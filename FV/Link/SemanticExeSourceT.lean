@@ -160,7 +160,8 @@ theorem attemptT_correct_source {S : LinkSpec} {file0 file : ByteArray}
 
 /-- **The typed compiler on a Stock route refines the original source program, recursive
 programs included** (S3, L1d): `attempt_correct_source_peak` for `attemptT`, returned values by
-class (`ExecRefinesT`). -/
+class (`ExecRefinesT`); the outside caller provides `frameDrop + (D * d + pbMax)` bytes of stack
+(statement change for #581: the stack probes touch up to `pbMax` bytes below the frames). -/
 theorem attemptT_correct_source_peak {S : LinkSpec} {file0 file : ByteArray}
     (h : attemptT lower S file0 = .ok file) (hsrc : SrcScopeB (input lower S true) = true)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S true) B)) (hH : HooksSim (input lower S true) B)
@@ -171,8 +172,8 @@ theorem attemptT_correct_source_peak {S : LinkSpec} {file0 file : ByteArray}
     (d : Nat) {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall (input lower S true) (BinCheck.roByte (input lower S true) S.data) (legalize f)
-      (frameDrop (art (input lower S true) (legalize f)).af + (input lower S true).D * d) r args'
-        cs'.mem)
+      (frameDrop (art (input lower S true) (legalize f)).af +
+        ((input lower S true).D * d + pbMax (input lower S true))) r args' cs'.mem)
     (hr : ClifRun (input lower S true) B (legalize f) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

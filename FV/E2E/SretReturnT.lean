@@ -241,7 +241,7 @@ theorem backend_correct_of_rules_exT_abi {p : Clif.Program} {f : Clif.Function} 
       hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
     hM6 hent hres hbe
-    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
 /-- `backend_correct_m4_exT` with the ABI return values (`sretStableB f`). -/

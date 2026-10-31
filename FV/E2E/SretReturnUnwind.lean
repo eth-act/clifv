@@ -276,7 +276,7 @@ theorem backend_correct_final_unwind_ex_abi {p : Clif.Program} {f : Clif.Functio
       hsites hlsda hpad hlast hrows hcie hfde hsaved)
     hent hres hbe
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
-      (stackArgsAvoid_frameWA hc hres hent hargs))
+      (stackArgsAvoid_frameWA hc hres hent hargs) hres)
     hcs hrel htr fuel
 
 /-- **The backend's end-to-end theorem with unwinding and the ABI return values**
@@ -341,7 +341,7 @@ theorem backend_correct_final_unwind_abi {p : Clif.Program} {f : Clif.Function} 
       hsites hlsda hpad hlast hrows hcie hfde hsaved).ex
     hent hres hbe
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
-      (stackArgsAvoid_frameW hc hres hent hargs))
+      (stackArgsAvoid_frameW hc hres hent hargs) hres)
     hcs hrel htr fuel
 
 /-- **The `sret` return register with unwinding**: for a function with an `sret` parameter `i`

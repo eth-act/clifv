@@ -88,7 +88,7 @@ theorem backend_correct_cleanup_ex_validated {p : Clif.Program} {f : Clif.Functi
       obtain ⟨pr, pt⟩ := prepareCorrect_of_check (hds s') hc.prepOk a w
       exact ⟨fun _ _ _ h => pr _ _ _ (hr _ _ _ h), fun _ h => pt _ (ht _ h)⟩)
     hM6 hent hres hbe
-    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
   exact {
     shape := hshape
@@ -252,7 +252,7 @@ theorem stackArgsAvoid_frameWCleanupA_validated {f : Clif.Function} {k : Nat} {v
     rw [hfs, e]
     exact Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) (le_alignTo16 _))
       (Nat.le_add_right _ _)
-  have hsp := hres.1
+  have hsp := hres.1.1
   have hfit := h.fits
   have hx : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j -
       (spv s - BitVec.ofNat 64 (frameDrop af))).toNat = off + j + frameDrop af := by

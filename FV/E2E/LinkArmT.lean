@@ -469,7 +469,8 @@ theorem bodyEntryW_compatT (hL : L.OkT) {h : Clif.Function} (hh : h ∈ L.P.func
     have h30 : f ≠ .GPR 30#5 := by rintro rfl; exact hf (by simp [Masked])
     rw [r_bodyOf _ _ h29' h31, r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
       hc.world.1 f hf, ht.world.1 f hf]
-  · rw [mem_bodyOf, mem_enterAt, mem_enterAt, hc.world.2.1 a ha, ht.world.2.1 a ha]
+  · rw [mem_bodyOf]
+    exact probeMem_congr hsp (by rw [mem_enterAt, mem_enterAt, hc.world.2.1 a ha, ht.world.2.1 a ha])
 end LinkSys
 namespace LinkSys
 variable (L : LinkSys)
@@ -489,7 +490,8 @@ theorem frameDrop_eqT (hL : L.OkT) {h : Clif.Function} (hh : h ∈ L.P.funcs) :
 /-- **A call of a function `h` of `P`** at depth `M` (its callee run at depth `M`, `crun M`,
 returns) from a world `w` with room for the callee's stack: one VCode outcome of `h`, which the
 linked machine's call realises from every caller state compatible with `w` (`CallerOk`), in
-particular from the canonical one. -/
+particular from the canonical one. The callee's budget holds its stack probes (`hpb`, #581, as
+`progCall`). -/
 theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.ThmT κ (M - 1)) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     (hib : ((RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0 ∧
@@ -499,6 +501,7 @@ theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
     {cm' : Clif.Mem} (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
@@ -563,6 +566,10 @@ theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
   have hsp0 : spv cn = spv w := hcOk.world.1 _ (by simp [Masked])
   have hspw₀ : spv w₀ = spv w - BitVec.ofNat 64 (frameDrop (L.A h).af) := by
     rw [spv_bodyOf, spv_enterAt, hsp0]
+  -- the callee's stack probes zero only bytes of its frame and of its budget, inside `F` (#581)
+  have hnpw : ∀ u : Arm.ArmState, spv u = spv w → ∀ a, ¬ F a →
+      probeHit (L.A h).af (spv (enterAt (L.A h) u)) a = false := fun u hu a ha => by
+    rw [spv_enterAt, hu]; exact probeHit_of_notF hpb hroom (fun a hb => (hdead a hb).1) ha
   obtain ⟨-, -, hB⟩ := off_toNat 0 (spv w) (frameDrop (L.A h).af) (by omega)
   -- the callee's outgoing area (in the caller's dead stack) is outside the callee's `F`
   let ib := (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase
@@ -649,10 +656,12 @@ theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
           hcOk.world.1 _ (by simp [Masked])]
         exact herr
       · rw [← hmr.bytes a b hv hb]
-        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf, mem_enterAt]
-        rw [L.mem_canon, mem_withImg, if_neg]
+        have hnF : ¬ F (BitVec.ofNat 64 a) := fun hf =>
+          (hmr.valid a 1 hv).2 0 (by omega) (by simpa using hf)
+        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf]
+        rw [probeMem_of_not (hnpw cn hsp0 _ hnF), mem_enterAt, L.mem_canon, mem_withImg, if_neg]
         intro hi
-        exact (hmr.valid a 1 hv).2 0 (by omega) (by simpa using himgF _ hi)
+        exact hnF (himgF _ hi)
     · intro loc v hmem
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hmem
       cases loc with
@@ -667,8 +676,9 @@ theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
         rw [show Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w₀ =
             Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w from
           read_mem_bytes_congr _ _ (fun k hk => by
-            simp only [w₀, mem_bodyOf, mem_enterAt]
-            rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
+            simp only [w₀, mem_bodyOf]
+            rw [probeMem_of_not (hnpw cn hsp0 _ (hsav off v hmem k hk)), mem_enterAt, L.mem_canon,
+              mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
         exact hargs.2.2 off v hmem
       | reg r =>
         obtain ⟨i, hr, hv⟩ := reg_zip _ _ hi
@@ -763,7 +773,7 @@ theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
       fun a ha => by rw [mem_enterAt]; exact himgt a ha, hbw⟩
     · rw [r_enterAt _ _ (by simp) (by simp)]; exact herrt
     · rw [hspt]; exact hal
-    · refine stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_
+    · refine ⟨stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_, hpb⟩
       rw [hspt, ← hdrop] at hb
       exact (hdead a hb).2 (hcode t a ha)
     · rw [hspt]; exact ha.2
@@ -815,7 +825,10 @@ theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
         rw [r_bodyOf _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp)]
         exact herrt
       · have := hmt.bytes a b hv hb
-        simp only [Arm.read_mem, Arm.read_store, w₀', mem_bodyOf, mem_enterAt] at this ⊢
+        have hnF : ¬ F (BitVec.ofNat 64 a) := fun hf =>
+          (hmt.valid a 1 hv).2 0 (by omega) (by simpa using hf)
+        simp only [Arm.read_mem, Arm.read_store, w₀', mem_bodyOf] at this ⊢
+        rw [probeMem_of_not (hnpw t hst _ hnF), mem_enterAt]
         exact this
     have hsw : SameWorld (fun a => Fh a ∨ D a) w₀ w₀' := by
       refine ⟨fun f hf => ?_, fun a ha => ?_, by simp [w₀, w₀']⟩
@@ -837,8 +850,9 @@ theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
           by_cases hf : Fh a
           · exact ha (.inl hf)
           · exact ha (.inr ⟨hz, hf⟩)
-        simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
-        rw [hcOk.world.2.1 a (fun hf => hnZ (hFZ a hf)), hZ.2.1 a hnZ]
+        simp only [w₀, w₀', mem_bodyOf]
+        exact probeMem_congr (by rw [spv_enterAt, spv_enterAt, hsp0, hst])
+          (by rw [mem_enterAt, mem_enterAt, hcOk.world.2.1 a (fun hf => hnZ (hFZ a hf)), hZ.2.1 a hnZ])
     have hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf h.sig).zip vals →
         regVal w₀' r = regVal w₀ r := by
       intro r v hm
@@ -854,8 +868,9 @@ theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
       intro off v hm k hk
       rw [hx29, fp_off_eq]
       have hnF := hsav off v hm k hk
-      simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
-      rw [hstkt off v hm k hk, hcOk.world.2.1 _ hnF]
+      simp only [w₀, w₀', mem_bodyOf]
+      exact probeMem_congr (by rw [spv_enterAt, spv_enterAt, hsp0, hst])
+        (by rw [mem_enterAt, mem_enterAt, hstkt off v hm k hk, hcOk.world.2.1 _ hnF])
     obtain ⟨k, hret, htrk⟩ := hni hN D w₀' hrel' hsw hreg hstk G (Arm.r .PC t + 4)
       (enterAt (L.A h) t) (hME t w₀' hst herrt himgt hbw)
     refine ⟨k, hpcall t k hrat htrk hret.ret hret.prog, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
@@ -916,12 +931,16 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
-/-- `K` is a budget (every frame at most `D`, `Ok.depth`). -/
+/-- `K` is a budget (every frame at most `D`, `Ok.depth`; every function's probes at most
+`pbMax`). -/
 theorem budget_KT (hL : L.OkT) : L.Budget fun M _ => L.K M := by
-  intro M g _ h hc
-  have := hL.depth h (L.callee_mem hc)
-  simp only [K, Nat.mul_succ]
-  omega
+  refine ⟨fun M g _ h hc => ?_, fun M g hg => ?_⟩
+  · have := hL.depth h (L.callee_mem hc)
+    simp only [K, Nat.mul_succ]
+    omega
+  · have := L.probeBelow_le_pbMax hg
+    simp only [K]
+    omega
 
 /-- **The core of the operand-view obligation of a call of the function `h` of `P`** (by `bl`
 or `blr`) in the linked machine at depth `M` (from the linking statement at depth `M - 1`): from
@@ -971,8 +990,8 @@ theorem progOsCoreT (hL : L.OkT) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (
   simp only [Option.some.injEq, Prod.mk.injEq] at hx
   obtain ⟨rfl, rfl⟩ := hx
   obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, hrs, hcall, -⟩ :=
-    L.progCallT hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw halw hroom hdead hmr hargs hsav hpl
-      hinit hrun
+    L.progCallT hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw halw hroom hdead (hκ.2 _ h hh)
+      hmr hargs hsav hpl hinit hrun
   -- the caller state is compatible with the canonical one
   have hcOk : L.CallerOk F h uses w t := by
     refine ⟨hsw, fun a ha => (hG a (himgG a ha)).trans (himgS a ha), fun r hr => ?_,
@@ -1453,7 +1472,7 @@ theorem progResultT (hL : L.OkT) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (
   have hplw : L.NeedSlots → L.PlaceAt cm (spv w) := fun hN => by rw [hsp]; exact hpl hN
   obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, -, hcall, -⟩ :=
     L.progCallT hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw (by rw [hsp]; exact halign)
-      hroom' hdead' hmemR0 hargs hsav hplw hinit hret
+      hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hplw hinit hret
   obtain ⟨kc, hc_eq, hc_ret⟩ := hcall _ (L.callerOk_canonT hL hh himgF args w)
   have hcond : L.Cond κ M F h args w ∧ Arm.r .ERR (L.pcall M h (L.canon h args w)) = .None := by
     refine ⟨⟨hM, herrw, by rw [hsp]; exact halign, hroom', hdead', vals, cm, cs, rvals, cm',
@@ -1676,10 +1695,11 @@ theorem regVal_canon_eqT (hL : L.OkT) {h : Clif.Function} (hh : h ∈ L.P.funcs)
 /-- **Non-interference of a call of a function `h` of `P`** that `g` declares (when the linking
 needs it): from two worlds that agree outside `Z ⊇ F`, related to the same CLIF memory, with the
 arguments where `h`'s ABI puts them in both, on which the callee's run (`crun M`) returns,
-the two calls (`progXT`) give the same results and worlds that agree outside `Z`. -/
+the two calls (`progXT`) give the same results and worlds that agree outside `Z`. The callee's
+budget holds its stack probes (`hpb`, #581, as `progCall`). -/
 theorem progX_niT (hL : L.OkT) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1))
     {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
-    (hcallee : L.Callee g h) {F Z : BitVec 64 → Prop}
+    (hcallee : L.Callee g h) (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h) {F Z : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (hFZ : ∀ a, F a → Z a) {w w' : Arm.ArmState}
     (hsw : SameWorld Z w w') {cm : Clif.Mem} {vals : List Clif.Val} {args : List CV}
     (hm : MemRel F L.syms cm w) (hm' : MemRel F L.syms cm w') (ha : ArgsAt h.sig vals args w)
@@ -1705,7 +1725,7 @@ theorem progX_niT (hL : L.OkT) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0
     rw [(clifEntry_initState hpf hinit).sig, (clifEntry_initState hpf hinit1).sig]
   have hsav := stackArgsAvoid_tys hsav1 hty
   obtain ⟨us, outs, wf, hus, hlen, hhold, -, hrs, hall, hni⟩ :=
-    L.progCallT hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ (.inr hN) himgF herr hal hroom hdead hm ha
+    L.progCallT hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ (.inr hN) himgF herr hal hroom hdead hpb hm ha
       hsav hpl hinit hrun
   have hc0 := L.callerOk_canonT hL hh himgF args w
   have hc1 := L.callerOk_canonT hL hh himgF args w'
@@ -1780,7 +1800,7 @@ theorem progX_niT (hL : L.OkT) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0
 the linking needs it): the base externs' (`baseNI`), and for a function of `P` that `g` declares
 `progX_niT` (a direct call has the arguments in the callee's ABI, its declaration having the
 callee's signature, `declSig`; an indirect call's callee takes register arguments, `indSig`). -/
-theorem xniT (hL : L.OkT) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1))
+theorem xniT (hL : L.OkT) [L.CrunOk] (hN : L.NeedNI) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (c : BitVec 64) :
     XNI F L.syms (g.externs.map (·.2)) (indSigs g) c
@@ -1835,7 +1855,8 @@ theorem xniT (hL : L.OkT) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L
         exact ⟨(argsAt_iff_of_regs hb hb8 hvl).mpr hall, (argsAt_iff_of_regs hb hb8 hvl).mpr hall⟩
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, u, rfl, hu⟩
     · rw [L.XT_prog hpf] at hx hx'
-      exact L.progX_niT hL hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit hGo hx hx'
+      exact L.progX_niT hL hN ih hg hh hcallee (hκ.2 _ h hh) himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw
+        hinit hGo hx hx'
     · have hs : symCallee L.Xb L.P (lo64 u) = some h := by
         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = some h
         rw [hu]; exact (L.find_symT hL h.name).1 h hpf
@@ -1843,8 +1864,8 @@ theorem xniT (hL : L.OkT) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L
       split at hx
       · rename_i hif
         rw [if_pos hif] at hx'
-        exact L.progX_niT hL hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit hGo hx
-          hx'
+        exact L.progX_niT hL hN ih hg hh hcallee (hκ.2 _ h hh) himgF hFZ hsw hm hm' hAA.1 hAA.2
+          hplw hinit hGo hx hx'
       · cases hx
 
 /-- The TLSDESC flags of an activation's external semantics are the base's. -/
@@ -1967,7 +1988,7 @@ theorem thm_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < 
     refine ⟨us, outs, wf, ⟨hus, fun h => absurd (hsr.symm.trans h) (by decide)⟩, hlen, hhold, hmem,
       hrs, fun G ra s hME => hall (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀ hME),
       fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
-    exact hni (L.xniT hL hN ih hg hWE.img (spv w₀)) (L.xTlsT hL hN) D w₀' hrel' hsw hreg hstk
+    exact hni (L.xniT hL hN hκ ih hg hWE.img (spv w₀)) (L.xTlsT hL hN) D w₀' hrel' hsw hreg hstk
       (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀' hME)
   | true =>
     rcases hL.sretE g hg hsr with ⟨hsubE, hcE⟩ | hx
@@ -1991,14 +2012,14 @@ theorem thm_ofT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < 
       refine ⟨us, outs, wf, ⟨retRegsOk_of_x hus hint (by have := hhold.1; omega), fun _ => hus⟩,
         hlen, hhold, hmem, hrs, fun G ra s hME => hall (L.hooks M) G (L.A g).base ra s
         (hAE G ra s w₀ hME), fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
-      exact hni (L.xniT hL hN ih hg hWE.img (spv w₀)) (L.xTlsT hL hN) D w₀' hrel' hsw hreg hstk
+      exact hni (L.xniT hL hN hκ ih hg hWE.img (spv w₀)) (L.xTlsT hL hN) D w₀' hrel' hsw hreg hstk
         (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀' hME)
     · -- #722: any `sret` function whose returns are in x0.. (`RetsX`): the typed world theorem
       obtain ⟨us, outs, wf, hus, -, hlen, hhold, hmem, hrs, hall, hni⟩ := hT rvals cm' hrun'
       refine ⟨us, outs, wf, ⟨hus, fun _ => hx us hrs⟩, hlen, hhold, hmem, hrs,
         fun G ra s hME => hall (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀ hME),
         fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
-      exact hni (L.xniT hL hN ih hg hWE.img (spv w₀)) (L.xTlsT hL hN) D w₀' hrel' hsw hreg hstk
+      exact hni (L.xniT hL hN hκ ih hg hWE.img (spv w₀)) (L.xTlsT hL hN) D w₀' hrel' hsw hreg hstk
         (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀' hME)
 
 /-- **The linking statement at every depth.** -/
@@ -2072,7 +2093,7 @@ theorem backend_correct_program_coreT (L : LinkSys) (hL : L.OkT) [L.CrunOk]
     refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
     · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
     · refine argsAtEntry_bodyT hfr hc.entryRegs hbe hargs
-        fun off v hm k hk hk' => ?_
+        (fun off v hm k hk hk' => ?_) hres
       rw [hF] at hk'
       rcases hk' with hw | hi
       · exact stackArgsAvoid_frameW_of_alloc hc.alloc hres hent hargs off v hm k hk hw

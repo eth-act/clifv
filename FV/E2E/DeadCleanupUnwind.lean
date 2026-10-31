@@ -122,7 +122,7 @@ theorem backend_correct_cleanup_layersU_ex {p : Clif.Program} {f : Clif.Function
     ArmRefinesU fb base ra astep s (Clif.runLoopX env p fuel cs.toX) :=
   backend_correct_of_layersU_ex hIsel
     (fun s' => prepareCorrectU_cleanup (hds s') (hPure s') (hCmp s') hc.prepOk XR) hReg hent hres hbe
-    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
 end E2E

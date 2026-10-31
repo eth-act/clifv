@@ -334,7 +334,7 @@ abbrev Act.RL (L : Link) (g : Act) : Backend.Proof.RL := L.act g.F g.s0 g.K g.G
 
 /-- The activation's callee-saved registers at its body entry (after the prologue). -/
 noncomputable def Act.r0 (L : Link) (g : Act) : Reg → CV := fun r =>
-  locVal (g.RL L).fr (iterN (g.RL L).step (prologueLines g.F.af.saves g.F.af.frameSize).length g.s0)
+  locVal (g.RL L).fr (iterN (g.RL L).step (prologueLines g.F.af.saves g.F.af.frameSize g.F.af.isCaller).length g.s0)
     (.reg r)
 
 /-- **The static facts of an activation** (module doc): the premises of the chain theorems that do
@@ -376,6 +376,9 @@ structure StatOk (L : Link) (env : Clif.Env) (p : Clif.Program) (g : Act) : Prop
   uniq : ∀ e ∈ g.f.externs, ∀ e' ∈ g.f.externs, e.2.name = e'.2.name → e.2 = e'.2
   envx : ∀ e ∈ g.f.externs, env.extern e.2.name = none
   sigs : ∀ e ∈ g.f.externs, ∀ callee, p.func? e.2.name = some callee → callee.sig = e.2.sig
+  /-- the prologue's stack probes write outside the world (#581, `ProbeF`: new, for the entry
+  form `chainP_entry`; holds for a frame below 4 KiB, `ProbeF.of_small`) -/
+  probe : ProbeF (g.RL L)
 
 /-- **The static facts of a compiled function of the link** (module doc): the lowering, prep and
 allocation data of the CLIF function `f` compiled to `F` (named `nm`), its CLIF slots within its
@@ -462,11 +465,11 @@ theorem chainP_entry (hS : StatOk L env p g) {cs : Clif.State} {B0 : Clif.Block}
     (hsig : args.map (·.ty) = g.f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : RelW g.Γ g.f g.c g.slots cs.mem w₀)
     (hargs : ArgsAtEntry (g.RL L).F g.f.sig args w₀)
-    (hq : Q (g.RL L) (iterN (g.RL L).step (prologueLines g.F.af.saves g.F.af.frameSize).length g.s0)
+    (hq : Q (g.RL L) (iterN (g.RL L).step (prologueLines g.F.af.saves g.F.af.frameSize g.F.af.isCaller).length g.s0)
       (MConf.init g.F.rf m₀ w₀)) (hA : AInv (g.RL L) (MConf.init g.F.rf m₀ w₀)) {mon : Mon} :
     ChainP L env p g (fun r => m₀ (.reg r)) (g.s0, mon) cs := fun ls t' hr => by
   obtain ⟨k, trS, t, ψ, hk, hx, hrun, href, hend⟩ := arm_isel_refines_abiCRNX hS.wf hS.scope rfl
-    (agreesAt_M hS.ok hS.mem _ _ _) hS.abi hS.H hS.chk (hS.ΓF ▸ memRelOk_relW g.Γ g.f g.c)
+    (agreesAt_M hS.ok hS.mem _ _ _) hS.abi hS.probe hS.H hS.chk (hS.ΓF ▸ memRelOk_relW g.Γ g.f g.c)
     (IselRefines.Witness.relW_wf hS.align) hS.tls hS.noCall
     (memRefines_csem _ _ _ hS.slot (fun n b h => hS.sym n b h))
     (hS.ΓF ▸ mrStable_relW g.Γ g.f g.c)

@@ -74,7 +74,9 @@ theorem iniOf_F (I : LinkInput) (B : BaseEnv) (F : BitVec 64 → Prop) :
   LinkSys.iniOf_congr rfl rfl rfl fun M g => by
     rw [LinkSys.mach_std, LinkSys.mach_std]; exact mach_F I B F (fun _ => False) M g
 
-/-- **`premises` with the reference CLIF run under the slot-byte oracle** (`ClifRunB`). -/
+/-- **`premises` with the reference CLIF run under the slot-byte oracle** (`ClifRunB`; the stack
+premise is the room `StackRoom` only, #581: `StackAvail` also asks `probeBelow ≤ K`, a fact of
+the budget). -/
 theorem premisesB {I : LinkInput} {B : BaseEnv} {f : Clif.Function} {K M : Nat}
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hL : (LinkSys.ofInputCleanup I B (worldF I f K r)).Ok) (hf : f ∈ (prog I).funcs)
@@ -82,7 +84,7 @@ theorem premisesB {I : LinkInput} {B : BaseEnv} {f : Clif.Function} {K M : Nat}
     (ho : OutsideCall I roB f (frameDrop (art I f).af + K) r args cs.mem)
     (hr : ClifRunB I B M f r args cs) :
     AbiEntry (art I f).fb (art I f).base (xreg 30 r) (modelOf I f r) ∧
-    StackAvail K (art I f).af (modelOf I f r) ∧
+    StackRoom ((art I f).af.frameSize + 16 + K) (modelOf I f r) ∧
     (∀ a, img I a → ¬ StackBelow (frameDrop (art I f).af + K) (spv (modelOf I f r)) a) ∧
     (∀ a, img I a → (modelOf I f r).mem a = imgMem I a) ∧
     BodyEntry (art I f).af (modelOf I f r) (bodyOf (art I f).af (modelOf I f r)) ∧
@@ -143,15 +145,12 @@ theorem premisesB {I : LinkInput} {B : BaseEnv} {f : Clif.Function} {K M : Nat}
   · intro off v hm
     obtain ⟨-, hav, -⟩ := ho.args (.stack off) v hm
     rw [spv_modelOf]; exact hav
-  · -- the live CLIF bytes
+  · -- the live CLIF bytes (the body-entry memory is after the stack probes, #581)
     have hni := ((ho.valid a 1 hv).2 0 (by omega)).1
     simp only [Nat.add_zero] at hni
-    simp only [Arm.read_mem, mem_bodyOf]
-    rw [show Arm.read_store (BitVec.ofNat 64 a) (modelOf I f r).mem = (modelOf I f r).mem (BitVec.ofNat 64 a)
-      from rfl, mem_modelOf_not hni]
-    cases hroa : roB (BitVec.ofNat 64 a) with
-    | none => exact ho.bytes a b hv hb hroa
-    | some b' => rw [hro _ _ hroa, ho.image a b b' hv hb hroa]
+    show probeMem (art I f).af (modelOf I f r) (BitVec.ofNat 64 a) = b
+    rw [probeMem_congr (by rw [spv_modelOf]) (mem_modelOf_not hni)]
+    exact ho.bytes a b hv hb
   · obtain ⟨hfit, hk⟩ := ho.valid a n hv
     exact ⟨hfit, fun k hkn => not_worldF hL hf hN (hk k hkn).1 (hk k hkn).2⟩
   · -- the slots
@@ -225,7 +224,9 @@ theorem binary_correct_init {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
   obtain ⟨hA, hG⟩ := backend_correct_program_initEX (sysW I B f r) hL (κ := kapW I B f r)
     (DeadCleanupStackBound.budget_of hbin.ok B (worldF I f (DeadCleanupStackBound.bud I f) r))
     hIO.baseRet hIO.retCount hIO.det hIO.detTab hIO.detTabR hIO.hooks hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (by rw [hκf]; exact hgfree) himg hbe hargs
+    (by rw [hκf]; exact ⟨hres, by rw [← hκf]; exact (DeadCleanupStackBound.budget_of hbin.ok B
+      (worldF I f (DeadCleanupStackBound.bud I f) r)).2 M f hfm⟩) (by rw [hκf]; rfl)
+    (by rw [hκf]; exact hgfree) himg hbe hargs
     hr.entry hsav hrel (fun hN => by rw [iniOf_F]; exact hpl hN) hrun
   refine ⟨?_, modelOf_diff hbin hX f, runGoodL_F hG⟩
   rw [mach_F I B (fun _ => False) (worldF I f (DeadCleanupStackBound.bud I f) r)]
@@ -307,7 +308,9 @@ theorem model_init_sysS {D : List Clif.DataObject} (hI : okBCleanup I = true)
     (backend_correct_program_initEX (sysS I B f r S) hL (κ := kapW I B f r)
     ((DeadCleanupStackBound.budget_of hI B (worldF I f (DeadCleanupStackBound.bud I f) r)).extImg _ _ _)
     hIO.baseRet hIO.retCount hIO.det hIO.detTab hIO.detTabR hIO.hooks hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (fun a ha => ?_) (fun a _ => rfl) hbe hargs
+    (by rw [hκf]; exact ⟨hres, by rw [← hκf]; exact (DeadCleanupStackBound.budget_of hI B
+      (worldF I f (DeadCleanupStackBound.bud I f) r)).2 M f hfm⟩) (by rw [hκf]; rfl)
+    (fun a ha => ?_) (fun a _ => rfl) hbe hargs
     hr.entry (fun off v hm k hk hx => ?_)
     ⟨⟨hrel.1.bytes, fun a n hv => ?_, hrel.1.symbols⟩, hrel.2.1, hrel.2.2.1, fun j hj => ?_,
       hrel.2.2.2.2⟩ (fun hN => by rw [iniOf_sysS]; exact hpl hN) hrun)

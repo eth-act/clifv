@@ -68,11 +68,13 @@ def Ret (g : Act) (_u : ArmState × Mon) (_c : TState × (Nat → Prop)) (v : Ar
 
 end thread
 
-/-- **The static premises of a link of compiled functions** (module doc). -/
+/-- **The static premises of a link of compiled functions** (module doc). (#581: the frame bound
+`Mx` now also covers the bytes the function's stack probes write below its frame
+(`probeBelow`): a callee's `R.Wf` includes `StackAvail`, which bounds them by its budget.) -/
 structure LinkOk (L : Link) (env : Clif.Env) (p : Clif.Program) (syms : String → Option Nat)
     (fr : String → Option (Nat × (Clif.SlotId → Nat))) (Mx : Nat) : Prop where
   fn : ∀ n f, p.func? n = some f → ∃ F, (n, F) ∈ L.fns ∧ FnOk L env p syms n F f ∧
-    fr n = some (frameDrop F.af, slotOffs F.af f) ∧ F.af.frameSize + 16 ≤ Mx
+    fr n = some (frameDrop F.af, slotOffs F.af f) ∧ F.af.frameSize + 16 + probeBelow F.af ≤ Mx
   inside : ∀ n F, (n, F) ∈ L.fns → CallsInside F
   noSelf : ∀ n f, p.func? n = some f → ∀ e ∈ f.externs, e.2.name ≠ n
   defsRet : ∀ nA FA nB FB, (nA, FA) ∈ L.fns → (nB, FB) ∈ L.fns →
@@ -208,12 +210,12 @@ end threadX
 /-- **The static premises of a link with externals** `Xn` (return registers `xr`): `LinkOk` for
 the program functions other than the externals; every external's code in the link and its CLIF
 specification without stack slots; the externals' return registers `CallDefsRet` of every
-caller. -/
+caller. (#581: the frame bound `Mx` also covers the stack probes below the frame, `LinkOk`.) -/
 structure LinkOkX (L : Link) (env : Clif.Env) (p : Clif.Program) (syms : String → Option Nat)
     (fr : String → Option (Nat × (Clif.SlotId → Nat))) (Mx : Nat) (Xn : String → Prop)
     (xr : String → List Reg) : Prop where
   fn : ∀ n f, p.func? n = some f → ¬ Xn n → ∃ F, (n, F) ∈ L.fns ∧ FnOk L env p syms n F f ∧
-    fr n = some (frameDrop F.af, slotOffs F.af f) ∧ F.af.frameSize + 16 ≤ Mx
+    fr n = some (frameDrop F.af, slotOffs F.af f) ∧ F.af.frameSize + 16 + probeBelow F.af ≤ Mx
   xfn : ∀ n f, p.func? n = some f → Xn n → (∃ F, (n, F) ∈ L.fns) ∧ f.slots = []
   inside : ∀ n F, (n, F) ∈ L.fns → CallsInside F
   noSelf : ∀ n f, p.func? n = some f → ∀ e ∈ f.externs, e.2.name ≠ n
@@ -480,7 +482,8 @@ theorem segOkG_ext {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat →
         exact chainP_resume (mon := z.2) hS (r0_saves hS) h1 h2 h3 h4 h5
     -- a compiled callee
     obtain ⟨FB, hFBm, hFn, hfr, hMx⟩ := hL.fn e.name callee hpf hXe
-    obtain ⟨hNK, hbud⟩ := budget_call hLv'.budget hdlt hMx
+    obtain ⟨hNK, hbud⟩ := budget_call hLv'.budget hdlt (N := FB.af.frameSize + 16) (by omega)
+    have hpK := (budget_call hLv'.budget hdlt hMx).1
     let KB := g.K - (FB.af.frameSize + 16)
     let RB := L.act FB (enter FB tE.1) KB (g.RL L).FK
     let NB : Nat → Prop := fun a => (g.N a ∨ (PrivA (g.RL L) a ∧ ¬ PrivA RB a)) ∧
@@ -488,7 +491,7 @@ theorem segOkG_ext {L : Link} {env : Clif.Env} {p : Clif.Program} {Bnd : Nat →
     obtain ⟨h, hnm', hF, hs0, hK, hG, hra, hf, hsl, hext', hcaller, hop, hN, hsps, hsyms, hSB,
         hchB, hcinB, hnest, hM, -, -, hfx, hlr⟩ :=
       callee_chainP hS hLv'.syms hLv'.code hRQ.1 hPz hm2 hm3 hm4 hbody hcl he hvals htys hFBm hsig
-        hFn (KB := KB) (by omega) (sps := g.sps) (fr := fr) (by rw [hsp]; exact hpl0)
+        hFn (KB := KB) (by omega) (by omega) (sps := g.sps) (fr := fr) (by rw [hsp]; exact hpl0)
         (by rw [hcn]; exact hfr) hB0 hcs1 hcs2 hcs3 hcs4 hcs5 hcs6 hcs7 hcs8 hcs9 ext' g.F
         ((s'.mem, g.ext.length) :: g.opens) NB ((g.RL L).spB :: g.sps)
     have hRL : h.RL L = RB := by show L.act h.F h.s0 h.K h.G = _; rw [hF, hs0, hK, hG]

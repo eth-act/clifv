@@ -67,6 +67,17 @@ structure AFunc where
   saves : List Reg := []
   deriving Inhabited
 
+/-- An instruction Cranelift counts as a call (aarch64 `Inst::call_type`: `Call`, `CallInd` and
+the TLS address call; `try_call` is a `Call`). -/
+def MInst.callsOut : MInst → Bool
+  | .call _ | .tryCall _ _ | .elfTlsGetAddr .. => true
+  | _ => false
+
+/-- The function calls (Cranelift's `FunctionCalls` of its VCode is not `None`): the stack
+probes of its prologue cover its callees' fp/lr area too (`prologueLines`). -/
+def AFunc.isCaller (af : AFunc) : Bool :=
+  af.blocks.any fun (_, code) => code.any fun | .inst m => m.callsOut | _ => false
+
 /-- The int registers of a save list (x19–x28). -/
 def savesInt (saves : List Reg) : List Reg := saves.filter fun | .x _ => true | _ => false
 

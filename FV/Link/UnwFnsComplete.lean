@@ -162,7 +162,7 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
       af.blocks[0]? = some (vb.label, (AInst.prologue :: code).toArray) ∧
       codeLinesE ⟨k, af.slotBase⟩ af code ps1 = .ok (ls, ps2) ∧
       fa.lines.toList[0]? = some (.label (.block vb.label)) ∧
-      fa.lines.toList.drop 1 = prologueLines af.saves af.frameSize ++
+      fa.lines.toList.drop 1 = prologueLines af.saves af.frameSize af.isCaller ++
         (relaxLines (emitFar ⟨k, af.slotBase⟩ af) (ftList (ls ++ nxtOf af 0)) ++ T) := by
   have hframe := lowerRFunc_frame halloc
   obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok halloc
@@ -312,7 +312,7 @@ theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa
     unwindRows af fa = .ok (prologueRows ++ pushRows af.saves 8) := by
   have hframe := lowerRFunc_frame halloc
   obtain ⟨code, ls, ps1, ps2, T, -, haf, -, h0, hd⟩ := entry_static halloc hemit hvb hit
-  generalize hP : prologueLines af.saves af.frameSize = P at hd
+  generalize hP : prologueLines af.saves af.frameSize af.isCaller = P at hd
   have hins : ∀ ln ∈ P, ∃ i t, ln = .ins i t := by
     intro ln hln
     rw [← hP] at hln

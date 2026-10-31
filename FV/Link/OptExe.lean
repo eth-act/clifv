@@ -115,7 +115,7 @@ theorem execOptPeak {S : LinkSpec} {file0 file : ByteArray} (h : compileExeOpt S
     {f' : Clif.Function} (hf' : (prog S.opt.input).func? n = some f') (d : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs' : Clif.State} (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.opt.input (BinCheck.roByte S.opt.input S.opt.data) f'
-      (frameDrop (art S.opt.input f').af + S.opt.input.D * d) r args cs'.mem)
+      (frameDrop (art S.opt.input f').af + (S.opt.input.D * d + pbMax S.opt.input)) r args cs'.mem)
     (hr : ClifRun S.opt.input B f' r args cs') (hd : Clif.DepthLe B.env (prog S.opt.input) d cs')
     {o : Clif.Outcome} {m : Nat}
     (hm : Clif.runLoop B.env (prog S.opt.input) m cs' = o) (hof : o ≠ .outOfFuel)
@@ -168,7 +168,7 @@ theorem compileExeOpt_correct {S : LinkSpec} {file0 file : ByteArray}
 
 /-- **The optimising executable compiler is correct for recursive programs, with the stack of
 the run's peak call depth**: `compileExeOpt_correct` without the call-graph premise; the outside
-caller provides `frameDrop + D * d` bytes of stack, where `d` bounds the call depth of the input
+caller provides `frameDrop + (D * d + pbMax)` bytes of stack (#581), where `d` bounds the call depth of the input
 program's run from `cs` (the mid-end keeps the call depth of the runs it refines). -/
 theorem compileExeOpt_correct_peak {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExeOpt S file0 = .ok file) (B : BaseEnv) (hB : BaseOk (sys S.opt.input B))
@@ -178,7 +178,7 @@ theorem compileExeOpt_correct_peak {S : LinkSpec} {file0 file : ByteArray}
     {r : Arm.ArmState} {args : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.opt.input (BinCheck.roByte S.opt.input S.opt.data) f'
-      (frameDrop (art S.opt.input f').af + S.opt.input.D * d) r args cs'.mem)
+      (frameDrop (art S.opt.input f').af + (S.opt.input.D * d + pbMax S.opt.input)) r args cs'.mem)
     (hr : ClifRun S.opt.input B f' r args cs') (hcs : ClifEntry f args cs)
     (hregs : cs.frame.regs = cs'.frame.regs) (hsl : cs.frame.slots = cs'.frame.slots)
     (hmem : cs.mem = cs'.mem) (hd : Clif.DepthLe B.env (prog S.input) d cs) (M : Nat) :
@@ -307,7 +307,7 @@ theorem compileExeOpt_correct_source {S : LinkSpec} {file0 file : ByteArray}
 
 /-- **The optimising executable compiler refines the original source program, recursive
 programs included** (S2, S3, L1d): `compileExeOpt_correct_source` without the call-graph
-premise; the outside caller provides `frameDrop + D * d` bytes of stack, where `d` bounds the
+premise; the outside caller provides `frameDrop + (D * d + pbMax)` bytes of stack (#581), where `d` bounds the
 call depth of the **source** run (`Clif.DepthLe`): the legalisation and the mid-end keep the
 call depth of the runs they refine. -/
 theorem compileExeOpt_correct_source_peak {S : LinkSpec} {file0 file : ByteArray}
@@ -322,7 +322,7 @@ theorem compileExeOpt_correct_source_peak {S : LinkSpec} {file0 file : ByteArray
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.opt.input (BinCheck.roByte S.opt.input S.opt.data) f'
-      (frameDrop (art S.opt.input f').af + S.opt.input.D * d) r args' cs'.mem)
+      (frameDrop (art S.opt.input f').af + (S.opt.input.D * d + pbMax S.opt.input)) r args' cs'.mem)
     (hr : ClifRun S.opt.input B f' r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

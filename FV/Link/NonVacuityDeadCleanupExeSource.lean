@@ -65,7 +65,8 @@ theorem compileExe_correct_source_peak_helper {S : LinkSpec} {file0 file : ByteA
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize f)
-      (frameDrop (art S.inputCleanup (legalize f)).af + S.inputCleanup.D * d) r args' cs'.mem)
+      (frameDrop (art S.inputCleanup (legalize f)).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args' cs'.mem)
     (hr : ClifRun S.inputCleanup helperBase (legalize f) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

@@ -11,7 +11,7 @@ and returns), runs the Lean linker and accepts its output only when the decided 
 **`compileExe_correct_peakT`** is `Link.DeadCleanup.compileExe_correct_peak` on the typed input
 conditions: for `leanLink S file0 = .ok file` on a typed in-scope input passing the output
 checks, an outside call of a function `f` of the program with
-`frameDrop (art S.inputCleanup f).af + S.inputCleanup.D * d` bytes of stack, where `d` bounds the
+`frameDrop (art S.inputCleanup f).af + (S.inputCleanup.D * d + pbMax S.inputCleanup)` bytes of stack (#581), where `d` bounds the
 call depth of the whole-program CLIF run (`Clif.DepthLe`), the executable machine run of `file`'s
 own words refines the whole-program CLIF run of at most `F + 1` steps (`ExecRefinesT`;
 `TrapsExplicit` under `Clif.linkEnvD`). It composes the typed cleanup facts of `leanLink`'s
@@ -33,7 +33,7 @@ open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf E2E.DeadCleanupBinary E2E.DeadCleanu
 /-- **The shipped executable compiler is correct on the typed scope at the run's peak call
 depth** (L1d; `Link.DeadCleanup.compileExe_correct_peak` for `InScopeP`): for `leanLink S file0 =
 .ok file` on a typed in-scope input passing the output checks, an outside call of a function `f`
-of the program with `frameDrop (art S.inputCleanup f).af + S.inputCleanup.D * d` bytes of stack,
+of the program with `frameDrop (art S.inputCleanup f).af + (S.inputCleanup.D * d + pbMax S.inputCleanup)` bytes of stack,
 where `d` bounds the call depth of the whole-program CLIF run (`Clif.DepthLe`: every state the
 run from `cs` reaches has at most `d` callers), the executable machine run of `file`'s own words
 refines the whole-program CLIF run of at most `F + 1` steps, each returned value in the ABI
@@ -46,7 +46,8 @@ theorem compileExe_correct_peakT {S : LinkSpec} {file0 file : ByteArray}
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) f
-      (frameDrop (art S.inputCleanup f).af + S.inputCleanup.D * d) r args cs.mem)
+      (frameDrop (art S.inputCleanup f).af + (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args
+      cs.mem)
     (hr : ClifRun S.inputCleanup B f r args cs)
     (hd : Clif.DepthLe B.env (prog S.inputCleanup) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog S.inputCleanup) B.env F d)
@@ -62,7 +63,7 @@ theorem compileExe_correct_peakT {S : LinkSpec} {file0 file : ByteArray}
 depth** (L1d; `Link.DeadCleanup.compileExeT_correct` without the depth premise): for
 `compileExeT S file0 = .ok file` — `compileExe` on `InScopeP`, else the Lean linker followed by
 the output checks on a typed in-scope input — and an outside call of a function `f` of the
-program with `frameDrop (art S.inputCleanup f).af + S.inputCleanup.D * d` bytes of stack, where
+program with `frameDrop (art S.inputCleanup f).af + (S.inputCleanup.D * d + pbMax S.inputCleanup)` bytes of stack, where
 `d` bounds the call depth of the whole-program CLIF run (`Clif.DepthLe`), the executable machine
 run of `file`'s own words refines the whole-program CLIF run of at most `F + 1` steps
 (`ExecRefinesT`; `TrapsExplicit` under `Clif.linkEnvD`). -/
@@ -73,7 +74,8 @@ theorem compileExeT_correct_peak {S : LinkSpec} {file0 file : ByteArray}
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) f
-      (frameDrop (art S.inputCleanup f).af + S.inputCleanup.D * d) r args cs.mem)
+      (frameDrop (art S.inputCleanup f).af + (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args
+      cs.mem)
     (hr : ClifRun S.inputCleanup B f r args cs)
     (hd : Clif.DepthLe B.env (prog S.inputCleanup) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog S.inputCleanup) B.env F d)

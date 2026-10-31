@@ -69,7 +69,7 @@ theorem compileExe_correct_depthT {S : LinkSpec} {file0 file : ByteArray}
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) f
-      (frameDrop (art S.input f).af + S.input.D * M) r args cs.mem)
+      (frameDrop (art S.input f).af + (S.input.D * M + pbMax S.input)) r args cs.mem)
     (hr : ClifRun S.input B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs) :
     ExecRefinesT (art S.input f).fb (art S.input f).base (xreg 30 r) (step S.input B file) r
@@ -87,7 +87,7 @@ theorem compileExe_correct_peakT {S : LinkSpec} {file0 file : ByteArray}
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) f
-      (frameDrop (art S.input f).af + S.input.D * d) r args cs.mem)
+      (frameDrop (art S.input f).af + (S.input.D * d + pbMax S.input)) r args cs.mem)
     (hr : ClifRun S.input B f r args cs)
     (hd : Clif.DepthLe B.env (prog S.input) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog S.input) B.env F d) (prog S.input).bare cs) :
@@ -168,7 +168,7 @@ theorem compileExe_correct_depth_viaT {S : LinkSpec} {file0 file : ByteArray}
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) f
-      (frameDrop (art S.input f).af + S.input.D * M) r args cs.mem)
+      (frameDrop (art S.input f).af + (S.input.D * M + pbMax S.input)) r args cs.mem)
     (hr : ClifRun S.input B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs) :
     ExecRefines (art S.input f).fb (art S.input f).base (xreg 30 r) (step S.input B file) r
@@ -184,7 +184,7 @@ theorem compileExe_correct_peak_viaT {S : LinkSpec} {file0 file : ByteArray}
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) f
-      (frameDrop (art S.input f).af + S.input.D * d) r args cs.mem)
+      (frameDrop (art S.input f).af + (S.input.D * d + pbMax S.input)) r args cs.mem)
     (hr : ClifRun S.input B f r args cs)
     (hd : Clif.DepthLe B.env (prog S.input) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog S.input) B.env F d) (prog S.input).bare cs) :

@@ -29,7 +29,7 @@ open Arm ArmThread Prog ClifThread Backend Backend.Proof Backend.Proof.Driver VC
 prologue pushes (it keeps the callee-saved registers): `rets_alloc`'s `hr₀`. -/
 theorem hr₀_init {RA : RL} (hR : RA.Wf) {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
     {m₀ : Loc → CV} {w₀ : ArmState}
-    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize).length RA.s0)
+    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length RA.s0)
       (MConf.init RA.rf m₀ w₀)) :
     ∀ r ∈ RA.af.saves, ckeep r (m₀ (.reg r)) = ckeep r (regVal RA.s0 r) := by
   obtain ⟨-, -, -, hsv, -⟩ := RL.frame_facts hR
@@ -43,16 +43,19 @@ theorem hr₀_init {RA : RL} (hR : RA.Wf) {ra : BitVec 64} (hent : AbiCall RA.fb
   rw [regVal_calleeSaved_congr (fun f h1 h2 h3 h4 h5 => prologue_fields hR hent f h1 h3 h5 h2) r hcs]
 
 /-- **The prologue on an agreeing machine**: through the prologue's lines a precise run of `g`
-under `OkPriv` is the single-core path, its events private plain writes. -/
+under `OkPriv` is the single-core path, its events private plain writes. (#581: `hpf`
+(`ProbeF`) is new: the stack probes' writes are private only when the probed bytes are in
+`RA.F`.) -/
 theorem prun_prologueG {RA : RL} (hR : RA.Wf) {g : ArmState → ArmState} (hg : AgreesAt RA g)
-    {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0) {mon : Mon} {L : List Lab}
+    {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0) (hpf : ProbeF RA) {mon : Mon}
+    {L : List Lab}
     {t1 : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) L t1)
-    (hL : L.length ≤ (prologueLines RA.af.saves RA.af.frameSize).length) :
+    (hL : L.length ≤ (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length) :
     t1.1 = iterN RA.step L.length RA.s0 ∧ PrivW (PrivA RA) (evTr L) ∧
       ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := by
   have hlat := prologue_linesAt hR hent
-  have hpe := prologue_evs hR hent hlat
-  have hnr := CallSeg.linesAt_nonRet hR hlat (CallSeg.noRet_prologue _ _)
+  have hpe := prologue_evs hR hent hpf hlat
+  have hnr := CallSeg.linesAt_nonRet hR hlat (CallSeg.noRet_prologue _ _ _)
   obtain ⟨h1, hev, -⟩ := CallSeg.prun_privF hr fun i hi =>
     ⟨fun e he => ((hpe i (by omega)).1 e he).1, (hpe i (by omega)).2,
       hg _ (CallSeg.linesAt_program hR hlat i (by omega)) (hnr i (by omega))⟩
@@ -74,10 +77,11 @@ theorem prun_prologueG {RA : RL} (hR : RA.Wf) {g : ArmState → ArmState} (hg : 
 
 /-- **All layers from the ABI entry, pausing at calls and at returns with their contract**
 (module doc), the realized prefix exclusive-closed (the prologue has no `relXW`,
-`arm_isel_refines_entryCRNX`). -/
+`arm_isel_refines_entryCRNX`). (#581: `hpf` (`ProbeF`) is new: the prologue's stack probes
+refine no CLIF step only when the probed bytes are private.) -/
 theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
-    {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
+    {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0) (hpf : ProbeF RA)
     {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
     {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT}
     {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat}
@@ -104,7 +108,7 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ArgsAtEntry RA.F f.sig args w₀)
-    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize).length RA.s0)
+    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length RA.s0)
       (MConf.init RA.rf m₀ w₀)) (hA : AInv RA (MConf.init RA.rf m₀ w₀)) {mon : Mon}
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) ls t') :
     ∃ k trS t ψ, k ≤ ls.length ∧ CallCompose.XClosed (evTr (ls.take k)) ∧ CRun env p (.run cs) trS t ∧
@@ -118,12 +122,12 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (RA.s0, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s')) := by
   have hr₀ := hr₀_init hR hent hq
-  generalize hP : (prologueLines RA.af.saves RA.af.frameSize).length = P at hq
+  generalize hP : (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length = P at hq
   have hpp : ∀ {L : List Lab} {t1 : ArmState × Mon},
       PRun Policy.arm g (OkPriv RA) (RA.s0, mon) L t1 → L.length ≤ P →
       t1.1 = iterN RA.step L.length RA.s0 ∧ PrivW (PrivA RA) (evTr L) ∧
         ∀ p y, evAt (evTr L) p = some y → y.k = .plainW :=
-    fun h hL => prun_prologueG hR hg hent h (hP ▸ hL)
+    fun h hL => prun_prologueG hR hg hent hpf h (hP ▸ hL)
   by_cases hle : ls.length ≤ P
   · obtain ⟨-, hpw, hpk0⟩ := hpp hr hle
     refine ⟨ls.length, [], _, id, Nat.le_refl _, ?_, .nil, ?_, .inl rfl⟩
@@ -161,10 +165,12 @@ theorem arm_isel_refines_abiCRNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
         rw [etake]; exact hv.append hpr
 
 /-- **All layers from the ABI entry, pausing at calls and returns with their contract**
-(module doc; `arm_isel_refines_abiCRNX` without its exclusive-closed prefix). -/
+(module doc; `arm_isel_refines_abiCRNX` without its exclusive-closed prefix). (#581: `hpf`
+(`ProbeF`) is new: the prologue's stack probes refine no CLIF step only when the probed bytes are
+private.) -/
 theorem arm_isel_refines_abiCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
-    {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0)
+    {ra : BitVec 64} (hent : AbiCall RA.fb RA.base ra RA.s0) (hpf : ProbeF RA)
     {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
     {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT}
     {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat}
@@ -191,7 +197,7 @@ theorem arm_isel_refines_abiCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
     (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
     {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ArgsAtEntry RA.F f.sig args w₀)
-    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize).length RA.s0)
+    (hq : Q RA (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length RA.s0)
       (MConf.init RA.rf m₀ w₀)) (hA : AInv RA (MConf.init RA.rf m₀ w₀)) {mon : Mon}
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (RA.s0, mon) ls t') :
     ∃ k trS t ψ, k ≤ ls.length ∧ CRun env p (.run cs) trS t ∧
@@ -204,7 +210,7 @@ theorem arm_isel_refines_abiCRN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
           MatchRun cc ins ckeep (fun r => m₀ (.reg r)) cM' vP') ∨
         (∃ tE s', PRun Policy.arm g (OkPriv RA) (RA.s0, mon) (ls.take k) tE ∧ t = .run s' ∧
           AtRetS s' ∧ RetEnd RA ra env p MR slots (fun r => m₀ (.reg r)) tE.1 s')) := by
-  obtain ⟨k, trS, t, ψ, hk, -, h⟩ := arm_isel_refines_abiCRNX hR hsc hgv hg hent H hchk hMR hMRw
+  obtain ⟨k, trS, t, ψ, hk, -, h⟩ := arm_isel_refines_abiCRNX hR hsc hgv hg hent hpf H hchk hMR hMRw
     hX hX0 hMem hMRs hreg H3 hm3 hc hm4 hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs
     hq hA hr
   exact ⟨k, trS, t, ψ, hk, h⟩

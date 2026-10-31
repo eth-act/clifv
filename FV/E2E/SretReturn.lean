@@ -179,7 +179,7 @@ theorem backend_correct_ex_abi {p : Clif.Program} {f : Clif.Function} {k : Nat} 
     (R := R) (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s') hS)
     (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
     hM6 hent hres hbe
-    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
   exact {
     shape := hshape

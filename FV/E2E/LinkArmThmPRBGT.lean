@@ -224,7 +224,7 @@ theorem thmPRBGT_ofRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         vals' cm cs' rvals' cm'' ini' hmr hargs hsav (fun hN => (hpl hN).1) (fun hN => (hpl hN).2)
         hinit hrun2 _ hcOk hmsk hrgn htabC)
       obtain ⟨Fh, G', w₀', m', hWE', hME', hra', hm'⟩ := L.actualEntry hL hM hpf ⟨g, hg, hcal⟩
-        hWE.img herrW halW hroomW hdeadW hmr hargs hsav (fun hN => (hpl hN).1)
+        hWE.img herrW halW hroomW hdeadW (hκ.2 _ h hh) hmr hargs hsav (fun hN => (hpl hN).1)
         (fun hN => (hpl hN).2) hinit hrun2 hcOk hrgn
       exact ihG hM h hh Fh vals' cs' w₀' m' rvals' cm'' (calleeIni h ini') G' _ _ hWE' hME' hra'
         htabE hm' _ _ _ _ hR' herrt
@@ -302,7 +302,7 @@ theorem backend_correct_program_core_initETXRU (L : LinkSys) (hL : L.Ok) [L.Crun
     have hWE : L.WorldEntryB κ M f L.F args cs w₀ (L.iniOf M f s) := by
       refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
       · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
-      · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm k hk hk' => ?_
+      · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs (fun off v hm k hk hk' => ?_) hres
         rw [hF] at hk'
         rcases hk' with hw | hi
         · exact stackArgsAvoid_frameW_pipeline hc hres hent hargs off v hm k hk hw

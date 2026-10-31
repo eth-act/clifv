@@ -68,7 +68,8 @@ theorem bundle_correct_raw {b : Bundle} {S : LinkSpec} {file0 file : ByteArray}
 
 /-- **The shipped executable compiler, recursive programs included (`bundle_correct_source_peak`) refines cg_clif's program**: as `bundle_correct_source_peak`, about the runs of cg_clif's
 program `rawLink us sc` under a naming `sc` of its module identities that respects its declarations
-(`RawScopingOk`). -/
+(`RawScopingOk`). The stack is `frameDrop + (D * d + pbMax)` (#581: the deepest activation's stack
+probes write up to `pbMax` bytes below its frame). -/
 theorem bundle_correct_raw_peak {b : Bundle} {S : LinkSpec} {file0 file : ByteArray}
     (hb : buildSpec b = .ok S) (h : Link.DeadCleanup.compileExe S file0 = .ok file)
     (hsrc : SrcScopeB S.inputCleanup = true)
@@ -84,7 +85,8 @@ theorem bundle_correct_raw_peak {b : Bundle} {S : LinkSpec} {file0 file : ByteAr
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d) r args' cs'.mem)
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize (f.rename σ.fwd)) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
@@ -155,7 +157,8 @@ theorem bundle_correct_raw_baseline {b : Bundle} {S : LinkSpec} {file0 file : By
 
 /-- **The baseline executable compiler, recursive programs included (`bundle_correct_source_peak_baseline`) refines cg_clif's program**: as `bundle_correct_source_peak_baseline`, about the runs of cg_clif's
 program `rawLink us sc` under a naming `sc` of its module identities that respects its declarations
-(`RawScopingOk`). -/
+(`RawScopingOk`). The stack is `frameDrop + (D * d + pbMax)` (#581: the deepest activation's stack
+probes write up to `pbMax` bytes below its frame). -/
 theorem bundle_correct_raw_peak_baseline {b : Bundle} {S : LinkSpec} {file0 file : ByteArray}
     (hb : buildSpec b = .ok S) (h : Link.compileExe S file0 = .ok file)
     (hsrc : SrcScopeB S.input = true)
@@ -171,7 +174,8 @@ theorem bundle_correct_raw_peak_baseline {b : Bundle} {S : LinkSpec} {file0 file
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) (legalize (f.rename σ.fwd))
-      (frameDrop (art S.input (legalize (f.rename σ.fwd))).af + S.input.D * d) r args' cs'.mem)
+      (frameDrop (art S.input (legalize (f.rename σ.fwd))).af + (S.input.D * d + pbMax S.input)) r
+      args' cs'.mem)
     (hr : ClifRun S.input B (legalize (f.rename σ.fwd)) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

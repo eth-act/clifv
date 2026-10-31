@@ -241,7 +241,8 @@ reaches a state at a trap with `int_divz` (every other premise discharged, witho
 bound of the source run). -/
 theorem exec_source_traps_peak {r : Arm.ArmState} (hX : (imageOf file).Intact r)
     (ho : OutsideCall spec.inputCleanup (BinCheck.roByte spec.inputCleanup spec.data) fF
-      (frameDrop (art spec.inputCleanup fF).af + spec.inputCleanup.D * 1) r [v41, v0] cs0.mem)
+      (frameDrop (art spec.inputCleanup fF).af + (spec.inputCleanup.D * 1 + pbMax spec.inputCleanup))
+      r [v41, v0] cs0.mem)
     (hr : ClifRun spec.inputCleanup closedBase fF r [v41, v0] cs0) :
     Clif.runLoop closedBase.env spec.inputCleanup.srcProg 3 cs0 = .trapped .intDivz ∧
     ∃ k, TrapAtE spec.inputCleanup closedBase .intDivz

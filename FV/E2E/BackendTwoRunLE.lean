@@ -145,9 +145,29 @@ theorem stEqOutX_entryZ {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra' : BitVe
           obtain ⟨h1, h2⟩ := hds
           rw [RL.spB, hB] at h1 h2
           exact ⟨by omega, by omega⟩
-        · have hn : ¬ (R.F a ∨ MConf.WDiff c c' a) := fun h => ha ⟨hfr, hjt, hds, h⟩
+        · by_cases hpr : probeHit R.af (spv R.s0) a = true
+          · -- a byte the stack probes zero: in the frame or the dead stack below it
+            apply hag.2
+            have hst := hR.stack
+            have hf : R.af.frame = true := by
+              simp only [probeHit, Bool.and_eq_true] at hpr; exact hpr.1
+            have hd : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hf]
+            have hb := probeHit_below (by rw [hd]; exact hst.probe.1) hpr
+            have h2 := hst.2
+            unfold StackBelow at hb ⊢
+            omega
+          have hn : ¬ (R.F a ∨ MConf.WDiff c c' a) := fun h => ha ⟨hfr, hjt, hds, h⟩
           have hF : ¬ R.F a := fun h => hn (.inl h)
-          rw [← hbe.mem a hF, ← hbe'.mem a (fun h => hF (hF' a h))]
+          have hsp : spv t0 = spv R.s0 := by
+            have e3 : spv w₀ = spv w₀' := hsw.1 _ (by simp [Masked])
+            have e : spv R.s0 - BitVec.ofNat 64 (frameDrop R.af) =
+                spv t0 - BitVec.ofNat 64 (frameDrop R.af) := hbe.sp.symm.trans (e3.trans hbe'.sp)
+            have := congrArg (· + BitVec.ofNat 64 (frameDrop R.af)) e
+            simpa using this.symm
+          have hpr' : probeHit R.af (spv t0) a = false := by
+            rw [hsp]; simpa using hpr
+          rw [← probeMem_of_not (by simpa using hpr), ← probeMem_of_not hpr', ← hbe.mem a hF,
+            ← hbe'.mem a (fun h => hF (hF' a h))]
           exact Classical.byContradiction fun h => hn (.inr (hW a h))
 
 theorem spAdjLines_x30 (sub : Bool) (size : Nat) :
@@ -189,9 +209,9 @@ theorem pushLines_x30 {int : Bool} {rs : List Reg} (hrs : ∀ r ∈ rs, PushReg 
     cases int <;> simp [Insn.x30Exempt, hne]
 
 /-- **The only `x30`-exempt line of the prologue is its first, the frame-record store.** -/
-theorem prologue_exempt {saves : List Reg} (hsv : SavesOk saves) {size i : Nat} {x : Insn}
-    {t : Option Clif.TrapCode}
-    (h : (prologueLines saves size)[i]? = some (.ins x t)) (hx : x.x30Exempt = true) :
+theorem prologue_exempt {saves : List Reg} (hsv : SavesOk saves) {size i : Nat} {calls : Bool}
+    {x : Insn} {t : Option Clif.TrapCode}
+    (h : (prologueLines saves size calls)[i]? = some (.ins x t)) (hx : x.x30Exempt = true) :
     i = 0 ∧ x = .stp .fp .lr (.spPreIndexed (-16)) := by
   rw [prologueLines_eq] at h
   match i, h with
@@ -208,7 +228,9 @@ theorem prologue_exempt {saves : List Reg} (hsv : SavesOk saves) {size i : Nat} 
     have hm := List.mem_of_getElem? h
     simp only [List.mem_append] at hm
     have : x.x30Exempt = false := by
-      rcases hm with hm | hm | hm
+      rcases hm with hm | hm | hm | hm
+      · rcases probeLines_mem hm with e | e | ⟨_, e⟩ <;>
+          (simp only [Line.ins.injEq] at e; obtain ⟨rfl, -⟩ := e; simp [Insn.x30Exempt])
       · exact pushLines_x30 hsv.int x t hm
       · exact pushLines_x30 hsv.float x t hm
       · exact spAdjLines_x30 true _ x t hm
@@ -228,27 +250,27 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
     {Z : BitVec 64 → Prop}
     (hLR : ∀ k, 8 ≤ k → k < 16 → Z (spv R.s0 - 16#64 + BitVec.ofNat 64 k)) {t : Arm.ArmState}
     (h : StEqOutX Z t R.s0) :
-    ∀ i ≤ (prologueLines R.af.saves R.af.frameSize).length,
+    ∀ i ≤ (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
       StEqOutX Z (iterN R.step i t) (iterN R.step i R.s0) := by
   obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; have := (spv R.s0).isLt; omega
   obtain ⟨vb, items, code, ls, ps1, ps2, T, -, -, -, -, -, hj0, hdrop⟩ := entry_block hR
   obtain ⟨s', hsteps, -, -, -, -, -, -⟩ :=
-    prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
-  have hat : ∀ k ln, (prologueLines R.af.saves R.af.frameSize)[k]? = some ln →
+  have hat : ∀ k ln, (prologueLines R.af.saves R.af.frameSize R.af.isCaller)[k]? = some ln →
       R.fa.lines.toList[1 + k]? = some ln := by
     intro k ln hk
     have := congrArg (·[k]?) hdrop
     simp only [List.getElem?_drop, RL.L] at this
     rw [this, List.getElem?_append_left (List.getElem?_eq_some_iff.1 hk).1]
     exact hk
-  have hhook : ∀ i t, Line.ins i t ∈ prologueLines R.af.saves R.af.frameSize → i.hooked = false :=
+  have hhook : ∀ i t, Line.ins i t ∈ prologueLines R.af.saves R.af.frameSize R.af.isCaller → i.hooked = false :=
     fun i t hm => by
       obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ _ hm; cases e; exact hh
   have hinter := stepsOk_interOk hsteps hent.err
@@ -263,9 +285,9 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
   induction i with
   | zero => exact h
   | succ i ih =>
-    have hi' : i < (prologueLines R.af.saves R.af.frameSize).length := by omega
+    have hi' : i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length := by omega
     have hl := ih (by omega)
-    obtain ⟨ln, hln⟩ : ∃ ln, (prologueLines R.af.saves R.af.frameSize)[i]? = some ln :=
+    obtain ⟨ln, hln⟩ : ∃ ln, (prologueLines R.af.saves R.af.frameSize R.af.isCaller)[i]? = some ln :=
       ⟨_, List.getElem?_eq_getElem hi'⟩
     obtain ⟨x, rfl, hhx, -⟩ := prologueLines_ins _ _ _ (List.mem_of_getElem? hln)
     have hj := hat i _ hln
@@ -307,8 +329,8 @@ theorem stEqOutX_prologueZ {R : RL} (hR : R.Wf) {ra : BitVec 64}
     {Z : BitVec 64 → Prop}
     (hLR : ∀ k, 8 ≤ k → k < 16 → Z (spv R.s0 - 16#64 + BitVec.ofNat 64 k)) {t : Arm.ArmState}
     (h : StEqOutX Z t R.s0) :
-    StEqOutX Z (iterN R.step (prologueLines R.af.saves R.af.frameSize).length t)
-      (iterN R.step (prologueLines R.af.saves R.af.frameSize).length R.s0) :=
+    StEqOutX Z (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t)
+      (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0) :=
   stEqOutX_prologueZ_le hR hent hx30 hLR h _ (Nat.le_refl _)
 
 section
@@ -375,41 +397,41 @@ theorem backend_twoRunLE (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
     (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
     ∃ N e e',
-      (∀ i < (prologueLines R.af.saves R.af.frameSize).length,
+      (∀ i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)) ∧
       (∀ i < N, ∃ c c', StEqOutX (R.Zc c c')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + i) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize).length + i) t0)) ∧
+          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) (KJL R XI t0 G' F)
         (fun d d' u u' => StEqOutX (R.Zc d d') u u')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + N) R.s0) e
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) R.s0) e
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize).length + N) t0) e' ∧
+          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) t0) e' ∧
       (∀ i < R.retLen,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step
-            ((prologueLines R.af.saves R.af.frameSize).length + N + i) R.s0) ∧
+            ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + i) R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-            ((prologueLines R.af.saves R.af.frameSize).length + N + i) t0)) ∧
+            ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + i) t0)) ∧
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
+        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) t0) = ra' ∧
       R.RetsAt e ∧ R.RetsAt e' := by
 
   have hpro : StEqOutX
       (R.Zc (MConf.init R.rf (locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step
-          (prologueLines R.af.saves R.af.frameSize).length R.s0)) w₀)
+          (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)) w₀)
         (MConf.init R.rf (locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          (prologueLines R.af.saves R.af.frameSize).length t0)) w₀'))
-      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.saves R.af.frameSize).length R.s0)
+          (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t0)) w₀'))
+      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)
       (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        (prologueLines R.af.saves R.af.frameSize).length t0) := by
+        (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t0) := by
     subst hR
     have hF := he.hF
     subst hF

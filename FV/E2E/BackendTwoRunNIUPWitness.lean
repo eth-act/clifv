@@ -33,12 +33,12 @@ theorem a2_twoRunLERWZIUP {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {ar
     ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ T, Arm.read_mem_bytes 16 (spv t0 - 16#64)
           (iterN (ArmStepX Xb idHooks (A fA2).fa)
-            ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + T +
+            ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + T +
               ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) t0) =
           xreg 30 t0 ++ xreg 29 t0 ∧
         ∀ a, G' a →
           (iterN (ArmStepX Xb idHooks (A fA2).fa)
-            ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + T +
+            ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + T +
               ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) t0).mem a = t0.mem a := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]

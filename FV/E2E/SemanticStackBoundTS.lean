@@ -77,6 +77,7 @@ theorem goodN_iffTS {I : CompilerInput} (hI : okBTS I = true) {n : String} :
 theorem budget_ofTS {I : CompilerInput} (hI : okBTS I = true) (B : BaseEnv) (F : BitVec 64 → Prop) :
     (ofInput I B F).Budget ((ofInput I B F).hybrid (budO I) (budMax I)) := by
   refine LinkSys.budget_hybrid _ _ _ (fun h hh => (factsTS hI hh).depth) ?_ ?_
+    fun g hg bg hbg => E2E.StackBound.budC_probe (I := I) (R := I.results) (okBTS_names hI) hg hbg
   · intro g hg bg hbg h hcl
     have hok := budOkW_budMap (I := I) (R := I.results) (okBTS_names hI)
     have he := edgeB_of_calleeTS hI hg hcl

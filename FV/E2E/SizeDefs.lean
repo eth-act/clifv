@@ -6,7 +6,7 @@ import FV.Backend.Proof.IselSzDefs
 `spillSizeOkB vcp` (`EmitSize`) bounds the words of the spill allocation's code of the prepared
 VCode. This file defines the measures the input-side bound goes through:
 
-* on a VCode (`vcW M vc`): per block its prologue (7), callee-saved saves (`restW`), the entry
+* on a VCode (`vcW M vc`): per block its prologue (16, with the stack probes), callee-saved saves (`restW`), the entry
   stores of a predecessor's terminator defs (`10 · M`, `M` bounding every instruction's register
   operands, `maxRC`), the parallel copy of its branch arguments (`40` per argument), and the
   weight `wtA` of its instructions (`IselSzDefs`); `vcTg vc`: its branch targets (each may become
@@ -31,7 +31,7 @@ def maxRC (vc : VCode) : Nat :=
 operands: prologue, callee-saved saves, entry stores, the branch arguments' parallel copy, and
 its instructions' weight. -/
 def vbW (M : Nat) (vb : VBlock) : Nat :=
-  7 + restW + 10 * M + 40 * vb.branchArgs.size + wtA vb.insts
+  16 + restW + 10 * M + 40 * vb.branchArgs.size + wtA vb.insts
 
 /-- The words of a VCode's spill-allocated code. -/
 def vcW (M : Nat) (vc : VCode) : Nat := (vc.blocks.toList.map (vbW M)).sum
@@ -40,7 +40,7 @@ def vcW (M : Nat) (vc : VCode) : Nat := (vc.blocks.toList.map (vbW M)).sum
 def vcTg (vc : VCode) : Nat := (vc.blocks.toList.map fun vb => tgA vb.insts).sum
 
 /-- The words of an edge block `prepare` creates (one `jump`). -/
-def jumpBW (M : Nat) : Nat := 7 + restW + 10 * M + szInstW (.jump 0)
+def jumpBW (M : Nat) : Nat := 16 + restW + 10 * M + szInstW (.jump 0)
 
 /-! ## On the CLIF function -/
 
@@ -88,11 +88,11 @@ def mIn (f : Clif.Function) : Nat :=
 
 /-- The bound of block `bi` (`B`) of `f`, `M` bounding the register operands. -/
 def blockIn (M : Nat) (bi : Nat) (B : Clif.Block) : Nat :=
-  7 + restW + 10 * M + 40 * jumpArgsIn B.term + (if bi = 0 then entryIn B else 0) +
+  16 + restW + 10 * M + 40 * jumpArgsIn B.term + (if bi = 0 then entryIn B else 0) +
     (B.body.map stmtIn).sum + termIn B.term
 
 /-- The bound of an edge block of `lowerFunction` with `n` arguments (one `jump`). -/
-def edgeIn (M n : Nat) : Nat := 7 + restW + 10 * M + 40 * n + szInstW (.jump 0)
+def edgeIn (M n : Nat) : Nat := 16 + restW + 10 * M + 40 * n + szInstW (.jump 0)
 
 /-- The words of `lowerFunction`'s blocks and edge blocks, `M` bounding the register operands. -/
 def vcIn (M : Nat) (f : Clif.Function) : Nat :=

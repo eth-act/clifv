@@ -10,9 +10,10 @@ whose step ends without error. Here they are carried through the stack-bound wra
 (`binary_correctX`, `binary_correct_of_checksX`), across the exterior `F` of the proof's linked
 system (`runGoodL_F`: the linked machine does not depend on it). `binary_correct_depthX` is the
 same for any program, recursive ones included: the stack premise is the depth-`M` budget
-`frameDrop + D * M` (`LinkSys.budget_K_production`) instead of the stack bound of a non-recursive program.
+`frameDrop + (D * M + pbMax)` (`LinkSys.budget_K_production`; #581: the deepest activation's stack
+probes write up to `pbMax` bytes below its frame) instead of the stack bound of a non-recursive program.
 `binary_correct_peakX` takes the budget at the run's peak call depth `d` instead of its fuel
-(`Clif.DepthLe`, `backend_correct_program_peakX_production`): `frameDrop + D * d`. -/
+(`Clif.DepthLe`, `backend_correct_program_peakX_production`): `frameDrop + (D * d + pbMax)`. -/
 
 namespace E2E
 
@@ -40,7 +41,7 @@ theorem backend_correct_program_stackX_production (L : LinkSys) (hL : L.OkProduc
         (∃ c, Clif.runLoop L.base L.P (M + 1) cs = .trapped c) → L.RunGoodL M f s) := by
   have hd := L.frameDrop_eq_production hL hf
   have hres : StackAvail b (L.A f).af s := by
-    unfold StackAvail
+    refine ⟨?_, by rw [← hb M]; exact hκ.2 M f hf⟩
     rw [show (L.A f).af.frameSize + 16 + b = frameDrop (L.A f).af + b by omega]
     refine stackRoom_of hroom fun a ha => hgfree a (hL.imgAddr f hf a ?_)
     simpa [CodeAddr, hent.program] using ha
@@ -169,15 +170,17 @@ theorem BinFacts.modelOf_ne {I : ProductionStackBound.CompilerInput} {X : Image}
   · exact absurd (mem_modelOf_not hi) hne
 
 /-- **`binary_correctX` for any program, recursive ones included**: the stack premise is the
-depth-`M` budget `frameDrop + D * M` (`LinkSys.budget_K_production`: every frame of a call level is at most
-`D`) instead of the stack bound `stackFn` of a non-recursive program, so no call-graph premise
+depth-`M` budget `frameDrop + (D * M + pbMax I)` (`LinkSys.budget_K_production`: every frame of a
+call level is at most `D`, and the deepest activation's stack probes write up to `pbMax I` bytes
+below its frame, #581: the former `frameDrop + D * M` is too small for a program with probes)
+instead of the stack bound `stackFn` of a non-recursive program, so no call-graph premise
 (`goodN`) is left; with read-only data facts `roB` (unlike `binary_correct_depth`). `M` is both
 the CLIF run's fuel and the depth of the linked machine. -/
 theorem binary_correct_depthX {I : ProductionStackBound.CompilerInput} {X : Image} {R : BitVec 64 → Prop}
     {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFacts I X R roB) (B : BaseEnv)
     (hB : BaseOk (sys I B)) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
-    (ho : OutsideCall I roB f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (ho : OutsideCall I roB f (frameDrop (art I f).af + (I.D * M + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
@@ -186,30 +189,33 @@ theorem binary_correct_depthX {I : ProductionStackBound.CompilerInput} {X : Imag
     ((∃ vals cm, Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c) →
       (sys I B).RunGoodL M f (modelOf I f r)) := by
-  have hB' : BaseOk (ProductionStackBound.ofInput I B (worldF I f (I.D * M) r)) := baseOk_F hB
-  have himgF : ∀ a, (ProductionStackBound.ofInput I B (worldF I f (I.D * M) r)).Img a →
-      worldF I f (I.D * M) r a := fun _ h => .inr h
+  have hB' : BaseOk (ProductionStackBound.ofInput I B (worldF I f (I.D * M + pbMax I) r)) := baseOk_F hB
+  have himgF : ∀ a, (ProductionStackBound.ofInput I B (worldF I f (I.D * M + pbMax I) r)).Img a →
+      worldF I f (I.D * M + pbMax I) r a := fun _ h => .inr h
   have hL := ProductionStackBound.okB_sound hbin.ok hB' himgF
   have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h =>
     hX a b (hbin.data a b h).1 (hbin.data a b h).2
   obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
     premises hL (Clif.Program.func?_some hf).1 hro ho hr
   obtain ⟨hA, hG⟩ := backend_correct_program_budgetX_production _ hL (LinkSys.budget_K_production _ hL)
-    (Clif.Program.func?_some hf).1 M hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl htr
+    (Clif.Program.func?_some hf).1 M hent
+    ⟨hres, (LinkSys.budget_K_production _ hL).2 M f (Clif.Program.func?_some hf).1⟩ rfl hgfree
+    himg hbe hargs hr.entry hsav hrel hpl htr
   refine ⟨?_, hbin.modelOf_ne hX, fun hout => runGoodL_F (hG hout)⟩
-  rw [mach_F I B (fun _ => False) (worldF I f (I.D * M) r)]
+  rw [mach_F I B (fun _ => False) (worldF I f (I.D * M + pbMax I) r)]
   exact hA
 
 /-- **`binary_correct_depthX` for the run's peak call depth** (L1d): the whole-program CLIF run
 of at most `F + 1` steps reaches no state with more than `d` callers (`Clif.DepthLe`); the stack
-premise is the depth-`d` budget `frameDrop + D * d`, independent of the fuel `F`, and the linked
+premise is the depth-`d` budget `frameDrop + (D * d + pbMax I)` (#581: with the probes of the
+deepest activation), independent of the fuel `F`, and the linked
 machine has depth `d`. The run premise `TrapsExplicit` is under the environment whose program
 callees run with fuel `F` and at most `d - 1` callers of their own (`Clif.linkEnvD`). -/
 theorem binary_correct_peakX {I : ProductionStackBound.CompilerInput} {X : Image} {R : BitVec 64 → Prop}
     {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFacts I X R roB) (B : BaseEnv)
     (hB : BaseOk (sys I B)) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
-    (ho : OutsideCall I roB f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I roB f (frameDrop (art I f).af + (I.D * d + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs) :
     ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach d f) (modelOf I f r)
@@ -218,19 +224,21 @@ theorem binary_correct_peakX {I : ProductionStackBound.CompilerInput} {X : Image
     ((∃ vals cm, Clif.runLoop B.env (prog I) (F + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (F + 1) cs = .trapped c) →
       (sys I B).RunGoodL d f (modelOf I f r)) := by
-  have hB' : BaseOk (ProductionStackBound.ofInput I B (worldF I f (I.D * d) r)) := baseOk_F hB
-  have himgF : ∀ a, (ProductionStackBound.ofInput I B (worldF I f (I.D * d) r)).Img a →
-      worldF I f (I.D * d) r a := fun _ h => .inr h
+  have hB' : BaseOk (ProductionStackBound.ofInput I B (worldF I f (I.D * d + pbMax I) r)) := baseOk_F hB
+  have himgF : ∀ a, (ProductionStackBound.ofInput I B (worldF I f (I.D * d + pbMax I) r)).Img a →
+      worldF I f (I.D * d + pbMax I) r a := fun _ h => .inr h
   have hL := ProductionStackBound.okB_sound hbin.ok hB' himgF
   have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h =>
     hX a b (hbin.data a b h).1 (hbin.data a b h).2
   obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
     premises hL (Clif.Program.func?_some hf).1 hro ho hr
   obtain ⟨hA, hG⟩ := backend_correct_program_peakX_production _ hL (LinkSys.budget_K_production _ hL)
-    (Clif.Program.func?_some hf).1 F d hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl
+    (Clif.Program.func?_some hf).1 F d hent
+    ⟨hres, (LinkSys.budget_K_production _ hL).2 d f (Clif.Program.func?_some hf).1⟩ rfl hgfree
+    himg hbe hargs hr.entry hsav hrel hpl
     hd htr
   refine ⟨?_, hbin.modelOf_ne hX, fun hout => runGoodL_F (hG hout)⟩
-  rw [mach_F I B (fun _ => False) (worldF I f (I.D * d) r)]
+  rw [mach_F I B (fun _ => False) (worldF I f (I.D * d + pbMax I) r)]
   exact hA
 
 /-- `binary_correct_of_checks` with `RunGoodL` of the model's run for a returning or trapping

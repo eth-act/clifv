@@ -137,7 +137,7 @@ def DetTabPRBE (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     MemRel F L.syms cm w → ArgsAt h.sig vals uses w → StackArgsAvoid F h.sig vals w →
     (L.NeedSlots → L.PlaceAtB cm (spv w) ini) →
     (L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a)) →
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a)) →
     Clif.initState L.P n vals cm = .ok cs → L.crun M cs = .returned rvals cm' →
     ∀ t, L.CallerOk F h uses w t →
       (∀ f, Masked f → f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (L.canon h uses w)) →
@@ -164,7 +164,8 @@ theorem calleeIni_adv_eq (h : Clif.Function) (ini : Clif.SlotInit) {x y : Nat} (
   simp only [Clif.SlotInit.adv]
   rw [hx]
 
-/-- **The canonical callee entry** of `progCallPRBRL` (module doc). -/
+/-- **The canonical callee entry** of `progCallPRBRL` (module doc; with `hpb`, #581, as
+`progCall`). -/
 theorem canonEntry (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
@@ -172,12 +173,13 @@ theorem canonEntry (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) {n : Strin
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
     {cm' : Clif.Mem} {ini : Clif.SlotInit} (hmr : MemRel F L.syms cm w)
     (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAtB cm (spv w) ini)
     (hslotb : L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a))
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm') :
     ∃ (Fh G : BitVec 64 → Prop) (w₀ : Arm.ArmState) (m : Nat),
@@ -246,6 +248,10 @@ theorem canonEntry (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) {n : Strin
   have hsp0 : spv cn = spv w := hcOk.world.1 _ (by simp [Masked])
   have hspw₀ : spv w₀ = spv w - BitVec.ofNat 64 (frameDrop (L.A h).af) := by
     rw [spv_bodyOf, spv_enterAt, hsp0]
+  -- the callee's stack probes zero only bytes of its frame and of its budget, inside `F` (#581)
+  have hnpw : ∀ u : Arm.ArmState, spv u = spv w → ∀ a, ¬ F a →
+      probeHit (L.A h).af (spv (enterAt (L.A h) u)) a = false := fun u hu a ha => by
+    rw [spv_enterAt, hu]; exact probeHit_of_notF hpb hroom (fun a hb => (hdead a hb).1) ha
   obtain ⟨-, -, hB⟩ := off_toNat 0 (spv w) (frameDrop (L.A h).af) (by omega)
   -- the callee's outgoing area (in the caller's dead stack) is outside the callee's `F`
   let ib := (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase
@@ -345,13 +351,17 @@ theorem canonEntry (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) {n : Strin
           hcOk.world.1 _ (by simp [Masked])]
         exact herr
       · rw [← hmr.bytes a b hv hb]
-        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf, mem_enterAt]
-        rw [L.mem_canon, mem_withImg, if_neg]
+        have hnF : ¬ F (BitVec.ofNat 64 a) := fun hf =>
+          (hmr.valid a 1 hv).2 0 (by omega) (by simpa using hf)
+        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf]
+        rw [probeMem_of_not (hnpw cn hsp0 _ hnF), mem_enterAt, L.mem_canon, mem_withImg, if_neg]
         intro hi
-        exact (hmr.valid a 1 hv).2 0 (by omega) (by simpa using himgF _ hi)
+        exact hnF (himgF _ hi)
       · rw [hslotb hN a hsb]
-        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf, mem_enterAt]
-        rw [L.mem_canon, mem_withImg, if_neg (fun hi => (hslot_F _ (hslot_at a hsb)).2 hi)]
+        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf]
+        refine probeMem_congr (by rw [spv_enterAt, hsp0]) ?_
+        rw [mem_enterAt, L.mem_canon, mem_withImg,
+          if_neg (fun hi => (hslot_F _ (hslot_at a hsb)).2 hi)]
     · intro loc v hmem
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hmem
       cases loc with
@@ -366,8 +376,9 @@ theorem canonEntry (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) {n : Strin
         rw [show Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w₀ =
             Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w from
           read_mem_bytes_congr _ _ (fun k hk => by
-            simp only [w₀, mem_bodyOf, mem_enterAt]
-            rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
+            simp only [w₀, mem_bodyOf]
+            rw [probeMem_of_not (hnpw cn hsp0 _ (hsav off v hmem k hk)), mem_enterAt, L.mem_canon,
+              mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
         exact hargs.2.2 off v hmem
       | reg r =>
         obtain ⟨i, hr, hv⟩ := reg_zip _ _ hi
@@ -436,7 +447,7 @@ theorem canonEntry (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) {n : Strin
       fun a ha => by rw [mem_enterAt]; exact himgt a ha, hbw⟩
     · rw [r_enterAt _ _ (by simp) (by simp)]; exact herrt
     · rw [hspt]; exact hal
-    · refine stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_
+    · refine ⟨stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_, hpb⟩
       rw [hspt, ← hdrop] at hb
       exact (hdead a hb).2 (hcode t a ha)
     · rw [hspt]; exact ha.2
@@ -454,7 +465,8 @@ theorem canonEntry (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) {n : Strin
   exact ⟨Fh, G, w₀, m, hWE, hME0, by rw [BitVec.add_sub_cancel]; exact hcOk.ra, hm⟩
 
 /-- **The canonical callee run's `TableOf` from its `TableOfE`** (module doc): `ThmPRBRLE` one
-level down at the canonical entry (`canonEntry`) returns with a table up to the return. -/
+level down at the canonical entry (`canonEntry`) returns with a table up to the return (with
+`hpb`, #581, as `progCall`). -/
 theorem tableOf_canon_of_E (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     (ih : L.ThmPRBRLE κ (M - 1)) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
@@ -463,18 +475,19 @@ theorem tableOf_canon_of_E (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
     {cm' : Clif.Mem} {ini : Clif.SlotInit} (hmr : MemRel F L.syms cm w)
     (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAtB cm (spv w) ini)
     (hslotb : L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a))
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm')
     (htab : L.TableOfE (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini)) :
     L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini) := by
   obtain ⟨Fh, G, w₀, m, hWE, hME, hra, hm⟩ := L.canonEntry hL hM hpf hcal himgF herr hal hroom
-    hdead hmr hargs hsav hpl hslotb hinit hrun
+    hdead hpb hmr hargs hsav hpl hslotb hinit hrun
   have hh : h ∈ L.P.funcs := (Clif.Program.func?_some hpf).1
   obtain ⟨_, _, _, _, _, -, -, -, -, -, hret0, -, htab0, -⟩ :=
     ih h hh Fh vals cs w₀ m rvals cm' (calleeIni h ini) G _ _ hWE hME hra htab hm

@@ -59,7 +59,8 @@ arguments and memory, when the callee run with unwinding (`crunX (M + 1)`) retur
 outcome of `h` that the linked machine's call returns with (not raising) from every caller state
 compatible with `w` (`CallerOk`); when it ends `unwound`, an exception object related to the CLIF
 exception and a world related to the CLIF memory that the linked machine's call raises with from
-every compatible caller state, leaving the callee's frame as the ABI return (`ActUnw`). -/
+every compatible caller state, leaving the callee's frame as the ABI return (`ActUnw`). With
+`hpb` (#581, as `progCall`). -/
 theorem progCallU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : ¬ L.NeedNI) {M : Nat}
     (ih : L.ThmU κ M) {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
     (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
@@ -68,6 +69,7 @@ theorem progCallU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : ¬ L.NeedNI) {
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ M h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ M h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State}
     (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
@@ -133,6 +135,10 @@ theorem progCallU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : ¬ L.NeedNI) {
   have hsp0 : spv cn = spv w := hcOk.world.1 _ (by simp [Masked])
   have hspw₀ : spv w₀ = spv w - BitVec.ofNat 64 (frameDrop (L.A h).af) := by
     rw [spv_bodyOf, spv_enterAt, hsp0]
+  -- the callee's stack probes zero only bytes of its frame and of its budget, inside `F` (#581)
+  have hnpw : ∀ u : Arm.ArmState, spv u = spv w → ∀ a, ¬ F a →
+      probeHit (L.A h).af (spv (enterAt (L.A h) u)) a = false := fun u hu a ha => by
+    rw [spv_enterAt, hu]; exact probeHit_of_notF hpb hroom (fun a hb => (hdead a hb).1) ha
   obtain ⟨-, -, hB⟩ := off_toNat 0 (spv w) (frameDrop (L.A h).af) (by omega)
   -- the callee's outgoing area (in the caller's dead stack) is outside the callee's `F`
   let ib := (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase
@@ -218,10 +224,12 @@ theorem progCallU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : ¬ L.NeedNI) {
           hcOk.world.1 _ (by simp [Masked])]
         exact herr
       · rw [← hmr.bytes a b hv hb]
-        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf, mem_enterAt]
-        rw [L.mem_canon, mem_withImg, if_neg]
+        have hnF : ¬ F (BitVec.ofNat 64 a) := fun hf =>
+          (hmr.valid a 1 hv).2 0 (by omega) (by simpa using hf)
+        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf]
+        rw [probeMem_of_not (hnpw cn hsp0 _ hnF), mem_enterAt, L.mem_canon, mem_withImg, if_neg]
         intro hi
-        exact (hmr.valid a 1 hv).2 0 (by omega) (by simpa using himgF _ hi)
+        exact hnF (himgF _ hi)
     · intro loc v hmem
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hmem
       cases loc with
@@ -236,8 +244,9 @@ theorem progCallU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : ¬ L.NeedNI) {
         rw [show Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w₀ =
             Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w from
           read_mem_bytes_congr _ _ (fun k hk => by
-            simp only [w₀, mem_bodyOf, mem_enterAt]
-            rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
+            simp only [w₀, mem_bodyOf]
+            rw [probeMem_of_not (hnpw cn hsp0 _ (hsav off v hmem k hk)), mem_enterAt, L.mem_canon,
+              mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
         exact hargs.2.2 off v hmem
       | reg r =>
         obtain ⟨i, hr, hv⟩ := reg_zip _ _ hi
@@ -319,7 +328,7 @@ theorem progCallU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : ¬ L.NeedNI) {
       fun a ha => by rw [mem_enterAt]; exact himgt a ha, hbw⟩
     · rw [r_enterAt _ _ (by simp) (by simp)]; exact herrt
     · rw [hspt]; exact hal
-    · refine stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_
+    · refine ⟨stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_, hpb⟩
       rw [hspt, ← hdrop] at hb
       exact (hdead a hb).2 (hcode t a ha)
     · rw [hspt]; exact ha.2

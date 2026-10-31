@@ -56,7 +56,7 @@ theorem iterN_stepsNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ls T : List
 theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
-    ∃ n, n = (prologueLines R.af.saves R.af.frameSize).length ∧
+    ∃ n, n = (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length ∧
       (∀ i < n, R.GoodXNY Y (iterN R.step i R.s0)) ∧
       QW R (iterN R.step n R.s0) R.initW.1 R.initW.2.1 R.initW.2.2
         (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
@@ -69,7 +69,7 @@ theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
   obtain ⟨s', hsteps, hsp', hfp', ho', hm', -, -⟩ :=
-    prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
@@ -79,7 +79,7 @@ theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
     hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
-  refine ⟨(prologueLines R.af.saves R.af.frameSize).length, rfl,
+  refine ⟨(prologueLines R.af.saves R.af.frameSize R.af.isCaller).length, rfl,
     hgx (prologueLines_tail _ _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
       (Pa := fun _ => False) (fun _ h => h.elim) (fun _ _ _ _ _ h => h.elim)
       (linesReads_noLoads (prologueLines_noLoads _ _)), ?_⟩
@@ -102,14 +102,20 @@ theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     simp only [RL.topN]
     rw [hfs] at this
     omega
-  -- the frame top
-  have hslot : ∀ a, (∀ k < R.topN, a ≠ R.topB + BitVec.ofNat 64 k) → s'.mem a = R.s0.mem a :=
-    fun a ha => hm' a ha
+  -- the frame top (and the bytes the stack probes zeroed)
+  have hslot : ∀ a, (∀ k < R.topN, a ≠ R.topB + BitVec.ofNat 64 k) → s'.mem a = probeMem R.af R.s0 a :=
+    fun a ha => by
+      rw [hm' a ha]
+      show _ = (if probeHit R.af (spv R.s0) a then 0#8 else R.s0.mem a)
+      rw [show probeHit R.af (spv R.s0) a =
+        probeHitN (probeCount (probeTotal R.af.frameSize R.af.isCaller)) (spOf R.s0) a by
+          simp only [probeHit, hframe, Bool.true_and]; rfl]
   have hmemF : ∀ a, ¬ R.F a → s'.mem a = w₀.mem a := by
     intro a ha
     rw [hslot a (fun k hk e => ha (e ▸ RL.FK_F (fplr_inF hR hframe k hk))), hbe.mem a ha]
   have hcode' : ∀ a, CodeAddr R.s0 a → s'.mem a = R.s0.mem a := by
     intro a ha
+    rw [← probeMem_of_not (probeHit_noCode hR.stack ha)]
     apply hslot
     intro k hk e
     have h2 := hst0.2 a ha
@@ -140,6 +146,7 @@ theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
   -- the kept addresses are not the frame top
   have hgk : ∀ a, R.G a → s'.mem a = R.s0.mem a := by
     intro a ha
+    rw [← probeMem_of_not (hR.gprobe a ha)]
     apply hslot
     intro k hk e
     apply hR.gfree a ha
@@ -152,7 +159,7 @@ theorem q_initNA {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {ra : BitVec 64}
     constructor <;> omega
   refine ⟨?_, ?_, hfield⟩
   · have hitems : R.rf.blocks[0]! = items := by simp [getElem!_def, hit]
-    have hIW : R.InitWit (1 + (prologueLines R.af.saves R.af.frameSize).length, ps1, T) :=
+    have hIW : R.InitWit (1 + (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length, ps1, T) :=
       ⟨rfl, fun items' hit' => by
         rw [hit] at hit'; cases hit'
         exact ⟨vb, code, ls, ps2, hvb, itemsChecked_block hR hvb hit, hcode, hls, htr,

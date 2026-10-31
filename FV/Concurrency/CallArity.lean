@@ -217,7 +217,7 @@ theorem resume_allA {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun 
     (hlr : xreg 30 RB.s0 = Arm.r .PC x + 4#64)
     (hm0 : ∀ a, RA.FK a → RB.s0.mem a = x.mem a) (hG : ∀ a, RA.FK a → RB.G a)
     (hr₀B : ∀ r ∈ calleeSaved, ckeep r (r₀B r) =
-      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize).length RB.s0) (.reg r)))
+      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize RB.af.isCaller).length RB.s0) (.reg r)))
     (hprog : y.program = x.program)
     {usB : List (Reg × Reg)} {ysB : List CV} {rvals : List Clif.Val}
     (hus : ∀ (j : Nat) (v q : Reg) (u : CV), usB[j]? = some (v, q) → ysB[j]? = some u →

@@ -474,7 +474,9 @@ theorem fnOk_CX {env : Clif.Env} (henv : env.extern "ld" = none) :
       rw [hexts, List.mem_singleton] at he
       subst he
       rw [func_fX] at hp; cases hp
-      exact sig_fX }
+      exact sig_fX
+    probe := ArmAllocThread.ProbeF.of_small
+      (show callerF.af.frameSize + 16 < 4096 by rw [fs_C]; decide) }
 
 /-- `pX` has no `return_call`. -/
 theorem linkFreeX : ∀ f : Clif.Function, f ∈ Clif.Program.funcs pX → Clif.LinkFree f := by
@@ -494,7 +496,9 @@ theorem linkOkX {env : Clif.Env} (henv : env.extern "ld" = none) :
     simp only [pX, List.mem_cons, List.not_mem_nil, or_false] at hm
     rcases hm with rfl | rfl
     · rw [name_fC]
-      exact ⟨callerF, mem_callerX, fnOk_CX henv, fr2_f, by rw [fs_C]; decide⟩
+      exact ⟨callerF, mem_callerX, fnOk_CX henv, fr2_f, by
+        rw [ArmAllocThread.Witness.probeBelow_small (af := callerF.af) (by rw [fs_C]; decide), fs_C]
+        decide⟩
     · exact absurd name_fX hn
   xfn := by
     intro n f hf hn

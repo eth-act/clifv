@@ -666,13 +666,14 @@ theorem nearOkB_ins {i : Insn} {tr : Option Clif.TrapCode} (h : i.pcRelSpec? = n
   have := (plain_line (tr := tr) h).2.2
   cases i <;> simp_all [Line.nearOkB, Line.bOk, Insn.pcRelSpec?]
 
-theorem prologue_nearOkB (saves : List Reg) (size : Nat) :
-    ∀ ln ∈ prologueLines saves size, ln.nearOkB = true := by
+theorem prologue_nearOkB {calls : Bool} (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size calls, ln.nearOkB = true := by
   intro ln hl
   simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
-  rcases hl with (((rfl | rfl) | hl) | hl) | hl
+  rcases hl with ((((rfl | rfl) | hl) | hl) | hl) | hl
   · exact nearOkB_ins rfl
   · exact nearOkB_ins rfl
+  · rcases probeLines_mem hl with rfl | rfl | ⟨n, rfl⟩ <;> exact nearOkB_ins rfl
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> exact nearOkB_ins rfl
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> exact nearOkB_ins rfl
   · rcases mem_spAdjLines hl with ⟨i, -, rfl⟩ | hl | rfl

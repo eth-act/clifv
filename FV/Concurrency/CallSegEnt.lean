@@ -20,7 +20,9 @@ open Arm ArmThread Prog ClifThread Backend Backend.Proof Backend.Proof.Driver VC
   LinkedMachine LinkedMachine.Link CallSegOkG CallSegCall CallEntryRel FrameDisj ArmFoot
   ArmInstFoot
 
-/-- **The callee's activation and its chain property** (module doc). -/
+/-- **The callee's activation and its chain property** (module doc). (#581: `hpB`, the callee's
+stack probes below its frame within its budget `KB`, is new: the callee's `R.Wf` includes
+`StackAvail`, which now bounds them.) -/
 theorem callee_chainP {L : Link} {env : Clif.Env} {p : Clif.Program}
     {syms : String → Option Nat} {g : Act} (hS : StatOk L env p g) (hsyms : g.Γ.syms = syms)
     (hcin : CodeIn L (g.RL L)) {x : ArmState} {s' : Clif.State} {vV' vP' : VState CV ArmState}
@@ -36,6 +38,7 @@ theorem callee_chainP {L : Link} {env : Clif.Env} {p : Clif.Program}
     (htys : vals.map (·.ty) = Clif.AbiParam.tys e.sig.params)
     {FB : LFn} (hB : (e.name, FB) ∈ L.fns) {fB : Clif.Function} (hsig : fB.sig = e.sig)
     (hFn : FnOk L env p syms e.name FB fB) {KB : Nat} (hKB : FB.af.frameSize + 16 + KB ≤ g.K)
+    (hpB : probeBelow FB.af ≤ KB)
     {sps : List (BitVec 64)} {fr : String → Option (Nat × (Clif.SlotId → Nat))}
     (hpl : s'.mem.place = some ⟨spv x :: sps, fr, none⟩)
     (hfr : fr fB.name = some (frameDrop FB.af, slotOffs FB.af fB))
@@ -62,7 +65,7 @@ theorem callee_chainP {L : Link} {env : Clif.Env} {p : Clif.Program}
   obtain ⟨hM, hev, hcls, hWf, habi, hfx, hlr, -, hQ, hAI, hargs, hcinB, hnest⟩ :=
     call_endK hS.ok hS.mem hS.wf hcin hS.H hS.chk hS.res hS.cu hS.low hS.ind hS.ver hS.nt hS.out0
       hS.slot hS.sym hS.noCall hS.H3 hS.checked hS.uv hS.dv hq hP hm2 hm3 hm4 hbody hcl he huniq
-      hvals htys hB hFn.1 hKB hsig
+      hvals htys hB hFn.1 hKB hpB hsig
   obtain ⟨wA, hmr, hmx, herr, -⟩ := caller_world hS.noCall hS.H hS.chk hS.H3 hS.checked hq hP
     ⟨stm, rest, fn, args, hbody, hcl⟩ hm2 hm3 hm4
   rw [hS.ΓF, hsyms] at hmr

@@ -350,26 +350,26 @@ theorem backend_twoRunLER (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
     ∃ N,
       (∀ i < N, ∃ c c', StEqOutX (R.Zc c c')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + i) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize).length + i) t0)) ∧
+          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) t0)) ∧
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
+        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) t0) = ra' ∧
       RetAgreeX (frameDrop af + K) (spv s)
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) t0)
+          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) t0)
         (iterN ({ R with X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) R.s0) := by
+          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) R.s0) := by
   intro vals cm hrun
   obtain ⟨N, e, e', -, hlk, ⟨⟨W, hqA, -⟩, -, -, hLB⟩, -, hpc, hpc', hre, -⟩ :=
     backend_twoRunLEF hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk
       htr fuel hlm hpsF he he' hR hcov hx30 hcall htls hag hx29 vals cm hrun
   refine ⟨N, hlk, hpc, hpc', ?_⟩
   have hs : ∀ (g : Arm.ArmState → Arm.ArmState) (x : Arm.ArmState),
-      iterN g ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) x =
-        iterN g R.retLen (iterN g ((prologueLines R.af.saves R.af.frameSize).length + N) x) :=
+      iterN g ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) x =
+        iterN g R.retLen (iterN g ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) x) :=
     fun g x => iterN_add ..
   rw [hs, hs]
   subst hR

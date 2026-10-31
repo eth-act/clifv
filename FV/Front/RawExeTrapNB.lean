@@ -81,7 +81,8 @@ theorem bundle_correct_source_trap_nobnd {b : Bundle} {S : LinkSpec} {file0 file
 /-- `bundle_correct_source_trap_peak` without the premise that the source run's memories lie below `2^64`
 (A2/B1).
 **`bundle_correct_source_trap`, recursive programs included** (with
-`Link.DeadCleanup.compileExe_correct_source_trap_peak`): the stack from the units' run's call
+`Link.DeadCleanup.compileExe_correct_source_trap_peak`): the stack `frameDrop + (D * d + pbMax)`
+(#581: the deepest activation's stack probes write up to `pbMax` bytes below its frame) from the units' run's call
 depth `d`; the target runs under `TrapsD` of `LinkSys.peak` at every fuel. -/
 theorem bundle_correct_source_trap_peak_nobnd {b : Bundle} {S : LinkSpec} {file0 file : ByteArray}
     (hb : buildSpec b = .ok S) (h : Link.DeadCleanup.compileExeU S file0 = .ok file)
@@ -100,7 +101,8 @@ theorem bundle_correct_source_trap_peak_nobnd {b : Bundle} {S : LinkSpec} {file0
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d) r
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r
       args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize (f.rename σ.fwd)) r args' cs')
     (hcs : ClifEntry f args cs)
@@ -206,7 +208,8 @@ theorem bundle_correct_raw_trap_peak_nobnd {b : Bundle} {S : LinkSpec} {file0 fi
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d) r
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r
       args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize (f.rename σ.fwd)) r args' cs')
     (hcs : ClifEntry f args cs)

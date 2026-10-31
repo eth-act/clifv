@@ -89,39 +89,39 @@ theorem backend_twoRunLF (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hpro : StEqOutX
       (R.Zc (MConf.init R.rf (locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step
-          (prologueLines R.af.saves R.af.frameSize).length R.s0)) w₀)
+          (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)) w₀)
         (MConf.init R.rf (locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          (prologueLines R.af.saves R.af.frameSize).length t0)) w₀'))
-      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.saves R.af.frameSize).length R.s0)
+          (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t0)) w₀'))
+      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)
       (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        (prologueLines R.af.saves R.af.frameSize).length t0)) :
+        (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t0)) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
     ∃ N e e',
-      (∀ i < (prologueLines R.af.saves R.af.frameSize).length,
+      (∀ i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)) ∧
       (∀ i < N, ∃ c c', StEqOutX (R.Zc c c')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + i) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize).length + i) t0)) ∧
+          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) (KJL R XI t0 G' F)
         (fun d d' u u' => StEqOutX (R.Zc d d') u u')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + N) R.s0) e
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) R.s0) e
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize).length + N) t0) e' ∧
+          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) t0) e' ∧
       (∀ i < R.retLen,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step
-            ((prologueLines R.af.saves R.af.frameSize).length + N + i) R.s0) ∧
+            ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + i) R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-            ((prologueLines R.af.saves R.af.frameSize).length + N + i) t0)) ∧
+            ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + i) t0)) ∧
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
+        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) t0) = ra' ∧
       R.RetsAt e ∧ R.RetsAt e' :=
   backend_twoRunL hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk htr
     fuel hlm hpsF he he' hR hcov hx30 (fun _ _ _ _ _ _ hin hat hx ht => RL.InSeg.exempt hin hat hx ht)
@@ -185,31 +185,31 @@ theorem backend_twoRunLEF (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
     (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
     ∃ N e e',
-      (∀ i < (prologueLines R.af.saves R.af.frameSize).length,
+      (∀ i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)) ∧
       (∀ i < N, ∃ c c', StEqOutX (R.Zc c c')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + i) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize).length + i) t0)) ∧
+          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) (KJL R XI t0 G' F)
         (fun d d' u u' => StEqOutX (R.Zc d d') u u')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize).length + N) R.s0) e
+        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) R.s0) e
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize).length + N) t0) e' ∧
+          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) t0) e' ∧
       (∀ i < R.retLen,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step
-            ((prologueLines R.af.saves R.af.frameSize).length + N + i) R.s0) ∧
+            ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + i) R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-            ((prologueLines R.af.saves R.af.frameSize).length + N + i) t0)) ∧
+            ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + i) t0)) ∧
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) R.s0) = ra ∧
+        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
+        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) t0) = ra' ∧
       R.RetsAt e ∧ R.RetsAt e' :=
   backend_twoRunLE hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk htr
     fuel hlm hpsF he he' hR hcov hx30 (fun _ _ _ _ _ _ hin hat hx ht => RL.InSeg.exempt hin hat hx ht)

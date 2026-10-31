@@ -84,8 +84,8 @@ theorem detInduction (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hoo
     have hdet : L.DetPRBRU κ M := L.detPRBRU_ofC (L.detRunPRBCRU_of_lockRet hL hLk)
     have hT1 : L.ThmPRBRLE κ (M + 1 - 1) := by rw [Nat.add_sub_cancel]; exact hT
     have hLk1 : L.LockRet κ (M + 1 - 1) := by rw [Nat.add_sub_cancel]; exact hLk
-    have hdt : L.DetTabPRBE κ (M + 1) := L.detTabPRBE_of hL (Nat.succ_pos M) hT1 hLk1
-    have hcl : L.CallLock κ (M + 1) := L.callLock_of hL (Nat.succ_pos M) hT1 hLk1
+    have hdt : L.DetTabPRBE κ (M + 1) := L.detTabPRBE_of hL hκ (Nat.succ_pos M) hT1 hLk1
+    have hcl : L.CallLock κ (M + 1) := L.callLock_of hL hκ (Nat.succ_pos M) hT1 hLk1
     have hret := L.retOkPRB_of (κ := κ) hL hNS hB hC (M + 1)
     have h2 := L.stage2PRBZS_ofERU hL hκ hNS hT hdet hdt hret
     refine ⟨L.thmPRBRLE_succSRU hL hκ hNS hT hdet hdt hret,
@@ -119,7 +119,7 @@ theorem detPRBRU_allK (M : Nat) : L.DetPRBRU κ M :=
 /-- **The call twins, given the canonical callee's table, at every depth.** -/
 theorem callTwinCET_allK : ∀ M, L.CallTwinCET κ M
   | 0 => CallLock.callTwinCET L (L.callLock_zero (κ := κ))
-  | M + 1 => CallLock.callTwinCET L (L.callLock_of hL (Nat.succ_pos M)
+  | M + 1 => CallLock.callTwinCET L (L.callLock_of hL hκ (Nat.succ_pos M)
       (by rw [Nat.add_sub_cancel]; exact L.thmPRBRLE_allK hL hκ hK hNS hN hNX hB hC hx30 hrl hblr M)
       (by rw [Nat.add_sub_cancel]
           exact (L.detInduction hL hκ hK hNS hN hNX hB hC hx30 hrl hblr M).2))
@@ -127,7 +127,7 @@ theorem callTwinCET_allK : ∀ M, L.CallTwinCET κ M
 /-- **`DetTabPRBE` at every depth** (`detTabPRBE_ofCE`'s conclusion without `CallTwinCE`). -/
 theorem detTabPRBE_allK : ∀ M, L.DetTabPRBE κ M
   | 0 => L.detTabPRBE_zero
-  | M + 1 => L.detTabPRBE_of hL (Nat.succ_pos M)
+  | M + 1 => L.detTabPRBE_of hL hκ (Nat.succ_pos M)
       (by rw [Nat.add_sub_cancel]; exact L.thmPRBRLE_allK hL hκ hK hNS hN hNX hB hC hx30 hrl hblr M)
       (by rw [Nat.add_sub_cancel]
           exact (L.detInduction hL hκ hK hNS hN hNX hB hC hx30 hrl hblr M).2)

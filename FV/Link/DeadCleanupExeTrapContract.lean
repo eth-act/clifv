@@ -72,15 +72,18 @@ theorem compileExe_correct_trap_contract {S : LinkSpec} {file0 file : ByteArray}
     hv.run htr
 
 /-- **`compileExe_correct_trap_peak` under the trap contract** (recursive programs included):
-as `compileExe_correct_trap_contract`, with `frameDrop + D·d` bytes of stack for the run's peak
+as `compileExe_correct_trap_contract`, with `frameDrop + (D·d + pbMax)` bytes of stack (#581: the
+deepest activation's stack probes write up to `pbMax` bytes below its frame) for the run's peak
 call depth `d`. -/
 theorem compileExe_correct_trap_peak_contract {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExeU S file0 = .ok file) (B : BaseEnv) {n : String} {f : Clif.Function}
     (hf : (prog S.inputCleanup).func? n = some f) (F d : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
-    (hC : TrapContract S B file f (frameDrop (art S.inputCleanup f).af + S.inputCleanup.D * d)
+    (hC : TrapContract S B file f
+      (frameDrop (art S.inputCleanup f).af + (S.inputCleanup.D * d + pbMax S.inputCleanup))
       r args)
-    (hv : ClifView S.inputCleanup B f (frameDrop (art S.inputCleanup f).af + S.inputCleanup.D * d)
+    (hv : ClifView S.inputCleanup B f
+      (frameDrop (art S.inputCleanup f).af + (S.inputCleanup.D * d + pbMax S.inputCleanup))
       r args cs)
     (hd : Clif.DepthLe B.env (prog S.inputCleanup) d cs)
     (htr : ((sys S.inputCleanup B).peak F).TrapsD d f cs) :

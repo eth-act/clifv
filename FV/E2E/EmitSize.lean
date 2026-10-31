@@ -18,7 +18,8 @@ counts items, never frame offsets, so it is cheap and independent of the frame l
 * a move (`moveWords`): a slot load or store (`slotLoadAt`/`slotStoreAt`, ≤ 10 words with
   `spAddrX16`), a register-to-register move at most two of them (20); a save or a restore emits
   nothing, its 10 words pay for its push in the prologue or its pop in the epilogue;
-* every block a prologue (7 besides the pushes).
+* every block a prologue (16 besides the pushes: fp/lr, `x29`, the stack probes, the `sp`
+  adjustment).
 
 `fallthrough` only drops or merges lines and relaxation at most doubles the code
 (`emitFunc_size_le`), so the code is at most `8 · spillWordBound vcp` bytes.
@@ -39,9 +40,11 @@ def instWords : MInst → Nat
   | _ => 1
 
 /-- An upper bound on the words of an `AInst` of a function saving `n` registers: the prologue
-and the epilogue push/pop at most one register per instruction. -/
+and the epilogue push/pop at most one register per instruction; the prologue's stack probes
+(#581) take at most 9 more words. -/
 def aInstWords (n : Nat) : AInst → Nat
-  | .prologue | .epilogueRet => 7 + n
+  | .prologue => 16 + n
+  | .epilogueRet => 7 + n
   | .inst m => instWords m
 
 /-- An upper bound on the words of a move (`RAFrame.moveInsts`). -/
@@ -60,7 +63,7 @@ def itemWords (vb : VBlock) : RItem → Nat
 block). -/
 def rfWords (vc : VCode) (rf : RFunc) : Nat :=
   ((vc.blocks.zip rf.blocks).toList.map fun (vb, items) =>
-    7 + (items.toList.map (itemWords vb)).sum).sum
+    16 + (items.toList.map (itemWords vb)).sum).sum
 
 /-- The word bound of the spill allocation's code. -/
 def spillWordBound (vcp : VCode) : Nat := rfWords vcp (spillAlloc vcp)
@@ -525,12 +528,22 @@ theorem saves_split : ∀ saves : List Reg,
     have := saves_split rs
     cases r <;> simp_all [savesInt, savesFloat, List.filter_cons] <;> omega
 
-/-- The prologue: fp/lr, x29, at most one push per saved register, the `sp` adjustment. -/
-theorem prologueLines_length (saves : List Reg) (n : Nat) :
-    (prologueLines saves n).length ≤ 7 + saves.length := by
+theorem probeLines_length (total : Nat) : (probeLines total).length ≤ 9 := by
+  have := probeCount_le_three total
+  unfold probeLines
+  simp only
+  split
+  · simp
+  · simp only [List.length_append, probeSteps_length, List.length_singleton]; omega
+
+/-- The prologue: fp/lr, x29, the stack probes, at most one push per saved register, the `sp`
+adjustment. -/
+theorem prologueLines_length {calls : Bool} (saves : List Reg) (n : Nat) :
+    (prologueLines saves n calls).length ≤ 16 + saves.length := by
   have := pushLines_length true (savesInt saves)
   have := pushLines_length false (savesFloat saves)
   have := spAdjLines_length true (n - clobberBytes saves)
+  have := probeLines_length (probeTotal n calls)
   have := saves_split saves
   simp only [prologueLines, List.length_append, List.length_cons, List.length_nil]
   omega
@@ -552,7 +565,7 @@ theorem ainstLines_length {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState}
   | prologue =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    have := prologueLines_length af.saves af.frameSize
+    have := prologueLines_length (calls := af.isCaller) af.saves af.frameSize
     split <;> simp [aInstWords] <;> omega
   | epilogueRet =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h

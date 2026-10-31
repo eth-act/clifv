@@ -15,8 +15,10 @@ the M6 proof:
 * `binary_correct_exec_proven`: no call cycle reachable from the entry, the stack bound
   `stackFn` (`binary_correct_of_checksX`, `runGood_sysS`);
 * `binary_correct_exec_depth_proven`: any program, recursive ones included, the stack
-  `frameDrop + D * M` of the depth-`M` budget (`binary_correct_depthX`, `runGood_sysS_depth`);
-* `binary_correct_exec_peak_proven`: the same with the stack `frameDrop + D * d` for the run's
+  `frameDrop + (D * M + pbMax)` of the depth-`M` budget (`binary_correct_depthX`,
+  `runGood_sysS_depth`; #581: the deepest activation's stack probes write up to `pbMax` bytes below
+  its frame);
+* `binary_correct_exec_peak_proven`: the same with the stack `frameDrop + (D * d + pbMax)` for the run's
   peak call depth `d` (`Clif.DepthLe`) instead of its fuel (`binary_correct_peakX`,
   `runGood_sysS_peak`).
 -/
@@ -94,7 +96,8 @@ theorem binary_correct_exec_proven {I : SemanticStackBound.CompilerInput} {D : L
 
 /-- **The binary theorem about the executable's own words for any program**, recursive ones
 included: `binary_correct_exec_proven` without the call-graph premise (`¬ CycleFrom`), the outside
-caller providing the stack `frameDrop + D * M` of the depth-`M` budget (every call level at most
+caller providing the stack `frameDrop + (D * M + pbMax)` of the depth-`M` budget (#581: the
+deepest activation's stack probes write up to `pbMax` bytes below its frame; every call level at most
 `D` bytes, `LinkSys.budget_K_semantic`) instead of the stack bound `stackFn` of a non-recursive program.
 `M` is the CLIF run's fuel (at most `M + 1` steps of the whole-program run) and the depth of the
 proof's linked machine: the stack is proportional to the fuel, not to the run's actual peak call
@@ -105,8 +108,10 @@ theorem binary_correct_exec_depth_proven {I : SemanticStackBound.CompilerInput} 
     (hH : HooksSim I B) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
-    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * M + pbMax I)) r
+      args cs.mem)
+    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + (I.D * M + pbMax I)) r args
+      cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAtWithResults I I.results)
@@ -114,7 +119,7 @@ theorem binary_correct_exec_depth_proven {I : SemanticStackBound.CompilerInput} 
   have hfacts := binFacts_of_checks hI hbin
   obtain ⟨hA, hd, hG⟩ := binary_correct_depthX hfacts B hB hf M hX ho hr htr
   have hfm := (Clif.Program.func?_some hf).1
-  have hL := SemanticStackBound.okB_sound hI (baseOk_F (F' := worldF I f (I.D * M) r) hB) fun _ h => .inr h
+  have hL := SemanticStackBound.okB_sound hI (baseOk_F (F' := worldF I f (I.D * M + pbMax I) r) hB) fun _ h => .inr h
   have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
     hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
   obtain ⟨hent, -⟩ := premises hL hfm hro ho hr
@@ -122,7 +127,7 @@ theorem binary_correct_exec_depth_proven {I : SemanticStackBound.CompilerInput} 
     ⟨hG hout, runGood_sysS_depth hI hbin hB hfm M hX ho hav hr htr hout⟩
 
 /-- **The binary theorem about the executable's own words for the run's peak call depth** (L1d):
-`binary_correct_exec_depth_proven` with the stack `frameDrop + D * d`, where `d` bounds the call
+`binary_correct_exec_depth_proven` with the stack `frameDrop + (D * d + pbMax)` (#581), where `d` bounds the call
 depth of the whole-program CLIF run (`Clif.DepthLe`: every state it reaches has at most `d`
 callers), independent of its fuel `F` (at most `F + 1` steps). The run premise `TrapsExplicit` is
 under `Clif.linkEnvD` (program callees with fuel `F` and at most `d - 1` callers of their own). -/
@@ -132,8 +137,10 @@ theorem binary_correct_exec_peak_proven {I : SemanticStackBound.CompilerInput} {
     (hH : HooksSim I B) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
-    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r
+      args cs.mem)
+    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r args
+      cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAtWithResults I I.results)
@@ -141,7 +148,7 @@ theorem binary_correct_exec_peak_proven {I : SemanticStackBound.CompilerInput} {
   have hfacts := binFacts_of_checks hI hbin
   obtain ⟨hA, hdiff, hG⟩ := binary_correct_peakX hfacts B hB hf F d hX ho hr hd htr
   have hfm := (Clif.Program.func?_some hf).1
-  have hL := SemanticStackBound.okB_sound hI (baseOk_F (F' := worldF I f (I.D * d) r) hB) fun _ h => .inr h
+  have hL := SemanticStackBound.okB_sound hI (baseOk_F (F' := worldF I f (I.D * d + pbMax I) r) hB) fun _ h => .inr h
   have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
     hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
   obtain ⟨hent, -⟩ := premises hL hfm hro ho hr

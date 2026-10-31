@@ -30,32 +30,36 @@ theorem abiRL : AbiCall RAL.fb RAL.base 0x4000#64 RAL.s0 :=
 theorem bodyRL : BodyEntryW RAL.F RAL.vc.EntryArg RAL.af RAL.s0 w₀L :=
   (E2E.Binary.bodyEntry_bodyOf RAL.af RAL.s0).w RAL.F entryArgRL
 
+/-- `atomic_load`'s frame gets no stack probes (#581). -/
+theorem probeF_RL : ProbeF RAL :=
+  ProbeF.of_small (by have := factsL.2.2.2.2.2.2.1; omega)
+
 /-- **Every premise of `arm_alloc_refines_entry`** for the compiled `atomic_load`. -/
 theorem entry_premises : RAL.Wf ∧ MemScopeLS RAL ∧
     AbiCall RAL.fb RAL.base 0x4000#64 RAL.s0 ∧
-    BodyEntryW RAL.F RAL.vc.EntryArg RAL.af RAL.s0 w₀L :=
+    BodyEntryW RAL.F RAL.vc.EntryArg RAL.af RAL.s0 w₀L ∧ ProbeF RAL :=
   ⟨wfRL, memScopeLS_of_memScopeB (memScopeB_of_memScopeL (memScopeL_of_memScope scopeRL)), abiRL,
-    bodyRL⟩
+    bodyRL, probeF_RL⟩
 
 /-- **The precise run from the ABI entry through the `ldar`** (module doc). -/
 theorem run_load_entry : ∃ (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
     (∀ env p, Compiled env p RAL csL
-      (iterN RAL.step (prologueLines RAL.af.saves RAL.af.frameSize).length RAL.s0)) ∧
+      (iterN RAL.step (prologueLines RAL.af.saves RAL.af.frameSize RAL.af.isCaller).length RAL.s0)) ∧
     PRun Policy.arm RAL.step (OkPriv RAL) (RAL.s0, none) (lsP ++ [⟨[e], false⟩]) t' ∧
     e.k = .acqR ∧ e.n = 8 ∧ e.addr = 0 ∧
     (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAL e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) := by
   obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRL abiRL bodyRL
-  have hpe := prologue_evs wfRL abiRL hlat
+  have hpe := prologue_evs wfRL abiRL probeF_RL hlat
   -- the prologue
   obtain ⟨t0, r0, ht0⟩ := prun_fwd wfRL hlat (fun i hi => (hpe i hi).2) none
-  have hev0 : ∀ l ∈ (segEvs RAL.step (prologueLines RAL.af.saves RAL.af.frameSize).length RAL.s0).map
+  have hev0 : ∀ l ∈ (segEvs RAL.step (prologueLines RAL.af.saves RAL.af.frameSize RAL.af.isCaller).length RAL.s0).map
       (fun e => (⟨e, false⟩ : Lab)), ∀ e' ∈ l.evs, PrivA RAL e'.addr.toNat ∧ e'.k = .plainW := by
     intro l hl e' he'
     obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hl
     obtain ⟨i, hi, rfl⟩ := mem_segEvs hx
     obtain ⟨hF, hK⟩ := (hpe i hi).1 e' he'
     exact ⟨privA_addr.2 hF, hK⟩
-  generalize iterN RAL.step (prologueLines RAL.af.saves RAL.af.frameSize).length RAL.s0 = s1 at hq hA ht0 ⊢
+  generalize iterN RAL.step (prologueLines RAL.af.saves RAL.af.frameSize RAL.af.isCaller).length RAL.s0 = s1 at hq hA ht0 ⊢
   obtain ⟨t0s, t0m⟩ := t0
   simp only at ht0
   subst ht0
@@ -109,7 +113,7 @@ theorem refines_load_entry : ∃ (lsP : List Lab) (e : Ev) (t' : ArmState × Mon
         (PrepThread.conv trS) (PrepThread.conv (evTr ((lsP ++ [(⟨[e], false⟩ : Lab)]).take n))) ψ ∧
       (n = (lsP ++ [(⟨[e], false⟩ : Lab)]).length ∨ Done RAL cE) := by
   obtain ⟨lsP, e, t', -, hr, hk, hn, -, -⟩ := run_load_entry
-  obtain ⟨hR, hsc, hent, hbe⟩ := entry_premises
-  exact ⟨lsP, e, t', hr, hk, hn, arm_alloc_refines_entry hR hsc hent hbe hr⟩
+  obtain ⟨hR, hsc, hent, hbe, hpf⟩ := entry_premises
+  exact ⟨lsP, e, t', hr, hk, hn, arm_alloc_refines_entry hR hsc hent hpf hbe hr⟩
 
 end Concurrency.RealizeCompiled.WitnessL

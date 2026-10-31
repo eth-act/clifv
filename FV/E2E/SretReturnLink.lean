@@ -63,7 +63,7 @@ theorem backend_correct_program_core_abi (L : LinkSys) (hL : L.Ok) [L.CrunOk]
     have hWE : L.WorldEntry κ M f L.F args cs w₀ := by
       refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
       · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
-      · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm k hk hk' => ?_
+      · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs (fun off v hm k hk hk' => ?_) hres
         rw [hF] at hk'
         rcases hk' with hw | hi
         · exact stackArgsAvoid_frameW_pipeline hc hres hent hargs off v hm k hk hw
@@ -160,7 +160,7 @@ theorem backend_correct_program_stack_abi (L : LinkSys) (hL : L.Ok)
       (Clif.runLoop L.base L.P (M + 1) cs) := by
   have hd := L.frameDrop_eq hL hf
   have hres : StackAvail b (L.A f).af s := by
-    unfold StackAvail
+    refine ⟨?_, by rw [← hb M]; exact hκ.2 M f hf⟩
     rw [show (L.A f).af.frameSize + 16 + b = frameDrop (L.A f).af + b by omega]
     refine stackRoom_of hroom fun a ha => hgfree a (hL.imgAddr f hf a ?_)
     simpa [CodeAddr, hent.program] using ha

@@ -58,7 +58,7 @@ theorem codeAddr_words {s : ArmState} {base a : BitVec 64} {fb : FnBin}
 
 theorem stackRC : StackAvail 0 (act vcpC rfC).af RC.s0 := by
   have hs := spC
-  refine ⟨?_, fun a ha => ?_⟩
+  refine ⟨⟨?_, fun a ha => ?_⟩, ?_⟩
   · rw [spv_RC]; show (act vcpC rfC).af.frameSize + 16 + 0 ≤ _
     have : (act vcpC rfC).af.frameSize = 176 := hs.2.2.2.2.2.2.2.1
     simp only [BitVec.toNat_ofNat]; omega
@@ -71,6 +71,8 @@ theorem stackRC : StackAvail 0 (act vcpC rfC).af RC.s0 := by
     rw [show RC.base = 0x30000#64 from rfl] at hd
     generalize j = J at hj' hd
     bv_omega
+  · have : (act vcpC rfC).af.frameSize = 176 := hs.2.2.2.2.2.2.2.1
+    exact ArmAllocThread.Witness.probeBelow_le_small (by omega)
 
 theorem wfRC : RC.Wf := by
   obtain ⟨-, h1, h2, h3, h4, h5, h6, -, -, h9⟩ := factsC
@@ -79,6 +81,19 @@ theorem wfRC : RC.Wf := by
   rw [show E2E.spv sC0 = 0x7000#64 from spv_RC] at h1
   simp only [BitVec.toNat_ofNat] at h1
   omega
+
+/-- The caller's frame gets no stack probes (#581). -/
+theorem probeF_RC : ProbeF RC :=
+  ProbeF.of_small (show (act vcpC rfC).af.frameSize + 16 < 4096 by
+    have : (act vcpC rfC).af.frameSize = 176 := spC.2.2.2.2.2.2.2.1
+    omega)
+
+/-- The callee's (`atomic_rmw`'s) frame gets no stack probes (#581). -/
+theorem probeF_R {R : RL} (h : R.af = (act vcpR rfR).af) : ProbeF R :=
+  ProbeF.of_small (by
+    rw [h]
+    have : (act vcpR rfR).af.frameSize = 192 := spC.2.2.2.2.2.2.2.2
+    omega)
 
 theorem abiRC : AbiCall RC.fb RC.base 0x4000#64 RC.s0 where
   program := program_RC
@@ -189,9 +204,9 @@ theorem prefixC : ∃ (n0 j : Nat) (m : Loc → CV),
     regVal (iterN RC.step n0 RC.s0) (.x 0) = 0 ∧
     regVal (iterN RC.step n0 RC.s0) (.x 1) = 0 := by
   obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
-  have hpe := prologue_evs wfRC abiRC hlat
+  have hpe := prologue_evs wfRC abiRC probeF_RC hlat
   have hpr0 := linesAt_program wfRC hlat
-  generalize hn0 : (prologueLines RC.af.saves RC.af.frameSize).length = n0 at hpe hpr0 hq hA
+  generalize hn0 : (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length = n0 at hpe hpr0 hq hA
   have hq0 := hq
   have hA0 := hA
   have e0 := checksRunC.1
@@ -416,7 +431,7 @@ theorem rcF_ge {a : BitVec 64} (h : RC.F a) : 0x6F40 ≤ a.toNat := by
 theorem stackX (hS : StRel RC s m w₀C) : StackAvail 0 (act vcpR rfR).af (enterR s) := by
   have hs := spC
   have hfs : (act vcpR rfR).af.frameSize = 192 := hs.2.2.2.2.2.2.2.2
-  refine ⟨?_, fun a ha => ?_⟩
+  refine ⟨⟨?_, fun a ha => ?_⟩, ArmAllocThread.Witness.probeBelow_le_small (by omega)⟩
   · rw [spv_enterR hS, hfs]; decide
   · obtain ⟨j, hj, hd⟩ := codeAddr_words (enterR_program s) ha
     rw [spv_enterR hS, hfs]
@@ -595,7 +610,7 @@ theorem compiledEX (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0)
     CompiledE env p (RLx s) csR := by
   obtain ⟨-, hq, hA⟩ := q_init_lines (wfX hS) (abiX hS) (bodyX s)
   exact ⟨wfX hS, memScopeLS_of_memScopeB (memScopeB_of_memScopeL (scopeX s)), rfl, ⟨_, abiX hS⟩,
-    (compiled_ofX hS hx0 hx1 hq hA env p).front⟩
+    (compiled_ofX hS hx0 hx1 hq hA env p).front, probeF_R rfl⟩
 
 theorem step_programX (s s' : ArmState) : ((RLx s).step s').program = s'.program :=
   CallThread.Witness.armStepX_program (fun _ _ => rfl) (fun _ _ _ => rfl) s'

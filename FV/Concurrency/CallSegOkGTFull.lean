@@ -38,7 +38,7 @@ abbrev RA5 : RL := link2.act callerF sC0 0x200 GL
 theorem stack_RA5 : StackAvail 0x200 callerF.af sC0 := by
   have hs := spC
   have hfs : callerF.af.frameSize = 160 := hs.2.2.2.2.2.2.2.1
-  refine ⟨?_, fun a ha => ?_⟩
+  refine ⟨⟨?_, fun a ha => ?_⟩, ArmAllocThread.Witness.probeBelow_le_small (by omega)⟩
   · show callerF.af.frameSize + 16 + 0x200 ≤ (E2E.spv RC.s0).toNat
     rw [spv_RC, hfs]; decide
   · obtain ⟨j, hj, hd⟩ := CallSeg.WitnessC.codeAddr_words program_RC ha

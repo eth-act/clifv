@@ -546,9 +546,74 @@ def spAdjLines (sub : Bool) (size : Nat) : List Line :=
     | none => loadConst64 (.x 16) size ++
         [.ins (.aluRRRExtend (if sub then .sub else .add) true .sp .sp (.x 16) .uxtx)]
 
-/-- The prologue of a frame of `size` bytes below fp/lr (clobber area included). -/
-def prologueLines (saves : List Reg) (size : Nat) : List Line :=
+/-- `k` probes of `gen_probestack_unroll`: `sub sp, sp, #4096; stur wzr, [sp]` each. -/
+def probeSteps : Nat → List Line
+  | 0 => []
+  | k + 1 => [.ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩), .ins (.store .store32 .xzr (.unscaled .sp 0))] ++
+      probeSteps k
+
+/-- The stack size Cranelift probes for a frame of `size` bytes below fp/lr (`gen_prologue`'s
+`total_stacksize`: clobbers, fixed frame and outgoing arguments, plus the 16-byte setup area of
+its callees when the function calls, `FunctionCalls` not `None`). -/
+def probeTotal (size : Nat) (calls : Bool) : Nat := size + if calls then 16 else 0
+
+/-- The number of probes (4-byte zero stores at `sp₁ - 4096·i`, `i = 1, …`, where `sp₁` is the
+`sp` after the frame setup) of Cranelift's inline stack probes for a probed stack of `total`
+bytes: `n = total / 4096` (`gen_inline_probestack`, 4 KiB guard), unrolled for `n ≤ 3`
+(`PROBE_MAX_UNROLL`). Frames with `n > 3` (`total ≥ 16 KiB`), where Cranelift emits the
+`StackProbeLoop`, get no probes yet (#581). -/
+def probeCount (total : Nat) : Nat := if total / 4096 ≤ 3 then total / 4096 else 0
+
+theorem probeCount_le_three (total : Nat) : probeCount total ≤ 3 := by
+  unfold probeCount; split <;> omega
+
+theorem probeSteps_length : ∀ k, (probeSteps k).length = 2 * k
+  | 0 => rfl
+  | k + 1 => by simp only [probeSteps, List.length_append, probeSteps_length k]; simp; omega
+
+/-- Cranelift's inline stack probes (`gen_prologue`, `enable_probestack` with the inline strategy
+and a 4 KiB guard, as cg_clif sets them; aarch64 `gen_inline_probestack`) for a function whose
+probed stack takes `total` bytes (`probeTotal`): `n = probeCount total` probes, none when
+`n = 0`; otherwise `gen_probestack_unroll`: `n` times `sub sp, sp, #4096` + `stur wzr, [sp]`
+(`probeSteps`), then `add sp, sp, #4096·n`. -/
+def probeLines (total : Nat) : List Line :=
+  let n := probeCount total
+  if n == 0 then [] else probeSteps n ++ [.ins (.aluImm12 .add true .sp .sp ⟨n, true⟩)]
+
+theorem probeSteps_mem : ∀ {k : Nat} {ln : Line}, ln ∈ probeSteps k →
+    ln = .ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) ∨
+      ln = .ins (.store .store32 .xzr (.unscaled .sp 0))
+  | 0, _, h => by simp [probeSteps] at h
+  | k + 1, ln, h => by
+    simp only [probeSteps, List.cons_append, List.nil_append, List.mem_cons] at h
+    rcases h with rfl | rfl | h
+    · exact .inl rfl
+    · exact .inr rfl
+    · exact probeSteps_mem h
+
+/-- The lines of the stack probes: `sub sp, sp, #4096`, `stur wzr, [sp]` and the final `add sp`. -/
+theorem probeLines_mem {total : Nat} {ln : Line} (h : ln ∈ probeLines total) :
+    ln = .ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) ∨
+      ln = .ins (.store .store32 .xzr (.unscaled .sp 0)) ∨
+      ∃ n, ln = .ins (.aluImm12 .add true .sp .sp ⟨n, true⟩) := by
+  unfold probeLines at h
+  simp only at h
+  split at h
+  · simp at h
+  · rw [List.mem_append, List.mem_singleton] at h
+    rcases h with h | rfl
+    · rcases probeSteps_mem h with rfl | rfl
+      · exact .inl rfl
+      · exact .inr (.inl rfl)
+    · exact .inr (.inr ⟨_, rfl⟩)
+
+/-- The prologue of a frame of `size` bytes below fp/lr (clobber area included); `calls`: the
+function calls (Cranelift's `FunctionCalls` is not `None`), so the probed stack also covers the
+16-byte fp/lr area of its callees. The probes come after the frame setup and before the clobber
+pushes (`gen_prologue`). -/
+def prologueLines (saves : List Reg) (size : Nat) (calls : Bool) : List Line :=
   [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
+  probeLines (probeTotal size calls) ++
   pushLines true (savesInt saves) ++ pushLines false (savesFloat saves) ++
   spAdjLines true (size - clobberBytes saves)
 
@@ -623,7 +688,7 @@ def emitPre (k : Nat) (af : AFunc) : Except String (Array Line) := do
     lines := lines.push (.label (.block l))
     for i in code do
       match i with
-      | .prologue => if af.frame then lines := lines ++ (prologueLines af.saves af.frameSize).toArray
+      | .prologue => if af.frame then lines := lines ++ (prologueLines af.saves af.frameSize af.isCaller).toArray
       | .epilogueRet =>
         lines := lines ++ (if af.frame then (epilogueLines af.saves af.frameSize).toArray else #[.ins .ret])
       | .inst m =>

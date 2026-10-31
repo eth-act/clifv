@@ -71,7 +71,9 @@ theorem binary_correct_initRU {I : LinkInput} {X : Image} {R : BitVec 64 → Pro
   obtain ⟨hA, hG⟩ := backend_correct_program_initEXRU (sysW I B f r) hL (κ := kapW I B f r)
     (DeadCleanupStackBound.budget_of hbin.ok B (worldF I f (DeadCleanupStackBound.bud I f) r))
     hIO.baseRet hIO.retCount hIO.det hIO.detTab hIO.detTabR hIO.hooks hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (by rw [hκf]; exact hgfree) himg hbe hargs
+    (by rw [hκf]; exact ⟨hres, by rw [← hκf]; exact (DeadCleanupStackBound.budget_of hbin.ok B
+      (worldF I f (DeadCleanupStackBound.bud I f) r)).2 M f hfm⟩) (by rw [hκf]; rfl)
+    (by rw [hκf]; exact hgfree) himg hbe hargs
     hr.entry hsav hrel (fun hN => by rw [iniOf_F]; exact hpl hN) hrun
   refine ⟨?_, modelOf_diff hbin hX f, runGoodL_F hG⟩
   rw [mach_F I B (fun _ => False) (worldF I f (DeadCleanupStackBound.bud I f) r)]
@@ -104,7 +106,9 @@ theorem binary_correct_initTRU {I : LinkInput} {X : Image} {R : BitVec 64 → Pr
   have hA := backend_correct_program_initETRU (sysW I B f r) hL (κ := kapW I B f r)
     (DeadCleanupStackBound.budget_of hbin.ok B (worldF I f (DeadCleanupStackBound.bud I f) r))
     hIO.baseRet hIO.retCount hIO.det hIO.detTab hIO.hooks hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (by rw [hκf]; exact hgfree) himg hbe hargs
+    (by rw [hκf]; exact ⟨hres, by rw [← hκf]; exact (DeadCleanupStackBound.budget_of hbin.ok B
+      (worldF I f (DeadCleanupStackBound.bud I f) r)).2 M f hfm⟩) (by rw [hκf]; rfl)
+    (by rw [hκf]; exact hgfree) himg hbe hargs
     hr.entry hsav hrel (fun hN => by rw [iniOf_F]; exact hpl hN) htr hrun
   refine ⟨?_, modelOf_diff hbin hX f⟩
   rw [mach_F I B (fun _ => False) (worldF I f (DeadCleanupStackBound.bud I f) r)]
@@ -161,7 +165,9 @@ theorem model_init_sysSRU {D : List Clif.DataObject} (hI : okBCleanup I = true)
     (backend_correct_program_initEXRU (sysS I B f r S) hL (κ := kapW I B f r)
     ((DeadCleanupStackBound.budget_of hI B (worldF I f (DeadCleanupStackBound.bud I f) r)).extImg _ _ _)
     hIO.baseRet hIO.retCount hIO.det hIO.detTab hIO.detTabR hIO.hooks hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (fun a ha => ?_) (fun a _ => rfl) hbe hargs
+    (by rw [hκf]; exact ⟨hres, by rw [← hκf]; exact (DeadCleanupStackBound.budget_of hI B
+      (worldF I f (DeadCleanupStackBound.bud I f) r)).2 M f hfm⟩) (by rw [hκf]; rfl)
+    (fun a ha => ?_) (fun a _ => rfl) hbe hargs
     hr.entry (fun off v hm k hk hx => ?_)
     ⟨⟨hrel.1.bytes, fun a n hv => ?_, hrel.1.symbols⟩, hrel.2.1, hrel.2.2.1, fun j hj => ?_,
       hrel.2.2.2.2⟩ (fun hN => by rw [iniOf_sysS]; exact hpl hN) hrun)

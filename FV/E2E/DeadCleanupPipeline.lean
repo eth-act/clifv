@@ -91,7 +91,7 @@ theorem backend_correct_cleanup_ex {p : Clif.Program} {f : Clif.Function} {k : N
       obtain ⟨pr, pt⟩ := prepareCorrect_of_check (hds s') hc.prepOk a w
       exact ⟨fun _ _ _ h => pr _ _ _ (hr _ _ _ h), fun _ h => pt _ (ht _ h)⟩)
     hM6 hent hres hbe
-    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
   exact {
     shape := hshape

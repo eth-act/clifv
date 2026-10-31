@@ -69,7 +69,8 @@ theorem progCallPRBR_Lu (M : Nat) (hdet : Lu.DetPRB (fun M _ => Lu.K M) M) {n : 
   obtain ⟨hh, -⟩ := Clif.Program.func?_some hpf
   obtain ⟨us, outs, wf, _, -, -, -, -, -, -, hall⟩ :=
     Lu.progCallPRBR (κ := fun M _ => Lu.K M) Lu_ok (M := M + 1) (Nat.succ_pos M) (thmPRBR_LU M)
-      hdet hpf hcal himgF herr hal hroom hdead hmr hargs hsav (fun hN => absurd hN noSlots_Lu)
+      hdet hpf hcal himgF herr hal hroom hdead ((Lu.budget_K Lu_ok).2 _ h hh) hmr hargs hsav
+      (fun hN => absurd hN noSlots_Lu)
       (fun hN => absurd hN noSlots_Lu) htab hinit hrun
   obtain ⟨k, hk, hret, -⟩ := hall _ (Lu.callerOk_canon Lu_ok hh himgF uses w)
     (fun _ _ _ _ => rfl) (fun _ _ => rfl)
@@ -95,7 +96,8 @@ theorem progCallPRBR_at_Lu (M : Nat) (hdet : Lu.DetPRB (fun M _ => Lu.K M) M)
   obtain ⟨hh, -⟩ := Clif.Program.func?_some hpf
   obtain ⟨us, outs, wf, e, -, -, hhold, hmem, -⟩ :=
     Lu.progCallPRBR_at (κ := fun M _ => Lu.K M) Lu_ok (M := M + 1) (Nat.succ_pos M)
-      (thmPRBR_LU M) hdet hdt hpf hcal himgF herr hal hroom hdead hmr hargs hsav
+      (thmPRBR_LU M) hdet hdt hpf hcal himgF herr hal hroom hdead
+      ((Lu.budget_K Lu_ok).2 _ h hh) hmr hargs hsav
       (fun hN => absurd hN noSlots_Lu) (fun hN => absurd hN noSlots_Lu) hinit hrun
       (Lu.callerOk_canon Lu_ok hh himgF uses w) (fun _ _ _ _ => rfl) (fun _ _ => rfl) htab
   exact ⟨us, outs, wf, e, hhold, hmem⟩

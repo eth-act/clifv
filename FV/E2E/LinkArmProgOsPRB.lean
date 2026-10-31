@@ -66,7 +66,8 @@ theorem progOsCorePRB (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
   simp only [Option.some.injEq, Prod.mk.injEq] at hx
   obtain ⟨rfl, rfl⟩ := hx
   obtain ⟨us, outsV, wf, e, hus, hlen, hhold, hmemR, hrs, -, hcall⟩ :=
-    L.progCallPRB hL hM (ih hM) (hdet hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead hmr
+    L.progCallPRB hL hM (ih hM) (hdet hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead
+      (hκ.2 _ h hh) hmr
       hargs hsav (fun hN => (hpl hN).1) (fun hN => (hpl hN).2) htab hinit hrun
   -- the caller state is compatible with the canonical one
   have hcOk : L.CallerOk F h uses w t := by

@@ -182,7 +182,7 @@ theorem stackArgsAvoid_frameWA {f : Clif.Function} {k : Nat} {vc vcp : VCode} {r
     rw [hfs]; simp only [RAFrame.compute]
     exact Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) (le_alignTo _ 16 (by decide)))
       (Nat.le_add_right _ _)
-  have hsp := hres.1
+  have hsp := hres.1.1
   have hfit := h.fits
   have hx : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j -
       (spv s - BitVec.ofNat 64 (frameDrop af))).toNat = off + j + frameDrop af := by

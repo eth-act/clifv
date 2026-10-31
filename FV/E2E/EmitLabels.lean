@@ -547,11 +547,17 @@ theorem popLines_plain (int : Bool) (rs : List Reg) : Plain (popLines int rs) :=
       cases int <;> simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
     · simp at hl
 
-theorem prologueLines_plain (saves : List Reg) (size : Nat) : Plain (prologueLines saves size) := by
+theorem probeLines_plain (total : Nat) : Plain (probeLines total) := by
+  intro ln hl
+  rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ <;>
+    simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
+
+theorem prologueLines_plain {calls : Bool} (saves : List Reg) (size : Nat) :
+    Plain (prologueLines saves size calls) := by
   unfold prologueLines
-  exact plain_append (plain_append (plain_append
-    (by simp [Plain, lineDef, Line.labelsUsed, Insn.pcRelSpec?]) (pushLines_plain _ _))
-    (pushLines_plain _ _)) (spAdjLines_plain _ _)
+  exact plain_append (plain_append (plain_append (plain_append
+    (by simp [Plain, lineDef, Line.labelsUsed, Insn.pcRelSpec?]) (probeLines_plain _))
+    (pushLines_plain _ _)) (pushLines_plain _ _)) (spAdjLines_plain _ _)
 
 theorem epilogueLines_plain (saves : List Reg) (size : Nat) : Plain (epilogueLines saves size) := by
   unfold epilogueLines

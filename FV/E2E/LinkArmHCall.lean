@@ -61,7 +61,7 @@ theorem pcall_lock (hL : L.Ok) {M : Nat} (hcl : L.CallLock κ M) {nm : String} {
     (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAtB cm (spv w) ini)
     (hslotb : L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a))
     (htab : L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini))
     (hinit : Clif.initState L.P nm vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm')

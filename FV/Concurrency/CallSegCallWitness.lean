@@ -90,10 +90,15 @@ theorem budget_ld : ldF.af.frameSize + 16 + 0x10 ≤ RA2.K := by
   show (act vcpL rfL).af.frameSize + 16 + 0x10 ≤ 0x100
   omega
 
+/-- `atomic_load`'s frame gets no stack probes (#581). -/
+theorem probe_ld : probeBelow ldF.af ≤ 0x10 := by
+  have : (act vcpL rfL).af.frameSize = 160 := spC.2.2.2.2.2.2.2.2
+  exact ArmAllocThread.Witness.probeBelow_le_small (show (act vcpL rfL).af.frameSize + 16 < 4096 by omega)
+
 /-- **Non-vacuity of `stackAvail_callee`.** -/
 theorem stack_ld : StackAvail 0x10 ldF.af (enter ldF sBF) := by
   obtain ⟨m, hS⟩ := strel_sBF
-  exact stackAvail_callee wf_RA2 hS codeIn_RA2 mem_ld budget_ld
+  exact stackAvail_callee wf_RA2 hS codeIn_RA2 mem_ld budget_ld probe_ld
 
 /-- **Non-vacuity of `nested_callee`.** -/
 theorem nested_ld : Nested RA2 (link2.act ldF (enter ldF sBF) 0x10 RA2.FK) := by
@@ -158,7 +163,7 @@ theorem call_endK_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitVe
     (fun _ _ h => by cases h) (fun _ _ _ => rfl) H3 hat0 Concurrency.CallArgsAt.Witness.usesV_fC
     CallResumeAll.Witness.defs_fC.1 hq hP hm2 hm3 hm4 hbody hcl hext'
     (fun e he _ => by rw [hexts, List.mem_singleton] at he; rw [he]) hvals htys hB static_ld
-    budget_ld sig_fL
+    budget_ld probe_ld sig_fL
   exact ⟨h1, h4, h11, h12, h13⟩
 
 /-- **Non-vacuity of `retEnd_n`**: every activation of `atomic_load` entered by the caller's `bl`
@@ -223,7 +228,7 @@ theorem resume_ret_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitV
         xreg 30 s0B = Arm.r .PC x + 4#64 → (∀ a, RC.FK a → s0B.mem a = x.mem a) →
         (∀ r ∈ calleeSaved, ckeep r (r₀B r) = ckeep r
           (locVal (link2.act ldF s0B 0 RC.F).fr (iterN (link2.act ldF s0B 0 RC.F).step
-            (prologueLines ldF.af.saves ldF.af.frameSize).length s0B) (.reg r))) →
+            (prologueLines ldF.af.saves ldF.af.frameSize ldF.af.isCaller).length s0B) (.reg r))) →
         RetEnd (link2.act ldF s0B 0 RC.F) (RC.pcOf 15 + 4#64) env pCL (RelW ΓB fB cB) slotsB r₀B
           xB sR →
         ΓB.F = (link2.act ldF s0B 0 RC.F).F → ΓB.syms = ΓC.syms →

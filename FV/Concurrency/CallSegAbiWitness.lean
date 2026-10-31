@@ -39,10 +39,10 @@ theorem arm_abiCRN_fC {env : Clif.Env} (henv : env.extern "ld" = none) {c : BitV
               RelQ RC tE (.run cM') ∧ Pause RC (.run cM') ∧ t = .run s' ∧ AtCallS s' ∧
               Match fC ctx R gn bl A (RelW ΓC fC c) slots s' vV' ∧
               PMatch vcC RC.vc (csem RC.F RC.ctx RC.X) (cEvs RC.F RC.ctx) L ss' (.run vV') (.run vP') ∧
-              MatchRun cc ins ckeep (fun r => locVal RC.fr (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize).length RC.s0) (.reg r)) cM' vP') ∨
+              MatchRun cc ins ckeep (fun r => locVal RC.fr (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length RC.s0) (.reg r)) cM' vP') ∨
             (∃ tE s', PRun Policy.arm MC2 (OkPriv RC) (RC.s0, mon) (ls.take k) tE ∧ t = .run s' ∧
               AtRetS s' ∧ RetEnd RC 0x4000#64 env pCL (RelW ΓC fC c) slots
-                (fun r => locVal RC.fr (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize).length RC.s0) (.reg r)) tE.1 s')) := by
+                (fun r => locVal RC.fr (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length RC.s0) (.reg r)) tE.1 s')) := by
   obtain ⟨ctx, st0, R, gn, bl, A, H, hchk⟩ := driverC henv c
   obtain ⟨L, ss, ss', H3, hm3⟩ := CallLayers.prep_init (vc := vcC) (vcp := RC.vc)
     CallResumeL.Witness.prepC
@@ -50,7 +50,7 @@ theorem arm_abiCRN_fC {env : Clif.Env} (henv : env.extern "ld" = none) {c : BitV
   obtain ⟨-, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
   refine ⟨ctx, st0, R, gn, bl, A, L, ss', cc, ins, H, fun slots cs B0 args mon ls t' hB0 hcall hfunc
     hslots hbody hterm hregs hty hsig hmr hargs hr => ?_⟩
-  exact arm_isel_refines_abiCRN wfRC scopeRC rfl agreesAt_MC2 abiRC H hchk
+  exact arm_isel_refines_abiCRN wfRC scopeRC rfl agreesAt_MC2 abiRC probeF_RC H hchk
     (memRelOk_relW ΓC fC c) (relW_wf hc) VCodeThread.Witness.X0_tls (fun _ _ _ => rfl)
     (memRefines_csem RC.F RC.ctx _ rfl (fun _ _ h => by cases h)) (mrStable_relW ΓC fC c) fC_reg
     H3 (hm3 _ _) hat hm4 hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hq hA hr
@@ -80,7 +80,8 @@ theorem arm_abiCRNX_fC {env : Clif.Env} (henv : env.extern "ld" = none) {c : Bit
   refine ⟨ctx, st0, R, gn, bl, A, H, fun slots cs B0 args mon ls t' hB0 hcall hfunc
     hslots hbody hterm hregs hty hsig hmr hargs hr => ?_⟩
   obtain ⟨k, trS, t, -, hk, hx, hrun, -⟩ := arm_isel_refines_abiCRNX wfRC scopeRC rfl agreesAt_MC2
-    abiRC H hchk (memRelOk_relW ΓC fC c) (relW_wf hc) VCodeThread.Witness.X0_tls (fun _ _ _ => rfl)
+    abiRC probeF_RC H hchk (memRelOk_relW ΓC fC c) (relW_wf hc) VCodeThread.Witness.X0_tls
+    (fun _ _ _ => rfl)
     (memRefines_csem RC.F RC.ctx _ rfl (fun _ _ h => by cases h)) (mrStable_relW ΓC fC c) fC_reg
     H3 (hm3 _ _) hat hm4 hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hq hA hr
   exact ⟨k, trS, t, hk, hx, hrun⟩

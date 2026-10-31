@@ -188,7 +188,8 @@ theorem progOsCoreU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX]
   obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
   have hbud : frameDrop (L.A h).af + κ M' h ≤ κ (M' + 1) g := L.budget_step hκ hM hg hcallee
   obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, hrs, hcall, -⟩ :=
-    (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead hmr
+    (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead
+      (hκ.2 _ h hh) hmr
       hargs hsav hpl hinit).1 rvals cm' hrun
   -- the caller state is compatible with the canonical one
   have hcOk : L.CallerOk F h uses w t := by
@@ -297,7 +298,8 @@ theorem progRaiseCoreU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX]
   obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
   have hbud : frameDrop (L.A h).af + κ M' h ≤ κ (M' + 1) g := L.budget_step hκ hM hg hcallee
   obtain ⟨obj0, wf, -, -, hall, -⟩ :=
-    (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead hmr
+    (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead
+      (hκ.2 _ h hh) hmr
       hargs hsav hpl hinit).2 e cm' hrun
   have hcOk : L.CallerOk F h uses w t := by
     refine ⟨hsw, fun a ha => (hG a (himgG a ha)).trans (himgS a ha), fun r hr => ?_,

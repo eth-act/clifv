@@ -30,11 +30,11 @@ theorem entry_premises {RB : RL} (hRB : RB.Wf) {ra : BitVec 64}
     (hfx : ∀ f, f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f RB.s0 = Arm.r f x)
     (hlr : xreg 30 RB.s0 = Arm.r .PC x + 4#64) :
     (∀ r ∈ calleeSaved,
-      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize).length RB.s0) (.reg r)) =
+      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize RB.af.isCaller).length RB.s0) (.reg r)) =
         ckeep r (regVal x r)) ∧
     spv RB.s0 = spOf x ∧ ra = Arm.r .PC x + 4#64 := by
   refine ⟨fun r hr => ?_, hfx _ (by simp) (by simp), hent.lr.symm.trans hlr⟩
-  have e := regVal_calleeSaved_congr (s := iterN RB.step (prologueLines RB.af.saves RB.af.frameSize).length RB.s0)
+  have e := regVal_calleeSaved_congr (s := iterN RB.step (prologueLines RB.af.saves RB.af.frameSize RB.af.isCaller).length RB.s0)
     (t := x) (fun f h1 h2 h3 h4 h5 => (prologue_fields hRB hent f h1 h3 h5 h2).trans (hfx f h1 h4)) r hr
   simp only [locVal]
   rw [e]

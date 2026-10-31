@@ -146,7 +146,7 @@ theorem RL.entryW_congr {R R' : RL} (h : R.SameCode R') (t : Nat) : R'.entryW t 
 /-- **An initial witness**: the line after the prologue, where block 0's lines start with the
 emitter state and tail of the witness (code data only, as `RL.EntryWit`). -/
 def RL.InitWit (R : RL) (W : Nat × PState × List Line) : Prop :=
-  W.1 = 1 + (prologueLines R.af.saves R.af.frameSize).length ∧
+  W.1 = 1 + (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length ∧
     ∀ (items : Array RItem), R.rf.blocks[0]? = some items →
       ∃ vb code ls ps2, R.vc.blocks[0]? = some vb ∧ ItemsChecked R vb items.toList ∧
         itemsCode R.fr vb items.toList = .ok code ∧

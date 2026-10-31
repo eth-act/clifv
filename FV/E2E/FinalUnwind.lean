@@ -153,7 +153,7 @@ theorem backend_correct_final_unwind_ex {p : Clif.Program} {f : Clif.Function} {
       hsites hlsda hpad hlast hrows hcie hfde hsaved)
     hent hres hbe
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
-      (stackArgsAvoid_frameWA hc hres hent hargs))
+      (stackArgsAvoid_frameWA hc hres hent hargs) hres)
     hcs hrel htr fuel
 
 /-- **The backend's end-to-end theorem with unwinding** (`Compiled`; `backend_correct_final`'s
@@ -213,7 +213,7 @@ theorem backend_correct_final_unwind {p : Clif.Program} {f : Clif.Function} {k :
       hsites hlsda hpad hlast hrows hcie hfde hsaved)
     hent hres hbe
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
-      (stackArgsAvoid_frameW hc hres hent hargs))
+      (stackArgsAvoid_frameW hc hres hent hargs) hres)
     hcs hrel htr fuel
 
 /-- **The normal-return theorem's shape as the specialisation without raising callees**: with

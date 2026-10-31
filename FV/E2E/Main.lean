@@ -214,13 +214,28 @@ theorem fp_off_eq (a : BitVec 64) (off : Nat) :
     simp [BitVec.toNat_add]
   rw [h, ← BitVec.add_assoc, BitVec.sub_add_cancel]
 
+/-- The stack probes zero nothing at or above the entry `sp` (#581): they lie below the frame,
+which fits below `sp` (`StackAvail`). -/
+theorem probeHit_above {K : Nat} {af : AFunc} {s : Arm.ArmState} (hst : StackAvail K af s)
+    {a : BitVec 64} (ha : (spv s).toNat ≤ a.toNat) : probeHit af (spv s) a = false := by
+  cases hp : probeHit af (spv s) a
+  · rfl
+  have hr := hst.probe.1
+  have hf : af.frame = true := by simp only [probeHit, Bool.and_eq_true] at hp; exact hp.1
+  have hc := probeCount_le af hf
+  obtain ⟨-, i, hi, k, hk, e⟩ := probeHit_toNat hp (by omega)
+  omega
+
 /-- The arguments of the ABI entry state `s` are where the entry code reads them in the
 body-entry world `w₀`: the register-passed ones in x0–x8 (kept by the prologue), the
-stack-passed ones at `fp + 16 + off` (the prologue's fp is `sp - 16`; memory is unchanged). -/
+stack-passed ones at `fp + 16 + off` (the prologue's fp is `sp - 16`; memory is unchanged: the
+stack probes write below the frame, which `StackAvail` fits below `sp`). `hres` is new (#581):
+without it the probes may wrap around and zero an argument byte. -/
 theorem argsAtEntry_body {f : Clif.Function} {args : List Clif.Val} {af : AFunc}
     {s w₀ : Arm.ArmState} {F : BitVec 64 → Prop} (hframe : af.frame = true)
     (hregs : ∀ l ∈ locsOf f.sig, ∀ r, l = .reg r → ∃ n, r = .x n ∧ n ≤ 8)
-    (hbe : BodyEntry af s w₀) (h : ArgsIn f.sig args s) (hav : StackArgsAvoid F f.sig args s) :
+    (hbe : BodyEntry af s w₀) (h : ArgsIn f.sig args s) (hav : StackArgsAvoid F f.sig args s)
+    {K : Nat} (hres : StackAvail K af s) :
     ArgsAtEntry F f.sig args w₀ := by
   intro loc v hm
   have hl : loc ∈ locsOf f.sig := (List.of_mem_zip hm).1
@@ -239,7 +254,12 @@ theorem argsAtEntry_body {f : Clif.Function} {args : List Clif.Val} {af : AFunc}
     refine ⟨hav off v hm, ?_⟩
     rw [show Arm.read_mem_bytes v.ty.bytes (spv s + BitVec.ofNat 64 off) w₀ =
         Arm.read_mem_bytes v.ty.bytes (spv s + BitVec.ofNat 64 off) s from
-      read_mem_bytes_congr _ _ (fun k _ => by rw [hbe.mem])]
+      read_mem_bytes_congr _ _ (fun k hk => by
+        rw [hbe.mem]
+        refine probeMem_of_not (probeHit_above hres ?_)
+        have := h1.fits
+        simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+        omega)]
     exact h1.bytes
 
 theorem callsStack_mono {f : Clif.Function} {a b : Nat} (h : CallsStack f a) (hab : a ≤ b) :
@@ -295,7 +315,7 @@ theorem backend_correct_ex {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
   refine backend_correct_of_layers_ex (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
     (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s')) (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
     hM6 hent hres hbe
-    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
   exact {
     shape := hshape

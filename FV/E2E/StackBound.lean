@@ -4,7 +4,7 @@ import FV.E2E.LinkCheck
 docs/contracts/e2e.md, "Binary level (M9)")
 
 `backend_correct_program` (`FV/E2E/LinkArm.lean`) gives the entry activation the stack budget
-`L.K M = L.D * M` for its callees, `M` the whole-program run's fuel (its step count): no fixed
+`L.K M = L.D * M + L.pbMax` for its callees, `M` the whole-program run's fuel (its step count): no fixed
 stack meets it for every `M`. The linking induction holds for every per-function budget
 `κ M g` in which a callee's frame and its own budget fit (`LinkSys.Budget`,
 `backend_correct_program_budget`). A function whose calls never reach a cycle of the call graph
@@ -16,7 +16,8 @@ has a budget that does not depend on the depth: the largest frame chain below it
 * `LinkSys.hybrid`, `LinkSys.budget_hybrid`: partial depth-independent budgets (for the
   functions whose calls never reach a cycle), completed by the depth budget `K M` plus a constant
   for the others, are a budget.
-* The budgets: `budMap` iterates `B(g) = max over the callees h of g of frameDrop h + B(h)` on the
+* The budgets: `budMap` iterates `B(g) = max (probeBelow g) (max over the callees h of g of
+  frameDrop h + B(h))` (the bytes `g`'s stack probes write below its body's `sp`, #581) on the
   call graph `edgeB` (an over-approximation of `LinkSys.Callee` under `okB`, `edgeB_of_callee`:
   the functions `g` declares, and with indirect calls every function with a CLIF-image address
   whose signature one of them matches), as many rounds as there are functions (`budArr`); by
@@ -65,7 +66,7 @@ theorem backend_correct_program_stack (L : LinkSys) (hL : L.Ok) {κ : Nat → Cl
     ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs) := by
   have hd := L.frameDrop_eq hL hf
   have hres : StackAvail b (L.A f).af s := by
-    unfold StackAvail
+    refine ⟨?_, by rw [← hb M]; exact hκ.2 M f hf⟩
     rw [show (L.A f).af.frameSize + 16 + b = frameDrop (L.A f).af + b by omega]
     refine stackRoom_of hroom fun a ha => hgfree a (hL.imgAddr f hf a ?_)
     simpa [CodeAddr, hent.program] using ha
@@ -77,37 +78,48 @@ namespace LinkSys
 
 /-- **The budget of partial bounds** `c`: `c g = some b` (a depth-independent budget, for the
 functions whose calls never reach a call cycle), else the depth budget `K M` plus a bound `C` of
-the others' frames and budgets. -/
+the others' frames and budgets (`K M` holds every function's stack probes, `pbMax`). -/
 def hybrid (L : LinkSys) (c : Clif.Function → Option Nat) (C M : Nat) (g : Clif.Function) : Nat :=
   match c g with
   | some b => b
   | none => L.K M + C
 
 /-- **`hybrid` is a budget** when the functions with a bound call only functions with a bound
-that fit in theirs (`hc`) and `C` bounds every bounded function's frame and budget (`hC`). -/
+that fit in theirs (`hc`), `C` bounds every bounded function's frame and budget (`hC`), and every
+bound holds its function's stack probes (`hp`, #581: without it a bounded function's probes
+write below its budget, so the former statement is false with probes). -/
 theorem budget_hybrid (L : LinkSys) (c : Clif.Function → Option Nat) (C : Nat)
     (hD : ∀ h ∈ L.P.funcs, frameDrop (L.A h).af ≤ L.D)
     (hc : ∀ g ∈ L.P.funcs, ∀ bg, c g = some bg → ∀ h, L.Callee g h →
       ∃ bh, c h = some bh ∧ frameDrop (L.A h).af + bh ≤ bg)
-    (hC : ∀ h ∈ L.P.funcs, ∀ bh, c h = some bh → frameDrop (L.A h).af + bh ≤ C) :
+    (hC : ∀ h ∈ L.P.funcs, ∀ bh, c h = some bh → frameDrop (L.A h).af + bh ≤ C)
+    (hp : ∀ g ∈ L.P.funcs, ∀ bg, c g = some bg → probeBelow (L.A g).af ≤ bg) :
     L.Budget (L.hybrid c C) := by
-  intro M g hg h hcl
-  have hh := L.callee_mem hcl
-  cases hg' : c g with
-  | some bg =>
-    obtain ⟨bh, hbh, hle⟩ := hc g hg bg hg' h hcl
-    simp only [hybrid, hg', hbh]
-    exact hle
-  | none =>
-    have hd := hD h hh
-    have e : L.K (M + 1) = L.K M + L.D := by simp [K, Nat.mul_succ]
-    cases hh' : c h with
-    | some bh =>
-      have := hC h hh bh hh'
-      simp only [hybrid, hg', hh', e]
-      omega
+  refine ⟨fun M g hg h hcl => ?_, fun M g hg => ?_⟩
+  · have hh := L.callee_mem hcl
+    cases hg' : c g with
+    | some bg =>
+      obtain ⟨bh, hbh, hle⟩ := hc g hg bg hg' h hcl
+      simp only [hybrid, hg', hbh]
+      exact hle
     | none =>
-      simp only [hybrid, hg', hh', e]
+      have hd := hD h hh
+      have e : L.K (M + 1) = L.K M + L.D := by simp only [K, Nat.mul_succ]; omega
+      cases hh' : c h with
+      | some bh =>
+        have := hC h hh bh hh'
+        simp only [hybrid, hg', hh', e]
+        omega
+      | none =>
+        simp only [hybrid, hg', hh', e]
+        omega
+  · cases hg' : c g with
+    | some bg =>
+      simp only [hybrid, hg']
+      exact hp g hg bg hg'
+    | none =>
+      have := L.probeBelow_le_pbMax hg
+      simp only [hybrid, hg', K]
       omega
 
 end LinkSys
@@ -138,18 +150,19 @@ def budAcc (fd : Array Nat) (b : Array (Option Nat)) (acc : Option Nat) (j : Nat
   | some x, some y => some (max x (fd[j]! + y))
   | _, _ => none
 
-/-- One round of the budget iteration on the program's functions (by position): the callees'
-largest frame plus budget, `none` while a callee has none. -/
-def budStep (fd : Array Nat) (succ : Array (List Nat)) (b : Array (Option Nat)) :
+/-- One round of the budget iteration on the program's functions (by position): the largest of
+the function's own stack probes below its body's `sp` (`pb`, #581: they write into its callees'
+budget) and its callees' frame plus budget, `none` while a callee has none. -/
+def budStep (fd pb : Array Nat) (succ : Array (List Nat)) (b : Array (Option Nat)) :
     Array (Option Nat) :=
-  succ.map fun hs => hs.foldl (budAcc fd b) (some 0)
+  succ.mapIdx fun i hs => hs.foldl (budAcc fd b) (some pb[i]!)
 
 /-- At most `k` rounds, stopping at a fixed point. -/
-def budIter (fd : Array Nat) (succ : Array (List Nat)) : Nat → Array (Option Nat) →
+def budIter (fd pb : Array Nat) (succ : Array (List Nat)) : Nat → Array (Option Nat) →
     Array (Option Nat)
   | 0, b => b
-  | k + 1, b => let b' := budStep fd succ b
-    if b' == b then b else budIter fd succ k b'
+  | k + 1, b => let b' := budStep fd pb succ b
+    if b' == b then b else budIter fd pb succ k b'
 
 /-- The call graph by position: for each function of `fs`, the positions of the functions it
 calls (`edgeW`, its indirect calls computed once). -/
@@ -164,12 +177,17 @@ def budSucc (I : LinkInput) (fs : Array Clif.Function) : Array (List Nat) :=
 def budFd (R : Res) (fs : Array Clif.Function) : Array Nat :=
   fs.map fun g => frameDrop (artOf R g).af
 
+/-- The bytes the stack probes of each function of `fs` write below its body's `sp` (by
+position, `probeBelow`). -/
+def budPb (R : Res) (fs : Array Clif.Function) : Array Nat :=
+  fs.map fun g => probeBelow (artOf R g).af
+
 /-- **The computed budgets** of the functions of the results `R`, by position: as many rounds as
 there are functions, after which exactly the functions whose calls never reach a call cycle have
 one (`budC_isSome_iff`). -/
 def budArr (I : LinkInput) (R : Res) : Array (Option Nat) :=
   let fs := (progOf R).funcs.toArray
-  budIter (budFd R fs) (budSucc I fs) (fs.size + 1) (fs.map fun _ => none)
+  budIter (budFd R fs) (budPb R fs) (budSucc I fs) (fs.size + 1) (fs.map fun _ => none)
 
 /-- `budArr` by name. -/
 def budMap (I : LinkInput) (R : Res) : Std.HashMap String Nat :=
@@ -425,16 +443,16 @@ theorem cycle_of_walkN {α : Type} {E : α → α → Prop} (dom : List α)
 /-! ### The iteration -/
 
 /-- `budStep` iterated `k` times from `b₀`. -/
-def budPow (fd : Array Nat) (succ : Array (List Nat)) (b₀ : Array (Option Nat)) :
+def budPow (fd pb : Array Nat) (succ : Array (List Nat)) (b₀ : Array (Option Nat)) :
     Nat → Array (Option Nat)
   | 0 => b₀
-  | k + 1 => budStep fd succ (budPow fd succ b₀ k)
+  | k + 1 => budStep fd pb succ (budPow fd pb succ b₀ k)
 
 /-- The call graph by position. -/
 def IdxE (succ : Array (List Nat)) (i j : Nat) : Prop := j ∈ succ[i]!
 
 section
-variable {fd : Array Nat} {succ : Array (List Nat)} {b₀ : Array (Option Nat)}
+variable {fd pb : Array Nat} {succ : Array (List Nat)} {b₀ : Array (Option Nat)}
 
 theorem budAcc_none (b : Array (Option Nat)) :
     ∀ hs : List Nat, hs.foldl (budAcc fd b) none = none
@@ -479,8 +497,8 @@ theorem budAcc_congr {b b' : Array (Option Nat)} :
     exact budAcc_congr hs _ fun j' hj' => h j' (List.mem_cons_of_mem _ hj')
 
 theorem budStep_get (b : Array (Option Nat)) (i : Nat) :
-    (budStep fd succ b)[i]! =
-      if i < succ.size then succ[i]!.foldl (budAcc fd b) (some 0) else none := by
+    (budStep fd pb succ b)[i]! =
+      if i < succ.size then succ[i]!.foldl (budAcc fd b) (some pb[i]!) else none := by
   split
   · rename_i h
     rw [getElem!_pos _ _ (by simp [budStep, h]), getElem!_pos succ i h]
@@ -489,8 +507,8 @@ theorem budStep_get (b : Array (Option Nat)) (i : Nat) :
     rw [getElem!_neg _ _ (by simp [budStep, h])]
     rfl
 
-theorem budStep_some {b : Array (Option Nat)} {i v : Nat} (h : (budStep fd succ b)[i]! = some v) :
-    i < succ.size ∧ succ[i]!.foldl (budAcc fd b) (some 0) = some v := by
+theorem budStep_some {b : Array (Option Nat)} {i v : Nat} (h : (budStep fd pb succ b)[i]! = some v) :
+    i < succ.size ∧ succ[i]!.foldl (budAcc fd b) (some pb[i]!) = some v := by
   rw [budStep_get] at h
   split at h
   · exact ⟨by assumption, h⟩
@@ -498,12 +516,13 @@ theorem budStep_some {b : Array (Option Nat)} {i v : Nat} (h : (budStep fd succ 
 
 /-- A budget, once computed, stays. -/
 theorem budPow_mono (hb₀ : ∀ j : Nat, b₀[j]! = none) :
-    ∀ (k j v : Nat), (budPow fd succ b₀ k)[j]! = some v → (budPow fd succ b₀ (k + 1))[j]! = some v
+    ∀ (k j v : Nat), (budPow fd pb succ b₀ k)[j]! = some v →
+      (budPow fd pb succ b₀ (k + 1))[j]! = some v
   | 0, j, v, h => by simp [budPow, hb₀] at h
   | k + 1, j, v, h => by
     obtain ⟨hj, hf⟩ := budStep_some h
     obtain ⟨-, hall⟩ := budAcc_some _ _ _ _ hf
-    show (budStep fd succ (budPow fd succ b₀ (k + 1)))[j]! = some v
+    show (budStep fd pb succ (budPow fd pb succ b₀ (k + 1)))[j]! = some v
     simp only [budStep_get, hj, ↓reduceIte]
     rw [← hf]
     refine (budAcc_congr _ _ fun j' hj' => ?_).symm
@@ -513,8 +532,8 @@ theorem budPow_mono (hb₀ : ∀ j : Nat, b₀[j]! = none) :
 /-- **Every iterate passes the budget check**: a position with a budget has its callees' budgets,
 whose frame and budget fit. -/
 theorem budPow_ok (hb₀ : ∀ j : Nat, b₀[j]! = none) :
-    ∀ (k i bg : Nat), (budPow fd succ b₀ k)[i]! = some bg → ∀ j ∈ succ[i]!,
-      ∃ bh, (budPow fd succ b₀ k)[j]! = some bh ∧ fd[j]! + bh ≤ bg
+    ∀ (k i bg : Nat), (budPow fd pb succ b₀ k)[i]! = some bg → ∀ j ∈ succ[i]!,
+      ∃ bh, (budPow fd pb succ b₀ k)[j]! = some bh ∧ fd[j]! + bh ≤ bg
   | 0, i, bg, h => by simp [budPow, hb₀] at h
   | k + 1, i, bg, h => by
     obtain ⟨-, hf⟩ := budStep_some h
@@ -522,9 +541,15 @@ theorem budPow_ok (hb₀ : ∀ j : Nat, b₀[j]! = none) :
     obtain ⟨bh, hbh, hle⟩ := (budAcc_some _ _ _ _ hf).2 j hj
     exact ⟨bh, budPow_mono hb₀ k j bh hbh, hle⟩
 
+/-- **Every iterate's budget holds the position's stack probes** (`pb`, the fold's start). -/
+theorem budPow_pb (hb₀ : ∀ j : Nat, b₀[j]! = none) :
+    ∀ (k i v : Nat), (budPow fd pb succ b₀ k)[i]! = some v → pb[i]! ≤ v
+  | 0, i, v, h => by simp [budPow, hb₀] at h
+  | _ + 1, _, _, h => (budAcc_some _ _ _ _ (budStep_some h).2).1
+
 /-- A position with a budget after `k` rounds has no walk of `k` calls. -/
 theorem budPow_walk (hb₀ : ∀ j : Nat, b₀[j]! = none) :
-    ∀ (k i v : Nat), (budPow fd succ b₀ k)[i]! = some v → ¬ WalkN (IdxE succ) k i
+    ∀ (k i v : Nat), (budPow fd pb succ b₀ k)[i]! = some v → ¬ WalkN (IdxE succ) k i
   | 0, i, v, h => by simp [budPow, hb₀] at h
   | k + 1, i, v, h => fun w => by
     obtain ⟨-, hf⟩ := budStep_some h
@@ -534,24 +559,27 @@ theorem budPow_walk (hb₀ : ∀ j : Nat, b₀[j]! = none) :
 
 /-- A position without a walk of `k` calls has a budget after `k` rounds. -/
 theorem budPow_of_walk (hsucc : ∀ i j : Nat, j ∈ succ[i]! → j < succ.size) :
-    ∀ (k i : Nat), i < succ.size → ¬ WalkN (IdxE succ) k i → (budPow fd succ b₀ k)[i]!.isSome = true
+    ∀ (k i : Nat), i < succ.size → ¬ WalkN (IdxE succ) k i →
+      (budPow fd pb succ b₀ k)[i]!.isSome = true
   | 0, _, _, h => absurd .zero h
   | k + 1, i, hi, h => by
-    show (budStep fd succ (budPow fd succ b₀ k))[i]!.isSome = true
+    show (budStep fd pb succ (budPow fd pb succ b₀ k))[i]!.isSome = true
     simp only [budStep_get, hi, ↓reduceIte]
     exact budAcc_isSome _ _ _ fun j hj =>
       budPow_of_walk hsucc k j (hsucc i j hj) fun w => h (.step hj w)
 
-theorem budPow_fix {m : Nat} (h : budStep fd succ (budPow fd succ b₀ m) = budPow fd succ b₀ m) :
-    ∀ t, budPow fd succ b₀ (m + t) = budPow fd succ b₀ m
+theorem budPow_fix {m : Nat}
+    (h : budStep fd pb succ (budPow fd pb succ b₀ m) = budPow fd pb succ b₀ m) :
+    ∀ t, budPow fd pb succ b₀ (m + t) = budPow fd pb succ b₀ m
   | 0 => rfl
   | t + 1 => by
-    show budStep fd succ (budPow fd succ b₀ (m + t)) = _
+    show budStep fd pb succ (budPow fd pb succ b₀ (m + t)) = _
     rw [budPow_fix h t, h]
 
 /-- `budIter` returns an iterate: after all its rounds, or at a fixed point. -/
-theorem budIter_pow : ∀ k j, ∃ m, budIter fd succ k (budPow fd succ b₀ j) = budPow fd succ b₀ m ∧
-    (m = j + k ∨ budStep fd succ (budPow fd succ b₀ m) = budPow fd succ b₀ m)
+theorem budIter_pow : ∀ k j, ∃ m,
+    budIter fd pb succ k (budPow fd pb succ b₀ j) = budPow fd pb succ b₀ m ∧
+    (m = j + k ∨ budStep fd pb succ (budPow fd pb succ b₀ m) = budPow fd pb succ b₀ m)
   | 0, j => ⟨j, rfl, .inl rfl⟩
   | k + 1, j => by
     simp only [budIter]
@@ -561,8 +589,9 @@ theorem budIter_pow : ∀ k j, ∃ m, budIter fd succ k (budPow fd succ b₀ j) 
       exact ⟨m, hm, h.imp_left fun h => by omega⟩
 
 /-- `budIter` with fuel `n + 1` from `b₀` returns an iterate of at least `n` rounds. -/
-theorem budIter_ge (n : Nat) : ∃ m, n ≤ m ∧ budIter fd succ (n + 1) b₀ = budPow fd succ b₀ m := by
-  obtain ⟨m, hm, h⟩ := budIter_pow (fd := fd) (succ := succ) (b₀ := b₀) (n + 1) 0
+theorem budIter_ge (n : Nat) :
+    ∃ m, n ≤ m ∧ budIter fd pb succ (n + 1) b₀ = budPow fd pb succ b₀ m := by
+  obtain ⟨m, hm, h⟩ := budIter_pow (fd := fd) (pb := pb) (succ := succ) (b₀ := b₀) (n + 1) 0
   rcases h with h | h
   · exact ⟨m, by omega, hm⟩
   · exact ⟨m + (n + 1), by omega, by rw [budPow_fix h]; exact hm⟩
@@ -609,6 +638,11 @@ theorem budFd_get (R : Res) {fs : Array Clif.Function} {j : Nat} (hj : j < fs.si
   rw [getElem!_pos _ _ (by simp [budFd, hj]), getElem!_pos fs j hj]
   simp [budFd]
 
+theorem budPb_get (R : Res) {fs : Array Clif.Function} {j : Nat} (hj : j < fs.size) :
+    (budPb R fs)[j]! = probeBelow (artOf R fs[j]!).af := by
+  rw [getElem!_pos _ _ (by simp [budPb, hj]), getElem!_pos fs j hj]
+  simp [budPb]
+
 theorem budNone (fs : Array Clif.Function) (j : Nat) :
     (fs.map fun _ => (none : Option Nat))[j]! = none := by
   by_cases hj : j < fs.size
@@ -620,7 +654,8 @@ theorem budNone (fs : Array Clif.Function) (j : Nat) :
 /-- `budArr` is an iterate of at least as many rounds as there are functions. -/
 theorem budArr_pow (I : LinkInput) (R : Res) :
     ∃ m, (progOf R).funcs.toArray.size ≤ m ∧ budArr I R = budPow (budFd R (progOf R).funcs.toArray)
-      (budSucc I (progOf R).funcs.toArray) ((progOf R).funcs.toArray.map fun _ => none) m :=
+      (budPb R (progOf R).funcs.toArray) (budSucc I (progOf R).funcs.toArray)
+      ((progOf R).funcs.toArray.map fun _ => none) m :=
   budIter_ge _
 
 /-- The by-name map of the budgets by position, with distinct names. -/
@@ -677,7 +712,7 @@ theorem budOkW_budMap {I : LinkInput} {R : Res} (hn : ((progOf R).funcs.map (·.
   intro g hg
   obtain ⟨i, hi, rfl⟩ := mem_toArray hg
   rw [budC_get hn hi, hm]
-  cases hb : (budPow _ _ _ m)[i]! with
+  cases hb : (budPow _ _ _ _ m)[i]! with
   | none => rfl
   | some bg =>
     simp only [List.all_eq_true]
@@ -691,6 +726,18 @@ theorem budOkW_budMap {I : LinkInput} {R : Res} (hn : ((progOf R).funcs.map (·.
       rw [budC_get hn hj, hm, hbh]
       rw [budFd_get R hj] at hle
       simpa using hle
+
+/-- **The computed budgets hold the stack probes**: with distinct names, a function's budget is
+at least the bytes its stack probes write below its body's `sp` (`budPb`, the iteration's
+start). -/
+theorem budC_probe {I : LinkInput} {R : Res} (hn : ((progOf R).funcs.map (·.name)).Nodup)
+    {g : Clif.Function} (hg : g ∈ (progOf R).funcs) {bg : Nat} (hb : budC I R g = some bg) :
+    probeBelow (artOf R g).af ≤ bg := by
+  obtain ⟨i, hi, rfl⟩ := mem_toArray hg
+  obtain ⟨m, -, hm⟩ := budArr_pow I R
+  rw [budC_get hn hi, hm] at hb
+  have := budPow_pb (budNone _) m i bg hb
+  rwa [budPb_get R hi] at this
 
 theorem walk_idx {I : LinkInput} {R : Res} :
     ∀ {k i : Nat}, i < (progOf R).funcs.toArray.size →
@@ -761,6 +808,7 @@ environment). -/
 theorem budget_of {I : LinkInput} (hI : okB I = true) (B : BaseEnv) (F : BitVec 64 → Prop) :
     (LinkSys.ofInput I B F).Budget ((LinkSys.ofInput I B F).hybrid (budO I) (budMax I)) := by
   refine LinkSys.budget_hybrid _ _ _ (fun h hh => (facts hI hh).depth) ?_ ?_
+    fun g hg bg hbg => budC_probe (I := I) (R := I.results) (okB_names hI) hg hbg
   · intro g hg bg hbg h hcl
     have hok := budOkW_budMap (I := I) (R := I.results) (okB_names hI)
     have he := edgeB_of_callee hI hg hcl

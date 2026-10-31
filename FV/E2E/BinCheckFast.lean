@@ -107,19 +107,27 @@ theorem budFdFast_eq (R : Res) (fs : Array Clif.Function) :
     budFdFast (artMap R) fs = budFd R fs := by
   simp only [budFdFast, budFd, artMap_artOf]
 
+/-- `budPb` with the images in a hash map. -/
+def budPbFast (M : Std.HashMap String Art) (fs : Array Clif.Function) : Array Nat :=
+  fs.map fun g => probeBelow ((M[g.name]?).getD default).af
+
+theorem budPbFast_eq (R : Res) (fs : Array Clif.Function) :
+    budPbFast (artMap R) fs = budPb R fs := by
+  simp only [budPbFast, budPb, artMap_artOf]
+
 /-- **`budMap` with hash maps** (`budMapFast_eq`). The symbol map is built once, outside the
 edge test (inside the lambda it was rebuilt per candidate edge of every indirect caller). -/
 def budMapFast (I : LinkInput) (R : Res) : Std.HashMap String Nat :=
   let fs := (progOf R).funcs.toArray
   let sm := assocMap I.syms
-  let b := budIter (budFdFast (artMap R) fs) (budSuccFast (fun n => sm[n]?) fs)
+  let b := budIter (budFdFast (artMap R) fs) (budPbFast (artMap R) fs) (budSuccFast (fun n => sm[n]?) fs)
     (fs.size + 1) (fs.map fun _ => none)
   (List.range fs.size).foldl (fun m j => match b[j]! with
     | some v => m.insert fs[j]!.name v
     | none => m) {}
 
 theorem budMapFast_eq (I : LinkInput) (R : Res) : budMapFast I R = budMap I R := by
-  simp only [budMapFast, budFdFast_eq, budSuccFast_eq]
+  simp only [budMapFast, budFdFast_eq, budPbFast_eq, budSuccFast_eq]
   rfl
 
 end StackBound

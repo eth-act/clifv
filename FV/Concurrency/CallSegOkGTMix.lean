@@ -179,7 +179,7 @@ theorem gM_ge {a : BitVec 64} (h : GM a) : 0x20000 ≤ a.toNat ∧ a.toNat < 0x3
 
 theorem stackRCM : StackAvail 0 (actW vcpM rfM).af RCM.s0 := by
   have hs := spM
-  refine ⟨?_, fun a ha => ?_⟩
+  refine ⟨⟨?_, fun a ha => ?_⟩, ?_⟩
   · rw [spv_RCM]; show (actW vcpM rfM).af.frameSize + 16 + 0 ≤ _
     have : (actW vcpM rfM).af.frameSize = 176 := hs.2.2.2.2.1
     simp only [BitVec.toNat_ofNat]; omega
@@ -192,6 +192,8 @@ theorem stackRCM : StackAvail 0 (actW vcpM rfM).af RCM.s0 := by
     rw [show RCM.base = 0x30000#64 from rfl] at hd
     generalize j = J at hj' hd
     bv_omega
+  · have : (actW vcpM rfM).af.frameSize = 176 := hs.2.2.2.2.1
+    exact ArmAllocThread.Witness.probeBelow_le_small (by omega)
 
 theorem wfRCM : RCM.Wf := by
   obtain ⟨-, h1, h2, h3, h4, h5, h6, h9⟩ := factsM
@@ -425,7 +427,9 @@ theorem fnOk_M {env : Clif.Env} (henvL : env.extern "ld" = none) (henvT : env.ex
         exact hsigL
       · have : pM.func? "xt" = some fT := by native_decide -- witness: native_decide
         rw [hnT, this] at hp; cases hp
-        exact hsigT }
+        exact hsigT
+    probe := ArmAllocThread.ProbeF.of_small
+      (show callerM.af.frameSize + 16 < 4096 by rw [fs_M]; decide) }
 
 /-- Every activation of `atomic_load` in `linkM` is in the scope with calls. -/
 theorem scope_ldM (s0 : ArmState) (K : Nat) (G : BitVec 64 → Prop) :
@@ -486,7 +490,8 @@ theorem fnOk_LM {env : Clif.Env} : FnOk linkM env pM (fun _ => none) "ld" ldF fL
     dv := (callDefsVirtB_iff _).1 hdv
     uniq := fun e he => by rw [hnil] at he; cases he
     envx := hext
-    sigs := fun e he => by rw [hnil] at he; cases he }
+    sigs := fun e he => by rw [hnil] at he; cases he
+    probe := ArmAllocThread.ProbeF.of_small (show ldF.af.frameSize + 16 < 4096 by rw [fs_ld]; decide) }
 
 /-! ## The static premises of the link and the external's contract -/
 
@@ -524,8 +529,12 @@ theorem linkOkM {env : Clif.Env} (henvL : env.extern "ld" = none)
   fn := by
     intro n f hf hn
     rcases func_pM hf with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, -⟩
-    · exact ⟨callerM, mem_callerM, fnOk_M henvL henvT, frM_f, by rw [fs_M]; decide⟩
-    · exact ⟨ldF, mem_ldM, fnOk_LM, frM_ld, by rw [fs_ld]; decide⟩
+    · exact ⟨callerM, mem_callerM, fnOk_M henvL henvT, frM_f, by
+        rw [ArmAllocThread.Witness.probeBelow_small (af := callerM.af) (by rw [fs_M]; decide), fs_M]
+        decide⟩
+    · exact ⟨ldF, mem_ldM, fnOk_LM, frM_ld, by
+        rw [ArmAllocThread.Witness.probeBelow_small (af := ldF.af) (by rw [fs_ld]; decide), fs_ld]
+        decide⟩
     · exact absurd rfl hn
   xfn := by
     intro n f hf hn
@@ -609,7 +618,7 @@ abbrev RAM : RL := linkM.act callerM sM0 0x200 GM
 theorem stack_RAM : StackAvail 0x200 callerM.af sM0 := by
   have hs := spM
   have hfs : callerM.af.frameSize = 176 := fs_M
-  refine ⟨?_, fun a ha => ?_⟩
+  refine ⟨⟨?_, fun a ha => ?_⟩, ArmAllocThread.Witness.probeBelow_le_small (by omega)⟩
   · show callerM.af.frameSize + 16 + 0x200 ≤ (E2E.spv RCM.s0).toNat
     rw [spv_RCM, hfs]; decide
   · obtain ⟨j, hj, hd⟩ := codeAddr_words program_RCM ha

@@ -23,6 +23,21 @@ theorem ok_getD {ε α : Type} [Inhabited α] {e : Except ε α} (h : e.toBool =
     e = .ok (e.toOption.getD default) := by
   cases e <;> simp_all [Except.toBool, Except.toOption]
 
+/-- A probed stack below 4 KiB gets no stack probes (#581). -/
+theorem probeCount_small {total : Nat} (h : total < 4096) : probeCount total = 0 := by
+  simp [probeCount, Nat.div_eq_of_lt h]
+
+/-- A frame below 4 KiB (with its callees' 16-byte setup area) gets no stack probes, so none
+below it (#581). -/
+theorem probeBelow_small {af : AFunc} (h : af.frameSize + 16 < 4096) : E2E.probeBelow af = 0 := by
+  have ht : probeTotal af.frameSize af.isCaller < 4096 := by unfold probeTotal; split <;> omega
+  simp [E2E.probeBelow, probeCount_small ht]
+
+/-- `StackAvail`'s probe budget for a frame below 4 KiB: any budget (#581). -/
+theorem probeBelow_le_small {af : AFunc} {K : Nat} (h : af.frameSize + 16 < 4096) :
+    E2E.probeBelow af ≤ K := by
+  rw [probeBelow_small h]; exact Nat.zero_le _
+
 /-- The code words of `fb` at `base`, as memory (zero elsewhere). -/
 def codeMem (fb : FnBin) (base : BitVec 64) : Memory := fun a =>
   let k := (a - base).toNat
@@ -109,7 +124,7 @@ theorem wf_of {vc : VCode} {rf : RFunc}
     have hsp : spv (act vc rf).s0 = 0x8000#64 := by
       simp [spv, act, entry, ArmFoot.r_setMem, Arm.r_of_w_different, Arm.r_of_w_same]
     have hK : (act vc rf).K = 0 := rfl
-    refine ⟨?_, fun a ⟨p, hp, hd⟩ => ?_⟩
+    refine ⟨⟨?_, fun a ⟨p, hp, hd⟩ => ?_⟩, ?_⟩
     · rw [hsp, hK]; simp; omega
     · rw [hsp, hK]
       have hp' : List.Mem p (wordsAt 0x10000#64 0 (act vc rf).fb.words.toList) := by
@@ -121,6 +136,7 @@ theorem wf_of {vc : VCode} {rf : RFunc}
       have hp1 : p.1.toNat = 0x10000 + 4 * j := by
         rw [he]; simp only [Nat.zero_add, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
       exact room_of (by omega) (by omega) (by omega) hd
+    · exact Nat.le_of_eq (probeBelow_small (af := (act vc rf).af) (by omega))
   psF := ok_snd hps
   prog0 := entry_program _ _
   gfree := fun _ h => h.elim
@@ -202,7 +218,7 @@ theorem wf_ofAt {sp base : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.to
   stack := by
     have hsp := spv_s0At sp base vc rf
     have hK : (actAt sp base vc rf).K = 0 := rfl
-    refine ⟨?_, fun a ⟨p, hp, hd⟩ => ?_⟩
+    refine ⟨⟨?_, fun a ⟨p, hp, hd⟩ => ?_⟩, ?_⟩
     · rw [hsp, hK]; show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega
     · rw [hsp, hK]
       have hp' : List.Mem p (wordsAt base 0 (act vc rf).fb.words.toList) := by
@@ -216,6 +232,7 @@ theorem wf_ofAt {sp base : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.to
       exact room_ofAt (by show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega)
         (by show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega) hsp2 hb1 hb2 (by omega)
         (by omega) hd
+    · exact Nat.le_of_eq (probeBelow_small (show (act vc rf).af.frameSize + 16 < 4096 by omega))
   psF := ok_snd hps
   prog0 := entryAt_program _ _ _
   gfree := fun _ h => h.elim

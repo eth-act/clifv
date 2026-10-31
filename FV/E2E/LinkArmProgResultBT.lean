@@ -41,7 +41,7 @@ theorem progResultBTRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       g c sl cm w)
     (hpl : L.NeedSlots → L.PlaceAtB cm c ini)
     (hslotb : L.NeedSlots → ∀ a, L.SlotByte h c a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a))
     (htab : L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h args w)) (calleeIni h ini))
     (hinit : Clif.initState L.P h.name vals cm = .ok cs)
     (hret : L.crun M cs = .returned rvals cm') :
@@ -63,11 +63,12 @@ theorem progResultBTRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     hdead a (by rw [← hsp]; exact stackBelow_mono ha (L.budget_step hκ hM hg hcallee))
   have hplw : L.NeedSlots → L.PlaceAtB cm (spv w) ini := fun hN => by rw [hsp]; exact hpl hN
   have hslotw : L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a) := fun hN => by
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a) := fun hN => by
     rw [hsp]; exact hslotb hN
   obtain ⟨us, outsV, wf, e, hus, hlen, hhold, hmemR, -, -, hcall⟩ :=
     L.progCallPRBRLRU hL hM (ih hM) (hdet hM) hpf ⟨g, hg, hcallee⟩ himgF herrw
-      (by rw [hsp]; exact halign) hroom' hdead' hmemR0 hargs hsav hplw hslotw htab hinit hret
+      (by rw [hsp]; exact halign) hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hplw hslotw htab
+      hinit hret
   obtain ⟨kc, hc_eq, hc_ret, -⟩ := hcall _ (L.callerOk_canon hL hh himgF args w)
     (L.canon_agree (κ := κ) h args w M).1 (L.canon_agree (κ := κ) h args w M).2
   have hcond : L.CondBT κ M F h args w ∧
@@ -151,7 +152,7 @@ theorem progResultBTR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       g c sl cm w)
     (hpl : L.NeedSlots → L.PlaceAtB cm c ini)
     (hslotb : L.NeedSlots → ∀ a, L.SlotByte h c a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a))
     (htab : L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h args w)) (calleeIni h ini))
     (hinit : Clif.initState L.P h.name vals cm = .ok cs)
     (hret : L.crun M cs = .returned rvals cm') :
@@ -179,7 +180,7 @@ theorem progResultBT (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       g c sl cm w)
     (hpl : L.NeedSlots → L.PlaceAtB cm c ini)
     (hslotb : L.NeedSlots → ∀ a, L.SlotByte h c a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a))
     (htab : L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h args w)) (calleeIni h ini))
     (hinit : Clif.initState L.P h.name vals cm = .ok cs)
     (hret : L.crun M cs = .returned rvals cm') :

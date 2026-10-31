@@ -230,7 +230,7 @@ theorem ftList_snoc_label (l : Lbl) : ∀ X : List Line, ∃ Z, ftList (X ++ [.l
 
 /-- The lines of one `AInst` (`emitFunc`'s inner loop body). -/
 def ainstLines (c : FnCtx) (af : AFunc) : AInst → PState → Except String (List Line × PState)
-  | .prologue, ps => pure (if af.frame then prologueLines af.saves af.frameSize else [], ps)
+  | .prologue, ps => pure (if af.frame then prologueLines af.saves af.frameSize af.isCaller else [], ps)
   | .epilogueRet, ps => pure (if af.frame then epilogueLines af.saves af.frameSize else [.ins .ret], ps)
   | .inst m, ps => m.lines c ps
 
