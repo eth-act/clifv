@@ -88,12 +88,13 @@ validator's verdict instead of running `lowerCheck` again (`cleanupStageChecked`
 (`_stage`/`K` variants, audit `scripts/audit/skip-wiring.lean`); the old statements stay. On
 the `icmp`/`brif` witness (`skipWitness`), `cmp; cset; cmp; b.eq` becomes stock's `cmp; b.eq`.
 regalloc2's input (`FVTest/Backend/CraneliftInput.lean`) gives the skipped statements'
-temporaries no vreg numbers, as Cranelift never lowers them. Measured with
-`scripts/stock-crate-parity.py` against main cf89491d (#552, #557):
+temporaries no vreg numbers, as Cranelift never lowers them. The Stock semantic routes run the
+same stage (`Stock.Arithmetic.stageV`, `FV/Backend/StockArithmeticStageF.lean`), CFG and memory
+routes included. Measured with `scripts/stock-crate-parity.py` against main 82cf8c4a (#552, #557):
 
-* fv-demo: 634 → 679 byte-identical functions, .text 183,644 → 182,548 B;
-* survey subset (a_arith, d_loops_iters, f_crypto, g_u128): 677 → 732 functions,
-  267,356 → 265,996 B;
+* fv-demo: 731 → 783 byte-identical functions, .text 179,648 → 178,552 B;
+* survey subset (a_arith, d_loops_iters, f_crypto, g_u128): 763 → 822 functions,
+  261,456 → 260,104 B;
 * no function that was identical before differs now.
 
 ## Consumers and proof scope
