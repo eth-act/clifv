@@ -54,7 +54,9 @@ def bits : Nat := 0x3ff7b8bac710cb29
   (lowerRFunc (vcpOf fLit) (spillAlloc (vcpOf fLit))).toBool && (emitFunc 0 (afOf fLit)).toBool &&
   (faOf fLit).layout.toBool
 #guard (vcpOf fLit).blocks.any fun vb => vb.insts.any fun i =>
-  i.isPoolLoad && i matches .fpuLoad .size64 _ (.const 0x3ff7b8bac710cb29) _
+  i.isPoolLoad && match i with
+    | .fpuLoad .size64 _ (.const c) _ => Nat.beq c 0x3ff7b8bac710cb29
+    | _ => false
 -- it is neither a control form nor a `FormOk` form: only the third category covers it
 #guard (vcpOf fLit).blocks.any fun vb => vb.insts.any fun i =>
   i.isPoolLoad && !i.isCtl && !FormOk ⟨(faOf fLit).k, (afOf fLit).slotBase⟩ i
@@ -71,12 +73,12 @@ theorem formsCovered_lit :
 
 /-- **Witness**: `%litpool`'s prepared code contains a literal-pool load. -/
 theorem has_poolLoad :
-    ∃ b vb k i, (vcpOf fLit).blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧
-      i.isPoolLoad = true := by
+    ∃ (b : Nat) (vb : VBlock) (k : Nat) (i : MInst), (vcpOf fLit).blocks[b]? = some vb ∧
+      vb.insts[k]? = some i ∧ i.isPoolLoad = true := by
   have h : ((vcpOf fLit).blocks.any fun vb => vb.insts.any fun i => i.isPoolLoad) = true := by
     native_decide
-  obtain ⟨b, hb, hvb⟩ := Array.any_iff_exists.mp h
-  obtain ⟨k, hk, hi⟩ := Array.any_iff_exists.mp hvb
+  obtain ⟨b, hb, -, -, hvb⟩ := Array.any_iff_exists.mp h
+  obtain ⟨k, hk, -, -, hi⟩ := Array.any_iff_exists.mp hvb
   exact ⟨b, _, k, _, Array.getElem?_eq_getElem hb, Array.getElem?_eq_getElem hk, hi⟩
 
 /-- **Witness**: `csem` of the pool load is the entry's value, the world unchanged. -/
@@ -93,7 +95,7 @@ theorem poolVal_lit : poolVal .size64 bits = (0x3ff7b8bac710cb29#64).setWidth 12
 
 /-- The prepared code meets the size condition, by its size: it has a pool load (`noPoolB` is
 false), so `poolReachB` holds by the `2 ^ 17` bound. -/
-theorem spillSizeOk_lit : spillSizeOkB (vcpOf fLit) = true ∧ (vcpOf fLit).noPoolB = false := by
+theorem spillSizeOk_lit : E2E.spillSizeOkB (vcpOf fLit) = true ∧ (vcpOf fLit).noPoolB = false := by
   native_decide
 
 /-- **Witness of `emitFunc_spill_near` with a literal load** (`emitFunc_near_of`'s size
@@ -107,14 +109,14 @@ theorem near_lit : ∃ af fa, lowerRFunc (vcpOf fLit) (spillAlloc (vcpOf fLit)) 
     | .error _ => false) = true := by native_decide
   have hna : (vcpOf fLit).noAlwaysB = true := by native_decide
   cases ha : lowerRFunc (vcpOf fLit) (spillAlloc (vcpOf fLit)) with
-  | error e => rw [ha] at h; cases h
+  | error e => simp [ha] at h
   | ok af =>
-    rw [ha] at h
+    simp only [ha] at h
     cases he : emitFunc 0 af with
-    | error e => rw [he] at h; cases h
+    | error e => simp [he] at h
     | ok fa =>
-      rw [he] at h
-      exact ⟨af, fa, rfl, rfl, of_decide_eq_true h,
+      simp only [he] at h
+      exact ⟨af, fa, rfl, he, of_decide_eq_true h,
         E2E.emitFunc_spill_near hna spillSizeOk_lit.1 ha he⟩
 
 end PoolLoadWitness
