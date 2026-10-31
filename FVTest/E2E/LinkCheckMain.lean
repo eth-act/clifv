@@ -1,5 +1,5 @@
 import FV.E2E.ProductionPipelineWith
-import FV.Backend.Lowering.StockMemoryStoreCfgNI
+import FV.Backend.Lowering.StockMemoryLoadStoreNI
 import FV.Front.Read
 import FVTest.E2E.LinkProof
 import FVTest.E2E.SemanticLinkProofWith
@@ -38,20 +38,20 @@ def main (args : List String) : IO UInt32 := do
       let route (fi : FnInput) : Option (String × Nat) :=
         let f := fi.func
         if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f ||
-            Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f || (((((Stock.MemoryStoreCfg.eligible f || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.eligible f || Stock.ConditionalForwardCfg.eligible f) || Stock.ConditionalCfg.eligible f) || Stock.ForwardCfg.eligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f)) &&
+            Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f || ((((((Stock.MemoryLoadStore.eligible f || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.eligible f || Stock.ConditionalForwardCfg.eligible f) || Stock.ConditionalCfg.eligible f) || Stock.ForwardCfg.eligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f)) &&
             !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
           -- Probe each complete route before its transactional retry. A retained
           -- logical/mixed artifact must not be skipped directly to legacy.
-          let found := Stock.MemoryStoreCfg.lowerRoutes.zipIdx.find? fun (lower, _) =>
+          let found := Stock.MemoryLoadStore.lowerRoutes.zipIdx.find? fun (lower, _) =>
             match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
             | .error _ => false
             | .ok a => artB I0 rd phs a
           let idx := (found.map (·.2)).getD 4
-          if idx != 0 || (((((Stock.MemoryStoreCfg.eligible f || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.eligible f || Stock.ConditionalForwardCfg.eligible f) || Stock.ConditionalCfg.eligible f) || Stock.ForwardCfg.eligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f) then some (f.name, idx) else none
+          if idx != 0 || ((((((Stock.MemoryLoadStore.eligible f || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.eligible f || Stock.ConditionalForwardCfg.eligible f) || Stock.ConditionalCfg.eligible f) || Stock.ForwardCfg.eligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f) then some (f.name, idx) else none
         else none
       (Link.parMap route I0.funcs).filterMap id
-  let actualLower := Stock.MemoryStoreCfg.lowerWithRoutes choices
-  let lowerName := "(Backend.Stock.MemoryStoreCfg.lowerWithRoutes [" ++
+  let actualLower := Stock.MemoryLoadStore.lowerWithRoutes choices
+  let lowerName := "(Backend.Stock.MemoryLoadStore.lowerWithRoutes [" ++
     ", ".intercalate (choices.map fun (name,idx) => "(" ++ leanStr name ++ ", " ++ toString idx ++ ")") ++ "])"
   if o.profile then
     -- the slowest functions: the pipeline, the lowering validator, the allocation checker
@@ -397,7 +397,7 @@ def main (args : List String) : IO UInt32 := do
     let stackAll := Pk.funcs.all fun g => (stackOf g).isSome
     let stackS := if stackAll then some (Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0)
       else none
-    for (p, t) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockMemoryStoreCfgNI") do
+    for (p, t) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockMemoryLoadStoreNI") do
       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd
       IO.FS.writeFile p t
       IO.println s!"  wrote {p}"

@@ -206,3 +206,7 @@ root = "FVTest.Backend.Lowering.StockMemoryStoreProductionLinked"
 [[lean_exe]]
 name = "stock-memory-store-cfg-linked"
 root = "FVTest.Backend.Lowering.StockMemoryStoreCfgProductionLinked"
+
+[[lean_exe]]
+name = "stock-memory-load-store-linked"
+root = "FVTest.Backend.Lowering.StockMemoryLoadStoreProductionLinked"
