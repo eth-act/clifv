@@ -67,6 +67,14 @@ private theorem opcode_args_match {p : Program} (hp : Data p) {ctx : Ctx}
     rw [args] at matched
     obtain ⟨e1,head,_⟩ := matchArgs_cons_inv matched
     exact opcode_root_match hp parsed head
+/-- A rule's argument patterns match an instruction under the baseline embedding only if its
+primary source opcode is the instruction's data opcode. -/
+theorem stock_opcode_args_match {p : Program} (hp : Data p) {ctx : Ctx}
+    {r : Rule} {code : Nat} (parsed : sourceRuleOpcode p r = some code)
+    {st : LState} {i : Nat} {env env' : Isle.Interp.Env V}
+    (matched : matchArgs p (Backend.sem ctx) st r.args [.inst i] env = .ok (some env')) :
+    ∃ info kf opfs rest, ctx.insts[i]? = some info ∧ info.data = .data 152 kf (.data 151 code opfs :: rest) :=
+  opcode_args_match hp parsed matched
 /-- Real Stock first-match selection has the primary opcode of its original
 source data, using original scope/closure and actual matching internally. -/
 theorem stock_selected_source_opcode {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)
