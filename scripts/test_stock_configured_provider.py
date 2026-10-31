@@ -117,6 +117,13 @@ class StockConfiguredProviderTests(unittest.TestCase):
     def test_configured_compiler_uses_the_default_provider(self):
         fixtures = [(MEMORY_CFG, True), (MEMORY, True), (RETAINED, False)]
         fixtures.extend((MEMORY.replace('i32', ty), True) for ty in ('i8', 'i16', 'i64'))
+        for op, types in (("uload8", ("i16", "i32", "i64")),
+                          ("sload8", ("i16", "i32", "i64")),
+                          ("uload16", ("i32", "i64")),
+                          ("sload16", ("i32", "i64")),
+                          ("uload32", ("i64",)), ("sload32", ("i64",))):
+            fixtures.extend((MEMORY.replace("i32", ty).replace("load.", op + "."), True)
+                            for ty in types)
         for source, stock_selected in fixtures:
             for cleanup in (False, True):
                 with self.subTest(source=source.splitlines()[0], cleanup=cleanup):
