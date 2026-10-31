@@ -18,7 +18,7 @@ open Backend Isle Isle.Interp Isle.Aarch64
 
 /-- A call-site signature of `f`'s indirect calls is a `call_indirect`'s or a
 `try_call_indirect`'s. -/
-theorem mem_indSigs {f : Clif.Function} {s : Clif.Signature} (h : s ∈ indSigs f) :
+theorem mem_indSigs_cases {f : Clif.Function} {s : Clif.Signature} (h : s ∈ indSigs f) :
     ∃ B ∈ f.blocks, (∃ st ∈ B.body, ∃ sig c args, st.inst = .callIndirect sig c args ∧
       f.sigDecls.lookup sig = some s) ∨
       (∃ c args et, B.term = .tryCallIndirect c args et ∧ f.sigDecls.lookup et.sig = some s) := by
@@ -45,7 +45,7 @@ set_option maxRecDepth 20000
 /-! ## `call_indirect` -/
 
 /-- The data of a `call_indirect` instruction. -/
-theorem instData_callIndirect_eq {f : Clif.Function} {sig callee : Nat} {args : List Nat} {d : V}
+theorem instData_callIndirect_sig {f : Clif.Function} {sig callee : Nat} {args : List Nat} {d : V}
     (h : instData f (.callIndirect sig callee args) = .ok d) :
     ∃ s, f.sigDecls.lookup sig = some s ∧
       d = .data 152 7 [.data 151 9 [], .values (callee :: args), .op (.sig s)] := by
@@ -202,7 +202,7 @@ theorem callIndOut_runTerm {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
     {tr : List RuleId} (h : runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr)) :
     stackBytes s ≤ st'.outgoing := by
   obtain ⟨r, hr, m, n, env', s1, tr2, hm, hn, -, hmatch, heval⟩ := runTerm_lower_rule h
-  obtain ⟨s', hs', hdat⟩ := instData_callIndirect_eq (hctx.data ii info _ hi hc)
+  obtain ⟨s', hs', hdat⟩ := instData_callIndirect_sig (hctx.data ii info _ hi hc)
   rw [hs] at hs'
   cases hs'
   have hok := List.all_eq_true.mp lower_callInd_fmts r hr

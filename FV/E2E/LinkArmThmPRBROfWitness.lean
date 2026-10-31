@@ -37,7 +37,7 @@ theorem stage2Y_noExt {L : LinkSys} {κ : Nat → Clif.Function → Nat} {M : Na
     {Q : Arm.ArmState → Prop} {n : Nat} : L.Stage2Y κ M g F P R env cs c Q n := by
   intro u w _ _ d uses hn
   refine absurd (fun r => ⟨fun ext _ G sl cm args vals rvals cm' hg _ _ _ _ _ => ?_,
-    fun sig _ nm G sl cm u' args vals rvals cm' _ _ hg _ _ _ _ _ _ _ _ => ?_⟩) hn
+    fun sig _ nm G sl cm u' args vals rvals cm' _ _ hg _ _ _ _ _ _ _ => ?_⟩) hn
   · obtain ⟨g0, hg0, -⟩ := Clif.Env.only_extern_eq hg
     rw [h0] at hg0; cases hg0
   · obtain ⟨g0, hg0, -⟩ := Clif.Env.only_extern_eq hg

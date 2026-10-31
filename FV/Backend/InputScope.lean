@@ -34,6 +34,6 @@ def verifiable (f : Clif.Function) : Bool :=
 `Compile.functionET` (float parameters, returns, block parameters, loads, stores, constants,
 `select`, `bitcast`), float stores storing float values. -/
 def verifiableT (f : Clif.Function) : Bool :=
-  Compile.functionET f && Compile.storeTypedB f && abiSigs f && indSigsOk f
+  Compile.functionET f && Compile.storeTypedB f && abiSigs f && indSigsAbiOk f
 
 end Backend
