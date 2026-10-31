@@ -179,6 +179,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Trick:** `let sm := assocMap I.syms` before the call, pass `fun n => sm[n]?`; `budMapFast_eq` unchanged (`simp` zeta-reduces). Also one task per function (`Link.parMap`, `parMap_eq`) for the routing recovery's up to five pipelines per function.
 - **Numbers:** std bundle link-check >67 min (killed) → 5 min 19 s (stack bound 65 s, max RSS 1.2 GB); same output on 22 non-std executables (`FV/E2E/BinCheckFast.lean`, `FVTest/E2E/LinkCheckMain.lean`).
 
+### A definition that returns a function is compiled at full arity: its `let`s run on every call
+- **Problem:** with the skip wired into lean-backend (`agent/parityisel-wire8`), `corpus/clif-regress/large_frame.clif` (one block, about 9,000 statements) took about 1 h 40 min instead of main's 68 s (#803). `skipDrops f R bl vc : Nat → Nat → Bool` was written as `let …candidates, fixpoint, HashSet…; fun b j => tbl.contains (b, j)`. Lean compiles it as a 6-argument function, which puts the `let`s under `fun b j`, so each of `skipMask`'s `drop b j` queries rebuilt the whole set (gdb: `skipMask` → `skipAt` → `skipDrops` → `skipCands` → `seg`).
+- **Trick:** move the table into its own definition that does not return a function (`skipDropSet`) and make `skipDrops` its membership test. A run-time variant (`skipDeadImpl`) binds `let tbl := skipDropSet …` once, and `@[csimp] skipDead_eq_impl : @skipDead = @skipDeadImpl := rfl` swaps it in for compiled code, so the proofs, which are about `skipDead`, are unchanged.
+- **Numbers:** large_frame 1 h 40 min → 87 s (max RSS 3.4 GB), same output (`FV/Backend/SkipDead.lean`, `FVTest/Backend/CraneliftInput.lean`).
+
 ## From other projects (not yet measured in clifv)
 
 From [Th0rgal/evm.fast-dev](https://github.com/Th0rgal/evm.fast-dev) (`docs/PROOF-PERFORMANCE.md`). All keep ordinary kernel checking and standard axioms. Move an entry up into the sections above once it has been measured here.
