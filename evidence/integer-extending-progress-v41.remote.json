@@ -1,0 +1,25 @@
+{
+  "archive": "integer-extending-progress-v41.tar.gz",
+  "archive_bytes": 92053773,
+  "archive_sha256": "db246bf81408e6b0d40f07cc6f230b327fc197dfd597cb7ef867c68bbc9c5920",
+  "source_manifest": "integer-extending-progress-v41.json",
+  "source_manifest_sha256": "0f8ec59d3d3d62ccec8268d8f8102e8d808c97866741902166bbe22f490e5ff3",
+  "parts": [
+    {
+      "name": "integer-extending-progress-v41.tar.gz.part-000",
+      "bytes": 41943040,
+      "sha256": "d0dc51b071089517cb3cff81a8258611e53b926fdaf2c46977f1e344ec894198"
+    },
+    {
+      "name": "integer-extending-progress-v41.tar.gz.part-001",
+      "bytes": 41943040,
+      "sha256": "82368689cdb4618755b525352d6ed0807db4e3a8652b2892e88e037e7151ddb0"
+    },
+    {
+      "name": "integer-extending-progress-v41.tar.gz.part-002",
+      "bytes": 8167693,
+      "sha256": "3c750aee2b101d616dc07b1f2812d836475c128628b5d93620cc8ff522007be8"
+    }
+  ],
+  "restore": "Concatenate the parts in listed order to restore the tar.gz archive,then verify its SHA256."
+}
