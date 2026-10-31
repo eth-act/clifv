@@ -68,3 +68,18 @@ theorem check_sound {f : Clif.Function} {vc : VCode} (checked : check f vc = tru
     exact ⟨kind,ty,result,family,rfl,of_decide_eq_true equal,effects⟩
 
 end Backend.Stock.MemoryStore
+
+namespace Backend.Stock.Memory.Store
+
+/-- Store effects cannot call the TLS helper. -/
+theorem effectsOnly_noTls {vc : VCode} (checked : effectsOnly vc = true) : vc.hasTls = false := by
+  rw [VCode.hasTls,Array.any_eq_false']
+  intro vb member
+  apply Bool.eq_false_iff.mp
+  apply Array.any_eq_false'.mpr
+  intro i present
+  have block := List.all_eq_true.mp checked vb (Array.mem_toList_iff.mpr member)
+  have good := List.all_eq_true.mp block i (Array.mem_toList_iff.mpr present)
+  cases i <;> simp_all [effectInstruction,Memory.effectInstruction]
+
+end Backend.Stock.Memory.Store

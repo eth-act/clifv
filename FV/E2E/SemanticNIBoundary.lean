@@ -116,6 +116,15 @@ theorem entryRegs (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
     obtain ⟨n,bound,pin⟩ := regs r found
     exact ⟨n,pin,bound⟩
 
+  | memoryStore family equal effects h =>
+    intro loc member r located
+    have regs := (Spill.locsOf_regs (functionE_sig_int family.scope.subsetE).1
+      (Spill.sret_le_of_sigAbiOk family.abi)).2
+    have found : r ∈ Spill.locRegs (locsOf f.sig) :=
+      List.mem_filterMap.mpr ⟨loc,member,by rw [located]⟩
+    obtain ⟨n,bound,pin⟩ := regs r found
+    exact ⟨n,pin,bound⟩
+
 /-- An ABI-read-only artifact contains no TLS helper; cleanup and checked
 preparation preserve that exclusion. -/
 theorem noTls {sig : Clif.Signature} {code : VCode}
@@ -293,6 +302,17 @@ theorem hasTls_of_vcode_semantic {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     cases ht
   | @memoryExtending kind ty cleanup result family equal effects h =>
     have raw := Stock.Memory.effectsOnly_noTls effects
+    have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
+      rw [equal]
+      cases cleanup with
+      | false => exact raw
+      | true => exact Backend.DeadCleanup.prune_noTls raw
+    have prepared := noTls_of_prepCheck h.prepOk staged
+    rw [prepared] at ht
+    cases ht
+
+  | @memoryStore kind ty cleanup result family equal effects h =>
+    have raw := Stock.Memory.Store.effectsOnly_noTls effects
     have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
       rw [equal]
       cases cleanup with

@@ -1,3 +1,4 @@
+import FV.E2E.SemanticNIBoundary
 import FV.E2E.CompiledSemanticNI
 import FV.Backend.StockMemoryStoreCheck
 import FV.Backend.Proof.StockMemoryStoreCheck
@@ -96,3 +97,7 @@ import FV.Backend.Proof.StockMemoryStoreWitness
 #print axioms E2E.CompiledSemanticNI.toSemantic
 #print axioms E2E.CompiledSemanticNI.of_checks
 #print axioms E2E.backend_correct_world_niX_semantic
+
+#print axioms Backend.Stock.Memory.Store.effectsOnly_noTls
+#print axioms E2E.CompiledSemanticNI.entryRegs
+#print axioms E2E.hasTls_of_vcode_semantic
