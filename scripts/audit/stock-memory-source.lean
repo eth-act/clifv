@@ -1,52 +1,23 @@
-import FV.Backend.Proof.StockMemoryPairedRecord
-import FV.Backend.Proof.StockMemoryReadTransport
-import FV.Backend.Proof.StockMemorySingleFixture
-import FV.Backend.Proof.StockMemorySingleWitness
-import FV.Backend.StockMemoryCheck
-import FV.E2E.StockMemoryMachine
-import FV.E2E.StockMemoryNI
-import FV.E2E.StockMemoryPairedBody
-import FV.E2E.StockMemoryPairedEntry
-import FV.E2E.StockMemoryPairedEntryReturn
-import FV.E2E.StockMemoryPairedFunction
-import FV.E2E.StockMemoryPairedFunctionWitness
-import FV.E2E.StockMemoryPairedReturn
-import FV.E2E.StockMemoryPairedReturnAt
-import FV.E2E.StockMemoryPairedScan
-import FV.E2E.StockMemoryPairedSource
-import FV.E2E.StockMemoryReadWitness
-import FV.E2E.StockMemoryRegisterPrelude
-import FV.E2E.StockMemoryValue
-import FV.Backend.Proof.StockMemoryAutoScan
-import FV.Backend.Proof.StockMemoryBodyFixture
-import FV.Backend.Proof.StockMemoryClass
-import FV.Backend.Proof.StockMemoryDispatch
-import FV.Backend.Proof.StockMemoryNotrap
-import FV.Backend.Proof.StockMemoryOrdinaryWitness
-import FV.Backend.Proof.StockMemoryReturnBody
-import FV.Backend.Proof.StockMemoryReturnRefines
-import FV.Backend.Proof.StockMemoryReturnSpec
-import FV.Backend.Proof.StockMemoryReturnWitness
-import FV.Backend.Proof.StockMemorySingleDomain
-import FV.Backend.Proof.StockMemorySourceExecution
-import FV.Backend.Proof.StockReturnedSourceRetention
-import FV.Backend.Proof.StockMemoryGuardedWitness
-import FV.Backend.Proof.StockMemoryInput
-import FV.Backend.Proof.StockMemoryRecordKernel
-import FV.Backend.Proof.StockMemoryRecordValues
-import FV.Backend.Proof.StockMemoryRecordWitness
-import FV.Backend.Proof.StockMemoryScanRefines
-import FV.Backend.Proof.StockMemorySelected
-import FV.Backend.Proof.StockMemorySelectedValues
-import FV.Backend.Proof.StockMemorySelectedWitness
-import FV.Backend.Proof.StockMemorySourceValues
-import FV.Backend.Proof.StockMemoryAddressSelection
-import FV.Backend.Proof.StockMemoryContract
+import FV.Backend.Proof.StockMemoryCompatibility
 import FV.Backend.Proof.StockMemoryContractWitness
-import FV.Backend.Proof.StockMemoryLoad
-import FV.Backend.Proof.StockMemoryLoadSelection
 import FV.Backend.Proof.StockMemoryLoadWitness
-import FV.Backend.Proof.StockMemorySelection
+import FV.Backend.Proof.StockMemoryGuardedWitness
+import FV.Backend.Proof.StockMemoryOrdinaryWitness
+import FV.Backend.Proof.StockMemoryReturnWitness
+import FV.Backend.Proof.StockMemoryEntryWitness
+import FV.Backend.Proof.StockMemoryDispatchWitness
+import FV.Backend.Proof.StockMemorySingleWitness
+import FV.Backend.Proof.StockMemoryReadWitness
+import FV.E2E.StockMemoryReadWitness
+
+import FV.E2E.StockMemoryPairedFunctionWitness
+import FV.E2E.StockMemoryWorldX
+import FV.E2E.StockMemoryNI
+import FV.Backend.Proof.StockMemoryCheck
+import FV.E2E.StockMemoryEffectKernel
+
+import FV.E2E.StockMemoryActivationWitness
+
 #print axioms Backend.Stock.Memory.domain_of_scalar
 #print axioms Backend.Stock.Memory.existing_source_witness
 #print axioms Backend.Stock.Memory.load_source_result
@@ -84,6 +55,7 @@ import FV.Backend.Proof.StockMemorySelection
 #print axioms Backend.Stock.Memory.stock_lower_load_source_step
 #print axioms Backend.Stock.Memory.stock_lower_load_scan_fall_refines
 #print axioms Backend.Stock.Memory.LoadFixture.guarded_load_scan_witness
+
 #print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_source_step
 #print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_source_execution_frame
 #print axioms Backend.Stock.Memory.LoadFixture.RecordInput.atBlock
@@ -94,39 +66,50 @@ import FV.Backend.Proof.StockMemorySelection
 #print axioms Backend.Stock.Memory.LoadFixture.ordinary_load_body_execution_witness
 #print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_return_refines_at
 #print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_entry_return_refines_frame
+#print axioms Backend.Stock.Memory.EntryFixture.ordinary_entry_return_witness
 #print axioms Backend.Stock.Memory.LoadFixture.actual_load_return_block_witness
+
 #print axioms Backend.Stock.Memory.stock_selected_load_i32_rule
 #print axioms Backend.Stock.Memory.stock_lower_load_i32_selected_id
 #print axioms Backend.Stock.Memory.stock_lower_load_source_step_auto
 #print axioms Backend.Stock.Memory.stock_lower_load_scan_fall_refines_auto
+#print axioms Backend.Stock.Memory.stock_lower_parameter_load_sunk_eq
+#print axioms Backend.Stock.Memory.LoadFixture.source_dispatch_witness
+#print axioms Backend.Stock.Memory.LoadFixture.load_sunk_frame_witness
+
 #print axioms Backend.Stock.Proof.stock_lower_returned_definition_emitted
 #print axioms Backend.Stock.Memory.stock_single_load_return_body
 #print axioms Backend.Stock.Proof.OrdinaryBody.ordinary_source_notrap
 #print axioms Backend.Stock.Memory.domain_of_single_load_return
-#print axioms Backend.Stock.Memory.stock_lower_source_parameter_definition
-#print axioms Backend.Stock.Memory.stock_single_load_return_spec
-#print axioms Backend.Stock.Memory.SingleClass.domain
 #print axioms Backend.Stock.Memory.SingleFixture.scope
 #print axioms Backend.Stock.Memory.SingleFixture.dominated
 #print axioms Backend.Stock.Memory.SingleFixture.lowered
 #print axioms Backend.Stock.Memory.SingleFixture.domain
 #print axioms Backend.Stock.Memory.SingleFixture.complete_load_function_witness
+
 #print axioms Backend.Stock.Memory.initialized_load_value_eq
 #print axioms Backend.Stock.Memory.load_source_result_pair
 #print axioms Backend.Stock.Memory.load_source_result_pairR
 #print axioms Backend.Stock.Memory.stock_lower_load_paired_record
+#print axioms Backend.Stock.Memory.LoadFixture.paired_load_read_witness
 #print axioms E2E.StockMemoryReadWitness.guarded_paired_load_witness
 #print axioms E2E.StockMemoryReadWitness.guarded_actual_record_pair_witness
+
 #print axioms E2E.StockMemory.stock_lower_load_paired_source_step
 #print axioms E2E.StockMemory.stock_lower_load_scan_pair
 #print axioms E2E.StockMemory.stock_lower_load_paired_scan
 #print axioms E2E.StockMemoryReadWitness.guarded_actual_source_scan_pair_witness
 #print axioms E2E.StockMemoryReadWitness.pairsem_scan_interface_witness
+
+#print axioms Backend.Stock.Memory.stock_lower_source_parameter_definition
+#print axioms Backend.Stock.Memory.stock_single_load_return_spec
 #print axioms E2E.StockMemory.stock_single_load_return_paired_body
 #print axioms E2E.StockMemoryReadWitness.complete_paired_body_witness
+
 #print axioms E2E.StockMemory.stock_lower_return_record_paired_runOk
 #print axioms E2E.StockMemory.actual_ordinary_paired_return_refines_at
 #print axioms E2E.StockMemoryReadWitness.complete_paired_return_block_witness
+
 #print axioms E2E.StockMemory.mapped_entry_register_prelude_paired_frame
 #print axioms E2E.StockMemory.stock_lower_entry_prelude_paired_frame
 #print axioms E2E.StockMemory.actual_ordinary_paired_entry_return_refines_frame
@@ -134,7 +117,19 @@ import FV.Backend.Proof.StockMemorySelection
 #print axioms E2E.StockMemory.single_load_return_paired_function
 #print axioms E2E.StockMemoryFunctionWitness.source_class_witness
 #print axioms E2E.StockMemoryFunctionWitness.complete_paired_load_function_witness
+#print axioms Backend.Stock.Memory.SingleClass.domain
+#print axioms E2E.backend_correct_worldX_stock_memory
 #print axioms E2E.StockMemory.effectsOnly_instruction
 #print axioms E2E.StockMemory.return_value
 #print axioms E2E.StockMemory.machine_return
 #print axioms E2E.backend_correct_world_niX_stock_memory
+#print axioms Backend.Stock.Memory.sourceOk_sound
+#print axioms Backend.Stock.Memory.check_sound
+#print axioms E2E.StockMemoryEffectKernel.source_checked -- witness: native_decide
+#print axioms E2E.StockMemoryEffectKernel.actual_effects
+
+#print axioms Backend.Stock.Memory.effectsOnly_noTls
+#print axioms E2E.StockMemoryActivationWitness.default_memory_route_witness -- witness: native_decide
+
+#print axioms Backend.Stock.Memory.previous_file_exact
+#print axioms Backend.Stock.Memory.previous_file_exact_witness
