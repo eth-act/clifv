@@ -1,5 +1,6 @@
 import FV.E2E.LinkScopeChecksTF
 import FV.E2E.LinkScopeInputDefsTC
+import FV.E2E.LinkScopeInputDefsT3
 import FV.E2E.LinkScopeInputCleanupT
 import FV.E2E.SpillKillFreeT
 import FV.Backend.Proof.LowerCompleteTCF
