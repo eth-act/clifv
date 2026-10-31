@@ -212,7 +212,8 @@ def rename (m : Std.HashMap Nat Nat) (next : Nat) (vc : VCode) : VCode :=
       branchArgs := b.branchArgs.map R } }
 
 /-- `skipDead f vc` with the statements it skipped (`drop b j`: statement `j` of block `b`;
-none when the skip does not apply), recomputed as `skipDead` computes them. -/
+none when the skip does not apply), recomputed as `skipDeadImpl` computes them (the set of
+skipped statements built once). -/
 def skipDeadDrops (f : Clif.Function) (vc : VCode) : VCode × (Nat → Nat → Bool) :=
   match buildCtx f with
   | .error _ => (vc, fun _ _ => false)
@@ -222,13 +223,15 @@ def skipDeadDrops (f : Clif.Function) (vc : VCode) : VCode × (Nat → Nat → B
     | none => (vc, fun _ _ => false)
     | some bl =>
       let R := renOf (gnAt (gnTable st0.nextVreg (aliasOf f bl)))
-      let drop := skipAt f (skipDrops f R bl vc)
+      let tbl := skipDropSet f R bl vc
+      let drop := skipAt f fun b j => tbl.contains (b, j)
       let mask := skipMask f R bl vc drop
       if deleteCheck vc mask then (deleteWith vc mask, drop) else (vc, fun _ _ => false)
 
 theorem skipDeadDrops_fst (f : Clif.Function) (vc : VCode) :
     (skipDeadDrops f vc).1 = skipDead f vc := by
-  unfold skipDeadDrops skipDead
+  rw [skipDead_eq_impl]
+  unfold skipDeadDrops skipDeadImpl
   cases buildCtx f with
   | error => rfl
   | ok x =>

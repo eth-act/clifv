@@ -160,12 +160,15 @@ def keepFix : Nat → Std.HashSet Nat → List SkipCand → List SkipCand
     let (need, rest, changed) := keepPass need cands
     if changed then keepFix fuel need rest else rest
 
-/-- The statements to skip, as a table `drop b j`. -/
-def skipDrops : Nat → Nat → Bool :=
+/-- The statements to skip, as a set of `(b, j)` (built once by `skipDeadImpl`). -/
+def skipDropSet : Std.HashSet (Nat × Nat) :=
   let cands := skipCands f R bl
   let dropped := keepFix (cands.length + 1) (fixedUses f R bl vc cands) cands
-  let tbl : Std.HashSet (Nat × Nat) := Std.HashSet.ofList (dropped.map fun c => (c.b, c.j))
-  fun b j => tbl.contains (b, j)
+  Std.HashSet.ofList (dropped.map fun c => (c.b, c.j))
+
+/-- The statements to skip, as a table `drop b j`. -/
+def skipDrops : Nat → Nat → Bool :=
+  fun b j => (skipDropSet f R bl vc).contains (b, j)
 
 end
 /-- `skipAt f drop b j`: `drop b j`, for a `skippable` statement. -/
@@ -189,5 +192,24 @@ def skipDead (f : Clif.Function) (vc : VCode) : VCode :=
       let R := renOf (gnAt (gnTable st0.nextVreg (aliasOf f bl)))
       let mask := skipMask f R bl vc (skipAt f (skipDrops f R bl vc))
       if deleteCheck vc mask then deleteWith vc mask else vc
+
+/-- `skipDead` as the compiler runs it (`skipDead_eq_impl`, `@[csimp]`): the set of skipped
+statements is built once. Lean compiles the function-valued `skipDrops` at its full arity, so in
+`skipDead` every `drop b j` query rebuilt the candidates and the fixpoint: quadratic in the
+statements, hours on corpus/clif-regress/large_frame.clif (9,000 statements in one block). -/
+def skipDeadImpl (f : Clif.Function) (vc : VCode) : VCode :=
+  match buildCtx f with
+  | .error _ => vc
+  | .ok (ctx, _, st0) =>
+    match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+        f.blocks.length with
+    | none => vc
+    | some bl =>
+      let R := renOf (gnAt (gnTable st0.nextVreg (aliasOf f bl)))
+      let tbl := skipDropSet f R bl vc
+      let mask := skipMask f R bl vc (skipAt f fun b j => tbl.contains (b, j))
+      if deleteCheck vc mask then deleteWith vc mask else vc
+
+@[csimp] theorem skipDead_eq_impl : @skipDead = @skipDeadImpl := rfl
 
 end Backend.Proof.Driver
