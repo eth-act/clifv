@@ -1,0 +1,4 @@
+import FV.E2E.StockMemoryExtLoadPairedFunctionWitness
+
+#print axioms E2E.StockMemoryExtLoadFunctionWitness.source_class_witness
+#print axioms E2E.StockMemoryExtLoadFunctionWitness.complete_paired_extending_load_function_witness
