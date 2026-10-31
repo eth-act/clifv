@@ -1,0 +1,12 @@
+{
+  "archive": "integer-store-post-817-v1.tar.gz",
+  "archive_bytes": 5342993,
+  "archive_sha256": "af6a1b625030e1b29db247e030210bca59524a4cf602b2597b8aec6624f45c82",
+  "parts": [
+    {
+      "name": "integer-store-post-817-v1.tar.gz.part-000",
+      "bytes": 5342993,
+      "sha256": "af6a1b625030e1b29db247e030210bca59524a4cf602b2597b8aec6624f45c82"
+    }
+  ]
+}
