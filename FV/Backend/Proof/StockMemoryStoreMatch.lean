@@ -25,15 +25,15 @@ private theorem sem_i64 (ctx : Ctx) : (Stock.sem ctx).prim 14 "I64" = some (.ty 
 private theorem sem_eq (ctx : Ctx) (a b : V) : (Stock.sem ctx).eq a b = (a == b) := rfl
 
 /-- Plain roots use the actual operand type. Narrow roots impose no operand-type equality. -/
-theorem stock_match_integer_store {p : Program} (hp : Data p) (kind : Kind) (ctx : Ctx) {cfg : Config}
-    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags}
+theorem stock_match_integer_store_offset {p : Program} (hp : Data p) (kind : Kind) (ctx : Ctx) {cfg : Config}
+    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags} {offset : Int}
     (source : ctx.insts[i]? = some info)
     (typed : kind.sourceOp = .store → ctx.valueType? value = some (.int kind.width.bits))
     (data : info.data = .data 152 22
-      [.data 151 kind.opcodeIndex [],.values [value,pointer],.op (.memFlags flags),.int 0])
+      [.data 151 kind.opcodeIndex [],.values [value,pointer],.op (.memFlags flags),.int offset])
     (little : flags.endianness ≠ some .big) (st : State) (tr : Array RuleId) (n : Nat) :
     (matchRule p (Stock.sem ctx) cfg (n+20) kind.root [.inst i]).run (st,tr) =
-      .ok (some (env4 (.value value) (.value pointer) (.op (.memFlags flags)) (.int 0)),st,tr) := by
+      .ok (some (env4 (.value value) (.value pointer) (.op (.memFlags flags)) (.int offset)),st,tr) := by
   have extraction := ext_inst_data_value ctx st.base source
   rw [data] at extraction
   have operands : Backend.externExtract ctx T.value_array_2 (.values [value,pointer]) st.base =
@@ -49,24 +49,36 @@ theorem stock_match_integer_store {p : Program} (hp : Data p) (kind : Kind) (ctx
       rule_lower_2722,rule_lower_2726,rule_lower_2730,sem_extract,sem_unData,
       sem_i8,sem_i16,sem_i32,sem_i64,sem_eq]
 
+/-- Preserve the original zero-offset theorem variant. -/
+theorem stock_match_integer_store {p : Program} (hp : Data p) (kind : Kind) (ctx : Ctx) {cfg : Config}
+    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags}
+    (source : ctx.insts[i]? = some info)
+    (typed : kind.sourceOp = .store → ctx.valueType? value = some (.int kind.width.bits))
+    (data : info.data = .data 152 22
+      [.data 151 kind.opcodeIndex [],.values [value,pointer],.op (.memFlags flags),.int 0])
+    (little : flags.endianness ≠ some .big) (st : State) (tr : Array RuleId) (n : Nat) :
+    (matchRule p (Stock.sem ctx) cfg (n+20) kind.root [.inst i]).run (st,tr) =
+      .ok (some (env4 (.value value) (.value pointer) (.op (.memFlags flags)) (.int 0)),st,tr) := by
+  exact stock_match_integer_store_offset hp kind ctx source typed data little st tr n
+
 section SourceData
 attribute [local semireducible] Isle.Aarch64.program
 
 /-- Accepted original metadata supplies the store opcode and endianness.
 The instruction's declared type remains arbitrary. -/
-theorem integer_store_source_data (kind : Kind) {ty : Clif.Ty}
+theorem integer_store_source_data_offset (kind : Kind) {ty : Clif.Ty}
     {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
-    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags}
+    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags} {offset : Int}
     (source : ctx.insts[i]? = some info)
-    (clif : info.clif = some (.store kind.sourceOp ty flags value pointer 0)) :
+    (clif : info.clif = some (.store kind.sourceOp ty flags value pointer offset)) :
     flags.endianness ≠ some .big ∧ info.data = .data 152 22
-      [.data 151 kind.opcodeIndex [],.values [value,pointer],.op (.memFlags flags),.int 0] := by
+      [.data 151 kind.opcodeIndex [],.values [value,pointer],.op (.memFlags flags),.int offset] := by
   have data := inv.data i info _ source clif
   change (if (!eTy ty && !(ty.isFloat && kind.sourceOp == .store)) = true then
       Except.error s!"store.{ty.name}"
     else if (flags.endianness == some .big) = true then Except.error "big-endian store"
     else Except.ok (instDataV "Store" [opcodeV (storeOpcode kind.sourceOp),
-      .values [value,pointer],.op (.memFlags flags),.int 0])) = Except.ok info.data at data
+      .values [value,pointer],.op (.memFlags flags),.int offset])) = Except.ok info.data at data
   by_cases invalid : (!eTy ty && !(ty.isFloat && kind.sourceOp == .store)) = true
   · rw [if_pos invalid] at data
     cases data
@@ -82,6 +94,16 @@ theorem integer_store_source_data (kind : Kind) {ty : Clif.Ty}
     rw [if_neg accepted] at data
     refine ⟨little,(Except.ok.inj data).symm.trans ?_⟩
     cases kind <;> rfl
+
+/-- Preserve the original zero-offset theorem variant. -/
+theorem integer_store_source_data (kind : Kind) {ty : Clif.Ty}
+    {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
+    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags}
+    (source : ctx.insts[i]? = some info)
+    (clif : info.clif = some (.store kind.sourceOp ty flags value pointer 0)) :
+    flags.endianness ≠ some .big ∧ info.data = .data 152 22
+      [.data 151 kind.opcodeIndex [],.values [value,pointer],.op (.memFlags flags),.int 0] := by
+  exact integer_store_source_data_offset kind inv source clif
 
 end SourceData
 end Backend.Stock.Memory.StoreRoots

@@ -11,10 +11,10 @@ set_option maxHeartbeats 4000000
 attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
 
 private theorem store_type_pattern_matched {p : Program} (hp : Data p)
-    {ctx : Ctx} {st : LState} {i value pointer width : Nat} {info : IInfo} {flags : Clif.MemFlags}
+    {ctx : Ctx} {st : LState} {i value pointer width : Nat} {info : IInfo} {flags : Clif.MemFlags} {offset : Int}
     (source : ctx.insts[i]? = some info)
     (data : info.data = .data 152 22
-      [.data 151 30 [],.values [value,pointer],.op (.memFlags flags),.int 0])
+      [.data 151 30 [],.values [value,pointer],.op (.memFlags flags),.int offset])
     (typed : ctx.valueType? value = some (.int width))
     {typePattern : Pattern} {env env' : Isle.Interp.Env V}
     (matched : matchArgs p (Backend.sem ctx) st
@@ -36,10 +36,10 @@ private theorem store_type_pattern_matched {p : Program} (hp : Data p)
   obtain ⟨next,format,_⟩ := matchArgs_cons_inv rest
   obtain ⟨fields,unData,fieldPatterns⟩ := matchPat_enum_inv hp.t2469 term_2469_kind format
   have known : (Backend.sem ctx).unData 152
-      (.data 152 22 [.data 151 30 [],.values [value,pointer],.op (.memFlags flags),.int 0]) =
-      some (22,[.data 151 30 [],.values [value,pointer],.op (.memFlags flags),.int 0]) := rfl
+      (.data 152 22 [.data 151 30 [],.values [value,pointer],.op (.memFlags flags),.int offset]) =
+      some (22,[.data 151 30 [],.values [value,pointer],.op (.memFlags flags),.int offset]) := rfl
   rw [known] at unData
-  have same : fields = [.data 151 30 [],.values [value,pointer],.op (.memFlags flags),.int 0] :=
+  have same : fields = [.data 151 30 [],.values [value,pointer],.op (.memFlags flags),.int offset] :=
     (congrArg Prod.snd (Option.some.inj unData)).symm
   rw [same] at fieldPatterns
   obtain ⟨afterOpcode,_,rest⟩ := matchArgs_cons_inv fieldPatterns
@@ -70,13 +70,13 @@ private theorem plain_inventory :
 
 private theorem selected_plain_store_rule (width : IntegerRoots.Width)
     {ty : Clif.Ty} {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
-    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags}
+    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags} {offset : Int}
     (source : ctx.insts[i]? = some info)
-    (clif : info.clif = some (.store .store ty flags value pointer 0))
+    (clif : info.clif = some (.store .store ty flags value pointer offset))
     (typed : ctx.valueType? value = some (.int width.bits))
     {st next : State} {out : V} {trace : List RuleId}
     (selected : LowerSelection ctx i st out next trace) : selected.rule = (plainKind width).root := by
-  obtain ⟨little,data⟩ := integer_store_source_data (plainKind width) inv source
+  obtain ⟨little,data⟩ := integer_store_source_data_offset (plainKind width) inv source
     (by rw [plain_opcode]; exact clif)
   rw [plain_index] at data
   have member := stock_selected_source_opcode_ids inv source clif data selected
@@ -157,12 +157,12 @@ private theorem selected_plain_store_rule (width : IntegerRoots.Width)
 private theorem selected_unique_store_rule (kind : Kind)
     (inventory : sourceOpcodeIds kind.opcodeIndex = [kind.root.id])
     {ty : Clif.Ty} {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
-    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags}
+    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags} {offset : Int}
     (source : ctx.insts[i]? = some info)
-    (clif : info.clif = some (.store kind.sourceOp ty flags value pointer 0))
+    (clif : info.clif = some (.store kind.sourceOp ty flags value pointer offset))
     {st next : State} {out : V} {trace : List RuleId}
     (selected : LowerSelection ctx i st out next trace) : selected.rule = kind.root := by
-  obtain ⟨little,data⟩ := integer_store_source_data kind inv source clif
+  obtain ⟨little,data⟩ := integer_store_source_data_offset kind inv source clif
   have member := stock_selected_source_opcode_ids inv source clif data selected
   rw [inventory] at member
   have equal := List.mem_singleton.mp member
@@ -172,11 +172,11 @@ private theorem selected_unique_store_rule (kind : Kind)
   exact eq_of_mem_of_id lower_ids_nodup selected.rule_mem candidate equal
 
 /-- Original opcode and operand type determine all seven selected store roots internally. -/
-theorem stock_selected_integer_store_rule (kind : Kind)
+theorem stock_selected_integer_store_rule_offset (kind : Kind)
     {ty : Clif.Ty} {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
-    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags}
+    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags} {offset : Int}
     (source : ctx.insts[i]? = some info)
-    (clif : info.clif = some (.store kind.sourceOp ty flags value pointer 0))
+    (clif : info.clif = some (.store kind.sourceOp ty flags value pointer offset))
     (typed : kind.sourceOp = .store → ctx.valueType? value = some (.int kind.width.bits))
     {st next : State} {out : V} {trace : List RuleId}
     (selected : LowerSelection ctx i st out next trace) : selected.rule = kind.root := by
@@ -189,7 +189,34 @@ theorem stock_selected_integer_store_rule (kind : Kind)
   | narrow16 => exact selected_unique_store_rule .narrow16 (by decide +kernel) inv source clif selected
   | narrow32 => exact selected_unique_store_rule .narrow32 (by decide +kernel) inv source clif selected
 
+/-- Preserve the original zero-offset theorem variant. -/
+theorem stock_selected_integer_store_rule (kind : Kind)
+    {ty : Clif.Ty} {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
+    {i value pointer : Nat} {info : IInfo} {flags : Clif.MemFlags}
+    (source : ctx.insts[i]? = some info)
+    (clif : info.clif = some (.store kind.sourceOp ty flags value pointer 0))
+    (typed : kind.sourceOp = .store → ctx.valueType? value = some (.int kind.width.bits))
+    {st next : State} {out : V} {trace : List RuleId}
+    (selected : LowerSelection ctx i st out next trace) : selected.rule = kind.root := by
+  exact stock_selected_integer_store_rule_offset kind inv source clif typed selected
+
 /-- A retained store derives its selected ID from the actual whole-driver selection receipt. -/
+theorem stock_lower_integer_store_selected_id_offset (kind : Kind) {ty : Clif.Ty}
+    {f : Clif.Function} {result : Result} (run : Stock.lower f = .ok result) (scope : LowerScope f)
+    {event : BlockScanEvent} {record : ScanRecord}
+    (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
+    {info : IInfo} {value pointer : Nat} {flags : Clif.MemFlags} {offset : Int}
+    (source : event.ctx.insts[record.inst]? = some info)
+    (clif : info.clif = some (.store kind.sourceOp ty flags value pointer offset))
+    (typed : kind.sourceOp = .store → event.ctx.valueType? value = some (.int kind.width.bits))
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted) :
+    step.rules.getLast? = some kind.root.id := by
+  obtain ⟨receipt⟩ := stock_lower_record_selection run events records recorded emitted
+  have chosen := stock_selected_integer_store_rule_offset kind (stock_lower_record_context run scope events).1
+    source clif typed receipt.selected
+  rw [receipt.rules,receipt.selected.last_rule,chosen]
+
+/-- Preserve the original zero-offset theorem variant. -/
 theorem stock_lower_integer_store_selected_id (kind : Kind) {ty : Clif.Ty}
     {f : Clif.Function} {result : Result} (run : Stock.lower f = .ok result) (scope : LowerScope f)
     {event : BlockScanEvent} {record : ScanRecord}
@@ -200,9 +227,6 @@ theorem stock_lower_integer_store_selected_id (kind : Kind) {ty : Clif.Ty}
     (typed : kind.sourceOp = .store → event.ctx.valueType? value = some (.int kind.width.bits))
     {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted) :
     step.rules.getLast? = some kind.root.id := by
-  obtain ⟨receipt⟩ := stock_lower_record_selection run events records recorded emitted
-  have chosen := stock_selected_integer_store_rule kind (stock_lower_record_context run scope events).1
-    source clif typed receipt.selected
-  rw [receipt.rules,receipt.selected.last_rule,chosen]
+  exact stock_lower_integer_store_selected_id_offset kind run scope events records source clif typed recorded emitted
 
 end Backend.Stock.Memory.StoreRoots
