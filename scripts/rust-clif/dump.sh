@@ -3,7 +3,7 @@
 # patched one of scripts/build-cg-clif.sh, which writes each dump's external-name table; CG_CLIF
 # overrides) and dump the CLIF it produces.
 #
-# usage: scripts/rust-clif/dump.sh [OUT_DIR]      (default /tmp/rust-clif-survey/out)
+# usage: scripts/rust-clif/dump.sh [OUT_DIR]      (default ${TMPDIR:-/tmp}/rust-clif-survey/out)
 #
 # Output: OUT_DIR/<profile>/<crate>/<crate>.clif/<symbol>.{unopt,opt}.clif (+ .vcode),
 #         OUT_DIR/<profile>/<crate>/<crate>.o and <crate>.undef (undefined symbols of the object).
@@ -22,7 +22,7 @@ TOOLCHAIN=${TOOLCHAIN:-nightly-2026-09-26}
 TARGET=${TARGET:-aarch64-unknown-linux-gnu}
 here=$(cd "$(dirname "$0")" && pwd)
 CG_CLIF=${CG_CLIF:-$here/../../target/cg_clif/abort/librustc_codegen_cranelift.so}
-out=${1:-/tmp/rust-clif-survey/out}
+out=${1:-${TMPDIR:-/tmp}/rust-clif-survey/out}
 
 declare -A PROFILE=(
   [debug]="-Copt-level=0 -Cdebug-assertions=on -Coverflow-checks=on"

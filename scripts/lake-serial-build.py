@@ -255,7 +255,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("targets", nargs="+")
     ap.add_argument("--root", default=".")
-    ap.add_argument("--out", default=None, help="log dir (default /tmp/lake-serial-build-<pid>)")
+    ap.add_argument("--out", default=None, help="log dir (default ${TMPDIR:-/tmp}/lake-serial-build-<pid>)")
     ap.add_argument("--budget", default="16G", help="sum of caps of concurrent light modules")
     ap.add_argument("--max-jobs", type=int, default=6)
     ap.add_argument("--heavy", default="12G", help="caps above this run alone")
@@ -292,7 +292,7 @@ def main():
         signal.signal(sig, lambda s, _f: sys.exit(128 + s))  # run the clean-up in main()'s finally
 
     root = pathlib.Path(a.root).resolve()
-    out = pathlib.Path(a.out or f"/tmp/lake-serial-build-{os.getpid()}")
+    out = pathlib.Path(a.out or f"{os.environ.get('TMPDIR') or '/tmp'}/lake-serial-build-{os.getpid()}")
     budget, heavy = size(a.budget), size(a.heavy)
     heavy_avail, pause_avail = size(a.heavy_avail), size(a.pause_avail)
     min_cap, default_cap, max_cap = size(a.min_cap), size(a.default_cap), size(a.max_cap)
