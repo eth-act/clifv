@@ -1,0 +1,12 @@
+{
+  "archive": "integer-store-demand-transport-backup-v2.tar.gz",
+  "archive_bytes": 265492,
+  "archive_sha256": "e938e07bea9640327b6a90ef48d78a58e91d171bb3da7516a456d75907996804",
+  "parts": [
+    {
+      "name": "integer-store-demand-transport-backup-v2.tar.gz.part-000",
+      "bytes": 265492,
+      "sha256": "e938e07bea9640327b6a90ef48d78a58e91d171bb3da7516a456d75907996804"
+    }
+  ]
+}
