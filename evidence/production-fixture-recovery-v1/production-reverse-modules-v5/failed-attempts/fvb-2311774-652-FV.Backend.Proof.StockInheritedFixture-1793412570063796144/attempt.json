@@ -1,0 +1,13 @@
+{
+  "module": "FV.Backend.Proof.StockInheritedFixture",
+  "unit": "fvb-2311774-652-FV.Backend.Proof.StockInheritedFixture",
+  "cap_bytes": 6442450944,
+  "returncode": 1,
+  "seconds": 15.01865267753601,
+  "module_source_sha256": "657956896ed542f8248b501447d1932c8593911124031f0a9abf5e45a3263ebe",
+  "artifacts": {
+    "FV.Backend.Proof.StockInheritedFixture.log": "146890439044136dc437206277782735989bc25625b27be3145053b0a0a8cfe2",
+    "FV.Backend.Proof.StockInheritedFixture.mem": "7cfb33758ba7429ef5c329bbbbcb8e5e3695f0a47bd76196c67fb727a6e0f788",
+    "FV.Backend.Proof.StockInheritedFixture.time": "9bedf27283f88adbee1887fab90dd398812e592266bfe317c849696ec65533dc"
+  }
+}

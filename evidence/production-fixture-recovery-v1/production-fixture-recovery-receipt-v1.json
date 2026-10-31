@@ -1,0 +1,38 @@
+{
+  "utc": "2026-10-31T02:13:32.127755+00:00",
+  "status": "passed bounded retries for two existing fixtures",
+  "modules": [
+    {
+      "module": "FV.Backend.Proof.StockInheritedFixture",
+      "source_sha256": "657956896ed542f8248b501447d1932c8593911124031f0a9abf5e45a3263ebe",
+      "source_unchanged": true,
+      "failed_attempt": "production-reverse-modules-v5/failed-attempts/fvb-2311774-652-FV.Backend.Proof.StockInheritedFixture-1793412570063796144/attempt.json",
+      "failed_cap_bytes": 6442450944,
+      "retry_cap_bytes": 8589934592,
+      "retry_memory": {
+        "peak": 8250339328,
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "retry_elapsed_seconds": 27.31217787899368,
+      "success_log": "production-reverse-modules-v5/FV.Backend.Proof.StockInheritedFixture.log"
+    },
+    {
+      "module": "FV.Backend.Proof.StockParameterKernel",
+      "source_sha256": "f316093ddaa3092a9c3f7398cce0e49fd609ed0696423875b9be1d837b9892b9",
+      "source_unchanged": true,
+      "failed_attempt": "production-reverse-modules-v5/failed-attempts/fvb-2311774-654-FV.Backend.Proof.StockParameterKernel-1793412613499208416/attempt.json",
+      "failed_cap_bytes": 6442450944,
+      "retry_cap_bytes": 8589934592,
+      "retry_memory": {
+        "peak": 8251777024,
+        "oom": 0,
+        "oom_kill": 0
+      },
+      "retry_elapsed_seconds": 113.78437791099714,
+      "success_log": "production-reverse-modules-v5/FV.Backend.Proof.StockParameterKernel.log"
+    }
+  ],
+  "scope": "Existing source unchanged; full production reverse closure, links and audit remain pending",
+  "next": "Continue watcher2311744; use at least8GiB for fresh builds of these fixtures"
+}

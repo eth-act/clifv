@@ -1,0 +1,13 @@
+{
+  "utc": "2026-10-31T02:11:03.513910+00:00",
+  "remote_backup": "fd61beb427fc4a6a22ed7d49ece8276b96b61625",
+  "source_verified": true,
+  "removed": [
+    "configured-provider-focus-v1/lib",
+    "configured-provider-focus-v1/source",
+    "configured-provider-focus-v1/configured-lean-backend"
+  ],
+  "retained": "Authoritative drafts, raw allocator and object records, logs, failed attempt and resource receipts",
+  "peer_trees_untouched": true,
+  "shared_cache_untouched": true
+}

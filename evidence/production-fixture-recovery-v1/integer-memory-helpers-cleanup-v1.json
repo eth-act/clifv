@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-31T02:03:44.897153+00:00",
+  "remote_backup": "f87e1fad7576b2a066013f7719f867376b4df948",
+  "source_verified": true,
+  "removed": [
+    "integer-memory-helpers-v1/lib",
+    "integer-memory-helpers-v1/source"
+  ],
+  "retained": "Authoritative source drafts, successful logs, exact axiom sets, resource receipts and all failed attempts",
+  "peer_trees_untouched": true,
+  "shared_cache_untouched": true
+}

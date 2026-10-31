@@ -1,0 +1,13 @@
+{
+  "module": "FV.Backend.Proof.StockParameterKernel",
+  "unit": "fvb-2311774-654-FV.Backend.Proof.StockParameterKernel",
+  "cap_bytes": 6442450944,
+  "returncode": 1,
+  "seconds": 15.018960237503052,
+  "module_source_sha256": "f316093ddaa3092a9c3f7398cce0e49fd609ed0696423875b9be1d837b9892b9",
+  "artifacts": {
+    "FV.Backend.Proof.StockParameterKernel.log": "fb2ff73f1f6894cf2efc3f192840e7aa5da8b1fe1faa0593ae6c7dc03467fdf8",
+    "FV.Backend.Proof.StockParameterKernel.mem": "7cfb33758ba7429ef5c329bbbbcb8e5e3695f0a47bd76196c67fb727a6e0f788",
+    "FV.Backend.Proof.StockParameterKernel.time": "ba9e80e8ba6a0d5adc12b6120144b18ffd092b07efe452c7aa148abdee44f0d6"
+  }
+}
