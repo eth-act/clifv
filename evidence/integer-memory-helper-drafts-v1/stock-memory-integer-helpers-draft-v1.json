@@ -1,0 +1,33 @@
+{
+  "utc": "2026-10-31T01:41:27.793037+00:00",
+  "status": "UNVALIDATED drafts; excluded from current production and captured gates",
+  "load_variants": 7,
+  "store_variants": 4,
+  "axiom_roots": [
+    "integer_helpers_project_and_preserve",
+    "integer_helper_success",
+    "integer_helper_replay",
+    "integer_load_contract",
+    "integer_store_contract",
+    "integer_helpers_complete_witness",
+    "integer_loads_complete_witness",
+    "integer_stores_complete_witness"
+  ],
+  "files": {
+    "StockMemoryHelperProjection.next.lean": "4fd05d0d95d4e2a5e63f9cc4c1d2e687b11092fdb85a47b0799218529e07d8ca",
+    "StockMemoryHelperContracts.next.lean": "9ee085d9c4d5054b81dc2bb4e3dba4432df46e1c077ad0d1d0e1f15681922776",
+    "StockMemoryHelperWitness.next.lean": "9f520b68637ea012edbcb74b49a587428da9df3fda639f5685d37f7e210f1157",
+    "stock-memory-integer-helpers-audit.next.lean": "8d374ddf054547ae894876b1fef14ceac11071b91bc735e31103fff9f4b93b8b"
+  },
+  "reuse": [
+    "IselScopedProjectionInv",
+    "IselMemHelpers"
+  ],
+  "next": [
+    "Land current production packet and captured class",
+    "Integrate and validate configured adapter",
+    "Build these helper drafts, run all eight axiom audits and all eleven witnesses",
+    "Connect actual retained roots, source effects and complete production classes"
+  ],
+  "scope": "Helper selection and complete scheduling state only; source/machine memory correctness and production activation remain unfinished"
+}
