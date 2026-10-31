@@ -1,0 +1,353 @@
+--- a/FVTest/Backend/Main.lean
++++ b/FVTest/Backend/Main.lean
+@@ -272,8 +272,15 @@
+         else compileFileMemoryCfgNIWhen (!o.opt.isSome &&
+           !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
+           allocNone pf (unv128 ++ unvTry) o.deadCleanup)
+-    | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
+-        (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))) o.deadCleanup)
++    | some c => do
++      let configuredAlloc : Array VCode → IO (Array (Except String AFunc)) := fun vcs => do
++        -- A whole-file retry replaces the previous attempt's configuration receipt.
++        rejected.set #[]
++        StockConfig.allocateWith c clif rejected allocNone vcs
++      compileFileMemoryCfgNIWhen (!pipelineT && !o.opt.isSome &&
++          !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
++        configuredAlloc pf
++        (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))) o.deadCleanup
+   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
+     IO.FS.writeFile receipt
+       ((StockConfig.receipt request none (some (← rejected.get).toList) o.deadCleanup).pretty ++ "\n")
+--- a/FVTest/Backend/StockConfig.lean
++++ b/FVTest/Backend/StockConfig.lean
+@@ -177,10 +177,11 @@
+ 
+ /-- Allocate, then apply `configure`. `clif name` is the CLIF of function `name`. Each rejection
+ is recorded in `rejected` as (name, reason), for the receipt. -/
+-def allocate (c : Config) (clif : String → List Clif.Function)
+-    (rejected : IO.Ref (Array (String × String))) (a : Allocator) (vcs : Array VCode) :
++def allocateWith (c : Config) (clif : String → List Clif.Function)
++    (rejected : IO.Ref (Array (String × String)))
++    (run : Array VCode → IO (Array (Except String AFunc))) (vcs : Array VCode) :
+     IO (Array (Except String AFunc)) := do
+-  let results ← a.run vcs
++  let results ← run vcs
+   (vcs.zip results).mapM fun (vc, result) => do
+     match result with
+     | .error e => pure (.error e)
+@@ -190,6 +191,12 @@
+       | .error why =>
+         rejected.modify (·.push (vc.name, why))
+         pure (.error (rejectionPrefix ++ why))
++
++/-- Retain the original allocator entry point for existing comparison consumers. -/
++def allocate (c : Config) (clif : String → List Clif.Function)
++    (rejected : IO.Ref (Array (String × String))) (a : Allocator) (vcs : Array VCode) :
++    IO (Array (Except String AFunc)) :=
++  allocateWith c clif rejected a.run vcs
+ 
+ /-- Allocate Stock code together with its actual per-successor vectors. -/
+ def allocateAt (c : Config) (clif : String → List Clif.Function)
+--- /dev/null
++++ b/scripts/test_stock_configured_provider.py
+@@ -0,0 +1,141 @@
++"""Check that configured compilation uses the proved production provider."""
++import copy
++import hashlib
++import json
++import os
++from pathlib import Path
++import subprocess
++import tempfile
++import unittest
++
++from byte_compare import ELF
++
++ROOT = Path(__file__).resolve().parent.parent
++
++MEMORY_CFG = """function %memory_cfg(i64) -> i32 {
++block0(v0: i64):
++    nop
++    jump block1
++block1:
++    nop
++    v2 = load.i32 notrap v0
++    return v2
++}
++"""
++MEMORY = """function %memory(i64) -> i32 {
++block0(v0: i64):
++    v2 = load.i32 notrap v0
++    return v2
++}
++"""
++RETAINED = """function %retained(i64) -> i64 {
++block0(v0: i64):
++    return v0
++}
++"""
++
++
++class StockConfiguredProviderTests(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        cls.backend = ROOT / ".lake/build/bin/lean-backend"
++        cls.trace = ROOT / ".lake/build/bin/lean-backend-lowering-trace"
++        cls.allocator = ROOT / "rust/target/release/lean-regalloc"
++        if not all(p.exists() for p in (cls.backend, cls.trace, cls.allocator)):
++            raise unittest.SkipTest("build lean-backend, lean-backend-lowering-trace and lean-regalloc")
++        cls.request = json.loads((ROOT / "scripts/testdata/stock-config-aarch64.json").read_text())
++
++    def compile_at(self, directory, source, cleanup, configured, typed=False, request=None):
++        directory.mkdir()
++        input_path = directory / "input.clif"
++        input_path.write_text(source)
++        allocator_input = directory / "allocator.json"
++        receipt_path = directory / "receipt.json"
++        args = [self.backend, input_path, directory / "program.o", "--regalloc", "regalloc2"]
++        if not cleanup:
++            args.append("--no-dead-cleanup")
++        if configured:
++            requested = copy.deepcopy(self.request if request is None else request)
++            requested["input_sha256"] = hashlib.sha256(input_path.read_bytes()).hexdigest()
++            config = directory / "request.json"
++            config.write_text(json.dumps(requested))
++            args.extend(["--stock-config", config, "--config-receipt", receipt_path])
++        env = dict(os.environ, LEAN_REGALLOC=str(self.allocator),
++                   LEAN_REGALLOC_KEEP=str(allocator_input))
++        env.pop("FV_PIPELINE_T", None)
++        if typed:
++            env["FV_PIPELINE_T"] = "1"
++        result = subprocess.run(args, cwd=ROOT, env=env, capture_output=True, text=True)
++        receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else None
++        captured = json.loads(allocator_input.read_text())["functions"] if allocator_input.exists() else None
++        return result, receipt, captured
++
++    def check_provider(self, source, cleanup=True, typed=False, stock_selected=False):
++        with tempfile.TemporaryDirectory(prefix="stock-configured-provider-") as tmp:
++            directory = Path(tmp)
++            plain, _, expected = self.compile_at(directory / "default", source, cleanup, False, typed)
++            configured, receipt, actual = self.compile_at(directory / "configured", source, cleanup, True, typed)
++            self.assertEqual(plain.returncode, 0, plain.stderr)
++            self.assertEqual(configured.returncode, 0, configured.stderr)
++            self.assertNotIn("unsupported:", configured.stderr)
++            self.assertTrue(receipt["configuration_accepted"])
++            self.assertFalse(receipt["function_rejections"])
++            self.assertIn("experimental", receipt["proof_scope"])
++            self.assertIsNotNone(expected)
++            self.assertEqual(actual, expected)
++            if not typed:
++                trace_path = directory / "trace.json"
++                flags = [] if cleanup else ["--no-dead-cleanup"]
++                env = dict(os.environ)
++                env.pop("FV_PIPELINE_T", None)
++                traced = subprocess.run(
++                    [self.trace, directory / "default/input.clif", trace_path,
++                     "--stock-schedule", *flags], cwd=ROOT, env=env,
++                    capture_output=True, text=True,
++                )
++                self.assertEqual(traced.returncode, 0, traced.stderr)
++                report = json.loads(trace_path.read_text())
++                self.assertEqual(report["dead_cleanup"], cleanup)
++                self.assertEqual(len(report["functions"]), 1)
++                row = report["functions"][0]
++                self.assertEqual(row["status"], "lowered", row)
++                self.assertEqual(len(expected), 1)
++                lowering = row["lowering"]
++                self.assertEqual(lowering["allocator_input"], expected[0])
++                if not cleanup and stock_selected:
++                    self.assertEqual(lowering["allocation_selected"],
++                                     lowering["stock_schedule"]["selected"])
++            name = source.splitlines()[0].split("%", 1)[1].split("(", 1)[0]
++            plain_object = ELF(directory / "default/program.o")
++            configured_object = ELF(directory / "configured/program.o")
++            plain_symbol, plain_code = plain_object.function(name)
++            configured_symbol, configured_code = configured_object.function(name)
++            self.assertEqual(configured_code, plain_code)
++            self.assertEqual(configured_object.function_relocations(configured_symbol, {}),
++                             plain_object.function_relocations(plain_symbol, {}))
++
++    def test_configured_compiler_uses_the_default_provider(self):
++        for source, stock_selected in ((MEMORY_CFG, True), (MEMORY, True), (RETAINED, False)):
++            for cleanup in (False, True):
++                with self.subTest(source=source.splitlines()[0], cleanup=cleanup):
++                    self.check_provider(source, cleanup, stock_selected=stock_selected)
++
++    def test_typed_pipeline_keeps_its_existing_provider(self):
++        self.check_provider(MEMORY_CFG, cleanup=False, typed=True)
++
++    def test_unsupported_settings_remain_rejected_before_allocation(self):
++        request = copy.deepcopy(self.request)
++        for flag in request["isa_flags"]:
++            if flag["name"] == "use_bti":
++                flag["value"] = "true"
++        with tempfile.TemporaryDirectory(prefix="stock-configured-rejection-") as tmp:
++            result, receipt, captured = self.compile_at(Path(tmp) / "rejected", MEMORY_CFG,
++                                                       True, True, request=request)
++            self.assertEqual(result.returncode, 3, result.stderr)
++            self.assertFalse(receipt["configuration_accepted"])
++            self.assertIsNotNone(receipt["error"])
++            self.assertIsNone(captured)
++
++
++if __name__ == "__main__":
++    unittest.main()
+--- /dev/null
++++ b/scripts/testdata/stock-config-aarch64.json
+@@ -0,0 +1,156 @@
++{
++  "schema": 1,
++  "target": "aarch64-unknown-unknown-elf",
++  "flags": [
++    {
++      "value": "backtracking",
++      "name": "regalloc_algorithm"
++    },
++    {
++      "value": "none",
++      "name": "opt_level"
++    },
++    {
++      "value": "none",
++      "name": "tls_model"
++    },
++    {
++      "value": "none",
++      "name": "stack_switch_model"
++    },
++    {
++      "value": "isa_default",
++      "name": "libcall_call_conv"
++    },
++    {
++      "value": "12",
++      "name": "probestack_size_log2"
++    },
++    {
++      "value": "outline",
++      "name": "probestack_strategy"
++    },
++    {
++      "value": "0",
++      "name": "bb_padding_log2_minus_one"
++    },
++    {
++      "value": "0",
++      "name": "log2_min_function_alignment"
++    },
++    {
++      "value": "false",
++      "name": "regalloc_checker"
++    },
++    {
++      "value": "false",
++      "name": "regalloc_verbose_logs"
++    },
++    {
++      "value": "true",
++      "name": "enable_alias_analysis"
++    },
++    {
++      "value": "true",
++      "name": "enable_verifier"
++    },
++    {
++      "value": "true",
++      "name": "is_pic"
++    },
++    {
++      "value": "false",
++      "name": "use_colocated_libcalls"
++    },
++    {
++      "value": "false",
++      "name": "enable_nan_canonicalization"
++    },
++    {
++      "value": "false",
++      "name": "enable_pinned_reg"
++    },
++    {
++      "value": "false",
++      "name": "enable_llvm_abi_extensions"
++    },
++    {
++      "value": "true",
++      "name": "enable_multi_ret_implicit_sret"
++    },
++    {
++      "value": "false",
++      "name": "unwind_info"
++    },
++    {
++      "value": "true",
++      "name": "preserve_frame_pointers"
++    },
++    {
++      "value": "true",
++      "name": "machine_code_cfg_info"
++    },
++    {
++      "value": "false",
++      "name": "enable_probestack"
++    },
++    {
++      "value": "true",
++      "name": "enable_heap_access_spectre_mitigation"
++    },
++    {
++      "value": "true",
++      "name": "enable_table_access_spectre_mitigation"
++    },
++    {
++      "value": "false",
++      "name": "enable_incremental_compilation_cache_checks"
++    },
++    {
++      "value": "false",
++      "name": "enable_compact_unwind_abi"
++    }
++  ],
++  "isa_flags": [
++    {
++      "value": "false",
++      "name": "has_lse"
++    },
++    {
++      "value": "false",
++      "name": "has_pauth"
++    },
++    {
++      "value": "false",
++      "name": "has_fp16"
++    },
++    {
++      "value": "false",
++      "name": "has_dotprod"
++    },
++    {
++      "value": "false",
++      "name": "has_i8mm"
++    },
++    {
++      "value": "false",
++      "name": "sign_return_address_all"
++    },
++    {
++      "value": "false",
++      "name": "sign_return_address"
++    },
++    {
++      "value": "false",
++      "name": "sign_return_address_with_bkey"
++    },
++    {
++      "value": "false",
++      "name": "use_bti"
++    },
++    {
++      "value": "false",
++      "name": "use_csdb"
++    }
++  ]
++}

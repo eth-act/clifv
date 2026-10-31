@@ -1,0 +1,8 @@
+test_configured_compiler_uses_the_default_provider (__main__.FocusTests.test_configured_compiler_uses_the_default_provider) ... ok
+test_typed_pipeline_keeps_its_existing_provider (__main__.FocusTests.test_typed_pipeline_keeps_its_existing_provider) ... ok
+test_unsupported_settings_remain_rejected_before_allocation (__main__.FocusTests.test_unsupported_settings_remain_rejected_before_allocation) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 13.950s
+
+OK

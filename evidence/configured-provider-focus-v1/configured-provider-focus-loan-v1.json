@@ -1,0 +1,12 @@
+{
+  "status": "returned",
+  "utc": "2026-10-31T02:06:40.220582+00:00",
+  "permission": "Standing worker-A permission after request853",
+  "memory": "2GiB",
+  "aggregate": "O18GiB/A14GiB",
+  "threads": 1,
+  "peer_gate_pid": 2307387,
+  "links_only_own_tree": true,
+  "returned_utc": "2026-10-31T02:09:00.868665+00:00",
+  "result": "Both adapter modules type-check; all eight maintained configured cases pass through the interpreter"
+}

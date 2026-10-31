@@ -1,0 +1,24 @@
+test_configured_compiler_uses_the_default_provider (__main__.FocusTests.test_configured_compiler_uses_the_default_provider) ... 
+  test_configured_compiler_uses_the_default_provider (__main__.FocusTests.test_configured_compiler_uses_the_default_provider) (source='function %retained(i64) -> i64 {', cleanup=False) ... FAIL
+test_typed_pipeline_keeps_its_existing_provider (__main__.FocusTests.test_typed_pipeline_keeps_its_existing_provider) ... ok
+test_unsupported_settings_remain_rejected_before_allocation (__main__.FocusTests.test_unsupported_settings_remain_rejected_before_allocation) ... ok
+
+======================================================================
+FAIL: test_configured_compiler_uses_the_default_provider (__main__.FocusTests.test_configured_compiler_uses_the_default_provider) (source='function %retained(i64) -> i64 {', cleanup=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 121, in test_configured_compiler_uses_the_default_provider
+    self.check_provider(source, cleanup)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/test_stock_configured_provider.next.py", line 106, in check_provider
+    self.assertEqual(lowering["allocation_selected"],
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     lowering["stock_schedule"]["selected"])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'slo[169 chars].int'], 'blocks': [{'params': [], 'label': 0, [203 chars][]}]} != {'slo[169 chars].int', 'Backend.RegClass.int', 'Backend.RegCla[4815 chars][]}]}
+Diff is 8618 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 3 tests in 14.102s
+
+FAILED (failures=1)

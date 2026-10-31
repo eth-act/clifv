@@ -1,0 +1,3 @@
+#!/usr/bin/python3
+import os,sys
+os.execv('/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean', ['/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean', "-j1", '--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/configured-provider-focus-v1/source', "--run", '/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/configured-provider-focus-v1/source/FVTest/Backend/Main.lean'] + sys.argv[1:])

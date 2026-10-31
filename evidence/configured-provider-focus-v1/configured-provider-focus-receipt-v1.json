@@ -1,0 +1,37 @@
+{
+  "utc": "2026-10-31T02:09:58.160112+00:00",
+  "status": "passed focused type-check and interpreter behavior; not integrated or landed",
+  "source_sha256": {
+    "BackendMainConfiguredProvider.next.lean": "e8a65e830f0617a3c567b455e52ba3dbf2c81cb9d38c0d32d6b0e2fc99bae4d2",
+    "StockConfigAllocateWith.next.lean": "dd2377dcea00a7931969a828b0b06640cc8fbe916c4281f2711cdaca6c06c266",
+    "test_stock_configured_provider.next.py": "5660a35f9c301615f199c616388f7b21040e980cc92f20f05902e9392e21782d",
+    "stock-config-aarch64.next.json": "fc78c1c1f46356c7498e59c3255b841b0a40f5b3d361261c66d4e73e4a358290"
+  },
+  "patch_sha256": "57e52b81e9bf09843ef9f7e76363e4d2f8ad521539d26f772b6205a1c6025073",
+  "native_baseline_sha256": {
+    "compiler": "e2ac18f07b779d040d2eae1f2da39e0a9afe8a783452fc8b4b50ed9d8d3490e6",
+    "trace": "6d737c13478d41573ab243f4b6a312ca4ea5e777e4f2011ecddaf389eb85ab71",
+    "allocator": "c99a1392f174706a1372b3d9884dcb8d70aa20757d19ffe56e7903e5fe5e0403"
+  },
+  "tests": 3,
+  "configured_cases": 8,
+  "compile_invocations": 15,
+  "memory_peak_bytes": 268791808,
+  "memory_oom": 0,
+  "loan_returned": true,
+  "source_gates_unchanged": true,
+  "checks": [
+    "Both changed Lean modules type-check",
+    "Actual allocator requests match the default provider",
+    "New memory classes select raw Stock output in plain mode",
+    "Function bytes and relocations match in both cleanup modes",
+    "Retained and typed providers keep their existing output",
+    "Unsupported settings reject before allocation"
+  ],
+  "pending": [
+    "Integrate after captured class lands",
+    "Build the actual native compiler and run maintained tests",
+    "Run the full official comparison and check every prior exact identity"
+  ],
+  "scope": "Lean interpreter runs the adapter draft against existing native baseline and dependencies; no final native or official-suite pass claim"
+}

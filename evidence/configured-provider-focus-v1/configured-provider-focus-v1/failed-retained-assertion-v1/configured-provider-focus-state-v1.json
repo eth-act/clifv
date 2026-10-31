@@ -1,0 +1,2453 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "module": "StockConfig",
+      "returncode": 0,
+      "source_sha256": "dd2377dcea00a7931969a828b0b06640cc8fbe916c4281f2711cdaca6c06c266"
+    },
+    {
+      "module": "Main",
+      "returncode": 0,
+      "source_sha256": "e8a65e830f0617a3c567b455e52ba3dbf2c81cb9d38c0d32d6b0e2fc99bae4d2"
+    }
+  ],
+  "cases": [
+    {
+      "function": "function %memory_cfg(i64) -> i32 {",
+      "cleanup": false,
+      "configured": false,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+      "receipt": null,
+      "allocator": [
+        {
+          "name": "memory_cfg",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [
+                1
+              ],
+              "preds": [],
+              "params": []
+            },
+            {
+              "insts": [
+                2,
+                4
+              ],
+              "succs": [],
+              "preds": [
+                0
+              ],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [],
+              "clobbers": [],
+              "kind": "branch",
+              "args": [
+                []
+              ]
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "",
+      "object_sha256": "46cd2d93a268794cd579630598e5166f471f1b4377eca781ff35727c6529b565",
+      "function_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %memory_cfg(i64) -> i32 {",
+      "cleanup": false,
+      "configured": true,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+      "receipt": {
+        "schema": 1,
+        "request": {
+          "target": "aarch64-unknown-unknown-elf",
+          "schema": 1,
+          "isa_flags": [
+            {
+              "value": "false",
+              "name": "has_lse"
+            },
+            {
+              "value": "false",
+              "name": "has_pauth"
+            },
+            {
+              "value": "false",
+              "name": "has_fp16"
+            },
+            {
+              "value": "false",
+              "name": "has_dotprod"
+            },
+            {
+              "value": "false",
+              "name": "has_i8mm"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_all"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_with_bkey"
+            },
+            {
+              "value": "false",
+              "name": "use_bti"
+            },
+            {
+              "value": "false",
+              "name": "use_csdb"
+            }
+          ],
+          "input_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+          "flags": [
+            {
+              "value": "backtracking",
+              "name": "regalloc_algorithm"
+            },
+            {
+              "value": "none",
+              "name": "opt_level"
+            },
+            {
+              "value": "none",
+              "name": "tls_model"
+            },
+            {
+              "value": "none",
+              "name": "stack_switch_model"
+            },
+            {
+              "value": "isa_default",
+              "name": "libcall_call_conv"
+            },
+            {
+              "value": "12",
+              "name": "probestack_size_log2"
+            },
+            {
+              "value": "outline",
+              "name": "probestack_strategy"
+            },
+            {
+              "value": "0",
+              "name": "bb_padding_log2_minus_one"
+            },
+            {
+              "value": "0",
+              "name": "log2_min_function_alignment"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_checker"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_verbose_logs"
+            },
+            {
+              "value": "true",
+              "name": "enable_alias_analysis"
+            },
+            {
+              "value": "true",
+              "name": "enable_verifier"
+            },
+            {
+              "value": "true",
+              "name": "is_pic"
+            },
+            {
+              "value": "false",
+              "name": "use_colocated_libcalls"
+            },
+            {
+              "value": "false",
+              "name": "enable_nan_canonicalization"
+            },
+            {
+              "value": "false",
+              "name": "enable_pinned_reg"
+            },
+            {
+              "value": "false",
+              "name": "enable_llvm_abi_extensions"
+            },
+            {
+              "value": "true",
+              "name": "enable_multi_ret_implicit_sret"
+            },
+            {
+              "value": "false",
+              "name": "unwind_info"
+            },
+            {
+              "value": "true",
+              "name": "preserve_frame_pointers"
+            },
+            {
+              "value": "true",
+              "name": "machine_code_cfg_info"
+            },
+            {
+              "value": "false",
+              "name": "enable_probestack"
+            },
+            {
+              "value": "true",
+              "name": "enable_heap_access_spectre_mitigation"
+            },
+            {
+              "value": "true",
+              "name": "enable_table_access_spectre_mitigation"
+            },
+            {
+              "value": "false",
+              "name": "enable_incremental_compilation_cache_checks"
+            },
+            {
+              "value": "false",
+              "name": "enable_compact_unwind_abi"
+            }
+          ]
+        },
+        "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+        "policy": "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization",
+        "function_rejections": {},
+        "error": null,
+        "dead_instruction_cleanup": false,
+        "configuration_accepted": true
+      },
+      "allocator": [
+        {
+          "name": "memory_cfg",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [
+                1
+              ],
+              "preds": [],
+              "params": []
+            },
+            {
+              "insts": [
+                2,
+                4
+              ],
+              "succs": [],
+              "preds": [
+                0
+              ],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [],
+              "clobbers": [],
+              "kind": "branch",
+              "args": [
+                []
+              ]
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "lean-backend: /tmp/stock-configured-provider-vp7r87lh/configured/input.clif: %memory_cfg: compiled, unverified (outside backend_correct): experimental stock-configured driver (outside backend_correct)\n",
+      "object_sha256": "cbea0df10e8fe40de14d933885c815539608cc6790bfa83b43076b2399baa2bf",
+      "function_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %memory_cfg(i64) -> i32 {",
+      "cleanup": true,
+      "configured": false,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+      "receipt": null,
+      "allocator": [
+        {
+          "name": "memory_cfg",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [
+                1
+              ],
+              "preds": [],
+              "params": []
+            },
+            {
+              "insts": [
+                2,
+                4
+              ],
+              "succs": [],
+              "preds": [
+                0
+              ],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [],
+              "clobbers": [],
+              "kind": "branch",
+              "args": [
+                []
+              ]
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "",
+      "object_sha256": "46cd2d93a268794cd579630598e5166f471f1b4377eca781ff35727c6529b565",
+      "function_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %memory_cfg(i64) -> i32 {",
+      "cleanup": true,
+      "configured": true,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+      "receipt": {
+        "schema": 1,
+        "request": {
+          "target": "aarch64-unknown-unknown-elf",
+          "schema": 1,
+          "isa_flags": [
+            {
+              "value": "false",
+              "name": "has_lse"
+            },
+            {
+              "value": "false",
+              "name": "has_pauth"
+            },
+            {
+              "value": "false",
+              "name": "has_fp16"
+            },
+            {
+              "value": "false",
+              "name": "has_dotprod"
+            },
+            {
+              "value": "false",
+              "name": "has_i8mm"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_all"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_with_bkey"
+            },
+            {
+              "value": "false",
+              "name": "use_bti"
+            },
+            {
+              "value": "false",
+              "name": "use_csdb"
+            }
+          ],
+          "input_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+          "flags": [
+            {
+              "value": "backtracking",
+              "name": "regalloc_algorithm"
+            },
+            {
+              "value": "none",
+              "name": "opt_level"
+            },
+            {
+              "value": "none",
+              "name": "tls_model"
+            },
+            {
+              "value": "none",
+              "name": "stack_switch_model"
+            },
+            {
+              "value": "isa_default",
+              "name": "libcall_call_conv"
+            },
+            {
+              "value": "12",
+              "name": "probestack_size_log2"
+            },
+            {
+              "value": "outline",
+              "name": "probestack_strategy"
+            },
+            {
+              "value": "0",
+              "name": "bb_padding_log2_minus_one"
+            },
+            {
+              "value": "0",
+              "name": "log2_min_function_alignment"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_checker"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_verbose_logs"
+            },
+            {
+              "value": "true",
+              "name": "enable_alias_analysis"
+            },
+            {
+              "value": "true",
+              "name": "enable_verifier"
+            },
+            {
+              "value": "true",
+              "name": "is_pic"
+            },
+            {
+              "value": "false",
+              "name": "use_colocated_libcalls"
+            },
+            {
+              "value": "false",
+              "name": "enable_nan_canonicalization"
+            },
+            {
+              "value": "false",
+              "name": "enable_pinned_reg"
+            },
+            {
+              "value": "false",
+              "name": "enable_llvm_abi_extensions"
+            },
+            {
+              "value": "true",
+              "name": "enable_multi_ret_implicit_sret"
+            },
+            {
+              "value": "false",
+              "name": "unwind_info"
+            },
+            {
+              "value": "true",
+              "name": "preserve_frame_pointers"
+            },
+            {
+              "value": "true",
+              "name": "machine_code_cfg_info"
+            },
+            {
+              "value": "false",
+              "name": "enable_probestack"
+            },
+            {
+              "value": "true",
+              "name": "enable_heap_access_spectre_mitigation"
+            },
+            {
+              "value": "true",
+              "name": "enable_table_access_spectre_mitigation"
+            },
+            {
+              "value": "false",
+              "name": "enable_incremental_compilation_cache_checks"
+            },
+            {
+              "value": "false",
+              "name": "enable_compact_unwind_abi"
+            }
+          ]
+        },
+        "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+        "policy": "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization",
+        "function_rejections": {},
+        "error": null,
+        "dead_instruction_cleanup": true,
+        "configuration_accepted": true
+      },
+      "allocator": [
+        {
+          "name": "memory_cfg",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [
+                1
+              ],
+              "preds": [],
+              "params": []
+            },
+            {
+              "insts": [
+                2,
+                4
+              ],
+              "succs": [],
+              "preds": [
+                0
+              ],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [],
+              "clobbers": [],
+              "kind": "branch",
+              "args": [
+                []
+              ]
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "lean-backend: /tmp/stock-configured-provider-07uq101f/configured/input.clif: %memory_cfg: compiled, unverified (outside backend_correct): experimental stock-configured driver (outside backend_correct)\n",
+      "object_sha256": "cbea0df10e8fe40de14d933885c815539608cc6790bfa83b43076b2399baa2bf",
+      "function_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %memory(i64) -> i32 {",
+      "cleanup": false,
+      "configured": false,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "f32579d9702ac1f317aeade66589e60d84f9b7edd220df44b6b125a2920c711c",
+      "receipt": null,
+      "allocator": [
+        {
+          "name": "memory",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                3
+              ],
+              "succs": [],
+              "preds": [],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "",
+      "object_sha256": "c6014d5f8f88d97bff4c39a9917ae253ef44cced2d8faf25c293cf1a9d56a329",
+      "function_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %memory(i64) -> i32 {",
+      "cleanup": false,
+      "configured": true,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "f32579d9702ac1f317aeade66589e60d84f9b7edd220df44b6b125a2920c711c",
+      "receipt": {
+        "schema": 1,
+        "request": {
+          "target": "aarch64-unknown-unknown-elf",
+          "schema": 1,
+          "isa_flags": [
+            {
+              "value": "false",
+              "name": "has_lse"
+            },
+            {
+              "value": "false",
+              "name": "has_pauth"
+            },
+            {
+              "value": "false",
+              "name": "has_fp16"
+            },
+            {
+              "value": "false",
+              "name": "has_dotprod"
+            },
+            {
+              "value": "false",
+              "name": "has_i8mm"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_all"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_with_bkey"
+            },
+            {
+              "value": "false",
+              "name": "use_bti"
+            },
+            {
+              "value": "false",
+              "name": "use_csdb"
+            }
+          ],
+          "input_sha256": "f32579d9702ac1f317aeade66589e60d84f9b7edd220df44b6b125a2920c711c",
+          "flags": [
+            {
+              "value": "backtracking",
+              "name": "regalloc_algorithm"
+            },
+            {
+              "value": "none",
+              "name": "opt_level"
+            },
+            {
+              "value": "none",
+              "name": "tls_model"
+            },
+            {
+              "value": "none",
+              "name": "stack_switch_model"
+            },
+            {
+              "value": "isa_default",
+              "name": "libcall_call_conv"
+            },
+            {
+              "value": "12",
+              "name": "probestack_size_log2"
+            },
+            {
+              "value": "outline",
+              "name": "probestack_strategy"
+            },
+            {
+              "value": "0",
+              "name": "bb_padding_log2_minus_one"
+            },
+            {
+              "value": "0",
+              "name": "log2_min_function_alignment"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_checker"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_verbose_logs"
+            },
+            {
+              "value": "true",
+              "name": "enable_alias_analysis"
+            },
+            {
+              "value": "true",
+              "name": "enable_verifier"
+            },
+            {
+              "value": "true",
+              "name": "is_pic"
+            },
+            {
+              "value": "false",
+              "name": "use_colocated_libcalls"
+            },
+            {
+              "value": "false",
+              "name": "enable_nan_canonicalization"
+            },
+            {
+              "value": "false",
+              "name": "enable_pinned_reg"
+            },
+            {
+              "value": "false",
+              "name": "enable_llvm_abi_extensions"
+            },
+            {
+              "value": "true",
+              "name": "enable_multi_ret_implicit_sret"
+            },
+            {
+              "value": "false",
+              "name": "unwind_info"
+            },
+            {
+              "value": "true",
+              "name": "preserve_frame_pointers"
+            },
+            {
+              "value": "true",
+              "name": "machine_code_cfg_info"
+            },
+            {
+              "value": "false",
+              "name": "enable_probestack"
+            },
+            {
+              "value": "true",
+              "name": "enable_heap_access_spectre_mitigation"
+            },
+            {
+              "value": "true",
+              "name": "enable_table_access_spectre_mitigation"
+            },
+            {
+              "value": "false",
+              "name": "enable_incremental_compilation_cache_checks"
+            },
+            {
+              "value": "false",
+              "name": "enable_compact_unwind_abi"
+            }
+          ]
+        },
+        "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+        "policy": "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization",
+        "function_rejections": {},
+        "error": null,
+        "dead_instruction_cleanup": false,
+        "configuration_accepted": true
+      },
+      "allocator": [
+        {
+          "name": "memory",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                3
+              ],
+              "succs": [],
+              "preds": [],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "lean-backend: /tmp/stock-configured-provider-0up6wk21/configured/input.clif: %memory: compiled, unverified (outside backend_correct): experimental stock-configured driver (outside backend_correct)\n",
+      "object_sha256": "c6767a3afed7b6a67c30342ffa17567743d72ff6f125e674838497074631e4f0",
+      "function_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %memory(i64) -> i32 {",
+      "cleanup": true,
+      "configured": false,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "f32579d9702ac1f317aeade66589e60d84f9b7edd220df44b6b125a2920c711c",
+      "receipt": null,
+      "allocator": [
+        {
+          "name": "memory",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                3
+              ],
+              "succs": [],
+              "preds": [],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "",
+      "object_sha256": "c6014d5f8f88d97bff4c39a9917ae253ef44cced2d8faf25c293cf1a9d56a329",
+      "function_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %memory(i64) -> i32 {",
+      "cleanup": true,
+      "configured": true,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "f32579d9702ac1f317aeade66589e60d84f9b7edd220df44b6b125a2920c711c",
+      "receipt": {
+        "schema": 1,
+        "request": {
+          "target": "aarch64-unknown-unknown-elf",
+          "schema": 1,
+          "isa_flags": [
+            {
+              "value": "false",
+              "name": "has_lse"
+            },
+            {
+              "value": "false",
+              "name": "has_pauth"
+            },
+            {
+              "value": "false",
+              "name": "has_fp16"
+            },
+            {
+              "value": "false",
+              "name": "has_dotprod"
+            },
+            {
+              "value": "false",
+              "name": "has_i8mm"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_all"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_with_bkey"
+            },
+            {
+              "value": "false",
+              "name": "use_bti"
+            },
+            {
+              "value": "false",
+              "name": "use_csdb"
+            }
+          ],
+          "input_sha256": "f32579d9702ac1f317aeade66589e60d84f9b7edd220df44b6b125a2920c711c",
+          "flags": [
+            {
+              "value": "backtracking",
+              "name": "regalloc_algorithm"
+            },
+            {
+              "value": "none",
+              "name": "opt_level"
+            },
+            {
+              "value": "none",
+              "name": "tls_model"
+            },
+            {
+              "value": "none",
+              "name": "stack_switch_model"
+            },
+            {
+              "value": "isa_default",
+              "name": "libcall_call_conv"
+            },
+            {
+              "value": "12",
+              "name": "probestack_size_log2"
+            },
+            {
+              "value": "outline",
+              "name": "probestack_strategy"
+            },
+            {
+              "value": "0",
+              "name": "bb_padding_log2_minus_one"
+            },
+            {
+              "value": "0",
+              "name": "log2_min_function_alignment"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_checker"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_verbose_logs"
+            },
+            {
+              "value": "true",
+              "name": "enable_alias_analysis"
+            },
+            {
+              "value": "true",
+              "name": "enable_verifier"
+            },
+            {
+              "value": "true",
+              "name": "is_pic"
+            },
+            {
+              "value": "false",
+              "name": "use_colocated_libcalls"
+            },
+            {
+              "value": "false",
+              "name": "enable_nan_canonicalization"
+            },
+            {
+              "value": "false",
+              "name": "enable_pinned_reg"
+            },
+            {
+              "value": "false",
+              "name": "enable_llvm_abi_extensions"
+            },
+            {
+              "value": "true",
+              "name": "enable_multi_ret_implicit_sret"
+            },
+            {
+              "value": "false",
+              "name": "unwind_info"
+            },
+            {
+              "value": "true",
+              "name": "preserve_frame_pointers"
+            },
+            {
+              "value": "true",
+              "name": "machine_code_cfg_info"
+            },
+            {
+              "value": "false",
+              "name": "enable_probestack"
+            },
+            {
+              "value": "true",
+              "name": "enable_heap_access_spectre_mitigation"
+            },
+            {
+              "value": "true",
+              "name": "enable_table_access_spectre_mitigation"
+            },
+            {
+              "value": "false",
+              "name": "enable_incremental_compilation_cache_checks"
+            },
+            {
+              "value": "false",
+              "name": "enable_compact_unwind_abi"
+            }
+          ]
+        },
+        "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+        "policy": "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization",
+        "function_rejections": {},
+        "error": null,
+        "dead_instruction_cleanup": true,
+        "configuration_accepted": true
+      },
+      "allocator": [
+        {
+          "name": "memory",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                3
+              ],
+              "succs": [],
+              "preds": [],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "lean-backend: /tmp/stock-configured-provider-gs1adx5s/configured/input.clif: %memory: compiled, unverified (outside backend_correct): experimental stock-configured driver (outside backend_correct)\n",
+      "object_sha256": "c6767a3afed7b6a67c30342ffa17567743d72ff6f125e674838497074631e4f0",
+      "function_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %retained(i64) -> i64 {",
+      "cleanup": false,
+      "configured": false,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "af656ff038b08c71ca31ac2f5ce0c1eaca3bb44c700a81b6235e304cbd1e38ab",
+      "receipt": null,
+      "allocator": [
+        {
+          "name": "retained",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [],
+              "preds": [],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "",
+      "object_sha256": "c6004de731f533bd9f10a683286122637d1b654f4264f19c381964442a1f911f",
+      "function_bytes": "fd7bbfa9fd030091fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %retained(i64) -> i64 {",
+      "cleanup": false,
+      "configured": true,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "af656ff038b08c71ca31ac2f5ce0c1eaca3bb44c700a81b6235e304cbd1e38ab",
+      "receipt": {
+        "schema": 1,
+        "request": {
+          "target": "aarch64-unknown-unknown-elf",
+          "schema": 1,
+          "isa_flags": [
+            {
+              "value": "false",
+              "name": "has_lse"
+            },
+            {
+              "value": "false",
+              "name": "has_pauth"
+            },
+            {
+              "value": "false",
+              "name": "has_fp16"
+            },
+            {
+              "value": "false",
+              "name": "has_dotprod"
+            },
+            {
+              "value": "false",
+              "name": "has_i8mm"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_all"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_with_bkey"
+            },
+            {
+              "value": "false",
+              "name": "use_bti"
+            },
+            {
+              "value": "false",
+              "name": "use_csdb"
+            }
+          ],
+          "input_sha256": "af656ff038b08c71ca31ac2f5ce0c1eaca3bb44c700a81b6235e304cbd1e38ab",
+          "flags": [
+            {
+              "value": "backtracking",
+              "name": "regalloc_algorithm"
+            },
+            {
+              "value": "none",
+              "name": "opt_level"
+            },
+            {
+              "value": "none",
+              "name": "tls_model"
+            },
+            {
+              "value": "none",
+              "name": "stack_switch_model"
+            },
+            {
+              "value": "isa_default",
+              "name": "libcall_call_conv"
+            },
+            {
+              "value": "12",
+              "name": "probestack_size_log2"
+            },
+            {
+              "value": "outline",
+              "name": "probestack_strategy"
+            },
+            {
+              "value": "0",
+              "name": "bb_padding_log2_minus_one"
+            },
+            {
+              "value": "0",
+              "name": "log2_min_function_alignment"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_checker"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_verbose_logs"
+            },
+            {
+              "value": "true",
+              "name": "enable_alias_analysis"
+            },
+            {
+              "value": "true",
+              "name": "enable_verifier"
+            },
+            {
+              "value": "true",
+              "name": "is_pic"
+            },
+            {
+              "value": "false",
+              "name": "use_colocated_libcalls"
+            },
+            {
+              "value": "false",
+              "name": "enable_nan_canonicalization"
+            },
+            {
+              "value": "false",
+              "name": "enable_pinned_reg"
+            },
+            {
+              "value": "false",
+              "name": "enable_llvm_abi_extensions"
+            },
+            {
+              "value": "true",
+              "name": "enable_multi_ret_implicit_sret"
+            },
+            {
+              "value": "false",
+              "name": "unwind_info"
+            },
+            {
+              "value": "true",
+              "name": "preserve_frame_pointers"
+            },
+            {
+              "value": "true",
+              "name": "machine_code_cfg_info"
+            },
+            {
+              "value": "false",
+              "name": "enable_probestack"
+            },
+            {
+              "value": "true",
+              "name": "enable_heap_access_spectre_mitigation"
+            },
+            {
+              "value": "true",
+              "name": "enable_table_access_spectre_mitigation"
+            },
+            {
+              "value": "false",
+              "name": "enable_incremental_compilation_cache_checks"
+            },
+            {
+              "value": "false",
+              "name": "enable_compact_unwind_abi"
+            }
+          ]
+        },
+        "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+        "policy": "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization",
+        "function_rejections": {},
+        "error": null,
+        "dead_instruction_cleanup": false,
+        "configuration_accepted": true
+      },
+      "allocator": [
+        {
+          "name": "retained",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [],
+              "preds": [],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "lean-backend: /tmp/stock-configured-provider-76d04tv5/configured/input.clif: %retained: compiled, unverified (outside backend_correct): experimental stock-configured driver (outside backend_correct)\n",
+      "object_sha256": "b152f4a5428737c192aa6b0ce7188e4943ce58f93125fd28bb37f0105b159f08",
+      "function_bytes": "fd7bbfa9fd030091fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %retained(i64) -> i64 {",
+      "cleanup": true,
+      "configured": false,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "af656ff038b08c71ca31ac2f5ce0c1eaca3bb44c700a81b6235e304cbd1e38ab",
+      "receipt": null,
+      "allocator": [
+        {
+          "name": "retained",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [],
+              "preds": [],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "",
+      "object_sha256": "c6004de731f533bd9f10a683286122637d1b654f4264f19c381964442a1f911f",
+      "function_bytes": "fd7bbfa9fd030091fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %retained(i64) -> i64 {",
+      "cleanup": true,
+      "configured": true,
+      "typed": false,
+      "returncode": 0,
+      "source_sha256": "af656ff038b08c71ca31ac2f5ce0c1eaca3bb44c700a81b6235e304cbd1e38ab",
+      "receipt": {
+        "schema": 1,
+        "request": {
+          "target": "aarch64-unknown-unknown-elf",
+          "schema": 1,
+          "isa_flags": [
+            {
+              "value": "false",
+              "name": "has_lse"
+            },
+            {
+              "value": "false",
+              "name": "has_pauth"
+            },
+            {
+              "value": "false",
+              "name": "has_fp16"
+            },
+            {
+              "value": "false",
+              "name": "has_dotprod"
+            },
+            {
+              "value": "false",
+              "name": "has_i8mm"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_all"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_with_bkey"
+            },
+            {
+              "value": "false",
+              "name": "use_bti"
+            },
+            {
+              "value": "false",
+              "name": "use_csdb"
+            }
+          ],
+          "input_sha256": "af656ff038b08c71ca31ac2f5ce0c1eaca3bb44c700a81b6235e304cbd1e38ab",
+          "flags": [
+            {
+              "value": "backtracking",
+              "name": "regalloc_algorithm"
+            },
+            {
+              "value": "none",
+              "name": "opt_level"
+            },
+            {
+              "value": "none",
+              "name": "tls_model"
+            },
+            {
+              "value": "none",
+              "name": "stack_switch_model"
+            },
+            {
+              "value": "isa_default",
+              "name": "libcall_call_conv"
+            },
+            {
+              "value": "12",
+              "name": "probestack_size_log2"
+            },
+            {
+              "value": "outline",
+              "name": "probestack_strategy"
+            },
+            {
+              "value": "0",
+              "name": "bb_padding_log2_minus_one"
+            },
+            {
+              "value": "0",
+              "name": "log2_min_function_alignment"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_checker"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_verbose_logs"
+            },
+            {
+              "value": "true",
+              "name": "enable_alias_analysis"
+            },
+            {
+              "value": "true",
+              "name": "enable_verifier"
+            },
+            {
+              "value": "true",
+              "name": "is_pic"
+            },
+            {
+              "value": "false",
+              "name": "use_colocated_libcalls"
+            },
+            {
+              "value": "false",
+              "name": "enable_nan_canonicalization"
+            },
+            {
+              "value": "false",
+              "name": "enable_pinned_reg"
+            },
+            {
+              "value": "false",
+              "name": "enable_llvm_abi_extensions"
+            },
+            {
+              "value": "true",
+              "name": "enable_multi_ret_implicit_sret"
+            },
+            {
+              "value": "false",
+              "name": "unwind_info"
+            },
+            {
+              "value": "true",
+              "name": "preserve_frame_pointers"
+            },
+            {
+              "value": "true",
+              "name": "machine_code_cfg_info"
+            },
+            {
+              "value": "false",
+              "name": "enable_probestack"
+            },
+            {
+              "value": "true",
+              "name": "enable_heap_access_spectre_mitigation"
+            },
+            {
+              "value": "true",
+              "name": "enable_table_access_spectre_mitigation"
+            },
+            {
+              "value": "false",
+              "name": "enable_incremental_compilation_cache_checks"
+            },
+            {
+              "value": "false",
+              "name": "enable_compact_unwind_abi"
+            }
+          ]
+        },
+        "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+        "policy": "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization",
+        "function_rejections": {},
+        "error": null,
+        "dead_instruction_cleanup": true,
+        "configuration_accepted": true
+      },
+      "allocator": [
+        {
+          "name": "retained",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [],
+              "preds": [],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "lean-backend: /tmp/stock-configured-provider-q_wwo1fz/configured/input.clif: %retained: compiled, unverified (outside backend_correct): experimental stock-configured driver (outside backend_correct)\n",
+      "object_sha256": "b152f4a5428737c192aa6b0ce7188e4943ce58f93125fd28bb37f0105b159f08",
+      "function_bytes": "fd7bbfa9fd030091fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %memory_cfg(i64) -> i32 {",
+      "cleanup": false,
+      "configured": false,
+      "typed": true,
+      "returncode": 0,
+      "source_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+      "receipt": null,
+      "allocator": [
+        {
+          "name": "memory_cfg",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [
+                1
+              ],
+              "preds": [],
+              "params": []
+            },
+            {
+              "insts": [
+                2,
+                4
+              ],
+              "succs": [],
+              "preds": [
+                0
+              ],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [],
+              "clobbers": [],
+              "kind": "branch",
+              "args": [
+                []
+              ]
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "",
+      "object_sha256": "46cd2d93a268794cd579630598e5166f471f1b4377eca781ff35727c6529b565",
+      "function_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %memory_cfg(i64) -> i32 {",
+      "cleanup": false,
+      "configured": true,
+      "typed": true,
+      "returncode": 0,
+      "source_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+      "receipt": {
+        "schema": 1,
+        "request": {
+          "target": "aarch64-unknown-unknown-elf",
+          "schema": 1,
+          "isa_flags": [
+            {
+              "value": "false",
+              "name": "has_lse"
+            },
+            {
+              "value": "false",
+              "name": "has_pauth"
+            },
+            {
+              "value": "false",
+              "name": "has_fp16"
+            },
+            {
+              "value": "false",
+              "name": "has_dotprod"
+            },
+            {
+              "value": "false",
+              "name": "has_i8mm"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_all"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_with_bkey"
+            },
+            {
+              "value": "false",
+              "name": "use_bti"
+            },
+            {
+              "value": "false",
+              "name": "use_csdb"
+            }
+          ],
+          "input_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+          "flags": [
+            {
+              "value": "backtracking",
+              "name": "regalloc_algorithm"
+            },
+            {
+              "value": "none",
+              "name": "opt_level"
+            },
+            {
+              "value": "none",
+              "name": "tls_model"
+            },
+            {
+              "value": "none",
+              "name": "stack_switch_model"
+            },
+            {
+              "value": "isa_default",
+              "name": "libcall_call_conv"
+            },
+            {
+              "value": "12",
+              "name": "probestack_size_log2"
+            },
+            {
+              "value": "outline",
+              "name": "probestack_strategy"
+            },
+            {
+              "value": "0",
+              "name": "bb_padding_log2_minus_one"
+            },
+            {
+              "value": "0",
+              "name": "log2_min_function_alignment"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_checker"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_verbose_logs"
+            },
+            {
+              "value": "true",
+              "name": "enable_alias_analysis"
+            },
+            {
+              "value": "true",
+              "name": "enable_verifier"
+            },
+            {
+              "value": "true",
+              "name": "is_pic"
+            },
+            {
+              "value": "false",
+              "name": "use_colocated_libcalls"
+            },
+            {
+              "value": "false",
+              "name": "enable_nan_canonicalization"
+            },
+            {
+              "value": "false",
+              "name": "enable_pinned_reg"
+            },
+            {
+              "value": "false",
+              "name": "enable_llvm_abi_extensions"
+            },
+            {
+              "value": "true",
+              "name": "enable_multi_ret_implicit_sret"
+            },
+            {
+              "value": "false",
+              "name": "unwind_info"
+            },
+            {
+              "value": "true",
+              "name": "preserve_frame_pointers"
+            },
+            {
+              "value": "true",
+              "name": "machine_code_cfg_info"
+            },
+            {
+              "value": "false",
+              "name": "enable_probestack"
+            },
+            {
+              "value": "true",
+              "name": "enable_heap_access_spectre_mitigation"
+            },
+            {
+              "value": "true",
+              "name": "enable_table_access_spectre_mitigation"
+            },
+            {
+              "value": "false",
+              "name": "enable_incremental_compilation_cache_checks"
+            },
+            {
+              "value": "false",
+              "name": "enable_compact_unwind_abi"
+            }
+          ]
+        },
+        "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+        "policy": "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization",
+        "function_rejections": {},
+        "error": null,
+        "dead_instruction_cleanup": false,
+        "configuration_accepted": true
+      },
+      "allocator": [
+        {
+          "name": "memory_cfg",
+          "entry": 0,
+          "vregs": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
+          "blocks": [
+            {
+              "insts": [
+                0,
+                2
+              ],
+              "succs": [
+                1
+              ],
+              "preds": [],
+              "params": []
+            },
+            {
+              "insts": [
+                2,
+                4
+              ],
+              "succs": [],
+              "preds": [
+                0
+              ],
+              "params": []
+            }
+          ],
+          "insts": [
+            {
+              "ops": [
+                {
+                  "v": 192,
+                  "k": "def",
+                  "p": "late",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [],
+              "clobbers": [],
+              "kind": "branch",
+              "args": [
+                []
+              ]
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "def",
+                  "p": "late",
+                  "c": "reg"
+                },
+                {
+                  "v": 192,
+                  "k": "use",
+                  "p": "early",
+                  "c": "reg"
+                }
+              ],
+              "clobbers": [],
+              "kind": "other"
+            },
+            {
+              "ops": [
+                {
+                  "v": 194,
+                  "k": "use",
+                  "p": "early",
+                  "c": "fixed:x0"
+                }
+              ],
+              "clobbers": [],
+              "kind": "ret"
+            }
+          ]
+        }
+      ],
+      "stderr": "lean-backend: /tmp/stock-configured-provider-ruszmmv1/configured/input.clif: %memory_cfg: compiled, unverified (outside backend_correct): experimental stock-configured driver (outside backend_correct)\n",
+      "object_sha256": "cbea0df10e8fe40de14d933885c815539608cc6790bfa83b43076b2399baa2bf",
+      "function_bytes": "fd7bbfa9fd030091000040b9fd7bc1a8c0035fd6",
+      "relocations": []
+    },
+    {
+      "function": "function %memory_cfg(i64) -> i32 {",
+      "cleanup": true,
+      "configured": true,
+      "typed": false,
+      "returncode": 3,
+      "source_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+      "receipt": {
+        "schema": 1,
+        "request": {
+          "target": "aarch64-unknown-unknown-elf",
+          "schema": 1,
+          "isa_flags": [
+            {
+              "value": "false",
+              "name": "has_lse"
+            },
+            {
+              "value": "false",
+              "name": "has_pauth"
+            },
+            {
+              "value": "false",
+              "name": "has_fp16"
+            },
+            {
+              "value": "false",
+              "name": "has_dotprod"
+            },
+            {
+              "value": "false",
+              "name": "has_i8mm"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_all"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address"
+            },
+            {
+              "value": "false",
+              "name": "sign_return_address_with_bkey"
+            },
+            {
+              "value": "true",
+              "name": "use_bti"
+            },
+            {
+              "value": "false",
+              "name": "use_csdb"
+            }
+          ],
+          "input_sha256": "02e407a5856d9fb0047c22b91a370d92cbdb5489cbd0597fa9000576dfac3276",
+          "flags": [
+            {
+              "value": "backtracking",
+              "name": "regalloc_algorithm"
+            },
+            {
+              "value": "none",
+              "name": "opt_level"
+            },
+            {
+              "value": "none",
+              "name": "tls_model"
+            },
+            {
+              "value": "none",
+              "name": "stack_switch_model"
+            },
+            {
+              "value": "isa_default",
+              "name": "libcall_call_conv"
+            },
+            {
+              "value": "12",
+              "name": "probestack_size_log2"
+            },
+            {
+              "value": "outline",
+              "name": "probestack_strategy"
+            },
+            {
+              "value": "0",
+              "name": "bb_padding_log2_minus_one"
+            },
+            {
+              "value": "0",
+              "name": "log2_min_function_alignment"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_checker"
+            },
+            {
+              "value": "false",
+              "name": "regalloc_verbose_logs"
+            },
+            {
+              "value": "true",
+              "name": "enable_alias_analysis"
+            },
+            {
+              "value": "true",
+              "name": "enable_verifier"
+            },
+            {
+              "value": "true",
+              "name": "is_pic"
+            },
+            {
+              "value": "false",
+              "name": "use_colocated_libcalls"
+            },
+            {
+              "value": "false",
+              "name": "enable_nan_canonicalization"
+            },
+            {
+              "value": "false",
+              "name": "enable_pinned_reg"
+            },
+            {
+              "value": "false",
+              "name": "enable_llvm_abi_extensions"
+            },
+            {
+              "value": "true",
+              "name": "enable_multi_ret_implicit_sret"
+            },
+            {
+              "value": "false",
+              "name": "unwind_info"
+            },
+            {
+              "value": "true",
+              "name": "preserve_frame_pointers"
+            },
+            {
+              "value": "true",
+              "name": "machine_code_cfg_info"
+            },
+            {
+              "value": "false",
+              "name": "enable_probestack"
+            },
+            {
+              "value": "true",
+              "name": "enable_heap_access_spectre_mitigation"
+            },
+            {
+              "value": "true",
+              "name": "enable_table_access_spectre_mitigation"
+            },
+            {
+              "value": "false",
+              "name": "enable_incremental_compilation_cache_checks"
+            },
+            {
+              "value": "false",
+              "name": "enable_compact_unwind_abi"
+            }
+          ]
+        },
+        "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+        "policy": "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization",
+        "error": "unsupported ISA setting use_bti=true",
+        "dead_instruction_cleanup": true,
+        "configuration_accepted": false
+      },
+      "allocator": null,
+      "stderr": "lean-backend: unsupported stock configuration: unsupported ISA setting use_bti=true\n"
+    }
+  ],
+  "utc": "2026-10-31T02:06:57.010955+00:00",
+  "error": "AssertionError()"
+}

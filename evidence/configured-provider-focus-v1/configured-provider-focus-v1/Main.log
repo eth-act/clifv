@@ -1,0 +1,6 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/configured-provider-focus-v1/source/FVTest/Backend/Main.lean:241:11: warning: Variable name `runAlloc` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _runAlloc
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`

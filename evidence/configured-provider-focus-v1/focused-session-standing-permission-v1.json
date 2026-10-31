@@ -1,0 +1,8 @@
+{
+  "utc": "2026-10-31T02:10:16.070793+00:00",
+  "peer": "worker-A",
+  "source": "Reply to request853",
+  "permission": "While the peer gate runs at14GiB, O may use the spare2GiB for bounded focused sessions, one thread, own tree only; report each session end. No new ask is needed.",
+  "required_preflight": "Verify the actual peer scheduler still runs at14GiB before each session",
+  "current_status": "Last session ended; loan returned in message864"
+}
