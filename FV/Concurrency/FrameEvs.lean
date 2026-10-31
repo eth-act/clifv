@@ -502,15 +502,100 @@ theorem probeSteps_evs : ∀ (k : Nat) (env : Env) (s : ArmState), (spOf s).toNa
       simp
     · rw [← hsp2, probeSteps_evs k _ _ hal2 e he, Bool.or_true]
 
+/-- The events of a plain store are written ranges (`MemWrites`). -/
+theorem evs_memWrites {env : Env} {x : Insn} {a : ArmInst} (ha : x.toArmInst env = .ok a)
+    (hk : insnKind x = some .plainW) (s : ArmState) :
+    ∀ e ∈ instEvs a s, (e.addr, e.n) ∈ ExecBytes.MemWrites a s := by
+  intro e he
+  have hk' : e.k = .plainW := by
+    have := (instEvs_kinds ha s).subset (List.mem_map_of_mem (f := (·.k)) he)
+    simpa [hk] using this
+  exact (ExecBytes.instEvs_cover he).2 (by rw [hk']; rfl)
+
+/-- **The stack-probe loop and the lines after it, run straight-line** (#581) from the loop's
+start (`LoopRuns` from iteration 0 at `sp = S`, at least two iterations): only the first
+iteration's `str wzr, [sp, x16]` accesses memory, at `S - 4096`; its `b.gt` jumps back, so the
+straight-line run stops there. -/
+theorem loopRest_evs (env : Env) {S : BitVec 64} {r : Nat} (hr : 2 ≤ r) (T : List Line)
+    (s : ArmState) {s' : ArmState} (hL : LoopRuns env S 0 r s s') :
+    ∀ e ∈ linesEvs env (probeLoopBody ++ T) s, e.addr = S - 4096#64 := by
+  obtain ⟨r', rfl⟩ : ∃ r', r = r' + 1 := ⟨r - 1, by omega⟩
+  obtain ⟨hsp, h16, s3, ab, h3, hab, -, -, hpcB, -⟩ := hL
+  rw [if_neg (by omega)] at hpcB
+  have hl3 : (probeLoopBody.take 3).length = 3 := rfl
+  rw [show probeLoopBody ++ T = probeLoopBody.take 3 ++ (.ins (.bcondRel .gt (-12)) none :: T) from rfl,
+    linesEvs_append_steps _ h3]
+  intro e he
+  rw [List.mem_append] at he
+  rcases he with he | he
+  · -- `sub x16`, `str wzr, [sp, x16]`, `cmn`: only the `str` accesses memory
+    have h3' : StepsOk env [.ins (.aluImm12 .sub true (.x 16) (.x 16) ⟨1, true⟩) none,
+        .ins (.store .store32 .xzr (.regReg .sp (.x 16))) none,
+        .ins (.aluRRR .addS true .xzr (.x 16) (.x 17)) none] s s3 := h3
+    obtain ⟨a1, ha1, hpc1, -, -, a2, ha2, hpc2, -, -, a3, ha3, hpc3, -, -, -⟩ := h3'
+    change e ∈ linesEvs env [.ins (.aluImm12 .sub true (.x 16) (.x 16) ⟨1, true⟩) none,
+        .ins (.store .store32 .xzr (.regReg .sp (.x 16))) none,
+        .ins (.aluRRR .addS true .xzr (.x 16) (.x 17)) none] s at he
+    rw [linesEvs_cons_of ha1 hpc1, instEvs_none ha1 rfl, List.nil_append,
+      linesEvs_cons_of ha2 hpc2, linesEvs_cons_of ha3 hpc3, instEvs_none ha3 rfl,
+      List.nil_append, List.mem_append] at he
+    rcases he with he | he
+    · have hw := evs_memWrites ha2 rfl _ e he
+      rw [memWrites_str_sp_x16 ha2, List.mem_singleton, Prod.mk.injEq] at hw
+      rw [hw.1]
+      obtain ⟨a, ha, hex⟩ := exec_sub_x16_4096 env s
+      rw [ha1, Except.ok.injEq] at ha
+      subst ha
+      rw [hex]
+      simp only [spOf, xreg, Arm.r_of_w_same,
+        Arm.r_of_w_different (show Arm.StateField.GPR 31#5 ≠ .GPR 16#5 by decide),
+        Arm.r_of_w_different (show Arm.StateField.GPR 31#5 ≠ .PC by decide)]
+      simp only [spOf] at hsp
+      simp only [xreg, loopOff, Nat.mul_zero] at h16
+      rw [hsp, h16]
+      bv_omega
+    · simp [linesEvs] at he
+  · -- the `b.gt` jumps back: the straight-line run stops with its (no) events
+    change e ∈ linesEvs { env with pc := env.pc + 12 } (.ins (.bcondRel .gt (-12)) none :: T) s3 at he
+    simp only [linesEvs, hab] at he
+    split at he
+    · rename_i hpc
+      rw [hpcB, h3.pc, hl3] at hpc
+      have e12 : BitVec.ofNat 64 (4 * 3) = 12#64 := rfl
+      rw [e12] at hpc
+      exact absurd hpc (by bv_omega)
+    · rw [instEvs_none hab rfl] at he
+      cases he
+
 /-- **The stack probes' events** from an aligned `sp`: at the probed bytes (`probeHitB`). -/
 theorem probeLines_evs (env : Env) (total : Nat) (s : ArmState) (hal : (spOf s).toNat % 16 = 0) :
     ∀ e ∈ linesEvs env (probeLines total) s, probeHitB (probeCount total) (spOf s) e.addr = true := by
+  by_cases hl : probeLoop total = true
+  · -- the loop form: only the first iteration's `str` is reached straight-line
+    have hn4 : 3 < probeCount total := by simpa [probeLoop] using hl
+    have hLL : probeLoopL total = probeLoopBody := by simp [probeLoopL, hl]
+    have hI : loopIters total = probeCount total := by simp [loopIters, hl]
+    have hH : probeHead total = loadConst64 (.x 16) 0 ++ loadConst64 (.x 17) total := by
+      simp [probeHead, hl]
+    obtain ⟨sP, ⟨s1, hH1, -, hL, -⟩, -⟩ := probeRun_ok env total s hal
+    rw [hI] at hL
+    intro e he
+    rw [probeLines_split, hLL, ← List.append_nil probeLoopBody, linesEvs_append_steps _ hH1,
+      mv_linesEvs_nil _ (by rw [hH, kinds_append, kinds_loadConst64, kinds_loadConst64]; rfl),
+      List.nil_append] at he
+    rw [loopRest_evs _ (by omega) [] s1 hL e he]
+    simp only [probeHitB, List.any_eq_true, List.mem_range]
+    refine ⟨0, by omega, ?_⟩
+    simp
+  have hl' : probeLoop total = false := by simpa using hl
+  have h3 : probeCount total ≤ 3 := by simpa [probeLoop] using hl'
   unfold probeLines
   simp only
   by_cases h0 : probeCount total = 0
   · simp only [h0, beq_self_eq_true, ite_true]
     intro e he; simp [linesEvs] at he
-  simp only [show (probeCount total == 0) = false by simpa using h0, Bool.false_eq_true, ite_false]
+  simp only [show (probeCount total == 0) = false by simpa using h0, Bool.false_eq_true, ite_false,
+    if_pos h3]
   obtain ⟨s1, h1, -⟩ := probeSteps_ok (probeCount total) env s hal
   have hadd : ∀ (env' : Env) (t : ArmState), linesEvs env'
       [Line.ins (.aluImm12 .add true .sp .sp ⟨probeCount total, true⟩) none] t = [] :=
@@ -598,7 +683,28 @@ theorem prologue_evsIn (env : Env) {saves : List Reg} {size : Nat} {calls : Bool
       (∃ k < clobberBytes saves, e.addr = BF + BitVec.ofNat 64 k) ∨
         probeHitN (probeCount (probeTotal size calls)) (spOf s) e.addr = true := by
     intro env2 e he
-    obtain ⟨sP, hP, hspP, -⟩ := probeLines_ok env2 (probeTotal size calls) s2 hal2
+    by_cases hl : probeLoop (probeTotal size calls) = true
+    · -- the loop form: the straight-line run stops at the first `b.gt`
+      have hn4 : 3 < probeCount (probeTotal size calls) := by simpa [probeLoop] using hl
+      have hLL : probeLoopL (probeTotal size calls) = probeLoopBody := by simp [probeLoopL, hl]
+      have hI : loopIters (probeTotal size calls) = probeCount (probeTotal size calls) := by
+        simp [loopIters, hl]
+      have hH : probeHead (probeTotal size calls) =
+          loadConst64 (.x 16) 0 ++ loadConst64 (.x 17) (probeTotal size calls) := by
+        simp [probeHead, hl]
+      obtain ⟨sP, ⟨s1, hH1, -, hL, -⟩, -⟩ := probeRun_ok env2 (probeTotal size calls) s2 hal2
+      rw [hI] at hL
+      rw [probeLines_split, hLL, List.append_assoc, linesEvs_append_steps _ hH1,
+        mv_linesEvs_nil _ (by rw [hH, kinds_append, kinds_loadConst64, kinds_loadConst64]; rfl),
+        List.nil_append] at he
+      right
+      rw [loopRest_evs _ (by omega) _ s1 hL e he, hsp2]
+      simp only [probeHitN, probeHitB, List.any_eq_true, List.mem_range]
+      refine ⟨0, by omega, ?_⟩
+      simp
+    have h3 : probeCount (probeTotal size calls) ≤ 3 := by
+      simpa [probeLoop] using (show probeLoop (probeTotal size calls) = false by simpa using hl)
+    obtain ⟨sP, hP, hspP, -⟩ := probeLines_ok env2 (probeTotal size calls) h3 s2 hal2
     rw [linesEvs_append_steps _ hP, List.mem_append] at he
     rcases he with he | he
     · right

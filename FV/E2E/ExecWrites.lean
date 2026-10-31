@@ -201,6 +201,21 @@ theorem memWrites_norm (a : Arm.ArmInst) (s : Arm.ArmState) :
     MemWrites a.norm s = MemWrites a s := by
   cases a <;> rename_i x <;> cases x <;> rfl
 
+theorem shiftLeft8_div_pos (k : Nat) : 0 < (8 <<< k) / 8 := by
+  rw [Nat.shiftLeft_eq, Nat.mul_comm, Nat.mul_div_assoc _ (by decide : 8 ∣ 8)]
+  exact Nat.mul_pos (Nat.two_pow_pos k) (by decide)
+
+/-- **Every written range is non-empty.** -/
+theorem memWrites_pos (a : Arm.ArmInst) (s : Arm.ArmState) : ∀ p ∈ MemWrites a s, 0 < p.2 := by
+  intro p hp
+  cases a <;> try (simp [MemWrites] at hp)
+  rename_i i
+  cases i <;> simp only [MemWrites, RegImm.writes, RegPair.writes, ldsturWrites, exclWrites] at hp <;>
+    (repeat' split at hp) <;> simp only [List.mem_singleton, List.not_mem_nil] at hp <;>
+    (try subst hp) <;> first | exact hp.elim | (simp only; first
+      | exact shiftLeft8_div_pos _
+      | exact Nat.mul_pos (by decide) (shiftLeft8_div_pos _))
+
 /-- A single-register load (`V = 0`, `opc ≠ 0`, or `V = 1`, `opc<0> = 1`) writes no memory, in
 every addressing mode. -/
 theorem ldstFields_load_writes {size : BitVec 2} {V : BitVec 1} {opc : BitVec 2} {bytes : Nat}

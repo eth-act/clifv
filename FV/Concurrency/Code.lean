@@ -251,23 +251,37 @@ theorem kinds_probeSteps : ∀ k, kinds (probeSteps k) = List.replicate k .plain
   | 0 => rfl
   | k + 1 => by rw [probeSteps, kinds_append, kinds_probeSteps k]; rfl
 
-/-- The stack probes (#581): one plain write per probe; the final `add sp` accesses nothing. -/
+/-- The stack probes' store lines (#581): one per unrolled probe, the loop's single `str`. -/
+def probeStores (total : Nat) : Nat := if 3 < probeCount total then 1 else probeCount total
+
+/-- The stack probes (#581): one plain write per unrolled probe (the final `add sp` accesses
+nothing), or the loop's `str wzr, [sp, x16]` (its constants, `sub`, `cmn` and `b.gt` access
+nothing). (#581: the former count, `probeCount`, became false for the loop form, whose single
+`str` runs once per iteration.) -/
 theorem kinds_probeLines (total : Nat) :
-    kinds (probeLines total) = List.replicate (probeCount total) .plainW := by
+    kinds (probeLines total) = List.replicate (probeStores total) .plainW := by
   unfold probeLines
   simp only
   split
   · rename_i h
     simp only [beq_iff_eq] at h
-    rw [h]; rfl
-  · rw [kinds_append, kinds_probeSteps]; exact List.append_nil _
+    rw [probeStores, if_neg (by omega), h]; rfl
+  · split
+    · rename_i h3
+      rw [kinds_append, kinds_probeSteps, probeStores, if_neg (by omega)]
+      exact List.append_nil _
+    · rename_i h3
+      rw [probeStores, if_pos (by omega)]
+      simp only [probeLoopLines, probeLoopBody, kinds_append, kinds_loadConst64, List.nil_append]
+      rfl
 
-/-- The frame setup stores fp/lr (`stp`), runs the stack probes (`stur wzr`), then pushes the
-saved registers: plain writes only. (#581: the former statement, without the probes' writes,
-became false with Cranelift's stack probes; `calls` is the new argument of `prologueLines`.) -/
+/-- The frame setup stores fp/lr (`stp`), runs the stack probes (`stur wzr`, or the loop's `str`),
+then pushes the saved registers: plain writes only. (#581: the former statement, without the
+probes' writes, became false with Cranelift's stack probes; `calls` is the new argument of
+`prologueLines`; the probes' count is `probeStores`.) -/
 theorem kinds_prologueLines (saves : List Reg) (n : Nat) (calls : Bool) :
     kinds (prologueLines saves n calls) = .plainW :: List.replicate
-      (probeCount (probeTotal n calls) +
+      (probeStores (probeTotal n calls) +
         ((pushLines true (savesInt saves)).length + (pushLines false (savesFloat saves)).length))
       .plainW := by
   rw [← List.replicate_append_replicate, ← List.replicate_append_replicate]
