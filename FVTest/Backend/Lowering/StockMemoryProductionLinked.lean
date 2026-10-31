@@ -1,7 +1,8 @@
-import FV.Backend.Lowering.StockMemoryNI
-import FV.Backend.MemoryNIProduction
+import FV.Backend.Lowering.StockMemoryCfgNI
+import FV.Backend.MemoryCfgNIProduction
 import FVTest.Backend.Lowering.StockScalarTestSupport
 import FV.E2E.SemanticChecksWith
+import FV.E2E.SemanticStackBound
 import FV.Link.ProductionImageWith
 import FV.Link.Ld.Spec
 import FVTest.E2E.SemanticLinkProofWith
@@ -32,23 +33,25 @@ private def plan (s : LinkSpec) : Link.Ld.Plan :=
     syms := s.addrs.toArray.map fun (n, value) =>
       {name := symName n, value, info := 18, shndx := 0xfff1} }
 
-def fixture (name : String) (i : Nat) : String :=
+def fixture (cfg : Bool) (name : String) (i : Nat) : String :=
   if i == 2 then
     "function %" ++ name ++ "(i64) -> i64 system_v {\nblock0(v0: i64):\n    return v0\n}\n"
   else
     let params := if i == 0 then "i64" else "i64, i64"
     let block := if i == 0 then "v0: i64" else "v0: i64, v1: i64"
     let pointer := if i == 0 then "v0" else "v1"
-    "function %" ++ name ++ "(" ++ params ++ ") -> i32 system_v {\nblock0(" ++ block ++ "):\n    v2 = load.i32 notrap " ++ pointer ++ "\n    return v2\n}\n"
+    "function %" ++ name ++ "(" ++ params ++ ") -> i32 system_v {\nblock0(" ++ block ++ "):\n" ++
+      (if cfg then "    nop\n    jump block1\nblock1:\n    nop\n" else "") ++
+      "    v2 = load.i32 notrap " ++ pointer ++ "\n    return v2\n}\n"
 
-private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit := do
-  let actualLower := Stock.Memory.lowerValidated
-  let lowerName := "Backend.Stock.Memory.lowerValidated"
+private def checkOne (out : System.FilePath) (cfg cleanup fallback : Bool) : IO Unit := do
+  let actualLower := Stock.MemoryCfg.lowerValidated
+  let lowerName := "Backend.Stock.MemoryCfg.lowerValidated"
   let names := ["memory_load0","memory_load1","memory_retained"]
-  let fixtureSource := fixture
-  let clif := String.join (names.zipIdx.map fun (name,i) => fixture name i)
+  let fixtureSource := fixture cfg
+  let clif := String.join (names.zipIdx.map fun (name,i) => fixture cfg name i)
   let parsed := Clif.parseFile clif
-  let production ← compileFileMemoryNIWhen true (fun vcs => do
+  let production ← compileFileMemoryCfgNIWhen true (fun vcs => do
     for vc in vcs do
       let some source := parsed.funcs.find? (fun p => p.name == vc.name)
         | throw (IO.userError "allocator source missing")
@@ -63,9 +66,10 @@ private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit
   let stem := s!"memory-{if cleanup then "cleanup" else "plain"}"
   IO.FS.writeBinFile (out / (stem ++ ".o")) (← get production.object)
   IO.FS.writeFile (out / (stem ++ ".json")) production.tableJson
-  let prior ← compileFileParameterCfgNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
+  let prior ← if cfg then compileFileMemoryNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
+    else compileFileParameterCfgNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
   let attempts ← IO.mkRef (0 : Nat)
-  let retried ← compileFileMemoryNIWhen true (fun vcs => do
+  let retried ← compileFileMemoryCfgNIWhen true (fun vcs => do
     let count ← attempts.get
     attempts.set (count+1)
     if count == 0 then pure (vcs.map fun _ => .error "forced memory-attempt failure")
@@ -100,7 +104,7 @@ private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit
     require (decide (a.vc = selected) && a.vc.rulesFired == selected.rulesFired) "actual memory artifact/history binding changed"
     if i < 2 then
       let raw ← get (Stock.lower fi.func)
-      require (Stock.Memory.check fi.func raw.code && SemanticNI.check fi.func raw.code &&
+      require ((if cfg then Stock.MemoryCfg.check fi.func raw.code else Stock.Memory.check fi.func raw.code) && SemanticNI.check fi.func raw.code &&
         decide (a.vc = raw.code) && !Backend.Proof.Driver.lowerCheck fi.func raw.code)
         "memory class fell back or retained the legacy vreg mapping"
     else
@@ -152,19 +156,19 @@ private def checkOne (out : System.FilePath) (cleanup fallback : Bool) : IO Unit
     for (path,text) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName input names names
         proof.toString label executable.toString cleanup true
         (if perEntry then none else stack) (if perEntry then names else []) bg
-        (lowerImport := "FV.Backend.Lowering.StockMemoryNI") do
+        (lowerImport := "FV.Backend.Lowering.StockMemoryCfgNI") do
       if let some parent := (System.FilePath.mk path).parent then IO.FS.createDirAll parent
       IO.FS.writeFile path text
     IO.FS.writeFile (out / (label ++ ".clif")) clif
     IO.println s!"ACTUAL_STOCK_MEMORY_LINK {label}: source/artifact/ELF/stack/proof emission passed"
 
-def check (out : System.FilePath) : IO Unit := do
+def check (out : System.FilePath) (cfg : Bool := false) : IO Unit := do
   IO.FS.createDirAll (out / "Crates")
   for cleanup in [false,true] do
-    for fallback in [false,true] do checkOne out cleanup fallback
+    for fallback in [false,true] do checkOne out cfg cleanup fallback
 
 end FVTest.StockMemoryProductionLinked
 
 def main (args : List String) : IO UInt32 := do
-  FVTest.StockMemoryProductionLinked.check (System.FilePath.mk (args[0]?.getD "/tmp/stock-memory-linked"))
+  FVTest.StockMemoryProductionLinked.check (System.FilePath.mk (args[0]?.getD "/tmp/stock-memory-linked")) (args.contains "--memory-cfg")
   pure 0
