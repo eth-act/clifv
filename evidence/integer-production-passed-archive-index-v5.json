@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-31T06:46:57.489015+00:00",
+  "files": 86058,
+  "archive_sha256": "754f4c4e98f129d5247e58b842a46060756aae1fef1c3044aa5d2924f0c0b19c",
+  "archive_bytes": 22363589,
+  "parts": {
+    "integer-production-passed-v5.tar.gz.part000": "754f4c4e98f129d5247e58b842a46060756aae1fef1c3044aa5d2924f0c0b19c"
+  },
+  "scope": "All focused786 post-merge gates pass. Official1633/4455,zero status changes. Full normal/runtime gates remain pending. CI failed before tests from runner disk exhaustion; peer clarified no revert for that infrastructure failure."
+}
