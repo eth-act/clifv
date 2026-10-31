@@ -46,4 +46,4 @@ import FV.E2E.StockMemoryPairedJump
 #print axioms E2E.StockMemory.original_entry_prelude_paired
 #print axioms E2E.StockMemory.stock_two_block_load_return_paired
 #print axioms E2E.StockMemory.stock_two_block_load_return_paired_function
-#print axioms E2E.StockMemoryCapturedWitness.complete_captured_paired_function_witness
+#print axioms E2E.StockMemoryCapturedWitness.complete_captured_paired_function_witness -- witness: native_decide
