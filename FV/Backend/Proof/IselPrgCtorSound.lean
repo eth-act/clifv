@@ -236,14 +236,16 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
     simp only [γ] at hw1
     obtain ⟨x, t, rfl, ht, -⟩ := hw1
     red_safe externCtor
-    rw [hP.ctxInv.typedReg x t ht]
+    obtain ⟨n, hn⟩ := hP.ctxInv.typedSome x t ht
+    rw [hn]
     exact CS.fin_ok ⟨_, rfl⟩
   -- put_in_regs
   · intro ts; cintro; gl1; cok
     simp only [γ] at hw1
     obtain ⟨x, t, rfl, ht, -⟩ := hw1
     red_safe externCtor
-    rw [hP.ctxInv.typedReg x t ht]
+    obtain ⟨n, hn⟩ := hP.ctxInv.typedSome x t ht
+    rw [hn]
     exact CS.fin_ok ⟨_, rfl, rfl⟩
   -- put_in_regs_vec (values)
   · intro xs; cintro; gl1

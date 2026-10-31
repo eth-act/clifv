@@ -118,7 +118,7 @@ theorem pinv_build (hdom : dominatedB f = true) (hs : lowerScopeB f = true)
   have sp := ctxSpec_of hb
   have hd := dominated_of hdom
   have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete (lowerScope_of hs) hb)
-  refine ⟨hctx, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨hctx.weak, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro j info c hi hc
     rcases sp.insts info (Array.mem_toList_iff.mpr (Array.mem_of_getElem? hi)) with
       rfl | ⟨B, hB, s, hs, rfl⟩
@@ -167,7 +167,7 @@ theorem pinv_build (hdom : dominatedB f = true) (hs : lowerScopeB f = true)
 
 /-- `PInv` survives replacing a terminator's placeholder by an entry without CLIF instruction
 or results. -/
-theorem pinv_of_insts (hP : PInv f ctx) {ctx' : Ctx} (hinv : CtxInv f ctx')
+theorem pinv_of_insts (hP : PInv f ctx) {ctx' : Ctx} (hinv : CtxInvW f ctx')
     (hvt : ctx'.valTy = ctx.valTy) (hso : ctx'.slotOff = ctx.slotOff)
     (hins : ∀ (j : Nat) (info : IInfo), ctx'.insts[j]? = some info →
       ctx.insts[j]? = some info ∨ (info.clif = none ∧ info.results = [])) : PInv f ctx' := by
@@ -199,17 +199,48 @@ theorem termCtx_insts_cases {ti : Nat} {data : V} {j : Nat} {info : IInfo}
       omega
   · rw [termCtx_insts_ne hj] at h; exact .inl h
 
+/-- `ctxInv_termCtx` for `CtxInvW`: a terminator's data in its placeholder slot keeps the
+invariant. -/
+theorem ctxInvW_termCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInvW f ctx) {ti : Nat}
+    (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : V) :
+    CtxInvW f (termCtx ctx ti data) := by
+  have hne : ∀ x d, ctx.defInst? x = some d → d ≠ ti := by
+    intro x d hd e
+    subst e
+    obtain ⟨info, hi, hx⟩ := h.defInst x d hd
+    rw [hph] at hi; cases hi; cases hx
+  refine ⟨h.func, fun ii info inst hi hc => ?_, fun ii info inst hi hc => ?_,
+    fun ii info inst hi hc => ?_, h.typedSome, fun x d hd => ?_, fun x d info hd hi => ?_, h.slotOff,
+    fun ii info hi => ?_, h.valTyE, fun ii info inst x hi hc hx => ?_⟩
+  · by_cases e : ii = ti
+    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
+    · rw [termCtx_insts_ne e] at hi; exact h.data ii info inst hi hc
+  · by_cases e : ii = ti
+    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
+    · rw [termCtx_insts_ne e] at hi; exact h.instE ii info inst hi hc
+  · by_cases e : ii = ti
+    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
+    · rw [termCtx_insts_ne e] at hi; exact h.resTys ii info inst hi hc
+  · rw [termCtx_insts_ne (hne x d hd)]; exact h.defInst x d hd
+  · rw [termCtx_insts_ne (hne x d hd)] at hi; exact h.defClif x d info hd hi
+  · by_cases e : ii = ti
+    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; intro t ht; cases ht
+    · rw [termCtx_insts_ne e] at hi; exact h.resTysE ii info hi
+  · by_cases e : ii = ti
+    · subst e; rw [termCtx_insts_self hph] at hi; cases hi; cases hc
+    · rw [termCtx_insts_ne e] at hi; exact h.addr64 ii info inst x hi hc hx
+
 /-- **`PInv` of a terminator's context** (`termCtx`: its data in its placeholder slot). -/
 theorem pinv_termCtx (hP : PInv f ctx) {ti : Nat}
     (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : V) :
     PInv f (termCtx ctx ti data) :=
-  pinv_of_insts hP (ctxInv_termCtx hP.ctxInv hph data) rfl rfl fun _ _ h => termCtx_insts_cases h
+  pinv_of_insts hP (ctxInvW_termCtx hP.ctxInv hph data) rfl rfl fun _ _ h => termCtx_insts_cases h
 
 /-- **`PInv` of a `try_call`'s context** (`tryCtx`: also its return and payload vregs). -/
 theorem pinv_tryCtx (hP : PInv f ctx) {ti : Nat}
     (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : V) (trs : List Reg × List Reg) :
     PInv f (tryCtx ctx ti data trs) :=
-  pinv_of_insts hP { ctxInv_termCtx hP.ctxInv hph data with } rfl rfl fun _ _ h =>
+  pinv_of_insts hP { ctxInvW_termCtx hP.ctxInv hph data with } rfl rfl fun _ _ h =>
     termCtx_insts_cases (ti := ti) (data := data) h
 
 end
