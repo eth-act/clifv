@@ -191,19 +191,6 @@ jobs:
           # main builds are later runs' baselines
           retention-days: ${{ github.ref == 'refs/heads/main' && 14 || 3 }}
 
-  shadow-experiment:
-    name: Optional turbo-lean shadow
-    needs: [plan, wave1, wave2, wave3, assemble]
-    if: ${{ !cancelled() && vars.TURBO_LEAN_SHADOW_DISABLED != 'true' }}
-    uses: ./.github/workflows/turbo-lean-shadow.yml
-    permissions:
-      actions: read
-      contents: read
-    with:
-      stock-result: ${{ needs.assemble.result == 'success' && 'success' || (needs.wave1.result == 'failure' || needs.wave2.result == 'failure' || needs.wave3.result == 'failure' || needs.assemble.result == 'failure') && 'failure' || needs.assemble.result }}
-      base-run: ${{ needs.plan.outputs.base-run }}
-      stages: ${{ needs.assemble.result == 'success' && 'lake-full' || 'stage-w*' }}
-
   audit:
     name: Axiom audits
     needs: [plan, assemble]
