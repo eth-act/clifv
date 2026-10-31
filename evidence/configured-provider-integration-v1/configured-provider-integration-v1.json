@@ -1,0 +1,33 @@
+{
+  "utc": "2026-10-31T01:33:05.635131+00:00",
+  "status": "draft; git apply --check passed; Lean build and runtime pending",
+  "files": [
+    {
+      "path": "FVTest/Backend/Main.lean",
+      "before_sha256": "b15ab64e4de03f585c1e214a95781f60a2540153bdb76ffcd4ab39698ee40c2f",
+      "after_sha256": "e8a65e830f0617a3c567b455e52ba3dbf2c81cb9d38c0d32d6b0e2fc99bae4d2"
+    },
+    {
+      "path": "FVTest/Backend/StockConfig.lean",
+      "before_sha256": "8c06bca647a8fc7339a7dddddc39875a542f950e845b8a03ab569a2b779b1bbc",
+      "after_sha256": "dd2377dcea00a7931969a828b0b06640cc8fbe916c4281f2711cdaca6c06c266"
+    },
+    {
+      "path": "scripts/test_stock_configured_provider.py",
+      "before_sha256": null,
+      "after_sha256": "8cb6f8f51a537d241dc6c2a5ca0fa05e916d61c8303b72deb99a9c9a0824ae35"
+    },
+    {
+      "path": "scripts/testdata/stock-config-aarch64.json",
+      "before_sha256": null,
+      "after_sha256": "fc78c1c1f46356c7498e59c3255b841b0a40f5b3d361261c66d4e73e4a358290"
+    }
+  ],
+  "patch_sha256": "f078144129d592d24f41d9c6ca7cbc40c8096b01cf0691d27d1ff429bd53f8bc",
+  "source_unchanged": true,
+  "required_order": [
+    "land775",
+    "land captured class",
+    "integrate and validate configured adapter"
+  ]
+}
