@@ -529,12 +529,17 @@ theorem saves_split : ∀ saves : List Reg,
     cases r <;> simp_all [savesInt, savesFloat, List.filter_cons] <;> omega
 
 theorem probeLines_length (total : Nat) : (probeLines total).length ≤ 9 := by
-  have := probeCount_le_three total
   unfold probeLines
   simp only
   split
   · simp
-  · simp only [List.length_append, probeSteps_length, List.length_singleton]; omega
+  · split
+    · simp only [List.length_append, probeSteps_length, List.length_singleton]; omega
+    · have := loadConst64_length (.x 17) total
+      have h0 : (loadConst64 (.x 16) 0).length = 1 := by decide
+      simp only [probeLoopLines, probeLoopBody, List.length_append, List.length_cons,
+        List.length_nil]
+      omega
 
 /-- The prologue: fp/lr, x29, the stack probes, at most one push per saved register, the `sp`
 adjustment. -/

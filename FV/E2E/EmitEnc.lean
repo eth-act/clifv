@@ -1212,8 +1212,9 @@ theorem pushReg_float {saves : List Reg} (hsv : SavesOk saves) :
   · cases hx
   · exact ⟨n, rfl, h1, h2⟩
 
-/-- The stack probes (`sub sp, sp, #4096`, `stur wzr, [sp]`, `add sp, sp, #4096·n`, `n ≤ 3`) are
-encodable. -/
+/-- The stack probes (`sub sp, sp, #4096`, `stur wzr, [sp]`, `add sp, sp, #4096·n`, `n ≤ 3`; or
+the loop's `x16 = 0`, `x17 = total`, `sub x16, x16, #4096`, `str wzr, [sp, x16]`,
+`cmn x16, x17`, `b.gt .-12`) are encodable. -/
 theorem probeLines_enc (total : Nat) :
     ∀ i t, Line.ins i t ∈ probeLines total → i.encodable = true := by
   intro i t h
@@ -1221,13 +1222,19 @@ theorem probeLines_enc (total : Nat) :
   simp only at h
   split at h
   · cases h
+  split at h
   · rcases List.mem_append.mp h with h | h
     · rcases probeSteps_mem h with h | h <;>
         (simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; enc)
-    · have := probeCount_le_three total
-      simp only [List.mem_singleton, Line.ins.injEq] at h
+    · simp only [List.mem_singleton, Line.ins.injEq] at h
       obtain ⟨rfl, -⟩ := h
       enc
+  · simp only [probeLoopLines, probeLoopBody, List.mem_append, List.mem_cons, List.not_mem_nil,
+      or_false] at h
+    rcases h with (h | h) | h | h | h | h
+    · exact loadConst64_enc (by omega) _ i t h
+    · exact loadConst64_enc (by omega) _ i t h
+    all_goals (simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; enc)
 
 /-- The prologue (fp/lr, the pushes of the callee-saved registers, the frame) is encodable. -/
 theorem aEnc_prologue (c : FnCtx) {af : AFunc} (hsv : SavesOk af.saves) : AEnc c af .prologue := by
