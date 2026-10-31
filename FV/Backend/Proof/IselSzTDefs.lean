@@ -73,7 +73,7 @@ abbrev CTab := List (TermId × List AT × Nat)
 
 /-- The weight of an entry of `t` whose inputs are above `as`. -/
 def ctabGet (ctab : CTab) (t : TermId) (as : List AT) : Option Nat :=
-  (ctab.find? fun e => e.1 == t && AT.leAll as e.2.1).map (·.2.2)
+  (ctab.find? fun e => e.1 == t && AT.leAllF as e.2.1).map (·.2.2)
 
 section Eval
 variable (p : Program) (tab : Tab) (aw : TermId → List AT → Option Nat) (ctab : CTab)

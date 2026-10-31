@@ -572,8 +572,8 @@ theorem tabGet_le {t : TermId} {as : List AT} {out : AT} (h : tabGet tab t as = 
     have hp := List.find?_some he
     simp only [Bool.and_eq_true, beq_iff_eq] at hp
     obtain ⟨⟨h1, h2⟩, -⟩ := hp
-    exact ⟨e.2.1, by rw [← h1]; exact hm, h2⟩
-  · cases hf : tab.find? (fun e => e.1 == t && AT.leAll as e.2.1) with
+    exact ⟨e.2.1, by rw [← h1]; exact hm, AT.leAllF_leAll h2⟩
+  · cases hf : tab.find? (fun e => e.1 == t && AT.leAllF as e.2.1) with
     | none => rw [hf] at h; cases h
     | some e =>
       rw [hf] at h
@@ -582,7 +582,7 @@ theorem tabGet_le {t : TermId} {as : List AT} {out : AT} (h : tabGet tab t as = 
       have hm := List.mem_of_find?_eq_some hf
       have hp := List.find?_some hf
       simp only [Bool.and_eq_true, beq_iff_eq] at hp
-      exact ⟨e.2.1, by rw [← hp.1]; exact hm, hp.2⟩
+      exact ⟨e.2.1, by rw [← hp.1]; exact hm, AT.leAllF_leAll hp.2⟩
 
 theorem chkTab_mem (hc : chkTab p tab aext actor apre aOracle = true) {t : TermId} {ins : List AT}
     {out : AT} (hm : (t, ins, out) ∈ tab) :
