@@ -110,6 +110,17 @@ jobs:
           compression-level: 0
           retention-days: 7
 
+  shadow-experiment:
+    name: Optional turbo-lean shadow
+    needs: measure
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && vars.TURBO_LEAN_SHADOW_DISABLED != 'true' }}
+    uses: ./.github/workflows/turbo-lean-shadow.yml
+    permissions:
+      actions: read
+      contents: read
+    with:
+      stock-result: ${{ needs.measure.result }}
+
   ratchet:
     name: Check lost matches
     needs: measure
