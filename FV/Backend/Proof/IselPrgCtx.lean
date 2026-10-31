@@ -30,8 +30,8 @@ outside the ISLE progress analysis), the argument locations compute (`sigArgLocs
 `i64`-or-narrower `normal` parameters and at most one `sret` one) and at most 8 ABI
 returns. -/
 def sigOkB (s : Clif.Signature) : Bool :=
-  s.params.all (·.ty.isInt) && (sigRets s).all (·.ty.isInt) &&
-    (sigArgLocs s).isOk && decide ((sigRets s).length ≤ 8)
+  s.params.all (·.ty.isInt) && s.returns.all (·.ty.isInt) &&
+    (sigArgLocs s).isOk && decide (s.returns.length ≤ 8)
 
 /-- The statement conditions of `iselInB`. -/
 def stmtIselB (f : Clif.Function) : Clif.Inst → Bool

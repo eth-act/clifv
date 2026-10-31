@@ -90,17 +90,19 @@ variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkO
 
 include hp hc in
 /-- `lower_return` on values of either class: the value registers, `rets` pinning them to the
-signature's return registers (`retRegsC` by class). -/
+return registers (`retRegsK`: the first declared returns as `retRegsC` places them, an `sret`
+signature's struct pointer in x8). -/
 theorem lower_return_okTy {n : Nat} (hn : 60 ≤ n) {xs : List Nat} {s s' : LState × Array RuleId}
     {v : V} (h : ApplyInternal p (sem ctx) cfg n 25 294 [.values xs] s v s') :
     ∃ rs ps, xs.mapM ctx.valueReg? = some rs ∧
-      retRegsC (regsClasses (rs.map fun r => [r])) 0 0 = some ps ∧
+      retRegsK (rs.length - (sretRet ctx.func).length)
+          (regsClasses (rs.map fun r => [r])) = some ps ∧
       s'.1 = s.1.emit (.rets (rs.zip ps)) ∧ v = .regsVec [] := by
   isel_split hp hc h 294
   ctl_inv [*, rule_prelude_lower_1493] at hm he
   simp only [mapM_single_map, List.length_map, Option.some.injEq] at *
   subst_vars
-  exact ⟨_, ‹List.mapM ctx.valueReg? xs = some _›, _, ‹retRegsC _ 0 0 = some _›, rfl⟩
+  exact ⟨_, ‹List.mapM ctx.valueReg? xs = some _›, _, ‹retRegsK _ _ = some _›, rfl⟩
 
 end
 

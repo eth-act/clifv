@@ -17,7 +17,7 @@ theorem runOkABI_of_return_stop {W : Type} {f : Clif.Function} {vc : VCode}
     {vals : List Clif.Val} {cm0 cm : Clif.Mem}
     (block : vc.blocks[label]? = some vb) (segment : SegAt vb k ms)
     (execution : seqRun sem ms ρ w = some (.stop offset (.rets us) ops ρ₁ w₁ outs w₂ .ret))
-    (pins : ReturnABI f us) (arity : us.length = (vuses ops ρ₁).length)
+    (pins : ReturnABIV f vals us) (arity : us.length = (vuses ops ρ₁).length)
     (values : PrefixHold vals (vuses ops ρ₁)) (memory : MR slots cm0 w₂)
     (freed : cm = (cm0.free (slots.map (·.2))).leave) :
     RunOkABI f vc sem MR slots ⟨label,k,ρ,w⟩ (.returned vals cm) := by
@@ -70,7 +70,12 @@ theorem stock_lower_return_record_runOk {f : Clif.Function} {result : Result}
   obtain ⟨ops,world',executed,values,mem⟩ := execution world memory
   have instruction : ((.rets (rs.zip ps) : MInst).mapRegs resolve) = .rets us := rfl
   rw [instruction] at executed
-  exact runOkABI_of_return_stop placed segment executed selected
+  have returnCount : us.length = vals.length + (sretRet f).length := by
+    have explicit := (getMany_ok ((stepTerm_ret callers).2.2 vals cm done).1).1
+    have both := (getMany_ok read).1
+    simp only [List.length_append] at both valueCount explicit ⊢
+    omega
+  exact runOkABI_of_return_stop placed segment executed ⟨selected, returnCount⟩
     (by have := values.1; omega) values.prefix_append mem
     ((stepTerm_ret callers).2.2 vals cm done).2
 end Backend.Stock.Proof

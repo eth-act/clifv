@@ -25,7 +25,7 @@ theorem pric_applies :
         TrapsExplicit env ({ funcs := [] } : Clif.Program) cs → ∀ fuel,
         ((∀ vals cm, Clif.runLoop env { funcs := [] } fuel cs = .returned vals cm →
           ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            RetPins vals us ∧ us.length = outs.length ∧
             PrefixHold vals outs ∧ MemRel F (fun _ => none) cm w ∧ vc.RetsSite us ∧
             ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (Kp : Nat)
               (cc : BitVec 64) (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState)
@@ -41,7 +41,7 @@ theorem pric_applies :
             ∃ n, TrapAt fb base c' (runX (ArmStepX (XI.at 0) H fa) n s))) ∧
         ((∀ vals cm, Clif.runLoop env { funcs := [] } fuel cs = .returned vals cm →
           ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            RetPins vals us ∧ us.length = outs.length ∧
             PrefixHold vals outs ∧ MemRel F (fun _ => none) cm w ∧ vc.RetsSite us ∧
             ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (Kp : Nat)
               (cc : BitVec 64) (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState)
@@ -57,7 +57,7 @@ theorem pric_applies :
             ∃ n, TrapAt fb base c' (runX (ArmStepX (XI.at 0) H fa) n s))) ∧
         (∀ vals cm, Clif.runLoop env { funcs := [] } fuel cs = .returned vals cm →
           ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            RetPins vals us ∧ us.length = outs.length ∧
             PrefixHold vals outs ∧ MemRel F (fun _ => none) cm w) := by
   obtain ⟨hsub, vc, vcp, af, fa, fb, hc, hcov, -⟩ := compiled_covered_exists
   refine ⟨vc, vcp, af, fa, fb, hc, fun env XI K F c w₀ args cs hce hrel hargs htr fuel =>

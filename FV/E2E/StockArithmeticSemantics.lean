@@ -80,7 +80,7 @@ theorem stock_arithmetic_machine_return {f : Clif.Function} {result : Stock.Resu
       returned refines driver memorySem stable memory arguments
   obtain ⟨n,finished,registers,memEq⟩ := (machine base ra s activation stack w bodyEntry ρ).1
     us outs world reached
-  exact ⟨n,us,outs,world,cm0,finished,pins,arity,values,registers,memEq,mem,freed⟩
+  exact ⟨n,us,outs,world,cm0,finished,pins.abi,arity,values,registers,memEq,mem,freed⟩
 
 /-- The actual checked allocator, physical lowering, emission and layout
 instantiate the direct Stock consumer. No legacy lowering verdict or supplied

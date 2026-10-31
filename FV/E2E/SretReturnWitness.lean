@@ -12,7 +12,7 @@ import FV.Backend.Proof.RegallocCover
 allocation, through emission and layout) with its prepared code's forms covered, and its ABI
 return value is the `sret` argument (`sretArg sw [p, v] = [p]`). `sw_returns_sret`: with the
 witness callees (`NonVacuity`), every premise of `backend_correct_final_sret` but the run's own is
-discharged: a return of a run of `sw` leaves the pointer `p` in x0.
+discharged: a return of a run of `sw` leaves the pointer `p` in x8 (Cranelift's AArch64 ABI).
 -/
 
 namespace E2E.SretReturnWitness
@@ -99,7 +99,7 @@ theorem compiled_exists :
 
 /-- **`backend_correct_final_sret` applies to `sw`**: for its compilation, with the witness
 callees (`NonVacuity`: every contract premise discharged; `sw` makes no calls), a CLIF return of
-a run of `sw` on `[p, v]` is matched by an Arm return with the struct pointer `p` in x0. -/
+a run of `sw` on `[p, v]` is matched by an Arm return with the struct pointer `p` in x8. -/
 theorem sw_returns_sret :
     ∃ vc vcp af fa fb, Compiled sw 0 vc vcp (spillAlloc vcp) af fa fb ∧
       ∀ {syms : String → Option Nat} {K : Nat} {env : Clif.Env} (_ : 32 ≤ K) (g h tp : BitVec 64)
@@ -113,7 +113,7 @@ theorem sw_returns_sret :
         Clif.runLoop env { funcs := [] } fuel cs = .returned vals cm →
         ∃ n, ArmRet ra s (runX (ArmStepX (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) fa) n s) ∧
-          XHolds p (xreg 0 (runX (ArmStepX (witnessX (witnessSym syms) tp)
+          XHolds p (xreg 8 (runX (ArmStepX (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) fa) n s)) ∧
           MemAgree cm (runX (ArmStepX (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) fa) n s) := by

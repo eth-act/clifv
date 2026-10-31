@@ -38,7 +38,7 @@ theorem iselSim_relW_abi {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vc
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns vc (csem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         AllHold (vals ++ sretArg f args) outs ∧ MemRel F syms cm w) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       VTraps vc (csem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
@@ -112,7 +112,7 @@ theorem backend_correct_world_abi {p : Clif.Program} {f : Clif.Function} {k : Na
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         AllHold (vals ++ sretArg f args) outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -163,7 +163,7 @@ theorem iselSim_relW_cleanup_abi {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         AllHold (vals ++ sretArg f args) outs ∧ MemRel F syms cm w) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       VTraps vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
@@ -239,7 +239,7 @@ theorem backend_correct_world_cleanup_abi {p : Clif.Program} {f : Clif.Function}
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         AllHold (vals ++ sretArg f args) outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -299,7 +299,7 @@ theorem backend_correct_world_pipeline_abi {p : Clif.Program} {f : Clif.Function
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         AllHold (vals ++ sretArg f args) outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -322,7 +322,7 @@ theorem armRefinesAbi_of_actRet {fb : FnBin} {base ra : BitVec 64}
     {astep : Arm.ArmState → Arm.ArmState} {s : Arm.ArmState} {F G : BitVec 64 → Prop}
     {syms : String → Option Nat} {vals rets : List Clif.Val} {cm : Clif.Mem}
     {us : List (Reg × Reg)} {outs : List CV}
-    {w : Arm.ArmState} (hus : us.map (·.2) = (List.range us.length).map Reg.x)
+    {w : Arm.ArmState} (hus : RetPins vals us)
     (hlen : us.length = outs.length) (hhold : AllHold (vals ++ rets) outs)
     (hm : MemRel F syms cm w)
     {n : Nat} (h : ActRet ra F G us outs w s (runX astep n s)) :
@@ -333,14 +333,14 @@ theorem armRefinesAbi_of_actRet {fb : FnBin} {base ra : BitVec 64}
   have hju : j < us.length := by have := hhold.1; omega
   obtain ⟨x, hx⟩ : ∃ x, outs[j]? = some x :=
     ⟨outs[j]'(by have := hhold.1; omega), List.getElem?_eq_getElem _⟩
-  have hp : (us[j]'hju).2 = Reg.x j := by
+  have hp : (us[j]'hju).2 = retX vals.length j := by
     have := congrArg (fun l => l[j]?) hus
     simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
       Option.map_some] at this
     exact Option.some.inj this
   have hr := h.regs j (us[j]'hju).1 (us[j]'hju).2 x (by simp [List.getElem?_eq_getElem hju]) hx
-  rw [hp, regVal_x] at hr
-  show VHolds v (ofX (xreg j (runX astep n s)))
+  rw [hp, retX, regVal_x] at hr
+  show VHolds v (ofX (xreg (if j < vals.length then j else 8) (runX astep n s)))
   rw [hr]
   exact hhold.2 j v x hj hx
 

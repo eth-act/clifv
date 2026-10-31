@@ -72,7 +72,7 @@ theorem progCallPRB_at (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
       t₁.mem a = (L.canon h uses w).mem a)
     (htab₁ : L.TableOf (M - 1) h (enterAt (L.A h) t₁) (calleeIni h ini)) :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (e : Nat),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (L.NeedSlots → Clif.NextAdv cs.mem cm' e) ∧
       (∀ t, L.CallerOk F h uses w t →

@@ -309,7 +309,7 @@ theorem callsRefineP_probeG {exts : List Clif.ExtFunc} {sigs : List Clif.Signatu
       · exact .inl ⟨rfl, rfl⟩
       · exact .inr ⟨⟨r, rfl⟩, _, rfl, lo64_ofX64 _⟩
     exact ⟨_, w', probeG_call_of (ci := ⟨dest, us, ds⟩) hG hr ⟨hex, hmr.1 ▸ hm⟩, by simp,
-      prefixHold_zero (by rw [hds]; exact returns_le_sigRets _), hmr.1, hm⟩
+      prefixHold_zero (by rw [hds]; exact Nat.le_refl _), hmr.1, hm⟩
   · intro ext hin g' sl cm0 w dest us ds ti uses args vals' rvals cm' hg' hd hds hti hargs hmr hpc
       hret hrl
     obtain ⟨hn, hs, rfl, rfl⟩ := hpc
@@ -324,7 +324,7 @@ theorem callsRefineP_probeG {exts : List Clif.ExtFunc} {sigs : List Clif.Signatu
       · exact .inl ⟨rfl, rfl⟩
       · exact .inr ⟨⟨r, rfl⟩, _, rfl, lo64_ofX64 _⟩
     exact ⟨_, w', probeG_tryCall_of (ci := ⟨dest, us, ds⟩) hG hr ⟨hex, hmr.1 ▸ hm⟩, by simp,
-      prefixHold_zero (Nat.le_trans (returns_le_sigRets _) hds), hmr.1, hm⟩
+      prefixHold_zero hds, hmr.1, hm⟩
 
 /-- **The guarded probe satisfies the pinned indirect-call contract** at a call of `n` on `vals`
 from `cm` whose CLIF extern unwinds. -/
@@ -354,7 +354,7 @@ theorem indCallsRefineP_probeG {exts : List Clif.ExtFunc} {sigs : List Clif.Sign
       ⟨args, ⟨hMRm _ _ _ hmr.2, hMRc _ _ _ hmr.2⟩, .inr ⟨hin, hlen, hall, hty⟩,
         .inr ⟨⟨r, rfl⟩, u, rfl, hX⟩⟩
     exact ⟨_, w', probeG_call_of (ci := ⟨.reg r, us, ds⟩) hG hr ⟨hex, hmr.1 ▸ hm⟩, by simp,
-      prefixHold_zero (by rw [hds]; exact returns_le_sigRets _), hmr.1, hm⟩
+      prefixHold_zero (by rw [hds]; exact Nat.le_refl _), hmr.1, hm⟩
   · intro sig hin n' g' sl cm0 w a r us ds ti u args vals' rvals cm' hg' hsg ha hu' hds hti hlen
       hall hmr hpc hret hrl hty
     obtain ⟨hn, hs, rfl, rfl⟩ := hpc
@@ -368,7 +368,7 @@ theorem indCallsRefineP_probeG {exts : List Clif.ExtFunc} {sigs : List Clif.Sign
       ⟨args, ⟨hMRm _ _ _ hmr.2, hMRc _ _ _ hmr.2⟩, .inr ⟨hin, hlen, hall, hty⟩,
         .inr ⟨⟨r, rfl⟩, u, rfl, hX⟩⟩
     exact ⟨_, w', probeG_tryCall_of (ci := ⟨.reg r, us, ds⟩) hG hr ⟨hex, hmr.1 ▸ hm⟩, by simp,
-      prefixHold_zero (Nat.le_trans (returns_le_sigRets _) hds), hmr.1, hm⟩
+      prefixHold_zero hds, hmr.1, hm⟩
 
 end
 

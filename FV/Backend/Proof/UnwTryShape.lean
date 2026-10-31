@@ -55,7 +55,7 @@ theorem sh_bl {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function} 
       (st, tr) = .ok (some env', s1))
     (heval : (evalExpr p (sem c) cfg n rule_lower_2542.rhs env').run s1 =
       .ok (some out, (st', tr'))) :
-    TryEmS lo.nextVreg (sigRets sig).length st st' := by
+    TryEmS lo.nextVreg sig.returns.length st st' := by
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_impl_ok hp (ctx := c) hc (n := n)
@@ -104,9 +104,9 @@ theorem sh_bl {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function} 
   cases hmi
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
-  have hcd : ((List.range (max (sigRets ext.sig).length 2)).map fun j =>
+  have hcd : ((List.range (max ext.sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs1 hs2
@@ -131,7 +131,7 @@ theorem sh_got {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function}
       (st, tr) = .ok (some env', s1))
     (heval : (evalExpr p (sem c) cfg n rule_lower_2551.rhs env').run s1 =
       .ok (some out, (st', tr'))) :
-    TryEmS lo.nextVreg (sigRets sig).length st st' := by
+    TryEmS lo.nextVreg sig.returns.length st st' := by
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
   -- the start state's counter, under a name the inversion's substitutions keep
@@ -187,9 +187,9 @@ theorem sh_got {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function}
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
   rw [show ∀ s : LState, (s.fresh .int).1 = .vreg s.nextVreg .int from fun s => rfl] at hs2 hs0
-  have hcd : ((List.range (max (sigRets ext.sig).length 2)).map fun j =>
+  have hcd : ((List.range (max ext.sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs0 hs1 hs2
@@ -224,7 +224,7 @@ theorem sh_ind {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p)
       (st, tr) = .ok (some env', s1))
     (heval : (evalExpr p (sem c) cfg n rule_lower_2561.rhs env').run s1 =
       .ok (some out, (st', tr'))) :
-    TryEmS lo.nextVreg (sigRets sig).length st st' := by
+    TryEmS lo.nextVreg sig.returns.length st st' := by
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_ind_impl_ok hp (ctx := c) hc (n := n)
@@ -269,9 +269,9 @@ theorem sh_ind {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p)
   cases hmi
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
-  have hcd : ((List.range (max (sigRets sig).length 2)).map fun j =>
+  have hcd : ((List.range (max sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs1 hs2
@@ -293,7 +293,7 @@ theorem tryEmS_run {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
     (hd : tryCallData f t = .ok data) (he : exnTableOpnd f et = .ok (sig, items))
     (htr : tryRegsOf sig lo = some (trs, st1))
     (h : tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (some v, s', tr)) :
-    TryEmS lo.nextVreg (sigRets sig).length { st1 with emitted := #[] } s' := by
+    TryEmS lo.nextVreg sig.returns.length { st1 with emitted := #[] } s' := by
   have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete hs hb)
   have hctx' : CtxInv f (tryCtx ctx ti data trs) := { ctxInv_termCtx hctx hph data with }
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=

@@ -67,7 +67,7 @@ open Backend Backend.Proof Backend.Proof.Driver
 theorem iselCtlOnF {f : Clif.Function} (hdom : dominatedB f = true) (hs : LowerScopeTF f)
     (hfa : Compile.floatArgsTyped f = true) (hst : Compile.storeTypedB f = true)
     (hsel : Compile.selectTypedB f = true) (ha : Spill.AbiSigsOk f) : Spill.IselCtlOn f := by
-  intro ctx ranges st0 hb
+  intro ctx ranges st0 hb hsr
   have hx := hs.externsE
   have hctx : CtxT f ctx := ctxT_ofF hs hb
   have hcl : Cov.Clean ctx := Cov.clean_of_build hb
@@ -83,7 +83,7 @@ theorem iselCtlOnF {f : Clif.Function} (hdom : dominatedB f = true) (hs : LowerS
     exact stmt_shpT hctx hx hcl hfam ha hi hc hmem hN h
   · obtain ⟨B, hBm, rfl⟩ := hB
     exact termCall_shpT hctx hcl hfam hph hty (termIntPos_ofF hs hb hBm) hd
-      (termFam_ofF hs hb hBm (.inl hd)) hN h
+      (termFam_ofF hs hb hBm (.inl hd)) hsr hN h
   · obtain ⟨B, hBm, hBt⟩ := hB
     subst hBt
     exact tryCall_shpT hctx hcl hfam ha hph het ⟨B, hBm, rfl⟩ hd

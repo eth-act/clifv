@@ -8,8 +8,8 @@ import FV.Backend.Proof.IselCtlTerm
 the callee contract `CallsRefine` and `CallRegArgs f` (at most 8 register arguments).
 This file: the extern/ABI lemmas. With at most 8 parameters every argument is in a register:
 `x (abiArgIdx …)` (x0.. in order, an `sret` parameter in x8, `sigArgLocs_regs`); the call
-defines one register per ABI return (`sigRets`: an `sret` signature without returns returns its
-struct pointer, `sigRets_cases`).
+defines one register per declared return (`s.returns`: an `sret` callee's struct pointer, its
+extra ABI return `sigRets`, gets none, as in Cranelift's `gen_call_output`).
 -/
 
 namespace Backend.Proof
@@ -303,26 +303,36 @@ theorem sigRets_cases (s : Clif.Signature) :
     | nil => exact .inr ⟨rfl, rfl⟩
     | cons a l => exact .inl rfl
 
-/-- **`gen_call_output`** (typed, S11e5a): one fresh vreg per ABI return, of its class
+/-- **`gen_call_output`** (typed, S11e5a): one fresh vreg per declared return, of its class
 (`retClass`). -/
 theorem ctor_gen_call_output_typed (st : LState) (s : Clif.Signature) (v : V) (st' : LState) :
     externCtor ctx T.gen_call_output [.op (.sig s)] st = .ok (v, st') ↔
-      v = .regsVec (outRegsC st ((sigRets s).map retClass)) ∧
-        st' = freshC st ((sigRets s).map retClass) := by
+      v = .regsVec (outRegsC st (s.returns.map retClass)) ∧
+        st' = freshC st (s.returns.map retClass) := by
   have : externCtor ctx T.gen_call_output [.op (.sig s)] st =
-      (let r := (sigRets s).foldl (fun (p : Array (List Reg) × LState) (q : Clif.AbiParam) =>
+      (let r := s.returns.foldl (fun (p : Array (List Reg) × LState) (q : Clif.AbiParam) =>
           (p.1.push [(p.2.fresh (retClass q)).1], (p.2.fresh (retClass q)).2)) (#[], st)
        .ok (.regsVec r.1.toList, r.2)) := rfl
   rw [this, foldl_freshC]
   simp [eq_comm]
 
-/-- `gen_call_output` of a signature whose ABI returns are integers: fresh integer vregs. -/
+/-- Integer ABI returns (`sigRets`) make integer declared returns. -/
+theorem returnsInt_of_sigRets {s : Clif.Signature}
+    (h : (sigRets s).map retClass = List.replicate (sigRets s).length .int) :
+    s.returns.map retClass = List.replicate s.returns.length .int := by
+  rcases sigRets_cases s with h' | ⟨h', -⟩
+  · rwa [h'] at h
+  · simp [h']
+
+/-- `gen_call_output` of a signature whose ABI returns are integers: fresh integer vregs, one
+per declared return. -/
 theorem ctor_gen_call_output_iff (st : LState) (s : Clif.Signature)
     (hr : (sigRets s).map retClass = List.replicate (sigRets s).length .int) (v : V)
     (st' : LState) :
     externCtor ctx T.gen_call_output [.op (.sig s)] st = .ok (v, st') ↔
-      v = .regsVec (outRegs st (sigRets s).length) ∧ st' = freshN st (sigRets s).length := by
-  rw [ctor_gen_call_output_typed, hr, outRegsC_replicate, freshC_replicate]
+      v = .regsVec (outRegs st s.returns.length) ∧ st' = freshN st s.returns.length := by
+  rw [ctor_gen_call_output_typed, returnsInt_of_sigRets hr, outRegsC_replicate,
+    freshC_replicate]
 
 /-- The register pairs of `gen_call_args` for register locations. -/
 theorem zip_regLocs : ∀ (locs : List ArgLoc) (rs : List Reg) (bytes : List Nat),

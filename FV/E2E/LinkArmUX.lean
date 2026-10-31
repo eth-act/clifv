@@ -122,7 +122,7 @@ theorem progResultU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX]
     (hpl : L.NeedSlots → L.PlaceAt cm c) (hinit : Clif.initState L.P h.name vals cm = .ok cs)
     (hret : L.crunX M cs = .returned rvals cm') :
     ∃ outs w', L.progXU κ M F h args w = some (outs, w') ∧
-      outs.length = (sigRets h.sig).length ∧ PrefixHold rvals outs ∧
+      outs.length = h.sig.returns.length ∧ PrefixHold rvals outs ∧
       RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c sl cm' w' := by
   have hpf := func?_of_mem hL.names hh
@@ -155,7 +155,7 @@ theorem progResultU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX]
     simp only [spv] at this
     rw [this, r_enterAt _ _ (by simp) (by simp)]
     exact (L.callerOk_canon hL hh himgF args w).world.1 _ (by simp [Masked])
-  have hlr : rvals.length ≤ (sigRets h.sig).length := by
+  have hlr : rvals.length ≤ h.sig.returns.length := by
     obtain ⟨Nr, hretN⟩ := hR.runs (M' + 1) cs _ hret (.inl ⟨_, _, rfl⟩)
     have hrt := Clif.runLoopX_returned_tys hL.free Nr cs.toX rvals cm'
       (Clif.initState_xinv hinit) hretN
@@ -165,20 +165,30 @@ theorem progResultU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX]
     rw [hbot] at hrt
     have := congrArg List.length hrt
     simp only [List.length_map, Clif.AbiParam.tys] at this
-    rw [this]; exact returns_le_sigRets _
+    omega
+  have hrl : rvals.length = h.sig.returns.length := by
+    obtain ⟨Nr, hretN⟩ := hR.runs (M' + 1) cs _ hret (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoopX_returned_tys hL.free Nr cs.toX rvals cm'
+      (Clif.initState_xinv hinit) hretN
+    have hce := clifEntry_initState (f := h) hpf hinit
+    have hbot : cs.toX.s.bottom = h := by
+      simp [Clif.State.toX, Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have := congrArg List.length hrt
+    simpa only [List.length_map, Clif.AbiParam.tys] using this
   refine ⟨_, _, by rw [progXU, if_pos hcond], ?_, ⟨by simpa using hlr, fun j v x hv hx => ?_⟩,
     ⟨⟨⟨fun a b hv hb => ?_, hmemR.valid, hmemR.symbols⟩, ?_, ?_⟩, ?_, hcond.2⟩⟩
   · rw [List.length_map, List.length_range]
   · -- the results
     have hjr : j < rvals.length := (List.getElem?_eq_some_iff.mp hv).1
     have hju : j < us.length := by have := hhold.1; omega
-    simp only [List.getElem?_map, List.getElem?_range (by omega : j < (sigRets h.sig).length),
+    simp only [List.getElem?_map, List.getElem?_range (by omega : j < h.sig.returns.length),
       Option.map_some, Option.some.injEq] at hx
     subst hx
     have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
       have := congrArg (·[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some, Option.some.injEq] at this
+        Option.map_some, Option.some.injEq, retX_lt hjr] at this
       rw [List.getElem?_eq_getElem hju, ← this]
     have hoj : outsV[j]? = some (outsV[j]'(by omega)) := List.getElem?_eq_getElem _
     rw [hc_eq, regVal_set_program, hc_ret.regs j _ _ _ hus_j hoj]
@@ -370,7 +380,7 @@ theorem xCallsIndOkU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ)
         argsAt_regLocs hargs⟩]
       exact hx
     · rw [hol]
-      exact hsr sig hsig hm.ty hm.returns_length
+      exact hm.returns_length
 
 /-- **The raising callees' contract of an activation of `g` at depth `M`** (direct calls) under
 its environment with unwinding (`XRaiseOk` for `XRU`). -/

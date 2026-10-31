@@ -160,10 +160,10 @@ theorem callPost_invokedN_exists {env : Clif.Env} {p : Clif.Program} {cs : Clif.
       (∀ a k, cm'.valid a k = true → m.valid a k = true) ∧ cm'.symbols = m.symbols ∧
       ∃ ℓ, rvals.length ≤ ℓ ∧
         (∀ ext ∈ exts, ext.name = nm → vals.length = ext.sig.params.length →
-          rvals.length = ext.sig.returns.length → (sigRets ext.sig).length = ℓ) ∧
+          rvals.length = ext.sig.returns.length → ext.sig.returns.length = ℓ) ∧
         (∀ sig ∈ sigs, (∀ s', env.sigOf nm = some s' → sig.abiMatch s' = true) →
           vals.length = sig.params.length → rvals.length = sig.returns.length →
-          (sigRets sig).length = ℓ)) :
+          sig.returns.length = ℓ)) :
     ∀ d uses w, ∃ r,
       CallPost (env.only (InvokedN env p cs n)) exts sigs (RelW Γ f c) sym d uses w r := by
   intro d uses w

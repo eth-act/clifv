@@ -127,12 +127,18 @@ theorem ret_ruleOkT {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem :
     subst hs
     have hrs' := mapM_valueRegT hctx.inv hrs
     subst hrs'
-    rw [regsClasses_single, List.map_map] at hps
-    have hps' := retRegsC_eq _ _ _ _ hps
     have hcl : (Reg.homeCls ∘ fun x => Reg.vreg x (valClassOf ctx x)) = valClassOf ctx := by
       funext x; rfl
-    rw [hcl] at hps'
-    have hpl : ps.length = xs.length := by rw [hps', retRegsT_length, List.length_map]
+    rw [regsClasses_single, List.map_map, hcl] at hps
+    simp only [List.length_map] at hps
+    have hps' : ps = retRegsT ((xs.map (valClassOf ctx)).take
+        (xs.length - (sretRet ctx.func).length)) 0 0 ++
+        List.replicate (xs.length - (xs.length - (sretRet ctx.func).length)) (Reg.x 8) := by
+      unfold retRegsK at hps
+      obtain ⟨rs', h1, rfl⟩ := Option.map_eq_some_iff.mp hps
+      rw [retRegsC_eq _ _ _ _ h1, List.length_map]
+    have hpl : ps.length = xs.length := by
+      rw [hps']; simp [retRegsT_length, List.length_take]
     have hz : (xs.map fun x => Reg.vreg x (valClassOf ctx x)).zip ps =
         argPairsC ((xs.zip ps).map fun q => (q.1, valClassOf ctx q.1, q.2)) := by
       simp [argPairsC, List.zip_map_left, Function.comp_def]
@@ -164,8 +170,10 @@ theorem ret_ruleOkT {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem :
       obtain ⟨v, hv'⟩ : ∃ v, vals[j]? = some v := ⟨vals[j]'(by omega), by simp [hj, hlen]⟩
       rw [hv (j := j) _ v (by simp [hj]) hv']
       rfl
-    · rw [← hps', ← hsnd]
-      simp [argPairsC, List.map_map, Function.comp_def]
+    · have hL : List.map (fun x => x.snd) (argPairsC ns) = ns.map (fun q => q.2.2) := by
+        simp [argPairsC, List.map_map]
+      rw [hL, hsnd]
+      exact hps'
     · simp [argPairsC, hnl, hlen]
     · rw [vuses_retOpsC]
       have : ns.map (ρ ·.1) = xs.map ρ := by

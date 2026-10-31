@@ -10,18 +10,18 @@ import FV.Backend.Proof.LowerSimUAbi
 
 `SretReturn.lean`'s ABI return values for the backend's theorem with unwinding
 (`backend_correct_final_unwind`): a return also leaves `sretArg f args`, the `sret` argument, in
-x0 after the CLIF return values.
+x8 after the CLIF return values in x0.. (until #587: in x0.. after them).
 
 * `IselSimUAbi`, `iselSimUAbi_of_driver`, `iselSimU_final_abi`: the CLIF → VCode layer with
   unwinding with all ABI returns held (`driver_correctU_abi` with `sret_reachX`: the `sretRet f`
   value at every `return` is the `sret` argument, for functions with `sretStableXB f` — the
   `sret` value is bound once, also on the exceptional edges to the handler blocks);
-* `ArmRefinesUAbi`: `ArmRefinesU` with `vals ++ rets` in x0.. (`ArmRefinesUAbi.armRefinesU`);
+* `ArmRefinesUAbi`: `ArmRefinesU` with `vals` in x0.. and `rets` in x8 (`ArmRefinesUAbi.armRefinesU`);
 * `backend_correct_of_layersU_ex_abi`, `backend_correct_final_unwind_ex_abi`,
   **`backend_correct_final_unwind_abi`**: `backend_correct_final_unwind[_ex]` with the premise
   `sretStableXB f = true`;
 * **`backend_correct_final_unwind_sret`**: for a function with an `sret` parameter `i` and no
-  returns, a return of the run with unwinding leaves the `sret` argument `args[i]` in x0.
+  returns, a return of the run with unwinding leaves the `sret` argument `args[i]` in x8.
 -/
 
 namespace E2E
@@ -36,7 +36,7 @@ def IselSimUAbi (sem : Sem) (XR : XRaise) (Γ : Rel) (env : Clif.XEnv) (p : Clif
     ArgsAtEntry Γ.F f.sig args w₀ → TrapsExplicitX env p cs → ∀ fuel,
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ us outs w, VReturns vc sem ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         AllHold (vals ++ sretArg f args) outs ∧ MemRel Γ.F Γ.syms cm w) ∧
     (∀ c, Clif.runLoopX env p fuel cs.toX = .trapped c → VTraps vc sem ρ₀ w₀ c) ∧
     (∀ e cm, Clif.runLoopX env p fuel cs.toX = .unwound e cm →
@@ -144,11 +144,14 @@ theorem iselSimU_final_abi {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
     cfg := cfg_of_prepare hc.prepare }
 
 /-- What the Arm run with unwinding does for a CLIF outcome with unwinding, with the ABI return
-values `rets` after the CLIF ones (`ArmRefinesU` otherwise). -/
+values `rets` after the CLIF ones (`ArmRefinesU` otherwise): the CLIF values in x0.., `rets` in
+x8. Restated for #587 (as `ArmRefinesAbi`): `rets` were in x0.. after the CLIF values, as the
+backend placed them before #587 (`mov x0, x8`); Cranelift returns the `sret` pointer in x8. -/
 def ArmRefinesUAbi (fb : FnBin) (base ra : BitVec 64) (astep : Arm.ArmState → Arm.ArmState)
     (s : Arm.ArmState) (rets : List Clif.Val) : Clif.XOutcome → Prop
   | .returned vals cm => ∃ n, ArmRet ra s (runX astep n s) ∧
-      (∀ (j : Nat) v, (vals ++ rets)[j]? = some v → XHolds v (xreg j (runX astep n s))) ∧
+      (∀ (j : Nat) v, (vals ++ rets)[j]? = some v →
+        XHolds v (xreg (if j < vals.length then j else 8) (runX astep n s))) ∧
       MemAgree cm (runX astep n s)
   | .trapped c => ∃ n, TrapAt fb base c (runX astep n s)
   | .unwound e cm => ∃ n, ArmRet ra s (runX astep n s) ∧ ExnRel e (xreg 0 (runX astep n s)) ∧
@@ -162,9 +165,10 @@ theorem ArmRefinesUAbi.armRefinesU {fb : FnBin} {base ra : BitVec 64}
   cases o with
   | returned vals cm =>
     obtain ⟨n, hret, hx, hm⟩ := h
-    refine ⟨n, hret, fun j v hj => hx j v ?_, hm⟩
-    rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp hj).1]
-    exact hj
+    have hjv := fun j (v : Clif.Val) (hj : vals[j]? = some v) => (List.getElem?_eq_some_iff.mp hj).1
+    refine ⟨n, hret, fun j v hj => ?_, hm⟩
+    have := hx j v (by rw [List.getElem?_append_left (hjv j v hj)]; exact hj)
+    rwa [if_pos (hjv j v hj)] at this
   | trapped c => exact h
   | unwound e cm => exact h
   | _ => trivial
@@ -196,14 +200,14 @@ theorem backend_correct_of_layersU_ex_abi {p : Clif.Program} {f : Clif.Function}
     have hju : j < us.length := by have := hhold.1; omega
     obtain ⟨x, hx⟩ : ∃ x, outs[j]? = some x :=
       ⟨outs[j]'(by have := hhold.1; omega), List.getElem?_eq_getElem _⟩
-    have hp : (us[j]'hju).2 = Reg.x j := by
+    have hp : (us[j]'hju).2 = retX vals.length j := by
       have := congrArg (fun l => l[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
         Option.map_some] at this
       exact Option.some.inj this
     have hr := hregs j (us[j]'hju).1 (us[j]'hju).2 x (by simp [List.getElem?_eq_getElem hju]) hx
-    rw [hp, regVal_x] at hr
-    show VHolds v (ofX (xreg j (runX astep n s)))
+    rw [hp, retX, regVal_x] at hr
+    show VHolds v (ofX (xreg (if j < vals.length then j else 8) (runX astep n s)))
     rw [hr]
     exact hhold.2 j v x hj hx
   | trapped c =>
@@ -217,7 +221,7 @@ theorem backend_correct_of_layersU_ex_abi {p : Clif.Program} {f : Clif.Function}
 
 /-- **The backend's end-to-end theorem with unwinding and the ABI return values, for an
 `AllocChecked` allocation**: `backend_correct_final_unwind_ex` (its premises plus
-`sretStableXB f`), and a return also leaves the ABI return values after the CLIF ones in x0..
+`sretStableXB f`), and a return also leaves the ABI return values after the CLIF ones in x8
 (`sretArg f args`). -/
 theorem backend_correct_final_unwind_ex_abi {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -281,8 +285,8 @@ theorem backend_correct_final_unwind_ex_abi {p : Clif.Program} {f : Clif.Functio
 
 /-- **The backend's end-to-end theorem with unwinding and the ABI return values**
 (`docs/contracts/e2e.md`, "`sret`"): `backend_correct_final_unwind` (its premises plus
-`sretStableXB f`), and a return also leaves the ABI return values after the CLIF ones in x0..:
-for a function with an `sret` parameter and no returns, the `sret` argument in x0 (`sretArg`,
+`sretStableXB f`), and a return also leaves the ABI return values after the CLIF ones in x8:
+for a function with an `sret` parameter and no returns, the `sret` argument in x8 (`sretArg`,
 `backend_correct_final_unwind_sret`). -/
 theorem backend_correct_final_unwind_abi {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -346,8 +350,10 @@ theorem backend_correct_final_unwind_abi {p : Clif.Program} {f : Clif.Function} 
 
 /-- **The `sret` return register with unwinding**: for a function with an `sret` parameter `i`
 and no returns, under the premises of `backend_correct_final_unwind_abi`, a return of the CLIF
-run with unwinding is matched by an Arm return (`ArmRet`) on the machine with unwinding whose x0
-holds the `sret` argument `args[i]`, with the memory the function wrote (`MemAgree`). -/
+run with unwinding is matched by an Arm return (`ArmRet`) on the machine with unwinding whose x8
+holds the `sret` argument `args[i]`, with the memory the function wrote (`MemAgree`). Restated
+for #587 (as `backend_correct_final_sret`): the conclusion said x0, true of the backend before
+#587 (`mov x0, x8` before `ret`); Cranelift returns the pointer in x8 on aarch64. -/
 theorem backend_correct_final_unwind_sret {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb) (hunw : unwCheck f vc = true)
@@ -397,7 +403,7 @@ theorem backend_correct_final_unwind_sret {p : Clif.Program} {f : Clif.Function}
     (hrun : Clif.runLoopX env p fuel cs.toX = .returned vals cm) {v : Clif.Val}
     (hv : args[i]? = some v) :
     ∃ n, ArmRet ra s (runX (Unw.ArmStepU X H U T fa) n s) ∧
-      XHolds v (xreg 0 (runX (Unw.ArmStepU X H U T fa) n s)) ∧
+      XHolds v (xreg 8 (runX (Unw.ArmStepU X H U T fa) n s)) ∧
       MemAgree cm (runX (Unw.ArmStepU X H U T fa) n s) := by
   obtain ⟨B0, hentB, hbody, hterm, -, -⟩ := hcs.entry
   have hB0 : f.blocks[0]? = some B0 := by
@@ -413,6 +419,6 @@ theorem backend_correct_final_unwind_sret {p : Clif.Program} {f : Clif.Function}
     htr fuel
   rw [hrun, sretArg_of_sret hi hnr, hv] at h
   obtain ⟨n, hret, hx, hm⟩ := h
-  exact ⟨n, hret, hx 0 v (by simp), hm⟩
+  exact ⟨n, hret, by simpa using hx 0 v (by simp), hm⟩
 
 end E2E

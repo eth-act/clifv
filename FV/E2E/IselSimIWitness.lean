@@ -70,7 +70,7 @@ theorem a2_iselSimI {F : BitVec 64 → Prop} {c : BitVec 64} {args : List Clif.V
     (∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ us outs w, VRetFrom (A fA2).vc (csemI F ⟨(A fA2).fa.k, (A fA2).af.slotBase⟩
           (ExtSemI.const Xb)) ⟨0, 0, ρ₀, (w₀, 0)⟩ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F (fun _ => none) cm w.1) ∧
     (∀ c', Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .trapped c' →
       VTrapFrom (A fA2).vc (csemI F ⟨(A fA2).fa.k, (A fA2).af.slotBase⟩ (ExtSemI.const Xb))
@@ -91,7 +91,7 @@ theorem a2_worldPRI {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args : L
     (htr : TrapsExplicit Clif.Rust.env (L F).P.bare cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F (fun _ => none) cm w ∧ (A fA2).vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (Kp : Nat) (cc : BitVec 64)
           (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState) (s : Arm.ArmState),

@@ -169,31 +169,39 @@ theorem foldl_len {α β γ : Type} (g : γ → γ) :
   | [], _ :: _, _, h => by simp at h
   | _ :: _, [], _, h => by simp at h
 
-/-- **The typed vregs are `tryRegsOf`'s on integer returns.** -/
+/-- **The typed vregs are `tryRegsOf`'s on integer returns.** (Both allocate over the declared
+returns, #587; integer ABI returns, `sigRets`, make integer declared returns.) -/
 theorem tryRegsOfC_eq {sig : Clif.Signature}
     (h : (sigRets sig).map retClass = List.replicate (sigRets sig).length .int) (st : LState) :
     tryRegsOfC sig st = tryRegsOf sig st := by
+  have h' : sig.returns.map retClass = List.replicate sig.returns.length .int := by
+    unfold sigRets at h
+    split at h
+    · split at h
+      · rename_i hr; rw [List.isEmpty_iff.mp hr]; rfl
+      · exact h
+    · exact h
   unfold tryRegsOfC tryRegsOf
-  rw [h, retRegsC_int]
-  cases hr : retRegs (sigRets sig).length with
+  rw [h', retRegsC_int]
+  cases hr : retRegs sig.returns.length with
   | none => rfl
   | some ps =>
     simp only [bind, Option.bind]
-    have hcls : ∀ q ∈ sigRets sig, retClass q = .int := fun q hq => by
-      have hm : retClass q ∈ (sigRets sig).map retClass := List.mem_map_of_mem hq
-      rw [h] at hm
+    have hcls : ∀ q ∈ sig.returns, retClass q = .int := fun q hq => by
+      have hm : retClass q ∈ sig.returns.map retClass := List.mem_map_of_mem hq
+      rw [h'] at hm
       exact List.eq_of_mem_replicate hm
-    have hps : ps.length = (sigRets sig).length := by
+    have hps : ps.length = sig.returns.length := by
       unfold retRegs at hr; split at hr
       · cases hr; simp
       · cases hr
-    have e1 : (sigRets sig).foldl (init := ((#[] : Array Reg), st)) (fun (x : Array Reg × LState) q =>
+    have e1 : sig.returns.foldl (init := ((#[] : Array Reg), st)) (fun (x : Array Reg × LState) q =>
         ((x.1.push (x.2.fresh (retClass q)).1), (x.2.fresh (retClass q)).2)) =
-        (sigRets sig).foldl (init := ((#[] : Array Reg), st)) (fun (x : Array Reg × LState) _ =>
+        sig.returns.foldl (init := ((#[] : Array Reg), st)) (fun (x : Array Reg × LState) _ =>
         ((x.1.push (x.2.fresh .int).1), (x.2.fresh .int).2)) := by
       exact foldl_congr_mem _ _ fun q hq x => by rw [hcls q hq]
     have e2 := foldl_len (fun (x : Array Reg × LState) =>
-        ((x.1.push (x.2.fresh .int).1), (x.2.fresh .int).2)) (sigRets sig) ps
+        ((x.1.push (x.2.fresh .int).1), (x.2.fresh .int).2)) sig.returns ps
       ((#[] : Array Reg), st) hps.symm
     rw [e1, e2]
 
@@ -203,7 +211,7 @@ theorem tryRegsOfC_mono {sig : Clif.Signature} {st st' : LState} {r : List Reg �
   have hf : ∀ (c : RegClass) (s : LState), s.nextVreg ≤ (s.fresh c).2.nextVreg ∧
       (s.fresh c).2.emitted = s.emitted := fun c s => by simp [LState.fresh]
   unfold tryRegsOfC at h
-  cases hr : retRegsC ((sigRets sig).map retClass) 0 0 with
+  cases hr : retRegsC (sig.returns.map retClass) 0 0 with
   | none => rw [hr] at h; cases h
   | some ps =>
     rw [hr] at h
@@ -244,8 +252,8 @@ theorem tryRegsOfC_mono {sig : Clif.Signature} {st st' : LState} {r : List Reg �
         · obtain ⟨a1, a2⟩ := ih (acc.push (s.fresh .int).1) (s.fresh .int).2
           obtain ⟨b1, b2⟩ := hf .int s
           exact ⟨Nat.le_trans b1 a1, a2.trans b2⟩
-    obtain ⟨c1, c2⟩ := g1 (sigRets sig) #[] st
-    generalize hR : (sigRets sig).foldl (fun (x : Array Reg × LState) q =>
+    obtain ⟨c1, c2⟩ := g1 sig.returns #[] st
+    generalize hR : sig.returns.foldl (fun (x : Array Reg × LState) q =>
       ((x.1.push (x.2.fresh (retClass q)).1), (x.2.fresh (retClass q)).2)) (#[], st) = R at c1 c2
     obtain ⟨d1, d2⟩ := g2 (payloadRegs sig.callConv) R.1 #[] R.2
     exact ⟨Nat.le_trans c1 d1, d2.trans c2⟩

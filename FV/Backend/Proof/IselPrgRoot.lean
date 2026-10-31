@@ -84,13 +84,14 @@ def tyNone : PA := .ty [.invalid]
 /-- The first result type of a call: none, or an E type. -/
 def tyCall : PA := .ty (.invalid :: eCTys)
 
-/-- The number of ABI returns of `f`'s callee `fn` (`sigRets`). -/
+/-- The number of declared returns of `f`'s callee `fn` (the call defines one result vreg per
+declared return, `gen_call_output`). -/
 def retsOf (f : Clif.Function) (fn : Nat) : Nat :=
-  ((f.extern? fn).map fun e => (sigRets e.sig).length).getD 0
+  ((f.extern? fn).map fun e => e.sig.returns.length).getD 0
 
-/-- The number of ABI returns of `f`'s signature declaration `sig`. -/
+/-- The number of declared returns of `f`'s signature declaration `sig`. -/
 def sigRetsOf (f : Clif.Function) (sig : Nat) : Nat :=
-  ((f.sigDecls.lookup sig).map fun s => (sigRets s).length).getD 0
+  ((f.sigDecls.lookup sig).map fun s => s.returns.length).getD 0
 
 /-- **The root form of a statement**: the abstract value of `.inst ii` for an instruction with
 CLIF instruction `c` (`instData`, its result type). -/

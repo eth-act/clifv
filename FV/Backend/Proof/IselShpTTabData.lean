@@ -2346,10 +2346,11 @@ def shpTabT : Tab :=
 abbrev shpEntryOkT (e : TermId × List AT × AT) : Bool :=
   (program.rulesOf e.1).all (aRule program shpTabT aext actor apreST aOracleST e.2.1 e.2.2)
 
-/-- The test of one rule of `lower`: a hand-checked one (`shpHandIds`), or it checks on every
-family. -/
+/-- The test of one rule of `lower`: a hand-checked one (`shpHandIds`), the `return` rule (1037,
+which matches no statement, `lower_ret_stmt_nomatch`; it reaches `gen_return`, outside `apreST`),
+or it checks on every family. -/
 def shpStmtOkT (r : Rule) : Bool :=
-  Cov.shpHandIds.contains r.id || (List.range famTab.length).all fun i =>
+  Cov.shpHandIds.contains r.id || r.id == 1037 || (List.range famTab.length).all fun i =>
     aRule program shpTabT aext actor apreST aOracleST [.inst [i]] AT.top r
 
 /-- The test of one rule of `lower_branch`: a hand-checked one, or it checks on every family. -/

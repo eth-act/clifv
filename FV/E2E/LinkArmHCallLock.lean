@@ -32,7 +32,7 @@ theorem csemV_call_of_tryCall {gv : Nat → String → Prop} {F : BitVec 64 → 
   have h0 := csemV_sub h
   simp only [csem, Option.map_eq_some_iff, Option.filter_eq_some_iff] at h0
   obtain ⟨⟨xo, w2⟩, ⟨hx, -⟩, -⟩ := h0
-  exact ⟨xo, w2, by simp only [csemV, hg, ↓reduceIte]; simp [csem, hx]⟩
+  exact ⟨xo.take info.defs.length, w2, by simp only [csemV, hg, ↓reduceIte]; simp [csem, hx]⟩
 
 namespace LinkSys
 

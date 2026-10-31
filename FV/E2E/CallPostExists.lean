@@ -60,10 +60,10 @@ theorem callPost_only_exists {env : Clif.Env} {A : String → List Clif.Val → 
       (∀ a k, cm'.valid a k = true → cm0.valid a k = true) ∧ cm'.symbols = cm0.symbols ∧
       rvals.length ≤ ℓ ∧
       (∀ ext ∈ exts, ext.name = n0 → vals0.length = ext.sig.params.length →
-        rvals.length = ext.sig.returns.length → (sigRets ext.sig).length = ℓ) ∧
+        rvals.length = ext.sig.returns.length → ext.sig.returns.length = ℓ) ∧
       (∀ sig ∈ sigs, (∀ s, env.sigOf n0 = some s → sig.abiMatch s = true) →
         vals0.length = sig.params.length → rvals.length = sig.returns.length →
-        (sigRets sig).length = ℓ)) :
+        sig.returns.length = ℓ)) :
     ∀ d uses w, ∃ r, CallPost (env.only A) exts sigs (RelW Γ f c) sym d uses w r := by
   intro d uses w
   -- the invocation's outcome (if it returns)
@@ -155,9 +155,9 @@ theorem callPost_invoked_exists {env : Clif.Env} {p : Clif.Program} {s : Clif.St
       (∀ a k, cm'.valid a k = true → s.mem.valid a k = true) ∧ cm'.symbols = s.mem.symbols ∧
       rvals.length ≤ ℓ ∧
       (∀ ext ∈ exts, ext.name = n → rvals.length = ext.sig.returns.length →
-        (sigRets ext.sig).length = ℓ) ∧
+        ext.sig.returns.length = ℓ) ∧
       (∀ sig ∈ sigs, (∀ s', env.sigOf n = some s' → sig.abiMatch s' = true) →
-        rvals.length = sig.returns.length → (sigRets sig).length = ℓ)) :
+        rvals.length = sig.returns.length → sig.returns.length = ℓ)) :
     ∀ d uses w, ∃ r,
       CallPost (env.only (Clif.Invoked env p s)) exts sigs (RelW Γ f c) sym d uses w r := by
   by_cases hinv : ∃ n vals m, Clif.Invoked env p s n vals m

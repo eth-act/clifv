@@ -144,7 +144,7 @@ def ThmPDERX (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     L.WorldEntry κ M g F vals cs w₀ →
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
       (∀ G ra s, L.MachEntryPR κ M g F G ra s w₀ P R →
         ∃ n, ActRet ra F G us outs wf s (runX (L.mach M g) n s) ∧

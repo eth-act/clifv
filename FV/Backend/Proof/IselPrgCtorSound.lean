@@ -366,9 +366,11 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
       · split
         · exact CS.fin_ok CS.γ_unit
         · rename_i hno
-          obtain ⟨ps, hps⟩ := retRegsC_some (regsClasses rss) 0 0 (by simp [regsClasses]; omega)
-            (by simp [regsClasses]; omega)
-          exact absurd (CS.single_mapM_eq (fun _ => rfl) rss h1) (hno _ _ hps)
+          obtain ⟨ps, hps⟩ := retRegsC_some
+            ((regsClasses rss).take (rss.length - (sretRet ctx.func).length)) 0 0
+            (by simp [regsClasses]; omega) (by simp [regsClasses]; omega)
+          exact absurd (CS.single_mapM_eq (fun _ => rfl) rss h1)
+            (hno _ _ (by simp only [retRegsK, hps, Option.map_some]; rfl))
       · contradiction
     · cases h
   -- gen_call_output (signature)
@@ -376,7 +378,7 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
     simp only [γ] at hw1
     obtain ⟨_, rfl, s, rfl, hs, hn⟩ := hw1
     red_safe externCtor
-    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut retClass (sigRets s) #[] st
+    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut retClass s.returns #[] st
     refine CS.fin_ok ⟨_, rfl, ?_, ?_⟩ <;> rw [hr]
     · simpa using h1
     · rcases hn with rfl | rfl
@@ -387,7 +389,7 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
     simp only [γ] at hw1
     obtain ⟨_, rfl, s, rfl, hs, -⟩ := hw1
     red_safe externCtor
-    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut retClass (sigRets s) #[] st
+    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut retClass s.returns #[] st
     refine CS.fin_ok ⟨_, rfl, ?_, .inl rfl⟩
     rw [hr]
     simpa using h1
@@ -484,7 +486,7 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
     simp only [γ] at hw1
     obtain ⟨_, rfl, s, rfl, hs, hlen⟩ := hw1
     red_safe externCtor
-    obtain ⟨ps, hps⟩ := retRegsC_some ((sigRets s).map retClass) 0 0 (by simpa using hs.2)
+    obtain ⟨ps, hps⟩ := retRegsC_some (s.returns.map retClass) 0 0 (by simpa using hs.2)
       (by simpa using hs.2)
     rw [hps]
     dsimp only

@@ -25,10 +25,12 @@ namespace Backend.Proof.Spill
 
 open Backend Backend.Proof Backend.Proof.Driver
 
-/-- **The control shapes of the typed lowering.** -/
+/-- **The control shapes of the typed lowering.** A `Rets` pins vregs to distinct registers of
+their classes: x0..x7/v0..v7 for the declared returns, x8 for an `sret` function's struct
+pointer (`ArgRegC`; #587, Cranelift's `gen_return` returns `sret_reg` in x8). -/
 def CtlShapeT (N : Nat) (m : MInst) : Prop :=
   CtlShape N m ∨ ∃ ns : List (Nat × RegClass × Reg), m = .rets (argPairsC ns) ∧
-    (∀ q ∈ ns, RetRegC q.2.1 q.2.2) ∧ (ns.map (·.2.2)).Nodup
+    (∀ q ∈ ns, ArgRegC q.2.1 q.2.2) ∧ (ns.map (·.2.2)).Nodup
 
 theorem CtlShape.toT {N : Nat} {m : MInst} (h : CtlShape N m) : CtlShapeT N m := .inl h
 
@@ -104,17 +106,20 @@ theorem retRegsC_pairs : ∀ (rs : List Reg) (nx nv : Nat) (ps : List Reg),
 theorem rets_shapeT (N : Nat) {rs ps : List Reg} (hv : ∀ r ∈ rs, ∃ n c, r = .vreg n c)
     (hps : retRegsC (rs.map Reg.homeCls) 0 0 = some ps) : CtlShapeT N (.rets (rs.zip ps)) := by
   obtain ⟨ns, hz, hns, hnd⟩ := retRegsC_pairs rs 0 0 ps hv hps
-  exact .inr ⟨ns, by rw [hz], fun q hq => (hns q hq).1, hnd⟩
+  exact .inr ⟨ns, by rw [hz], fun q hq => retRegC_argRegC (hns q hq).1, hnd⟩
 
 /-! ## The typed ISLE inversion -/
 
 /-- **`IselCtlHyp` over the typed scope**: every ISLE run of the driver, on `LowerScopeT`
-input with class-checked `store`s and `select`s, emits only control forms of the typed shapes
-`CtlShapeT`. -/
+input with class-checked `store`s and `select`s and an integer-classed `sret` struct pointer
+(the value `gen_return` returns in x8; the entry block's typing `EntryClassOk` gives it,
+`sretRet_valClass_int`), emits only control forms of the typed shapes `CtlShapeT`. Its
+terminator clause is restricted to `f`'s terminators. -/
 def IselCtlHypT : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState),
     dominatedB f = true → LowerScopeT f → Compile.storeTypedB f = true →
     Compile.selectTypedB f = true → AbiSigsOk f → buildCtx f = .ok (ctx, ranges, st0) →
+    (∀ y ∈ sretRet f, valClassOf ctx y = .int) →
     (∀ ii info inst s out s' tr, ctx.insts[ii]? = some info → info.clif = some inst →
       ctx.valDef.size ≤ s.nextVreg →
       runTerm ctx "lower" [.inst ii] s = .ok (out, s', tr) → CtlSinceT ctx.valDef.size s s') ∧
@@ -130,9 +135,11 @@ def IselCtlHypT : Prop :=
       CtlSinceT ctx.valDef.size { st1 with emitted := #[] } s')
 
 /-- **The typed ISLE inversion of one function** (`IselCtlHypT`'s conclusion for `f`): every ISLE
-run of the driver in `buildCtx f`'s context emits only control forms of the typed shapes. -/
+run of the driver in `buildCtx f`'s context emits only control forms of the typed shapes, when the
+`sret` struct pointer `gen_return` returns in x8 has an integer vreg (as in `IselCtlHypT`). -/
 def IselCtlOn (f : Clif.Function) : Prop :=
   ∀ (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState), buildCtx f = .ok (ctx, ranges, st0) →
+    (∀ y ∈ sretRet f, valClassOf ctx y = .int) →
     (∀ ii info inst s out s' tr, ctx.insts[ii]? = some info → info.clif = some inst →
       ctx.valDef.size ≤ s.nextVreg →
       runTerm ctx "lower" [.inst ii] s = .ok (out, s', tr) → CtlSinceT ctx.valDef.size s s') ∧

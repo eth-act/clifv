@@ -437,6 +437,20 @@ error without `enable_multi_ret_implicit_sret`). The integer specialisation of `
 def retRegs (n : Nat) : Option (List Reg) :=
   if n ≤ 8 then some ((List.range n).map .x) else none
 
+/-- The X register of ABI return `j` when the first `k` ABI returns are the declared (CLIF)
+ones: x`j` for those, **x8** for the one after them, the struct pointer of an `sret`
+signature without returns (`sigRets`). Cranelift's aarch64 `compute_arg_locs` assigns a
+`StructReturn` slot to x8 for the returns as for the parameters (`isa/aarch64/abi.rs:255-270`
+in cranelift-codegen 0.135.0), `from_func_sig` makes the `sret` parameter that signature's only
+return (`machinst/abi.rs:902`), and `Lower::gen_return` returns `sret_reg` there; AAPCS64 itself
+does not require x0 (or x8) to hold the pointer on return. -/
+def retX (k j : Nat) : Reg := .x (if j < k then j else 8)
+
+/-- Return registers for values of the classes `cs` whose first `k` are declared returns: those
+as `retRegsC` places them, the rest (the struct pointer of an `sret` signature, `retX`) in x8. -/
+def retRegsK (k : Nat) (cs : List RegClass) : Option (List Reg) :=
+  (retRegsC (cs.take k) 0 0).map (· ++ List.replicate (cs.length - k) (.x 8))
+
 /-- The byte sizes of the parameters of a signature as AAPCS64 places them
 (`compute_arg_locs`): a `normal`/`vmctx` parameter of an integer or float type takes the next
 register of its class (`tyClass`), then 8-byte-minimum naturally aligned stack slots; a
@@ -514,8 +528,10 @@ def stackLayoutOk (s : Clif.Signature) : Bool :=
 
 /-- The returns of a signature as the ABI sees them (`from_func_sig` /
 `ensure_struct_return_ptr_is_returned`, which is `keep in sync` in Cranelift's abi.rs): a
-signature with an `sret` parameter and no returns returns the struct pointer in x0, i.e.
-its only ABI return is the sret parameter itself. -/
+signature with an `sret` parameter and no returns returns the struct pointer (in x8, `retX`),
+i.e. its only ABI return is the sret parameter itself. A caller does not read that return
+(`gen_call_rets` skips the `StructReturn` return, `machinst/abi.rs:1991`): a call defines the
+declared returns only (`gen_call_output`, `tryRegsOf`). -/
 def sigRets (s : Clif.Signature) : List Clif.AbiParam :=
   match s.params.find? (·.purpose == .sret) with
   | some p => if s.returns.isEmpty then [p] else s.returns
@@ -528,14 +544,16 @@ def retClass (p : Clif.AbiParam) : RegClass :=
   if p.purpose == .sret then .int else tyClass p.ty
 
 /-- **The AAPCS64 return registers of a signature** (`compute_arg_locs` on `sigRets`): integer
-returns in x0..x7, `f32`/`f64` ones in v0..v7 (`retRegsC` of their `retClass`). -/
+returns in x0..x7, `f32`/`f64` ones in v0..v7 (`retRegsC` of their `retClass`). `lowerFunction`
+only checks that it succeeds (at most 8 returns per class); the struct pointer of an `sret`
+signature is returned in x8 (`retX`, `retRegsK`), not in the x0 this counts it in. -/
 def abiRetRegs (s : Clif.Signature) : Option (List Reg) :=
   retRegsC ((sigRets s).map retClass) 0 0
 
 /-- The signatures the end-to-end theorem covers (`E2E.InSubset.abiSigs`): `normal`
 parameters and returns, plus at most one `sret` parameter (an `i64`, in x8), and then no
 return values (Cranelift rejects `sret` with returns; the only ABI return is the struct
-pointer in x0, `sigRets`). -/
+pointer, returned in x8, `sigRets`, `retX`). -/
 def sigAbiOk (s : Clif.Signature) : Bool :=
   s.params.all (fun p => p.purpose == .normal || (p.purpose == .sret && p.ty == .i64)) &&
     s.returns.all (·.purpose == .normal) &&
@@ -605,7 +623,8 @@ def payloadRegs (c : Option Clif.CallConv) : List Reg :=
 /-- `try_call_info` (`machinst/isle.rs`): one landing-pad label per `tag`/`default` item (in
 item order), then the continuation (the last label). `clobberAll` is
 `get_regs_clobbered_by_call(callee, true) = ALL_CLOBBERS` (`tail`/`preserve_all` callees);
-`rets` the number of ABI returns (`sigRets`), the results `gen_try_call_rets` puts first. -/
+`rets` the number of declared returns, the results `gen_try_call_rets` puts first (an `sret`
+callee's struct pointer is not one: `gen_call_rets` skips the `StructReturn` return). -/
 def tryInfoOf (sig : Clif.Signature) (items : List (Option Nat)) (ls : List Label) :
     Option TryInfo :=
   if ls.length != items.length + 1 then none
@@ -613,7 +632,7 @@ def tryInfoOf (sig : Clif.Signature) (items : List (Option Nat)) (ls : List Labe
     continuation := ls.getLastD 0
     handlers := (items.zip ls).map fun | (some n, l) => .tag n l | (none, l) => .default l
     clobberAll := sig.callConv == some .tail || sig.callConv == some .preserveAll
-    rets := (sigRets sig).length }
+    rets := sig.returns.length }
 
 /-- The `ExceptionTable` operand of a `try_call`: its signature and item kinds. Callee
 conventions other than `system_v` are rejected (Cranelift 0.136.1 panics on a `fast` one;
@@ -646,12 +665,13 @@ def tryCallData (f : Clif.Function) : Clif.Terminator → Except String V
   | _ => throw "not a try_call"
 
 /-- The vregs of a `try_call`'s return values and exception payloads (`lower.rs`
-`try_call_rets`/`try_call_payloads`), allocated from `st`: one fresh vreg per ABI return (the
-return registers `retRegs`: `exnTableOpnd` admits integer signatures only, `sigIntB`), then per payload
-register (`payloadRegs`) the vreg of the return in that register (`set_vreg_alias`), else a
-fresh one. `none`: more than 8 return values. -/
+`try_call_rets`/`try_call_payloads`), allocated from `st`: one fresh vreg per declared return
+(the return registers `retRegs`: `exnTableOpnd` admits integer signatures only, `sigIntB`; an
+`sret` callee's struct pointer has none, as in `Lower::new`), then per payload register
+(`payloadRegs`) the vreg of the return in that register (`set_vreg_alias`), else a fresh one.
+`none`: more than 8 return values. -/
 def tryRegsOf (sig : Clif.Signature) (st : LState) : Option ((List Reg × List Reg) × LState) := do
-  let ps ← retRegs (sigRets sig).length
+  let ps ← retRegs sig.returns.length
   let (rets, st) := ps.foldl (init := ((#[] : Array Reg), st)) fun (acc, st) _ =>
     let (r, st') := st.fresh .int
     (acc.push r, st')
@@ -689,13 +709,14 @@ def tryCallDataC (f : Clif.Function) : Clif.Terminator → Except String V
   | t => tryCallData f t
 
 /-- **The vregs of a typed `try_call`** (S11e6; `lower.rs` `try_call_rets`/`try_call_payloads`):
-one fresh vreg per ABI return of the return's class (`retClass`, `vregs.alloc(ty)`), in the
-return registers of their classes (`retRegsC`: x0.. / v0.., at most 8 of each), then per payload
-register (`payloadRegs`: x0, x1) the vreg of the return in that register, else a fresh integer
-one. On integer signatures it is `tryRegsOf`. -/
+one fresh vreg per declared return of the return's class (`retClass`, `vregs.alloc(ty)`; an
+`sret` callee's struct pointer has none, as in `Lower::new`, #587), in the return registers of
+their classes (`retRegsC`: x0.. / v0.., at most 8 of each), then per payload register
+(`payloadRegs`: x0, x1) the vreg of the return in that register, else a fresh integer one. On
+integer signatures it is `tryRegsOf`. -/
 def tryRegsOfC (sig : Clif.Signature) (st : LState) : Option ((List Reg × List Reg) × LState) := do
-  let ps ← retRegsC ((sigRets sig).map retClass) 0 0
-  let (rets, st) := (sigRets sig).foldl (init := ((#[] : Array Reg), st)) fun (acc, st) q =>
+  let ps ← retRegsC (sig.returns.map retClass) 0 0
+  let (rets, st) := sig.returns.foldl (init := ((#[] : Array Reg), st)) fun (acc, st) q =>
     let (r, st') := st.fresh (retClass q)
     (acc.push r, st')
   let (pays, st) := (payloadRegs sig.callConv).foldl (init := ((#[] : Array Reg), st))
@@ -1098,19 +1119,23 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     match ctx.slotOff.lookup s with
     | some base => ok (.int (base + a + b))
     | none => .unmodeled s!"stack slot ss{s}"
-  -- each returned value in the next return register of its class (`retRegsC`); at most 8
-  -- values in all (the backend's bound, as before the typed ABI)
+  -- each returned value in the next return register of its class (`retRegsC`), and the ABI
+  -- return `lowerFunction` appends for an `sret` function (`sretRet`: its struct pointer) in
+  -- x8 (`retRegsK`, `retX`: `Lower::gen_return` returns `sret_reg` in the `StructReturn`
+  -- return's location); at most 8 values in all (the backend's bound, as before the typed ABI)
   | TId.gen_return, [.regsVec rss] =>
     if rss.length ≤ 8 then
-      match retRegsC (regsClasses rss) 0 0, rss.mapM (fun | [r] => some r | _ => none) with
+      match retRegsK (rss.length - (sretRet ctx.func).length) (regsClasses rss),
+          rss.mapM (fun | [r] => some r | _ => none) with
       | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
       | _, _ => .unmodeled "gen_return: multi-register values"
     else .unmodeled "gen_return: more than 8 return values"
   -- typed calls (S11e5a; Cranelift's `Lower::gen_call_output`, `machinst/lower.rs:630`): one
-  -- fresh vreg per ABI return (`sigRets`), of the return's class (`vregs.alloc(ty)`,
-  -- `rc_for_type`: `retClass`)
+  -- fresh vreg per declared return, of the return's class (`vregs.alloc(ty)`, `rc_for_type`:
+  -- `retClass`); an `sret` callee's struct pointer gets none (`gen_call_rets` skips the
+  -- `StructReturn` return, `machinst/abi.rs:1991`: the call does not define x8 or x0)
   | TId.gen_call_output, [.op (.sig s)] =>
-    let (rs, st) := (sigRets s).foldl (init := (#[], st)) fun (acc, st) p =>
+    let (rs, st) := s.returns.foldl (init := (#[], st)) fun (acc, st) p =>
       let (r, st) := st.fresh (retClass p)
       (acc.push [r], st)
     .ok (.regsVec rs.toList, st)
@@ -1133,7 +1158,7 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     | _, none => .unmodeled "gen_call_args: multi-register value"
   -- `Callee::gen_call_rets` (`machinst/abi.rs:1995`): each output in the return register of
   -- its class (`compute_arg_locs` on the returns, `retRegsC`; the outputs are
-  -- `gen_call_output`'s, one per return of its class); at most 8 values in all (the
+  -- `gen_call_output`'s, one per declared return, of its class); at most 8 values in all (the
   -- backend's bound, as `gen_return`)
   | TId.gen_call_rets, [.op (.sig _), .regsVec rss] =>
     if rss.length ≤ 8 then
@@ -1147,13 +1172,14 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     | some ti => ok (.op (.tryCallInfo ti))
     | none => .unmodeled "try_call_info: label count"
   -- `gen_try_call_rets` (`Lower::gen_try_call_rets` → `gen_call_rets` with payloads): the
-  -- return vregs in the return registers, then each payload register that is not also a
-  -- return register (a payload in a return register shares the return's vreg, as
-  -- `set_vreg_alias` makes it there); the return registers of the returns' classes
-  -- (`retRegsC`, typed `try_call`, S11e6: x0.. / v0..)
+  -- return vregs in the return registers (the declared returns: an `sret` callee's struct
+  -- pointer has no def), then each payload register that is not also a return register (a
+  -- payload in a return register shares the return's vreg, as `set_vreg_alias` makes it
+  -- there); the return registers of the returns' classes (`retRegsC`, typed `try_call`,
+  -- S11e6: x0.. / v0..)
   | TId.gen_try_call_rets, [.op (.sig s)] =>
     let (rets, pays) := ctx.tryRegs
-    match retRegsC ((sigRets s).map retClass) 0 0 with
+    match retRegsC (s.returns.map retClass) 0 0 with
     | some ps =>
       if ps.length != rets.length then .unmodeled "gen_try_call_rets: return count"
       else
@@ -1505,10 +1531,10 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
       code := code ++ st.emitted ++ extra
       st := { st with emitted := #[] }
       d := { d with st, rules := d.rules ++ n.toArray }
-    -- terminator. An sret signature's only ABI return is the struct pointer in x0
-    -- (`sigRets`); the CLIF `return` carries no values, so the legalized return value is
-    -- the sret parameter (`sretRet`, `abiTerm`), exactly what Cranelift's legalizer rewrites
-    -- the terminator to.
+    -- terminator. An sret signature's only ABI return is the struct pointer, in x8
+    -- (`sigRets`, `retX`); the CLIF `return` carries no values, so the legalized return value
+    -- is the sret parameter (`sretRet`, `abiTerm`), exactly what Cranelift's legalizer
+    -- rewrites the terminator to, and `gen_return` returns it in x8 (`retRegsK`).
     let sretParam := sretRet f
     let data ← match b.term with
       | .tryCall .. | .tryCallIndirect .. => tryCallDataC f b.term

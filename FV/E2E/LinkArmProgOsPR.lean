@@ -32,14 +32,15 @@ theorem progOsCoreXPRR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     {info : CallInfo} (hdefs0 : info.defs = callDefs Ld)
     {ops : Array Operand} {regs : Array Reg}
     (hdefs : ((ops.zip regs).toList.filter (·.1.isDef)) = (callDefOps Ld).zip (Ld.map (·.1)))
-    {t w w' : Arm.ArmState} {outs : List CV}
+    {t w w' : Arm.ArmState} {o outs : List CV}
     (hK : κ M g ≤ (spOf t).toNat) (hG : ∀ a, G a → t.mem a = s0.mem a)
     (hra : RaOk (L.A h) (Arm.r .PC t))
     (hsw : SameWorld F t w)
     {P : Nat → BitVec 64 → BitVec 8} {R : Nat → Arm.ArmState} {n : Nat}
     (hmskQ : ∀ f, MaskedReg f → Arm.r f t = Arm.r f (R n))
     (hrgnQ : ∀ a, StackBelow (κ M g) (spv t) a → t.mem a = P n a)
-    (hx : L.progXPR κ M F h (Lu.map (fun q => regVal t q.2)) (P n) (R n) w = some (outs, w')) :
+    (hx : L.progXPR κ M F h (Lu.map (fun q => regVal t q.2)) (P n) (R n) w = some (o, w'))
+    (houts : ∃ n, outs = o.take n) :
     SameWorld F (L.pcall M h t) w' ∧
       FrameKeep (fun a => F a ∧ ¬ StackBelow (κ M g) (spOf t) a) t (L.pcall M h t) ∧
       (∀ p ∈ defRegs ops regs outs, regVal (L.pcall M h t) p.1.2 = p.2) ∧
@@ -48,7 +49,7 @@ theorem progOsCoreXPRR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       (∀ r ∈ (MInst.call info).clobbers, r ∈ calleeSaved →
         ckeep r (regVal (L.pcall M h t) r) = ckeep r (regVal t r)) := by
   let W := L.worldPR κ M h (P n) (R n) w
-  replace hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) W = some (outs, w') := hx
+  replace hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) W = some (o, w') := hx
   obtain ⟨-, harg, -⟩ := hL.argRegs h hh
   -- `Cond` of the world with the prophecies
   have hcondW : L.Cond κ M F h (Lu.map (fun q => regVal t q.2)) W := by
@@ -103,7 +104,7 @@ theorem progOsCoreXPRR (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
           (fun hr => ha (hdeadW a hr).1)]),
       hsw.2.2.trans (L.program_worldPR h _ _ w).symm⟩
   exact L.progOsCorePR hL hκ ih hg hh hcal himgF himgG himgS hLu hLd hdefs0 hdefs hK hG hra hsw' hmsk
-    hrgn hx
+    hrgn hx houts
 
 /-- **`progOs` for call number `n` with both prophecies, on `ThmPDER`** (module doc). -/
 theorem progOsPR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
@@ -132,16 +133,17 @@ theorem progOsPR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
   have hregs := callRegs_eq (regs := regs) (by simpa using hsz')
     (fun p hp r hr => (hloc p hp).2 r hr)
   rw [call_useVals hregs] at hsem
-  have hx : L.progXPR κ M F h (Lu.map (fun q => regVal t q.2)) (P n) (R n) w = some (outs, w') := by
+  obtain ⟨o, hx, hout⟩ : ∃ o, L.progXPR κ M F h (Lu.map (fun q => regVal t q.2)) (P n) (R n) w =
+      some (o, w') ∧ outs = o.take (callDefs Ld).length := by
     simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
     obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
     rw [L.XPR_prog hpf] at hx
-    exact hx
+    exact ⟨o, hx, rfl⟩
   obtain ⟨hmskQ, hrgnQ⟩ := hQ t hQt hP.callPc
   obtain ⟨us', ds', rfl⟩ := assign_call_sym hasg
   exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_some hpf],
     L.progOsCoreXPRR hL hκ ih hg hh (.inl ⟨_, hsite⟩) himgF himgG himgS hLu hLd rfl (call_defs hregs)
-      hK hG (hL.raCall g hg _ h hsite _ hP.callPc) hsw hmskQ hrgnQ hx⟩
+      hK hG (hL.raCall g hg _ h hsite _ hP.callPc) hsw hmskQ hrgnQ hx ⟨_, hout⟩⟩
 
 /-- **`progOsReg` for call number `n` with both prophecies, on `ThmPDER`**: a `blr` to a declared
 function of `P` (`progOsCoreXPR`), to another function of `P` (`XPR` undefined), or to no function
@@ -194,11 +196,12 @@ theorem progOsRegPR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     exact blrTarget_of hc.layout hlm hj hn0 hpc
       (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (himgG a ha)).trans (himgS a ha)) k wd hk)
   -- the external semantics' call
-  have hx : (L.XPR κ M g F P R n).call none (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w =
-      some (outs, w') := by
+  obtain ⟨o, hx, hout⟩ : ∃ o, (L.XPR κ M g F P R n).call none
+      (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w = some (o, w') ∧
+      outs = o.take (callDefs Ld).length := by
     simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
     obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
-    exact hx
+    exact ⟨o, hx, rfl⟩
   cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
   | none =>
     -- no function of `P` at the target: the base's contract
@@ -207,7 +210,7 @@ theorem progOsRegPR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     have hsem' : csem F ctx L.Xb (.call ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩)
         (useVals (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray regs t) w =
         some (outs, w', .next) := by
-      rw [call_useVals_reg hregs0]; simp [csem, hx]
+      rw [call_useVals_reg hregs0, hout]; simp [csem, hx]
     obtain ⟨s', hex, rest⟩ := hL.baseOs g hg _ hsite (.inl rfl) F (κ M g) G s0
       (CallAt (L.A g).fa (L.A g).base) ctx t hK hD hG c wh _ regs _ w outs w' hops0 hst hasg hP hsw
       hal herr hsem'
@@ -232,7 +235,7 @@ theorem progOsRegPR (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         L.progOsCoreXPRR hL hκ ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS hLu hLd rfl
           (call_defs_reg hregs0) hK hG
           (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw (hQ t hQt hP.callPc).1
-          (hQ t hQt hP.callPc).2 hx⟩
+          (hQ t hQt hP.callPc).2 hx ⟨_, hout⟩⟩
     · cases hx
 
 /-- **`calleeOk` for call number `n` with both prophecies, on `ThmPDER`**: the call contract of an

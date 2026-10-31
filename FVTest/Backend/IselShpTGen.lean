@@ -7,7 +7,8 @@ Untrusted: `IselCovTGen` with the control-shape precondition `apreST` and oracle
 (`IselShpTFns`): computes, by a fixpoint of the disjunctive abstract interpreter (`aRule`, `AT`)
 over the exported ISLE rules, a summary table for every internal term reachable from the rules
 of `lower` and `lower_branch` other than the hand-checked ones (`shpHandIds`) on every
-instruction family (`famTab`) and from the terminator rules of `lower`, and writes the table as
+instruction family (`famTab`) and from the `trap` rule of `lower` (the `return` rule is checked
+by hand, `IselShpTRet`: its `gen_return` is outside `apreST`), and writes the table as
 Lean literals (`IselShpTTabData`) with leaf-wise `decide +kernel` checks split over modules (entry
 chunks `IselShpTTabC*`, one theorem per rule of `lower` in `IselShpTTabS*`, `lower_branch` and the
 terminator rules in `IselShpTTabB`) and their assembly (`IselShpTTab`). Rule constant names are
@@ -204,12 +205,12 @@ def entryLit (e : TermId × List AT × AT) : String :=
   s!"({e.1}, [{", ".intercalate (e.2.1.map awLit)}], {awLit e.2.2})"
 
 def stmtRules : List Rule := program.rulesOf TId.lower
-def termRules : List Rule := (program.rulesOf TId.lower).filter fun r => r.id == 964 || r.id == 1037
+def termRules : List Rule := (program.rulesOf TId.lower).filter fun r => r.id == 964
 def branchRules : List Rule := program.rulesOf TId.lower_branch
 
 def roots : List (List AT × List Rule) :=
   ((List.range famTab.length).map fun i =>
-    ([.inst [i]], stmtRules.filter fun r => !shpHandIds.contains r.id)) ++
+    ([.inst [i]], stmtRules.filter fun r => !shpHandIds.contains r.id && r.id != 1037)) ++
     ((List.range famTab.length).map fun i =>
       ([.inst [i], .c0], branchRules.filter fun r => !shpHandIds.contains r.id)) ++
     [([.c0], termRules)]
@@ -240,10 +241,11 @@ def okDefs : String := "/-- `chkTab`'s test of one entry. -/
 abbrev shpEntryOkT (e : TermId × List AT × AT) : Bool :=
   (program.rulesOf e.1).all (aRule program shpTabT aext actor apreST aOracleST e.2.1 e.2.2)
 
-/-- The test of one rule of `lower`: a hand-checked one (`shpHandIds`), or it checks on every
-family. -/
+/-- The test of one rule of `lower`: a hand-checked one (`shpHandIds`), the `return` rule (1037,
+which matches no statement, `lower_ret_stmt_nomatch`; it reaches `gen_return`, outside `apreST`),
+or it checks on every family. -/
 def shpStmtOkT (r : Rule) : Bool :=
-  Cov.shpHandIds.contains r.id || (List.range famTab.length).all fun i =>
+  Cov.shpHandIds.contains r.id || r.id == 1037 || (List.range famTab.length).all fun i =>
     aRule program shpTabT aext actor apreST aOracleST [.inst [i]] AT.top r
 
 /-- The test of one rule of `lower_branch`: a hand-checked one, or it checks on every family. -/
@@ -373,11 +375,11 @@ The leaf-wise kernel checks are in `IselShpTTabC*` (entries), `IselShpTTabS*` (t
       | none => c := c ++ s!"theorem shpStmtOkT_{r} : shpStmtOkT {r} = true := by decide +kernel\n\n"
     files := files ++ [(s!"IselShpTTabS{gi}.lean", c ++ "end Backend.Proof.CovT\n")]
   -- branch rules and terminators
-  let mut bc := preamble "rules of `lower_branch`, terminators" "Each rule of `lower_branch` checks on every family (`shpBranchOkT`); the terminator rules of `lower` (964 `return`, 1037 `trap`) check on `c0`." "import FV.Backend.Proof.IselShpTTabData\n"
+  let mut bc := preamble "rules of `lower_branch`, terminators" "Each rule of `lower_branch` checks on every family (`shpBranchOkT`); the `trap` rule of `lower` (964) checks on `c0` (the `return` rule, 1037, is checked by hand: `IselShpTRet.handOkT_ret`)." "import FV.Backend.Proof.IselShpTTabData\n"
   for r in branchNames do
     bc := bc ++ s!"theorem shpBranchOkT_{r} : shpBranchOkT {r} = true := by decide +kernel\n\n"
-  bc := bc ++ "/-- The terminator rules of `lower` (964 `return`, 1037 `trap`) check. -/
-theorem shpTermT_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
+  bc := bc ++ "/-- The `trap` rule of `lower` (964) checks. -/
+theorem shpTermT_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964) ||
     aRule program shpTabT aext actor apreST aOracleST [.c0] AT.top r) = true := by
   rw [show TId.lower = 686 from rfl, data_program.r686]
   simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
@@ -393,7 +395,7 @@ theorem shpTermT_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 ||
   let mut m := preamble "the table and root checks"
     "`shpTabT_ok`: every rule of every entry checks (`chkTab`); `shpStmtT_ok`: every rule of `lower`
 other than the hand-checked ones (`shpHandIds`) checks on every family; `shpTermT_ok`
-(`IselShpTTabB`): the terminator rules of `lower` check; `shpBranchT_ok`: every rule of
+(`IselShpTTabB`): the `trap` rule of `lower` checks; `shpBranchT_ok`: every rule of
 `lower_branch` other than the hand-checked ones checks on every family."
     imps
   m := m ++ "/-- **Every rule of every entry checks.** -/\ntheorem shpTabT_ok : chkTab program shpTabT aext actor apreST aOracleST = true := by\n  unfold chkTab\n  show (shpTabT).all shpEntryOkT = true\n  simp only [shpTabT, List.all_append, " ++
@@ -430,7 +432,7 @@ def main (args : List String) : IO UInt32 := do
             | some a => IO.println s!"    rhs {awLit a}"
   let mut allOk := ok
   for i in List.range famTab.length do
-    let topBad := stmtRules.filter fun r => !isHand r && !aRule program tab aext actor apreST aOracleST [.inst [i]] AT.top r
+    let topBad := stmtRules.filter fun r => !isHand r && r.id != 1037 && !aRule program tab aext actor apreST aOracleST [.inst [i]] AT.top r
     if !topBad.isEmpty then allOk := false
     IO.println s!"family {i}: top-fail {topBad.map (·.id)}"
   let termBad := termRules.filter fun r => !aRule program tab aext actor apreST aOracleST [.c0] AT.top r

@@ -27,7 +27,7 @@ theorem backend_correct_world_niX_stock_arithmetic {p : Clif.Program} {f : Clif.
     (fuel : Nat) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ result.code.RetsSite us ∧
         (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -71,7 +71,7 @@ theorem backend_correct_world_niX_stock_arithmetic {p : Clif.Program} {f : Clif.
   have mem : MemRel F syms cm w₀ := by
     rw [freed]
     exact memRel_leave (memRel_free memory.1.1 _)
-  refine ⟨us,outs,w₀,pins.ordinary domain.ordinary,arity,values,mem,site,?_,?_⟩
+  refine ⟨us,outs,w₀,pins.retPins domain.ordinary,arity,values,mem,site,?_,?_⟩
   · intro H G base ra s he
     exact ABIReadOnly.machine_return (f := f) hcs.sig readOnly hc.prepOk hc.check hc.alloc hc.emit hc.layout
       (fun _ h => h) hcov hargs (SameWorld.refl F w₀) reached H G base ra s he

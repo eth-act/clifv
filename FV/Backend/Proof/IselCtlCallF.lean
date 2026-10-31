@@ -390,18 +390,18 @@ theorem resultsHeld_callC {fr : Clif.Frame} {ρ : Nat → CV} {st : LState} {rva
 /-- The results of a call with typed outputs (`results_call` with `outRegsC`). -/
 theorem results_callC {fr : Clif.Frame} {ρ : Nat → CV} {st : LState} {rvals : List Clif.Val}
     {outs : List CV} {results : List Nat} {s : Clif.Signature} {ps : List Reg}
-    (hps : ps.length = ((sigRets s).map retClass).length)
+    (hps : ps.length = (s.returns.map retClass).length)
     (hrN : rvals.length = s.returns.length) (hres : results.length = s.returns.length)
-    (hol : outs.length = (sigRets s).length) (hro : PrefixHold rvals outs) :
-    results = [] ∨ ResultsHeld st.nextVreg fr (outRegsC st ((sigRets s).map retClass)) rvals
-      (writeV ρ ((callDefOpsC (outDefsC st.nextVreg ps ((sigRets s).map retClass))).zip outs)) := by
-  rcases sigRets_cases s with h | ⟨h0, -⟩
-  · right
-    refine resultsHeld_callC hps (by rw [List.length_map, h, hrN]) ?_
-    exact hro.allHold (by rw [hol, h, hrN])
-  · left
-    rw [h0] at hres
-    exact List.eq_nil_of_length_eq_zero hres
+    (hol : outs.length = s.returns.length) (hro : PrefixHold rvals outs) :
+    results = [] ∨ ResultsHeld st.nextVreg fr (outRegsC st (s.returns.map retClass)) rvals
+      (writeV ρ ((callDefOpsC (outDefsC st.nextVreg ps (s.returns.map retClass))).zip outs)) := by
+  cases h0 : s.returns with
+  | nil => left; rw [h0] at hres; exact List.eq_nil_of_length_eq_zero hres
+  | cons a l =>
+    right
+    rw [h0] at hps hrN hol
+    refine resultsHeld_callC hps (by rw [List.length_map]; exact hrN) ?_
+    exact hro.allHold (by rw [hol, hrN])
 
 /-! ## `gen_call_args` with typed arguments -/
 
@@ -708,14 +708,14 @@ theorem call_sym_lowerInstOkTF {Rd F : BitVec 64 → Prop}
     (hext : f.extern? fn = some ext) (hin : ext ∈ exts) (hso : SigStackOk ext.sig outB)
     {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes) {locs : List ArgLoc} {S : Nat}
     (hl : sigArgLocs ext.sig = .ok (locs, S)) {ps : List Reg}
-    (hps : ps.length = ((sigRets ext.sig).map retClass).length)
+    (hps : ps.length = (ext.sig.returns.map retClass).length)
     {st st' : LState} {results : List Nat} (hres : results.length = ext.sig.returns.length)
-    (hst' : st'.nextVreg = st.nextVreg + (sigRets ext.sig).length) :
+    (hst' : st'.nextVreg = st.nextVreg + ext.sig.returns.length) :
     LowerInstOkP Rd Pc isem MR env cp ctx (.call fn args) results st
-      (outRegsC st ((sigRets ext.sig).map retClass)) st'
+      (outRegsC st (ext.sig.returns.map retClass)) st'
       ((stackEnts ((locs.zip args).zip bytes)).map (argStoreC (valClassOf ctx)) ++
         [.call ⟨.sym ext.name, argPairsC (liftC (valClassOf ctx) (regPairsOf ((locs.zip args).zip bytes))),
-          callDefsC (outDefsC st.nextVreg ps ((sigRets ext.sig).map retClass))⟩]) := by
+          callDefsC (outDefsC st.nextVreg ps (ext.sig.returns.map retClass))⟩]) := by
   refine ⟨by omega, ?_, ?_⟩
   · intro m hm d hd
     rcases List.mem_append.mp hm with hm | hm
@@ -742,16 +742,16 @@ theorem call_sym_lowerInstOkTF {Rd F : BitVec 64 → Prop}
         hlen.symm (valClassOf ctx) (fun j v x hv hx => hvh x v (hvx j x v hx hv))
         (argClasses_of_frame hdfg hvals) hmr
       obtain ⟨sym, -, hcall, -⟩ := hCR
-      have hdl : (callDefsC (outDefsC st.nextVreg ps ((sigRets ext.sig).map retClass))).length =
-          (sigRets ext.sig).length := by
+      have hdl : (callDefsC (outDefsC st.nextVreg ps (ext.sig.returns.map retClass))).length =
+          ext.sig.returns.length := by
         simp [callDefsC, outDefsC_length _ hps]
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := hcall ext hin g fr.slots cm w1 (.sym ext.name)
         (argPairsC (liftC (valClassOf ctx) (regPairsOf ((locs.zip args).zip bytes))))
-        (callDefsC (outDefsC st.nextVreg ps ((sigRets ext.sig).map retClass)))
+        (callDefsC (outDefsC st.nextVreg ps (ext.sig.returns.map retClass)))
         _ _ vals rvals cm' hg (.inl ⟨rfl, rfl⟩) hdl (hargs w1 (SameWorldNF.refl F w1)) hmr1 hpc hgo
         hrN
       rw [← liftC_vals (valClassOf ctx)] at hi
-      have hol' : outs.length = (outDefsC st.nextVreg ps ((sigRets ext.sig).map retClass)).length := by
+      have hol' : outs.length = (outDefsC st.nextVreg ps (ext.sig.returns.map retClass)).length := by
         rw [hol, hdl, outDefsC_length _ hps, List.length_map]
       refine ⟨?_, _, _, seqRun_append_fall' isem hrun1 (seqRun_call_symC hi hol'),
         results_callC hps hrN hres (by rw [hol, hdl]) hro, hmr'⟩
@@ -779,17 +779,17 @@ theorem call_got_lowerInstOkTF {Rd F : BitVec 64 → Prop}
     (hso : SigStackOk ext.sig outB)
     {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes) {locs : List ArgLoc} {S : Nat}
     (hl : sigArgLocs ext.sig = .ok (locs, S)) {ps : List Reg}
-    (hps : ps.length = ((sigRets ext.sig).map retClass).length)
+    (hps : ps.length = (ext.sig.returns.map retClass).length)
     {st st' : LState} {results : List Nat} (hres : results.length = ext.sig.returns.length)
     (hargs : ∀ x ∈ args, x < st.nextVreg)
-    (hst' : st'.nextVreg = st.nextVreg + (sigRets ext.sig).length + 1) :
+    (hst' : st'.nextVreg = st.nextVreg + ext.sig.returns.length + 1) :
     LowerInstOkP Rd Pc isem MR env cp ctx (.call fn args) results st
-      (outRegsC st ((sigRets ext.sig).map retClass)) st'
+      (outRegsC st (ext.sig.returns.map retClass)) st'
       ((stackEnts ((locs.zip args).zip bytes)).map (argStoreC (valClassOf ctx)) ++
-       [.loadExtNameGot (.vreg (st.nextVreg + (sigRets ext.sig).length) .int) ext.name,
-       .call ⟨.reg (.vreg (st.nextVreg + (sigRets ext.sig).length) .int),
+       [.loadExtNameGot (.vreg (st.nextVreg + ext.sig.returns.length) .int) ext.name,
+       .call ⟨.reg (.vreg (st.nextVreg + ext.sig.returns.length) .int),
         argPairsC (liftC (valClassOf ctx) (regPairsOf ((locs.zip args).zip bytes))),
-        callDefsC (outDefsC st.nextVreg ps ((sigRets ext.sig).map retClass))⟩]) := by
+        callDefsC (outDefsC st.nextVreg ps (ext.sig.returns.map retClass))⟩]) := by
   refine ⟨by omega, ?_, ?_⟩
   · intro m hm d hd
     rcases List.mem_append.mp hm with hm | hm
@@ -819,10 +819,10 @@ theorem call_got_lowerInstOkTF {Rd F : BitVec 64 → Prop}
         hlen.symm (valClassOf ctx) (fun j v x hv hx => hvh x v (hvx j x v hx hv))
         (argClasses_of_frame hdfg hvals) hmr
       obtain ⟨sym, hgot, hcall, -⟩ := hCR
-      obtain ⟨w2, hw2, hsw⟩ := hgot (.vreg (st.nextVreg + (sigRets ext.sig).length) .int) ext.name w1
+      obtain ⟨w2, hw2, hsw⟩ := hgot (.vreg (st.nextVreg + ext.sig.returns.length) .int) ext.name w1
       have hmr2 := hMR _ _ _ _ hsw hmr1
       have hrun2 := seqRun_got (F := F) (ρ := ρ) hw2
-      generalize ht : st.nextVreg + (sigRets ext.sig).length = t at hrun2 hw2 hsw ⊢
+      generalize ht : st.nextVreg + ext.sig.returns.length = t at hrun2 hw2 hsw ⊢
       have hρ1 : ∀ x ∈ args, upd ρ t (ofX (sym ext.name)) x = ρ x := by
         intro x hx
         have := hargs x hx
@@ -833,19 +833,19 @@ theorem call_got_lowerInstOkTF {Rd F : BitVec 64 → Prop}
         apply List.map_congr_left
         intro q hq
         exact hρ1 _ (map_zip_args (mem_args_of_regPairs (List.mem_map_of_mem hq)))
-      have hdl : (callDefsC (outDefsC st.nextVreg ps ((sigRets ext.sig).map retClass))).length =
-          (sigRets ext.sig).length := by
+      have hdl : (callDefsC (outDefsC st.nextVreg ps (ext.sig.returns.map retClass))).length =
+          ext.sig.returns.length := by
         simp [callDefsC, outDefsC_length _ hps]
       have ht1 : upd ρ t (ofX (sym ext.name)) t = ofX (sym ext.name) := by simp [upd]
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := hcall ext hin g fr.slots cm w2
         (.reg (.vreg t .int)) (argPairsC (liftC (valClassOf ctx) (regPairsOf ((locs.zip args).zip bytes))))
-        (callDefsC (outDefsC st.nextVreg ps ((sigRets ext.sig).map retClass)))
+        (callDefsC (outDefsC st.nextVreg ps (ext.sig.returns.map retClass)))
         (upd ρ t (ofX (sym ext.name)) t ::
           (regPairsOf ((locs.zip args).zip bytes)).map (upd ρ t (ofX (sym ext.name)) ·.1))
         ((regPairsOf ((locs.zip args).zip bytes)).map (ρ ·.1)) vals rvals cm' hg
         (.inr ⟨_, rfl, hcol, by rw [ht1, huses]⟩) hdl (hargsAt w2 hsw) hmr2 hpc hgo hrN
       rw [← liftC_vals (valClassOf ctx)] at hi
-      have hol' : outs.length = (outDefsC st.nextVreg ps ((sigRets ext.sig).map retClass)).length := by
+      have hol' : outs.length = (outDefsC st.nextVreg ps (ext.sig.returns.map retClass)).length := by
         rw [hol, hdl, outDefsC_length _ hps, List.length_map]
       have hrun3 := seqRun_call_regC hi hol'
       refine ⟨?_, _, _, seqRun_append_fall' isem hrun1

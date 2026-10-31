@@ -23,7 +23,7 @@ def A0 (n : String) (vals : List Clif.Val) (cm : Clif.Mem) : Prop :=
 theorem callPost_e (Γ : Rel) (f : Clif.Function) (c : BitVec 64) (sym : String → Int → BitVec 64) :
     ∀ d uses w, ∃ r, CallPost (envE.only A0) [extE] [] (RelW Γ f c) sym d uses w r := by
   refine callPost_only_exists (n0 := "e") (vals0 := []) (cm0 := Clif.Mem.empty)
-    (fun n vals cm h => h) (sigRets extE.sig).length ?_
+    (fun n vals cm h => h) extE.sig.returns.length ?_
   intro g rvals cm' hg hret
   simp only [envE, ↓reduceIte] at hg
   cases hg

@@ -5,14 +5,15 @@ import FV.Concurrency.CallResumeChecks
 # The arity part of `resume_all`'s `habi` as a check (#473, step (3))
 
 `CallResumeAll.resume_all`'s `habi` asks, besides the def registers (`CallResumeChecks`), that
-the paused call defines one register per ABI return of the CLIF extern `ext` the call statement
-names: `info.defs.length = (sigRets ext.sig).length` (and `rvals.length ≤ info.defs.length`,
-which follows from it and the CLIF return types, `returns_le_sigRets`). The VCode alone does not
+the paused call defines one register per declared return of the CLIF extern `ext` the call
+statement names (an `sret` callee's struct pointer is not a call result, #587):
+`info.defs.length = ext.sig.returns.length` (and `rvals.length ≤ info.defs.length`, which
+follows from it and the CLIF return types). The VCode alone does not
 know `ext`, so the check is per statement on the driver's lowering `bl`, in the style of
 `IselCheck.callOkB`:
 
 * `callArityB f stm sl`: a `call fn _` statement whose code is one `call` defines
-  `(sigRets ext.sig).length` registers, `ext` being `f.extern? fn`;
+  `ext.sig.returns.length` registers, `ext` being `f.extern? fn`;
 * `callArityBl f bl` on every statement, `callArityC f` on the driver's lowering of `f`.
 
 `match_atCallA` carries the statement's instruction through `IselCall.match_atCall`, and
@@ -33,7 +34,7 @@ def callArityB (f : Clif.Function) (stm : Clif.Stmt) (sl : SLow) : Bool :=
     match sl.st'.emitted.toList with
     | [.call ⟨_, _, ds⟩] =>
       match f.extern? fn with
-      | some ext => ds.length == (sigRets ext.sig).length
+      | some ext => ds.length == ext.sig.returns.length
       | none => false
     | _ => true
   | _ => true
@@ -91,7 +92,7 @@ theorem match_atCallA {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState
     {args : List Clif.ValueId} (hcl : stm.inst = .call fn args) {ext : Clif.ExtFunc}
     (hext : f.extern? fn = some ext) :
     ∃ vb n us ds, vc.blocks[vs.b]? = some vb ∧
-      vb.insts[vs.k]? = some (.call ⟨.sym n, us, ds⟩) ∧ ds.length = (sigRets ext.sig).length := by
+      vb.insts[vs.k]? = some (.call ⟨.sym n, us, ds⟩) ∧ ds.length = ext.sig.returns.length := by
   obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, hk, -, -⟩ := hm
   obtain ⟨hjlt, hstm, -⟩ := drop_cons_split (hbd ▸ hbody)
   obtain ⟨L, hL⟩ := H.blow hB
@@ -172,7 +173,7 @@ theorem resume_allAX {RA : RL} (hRA : RA.Wf) (hgv : RA.gv = fun _ _ => False)
   have habi : ∀ (vb : VBlock) (info : CallInfo),
       RA.vc.blocks[vP'.b]? = some vb → vb.insts[vP'.k]? = some (.call info) →
       (∀ (j : Nat) (d : Reg × Reg), info.defs[j]? = some d → ∃ v, usB[j]? = some (v, d.1)) ∧
-      rvals.length ≤ info.defs.length ∧ info.defs.length = (sigRets ext.sig).length := by
+      rvals.length ≤ info.defs.length ∧ info.defs.length = ext.sig.returns.length := by
     intro vb info hvb hi
     obtain ⟨b0, k0, ρ0, w0⟩ := vV'
     obtain ⟨vb0, n, us, ds, hvb0, hi0, hlen⟩ :=
@@ -183,8 +184,8 @@ theorem resume_allAX {RA : RL} (hRA : RA.Wf) (hgv : RA.gv = fun _ _ => False)
     rw [hvb'] at hvb; cases hvb
     rw [hi'] at hi; cases hi
     refine ⟨habi_regs hdr hvb' hi', ?_, hlen⟩
-    rw [hrl, hlen]
-    exact returns_le_sigRets _
+    simp only at hlen ⊢
+    omega
   exact resume_allX hRA hgv hX0 H hchk hlow hind hv hnt hout0 hΓF hslot hsym H3 hc hvdef hq
     hA hP hat hm2 hm3 hm4 hpc herr hsp hmem hcs hprog hfp hus hpreB hB hval hmemB hbody hcl hext
     huniq hvals htys hrty hregs habi

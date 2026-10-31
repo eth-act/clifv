@@ -29,7 +29,7 @@ def RunOkAbiN {W : Type} (env : Clif.Env) (p : Clif.Program) (cs : Clif.State) (
     (sem : ISem CV (W × Nat)) (MR : MemRelTW (W × Nat)) (slots : List (Clif.SlotId × Nat))
     (Q : List Clif.Val → Prop) (vs : VState CV (W × Nat)) : Clif.Outcome → Prop
   | .returned vals cm => ∃ us outs w cm0 sv, VRetFrom vc sem vs us outs w ∧
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins vals us ∧ us.length = outs.length ∧
       Q sv ∧ AllHold (vals ++ sv) outs ∧ MR slots cm0 w ∧ cm = (cm0.free (slots.map (·.2))).leave ∧
       ∃ u, ReachN env p cs u w.2 ∧ Clif.step env p u = .done vals cm
   | o => RunOkAbi vc sem MR slots Q vs o
@@ -213,7 +213,7 @@ theorem iselSim_relWIN {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp 
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VRetFrom vc (csemI F ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w.1 ∧
         ∃ u, ReachN env p cs u w.2 ∧ Clif.step env p u = .done vals cm) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
@@ -284,7 +284,7 @@ theorem iselSim_relWI_cleanupN {p : Clif.Program} {f : Clif.Function} {k : Nat} 
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VRetFrom vc (valueSemI F ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w.1 ∧
         ∃ u, ReachN env p cs u w.2 ∧ Clif.step env p u = .done vals cm) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →

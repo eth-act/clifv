@@ -129,17 +129,17 @@ theorem tryRegsOfC_bounds {sig : Clif.Signature} {st st1 : LState} {trs : List R
     ∀ r ∈ trs.1 ++ trs.2, ∃ n c, r = .vreg n c ∧ st.nextVreg ≤ n ∧ n < st1.nextVreg := by
   obtain ⟨rets, pays⟩ := trs
   unfold tryRegsOfC at h
-  cases hr : retRegsC ((sigRets sig).map retClass) 0 0 with
+  cases hr : retRegsC (sig.returns.map retClass) 0 0 with
   | none => rw [hr] at h; cases h
   | some ps =>
     rw [hr] at h
     simp only [Option.bind_eq_bind, Option.bind_some, Option.pure_def, Option.some.injEq,
       Prod.mk.injEq] at h
     obtain ⟨⟨hrets, hpays⟩, hst⟩ := h
-    obtain ⟨r1, r2⟩ := retFoldC (sigRets sig) #[] st
-    generalize hR : (sigRets sig).foldl (fun (x : Array Reg × LState) q =>
+    obtain ⟨r1, r2⟩ := retFoldC sig.returns #[] st
+    generalize hR : sig.returns.foldl (fun (x : Array Reg × LState) q =>
       ((x.1.push (x.2.fresh (retClass q)).1), (x.2.fresh (retClass q)).2)) (#[], st) = R at r1 r2 hrets hpays hst
-    have hps : ps.length = ((sigRets sig).map retClass).length := retRegsC_lengthC _ _ _ hr
+    have hps : ps.length = (sig.returns.map retClass).length := retRegsC_lengthC _ _ _ hr
     simp only [List.nil_append] at r1
     have hRb : ∀ r ∈ R.1.toList, ∃ n c, r = .vreg n c ∧ st.nextVreg ≤ n ∧ n < R.2.nextVreg := by
       intro r hr'
@@ -165,13 +165,14 @@ theorem tryRegsOfC_bounds {sig : Clif.Signature} {st st1 : LState} {trs : List R
       exact ⟨n, c, h1, h2, by rw [← hst]; exact h3⟩
 
 /-- The `i`-th return vreg of a typed `try_call` is the `i`-th fresh vreg (of the return's
-class). -/
+class). Over the declared returns (#587: the old `sigRets` bound is false for an `sret` callee,
+whose struct pointer gets no vreg, as in Cranelift). -/
 theorem tryRegsOfC_rets {sig : Clif.Signature} {st st1 : LState} {trs : List Reg × List Reg}
-    (h : tryRegsOfC sig st = some (trs, st1)) {i : Nat} (hi : i < (sigRets sig).length) :
+    (h : tryRegsOfC sig st = some (trs, st1)) {i : Nat} (hi : i < sig.returns.length) :
     ∃ c, trs.1[i]? = some (.vreg (st.nextVreg + i) c) := by
   obtain ⟨ps, -, h1, -, -⟩ := tryRegsOfC_defs h
   rw [h1]
-  exact ⟨retClass (sigRets sig)[i], by simp [hi]⟩
+  exact ⟨retClass sig.returns[i], by simp [hi]⟩
 
 /-- The rules of `lower_branch` other than the `try_call` roots never match a typed `try_call`
 (data `tryCallDataC`), in any context. -/

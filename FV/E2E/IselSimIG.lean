@@ -216,7 +216,7 @@ theorem term_stepIG (hN : NoCallProj semF semN) {n : Nat}
         (.run ⟨b', k', ρ', (w', n)⟩) ∧ Match f ctx R gn bl A MR slots s' ⟨b', k', ρ', w'⟩) ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vc (ISem.counted semF) ⟨b, k, ρ, (w, n)⟩ us outs (w', n) ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c →
@@ -371,8 +371,8 @@ theorem term_step_tryIG (hI : NcIndep semF) {n : Nat}
   obtain ⟨-, hregsEq, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc hexn) hregs
   obtain ⟨pre, ci', hms, hpre, hcd⟩ := hok.shape
   have hmono : T.st1.nextVreg ≤ L.tst'.nextVreg := hok.mono
-  have hmax1 : (sigRets T.sig).length ≤ max (sigRets T.sig).length 2 := Nat.le_max_left _ _
-  have hmax2 : 2 ≤ max (sigRets T.sig).length 2 := Nat.le_max_right _ _
+  have hmax1 : T.sig.returns.length ≤ max T.sig.returns.length 2 := Nat.le_max_left _ _
+  have hmax2 : 2 ≤ max T.sig.returns.length 2 := Nat.le_max_right _ _
   have hfix : tryFix T.info L.tst'.emitted.toList = pre ++ [.tryCall ci' T.info] := by
     rw [hms, tryFix_append]
   have hargsA : ∀ y ∈ instArgs ci, y ∈ A b B.body.length := fun y hy => htA y (hciA y hy)
@@ -543,8 +543,7 @@ theorem term_step_tryIG (hI : NcIndep semF) {n : Nat}
         exact hh
       | ret ii =>
         have hii : ii < T.sig.returns.length := hargsOk _ htam
-        have hiN : ii < (sigRets T.sig).length :=
-          Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
+        have hiN : ii < T.sig.returns.length := hii
         have hvi : regs' (f.freshValue + ii) = some rvals[ii] :=
           setMany_nodup hset (List.Pairwise.map _ (fun a b h e => h (Nat.add_left_cancel e)) List.nodup_range) ii _ _
             (by simp [List.getElem?_map, hii]) (List.getElem?_eq_getElem (by omega))
@@ -580,7 +579,7 @@ theorem term_step_tryIG (hI : NcIndep semF) {n : Nat}
     | val v => simp [normArgReg, tryArgNum, H.shape.ren.vreg]
     | ret ii =>
       have hii : ii < T.sig.returns.length := hargsOk _ ha
-      have hiN : ii < (sigRets T.sig).length := Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
+      have hiN : ii < T.sig.returns.length := hii
       have hg : gn (L.tst.nextVreg + ii) = L.tst.nextVreg + ii := H.shape.temps _ (by omega)
       simp [normArgReg, tryArgNum, hregsEq, hiN, H.shape.ren.vreg, hg]
     | exn _ => exact absurd (hargsOk _ ha) id

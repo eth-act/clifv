@@ -72,10 +72,17 @@ theorem mstep_callR {R : RL} {s y : ArmState} {b k : Nat} {allocs : Array Loc}
     fun p hp => hzip p ((List.mem_filter.mp hp).1)
   have hm1 := writeM_fun (locVal R.fr y) early m hearly
   have hm' := writeM_fun (locVal R.fr y) late m2 hlate
+  have hD : D.length ≤ info.defs.length := by
+    have := congrArg List.length (pairs_fst hsz.symm Operand.isDef)
+    rw [List.length_map] at this
+    simp only [D, defPairs]; rw [this]; exact CallResumeL.call_defs_le hops
   refine ⟨writeM m2 late, ?_, fun l hv hlive => ?_⟩
   · refine MStep.op hvb hi hops hsz ?_ (by simp [outs, D, defPairs]) (HavocOuts.refl _ _ _)
       ⟨?_, ?_⟩ (.next hk)
-    · simp [csem, xcallX, outs, D, defPairs]
+    · have hO : outs.length ≤ info.defs.length := by simp only [outs, List.length_map]; exact hD
+      simp only [csem, xcallX, Option.map_some]
+      congr 2
+      exact List.take_of_length_le hO
     · intro l hl
       simp only [m2]
       rw [if_neg (fun ⟨c, hc, he⟩ => hl c hc he)]; rfl

@@ -8,7 +8,7 @@ import FV.E2E.SretReturn
 `backend_correct_opt_abi`, `backend_correct_opt_proven_abi`: `backend_correct_opt` /
 `backend_correct_opt_proven` with the premise `sretStableB (Opt.optimize f cfg) = true` (the
 per-function check on the compiled, optimised function), and a return also leaves the ABI
-return values `sretArg f args` after the CLIF ones in x0.. (`ArmRefinesAbi`). The optimiser
+return values `sretArg f args` in x8 after the CLIF ones in x0.. (`ArmRefinesAbi`). The optimiser
 keeps the signature (`Opt.optimize_facts`), so `sretArg` of the optimised function is the
 source's.
 -/

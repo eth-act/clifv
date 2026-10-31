@@ -115,7 +115,7 @@ theorem iselSim_relW {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : 
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns vc (csem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       VTraps vc (csem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
@@ -201,7 +201,7 @@ theorem backend_correct_world {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -238,7 +238,7 @@ theorem backend_correct_world {p : Clif.Program} {f : Clif.Function} {k : Nat} {
 theorem armRefines_of_actRet {fb : FnBin} {base ra : BitVec 64} {astep : Arm.ArmState → Arm.ArmState}
     {s : Arm.ArmState} {F G : BitVec 64 → Prop} {syms : String → Option Nat}
     {vals : List Clif.Val} {cm : Clif.Mem} {us : List (Reg × Reg)} {outs : List CV}
-    {w : Arm.ArmState} (hus : us.map (·.2) = (List.range us.length).map Reg.x)
+    {w : Arm.ArmState} (hus : RetPins vals us)
     (hlen : us.length = outs.length) (hhold : PrefixHold vals outs) (hm : MemRel F syms cm w)
     {n : Nat} (h : ActRet ra F G us outs w s (runX astep n s)) :
     ArmRefines fb base ra astep s (.returned vals cm) := by
@@ -248,11 +248,7 @@ theorem armRefines_of_actRet {fb : FnBin} {base ra : BitVec 64} {astep : Arm.Arm
   have hju : j < us.length := by have := hhold.1; omega
   obtain ⟨x, hx⟩ : ∃ x, outs[j]? = some x :=
     ⟨outs[j]'(by have := hhold.1; omega), List.getElem?_eq_getElem _⟩
-  have hp : (us[j]'hju).2 = Reg.x j := by
-    have := congrArg (fun l => l[j]?) hus
-    simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-      Option.map_some] at this
-    exact Option.some.inj this
+  have hp : (us[j]'hju).2 = Reg.x j := hus.x hjv hju
   have hr := h.regs j (us[j]'hju).1 (us[j]'hju).2 x (by simp [List.getElem?_eq_getElem hju]) hx
   rw [hp, regVal_x] at hr
   show VHolds v (ofX (xreg j (runX astep n s)))

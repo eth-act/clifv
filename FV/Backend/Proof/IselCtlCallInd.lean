@@ -97,11 +97,11 @@ theorem call_ind_lowerInstOk {Rd : BitVec 64 → Prop}
     {s : Clif.Signature} (hs : f.sigDecls.lookup sig = some s) (hin : s ∈ sigs)
     (h8 : s.params.length ≤ 8) {st st' : LState} {results : List Nat}
     (hres : results.length = s.returns.length)
-    (hst' : st'.nextVreg = st.nextVreg + (sigRets s).length) :
+    (hst' : st'.nextVreg = st.nextVreg + s.returns.length) :
     LowerInstOkP Rd Pc isem MR env cp ctx (.callIndirect sig callee args) results st
-      (outRegs' st.nextVreg (sigRets s).length) st'
+      (outRegs' st.nextVreg s.returns.length) st'
       [.call ⟨.reg (.vreg callee .int), retPairs (args.zip ((abiArgIdx s.params 0).map Reg.x)),
-        callDefs (outDefs st.nextVreg (sigRets s).length)⟩] := by
+        callDefs (outDefs st.nextVreg s.returns.length)⟩] := by
   refine ⟨by omega, ?_, ?_⟩
   · intro m hm d hd
     simp only [List.mem_singleton] at hm
@@ -128,8 +128,8 @@ theorem call_ind_lowerInstOk {Rd : BitVec 64 → Prop}
         List.map_fst_zip (by simp [abiArgIdx_length]; omega)
       have huses : (args.zip ((abiArgIdx s.params 0).map Reg.x)).map (ρ ·.1) = args.map ρ := by
         rw [show (fun x : Nat × Reg => ρ x.1) = ρ ∘ (·.1) from rfl, ← List.map_map, hfst]
-      have hdl : (callDefs (outDefs st.nextVreg (sigRets s).length)).length =
-          (sigRets s).length := by
+      have hdl : (callDefs (outDefs st.nextVreg s.returns.length)).length =
+          s.returns.length := by
         simp [callDefs, outDefs]
       have hlo : lo64 (ρ callee) = BitVec.ofNat 64 x.toNat := by
         rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
@@ -137,9 +137,9 @@ theorem call_ind_lowerInstOk {Rd : BitVec 64 → Prop}
       obtain ⟨hcall, -⟩ := hCR
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := hcall s hin name g fr.slots cm w x.toNat
         (.vreg callee .int) (retPairs (args.zip ((abiArgIdx s.params 0).map Reg.x)))
-        (callDefs (outDefs st.nextVreg (sigRets s).length)) (ρ callee) (args.map ρ) vals rvals cm'
+        (callDefs (outDefs st.nextVreg s.returns.length)) (ρ callee) (args.map ρ) vals rvals cm'
         hg hsg hsym hlo hdl (by omega) (allHold_args hvh hvals) hmr hpc hgo hrN hty
-      have hol' : outs.length = (outDefs st.nextVreg (sigRets s).length).length := by
+      have hol' : outs.length = (outDefs st.nextVreg s.returns.length).length := by
         rw [hol]; simp [callDefs, outDefs]
       rw [← huses] at hi
       refine ⟨?_, _, _, seqRun_call_reg hi hol', results_call hrN hres (by rw [hol, hdl]) hro,

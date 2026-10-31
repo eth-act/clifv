@@ -357,7 +357,7 @@ theorem term_step_abiK (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
           (DeadDef vc (skipMask f R bl vc drop)) s' vsK') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vcK sem vsK us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vcK sem vsK c) := by

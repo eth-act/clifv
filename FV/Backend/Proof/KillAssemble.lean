@@ -418,7 +418,7 @@ def TryDefsExact : Prop :=
       ctx.valDef.size ≤ lo.nextVreg → tryRegsOf sig lo = some (trs, st1) →
       tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (out, s', tr) →
       ∀ m ∈ s'.emitted.toList, ∀ c, m = .call c →
-        c.defs = callDefs (outDefs lo.nextVreg (max (sigRets sig).length 2))
+        c.defs = callDefs (outDefs lo.nextVreg (max sig.returns.length 2))
 
 theorem asm_mem_killedL {ms : List MInst} {m : MInst} (hm : m ∈ ms) {k : Nat} (hk : k ∈ unstored m) :
     k ∈ killedL ms :=
@@ -800,12 +800,12 @@ theorem try_facts {bi : Nat} {B : Clif.Block} {L : BLow} {et : Clif.ExnTable}
     (hB : f.blocks[bi]? = some B) (hL : bl[bi]? = some L) (het : IsTryWith B.term et) :
     ∃ T ys cl, L.tl = some T ∧
       fixTry L.tl L.tst'.emitted.toList = ys ++ [.tryCall cl T.info] ∧
-      cl.defs = callDefs (outDefs L.tst.nextVreg (max (sigRets T.sig).length 2)) ∧
+      cl.defs = callDefs (outDefs L.tst.nextVreg (max T.sig.returns.length 2)) ∧
       (∀ m ∈ ys, ∀ k ∈ unstored m, T.st1.nextVreg ≤ k) ∧
-      T.regs = ((List.range (sigRets T.sig).length).map
+      T.regs = ((List.range T.sig.returns.length).map
         (fun j => Reg.vreg (L.tst.nextVreg + j) .int),
         [.vreg L.tst.nextVreg .int, .vreg (L.tst.nextVreg + 1) .int]) ∧
-      T.st1.nextVreg = L.tst.nextVreg + max (sigRets T.sig).length 2 ∧
+      T.st1.nextVreg = L.tst.nextVreg + max T.sig.returns.length 2 ∧
       T.st1.nextVreg ≤ L.tst'.nextVreg ∧ ctx.valDef.size ≤ L.tst.nextVreg ∧
       tryInfoOf T.sig T.items L.targets = some T.info ∧
       L.targets.length = et.dests.length ∧ L.targets.Nodup := by
@@ -944,8 +944,8 @@ theorem try_edge_ok {succs preds : Array (Array Nat)} (hc : vc.cfg = .ok (succs,
   obtain ⟨ta, hta, rfl⟩ := ha'
   have hok := hai ta hta
   -- a result vreg `lo + i`
-  have key : ∀ i, i < max (sigRets T.sig).length 2 →
-      (k = et.handlers.length → i < (sigRets T.sig).length) →
+  have key : ∀ i, i < max T.sig.returns.length 2 →
+      (k = et.handlers.length → i < T.sig.returns.length) →
       (!(killedOf vc).contains (L.tst.nextVreg + i) ||
         ((entryStored vc succs preds p.2).contains (L.tst.nextVreg + i) &&
           (#[MInst.jump tl].map (MInst.mapRegs (asmR f bl))).toList.all fun i' =>
@@ -976,18 +976,18 @@ theorem try_edge_ok {succs preds : Array (Array Nat)} (hc : vc.cfg = .ok (succs,
     rw [hc'] at hback
     have hops' : (MInst.tryCall c' T.info).operands = .ok (ops.map (rnOp (asmG f bl))) := by
       rw [← hc', operands_mapRegs hg, hops]; rfl
-    have hfD : ∀ q ∈ outDefs L.tst.nextVreg (max (sigRets T.sig).length 2),
+    have hfD : ∀ q ∈ outDefs L.tst.nextVreg (max T.sig.returns.length 2),
         asmG f bl q.2 = q.2 := by
       intro q hq
       simp only [outDefs, List.mem_map, List.mem_range] at hq
       obtain ⟨j, -, rfl⟩ := hq
       exact asm_fix bl hb (by simp only; omega)
     have hD0 : ops.toList.filter (·.kind == .def) =
-        callDefOps (outDefs L.tst.nextVreg (max (sigRets T.sig).length 2)) := by
+        callDefOps (outDefs L.tst.nextVreg (max T.sig.returns.length 2)) := by
       rw [operands_tryCall_call] at hops
       exact asm_call_defs hD hops
     have hD' : (ops.map (rnOp (asmG f bl))).toList.filter (·.kind == .def) =
-        callDefOps (outDefs L.tst.nextVreg (max (sigRets T.sig).length 2)) := by
+        callDefOps (outDefs L.tst.nextVreg (max T.sig.returns.length 2)) := by
       rw [asm_filter_map_rn, hD0, asm_callDefOps_rn _ _ hfD]
     have hte := asm_termEdge_try hback hops' hD' k
     -- the CFG
@@ -1023,7 +1023,7 @@ theorem try_edge_ok {succs preds : Array (Array Nat)} (hc : vc.cfg = .ok (succs,
         simp only [List.length_map, List.length_zip]
         have : et.dests.length = et.handlers.length + 1 := by simp [Clif.ExnTable.dests]
         omega
-    have hrets : T.info.rets = (sigRets T.sig).length := by
+    have hrets : T.info.rets = T.sig.returns.length := by
       unfold tryInfoOf at hinfo
       split at hinfo
       · cases hinfo

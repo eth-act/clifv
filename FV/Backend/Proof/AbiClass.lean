@@ -465,6 +465,53 @@ theorem retRegsC_vreg_int (xs : List Nat) :
   apply List.eq_replicate_iff.mpr
   simp [Reg.homeCls]
 
+/-! ### The struct pointer of an `sret` function returned in x8 (`retX`, `retRegsK`) -/
+
+theorem retX_lt {k j : Nat} (h : j < k) : retX k j = .x j := by simp [retX, h]
+
+theorem retX_ge {k j : Nat} (h : k ≤ j) : retX k j = .x 8 := by
+  simp [retX, Nat.not_lt.mpr h]
+
+/-- With at least `n` declared returns, the first `n` ABI returns are in x0..x(n-1). -/
+theorem map_retX_of_le {k n : Nat} (h : n ≤ k) :
+    (List.range n).map (retX k) = (List.range n).map Reg.x :=
+  List.map_congr_left fun _ hj => retX_lt (Nat.lt_of_lt_of_le (List.mem_range.mp hj) h)
+
+/-- With `k ≤ n` return positions, `retX k` places the first `k` in x0.. and the rest in x8. -/
+theorem map_retX_ge {k n : Nat} (h : k ≤ n) :
+    (List.range n).map (retX k) =
+      (List.range k).map Reg.x ++ List.replicate (n - k) (Reg.x 8) := by
+  apply List.ext_getElem (by simp; omega)
+  intro j hjn _
+  simp only [List.length_map, List.length_range] at hjn
+  rw [List.getElem_map, List.getElem_range]
+  by_cases hj : j < k
+  · simp [retX, hj, List.getElem_append, List.getElem_map, List.getElem_range]
+  · have hjk : j - k < n - k := by omega
+    simp [retX, hj, List.getElem_append, List.getElem_replicate, hjk]
+
+/-- `n ≤ 8` integer values, the first `k` declared: x0.. for those, x8 after them. -/
+theorem retRegsK_int (k n : Nat) (h : n ≤ 8) :
+    retRegsK k (List.replicate n .int) = some ((List.range n).map (retX k)) := by
+  unfold retRegsK
+  rw [List.take_replicate, retRegsC_int, retRegs, if_pos (by omega)]
+  simp only [Option.map_some, Option.some.injEq, List.length_replicate]
+  apply List.ext_getElem (by simp; omega)
+  intro j h1 h2
+  simp only [List.getElem_map, List.getElem_range]
+  by_cases hj : j < min k n
+  · rw [List.getElem_append_left (by simpa using hj)]
+    simp [retX_lt (show j < k by omega)]
+  · rw [List.getElem_append_right (by simp; omega)]
+    simp [retX_ge (show k ≤ j by simp at h2; omega)]
+
+/-- With every value declared, `retRegsK` is `retRegsC`. -/
+theorem retRegsK_of_le {k : Nat} {cs : List RegClass} (h : cs.length ≤ k) :
+    retRegsK k cs = retRegsC cs 0 0 := by
+  unfold retRegsK
+  rw [List.take_of_length_le h, Nat.sub_eq_zero_of_le h]
+  cases retRegsC cs 0 0 <;> simp
+
 /-! ## Witnesses -/
 
 /-- `(f64, i64, f32) → (f64, i64, f32)`. -/
@@ -497,6 +544,10 @@ theorem sigArgLocs_sigSret :
     sigArgLocs sigSret = .ok ([.reg (.x 8), .reg (.v 0), .reg (.x 0)], 0) := rfl
 
 theorem abiRetRegs_sigSret : abiRetRegs sigSret = some [.x 0] := rfl
+
+/-- The struct pointer an `sret` function returns is in x8: `gen_return` places the one ABI
+return after no declared return there (`retRegsK`). -/
+theorem retRegsK_sigSret : retRegsK sigSret.returns.length [.int] = some [.x 8] := rfl
 
 /-- Nine `f32` returns do not fit v0..v7. -/
 theorem abiRetRegs_nineFloats :

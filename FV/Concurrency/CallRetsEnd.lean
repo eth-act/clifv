@@ -72,7 +72,7 @@ theorem arm_isel_refinesCRG {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
             PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' vV' vP' ∧
             Backend.Proof.Match cc ins ckeep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
             ∃ us outs w', VRetFrom vc (csem RA.F RA.ctx RA.X) vR us outs w' ∧
-              us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+              RetPins vals us ∧ us.length = outs.length ∧
               PrefixHold vals outs ∧ MR slots s'.mem w' ∧
               cm = (s'.mem.free (slots.map (·.2))).leave)))
     (hq : Q RA x (.run cM)) (hA : AInv RA (.run cM))

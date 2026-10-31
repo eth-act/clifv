@@ -64,10 +64,10 @@ have the shape `ShapeOf` with the registers `callRegs` of the signature. -/
 def SiteCall (f : Clif.Function) (vc : VCode) (isTry : Bool) (rets : Nat) (c : CallInfo) : Prop :=
   ∃ args,
     (∃ e, DirSite f isTry args e ∧ ShapeOf (callRegs e.sig args) c ∧
-      (isTry = true → rets = (sigRets e.sig).length) ∧
+      (isTry = true → rets = e.sig.returns.length) ∧
       (c.dest = .sym e.name ∨ ∃ t, c.dest = .reg (.vreg t .int) ∧ gotOf vc t = some e.name)) ∨
     (∃ s, IndSite f isTry args s ∧ ShapeOf (callRegs s args) c ∧
-      (isTry = true → rets = (sigRets s).length) ∧ ∃ t, c.dest = .reg (.vreg t .int))
+      (isTry = true → rets = s.returns.length) ∧ ∃ t, c.dest = .reg (.vreg t .int))
 
 /-- **The ISLE call lowering against the call site's signature** (program-independent): every
 `call` of `lowerFunction`'s VCode of an in-scope function is the call of one of its `call`/

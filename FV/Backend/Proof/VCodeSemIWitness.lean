@@ -18,15 +18,18 @@ def XW : ExtSemI :=
   { call := fun n _ _ w => some ([BitVec.ofNat 128 n], w), sym := fun _ _ => 0, tp := 0,
     tlsFlags := fun _ w => Arm.read_pstate w }
 
+/-- A call with one def (`csem` keeps one result per def, #587). -/
+def c1 : CallInfo := { (default : CallInfo) with defs := [(.x 0, .x 0)] }
+
 /-- The first call of the activation returns `0`, the second `1`: the counter decides. -/
 theorem call_counted (F : BitVec 64 → Prop) (ctx : FnCtx) (w : Arm.ArmState) :
-    csemI F ctx XW (.call default) [] (w, 0) = some ([0#128], (w, 1), .next) ∧
-    csemI F ctx XW (.call default) [] (w, 1) = some ([1#128], (w, 2), .next) :=
+    csemI F ctx XW (.call c1) [] (w, 0) = some ([0#128], (w, 1), .next) ∧
+    csemI F ctx XW (.call c1) [] (w, 1) = some ([1#128], (w, 2), .next) :=
   ⟨rfl, rfl⟩
 
 /-- The same call at counters `0` and `1` gives different results. -/
 theorem call_counted_ne (F : BitVec 64 → Prop) (ctx : FnCtx) (w : Arm.ArmState) :
-    csemI F ctx XW (.call default) [] (w, 0) ≠ csemI F ctx XW (.call default) [] (w, 1) := by
+    csemI F ctx XW (.call c1) [] (w, 0) ≠ csemI F ctx XW (.call c1) [] (w, 1) := by
   rw [(call_counted F ctx w).1, (call_counted F ctx w).2]
   intro h
   simp at h
@@ -46,7 +49,7 @@ theorem jump_keeps (F : BitVec 64 → Prop) (ctx : FnCtx) (w : Arm.ArmState) :
 /-- With one `ExtSem` for every call the result does not depend on the counter
 (`csemI_const_projW` applied to the first call at counter `7`). -/
 theorem const_proj (F : BitVec 64 → Prop) (ctx : FnCtx) (w : Arm.ArmState) :
-    csem F ctx (XW.at 0) (.call default) [] w = some ([0#128], w, .next) :=
-  csemI_const_projW F ctx (XW.at 0) (.call default) [] (w, 7) [0#128] (w, 8) .next rfl
+    csem F ctx (XW.at 0) (.call c1) [] w = some ([0#128], w, .next) :=
+  csemI_const_projW F ctx (XW.at 0) (.call c1) [] (w, 7) [0#128] (w, 8) .next rfl
 
 end Backend.Proof.VCodeSemIWitness

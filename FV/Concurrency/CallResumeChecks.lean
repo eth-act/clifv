@@ -17,7 +17,7 @@ Both are Bool checks over the lowered code, each **sound and complete**:
 * `callDefsRetB vc rs` ↔ `CallDefsRet vc rs` (`callDefsRetB_iff`), and `CallDefsRet vc
   (usB.map (·.2))` gives the register part of `habi` (`habi_regs`).
 
-The third premise, `info.defs.length = (sigRets ext.sig).length` with `ext` the CLIF extern the
+The third premise, `info.defs.length = ext.sig.returns.length` with `ext` the CLIF extern the
 call statement names, stays a premise: it ties the VCode call to the CLIF statement (the call's
 destination symbol to `ext.name`), which the check on the VCode alone cannot see.
 -/

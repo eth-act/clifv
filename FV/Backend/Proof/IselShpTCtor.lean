@@ -145,20 +145,13 @@ theorem apre_of_apreST {id : TermId} {as : List AT} (h : apreST id as = true) : 
 theorem emitS_shapeT {N : Nat} {id : TermId} {as : List AT} {vs : List V}
     (hvs : Holds2 f ctx as vs) (hpre : apreST id as = true) {m : MInst} (h : EmitS id vs m)
     (hc : m.isCtl = true) : CtlShapeT N m := by
-  rcases h with h | ⟨rfl, i, rfl, hi⟩ | ⟨rfl, rss, ps, rs, rfl, hps, hss, rfl⟩
+  rcases h with h | ⟨rfl, i, rfl, hi⟩ | ⟨rfl, -⟩
   · rw [h] at hc; cases hc
   · obtain ⟨a, rfl, ha⟩ := holds2_one hvs
     simp only [apreST, beq_self_eq_true, ite_true, Bool.and_eq_true] at hpre
     exact (ctlAT_sound N ha hpre.2 hi hc).toT
-  · obtain ⟨a, rfl, ha⟩ := holds2_one hvs
-    have hne : (TId.gen_return == TId.emit) = false := by decide
-    simp only [apreST, hne, beq_self_eq_true, ite_true, ite_false, Bool.false_eq_true,
-      Bool.and_eq_true, beq_iff_eq] at hpre
-    have hv : ∀ r ∈ rs, ∃ n c, r = .vreg n c := fun r hr => by
-      obtain ⟨l, hl, hrl⟩ := single_mem hss r hr
-      exact kind_vreg ((deep_sound a _ ha).1 r (List.mem_flatten.mpr ⟨l, hl, hrl⟩)) hpre.2
-    rw [single_eq_map hss, regsClasses_single] at hps
-    exact rets_shapeT N hv hps
+  · have hne : (TId.gen_return == TId.emit) = false := by decide
+    simp [apreST, hne] at hpre
 
 /-- **Constructors** (typed V4): `actor` describes the result, the state invariant is kept. -/
 theorem ctorST_sound (hLI : LogicImmComplete) (hctx : CtxInvT f ctx) (N : Nat) (s0 : LState)

@@ -35,7 +35,7 @@ def ThmPRBR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     L.TableOf M g s ini →
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (n e : Nat),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
       ActRet ra F G us outs wf s (runX (L.mach M g) n s) ∧
       PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n ∧
@@ -65,7 +65,7 @@ theorem progCallPRBR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (e : Nat),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (L.NeedSlots → Clif.NextAdv cs.mem cm' e) ∧
       (∀ t, L.CallerOk F h uses w t →
@@ -488,7 +488,7 @@ theorem progCallPRBR_at (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
       t₁.mem a = (L.canon h uses w).mem a)
     (htab₁ : L.TableOf (M - 1) h (enterAt (L.A h) t₁) (calleeIni h ini)) :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (e : Nat),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (L.NeedSlots → Clif.NextAdv cs.mem cm' e) ∧
       (∀ t, L.CallerOk F h uses w t →

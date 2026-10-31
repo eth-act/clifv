@@ -32,7 +32,7 @@ theorem ret_pause (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨b, k, ρ, w⟩) tr cT) :
     Stop env p (.run s) ∨ ∃ vals cm, Clif.step env p s = .done vals cm ∧ (∀ e ∈ tr, e = []) ∧
       ∃ us outs w', VRetFrom vc (csem F fc X) ⟨b, k, ρ, w⟩ us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave := by
   obtain ⟨hbody, xs, hT⟩ := hat
   obtain ⟨-, -, -, -, B, j, hB, hterm, -, -, -, -, -⟩ := id hm
@@ -142,7 +142,7 @@ theorem isel_alloc_refinesCRG (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc 
           PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' vV' vP' ∧
           Backend.Proof.Match c ins keep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
           ∃ us outs w', VRetFrom vc (csem F fc X) vR us outs w' ∧
-            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            RetPins vals us ∧ us.length = outs.length ∧
             PrefixHold vals outs ∧ MR slots s'.mem w' ∧
             cm = (s'.mem.free (slots.map (·.2))).leave)) := by
   have hds := (driverSem_csem F fc X).toDriverSemG
@@ -244,7 +244,7 @@ theorem isel_alloc_refinesCR (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X
           PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' vV' vP' ∧
           Backend.Proof.Match c ins keep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
           ∃ us outs w', VRetFrom vc (csem F fc X) vR us outs w' ∧
-            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            RetPins vals us ∧ us.length = outs.length ∧
             PrefixHold vals outs ∧ MR slots s'.mem w' ∧
             cm = (s'.mem.free (slots.map (·.2))).leave)) :=
   isel_alloc_refinesCRG H hchk hX0 H3 hc (fun hrV => isel_refinesCR H hchk hMR hMRw hX hm2 hrV)
@@ -289,7 +289,7 @@ theorem isel_alloc_refines_entryCR (H : DriverHypT f vc ctx st0 R gn bl A (csem 
           PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' vV' vP' ∧
           Backend.Proof.Match c ins keep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
           ∃ us outs w', VRetFrom vc (csem F fc X) vR us outs w' ∧
-            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            RetPins vals us ∧ us.length = outs.length ∧
             PrefixHold vals outs ∧ MR slots s'.mem w' ∧
             cm = (s'.mem.free (slots.map (·.2))).leave)) :=
   isel_alloc_refinesCRG H hchk hX0 H3 hc (vV := ⟨0, 0, ρ₀, w₀⟩) (fun hrV =>

@@ -208,6 +208,12 @@ theorem refines_csemG : Refines F (csemG F ctx X Rd syms exts sigs sp0 Pc) := by
 theorem lo64_ofX64 (x : BitVec 64) : lo64 (ofX x) = x := by
   simp [lo64, ofX, BitVec.setWidth_setWidth_of_le]
 
+private theorem returns_le_sigRetsG (s : Clif.Signature) :
+    s.returns.length ≤ (sigRets s).length := by
+  rcases sigRets_cases s with h | ⟨h0, h1⟩
+  · rw [h]; exact Nat.le_refl _
+  · rw [h0, h1]; exact Nat.zero_le _
+
 /-- **The pinned callee contract for the guarded semantics**, from the external contract and
 the memory relation's `MemRel`. -/
 theorem callsRefineP_csemG {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : MemRelT}
@@ -229,13 +235,16 @@ theorem callsRefineP_csemG {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : Mem
       · exact .inl ⟨rfl, rfl⟩
       · exact .inr ⟨⟨r, rfl⟩, _, rfl, lo64_ofX64 _⟩
     rw [csemG_of hg hc]
+    have hle := returns_le_sigRetsG ext.sig
     rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, hcol, rfl⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals rvals
         cm' a1 (.inl ⟨rfl, rfl⟩) a4 a5 a7 a8
-      exact ⟨outs, w', by simp [csem, hc], by rw [hol, a3], ho, hm⟩
+      exact ⟨outs.take ds.length, w', by simp [csem, hc], by simp only [List.length_take]; omega,
+        ho.take (by omega), hm⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm'
         a1 (.inr ⟨rfl, hcol, rfl⟩) a4 a5 a7 a8
-      exact ⟨outs, w', by simp [csem, hc], by rw [hol, a3], ho, hm⟩
+      exact ⟨outs.take ds.length, w', by simp [csem, hc], by simp only [List.length_take]; omega,
+        ho.take (by omega), hm⟩
   · have hg : GuardR F Rd ctx.slotBase (.tryCall ⟨dest, us, ds⟩ ti) uses w := trivial
     have hc : GuardC F syms X exts sigs sp0 Pc (.tryCall ⟨dest, us, ds⟩ ti) uses w := by
       refine ⟨ext.name, ext.sig, vals, cm, args, hpc, ⟨hMRm sl cm w a5, hMRc sl cm w a5⟩, .inl ⟨⟨ext, hin, rfl, rfl⟩, a4⟩, ?_⟩
@@ -243,18 +252,21 @@ theorem callsRefineP_csemG {env : Clif.Env} {exts : List Clif.ExtFunc} {MR : Mem
       · exact .inl ⟨rfl, rfl⟩
       · exact .inr ⟨⟨r, rfl⟩, _, rfl, lo64_ofX64 _⟩
     rw [csemG_of hg hc]
+    have hle := returns_le_sigRetsG ext.sig
     rcases a2 with ⟨rfl, rfl⟩ | ⟨r, rfl, hcol, rfl⟩
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals
         rvals cm' a1 (.inl ⟨rfl, rfl⟩) a4 a5 a7 a8
-      refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, a0, decide_true, ↓reduceIte,
-        Option.map_some]; rfl, ?_, ho.append _, hm⟩
-      simp only [List.length_append, List.length_map, List.length_drop]
+      have hti' : ti.rets ≤ outs.length := by omega
+      refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hti', decide_true, ↓reduceIte,
+        Option.map_some]; rfl, ?_, (ho.append _).take (by omega), hm⟩
+      simp only [List.length_take, List.length_append, List.length_map, List.length_drop]
       omega
     · obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm' a1
         (.inr ⟨rfl, hcol, rfl⟩) a4 a5 a7 a8
-      refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, a0, decide_true, ↓reduceIte,
-        Option.map_some]; rfl, ?_, ho.append _, hm⟩
-      simp only [List.length_append, List.length_map, List.length_drop]
+      have hti' : ti.rets ≤ outs.length := by omega
+      refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hti', decide_true, ↓reduceIte,
+        Option.map_some]; rfl, ?_, (ho.append _).take (by omega), hm⟩
+      simp only [List.length_take, List.length_append, List.length_map, List.length_drop]
       omega
 
 /-- **The pinned indirect-call contract for the guarded semantics.** -/
@@ -328,7 +340,7 @@ theorem csemG_lockstep2 {Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) {i :
     obtain ⟨⟨o1, x1⟩, hp, rfl, rfl, rfl⟩ := hs
     obtain ⟨⟨o2, x2⟩, hp', rfl, rfl, rfl⟩ := hs'
     obtain ⟨ho, hx⟩ := hX info.dest hgc hgc' _ _ _ _ (hdest _ hp) (hdest' _ hp')
-    exact ⟨ho, rfl, hx⟩
+    exact ⟨by rw [ho], rfl, hx⟩
   · simp only [csem, Option.map_eq_some_iff, Option.filter_eq_some_iff, Prod.mk.injEq] at hs hs'
     obtain ⟨⟨o1, x1⟩, ⟨hp, -⟩, rfl, rfl, rfl⟩ := hs
     obtain ⟨⟨o2, x2⟩, ⟨hp', -⟩, rfl, rfl, rfl⟩ := hs'

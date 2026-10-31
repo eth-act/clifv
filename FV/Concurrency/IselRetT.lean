@@ -30,7 +30,7 @@ theorem term_step_abiT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
         Match f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
@@ -263,8 +263,13 @@ theorem term_step_abiT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     refine ⟨_, vuses ops ρ₁, w₂, vs, ⟨b, _, ρ₁', w₁, vb, ops.map (rnOp gn), outs, hstar, hvb, hi, hops,
       hvu.symm, by rw [← hvu]; exact hsem⟩, ?_, ?_, hvsS, hall,
       by simpa [fr', restrict, hslots] using hmr, by rw [hcm, hslots]⟩
-    · simp only [List.map_map, List.length_map]
-      exact hus
+    · have hvl : vs.length = (sretRet ctx.func).length := by
+        rw [H.shape.ctxInv.func]; exact (getMany_spec hvs0).1.symm
+      have hvl' : (sretRet (termCtx ctx (L.start + B.body.length) L.data).func).length =
+          (sretRet ctx.func).length := by simp [termCtx]
+      unfold RetPins
+      simp only [List.map_map, List.length_map, Function.comp_def]
+      rw [hus, List.length_append, hvl, hvl', Nat.add_sub_cancel]
     · simp only [List.length_map]; rw [hlen]; exact hall.1
   | trap c =>
     rw [hT] at hrun' hstep
@@ -308,7 +313,7 @@ theorem term_stepRT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
         Match f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w', VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
   obtain ⟨T1, T2, T3⟩ := term_step_abiT H hm hbody hnt

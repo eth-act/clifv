@@ -252,7 +252,7 @@ theorem isel_alloc_refinesCRGN (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc
           PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' vV' vP' ∧
           Backend.Proof.Match c ins keep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
           ∃ us outs w', VRetFrom vc (csem F fc X) vR us outs w' ∧
-            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            RetPins vals us ∧ us.length = outs.length ∧
             PrefixHold vals outs ∧ MR slots s'.mem w' ∧
             cm = (s'.mem.free (slots.map (·.2))).leave)) := by
   have hds := (driverSem_csem F fc X).toDriverSemG
@@ -367,7 +367,7 @@ theorem isel_alloc_refinesCRN (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc 
           PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' vV' vP' ∧
           Backend.Proof.Match c ins keep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
           ∃ us outs w', VRetFrom vc (csem F fc X) vR us outs w' ∧
-            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            RetPins vals us ∧ us.length = outs.length ∧
             PrefixHold vals outs ∧ MR slots s'.mem w' ∧
             cm = (s'.mem.free (slots.map (·.2))).leave)) :=
   isel_alloc_refinesCRGN H hchk hX0 H3 hc (fun hrV => isel_refinesCRN H hchk hMR hMRw hX hm2 hrV)
@@ -412,7 +412,7 @@ theorem isel_alloc_refines_entryCRN (H : DriverHypT f vc ctx st0 R gn bl A (csem
           PMatch vc vcp (csem F fc X) (cEvs F fc) L ss' vV' vP' ∧
           Backend.Proof.Match c ins keep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
           ∃ us outs w', VRetFrom vc (csem F fc X) vR us outs w' ∧
-            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            RetPins vals us ∧ us.length = outs.length ∧
             PrefixHold vals outs ∧ MR slots s'.mem w' ∧
             cm = (s'.mem.free (slots.map (·.2))).leave)) :=
   isel_alloc_refinesCRGN H hchk hX0 H3 hc (vV := ⟨0, 0, ρ₀, w₀⟩) (fun hrV =>
@@ -574,7 +574,7 @@ theorem arm_isel_refinesCRGNX {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
             PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' vV' vP' ∧
             Backend.Proof.Match cc ins ckeep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
             ∃ us outs w', VRetFrom vc (csem RA.F RA.ctx RA.X) vR us outs w' ∧
-              us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+              RetPins vals us ∧ us.length = outs.length ∧
               PrefixHold vals outs ∧ MR slots s'.mem w' ∧
               cm = (s'.mem.free (slots.map (·.2))).leave)))
     (hq : Q RA x (.run cM)) (hA : AInv RA (.run cM))
@@ -695,7 +695,7 @@ theorem arm_isel_refinesCRGN {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
             PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' vV' vP' ∧
             Backend.Proof.Match cc ins ckeep r₀ cE vP' ∧ Clif.step env p s' = .done vals cm ∧
             ∃ us outs w', VRetFrom vc (csem RA.F RA.ctx RA.X) vR us outs w' ∧
-              us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+              RetPins vals us ∧ us.length = outs.length ∧
               PrefixHold vals outs ∧ MR slots s'.mem w' ∧
               cm = (s'.mem.free (slots.map (·.2))).leave)))
     (hq : Q RA x (.run cM)) (hA : AInv RA (.run cM))

@@ -135,6 +135,31 @@ theorem entryParams_factsT {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat 
       show tyClass t = (CTy.ofClif t).valClass by cases t <;> rfl]
     simp [valClassOf, hty]
 
+/-- **The struct pointer an `sret` function returns has an integer vreg** (#587: `gen_return`
+returns it in x8): it is the entry block's `sret` parameter (`sretRet`), whose class is the
+signature's (`EntryClassOk`), an `i64`'s (`sigAbiOk`). -/
+theorem sretRet_valClass_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (hd : Dominated f) (hec : EntryClassOk f) (hsig : sigAbiOk f.sig = true)
+    (hb : buildCtx f = .ok (ctx, ranges, st0)) : ∀ y ∈ sretRet f, valClassOf ctx y = .int := by
+  intro y hy
+  unfold sretRet at hy
+  split at hy
+  · split at hy
+    · rename_i b0 i hb0 hi
+      cases hp : b0.params[i]? with
+      | none => simp [hp] at hy
+      | some q =>
+        obtain ⟨x, t⟩ := q
+        simp only [hp, Option.map_some, Option.toList_some, List.mem_singleton] at hy
+        rw [hy]
+        obtain ⟨hil, hpi, -⟩ := List.findIdx?_eq_some_iff_getElem.mp hi
+        have hB0 : f.blocks[0]? = some b0 := by rw [← List.head?_eq_getElem?]; exact hb0
+        rw [(entryParams_factsT [] hd hec hb hB0).2.2 i x t _ hp (List.getElem?_eq_getElem hil),
+          sret_i64_of_sigAbiOk hsig _ (List.getElem_mem hil) (by simpa using hpi)]
+        rfl
+    · simp at hy
+  · simp at hy
+
 /-- **`CtlSpillHyp` from the typed ISLE inversion of one function** (`IselCtlOn`), for input
 with integer externs whose signatures pass the end-to-end subset's ABI check and whose entry
 block is typed like the signature: `ctlSpillHypT_of`'s proof, for the typed and float scopes. -/
@@ -145,7 +170,7 @@ theorem ctlSpillHypG_of {f : Clif.Function} {vc : VCode}
     ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i := by
   have hd := dominated_of hdom
   obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hx hl
-  obtain ⟨hS, hT, hY⟩ := hIf ctx ranges st0 hb
+  obtain ⟨hS, hT, hY⟩ := hIf ctx ranges st0 hb (sretRet_valClass_int hd hec ha.1.1 hb)
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
   obtain ⟨-, hspec⟩ := lowBlocks_spec hlb

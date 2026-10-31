@@ -42,7 +42,8 @@ def CallPostN (env : Clif.Env) (p : Clif.Program) (cs : Clif.State) (exts : List
   CallPost (env.only (InvokedN env p cs n)) exts sigs MR sym
 
 /-- **The invocations of the run from `cs` that return keep the live allocations and symbols, and
-the declarations each can stand for agree on an ABI return count.** A declaration can stand for an
+the declarations each can stand for agree on a return count** (the declared returns since #587:
+an `sret` callee's struct pointer is not a call result). A declaration can stand for an
 invocation only with as many parameters as the invocation has values (#733: a call through a
 declaration passes one value per parameter, `ArgsAt`; an indirect call's values have its
 signature's parameter types, `CallPost`). -/
@@ -53,10 +54,10 @@ def InvokedRetOk (env : Clif.Env) (p : Clif.Program) (cs : Clif.State)
     (∀ a k, cm'.valid a k = true → m.valid a k = true) ∧ cm'.symbols = m.symbols ∧
     ∃ ℓ, rvals.length ≤ ℓ ∧
       (∀ ext ∈ exts, ext.name = nm → vals.length = ext.sig.params.length →
-        rvals.length = ext.sig.returns.length → (sigRets ext.sig).length = ℓ) ∧
+        rvals.length = ext.sig.returns.length → ext.sig.returns.length = ℓ) ∧
       (∀ sig ∈ sigs, (∀ s', env.sigOf nm = some s' → sig.abiMatch s' = true) →
         vals.length = sig.params.length → rvals.length = sig.returns.length →
-        (sigRets sig).length = ℓ)
+        sig.returns.length = ℓ)
 
 /-- **The per-state callee contracts of the guarded semantics.** -/
 theorem hX_guardI {env : Clif.Env} {p : Clif.Program} {cs : Clif.State}
@@ -90,7 +91,7 @@ theorem backend_correct_world_cleanupPRB {p : Clif.Program} {f : Clif.Function} 
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym)
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (Kp : Nat) (cc : BitVec 64)
           (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState) (s : Arm.ArmState),
@@ -124,7 +125,7 @@ theorem backend_correct_world_pipelinePRB {p : Clif.Program} {f : Clif.Function}
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) XI.sym)
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (Kp : Nat) (cc : BitVec 64)
           (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState) (s : Arm.ArmState),

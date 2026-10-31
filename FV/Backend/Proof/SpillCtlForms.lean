@@ -312,7 +312,9 @@ inductive CtlShape (N : Nat) : MInst → Prop
       CallOk N L D → CtlShape N (.call ⟨.sym nm, retPairs L, callDefs D⟩)
   | callReg (t : Nat) (L : List (Nat × Reg)) (D : List (Reg × Nat)) :
       CallOk N L D → CtlShape N (.call ⟨.reg (.vreg t .int), retPairs L, callDefs D⟩)
-  | rets (ns : List (Nat × Reg)) : (∀ q ∈ ns, ∃ k, k < 8 ∧ q.2 = .x k) → (ns.map (·.2)).Nodup →
+  /-- `gen_return`'s `Rets`: x0..x7 for the declared returns, x8 for an `sret` function's
+  struct pointer (#587) -/
+  | rets (ns : List (Nat × Reg)) : (∀ q ∈ ns, ∃ k, k ≤ 8 ∧ q.2 = .x k) → (ns.map (·.2)).Nodup →
       CtlShape N (.rets (retPairs ns))
   | condBr (a b : Label) (k : CondBrKind) : KindOk k → CtlShape N (.condBr a b k)
   | trapIf (k : CondBrKind) (c : Clif.TrapCode) : KindOk k → CtlShape N (.trapIf k c)

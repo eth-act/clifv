@@ -44,15 +44,15 @@ def lowerOkTSB (g : Clif.Function) (vc : VCode) : Bool :=
     (lowersToB g vc &&
       ((Compile.functionET g && lowerCheckT g vc) || (Compile.functionETCF g && lowerCheckTCF g vc)))
 
-/-- Every return of the code is in x0, x1, … (`RetsX`, decided per instruction). -/
-def retsXB : MInst → Bool
-  | .rets us => decide (us.map (·.2) = (List.range us.length).map Reg.x)
+/-- Every return of the code is in its `retX` register (`RetsX k`, decided per instruction). -/
+def retsXB (k : Nat) : MInst → Bool
+  | .rets us => decide (us.map (·.2) = (List.range us.length).map (retX k))
   | _ => true
 
-theorem retsXB_sound {vc : VCode} (h : allInsts vc retsXB = true) : RetsX vc := by
+theorem retsXB_sound {k : Nat} {vc : VCode} (h : allInsts vc (retsXB k) = true) : RetsX k vc := by
   intro us hr
-  obtain ⟨b, vb, k, hb, hk⟩ := hr
-  have := allInsts_sound h hb hk
+  obtain ⟨b, vb, i, hb, hi⟩ := hr
+  have := allInsts_sound h hb hi
   simpa [retsXB] using this
 
 def staticChksWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput) (g : Clif.Function)
@@ -74,8 +74,8 @@ def staticChksWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput)
    ("subset: storeTyped", Compile.storeTypedB g),
    ("subset: ABI signatures", sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)),
    ("subset: indirect-call signatures", indSigsOk g),
-   ("sret: subset E, lowerCheck, or returns in x0..", !(g.sig.params.any (·.purpose == .sret)) ||
-     (Compile.functionE g && lowerCheck g a.vc) || allInsts a.vc retsXB)]
+   ("sret: subset E, lowerCheck, or returns in retX", !(g.sig.params.any (·.purpose == .sret)) ||
+     (Compile.functionE g && lowerCheck g a.vc) || allInsts a.vc (retsXB g.sig.returns.length))]
 
 /-- The per-function checks of `okRWithTS`: `staticChksWithTS` and the class-aware link checks
 `linkChksTS` (#742: program calls with arguments and results of either class; it had
@@ -140,7 +140,8 @@ structure FactsWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput
   free : Clif.LinkFree g
   storeT : Compile.storeTypedB g = true
   sretE : g.sig.params.any (·.purpose == .sret) = true →
-    (Compile.functionE g = true ∧ lowerCheck g a.vc = true) ∨ allInsts a.vc retsXB = true
+    (Compile.functionE g = true ∧ lowerCheck g a.vc = true) ∨
+      allInsts a.vc (retsXB g.sig.returns.length) = true
   abi : sigAbiOk g.sig = true ∧ ∀ e ∈ g.externs, sigAbiOk e.2.sig = true
   indOk : indSigsOk g = true
   ind : indBC (progOf R) (fun n => I.syms.lookup n) g = true

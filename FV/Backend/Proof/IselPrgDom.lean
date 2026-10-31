@@ -76,11 +76,11 @@ abbrev AEnv := List (Option PA)
 /-- The signatures the lowering of a call handles: `sigArgLocs` succeeds and at most 8 ABI
 returns (`retRegs`). -/
 def SigOk (s : Clif.Signature) : Prop :=
-  (∃ r, sigArgLocs s = .ok r) ∧ (sigRets s).length ≤ 8
+  (∃ r, sigArgLocs s = .ok r) ∧ s.returns.length ≤ 8
 
 /-- `s` has `n` ABI returns, if `n` is given. -/
 def RetsN (n : Option Nat) (s : Clif.Signature) : Prop :=
-  n = none ∨ n = some (sigRets s).length
+  n = none ∨ n = some s.returns.length
 
 /-- `f`'s statement instruction `c`. -/
 def InstOf (f : Clif.Function) (c : Clif.Inst) : Prop :=
@@ -107,13 +107,13 @@ def OpOk : OK → Option Nat → Opnd → Prop
   | .funcRef, n, o => ∃ fn ext, o = .funcRef fn ∧ ctx.func.extern? fn = some ext ∧
       SigOk ext.sig ∧ RetsN n ext.sig
   | .funcRefTry, _, o => ∃ fn ext, o = .funcRef fn ∧ ctx.func.extern? fn = some ext ∧
-      SigOk ext.sig ∧ ctx.tryRegs.1.length = (sigRets ext.sig).length
+      SigOk ext.sig ∧ ctx.tryRegs.1.length = ext.sig.returns.length
   | .globalValue, _, o => ∃ g name off col, o = .globalValue g ∧
       ctx.func.globals.lookup g = some (.symbol name off col)
   | .tlsGlobalValue, _, o => ∃ g name off col, o = .tlsGlobalValue g ∧
       ctx.func.globals.lookup g = some (.tlsSymbol name off col)
   | .sig, n, o => ∃ s, o = .sig s ∧ SigOk s ∧ RetsN n s
-  | .sigTry, _, o => ∃ s, o = .sig s ∧ SigOk s ∧ ctx.tryRegs.1.length = (sigRets s).length
+  | .sigTry, _, o => ∃ s, o = .sig s ∧ SigOk s ∧ ctx.tryRegs.1.length = s.returns.length
   | .extName, _, o => ∃ x, o = .extName x
   | .callArgs, _, o => ∃ x, o = .callArgs x
   | .callRets, _, o => ∃ x, o = .callRets x
@@ -123,7 +123,7 @@ def OpOk : OK → Option Nat → Opnd → Prop
   | .tryCallNone, _, o => o = .tryCallNone
   | .exnTable, n, o => ∃ s items, o = .exnTable s items ∧ SigOk s ∧ RetsN n s
   | .exnTry, n, o => ∃ s items, o = .exnTable s items ∧ SigOk s ∧
-      ctx.tryRegs.1.length = (sigRets s).length ∧ (n = none ∨ n = some items.length)
+      ctx.tryRegs.1.length = s.returns.length ∧ (n = none ∨ n = some items.length)
   | .tryCallInfo, _, o => ∃ x, o = .tryCallInfo x
   | .fpModImm, _, o => ∃ i, o = .fpModImm i
   | .movModImm, _, o => ∃ i, o = .movModImm i

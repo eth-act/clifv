@@ -110,15 +110,15 @@ theorem shpTry_bl {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Functi
   cases hmi
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
-  have hcd : ((List.range (max (sigRets ext.sig).length 2)).map fun j =>
+  have hcd : ((List.range (max ext.sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs1 hs2
   refine shpTry_extend hst ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
     [.call ⟨.sym ext.name, retPairs (regPairsOf ((locs.zip args).zip bytes)),
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2))⟩]) ?_ ?_ ?_
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2))⟩]) ?_ ?_ ?_
   · rw [hs2, hs1]; simp [LState.emit, freshN_emitted]
   · intro mi hmi hctl
     rcases List.mem_append.mp hmi with hmi | hmi
@@ -203,16 +203,16 @@ theorem shpTry_got {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Funct
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
   rw [show ∀ s : LState, (s.fresh .int).1 = .vreg s.nextVreg .int from fun s => rfl] at hs2 hs0
-  have hcd : ((List.range (max (sigRets ext.sig).length 2)).map fun j =>
+  have hcd : ((List.range (max ext.sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs0 hs1 hs2
   refine shpTry_extend hst ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
     [.loadExtNameGot (.vreg σ.nextVreg .int) ext.name,
      .call ⟨.reg (.vreg σ.nextVreg .int), retPairs (regPairsOf ((locs.zip args).zip bytes)),
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2))⟩]) ?_ ?_ ?_
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2))⟩]) ?_ ?_ ?_
   · rw [hσ, hs2, hs1, hs0]
     simp only [LState.emit, LState.fresh]
     rw [← Array.toList_inj]
@@ -290,15 +290,15 @@ theorem shpTry_ind {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData 
   cases hmi
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
-  have hcd : ((List.range (max (sigRets sig).length 2)).map fun j =>
+  have hcd : ((List.range (max sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs1 hs2
   refine shpTry_extend hst ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
     [.call ⟨.reg (.vreg callee .int), retPairs (regPairsOf ((locs.zip args).zip bytes)),
-      callDefs (outDefs lo.nextVreg (max (sigRets sig).length 2))⟩]) ?_ ?_ ?_
+      callDefs (outDefs lo.nextVreg (max sig.returns.length 2))⟩]) ?_ ?_ ?_
   · rw [hs2, hs1]; simp [LState.emit]
   · intro mi hmi hctl
     rcases List.mem_append.mp hmi with hmi | hmi
