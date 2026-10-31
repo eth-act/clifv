@@ -173,6 +173,9 @@ theorem scopeT_fCtl : LowerScopeT fCtl where
       rw [hi] at this; cases this
     · have := List.all_eq_true.mp h2 B hB
       rw [ht] at this; cases this
+  indStackLayout := by
+    have h : (Backend.indSigs fCtl).all (fun s => stackLayoutOk s) = true := by native_decide
+    exact fun s hs => List.all_eq_true.mp h s hs
 
 /-! ## Slice 5b: float `Args`/`Rets` meet `SpillInstOk` -/
 

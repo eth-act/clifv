@@ -337,7 +337,7 @@ theorem lowerCheck_partsTF {f : Clif.Function} {vc : VCode} (hd : Dominated f)
           exact ⟨by rw [← hfin]; omega, hs.stackLayout.2 B hB fn args et e ht he⟩
         · rfl
       · rfl
-    · obtain ⟨B, hB, hk⟩ := mem_indSigs hs'
+    · obtain ⟨B, hB, hk⟩ := mem_indSigs_cases hs'
       obtain ⟨bi, L, hB', hL'⟩ := hL B hB
       simp only [Bool.and_eq_true, decide_eq_true_eq]
       refine ⟨?_, hs.indStackLayout s hs'⟩

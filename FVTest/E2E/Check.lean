@@ -288,7 +288,7 @@ def main (args : List String) : IO UInt32 := do
       if !Compile.functionE f then
         skipped := skipped + 1
         continue
-      if !Backend.abiSigs f || !Backend.indSigsOk f then
+      if !Backend.abiSigs f || !Backend.indSigsAbiOk f then
         skipped := skipped + 1
         continue
       if lg.accepted.contains p.name then legal := legal + 1

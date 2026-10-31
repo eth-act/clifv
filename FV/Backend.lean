@@ -87,14 +87,14 @@ file (`E2E.InSubsetTC`: `subsetETC`, `storeTyped`, `abiSigs`, `indSigs`; S11e6):
 `Compile.functionETC` (`functionET` where a direct `try_call`'s callee may take and return
 `f32`/`f64`), float stores storing float values. -/
 def verifiableTC (f : Clif.Function) : Bool :=
-  Compile.functionETC f && Compile.storeTypedB f && abiSigs f && indSigsOk f
+  Compile.functionETC f && Compile.storeTypedB f && abiSigs f && indSigsAbiOk f
 
 /-- The conditions of the typed theorem with the proven float operations that do not need the
 rest of the file (`E2E.InSubsetTCF`: `subsetETCF`, `storeTyped`, `abiSigs`, `indSigs`; S11f): the
 scope `Compile.functionETCF` (`functionETC` with the float arithmetic, rounding, conversions
 and scalar comparisons), float stores storing float values. -/
 def verifiableTCF (f : Clif.Function) : Bool :=
-  Compile.functionETCF f && Compile.storeTypedB f && abiSigs f && indSigsOk f
+  Compile.functionETCF f && Compile.storeTypedB f && abiSigs f && indSigsAbiOk f
 
 /-- The proved D0 Stock dispatcher with legacy fallback, then (if `verify`) the lowering validator
 (`lowerCheckFor`: `lowerCheck`, or `lowerCheckT` outside subset E, whose acceptance the

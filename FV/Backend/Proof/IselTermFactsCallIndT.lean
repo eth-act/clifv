@@ -110,7 +110,7 @@ theorem callIndOut_runTermT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ct
     {tr : List RuleId} (h : runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr)) :
     stackBytes s ≤ st'.outgoing := by
   obtain ⟨r, hr, m, n, env', s1, tr2, hm, hn, -, hmatch, heval⟩ := runTerm_lower_rule h
-  obtain ⟨s', hs', hdat⟩ := instData_callIndirect_eq (hctx.data ii info _ hi hc)
+  obtain ⟨s', hs', hdat⟩ := instData_callIndirect_sig (hctx.data ii info _ hi hc)
   rw [hs] at hs'
   cases hs'
   have hok := List.all_eq_true.mp lower_callInd_fmts r hr
