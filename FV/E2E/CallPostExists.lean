@@ -84,7 +84,7 @@ theorem callPost_only_exists {env : Clif.Env} {A : String → List Clif.Val → 
       cases hret'
       exact ⟨rfl, rfl, rfl, rfl, rfl⟩
     refine ⟨(outsOf rv0 ℓ, patchW cm1 w), fun ext hext' g sl cm args vals rvals cm' hg _ ha hmr hret
-        hlen => ?_, fun sig hsig' n g sl cm u args vals rvals cm' _ _ hg hs _ _ _ hmr hret hlen hty =>
+        hlen => ?_, fun sig hsig' n g sl cm u args vals rvals cm' _ _ hg hs _ _ hmr hret hlen hty =>
         ?_⟩
     · obtain ⟨hn, rfl, rfl, rfl, rfl⟩ := key _ _ _ _ _ _ hg hret
       exact ⟨by rw [outsOf_length hℓ]; exact (hext ext hext' hn ha.1 hlen).symm,
@@ -103,7 +103,7 @@ theorem callPost_only_exists {env : Clif.Env} {A : String → List Clif.Val → 
       obtain ⟨rfl, rfl, rfl⟩ := hA n vals cm hAi
       exact hex ⟨g, rvals, cm', hg1, hret'⟩
     exact ⟨([], w), fun _ _ _ _ _ _ _ _ _ hg _ _ _ hret _ => (none_ret _ _ _ _ _ _ hg hret).elim,
-      fun _ _ _ _ _ _ _ _ _ _ _ _ _ hg _ _ _ _ _ hret _ _ =>
+      fun _ _ _ _ _ _ _ _ _ _ _ _ _ hg _ _ _ _ hret _ _ =>
         (none_ret _ _ _ _ _ _ hg hret).elim⟩
 
 /-- **A state invokes at most one extern call** (name, argument values, memory). -/
@@ -177,7 +177,7 @@ theorem callPost_invoked_exists {env : Clif.Env} {p : Clif.Program} {s : Clif.St
       obtain ⟨g, -, rfl⟩ := Clif.Env.only_extern_eq hg'
       exact hinv ⟨n, vals, cm, (onlyFn_returned hret).1⟩
     exact ⟨([], w), fun _ _ _ _ _ _ _ _ _ hg _ _ _ hret _ => (none_ret _ _ _ _ _ _ hg hret).elim,
-      fun _ _ _ _ _ _ _ _ _ _ _ _ _ hg _ _ _ _ _ hret _ _ =>
+      fun _ _ _ _ _ _ _ _ _ _ _ _ _ hg _ _ _ _ hret _ _ =>
         (none_ret _ _ _ _ _ _ hg hret).elim⟩
 
 /-- A call of a smaller restriction that returns is a call of the larger one. -/
@@ -202,11 +202,11 @@ theorem callPost_only_mono {env : Clif.Env} {A A' : String → List Clif.Val →
     (h : CallPost (env.only A') exts sigs MR sym d uses w r) :
     CallPost (env.only A) exts sigs MR sym d uses w r := by
   refine ⟨fun ext hext g sl cm args vals rvals cm' hg hd ha hmr hret hlen => ?_,
-    fun sig hsig n g sl cm u args vals rvals cm' hd hu hg hs hlo h8 hall hmr hret hlen hty => ?_⟩
+    fun sig hsig n g sl cm u args vals rvals cm' hd hu hg hs hlo hargs hmr hret hlen hty => ?_⟩
   · obtain ⟨g', hg', hret'⟩ := only_returned_mono hAA hg hret
     exact h.1 ext hext g' sl cm args vals rvals cm' hg' hd ha hmr hret' hlen
   · obtain ⟨g', hg', hret'⟩ := only_returned_mono hAA hg hret
-    exact h.2 sig hsig n g' sl cm u args vals rvals cm' hd hu hg' (by simpa using hs) hlo h8 hall
+    exact h.2 sig hsig n g' sl cm u args vals rvals cm' hd hu hg' (by simpa using hs) hlo hargs
       hmr hret' hlen hty
 
 /-- **The guarded semantics meets both contracts** of the environment restricted to `A`, for a
@@ -218,14 +218,14 @@ theorem xCallsOk_guard_only {env : Clif.Env} {A A' : String → List Clif.Val �
     XCallsOk (env.only A) exts MR (X.guard (CallPost (env.only A') exts sigs MR X.sym)) ∧
       XCallsIndOk (env.only A) sigs MR (X.guard (CallPost (env.only A') exts sigs MR X.sym)) := by
   refine ⟨fun ext hext g sl cm w d uses args vals rvals cm' hg hd ha hmr hret hlen => ?_,
-    fun sig hsig n g sl cm w u args vals rvals cm' hg hs hlo h8 hall hmr hret hlen hty => ?_⟩
+    fun sig hsig n g sl cm w u args vals rvals cm' hg hs hlo hargs hmr hret hlen hty => ?_⟩
   · obtain ⟨⟨outs, w'⟩, hc, hq⟩ := ExtSem.guard_spec (X := X) (hex d uses w)
     obtain ⟨h1, h2, h3⟩ := (callPost_only_mono hAA hq).1 ext hext g sl cm args vals rvals cm' hg
       hd ha hmr hret hlen
     exact ⟨outs, w', hc, h1, h2, h3⟩
   · obtain ⟨⟨outs, w'⟩, hc, hq⟩ := ExtSem.guard_spec (X := X) (hex none (u :: args) w)
     obtain ⟨h1, h2, h3⟩ := (callPost_only_mono hAA hq).2 sig hsig n g sl cm u args vals rvals cm'
-      rfl rfl hg hs hlo h8 hall hmr hret hlen hty
+      rfl rfl hg hs hlo hargs hmr hret hlen hty
     exact ⟨outs, w', hc, h1, h2, h3⟩
 
 end E2E

@@ -1611,14 +1611,14 @@ theorem xCallsIndOkT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih :
     XCallsIndOk (L.envOf M g c) (indSigs g)
       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c) (L.XT κ M g F) := by
-  intro sig hsig n gsem sl cm w u args vals rvals cm' hgs hsg hu hl8 hall hmr hret hrl hty
+  intro sig hsig n gsem sl cm w u args vals rvals cm' hgs hsg hu hargsS hmr hret hrl hty
   rcases L.envOf_some hgs with ⟨hpf, hgs⟩ | ⟨h, hpf, hdecl, G0, hgs, hG0⟩
   · have hs : symCallee L.Xb L.P (lo64 u) = none := by
       show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = none
       rw [hu]; exact (L.find_symT hL n).2 hpf
     obtain ⟨outs, w', hx, h1, h2, h3⟩ := hL.baseXI g hg F (L.A g).af.slotBase
       (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c sig hsig n gsem sl cm w u args vals rvals
-      cm' hgs (fun _ h => nomatch h) hu hl8 hall hmr hret hrl hty
+      cm' hgs (fun _ h => nomatch h) hu hargsS hmr hret hrl hty
     exact ⟨outs, w', by rw [L.XT_none hs]; exact hx, h1, h2, h3⟩
   · obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
     subst hname
@@ -1646,6 +1646,8 @@ theorem xCallsIndOkT (hL : L.OkT) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih :
     have hm : IndSigMatch sig h :=
       hsg h.sig (by simp only [envOf, Clif.linkEnvR_sigOf, hpf, Option.map_some])
     obtain ⟨bytes, hb, hb8⟩ := hdeclS h hh hdecl (.inl ⟨sig, hsig, hm⟩)
+    have hall : AllHold vals args :=
+      (argsAt_iff_of_regs (hm.paramBytes.trans hb) hb8 hargsS.1).mp hargsS
     have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
     have hsav : StackArgsAvoid F h.sig vals w := by
       intro off v hm
@@ -1817,7 +1819,7 @@ theorem xniT (hL : L.OkT) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L
       simpa using this
     have hcallee : L.Callee g h := .inr (.inr ⟨hh, hdecl⟩)
     have hAA : ArgsAt h.sig vals args w ∧ ArgsAt h.sig vals args w' := by
-      rcases hA with ⟨⟨e', he', hen', hes⟩, h1, h2⟩ | ⟨hsig, h8, hall⟩
+      rcases hA with ⟨⟨e', he', hen', hes⟩, h1, h2⟩ | ⟨hsig, h1, h2⟩
       · have := hL.declSig g hg e' he' h (by rw [hen']; exact hpf)
         rw [← hes, this] at h1 h2
         exact ⟨h1, h2⟩
@@ -1832,7 +1834,8 @@ theorem xniT (hL : L.OkT) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L
             rfl
           · exact hce.sig.symm.trans hty
         obtain ⟨bytes, hb, hb8⟩ := hdeclS h hh hdecl (L.indReach hpf hdecl hsig hmatch)
-        exact ⟨(argsAt_iff_of_regs hb hb8 hvl).mpr hall, (argsAt_iff_of_regs hb hb8 hvl).mpr hall⟩
+        have habi := (hL.subset g hg).indSigs sig hsig
+        exact ⟨argsAt_of_tyMatch habi hmatch hb hb8 hvl h1, argsAt_of_tyMatch habi hmatch hb hb8 hvl h2⟩
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, u, rfl, hu⟩
     · rw [L.XT_prog hpf] at hx hx'
       exact L.progX_niT hL hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit hGo hx hx'

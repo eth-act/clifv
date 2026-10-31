@@ -111,12 +111,12 @@ theorem callPost_not_vacuous_ind {env : Clif.Env} {exts : List Clif.ExtFunc}
     {g : List Clif.Val → Clif.Mem → Clif.Outcome} {sl : List (Clif.SlotId × Nat)} {cm : Clif.Mem}
     {u : CV} {args : List CV} {vals rvals : List Clif.Val} {cm' : Clif.Mem}
     (hg : env.extern n = some g) (hs : ∀ s, env.sigOf n = some s → sig.abiMatch s = true)
-    (hu : lo64 u = sym n 0) (h8 : vals.length ≤ 8) (hall : AllHold vals args) (hmr : MR sl cm w)
+    (hu : lo64 u = sym n 0) (hargs : ArgsAt sig vals args w) (hmr : MR sl cm w)
     (hret : g vals cm = .returned rvals cm') (hlen : rvals.length = sig.returns.length)
     (hty : vals.map (·.ty) = Clif.AbiParam.tys sig.params) :
     ¬ ∀ r, CallPost env exts sigs MR sym none (u :: args) w r := fun hall' => by
   have := ((hall' (List.replicate ((sigRets sig).length + 1) (ofX 0), w)).2 sig hsig n g sl cm u
-    args vals rvals cm' rfl rfl hg hs hu h8 hall hmr hret hlen hty).1
+    args vals rvals cm' rfl rfl hg hs hu hargs hmr hret hlen hty).1
   simp at this
 
 /-- **Stage 1 for `guardR`** (`xCallsOk_guard_only`): with an accepted result for every call, the
@@ -128,7 +128,7 @@ theorem xCallsOk_guardR_only {env : Clif.Env} {A A' : String → List Clif.Val �
     XCallsOk (env.only A) exts MR (X.guardR (CallPost (env.only A') exts sigs MR X.sym)) ∧
       XCallsIndOk (env.only A) sigs MR (X.guardR (CallPost (env.only A') exts sigs MR X.sym)) := by
   refine ⟨fun ext hext g sl cm w d uses args vals rvals cm' hg hd ha hmr hret hlen => ?_,
-    fun sig hsig n g sl cm w u args vals rvals cm' hg hs hlo h8 hall hmr hret hlen hty => ?_⟩
+    fun sig hsig n g sl cm w u args vals rvals cm' hg hs hlo hargs hmr hret hlen hty => ?_⟩
   · have hn : ¬ ∀ r, CallPost (env.only A') exts sigs MR X.sym d uses w r := fun h =>
       callPost_not_vacuous (sl := sl) hext hg hd ha hmr hret hlen fun r => callPost_only_mono hAA (h r)
     obtain ⟨⟨outs, w'⟩, hc, hq⟩ := ExtSem.guardR_spec (X := X) (hex d uses w) hn
@@ -136,11 +136,11 @@ theorem xCallsOk_guardR_only {env : Clif.Env} {A A' : String → List Clif.Val �
       hd ha hmr hret hlen
     exact ⟨outs, w', hc, h1, h2, h3⟩
   · have hn : ¬ ∀ r, CallPost (env.only A') exts sigs MR X.sym none (u :: args) w r := fun h =>
-      callPost_not_vacuous_ind (sl := sl) hsig hg hs hlo h8 hall hmr hret hlen hty
+      callPost_not_vacuous_ind (sl := sl) hsig hg hs hlo hargs hmr hret hlen hty
         fun r => callPost_only_mono hAA (h r)
     obtain ⟨⟨outs, w'⟩, hc, hq⟩ := ExtSem.guardR_spec (X := X) (hex none (u :: args) w) hn
     obtain ⟨h1, h2, h3⟩ := (callPost_only_mono hAA hq).2 sig hsig n g sl cm u args vals rvals cm'
-      rfl rfl hg hs hlo h8 hall hmr hret hlen hty
+      rfl rfl hg hs hlo hargs hmr hret hlen hty
     exact ⟨outs, w', hc, h1, h2, h3⟩
 
 end E2E

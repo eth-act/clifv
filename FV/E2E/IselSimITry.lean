@@ -132,7 +132,7 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
       exact ⟨bc, rvals, cm', regs', htn, hO, by rw [← hsig0]; exact hset, rfl⟩
     · have hdata' : tryCallData f (.tryCallIndirect callee args et) = .ok L.data := hBT ▸ hdata
       have hsd := exnTableOpnd_sig hexn
-      obtain ⟨hsin, h8⟩ := H.tryIndSig B hBmem callee args et T.sig hBT hsd
+      have hsin := H.tryIndSig B hBmem callee args et T.sig hBT hsd
       obtain ⟨hnd, hnx⟩ := stepTryInd_spec (env := env) (p := p) (args := args) (et := et)
         (hind callee args (hterm.trans hBT))
       rw [hBT]
@@ -143,7 +143,7 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
           exact List.mem_cons.mpr ((List.mem_cons.mp hy).imp id fun h => List.mem_append_left _ h),
         hnd, fun s' hs => ?_,
         H.tryInd f ctx (L.start + B.body.length) callee args et L.data T.sig T.items L.targets
-          T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv hdata' hexn hsin h8
+          T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv hdata' hexn hsin
           (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
       obtain ⟨declared, bc, rvals, cm', regs', hd, htn, hO, hset, rfl⟩ := hnx s' hs
       rw [hfunc, hsd] at hd

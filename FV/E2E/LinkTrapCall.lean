@@ -232,9 +232,9 @@ theorem xCallsOk_cut {E : Clif.Env} {Q : String → List Clif.Val → Clif.Mem �
 theorem xCallsIndOk_cut {E : Clif.Env} {Q : String → List Clif.Val → Clif.Mem → Prop}
     {sigs : List Clif.Signature} {MR : MemRelT} {X : ExtSem} (h : XCallsIndOk E sigs MR X) :
     XCallsIndOk (cutEnv E Q) sigs MR X := by
-  intro sig hsig n g' sl cm w u args vals rvals cm' hg hs hu h8 hall hmr hret hrl hty
+  intro sig hsig n g' sl cm w u args vals rvals cm' hg hs hu hargs hmr hret hrl hty
   obtain ⟨g, hg0, rfl⟩ := cutEnv_extern hg
-  exact h sig hsig n g sl cm w u args vals rvals cm' hg0 hs hu h8 hall hmr (cutO_returned hret) hrl hty
+  exact h sig hsig n g sl cm w u args vals rvals cm' hg0 hs hu hargs hmr (cutO_returned hret) hrl hty
 
 /-! ## The linked machine's error states -/
 
@@ -911,7 +911,7 @@ theorem xTrapsOkG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk)
       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c) (L.X κ M g F) := by
   refine ⟨fun ext hin G' sl cm w d uses args vals tc hG' hd hargs hmr htr => ?_,
-    fun sig hsig n G' sl cm w u args vals tc hG' hsg hu hl8 hall hmr htr hty => ?_⟩
+    fun sig hsig n G' sl cm w u args vals tc hG' hsg hu hargsS hmr htr hty => ?_⟩
   · obtain ⟨G, hG, rfl⟩ := cutEnv_extern hG'
     obtain ⟨htrG, hQ⟩ := cutO_trapped htr
     cases hpf : L.P.func? ext.name with
@@ -959,7 +959,7 @@ theorem xTrapsOkG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk)
         simpa [envOf, hpf, Clif.linkEnvR_none hpf] using hG
       have hx := (hB.xt g hg F (L.A g).af.slotBase
         (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c).2 sig hsig n G sl cm w u args vals tc
-        hb (fun _ h => nomatch h) hu hl8 hall hmr htrG hty
+        hb (fun _ h => nomatch h) hu hargsS hmr htrG hty
       rw [L.X_none hs]; exact hx
     | some h =>
       obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
@@ -981,6 +981,8 @@ theorem xTrapsOkG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk)
       have hm : IndSigMatch sig h :=
         hsg h.sig (by simp only [cutEnv, envOf, Clif.linkEnvR_sigOf, hpf, Option.map_some])
       obtain ⟨⟨bytes, hb, hb8⟩, -⟩ := hdeclS h hh hdecl (.inl ⟨sig, hsig, hm⟩)
+      have hall : AllHold vals args :=
+        (argsAt_iff_of_regs (hm.paramBytes.trans hb) hb8 hargsS.1).mp hargsS
       have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
       have hsav : StackArgsAvoid F h.sig vals w := by
         intro off v hm

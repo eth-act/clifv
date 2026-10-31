@@ -95,7 +95,7 @@ theorem backend_correct_final_cleanup_trapcallT {p : Clif.Program} {f : Clif.Fun
       insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
         indRulesCorrect memRulesCorrect_program hRef (mrStable_holds Γ f) hcallsR hicallsR hMem
         (outArgsOk_holds Γ f) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-        (memRelOk_holds Γ f)
+        (indStack_mono (indStack_of_check hc.lowerOk) houtB) (memRelOk_holds Γ f)
       terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
         branchExcludedUnmatchable hRef (mrStable_holds Γ f)
       ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
@@ -108,7 +108,8 @@ theorem backend_correct_final_cleanup_trapcallT {p : Clif.Program} {f : Clif.Fun
         hMem (outArgsOk_holds Γ f) hcallsR, tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
       tryExt := hsub.tryExterns
       tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef
-        (mrStable_holds Γ f) hicallsR
+        (mrStable_holds Γ f) hMem (outArgsOk_holds Γ f)
+        (indStack_mono (indStack_of_check hc.lowerOk) houtB) hicallsR
       tryIndSig := tryIndSig_of_subset hsub
       cfg := by
         obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
@@ -117,7 +118,8 @@ theorem backend_correct_final_cleanup_trapcallT {p : Clif.Program} {f : Clif.Fun
       (trapEnv env c) Γ.F X (xrT XT) Γ.slotOff Γ.syms Γ.out :=
     ⟨raiseSem_valueSemU _ _ _ _, hRef, hMem, mrStable_holds Γ f, outArgsOk_holds Γ f,
       memRelOk_holds Γ f, callsStack_mono (callsStack_of_check hc.lowerOk) houtB,
-      tryStack_mono (tryStack_of_check hc.lowerOk) houtB, xRaiseOk_trapEnv (hXT s),
+      tryStack_mono (tryStack_of_check hc.lowerOk) houtB,
+      indStack_mono (indStack_of_check hc.lowerOk) houtB, xRaiseOk_trapEnv (hXT s),
       xRaiseIndOk_trapEnv (hXT s), hsym, fun sl cm w h => (memRelOk_holds Γ f).symbols sl cm w h⟩
   -- the register level
   obtain ⟨ρ₀, hR1, hR2, hR3⟩ := regLevel_trapCall_valueT hc.check hc.alloc hc.emit hc.layout hcov hC

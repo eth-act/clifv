@@ -49,7 +49,7 @@ theorem paired_try_indirect_calls (p0 : Arm.PState) (F D : BitVec 64 → Prop) (
     TryIndCalls (pairSem (csem F ⟨faL.k, afL.slotBase⟩ (Xr (WorldUnwindNIWitness.X1 p0))))
       (MRP ⟨F, fun _ => none, afL.slotBase, (RAFrame.compute vcpL rfL).intBase⟩ source c D)
       IselSimUWitness.env.toEnv { funcs := [] } (indSigs source) := by
-  exact tryIndCalls_pair_validated (xCallsIndOk_env _ _ _)
+  exact tryIndCalls_pair_validated try_contracts.1 (xCallsIndOk_env _ _ _)
     (fun _ _ h => by cases h) (WorldUnwindNIWitness.xni _ _ _ _ _ _ _)
     (WorldUnwindNIWitness.xtls _ _)
 
@@ -68,7 +68,7 @@ theorem paired_try_indirect_calls_cleanup (p0 : Arm.PState) (F D : BitVec 64 →
     TryIndCalls (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ (Xr (WorldUnwindNIWitness.X1 p0))))
       (MRP ⟨F, fun _ => none, af.slotBase, (RAFrame.compute vcp rf).intBase⟩ source c D)
       IselSimUWitness.env.toEnv { funcs := [] } (indSigs source) := by
-  exact tryIndCalls_pair_value_validated (xCallsIndOk_env _ _ _)
+  exact tryIndCalls_pair_value_validated try_contracts.2.1 (xCallsIndOk_env _ _ _)
     (fun _ _ h => by cases h) (WorldUnwindNIWitness.xni _ _ _ _ _ _ _)
     (WorldUnwindNIWitness.xtls _ _)
 

@@ -65,7 +65,7 @@ theorem LUN_okU (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (LUN 
     intro ext _ G sl cm w d uses args vals e m hG _ _ _ hu
     exact absurd hu (Clif.Env.toX_noUnwind _ _ _ hG vals cm e m)
   baseXRI g _ F' slotOff out c := by
-    intro sig _ n G sl cm w u args vals e m hG _ _ _ _ _ hu
+    intro sig _ n G sl cm w u args vals e m hG _ _ _ _ hu
     exact absurd hu (Clif.Env.toX_noUnwind (L F).base n G hG vals cm e m)
   baseExcl _ _ _ _ _ := rfl
   baseRaiseExt _ _ _ _ _ _ h := by cases h

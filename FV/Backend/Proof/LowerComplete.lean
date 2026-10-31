@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselTermFactsCallInd
 import FV.Backend.Proof.LowerCert
 import FV.Backend.Proof.LowerShapeOk
 
@@ -593,7 +594,7 @@ theorem lowerCheck_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
       have : bi < bl.length := by rw [hlen]; exact lt_of_getElem? hbi
       exact ⟨bi, _, hbi, List.getElem?_eq_getElem this⟩
     simp only [callsStackOkB, Bool.and_eq_true, List.all_eq_true]
-    refine ⟨fun B hB st hst => ?_, fun B hB => ?_⟩
+    refine ⟨⟨fun B hB st hst => ?_, fun B hB => ?_⟩, fun s hs' => ?_⟩
     · obtain ⟨bi, L, hB', hL'⟩ := hL B hB
       obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hst
       obtain ⟨hsll, -⟩ := hspec bi B L hB' hL'
@@ -630,6 +631,31 @@ theorem lowerCheck_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
           exact ⟨by rw [← hfin]; omega, hs.stackLayout.2 B hB fn args et e ht he⟩
         · rfl
       · rfl
+    · obtain ⟨B, hB, hk⟩ := mem_indSigs hs'
+      obtain ⟨bi, L, hB', hL'⟩ := hL B hB
+      simp only [Bool.and_eq_true, decide_eq_true_eq]
+      refine ⟨?_, hs.indStackLayout s hs'⟩
+      rcases hk with ⟨st, hst, sig, c, args, hi', hsd⟩ | ⟨c, args, et, ht, hsd⟩
+      · obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hst
+        obtain ⟨hsll, -⟩ := hspec bi B L hB' hL'
+        obtain ⟨sl, hsl⟩ : ∃ sl, L.sl[j]? = some sl :=
+          ⟨_, List.getElem?_eq_getElem (by rw [hsll]; exact lt_of_getElem? hj)⟩
+        obtain ⟨⟨info, hi, hic⟩, tr, hrun⟩ := hstm bi B L j st sl hB' hL' hj hsl
+        rw [hi'] at hic
+        have h1 := callInd_outgoing hctx hi hic hsd hrun
+        have h2 := (hlo L (List.mem_of_getElem? hL')).1 sl (List.mem_of_getElem? hsl)
+        rw [← hfin]; omega
+      · obtain ⟨-, -, -, nl0, nl', hterm⟩ := hspec bi B L hB' hL'
+        obtain ⟨-, hy⟩ := lowTerm_spec hterm
+        obtain ⟨T, -, hd, -, -, -, -, out, tr, hc⟩ := hy et (.inr ⟨c, args, ht⟩)
+        have hti : L.start + B.body.length < ctx.insts.size := by
+          have := hcf.term bi B hB'
+          rw [← hstart bi L hL'] at this
+          exact (Array.getElem?_eq_some_iff.mp this).1
+        rw [ht] at hd
+        have h1 := tryInd_outgoing hctx hti hd hsd hc
+        have h2 := (hlo L (List.mem_of_getElem? hL')).2
+        rw [← hfin]; omega
   · -- the entry's parameter locations
     obtain ⟨locs, n, hloc⟩ := hlf.entry hs.nonempty
     obtain ⟨bytes, hby⟩ := hlf.paramBytes

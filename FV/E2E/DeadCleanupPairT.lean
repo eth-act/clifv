@@ -167,6 +167,8 @@ theorem instCalls_pair_valueT (hc : CompiledCleanupT f k vc vcp rf af fa fb) (hT
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hstk := callsStack_mono (callsStackT_of_check hc.lowerOk)
     (outgoing_le_intBaseCleanupAT hc.toA)
+  have hIstk := indStack_mono (indStackT_of_check hc.lowerOk)
+    (outgoing_le_intBaseCleanupAT hc.toA)
   refine lowerInstOk_pairF_value hNI hTls (Γ := Γ) rfl hctx.inv.func hsig fun Rd Pc => ?_
   obtain ⟨B, hB, stm, hstm, hst'⟩ := hmem
   obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOkP_runTermT lowerRulesCorrectTI_program
@@ -177,7 +179,7 @@ theorem instCalls_pair_valueT (hc : CompiledCleanupT f k vc vcp rf af fa fb) (hT
     (indCallsRefineP_valueSemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
     (memRefinesR_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
     (memRefinesFP_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot)
-    hctx hsc (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
+    hctx hsc (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig hIstk
     (hst ii info inst hi hcl)
     (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst' ▸ hc') he) hvb hrun
   cases hov
@@ -287,7 +289,8 @@ theorem tryCalls_pair_valueT (hT : TypedRules)
   exact hok
 
 /-- **The typed `try_call_indirect` calls on pairs of worlds, value semantics.** -/
-theorem tryIndCalls_pair_valueT (hT : TypedRules)
+theorem tryIndCalls_pair_valueT (hIstk : IndStack (indSigs f) (RAFrame.compute vcp rf).intBase)
+    (hT : TypedRules)
     (hXI : XCallsIndOk env (indSigs f)
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
@@ -297,7 +300,7 @@ theorem tryIndCalls_pair_valueT (hT : TypedRules)
     TryIndCallsT f ctx (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p (indSigs f) := by
   intro ti callee args et data sig items targets info trs lo st1 out st' tr hd hip he hsig
-    h8 hph hinfo hregs hvb hrun
+    hph hinfo hregs hvb hrun
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hctx' := ctxT_tryRegs (ctxT_termCtx hctx hph data) trs
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
@@ -315,9 +318,11 @@ theorem tryIndCalls_pair_valueT (hT : TypedRules)
     cases hs
     exact ⟨rfl, ⟨.inr ⟨hsig, hty⟩, gg, rvals, cm', hg, hgo⟩, .inr ⟨_, _, _, rfl, hfg ▸ hsd, hv⟩⟩
   · obtain ⟨ms, hem, hok⟩ := tryIndOkP_runTermT hT.tryInd hT.tryIndUn refines_valueSemGF
-      (mrStable_relW Γ f c)
+      (mrStable_relW Γ f c) (memRefinesR_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) rfl hsym)
+      (outArgsOk_relW Γ f c)
+      hIstk
       (indCallsRefineP_valueSemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
-      hctx' hd hip' he hsig h8 hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
+      hctx' hd hip' he hsig hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
       (Nat.le_refl _) hrun
     have : ms = st'.emitted.toList := by
       simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
@@ -376,7 +381,9 @@ theorem vcode_ni_valueT (hsub : InSubsetT p f) (hc : CompiledCleanupT f k vc vcp
     tries := ⟨_, tryCalls_pair_valueT hT hX hsym hslot hNI hTls hctxT,
       tryStack_mono (tryStackT_of_check hc.lowerOk) houtB⟩
     tryExt := H.tryExt
-    tryInd := tryIndCalls_pair_valueT hT hXI hsym hNI hTls hctxT
+    tryInd := tryIndCalls_pair_valueT
+      (indStack_mono (indStackT_of_check hc.lowerOk) (outgoing_le_intBaseCleanupAT hc.toA))
+      hT hXI hsym hNI hTls hctxT
     tryIndSig := H.tryIndSig
     cfg := H.cfg }
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry

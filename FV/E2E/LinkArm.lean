@@ -542,6 +542,81 @@ theorem IndSigMatch.returns_length {sig : Clif.Signature} {h : Clif.Function}
   have := congrArg List.length (Clif.Signature.abiMatch_eq_true.mp hm).2.2
   simpa [Clif.AbiParam.tys] using this.symm
 
+/-- A matching call-site signature passes its parameters as the callee's signature does: the
+byte sizes depend on the parameter types and purposes only, which `abiMatch` compares. -/
+theorem IndSigMatch.paramBytes {sig : Clif.Signature} {h : Clif.Function}
+    (hm : IndSigMatch sig h) : sigParamBytes sig = sigParamBytes h.sig := by
+  obtain ⟨h1, h2, -⟩ := Clif.Signature.abiMatch_eq_true.mp hm
+  unfold sigParamBytes sigArgs
+  generalize sig.params = ps at h1 h2 ⊢
+  generalize h.sig.params = qs at h1 h2 ⊢
+  induction ps generalizing qs with
+  | nil => cases qs with
+    | nil => rfl
+    | cons q qs => simp [Clif.AbiParam.tys] at h1
+  | cons p ps ih => cases qs with
+    | nil => simp [Clif.AbiParam.tys] at h1
+    | cons q qs =>
+      simp only [Clif.AbiParam.tys, Clif.AbiParam.purposes, List.map_cons, List.cons.injEq]
+        at h1 h2
+      rw [List.mapM_cons, List.mapM_cons, ih qs h1.2 h2.2]
+      simp only [h1.1, h2.1]
+
+/-- A signature of the theorem's scope (`sigAbiOk`) whose parameter types are those of a
+signature whose byte sizes compute has computing byte sizes too. -/
+theorem sigParamBytes_ok_of_tys {s t : Clif.Signature} (habi : sigAbiOk s = true)
+    (hty : Clif.AbiParam.tys s.params = Clif.AbiParam.tys t.params) {bytes : List Nat}
+    (hb : sigParamBytes t = .ok bytes) : ∃ bytes', sigParamBytes s = .ok bytes' := by
+  have hall : ∀ p ∈ s.params, p.purpose = .normal ∨ (p.purpose = .sret ∧ p.ty = .i64) := by
+    simp only [sigAbiOk, Bool.and_eq_true, List.all_eq_true, Bool.or_eq_true, beq_iff_eq] at habi
+    exact habi.1.1.1
+  unfold sigParamBytes sigArgs at hb ⊢
+  generalize s.params = ps at hall hty ⊢
+  generalize t.params = qs at hty hb
+  induction ps generalizing qs bytes with
+  | nil => exact ⟨[], rfl⟩
+  | cons p ps ih =>
+    cases qs with
+    | nil => simp [Clif.AbiParam.tys] at hty
+    | cons q qs =>
+      simp only [Clif.AbiParam.tys, List.map_cons, List.cons.injEq] at hty
+      obtain ⟨hpq, hty⟩ := hty
+      simp only [List.mapM_cons, bind, Except.bind, pure, Except.pure] at hb ⊢
+      have hp := hall p (by simp)
+      have hall' : ∀ p ∈ ps, p.purpose = .normal ∨ (p.purpose = .sret ∧ p.ty = .i64) :=
+        fun p' hp' => hall p' (by simp [hp'])
+      split at hb
+      · cases hb
+      · rename_i b hq
+        split at hb
+        · cases hb
+        · rename_i bs hqs
+          obtain ⟨bs', hbs'⟩ := ih hall' qs hty hqs
+          simp only [pure, Except.pure] at hbs'
+          rw [hbs']
+          have hqi : q.ty ≠ .i128 := by
+            intro h; simp [h] at hq
+          rcases hp with hn | ⟨hs, hi⟩
+          · simp [hn, hpq, hqi]
+          · simp [hs, hi]
+
+/-- **The arguments of an indirect call that entered a function of `P`**: with a call-site
+signature of the theorem's scope whose parameter types are the callee's, and a callee with at
+most 8 (register) parameters, the call site's argument placement (`ArgsAt sig`, S5) is the
+callee's: both put every argument in a register. -/
+theorem argsAt_of_tyMatch {sig : Clif.Signature} {h : Clif.Function} (habi : sigAbiOk sig = true)
+    (hm : IndTyMatch sig h) {bytes : List Nat} (hb : sigParamBytes h.sig = .ok bytes)
+    (hb8 : bytes.length ≤ 8) {vals : List Clif.Val} {args : List CV} {w : Arm.ArmState}
+    (hvl : vals.length = h.sig.params.length) (ha : ArgsAt sig vals args w) :
+    ArgsAt h.sig vals args w := by
+  obtain ⟨bytes', hb'⟩ := sigParamBytes_ok_of_tys habi hm.symm hb
+  have hl : sig.params.length = h.sig.params.length := by
+    have := congrArg List.length hm
+    simpa [Clif.AbiParam.tys] using this.symm
+  have hl' : bytes'.length ≤ 8 := by
+    rw [sigParamBytes_length hb', hl, ← sigParamBytes_length hb]; exact hb8
+  exact (argsAt_iff_of_regs hb hb8 hvl).mpr ((argsAt_iff_of_regs hb' hl' ha.1).mp ha)
+
 /-- The names an activation of `g` may call: the declarations of `g` (`DeclN`), including itself,
 and, when `g` has indirect calls, every name with a link-time address (a pointer to a function of
 `P`, e.g. a vtable slot, need not come from `g`'s declarations: `Clif.linkEnvN` resolves it
@@ -3433,7 +3508,8 @@ theorem xCallsOk (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < 
 indirect call reaching an extern outside `P` is the base's; one reaching a function of `P` that
 `g` may reach (`MayCall`: declared or not) is, the call-site signature matching the callee's
 (`envOf`'s `sigOf`), the linked machine's call from the canonical state (its parameters are in
-registers, `indSig`). -/
+registers, `indSig`; a call-site signature matching it passes them in the same registers,
+`IndSigMatch.paramBytes`). -/
 theorem xCallsIndOk (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {c : BitVec 64}
     (hroom : κ M g ≤ c.toNat)
@@ -3441,14 +3517,14 @@ theorem xCallsIndOk (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0
     XCallsIndOk (L.envOf M g c) (indSigs g)
       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c) (L.X κ M g F) := by
-  intro sig hsig n gsem sl cm w u args vals rvals cm' hgs hsg hu hl8 hall hmr hret hrl hty
+  intro sig hsig n gsem sl cm w u args vals rvals cm' hgs hsg hu hargsS hmr hret hrl hty
   rcases L.envOf_some hgs with ⟨hpf, hgs⟩ | ⟨h, hpf, hdecl, G0, hgs, hG0⟩
   · have hs : symCallee L.Xb L.P (lo64 u) = none := by
       show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = none
       rw [hu]; exact (L.find_sym hL n).2 hpf
     obtain ⟨outs, w', hx, h1, h2, h3⟩ := hL.baseXI g hg F (L.A g).af.slotBase
       (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c sig hsig n gsem sl cm w u args vals rvals
-      cm' hgs (fun _ h => nomatch h) hu hl8 hall hmr hret hrl hty
+      cm' hgs (fun _ h => nomatch h) hu hargsS hmr hret hrl hty
     exact ⟨outs, w', by rw [L.X_none hs]; exact hx, h1, h2, h3⟩
   · obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
     subst hname
@@ -3476,6 +3552,8 @@ theorem xCallsIndOk (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0
     have hm : IndSigMatch sig h :=
       hsg h.sig (by simp only [envOf, Clif.linkEnvR_sigOf, hpf, Option.map_some])
     obtain ⟨⟨bytes, hb, hb8⟩, hsr⟩ := hdeclS h hh hdecl (.inl ⟨sig, hsig, hm⟩)
+    have hall : AllHold vals args :=
+      (argsAt_iff_of_regs (hm.paramBytes.trans hb) hb8 hargsS.1).mp hargsS
     have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
     have hsav : StackArgsAvoid F h.sig vals w := by
       intro off v hm
@@ -3700,7 +3778,7 @@ theorem xni (hL : L.Ok) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.T
       simpa using this
     have hcallee : L.Callee g h := .inr (.inr ⟨hh, hdecl⟩)
     have hAA : ArgsAt h.sig vals args w ∧ ArgsAt h.sig vals args w' := by
-      rcases hA with ⟨⟨e', he', hen', hes⟩, h1, h2⟩ | ⟨hsig, h8, hall⟩
+      rcases hA with ⟨⟨e', he', hen', hes⟩, h1, h2⟩ | ⟨hsig, h1, h2⟩
       · have := hL.declSig g hg e' he' h (by rw [hen']; exact hpf)
         rw [← hes, this] at h1 h2
         exact ⟨h1, h2⟩
@@ -3715,7 +3793,8 @@ theorem xni (hL : L.Ok) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.T
             rfl
           · exact hce.sig.symm.trans hty
         obtain ⟨⟨bytes, hb, hb8⟩, -⟩ := hdeclS h hh hdecl (L.indReach hpf hdecl hsig hmatch)
-        exact ⟨(argsAt_iff_of_regs hb hb8 hvl).mpr hall, (argsAt_iff_of_regs hb hb8 hvl).mpr hall⟩
+        have habi := (hL.subset g hg).indSigs sig hsig
+        exact ⟨argsAt_of_tyMatch habi hmatch hb hb8 hvl h1, argsAt_of_tyMatch habi hmatch hb hb8 hvl h2⟩
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, u, rfl, hu⟩
     · rw [L.X_prog hpf] at hx hx'
       exact L.progX_ni hL hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit hGo hx hx'

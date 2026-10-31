@@ -94,6 +94,7 @@ theorem iselSimU_relW_cleanup {p : Clif.Program} {f : Clif.Function} {k : Nat} {
     insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
       indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
       (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB)
       (memRelOk_relW Γ f c)
     terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable hRef (mrStable_relW Γ f c)
@@ -107,7 +108,7 @@ theorem iselSimU_relW_cleanup {p : Clif.Program} {f : Clif.Function} {k : Nat} {
       (outArgsOk_relW Γ f c) hcalls, tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef (mrStable_relW Γ f c)
-      hicalls
+      hmem (outArgsOk_relW Γ f c) (indStack_mono (indStack_of_check hc.lowerOk) houtB) hicalls
     tryIndSig := tryIndSig_of_subset hsub
     cfg := by
       obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
@@ -115,7 +116,8 @@ theorem iselSimU_relW_cleanup {p : Clif.Program} {f : Clif.Function} {k : Nat} {
   have HR : RaiseHyp f sem (RelW Γ f c) env F X XR slotOff syms (RAFrame.compute vcp rf).intBase :=
     ⟨raiseSem_valueSemU _ _ X XR, hRef, hmem, mrStable_relW Γ f c, outArgsOk_relW Γ f c,
       memRelOk_relW Γ f c, callsStack_mono (callsStack_of_check hc.lowerOk) houtB,
-      tryStack_mono (tryStack_of_check hc.lowerOk) houtB, hXR, hXRi, hsym,
+      tryStack_mono (tryStack_of_check hc.lowerOk) houtB,
+      indStack_mono (indStack_of_check hc.lowerOk) houtB, hXR, hXRi, hsym,
       fun sl cm w h => (memRelOk_relW Γ f c).symbols sl cm w h⟩
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
   have hB0 : f.blocks[0]? = some B0 := by
@@ -337,14 +339,13 @@ theorem indCallsRefine_csemU_of_excl {F : BitVec 64 → Prop} {ctx : FnCtx} {X :
     IndCallsRefine env sigs MR (csemU F ctx X XR) := by
   obtain ⟨h1, h2⟩ := indCallsRefine_csem (F := F) (ctx := ctx) hX hsym hMR
   refine ⟨?_, ?_⟩
-  · intro sig hsig n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11
+  · intro sig hsig n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10
     obtain ⟨outs, w', hs, rest⟩ :=
-      h1 sig hsig n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11
+      h1 sig hsig n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10
     exact ⟨outs, w', csemU_of_csem hex hs, rest⟩
   · intro sig hsig n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11
-      a12
     obtain ⟨outs, w', hs, rest⟩ := h2 sig hsig n g sl cm w a r us ds ti u args vals rvals cm' a1 a2
-      a3 a4 a5 a6 a7 a8 a9 a10 a11 a12
+      a3 a4 a5 a6 a7 a8 a9 a10 a11
     exact ⟨outs, w', csemU_of_csem hex hs, rest⟩
 
 /-- **CLIF → VCode with unwinding for an activation inside a linked program** (`RelW`; the
@@ -395,6 +396,7 @@ theorem iselSimU_relW {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp :
     insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
       indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
       (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB)
       (memRelOk_relW Γ f c)
     terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable hRef (mrStable_relW Γ f c)
@@ -408,13 +410,14 @@ theorem iselSimU_relW {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp :
       (outArgsOk_relW Γ f c) hcalls, tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef (mrStable_relW Γ f c)
-      hicalls
+      hmem (outArgsOk_relW Γ f c) (indStack_mono (indStack_of_check hc.lowerOk) houtB) hicalls
     tryIndSig := tryIndSig_of_subset hsub
     cfg := cfg_of_prepare hc.prepare }
   have HR : RaiseHyp f sem (RelW Γ f c) env F X XR slotOff syms (RAFrame.compute vcp rf).intBase :=
     ⟨raiseSem_csemU _ _ X XR, hRef, hmem, mrStable_relW Γ f c, outArgsOk_relW Γ f c,
       memRelOk_relW Γ f c, callsStack_mono (callsStack_of_check hc.lowerOk) houtB,
-      tryStack_mono (tryStack_of_check hc.lowerOk) houtB, hXR, hXRi, hsym,
+      tryStack_mono (tryStack_of_check hc.lowerOk) houtB,
+      indStack_mono (indStack_of_check hc.lowerOk) houtB, hXR, hXRi, hsym,
       fun sl cm w h => (memRelOk_relW Γ f c).symbols sl cm w h⟩
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
   have hB0 : f.blocks[0]? = some B0 := by

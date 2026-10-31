@@ -91,6 +91,7 @@ theorem backend_correct_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function} {k
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB)
       (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f)
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
@@ -162,7 +163,9 @@ theorem backend_correct_of_rules_cleanup_ex_abi {p : Clif.Program} {f : Clif.Fun
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
     (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
+      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB) (hicalls s'))
     hM6 hRef hds hcalls hicalls hmem hPure hCmp houtB hent hres hbe hargs hargF hcs hrel htr fuel
 
 /-- `backend_correct_m4_cleanup_ex` with the ABI return values (`sretStableB f`). -/

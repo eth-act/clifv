@@ -324,7 +324,7 @@ theorem xCallsIndOkU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ)
     XCallsIndOk (L.envOfX M g c).toEnv (indSigs g)
       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c) (L.XU κ M g F) := by
-  intro sig hsig n gsem sl cm w u args vals rvals cm' hgs hsg hu hl8 hall hmr hret hrl hty
+  intro sig hsig n gsem sl cm w u args vals rvals cm' hgs hsg hu hargsS hmr hret hrl hty
   simp only [Clif.XEnv.toEnv, Option.map_eq_some_iff] at hgs
   obtain ⟨G, hG, rfl⟩ := hgs
   have hret' := Clif.toOutcome_returned hret
@@ -337,7 +337,7 @@ theorem xCallsIndOkU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ)
       rw [← hU.envX]; simp [Clif.XEnv.toEnv, hgs]
     obtain ⟨outs, w', hx, h1, h2, h3⟩ := hL.baseXI g hg F (L.A g).af.slotBase
       (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c sig hsig n _ sl cm w u args vals rvals
-      cm' hb (fun _ h => nomatch h) hu hl8 hall hmr hret hrl hty
+      cm' hb (fun _ h => nomatch h) hu hargsS hmr hret hrl hty
     exact ⟨outs, w', by rw [L.XU_none hs]; exact hx, h1, h2, h3⟩
   · obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
     subst hname
@@ -357,6 +357,8 @@ theorem xCallsIndOkU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ)
     have hm : LinkSys.IndSigMatch sig h :=
       hsg h.sig (by simp only [envOfX, Clif.XEnv.toEnv, Clif.linkEnvRX, hpf, Option.map_some])
     obtain ⟨⟨bytes, hb, hb8⟩, hsr⟩ := hdeclS h hh hdecl (.inl ⟨sig, hsig, hm⟩)
+    have hall : AllHold vals args :=
+      (argsAt_iff_of_regs (hm.paramBytes.trans hb) hb8 hargsS.1).mp hargsS
     have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
     have hsav : StackArgsAvoid F h.sig vals w := by
       intro off v hm
@@ -431,14 +433,14 @@ theorem xRaiseIndOkU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ)
     XRaiseIndOk (L.envOfX M g c) (indSigs g)
       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c) (L.XU κ M g F) (L.XRU κ M g F) := by
-  intro sig hsig n G sl cm w u args vals e m hG hsg hu hl8 hall hmr hret hty
+  intro sig hsig n G sl cm w u args vals e m hG hsg hu hargsS hmr hret hty
   rcases L.envOfX_some hG with ⟨hpf, hgs⟩ | ⟨h, hpf, hdecl, G0, hgs, hG0⟩
   · have hs : symCallee L.Xb L.P (lo64 u) = none := by
       show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = none
       rw [hu]; exact (L.toLinkSys.find_sym hL n).2 hpf
     obtain ⟨obj, w', hx, h1, h2⟩ := hU.baseXRI g hg F (L.A g).af.slotBase
       (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c sig hsig n G sl cm w u args vals e m
-      hgs (fun _ h => nomatch h) hu hl8 hall hmr hret hty
+      hgs (fun _ h => nomatch h) hu hargsS hmr hret hty
     exact ⟨obj, w', by rw [L.XRU_none hs]; exact hx, h1, h2⟩
   · obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
     subst hname
@@ -458,6 +460,8 @@ theorem xRaiseIndOkU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ)
     have hm : LinkSys.IndSigMatch sig h :=
       hsg h.sig (by simp only [envOfX, Clif.linkEnvRX, hpf, Option.map_some])
     obtain ⟨⟨bytes, hb, hb8⟩, -⟩ := hdeclS h hh hdecl (.inl ⟨sig, hsig, hm⟩)
+    have hall : AllHold vals args :=
+      (argsAt_iff_of_regs (hm.paramBytes.trans hb) hb8 hargsS.1).mp hargsS
     have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
     have hsav : StackArgsAvoid F h.sig vals w := by
       intro off v hm

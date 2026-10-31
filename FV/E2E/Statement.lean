@@ -69,12 +69,12 @@ def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
 current restrictions of the proof (e2e.md, "Remaining"): calls only to externs of this
 activation's program. Whole-program linking supplies a program without functions and
 discharges compiled callees' contracts by induction on call depth, including self-calls.
-Indirect calls have at most 8 register parameters, and signatures (the
-function's, its externs' and its indirect calls') with `normal` parameters and returns plus at
-most one `sret` struct-return pointer (`sigAbiOk`: in x8, returned in x0, no other returns);
-other special-purpose parameters are compiled and flagged unverified. Parameters beyond x0..x7
-(the function's own, and the arguments of a `call` or a `try_call`) are passed on the stack
-(agent/stack-tls-proof, agent/last-unverified: `ArgsIn`, `Backend.Proof.ArgsAt`). -/
+Signatures (the function's, its externs' and its indirect calls') have `normal` parameters and
+returns plus at most one `sret` struct-return pointer (`sigAbiOk`: in x8, returned in x0, no
+other returns); other special-purpose parameters are compiled and flagged unverified. Parameters
+beyond x0..x7 (the function's own, and the arguments of a `call`, a `try_call`, a
+`call_indirect` or a `try_call_indirect`) are passed on the stack (agent/stack-tls-proof,
+agent/last-unverified, S5: `ArgsIn`, `Backend.Proof.ArgsAt`). -/
 structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   subsetE : Compile.functionE f = true
   externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
@@ -83,16 +83,16 @@ structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
   tryExterns : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   abiSigs : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true
-  /-- the signatures of the indirect calls (`call_indirect`, `try_call_indirect`) take at most
-  8 (register) parameters and pass `sigAbiOk` (`Backend.indSigsOk`) -/
-  indSigs : ∀ s ∈ indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true
+  /-- the signatures of the indirect calls (`call_indirect`, `try_call_indirect`) pass
+  `sigAbiOk` (`Backend.indSigsAbiOk`; before S5 they also had at most 8 parameters) -/
+  indSigs : ∀ s ∈ indSigs f, sigAbiOk s = true
 
 /-- The driver's local verification conditions give the per-activation subset when every
 call is external to `p`; linking later supplies the compiled callees' contracts. -/
 theorem InSubset.of_verifiable {p : Clif.Program} {f : Clif.Function}
     (h : Backend.verifiable f = true) (hp : ∀ n, p.func? n = none) : InSubset p f := by
-  simp only [Backend.verifiable, Backend.abiSigs, Backend.indSigsOk,
-    Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, and_assoc] at h
+  simp only [Backend.verifiable, Backend.abiSigs, Backend.indSigsAbiOk,
+    Bool.and_eq_true, List.all_eq_true, and_assoc] at h
   obtain ⟨hE, hf, hext, hind⟩ := h
   exact ⟨hE, fun _ _ _ _ _ _ _ e _ => hp e.name,
     fun _ _ _ _ _ _ e _ => hp e.name, ⟨hf, hext⟩, hind⟩
@@ -135,7 +135,7 @@ theorem InSubset.of_regArgs {p : Clif.Program} {f : Clif.Function}
     (habi : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true)
     (hind : ∀ s ∈ _root_.Backend.indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true) :
     InSubset p f :=
-  ⟨hE, hext, htry, habi, hind⟩
+  ⟨hE, hext, htry, habi, fun s hs => (hind s hs).2⟩
 
 /-- **Specialisation**: for a function without indirect calls, the former subset (without
 `indSigs`, which is vacuous: `indSigs_eq_nil`). -/

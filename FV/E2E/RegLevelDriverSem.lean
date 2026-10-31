@@ -312,15 +312,31 @@ theorem callsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {en
 /-- **The contract of the external semantics for indirect calls**, for the call-site signatures
 `sigs` of a function's `call_indirect`s and `try_call_indirect`s: a `blr` (`X.call none`) whose
 target (the first use) holds, in its low 64 bits, the link-time address `X.sym n 0` of an extern
-`n` of `env` whose signature, if `env` knows it (`env.sigOf`), the call site's matches, with at
-most 8 arguments related to CLIF values `vals` (in the registers of the call site's signature,
-of its parameter types: `Clif.callExternAt` checks both), from a world related (`MR`) to CLIF
-memory `cm`, where the extern returns `rvals` (one value per return of the call site's
-signature) with memory `cm'`, returns one value per ABI return of the call site's signature
-(`sigRets`), the first ones related to `rvals`, and a world related to `cm'`. It is
-`XCallsOk`'s `blr` clause for every extern of `env` at its address, with the call site's
-signature. -/
+`n` of `env` whose signature, if `env` knows it (`env.sigOf`), the call site's matches, with
+arguments related to CLIF values `vals` where the ABI of the call site's signature puts them
+(`ArgsAt`: the register-passed ones in the argument values `args`, the stack-passed ones in the
+outgoing area at `sp` of the world, S5; of its parameter types: `Clif.callExternAt` checks both),
+from a world related (`MR`) to CLIF memory `cm`, where the extern returns `rvals` (one value per
+return of the call site's signature) with memory `cm'`, returns one value per ABI return of the
+call site's signature (`sigRets`), the first ones related to `rvals`, and a world related to
+`cm'`. It is `XCallsOk`'s `blr` clause for every extern of `env` at its address, with the call
+site's signature. For signatures with at most 8 parameters this is the former contract
+(`xCallsIndOk_of_regArgs`). -/
 def XCallsIndOk (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem) :
+    Prop :=
+  ∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
+    (w : Arm.ArmState) (u : CV) (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
+    env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
+    lo64 u = X.sym n 0 →
+    ArgsAt sig vals args w → MR sl cm w →
+    g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
+    vals.map (·.ty) = Clif.AbiParam.tys sig.params →
+    ∃ outs w', X.call none (u :: args) w = some (outs, w') ∧ outs.length = (sigRets sig).length ∧
+      PrefixHold rvals outs ∧ MR sl cm' w'
+
+/-- The former indirect-call contract (before S5): at most 8 argument values, all in
+registers. -/
+def XCallsIndOkRegs (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem) :
     Prop :=
   ∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
     (w : Arm.ArmState) (u : CV) (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
@@ -331,6 +347,18 @@ def XCallsIndOk (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT) (X 
     vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     ∃ outs w', X.call none (u :: args) w = some (outs, w') ∧ outs.length = (sigRets sig).length ∧
       PrefixHold rvals outs ∧ MR sl cm' w'
+
+/-- **Specialisation**: for call-site signatures with at most 8 parameters (all in registers)
+the former contract implies `XCallsIndOk` (`ArgsAt` is `AllHold`, `argsAt_iff_of_regs`). -/
+theorem xCallsIndOk_of_regArgs {env : Clif.Env} {sigs : List Clif.Signature} {MR : MemRelT}
+    {X : ExtSem}
+    (h8 : ∀ s ∈ sigs, s.params.length ≤ 8 ∧ ∃ bytes, sigParamBytes s = .ok bytes)
+    (h : XCallsIndOkRegs env sigs MR X) : XCallsIndOk env sigs MR X := by
+  intro sig hin n g sl cm w u args vals rvals cm' hg hsg hu hargs hmr hret hrl hty
+  obtain ⟨h8s, bytes, hb⟩ := h8 sig hin
+  have hall := (argsAt_iff_of_regs hb (by rw [sigParamBytes_length hb]; exact h8s) hargs.1).mp hargs
+  exact h sig hin n g sl cm w u args vals rvals cm' hg hsg hu (by rw [hargs.1]; exact h8s) hall hmr
+    hret hrl hty
 
 /-- Without indirect calls (no signatures) the indirect-call contract is vacuous. -/
 theorem xCallsIndOk_nil (env : Clif.Env) (MR : MemRelT) (X : ExtSem) : XCallsIndOk env [] MR X :=
@@ -345,17 +373,17 @@ theorem indCallsRefine_csem {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} 
     (hMRs : ∀ sl cm w, MR sl cm w → cm.symbols = syms) :
     IndCallsRefine env sigs MR (csem F ctx X) := by
   refine ⟨?_, ?_⟩
-  · intro sig hin n g sl cm w a r us ds u args vals rvals cm' hg hsg ha hu hds hlen hall hmr hret
+  · intro sig hin n g sl cm w a r us ds u args vals rvals cm' hg hsg ha hu hds hargs hmr hret
       hrl hty
     have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
     obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg hsg
-      (by rw [hu, hs]) hlen hall hmr hret hrl hty
+      (by rw [hu, hs]) hargs hmr hret hrl hty
     exact ⟨outs, w', by simp [csem, hc], by rw [hol, hds], ho, hm⟩
-  · intro sig hin n g sl cm w a r us ds ti u args vals rvals cm' hg hsg ha hu hds hti hlen hall
+  · intro sig hin n g sl cm w a r us ds ti u args vals rvals cm' hg hsg ha hu hds hti hargs
       hmr hret hrl hty
     have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
     obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg hsg
-      (by rw [hu, hs]) hlen hall hmr hret hrl hty
+      (by rw [hu, hs]) hargs hmr hret hrl hty
     refine ⟨_, w', by simp only [csem, hc, Option.filter_some, hol, hti, decide_true,
       ↓reduceIte, Option.map_some]; rfl, ?_, ho.append _, hm⟩
     simp only [List.length_append, List.length_map, List.length_drop]

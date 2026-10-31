@@ -47,7 +47,8 @@ open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 `w` (callee descriptor `d`): the machine semantics `X.call` gives no normal return, and an
 extern of `exts` (called by `bl`, or `blr` of its GOT address), or an extern at the callee
 address of an indirect call with a signature of `sigs`, traps with `c` in its CLIF semantics on
-arguments held by `uses` (`ArgsAt`, `AllHold`) and a memory related to `w` (`MR`). -/
+arguments held by `uses` (`ArgsAt`: for an indirect call, where the call site's signature's ABI
+puts them, registers and outgoing area, S5) and a memory related to `w` (`MR`). -/
 def TrapCallSem (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signature)
     (MR : MemRelT) (X : ExtSem) (c : Clif.TrapCode) (d : Option String) (uses : List CV)
     (w : Arm.ArmState) : Prop :=
@@ -61,7 +62,7 @@ def TrapCallSem (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Si
       (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (u : CV) (args : List CV)
       (vals : List Clif.Val), env.extern n = some g ∧
       (∀ s, env.sigOf n = some s → sig.abiMatch s = true) ∧ lo64 u = X.sym n 0 ∧
-      vals.length ≤ 8 ∧ AllHold vals args ∧ MR sl cm w ∧ g vals cm = .trapped c ∧
+      ArgsAt sig vals args w ∧ MR sl cm w ∧ g vals cm = .trapped c ∧
       vals.map (·.ty) = Clif.AbiParam.tys sig.params ∧ d = none ∧ uses = u :: args))
 
 /-- **The trapping callees' contract** (`XCallsOk`/`XCallsIndOk`'s counterpart for traps): at
@@ -80,9 +81,38 @@ def XTrapsOk (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signa
   (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
       (w : Arm.ArmState) (u : CV) (args : List CV) (vals : List Clif.Val) (c : Clif.TrapCode),
     env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
+    lo64 u = X.sym n 0 → ArgsAt sig vals args w → MR sl cm w →
+    g vals cm = .trapped c → vals.map (·.ty) = Clif.AbiParam.tys sig.params →
+    X.call none (u :: args) w = none)
+
+/-- The former trapping callees' contract (before S5): at most 8 argument values of an indirect
+call, all in registers. -/
+def XTrapsOkRegs (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signature)
+    (MR : MemRelT) (X : ExtSem) : Prop :=
+  (∀ ext ∈ exts, ∀ g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem) (w : Arm.ArmState)
+      (d : Option String) (uses args : List CV) (vals : List Clif.Val) (c : Clif.TrapCode),
+    env.extern ext.name = some g →
+    (d = some ext.name ∧ uses = args ∨
+      d = none ∧ ext.colocated = false ∧ uses = ofX (X.sym ext.name 0) :: args) →
+    ArgsAt ext.sig vals args w → MR sl cm w → g vals cm = .trapped c → X.call d uses w = none) ∧
+  (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
+      (w : Arm.ArmState) (u : CV) (args : List CV) (vals : List Clif.Val) (c : Clif.TrapCode),
+    env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
     lo64 u = X.sym n 0 → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     g vals cm = .trapped c → vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     X.call none (u :: args) w = none)
+
+/-- **Specialisation**: for call-site signatures with at most 8 parameters (all in registers)
+the former contract implies `XTrapsOk` (`ArgsAt` is `AllHold`, `argsAt_iff_of_regs`). -/
+theorem xTrapsOk_of_regArgs {env : Clif.Env} {exts : List Clif.ExtFunc}
+    {sigs : List Clif.Signature} {MR : MemRelT} {X : ExtSem}
+    (h8 : ∀ s ∈ sigs, s.params.length ≤ 8 ∧ ∃ bytes, sigParamBytes s = .ok bytes)
+    (h : XTrapsOkRegs env exts sigs MR X) : XTrapsOk env exts sigs MR X := by
+  refine ⟨h.1, ?_⟩
+  intro sig hin n g sl cm w u args vals c hg hsg hu hargs hmr ht hty
+  obtain ⟨h8s, bytes, hb⟩ := h8 sig hin
+  have hall := (argsAt_iff_of_regs hb (by rw [sigParamBytes_length hb]; exact h8s) hargs.1).mp hargs
+  exact h.2 sig hin n g sl cm w u args vals c hg hsg hu (by rw [hargs.1]; exact h8s) hall hmr ht hty
 
 /-- Without trapping externs the contract holds. -/
 theorem xTrapsOk_of_noTrap {env : Clif.Env} {exts : List Clif.ExtFunc} {sigs : List Clif.Signature}
@@ -90,7 +120,7 @@ theorem xTrapsOk_of_noTrap {env : Clif.Env} {exts : List Clif.ExtFunc} {sigs : L
     (h : ∀ n g, env.extern n = some g → ∀ vals cm c, g vals cm ≠ .trapped c) :
     XTrapsOk env exts sigs MR X :=
   ⟨fun _ _ g _ _ _ _ _ _ _ _ hg _ _ _ ht => absurd ht (h _ g hg _ _ _),
-    fun _ _ _ g _ _ _ _ _ _ _ hg _ _ _ _ _ ht _ => absurd ht (h _ g hg _ _ _)⟩
+    fun _ _ _ g _ _ _ _ _ _ _ hg _ _ _ _ ht _ => absurd ht (h _ g hg _ _ _)⟩
 
 /-! ## The contracts of the proof device -/
 
@@ -143,9 +173,9 @@ theorem xCallsOk_trapEnv {exts : List Clif.ExtFunc} {MR : MemRelT} {X : ExtSem}
 
 theorem xCallsIndOk_trapEnv {sigs : List Clif.Signature} {MR : MemRelT} {X : ExtSem}
     (h : XCallsIndOk env sigs MR X) : XCallsIndOk (trapEnv env c).toEnv sigs MR X := by
-  intro sig hsig n g'' sl cm w u args vals rvals cm' hg hs hu h8 hall hmr hret hrl hty
+  intro sig hsig n g'' sl cm w u args vals rvals cm' hg hs hu hargs hmr hret hrl hty
   obtain ⟨g, hg0, hr⟩ := trapEnv_toEnv_returned hg
-  exact h sig hsig n g sl cm w u args vals rvals cm' hg0 hs hu h8 hall hmr (hr _ _ _ _ hret) hrl hty
+  exact h sig hsig n g sl cm w u args vals rvals cm' hg0 hs hu hargs hmr (hr _ _ _ _ hret) hrl hty
 
 theorem xRaiseOk_trapEnv {exts : List Clif.ExtFunc} {sigs : List Clif.Signature} {MR : MemRelT}
     {X : ExtSem} (hT : XTrapsOk env exts sigs MR X) :
@@ -160,11 +190,11 @@ theorem xRaiseOk_trapEnv {exts : List Clif.ExtFunc} {sigs : List Clif.Signature}
 theorem xRaiseIndOk_trapEnv {exts : List Clif.ExtFunc} {sigs : List Clif.Signature}
     {MR : MemRelT} {X : ExtSem} (hT : XTrapsOk env exts sigs MR X) :
     XRaiseIndOk (trapEnv env c) sigs MR X (xrT (TrapCallSem env exts sigs MR X c)) := by
-  intro sig hsig n g' sl cm w u args vals e m hg hs hu h8 hall hmr hun hty
+  intro sig hsig n g' sl cm w u args vals e m hg hs hu hargs hmr hun hty
   obtain ⟨g, hg0, rfl⟩ := trapEnv_extern hg
   obtain ⟨htc, rfl, hm⟩ := trapOut_unwound hun
-  exact ⟨0, w, xrT_of ⟨hT.2 sig hsig n g sl cm w u args vals c hg0 hs hu h8 hall hmr htc hty,
-    .inr ⟨sig, hsig, n, g, sl, cm, u, args, vals, hg0, hs, hu, h8, hall, hmr, htc, hty, rfl, rfl⟩⟩,
+  exact ⟨0, w, xrT_of ⟨hT.2 sig hsig n g sl cm w u args vals c hg0 hs hu hargs hmr htc hty,
+    .inr ⟨sig, hsig, n, g, sl, cm, u, args, vals, hg0, hs, hu, hargs, hmr, htc, hty, rfl, rfl⟩⟩,
     exnRel_trapExn, hm ▸ hmr⟩
 
 end
@@ -249,7 +279,7 @@ theorem backend_correct_final_cleanup_trapcall {p : Clif.Program} {f : Clif.Func
         insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
           indRulesCorrect memRulesCorrect_program hRef (mrStable_holds Γ f) hcallsR hicallsR hMem
           (outArgsOk_holds Γ f) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-          (memRelOk_holds Γ f)
+          (indStack_mono (indStack_of_check hc.lowerOk) houtB) (memRelOk_holds Γ f)
         terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
           branchExcludedUnmatchable hRef (mrStable_holds Γ f)
         ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
@@ -262,7 +292,8 @@ theorem backend_correct_final_cleanup_trapcall {p : Clif.Program} {f : Clif.Func
           hMem (outArgsOk_holds Γ f) hcallsR, tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
         tryExt := hsub.tryExterns
         tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef
-          (mrStable_holds Γ f) hicallsR
+          (mrStable_holds Γ f) hMem (outArgsOk_holds Γ f)
+          (indStack_mono (indStack_of_check hc.lowerOk) houtB) hicallsR
         tryIndSig := tryIndSig_of_subset hsub
         cfg := by
           obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
@@ -270,6 +301,7 @@ theorem backend_correct_final_cleanup_trapcall {p : Clif.Program} {f : Clif.Func
       hUs (driverSem_valueSemU Γ.F fctx X (xrT XT)) hRef hMem (raiseSem_valueSemU _ _ _ _)
       (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
       (tryStack_mono (tryStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB)
       (xRaiseOk_trapEnv (hXT s)) (xRaiseIndOk_trapEnv (hXT s)) hsym
   -- `prune` + `prepare`
   have hPrep := prepareCorrectU_cleanup_value hc Γ.F fctx X (xrT XT)

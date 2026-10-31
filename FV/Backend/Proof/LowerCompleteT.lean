@@ -2,6 +2,7 @@ import FV.Backend.Proof.LowerComplete
 import FV.Backend.Proof.LowerCertT
 import FV.Backend.Proof.LowerShapeOkT
 import FV.Backend.Proof.IselTermFactsCallT
+import FV.Backend.Proof.IselTermFactsCallIndT
 
 /-!
 # Completeness of the typed lowering validator (S11e5 Stage C)
@@ -292,7 +293,7 @@ theorem lowerCheck_partsTF {f : Clif.Function} {vc : VCode} (hd : Dominated f)
       have : bi < bl.length := by rw [hlen]; exact lt_of_getElem? hbi
       exact ⟨bi, _, hbi, List.getElem?_eq_getElem this⟩
     simp only [callsStackOkB, Bool.and_eq_true, List.all_eq_true]
-    refine ⟨fun B hB st hst => ?_, fun B hB => ?_⟩
+    refine ⟨⟨fun B hB st hst => ?_, fun B hB => ?_⟩, fun s hs' => ?_⟩
     · obtain ⟨bi, L, hB', hL'⟩ := hL B hB
       obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hst
       obtain ⟨hsll, -⟩ := hspec bi B L hB' hL'
@@ -336,6 +337,38 @@ theorem lowerCheck_partsTF {f : Clif.Function} {vc : VCode} (hd : Dominated f)
           exact ⟨by rw [← hfin]; omega, hs.stackLayout.2 B hB fn args et e ht he⟩
         · rfl
       · rfl
+    · obtain ⟨B, hB, hk⟩ := mem_indSigs hs'
+      obtain ⟨bi, L, hB', hL'⟩ := hL B hB
+      simp only [Bool.and_eq_true, decide_eq_true_eq]
+      refine ⟨?_, hs.indStackLayout s hs'⟩
+      rcases hk with ⟨st, hst, sig, c, args, hi', hsd⟩ | ⟨c, args, et, ht, hsd⟩
+      · obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hst
+        obtain ⟨hsll, -⟩ := hspec bi B L hB' hL'
+        obtain ⟨sl, hsl⟩ : ∃ sl, L.sl[j]? = some sl :=
+          ⟨_, List.getElem?_eq_getElem (by rw [hsll]; exact lt_of_getElem? hj)⟩
+        obtain ⟨⟨info, hi, hic⟩, tr, hrun⟩ := hstm bi B L j st sl hB' hL' hj hsl
+        rw [hi'] at hic
+        have h1 := callIndOut_runTermT hctx hi hic hsd hrun
+        have h2 := (hlo L (List.mem_of_getElem? hL')).1 sl (List.mem_of_getElem? hsl)
+        rw [← hfin]; omega
+      · obtain ⟨-, -, -, nl0, nl', hterm⟩ := hspec bi B L hB' hL'
+        obtain ⟨-, hy⟩ := lowTerm_spec hterm
+        obtain ⟨T, -, hd, -, -, -, -, out, tr, hc⟩ := hy et (.inr ⟨c, args, ht⟩)
+        have hti : L.start + B.body.length < ctx.insts.size := by
+          have := hcf.term bi B hB'
+          rw [← hstart bi L hL'] at this
+          exact (Array.getElem?_eq_some_iff.mp this).1
+        rw [ht] at hd
+        have hip := termIntPos_ofF hs hb hB
+        rw [ht] at hip
+        have hlt : ctx.insts[L.start + B.body.length]? = some ctx.insts[L.start + B.body.length] :=
+          Array.getElem?_eq_getElem hti
+        have h1 := tryIndOut_runTermT (ctx := tryCtx ctx _ _ T.regs)
+          ⟨hctx.func, fun x r h hx => hctx.valueReg_int h hx⟩
+          (fun x hx => hip x (by simpa [Compile.termIntOperands] using hx)) hd
+          (termCtx_insts_self hlt _) hsd hc
+        have h2 := (hlo L (List.mem_of_getElem? hL')).2
+        rw [← hfin]; omega
   · -- the entry's parameter locations
     obtain ⟨locs, n, hloc⟩ := hlf.entry hs.nonempty
     obtain ⟨bytes, hby⟩ := hlf.paramBytes

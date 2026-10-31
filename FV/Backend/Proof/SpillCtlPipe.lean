@@ -29,10 +29,10 @@ open Backend Backend.Proof Backend.Proof.Driver
 /-! ## The ABI condition -/
 
 /-- **The signature condition** of the end-to-end subset (`E2E.InSubset.abiSigs` and
-`E2E.InSubset.indSigs`). -/
+`E2E.InSubset.indSigs`; since S5 the indirect-call signatures are not limited to 8 parameters). -/
 def AbiSigsOk (f : Clif.Function) : Prop :=
   (sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true) ∧
-    ∀ s ∈ indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true
+    ∀ s ∈ indSigs f, sigAbiOk s = true
 
 theorem sret_le_of_sigAbiOk {s : Clif.Signature} (h : sigAbiOk s = true) :
     (s.params.filter (·.purpose == .sret)).length ≤ 1 := by

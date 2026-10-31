@@ -63,10 +63,10 @@ structure DriverHypTC (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   /-- M4: `lower_branch` on `try_call_indirect`s (`tryIndCalls_of_rules`) -/
   tryInd : TryIndCallsT f ctx sem MR env p (indSigs f)
-  /-- the signature of a `try_call_indirect` is among `f`'s indirect-call signatures, with
-  register arguments (`E2E.InSubset.indSigs`) -/
+  /-- the signature of a `try_call_indirect` is among `f`'s indirect-call signatures
+  (`E2E.InSubset.indSigs`) -/
   tryIndSig : ∀ B ∈ f.blocks, ∀ c args et s, B.term = .tryCallIndirect c args et →
-    f.sigDecls.lookup et.sig = some s → s ∈ indSigs f ∧ s.params.length ≤ 8
+    f.sigDecls.lookup et.sig = some s → s ∈ indSigs f
   cfg : ∃ ss ps, vc.cfg = .ok (ss, ps)
   /-- the signature's parameter locations and byte sizes compute, one per parameter
   (`lowerCheckT`'s `entryOkBT`) -/
@@ -848,7 +848,7 @@ theorem term_step_tryTC (H : DriverHypTC f vc ctx st0 R gn bl A sem MR env p)
       have hregsI : tryRegsOf T.sig L.tst = some (T.regs, T.st1) := by
         rw [← tryRegsOfC_eq (sigRets_classes_int (Bool.and_eq_true _ _ ▸ hint).2)]; exact hregs
       have hsd := exnTableOpnd_sig hexnI
-      obtain ⟨hsin, h8⟩ := H.tryIndSig B hBmem callee args et T.sig hBT hsd
+      have hsin := H.tryIndSig B hBmem callee args et T.sig hBT hsd
       obtain ⟨hnd, hnx⟩ := stepTryInd_spec (env := env) (p := p) (args := args) (et := et)
         (hind callee args (hterm.trans hBT))
       rw [hBT]
@@ -860,7 +860,7 @@ theorem term_step_tryTC (H : DriverHypTC f vc ctx st0 R gn bl A sem MR env p)
         hnd, fun s' hs => ?_,
         (H.tryInd (L.start + B.body.length) callee args et L.data T.sig T.items L.targets
           T.info T.regs L.tst T.st1 out L.tst' tr hdata'
-          (hBT ▸ H.termIntPos hBmem (fun fn args et h => by rw [hBT] at h; cases h)) hexnI hsin h8
+          (hBT ▸ H.termIntPos hBmem (fun fn args et h => by rw [hBT] at h; cases h)) hexnI hsin
           (H.shape.tslot b B L hB hL) hinfo hregsI hvbL hrun).toC⟩
       obtain ⟨declared, bc, rvals, cm', regs', hd, htn, hO, hset, rfl⟩ := hnx s' hs
       rw [hfunc, hsd] at hd

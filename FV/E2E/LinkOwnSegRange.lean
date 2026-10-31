@@ -46,14 +46,20 @@ theorem le_sum_of_mem' : ∀ {l : List Nat} {x : Nat}, x ∈ l → x ≤ l.sum
     · have := le_sum_of_mem' h
       omega
 
-/-- An outgoing area holding every extern's stack arguments. -/
-def outAll (f : Clif.Function) : Nat := (f.externs.map fun e => stackBytes e.2.sig).sum
+/-- An outgoing area holding every extern's and every indirect call's stack arguments. -/
+def outAll (f : Clif.Function) : Nat :=
+  (f.externs.map fun e => stackBytes e.2.sig).sum + ((indSigs f).map stackBytes).sum
 
 theorem sigStack_of {f : Clif.Function} {fn : Clif.FnRef} {e : Clif.ExtFunc}
     (he : f.extern? fn = some e) (hl : stackLayoutOk e.sig = true) :
     SigStackOk e.sig (outAll f) := by
   obtain ⟨q, hq, rfl⟩ := List.mem_map.mp (lookup_mem he)
-  exact ⟨le_sum_of_mem' (List.mem_map.mpr ⟨q, hq, rfl⟩), hl⟩
+  exact ⟨Nat.le_trans (le_sum_of_mem' (List.mem_map.mpr ⟨q, hq, rfl⟩)) (Nat.le_add_right _ _), hl⟩
+
+theorem indStack_all {f : Clif.Function} (hl : ∀ s ∈ indSigs f, stackLayoutOk s = true) :
+    IndStack (indSigs f) (outAll f) := fun s hs =>
+  ⟨Nat.le_trans (le_sum_of_mem' (List.mem_map.mpr ⟨s, hs, rfl⟩)) (Nat.le_add_left _ _),
+    hl s hs⟩
 
 theorem refines_none : Refines fNone semNone := refines_csem fNone default xNone
 
@@ -71,7 +77,7 @@ theorem callsRefine_none (env : Clif.Env) (exts : List Clif.ExtFunc) :
 theorem indCallsRefine_none (env : Clif.Env) (sigs : List Clif.Signature) :
     IndCallsRefine env sigs mrNone semNone :=
   indCallsRefine_csem (syms := fun _ => none) (by
-    intro sig _ n g sl cm w u args vals rvals cm' _ _ _ _ _ hmr
+    intro sig _ n g sl cm w u args vals rvals cm' _ _ _ _ hmr
     exact hmr.elim) (fun _ _ h => by cases h) (fun _ _ _ h => h.elim)
 
 theorem memRelOk_none (f : Clif.Function) :
@@ -118,6 +124,7 @@ theorem segRangeHyp : SegRangeHyp := by
       (callsRefine_none _ _) (indCallsRefine_none _ _) memRefines_none
       (outB := outAll f) (fun _ _ _ h => h.elim)
       (fun B hB st hst fn args e hi he => sigStack_of he (hs.stackLayout.1 B hB st hst fn args e hi he))
+      (indStack_all hs.indStackLayout)
       (memRelOk_none f)
   have hTC : TermCalls semNone mrNone :=
     termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
@@ -127,6 +134,7 @@ theorem segRangeHyp : SegRangeHyp := by
       (fun _ _ _ h => h.elim) (callsRefine_none _ _)
   have hYI : TryIndCalls semNone mrNone Clif.Env.empty p (indSigs f) :=
     tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable refines_none mrStable_none
+      memRefines_none (fun _ _ _ h => h.elim) (indStack_all hs.indStackLayout)
       (indCallsRefine_none _ _)
   obtain ⟨bi, B, L, hB, hL, hk⟩ := hseg
   have hBm : B ∈ f.blocks := List.mem_of_getElem? hB
@@ -199,10 +207,10 @@ theorem segRangeHyp : SegRangeHyp := by
             (fun e he => sigStack_of he (hs.stackLayout.2 B hBm fn args et e hBT he))
             hdata' hex hph hinfo hreg (hvbS _ hge) hc⟩
         · have hdata' : tryCallData f (.tryCallIndirect callee args et) = .ok L.data := hBT ▸ hdat
-          obtain ⟨hsin, h8⟩ := tryIndSig_of_subset hsub B hBm callee args et T.sig hBT
+          have hsin := tryIndSig_of_subset hsub B hBm callee args et T.sig hBT
             (Backend.Proof.Driver.exnTableOpnd_sig hex)
           exact ⟨_, hYI f ctx _ callee args et L.data T.sig T.items L.targets T.info T.regs L.tst
-            T.st1 out L.tst' tr hctx hdata' hex hsin h8 hph hinfo hreg (hvbS _ hge) hc⟩
+            T.st1 out L.tst' tr hctx hdata' hex hsin hph hinfo hreg (hvbS _ hge) hc⟩
       obtain ⟨pre, ci, hms, hpre, hcd⟩ := hok.shape
       have hmono := hok.mono
       obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc hex) hreg

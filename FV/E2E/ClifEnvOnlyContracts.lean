@@ -54,16 +54,16 @@ theorem xCallsIndOk_only_of {env : Clif.Env} {A : String → List Clif.Val → C
       (w : Arm.ArmState) (u : CV) (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
       A n vals cm → env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
       lo64 u = X.sym n 0 →
-      vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+      ArgsAt sig vals args w → MR sl cm w →
       g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
       vals.map (·.ty) = Clif.AbiParam.tys sig.params →
       ∃ outs w', X.call none (u :: args) w = some (outs, w') ∧
         outs.length = (sigRets sig).length ∧ PrefixHold rvals outs ∧ MR sl cm' w') :
     XCallsIndOk (env.only A) sigs MR X := by
-  intro sig hsig n g' sl cm w u args vals rvals cm' hg hs hu h8 hall hmr hret hlen hty
+  intro sig hsig n g' sl cm w u args vals rvals cm' hg hs hu hargs hmr hret hlen hty
   obtain ⟨g, hg0, rfl⟩ := Clif.Env.only_extern_eq hg
   obtain ⟨hA, hret'⟩ := onlyFn_returned hret
-  exact h sig hsig n g sl cm w u args vals rvals cm' hA hg0 (by simpa using hs) hu h8 hall hmr
+  exact h sig hsig n g sl cm w u args vals rvals cm' hA hg0 (by simpa using hs) hu hargs hmr
     hret' hlen hty
 
 /-- A call the restricted environment admits is one the environment admits, at an admitted
@@ -98,8 +98,8 @@ theorem xCallsOk_only {env : Clif.Env} (A : String → List Clif.Val → Clif.Me
 theorem xCallsIndOk_only {env : Clif.Env} (A : String → List Clif.Val → Clif.Mem → Prop)
     {sigs : List Clif.Signature} {MR : MemRelT} {X : ExtSem} (h : XCallsIndOk env sigs MR X) :
     XCallsIndOk (env.only A) sigs MR X :=
-  xCallsIndOk_only_of fun sig hsig n g sl cm w u args vals rvals cm' _ hg hs hu h8 hall hmr hret
-    hlen hty => h sig hsig n g sl cm w u args vals rvals cm' hg hs hu h8 hall hmr hret hlen hty
+  xCallsIndOk_only_of fun sig hsig n g sl cm w u args vals rvals cm' _ hg hs hu hargs hmr hret
+    hlen hty => h sig hsig n g sl cm w u args vals rvals cm' hg hs hu hargs hmr hret hlen hty
 
 /-- An environment's `XNI` holds for every restriction of it. -/
 theorem xNI_only {env : Clif.Env} (A : String → List Clif.Val → Clif.Mem → Prop)

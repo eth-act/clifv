@@ -256,6 +256,9 @@ theorem scopeT_w : LowerScopeT fW where
       rw [hi] at this; cases this
     · have := List.all_eq_true.mp h2 B hB
       rw [ht] at this; cases this
+  indStackLayout := by
+    have h : (Backend.indSigs fW).all (fun s => stackLayoutOk s) = true := by native_decide
+    exact fun s hs => List.all_eq_true.mp h s hs
 
 /-- **Witness** (direct route): with no answer from the untrusted allocator, slice 6's typed
 spill chain makes the lowered allocation `AllocChecked` under the decided premises, and

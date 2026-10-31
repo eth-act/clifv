@@ -176,6 +176,7 @@ theorem iselSimTAbi_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (hFP s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStackT_of_check hlow) houtB)
+      (indStack_mono (indStackT_of_check hlow) houtB)
       (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hshape.scope hstT
     terms := termCallsT_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
@@ -191,7 +192,9 @@ theorem iselSimTAbi_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       tryStack_mono (tryStackT_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCallsT_of_rules htryIndRules htryIndUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s') hctxT
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
+      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
+      (indStack_mono (indStackT_of_check hlow) houtB) (hicalls s') hctxT
     tryIndSig := tryIndSig_of_subsetT hsub
     cfg := hcfg }
 

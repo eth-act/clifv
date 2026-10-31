@@ -130,17 +130,17 @@ theorem xCalls_relOnly {env : Clif.Env} {p : Clif.Program} {cs : Clif.State}
         ((XI.relOnly (RelatedN env p cs exts sigs MR XI.sym)).at n) := by
   have hAA := invoked_sub_invokedN hnrc hs
   refine ⟨fun ext hext g sl cm w d uses args vals rvals cm' hg hd ha hmr hret hlen => ?_,
-    fun sig hsig nm g sl cm w u args vals rvals cm' hg hsg hlo h8 hall hmr hret hlen hty => ?_⟩
+    fun sig hsig nm g sl cm w u args vals rvals cm' hg hsg hlo hargs hmr hret hlen hty => ?_⟩
   · have hq : RelatedN env p cs exts sigs MR XI.sym n d uses w := fun hv =>
       callPost_not_vacuous (sl := sl) hext hg hd ha hmr hret hlen fun r =>
         callPost_only_mono hAA (hv r)
     rw [relOnly_call_of hq]
     exact hX.1 ext hext g sl cm w d uses args vals rvals cm' hg hd ha hmr hret hlen
   · have hq : RelatedN env p cs exts sigs MR XI.sym n none (u :: args) w := fun hv =>
-      callPost_not_vacuous_ind (sl := sl) hsig hg hsg hlo h8 hall hmr hret hlen hty fun r =>
+      callPost_not_vacuous_ind (sl := sl) hsig hg hsg hlo hargs hmr hret hlen hty fun r =>
         callPost_only_mono hAA (hv r)
     rw [relOnly_call_of hq]
-    exact hX.2 sig hsig nm g sl cm w u args vals rvals cm' hg hsg hlo h8 hall hmr hret hlen hty
+    exact hX.2 sig hsig nm g sl cm w u args vals rvals cm' hg hsg hlo hargs hmr hret hlen hty
 
 /-- **The machine's earlier calls are the CLIF run's, cleanup path**: `backend_prefix_cleanupPRI`
 with, at the machine's call `j < N`, the VCode call `(callDest info, uses, w)` related to the

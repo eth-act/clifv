@@ -81,7 +81,7 @@ theorem lowerInstOk_of_rulesTF (hrules : LowerRulesCorrectTI program)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {outB : Nat} (hout : OutArgsOk F outB MR)
     (hnorm : ExternsIn f exts) (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
-    (hsig : IndSigOk f sigs inst) (hst : StoreTyped ctx inst)
+    (hsig : IndSigOk f sigs inst) (hIstk : IndStack sigs outB) (hst : StoreTyped ctx inst)
     (hstk : ∀ fn args e, inst = .call fn args → f.extern? fn = some e → SigStackOk e.sig outB)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (program.rulesOf TId.lower).length ≤ n) {ty : TypeId} {st : LState}
@@ -170,8 +170,9 @@ theorem lowerInstOk_of_rulesTF (hrules : LowerRulesCorrectTI program)
               st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
             exact ⟨ms, rss, h1, h2, h3.toOk⟩
           · exact hmF hfmem
-      · exact hind F isem MR env cp sigs hR hMR hicr r hr hind' f ctx hctx ii info inst hi hc hE hsig
-          cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
+      · exact hind F isem MR env cp sigs sb syms outB hR hMR hMem hout hIstk hicr r hr hind' f ctx
+          hctx ii info inst hi hc hE hsig cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst
+          hmatch heval
     · exact hcalls F isem MR env cp exts sb syms outB hR hMR hMem hout hcr r hr hcall f ctx hctx
         hnorm ii info inst hi hc hE hstk cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst
         hmatch heval
@@ -192,7 +193,7 @@ theorem lowerInstOk_runTermTF (hrules : LowerRulesCorrectTI program)
     {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {outB : Nat} (hout : OutArgsOk F outB MR)
     (hnorm : ExternsIn f exts) (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
-    (hsig : IndSigOk f sigs inst) (hst : StoreTyped ctx inst)
+    (hsig : IndSigOk f sigs inst) (hIstk : IndStack sigs outB) (hst : StoreTyped ctx inst)
     (hstk : ∀ fn args e, inst = .call fn args → f.extern? fn = some e → SigStackOk e.sig outB)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr)) :
@@ -216,7 +217,7 @@ theorem lowerInstOk_runTermTF (hrules : LowerRulesCorrectTI program)
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
     obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rulesTF hrules hT hFT hCvt hFC hnE hcalls hind
-      hmem hmemF hR hMR hcr hicr hMem hFP hctx hout hnorm hMRo hi hc hsig hst hstk rfl (by omega)
+      hmem hmemF hR hMR hcr hicr hMem hFP hctx hout hnorm hMRo hi hc hsig hIstk hst hstk rfl (by omega)
       hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
@@ -234,14 +235,14 @@ theorem instCallsTF_of_rules (hrules : LowerRulesCorrectTI Isle.Aarch64.program)
     (hR : Refines F sem) (hMR : MRStable F MR) (hcr : CallsRefine F env (f.externs.map (·.2)) MR sem)
     (hicr : IndCallsRefine env (indSigs f) MR sem)
     (hMem : MemRefines F sb syms sem) (hFP : MemRefinesFP (fun _ => True) F sb sem) {outB : Nat}
-    (hout : OutArgsOk F outB MR) (hstk : CallsStack f outB)
+    (hout : OutArgsOk F outB MR) (hstk : CallsStack f outB) (hIstk : IndStack (indSigs f) outB)
     (hMRo : MemRelOk F sb syms f MR) (hctx : CtxT f ctx) (hst : StoresTyped ctx) :
     InstCallsT f ctx sem MR env p := by
   intro ii info inst st rss st' tr hmem' hi hc hsig hemp hvb hrun
   obtain ⟨B, hB, stm, hstm, rfl⟩ := hmem'
   obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOk_runTermTF hrules hT hFT hCvt hFC hnE hcalls hind
     hmem hmemF (env := env) (cp := p) hR hMR hcr hicr hMem hFP hctx hout (externsIn_self f) hMRo hi
-    hc hsig (hst ii info _ hi hc)
+    hc hsig hIstk (hst ii info _ hi hc)
     (fun fn args e hc he => hstk B hB stm hstm fn args e hc he) hvb hrun
   cases hov
   rw [hemp, Array.empty_append] at hem
