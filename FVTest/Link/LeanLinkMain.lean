@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockMemoryNI
+import FV.Backend.Lowering.StockMemoryCfgNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.Link.DeadCleanupCompileT3
@@ -461,15 +461,15 @@ def main (args0 : List String) : IO UInt32 := do
   -- provider can require a different region size from the emitted objects.
   -- Other exception, optimizer and tail-call variants retain their routes;
   -- typed `--verified` (S11e6) keeps its own route below.
-  let hasCfg := SC0.funcs.any (fun fi => (((Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func))
-  let stockEnabled := !typedV && !opt && !tailOn && SC0.funcs.any (fun fi => (((Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
+  let hasCfg := SC0.funcs.any (fun fi => (((Backend.Stock.MemoryCfg.eligible fi.func || Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func))
+  let stockEnabled := !typedV && !opt && !tailOn && SC0.funcs.any (fun fi => (((Backend.Stock.MemoryCfg.eligible fi.func || Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
     (hasCfg || !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)) &&
     -- #739: every route's `attempt` first checks `inScopePar` (`inScopeInPar` without the
     -- cleanup) of its placed spec, whose per-function conjunct `fnScopeB` (`fnScopeInB`) does not
     -- read the placement; when it fails, all routes fail and `compileWithRoutes` is `compile SC`,
     -- so skip the routes' placements (each one the full pipeline)
     (parMap (if deadCleanup then fnScopeB else fnScopeInB) SC0.input0.prog.funcs).all id
-  let routes := [Backend.Stock.Memory.lowerValidated,Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
+  let routes := [Backend.Stock.MemoryCfg.lowerValidated,Backend.Stock.Memory.lowerValidated,Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
   -- typed `--verified`: `compileExeT` (S11e6, #419)
   if typedV then

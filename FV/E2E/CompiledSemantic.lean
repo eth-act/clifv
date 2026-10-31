@@ -4,6 +4,7 @@ import FV.E2E.StockMixedWorldX
 import FV.E2E.StockLogicalWorldX
 import FV.E2E.StockScalarWorldX
 import FV.E2E.StockMemoryWorldX
+import FV.E2E.StockMemoryCfgWorldX
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
@@ -39,6 +40,11 @@ inductive CompiledSemantic (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemantic f k vc vcp rf af fa fb
 
+  | memoryCfg {cleanup : Bool} {result : Stock.Result} :
+      Stock.MemoryCfg.TwoBlockClass f → result.code = vc → Stock.MemoryCfg.effectsOnly vc = true →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemantic f k vc vcp rf af fa fb
+
 namespace CompiledSemantic
 variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -70,6 +76,7 @@ theorem check (hc : CompiledSemantic f k vc vcp rf af fa fb) : Backend.checkAllo
 
   | scalar _ _ h => exact h.check
   | memory _ _ h => exact h.check
+  | memoryCfg _ _ _ h => exact h.check
 
 theorem alloc (hc : CompiledSemantic f k vc vcp rf af fa fb) : lowerRFunc vcp rf = .ok af := by
   cases hc with
@@ -81,6 +88,7 @@ theorem alloc (hc : CompiledSemantic f k vc vcp rf af fa fb) : lowerRFunc vcp rf
 
   | scalar _ _ h => exact h.alloc
   | memory _ _ h => exact h.alloc
+  | memoryCfg _ _ _ h => exact h.alloc
 
 theorem emit (hc : CompiledSemantic f k vc vcp rf af fa fb) : emitFunc k af = .ok fa := by
   cases hc with
@@ -92,6 +100,7 @@ theorem emit (hc : CompiledSemantic f k vc vcp rf af fa fb) : emitFunc k af = .o
 
   | scalar _ _ h => exact h.emit
   | memory _ _ h => exact h.emit
+  | memoryCfg _ _ _ h => exact h.emit
 
 theorem layout (hc : CompiledSemantic f k vc vcp rf af fa fb) : fa.layout = .ok fb := by
   cases hc with
@@ -103,6 +112,7 @@ theorem layout (hc : CompiledSemantic f k vc vcp rf af fa fb) : fa.layout = .ok 
 
   | scalar _ _ h => exact h.layout
   | memory _ _ h => exact h.layout
+  | memoryCfg _ _ _ h => exact h.layout
 
 end CompiledSemantic
 
@@ -163,5 +173,9 @@ theorem backend_correct_worldX_semantic {p : Clif.Program} {f : Clif.Function} {
   | memory domain equal h =>
     subst vc
     exact backend_correct_worldX_stock_memory domain h hcov hsym hslot hcs hrel hargs fuel
+
+  | memoryCfg family equal effects h =>
+    subst vc
+    exact backend_correct_worldX_stock_memory_cfg family effects h hcov hsym hslot hcs hrel hargs fuel
 
 end E2E

@@ -12,6 +12,7 @@ import FV.Backend.StockMixedCheck
 import FV.Backend.StockLogicalCheck
 import FV.Backend.StockScalarCheck
 import FV.Backend.StockMemoryCheck
+import FV.Backend.StockMemoryCfgCheck
 import FV.Backend.ABIReadFlags
 import FV.Backend.ABIReadScalar
 import FV.Backend.ABIReadDiv
@@ -33,6 +34,6 @@ def check (f : Clif.Function) (vc : VCode) : Bool :=
       (Stock.ForwardCfg.check f vc && ABIReadCfg.check f.sig vc) ||
       (Stock.ConditionalCfg.check f vc && ABIReadCfg.check f.sig vc) ||
       (Stock.ConditionalCfg.rankedCheck f vc && ABIReadCfg.check f.sig vc) ||
-      (Stock.ParameterCfg.check f vc && ABIReadCfg.check f.sig vc) || Stock.Memory.check f vc)
+      (Stock.ParameterCfg.check f vc && ABIReadCfg.check f.sig vc) || Stock.Memory.check f vc || Stock.MemoryCfg.check f vc)
 
 end Backend.SemanticNI
