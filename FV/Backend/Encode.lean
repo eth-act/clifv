@@ -665,6 +665,11 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     -- C6.2 B.cond: imm19, ±1 MiB (Cranelift `enc_cbr`)
     pure (.BR (.Cond_branch_imm { imm19 := ← env.pcRel "b.cond" 19 4 t, o0 := 0,
                                   cond := c.bits }))
+  | .bcondRel c off =>
+    -- C6.2 B.cond to the fixed byte offset `off` (no label: the stack-probe loop's back edge)
+    if off % 4 != 0 then throw s!"b.cond offset {off} is not a multiple of 4"
+    if ¬ (-(2 ^ 18 : Int) ≤ off / 4 ∧ off / 4 < 2 ^ 18) then throw s!"b.cond offset {off} out of range"
+    pure (.BR (.Cond_branch_imm { imm19 := BitVec.ofInt 19 (off / 4), o0 := 0, cond := c.bits }))
   | .cbz nz w rt t =>
     -- C6.2 CBZ/CBNZ (Compare and branch (immediate), imm19, ±1 MiB; Cranelift `enc_cmpbr`)
     pure (.BR (.Compare_branch { sf := b1 w, op := b1 nz, imm19 := ← env.pcRel "cbz" 19 4 t,

@@ -112,6 +112,9 @@ inductive Insn where
   | addp (size : VectorSize) (rd rn rm : Reg)
   | b (target : Lbl)
   | bcond (c : Cond) (target : Lbl)
+  /-- `b.cond .+off`: a conditional branch to the fixed byte offset `off` from the instruction, no
+  label (the back edge of the stack-probe loop, `probeLoopBody`, #581). -/
+  | bcondRel (c : Cond) (off : Int)
   /-- `cbz` (`nz = false`) / `cbnz` (`nz = true`). -/
   | cbz (nz : Bool) (is64 : Bool) (rt : Reg) (target : Lbl)
   /-- `tbz` (`nz = false`) / `tbnz` (`nz = true`) `xt, #bit, target`. -/
@@ -557,28 +560,48 @@ def probeSteps : Nat → List Line
 its callees when the function calls, `FunctionCalls` not `None`). -/
 def probeTotal (size : Nat) (calls : Bool) : Nat := size + if calls then 16 else 0
 
-/-- The number of probes (4-byte zero stores at `sp₁ - 4096·i`, `i = 1, …`, where `sp₁` is the
-`sp` after the frame setup) of Cranelift's inline stack probes for a probed stack of `total`
-bytes: `n = total / 4096` (`gen_inline_probestack`, 4 KiB guard), unrolled for `n ≤ 3`
-(`PROBE_MAX_UNROLL`). Frames with `n > 3` (`total ≥ 16 KiB`), where Cranelift emits the
-`StackProbeLoop`, get no probes yet (#581). -/
-def probeCount (total : Nat) : Nat := if total / 4096 ≤ 3 then total / 4096 else 0
+/-- The number of probes (4-byte zero stores at `sp₁ - 4096·i`, `i = 1, …, n`, where `sp₁` is
+the `sp` after the frame setup) of Cranelift's inline stack probes for a probed stack of `total`
+bytes (`gen_inline_probestack`, 4 KiB guard): unrolled for `total / 4096 ≤ 3`
+(`PROBE_MAX_UNROLL`), `n = total / 4096` (rounded down: `gen_probestack_unroll`); above,
+Cranelift's `StackProbeLoop` (`total ≥ 16 KiB`) probes until the offset reaches `total`,
+`n = ⌈total / 4096⌉` (#581). Cranelift's frames are `u32`; a frame of `2 ^ 32` bytes or more
+(which Cranelift does not compile) gets no probes. -/
+def probeCount (total : Nat) : Nat :=
+  if total / 4096 ≤ 3 then total / 4096
+  else if total < 2 ^ 32 then (total + 4095) / 4096 else 0
 
-theorem probeCount_le_three (total : Nat) : probeCount total ≤ 3 := by
-  unfold probeCount; split <;> omega
+theorem probeCount_le (total : Nat) : probeCount total ≤ 2 ^ 20 := by
+  unfold probeCount; split
+  · omega
+  · split <;> omega
 
 theorem probeSteps_length : ∀ k, (probeSteps k).length = 2 * k
   | 0 => rfl
   | k + 1 => by simp only [probeSteps, List.length_append, probeSteps_length k]; simp; omega
 
+/-- The body of Cranelift's stack-probe loop (`StackProbeLoop`, aarch64 `emit.rs`): with the
+offset `x16` (counting down from 0) and the probed size `x17`:
+`sub x16, x16, #4096; str wzr, [sp, x16]; cmn x16, x17; b.gt <the sub>`. -/
+def probeLoopBody : List Line :=
+  [.ins (.aluImm12 .sub true (.x 16) (.x 16) ⟨1, true⟩), .ins (.store .store32 .xzr (.regReg .sp (.x 16))),
+   .ins (.aluRRR .addS true .xzr (.x 16) (.x 17)), .ins (.bcondRel .gt (-12))]
+
+/-- Cranelift's `gen_probestack_loop`: `x16 = 0`, `x17 = total` (`Inst::load_constant`), then
+the loop (`probeLoopBody`). -/
+def probeLoopLines (total : Nat) : List Line :=
+  loadConst64 (.x 16) 0 ++ loadConst64 (.x 17) total ++ probeLoopBody
+
 /-- Cranelift's inline stack probes (`gen_prologue`, `enable_probestack` with the inline strategy
 and a 4 KiB guard, as cg_clif sets them; aarch64 `gen_inline_probestack`) for a function whose
 probed stack takes `total` bytes (`probeTotal`): `n = probeCount total` probes, none when
-`n = 0`; otherwise `gen_probestack_unroll`: `n` times `sub sp, sp, #4096` + `stur wzr, [sp]`
-(`probeSteps`), then `add sp, sp, #4096·n`. -/
+`n = 0`; for `n ≤ 3` `gen_probestack_unroll`: `n` times `sub sp, sp, #4096` + `stur wzr, [sp]`
+(`probeSteps`), then `add sp, sp, #4096·n`; otherwise the loop (`probeLoopLines`). -/
 def probeLines (total : Nat) : List Line :=
   let n := probeCount total
-  if n == 0 then [] else probeSteps n ++ [.ins (.aluImm12 .add true .sp .sp ⟨n, true⟩)]
+  if n == 0 then []
+  else if n ≤ 3 then probeSteps n ++ [.ins (.aluImm12 .add true .sp .sp ⟨n, true⟩)]
+  else probeLoopLines total
 
 theorem probeSteps_mem : ∀ {k : Nat} {ln : Line}, ln ∈ probeSteps k →
     ln = .ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) ∨
@@ -591,21 +614,38 @@ theorem probeSteps_mem : ∀ {k : Nat} {ln : Line}, ln ∈ probeSteps k →
     · exact .inr rfl
     · exact probeSteps_mem h
 
-/-- The lines of the stack probes: `sub sp, sp, #4096`, `stur wzr, [sp]` and the final `add sp`. -/
+/-- The lines of the stack probes: unrolled, `sub sp, sp, #4096`, `stur wzr, [sp]` and the final
+`add sp`; the loop form, the constants `x16 = 0`, `x17 = total` and the loop's four instructions
+(`probeLoopBody`). -/
 theorem probeLines_mem {total : Nat} {ln : Line} (h : ln ∈ probeLines total) :
     ln = .ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) ∨
       ln = .ins (.store .store32 .xzr (.unscaled .sp 0)) ∨
-      ∃ n, ln = .ins (.aluImm12 .add true .sp .sp ⟨n, true⟩) := by
+      (∃ n, ln = .ins (.aluImm12 .add true .sp .sp ⟨n, true⟩)) ∨
+      ln ∈ loadConst64 (.x 16) 0 ∨ ln ∈ loadConst64 (.x 17) total ∨
+      ln = .ins (.aluImm12 .sub true (.x 16) (.x 16) ⟨1, true⟩) ∨
+      ln = .ins (.store .store32 .xzr (.regReg .sp (.x 16))) ∨
+      ln = .ins (.aluRRR .addS true .xzr (.x 16) (.x 17)) ∨
+      ln = .ins (.bcondRel .gt (-12)) := by
   unfold probeLines at h
   simp only at h
   split at h
   · simp at h
+  split at h
   · rw [List.mem_append, List.mem_singleton] at h
     rcases h with h | rfl
     · rcases probeSteps_mem h with rfl | rfl
       · exact .inl rfl
       · exact .inr (.inl rfl)
-    · exact .inr (.inr ⟨_, rfl⟩)
+    · exact .inr (.inr (.inl ⟨_, rfl⟩))
+  · simp only [probeLoopLines, probeLoopBody, List.mem_append, List.mem_cons, List.not_mem_nil,
+      or_false] at h
+    rcases h with (h | h) | rfl | rfl | rfl | rfl
+    · exact .inr (.inr (.inr (.inl h)))
+    · exact .inr (.inr (.inr (.inr (.inl h))))
+    · exact .inr (.inr (.inr (.inr (.inr (.inl rfl)))))
+    · exact .inr (.inr (.inr (.inr (.inr (.inr (.inl rfl))))))
+    · exact .inr (.inr (.inr (.inr (.inr (.inr (.inr (.inl rfl)))))))
+    · exact .inr (.inr (.inr (.inr (.inr (.inr (.inr (.inr rfl)))))))
 
 /-- The prologue of a frame of `size` bytes below fp/lr (clobber area included); `calls`: the
 function calls (Cranelift's `FunctionCalls` is not `None`), so the probed stack also covers the
@@ -1012,6 +1052,7 @@ def Insn.asm (k : Nat) : Insn → String
   | .addp s rd rn rm => s!"addp v{rd.vnum}.{s.arr}, v{rn.vnum}.{s.arr}, v{rm.vnum}.{s.arr}"
   | .b t => s!"b {t.name k}"
   | .bcond c t => s!"b.{c.asm} {t.name k}"
+  | .bcondRel c off => s!"b.{c.asm} .{if off < 0 then "" else "+"}{off}"
   | .cbz nz w rt t => s!"{if nz then "cbnz" else "cbz"} {rt.gpr w}, {t.name k}"
   | .tbz nz rt bit t => s!"{if nz then "tbnz" else "tbz"} {rt.gpr}, #{bit}, {t.name k}"
   | .bl sym => s!"bl {sym}"

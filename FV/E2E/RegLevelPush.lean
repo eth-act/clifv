@@ -1355,9 +1355,10 @@ theorem probeSteps_ok : ∀ (k : Nat) (env : Env) (s : Arm.ArmState), (spOf s).t
         simp only [h0, hk, decide_true, decide_false, Bool.false_or, Bool.true_or, Bool.or_true,
           Bool.or_false, Bool.false_eq_true, ite_true, ite_false]
 
-/-- `probeLines total` runs: `sp` unchanged, the probed bytes zeroed (`probeHitB`), nothing else
-but the pc changed. -/
-theorem probeLines_ok (env : Env) (total : Nat) (s : Arm.ArmState) (hal : (spOf s).toNat % 16 = 0) :
+/-- The unrolled `probeLines total` (`probeCount total ≤ 3`) runs: `sp` unchanged, the probed
+bytes zeroed (`probeHitB`), nothing else but the pc changed. -/
+theorem probeLines_ok (env : Env) (total : Nat) (h3 : probeCount total ≤ 3) (s : Arm.ArmState)
+    (hal : (spOf s).toNat % 16 = 0) :
     ∃ s', StepsOk env (probeLines total) s s' ∧ spOf s' = spOf s ∧
       (∀ f, f ≠ .PC → f ≠ .GPR 31#5 → Arm.r f s' = Arm.r f s) ∧
       (∀ a, s'.mem a = if probeHitB (probeCount total) (spOf s) a then 0#8 else s.mem a) := by
@@ -1366,8 +1367,9 @@ theorem probeLines_ok (env : Env) (total : Nat) (s : Arm.ArmState) (hal : (spOf 
   by_cases h0 : probeCount total = 0
   · simp only [h0, beq_self_eq_true, ite_true]
     exact ⟨s, rfl, rfl, fun _ _ _ => rfl, fun a => by simp [probeHitB]⟩
-  simp only [show (probeCount total == 0) = false by simpa using h0, Bool.false_eq_true, ite_false]
-  have hn : probeCount total ≤ 3 := by unfold probeCount; split <;> omega
+  simp only [show (probeCount total == 0) = false by simpa using h0, Bool.false_eq_true, ite_false,
+    h3, ite_true]
+  have hn : probeCount total ≤ 3 := h3
   obtain ⟨s1, h1, hsp1, ho1, hm1⟩ := probeSteps_ok (probeCount total) env s hal
   obtain ⟨a2, ha2, he2⟩ := exec_add_sp_imm
     { env with pc := env.pc + 4 * (probeSteps (probeCount total)).length } ⟨probeCount total, true⟩
@@ -1383,6 +1385,266 @@ theorem probeLines_ok (env : Env) (total : Nat) (s : Arm.ArmState) (hal : (spOf 
     exact BitVec.sub_add_cancel _ _
   · rw [he2, Arm.r_of_w_different g2, Arm.r_of_w_different g1, ho1 f g1 g2]
   · rw [he2, Arm.ArmState.mem_w_eq_mem, Arm.ArmState.mem_w_eq_mem, hm1 a]
+
+/-! ### The stack-probe loop (#581: probed stacks of 16 KiB and more) -/
+
+theorem exec_sub_x16_4096 (env : Env) (s : Arm.ArmState) :
+    ∃ a, (Insn.aluImm12 .sub true (.x 16) (.x 16) ⟨1, true⟩).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w (.GPR 16#5) (xreg 16 s - 4096#64) (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+  refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
+  have hi := imm12_bv (i := ⟨1, true⟩) (by decide)
+  simp only [Imm12.value, ite_true] at hi
+  simp [csimp_rules, Arm.fst_AddWithCarry_eq_sub_neg, hi, xreg]
+
+theorem exec_str_wzr_sp_x16 (env : Env) (s : Arm.ArmState) (halign : Arm.CheckSPAlignment s) :
+    ∃ a, (Insn.store .store32 .xzr (.regReg .sp (.x 16))).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w .PC (Arm.r .PC s + 4#64) (Arm.write_mem_bytes 4 (spOf s + xreg 16 s) 0#32 s) := by
+  have halign' := spAligned halign
+  refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
+  simp (config := {decide := true}) [csimp_rules, StoreOp.fields, Arm.LDST.exec_reg_reg_offset,
+    Arm.LDST.exec_reg_imm_common, Arm.LDST.reg_imm_operation, Arm.LDST.Reg_offset.value,
+    Arm.LDST.reg_imm_constrain_unpredictable, Arm.ldst_read, Arm.read_gpr_zr, Arm.read_gpr,
+    Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb, Arm.CheckSPAlignment, halign', spOf, xreg,
+    extend_uxtx0]
+
+theorem exec_cmn_x16_x17 (env : Env) (s : Arm.ArmState) :
+    ∃ a, (Insn.aluRRR .addS true .xzr (.x 16) (.x 17)).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.write_pstate (Arm.AddWithCarry (xreg 16 s) (xreg 17 s) 0#1).2
+        (Arm.w .PC (Arm.r .PC s + 4#64) s) := by
+  refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
+  simp [csimp_rules, xreg]
+
+theorem exec_bgt_back (env : Env) (s : Arm.ArmState) :
+    ∃ a, (Insn.bcondRel .gt (-12)).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w .PC (if Arm.ConditionHolds Cond.gt.bits s then Arm.r .PC s - 12#64
+        else Arm.r .PC s + 4#64) s := by
+  refine ⟨_, by simp [Insn.toArmInst, Insn.armFields, Functor.map, Except.map, pure, Except.pure]; rfl, ?_⟩
+  simp [Arm.ArmInst.norm, Arm.exec_inst, Arm.BR.exec_cond_branch_imm, Arm.write_pc, Arm.read_pc,
+    Arm.BR.Cond_branch_imm_inst.branch_taken_pc, Backend.signExtend_append_zero, Cond.bits]
+  split <;> simp_all
+  bv_omega
+
+/-- `x16` after `m` iterations of the probe loop: `-4096·m`. -/
+abbrev loopOff (m : Nat) : BitVec 64 := 0#64 - BitVec.ofNat 64 (4096 * m)
+
+/-- The flags of the loop's `cmn x16, x17` in iteration `m ≥ 1` (`x16 = -4096·m`,
+`x17 = total`): the sum `total - 4096·m` does not overflow. -/
+theorem cmn_flags {m total : Nat} (hm : 0 < m) (hm' : 4096 * m < 2 ^ 33) (ht : total < 2 ^ 32) :
+    (Arm.AddWithCarry (loopOff m) (BitVec.ofNat 64 total) 0#1).2 =
+      if 4096 * m ≤ total then Arm.make_pstate 0#1 (if 4096 * m = total then 1#1 else 0#1) 1#1 0#1
+      else Arm.make_pstate 1#1 0#1 0#1 0#1 := by
+  have hr := Arm.fst_AddWithCarry_eq_add (loopOff m) (BitVec.ofNat 64 total)
+  simp only [Arm.AddWithCarry, Arm.make_pstate] at hr ⊢
+  rw [hr]
+  split
+  · rename_i hle
+    simp only [Arm.PState.mk.injEq]
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · apply BitVec.eq_of_toNat_eq
+      simp only [Arm.BitVec.lsb, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
+      bv_omega
+    · split <;> split <;> bv_omega
+    · split <;> bv_omega
+    · rw [if_pos]
+      rw [← BitVec.toInt_inj, BitVec.toInt_signExtend_of_le (by decide), BitVec.toInt_add,
+        BitVec.toInt_add, BitVec.toInt_signExtend_of_le (by decide),
+        BitVec.toInt_signExtend_of_le (by decide), BitVec.toInt_add]
+      simp only [BitVec.toInt_eq_toNat_cond, Int.bmod_def, BitVec.toNat_sub, BitVec.toNat_ofNat]
+      simp only [Nat.reduceSub, Nat.reducePow, Nat.reduceAdd] at *
+      repeat' split
+      all_goals omega
+  · rename_i hlt
+    simp only [Arm.PState.mk.injEq]
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · apply BitVec.eq_of_toNat_eq
+      simp only [Arm.BitVec.lsb, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
+      bv_omega
+    · split <;> bv_omega
+    · split <;> bv_omega
+    · rw [if_pos]
+      rw [← BitVec.toInt_inj, BitVec.toInt_signExtend_of_le (by decide), BitVec.toInt_add,
+        BitVec.toInt_add, BitVec.toInt_signExtend_of_le (by decide),
+        BitVec.toInt_signExtend_of_le (by decide), BitVec.toInt_add]
+      simp only [BitVec.toInt_eq_toNat_cond, Int.bmod_def, BitVec.toNat_sub, BitVec.toNat_ofNat]
+      simp only [Nat.reduceSub, Nat.reducePow, Nat.reduceAdd] at *
+      repeat' split
+      all_goals omega
+
+/-- The branch of the loop's last instruction: `b.gt` holds after the `cmn` of iteration `m ≥ 1`
+iff `4096·m < total`. -/
+theorem cmn_gt {m total : Nat} (hm : 0 < m) (hm' : 4096 * m < 2 ^ 33) (ht : total < 2 ^ 32)
+    (w : Arm.ArmState) :
+    Arm.ConditionHolds Cond.gt.bits (Arm.write_pstate (Arm.AddWithCarry (loopOff m) (BitVec.ofNat 64 total) 0#1).2 w) =
+      decide (4096 * m < total) := by
+  rw [conditionHolds_write_pstate, cmn_flags hm hm' ht]
+  split <;> split <;> simp [condOn, Cond.bits, Arm.make_pstate] <;> omega
+
+/-- The flags after the last iteration (`4096·m ≥ total > 4096·(m - 1)`) are `loopFlag total`. -/
+theorem cmn_last {m total : Nat} (hm : 0 < m) (hm' : 4096 * m < 2 ^ 33) (ht : total < 2 ^ 32)
+    (hge : total ≤ 4096 * m) (hlt : 4096 * (m - 1) < total) (w : Arm.ArmState) (fl : Arm.PFlag) :
+    Arm.r (.FLAG fl) (Arm.write_pstate (Arm.AddWithCarry (loopOff m) (BitVec.ofNat 64 total) 0#1).2 w) =
+      loopFlag total fl := by
+  rw [cmn_flags hm hm' ht]
+  have hmod : (total % 4096 = 0) ↔ 4096 * m = total := by omega
+  cases fl <;> by_cases h : total % 4096 = 0 <;>
+    simp [Arm.write_pstate, Arm.make_pstate, loopFlag, Arm.r_of_w_same, Arm.r_of_w_different, h] <;>
+    split <;> simp_all <;> omega
+
+/-- The first three lines of the loop body (`sub`, `str`, `cmn`); then the `b.gt`. -/
+theorem probeLoopBody_eq :
+    probeLoopBody = probeLoopBody.take 3 ++ [.ins (.bcondRel .gt (-12))] := rfl
+
+/-- **`r` iterations of the stack-probe loop** (`probeLoopBody`, placed at `env.pc`) from `s`:
+each runs the `sub`, `str` and `cmn` straight-line, then the `b.gt`, which jumps back to the
+`sub` while iterations remain and falls through after the last. -/
+def LoopRuns (env : Env) : Nat → Arm.ArmState → Arm.ArmState → Prop
+  | 0, s, s' => s' = s
+  | r + 1, s, s' => ∃ s3 ab, StepsOk env (probeLoopBody.take 3) s s3 ∧
+      (Insn.bcondRel .gt (-12)).toArmInst { env with pc := env.pc + 12 } = .ok ab ∧
+      Arm.r .ERR (Arm.exec_inst ab s3) = Arm.r .ERR s3 ∧ (Arm.exec_inst ab s3).program = s3.program ∧
+      Arm.r .PC (Arm.exec_inst ab s3) = (if r = 0 then Arm.r .PC s + 16#64 else Arm.r .PC s) ∧
+      LoopRuns env r (Arm.exec_inst ab s3) s'
+
+theorem LoopRuns.err : ∀ {env : Env} {r : Nat} {s s' : Arm.ArmState},
+    LoopRuns env r s s' → Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program
+  | _, 0, _, _, h => by simp only [LoopRuns] at h; subst h; exact ⟨rfl, rfl⟩
+  | _, _ + 1, _, _, h => by
+    obtain ⟨s3, ab, h3, -, he, hp, -, h⟩ := h
+    obtain ⟨e1, p1⟩ := LoopRuns.err h
+    obtain ⟨e3, p3⟩ := h3.err
+    exact ⟨e1.trans (he.trans e3), p1.trans (hp.trans p3)⟩
+
+/-- **The stack-probe loop runs** (`probeLoopBody`) from iteration `m` with `r ≥ 1` iterations
+left (`m + r = ⌈total / 4096⌉`, `x16 = -4096·m`, `x17 = total`, an aligned `sp`): `x16` ends at
+`-4096·(m + r)`, the flags at `loopFlag total`, the 4 bytes at `sp - 4096·i` zeroed for
+`m < i ≤ m + r`; the pc ends after the loop; nothing else changes. -/
+theorem probeLoop_ok (env : Env) {total : Nat} (hlo : 16384 ≤ total) (hhi : total < 2 ^ 32) :
+    ∀ (r m : Nat) (s : Arm.ArmState), m + r = (total + 4095) / 4096 → 0 < r →
+      (spOf s).toNat % 16 = 0 → xreg 16 s = loopOff m → xreg 17 s = BitVec.ofNat 64 total →
+      ∃ s', LoopRuns env r s s' ∧ spOf s' = spOf s ∧ xreg 16 s' = loopOff (m + r) ∧
+        xreg 17 s' = BitVec.ofNat 64 total ∧ (∀ fl, Arm.r (.FLAG fl) s' = loopFlag total fl) ∧
+        Arm.r .PC s' = Arm.r .PC s + 16#64 ∧
+        (∀ f, f ≠ .PC → f ≠ .GPR 16#5 → (∀ fl, f ≠ .FLAG fl) → Arm.r f s' = Arm.r f s) ∧
+        (∀ a, s'.mem a = if probeHitB r (spOf s - BitVec.ofNat 64 (4096 * m)) a then 0#8 else s.mem a)
+  | 0, _, _, _, h0, _, _, _ => absurd h0 (Nat.lt_irrefl 0)
+  | r + 1, m, s, hmr, _, hal, h16, h17 => by
+    have hn : (total + 4095) / 4096 ≤ 2 ^ 20 := by omega
+    -- `sub x16, x16, #4096`
+    obtain ⟨a1, ha1, he1⟩ := exec_sub_x16_4096 env s
+    generalize hs1 : Arm.exec_inst a1 s = s1 at he1
+    have hsp1 : spOf s1 = spOf s := by rw [he1]; simp [spOf, Arm.r_of_w_different]
+    have hx1 : xreg 16 s1 = loopOff (m + 1) := by
+      rw [he1]; simp only [xreg, Arm.r_of_w_same]
+      simp only [xreg] at h16; rw [h16]
+      rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega, BitVec.ofNat_add]; bv_omega
+    -- `str wzr, [sp, x16]`
+    obtain ⟨a2, ha2, he2⟩ := exec_str_wzr_sp_x16 { env with pc := env.pc + 4 } s1
+      (checkSP_of (by rw [hsp1]; exact hal))
+    generalize hs2 : Arm.exec_inst a2 s1 = s2 at he2
+    -- `cmn x16, x17`
+    obtain ⟨a3, ha3, he3⟩ := exec_cmn_x16_x17 { env with pc := env.pc + 4 + 4 } s2
+    generalize hs3 : Arm.exec_inst a3 s2 = s3 at he3
+    have hx2 : xreg 16 s2 = loopOff (m + 1) := by
+      rw [he2]; simp only [xreg] at hx1 ⊢; simp [Arm.r_of_w_different, Arm.r_of_write_mem_bytes, hx1]
+    have hx17 : xreg 17 s2 = BitVec.ofNat 64 total := by
+      rw [he2, he1]; simp only [xreg] at h17 ⊢
+      simp [Arm.r_of_w_different, Arm.r_of_write_mem_bytes, h17]
+    rw [hx2, hx17] at he3
+    have hm1 : 4096 * (m + 1) < 2 ^ 33 := by omega
+    -- `b.gt` back to the `sub`
+    obtain ⟨a4, ha4, he4⟩ := exec_bgt_back { env with pc := env.pc + 12 } s3
+    have hgt : Arm.ConditionHolds Cond.gt.bits s3 = decide (0 < r) := by
+      rw [he3, cmn_gt (by omega) hm1 hhi]
+      simp only [decide_eq_decide]; omega
+    have hpc3 : Arm.r .PC s3 = Arm.r .PC s + 12#64 := by
+      rw [he3, he2, he1]
+      simp [Arm.write_pstate, Arm.r_of_w_same, Arm.r_of_w_different, Arm.r_of_write_mem_bytes]
+      bv_omega
+    have hsp3 : spOf s3 = spOf s := by
+      rw [he3, he2]; simp only [spOf] at hsp1 ⊢
+      simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_write_mem_bytes, hsp1]
+    have hmem3 : ∀ a, s3.mem a = if (a - (spOf s - BitVec.ofNat 64 (4096 * (m + 1)))).toNat < 4
+        then 0#8 else s.mem a := by
+      intro a
+      rw [he3]
+      simp only [Arm.write_pstate, Arm.ArmState.mem_w_eq_mem]
+      rw [he2, Arm.ArmState.mem_w_eq_mem, Arm.Memory.write_mem_bytes_eq_mem_write_bytes]
+      simp only
+      rw [show (0#32 : BitVec 32) = 0#(4 * 8) from rfl, write_bytes_zero_at, hsp1, hx1, he1]
+      simp only [Arm.ArmState.mem_w_eq_mem]
+      congr 3
+      rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega]
+      bv_omega
+    have hf3 : ∀ f, f ≠ .PC → f ≠ .GPR 16#5 → (∀ fl, f ≠ .FLAG fl) → Arm.r f s3 = Arm.r f s := by
+      intro f g1 g2 g3
+      rw [he3, he2, he1]
+      simp only [Arm.write_pstate]
+      rw [Arm.r_of_w_different (g3 _), Arm.r_of_w_different (g3 _), Arm.r_of_w_different (g3 _),
+        Arm.r_of_w_different (g3 _), Arm.r_of_w_different g1, Arm.r_of_w_different g1,
+        Arm.r_of_write_mem_bytes, Arm.r_of_w_different g2, Arm.r_of_w_different g1]
+    have hsteps : StepsOk env (probeLoopBody.take 3) s s3 := by
+      show StepsOk env [.ins _ none, .ins _ none, .ins _ none] s s3
+      refine steps_cons ha1 (by rw [hs1, he1]; simp [Arm.r_of_w_same, Arm.r_of_w_different])
+        (by rw [hs1, he1]; simp [Arm.r_of_w_different]) (by rw [hs1, he1]; simp [Arm.w_program]) ?_
+      rw [hs1]
+      refine steps_cons ha2 (by rw [hs2, he2]; simp [Arm.r_of_w_same, Arm.r_of_w_different, Arm.r_of_write_mem_bytes])
+        (by rw [hs2, he2]; simp [Arm.r_of_w_different, Arm.r_of_write_mem_bytes])
+        (by rw [hs2, he2]; simp [Arm.w_program, Arm.write_mem_bytes_program]) ?_
+      rw [hs2]
+      refine steps_one ha3 (by rw [hs3, he3]; simp [Arm.write_pstate, Arm.r_of_w_same, Arm.r_of_w_different])
+        (by rw [hs3, he3]; simp [Arm.write_pstate, Arm.r_of_w_different])
+        (by rw [hs3, he3]; simp [Arm.write_pstate, Arm.w_program])
+    generalize hs4 : Arm.exec_inst a4 s3 = s4 at he4
+    have he4' : Arm.r .ERR s4 = Arm.r .ERR s3 ∧ s4.program = s3.program := by
+      rw [he4]; simp [Arm.r_of_w_different, Arm.w_program]
+    have hf4 : ∀ f, f ≠ .PC → Arm.r f s4 = Arm.r f s3 := fun f g => by rw [he4, Arm.r_of_w_different g]
+    have hm4 : s4.mem = s3.mem := by rw [he4, Arm.ArmState.mem_w_eq_mem]
+    rcases Nat.eq_zero_or_pos r with rfl | hr
+    · -- the last iteration: the `b.gt` falls through
+      have hpc4 : Arm.r .PC s4 = Arm.r .PC s + 16#64 := by
+        rw [he4, hgt]; simp [Arm.r_of_w_same, hpc3]; bv_omega
+      refine ⟨s4, ⟨s3, a4, hsteps, ha4, he4'.1, he4'.2, by rw [hpc4]; rfl, rfl⟩, ?_, ?_, ?_, ?_, hpc4,
+        fun f g1 g2 g3 => by rw [hf4 f g1, hf3 f g1 g2 g3], fun a => ?_⟩
+      · rw [show spOf s4 = spOf s3 from hf4 _ (by simp), hsp3]
+      · show Arm.r _ s4 = _; rw [hf4 _ (by simp), he3]
+        simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same, hx2]
+      · show Arm.r _ s4 = _; rw [hf4 _ (by simp), he3]
+        simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same]
+        simpa [xreg] using hx17
+      · intro fl
+        rw [hf4 _ (by simp), he3]
+        exact cmn_last (by omega) hm1 hhi (by omega) (by omega) _ fl
+      · rw [hm4, hmem3 a]
+        simp only [probeHitB, List.range_one, List.any_cons, List.any_nil, Bool.or_false]
+        rw [show spOf s - BitVec.ofNat 64 (4096 * m) - BitVec.ofNat 64 (4096 * (0 + 1)) =
+          spOf s - BitVec.ofNat 64 (4096 * (m + 1)) by
+            rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega, BitVec.ofNat_add]; bv_omega]
+        by_cases h : (a - (spOf s - BitVec.ofNat 64 (4096 * (m + 1)))).toNat < 4 <;> simp [h]
+    · -- more iterations: the `b.gt` jumps back to the `sub`
+      have hpc4 : Arm.r .PC s4 = Arm.r .PC s := by
+        rw [he4, hgt]; simp [Arm.r_of_w_same, hpc3, hr]
+      have hal4 : (spOf s4).toNat % 16 = 0 := by
+        rw [show spOf s4 = spOf s3 from hf4 _ (by simp), hsp3]; exact hal
+      have h16' : xreg 16 s4 = loopOff (m + 1) := by
+        show Arm.r _ s4 = _; rw [hf4 _ (by simp), he3]
+        simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same, hx2]
+      have h17' : xreg 17 s4 = BitVec.ofNat 64 total := by
+        show Arm.r _ s4 = _; rw [hf4 _ (by simp), he3]
+        simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same]
+        simpa [xreg] using hx17
+      obtain ⟨s', hL, hsp', hx16', hx17', hfl', hpc', hf', hm'⟩ :=
+        probeLoop_ok env hlo hhi r (m + 1) s4 (by omega) hr hal4 h16' h17'
+      refine ⟨s', ⟨s3, a4, hsteps, ha4, he4'.1, he4'.2, by rw [hs4, hpc4]; simp [Nat.pos_iff_ne_zero.mp hr], by
+        rw [hs4]; exact hL⟩, ?_, by rw [hx16']; congr 2; omega, hx17', hfl', ?_, ?_, fun a => ?_⟩
+      · rw [hsp', show spOf s4 = spOf s3 from hf4 _ (by simp), hsp3]
+      · rw [hpc', hpc4]
+      · intro f g1 g2 g3; rw [hf' f g1 g2 g3, hf4 f g1, hf3 f g1 g2 g3]
+      · rw [hm' a, show spOf s4 = spOf s3 from hf4 _ (by simp), hsp3, hm4, hmem3 a, probeHitB_succ]
+        rw [show spOf s - BitVec.ofNat 64 (4096 * m) - 4096#64 = spOf s - BitVec.ofNat 64 (4096 * (m + 1)) by
+          rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega, BitVec.ofNat_add]; bv_omega]
+        cases hk : probeHitB r (spOf s - BitVec.ofNat 64 (4096 * (m + 1))) a <;>
+          by_cases h0 : (a - (spOf s - BitVec.ofNat 64 (4096 * (m + 1)))).toNat < 4 <;>
+          simp [h0, hk]
 
 /-- The probes zero nothing in `[base - c, base + 16)` for `c ≤ 4000` (the clobber area and the
 fp/lr slot above it): every probe is at least 4096 bytes below `base`. -/
@@ -1403,6 +1665,135 @@ theorem probeHitB_top {n c k : Nat} {base : BitVec 64} (hc : c ≤ 4000) (hk : k
 theorem probeHitB_sub16 (n : Nat) (sp a : BitVec 64) :
     probeHitB n (sp - 16#64) a = probeHitN n sp a := rfl
 
+theorem StepsOk.pc : ∀ {env : Env} {ls : List Line} {s s' : Arm.ArmState}, StepsOk env ls s s' →
+    Arm.r .PC s' = Arm.r .PC s + BitVec.ofNat 64 (4 * ls.length)
+  | _, [], _, _, h => by simp only [StepsOk] at h; subst h; simp
+  | _, .ins i t :: ls, s, s', h => by
+    obtain ⟨ai, -, hpc, -, -, h⟩ := h
+    rw [StepsOk.pc h, hpc, BitVec.add_assoc]
+    congr 1
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, List.length_cons]
+    omega
+  | _, .label _ :: _, _, _, h => h.elim
+  | _, .word _ _ :: _, _, _, h => h.elim
+
+/-! ### The stack probes as a phase of the prologue -/
+
+/-- The probe lines that run straight-line: the unrolled probes, or the loop's constants
+`x16 = 0`, `x17 = total`. -/
+def probeHead (total : Nat) : List Line :=
+  if probeLoop total then loadConst64 (.x 16) 0 ++ loadConst64 (.x 17) total else probeLines total
+
+/-- The stack-probe loop's body when the probes are the loop (`probeLoopBody`), else nothing. -/
+def probeLoopL (total : Nat) : List Line := if probeLoop total then probeLoopBody else []
+
+/-- The iterations of the stack-probe loop (`probeCount`; none without the loop). -/
+def loopIters (total : Nat) : Nat := if probeLoop total then probeCount total else 0
+
+theorem probeLines_split (total : Nat) : probeLines total = probeHead total ++ probeLoopL total := by
+  unfold probeLines probeHead probeLoopL probeLoop
+  by_cases h : 3 < probeCount total
+  · have h0 : (probeCount total == 0) = false := by simp; omega
+    simp [h, h0, show ¬ probeCount total ≤ 3 by omega, probeLoopLines]
+  · simp [h]
+
+/-- The probe loop is the loop form: a probed stack in `[16 KiB, 4 GiB)`, `⌈total / 4096⌉` probes. -/
+theorem probeLoop_facts {total : Nat} (hl : probeLoop total = true) :
+    16384 ≤ total ∧ total < 2 ^ 32 ∧ probeCount total = (total + 4095) / 4096 := by
+  have hc : 3 < probeCount total := by simpa [probeLoop] using hl
+  unfold probeCount at hc ⊢
+  split at hc
+  · omega
+  · rename_i h1
+    split at hc
+    · rename_i h2
+      rw [if_neg h1, if_pos h2]
+      exact ⟨by omega, h2, rfl⟩
+    · omega
+
+/-- **The stack probes' run** from `s`: the straight-line part (`probeHead`), then the loop's
+iterations (`LoopRuns`, none without the loop). -/
+def ProbeRun (env : Env) (total : Nat) (s s' : Arm.ArmState) : Prop :=
+  ∃ s1, StepsOk env (probeHead total) s s1 ∧
+    LoopRuns { env with pc := env.pc + 4 * (probeHead total).length } (loopIters total) s1 s'
+
+theorem ProbeRun.err {env : Env} {total : Nat} {s s' : Arm.ArmState} (h : ProbeRun env total s s') :
+    Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program := by
+  obtain ⟨s1, h1, h2⟩ := h
+  obtain ⟨e1, p1⟩ := h1.err
+  obtain ⟨e2, p2⟩ := h2.err
+  exact ⟨e2.trans e1, p2.trans p1⟩
+
+/-- **The stack probes run** (`probeLines`) from an aligned `sp`: `sp` unchanged, the probed bytes
+zeroed (`probeHitB`), the flags those of the loop (`probeFlagT`), the pc after the probe lines;
+besides, only x16 and x17 change (the loop's registers). -/
+theorem probeRun_ok (env : Env) (total : Nat) (s : Arm.ArmState) (hal : (spOf s).toNat % 16 = 0) :
+    ∃ s', ProbeRun env total s s' ∧ spOf s' = spOf s ∧
+      Arm.r .PC s' = Arm.r .PC s + BitVec.ofNat 64 (4 * (probeLines total).length) ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 → (∀ fl, f ≠ .FLAG fl) →
+        Arm.r f s' = Arm.r f s) ∧
+      (∀ fl, Arm.r (.FLAG fl) s' = probeFlagT total s fl) ∧
+      (∀ a, s'.mem a = if probeHitB (probeCount total) (spOf s) a then 0#8 else s.mem a) := by
+  by_cases hl : probeLoop total = true
+  · obtain ⟨hlo, hhi, hcnt⟩ := probeLoop_facts hl
+    have hH : probeHead total = loadConst64 (.x 16) 0 ++ loadConst64 (.x 17) total := by
+      simp [probeHead, hl]
+    have hI : loopIters total = probeCount total := by simp [loopIters, hl]
+    have hLL : probeLoopL total = probeLoopBody := by simp [probeLoopL, hl]
+    -- `x16 = 0`, `x17 = total`
+    have h1 := steps_loadConst64 env (n := 16) (by omega) 0 s
+    generalize hs1 : pcx s 16 (Arm.r .PC s + BitVec.ofNat 64 (4 * (loadConst64 (.x 16) 0).length))
+      (BitVec.ofNat 64 0) = s1 at h1
+    have h2 := steps_loadConst64 { env with pc := env.pc + 4 * (loadConst64 (.x 16) 0).length }
+      (n := 17) (by omega) total s1
+    generalize hs2 : pcx s1 17 (Arm.r .PC s1 + BitVec.ofNat 64 (4 * (loadConst64 (.x 17) total).length))
+      (BitVec.ofNat 64 total) = s2 at h2
+    have hf2 : ∀ f, f ≠ .PC → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 → Arm.r f s2 = Arm.r f s := by
+      intro f g1 g2 g3
+      rw [← hs2, ← hs1]
+      simp only [pcx]
+      rw [Arm.r_of_w_different g1, Arm.r_of_w_different g3, Arm.r_of_w_different g1,
+        Arm.r_of_w_different g2]
+    have hm2 : s2.mem = s.mem := by rw [← hs2, ← hs1]; simp [pcx, Arm.ArmState.mem_w_eq_mem]
+    have hsp2 : spOf s2 = spOf s := hf2 _ (by simp) (by simp) (by simp)
+    have h16 : xreg 16 s2 = loopOff 0 := by
+      show Arm.r _ s2 = _
+      rw [← hs2, ← hs1]
+      simp [pcx, Arm.r_of_w_different, Arm.r_of_w_same]
+    have h17 : xreg 17 s2 = BitVec.ofNat 64 total := by
+      show Arm.r _ s2 = _
+      rw [← hs2]; simp [pcx, Arm.r_of_w_same]
+    have hpc2 : Arm.r .PC s2 = Arm.r .PC s +
+        BitVec.ofNat 64 (4 * ((loadConst64 (.x 16) 0).length + (loadConst64 (.x 17) total).length)) := by
+      rw [← hs2, (pcx_facts _ _ _ _).1, ← hs1, (pcx_facts _ _ _ _).1, BitVec.add_assoc]
+      congr 1
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+      omega
+    obtain ⟨s', hL, hsp', -, -, hfl', hpc', hf', hm'⟩ :=
+      probeLoop_ok { env with pc := env.pc + 4 * (probeHead total).length } hlo hhi (probeCount total) 0 s2
+        (by omega) (by omega) (by rw [hsp2]; exact hal) h16 h17
+    refine ⟨s', ⟨s2, by rw [hH]; exact StepsOk.append h1 h2, by rw [hI]; exact hL⟩, by rw [hsp', hsp2], ?_,
+      fun f g1 g2 g3 g4 g5 => ?_, fun fl => ?_, fun a => ?_⟩
+    · rw [hpc', hpc2, probeLines_split, hH, hLL, BitVec.add_assoc]
+      congr 1
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_add, BitVec.toNat_ofNat, List.length_append, probeLoopBody,
+        List.length_cons, List.length_nil]
+      omega
+    · rw [hf' f g1 g3 g5, hf2 f g1 g3 g4]
+    · rw [hfl']; simp [probeFlagT, hl]
+    · rw [hm' a, hsp2, hm2]; simp
+  · have hl' : probeLoop total = false := by simpa using hl
+    have h3 : probeCount total ≤ 3 := by simpa [probeLoop] using hl'
+    have hH : probeHead total = probeLines total := by simp [probeHead, hl']
+    have hI : loopIters total = 0 := by simp [loopIters, hl']
+    obtain ⟨s', hP, hsp', hf', hm'⟩ := probeLines_ok env total h3 s hal
+    refine ⟨s', ⟨s', by rw [hH]; exact hP, by rw [hI]; rfl⟩, hsp', hP.pc, fun f g1 g2 _ _ _ => hf' f g1 g2,
+      fun fl => ?_, hm'⟩
+    rw [hf' _ (by simp) (by simp)]; simp [probeFlagT, hl']
+
 /-! ## The prologue and the epilogue -/
 
 theorem prologueLines_eq {calls : Bool} (saves : List Reg) (size : Nat) :
@@ -1420,22 +1811,72 @@ theorem epilogueLines_eq (saves : List Reg) (size : Nat) :
 theorem frame_sp_eq (X C D : BitVec 64) :
     X - (BitVec.ofNat 64 16 + C) - D = X - 16#64 - (C + D) := by bv_omega
 
+/-- The frame setup: `stp x29, x30, [sp, #-16]!; mov x29, sp`. -/
+def fplrLines : List Line := [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)]
+
+/-- The prologue's lines after the stack probes: the pushes and the `sp` adjustment. -/
+def prologueTail (saves : List Reg) (size : Nat) : List Line :=
+  pushLines true (savesInt saves) ++ (pushLines false (savesFloat saves) ++
+    spAdjLines true (size - clobberBytes saves))
+
+theorem prologueLines_split {calls : Bool} (saves : List Reg) (size : Nat) :
+    prologueLines saves size calls = fplrLines ++ (probeHead (probeTotal size calls) ++
+      (probeLoopL (probeTotal size calls) ++ prologueTail saves size)) := by
+  rw [prologueLines_eq, probeLines_split, List.append_assoc]; rfl
+
+/-- **The prologue's run** from `s` to `s'` (its `prologueSteps` instructions): the frame setup,
+the stack probes (`ProbeRun`: the probe loop runs its body `probeCount` times, #581), the
+pushes and the `sp` adjustment. Without the probe loop it is the straight-line run of
+`prologueLines` (`ProRun.stepsOk`). -/
+def ProRun (env : Env) (saves : List Reg) (size : Nat) (calls : Bool) (s s' : Arm.ArmState) : Prop :=
+  ∃ s2 sP, StepsOk env fplrLines s s2 ∧ ProbeRun { env with pc := env.pc + 4 + 4 } (probeTotal size calls) s2 sP ∧
+    StepsOk { env with pc := env.pc + 4 + 4 + 4 * (probeLines (probeTotal size calls)).length }
+      (prologueTail saves size) sP s'
+
+theorem ProRun.err {env : Env} {saves : List Reg} {size : Nat} {calls : Bool} {s s' : Arm.ArmState}
+    (h : ProRun env saves size calls s s') : Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program := by
+  obtain ⟨s2, sP, h1, h2, h3⟩ := h
+  obtain ⟨e1, p1⟩ := h1.err
+  obtain ⟨e2, p2⟩ := h2.err
+  obtain ⟨e3, p3⟩ := h3.err
+  exact ⟨e3.trans (e2.trans e1), p3.trans (p2.trans p1)⟩
+
+/-- Without the probe loop the prologue's run is straight-line. -/
+theorem ProRun.stepsOk {env : Env} {saves : List Reg} {size : Nat} {calls : Bool} {s s' : Arm.ArmState}
+    (hl : probeLoop (probeTotal size calls) = false) (h : ProRun env saves size calls s s') :
+    StepsOk env (prologueLines saves size calls) s s' := by
+  obtain ⟨s2, sP, h1, ⟨s1, hH, hL⟩, h3⟩ := h
+  have hI : loopIters (probeTotal size calls) = 0 := by simp [loopIters, hl]
+  rw [hI] at hL
+  simp only [LoopRuns] at hL
+  subst hL
+  have hH' : probeHead (probeTotal size calls) = probeLines (probeTotal size calls) := by
+    simp [probeHead, hl]
+  rw [hH'] at hH
+  rw [prologueLines_eq]
+  exact StepsOk.append h1 (StepsOk.append hH h3)
+
 /-- **The prologue runs** (Cranelift's frame setup, stack probes and clobber saves): fp/lr
 pushed at `sp - 16`, `x29 = sp - 16`, the probes (`probeLines`) zero 4 bytes at
 `sp - 16 - 4096·(i + 1)` for `i < probeCount` (`probeHitN`), the saved registers pushed below
-fp/lr, `sp` lowered by `16 + size`; only the pc, `x29`, `sp` and `x16` change, memory only in
+fp/lr, `sp` lowered by `16 + size`; only the pc, `x29`, `sp`, `x16`, `x17` and the flags change
+(the flags as the stack-probe loop leaves them, `probeFlagT`), memory only in
 `[sp - 16 - clobberBytes, sp)`, where the fp/lr slot holds the entry x30:x29 and each saved
 register's slot (`clobberOff`) its low 64 bits, and at the probed bytes, which are zero.
-(#581: the former statement, memory only in `[sp - 16 - clobberBytes, sp)`, became false with
-Cranelift's probes: a probe of a frame of at least 4 KiB writes 4096 bytes and more below fp/lr,
-for a calling function possibly 16 bytes below the final `sp`; `calls` is the new argument of
-`prologueLines`.) -/
+(#581: the former statement, a straight-line run (`StepsOk`) of the prologue's lines changing
+only the pc, `x29`, `sp` and `x16`, memory only in `[sp - 16 - clobberBytes, sp)`, became false
+with Cranelift's probes: a probe of a frame of at least 4 KiB writes 4096 bytes and more below
+fp/lr, and for a probed stack of 16 KiB or more Cranelift's probe loop (`probeLoopBody`) jumps
+back, sets `x17` and the flags; the run is `ProRun`, straight-line without the loop
+(`ProRun.stepsOk`); `calls` is the new argument of `prologueLines`.) -/
 theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (hs : size < 2 ^ 64)
     (hsv : SavesOk saves) (hcb : clobberBytes saves ≤ size) (s : Arm.ArmState)
     (hal : (spOf s).toNat % 16 = 0) :
-    ∃ s', StepsOk env (prologueLines saves size calls) s s' ∧
+    ∃ s', ProRun env saves size calls s s' ∧
       spOf s' = spOf s - 16#64 - BitVec.ofNat 64 size ∧ xreg 29 s' = spOf s - 16#64 ∧
-      (∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → Arm.r f s' = Arm.r f s) ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
+        (∀ fl, f ≠ .FLAG fl) → Arm.r f s' = Arm.r f s) ∧
+      (∀ fl, Arm.r (.FLAG fl) s' = probeFlagT (probeTotal size calls) s fl) ∧
       (∀ a, (∀ k < 16 + clobberBytes saves,
         a ≠ spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) + BitVec.ofNat 64 k) →
         s'.mem a = if probeHitN (probeCount (probeTotal size calls)) (spOf s) a then 0#8 else s.mem a) ∧
@@ -1450,7 +1891,7 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (
   have hpIl : pushBytes (savesInt saves).length ≤ 1000 := by omega
   have hpFl : pushBytes (savesFloat saves).length ≤ 1000 := by omega
   generalize hn : probeCount (probeTotal size calls) = n
-  have hn63 : 4096 * n < 2 ^ 63 := by have := probeCount_le_three (probeTotal size calls); omega
+  have hn63 : 4096 * n < 2 ^ 63 := by have := probeCount_le (probeTotal size calls); omega
   -- the bases
   generalize hBF : spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) = BF
   have hBFa : BF.toNat % 16 = 0 := by rw [← hBF]; exact aligned_sub hal (by omega) (by omega)
@@ -1485,7 +1926,7 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (
     rw [← hs2, he2, ← hs1, he1]; simp [Arm.ArmState.mem_w_eq_mem]
   -- the stack probes
   have hal2 : (spOf s2).toNat % 16 = 0 := by rw [hsp2]; exact aligned_sub hal (by decide) (by decide)
-  obtain ⟨sP, hP, hspP, hoP, hmP⟩ := probeLines_ok { env with pc := env.pc + 4 + 4 }
+  obtain ⟨sP, hP, hspP, -, hoP, hflP, hmP⟩ := probeRun_ok { env with pc := env.pc + 4 + 4 }
     (probeTotal size calls) s2 hal2
   rw [hn, hsp2] at hmP
   have hspP' : spOf sP = spOf s - 16#64 := by rw [hspP, hsp2]
@@ -1519,17 +1960,18 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (
     intro k hk a ha
     rw [hm5, hm4 a (fun k' hk' e => add_ofNat_ne (by omega) (by omega) (by omega) (ha.symm.trans e))]
   -- the fields of `sP` against `s`
-  have hoP2 : ∀ f, f ≠ .PC → f ≠ .GPR 31#5 → Arm.r f sP = Arm.r f s2 := hoP
-  refine ⟨s5, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [prologueLines_eq, List.cons_append, List.cons_append, List.nil_append]
+  have hoP2 : ∀ f, f ≠ .PC → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 → (∀ fl, f ≠ .FLAG fl) →
+      Arm.r f sP = Arm.r f s2 := hoP
+  refine ⟨s5, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · refine ⟨s2, sP, ?_, hP, StepsOk.append h3 (StepsOk.append h4 h5)⟩
+    show StepsOk env [.ins _ none, .ins _ none] s s2
     refine steps_cons ha1 (by rw [he1]; simp [Arm.r_of_w_same])
       (by rw [he1]; simp [Arm.r_of_w_different, Arm.r_of_write_mem_bytes])
       (by rw [he1]; simp [Arm.w_program, Arm.write_mem_bytes_program]) ?_
     rw [hs1]
-    refine steps_cons ha2 (by rw [he2]; simp [Arm.r_of_w_same, Arm.r_of_w_different])
-      (by rw [he2]; simp [Arm.r_of_w_different]) (by rw [he2]; simp [Arm.w_program]) ?_
-    rw [hs2]
-    exact StepsOk.append hP (StepsOk.append h3 (StepsOk.append h4 h5))
+    rw [← hs2]
+    exact steps_one ha2 (by rw [he2]; simp [Arm.r_of_w_same, Arm.r_of_w_different])
+      (by rw [he2]; simp [Arm.r_of_w_different]) (by rw [he2]; simp [Arm.w_program])
   · rw [hsp5, hsp4, ← hBF]
     obtain ⟨d, rfl⟩ : ∃ d, size = clobberBytes saves + d := ⟨size - clobberBytes saves, by omega⟩
     rw [Nat.add_sub_cancel_left, BitVec.ofNat_add, BitVec.ofNat_add]
@@ -1537,10 +1979,16 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (
   · rw [show xreg 29 s5 = xreg 29 s2 by
       simp only [xreg]
       rw [ho5 _ (by simp) (by decide) (by decide), ho4 _ (by simp) (by decide), ho3 _ (by simp) (by decide),
-        hoP2 _ (by simp) (by decide)]]
+        hoP2 _ (by simp) (by decide) (by decide) (by decide) (by simp)]]
     exact hx29
-  · intro f g1 g2 g3 g4
-    rw [ho5 f g1 g3 g4, ho4 f g1 g3, ho3 f g1 g3, hoP2 f g1 g3, ho2 f g1 g2, ho1 f g1 g3]
+  · intro f g1 g2 g3 g4 g5 g6
+    rw [ho5 f g1 g3 g4, ho4 f g1 g3, ho3 f g1 g3, hoP2 f g1 g3 g4 g5 g6, ho2 f g1 g2, ho1 f g1 g3]
+  · intro fl
+    rw [ho5 _ (by simp) (by simp) (by simp), ho4 _ (by simp) (by simp), ho3 _ (by simp) (by simp), hflP fl]
+    simp only [probeFlagT]
+    split
+    · rfl
+    · rw [ho2 _ (by simp) (by simp), ho1 _ (by simp) (by simp)]
   · intro a ha
     rw [hm5P a (fun k hk e => ha k (by omega) (by rw [← hBF] at e ⊢; exact e)), hmP a, probeHitB_sub16]
     by_cases hh : probeHitN n (spOf s) a = true
@@ -1565,14 +2013,19 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (
         rw [add_ofNat_add, add_ofNat_add]; congr 2; unfold clobberBytes; omega).symm.trans e)), hmP,
       haddr, hnot 0 k (by decide) (by omega), ← haddr, if_neg (by decide), hm2, ← hT16]
   · intro r hr
-    have hreg : ∀ n, n < 29 → Arm.r (.GPR (rnum n)) sP = Arm.r (.GPR (rnum n)) s := fun n hn => by
+    have hreg : ∀ n, 19 ≤ n → n < 29 → Arm.r (.GPR (rnum n)) sP = Arm.r (.GPR (rnum n)) s := fun n h19 hn => by
       have h31 : Arm.StateField.GPR (rnum n) ≠ .GPR 31#5 := fun e => rnum_ne31 hn (Arm.StateField.GPR.inj e)
-      have h29 : Arm.StateField.GPR (rnum n) ≠ .GPR 29#5 := fun e => by
+      have hne : ∀ m, m < 32 → m ≠ n → Arm.StateField.GPR (rnum n) ≠ .GPR (BitVec.ofNat 5 m) := fun m hm hmn e => by
         have := congrArg BitVec.toNat (Arm.StateField.GPR.inj e)
         rw [rnum_toNat (by omega)] at this; simp at this; omega
-      rw [hoP2 _ (by simp) h31, ho2 _ (by simp) h29, ho1 _ (by simp) h31]
+      rw [hoP2 _ (by simp) h31 (hne 16 (by omega) (by omega)) (hne 17 (by omega) (by omega)) (by simp),
+        ho2 _ (by simp) (hne 29 (by omega) (by omega)), ho1 _ (by simp) h31]
     rcases saves_mem hsv hr with ⟨n, rfl, hi, ho⟩ | ⟨n, rfl, hi, ho⟩
     · have hn : n < 29 := (hsv.int _ (List.mem_of_getElem? hi)).2
+      have h19 : 19 ≤ n := by
+        rcases calleeSaved_cases (hsv.1 _ hr) with ⟨m, e, hm, -⟩ | ⟨m, e, -⟩
+        · cases e; exact hm
+        · cases e
       have hil : (savesInt saves).idxOf (.x n) < (savesInt saves).length := (List.getElem?_eq_some_iff.1 hi).1
       have hv := hv3 _ _ hi
       rw [ho, ← add_ofNat_add]
@@ -1587,15 +2040,15 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (
           (by rw [add_ofNat_add, add_ofNat_add]))
       rw [e1, hv]
       simp only [slotVal]
-      exact hreg n hn
+      exact hreg n h19 hn
     · have hv := hv4 _ _ hi
       rw [ho]
       rw [show Arm.read_mem_bytes 8 (BF + BitVec.ofNat 64 (8 * (savesFloat saves).idxOf (.v n))) s5 =
           Arm.read_mem_bytes 8 (BF + BitVec.ofNat 64 (8 * (savesFloat saves).idxOf (.v n))) s4 from
         read_of_mem_eq hm5 _ _, hv]
       simp only [slotVal]
-      rw [ho3 _ (by simp) (by simp), hoP2 _ (by simp) (by simp), ho2 _ (by simp) (by simp),
-        ho1 _ (by simp) (by simp)]
+      rw [ho3 _ (by simp) (by simp), hoP2 _ (by simp) (by simp) (by simp) (by simp) (by simp),
+        ho2 _ (by simp) (by simp), ho1 _ (by simp) (by simp)]
 
 /-- **The epilogue runs up to the `ret`** (Cranelift's clobber restore and frame teardown):
 `sp` raised by `size - clobberBytes`, the saved registers popped (`PopVal`: each gets its slot,

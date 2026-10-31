@@ -46,35 +46,53 @@ theorem iterN_stepsN {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : A
   apply BitVec.eq_of_toNat_eq
   simp [BitVec.toNat_add]
 
+/-- `iterN_proRun` with `RL.GoodXN` (#581): the prologue's lines are unhooked, so no state of its
+run is a call state. -/
+theorem iterN_proRunN {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : Bool}
+    {T : List Line} {j : Nat} {s s' : Arm.ArmState}
+    (hdrop : R.L.drop j = prologueLines saves size calls ++ T)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (h : ProRun (R.envOf j) saves size calls s s') :
+    iterN R.step (prologueSteps saves size calls) s = s' ∧
+      Arm.r .PC s' = R.pcOf (j + (prologueLines saves size calls).length) ∧
+      (∀ i, 0 < i → i ≤ prologueSteps saves size calls → R.Good (iterN R.step i s)) ∧
+      (R.Good s → ∀ i < prologueSteps saves size calls, R.GoodXN (iterN R.step i s)) := by
+  obtain ⟨h1, h2, h3, h4, h5⟩ := iterN_proRun hR hdrop hprog hpc herr h
+  refine ⟨h1, h2, h3, fun h0 i hi => ⟨h4 h0 i hi, ?_⟩⟩
+  obtain ⟨k, hk, e⟩ := h5 i hi
+  obtain ⟨x, ex, hx, -⟩ := prologueLines_ins _ _ _ (List.getElem_mem hk)
+  refine RL.noCallAt_of_line hR (j := j + k) ?_ e hx
+  have := congrArg (·[k]?) hdrop
+  simp only [List.getElem?_drop] at this
+  rw [this, List.getElem?_append_left hk, List.getElem?_eq_getElem hk, ex]
+
 /-- **After the prologue**: the machine is at the entry configuration of the allocated code
 (store = the machine's locations, world = any body-entry world `w₀`), `AInv` holds, and every
-field but the pc, x16, x29 and `sp` is as at entry. -/
+field but the pc, x16, x17, x29, `sp` and the flags is as at entry. (#581: x17 and the flags
+are new exceptions: Cranelift's stack-probe loop sets them.) -/
 theorem q_initN {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
     ∃ n, (∀ i < n, R.GoodXN (iterN R.step i R.s0)) ∧
       Q R (iterN R.step n R.s0) (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
-      ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
-        Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
+      ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
+        (∀ fl, f ≠ .FLAG fl) → Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
   obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, hdrop0⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
-  obtain ⟨s', hsteps, hsp', hfp', ho', hm', -, -⟩ :=
+  obtain ⟨s', hsteps, hsp', hfp', ho', hfl', hm', -, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
-  obtain ⟨hiter, hpc', -, hgx⟩ := iterN_stepsN hR hdrop
-    (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
-    hent.program hpc1 hent.err hsteps
+  obtain ⟨hiter, hpc', -, hgx⟩ := iterN_proRunN hR hdrop hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
-  refine ⟨(prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
-    hgx (prologueLines_tail _ _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
-      (linesReads_noLoads (prologueLines_noLoads _ _)), ?_⟩
+  refine ⟨prologueSteps R.af.saves R.af.frameSize R.af.isCaller,
+    hgx (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits)), ?_⟩
   have hsP : R.sP = s' := hiter
   rw [hiter]
   have hspB : spOf s' = R.spB := by
@@ -133,8 +151,8 @@ theorem q_initN {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
     rw [e2] at h2
     rw [hfs] at this h2
     omega
-  have hfield : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
-      Arm.r f s' = Arm.r f R.s0 := ho'
+  have hfield : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
+      (∀ fl, f ≠ .FLAG fl) → Arm.r f s' = Arm.r f R.s0 := ho'
   -- the kept addresses are not the frame top
   have hgk : ∀ a, R.G a → s'.mem a = R.s0.mem a := by
     intro a ha
@@ -157,7 +175,12 @@ theorem q_initN {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
     · rw [← List.drop_drop, hdrop, List.drop_left]
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
         hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode', hgk, fun _ => hfp'⟩
-      · by_cases h29 : f = .GPR 29#5
+      · by_cases hfl : ∃ fl, f = .FLAG fl
+        · obtain ⟨fl, rfl⟩ := hfl
+          rw [hfl' fl, hbe.other _ hf (by simp) (by simp)]
+          simp [probeR, probeFlag, hframe]
+        have hfl : ∀ fl, f ≠ .FLAG fl := fun fl e => hfl ⟨fl, e⟩
+        by_cases h29 : f = .GPR 29#5
         · subst h29
           have := hbe.fp
           simp only [hframe, ite_true, xreg] at this hfp'
@@ -168,8 +191,9 @@ theorem q_initN {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
           simp only [spv] at this
           rw [this]; exact hspB
         have h16 : f ≠ .GPR 16#5 := by rintro rfl; exact hf (by simp [Masked])
+        have h17 : f ≠ .GPR 17#5 := by rintro rfl; exact hf (by simp [Masked])
         have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
-        rw [hfield f hpc h29 h31 h16, hbe.other f hf h29 h31]
+        rw [hfield f hpc h29 h31 h16 h17 hfl, hbe.other f hf h29 h31, probeR_of_ne hfl]
       · rw [hprog', hbe.program]
       · rw [checkSP_iff, hspB]
         simp only [RL.spB, hdrop0]
@@ -195,10 +219,10 @@ theorem q_initN {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
         fun m h1 h2 e => rnum_ne (a := n) (b := m) (by omega) h2 (by omega) (Arm.StateField.GPR.inj e)
       simp only [regVal]
       rw [hfield _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
-        (hne 16 (by omega) (by omega))]
+        (hne 16 (by omega) (by omega)) (hne 17 (by omega) (by omega)) (by simp)]
     | v n =>
       simp only [regVal]
-      rw [hfield _ (by simp) (by simp) (by simp) (by simp)]
+      rw [hfield _ (by simp) (by simp) (by simp) (by simp) (by simp) (by simp)]
     | _ => simp [Reg.isArgReg] at hr
 
 
