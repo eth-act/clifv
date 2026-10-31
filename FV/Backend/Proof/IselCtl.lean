@@ -48,13 +48,14 @@ theorem callRulesCorrectP : CallRulesCorrectP program := by
 (`callRulesCorrectP` with nothing pinned). -/
 theorem callRulesCorrect : CallRulesCorrect program := callRulesCorrect_of_P callRulesCorrectP
 
-/-- **`IndRulesCorrectP`**: under the pinned indirect-call contract, the `call_indirect` rule of
-`lower` (`blr` of the callee value, rule id 1033) is correct. -/
+/-- **`IndRulesCorrectP`**: under the pinned indirect-call contract, the guarded memory forms and
+an outgoing area holding the stack arguments, the `call_indirect` rule of `lower` (`blr` of the
+callee value, rule id 1033) is correct. -/
 theorem indRulesCorrectP : IndRulesCorrectP program := by
-  intro Rd Pc F isem MR env cp sigs hR hMR hCR r hr hroot
+  intro Rd Pc F isem MR env cp sigs sb syms outB hR hMR hMem hout hIstk hCR r hr hroot
   simp only [indRootRule, beq_iff_eq] at hroot
   rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2529 (by rw [hroot]; rfl)]
-  exact call_ind_ruleOk data_program indData_program hR hMR hCR
+  exact call_ind_ruleOk data_program indData_program hR hMR hMem hout hIstk hCR
 
 /-- **`IndRulesCorrect`** (`indRulesCorrectP` with nothing pinned). -/
 theorem indRulesCorrect : IndRulesCorrect program := indRulesCorrect_of_P indRulesCorrectP

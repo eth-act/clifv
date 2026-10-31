@@ -1188,7 +1188,8 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
     exact Clif.Program.bare_func? _ _
   · intro sig hs
     have := List.all_eq_true.mp (facts hg).indOk sig hs
-    simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+    simp only [Bool.and_eq_true] at this
+    exact this.2
   · obtain ⟨hl, hp, ha, he, hla, -, -⟩ := pipe_spec (facts hg).pipe
     exact .legacy ⟨hl, (facts hg).lowerOk, hp, (facts hg).prepOk, (facts hg).check, ha, he, hla⟩
   · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he

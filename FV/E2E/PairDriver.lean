@@ -89,8 +89,8 @@ def CallLg (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signatu
 signature `sig`, argument values `vals`, CLIF memory `cm`): two worlds that agree outside `Z ⊇ F`,
 both related to `cm` with stack pointer `sp0`, with the arguments as the call's kind puts them — a declared extern (in
 `exts`) with its arguments where the ABI puts them in both, or an indirect call (signature in
-`sigs`) with at most 8 register arguments — give, when the call returns on both, the same values
-and worlds that agree outside `Z`. -/
+`sigs`) with its arguments where its call-site signature's ABI puts them in both (S5) — give,
+when the call returns on both, the same values and worlds that agree outside `Z`. -/
 def XNI (F : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Clif.ExtFunc)
     (sigs : List Clif.Signature) (sp0 : BitVec 64)
     (Lg : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) (X : ExtSem) : Prop :=
@@ -102,7 +102,7 @@ def XNI (F : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Cli
     (∀ a, F a → Z a) → SameWorld Z w w' → MemRel F syms cm w → MemRel F syms cm w' →
     spv w = sp0 → spv w' = sp0 →
     ((∃ e ∈ exts, e.name = n ∧ e.sig = sig) ∧ ArgsAt sig vals args w ∧ ArgsAt sig vals args w' ∨
-      sig ∈ sigs ∧ vals.length ≤ 8 ∧ AllHold vals args) →
+      sig ∈ sigs ∧ ArgsAt sig vals args w ∧ ArgsAt sig vals args w') →
     X.call d uses w = some (o, x) → X.call d uses w' = some (o', x') → o = o' ∧ SameWorld Z x x'
 
 /-- The TLSDESC resolver's flags do not depend on the world outside `F`. -/
@@ -150,7 +150,7 @@ theorem callPin_stepPin {env : Clif.Env} {f : Clif.Function} {inst : Clif.Inst} 
     fun sg callee args s x vals n g rvals cm' hi hs hc hv hsym hg hgo hty => ?_⟩
   · refine ⟨rfl, ⟨.inl ⟨e, externsIn_self f fn e (hf ▸ he), rfl, rfl⟩, g, rvals, cm', hg, hgo⟩,
       .inl ⟨fn, args, e, hi, he, rfl, hv⟩⟩
-  · refine ⟨rfl, ⟨.inr ⟨(hsig sg callee args s hi (hf ▸ hs)).1, hty⟩, g, rvals, cm', hg, hgo⟩,
+  · refine ⟨rfl, ⟨.inr ⟨hsig sg callee args s hi (hf ▸ hs), hty⟩, g, rvals, cm', hg, hgo⟩,
       .inr ⟨sg, callee, args, hi, hs, hv⟩⟩
 
 /-- **The callee lockstep of a pinned step**, from `XNI`: two pinned calls (`CallG`) of the
@@ -183,12 +183,15 @@ theorem callLockstep {F : BitVec 64 → Prop} {syms : String → Option Nat} {X 
     · exact .inl ⟨rfl, rfl⟩
     · exact .inr ⟨rfl, hu⟩
   have hA : (∃ e ∈ exts, e.name = n1 ∧ e.sig = sig1) ∧ ArgsAt sig1 vals1 args1 w ∧
-      ArgsAt sig1 vals1 args1 w' ∨ sig1 ∈ sigs ∧ vals1.length ≤ 8 ∧ AllHold vals1 args1 := by
-    rcases ha1 with ⟨hk, ha1⟩ | ha1
-    · rcases ha2 with ⟨-, ha2⟩ | ha2
+      ArgsAt sig1 vals1 args1 w' ∨
+      sig1 ∈ sigs ∧ ArgsAt sig1 vals1 args1 w ∧ ArgsAt sig1 vals1 args1 w' := by
+    rcases ha1 with ⟨hk, ha1⟩ | ⟨hs1, ha1⟩
+    · rcases ha2 with ⟨-, ha2⟩ | ⟨-, ha2⟩
       · exact .inl ⟨hk, ha1, ha2⟩
-      · exact .inr ha2
-    · exact .inr ha1
+      · exact .inl ⟨hk, ha1, ha2⟩
+    · rcases ha2 with ⟨-, ha2⟩ | ⟨-, ha2⟩
+      · exact .inr ⟨hs1, ha1, ha2⟩
+      · exact .inr ⟨hs1, ha1, ha2⟩
   exact hNI n1 sig1 vals1 cm1 args1 (destName dest) us Z w w' o x o' x' hlg1 hd hFZ hw hm1 hm2 hc1
     hc2 hA hc hc'
 
@@ -317,6 +320,7 @@ theorem instCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
   intro ctx ii info inst st rss st' tr hctx hmem hE hi hcl hsig hemp hvb hrun
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hstk := callsStack_mono (callsStack_of_check hc.lowerOk) (outgoing_le_intBase hc)
+  have hIstk := indStack_mono (indStack_of_check hc.lowerOk) (outgoing_le_intBase hc)
   have key : ∀ (Rd : BitVec 64 → Prop)
       (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop),
       LowerInstOkP Rd Pc
@@ -329,7 +333,7 @@ theorem instCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
       excludedUnmatchable callRulesCorrectP indRulesCorrectP memRulesCorrectR_program
       refines_csemG (mrStable_relW Γ f c) (callsRefineP_csemG hX (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
       (indCallsRefineP_csemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1)) (memRefinesR_csemG (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
-      hctx (outArgsOk_relW Γ f c) (externsIn_self f) hE (memRelOk_relW Γ f c) hi hcl hsig
+      hctx (outArgsOk_relW Γ f c) (externsIn_self f) hE (memRelOk_relW Γ f c) hi hcl hsig hIstk
       (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst ▸ hc') he) hvb hrun
     cases hov
     rw [hemp, Array.empty_append] at hem
@@ -482,7 +486,7 @@ theorem tryIndCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
     TryIndCalls (pairSem (csem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p (indSigs f) := by
   intro g ctx ti callee args et data sig items targets info trs lo st1 out st' tr hctx hd he hsig
-    h8 hph hinfo hregs hvb hrun
+    hph hinfo hregs hvb hrun
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hctx' := ctxInv_tryRegs (ctxInv_termCtx hctx hph data) trs
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
@@ -498,8 +502,11 @@ theorem tryIndCalls_pair (hc : Compiled f k vc vcp rf af fa fb)
         { st1 with emitted := #[] } st' st'.emitted.toList := by
     intro Rd Pc
     obtain ⟨ms, hem, hok⟩ := tryIndOkP_runTerm tryIndRulesCorrectP tryIndUnmatchable
-      refines_csemG (mrStable_relW Γ f c) (indCallsRefineP_csemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
-      hctx' hd he hsig h8 hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
+      refines_csemG (mrStable_relW Γ f c)
+      (memRefinesR_csemG (ctx := ⟨fa.k, af.slotBase⟩) rfl hsym) (outArgsOk_relW Γ f c)
+      (indStack_mono (indStack_of_check hc.lowerOk) (outgoing_le_intBase hc))
+      (indCallsRefineP_csemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+      hctx' hd he hsig hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
       (Nat.le_refl _) hrun
     have : ms = st'.emitted.toList := by
       simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
@@ -669,6 +676,7 @@ theorem vcode_ni {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCod
     insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
       indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
       (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB)
       (memRelOk_relW Γ f c)
     terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable hRef (mrStable_relW Γ f c)
@@ -682,7 +690,7 @@ theorem vcode_ni {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCod
       (outArgsOk_relW Γ f c) hcalls, tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef (mrStable_relW Γ f c)
-      hicalls
+      hmem (outArgsOk_relW Γ f c) (indStack_mono (indStack_of_check hc.lowerOk) houtB) hicalls
     tryIndSig := tryIndSig_of_subset hsub
     cfg := cfg_of_prepare hc.prepare }
   have HP : DriverHyp f vc ctx st0 R gn bl A (pairSem (csem F ⟨fa.k, af.slotBase⟩ X)) (MRP Γ f c D)

@@ -60,7 +60,7 @@ theorem indSigsA : indSigs fA = [] := List.isEmpty_iff.mp checksA.2.2.2.1
 /-- **`fA` is in the subset for every program** (it calls nothing). -/
 theorem inSubsetA (p : Clif.Program) : InSubset p fA := by
   have hv := checksA.2.2.2.2.1
-  simp only [verifiable, abiSigs, indSigsOk, Bool.and_eq_true, List.all_eq_true,
+  simp only [verifiable, abiSigs, indSigsAbiOk, Bool.and_eq_true, List.all_eq_true,
     decide_eq_true_eq, and_assoc] at hv
   obtain ⟨hE, hf, hext, hind⟩ := hv
   have hno : ∀ fn e, fA.extern? fn = some e → False := fun fn e he => by
@@ -105,7 +105,7 @@ theorem driverHypA {Γ : E2E.Rel} {fctx : FnCtx} {X : ExtSem} {c : BitVec 64} {e
     insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
       indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ fA c) hcalls hicalls hmem
       (outArgsOk_relW Γ fA c) (callsStack_mono (callsStack_of_check hlow) houtB)
-      (memRelOk_relW Γ fA c)
+      (indStack_mono (indStack_of_check hlow) houtB) (memRelOk_relW Γ fA c)
     terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable hRef (mrStable_relW Γ fA c)
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
@@ -118,7 +118,8 @@ theorem driverHypA {Γ : E2E.Rel} {fctx : FnCtx} {X : ExtSem} {c : BitVec 64} {e
       (outArgsOk_relW Γ fA c) hcalls, tryStack_mono (tryStack_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef
-      (mrStable_relW Γ fA c) hicalls
+      (mrStable_relW Γ fA c) hmem (outArgsOk_relW Γ fA c)
+      (indStack_mono (indStack_of_check hlow) houtB) hicalls
     tryIndSig := tryIndSig_of_subset hsub
     cfg := cfgA }, hbl⟩
 

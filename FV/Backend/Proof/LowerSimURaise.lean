@@ -67,15 +67,16 @@ def XRaiseOk (env : Clif.XEnv) (exts : List Clif.ExtFunc) (MR : MemRelT) (X : Ex
 
 /-- **The callees' exceptional results, indirect calls** (`XCallsIndOk`'s counterpart): a `blr`
 whose target holds the link-time address of an extern `n` of `env` (call-site signature
-`sig ∈ sigs`, at most 8 register arguments) where the CLIF extern unwinds raises an exception
-object related to the CLIF exception, the world related to the extern's memory. -/
+`sig ∈ sigs`, the arguments where its ABI puts them, `ArgsAt`, S5) where the CLIF extern unwinds
+raises an exception object related to the CLIF exception, the world related to the extern's
+memory. -/
 def XRaiseIndOk (env : Clif.XEnv) (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem)
     (XR : XRaise) : Prop :=
   ∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
     (w : Arm.ArmState) (u : CV) (args : List CV) (vals : List Clif.Val) (e : Clif.Exn)
     (m : Clif.Mem),
     env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
-    lo64 u = X.sym n 0 → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+    lo64 u = X.sym n 0 → ArgsAt sig vals args w → MR sl cm w →
     g vals cm = .unwound e m → vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     ∃ obj w', XR.raise none (u :: args) w = some (obj, w') ∧ E2E.ExnRel e obj ∧ MR sl m w'
 
@@ -93,7 +94,7 @@ def XRaiseExcl (env : Clif.XEnv) (exts : List Clif.ExtFunc) (sigs : List Clif.Si
   (∀ sig ∈ sigs, ∀ (n : String) g (sl : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
     (w : Arm.ArmState) (u : CV) (args : List CV) (vals rvals : List Clif.Val) (cm' : Clif.Mem),
     env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
-    lo64 u = X.sym n 0 → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+    lo64 u = X.sym n 0 → ArgsAt sig vals args w → MR sl cm w →
     g vals cm = .returned rvals cm' → vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     XR.raise none (u :: args) w = none)
 
@@ -409,26 +410,26 @@ theorem indCallsRefineP_probe {sigs : List Clif.Signature} (hXRi : XRaiseIndOk e
     IndCallsRefineP (pinPc n s vals cm) (overEnv env.toEnv n vals cm (zeroVals s.returns) m) sigs
       (pinMR MR slots) (probe sem XR (raiseC MR slots e m)) := by
   refine ⟨?_, ?_⟩
-  · intro sig hin n' g' sl cm0 w a r us ds u args vals' rvals cm' hg' hsg ha hu' hds hlen hall hmr
+  · intro sig hin n' g' sl cm0 w a r us ds u args vals' rvals cm' hg' hsg ha hu' hds hargs hmr
       hpc hret hrl hty
     obtain ⟨hn, hs, rfl, rfl⟩ := hpc
     obtain ⟨-, rfl, hcm⟩ := overEnv_at hg' hret
     subst hn hs cm'
     have hX : lo64 u = X.sym n' 0 := by
       rw [hu', hsym n' a (by rw [← hMRs sl _ w hmr.2]; exact ha)]
-    obtain ⟨obj, w', hr, hex, hm⟩ := hXRi sig hin n' g sl cm0 w u args vals' e m hg hsg hX hlen
-      hall hmr.2 hu hty
+    obtain ⟨obj, w', hr, hex, hm⟩ := hXRi sig hin n' g sl cm0 w u args vals' e m hg hsg hX hargs
+      hmr.2 hu hty
     exact ⟨_, w', probe_call_of (ci := ⟨.reg r, us, ds⟩) hr ⟨hex, hmr.1 ▸ hm⟩, by simp,
       prefixHold_zero (by rw [hds]; exact returns_le_sigRets _), hmr.1, hm⟩
-  · intro sig hin n' g' sl cm0 w a r us ds ti u args vals' rvals cm' hg' hsg ha hu' hds hti hlen
-      hall hmr hpc hret hrl hty
+  · intro sig hin n' g' sl cm0 w a r us ds ti u args vals' rvals cm' hg' hsg ha hu' hds hti hargs
+      hmr hpc hret hrl hty
     obtain ⟨hn, hs, rfl, rfl⟩ := hpc
     obtain ⟨-, rfl, hcm⟩ := overEnv_at hg' hret
     subst hn hs cm'
     have hX : lo64 u = X.sym n' 0 := by
       rw [hu', hsym n' a (by rw [← hMRs sl _ w hmr.2]; exact ha)]
-    obtain ⟨obj, w', hr, hex, hm⟩ := hXRi sig hin n' g sl cm0 w u args vals' e m hg hsg hX hlen
-      hall hmr.2 hu hty
+    obtain ⟨obj, w', hr, hex, hm⟩ := hXRi sig hin n' g sl cm0 w u args vals' e m hg hsg hX hargs
+      hmr.2 hu hty
     exact ⟨_, w', probe_tryCall_of (ci := ⟨.reg r, us, ds⟩) hr ⟨hex, hmr.1 ▸ hm⟩, by simp,
       prefixHold_zero (Nat.le_trans (returns_le_sigRets _) hds), hmr.1, hm⟩
 
@@ -605,7 +606,7 @@ theorem stmt_raise {F : BitVec 64 → Prop} {X : ExtSem} {XR : XRaise} {sem : Se
     {syms : String → Option Nat} {out : Nat} (hRS : RaiseSem F X XR sem)
     (hRef : Refines F sem) (hMem : MemRefines F sb syms sem)
     (hMR : MRStable F MR) (hout : OutArgsOk F out MR) (hMRo : MemRelOk F sb syms f MR)
-    (hstk : CallsStack f out)
+    (hstk : CallsStack f out) (hIstk : IndStack (indSigs f) out)
     (hXR : XRaiseOk env (f.externs.map (·.2)) MR X XR) (hXRi : XRaiseIndOk env (indSigs f) MR X XR)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hMRs : ∀ sl cm w, MR sl cm w → cm.symbols = syms)
@@ -636,7 +637,7 @@ theorem stmt_raise {F : BitVec 64 → Prop} {X : ExtSem} {XR : XRaise} {sem : Se
     (callsRefineP_probe (slots := fr.slots) hRS hXR hg hu)
     (indCallsRefineP_probe (sem := sem) (slots := fr.slots) hXRi hsym hMRs hg hu)
     (memRefinesR_of (memRefines_probe hMem)) hctx (outArgsOk_pin hout fr.slots)
-    (externsIn_self f) hE (memRelOk_pin hMRo fr.slots) hi hc hsig
+    (externsIn_self f) hE (memRelOk_pin hMRo fr.slots) hi hc hsig hIstk
     (fun fn args e' hc' he => hstk B hB stm hstm fn args e' hc' he) hvb hrun
   have hms : ms = st'.emitted.toList := by
     rw [hemp, Array.empty_append] at hem; rw [hem, List.toList_toArray]
@@ -654,12 +655,13 @@ object related to `e` (the world related to `m`) and which continues at the firs
 (`.goto 0`) with the payload — if the code before the call contains no call and the call's
 shape is supported (`tryUOk`; decidable properties of the recorded lowering). From M4's proven
 `try_call` rule theorems, run on the probe. `hT`: the direct call's stack arguments fit the
-outgoing area, the indirect call's signature is an indirect-call signature of `f`. -/
+outgoing area, the indirect call's signature is an indirect-call signature of `f` (whose stack
+arguments fit the outgoing area by `hIstk`). -/
 theorem try_raise {F : BitVec 64 → Prop} {X : ExtSem} {XR : XRaise} {sem : Sem}
     {env : Clif.XEnv} {p : Clif.Program} {f : Clif.Function} {MR : MemRelT} {sb : Nat}
     {syms : String → Option Nat} {out : Nat} (hRS : RaiseSem F X XR sem)
     (hRef : Refines F sem) (hMem : MemRefines F sb syms sem)
-    (hMR : MRStable F MR) (hout : OutArgsOk F out MR)
+    (hMR : MRStable F MR) (hout : OutArgsOk F out MR) (hIstk : IndStack (indSigs f) out)
     (hXR : XRaiseOk env (f.externs.map (·.2)) MR X XR) (hXRi : XRaiseIndOk env (indSigs f) MR X XR)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hMRs : ∀ sl cm w, MR sl cm w → cm.symbols = syms)
@@ -670,8 +672,7 @@ theorem try_raise {F : BitVec 64 → Prop} {X : ExtSem} {XR : XRaise} {sem : Sem
     (hT : (∃ fn args, ci = .call fn args ∧ tryCallData f (.tryCall fn args et) = .ok data ∧
         ∀ e, f.extern? fn = some e → SigStackOk e.sig out) ∨
       (∃ callee args, ci = .callIndirect et.sig callee args ∧
-        tryCallData f (.tryCallIndirect callee args et) = .ok data ∧ sig ∈ indSigs f ∧
-        sig.params.length ≤ 8))
+        tryCallData f (.tryCallIndirect callee args et) = .ok data ∧ sig ∈ indSigs f))
     (he : exnTableOpnd f et = .ok (sig, items))
     (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩)
     (hinfo : tryInfoOf sig items targets = some info) (hregs : tryRegsOf sig lo = some (trs, st1))
@@ -705,12 +706,13 @@ theorem try_raise {F : BitVec 64 → Prop} {X : ExtSem} {XR : XRaise} {sem : Sem
         (probe sem XR (raiseC MR fr.slots e m)) (pinMR MR fr.slots)
         (overEnv env.toEnv n vals cm (zeroVals s.returns) m) p (tryCtx ctx ti data trs) ci info
         { st1 with emitted := #[] } st' ms := by
-    rcases hT with ⟨fn, args, rfl, hd, hra⟩ | ⟨callee, args, rfl, hd, hsg, h8⟩
+    rcases hT with ⟨fn, args, rfl, hd, hra⟩ | ⟨callee, args, rfl, hd, hsg⟩
     · exact tryOkP_runTerm tryRulesCorrectP tryUnmatchable hR' (mrStable_pin hMR fr.slots)
         (memRefinesR_of (memRefines_probe hMem)) (outArgsOk_pin hout fr.slots) hcr hctx'
         (externsIn_self f) hra hd he hi hinfo hregs' hvb' (Nat.le_refl _) hrun
     · exact tryIndOkP_runTerm tryIndRulesCorrectP tryIndUnmatchable hR' (mrStable_pin hMR fr.slots)
-        hicr hctx' hd he hsg h8 hi hinfo hregs' hvb' (Nat.le_refl _) hrun
+        (memRefinesR_of (memRefines_probe hMem)) (outArgsOk_pin hout fr.slots) hIstk
+        hicr hctx' hd he hsg hi hinfo hregs' hvb' (Nat.le_refl _) hrun
   have hms' : ms = st'.emitted.toList := by
     simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
   subst hms'

@@ -62,20 +62,20 @@ theorem callPost_fixW {env : Clif.Env} {exts : List Clif.ExtFunc} {sigs : List C
   · have e : fixW w r.2 = Arm.set_program r.2 w.program := by simp only [fixW, he, ↓reduceIte]
     rw [e]
     refine ⟨⟨fun ext hext g sl cm args vals rvals cm' hg hd ha hmr hret hlen => ?_,
-      fun sig hsig n g sl cm u args vals rvals cm' hd hu hg hs hlo h8 hall hmr hret hlen hty => ?_⟩,
+      fun sig hsig n g sl cm u args vals rvals cm' hd hu hg hs hlo hargs hmr hret hlen hty => ?_⟩,
       fun _ => ⟨by rw [r_set_program]; exact he, rfl⟩⟩
     · obtain ⟨h1, h2, h3⟩ := h.1 ext hext g sl cm args vals rvals cm' hg hd ha hmr hret hlen
       exact ⟨h1, h2, relW_set_program _ h3⟩
     · obtain ⟨h1, h2, h3⟩ :=
-        h.2 sig hsig n g sl cm u args vals rvals cm' hd hu hg hs hlo h8 hall hmr hret hlen hty
+        h.2 sig hsig n g sl cm u args vals rvals cm' hd hu hg hs hlo hargs hmr hret hlen hty
       exact ⟨h1, h2, relW_set_program _ h3⟩
   · -- no contract applies (it would pin the error to none): any result is accepted
     refine ⟨⟨fun ext hext g sl cm args vals rvals cm' hg hd ha hmr hret hlen => ?_,
-      fun sig hsig n g sl cm u args vals rvals cm' hd hu hg hs hlo h8 hall hmr hret hlen hty => ?_⟩,
+      fun sig hsig n g sl cm u args vals rvals cm' hd hu hg hs hlo hargs hmr hret hlen hty => ?_⟩,
       fun herr => ?_⟩
     · exact absurd (h.1 ext hext g sl cm args vals rvals cm' hg hd ha hmr hret hlen).2.2.2.2 he
     · exact absurd
-        (h.2 sig hsig n g sl cm u args vals rvals cm' hd hu hg hs hlo h8 hall hmr hret hlen hty).2.2.2.2
+        (h.2 sig hsig n g sl cm u args vals rvals cm' hd hu hg hs hlo hargs hmr hret hlen hty).2.2.2.2
         he
     · simp only [fixW, he, ↓reduceIte]; exact ⟨herr, trivial⟩
 
@@ -103,7 +103,7 @@ theorem xCallsOk_guardRX_only {env : Clif.Env} {A A' : String → List Clif.Val 
     XCallsOk (env.only A) exts MR (X.guardR (CallPostX (env.only A') exts sigs MR X.sym)) ∧
       XCallsIndOk (env.only A) sigs MR (X.guardR (CallPostX (env.only A') exts sigs MR X.sym)) := by
   refine ⟨fun ext hext g sl cm w d uses args vals rvals cm' hg hd ha hmr hret hlen => ?_,
-    fun sig hsig n g sl cm w u args vals rvals cm' hg hs hlo h8 hall hmr hret hlen hty => ?_⟩
+    fun sig hsig n g sl cm w u args vals rvals cm' hg hs hlo hargs hmr hret hlen hty => ?_⟩
   · have hn : ¬ ∀ r, CallPostX (env.only A') exts sigs MR X.sym d uses w r := fun h =>
       callPost_not_vacuous (sl := sl) hext hg hd ha hmr hret hlen fun r =>
         callPost_only_mono hAA (h r).1
@@ -112,11 +112,11 @@ theorem xCallsOk_guardRX_only {env : Clif.Env} {A A' : String → List Clif.Val 
       hd ha hmr hret hlen
     exact ⟨outs, w', hc, h1, h2, h3⟩
   · have hn : ¬ ∀ r, CallPostX (env.only A') exts sigs MR X.sym none (u :: args) w r := fun h =>
-      callPost_not_vacuous_ind (sl := sl) hsig hg hs hlo h8 hall hmr hret hlen hty
+      callPost_not_vacuous_ind (sl := sl) hsig hg hs hlo hargs hmr hret hlen hty
         fun r => callPost_only_mono hAA (h r).1
     obtain ⟨⟨outs, w'⟩, hc, hq⟩ := ExtSem.guardR_spec (X := X) (hex none (u :: args) w) hn
     obtain ⟨h1, h2, h3⟩ := (callPost_only_mono hAA hq.1).2 sig hsig n g sl cm u args vals rvals cm'
-      rfl rfl hg hs hlo h8 hall hmr hret hlen hty
+      rfl rfl hg hs hlo hargs hmr hret hlen hty
     exact ⟨outs, w', hc, h1, h2, h3⟩
 
 /-- **The guarded semantics keeps `X`'s `ext`** when the guard's results keep the program. -/

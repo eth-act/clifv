@@ -47,7 +47,7 @@ theorem callPost_of_answers {env : Clif.Env} {exts : List Clif.ExtFunc}
       d = none → uses = u :: args →
       env.extern n = some G → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
       lo64 u = sym n 0 →
-      vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+      ArgsAt sig vals args w → MR sl cm w →
       G vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
       vals.map (·.ty) = Clif.AbiParam.tys sig.params →
       ∃ r, X.call d uses w = some r ∧
@@ -58,20 +58,20 @@ theorem callPost_of_answers {env : Clif.Env} {exts : List Clif.ExtFunc}
   | none =>
     exfalso
     refine hnv fun _ => ⟨fun ext hin G sl cm args vals rvals cm' hG hd ha hmr hr hl => ?_,
-      fun sig hs n G sl cm u args vals rvals cm' hdn hu hG hsg hlo h8 hall hmr hr hl hty => ?_⟩
+      fun sig hs n G sl cm u args vals rvals cm' hdn hu hG hsg hlo hargsS hmr hr hl hty => ?_⟩
     · obtain ⟨r', hr', -⟩ := hext ext hin G sl cm args vals rvals cm' hG hd ha hmr hr hl
       rw [hx] at hr'; cases hr'
-    · obtain ⟨r', hr', -⟩ := hind sig hs n G sl cm u args vals rvals cm' hdn hu hG hsg hlo h8 hall
+    · obtain ⟨r', hr', -⟩ := hind sig hs n G sl cm u args vals rvals cm' hdn hu hG hsg hlo hargsS
         hmr hr hl hty
       rw [hx] at hr'; cases hr'
   | some x =>
     refine ⟨x, rfl, fun ext hin G sl cm args vals rvals cm' hG hd ha hmr hr hl => ?_,
-      fun sig hs n G sl cm u args vals rvals cm' hdn hu hG hsg hlo h8 hall hmr hr hl hty => ?_⟩
+      fun sig hs n G sl cm u args vals rvals cm' hdn hu hG hsg hlo hargsS hmr hr hl hty => ?_⟩
     · obtain ⟨r', hr', h1, h2, h3⟩ := hext ext hin G sl cm args vals rvals cm' hG hd ha hmr hr hl
       rw [hx] at hr'; cases hr'
       exact ⟨h1, h2, h3⟩
     · obtain ⟨r', hr', h1, h2, h3⟩ := hind sig hs n G sl cm u args vals rvals cm' hdn hu hG hsg
-        hlo h8 hall hmr hr hl hty
+        hlo hargsS hmr hr hl hty
       rw [hx] at hr'; cases hr'
       exact ⟨h1, h2, h3⟩
 
@@ -278,7 +278,7 @@ theorem stage2_answerFRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Na
         rw [L.XPRBT_ind hs, if_pos ⟨hto, argsAt_regLocs hargsW⟩]
         exact hx
   · -- an indirect call
-    intro sig hsig nm G sl cm u args vals rvals cm' hdn hu hG hsg hlo hl8 hall hmr hret hrl hty
+    intro sig hsig nm G sl cm u args vals rvals cm' hdn hu hG hsg hlo hargsS hmr hret hrl hty
     obtain ⟨hA, hb | ⟨h, hpf, hdecl, -, cs', hinit, hrun⟩⟩ := L.envOfB_only_some hG hret
     · obtain ⟨hpf, G0, hG0, hr0⟩ := hb
       have hs : symCallee L.Xb L.P (lo64 u) = none := by
@@ -287,7 +287,7 @@ theorem stage2_answerFRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Na
       subst hdn hu
       obtain ⟨outs, w', hx, h1, h2, h3⟩ := hL.baseXI g hg F (L.A g).af.slotBase
         (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c sig hsig nm G0 sl cm w u args vals rvals
-        cm' hG0 (fun _ h => nomatch h) hlo hl8 hall hmr hr0 hrl hty
+        cm' hG0 (fun _ h => nomatch h) hlo hargsS hmr hr0 hrl hty
       exact ⟨(outs, w'), by rw [L.XPRBT_none hs]; exact hx, h1, h2, h3⟩
     · obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
       subst hname
@@ -310,6 +310,8 @@ theorem stage2_answerFRU (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Na
         hsg h.sig (by simp only [Clif.Env.only_sigOf, envOfB, Clif.linkEnvR_sigOf, hpf,
           Option.map_some])
       obtain ⟨⟨bytes, hb, hb8⟩, hsr⟩ := hdeclS h hh hdecl (.inl ⟨sig, hsig, hm⟩)
+      have hall : AllHold vals args :=
+        (argsAt_iff_of_regs (hm.paramBytes.trans hb) hb8 hargsS.1).mp hargsS
       obtain ⟨hsw, hmrW, hspW⟩ := hW h sl cm hcal hM hmr
       have hargsW : ArgsAt h.sig vals args (L.worldPR κ M h (P n) (R n) w) :=
         (argsAt_iff_of_regs hb hb8 hvl).mpr hall

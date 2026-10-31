@@ -266,6 +266,8 @@ theorem instCalls_pair_valueTC (hc : CompiledCleanupTC f k vc vcp rf af fa fb)
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hstk := callsStack_mono (callsStackTC_of_check hc.lowerOk)
     (outgoing_le_intBaseCleanupATC hc.toA)
+  have hIstk := indStack_mono (indStackTC_of_check hc.lowerOk)
+    (outgoing_le_intBaseCleanupATC hc.toA)
   refine lowerInstOk_pairF_value hNI hTls (Γ := Γ) rfl hctx.inv.func hsig fun Rd Pc => ?_
   obtain ⟨B, hB, stm, hstm, hst'⟩ := hmem
   obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOkP_runTermT lowerRulesCorrectTI_program
@@ -276,7 +278,7 @@ theorem instCalls_pair_valueTC (hc : CompiledCleanupTC f k vc vcp rf af fa fb)
     (indCallsRefineP_valueSemGF hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
     (memRefinesR_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
     (memRefinesFP_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot)
-    hctx hsc (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
+    hctx hsc (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig hIstk
     (hst ii info inst hi hcl)
     (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst' ▸ hc') he) hvb hrun
   cases hov
@@ -315,6 +317,7 @@ theorem instCalls_pair_valueTCF (hc : CompiledCleanupTCF f k vc vcp rf af fa fb)
     (memRefinesR_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
     (memRefinesFP_valueSemGF (ctx := ⟨fa.k, af.slotBase⟩) hslot)
     hctx (outArgsOk_relW Γ f c) (externsIn_self f) (memRelOk_relW Γ f c) hi hcl hsig
+    (indStack_mono (indStackTCF_of_check hc.lowerOk) (outgoing_le_intBaseCleanupATCF hc.toA))
     (hst ii info inst hi hcl)
     (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst' ▸ hc') he) hvb hrun
   cases hov
@@ -412,7 +415,9 @@ theorem vcode_ni_valueTCF (hsub : InSubsetTCF p f)
     tries := ⟨_, tryCalls_pair_valueTC hT hX hsym hslot hNI hTls hctxT,
       tryStack_mono (tryStackTCF_of_check hc.lowerOk) houtB⟩
     tryExt := H.tryExt
-    tryInd := tryIndCalls_pair_valueT hT hXI hsym hNI hTls hctxT
+    tryInd := tryIndCalls_pair_valueT
+      (indStack_mono (indStackTCF_of_check hc.lowerOk) houtB)
+      hT hXI hsym hNI hTls hctxT
     tryIndSig := H.tryIndSig
     cfg := H.cfg }
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry

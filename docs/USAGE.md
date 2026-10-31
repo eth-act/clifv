@@ -16,7 +16,8 @@ for that function. Functions the Lean backend cannot compile keep cg_clif's code
   for `i128` functions `E2E.backend_correct_legal`, with `--opt-proven-only`
   `E2E.backend_correct_legal_opt`);
 * **compiled, unverified**: compiled by the Lean backend but outside the theorem (the reason
-  is given, e.g. an indirect call with stack-passed arguments, or any function under `--opt`),
+  is given, e.g. a special-purpose parameter other than one `sret` pointer, or any function
+  under `--opt`),
   or over the validation budget (see *What is verified, and what is not*);
 * **fallback**: cg_clif's code (the reason is given).
 
@@ -363,9 +364,9 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   registers"), with a witness (`E2E.backend_correct_final_try_witness`).
 * **Indirect calls are verified** (agent/indirect-proof): functions with `call_indirect`,
   `func_addr` (vtables, `fn` pointers, `dyn` dispatch) and `try_call_indirect` are inside
-  `E2E.backend_correct_final` when the indirect calls have at most 8 register parameters and
-  plain/`sret` signatures (otherwise "indirect call with stack-passed arguments or a
-  special-purpose parameter"). Calls are interpreted in a function-free activation program
+  `E2E.backend_correct_final` when the indirect calls have plain/`sret` signatures (otherwise
+  "indirect call with a special-purpose parameter other than one sret pointer"); since S5
+  (#29) their parameters beyond x0..x7 are stack-passed arguments, as for `call`. Calls are interpreted in a function-free activation program
   under `XCallsIndOk`/`XCallsOk`; the linking theorem supplies the contracts for compiled
   program callees, including the caller itself. Under `--opt-proven-only` `call_indirect`
   functions are verified too (`E2E.backend_correct_opt_exe`, S1; the mid-end's simulation

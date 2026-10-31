@@ -261,6 +261,8 @@ structure RaiseHyp (f : Clif.Function) (sem : Sem) (MR : MemRelT) (env : Clif.XE
   mro : MemRelOk F sb syms f MR
   stk : CallsStack f out
   tstk : TryStack f out
+  /-- the indirect calls' stack arguments fit the outgoing area (S5) -/
+  istk : IndStack (indSigs f) out
   xr : XRaiseOk env (f.externs.map (·.2)) MR X XR
   xri : XRaiseIndOk env (indSigs f) MR X XR
   sym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b
@@ -320,7 +322,8 @@ theorem stmt_step_raise (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p
     | callIndirect sig callee args => exact .inr ⟨sig, callee, args, rfl⟩
     | _ => rw [hi] at hr; simp [instRaise] at hr
   obtain ⟨hU, k', ci, ops, ρ₁, w₁, obj, w', hsr, hra, hex, hmr', -⟩ :=
-    stmt_raise HR.rs HR.ref HR.mem HR.mrs HR.outOk HR.mro HR.stk HR.xr HR.xri HR.sym HR.mrsyms
+    stmt_raise HR.rs HR.ref HR.mem HR.mrs HR.outOk HR.mro HR.stk HR.istk HR.xr HR.xri HR.sym
+      HR.mrsyms
       H.shape.ctxInv H.subE ⟨B, hBmem, stm, hstmmem, rfl⟩ hinfo hclif
       (H.indSig B hBmem stm hstmmem) hemp
       (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0) hrun
@@ -515,8 +518,7 @@ theorem term_step_try_exn (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv
       ((∃ fn args, ci = .call fn args ∧ tryCallData f (.tryCall fn args et) = .ok L.data ∧
         ∀ e, f.extern? fn = some e → SigStackOk e.sig out) ∨
       (∃ callee args, ci = .callIndirect et.sig callee args ∧
-        tryCallData f (.tryCallIndirect callee args et) = .ok L.data ∧ T.sig ∈ indSigs f ∧
-        T.sig.params.length ≤ 8)) ∧
+        tryCallData f (.tryCallIndirect callee args et) = .ok L.data ∧ T.sig ∈ indSigs f)) ∧
       LowerTryOk sem MR env.toEnv p (tryCtx ctx (L.start + B.body.length) L.data T.regs) ci
         T.info { T.st1 with emitted := #[] } L.tst' L.tst'.emitted.toList := by
     rcases hBT with ⟨fn, args, hBT⟩ | ⟨callee, args, hBT⟩
@@ -531,15 +533,15 @@ theorem term_step_try_exn (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv
           (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
     · have hdata' : tryCallData f (.tryCallIndirect callee args et) = .ok L.data := hBT ▸ hdata
       have hsd := exnTableOpnd_sig hexn
-      obtain ⟨hsin, h8⟩ := H.tryIndSig B hBmem callee args et T.sig hBT hsd
+      have hsin := H.tryIndSig B hBmem callee args et T.sig hBT hsd
       refine ⟨.callIndirect et.sig callee args, fun y hy => by
           simp only [instArgs] at hy
           simp only [hBT, termArgs, List.cons_append]
           exact List.mem_cons.mpr ((List.mem_cons.mp hy).imp id fun h => List.mem_append_left _ h),
         raiseAt_tryCallInd hbody (hterm.trans hBT) hr,
-        .inr ⟨callee, args, rfl, hdata', hsin, h8⟩,
+        .inr ⟨callee, args, rfl, hdata', hsin⟩,
         H.tryInd f ctx (L.start + B.body.length) callee args et L.data T.sig T.items L.targets
-          T.info T.regs L.tst T.st1 outv L.tst' tr H.shape.ctxInv hdata' hexn hsin h8
+          T.info T.regs L.tst T.st1 outv L.tst' tr H.shape.ctxInv hdata' hexn hsin
           (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
   have hargsA : ∀ y ∈ instArgs ci, y ∈ A b B.body.length := fun y hy => htA y (hciA y hy)
   obtain ⟨pre', ci', hms', hpre', hcd⟩ := hlow.shape
@@ -569,7 +571,8 @@ theorem term_step_try_exn (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv
       (fun x hx => restrict_regs_of_mem (hargsA x hx))]
     exact hraise
   obtain ⟨hU, ops0, ρ₁, w₁, obj, w₂, hsr, -, hex, hmr2⟩ :=
-    try_raise HR.rs HR.ref HR.mem HR.mrs HR.outOk HR.xr HR.xri HR.sym HR.mrsyms H.shape.ctxInv
+    try_raise HR.rs HR.ref HR.mem HR.mrs HR.outOk HR.istk HR.xr HR.xri HR.sym HR.mrsyms
+      H.shape.ctxInv
       hTarg hexn (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun hms hpre hok (fr := fr')
       (by simp [fr', restrict, hfunc, H.shape.ctxInv.func]) hvh (dfgCons_termCtx hcons _ _)
       (by simpa [fr', restrict, hslots] using hmem) hraise'

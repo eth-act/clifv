@@ -219,7 +219,8 @@ theorem okRWithLowering_sound (lower : Clif.Function → Except String VCode) (s
     exact Clif.Program.bare_func? _ _
   · intro sig hs
     have := List.all_eq_true.mp (fa hg).indOk sig hs
-    simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+    simp only [Bool.and_eq_true] at this
+    exact this.2
   · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
     exact outFitsB_sound ((fa hg).outFits _ hm hs) hl hp
   · -- the functions of `P` have distinct addresses: their link-map addresses (`symOk`), which

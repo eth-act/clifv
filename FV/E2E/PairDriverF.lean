@@ -33,7 +33,7 @@ def XNIF (F : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Cl
     SameWorld F w w' → MemRel F syms cm w → MemRel F syms cm w' →
     spv w = sp0 → spv w' = sp0 →
     ((∃ e ∈ exts, e.name = n ∧ e.sig = sig) ∧ ArgsAt sig vals args w ∧ ArgsAt sig vals args w' ∨
-      sig ∈ sigs ∧ vals.length ≤ 8 ∧ AllHold vals args) →
+      sig ∈ sigs ∧ ArgsAt sig vals args w ∧ ArgsAt sig vals args w') →
     X.call d uses w = some (o, x) → X.call d uses w' = some (o', x') → o = o' ∧ SameWorld F x x'
 
 /-- **`XNI` gives `XNIF`** (the set `F` itself). -/
@@ -84,12 +84,15 @@ theorem callLockstepF {F : BitVec 64 → Prop} {syms : String → Option Nat} {X
     · exact .inl ⟨rfl, rfl⟩
     · exact .inr ⟨rfl, hu⟩
   have hA : (∃ e ∈ exts, e.name = n1 ∧ e.sig = sig1) ∧ ArgsAt sig1 vals1 args1 w ∧
-      ArgsAt sig1 vals1 args1 w' ∨ sig1 ∈ sigs ∧ vals1.length ≤ 8 ∧ AllHold vals1 args1 := by
-    rcases ha1 with ⟨hk, ha1⟩ | ha1
-    · rcases ha2 with ⟨-, ha2⟩ | ha2
+      ArgsAt sig1 vals1 args1 w' ∨
+      sig1 ∈ sigs ∧ ArgsAt sig1 vals1 args1 w ∧ ArgsAt sig1 vals1 args1 w' := by
+    rcases ha1 with ⟨hk, ha1⟩ | ⟨hs1, ha1⟩
+    · rcases ha2 with ⟨-, ha2⟩ | ⟨-, ha2⟩
       · exact .inl ⟨hk, ha1, ha2⟩
-      · exact .inr ha2
-    · exact .inr ha1
+      · exact .inl ⟨hk, ha1, ha2⟩
+    · rcases ha2 with ⟨-, ha2⟩ | ⟨-, ha2⟩
+      · exact .inr ⟨hs1, ha1, ha2⟩
+      · exact .inr ⟨hs1, ha1, ha2⟩
   obtain ⟨ho, hx⟩ := hNI n1 sig1 vals1 cm1 args1 (destName dest) us w w' o x o' x' hlg1 hd
     (SameWorld.mono (fun a h => (hZ a).1 h) hw) hm1 hm2 hc1 hc2 hA hc hc'
   exact ⟨ho, SameWorld.mono (fun a h => (hZ a).2 h) hx⟩

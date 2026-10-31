@@ -165,7 +165,7 @@ theorem callsStackTCF_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheckT
   have h2 := (lowerCheckTCF_tail h).2.1
   simp only [callsStackOkB, Bool.and_eq_true] at h2
   intro B hB st hst fn args e hi he
-  have := List.all_eq_true.mp (List.all_eq_true.mp h2.1 B hB) st hst
+  have := List.all_eq_true.mp (List.all_eq_true.mp h2.1.1 B hB) st hst
   rw [hi] at this
   simp only [he, Bool.and_eq_true, decide_eq_true_eq] at this
   exact this
@@ -176,9 +176,20 @@ theorem tryStackTCF_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheckTCF
   have h2 := (lowerCheckTCF_tail h).2.1
   simp only [callsStackOkB, Bool.and_eq_true] at h2
   intro B hB fn args et hi e he
-  have := List.all_eq_true.mp h2.2 B hB
+  have := List.all_eq_true.mp h2.1.2 B hB
   rw [hi] at this
   simp only [he, Bool.and_eq_true, decide_eq_true_eq] at this
+  exact this
+
+/-- The call-site signatures of the indirect calls of `f` fit the VCode's outgoing area
+(`lowerCheckTCF`, S5). -/
+theorem indStackTCF_of_check {f : Clif.Function} {vc : VCode} (h : lowerCheckTCF f vc = true) :
+    IndStack (indSigs f) vc.outgoing := by
+  have h2 := (lowerCheckTCF_tail h).2.1
+  simp only [callsStackOkB, Bool.and_eq_true] at h2
+  intro s hs
+  have := List.all_eq_true.mp h2.2 s hs
+  simp only [Bool.and_eq_true, decide_eq_true_eq] at this
   exact this
 
 /-- The entry's parameter locations and byte sizes compute (`lowerCheckTCF`'s `entryOkBT`). -/

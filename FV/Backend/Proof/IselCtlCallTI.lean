@@ -418,27 +418,35 @@ theorem call_got_ruleOkT {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop}
 
 /-! ## `call_indirect` -/
 
-theorem call_ind_lowerInstOkT {Rd : BitVec 64 → Prop}
+theorem call_ind_lowerInstOkT {Rd F : BitVec 64 → Prop}
     {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem} {MR : MemRelT}
-    {env : Clif.Env} {cp : Clif.Program} {sigs : List Clif.Signature}
+    {env : Clif.Env} {cp : Clif.Program} {sb : Nat} {syms : String → Option Nat}
+    (hMR : MRStable F MR) (hMem : MemRefinesR Rd F sb syms isem) {outB : Nat}
+    (hout : OutArgsOk F outB MR) {sigs : List Clif.Signature}
     (hCR : IndCallsRefineP Pc env sigs MR isem)
     {f : Clif.Function} {ctx : Ctx} (hfunc : ctx.func = f) {sig callee : Nat} {args : List Nat}
     {s : Clif.Signature} (hs : f.sigDecls.lookup sig = some s) (hin : s ∈ sigs)
-    (h8 : s.params.length ≤ 8) {st st' : LState} {results : List Nat}
+    (hso : SigStackOk s outB) {bytes : List Nat} (hb : sigParamBytes s = .ok bytes)
+    {locs : List ArgLoc} {S : Nat} (hl : sigArgLocs s = .ok (locs, S))
+    {st st' : LState} {results : List Nat}
     (hres : results.length = s.returns.length)
     (hst' : st'.nextVreg = st.nextVreg + (sigRets s).length) :
     LowerInstOkP Rd Pc isem MR env cp ctx (.callIndirect sig callee args) results st
       (outRegs' st.nextVreg (sigRets s).length) st'
-      [.call ⟨.reg (.vreg callee .int), retPairs (args.zip ((abiArgIdx s.params 0).map Reg.x)),
-        callDefs (outDefs st.nextVreg (sigRets s).length)⟩] := by
+      ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
+        [.call ⟨.reg (.vreg callee .int), retPairs (regPairsOf ((locs.zip args).zip bytes)),
+          callDefs (outDefs st.nextVreg (sigRets s).length)⟩]) := by
   refine ⟨by omega, ?_, ?_⟩
   · intro m hm d hd
-    simp only [List.mem_singleton] at hm
-    subst hm
-    rw [vdefs_call_reg] at hd
-    simp only [outDefs, List.map_map, List.mem_map, List.mem_range, Function.comp_def] at hd
-    obtain ⟨j, hj, rfl⟩ := hd
-    omega
+    rcases List.mem_append.mp hm with hm | hm
+    · obtain ⟨e, -, rfl⟩ := List.mem_map.mp hm
+      simp [vdefs_argStore] at hd
+    · simp only [List.mem_singleton] at hm
+      subst hm
+      rw [vdefs_call_reg] at hd
+      simp only [outDefs, List.map_map, List.mem_map, List.mem_range, Function.comp_def] at hd
+      obtain ⟨j, hj, rfl⟩ := hd
+      omega
   · intro fr cm ρ w hfr hvh _ hmr _ hpin
     split
     · rename_i rvals cm' hO
@@ -448,15 +456,11 @@ theorem call_ind_lowerInstOkT {Rd : BitVec 64 → Prop}
       rw [hfr, hfunc, hs] at hd
       cases hd
       have hpc := hpin.2 sig callee args s x vals name g rvals cm' rfl hd0 hcv hvals hsym hg hgo hty
-      have hvl : vals.length = s.params.length := by
-        have := congrArg List.length hty; simpa [Clif.AbiParam.tys] using this
-      have hal : args.length = s.params.length := (getMany_ok hvals).1 ▸ hvl
       have hrN : rvals.length = s.returns.length := by
         have := congrArg List.length hrty; simpa [Clif.AbiParam.tys] using this
-      have hfst : (args.zip ((abiArgIdx s.params 0).map Reg.x)).map (·.1) = args :=
-        List.map_fst_zip (by simp [abiArgIdx_length]; omega)
-      have huses : (args.zip ((abiArgIdx s.params 0).map Reg.x)).map (ρ ·.1) = args.map ρ := by
-        rw [show (fun x : Nat × Reg => ρ x.1) = ρ ∘ (·.1) from rfl, ← List.map_map, hfst]
+      obtain ⟨hlen, hvx⟩ := getMany_ok hvals
+      obtain ⟨w1, hrun1, hmr1, hargsAt⟩ := argsAt_after_stores hMR hMem hout hso hb hl hty
+        hlen.symm (fun j v x hv hx => hvh x v (hvx j x v hx hv)) hmr
       have hdl : (callDefs (outDefs st.nextVreg (sigRets s).length)).length =
           (sigRets s).length := by
         simp [callDefs, outDefs]
@@ -464,22 +468,27 @@ theorem call_ind_lowerInstOkT {Rd : BitVec 64 → Prop}
         rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
         exact lo64_of_vholds (hvh callee _ (frame_get_regs hcv))
       obtain ⟨hcall, -⟩ := hCR
-      obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := hcall s hin name g fr.slots cm w x.toNat
-        (.vreg callee .int) (retPairs (args.zip ((abiArgIdx s.params 0).map Reg.x)))
-        (callDefs (outDefs st.nextVreg (sigRets s).length)) (ρ callee) (args.map ρ) vals rvals cm'
-        hg hsg hsym hlo hdl (by omega) (allHold_args hvh hvals) hmr hpc hgo hrN hty
+      obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := hcall s hin name g fr.slots cm w1 x.toNat
+        (.vreg callee .int) (retPairs (regPairsOf ((locs.zip args).zip bytes)))
+        (callDefs (outDefs st.nextVreg (sigRets s).length)) (ρ callee)
+        ((regPairsOf ((locs.zip args).zip bytes)).map (ρ ·.1)) vals rvals cm'
+        hg hsg hsym hlo hdl (hargsAt w1 (SameWorldNF.refl F w1)) hmr1 hpc hgo hrN hty
       have hol' : outs.length = (outDefs st.nextVreg (sigRets s).length).length := by
         rw [hol]; simp [callDefs, outDefs]
-      rw [← huses] at hi
-      refine ⟨?_, _, _, seqRun_call_reg hi hol', results_call hrN hres (by rw [hol, hdl]) hro,
-        hmr'⟩
+      refine ⟨?_, _, _, seqRun_append_fall' isem hrun1 (seqRun_call_reg hi hol'),
+        results_call hrN hres (by rw [hol, hdl]) hro, hmr'⟩
       intro mi hmi u hu
-      simp only [List.mem_singleton] at hmi
-      subst hmi
-      rw [vuseNums_call_reg, hfst] at hu
-      rcases List.mem_cons.mp hu with rfl | hu
-      · exact .inr (by rw [frame_get_regs hcv]; rfl)
-      · exact .inr (usesOk_args hvals u hu)
+      rcases List.mem_append.mp hmi with hmi | hmi
+      · obtain ⟨e, he, rfl⟩ := List.mem_map.mp hmi
+        rw [vuseNums_argStore, List.mem_singleton] at hu
+        subst hu
+        exact .inr (usesOk_args hvals _ (map_zip_args (mem_args_of_stackEnts he)))
+      · simp only [List.mem_singleton] at hmi
+        subst hmi
+        rw [vuseNums_call_reg] at hu
+        rcases List.mem_cons.mp hu with rfl | hu
+        · exact .inr (by rw [frame_get_regs hcv]; rfl)
+        · exact .inr (usesOk_args hvals u (map_zip_args (mem_args_of_regPairs hu)))
     · intro h; simp [explicitTrapInst] at h
     · trivial
 
@@ -488,7 +497,10 @@ set_option maxHeartbeats 5000000 in
 theorem call_ind_ruleOkT {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : BitVec 64 → Prop}
     {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem}
     {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} (hR : Refines F isem)
-    (hMR : MRStable F MR) {sigs : List Clif.Signature} (hCR : IndCallsRefineP Pc env sigs MR isem) :
+    (hMR : MRStable F MR) {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefinesR Rd F sb syms isem) {outB : Nat} (hout : OutArgsOk F outB MR)
+    {sigs : List Clif.Signature} (hIstk : IndStack sigs outB)
+    (hCR : IndCallsRefineP Pc env sigs MR isem) :
     IndRuleOkTP Rd Pc isem MR env cp sigs p rule_lower_2529 := by
   intro f ctx hctxT ii info inst hi hcl _ hsig cfg hc m n st tr env' s1 out st' tr' hm hn hvb _
     hmatch heval
@@ -513,7 +525,7 @@ theorem call_ind_ruleOkT {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : B
   have hops : ∀ x ∈ callee :: args, IntPos ctx x := fun x hx => hctx.intOps ii info _ hi hcl x hx
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
-  obtain ⟨hin, h8'⟩ := hsig sig callee args s rfl hs
+  have hin := hsig sig callee args s rfl hs
   have hres := callIndirect_results_lengthT hctx hi hcl hs
   simp only [ext_value_list_slice_iff, ext_value_slice_unwrap_iff] at *
   isel_destruct; subst_vars
@@ -534,16 +546,16 @@ theorem call_ind_ruleOkT {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : B
     outRegs_length, Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
-  have h8 : bytes.length ≤ 8 := sigParamBytes_length hb ▸ h8'
+  obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
   have hrs := mapM_valueRegTI hctx (fun x hx => hops x (List.mem_cons_of_mem _ hx))
     ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
   have htgt := hctx.valueReg_int ‹ctx.valueReg? callee = some _› (hops callee List.mem_cons_self)
   subst htgt
-  simp only [ctor_gen_call_args_iff _ _ _ hint hb h8, mapM_single_map, Option.some.injEq,
+  simp only [ctor_gen_call_args_gen _ _ _ hb hl, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
-  simp only [ctor_gen_call_ind_info_iff _ _ _ _ _ _ hb h8, Nat.reduceEqDiff, Nat.reduceLT,
+  simp only [ctor_gen_call_ind_info_gen _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
   obtain ⟨hr8, rfl⟩ := retRegs_eq ‹retRegs _ = some _›
@@ -555,9 +567,10 @@ theorem call_ind_ruleOkT {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : B
   obtain ⟨mi, hmi, hs2, -⟩ := kE _ (by omega) _ _ _ _ h242
   rw [ofV_callInd] at hmi
   cases hmi
-  rw [uses_retPairs, callDefs_outDefs] at hs2
+  rw [callDefs_outDefs] at hs2
   rw [outRegs_eq]
-  refine ⟨_, ?_, _, rfl, call_ind_lowerInstOkT hCR hctx.func hs hin h8' hres
+  refine ⟨_, ?_, _, rfl, call_ind_lowerInstOkT hMR hMem hout hCR hctx.func hs hin (hIstk s hin)
+    hb hl hres
     (by rw [hs2, hs1]; simp [LState.emit, freshN_nextVreg])⟩
   rw [hs2, hs1]; simp [LState.emit, freshN_emitted]
 
@@ -578,13 +591,14 @@ theorem callRulesCorrectTP_program : CallRulesCorrectTP program := by
 theorem callRulesCorrectT_program : CallRulesCorrectT program :=
   callRulesCorrectT_of_P callRulesCorrectTP_program
 
-/-- **`IndRulesCorrectTP`**: under the pinned indirect-call contract, the `call_indirect` rule of
-`lower` (1033) is correct over typed contexts. -/
+/-- **`IndRulesCorrectTP`**: under the pinned indirect-call contract, guarded memory forms and an
+outgoing area holding the stack arguments (S5), the `call_indirect` rule of `lower` (1033) is
+correct over typed contexts. -/
 theorem indRulesCorrectTP_program : IndRulesCorrectTP program := by
-  intro Rd Pc F isem MR env cp sigs hR hMR hCR r hr hroot
+  intro Rd Pc F isem MR env cp sigs sb syms outB hR hMR hMem hout hIstk hCR r hr hroot
   simp only [indRootRule, beq_iff_eq] at hroot
   rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2529 (by rw [hroot]; rfl)]
-  exact call_ind_ruleOkT data_program indData_program hR hMR hCR
+  exact call_ind_ruleOkT data_program indData_program hR hMR hMem hout hIstk hCR
 
 /-- **`IndRulesCorrectT`** (`indRulesCorrectTP_program` with nothing pinned). -/
 theorem indRulesCorrectT_program : IndRulesCorrectT program :=

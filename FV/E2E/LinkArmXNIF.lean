@@ -301,7 +301,7 @@ theorem callPost_progTransfer (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g 
       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩ g c)
       L.Xb.sym d uses w' r' := by
   refine ⟨fun ext hin G sl cm args vals rvals cm' hG hd hargs hmr hret hlen => ?_,
-    fun sig hs m G sl cm u args vals rvals cm' hdn hu hG hsg hlo h8 hall hmr hret hlen hty => ?_⟩
+    fun sig hs m G sl cm u args vals rvals cm' hdn hu hG hsg hlo hargsS hmr hret hlen hty => ?_⟩
   · have hmr0 := mrStable_relW _ g c sl cm w' w hsw.toNF hmr
     obtain ⟨hAi, hb | ⟨h, hpf, -, -, cs', hinit, -⟩⟩ := L.envOfB_only_some hG hret
     · exact absurd (hA _ _ _ hAi) (by simp [hb.1])
@@ -343,7 +343,20 @@ theorem callPost_progTransfer (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g 
     obtain ⟨h1, h2, h3⟩ := hcp.1 ext hin G sl cm args vals rvals cm' hG hd hargs0 hmr0 hret hlen
     exact ⟨hr1 ▸ h1, hr1 ▸ h2, mrStable_relW _ g c sl cm' _ _ hr2.symm.toNF h3⟩
   · have hmr0 := mrStable_relW _ g c sl cm w' w hsw.toNF hmr
-    obtain ⟨h1, h2, h3⟩ := hcp.2 sig hs m G sl cm u args vals rvals cm' hdn hu hG hsg hlo h8 hall
+    -- the callee is a function of the program: its arguments are all in registers
+    obtain ⟨hAi, hb | ⟨h, hpf, hdecl, -, cs', hinit, -⟩⟩ := L.envOfB_only_some hG hret
+    · exact absurd (hA _ _ _ hAi) (by simp [hb.1])
+    obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
+    have hnf : ¬ Clif.IndFree g := fun hif => by
+      rw [indSigs_nil_of_indFree hif] at hs; cases hs
+    have hm : IndSigMatch sig h :=
+      hsg h.sig (by rw [← hname]; simp only [Clif.Env.only_sigOf, envOfB, Clif.linkEnvR_sigOf,
+        hname ▸ hpf, Option.map_some])
+    obtain ⟨⟨bytes, hb, hb8⟩, -⟩ := hL.indSig g hg hnf h hh (hname ▸ hdecl) (.inl ⟨sig, hs, hm⟩)
+    have hb' := hm.paramBytes.trans hb
+    have hargs0 : ArgsAt sig vals args w :=
+      (argsAt_iff_of_regs hb' hb8 hargsS.1).mpr ((argsAt_iff_of_regs hb' hb8 hargsS.1).mp hargsS)
+    obtain ⟨h1, h2, h3⟩ := hcp.2 sig hs m G sl cm u args vals rvals cm' hdn hu hG hsg hlo hargs0
       hmr0 hret hlen hty
     exact ⟨hr1 ▸ h1, hr1 ▸ h2, mrStable_relW _ g c sl cm' _ _ hr2.symm.toNF h3⟩
 

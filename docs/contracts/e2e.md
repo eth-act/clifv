@@ -77,6 +77,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | **Linking** (2026-10-02, `agent/link-proof`): the CLIF side of linking the per-function theorems is proven — a whole-program run `Clif.runLoop base P` (calls and `try_call`s of functions of `P` enter them) that returns or traps is a per-function run of `P.only f` under `Clif.linkEnv P base` (`Clif.runLoop_link`) — and `E2E.backend_correct_linked` states `f`'s Arm code against the whole-program run, with the program callees' contracts as premises. Discharging those from the callees' own theorems is **not** done (see "Linking" below) | **proven** (CLIF layer, contract-level theorem); Arm-level discharge open |
 | **Callee contract with a dead stack, non-vacuity** (2026-10-02, `agent/callee-fix`): the former `CalleeOk` was unsatisfiable by every callee that saves its return address below `sp` (proven on main as `calleeOk_saves_lr_false`), so `backend_correct_final` and the theorems built on it were vacuous for every function calling such a callee. The callee contract now leaves the callees' dead stack (`K` bytes below the caller's `sp`) unspecified, is required only at the compiled code's call sites, and the theorems are proven again; a witness callee that pushes two frames meets every contract premise, for callees without results and for callees returning their argument (`E2E.final_contracts_witness`/`final_contracts_id`, `E2E.backend_correct_final_witness`/`backend_correct_final_id`, `FV/E2E/NonVacuity.lean`). See "Callee contract with a dead stack" and "Non-vacuity" below | **proven**; `try_call` callees: open (the exception payload registers, see there) |
 | **`try_call` callee contract, non-vacuity** (2026-10-02, `agent/trycall-contract`): the former `CalleeTryOk` fixed the exception payload registers of a `try_call`'s call (x0/x1 when not return registers) to `X.call`'s world, which a callee that does not write them cannot meet (it leaves the caller's values, which the world masks), so the theorems were vacuous for every function with a `try_call`. The payload defs are now dead on the normal-return edge: the allocated-code semantics havocs them there (`havocFrom`), the regalloc checker forgets them on that edge only (`CheckCtx.edgeForget`; kept for the handler edges), and `CalleeTryOk` constrains only the results, at the compiled code's `try_call` sites (`VCode.TrySite`). Witness: `E2E.backend_correct_final_try_witness` (see "`try_call` payload registers" and "Non-vacuity") | **proven** (`checkAlloc_sound` with `edgeForget_inv`, `realizes_tryCall`, every E2E theorem); lean-backend reports `try_call` functions verified for normal returns again |
+| **Stack-passed arguments of indirect calls** (2026-10-22, S5 #29, `agent/stackargs-s5`): `call_indirect`/`try_call_indirect` whose call-site signature has more than 8 parameters are inside `backend_correct_final`: `InSubset.indSigs` (and `InSubsetT.indSigs`) is `sigAbiOk` only (`Backend.indSigsAbiOk` in `Backend.verifiable`; `InSubset.of_regArgs` keeps the former domain). The indirect-call contracts take the call site's argument placement `ArgsAt sig vals args w` (register-passed in `args`, stack-passed at `sp + off`) instead of "at most 8 values, all in registers": `IndCallsRefine(P)`, `XCallsIndOk` (the former contract is `XCallsIndOkRegs`, `xCallsIndOk_of_regArgs`), `XRaiseIndOk`, the indirect clause of `XRaiseExcl`, the pins `CallG`/`RaiseGuard` and the non-interference premises `XNI`/`XRNI`. `IndSigOk` is membership only. `IndRulesCorrect(P)`/`TryIndRulesCorrect(P)` and the typed `…T(P)` take `MemRefines`, `OutArgsOk` and `IndStack sigs outB` (every call-site signature's stack arguments fit the outgoing area), decided by `lowerCheck`'s `callsStackOkB` (`indStack_of_check`, `indStackT_of_check`; layouts by `lowerScopeB`, `LowerScope.indStackLayout`); the rules store the stack arguments with `spOffset` stores before the `blr` (`call_ind_ruleOk`, `try_ind_ruleOk`; completeness `callInd_outgoing`/`tryInd_outgoing`). Linking: a call reaching a function of `P` (at most 8 register parameters) converts `ArgsAt` of the matching call-site signature (`LinkSys.IndSigMatch.paramBytes`, `LinkSys.argsAt_of_tyMatch`). Witness: `E2E.IndStackWitness.backend_correct_final_ind_stack` (ten arguments, two on the stack; the pre-S5 scope rejected it); run-time regression `corpus/clif-regress/call_indirect.clif` (`%ci_stack`, `%tci_stack`). The link scopes (`LinkScopeDefs`, `fnScopeInB`) still require `indSigsOk`. |
 
 ### Final hypotheses (`E2E.backend_correct_final`, 2026-09-28)
 
@@ -762,8 +763,9 @@ this change such calls were stuck.
 `scripts/clif-filetests.sh` and the differential tools are unchanged by it (see there).
 
 * **Scope** `InSubset.indSigs`: the call-site signatures of the indirect calls (`Backend.indSigs
-  f`: the `sigN` of each `call_indirect` and each `try_call_indirect`'s exception table) have
-  at most 8 parameters and pass `sigAbiOk` (`Backend.indSigsOk`, part of `Backend.verifiable`).
+  f`: the `sigN` of each `call_indirect` and each `try_call_indirect`'s exception table) pass
+  `sigAbiOk` (`Backend.indSigsAbiOk`, part of `Backend.verifiable`; until S5 they also had at
+  most 8 parameters, `Backend.indSigsOk`: "Stack-passed arguments of indirect calls").
   `InSubset.noCI`/`noFA` and `CtxInv.noFA` are gone; `CtxInv.resTys` takes a `call_indirect`'s
   result types from its `sigN` declaration. `Compile.termE` admits `try_call_indirect`.
 * **Run premises** `TrapsExplicit.indirect`/`tryIndirect`: at a `call_indirect` statement /
@@ -3506,8 +3508,8 @@ the `try_call_indirect` statements `TryIndRulesCorrect`, `TryIndUnmatchable` (of
   arguments beyond the registers are passed on the stack, agent/stack-tls-proof), and the
   signatures of `f` and its externs pass `sigAbiOk` (`abiSigs`: `normal` plus at most one
   `sret`; `Backend.abiSigs`), every `try_call` calls an extern (`tryExterns`), and the
-  indirect calls' signatures take at most 8 parameters and pass `sigAbiOk` (`indSigs`,
-  `Backend.indSigsOk`). `br_table`
+  indirect calls' signatures pass `sigAbiOk` (`indSigs`, `Backend.indSigsAbiOk`; their
+  parameters beyond x0..x7 are stack-passed arguments, S5). `br_table`
   indices of at most 32 bits are enforced by `lowerCheck` (`brIdxOk`, contract change #6):
   an `i64` index is a compile error, as in Cranelift's verifier; so is a jump table with `2^32`
   or more entries (contract change #9).
@@ -4229,7 +4231,7 @@ functions over the validation budget (`Backend.validationBudget`: instructions �
 
 **Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside
 clif-subset-v2 E and its typed scope, calls (also `try_call`s) of functions of the same file, special-purpose parameters other than one `sret` pointer (`abiSigs`), indirect calls
-with more than 8 parameters or special-purpose parameters (`indSigsOk`)) are still
+with such parameters (`indSigsAbiOk`; before S5 also with more than 8 parameters)) are still
 compiled, without validation, and reported as unverified (`FileAsm.unverified`; `lean-backend`
 prints `compiled, unverified (outside backend_correct): …`).
 
@@ -4385,7 +4387,10 @@ E2E.backend_correct_final_cleanup_trapcall
 * **Trapping callees' contract** `XTrapsOk`: where an extern's CLIF semantics traps (arguments
   and memory related as in `XCallsOk`), its machine semantics `X.call` is `none` — the outside
   code does not return there (a `__*ti3` helper with divisor zero, a panic). It holds trivially
-  for callees that never trap (`xTrapsOk_of_noTrap`).
+  for callees that never trap (`xTrapsOk_of_noTrap`). Since S5 the indirect clause (and
+  `TrapCallSem`'s) places the arguments by `ArgsAt` (registers and outgoing area); the former
+  8-register shape is `XTrapsOkRegs`, which implies `XTrapsOk` for signatures of at most 8
+  parameters (`xTrapsOk_of_regArgs`).
 * **Scope of S9a**: functions without `try_call`/`try_call_indirect` terminators, in a program
   without functions (`p.funcs = []`, the per-function theorems' `p.bare` in the linked
   theorems), whose lowering passes the unwinding validator `lowerCheckU` (decided by

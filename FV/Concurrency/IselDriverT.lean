@@ -35,7 +35,7 @@ structure DriverHypT (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState)
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   tryInd : TryIndCalls sem MR env p (indSigs f)
   tryIndSig : ∀ B ∈ f.blocks, ∀ c args et s, B.term = .tryCallIndirect c args et →
-    f.sigDecls.lookup et.sig = some s → s ∈ indSigs f ∧ s.params.length ≤ 8
+    f.sigDecls.lookup et.sig = some s → s ∈ indSigs f
   cfg : ∃ ss ps, vc.cfg = .ok (ss, ps)
   entryLocs : (locsOf f.sig).length = f.sig.params.length ∧ ∃ bytes, sigParamBytes f.sig = .ok bytes
 

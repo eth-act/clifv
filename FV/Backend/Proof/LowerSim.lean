@@ -195,8 +195,8 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
   terms : TermCalls sem MR
   ext : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args, st.inst = .call fn args →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
-  /-- the signature of an indirect call is among `f`'s indirect-call signatures, with register
-  arguments (`E2E.InSubset.indSigs`) -/
+  /-- the signature of an indirect call is among `f`'s indirect-call signatures
+  (`E2E.InSubset.indSigs`) -/
   indSig : ∀ B ∈ f.blocks, ∀ st ∈ B.body, IndSigOk f (indSigs f) st.inst
   /-- `f` is in subset E (`E2E.InSubset.subsetE`; new since `call_indirect`/`func_addr` compile) -/
   subE : Compile.functionE f = true
@@ -212,10 +212,10 @@ structure DriverHyp (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) 
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   /-- M4: `lower_branch` on `try_call_indirect`s (`tryIndCalls_of_rules`) -/
   tryInd : TryIndCalls sem MR env p (indSigs f)
-  /-- the signature of a `try_call_indirect` is among `f`'s indirect-call signatures, with
-  register arguments (`E2E.InSubset.indSigs`) -/
+  /-- the signature of a `try_call_indirect` is among `f`'s indirect-call signatures
+  (`E2E.InSubset.indSigs`) -/
   tryIndSig : ∀ B ∈ f.blocks, ∀ c args et s, B.term = .tryCallIndirect c args et →
-    f.sigDecls.lookup et.sig = some s → s ∈ indSigs f ∧ s.params.length ≤ 8
+    f.sigDecls.lookup et.sig = some s → s ∈ indSigs f
   cfg : ∃ ss ps, vc.cfg = .ok (ss, ps)
   /-- the signature's parameter locations and byte sizes compute, one per parameter
   (`lowerCheck`'s `entryOkB`) -/
@@ -1484,7 +1484,7 @@ theorem term_step_tryP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       exact ⟨bc, rvals, cm', regs', htn, hO, by rw [← hsig0]; exact hset, rfl⟩
     · have hdata' : tryCallData f (.tryCallIndirect callee args et) = .ok L.data := hBT ▸ hdata
       have hsd := exnTableOpnd_sig hexn
-      obtain ⟨hsin, h8⟩ := H.tryIndSig B hBmem callee args et T.sig hBT hsd
+      have hsin := H.tryIndSig B hBmem callee args et T.sig hBT hsd
       obtain ⟨hnd, hnx⟩ := stepTryInd_spec (env := env) (p := p) (args := args) (et := et)
         (hind callee args (hterm.trans hBT))
       rw [hBT]
@@ -1495,7 +1495,7 @@ theorem term_step_tryP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
           exact List.mem_cons.mpr ((List.mem_cons.mp hy).imp id fun h => List.mem_append_left _ h),
         hnd, fun s' hs => ?_,
         H.tryInd f ctx (L.start + B.body.length) callee args et L.data T.sig T.items L.targets
-          T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv hdata' hexn hsin h8
+          T.info T.regs L.tst T.st1 out L.tst' tr H.shape.ctxInv hdata' hexn hsin
           (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
       obtain ⟨declared, bc, rvals, cm', regs', hd, htn, hO, hset, rfl⟩ := hnx s' hs
       rw [hfunc, hsd] at hd

@@ -69,11 +69,12 @@ def lowerScopeB (f : Clif.Function) : Bool :=
       | some e => stackLayoutOk e.sig
       | none => true
     | _ => true) &&
-  f.blocks.all fun B => match B.term with
+  (f.blocks.all fun B => match B.term with
     | .tryCall fn _ _ => match f.extern? fn with
       | some e => stackLayoutOk e.sig
       | none => true
-    | _ => true
+    | _ => true) &&
+  (indSigs f).all stackLayoutOk
 
 /-! ## Soundness -/
 
@@ -152,9 +153,9 @@ theorem dominated_of {f : Clif.Function} (h : dominatedB f = true) : Dominated f
 theorem lowerScope_of {f : Clif.Function} (h : lowerScopeB f = true) : LowerScope f := by
   simp only [lowerScopeB, Bool.and_eq_true, List.all_eq_true, bne_iff_ne, ne_eq,
     Bool.not_eq_true', List.isEmpty_eq_false_iff] at h
-  obtain ⟨⟨⟨⟨⟨⟨hE, hne⟩, hent⟩, hctx⟩, htry⟩, hcall⟩, htc⟩ := h
+  obtain ⟨⟨⟨⟨⟨⟨⟨hE, hne⟩, hent⟩, hctx⟩, htry⟩, hcall⟩, htc⟩, hind⟩ := h
   refine ⟨hE, hne, hent, fun ctx ranges st0 hb => ?_, fun B hB et het sig hsig i hi => ?_,
-    ⟨fun B hB st hst fn args e hi he => ?_, fun B hB fn args et e ht he => ?_⟩⟩
+    ⟨fun B hB st hst fn args e hi he => ?_, fun B hB fn args et e ht he => ?_⟩, hind⟩
   · rw [hb] at hctx
     simp only [Bool.and_eq_true, List.all_eq_true] at hctx
     refine ⟨hctx.1, fun ii info inst x hi hc hm => ?_⟩

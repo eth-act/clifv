@@ -114,14 +114,14 @@ theorem xCallsOk_env (exts : List Clif.ExtFunc) (MR : MemRelT) (X : ExtSem) :
 
 theorem xCallsIndOk_env (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem) :
     XCallsIndOk env sigs MR X := by
-  intro _ _ _ g _ cm _ _ _ vals _ _ hg _ _ _ _ _ hr
+  intro _ _ _ g _ cm _ _ _ vals _ _ hg _ _ _ _ hr
   rw [env_extern hg] at hr
   cases hr
 
 /-- No callee of `Xn X0` returns normally: the trapping callees' contract holds. -/
 theorem xTrapsOk_Xn (exts : List Clif.ExtFunc) (sigs : List Clif.Signature) (MR : MemRelT)
     (X0 : ExtSem) : XTrapsOk env exts sigs MR (Xn X0) :=
-  ⟨fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl, fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl⟩
+  ⟨fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl, fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl⟩
 
 theorem source_noTry : ∀ B ∈ source.blocks, B.term.isTry = false := by
   intro B hB

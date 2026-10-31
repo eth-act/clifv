@@ -262,7 +262,7 @@ private theorem fixture_original_build :
 
 set_option maxRecDepth 4096 in
 private theorem fixture_scope : LowerScope fixture := by
-  refine ⟨by decide, by decide, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨by decide, by decide, ?_, ?_, ?_, ⟨?_, ?_⟩, ?_⟩
   · intro B hB b hb
     simp [fixture] at hB
     subst B
@@ -297,6 +297,8 @@ private theorem fixture_scope : LowerScope fixture := by
     simp [fixture] at hB
     subst B
     cases ht
+  · intro s hs
+    simp [indSigs, fixture] at hs
 
 set_option maxRecDepth 4096 in
 private theorem fixture_view : DFGViewEq fixtureResult.1 originalResult.1 :=

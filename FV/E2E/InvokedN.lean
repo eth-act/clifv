@@ -188,7 +188,7 @@ theorem callPost_invokedN_exists {env : Clif.Env} {p : Clif.Program} {cs : Clif.
       obtain ⟨g, -, rfl⟩ := Clif.Env.only_extern_eq hg'
       exact hinv ⟨nm, vals, cm, (onlyFn_returned hret).1⟩
     exact ⟨([], w), fun _ _ _ _ _ _ _ _ _ hg _ _ _ hret _ => (none_ret _ _ _ _ _ _ hg hret).elim,
-      fun _ _ _ _ _ _ _ _ _ _ _ _ _ hg _ _ _ _ _ hret _ _ =>
+      fun _ _ _ _ _ _ _ _ _ _ _ _ _ hg _ _ _ _ hret _ _ =>
         (none_ret _ _ _ _ _ _ hg hret).elim⟩
 
 end E2E

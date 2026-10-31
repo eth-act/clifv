@@ -69,7 +69,7 @@ theorem callPost_xb_zero (hL : L.Ok) [L.CrunOk] {g : Clif.Function} (hg : g ∈ 
       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩ g c)
       L.Xb.sym d uses w x := by
   refine ⟨fun ext hin G sl cm args vals rvals cm' hG hd hargs hmr hret hlen => ?_,
-    fun sig hs m G sl cm u args vals rvals cm' hdn hu hG _ hlo h8 hall hmr hret hlen hty => ?_⟩
+    fun sig hs m G sl cm u args vals rvals cm' hdn hu hG _ hlo hargsS hmr hret hlen hty => ?_⟩
   · obtain ⟨hpf, G0, hG0, hr0⟩ := L.envOfB_zero_ret hG hret
     obtain ⟨outs, w', hx', h1, h2, h3⟩ := hL.baseX g hg F (L.A g).af.slotBase
       (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c ext
@@ -82,7 +82,7 @@ theorem callPost_xb_zero (hL : L.Ok) [L.CrunOk] {g : Clif.Function} (hg : g ∈ 
     subst hdn hu
     obtain ⟨outs, w', hx', h1, h2, h3⟩ := hL.baseXI g hg F (L.A g).af.slotBase
       (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c sig hs m G0 sl cm w u args vals rvals
-      cm' hG0 (fun _ h => by cases h) hlo h8 hall hmr hr0 hlen hty
+      cm' hG0 (fun _ h => by cases h) hlo hargsS hmr hr0 hlen hty
     rw [hx] at hx'
     cases hx'
     exact ⟨h1, h2, h3⟩
@@ -99,7 +99,7 @@ theorem stage2Y_zero (hL : L.Ok) [L.CrunOk] {g : Clif.Function} (hg : g ∈ L.P.
       ∃ x, L.Xb.call d uses w = some x := by
     refine Classical.byContradiction fun hno => hnv fun r => ⟨fun ext hin G sl cm args vals rvals
       cm' hG hd hargs hmr hret hlen => ?_, fun sig hs m G sl cm u args vals rvals cm' hdn hu hG _
-      hlo h8 hall hmr hret hlen hty => ?_⟩
+      hlo hargsS hmr hret hlen hty => ?_⟩
     · exfalso
       obtain ⟨hpf, G0, hG0, hr0⟩ := L.envOfB_zero_ret hG hret
       obtain ⟨outs, w', hx', -⟩ := hL.baseX g hg F (L.A g).af.slotBase
@@ -115,7 +115,7 @@ theorem stage2Y_zero (hL : L.Ok) [L.CrunOk] {g : Clif.Function} (hg : g ∈ L.P.
       subst hdn hu
       obtain ⟨outs, w', hx', -⟩ := hL.baseXI g hg F (L.A g).af.slotBase
         (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c sig hs m G0 sl cm w u args vals rvals
-        cm' hG0 (fun _ h => by cases h) hlo h8 hall hmr hr0 hlen hty
+        cm' hG0 (fun _ h => by cases h) hlo hargsS hmr hr0 hlen hty
       exact hno ⟨m, hpf, .inr ⟨rfl, u, args, rfl, hlo⟩, _, hx'⟩
   obtain ⟨n0, hpf, hshape, x, hx⟩ := hinst
   refine ⟨x, ?_, L.callPost_xb_zero hL hg F c' c _ hx⟩

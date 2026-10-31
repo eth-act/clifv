@@ -149,7 +149,7 @@ theorem xCallsOk_env (exts : List Clif.ExtFunc) (MR : MemRelT) (X : ExtSem) :
 
 theorem xCallsIndOk_env (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem) :
     XCallsIndOk IselSimUWitness.env.toEnv sigs MR X := by
-  intro _ _ _ g _ cm _ _ _ vals _ _ hg _ _ _ _ _ hr
+  intro _ _ _ g _ cm _ _ _ vals _ _ hg _ _ _ _ hr
   obtain ⟨g0, hg0, hgg⟩ := toEnv_extern hg
   simp only [IselSimUWitness.env, Option.some.injEq] at hg0
   subst hg0

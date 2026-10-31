@@ -137,7 +137,7 @@ theorem cfg_of_prepare {vc vcp : VCode} (h : prepare vc = .ok vcp) :
   | error e => rw [hc] at h; cases h
 
 /-- The call-site signature of an indirect call of an in-subset function is one of its
-indirect-call signatures, with register arguments. -/
+indirect-call signatures. -/
 theorem indSig_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset p f) :
     ∀ B ∈ f.blocks, ∀ st ∈ B.body, IndSigOk f (indSigs f) st.inst := by
   intro B hB st hst sig callee args s hi hs
@@ -145,18 +145,18 @@ theorem indSig_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset p 
     unfold indSigs
     refine List.mem_flatMap.mpr ⟨B, hB, List.mem_append_left _ (List.mem_filterMap.mpr ⟨st, hst, ?_⟩)⟩
     rw [hi]; exact hs
-  exact ⟨hmem, (h.indSigs s hmem).1⟩
+  exact hmem
 
 /-- The same for a `try_call_indirect` (its exception table's signature). -/
 theorem tryIndSig_of_subset {p : Clif.Program} {f : Clif.Function} (h : InSubset p f) :
     ∀ B ∈ f.blocks, ∀ c args et s, B.term = .tryCallIndirect c args et →
-      f.sigDecls.lookup et.sig = some s → s ∈ indSigs f ∧ s.params.length ≤ 8 := by
+      f.sigDecls.lookup et.sig = some s → s ∈ indSigs f := by
   intro B hB c args et s ht hs
   have hmem : s ∈ indSigs f := by
     unfold indSigs
     refine List.mem_flatMap.mpr ⟨B, hB, List.mem_append_right _ ?_⟩
     rw [ht]; simp [hs]
-  exact ⟨hmem, (h.indSigs s hmem).1⟩
+  exact hmem
 
 /-- **CLIF → VCode** from the driver simulation (the entry loads read memory through `sem`'s
 load forms, `MemRefines`). -/
@@ -250,6 +250,10 @@ theorem tryStack_mono {f : Clif.Function} {a b : Nat} (h : TryStack f a) (hab : 
     TryStack f b := fun B hB fn args et hi e he =>
   ⟨Nat.le_trans (h B hB fn args et hi e he).1 hab, (h B hB fn args et hi e he).2⟩
 
+theorem indStack_mono {sigs : List Clif.Signature} {a b : Nat} (h : IndStack sigs a)
+    (hab : a ≤ b) : IndStack sigs b := fun s hs =>
+  ⟨Nat.le_trans (h s hs).1 hab, (h s hs).2⟩
+
 /-- `backend_correct` with `CompiledA` (an `AllocChecked` allocation) and `RegLevelCorrectEx` (V4). -/
 theorem backend_correct_ex {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -305,6 +309,7 @@ theorem backend_correct_ex {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB)
       (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f)
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
@@ -420,7 +425,9 @@ theorem backend_correct_of_rules_ex {p : Clif.Program} {f : Clif.Function} {k : 
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
     (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
+      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB) (hicalls s'))
     hM6 hRef hds hcalls hicalls hmem houtB hent hres hbe hargs hargF hcs hrel htr fuel
 
 /-- **`backend_correct` from M4's rule statements only**: the terminator calls (`TermCalls`)

@@ -57,7 +57,7 @@ theorem driverHyp_relW_cleanup {p : Clif.Program} {f : Clif.Function} {k : Nat} 
     insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
       indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
       (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-      (memRelOk_relW Γ f c)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB) (memRelOk_relW Γ f c)
     terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable hRef (mrStable_relW Γ f c)
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
@@ -70,7 +70,7 @@ theorem driverHyp_relW_cleanup {p : Clif.Program} {f : Clif.Function} {k : Nat} 
       (outArgsOk_relW Γ f c) hcalls, tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef (mrStable_relW Γ f c)
-      hicalls
+      hmem (outArgsOk_relW Γ f c) (indStack_mono (indStack_of_check hc.lowerOk) houtB) hicalls
     tryIndSig := tryIndSig_of_subset hsub
     cfg := by
       obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare

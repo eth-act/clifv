@@ -38,11 +38,13 @@ structure LowerScopeTF (f : Clif.Function) : Prop where
       f.extern? fn = some e → stackLayoutOk e.sig = true) ∧
     ∀ B ∈ f.blocks, ∀ fn args et e, B.term = .tryCall fn args et → f.extern? fn = some e →
       stackLayoutOk e.sig = true
+  /-- the indirect callees' stack-argument layouts are well formed (S5) -/
+  indStackLayout : ∀ s ∈ indSigs f, stackLayoutOk s = true
 
 /-- The typed movement scope's input conditions are the float scope's. -/
 theorem LowerScopeT.toTF {f : Clif.Function} (hs : LowerScopeT f) : LowerScopeTF f :=
   ⟨Compile.functionETF_of_functionET hs.subsetT, hs.nonempty, hs.noEntryPred, hs.ctxFacts,
-    hs.tryRet, hs.stackLayout⟩
+    hs.tryRet, hs.stackLayout, hs.indStackLayout⟩
 
 /-- The parts of `Compile.functionETF`. -/
 theorem functionETF_parts {f : Clif.Function} (h : Compile.functionETF f = true) :

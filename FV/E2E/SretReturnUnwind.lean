@@ -51,7 +51,7 @@ theorem iselSimUAbi_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 
     (H : DriverHyp f vc ctx st0 R gn bl A sem (fun sl cm w => Γ.holds f sl cm w) env.toEnv p)
     (HU : UnwShape f vc ctx R gn bl A) (hds : DriverSem sem) (hRef : Refines Γ.F sem)
     (hMem : MemRefines Γ.F Γ.slotOff Γ.syms sem) (hRS : RaiseSem Γ.F X XR sem)
-    (hstk : CallsStack f Γ.out) (htstk : TryStack f Γ.out)
+    (hstk : CallsStack f Γ.out) (htstk : TryStack f Γ.out) (histk : IndStack (indSigs f) Γ.out)
     (hXR : XRaiseOk env (f.externs.map (·.2)) (fun sl cm w => Γ.holds f sl cm w) X XR)
     (hXRi : XRaiseIndOk env (indSigs f) (fun sl cm w => Γ.holds f sl cm w) X XR)
     (hsym : ∀ n b, Γ.syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
@@ -60,7 +60,7 @@ theorem iselSimUAbi_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 
   have HR : RaiseHyp f sem (fun sl cm w => Γ.holds f sl cm w) env Γ.F X XR Γ.slotOff Γ.syms
       Γ.out :=
     ⟨hRS, hRef, hMem, mrStable_holds Γ f, outArgsOk_holds Γ f, memRelOk_holds Γ f, hstk, htstk,
-      hXR, hXRi, hsym, fun sl cm w h => (memRelOk_holds Γ f).symbols sl cm w h⟩
+      histk, hXR, hXRi, hsym, fun sl cm w h => (memRelOk_holds Γ f).symbols sl cm w h⟩
   intro args cs w₀ ρ₀ hce hrel hargs htr fuel
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
   have hB0 : f.blocks[0]? = some B0 := by
@@ -116,7 +116,8 @@ theorem iselSimU_final_abi {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
   refine iselSimUAbi_of_driver (ctx := ctx) (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A)
     ?_ hUS (driverSem_csemU F fctx X XR) hRef hmem (raiseSem_csemU F fctx X XR)
     (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-    (tryStack_mono (tryStack_of_check hc.lowerOk) houtB) hXR hXRi hsym hS
+    (tryStack_mono (tryStack_of_check hc.lowerOk) houtB)
+    (indStack_mono (indStack_of_check hc.lowerOk) houtB) hXR hXRi hsym hS
   exact {
     shape := hshape
     cert := hcert
@@ -125,6 +126,7 @@ theorem iselSimU_final_abi {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
       indRulesCorrect memRulesCorrect_program hRef mrs hcalls hicalls hmem
       (outArgsOk_holds ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f)
       (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB)
       (memRelOk_holds ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f)
     terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable hRef mrs
@@ -139,7 +141,9 @@ theorem iselSimU_final_abi {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc 
         (outArgsOk_holds ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f) hcalls,
       tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
     tryExt := hsub.tryExterns
-    tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef mrs hicalls
+    tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef mrs hmem
+      (outArgsOk_holds ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB) hicalls
     tryIndSig := tryIndSig_of_subset hsub
     cfg := cfg_of_prepare hc.prepare }
 

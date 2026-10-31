@@ -61,7 +61,8 @@ theorem driverHypTCF_relW_of {sem : Sem} (hsub : InSubsetTCF p f) (hT : TypedRul
       nonEUnmatchableTF_program hT.callsT hT.indT
       memRulesCorrectRTI_program memRulesCorrectRT_program hRef (mrStable_relW Γ f c) hcalls
       hicalls hmem hFP (outArgsOk_relW Γ f c)
-      (callsStack_mono (callsStackTCF_of_check hlow) houtB) (memRelOk_relW Γ f c) hctxT hstT
+      (callsStack_mono (callsStackTCF_of_check hlow) houtB)
+      (indStack_mono (indStackTCF_of_check hlow) houtB) (memRelOk_relW Γ f c) hctxT hstT
     terms := termCallsT_of_rules hT.term hT.termUn hT.branch hT.branchEx hRef
       (mrStable_relW Γ f c) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
@@ -74,8 +75,8 @@ theorem driverHypTCF_relW_of {sem : Sem} (hsub : InSubsetTCF p f) (hT : TypedRul
       (outArgsOk_relW Γ f c) hcalls hshape.ctxInvT,
       tryStack_mono (tryStackTCF_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
-    tryInd := tryIndCallsT_of_rules hT.tryIndT hT.tryIndUn hRef (mrStable_relW Γ f c)
-      hicalls hctxT
+    tryInd := tryIndCallsT_of_rules hT.tryIndT hT.tryIndUn hRef (mrStable_relW Γ f c) hmem
+      (outArgsOk_relW Γ f c) (indStack_mono (indStackTCF_of_check hlow) houtB) hicalls hctxT
     tryIndSig := tryIndSig_of_subsetTCF hsub
     cfg := hcfg }
 

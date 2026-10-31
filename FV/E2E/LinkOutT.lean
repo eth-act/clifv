@@ -70,7 +70,7 @@ theorem global_resultsTT {I : LinkInput} (hin : InScopePT I = true) (hlk : linke
 /-- `LowerScope` of a subset-E function of the typed scope. -/
 theorem lowerScope_of_T {f : Clif.Function} (hs : LowerScopeT f) (hE : Compile.functionE f = true) :
     LowerScope f :=
-  ⟨hE, hs.nonempty, hs.noEntryPred, hs.ctxFacts, hs.tryRet, hs.stackLayout⟩
+  ⟨hE, hs.nonempty, hs.noEntryPred, hs.ctxFacts, hs.tryRet, hs.stackLayout, hs.indStackLayout⟩
 
 /-- **The typed per-function checks hold** for the compiler's results of a typed in-scope input
 that passes the output checks. -/

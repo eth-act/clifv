@@ -105,7 +105,7 @@ theorem xCallsOk_none (env : Clif.Env) (exts : List Clif.ExtFunc) (MR : MemRelT)
 
 theorem xCallsIndOk_none (env : Clif.Env) (sigs : List Clif.Signature) (MR : MemRelT)
     (X : ExtSem) : XCallsIndOk (env.only fun _ _ _ => False) sigs MR X := by
-  intro _ _ n g _ cm _ _ _ vals _ _ hg _ _ _ _ _ hret _ _
+  intro _ _ n g _ cm _ _ _ vals _ _ hg _ _ _ _ hret _ _
   obtain ⟨g0, -, rfl⟩ := Clif.Env.only_extern_eq hg
   rw [Clif.onlyFn_of_not (fun h => h)] at hret
   cases hret
@@ -164,7 +164,7 @@ theorem driverHyp_relW {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp 
     insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
       indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
       (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-      (memRelOk_relW Γ f c)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB) (memRelOk_relW Γ f c)
     terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable hRef (mrStable_relW Γ f c)
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
@@ -177,7 +177,7 @@ theorem driverHyp_relW {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp 
       (outArgsOk_relW Γ f c) hcalls, tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef (mrStable_relW Γ f c)
-      hicalls
+      hmem (outArgsOk_relW Γ f c) (indStack_mono (indStack_of_check hc.lowerOk) houtB) hicalls
     tryIndSig := tryIndSig_of_subset hsub
     cfg := cfg_of_prepare hc.prepare }
 

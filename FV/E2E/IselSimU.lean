@@ -130,25 +130,25 @@ theorem indCallsRefine_csemU {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
     (hMRs : ∀ sl cm w, MR sl cm w → cm.symbols = syms) :
     IndCallsRefine env.toEnv sigs MR (csemU F ctx X XR) := by
   refine ⟨?_, ?_⟩
-  · intro sig hin n g sl cm w a r us ds u args vals rvals cm' hg hsg ha hu hds hlen hall hmr hret
+  · intro sig hin n g sl cm w a r us ds u args vals rvals cm' hg hsg ha hu hds hargs hmr hret
       hrl hty
     have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
     obtain ⟨g0, hg0, hgg⟩ := toEnv_extern hg
     have hret0 := toOutcome_returned ((hgg vals cm).symm.trans hret)
-    have hnr := hE.2 sig hin n g0 sl cm w u args vals rvals cm' hg0 hsg (by rw [hu, hs]) hlen hall
+    have hnr := hE.2 sig hin n g0 sl cm w u args vals rvals cm' hg0 hsg (by rw [hu, hs]) hargs
       hmr hret0 hty
     obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg hsg
-      (by rw [hu, hs]) hlen hall hmr hret hrl hty
+      (by rw [hu, hs]) hargs hmr hret hrl hty
     exact ⟨outs, w', by simp [csemU, callDest, hnr, csem, hc], by rw [hol, hds], ho, hm⟩
-  · intro sig hin n g sl cm w a r us ds ti u args vals rvals cm' hg hsg ha hu hds hti hlen hall
+  · intro sig hin n g sl cm w a r us ds ti u args vals rvals cm' hg hsg ha hu hds hti hargs
       hmr hret hrl hty
     have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
     obtain ⟨g0, hg0, hgg⟩ := toEnv_extern hg
     have hret0 := toOutcome_returned ((hgg vals cm).symm.trans hret)
-    have hnr := hE.2 sig hin n g0 sl cm w u args vals rvals cm' hg0 hsg (by rw [hu, hs]) hlen hall
+    have hnr := hE.2 sig hin n g0 sl cm w u args vals rvals cm' hg0 hsg (by rw [hu, hs]) hargs
       hmr hret0 hty
     obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg hsg
-      (by rw [hu, hs]) hlen hall hmr hret hrl hty
+      (by rw [hu, hs]) hargs hmr hret hrl hty
     refine ⟨_, w', by simp only [csemU, callDest, hnr, csem, hc, Option.filter_some, hol, hti,
       decide_true, ↓reduceIte, Option.map_some]; rfl, ?_, ho.append _, hm⟩
     simp only [List.length_append, List.length_map, List.length_drop]
@@ -167,7 +167,7 @@ theorem iselSimU_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : L
     (H : DriverHyp f vc ctx st0 R gn bl A sem (fun sl cm w => Γ.holds f sl cm w) env.toEnv p)
     (HU : UnwShape f vc ctx R gn bl A) (hds : DriverSem sem) (hRef : Refines Γ.F sem)
     (hMem : MemRefines Γ.F Γ.slotOff Γ.syms sem) (hRS : RaiseSem Γ.F X XR sem)
-    (hstk : CallsStack f Γ.out) (htstk : TryStack f Γ.out)
+    (hstk : CallsStack f Γ.out) (htstk : TryStack f Γ.out) (hIstk : IndStack (indSigs f) Γ.out)
     (hXR : XRaiseOk env (f.externs.map (·.2)) (fun sl cm w => Γ.holds f sl cm w) X XR)
     (hXRi : XRaiseIndOk env (indSigs f) (fun sl cm w => Γ.holds f sl cm w) X XR)
     (hsym : ∀ n b, Γ.syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
@@ -175,6 +175,7 @@ theorem iselSimU_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : L
   have HR : RaiseHyp f sem (fun sl cm w => Γ.holds f sl cm w) env Γ.F X XR Γ.slotOff Γ.syms
       Γ.out :=
     ⟨hRS, hRef, hMem, mrStable_holds Γ f, outArgsOk_holds Γ f, memRelOk_holds Γ f, hstk, htstk,
+      hIstk,
       hXR, hXRi, hsym, fun sl cm w h => (memRelOk_holds Γ f).symbols sl cm w h⟩
   intro args cs w₀ ρ₀ hce hrel hargs htr fuel
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
@@ -199,13 +200,13 @@ theorem iselSimU_csemU {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LStat
     (H : DriverHyp f vc ctx st0 R gn bl A (csemU Γ.F fctx X XR)
       (fun sl cm w => Γ.holds f sl cm w) env.toEnv p)
     (HU : UnwShape f vc ctx R gn bl A) (hslot : fctx.slotBase = Γ.slotOff)
-    (hstk : CallsStack f Γ.out) (htstk : TryStack f Γ.out)
+    (hstk : CallsStack f Γ.out) (htstk : TryStack f Γ.out) (hIstk : IndStack (indSigs f) Γ.out)
     (hXR : XRaiseOk env (f.externs.map (·.2)) (fun sl cm w => Γ.holds f sl cm w) X XR)
     (hXRi : XRaiseIndOk env (indSigs f) (fun sl cm w => Γ.holds f sl cm w) X XR)
     (hsym : ∀ n b, Γ.syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
     IselSimU (csemU Γ.F fctx X XR) XR Γ env p f vc :=
   iselSimU_of_driver H HU (driverSem_csemU Γ.F fctx X XR) (refines_csemU Γ.F fctx X XR)
-    (memRefines_csemU Γ.F fctx X XR hslot hsym) (raiseSem_csemU Γ.F fctx X XR) hstk htstk hXR
+    (memRefines_csemU Γ.F fctx X XR hslot hsym) (raiseSem_csemU Γ.F fctx X XR) hstk htstk hIstk hXR
     hXRi hsym
 
 /-! ## Non-vacuity of the raising premises
@@ -242,7 +243,7 @@ theorem xRaiseOk (exts : List Clif.ExtFunc) (MR : MemRelT) (X : ExtSem) :
 
 theorem xRaiseIndOk (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem) :
     XRaiseIndOk env sigs MR X XR := by
-  intro sig _ n g sl cm w u args vals e m hg _ _ _ _ hmr hu _
+  intro sig _ n g sl cm w u args vals e m hg _ _ _ hmr hu _
   simp only [env, Option.some.injEq] at hg
   subst hg
   simp only [Clif.XOutcome.unwound.injEq] at hu
@@ -252,7 +253,7 @@ theorem xRaiseIndOk (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem) :
 theorem xRaiseExcl (exts : List Clif.ExtFunc) (sigs : List Clif.Signature) (MR : MemRelT)
     (X : ExtSem) : XRaiseExcl env exts sigs MR X XR := by
   refine ⟨fun ext _ g sl cm w d uses args vals rvals cm' hg _ _ _ hr => ?_,
-    fun sig _ n g sl cm w u args vals rvals cm' hg _ _ _ _ _ hr _ => ?_⟩ <;>
+    fun sig _ n g sl cm w u args vals rvals cm' hg _ _ _ _ hr _ => ?_⟩ <;>
   · simp only [env, Option.some.injEq] at hg
     subst hg
     cases hr

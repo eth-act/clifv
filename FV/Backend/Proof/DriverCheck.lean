@@ -712,20 +712,21 @@ def brIdxOk (f : Clif.Function) (ctx : Ctx) : Bool :=
       | _ => false
     | _ => true
 
-/-- The calls (`call`) of `f`'s statements and the callees of its `try_call`s pass at most
-`out` bytes on the stack, with a well-formed stack-argument layout (`CallsStack`,
-`TryStack`). -/
+/-- The calls (`call`) of `f`'s statements, the callees of its `try_call`s and the call-site
+signatures of its indirect calls (`indSigs`, S5) pass at most `out` bytes on the stack, with a
+well-formed stack-argument layout (`CallsStack`, `TryStack`, `IndStack`). -/
 def callsStackOkB (f : Clif.Function) (out : Nat) : Bool :=
   (f.blocks.all fun B => B.body.all fun st => match st.inst with
     | .call fn _ => match f.extern? fn with
       | some e => decide (stackBytes e.sig ≤ out) && stackLayoutOk e.sig
       | none => true
     | _ => true) &&
-  f.blocks.all fun B => match B.term with
+  (f.blocks.all fun B => match B.term with
     | .tryCall fn _ _ => match f.extern? fn with
       | some e => decide (stackBytes e.sig ≤ out) && stackLayoutOk e.sig
       | none => true
-    | _ => true
+    | _ => true) &&
+  (indSigs f).all fun s => decide (stackBytes s ≤ out) && stackLayoutOk s
 
 /-- The signature's parameter locations and byte sizes compute, one per parameter (the entry
 block's `Args` and loads, `pre`), and the register-passed parameters are in x0..x8. -/

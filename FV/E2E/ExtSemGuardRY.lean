@@ -68,7 +68,7 @@ theorem xCallsOk_guardRXR_only {env : Clif.Env} {A A' : String → List Clif.Val
     XCallsOk (env.only A) exts MR (X.guardR (CallPostXR (env.only A') exts sigs MR X.sym)) ∧
       XCallsIndOk (env.only A) sigs MR (X.guardR (CallPostXR (env.only A') exts sigs MR X.sym)) := by
   refine ⟨fun ext hext g sl cm w d uses args vals rvals cm' hg hd ha hmr hret hlen => ?_,
-    fun sig hsig n g sl cm w u args vals rvals cm' hg hs hlo h8 hall hmr hret hlen hty => ?_⟩
+    fun sig hsig n g sl cm w u args vals rvals cm' hg hs hlo hargs hmr hret hlen hty => ?_⟩
   · have hn : ¬ ∀ r, CallPostXR (env.only A') exts sigs MR X.sym d uses w r := fun h =>
       callPost_not_vacuous (sl := sl) hext hg hd ha hmr hret hlen fun r =>
         callPost_only_mono hAA (h r).1
@@ -77,11 +77,11 @@ theorem xCallsOk_guardRXR_only {env : Clif.Env} {A A' : String → List Clif.Val
       hd ha hmr hret hlen
     exact ⟨outs, w', hc, h1, h2, h3⟩
   · have hn : ¬ ∀ r, CallPostXR (env.only A') exts sigs MR X.sym none (u :: args) w r := fun h =>
-      callPost_not_vacuous_ind (sl := sl) hsig hg hs hlo h8 hall hmr hret hlen hty
+      callPost_not_vacuous_ind (sl := sl) hsig hg hs hlo hargs hmr hret hlen hty
         fun r => callPost_only_mono hAA (h r).1
     obtain ⟨⟨outs, w'⟩, hc, hq⟩ := ExtSem.guardR_spec (X := X) (hex none (u :: args) w) hn
     obtain ⟨h1, h2, h3⟩ := (callPost_only_mono hAA hq.1).2 sig hsig n g sl cm u args vals rvals cm'
-      rfl rfl hg hs hlo h8 hall hmr hret hlen hty
+      rfl rfl hg hs hlo hargs hmr hret hlen hty
     exact ⟨outs, w', hc, h1, h2, h3⟩
 
 /-- **The guarded semantics keeps `X`'s `ext`** when the guard's results keep the program where

@@ -227,7 +227,8 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
       fun b _ fn args et _ e he => Clif.Program.bare_func? _ _, (fa hg).abi, fun sig hs => ?_,
       (fa hg).storeT⟩
     have := List.all_eq_true.mp (fa hg).indOk sig hs
-    simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at this
+    exact this.2
   have hinTC : ∀ g ∈ (progOf R).funcs, Compile.functionETCF g = true →
       InSubsetTCF (ofRes I R B F).P.bare g := by
     intro g hg hETCF
@@ -235,7 +236,8 @@ theorem okRWith_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInpu
       fun b _ fn args et _ e he => Clif.Program.bare_func? _ _, (fa hg).abi, fun sig hs => ?_,
       (fa hg).storeT⟩
     have := List.all_eq_true.mp (fa hg).indOk sig hs
-    simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at this
+    exact this.2
   have hcomp : ∀ g ∈ (progOf R).funcs,
       CompiledAnyT (ofRes I R B F).P.bare g (artOf R g).k (artOf R g).vc (artOf R g).vcp
         (artOf R g).rf (artOf R g).af (artOf R g).fa (artOf R g).fb ∧

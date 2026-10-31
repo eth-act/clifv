@@ -90,7 +90,8 @@ theorem inSubset_of_fnScope {g : Clif.Function} (h : fnScopeB g = true) (p : Cli
     exact Clif.Program.bare_func? _ _
   · intro sig hs
     have := List.all_eq_true.mp hind sig hs
-    simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at this
+    exact this.2
 
 theorem lowersB_spec {f : Clif.Function} (h : lowersB f = true) :
     extendsWidenB f = true ∧ ∃ vc vcp, lowerFunction f = .ok vc ∧ prepare vc = .ok vcp ∧

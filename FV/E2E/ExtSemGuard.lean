@@ -90,7 +90,7 @@ def CallPost (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signa
     d = none → uses = u :: args →
     env.extern n = some g → (∀ s, env.sigOf n = some s → sig.abiMatch s = true) →
     lo64 u = sym n 0 →
-    vals.length ≤ 8 → AllHold vals args → MR sl cm w →
+    ArgsAt sig vals args w → MR sl cm w →
     g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
     vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     r.1.length = (sigRets sig).length ∧ PrefixHold rvals r.1 ∧ MR sl cm' r.2)
@@ -112,10 +112,10 @@ theorem xCallsIndOk_guard {env : Clif.Env} {exts : List Clif.ExtFunc} {sigs : Li
     {MR : MemRelT} (X : ExtSem)
     (hex : ∀ d uses w, ∃ r, CallPost env exts sigs MR X.sym d uses w r) :
     XCallsIndOk env sigs MR (X.guard (CallPost env exts sigs MR X.sym)) := by
-  intro sig hsig n g sl cm w u args vals rvals cm' hg hs hu h8 hall hmr hret hlen hty
+  intro sig hsig n g sl cm w u args vals rvals cm' hg hs hu hargs hmr hret hlen hty
   obtain ⟨⟨outs, w'⟩, hc, hq⟩ := ExtSem.guard_spec (X := X) (hex none (u :: args) w)
   obtain ⟨h1, h2, h3⟩ :=
-    hq.2 sig hsig n g sl cm u args vals rvals cm' rfl rfl hg hs hu h8 hall hmr hret hlen hty
+    hq.2 sig hsig n g sl cm u args vals rvals cm' rfl rfl hg hs hu hargs hmr hret hlen hty
   exact ⟨outs, w', hc, h1, h2, h3⟩
 
 end E2E

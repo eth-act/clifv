@@ -136,11 +136,12 @@ structure LowerScopeT (f : Clif.Function) : Prop where
       f.extern? fn = some e → stackLayoutOk e.sig = true) ∧
     ∀ B ∈ f.blocks, ∀ fn args et e, B.term = .tryCall fn args et → f.extern? fn = some e →
       stackLayoutOk e.sig = true
+  indStackLayout : ∀ s ∈ indSigs f, stackLayoutOk s = true
 
 /-- **Integer specialization**: the integer scope is in the typed one. -/
 theorem LowerScope.toT {f : Clif.Function} (hs : LowerScope f) : LowerScopeT f :=
   ⟨Compile.functionET_of_functionE hs.subsetE, hs.nonempty, hs.noEntryPred, hs.ctxFacts,
-    hs.tryRet, hs.stackLayout⟩
+    hs.tryRet, hs.stackLayout, hs.indStackLayout⟩
 
 /-- The externs of a typed-scope function have integer signatures. -/
 theorem LowerScopeT.externsE {f : Clif.Function} (hs : LowerScopeT f) :

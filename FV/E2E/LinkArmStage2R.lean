@@ -55,7 +55,7 @@ theorem stage2Y_of_not_invoked {M : Nat} {g : Clif.Function} {F : BitVec 64 → 
     L.Stage2Y κ M g F P R env cs c Q n := by
   intro u w _ _ d uses hnv
   refine absurd (fun r => ⟨fun ext _ G sl cm args vals rvals cm' hG _ _ _ hret _ => ?_,
-    fun sig _ m G sl cm u args vals rvals cm' _ _ hG _ _ _ _ _ hret _ _ => ?_⟩) hnv
+    fun sig _ m G sl cm u args vals rvals cm' _ _ hG _ _ _ _ hret _ _ => ?_⟩) hnv
   · obtain ⟨G1, -, rfl⟩ := Clif.Env.only_extern_eq hG
     rw [Clif.onlyFn_of_not (hno _ _ _)] at hret
     cases hret

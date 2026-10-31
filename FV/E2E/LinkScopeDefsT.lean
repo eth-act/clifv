@@ -51,11 +51,12 @@ def lowerScopeTB (f : Clif.Function) : Bool :=
       | some e => stackLayoutOk e.sig
       | none => true
     | _ => true) &&
-  f.blocks.all fun B => match B.term with
+  (f.blocks.all fun B => match B.term with
     | .tryCall fn _ _ => match f.extern? fn with
       | some e => stackLayoutOk e.sig
       | none => true
-    | _ => true
+    | _ => true) &&
+  (indSigs f).all stackLayoutOk
 
 /-- `lowerFunction` and `prepare` accept `f`, every extension widens, the spill code's word
 bound is below `2 ^ 24` (`lowersB`), and the typed spill chain's run-time facts hold of the

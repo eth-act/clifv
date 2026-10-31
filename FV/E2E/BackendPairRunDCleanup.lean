@@ -143,7 +143,7 @@ theorem vcode_niID_valueL (hsub : InSubset p f) (hc : CompiledCleanup f k vc vcp
       tries := ⟨_, tryCalls_pairD_value hc hX' hsym' hslot hLS',
         tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
       tryExt := H.tryExt
-      tryInd := tryIndCalls_pairD_value hXI' hsym' hLS'
+      tryInd := tryIndCalls_pairD_value (indStack_mono (indStack_of_check hc.lowerOk) houtB) hXI' hsym' hLS'
       tryIndSig := H.tryIndSig
       cfg := H.cfg }
   have HbP : ∀ n, DriverHyp f vc ctx st0 R gn bl A
