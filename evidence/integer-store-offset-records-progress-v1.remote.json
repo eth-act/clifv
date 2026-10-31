@@ -1,0 +1,12 @@
+{
+  "archive": "integer-store-offset-records-progress-v1.tar.gz",
+  "archive_bytes": 62630,
+  "archive_sha256": "2cb056f64b658574f0533b84e985ab48a0fcfaeeb5c148fe3abefca521d4cf09",
+  "parts": [
+    {
+      "name": "integer-store-offset-records-progress-v1.tar.gz.part-000",
+      "bytes": 62630,
+      "sha256": "2cb056f64b658574f0533b84e985ab48a0fcfaeeb5c148fe3abefca521d4cf09"
+    }
+  ]
+}
