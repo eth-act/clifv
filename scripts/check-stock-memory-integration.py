@@ -12,6 +12,7 @@ import subprocess
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--memory-cfg', action='store_true', help='exercise the captured two-block load class')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     out = args.output.resolve()
@@ -19,7 +20,7 @@ def main():
         parser.error('output must be outside the source tree')
     out.mkdir(parents=True, exist_ok=False)
     generated = out / 'generated'
-    env = dict(os.environ, OMP_NUM_THREADS='2', OMP_THREAD_LIMIT='2', LEAN_NUM_THREADS='2', FV_MEMCAP='8G')
+    env = dict(os.environ, OMP_NUM_THREADS='2', OMP_THREAD_LIMIT='2', LEAN_NUM_THREADS='2', FV_MEMCAP=os.environ.get('FV_MEMCAP', '8G'))
     records = []
     sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
@@ -35,7 +36,7 @@ def main():
         return log.read_text()
 
     try:
-        run('fixture', [root / '.lake/build/bin/stock-memory-linked', generated])
+        run('fixture', [root / '.lake/build/bin/stock-memory-linked', generated, *(['--memory-cfg'] if args.memory_cfg else [])])
         expected = {f'StockMemoryProduction{mode}{policy}{scope}' for mode in ('Plain', 'Cleanup')
                     for policy in ('Strict', 'Fallback') for scope in ('Global', 'Entries')}
         assert {p.stem for p in (generated / 'Crates').glob('*.lean')} == expected
@@ -151,7 +152,7 @@ run_cmd do
         assert 'STOCK_MEMORY_GENERATED_AXIOMS_PASS ' in run('generated-axioms', ['lean', '--root=' + str(out), audit])
         report = dict(state='passed', generated_sources=built, native_calls=12288, initialized_loads=8192,
                       native_reference='exact stored 32-bit source value, unaligned initialized address; unused first ABI argument',
-                      cleanup_modes=2, generated_roots=sorted(expected), commands=records)
+                      cleanup_modes=2, memory_cfg=args.memory_cfg, generated_roots=sorted(expected), commands=records)
     except BaseException as error:
         report = dict(state='failed', error=repr(error), commands=records)
         raise

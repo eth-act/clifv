@@ -22,7 +22,7 @@ theorem default_memory_route_witness : ∃ result,Stock.lower function = .ok res
     have checked : Memory.check function result.code = true := by
       simp only [Memory.check,StockMemoryEffectKernel.source_checked,run,decide_true,Bool.true_and,actual]
     have semantic : SemanticNI.check function result.code = true := by
-      simp only [SemanticNI.check,checked,Bool.or_true]
+      simp only [SemanticNI.check,checked,Bool.or_true,Bool.true_or]
     have chosen : Memory.lowerValidated function = .ok result.code := by
       simp [Memory.lowerValidated,show Memory.eligible function = true from rfl,run,checked]
     exact ⟨result,rfl,checked,semantic,chosen,StockMemoryFunctionWitness.source_class_witness⟩
