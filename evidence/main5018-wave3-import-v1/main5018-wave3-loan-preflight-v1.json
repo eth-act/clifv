@@ -1,0 +1,9 @@
+{
+  "utc": "2026-10-31T00:18:58.827073+00:00",
+  "peer_gate": {
+    "pid": 2307387,
+    "budget": "14G"
+  },
+  "permission": "Worker-A grants future one-GiB cache imports while its gate runs at14GiB; report completion.",
+  "import_cap": "1G"
+}
