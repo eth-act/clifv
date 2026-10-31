@@ -1,0 +1,26 @@
+{
+  "utc": "2026-10-31T04:11:33.786066+00:00",
+  "head": "51d82c2d56c8a5fb724abe1755e5ef69749e997f",
+  "merged_as": "3812875d",
+  "source_clean": true,
+  "repl_source_clean": true,
+  "ignored_counts": {
+    ".lake": 29960,
+    "rust": 1,
+    "scripts": 11,
+    "third_party": 2,
+    "tools": 1
+  },
+  "symlinks": {
+    "rust/target": "/home/lee/clifv/.worktrees/driver-proof-resume/rust/target",
+    "tools/prejit-export/target": "/home/lee/clifv/.worktrees/driver-proof-resume/rust/target",
+    "third_party/wasmtime": "/home/lee/clifv/third_party/wasmtime",
+    "third_party/lnsym-upstream": "/home/lee/clifv/third_party/lnsym-upstream"
+  },
+  "files": {
+    ".lake/build/bin/lean-backend": "3bf0bd578a2c6e6352d04fd4c25d42b49a7a7b86a30f3fa3d3cbec084b718cc1",
+    ".lake/build/bin/lean-backend-lowering-trace": "451468b459706c1596e5b8fba30983cfee2b0bf6df0fa07febd0e0a6a7daa393",
+    ".lake/lake-module-peaks.tsv": "b6c73cebc35ff6cd0b50b8e955a12537d344e74c9866e6d9dea76b6dcdae2035"
+  },
+  "reason": "Delivery and configured batches are merged and verified. The captured view and shared cache serve ongoing memory work."
+}
