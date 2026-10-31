@@ -57,7 +57,7 @@ theorem cApply_aApply {ty : TypeId} {t : TermId} {as : List AT} {c : Nat}
   · simp [hb]
   rw [Bool.not_eq_true] at hb
   simp only [hb, Bool.false_eq_true, ↓reduceIte] at h ⊢
-  cases ht : termOf p t with
+  cases ht : termOfT p t with
   | error e => simp
   | ok term =>
     rw [ht] at h
@@ -420,6 +420,7 @@ theorem costAt (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAt md cfg tab n
   · -- applyTerm
     intro ty t as c vs s tr r s' tr' hca hvs hIs h
     unfold cApply at hca
+    rw [termOfT_eq] at hca
     split at hca
     · rename_i hb
       exact (holds2_bot hb hvs).elim

@@ -1,3 +1,4 @@
+import FV.Isle.Lookup
 import FV.Backend.Proof.IselSzDefs
 import FV.Backend.Proof.IselCovTFam
 import FV.Backend.Proof.IselCovTCheck
@@ -84,7 +85,7 @@ variable (p : Program) (tab : Tab) (aw : TermId → List AT → Option Nat) (cta
 `some` only where `aApply` is). -/
 def cApply (_ty : TypeId) (t : TermId) (as : List AT) : Option Nat :=
   if as.any AT.isBot then some 0 else
-  match termOf p t with
+  match termOfT p t with
   | .ok term =>
     match term.kind with
     | .enumVariant _ => some 0

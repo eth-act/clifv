@@ -1,3 +1,4 @@
+import FV.Isle.Lookup
 import FV.Backend.Proof.IselCovTDom
 
 /-!
@@ -95,7 +96,7 @@ def aPat (a : AT) (q : Pattern) (env : List AT) : List (List AT) :=
   | .bind _ x sub => (AT.split a).flatMap fun b => aPat b sub (env.set x b)
   | .and _ ps => aPatAll a ps env
   | .term _ t args =>
-    match termOf p t with
+    match termOfT p t with
     | .ok term =>
       match term.kind with
       | .enumVariant k =>
@@ -123,7 +124,7 @@ end
 /-- Abstract application of term `t` (result type `ty`). -/
 def aApply (ty : TypeId) (t : TermId) (as : List AT) : Option AT :=
   if as.any AT.isBot then some .bot else
-  match termOf p t with
+  match termOfT p t with
   | .ok term =>
     match term.kind with
     | .enumVariant k => some (.data ty k as)

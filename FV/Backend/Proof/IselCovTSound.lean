@@ -346,7 +346,7 @@ theorem aPat_sound : ∀ (q : Pattern) (a : AT) (aenv : List AT) (v : V) (env en
         | ok term =>
           rw [ht] at h
           simp only [bind, Except.bind] at h ⊢
-          simp only [ht]
+          simp only [termOfT_eq, ht]
           cases hk : term.kind with
           | enumVariant k =>
             rw [hk] at h
@@ -822,7 +822,7 @@ theorem soundAt (hc : cfg.checkOverlap = false) (htab : chkTab p tab aext actor 
       obtain ⟨_, ht', -⟩ := liftM_ok h1
       rw [ht] at ht'; cases ht'
     | ok term =>
-      rw [ht] at ha
+      rw [termOfT_eq, ht] at ha
       simp only at ha
       cases hk : term.kind with
       | enumVariant k =>
