@@ -151,3 +151,5 @@ import FV.Backend.Proof.StockMemoryStoreWitness
 #print axioms Backend.Stock.MemoryStoreCfg.previous_file_exact_witness
 #print axioms Backend.Stock.MemoryStoreCfg.previous_routes_exact
 #print axioms Backend.Stock.MemoryStoreCfg.previous_lower_exact
+
+#print axioms Backend.Stock.MemoryStoreCfg.effectsOnly_noTls

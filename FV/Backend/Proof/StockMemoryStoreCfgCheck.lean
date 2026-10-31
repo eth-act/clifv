@@ -83,4 +83,15 @@ theorem check_sound {f : Clif.Function} {vc : VCode} (checked : check f vc = tru
     obtain ⟨equal,effects⟩ := Bool.and_eq_true_iff.mp lowered
     exact ⟨kind,ty,result,family,rfl,of_decide_eq_true equal,effects⟩
 
+/-- The actual CFG whitelist excludes TLS instructions. -/
+theorem effectsOnly_noTls {vc : VCode} (checked : effectsOnly vc = true) : vc.hasTls = false := by
+  rw [VCode.hasTls,Array.any_eq_false']
+  intro vb member
+  apply Bool.eq_false_iff.mp
+  apply Array.any_eq_false'.mpr
+  intro i present
+  have block := List.all_eq_true.mp checked vb (Array.mem_toList_iff.mpr member)
+  have good := List.all_eq_true.mp block i (Array.mem_toList_iff.mpr present)
+  cases i <;> simp_all [effectInstruction,Memory.Store.effectInstruction,Memory.effectInstruction]
+
 end Backend.Stock.MemoryStoreCfg
