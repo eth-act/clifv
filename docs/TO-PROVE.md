@@ -1012,6 +1012,10 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   `/home/kev/work/clifv-wt/<name>`, branch `agent/<name>`. Absolute paths under the worktree. Push your
   branch, open its PR and squash-merge it once its per-PR gates pass ("Gate policy" below); never
   force-push main, never `git stash`, never pattern-kill processes. Temp files in `/tmp/<name>_*`.
+- **Checking an edit:** the Lean language server first (lean-lsp-mcp; seconds per declaration even
+  in files whose full check takes minutes), turbo-lean for heavy files, `lake env lean` only on small
+  files, and the module with its importers through `scripts/lake-serial-build.py` before a commit
+  (docs/USAGE.md, "Checking an edit").
 - Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; check the log for "Build
   completed successfully". The `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to about
   10 GB (`RuleExtends2`, `RuleBitops3`/`4`; the former 12–19 GB modules are split into parts,
