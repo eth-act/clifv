@@ -229,7 +229,8 @@ theorem prologue_exempt {saves : List Reg} (hsv : SavesOk saves) {size i : Nat} 
     simp only [List.mem_append] at hm
     have : x.x30Exempt = false := by
       rcases hm with hm | hm | hm | hm
-      · rcases probeLines_mem hm with e | e | ⟨_, e⟩ <;>
+      · rcases probeLines_mem hm with e | e | ⟨_, e⟩ | hl | hl | e | e | e | e <;>
+          (try obtain ⟨_, e | e⟩ := loadConst64_mem hl) <;>
           (simp only [Line.ins.injEq] at e; obtain ⟨rfl, -⟩ := e; simp [Insn.x30Exempt])
       · exact pushLines_x30 hsv.int x t hm
       · exact pushLines_x30 hsv.float x t hm
@@ -256,7 +257,7 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; have := (spv R.s0).isLt; omega
   obtain ⟨vb, items, code, ls, ps1, ps2, T, -, -, -, -, -, hj0, hdrop⟩ := entry_block hR
-  obtain ⟨s', hsteps, -, -, -, -, -, -⟩ :=
+  obtain ⟨s', hsteps, -, -, -, -, -, -, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
@@ -270,31 +271,24 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
     simp only [List.getElem?_drop, RL.L] at this
     rw [this, List.getElem?_append_left (List.getElem?_eq_some_iff.1 hk).1]
     exact hk
-  have hhook : ∀ i t, Line.ins i t ∈ prologueLines R.af.saves R.af.frameSize R.af.isCaller → i.hooked = false :=
-    fun i t hm => by
-      obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ _ hm; cases e; exact hh
-  have hinter := stepsOk_interOk hsteps hent.err
-  have hpcs := iterN_execLines_pc (X := R.X) (H := R.H) hR.layout hR.lm hR.fit _ 1 R.s0 s' hat hhook
-    hent.program (by rw [hpc1]; rfl) hent.err hinter hsteps.exec
-  have hgx := (iterN_steps hR hdrop (fun ln h => by
-      obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
-    hent.program hpc1 hent.err hsteps).2.2.2 (prologueLines_tail _ _)
-    (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
-    (linesReads_noLoads (prologueLines_noLoads _ _))
+  obtain ⟨-, -, -, hgx0, hloc⟩ := iterN_proRun hR hdrop hent.program hpc1 hent.err hsteps
+  have hgx := hgx0 (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
   intro i hi
   induction i with
   | zero => exact h
   | succ i ih =>
     have hi' : i < (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) := by omega
     have hl := ih (by omega)
-    obtain ⟨ln, hln⟩ : ∃ ln, (prologueLines R.af.saves R.af.frameSize R.af.isCaller)[i]? = some ln :=
-      ⟨_, List.getElem?_eq_getElem hi'⟩
+    -- the line of the `i`-th state (the stack-probe loop runs its lines repeatedly)
+    obtain ⟨kl, hkl, hpck, hk0⟩ := hloc i hi'
+    obtain ⟨ln, hln⟩ : ∃ ln, (prologueLines R.af.saves R.af.frameSize R.af.isCaller)[kl]? = some ln :=
+      ⟨_, List.getElem?_eq_getElem hkl⟩
     obtain ⟨x, rfl, hhx, -⟩ := prologueLines_ins _ _ _ (List.mem_of_getElem? hln)
-    have hj := hat i _ hln
+    have hj := hat kl _ hln
     have hg := hgx i hi'
     have ht : OnLine R.fa R.fb R.lm R.base (iterN R.step i R.s0) x :=
-      ⟨hR.layout, hR.lm, hR.fit, hg.prog, hg.err, ⟨1 + i, none, hj, hpcs i (by omega)⟩⟩
-    have hex : x.x30Exempt = true → i = 0 ∧ x = .stp .fp .lr (.spPreIndexed (-16)) :=
+      ⟨hR.layout, hR.lm, hR.fit, hg.prog, hg.err, ⟨1 + kl, none, hj, hpck⟩⟩
+    have hex : x.x30Exempt = true → kl = 0 ∧ x = .stp .fp .lr (.spPreIndexed (-16)) :=
       prologue_exempt hsv hln
     have hstep := stEqOutX_line (X := R.X) (H := R.H) ht hx30
       (prologueLines_tail _ _ x none (List.mem_of_getElem? hln))
@@ -318,7 +312,8 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
     refine hstep.mono fun a ha => ?_
     rcases ha with ha | ⟨e, k, hk8, hk16, rfl⟩
     · exact ha
-    · obtain ⟨rfl, -⟩ := hex (by rw [e]; decide)
+    · obtain ⟨hkl0, -⟩ := hex (by rw [e]; decide)
+      obtain rfl := hk0 hkl0
       rw [stpAddr_fr]
       exact hLR k hk8 hk16
 

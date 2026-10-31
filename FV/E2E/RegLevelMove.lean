@@ -227,7 +227,8 @@ theorem prologueLines_isIns {calls : Bool} (saves : List Reg) (size : Nat) :
   rcases h with (rfl | rfl) | h | h | h | h
   · exact ⟨_, _, rfl⟩
   · exact ⟨_, _, rfl⟩
-  · rcases probeLines_mem h with rfl | rfl | ⟨_, rfl⟩ <;> exact ⟨_, _, rfl⟩
+  · rcases probeLines_mem h with rfl | rfl | ⟨_, rfl⟩ | hl | hl | rfl | rfl | rfl | rfl <;>
+      (try obtain ⟨_, rfl | rfl⟩ := loadConst64_mem hl) <;> exact ⟨_, _, rfl⟩
   · obtain ⟨x, rfl, -⟩ := pushLines_mem h; exact ⟨_, _, rfl⟩
   · obtain ⟨x, rfl, -⟩ := pushLines_mem h; exact ⟨_, _, rfl⟩
   · exact spAdjLines_isIns _ _ _ h

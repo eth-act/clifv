@@ -65,7 +65,7 @@ theorem iterN_proRunNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {saves : Li
   obtain ⟨h1, h2, h3, h4⟩ := iterN_proRunN hR hdrop hprog hpc herr h
   obtain ⟨-, -, -, -, h5⟩ := iterN_proRun hR hdrop hprog hpc herr h
   refine ⟨h1, h2, h3, fun h0 i hi => ⟨h4 h0 i hi, ?_⟩⟩
-  obtain ⟨k, hk, e⟩ := h5 i hi
+  obtain ⟨k, hk, e, -⟩ := h5 i hi
   obtain ⟨x, ex, -, -⟩ := prologueLines_ins _ _ _ (List.getElem_mem hk)
   refine RL.readsIn_noLoad hR (j := j + k) ?_ e
     (prologueLines_noLoads (calls := calls) saves size x none (by rw [← ex]; exact List.getElem_mem hk))

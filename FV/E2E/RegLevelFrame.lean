@@ -385,8 +385,8 @@ theorem iterN_loop {R : RL} (hR : R.Wf) {T : List Line} {j : Nat}
 machine steps (the stack-probe loop's body `probeCount` times), ending after its lines; every
 state after the first is no return into the code (`RL.Good`) and, from a state satisfying
 `RL.Good`, every state before the last step satisfies `RL.GoodX`; every state before the last
-step is at one of the prologue's lines. Without the probe loop this is `iterN_steps` of the
-straight-line `prologueLines`. -/
+step is at one of the prologue's lines, the first line only at the start. Without the probe loop
+this is `iterN_steps` of the straight-line `prologueLines`. -/
 theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : Bool}
     {T : List Line} {j : Nat} {s s' : Arm.ArmState}
     (hdrop : R.L.drop j = prologueLines saves size calls ++ T)
@@ -397,7 +397,7 @@ theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls
       (∀ i, 0 < i → i ≤ prologueSteps saves size calls → R.Good (iterN R.step i s)) ∧
       (R.Good s → ∀ i < prologueSteps saves size calls, R.GoodX (iterN R.step i s)) ∧
       (∀ i < prologueSteps saves size calls, ∃ k < (prologueLines saves size calls).length,
-        Arm.r .PC (iterN R.step i s) = R.pcOf (j + k)) := by
+        Arm.r .PC (iterN R.step i s) = R.pcOf (j + k) ∧ (k = 0 → i = 0)) := by
   have hins : ∀ ln ∈ prologueLines saves size calls, ∃ x, ln = .ins x none ∧ x.hooked = false :=
     fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩
   have hnl := prologueLines_noLoads (calls := calls) saves size
@@ -505,22 +505,22 @@ theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls
           rw [hiter2]
           exact hgxT (fun x t h => htl x t (hmemT _ h)) hgoodP hrdT i' (by omega)
     · rcases Nat.lt_or_ge i A.length with hA' | hA'
-      · exact ⟨i, by omega, hpcsA i (by omega)⟩
+      · exact ⟨i, by omega, hpcsA i (by omega), fun h => h⟩
       · rcases Nat.lt_or_ge i (A.length + 4 * probeCount (probeTotal size calls)) with hB | hB
         · obtain ⟨i', rfl⟩ : ∃ i', i = A.length + i' := ⟨i - A.length, by omega⟩
           rw [hiter]
           obtain ⟨k, hk, e, -⟩ := hlocL i' (by omega)
-          exact ⟨A.length + k, by omega, by rw [e, Nat.add_assoc]⟩
+          exact ⟨A.length + k, by omega, by rw [e, Nat.add_assoc], fun h => absurd h (by omega)⟩
         · obtain ⟨i', rfl⟩ : ∃ i', i = A.length + 4 * probeCount (probeTotal size calls) + i' :=
             ⟨i - (A.length + 4 * probeCount (probeTotal size calls)), by omega⟩
           rw [hiter2, hpcsT i' (by omega)]
-          exact ⟨A.length + 4 + i', by omega, by congr 1; omega⟩
+          exact ⟨A.length + 4 + i', by omega, by congr 1; omega, fun h => absurd h (by omega)⟩
   · have hl' : probeLoop (probeTotal size calls) = false := by simpa using hl
     have hst := ProRun.stepsOk hl' h
     rw [prologueSteps_of_not hl']
     obtain ⟨hit, hpc', hg, hgx⟩ := iterN_steps hR hdrop hins hprog hpc herr hst
     exact ⟨hit, hpc', hg, fun h0 => hgx htl h0 (linesReads_noLoads hnl),
-      fun i hi => ⟨i, hi, iterN_steps_pc hR hdrop hins hprog hpc herr hst i (by omega)⟩⟩
+      fun i hi => ⟨i, hi, iterN_steps_pc hR hdrop hins hprog hpc herr hst i (by omega), fun h => h⟩⟩
 
 /-- **The entry address is no return address of a call of the function**: `base + off + 4 =
 base` only if the code fills the address space (`AbiCall.fits`), but the frame below the entry

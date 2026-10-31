@@ -291,7 +291,8 @@ theorem prologueLines_noSecond {calls : Bool} (saves : List Reg) (size : Nat) :
   rcases hln with ((((rfl | rfl) | hln) | hln) | hln) | hln
   · rfl
   · rfl
-  · rcases probeLines_mem hln with rfl | rfl | ⟨_, rfl⟩ <;> rfl
+  · rcases probeLines_mem hln with rfl | rfl | ⟨_, rfl⟩ | hl | hl | rfl | rfl | rfl | rfl <;>
+      (try obtain ⟨_, rfl | rfl⟩ := loadConst64_mem hl) <;> rfl
   · exact pushLines_noSecond _ _ _ hln
   · exact pushLines_noSecond _ _ _ hln
   · exact spAdjLines_noSecond _ _ _ hln

@@ -418,7 +418,8 @@ theorem prologueLines_tailFree {calls : Bool} (saves : List Reg) (n : Nat) :
   rcases h with (rfl | rfl) | h | h | h | h
   · rfl
   · rfl
-  · rcases probeLines_mem h with rfl | rfl | ⟨_, rfl⟩ <;> rfl
+  · rcases probeLines_mem h with rfl | rfl | ⟨_, rfl⟩ | hl | hl | rfl | rfl | rfl | rfl <;>
+      (try obtain ⟨_, rfl | rfl⟩ := loadConst64_mem hl) <;> rfl
   · exact pushLines_tailFree _ _ _ h
   · exact pushLines_tailFree _ _ _ h
   · exact spAdjLines_tailFree _ _ _ h

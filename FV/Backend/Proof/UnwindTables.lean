@@ -541,7 +541,8 @@ theorem prologueLines_noCall {calls : Bool} (saves : List Reg) (size : Nat) :
   rcases hl with ((((rfl | rfl) | hl) | hl) | hl) | hl
   · rfl
   · rfl
-  · rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ <;> rfl
+  · rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ | hl | hl | rfl | rfl | rfl | rfl <;>
+      (try obtain ⟨_, rfl | rfl⟩ := loadConst64_mem hl) <;> rfl
   · exact pushLines_noCall _ _ l hl
   · exact pushLines_noCall _ _ l hl
   · exact spAdjLines_noCall true _ l hl

@@ -410,10 +410,12 @@ theorem noRet_popLines (int : Bool) (rs : List Reg) : NoRet (popLines int rs) :=
   obtain ⟨rfl, -⟩ := e
   rcases hy with rfl | rfl | rfl | rfl <;> intro h <;> cases h
 
-/-- The stack probes (#581): `sub sp`, `stur wzr` and `add sp`, no `ret`. -/
+/-- The stack probes (#581): `sub sp`, `stur wzr` and `add sp`, or the loop's constants and
+its `sub`, `str`, `cmn` and `b.gt`; no `ret`. -/
 theorem noRet_probeLines (total : Nat) : NoRet (probeLines total) := by
   intro x t hln
-  rcases probeLines_mem hln with h | h | ⟨n, h⟩ <;>
+  rcases probeLines_mem hln with h | h | ⟨n, h⟩ | hl | hl | h | h | h | h <;>
+    (try obtain ⟨_, h | h⟩ := loadConst64_mem hl) <;>
     (simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; intro h; cases h)
 
 /-- The prologue has no `ret` (with the stack probes, #581: `calls` is the new argument of

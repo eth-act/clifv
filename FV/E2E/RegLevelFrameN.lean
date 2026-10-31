@@ -59,7 +59,7 @@ theorem iterN_proRunN {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {call
       (R.Good s → ∀ i < prologueSteps saves size calls, R.GoodXN (iterN R.step i s)) := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := iterN_proRun hR hdrop hprog hpc herr h
   refine ⟨h1, h2, h3, fun h0 i hi => ⟨h4 h0 i hi, ?_⟩⟩
-  obtain ⟨k, hk, e⟩ := h5 i hi
+  obtain ⟨k, hk, e, -⟩ := h5 i hi
   obtain ⟨x, ex, hx, -⟩ := prologueLines_ins _ _ _ (List.getElem_mem hk)
   refine RL.noCallAt_of_line hR (j := j + k) ?_ e hx
   have := congrArg (·[k]?) hdrop
