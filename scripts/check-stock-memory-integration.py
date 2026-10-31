@@ -13,7 +13,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--memory-cfg', action='store_true', help='exercise the captured two-block load class')
+    parser.add_argument('--load-type', choices=('i8', 'i16', 'i32', 'i64'), default='i32')
     args = parser.parse_args()
+    if args.memory_cfg and args.load_type != 'i32':
+        parser.error('the captured CFG fixture retains its i32 class')
     root = Path(__file__).resolve().parents[1]
     out = args.output.resolve()
     if out == root or root in out.parents:
@@ -36,7 +39,8 @@ def main():
         return log.read_text()
 
     try:
-        run('fixture', [root / '.lake/build/bin/stock-memory-linked', generated, *(['--memory-cfg'] if args.memory_cfg else [])])
+        run('fixture', [root / '.lake/build/bin/stock-memory-linked', generated, *(['--memory-cfg'] if args.memory_cfg else []),
+                        '--load-type', args.load_type])
         expected = {f'StockMemoryProduction{mode}{policy}{scope}' for mode in ('Plain', 'Cleanup')
                     for policy in ('Strict', 'Fallback') for scope in ('Global', 'Entries')}
         assert {p.stem for p in (generated / 'Crates').glob('*.lean')} == expected
@@ -78,7 +82,7 @@ def main():
             assert 'attempt_correct_source_peak' in linked
 
         assembly = out / 'memory-native.s'
-        assembly.write_text('''\n.text
+        native = '''\n.text
 .global _start
 _start:
   adrp x19, test_data
@@ -119,7 +123,18 @@ _start:
 test_data:
   .quad 0
   .quad 0
-''')
+'''
+        if args.load_type == 'i64':
+            native = native.replace('mov w20, #0xa5a5\n  movk w20, #0xa5a5, lsl #16',
+                                    'mov x20, #0xa5a5\n  movk x20, #0xa5a5, lsl #16\n'
+                                    '  movk x20, #0xa5a5, lsl #32\n  movk x20, #0xa5a5, lsl #48')
+            native = native.replace('str w20', 'str x20').replace('add w20, w20', 'add x20, x20')
+            native = native.replace('ror w20, w20', 'ror x20, x20')
+        elif args.load_type in ('i8', 'i16'):
+            mask = '0xff' if args.load_type == 'i8' else '0xffff'
+            native = native.replace('1:\n', f'1:\n  and x21, x20, #{mask}\n', 1)
+            native = native.replace('cmp x0, x20', 'cmp x0, x21')
+        assembly.write_text(native)
         mc = env.get('LLVM_MC', 'llvm-mc')
         lld = env.get('CLIF_NATIVE_LLD', 'ld.lld')
         qemu = env.get('CLIF_NATIVE_QEMU', 'qemu-aarch64')
@@ -151,7 +166,8 @@ run_cmd do
 ''')
         assert 'STOCK_MEMORY_GENERATED_AXIOMS_PASS ' in run('generated-axioms', ['lean', '--root=' + str(out), audit])
         report = dict(state='passed', generated_sources=built, native_calls=12288, initialized_loads=8192,
-                      native_reference='exact stored 32-bit source value, unaligned initialized address; unused first ABI argument',
+                      native_reference=f'exact stored {args.load_type} source value, unaligned initialized address; unused first ABI argument',
+                      load_type=args.load_type,
                       cleanup_modes=2, memory_cfg=args.memory_cfg, generated_roots=sorted(expected), commands=records)
     except BaseException as error:
         report = dict(state='failed', error=repr(error), commands=records)
