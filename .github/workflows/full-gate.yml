@@ -293,6 +293,44 @@ jobs:
           path: gate-logs
           retention-days: 14
 
+  unused-imports:
+    # report only: not in the report's GREEN rule, never fails the gate (fix: scripts/shake/regen.sh)
+    name: Unused imports (report)
+    needs: [plan, assemble]
+    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
+    continue-on-error: true
+    runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
+    # 28 min on a 16-vCPU orb (49 CPU-min, 12.7 GB peak)
+    timeout-minutes: 150
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/fv-lean
+        with:
+          swap-gb: '24'
+          stages: lake-full
+      - name: scripts/shake --dry-run
+        env:
+          SHAKE_JOBS: '2'
+        run: |
+          mkdir -p gate-logs
+          lake build $LEAN_TARGETS 2>&1 | tail -n 1
+          start=$(date +%s)
+          rc=0; python3 scripts/shake/shake.py --dry-run --no-pr-skip --report gate-logs/unused-imports.json \
+            > gate-logs/unused-imports.log 2>&1 || rc=$?
+          echo "unused imports (report only) rc=$rc $(( $(date +%s) - start )) s: $(grep '^modules ' gate-logs/unused-imports.log || tail -n 1 gate-logs/unused-imports.log)" \
+            | tee -a gate-logs/summary.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: gate-unused-imports
+          path: gate-logs
+          retention-days: 14
+
   runtime:
     name: ${{ matrix.gate }}
     needs: [plan, assemble]
@@ -420,7 +458,7 @@ jobs:
 
   report:
     name: Report
-    needs: [plan, wave1, wave2, wave3, assemble, audit, crate-proofs, e2e, runtime, cargo-fv]
+    needs: [plan, wave1, wave2, wave3, assemble, audit, crate-proofs, e2e, runtime, cargo-fv, unused-imports]
     if: ${{ always() && needs.plan.result != 'skipped' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
