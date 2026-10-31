@@ -411,12 +411,14 @@ theorem binary_correct_exec_memtrap {D : List Clif.DataObject} (hI : okBCleanup 
       DeadCleanupStackBound.bud I f := fun M => by simp [LinkSys.hybrid, hb, hbud]
   obtain ⟨N, ht, hgood⟩ := backend_correct_program_memtrap_budget _ hL0 hκ hfm
     (compiledCleanup_of hI hfm) M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (by rw [hκf]; exact hgfree) himg hbe hargs
+    (by rw [hκf]; exact ⟨hres, by rw [← hκf M]; exact hκ.2 M f hfm⟩) (by rw [hκf]; rfl)
+    (by rw [hκf]; exact hgfree) himg hbe hargs
     hr.entry hsav hrel hpl htr hmf hrun
   exact exec_memtrap_of_model hI hcm hbin hnogot hB hH hf hX ho hr ht hgood
 
 /-- **`binary_correct_exec_memtrap` for the run's peak call depth** (any program, recursive ones
-included): the stack `frameDrop + D * d` of the run's call depth `d` (`Clif.DepthLe`), the run
+included): the stack `frameDrop + (D * d + pbMax I)` of the run's call depth `d` (`Clif.DepthLe`;
+#581: with the stack probes of the deepest activation), the run
 premises of the callees running with fuel `F` and at most `d - 1` callers of their own
 (`Clif.linkEnvD`). -/
 theorem binary_correct_exec_memtrap_peak {D : List Clif.DataObject} (hI : okBCleanup I = true)
@@ -424,7 +426,8 @@ theorem binary_correct_exec_memtrap_peak {D : List Clif.DataObject} (hI : okBCle
     (hnogot : ∀ a, ¬ GotSlot I file a) (B : BaseEnv) (hB : BaseOk (sys I B)) (hH : HooksSim I B)
     {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f) (F d : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r
+      args cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicitM (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs)
     {mp : ArmFault.MemMap} (hmf : MapFaults mp (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs)
@@ -432,13 +435,14 @@ theorem binary_correct_exec_memtrap_peak {D : List Clif.DataObject} (hI : okBCle
     ∃ k, ExecTrapM mp I file f tc (runX (step I B file) k r) := by
   have hfm := (Clif.Program.func?_some hf).1
   have hfacts := binFacts_of_checks hI hbin
-  have hB' : BaseOk (LinkSys.ofInputCleanup I B (worldF I f (I.D * d) r)) := baseOk_F hB
+  have hB' : BaseOk (LinkSys.ofInputCleanup I B (worldF I f (I.D * d + pbMax I) r)) := baseOk_F hB
   have hL0 := okBCleanup_sound hI hB' fun _ h => .inr h
   have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
     hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
   obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ := premises hL0 hfm hro ho hr
   obtain ⟨N, ht, hgood⟩ := backend_correct_program_memtrap_peak _ hL0 (LinkSys.budget_K _ hL0) hfm
-    (compiledCleanup_of hI hfm) F d hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl
+    (compiledCleanup_of hI hfm) F d hent ⟨hres, (LinkSys.budget_K _ hL0).2 d f hfm⟩ rfl hgfree himg
+    hbe hargs hr.entry hsav hrel hpl
     hd htr hmf hrun
   exact exec_memtrap_of_model hI hcm hbin hnogot hB hH hf hX ho hr ht hgood
 

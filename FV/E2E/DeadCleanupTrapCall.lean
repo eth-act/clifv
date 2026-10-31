@@ -278,7 +278,7 @@ theorem backend_correct_final_cleanup_trapcall {p : Clif.Program} {f : Clif.Func
     (fun h => hTls (hasTls_of_vcodeCleanupA hc h)) hnt XT hent hres hbe
   have hI := hIsel args cs w₀ ρ₀ hcs hrel
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
-      (stackArgsAvoid_frameWCleanupA hc hres hent hargs)) htrX fuel
+      (stackArgsAvoid_frameWCleanupA hc hres hent hargs) hres) htrX fuel
   rcases hout with h | ⟨e, m, h⟩
   · obtain ⟨n, hn⟩ := hR1 c ((hPrep.1 _ _).2 c (hI.2.1 c h))
     exact ⟨n, .inl hn⟩

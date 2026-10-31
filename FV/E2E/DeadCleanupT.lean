@@ -118,7 +118,7 @@ theorem backend_correct_of_rules_cleanup_exT {p : Clif.Program} {f : Clif.Functi
       hT.tryUn hT.tryIndT hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_prune (hds s') (hPure s') (hCmp s') hc.prepOk)
     hM6 hent hres hbe
-    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
 /-- **Integer returns**: the typed dead-cleanup chain gives `ArmRefines`. -/
@@ -158,7 +158,7 @@ theorem backend_correct_of_rules_cleanup_ex_ofT {p : Clif.Program} {f : Clif.Fun
       hT.tryUn hT.tryIndT hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_prune (hds s') (hPure s') (hCmp s') hc.prepOk)
     hM6 hent hres hbe
-    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
 /-- The float loads/stores of the value semantics are `csem`'s (they are not pure forms). -/
@@ -217,7 +217,7 @@ theorem stackArgsAvoid_frameW_of_alloc {f : Clif.Function} {vcp : VCode} {rf : R
     rw [hfs, e]
     exact Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) (le_alignTo16 _))
       (Nat.le_add_right _ _)
-  have hsp := hres.1
+  have hsp := hres.1.1
   have hfit := h.fits
   have hx : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j -
       (spv s - BitVec.ofNat 64 (frameDrop af))).toNat = off + j + frameDrop af := by

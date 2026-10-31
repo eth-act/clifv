@@ -407,23 +407,128 @@ theorem StackRoom.mono {m n : Nat} {s : Arm.ArmState} (h : StackRoom m s) (hnm :
   have := (a - (spv s - BitVec.ofNat 64 m)).isLt
   omega
 
+/-- How far below the body's `sp` (`sp_entry - frameDrop`) Cranelift's inline stack probes of
+the prologue (`probeLines`) write: the last probe is at `sp_entry - 16 - 4096·probeCount`, which
+lies below the frame when the probed stack (`probeTotal`) includes the 16-byte setup area of the
+callees of a calling function (`calls`): then up to 16 bytes. -/
+def probeBelow (af : AFunc) : Nat :=
+  if af.frame then 4096 * probeCount (probeTotal af.frameSize af.isCaller) - af.frameSize else 0
+
+/-- `a` is one of the 4 bytes zeroed by `n` stack probes below `base` (the `sp` after the frame
+setup): the probes store `wzr` at `base - 4096·(i + 1)` for `i < n` (`probeLines`). -/
+def probeHitB (n : Nat) (base a : BitVec 64) : Bool :=
+  (List.range n).any fun i => decide ((a - (base - BitVec.ofNat 64 (4096 * (i + 1)))).toNat < 4)
+
+/-- `a` is one of the 4 bytes zeroed by `n` stack probes for an entry `sp` (the frame setup
+pushes fp/lr: the probes are below `sp - 16`). -/
+def probeHitN (n : Nat) (sp a : BitVec 64) : Bool := probeHitB n (sp - 16#64) a
+
+/-- `a` is one of the bytes the stack probes of `af`'s prologue zero, for an entry `sp`. -/
+def probeHit (af : AFunc) (sp a : BitVec 64) : Bool :=
+  af.frame && probeHitN (probeCount (probeTotal af.frameSize af.isCaller)) sp a
+
+/-- The memory after the stack probes of `af`'s prologue, entered in `s`: the probed bytes are
+zero, every other byte as in `s`. -/
+def probeMem (af : AFunc) (s : Arm.ArmState) : Arm.Memory :=
+  fun a => if probeHit af (spv s) a then 0#8 else s.mem a
+
+theorem probeMem_of_not {af : AFunc} {s : Arm.ArmState} {a : BitVec 64}
+    (h : probeHit af (spv s) a = false) : probeMem af s a = s.mem a := by
+  simp [probeMem, h]
+
+theorem probeHit_of_frame {af : AFunc} (h : af.frame = false) (sp a : BitVec 64) :
+    probeHit af sp a = false := by
+  simp [probeHit, h]
+
+/-- Without a frame there are no probes. -/
+theorem probeMem_of_frame {af : AFunc} (h : af.frame = false) (s : Arm.ArmState) :
+    probeMem af s = s.mem :=
+  funext fun _ => probeMem_of_not (probeHit_of_frame h _ _)
+
+/-- Without probes the memory is the entry memory. -/
+theorem probeMem_of_count {af : AFunc} (h : probeCount (probeTotal af.frameSize af.isCaller) = 0)
+    (s : Arm.ArmState) : probeMem af s = s.mem :=
+  funext fun _ => probeMem_of_not (by simp [probeHit, probeHitN, probeHitB, h])
+
+/-- A byte zeroed by `n` probes, in numbers: the `k`-th byte of probe `i`, when the probes fit
+below `sp`. -/
+theorem probeHitN_toNat {n : Nat} {sp a : BitVec 64} (h : probeHitN n sp a = true)
+    (hfit : 16 + 4096 * n ≤ sp.toNat) :
+    ∃ i < n, ∃ k < 4, a.toNat + 16 + 4096 * (i + 1) = sp.toNat + k := by
+  simp only [probeHitN, probeHitB, List.any_eq_true, List.mem_range, decide_eq_true_eq] at h
+  obtain ⟨i, hi, hk⟩ := h
+  refine ⟨i, hi, _, hk, ?_⟩
+  have hmul : 4096 * (i + 1) ≤ 4096 * n := Nat.mul_le_mul_left 4096 hi
+  have hle : 16 + 4096 * (i + 1) ≤ sp.toNat := Nat.le_trans (Nat.add_le_add_left hmul 16) hfit
+  have hb : (sp - 16#64 - BitVec.ofNat 64 (4096 * (i + 1))).toNat = sp.toNat - (16 + 4096 * (i + 1)) := by
+    have e : sp - 16#64 - BitVec.ofNat 64 (4096 * (i + 1)) = sp - BitVec.ofNat 64 (16 + 4096 * (i + 1)) := by
+      rw [BitVec.ofNat_add]; bv_omega
+    have hm : (16 + 4096 * (i + 1)) % 2 ^ 64 = 16 + 4096 * (i + 1) :=
+      Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt hle sp.isLt)
+    rw [e, BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; exact hle),
+      BitVec.toNat_ofNat, hm]
+  have ha := a.isLt
+  have hs := sp.isLt
+  rw [BitVec.toNat_sub, hb] at hk ⊢
+  by_cases hlt : sp.toNat - (16 + 4096 * (i + 1)) ≤ a.toNat
+  · rw [show 2 ^ 64 - (sp.toNat - (16 + 4096 * (i + 1))) + a.toNat =
+      (a.toNat - (sp.toNat - (16 + 4096 * (i + 1)))) + 2 ^ 64 by omega, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega)] at hk ⊢
+    omega
+  · rw [Nat.mod_eq_of_lt (by omega)] at hk
+    omega
+
+/-- A probed byte of `af`'s prologue, in numbers (`probeHitN_toNat`). -/
+theorem probeHit_toNat {af : AFunc} {sp a : BitVec 64} (h : probeHit af sp a = true)
+    (hfit : 16 + 4096 * probeCount (probeTotal af.frameSize af.isCaller) ≤ sp.toNat) :
+    af.frame = true ∧ ∃ i < probeCount (probeTotal af.frameSize af.isCaller), ∃ k < 4,
+      a.toNat + 16 + 4096 * (i + 1) = sp.toNat + k := by
+  simp only [probeHit, Bool.and_eq_true] at h
+  exact ⟨h.1, probeHitN_toNat h.2 hfit⟩
+
+/-- The probes lie below `sp - 16 - 4096 + 4`, inside the frame or at most `probeBelow` bytes
+below it. -/
+theorem probeCount_le (af : AFunc) (hf : af.frame = true) :
+    4096 * probeCount (probeTotal af.frameSize af.isCaller) ≤ af.frameSize + probeBelow af := by
+  simp only [probeBelow, hf, ite_true]; omega
+
 /-- **Resource precondition** with a stack budget `K` for the callees: the frame (fp/lr pair and
 `frameSize` bytes) and `K` more bytes below it fit below sp without wrapping and hold no code.
 The callees' stack `[sp_body - K, sp_body)` is the dead stack of every call (`CalleeOk`). With
-`K = 0` this is the former precondition (the frame only). -/
+`K = 0` this is the former precondition (the frame only). The budget also covers the bytes the
+prologue's stack probes write below the frame (`probeBelow`, #581: up to 16 bytes, the setup
+area of the callees Cranelift's probes count in, for a calling function whose probed stack is a
+multiple of 4 KiB; 0 for a function without probes, where this is the former precondition). -/
 def StackAvail (K : Nat) (af : AFunc) (s : Arm.ArmState) : Prop :=
-  StackRoom (af.frameSize + 16 + K) s
+  StackRoom (af.frameSize + 16 + K) s ∧ probeBelow af ≤ K
 
 /-- The frame part of `StackAvail` (the former precondition). -/
 theorem StackAvail.frame {K : Nat} {af : AFunc} {s : Arm.ArmState} (h : StackAvail K af s) :
     StackRoom (af.frameSize + 16) s :=
-  StackRoom.mono h (Nat.le_add_right _ _)
+  StackRoom.mono h.1 (Nat.le_add_right _ _)
+
+/-- The frame and the callees' budget (the former `StackAvail`). -/
+theorem StackAvail.room {K : Nat} {af : AFunc} {s : Arm.ArmState} (h : StackAvail K af s) :
+    StackRoom (af.frameSize + 16 + K) s :=
+  h.1
+
+/-- The frame and the bytes below it that the stack probes write. -/
+theorem StackAvail.probe {K : Nat} {af : AFunc} {s : Arm.ArmState} (h : StackAvail K af s) :
+    StackRoom (af.frameSize + 16 + probeBelow af) s :=
+  StackRoom.mono h.1 (Nat.add_le_add_left h.2 _)
+
+/-- `StackAvail` from the former precondition when the budget covers the probes. -/
+theorem StackAvail.of_room {K : Nat} {af : AFunc} {s : Arm.ArmState}
+    (h : StackRoom (af.frameSize + 16 + K) s) (hp : probeBelow af ≤ K) : StackAvail K af s :=
+  ⟨h, hp⟩
 
 /-- The state the function body starts in, relative to the ABI entry state `s`: the prologue
 (when `af.frame`) pushed fp/lr and set up the frame: `sp` lowered by `16 + frameSize`, `x29` the
 frame pointer `sp_entry - 16`; x0–x8 and v0–v7 (arguments; x8 is preserved by the
-prologue — for `sret` functions it carries the hidden struct-return pointer), memory, the program and every field outside
-the allocatable/temporary registers (x18, x30, flags, …) as at entry. -/
+prologue — for `sret` functions it carries the hidden struct-return pointer), the program and every field outside
+the allocatable/temporary registers (x18, x30, flags, …) as at entry; memory as at entry but for
+the bytes the prologue's stack probes zeroed (`probeMem`, #581; as at entry for a function
+without probes, the former condition). -/
 def frameDrop (af : AFunc) : Nat := if af.frame then af.frameSize + 16 else 0
 
 structure BodyEntry (af : AFunc) (s w₀ : Arm.ArmState) : Prop where
@@ -432,7 +537,7 @@ structure BodyEntry (af : AFunc) (s w₀ : Arm.ArmState) : Prop where
   args : ∀ i < 9, xreg i w₀ = xreg i s
   argsV : ∀ i < 8, Arm.r (.SFP (BitVec.ofNat 5 i)) w₀ = Arm.r (.SFP (BitVec.ofNat 5 i)) s
   other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = Arm.r f s
-  mem : w₀.mem = s.mem
+  mem : w₀.mem = probeMem af s
   program : w₀.program = s.program
 
 /-- Callee-saved X registers (AAPCS64: x19–x28, and the frame pointer x29). -/

@@ -219,14 +219,15 @@ theorem spAdjLines_isIns (sub : Bool) (size : Nat) : ∀ ln ∈ spAdjLines sub s
       · simp only [List.mem_singleton] at h; exact ⟨_, _, h⟩
 
 /-- The prologue's lines are instructions. -/
-theorem prologueLines_isIns (saves : List Reg) (size : Nat) :
-    ∀ ln ∈ prologueLines saves size, ∃ i t, ln = .ins i t := by
+theorem prologueLines_isIns {calls : Bool} (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size calls, ∃ i t, ln = .ins i t := by
   intro ln h
   rw [prologueLines_eq] at h
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with (rfl | rfl) | h | h | h
+  rcases h with (rfl | rfl) | h | h | h | h
   · exact ⟨_, _, rfl⟩
   · exact ⟨_, _, rfl⟩
+  · rcases probeLines_mem h with rfl | rfl | ⟨_, rfl⟩ <;> exact ⟨_, _, rfl⟩
   · obtain ⟨x, rfl, -⟩ := pushLines_mem h; exact ⟨_, _, rfl⟩
   · obtain ⟨x, rfl, -⟩ := pushLines_mem h; exact ⟨_, _, rfl⟩
   · exact spAdjLines_isIns _ _ _ h
@@ -296,6 +297,22 @@ structure RL.Wf (R : RL) : Prop where
   prog0 : R.s0.program = R.fb.program R.base
   /-- the kept addresses are not in the frame or the callees' dead stack -/
   gfree : ∀ a, R.G a → ¬ StackBelow (frameDrop R.af + R.K) (spv R.s0) a
+
+/-- The kept addresses are not written by the prologue's stack probes (#581): the probes are in
+the frame or the callees' dead stack below it (`StackAvail`: the budget covers them). -/
+theorem RL.Wf.gprobe {R : RL} (hR : R.Wf) : ∀ a, R.G a → probeHit R.af (spv R.s0) a = false := by
+  intro a ha
+  cases hp : probeHit R.af (spv R.s0) a
+  · rfl
+  have hf : R.af.frame = true := by simp only [probeHit, Bool.and_eq_true] at hp; exact hp.1
+  have hd : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hf]
+  have hr := hR.stack.probe
+  have hb := probeHit_below (by rw [hd]; exact hr.1) hp
+  exfalso
+  apply hR.gfree a ha
+  have h2 := hR.stack.2
+  unfold StackBelow at hb ⊢
+  omega
 
 /-- The activation's frame is laid out correctly (its slots in the frame addresses `frameF`). -/
 theorem RL.frameOkF {R : RL} (hR : R.Wf) :

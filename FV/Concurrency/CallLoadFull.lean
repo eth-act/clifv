@@ -149,15 +149,15 @@ theorem calleePath (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) :
       Q (RLx s) (iterN (RLx s).step n0 (RLx s).s0) (.run ⟨0, rest2L, mL, w₀X s⟩) ∧
       AInv (RLx s) (.run ⟨0, rest2L, mL, w₀X s⟩) ∧
       SRun (SrcStep (RLx s)) (MConf.init (RLx s).rf (locVal (RLx s).fr
-        (iterN (RLx s).step (prologueLines (RLx s).af.saves (RLx s).af.frameSize).length (RLx s).s0)) (w₀X s))
+        (iterN (RLx s).step (prologueLines (RLx s).af.saves (RLx s).af.frameSize (RLx s).af.isCaller).length (RLx s).s0)) (w₀X s))
         trM (.run ⟨0, rest2L, mL, w₀X s⟩) ∧
       (∀ x ∈ trM, x = []) ∧ mL (.reg (.x 0)) = 0 := by
   have hR := wfX hS
   obtain ⟨hlat, hq, hA⟩ := q_init_lines hR (abiX hS) (bodyX s)
-  have hpe := prologue_evs hR (abiX hS) hlat
+  have hpe := prologue_evs hR (abiX hS) (probeF_L rfl) hlat
   have hpr0 := linesAt_program hR hlat
-  have hnr0 := linesAt_nonRet hR hlat (noRet_prologue _ _)
-  generalize hP : (prologueLines (RLx s).af.saves (RLx s).af.frameSize).length = n0 at hpe hpr0 hnr0 hq hA ⊢
+  have hnr0 := linesAt_nonRet hR hlat (noRet_prologue _ _ _)
+  generalize hP : (prologueLines (RLx s).af.saves (RLx s).af.frameSize (RLx s).af.isCaller).length = n0 at hpe hpr0 hnr0 hq hA ⊢
   have hq0 := hq
   have hA0 := hA
   simp only [MConf.init] at hq0 hA0
@@ -462,7 +462,7 @@ stepped, since its step has an event, and does not stop there). -/
 theorem mstep_ldar (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) (env : Clif.Env)
     {mL : Loc → CV} {trM : List (List Ev)}
     (hrun : SRun (SrcStep (RLx s)) (MConf.init (RLx s).rf (locVal (RLx s).fr
-        (iterN (RLx s).step (prologueLines (RLx s).af.saves (RLx s).af.frameSize).length (RLx s).s0)) (w₀X s))
+        (iterN (RLx s).step (prologueLines (RLx s).af.saves (RLx s).af.frameSize (RLx s).af.isCaller).length (RLx s).s0)) (w₀X s))
         trM (.run ⟨0, rest2L, mL, w₀X s⟩))
     (hnil : ∀ x ∈ trM, x = []) :
     ∃ c', MStep (RLx s).vc (RLx s).sem ckeep (RLx s).rf (.run ⟨0, rest2L, mL, w₀X s⟩) c' := by

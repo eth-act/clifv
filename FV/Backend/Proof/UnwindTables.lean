@@ -534,13 +534,14 @@ theorem pushLines_noCall (int : Bool) (rs : List Reg) : ∀ l ∈ pushLines int 
     | some r => simp only [List.mem_singleton] at hl; subst hl; cases int <;> rfl
   · cases int <;> rfl
 
-theorem prologueLines_noCall (saves : List Reg) (size : Nat) :
-    ∀ l ∈ prologueLines saves size, l.isCall = false := by
+theorem prologueLines_noCall {calls : Bool} (saves : List Reg) (size : Nat) :
+    ∀ l ∈ prologueLines saves size calls, l.isCall = false := by
   intro l hl
   simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
-  rcases hl with (((rfl | rfl) | hl) | hl) | hl
+  rcases hl with ((((rfl | rfl) | hl) | hl) | hl) | hl
   · rfl
   · rfl
+  · rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ <;> rfl
   · exact pushLines_noCall _ _ l hl
   · exact pushLines_noCall _ _ l hl
   · exact spAdjLines_noCall true _ l hl
@@ -764,7 +765,7 @@ theorem unwindRows_frame {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)}
   by_cases hp : (code.toList.head? != some AInst.prologue) = true
   · simp [hp, bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at h
   simp only [hp, Bool.false_eq_true, ite_false] at h
-  generalize hpro : prologueLines af.saves af.frameSize = pro at h
+  generalize hpro : prologueLines af.saves af.frameSize af.isCaller = pro at h
   by_cases hz : 4 * pro.length ≥ 2 ^ 32
   · rw [if_pos hz] at h
     simp [throw, throwThe, MonadExceptOf.throw, bind, Except.bind] at h

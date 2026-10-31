@@ -410,13 +410,23 @@ theorem noRet_popLines (int : Bool) (rs : List Reg) : NoRet (popLines int rs) :=
   obtain ⟨rfl, -⟩ := e
   rcases hy with rfl | rfl | rfl | rfl <;> intro h <;> cases h
 
-theorem noRet_prologue (saves : List Reg) (size : Nat) : NoRet (prologueLines saves size) := by
+/-- The stack probes (#581): `sub sp`, `stur wzr` and `add sp`, no `ret`. -/
+theorem noRet_probeLines (total : Nat) : NoRet (probeLines total) := by
+  intro x t hln
+  rcases probeLines_mem hln with h | h | ⟨n, h⟩ <;>
+    (simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; intro h; cases h)
+
+/-- The prologue has no `ret` (with the stack probes, #581: `calls` is the new argument of
+`prologueLines`). -/
+theorem noRet_prologue (saves : List Reg) (size : Nat) (calls : Bool) :
+    NoRet (prologueLines saves size calls) := by
   intro x t hln
   rw [prologueLines_eq] at hln
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
-  rcases hln with (h | h) | h | h | h
+  rcases hln with (h | h) | h | h | h | h
   · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; intro h; cases h
   · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; intro h; cases h
+  · exact noRet_probeLines _ x t h
   · exact noRet_pushLines _ _ x t h
   · exact noRet_pushLines _ _ x t h
   · exact noRet_spAdj true _ x t h

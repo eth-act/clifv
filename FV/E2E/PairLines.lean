@@ -284,13 +284,14 @@ theorem popLines_noSecond (int : Bool) (rs : List Reg) :
     · simp only [List.mem_singleton] at hln; subst hln; cases int <;> rfl
     · simp at hln
 
-theorem prologueLines_noSecond (saves : List Reg) (size : Nat) :
-    ∀ ln ∈ prologueLines saves size, lnSecond ln = false := by
+theorem prologueLines_noSecond {calls : Bool} (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size calls, lnSecond ln = false := by
   intro ln hln
   simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
-  rcases hln with (((rfl | rfl) | hln) | hln) | hln
+  rcases hln with ((((rfl | rfl) | hln) | hln) | hln) | hln
   · rfl
   · rfl
+  · rcases probeLines_mem hln with rfl | rfl | ⟨_, rfl⟩ <;> rfl
   · exact pushLines_noSecond _ _ _ hln
   · exact pushLines_noSecond _ _ _ hln
   · exact spAdjLines_noSecond _ _ _ hln

@@ -102,7 +102,8 @@ theorem binary_correct_exec_proven_tls {I : SemanticStackBound.CompilerInput} {D
     ⟨hG hout, runGood_sysS hI hbin hB hn hf M hX ho hav hr' htr' hout⟩
 
 /-- **`binary_correct_exec_depth_proven` without the TLS hook** (any program, recursive ones
-included; the stack `frameDrop + D * M`). -/
+included; the stack `frameDrop + (D * M + pbMax I)`, #581: with the stack probes of the deepest
+activation). -/
 theorem binary_correct_exec_depth_proven_tls {I : SemanticStackBound.CompilerInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : SemanticStackBound.okB I = true) (hcm : codeMapB I (tabOf I.results) = true)
     (hbin : BinCheck.BinOkWithResults I I.results D file) (hgot : GotOk I file) (B : BaseEnv)
@@ -111,8 +112,10 @@ theorem binary_correct_exec_depth_proven_tls {I : SemanticStackBound.CompilerInp
     {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
-    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * M + pbMax I)) r
+      args cs.mem)
+    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + (I.D * M + pbMax I)) r args
+      cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
     (hL : TlsLoader I B file r) :
@@ -124,14 +127,15 @@ theorem binary_correct_exec_depth_proven_tls {I : SemanticStackBound.CompilerInp
   have hfacts := binFacts_of_checks hI hbin
   obtain ⟨hA, hd, hG⟩ := binary_correct_depthX hfacts _ hB hf M hX ho hr' htr'
   have hfm := (Clif.Program.func?_some hf).1
-  have hL0 := SemanticStackBound.okB_sound hI (baseOk_F (F' := worldF I f (I.D * M) r) hB) fun _ h => .inr h
+  have hL0 := SemanticStackBound.okB_sound hI (baseOk_F (F' := worldF I f (I.D * M + pbMax I) r) hB) fun _ h => .inr h
   have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
     hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
   obtain ⟨hent, -⟩ := premises hL0 hfm hro ho hr'
   exact exec_of_runGoodT hI hcm hbin hgot hB hHc hfm hX hL hent hd hA fun hout =>
     ⟨hG hout, runGood_sysS_depth hI hbin hB hfm M hX ho hav hr' htr' hout⟩
 
-/-- **`binary_correct_exec_peak_proven` without the TLS hook** (the stack `frameDrop + D * d`
+/-- **`binary_correct_exec_peak_proven` without the TLS hook** (the stack `frameDrop + (D * d + pbMax)`,
+#581: the deepest activation's stack probes write up to `pbMax` bytes below its frame,
 for the run's peak call depth `d`). -/
 theorem binary_correct_exec_peak_proven_tls {I : SemanticStackBound.CompilerInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : SemanticStackBound.okB I = true) (hcm : codeMapB I (tabOf I.results) = true)
@@ -141,8 +145,10 @@ theorem binary_correct_exec_peak_proven_tls {I : SemanticStackBound.CompilerInpu
     {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
-    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r
+      args cs.mem)
+    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r args
+      cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs)
     (hL : TlsLoader I B file r) :
@@ -155,7 +161,7 @@ theorem binary_correct_exec_peak_proven_tls {I : SemanticStackBound.CompilerInpu
   have hfacts := binFacts_of_checks hI hbin
   obtain ⟨hA, hdiff, hG⟩ := binary_correct_peakX hfacts _ hB hf F d hX ho hr' hd' htr'
   have hfm := (Clif.Program.func?_some hf).1
-  have hL0 := SemanticStackBound.okB_sound hI (baseOk_F (F' := worldF I f (I.D * d) r) hB) fun _ h => .inr h
+  have hL0 := SemanticStackBound.okB_sound hI (baseOk_F (F' := worldF I f (I.D * d + pbMax I) r) hB) fun _ h => .inr h
   have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
     hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
   obtain ⟨hent, -⟩ := premises hL0 hfm hro ho hr'

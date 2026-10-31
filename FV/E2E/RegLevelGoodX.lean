@@ -410,14 +410,15 @@ theorem popLines_tailFree (int : Bool) (rs : List Reg) : ∀ ln ∈ popLines int
   obtain ⟨x, rfl, r, r', hx⟩ := popLines_mem h
   rcases hx with rfl | rfl | rfl | rfl <;> rfl
 
-theorem prologueLines_tailFree (saves : List Reg) (n : Nat) :
-    ∀ ln ∈ prologueLines saves n, ln.tailFree = true := by
+theorem prologueLines_tailFree {calls : Bool} (saves : List Reg) (n : Nat) :
+    ∀ ln ∈ prologueLines saves n calls, ln.tailFree = true := by
   intro ln h
   rw [prologueLines_eq] at h
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with (rfl | rfl) | h | h | h
+  rcases h with (rfl | rfl) | h | h | h | h
   · rfl
   · rfl
+  · rcases probeLines_mem h with rfl | rfl | ⟨_, rfl⟩ <;> rfl
   · exact pushLines_tailFree _ _ _ h
   · exact pushLines_tailFree _ _ _ h
   · exact spAdjLines_tailFree _ _ _ h

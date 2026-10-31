@@ -454,14 +454,14 @@ theorem block_words (vc : VCode) (h : Homes) (vb : VBlock) (pre : List RItem)
     (hpre : (pre.map (itemWords vb)).sum ≤ restW + 10 * maxRC vc) (mv : MInst × Nat → List RItem)
     (hmv : ∀ p, ((mv p).map (itemWords vb)).sum ≤
       if p.2 + 1 = vb.insts.size then 40 * vb.branchArgs.size else 0) :
-    7 + ((pre ++ (vb.insts.toList.zipIdx).flatMap fun p =>
+    16 + ((pre ++ (vb.insts.toList.zipIdx).flatMap fun p =>
       mv p ++ spillInst h p.2 p.1).map (itemWords vb)).sum ≤ vbW (maxRC vc) vb := by
   rw [List.map_append, List.sum_append, sum_flatMap]
   have hc : (if 0 + 1 ≤ vb.insts.size then 40 * vb.branchArgs.size else 0) ≤
       40 * vb.branchArgs.size := by split <;> omega
   have hw : wtA vb.insts = (vb.insts.toList.map szInstW).sum := rfl
   refine Nat.le_trans (Nat.add_le_add_left (Nat.add_le_add hpre
-    (sum_zipIdx_le _ szInstW vb.insts.size (40 * vb.branchArgs.size) _ 0 fun p hp => ?_)) 7) ?_
+    (sum_zipIdx_le _ szInstW vb.insts.size (40 * vb.branchArgs.size) _ 0 fun p hp => ?_)) 16) ?_
   · obtain ⟨i, k⟩ := p
     obtain ⟨-, hk, hi⟩ := List.mem_zipIdx hp
     have hk' : vb.insts[k]? = some i := by

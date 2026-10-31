@@ -299,13 +299,22 @@ theorem callE1_ge : 1 ≤ LO.std.callE (14 + 1) fF sC 1 := by
   rw [cb26, slotted_fR] at this
   omega
 
+/-- `h` and `r` have frames below 4 KiB: their prologues make no stack probe (#581). -/
+theorem noProbe_fH :
+    probeCount (probeTotal (LO.std.A fH).af.frameSize (LO.std.A fH).af.isCaller) = 0 := by
+  native_decide
+
+theorem noProbe_fR :
+    probeCount (probeTotal (LO.std.A fR).af.frameSize (LO.std.A fR).af.isCaller) = 0 := by
+  native_decide
+
 /-- **Entry `1` of the machine's table**: the memory at the machine's call of `h`. -/
 theorem tab1 : LO.std.tabB M0 fF sC 0 1 = fun a => (runM 14).mem (BitVec.ofNat 64 a) := by
   have e := LO.std.tabB_at (M := 14) hL hK fF_mem hprog (herr (by decide))
     (hcp (by decide) machB_parts.2.2.2.2.2.2.1) hct1 (x := 1) (k := 0)
     (by rw [cb23]; simp [Clif.sumTo]) (fun _ => by rw [cb23]; simp [Clif.sumTo, callE0])
   rw [cb23, slotted_fH, ite_eq_left_of_eq_true _ _ (eq_true (by simp [Clif.sumTo]))] at e
-  rw [show M0 = 14 + 1 from rfl, e]
+  rw [show M0 = 14 + 1 from rfl, e, probeMem_of_count (af := (LO.std.A fH).af) noProbe_fH]
   funext a
   show (runX (LO.std.mach M0 fF) 14 sC).mem _ = _
   rw [runEq (by decide)]
@@ -317,7 +326,7 @@ theorem tab2 : LO.std.tabB M0 fF sC 0 2 = fun a => (runM 17).mem (BitVec.ofNat 6
     (by rw [cb26]; simp [Clif.sumTo, callE0])
     (fun _ => by rw [cb26]; have := callE1_ge; simp only [Clif.sumTo, callE0]; omega)
   rw [cb26, slotted_fR, ite_eq_left_of_eq_true _ _ (eq_true (by simp [Clif.sumTo, callE0]))] at e
-  rw [show M0 = 14 + 1 from rfl, e]
+  rw [show M0 = 14 + 1 from rfl, e, probeMem_of_count (af := (LO.std.A fR).af) noProbe_fR]
   funext a
   show (runX (LO.std.mach M0 fF) 17 sC).mem _ = _
   rw [runEq (by decide)]

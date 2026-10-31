@@ -167,7 +167,7 @@ theorem lockRet_of_Lsl (M : Nat) : Lsl.LockRet (fun M _ => Lsl.K M) M :=
 
 /-- **`detTabPRBE_of` with every premise discharged.** -/
 theorem detTabPRBE_of_Lsl (M : Nat) : Lsl.DetTabPRBE (fun M _ => Lsl.K M) (M + 1) :=
-  Lsl.detTabPRBE_of Lsl_ok (Nat.succ_pos M)
+  Lsl.detTabPRBE_of Lsl_ok (Lsl.budget_K Lsl_ok) (Nat.succ_pos M)
     (by rw [Nat.add_sub_cancel]; exact thmPRBRLE_allK_Lsl M)
     (by rw [Nat.add_sub_cancel]; exact lockRet_Lsl M)
 

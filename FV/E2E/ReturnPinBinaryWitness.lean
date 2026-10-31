@@ -148,9 +148,10 @@ theorem outside_budget (cleanup : Bool) (word : BitVec 64) (N : Nat) (bound : N 
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 10000000 in
--- witness: native_decide (two fixed compiled frame budgets only)
+-- witness: native_decide (two fixed compiled frame budgets only; with the probes' `pbMax`, #581)
 theorem depth_budget (cleanup : Bool) :
-    frameDrop (art (original cleanup) ProductionBoundaryWitness.f).af + (original cleanup).D*3 ≤ 4096 := by
+    frameDrop (art (original cleanup) ProductionBoundaryWitness.f).af +
+      ((original cleanup).D*3 + pbMax (original cleanup)) ≤ 4096 := by
   cases cleanup <;> native_decide
 
 end E2E.ReturnPinBinaryWitness
@@ -197,7 +198,8 @@ theorem peak_model_run (cleanup : Bool) (word : BitVec 64) : ModelReturn cleanup
   have bounded := depth cleanup word
   have traps := ReturnPinBinary.trapsExplicit_of_runD contract (Clif.Program.func?_some found).1
     (source_run cleanup word).entry (outside cleanup word).symbols bounded returned
-  have budget : frameDrop (art (original cleanup) ProductionBoundaryWitness.f).af + (original cleanup).D*0 ≤ 4096 := by
+  have budget : frameDrop (art (original cleanup) ProductionBoundaryWitness.f).af +
+      ((original cleanup).D*0 + pbMax (original cleanup)) ≤ 4096 := by
     have bound := depth_budget cleanup
     omega
   have entry := outside_budget cleanup word _ budget

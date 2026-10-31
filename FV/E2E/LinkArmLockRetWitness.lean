@@ -75,7 +75,7 @@ theorem progXBT_rel_Lsl {M : Nat}
     {o : List CV} {x : Arm.ArmState}
     (hx : Lsl.progXBT (fun M _ => Lsl.K M) M F h uses W = some (o, x)) :
     ∃ x', Lsl.progXBT (fun M _ => Lsl.K M) M F h uses W' = some (o, x') ∧ SameWorld F x x' :=
-  Lsl.progXBT_rel Lsl_ok ih hdet htw hh hcal himgF hr hp hm hrgn hx
+  Lsl.progXBT_rel Lsl_ok (Lsl.budget_K Lsl_ok) ih hdet htw hh hcal himgF hr hp hm hrgn hx
 
 theorem xnifXPBTGY_Lsl (hN : Lsl.NeedNI) {M : Nat}
     (ih : 0 < M → Lsl.ThmPRBRL (fun M _ => Lsl.K M) (M - 1))
@@ -89,12 +89,12 @@ theorem xnifXPBTGY_Lsl (hN : Lsl.NeedNI) {M : Nat}
       (CallLg ((Lsl.envOfB M g c).only (Clif.Invoked (Lsl.envOfB M g c) Lsl.P.bare s))
         (g.externs.map (·.2)) (indSigs g))
       ((Lsl.XPBTGY (fun M _ => Lsl.K M) M g F P R (Lsl.envOfB M g c) cs c).at n) :=
-  Lsl.xnifXPBTGY Lsl_ok hN ih hdet htw hg himgF P R hnrc hs
+  Lsl.xnifXPBTGY Lsl_ok (Lsl.budget_K Lsl_ok) hN ih hdet htw hg himgF P R hnrc hs
 
 theorem callLock_of_Lsl {M : Nat} (hM : 0 < M)
     (ih : Lsl.ThmPRBRLE (fun M _ => Lsl.K M) (M - 1))
     (hlock : Lsl.LockRet (fun M _ => Lsl.K M) (M - 1)) : Lsl.CallLock (fun M _ => Lsl.K M) M :=
-  Lsl.callLock_of Lsl_ok hM ih hlock
+  Lsl.callLock_of Lsl_ok (Lsl.budget_K Lsl_ok) hM ih hlock
 
 /-- **`hooks_lock_tls` on two distinct states** (they differ in `x30`, `Z = ∅`). -/
 theorem hooks_lock_tls_Lsl {F : BitVec 64 → Prop} (hN : HookNIX Lsl.Hb Lsl.BaseDest F) (M : Nat)

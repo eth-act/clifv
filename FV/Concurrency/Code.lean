@@ -245,13 +245,34 @@ theorem kinds_popLines (int : Bool) (rs : List Reg) :
     · simp only [List.mem_singleton] at hl; subst hl; cases int <;> rfl
     · simp at hl
 
-/-- The frame setup stores fp/lr (`stp`), then pushes the saved registers: plain writes only. -/
-theorem kinds_prologueLines (saves : List Reg) (n : Nat) :
-    kinds (prologueLines saves n) = .plainW :: List.replicate
-      ((pushLines true (savesInt saves)).length + (pushLines false (savesFloat saves)).length)
+/-- `k` unrolled stack probes (#581): one plain write (`stur wzr`) each; `sub sp` accesses
+nothing. -/
+theorem kinds_probeSteps : ∀ k, kinds (probeSteps k) = List.replicate k .plainW
+  | 0 => rfl
+  | k + 1 => by rw [probeSteps, kinds_append, kinds_probeSteps k]; rfl
+
+/-- The stack probes (#581): one plain write per probe; the final `add sp` accesses nothing. -/
+theorem kinds_probeLines (total : Nat) :
+    kinds (probeLines total) = List.replicate (probeCount total) .plainW := by
+  unfold probeLines
+  simp only
+  split
+  · rename_i h
+    simp only [beq_iff_eq] at h
+    rw [h]; rfl
+  · rw [kinds_append, kinds_probeSteps]; exact List.append_nil _
+
+/-- The frame setup stores fp/lr (`stp`), runs the stack probes (`stur wzr`), then pushes the
+saved registers: plain writes only. (#581: the former statement, without the probes' writes,
+became false with Cranelift's stack probes; `calls` is the new argument of `prologueLines`.) -/
+theorem kinds_prologueLines (saves : List Reg) (n : Nat) (calls : Bool) :
+    kinds (prologueLines saves n calls) = .plainW :: List.replicate
+      (probeCount (probeTotal n calls) +
+        ((pushLines true (savesInt saves)).length + (pushLines false (savesFloat saves)).length))
       .plainW := by
-  rw [← List.replicate_append_replicate]
-  simp only [prologueLines, kinds_append, kinds_spAdjLines, kinds_pushLines, List.append_nil]
+  rw [← List.replicate_append_replicate, ← List.replicate_append_replicate]
+  simp only [prologueLines, kinds_append, kinds_spAdjLines, kinds_pushLines, kinds_probeLines,
+    List.append_nil, List.append_assoc]
   rfl
 
 /-- The frame teardown pops the saved registers, then loads fp/lr (`ldp`): plain reads only. -/
