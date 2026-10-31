@@ -5,14 +5,14 @@
 # LLVM (cg_clif cannot compile compiler_builtins' f128 code). Target x86_64: on aarch64, cg_clif
 # rejects core's 128-bit atomics ("128bit atomics not yet supported").
 #
-# usage: scripts/rust-clif/core.sh [WORK_DIR]     (default /tmp/rust-clif-survey/core)
+# usage: scripts/rust-clif/core.sh [WORK_DIR]     (default ${TMPDIR:-/tmp}/rust-clif-survey/core)
 # Result: WORK_DIR/clif/{core,alloc} (symlinks to cg_clif's `.clif` directories).
 set -euo pipefail
 
 TOOLCHAIN=${TOOLCHAIN:-nightly-2026-09-26}
 # the patched cg_clif (scripts/build-cg-clif.sh: dumps with external-name tables)
 CG_CLIF=${CG_CLIF:-$(cd "$(dirname "$0")/../.." && pwd)/target/cg_clif/abort/librustc_codegen_cranelift.so}
-work=${1:-/tmp/rust-clif-survey/core}
+work=${1:-${TMPDIR:-/tmp}/rust-clif-survey/core}
 rm -rf "$work"
 mkdir -p "$work"
 cd "$work"

@@ -13,7 +13,7 @@ stub_s="${out%.o}_panic.s"
 stub_o="${out%.o}_panic.o"
 
 # the corpus's undefined symbols: every panic-ish one is a diverging entry point
-survey="${RR_SURVEY:-/tmp/rust-clif-survey}"
+survey="${RR_SURVEY:-${TMPDIR:-/tmp}/rust-clif-survey}"
 undef=$(for c in a_arith b_slices c_structs_enums d_loops_iters e_option_result f_crypto \
         g_u128 h_dyn_generic i_alloc; do cat "$survey/out/debug/$c/$c.undef" 2>/dev/null; done | sort -u)
 panics=$(echo "$undef" | grep -E "panic|fail|handle_alloc_error|handle_error|Formatter|3fmt" || true)
