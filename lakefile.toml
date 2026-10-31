@@ -198,3 +198,7 @@ rev = "v4.34.0"
 [[lean_exe]]
 name = "stock-memory-retained"
 root = "FVTest.Backend.Lowering.StockMemoryRetainedRuntime"
+
+[[lean_exe]]
+name = "stock-memory-store-linked"
+root = "FVTest.Backend.Lowering.StockMemoryStoreProductionLinked"

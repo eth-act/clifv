@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMemoryStoreCompatibility
 import FV.Backend.Proof.StockMemoryExtLoadCompatibility
 import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
 import FV.Backend.Proof.StockMemoryCompatibility
@@ -44,6 +45,9 @@ def check (kind : String) : IO Unit := do
         let previous ← get (Stock.MemoryUnsigned.lowerValidated f)
         let extending ← get (Stock.MemoryExtending.lowerValidated f)
         require (decide (extending = previous)) "extending provider changed retained artifact/history"
+        require (!Stock.MemoryStore.eligible f) "retained class overlaps store source selector"
+        let store ← get (Stock.MemoryStore.lowerValidated f)
+        require (decide (store = extending)) "store provider changed retained artifact/history"
         cases := cases+1
       for cleanup in [false,true] do
         let allocate : Array VCode → IO (Array (Except String AFunc)) := fun vcs => pure (allocateLean vcs)
@@ -68,6 +72,13 @@ def check (kind : String) : IO Unit := do
           extendingFile.unsupported == previousFile.unsupported && extendingFile.unverified == previousFile.unverified &&
           extendingFile.unvalidated == previousFile.unvalidated)
           "extending provider changed retained whole-file bytes/identities/history/stages"
+        let storeFile ← compileFileMemoryStoreNIWhen true allocate pf [] cleanup
+        let storeBytes ← get storeFile.object
+        require (storeBytes == extendingBytes && storeFile.tableJson == extendingFile.tableJson &&
+          storeFile.text == extendingFile.text && storeFile.rules == extendingFile.rules &&
+          storeFile.unsupported == extendingFile.unsupported && storeFile.unverified == extendingFile.unverified &&
+          storeFile.unvalidated == extendingFile.unvalidated)
+          "store provider changed retained whole-file bytes/identities/history/stages"
         programs := programs+1
     else throw (IO.userError "retained class unexpectedly overlaps memory source selector")
   IO.println s!"STOCK_MEMORY_RETAINED_MATRIX_PASS {kind}: {cases} original functions, {programs} whole programs, exact Lean-allocator bytes/history/stages"

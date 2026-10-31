@@ -1,6 +1,6 @@
 import FV.Backend
 import FV.Backend.Lowering.StockReplay
-import FV.Backend.MemoryExtLoadNIProduction
+import FV.Backend.MemoryStoreNIProduction
 import FV.Opt.Legalize128Pass
 import FVTest.Backend.CraneliftInput
 
@@ -113,7 +113,7 @@ def snapshot (f : Clif.Function) (stockSchedule : Bool) (deadCleanup : Bool := t
     (routes : Bool := true) (verify : Bool := true) : Except String Json := do
   let (ctx, ranges, initial) ← buildCtx f
   let selected ← lowerFunction f
-  let allocationSelected ← if routes then lowerForAllocationMemoryExtLoadNI f verify deadCleanup
+  let allocationSelected ← if routes then lowerForAllocationMemoryStoreNI f verify deadCleanup
     else lowerForAllocation f verify deadCleanup
   let prepared ← prepare allocationSelected
   let replay ← replayJson f ctx initial
