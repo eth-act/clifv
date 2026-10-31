@@ -1,6 +1,7 @@
 import FV.E2E.WorldTrapStop
 import FV.E2E.TrapCallTryPrep
 import FV.E2E.RegLevelTrapCallTry
+import FV.E2E.TrapCallTryStopSkip
 
 /-!
 # The per-function world theorem with callee traps, `try_call`s included (S9e, #408)
