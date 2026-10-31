@@ -1,5 +1,5 @@
-import FV.Backend.Lowering.StockMemoryIntegerNI
-import FV.Backend.MemoryIntegerNIProduction
+import FV.Backend.Lowering.StockMemoryExtLoadNI
+import FV.Backend.MemoryExtLoadNIProduction
 import FVTest.Backend.Lowering.StockScalarTestSupport
 import FV.E2E.SemanticChecksWith
 import FV.E2E.SemanticStackBound
@@ -33,7 +33,7 @@ private def plan (s : LinkSpec) : Link.Ld.Plan :=
     syms := s.addrs.toArray.map fun (n, value) =>
       {name := symName n, value, info := 18, shndx := 0xfff1} }
 
-def fixture (cfg : Bool) (name : String) (i : Nat) (loadTy : String := "i32") : String :=
+def fixture (cfg : Bool) (name : String) (i : Nat) (loadTy : String := "i32") (loadOp : String := "load") : String :=
   if i == 2 then
     "function %" ++ name ++ "(i64) -> i64 system_v {\nblock0(v0: i64):\n    return v0\n}\n"
   else
@@ -42,16 +42,16 @@ def fixture (cfg : Bool) (name : String) (i : Nat) (loadTy : String := "i32") : 
     let pointer := if i == 0 then "v0" else "v1"
     "function %" ++ name ++ "(" ++ params ++ ") -> " ++ loadTy ++ " system_v {\nblock0(" ++ block ++ "):\n" ++
       (if cfg then "    nop\n    jump block1\nblock1:\n    nop\n" else "") ++
-      "    v2 = load." ++ loadTy ++ " notrap " ++ pointer ++ "\n    return v2\n}\n"
+      "    v2 = " ++ loadOp ++ "." ++ loadTy ++ " notrap " ++ pointer ++ "\n    return v2\n}\n"
 
-private def checkOne (out : System.FilePath) (cfg cleanup fallback : Bool) (loadTy : String) : IO Unit := do
-  let actualLower := Stock.MemoryUnsigned.lowerValidated
-  let lowerName := "Backend.Stock.MemoryUnsigned.lowerValidated"
+private def checkOne (out : System.FilePath) (cfg cleanup fallback : Bool) (loadTy loadOp : String) : IO Unit := do
+  let actualLower := Stock.MemoryExtending.lowerValidated
+  let lowerName := "Backend.Stock.MemoryExtending.lowerValidated"
   let names := ["memory_load0","memory_load1","memory_retained"]
-  let fixtureSource := fun name i => fixture cfg name i loadTy
-  let clif := String.join (names.zipIdx.map fun (name,i) => fixture cfg name i loadTy)
+  let fixtureSource := fun name i => fixture cfg name i loadTy loadOp
+  let clif := String.join (names.zipIdx.map fun (name,i) => fixture cfg name i loadTy loadOp)
   let parsed := Clif.parseFile clif
-  let production ← compileFileMemoryIntegerNIWhen true (fun vcs => do
+  let production ← compileFileMemoryExtLoadNIWhen true (fun vcs => do
     for vc in vcs do
       let some source := parsed.funcs.find? (fun p => p.name == vc.name)
         | throw (IO.userError "allocator source missing")
@@ -66,11 +66,12 @@ private def checkOne (out : System.FilePath) (cfg cleanup fallback : Bool) (load
   let stem := s!"memory-{if cleanup then "cleanup" else "plain"}"
   IO.FS.writeBinFile (out / (stem ++ ".o")) (← get production.object)
   IO.FS.writeFile (out / (stem ++ ".json")) production.tableJson
-  let prior ← if loadTy != "i32" then compileFileMemoryCfgNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
+  let prior ← if loadOp != "load" then compileFileMemoryIntegerNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
+    else if loadTy != "i32" then compileFileMemoryCfgNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
     else if cfg then compileFileMemoryNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
     else compileFileParameterCfgNIWhen true (fun vcs => pure (allocateLean vcs)) parsed [] cleanup
   let attempts ← IO.mkRef (0 : Nat)
-  let retried ← compileFileMemoryIntegerNIWhen true (fun vcs => do
+  let retried ← compileFileMemoryExtLoadNIWhen true (fun vcs => do
     let count ← attempts.get
     attempts.set (count+1)
     if count == 0 then pure (vcs.map fun _ => .error "forced memory-attempt failure")
@@ -105,7 +106,8 @@ private def checkOne (out : System.FilePath) (cfg cleanup fallback : Bool) (load
     require (decide (a.vc = selected) && a.vc.rulesFired == selected.rulesFired) "actual memory artifact/history binding changed"
     if i < 2 then
       let raw ← get (Stock.lower fi.func)
-      require ((if loadTy != "i32" then Stock.MemoryUnsigned.check fi.func raw.code
+      require ((if loadOp != "load" then Stock.MemoryExtending.check fi.func raw.code
+          else if loadTy != "i32" then Stock.MemoryUnsigned.check fi.func raw.code
           else if cfg then Stock.MemoryCfg.check fi.func raw.code else Stock.Memory.check fi.func raw.code) && SemanticNI.check fi.func raw.code &&
         decide (a.vc = raw.code) && !Backend.Proof.Driver.lowerCheck fi.func raw.code)
         "memory class fell back or retained the legacy vreg mapping"
@@ -158,22 +160,24 @@ private def checkOne (out : System.FilePath) (cfg cleanup fallback : Bool) (load
     for (path,text) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName input names names
         proof.toString label executable.toString cleanup true
         (if perEntry then none else stack) (if perEntry then names else []) bg
-        (lowerImport := "FV.Backend.Lowering.StockMemoryIntegerNI") do
+        (lowerImport := "FV.Backend.Lowering.StockMemoryExtLoadNI") do
       if let some parent := (System.FilePath.mk path).parent then IO.FS.createDirAll parent
       IO.FS.writeFile path text
     IO.FS.writeFile (out / (label ++ ".clif")) clif
     IO.println s!"ACTUAL_STOCK_MEMORY_LINK {label}: source/artifact/ELF/stack/proof emission passed"
 
-def check (out : System.FilePath) (cfg : Bool := false) (loadTy : String := "i32") : IO Unit := do
+def check (out : System.FilePath) (cfg : Bool := false) (loadTy : String := "i32") (loadOp : String := "load") : IO Unit := do
   require (#["i8","i16","i32","i64"].contains loadTy) "unsupported fixture load type"
-  require (!cfg || loadTy == "i32") "the captured CFG fixture retains its i32 class"
+  require (#["load","uload8","sload8","uload16","sload16","uload32","sload32"].contains loadOp) "unsupported fixture load opcode"
+  require (!cfg || (loadTy == "i32" && loadOp == "load")) "the captured CFG fixture retains its i32 class"
   IO.FS.createDirAll (out / "Crates")
   for cleanup in [false,true] do
-    for fallback in [false,true] do checkOne out cfg cleanup fallback loadTy
+    for fallback in [false,true] do checkOne out cfg cleanup fallback loadTy loadOp
 
 end FVTest.StockMemoryProductionLinked
 
 def main (args : List String) : IO UInt32 := do
   let loadTy := ((args.dropWhile (· != "--load-type")).drop 1).head?.getD "i32"
-  FVTest.StockMemoryProductionLinked.check (System.FilePath.mk (args[0]?.getD "/tmp/stock-memory-linked")) (args.contains "--memory-cfg") loadTy
+  let loadOp := ((args.dropWhile (· != "--load-op")).drop 1).head?.getD "load"
+  FVTest.StockMemoryProductionLinked.check (System.FilePath.mk (args[0]?.getD "/tmp/stock-memory-linked")) (args.contains "--memory-cfg") loadTy loadOp
   pure 0
