@@ -1,0 +1,9 @@
+{
+  "archive_sha256": "21dd82f37f88973068758538cfd9eb66ae554a65ac02d52cf8cef47addf50a87",
+  "archive_bytes": 32997231,
+  "source_manifest_sha256": "3d0daa6aec398b84c40b38f44361fe7ee8632db4434f141e85246771ec121039",
+  "parts": {
+    "integer-production-examples-before-runtime-v1.tar.gz.part000": "21dd82f37f88973068758538cfd9eb66ae554a65ac02d52cf8cef47addf50a87"
+  },
+  "source_files": 27984
+}
