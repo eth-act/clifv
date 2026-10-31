@@ -233,19 +233,19 @@ loop; every state after the first is no return into the code (`RL.Good`) and eve
 the last step satisfies `RL.GoodX` (the `b.gt` jumps back to the line after line `j - 1`). -/
 theorem iterN_loop {R : RL} (hR : R.Wf) {T : List Line} {j : Nat}
     (hdrop : R.L.drop j = probeLoopBody ++ T) (hj : 0 < j) {xp : Insn} {tp : Option Clif.TrapCode}
-    (hprev : R.L[j - 1]? = some (.ins xp tp)) (hxp : xp.hooked = false) :
-    ∀ (r : Nat) (s s' : Arm.ArmState), s.program = R.fb.program R.base → Arm.r .PC s = R.pcOf j →
-      Arm.r .ERR s = .None → LoopRuns (R.envOf j) r s s' →
+    (hprev : R.L[j - 1]? = some (.ins xp tp)) (hxp : xp.hooked = false) {S : BitVec 64} :
+    ∀ (r m : Nat) (s s' : Arm.ArmState), s.program = R.fb.program R.base → Arm.r .PC s = R.pcOf j →
+      Arm.r .ERR s = .None → LoopRuns (R.envOf j) S m r s s' →
       iterN R.step (4 * r) s = s' ∧ (0 < r → Arm.r .PC s' = R.pcOf (j + 4)) ∧
       (∀ i, 0 < i → i ≤ 4 * r → R.Good (iterN R.step i s)) ∧
       (∀ i < 4 * r, R.GoodX (iterN R.step i s)) ∧
       (∀ i < 4 * r, ∃ k < 4, Arm.r .PC (iterN R.step i s) = R.pcOf (j + k))
-  | 0, s, s', _, _, _, h => by
+  | 0, _, s, s', _, _, _, h => by
     simp only [LoopRuns] at h; subst h
     exact ⟨rfl, fun h => absurd h (Nat.lt_irrefl 0), fun i h1 h2 => by omega, fun i h => by omega,
       fun i h => by omega⟩
-  | r + 1, s, s', hprog, hpc, herr, h => by
-    obtain ⟨s3, ab, h3, hab, he4, hp4, hpc4, hL⟩ := h
+  | r + 1, m, s, s', hprog, hpc, herr, h => by
+    obtain ⟨-, -, s3, ab, h3, hab, he4, hp4, hpc4, hL⟩ := h
     have hj1 : j - 1 + 1 = j := by omega
     have hdrop3 : R.L.drop j = probeLoopBody.take 3 ++ ([.ins (.bcondRel .gt (-12)) none] ++ T) := by
       rw [hdrop]; rfl
@@ -323,7 +323,7 @@ theorem iterN_loop {R : RL} (hR : R.Wf) {T : List Line} {j : Nat}
         · obtain rfl : i = 3 := by omega
           rw [hit3]; exact hgoodX3
     · have hpc4' : Arm.r .PC s4 = R.pcOf j := by rw [hpc4, if_neg (by omega), hpc]
-      obtain ⟨hitL, hpcL, hgL, hgxL, hlocL⟩ := iterN_loop hR hdrop hj hprev hxp r s4 s' hprog4 hpc4' herr4 hL
+      obtain ⟨hitL, hpcL, hgL, hgxL, hlocL⟩ := iterN_loop hR hdrop hj hprev hxp r (m + 1) s4 s' hprog4 hpc4' herr4 hL
       have hsplit : ∀ i, iterN R.step (4 + i) s = iterN R.step i s4 := fun i => by
         rw [iterN_add, hit4]
       refine ⟨by rw [show 4 * (r + 1) = 4 + 4 * r by omega, hsplit, hitL], fun _ => hpcL hr,
@@ -419,7 +419,7 @@ theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls
         List.getElem?_append_left (by omega), List.getElem?_eq_getElem (by omega), e]
     rw [← henvL, hI] at hL
     obtain ⟨hitL, hpcL, hgL, hgxL, hlocL⟩ := iterN_loop hR hdropL (by omega) (j := j + A.length) hxp hxph
-      (probeCount (probeTotal size calls)) s1 sP (hprogA.trans hprog) hpcA (herrA.trans herr) hL
+      (probeCount (probeTotal size calls)) 0 s1 sP (hprogA.trans hprog) hpcA (herrA.trans herr) hL
     have hpcL' := hpcL (by omega)
     obtain ⟨herrL, hprogL⟩ := hL.err
     -- the tail

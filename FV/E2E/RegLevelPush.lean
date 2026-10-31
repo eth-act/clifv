@@ -1494,22 +1494,24 @@ theorem cmn_last {m total : Nat} (hm : 0 < m) (hm' : 4096 * m < 2 ^ 33) (ht : to
 theorem probeLoopBody_eq :
     probeLoopBody = probeLoopBody.take 3 ++ [.ins (.bcondRel .gt (-12))] := rfl
 
-/-- **`r` iterations of the stack-probe loop** (`probeLoopBody`, placed at `env.pc`) from `s`:
-each runs the `sub`, `str` and `cmn` straight-line, then the `b.gt`, which jumps back to the
-`sub` while iterations remain and falls through after the last. -/
-def LoopRuns (env : Env) : Nat → Arm.ArmState → Arm.ArmState → Prop
-  | 0, s, s' => s' = s
-  | r + 1, s, s' => ∃ s3 ab, StepsOk env (probeLoopBody.take 3) s s3 ∧
+/-- **`r` iterations of the stack-probe loop** (`probeLoopBody`, placed at `env.pc`) from `s`,
+the `m`-th one first: each starts with `sp = S` and `x16 = -4096·m` (`loopOff`), runs the `sub`,
+`str` and `cmn` straight-line, then the `b.gt`, which jumps back to the `sub` while iterations
+remain and falls through after the last. -/
+def LoopRuns (env : Env) (S : BitVec 64) : Nat → Nat → Arm.ArmState → Arm.ArmState → Prop
+  | _, 0, s, s' => s' = s
+  | m, r + 1, s, s' => spOf s = S ∧ xreg 16 s = loopOff m ∧ ∃ s3 ab,
+      StepsOk env (probeLoopBody.take 3) s s3 ∧
       (Insn.bcondRel .gt (-12)).toArmInst { env with pc := env.pc + 12 } = .ok ab ∧
       Arm.r .ERR (Arm.exec_inst ab s3) = Arm.r .ERR s3 ∧ (Arm.exec_inst ab s3).program = s3.program ∧
       Arm.r .PC (Arm.exec_inst ab s3) = (if r = 0 then Arm.r .PC s + 16#64 else Arm.r .PC s) ∧
-      LoopRuns env r (Arm.exec_inst ab s3) s'
+      LoopRuns env S (m + 1) r (Arm.exec_inst ab s3) s'
 
-theorem LoopRuns.err : ∀ {env : Env} {r : Nat} {s s' : Arm.ArmState},
-    LoopRuns env r s s' → Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program
-  | _, 0, _, _, h => by simp only [LoopRuns] at h; subst h; exact ⟨rfl, rfl⟩
-  | _, _ + 1, _, _, h => by
-    obtain ⟨s3, ab, h3, -, he, hp, -, h⟩ := h
+theorem LoopRuns.err : ∀ {env : Env} {S : BitVec 64} {m r : Nat} {s s' : Arm.ArmState},
+    LoopRuns env S m r s s' → Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program
+  | _, _, _, 0, _, _, h => by simp only [LoopRuns] at h; subst h; exact ⟨rfl, rfl⟩
+  | _, _, _, _ + 1, _, _, h => by
+    obtain ⟨-, -, s3, ab, h3, -, he, hp, -, h⟩ := h
     obtain ⟨e1, p1⟩ := LoopRuns.err h
     obtain ⟨e3, p3⟩ := h3.err
     exact ⟨e1.trans (he.trans e3), p1.trans (hp.trans p3)⟩
@@ -1521,7 +1523,7 @@ left (`m + r = ⌈total / 4096⌉`, `x16 = -4096·m`, `x17 = total`, an aligned 
 theorem probeLoop_ok (env : Env) {total : Nat} (hlo : 16384 ≤ total) (hhi : total < 2 ^ 32) :
     ∀ (r m : Nat) (s : Arm.ArmState), m + r = (total + 4095) / 4096 → 0 < r →
       (spOf s).toNat % 16 = 0 → xreg 16 s = loopOff m → xreg 17 s = BitVec.ofNat 64 total →
-      ∃ s', LoopRuns env r s s' ∧ spOf s' = spOf s ∧ xreg 16 s' = loopOff (m + r) ∧
+      ∃ s', LoopRuns env (spOf s) m r s s' ∧ spOf s' = spOf s ∧ xreg 16 s' = loopOff (m + r) ∧
         xreg 17 s' = BitVec.ofNat 64 total ∧ (∀ fl, Arm.r (.FLAG fl) s' = loopFlag total fl) ∧
         Arm.r .PC s' = Arm.r .PC s + 16#64 ∧
         (∀ f, f ≠ .PC → f ≠ .GPR 16#5 → (∀ fl, f ≠ .FLAG fl) → Arm.r f s' = Arm.r f s) ∧
@@ -1595,15 +1597,17 @@ theorem probeLoop_ok (env : Env) {total : Nat} (hlo : 16384 ≤ total) (hhi : to
         (by rw [hs3, he3]; simp [Arm.write_pstate, Arm.r_of_w_different])
         (by rw [hs3, he3]; simp [Arm.write_pstate, Arm.w_program])
     generalize hs4 : Arm.exec_inst a4 s3 = s4 at he4
-    have he4' : Arm.r .ERR s4 = Arm.r .ERR s3 ∧ s4.program = s3.program := by
-      rw [he4]; simp [Arm.r_of_w_different, Arm.w_program]
+    have he4' : Arm.r .ERR (Arm.exec_inst a4 s3) = Arm.r .ERR s3 ∧
+        (Arm.exec_inst a4 s3).program = s3.program := by
+      rw [hs4, he4]; simp [Arm.r_of_w_different, Arm.w_program]
     have hf4 : ∀ f, f ≠ .PC → Arm.r f s4 = Arm.r f s3 := fun f g => by rw [he4, Arm.r_of_w_different g]
     have hm4 : s4.mem = s3.mem := by rw [he4, Arm.ArmState.mem_w_eq_mem]
     rcases Nat.eq_zero_or_pos r with rfl | hr
     · -- the last iteration: the `b.gt` falls through
       have hpc4 : Arm.r .PC s4 = Arm.r .PC s + 16#64 := by
         rw [he4, hgt]; simp [Arm.r_of_w_same, hpc3]; bv_omega
-      refine ⟨s4, ⟨s3, a4, hsteps, ha4, he4'.1, he4'.2, by rw [hpc4]; rfl, rfl⟩, ?_, ?_, ?_, ?_, hpc4,
+      refine ⟨s4, ⟨rfl, h16, s3, a4, hsteps, ha4, he4'.1, he4'.2, by rw [hs4, hpc4, if_pos rfl], hs4.symm⟩,
+        ?_, ?_, ?_, ?_, hpc4,
         fun f g1 g2 g3 => by rw [hf4 f g1, hf3 f g1 g2 g3], fun a => ?_⟩
       · rw [show spOf s4 = spOf s3 from hf4 _ (by simp), hsp3]
       · show Arm.r _ s4 = _; rw [hf4 _ (by simp), he3]
@@ -1632,9 +1636,11 @@ theorem probeLoop_ok (env : Env) {total : Nat} (hlo : 16384 ≤ total) (hhi : to
         show Arm.r _ s4 = _; rw [hf4 _ (by simp), he3]
         simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same]
         simpa [xreg] using hx17
+      have hsp4 : spOf s4 = spOf s := by rw [show spOf s4 = spOf s3 from hf4 _ (by simp), hsp3]
       obtain ⟨s', hL, hsp', hx16', hx17', hfl', hpc', hf', hm'⟩ :=
         probeLoop_ok env hlo hhi r (m + 1) s4 (by omega) hr hal4 h16' h17'
-      refine ⟨s', ⟨s3, a4, hsteps, ha4, he4'.1, he4'.2, by rw [hs4, hpc4]; simp [Nat.pos_iff_ne_zero.mp hr], by
+      rw [hsp4] at hL
+      refine ⟨s', ⟨rfl, h16, s3, a4, hsteps, ha4, he4'.1, he4'.2, by rw [hs4, hpc4]; simp [Nat.pos_iff_ne_zero.mp hr], by
         rw [hs4]; exact hL⟩, ?_, by rw [hx16']; congr 2; omega, hx17', hfl', ?_, ?_, fun a => ?_⟩
       · rw [hsp', show spOf s4 = spOf s3 from hf4 _ (by simp), hsp3]
       · rw [hpc', hpc4]
@@ -1713,10 +1719,10 @@ theorem probeLoop_facts {total : Nat} (hl : probeLoop total = true) :
     · omega
 
 /-- **The stack probes' run** from `s`: the straight-line part (`probeHead`), then the loop's
-iterations (`LoopRuns`, none without the loop). -/
+iterations (`LoopRuns` from iteration 0 at the `sp` after the head, none without the loop). -/
 def ProbeRun (env : Env) (total : Nat) (s s' : Arm.ArmState) : Prop :=
   ∃ s1, StepsOk env (probeHead total) s s1 ∧
-    LoopRuns { env with pc := env.pc + 4 * (probeHead total).length } (loopIters total) s1 s'
+    LoopRuns { env with pc := env.pc + 4 * (probeHead total).length } (spOf s1) 0 (loopIters total) s1 s'
 
 theorem ProbeRun.err {env : Env} {total : Nat} {s s' : Arm.ArmState} (h : ProbeRun env total s s') :
     Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program := by
