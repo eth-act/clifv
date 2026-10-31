@@ -9,10 +9,10 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
-work=${1:-${DIFF_WORK:-/tmp/rust-clif-survey/diff-native}}
+work=${1:-${DIFF_WORK:-${TMPDIR:-/tmp}/rust-clif-survey/diff-native}}
 native="$root/rust/target/release/clif-native"
 backend="$root/.lake/build/bin/lean-backend"
-t=$(mktemp -d /tmp/diff-native-selftest.XXXXXX)
+t=$(mktemp -d "${TMPDIR:-/tmp}/diff-native-selftest.XXXXXX")
 trap 'rm -rf "$t"' EXIT
 ulimit -c 0
 

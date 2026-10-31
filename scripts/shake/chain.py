@@ -10,7 +10,7 @@ of B that A mentions, their closure inside B (what would have to move to a lower
 A need not import B), the modules that closure needs, and the depth A would have if it imported
 that lower module instead of B (the other modules A needs from B's closure imported directly).
 """
-import argparse, json, pathlib, subprocess, sys
+import argparse, json, os, pathlib, subprocess, sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import measure  # noqa: E402
@@ -49,10 +49,11 @@ def main():
     print(f"capped critical chain: {depth[end] / 3600:.2f} h, {len(chain)} modules")
     refs_path = a.refs
     if not refs_path:
-        refs_path = "/tmp/shake-refs.jsonl"
-        pathlib.Path("/tmp/shake-chain.txt").write_text("\n".join(chain) + "\n")
+        tmp = os.environ.get("TMPDIR") or "/tmp"
+        refs_path = f"{tmp}/shake-refs.jsonl"
+        pathlib.Path(f"{tmp}/shake-chain.txt").write_text("\n".join(chain) + "\n")
         subprocess.run(["lake", "env", "lean", "--run", "scripts/shake/Refs.lean", refs_path,
-                        "/tmp/shake-chain.txt"], cwd=ROOT, check=True)
+                        f"{tmp}/shake-chain.txt"], cwd=ROOT, check=True)
     consts = {}   # name -> record
     by_mod = {}
     for line in open(refs_path):
