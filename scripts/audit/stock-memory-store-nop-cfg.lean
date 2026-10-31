@@ -97,8 +97,8 @@ import FV.Backend.Proof.StockMemoryStoreWitness
 
 #print axioms Backend.Stock.Memory.StoreCfgFixture.scope
 #print axioms Backend.Stock.Memory.StoreCfgFixture.dominated
-#print axioms Backend.Stock.Memory.StoreCfgFixture.lowered
-#print axioms E2E.StockMemoryStoreCfgFunctionWitness.complete_paired_integer_store_cfg_function_witness
+#print axioms Backend.Stock.Memory.StoreCfgFixture.lowered -- witness: native_decide
+#print axioms E2E.StockMemoryStoreCfgFunctionWitness.complete_paired_integer_store_cfg_function_witness -- witness: native_decide
 
 #print axioms Backend.Stock.Memory.stock_nop_body_of_split
 #print axioms Backend.Stock.Proof.Control.nop_jump_body_returns_at
@@ -107,7 +107,7 @@ import FV.Backend.Proof.StockMemoryStoreWitness
 #print axioms Backend.Stock.Memory.StoreRoots.two_block_store_return_function
 #print axioms Backend.Stock.Memory.StoreRoots.domain_of_two_block_store_return
 #print axioms Backend.Stock.Memory.StoreCfgFixture.domain
-#print axioms Backend.Stock.Memory.StoreCfgFixture.domain_and_lower_witness
+#print axioms Backend.Stock.Memory.StoreCfgFixture.domain_and_lower_witness -- witness: native_decide
 
 #print axioms Backend.Stock.Memory.StoreRoots.stock_retained_store_return_spec
 #print axioms Backend.Stock.Memory.StoreRoots.RetainedStoreReturnSpec.nop_records
@@ -122,7 +122,7 @@ import FV.Backend.Proof.StockMemoryStoreWitness
 #print axioms E2E.StockMemory.StoreRoots.two_block_nop_store_return_paired_function
 #print axioms Backend.Stock.Memory.StoreNopCfgFixture.scope
 #print axioms Backend.Stock.Memory.StoreNopCfgFixture.dominated
-#print axioms Backend.Stock.Memory.StoreNopCfgFixture.lowered
+#print axioms Backend.Stock.Memory.StoreNopCfgFixture.lowered -- witness: native_decide
 #print axioms Backend.Stock.Memory.StoreNopCfgFixture.domain
-#print axioms Backend.Stock.Memory.StoreNopCfgFixture.domain_and_lower_witness
-#print axioms E2E.StockMemoryStoreNopCfgFunctionWitness.complete_paired_integer_store_nop_cfg_function_witness
+#print axioms Backend.Stock.Memory.StoreNopCfgFixture.domain_and_lower_witness -- witness: native_decide
+#print axioms E2E.StockMemoryStoreNopCfgFunctionWitness.complete_paired_integer_store_nop_cfg_function_witness -- witness: native_decide
