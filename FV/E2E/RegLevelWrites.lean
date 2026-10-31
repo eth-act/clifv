@@ -27,6 +27,27 @@ def RL.WritesAt (R : RL) (u : Arm.ArmState) : Prop :=
 /-- **The per-state facts with the writes.** -/
 def RL.GoodXW (R : RL) (u : Arm.ArmState) : Prop := R.GoodX u ∧ R.WritesAt u
 
+/-- **The writes at `u` satisfy `P`**: `RL.WritesAt` for any address predicate (`WritesAt` is
+`WritesAtP` of the addresses outside `G`). -/
+def RL.WritesAtP (R : RL) (P : BitVec 64 → Prop) (u : Arm.ArmState) : Prop :=
+  ∀ j x t, R.L[j]? = some (.ins x t) → Arm.r .PC u = R.pcOf j → x.hooked = false →
+    ∀ env a, x.toArmInst env = .ok a → ∀ p ∈ E2E.ExecBytes.MemWrites a u, ∀ k < p.2, P (p.1 + BitVec.ofNat 64 k)
+
+theorem RL.writesAt_iff {R : RL} {u : Arm.ArmState} : R.WritesAt u ↔ R.WritesAtP (fun a => ¬ R.G a) u :=
+  Iff.rfl
+
+/-- `WritesAtP` at an instruction line from the writes of its instruction. -/
+theorem RL.writesAtP_of_line {R : RL} (hR : R.Wf) {P : BitVec 64 → Prop} {u : Arm.ArmState} {j : Nat}
+    {x : Insn} {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
+    (h : x.hooked = false → ∀ env a, x.toArmInst env = .ok a →
+      ∀ p ∈ E2E.ExecBytes.MemWrites a u, ∀ k < p.2, P (p.1 + BitVec.ofNat 64 k)) :
+    R.WritesAtP P u := by
+  intro j' x' t' hj' hpc' hh
+  obtain rfl := RL.pcOf_inj hR hj hj' (hpc.symm.trans hpc')
+  rw [hj] at hj'
+  cases hj'
+  exact h hh
+
 /-- `WritesAt` at an instruction line from the writes of its instruction. -/
 theorem RL.writesAt_of_line {R : RL} (hR : R.Wf) {u : Arm.ArmState} {j : Nat} {x : Insn}
     {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
@@ -102,6 +123,44 @@ theorem RL.goodXW_execLinesG {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s 
       exact ⟨s1, hs1, hit⟩
   obtain ⟨s1, hs1, hit1⟩ := hst
   exact RL.writesAt_of_line hR hj hpci fun _ env a ha => by
+    rw [hit1]; exact hwr i x t hln s1 hs1 env a ha
+
+/-- **The states of a straight-line run with their writes, for any address predicate**: the
+`i`-th state is at line `j + i`, whose instruction's writes satisfy `P` by `LinesWrites`. -/
+theorem RL.writesAtP_execLines {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s' : Arm.ArmState}
+    (hat : ∀ k ln, ls[k]? = some ln → R.fa.lines.toList[j + k]? = some ln)
+    (hhook : ∀ i t, Line.ins i t ∈ ls → i.hooked = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (hinter : InterOk (R.envOf j) ls s)
+    (hrun : execLines (R.envOf j) ls s = some s') {P : BitVec 64 → Prop}
+    (hwr : LinesWrites (R.envOf j) ls s P) :
+    ∀ i < ls.length, R.WritesAtP P (iterN R.step i s) := by
+  intro i hi
+  have hpcs := iterN_execLines_pc (X := R.X) (H := R.H) hR.layout hR.lm hR.fit ls j s s' hat hhook
+    hprog hpc herr hinter hrun
+  obtain ⟨ln, hln⟩ : ∃ ln, ls[i]? = some ln := ⟨ls[i], List.getElem?_eq_getElem hi⟩
+  have hmem := List.mem_of_getElem? hln
+  obtain ⟨x, t, rfl⟩ := execLines_ins hrun _ hmem
+  have hj : R.L[j + i]? = some (.ins x t) := hat i _ hln
+  have hpci : Arm.r .PC (iterN R.step i s) = R.pcOf (j + i) := hpcs i (by omega)
+  have hst : ∃ s1, execLines (R.envOf j) (ls.take i) s = some s1 ∧ iterN R.step i s = s1 := by
+    rcases Nat.eq_zero_or_pos i with rfl | hi0
+    · exact ⟨s, by simp [execLines], rfl⟩
+    · obtain ⟨s1, hs1⟩ := execLines_take i hrun
+      have hlen : (ls.take i).length = i := by simp; omega
+      have hit := iterN_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit (ls.take i) j s s1
+        (fun k ln hk => by
+          rw [List.getElem?_take] at hk
+          split at hk
+          · exact hat k ln hk
+          · cases hk)
+        (fun i' t' hm => hhook i' t' (List.mem_of_mem_take hm)) hprog hpc herr
+        (fun k hk0 hk s2 hs2 => hinter k hk0 (by omega) s2 (by
+          rwa [List.take_take, Nat.min_eq_left (by omega)] at hs2)) hs1
+      rw [hlen] at hit
+      exact ⟨s1, hs1, hit⟩
+  obtain ⟨s1, hs1, hit1⟩ := hst
+  exact RL.writesAtP_of_line hR hj hpci fun _ env a ha => by
     rw [hit1]; exact hwr i x t hln s1 hs1 env a ha
 
 theorem RL.goodXW_execLines {R : RL} (hR : R.Wf) {ls : List Line} {j : Nat} {s s' : Arm.ArmState}

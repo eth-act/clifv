@@ -124,7 +124,7 @@ theorem csemVI_sub {gv : Nat → String → Prop} {F : BitVec 64 → Prop} {ctx 
 /-! ## The register-level theorem -/
 
 /-- **The state after the prologue does not read the external semantics**: the prologue's lines
-are not hooked, and from the ABI entry both machines run them as `execLines` (`iterN_steps`). -/
+are not hooked, and from the ABI entry both machines run them (`iterN_proRun`). -/
 theorem RL.sP_withX {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (X : ExtSem) : ({ R with X := X } : RL).sP = R.sP := by
   have hR' : ({ R with X := X } : RL).Wf :=
@@ -140,11 +140,8 @@ theorem RL.sP_withX {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
-  have hins : ∀ ln ∈ prologueLines R.af.saves R.af.frameSize R.af.isCaller,
-      ∃ x, ln = .ins x none ∧ x.hooked = false :=
-    fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩
-  have h1 := (iterN_steps hR hdrop hins hent.program hpc1 hent.err hsteps).1
-  have h2 := (iterN_steps (R := { R with X := X }) hR' hdrop hins hent.program hpc1 hent.err
+  have h1 := (iterN_proRun hR hdrop hent.program hpc1 hent.err hsteps).1
+  have h2 := (iterN_proRun (R := { R with X := X }) hR' hdrop hent.program hpc1 hent.err
     hsteps).1
   exact h2.trans h1.symm
 

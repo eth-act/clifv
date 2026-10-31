@@ -672,11 +672,16 @@ theorem epilogue_evsIn (env : Env) {saves : List Reg} {size : Nat} (hs : size < 
 
 /-! ## The prologue's fields -/
 
-/-- **The prologue keeps every field but the pc, x29, `sp` and x16.** -/
+/-- **The prologue keeps every field but the pc, x29, `sp`, x16, x17 and the flags.** (#581: the
+run is `prologueSteps` steps and x17 and the flags are new exceptions, which Cranelift's
+stack-probe loop sets; the former statement, `prologueLines`' length steps keeping every field
+but the pc, x29, `sp` and x16, became false for a probed stack of 16 KiB or more.) -/
 theorem prologue_fields {R : RL} (hR : R.Wf) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) :
-    ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
-      Arm.r f (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0) = Arm.r f R.s0 := by
+    ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
+      (∀ fl, f ≠ .FLAG fl) →
+      Arm.r f (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) =
+        Arm.r f R.s0 := by
   obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
@@ -688,9 +693,7 @@ theorem prologue_fields {R : RL} (hR : R.Wf) {ra : BitVec 64}
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
-  obtain ⟨hiter, -, -, -⟩ := iterN_steps hR hdrop
-    (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
-    hent.program hpc1 hent.err hsteps
+  obtain ⟨hiter, -⟩ := iterN_proRun hR hdrop hent.program hpc1 hent.err hsteps
   rw [hiter]
   exact ho'
 
