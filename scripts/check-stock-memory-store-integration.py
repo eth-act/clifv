@@ -12,9 +12,11 @@ import subprocess
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--memory-cfg', action='store_true', help='exercise the complete two-block store class')
     parser.add_argument('--store-type', choices=('i8', 'i16', 'i32', 'i64'), default='i64')
     parser.add_argument('--store-op', choices=('store', 'istore8', 'istore16', 'istore32'), default='store')
     args = parser.parse_args()
+    program = "StockMemoryStoreCfgProduction" if args.memory_cfg else "StockMemoryStoreProduction"
     value_bits = int(args.store_type[1:])
     store_bits = value_bits if args.store_op == 'store' else int(args.store_op[6:])
     if store_bits > value_bits:
@@ -41,9 +43,9 @@ def main():
         return log.read_text()
 
     try:
-        run('fixture', [root / '.lake/build/bin/stock-memory-store-linked', generated,
+        run('fixture', [root / ('.lake/build/bin/stock-memory-store-cfg-linked' if args.memory_cfg else '.lake/build/bin/stock-memory-store-linked'), generated,
                         '--store-type', args.store_type, '--store-op', args.store_op])
-        expected = {f'StockMemoryStoreProduction{mode}{policy}{scope}' for mode in ('Plain', 'Cleanup')
+        expected = {f'{program}{mode}{policy}{scope}' for mode in ('Plain', 'Cleanup')
                     for policy in ('Strict', 'Fallback') for scope in ('Global', 'Entries')}
         assert {p.stem for p in (generated / 'Crates').glob('*.lean')} == expected
         env['LEAN_PATH'] = str(generated) + ':' + run('lean-path', ['lake', 'env', 'printenv', 'LEAN_PATH']).strip().splitlines()[-1]
@@ -74,7 +76,7 @@ def main():
 
         compile_generated()
         for mode, flags in [('Plain', ['--no-dead-cleanup']), ('Cleanup', [])]:
-            bundle = generated / f'StockMemoryStoreProduction{mode}FallbackGlobal-bundle'
+            bundle = generated / f'{program}{mode}FallbackGlobal-bundle'
             proof = generated / 'Crates' / f'MemoryStoreCLI{mode}.lean'
             run('cli-check-' + mode, [root / '.lake/build/bin/link-check', bundle, '--lean', proof,
                                      '--module', proof.stem, *flags])
@@ -112,11 +114,11 @@ run_cmd do
     count := count + 1
   unless count > 0 do throwError "empty generated-proof audit"
   logInfo m!"STOCK_MEMORY_STORE_GENERATED_AXIOMS_PASS {count}"
-''')
+'''.replace('Crates.StockMemoryStoreProduction', 'Crates.' + program))
         assert 'STOCK_MEMORY_STORE_GENERATED_AXIOMS_PASS ' in run('generated-axioms', ['lean', '--root=' + str(out), audit])
         report = dict(state='passed', generated_sources=built, native_store_calls=44, retained_calls=2,
                       native_reference='original argument bytes with arbitrary upper bits; unchanged surrounding bytes',
-                      store_type=args.store_type, store_op=args.store_op, cleanup_modes=2,
+                      store_type=args.store_type, store_op=args.store_op, memory_cfg=args.memory_cfg, cleanup_modes=2,
                       operand_orders=2, generated_roots=sorted(expected), commands=records)
     except BaseException as error:
         report = dict(state='failed', error=repr(error), commands=records)
