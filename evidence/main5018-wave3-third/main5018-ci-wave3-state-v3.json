@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "utc": "2026-10-31T01:28:36.767200+00:00",
+  "records": [
+    {
+      "id": 13024567071,
+      "node_id": "MDg6QXJ0aWZhY3QxMzAyNDU2NzA3MQ==",
+      "name": "stage-w3-3",
+      "size_in_bytes": 302066633,
+      "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13024567071",
+      "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13024567071/zip",
+      "expired": false,
+      "digest": "sha256:9ade13e1cf8bf4f6a762ade011ea50d8cff3912f6dc4ba67052f207ee99acc56",
+      "created_at": "2026-10-31T01:14:36Z",
+      "updated_at": "2026-10-31T01:14:36Z",
+      "expires_at": "2026-11-02T01:14:32Z",
+      "workflow_run": {
+        "id": 41055926134,
+        "repository_id": 1391033036,
+        "head_repository_id": 1391033036,
+        "head_branch": "main",
+        "head_sha": "5018b9509dc124154dbe08a5bd85862595d8eab7"
+      }
+    }
+  ],
+  "additive_only": true,
+  "stage_removed": true,
+  "source_changed": false,
+  "artifact_count": 1,
+  "memory_cap": "1G",
+  "temporary_loan_requires_return": false,
+  "loan_returned_utc": "2026-10-31T01:29:06.107666+00:00",
+  "peer_notification": 789
+}
