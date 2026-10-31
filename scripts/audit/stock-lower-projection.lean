@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockLowerArgsFail
+import FV.Backend.Proof.StockLowerProjectionWitness
 
 #print axioms Backend.Stock.Proof.stock_opcode_args_match
 #print axioms Backend.Stock.Proof.CastComplete.stock_extend_load_args_fail
@@ -16,3 +17,4 @@ import FV.Backend.Proof.StockLowerArgsFail
 #print axioms Backend.Stock.Proof.LowerProjection.instNames_not_call
 #print axioms Backend.Stock.Proof.LowerProjection.lower_diverging_names
 #print axioms Backend.Stock.Proof.LowerProjection.lower_diverging_args_fail
+#print axioms Backend.Stock.Proof.LowerProjection.stock_runTerm_lower_of_backend_witness
