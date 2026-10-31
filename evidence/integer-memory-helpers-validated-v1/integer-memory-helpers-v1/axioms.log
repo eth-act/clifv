@@ -1,0 +1,16 @@
+'Backend.Stock.Proof.MemoryHelpers.integer_helpers_project_and_preserve' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryHelpers.integer_helper_success' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryHelpers.integer_helper_replay' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryHelpers.integer_load_contract' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryHelpers.integer_store_contract' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryHelpers.integer_helpers_complete_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryHelpers.integer_loads_complete_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryHelpers.integer_stores_complete_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]

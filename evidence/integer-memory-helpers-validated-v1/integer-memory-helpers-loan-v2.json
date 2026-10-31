@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-31T01:59:49.846727+00:00",
+  "status": "returned",
+  "permission": "worker-A reply to request835; includes proof iterations",
+  "memory": "2GiB",
+  "aggregate": "O18GiB/A14GiB",
+  "threads": 1,
+  "links_only_own_tree": true,
+  "artifact_cache_created": false,
+  "returned_utc": "2026-10-31T02:02:13.212357+00:00",
+  "result": "Three new modules and all eight standard-only axiom roots passed; eleven helper witnesses"
+}

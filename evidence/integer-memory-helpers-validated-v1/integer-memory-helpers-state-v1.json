@@ -1,0 +1,12 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "module": "IselScopedProjectionInv",
+      "returncode": 1,
+      "source_sha256": "10f819df131b084c011454be10576104f941f75608c162e7beaa7f458cba8192"
+    }
+  ],
+  "utc": "2026-10-31T01:58:45.727556+00:00",
+  "error": "RuntimeError(('IselScopedProjectionInv', 1))"
+}

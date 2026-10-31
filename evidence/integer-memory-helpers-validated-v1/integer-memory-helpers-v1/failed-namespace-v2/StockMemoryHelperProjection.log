@@ -1,0 +1,162 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:7:5: error: unknown namespace `Backend.Proof`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:18:27: error(lean.unknownIdentifier): Unknown identifier `Rule`
+
+Note: It is not possible to treat `Rule` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:19:51: error(lean.unknownIdentifier): Unknown identifier `exprCalls`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:22:8: error(lean.unknownIdentifier): Unknown identifier `termOf`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:23:4: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.error` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Except.error`
+  [apply] `EST.Out.error`
+  [apply] `EStateM.Result.error`
+  [apply] `Lean.Macro.Exception.error`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:29:75: error: Tactic `decide` failed for proposition
+  helperIds.all (checkTerm helperIds) = true
+because its `Decidable` instance
+  instDecidableEqBool (helperIds.all (checkTerm helperIds)) true
+did not reduce to `isTrue` or `isFalse`.
+
+Reduction got stuck at the `Decidable` instance
+  match helperIds.all (checkTerm helperIds), true with
+  | false, false => isTrue ⋯
+  | false, true => isFalse ⋯
+  | true, false => isFalse ⋯
+  | true, true => isTrue ⋯
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:32:65: error(lean.unknownIdentifier): Unknown identifier `Term`
+
+Note: It is not possible to treat `Term` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:33:14: error(lean.unknownIdentifier): Unknown identifier `termOf`
+
+Note: It is not possible to treat `termOf` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:33:33: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.ok` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Except.ok`
+  [apply] `Clif.Res.ok`
+  [apply] `EST.Out.ok`
+  [apply] `EStateM.Result.ok`
+  [apply] `Isle.ExtResult.ok`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:35:7: error(lean.unknownIdentifier): Unknown identifier `program.rulesOf`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:38:7: error(lean.unknownIdentifier): Unknown identifier `program.rulesOf`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:39:16: warning: declaration uses `sorry`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:43:4: error(lean.unknownIdentifier): Unknown identifier `ProjectionScopeInv`
+
+Note: It is not possible to treat `ProjectionScopeInv` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:46:2: error: Tactic `constructor` failed: target is not an inductive datatype
+
+ctx : Ctx
+original : State
+⊢ sorry
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:75:64: error(lean.unknownIdentifier): Unknown identifier `Config`
+
+Note: It is not possible to treat `Config` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:77:76: error(lean.unknownIdentifier): Unknown identifier `RuleId`
+
+Note: It is not possible to treat `RuleId` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:78:4: error(lean.unknownIdentifier): Unknown identifier `projectResult`
+
+Note: It is not possible to treat `projectResult` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:79:7: error(lean.unknownIdentifier): Unknown identifier `applyTerm`
+
+Note: It is not possible to treat `applyTerm` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:81:7: error(lean.unknownIdentifier): Unknown identifier `applyTerm`
+
+Note: It is not possible to treat `applyTerm` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:82:8: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.ok` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Except.ok`
+  [apply] `Clif.Res.ok`
+  [apply] `EST.Out.ok`
+  [apply] `EStateM.Result.ok`
+  [apply] `Isle.ExtResult.ok`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:82:63: error(lean.invalidField): Invalid field notation: Type of
+  next
+is not known; cannot resolve field `base`
+
+Hint: Consider replacing the field projection with a call to one of the following:
+  • `Clif.Alloc.base`
+  • `Nat.lt.base`
+  • `Allocation.base`
+  • `State.base`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:83:10: error(lean.unknownIdentifier): Unknown identifier `evaluation_scoped_restate_inv`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:89:50: error(lean.unknownIdentifier): Unknown identifier `Config`
+
+Note: It is not possible to treat `Config` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:92:44: error(lean.unknownIdentifier): Unknown identifier `RuleId`
+
+Note: It is not possible to treat `RuleId` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:92:44: error(lean.unknownIdentifier): Unknown identifier `RuleId`
+
+Note: It is not possible to treat `RuleId` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:93:11: error(lean.unknownIdentifier): Unknown identifier `ApplyInternal`
+
+Note: It is not possible to treat `ApplyInternal` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:95:4: error(lean.unknownIdentifier): Unknown identifier `ApplyInternal`
+
+Note: It is not possible to treat `ApplyInternal` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:97:17: error(lean.unknownIdentifier): Unknown identifier `integer_helpers_project_and_preserve`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:96:85: error: unsolved goals
+ctx : Ctx
+cfg : sorry
+overlap : sorry = false
+fuel ty term : Nat
+member : term ∈ helperIds
+args : List V
+st next : State
+before : Array sorry
+trace : Array sorry
+out : V
+run : sorry
+⊢ sorry ∧
+    next =
+      { base := next.base, demand := st.demand, uses := st.uses, instBlock := st.instBlock, entryColor := st.entryColor,
+        endColor := st.endColor, tryRegs := st.tryRegs, current := st.current, color := st.color, sunk := st.sunk,
+        opportunistic := st.opportunistic, alias := st.alias }
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:105:49: error(lean.unknownIdentifier): Unknown identifier `Config`
+
+Note: It is not possible to treat `Config` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:108:42: error(lean.unknownIdentifier): Unknown identifier `RuleId`
+
+Note: It is not possible to treat `RuleId` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:108:42: error(lean.unknownIdentifier): Unknown identifier `RuleId`
+
+Note: It is not possible to treat `RuleId` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:109:15: error(lean.unknownIdentifier): Unknown identifier `applyTerm`
+
+Note: It is not possible to treat `applyTerm` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:110:25: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.ok` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Except.ok`
+  [apply] `Clif.Res.ok`
+  [apply] `EST.Out.ok`
+  [apply] `EStateM.Result.ok`
+  [apply] `Isle.ExtResult.ok`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:111:5: error(lean.unknownIdentifier): Unknown identifier `applyTerm`
+
+Note: It is not possible to treat `applyTerm` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:112:6: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.ok` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Except.ok`
+  [apply] `Clif.Res.ok`
+  [apply] `EST.Out.ok`
+  [apply] `EStateM.Result.ok`
+  [apply] `Isle.ExtResult.ok`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:113:17: error(lean.unknownIdentifier): Unknown identifier `integer_helpers_project_and_preserve`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:112:40: error: unsolved goals
+ctx : Ctx
+cfg : sorry
+overlap : sorry = false
+fuel ty term : Nat
+member : term ∈ helperIds
+args : List V
+st : State
+base : LState
+before : Array sorry
+trace : Array sorry
+out : Option V
+legacy : sorry = sorry
+⊢ sorry = sorry

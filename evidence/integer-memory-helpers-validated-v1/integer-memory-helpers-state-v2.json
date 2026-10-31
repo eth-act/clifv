@@ -1,0 +1,17 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "module": "IselScopedProjectionInv",
+      "returncode": 0,
+      "source_sha256": "10f819df131b084c011454be10576104f941f75608c162e7beaa7f458cba8192"
+    },
+    {
+      "module": "StockMemoryHelperProjection",
+      "returncode": 1,
+      "source_sha256": "4fd05d0d95d4e2a5e63f9cc4c1d2e687b11092fdb85a47b0799218529e07d8ca"
+    }
+  ],
+  "utc": "2026-10-31T01:59:51.126554+00:00",
+  "error": "RuntimeError(('StockMemoryHelperProjection', 1))"
+}

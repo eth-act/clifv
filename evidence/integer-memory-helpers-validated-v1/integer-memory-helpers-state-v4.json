@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "module": "StockMemoryHelperProjection",
+      "returncode": 0,
+      "source_sha256": "cda8093709f9653ac5947de4c64a2123a67fb27a11d8934bfbedb61ab0e318f8"
+    },
+    {
+      "module": "StockMemoryHelperContracts",
+      "returncode": 0,
+      "source_sha256": "bdd702ef1b3145266bbb9548d12fd41c62c6382e8aebee18d8dc8c148c978fc1"
+    },
+    {
+      "module": "StockMemoryHelperWitness",
+      "returncode": 0,
+      "source_sha256": "9f520b68637ea012edbcb74b49a587428da9df3fda639f5685d37f7e210f1157"
+    }
+  ],
+  "utc": "2026-10-31T02:01:18.674999+00:00",
+  "axiom_roots": 8,
+  "standard_only": true,
+  "load_variants": 7,
+  "store_variants": 4,
+  "source_gates_unchanged": true,
+  "scope": "Focused helper contracts and witnesses only"
+}

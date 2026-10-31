@@ -1,0 +1,13 @@
+{
+  "utc": "2026-10-31T01:58:45.358066+00:00",
+  "status": "returned",
+  "permission": "worker-A reply to request825",
+  "memory": "2GiB",
+  "aggregate": "O18GiB/A14GiB",
+  "threads": 1,
+  "worktree_created": false,
+  "artifact_cache_created": false,
+  "source_overlay": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source",
+  "returned_utc": "2026-10-31T01:59:18.920931+00:00",
+  "result": "Initial package lookup failed before proof checking"
+}

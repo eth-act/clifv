@@ -1,0 +1,51 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-memory-helpers-v1/source/FV/Backend/Proof/StockMemoryHelperProjection.lean:58:10: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  (value, next).snd
+in the target expression
+  next =
+    { base := next.base, demand := original.demand, uses := original.uses, instBlock := original.instBlock,
+      entryColor := original.entryColor, endColor := original.endColor, tryRegs := original.tryRegs,
+      current := original.current, color := original.color, sunk := original.sunk,
+      opportunistic := original.opportunistic, alias := original.alias }
+
+case preserve.ok
+ctx : Ctx
+original : State
+t : TermId
+term : Term
+member : t ∈ helperIds
+lookup : termOf program t = Except.ok term
+args : List V
+st : State
+value : V
+next : State
+invariant :
+  st =
+    { base := st.base, demand := original.demand, uses := original.uses, instBlock := original.instBlock,
+      entryColor := original.entryColor, endColor := original.endColor, tryRegs := original.tryRegs,
+      current := original.current, color := original.color, sunk := original.sunk,
+      opportunistic := original.opportunistic, alias := original.alias }
+out : V
+base : LState
+ran :
+  (match ExtResult.ok (out, base) with
+    | ExtResult.ok (v, base) =>
+      ExtResult.ok
+        (v,
+          { base := base, demand := st.demand, uses := st.uses, instBlock := st.instBlock, entryColor := st.entryColor,
+            endColor := st.endColor, tryRegs := st.tryRegs, current := st.current, color := st.color, sunk := st.sunk,
+            opportunistic := st.opportunistic, alias := st.alias })
+    | ExtResult.fail => ExtResult.fail
+    | ExtResult.unmodeled e => ExtResult.unmodeled e) =
+    ExtResult.ok (value, next)
+result : Backend.externCtor ctx term args st.base = ExtResult.ok (out, base)
+same :
+  (out,
+        { base := base, demand := st.demand, uses := st.uses, instBlock := st.instBlock, entryColor := st.entryColor,
+          endColor := st.endColor, tryRegs := st.tryRegs, current := st.current, color := st.color, sunk := st.sunk,
+          opportunistic := st.opportunistic, alias := st.alias }).snd =
+    (value, next).snd
+⊢ next =
+    { base := next.base, demand := original.demand, uses := original.uses, instBlock := original.instBlock,
+      entryColor := original.entryColor, endColor := original.endColor, tryRegs := original.tryRegs,
+      current := original.current, color := original.color, sunk := original.sunk,
+      opportunistic := original.opportunistic, alias := original.alias }
