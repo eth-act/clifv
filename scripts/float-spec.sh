@@ -16,7 +16,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 export FV_MEMCAP="${FV_MEMCAP:-16G}" LEAN_NUM_THREADS="${LEAN_NUM_THREADS:-2}"
 mc="$root/scripts/memcap.sh"
-tmp="$(mktemp -d /tmp/float-spec_XXXXXX)"; trap 'rm -rf "$tmp"' EXIT
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/float-spec_XXXXXX")"; trap 'rm -rf "$tmp"' EXIT
 
 # 1. FV/Float as the compiler sees it: root toolchain, root .lake (shared cache allowed).
 cd "$root"
