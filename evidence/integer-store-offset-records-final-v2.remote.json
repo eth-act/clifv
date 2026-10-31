@@ -1,0 +1,12 @@
+{
+  "archive": "integer-store-offset-records-final-v2.tar.gz",
+  "archive_bytes": 318249,
+  "archive_sha256": "23dc42d874c5b33ec0a3856c3343b56cbc92b874e023374aa25ad047a6e426d0",
+  "parts": [
+    {
+      "name": "integer-store-offset-records-final-v2.tar.gz.part-000",
+      "bytes": 318249,
+      "sha256": "23dc42d874c5b33ec0a3856c3343b56cbc92b874e023374aa25ad047a6e426d0"
+    }
+  ]
+}
