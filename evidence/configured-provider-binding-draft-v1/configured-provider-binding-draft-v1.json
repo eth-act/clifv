@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-31T01:30:51.948181+00:00",
+  "status": "draft; syntax passed; integration and runtime pending",
+  "purpose": "Bind configured/default requests to actual Stock selected output, preventing a shared legacy fallback from masking regression",
+  "files": {
+    "test_stock_configured_provider.next.py": "8cb6f8f51a537d241dc6c2a5ca0fa05e916d61c8303b72deb99a9c9a0824ae35",
+    "configured-provider-next-batch.md": "0625f8bb3fbc854bfbe076293eb3adfbc661aeda33762a17d484dcf279e35cf3"
+  },
+  "source_gates_unchanged": true
+}
