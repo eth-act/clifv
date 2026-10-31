@@ -15,7 +15,7 @@ def lowerCheckedMemoryExtLoadNI (f : Clif.Function) (verify : Bool) : Except Str
   | .error _ => lowerCheckedMemoryIntegerNI f verify
 
 def lowerForAllocationMemoryExtLoadNI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedMemoryExtLoadNI f verify).map (Stock.Arithmetic.stage cleanup)
+  (lowerCheckedMemoryExtLoadNI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
 
 /-- Retry the previous complete pipeline on the original input and allocation
 callback if extending selection, allocation, emission or layout fails. -/
