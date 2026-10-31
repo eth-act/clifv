@@ -1,5 +1,6 @@
 import FV.E2E.RegLevelFRFree
 import FV.E2E.RegLevelOpNR
+import FV.E2E.RegLevelQW
 
 /-!
 # Straight-line instructions, at a witness (SEM1 #537, item (3), route (a))
