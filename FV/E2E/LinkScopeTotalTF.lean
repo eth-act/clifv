@@ -20,8 +20,9 @@ compiler.
   `fnScopeInTCB_of_T3F`: so `fnScopeInTB3F` is inside `fnScopeInTCB`;
 * `pipeCleanupT_okT3F`: the cleanup pipeline `pipeCleanupT` succeeds on every function of
   `fnScopeInTB3F`, whatever the untrusted allocator answered, with the artifact passing
-  `lowerCheckTCF`, the `prepare` validator on the pruned code, `AllocChecked` and the covered forms
-  (`pipeCleanupT_okT`'s non-E branch over `LowerScopeTF`: `Prep.prepare_okTF`,
+  `lowerCheckTCF`, the `prepare` validator on the cleanup stage's code (`cleanupStage`),
+  `AllocChecked` and the covered forms (subset E: `pipeCleanupT_ok`; otherwise
+  `pipeCleanupT_okT`'s non-E branch over `LowerScopeTF`: `Prep.prepare_okTF`,
   `backend_total_emit_cleanupTF`, `spillKillFreeTF` and the run-time checks of
   `LinkScopeChecksTF.lean`); `resultsCleanupT_ok_inT3F`: every function of an `InScopeInT3F`
   crate compiles with cleanup.
@@ -101,40 +102,65 @@ theorem fnScopeInTCB_of_T3F {g : Clif.Function} (h : fnScopeInTB3F g = true) :
   simp only [fnScopeInTCB, hE, hst, habi, hext, hind, h7, h8, h9, h10, hd, har, hw, hsz,
     driverInTCB_of_driverInB hdrv, hent, hrc, hlow, Bool.and_self, Bool.or_true]
 
+/-- On subset E, `lowerScopeTFB` is `lowerScopeB` (they differ only in the first conjunct). -/
+theorem lowerScopeB_of_TF {g : Clif.Function} (hE : Compile.functionE g = true)
+    (h : lowerScopeTFB g = true) : lowerScopeB g = true := by
+  unfold lowerScopeTFB at h
+  unfold lowerScopeB
+  rw [hE]
+  cases hT : Compile.functionETF g <;> rw [hT] at h
+  · simp at h
+  · exact h
+
 /-- **The cleanup pipeline succeeds on every function of `fnScopeInTB3F`**, whatever the
 untrusted allocator answered (`o`), and its artifact passes the float lowering validator
-(`lowerCheckTCF`), the `prepare` validator on the pruned code, `AllocChecked` and the covered
-forms. -/
+(`lowerCheckTCF`), the `prepare` validator on the code of the production cleanup stage
+(`cleanupStage g a.vc`, formerly `prune a.vc`: the compiler now runs Cranelift's skip of unused
+instructions there, #552), `AllocChecked` and the covered forms. A subset-E function goes through
+`pipeCleanupT_ok` (as in `pipeCleanupT_okT`); on any other the skip does not run, so the stage is
+`prune`. -/
 theorem pipeCleanupT_okT3F {g : Clif.Function} (h : fnScopeInTB3F g = true) (k : Nat)
     (base : BitVec 64) (o : Lean.Json) :
     ∃ a, pipeCleanupT g k base o = .ok a ∧ lowerCheckTCF g a.vc = true ∧
-      prepCheck (prune a.vc) a.vcp = true ∧ AllocChecked a.vcp a.rf ∧
+      prepCheck (cleanupStage g a.vc) a.vcp = true ∧ AllocChecked a.vcp a.rf ∧
       FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp := by
-  obtain ⟨hst, htc, hfa, habi, hext, hind, -, -, -, -, hd, hs, har, hw, hsz, hdrv, hin, hent,
+  obtain ⟨hst, htc, hfa, habi, hext, hind, h7, h8, h9, h10, hd, hs, har, hw, hsz, hdrv, hin, hent,
     hec, hsel, hbw⟩ := fnScopeInT3F_parts h
+  by_cases hE : Compile.functionE g = true
+  · have hsc : fnScopeB g = true := fnScopeB_of_input (by
+      simp only [fnScopeInB, hE, habi, hext, hind, h7, h8, h9, h10, hd, lowerScopeB_of_TF hE hs,
+        har, hw, hsz, hdrv, hin, hent, Bool.and_self])
+    obtain ⟨a, ha, -, hpc, hca, hcov⟩ := pipeCleanupT_ok hsc spillDefinedHyp k base o
+    obtain ⟨hl, -⟩ := pipeCleanupT_spec ha
+    exact ⟨a, ha, lowerCheckTCF_complete (dominated_of hd) (lowerScopeTF_of hs) hl, hpc,
+      allocChecked_of_checkAlloc hca, hcov⟩
   obtain ⟨vc, hl⟩ := lowerFunction_ok_inT3F habi hd hs har hent hw hdrv hin
   have hD := dominated_of hd
   have hS := lowerScopeTF_of hs
   have ha := abiSigsOk_of_checks habi hext hind
-  have hE := entryClassOk_of hec
-  have hcs := ctlSpillB_of_TF hd hS hfa hst hsel ha hE hl
+  have hEc := entryClassOk_of hec
+  have hcs := ctlSpillB_of_TF hd hS hfa hst hsel ha hEc hl
   obtain ⟨vcp, hp⟩ := Prep.prepare_okTF hS hl
   have hem := emitConds_lowerTF hd hS hfa hst hsel hw hbw hsz hl hp
   have hcov := formsCovered_completeTF hd hS hfa hst hsel hl hp default
   have hk := spillKillFreeTF hD hS ha (arityOk_of har) htc hl hp
-  have hci := ctlInsts_pipelineTF hd hS hfa hst hsel ha hE hl hp
+  have hci := ctlInsts_pipelineTF hd hS hfa hst hsel ha hEc hl hp
   have hrc := resClassOk_of_lowerScopeTF hd hS hfa hst hsel
-  have hp' := prune_prepare_ok hp
+  have hstage : cleanupStage g vc = prune vc := by simp [cleanupStage, skipStage, hE]
+  have hp' : Backend.prepare (cleanupStage g vc) = .ok (preparedCleanup vc vcp) := by
+    rw [hstage]; exact prune_prepare_ok hp
   obtain ⟨hacc, af, ha', fa, fb, he, hla⟩ := backend_total_emit_cleanupTF hD hS (arityOk_of har)
     htc hrc hl hp (ctlSpill_of_ctlSpillB hcs) hcov hk hci hem
     (raAnswer (preparedCleanup vc vcp) o) k
   refine ⟨⟨k, vc, preparedCleanup vc vcp, allocResult (preparedCleanup vc vcp)
       (readyAnswer (preparedCleanup vc vcp) (raAnswer (preparedCleanup vc vcp) o)), af, fa, fb,
-      base⟩, ?_, lowerCheckTCF_complete hD hS hl,
-    Prep.prepCheck_complete hp' (prune_prepDomain (prepDomain_ofTF hS hl)), hacc,
+      base⟩, ?_, lowerCheckTCF_complete hD hS hl, ?_, hacc,
     formsCovered_ctx (preparedCleanup_formsCovered hcov) _⟩
-  simp [pipeCleanupT, pipeTWithLowering, Backend.Stock.D0.defaultLower_eq_legacy, hl, hp', ha',
-    he, hla, bind, Except.bind, pure, Except.pure]
+  · simp [pipeCleanupT, pipeTWithLowering, Backend.Stock.D0.defaultLower_eq_legacy, hl, hp', ha',
+      he, hla, bind, Except.bind, pure, Except.pure]
+  · show prepCheck (cleanupStage g vc) (preparedCleanup vc vcp) = true
+    rw [hstage]
+    exact Prep.prepCheck_complete (prune_prepare_ok hp) (prune_prepDomain (prepDomain_ofTF hS hl))
 
 /-- **Every function of a crate in `InScopeInT3F` compiles with cleanup**
 (`resultsCleanupT_ok_inT` over the float scope, without the run-time decider). -/
