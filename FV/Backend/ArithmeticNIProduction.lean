@@ -1,5 +1,6 @@
 import FV.Backend.ScalarProduction
 import FV.Backend.Lowering.StockArithmeticNI
+import FV.Backend.StockArithmeticStageF
 
 namespace Backend
 set_option autoImplicit false
