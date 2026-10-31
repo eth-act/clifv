@@ -250,7 +250,7 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
     {Z : BitVec 64 → Prop}
     (hLR : ∀ k, 8 ≤ k → k < 16 → Z (spv R.s0 - 16#64 + BitVec.ofNat 64 k)) {t : Arm.ArmState}
     (h : StEqOutX Z t R.s0) :
-    ∀ i ≤ (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
+    ∀ i ≤ (prologueSteps R.af.saves R.af.frameSize R.af.isCaller),
       StEqOutX Z (iterN R.step i t) (iterN R.step i R.s0) := by
   obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
@@ -285,7 +285,7 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
   induction i with
   | zero => exact h
   | succ i ih =>
-    have hi' : i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length := by omega
+    have hi' : i < (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) := by omega
     have hl := ih (by omega)
     obtain ⟨ln, hln⟩ : ∃ ln, (prologueLines R.af.saves R.af.frameSize R.af.isCaller)[i]? = some ln :=
       ⟨_, List.getElem?_eq_getElem hi'⟩
@@ -329,8 +329,8 @@ theorem stEqOutX_prologueZ {R : RL} (hR : R.Wf) {ra : BitVec 64}
     {Z : BitVec 64 → Prop}
     (hLR : ∀ k, 8 ≤ k → k < 16 → Z (spv R.s0 - 16#64 + BitVec.ofNat 64 k)) {t : Arm.ArmState}
     (h : StEqOutX Z t R.s0) :
-    StEqOutX Z (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t)
-      (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0) :=
+    StEqOutX Z (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t)
+      (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) :=
   stEqOutX_prologueZ_le hR hent hx30 hLR h _ (Nat.le_refl _)
 
 section
@@ -397,41 +397,41 @@ theorem backend_twoRunLE (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
     (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
     ∃ N e e',
-      (∀ i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
+      (∀ i < (prologueSteps R.af.saves R.af.frameSize R.af.isCaller),
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)) ∧
       (∀ i < N, ∃ c c', StEqOutX (R.Zc c c')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) t0)) ∧
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) (KJL R XI t0 G' F)
         (fun d d' u u' => StEqOutX (R.Zc d d') u u')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) R.s0) e
+        (iterN ({ R with X := XI.at 0 } : RL).step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N) R.s0) e
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) t0) e' ∧
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N) t0) e' ∧
       (∀ i < R.retLen,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step
-            ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + i) R.s0) ∧
+            (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + i) R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-            ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + i) t0)) ∧
+            (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + i) t0)) ∧
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) R.s0) = ra ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) t0) = ra' ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + R.retLen) t0) = ra' ∧
       R.RetsAt e ∧ R.RetsAt e' := by
 
   have hpro : StEqOutX
       (R.Zc (MConf.init R.rf (locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step
-          (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)) w₀)
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)) w₀)
         (MConf.init R.rf (locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t0)) w₀'))
-      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t0)) w₀'))
+      (iterN ({ R with X := XI.at 0 } : RL).step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)
       (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t0) := by
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t0) := by
     subst hR
     have hF := he.hF
     subst hF

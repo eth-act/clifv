@@ -329,21 +329,26 @@ theorem savedInv_init {V W : Type} (rf : RFunc) (keep : Reg → V → V) (m₀ :
   refine ⟨⟨[], by simp [h0]⟩, fun _ _ _ => rfl, fun _ _ => rfl, fun r hr hn => absurd ?_ hn⟩
   simpa [RFunc.saveRegs, h0] using hr
 
-/-- The callee-saved registers of a state that differs from `s0` only in the pc, x29, sp and
-x16 (the state after the prologue, `q_init`) hold their values in `s0`. -/
+/-- The callee-saved registers of a state that differs from `s0` only in the pc, x29, sp, x16,
+x17 and the flags (the state after the prologue, `q_init`) hold their values in `s0`. (#581:
+the premise also allows x17 and the flags, which Cranelift's stack-probe loop sets; the former
+premise implies it.) -/
 theorem entry_calleeSaved {fr : RAFrame} {s0 s1 : Arm.ArmState}
-    (h : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → Arm.r f s1 = Arm.r f s0) :
+    (h : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
+      (∀ fl, f ≠ .FLAG fl) → Arm.r f s1 = Arm.r f s0) :
     ∀ r ∈ calleeSaved, locVal fr s1 (.reg r) = regVal s0 r := by
   intro r hr
   simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range] at hr
   rcases hr with ⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩
   · have hne : ∀ k : Nat, k < 10 →
-        rnum (19 + k) ≠ 29#5 ∧ rnum (19 + k) ≠ 31#5 ∧ rnum (19 + k) ≠ 16#5 := by decide
-    obtain ⟨h1, h2, h3⟩ := hne i hi
+        rnum (19 + k) ≠ 29#5 ∧ rnum (19 + k) ≠ 31#5 ∧ rnum (19 + k) ≠ 16#5 ∧ rnum (19 + k) ≠ 17#5 := by
+      decide
+    obtain ⟨h1, h2, h3, h4⟩ := hne i hi
     simp only [locVal, regVal]
-    rw [h _ (by simp) (by simpa using h1) (by simpa using h2) (by simpa using h3)]
+    rw [h _ (by simp) (by simpa using h1) (by simpa using h2) (by simpa using h3) (by simpa using h4)
+      (by simp)]
   · simp only [locVal, regVal]
-    rw [h _ (by simp) (by simp) (by simp) (by simp)]
+    rw [h _ (by simp) (by simp) (by simp) (by simp) (by simp) (by simp)]
 
 /-- The initial configuration `q_init` gives satisfies `SavedInv` for the entry state's
 callee-saved registers. -/
