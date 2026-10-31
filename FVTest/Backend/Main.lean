@@ -1,5 +1,5 @@
 import FV.Backend
-import FV.Backend.MemoryExtLoadNIProduction
+import FV.Backend.MemoryStoreNIProduction
 import FV.Opt.Legalize128Pass
 import FV.Opt.LegalExn
 import FVTest.Opt.Common
@@ -269,7 +269,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     pure afs
   let fa ← match stock with
     | none => (if pipelineT then compileFileWith allocNone pf (unv128 ++ unvTry) false
-        else compileFileMemoryExtLoadNIWhen (!o.opt.isSome &&
+        else compileFileMemoryStoreNIWhen (!o.opt.isSome &&
           !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
           allocNone pf (unv128 ++ unvTry) o.deadCleanup)
     | some c => do
@@ -277,7 +277,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         -- A whole-file retry replaces the previous attempt's configuration receipt.
         rejected.set #[]
         StockConfig.allocateWith c clif rejected allocNone vcs
-      compileFileMemoryExtLoadNIWhen (!pipelineT && !o.opt.isSome &&
+      compileFileMemoryStoreNIWhen (!pipelineT && !o.opt.isSome &&
           !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
         configuredAlloc pf
         (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))) o.deadCleanup
