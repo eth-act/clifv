@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "utc": "2026-10-31T01:24:13.329628+00:00",
+  "module": "FV.Backend.Proof.IselSzTTabS32",
+  "source_sha256": "20575b091adae4ec126f18adcfd9958d6de7984f2b3f754045a07b069a5db873",
+  "source_unchanged": true,
+  "failed_attempt_path": "production-reverse-modules-v5/failed-attempts/fvb-2311774-356-FV.Backend.Proof.IselSzTTabS32-1793409482315217108/attempt.json",
+  "failed_attempt": {
+    "module": "FV.Backend.Proof.IselSzTTabS32",
+    "unit": "fvb-2311774-356-FV.Backend.Proof.IselSzTTabS32",
+    "cap_bytes": 6442450944,
+    "returncode": 1,
+    "seconds": 171.2944712638855,
+    "module_source_sha256": "20575b091adae4ec126f18adcfd9958d6de7984f2b3f754045a07b069a5db873",
+    "artifacts": {
+      "FV.Backend.Proof.IselSzTTabS32.log": "4f7562a26418f18586cb3ef88ee59c3876cdf6ecf85f530218b76a49e5f54814",
+      "FV.Backend.Proof.IselSzTTabS32.mem": "7cfb33758ba7429ef5c329bbbbcb8e5e3695f0a47bd76196c67fb727a6e0f788",
+      "FV.Backend.Proof.IselSzTTabS32.time": "849588321cab76f5bbc89b3666f26792fc055f167aa3abfb15f7e58149900d2e"
+    }
+  },
+  "first_failure": "6 GiB cgroup OOM; Lean exit137",
+  "retry_cap_bytes": 8589934592,
+  "retry_memory": {
+    "peak": 7074652160,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  "retry_elapsed_seconds": 212.67525707100867,
+  "olean_sha256": "5740a278c39bf91766bbd39cb9b1f146245e4f092f73edf8950a4c7d05ce95bd",
+  "scope": "One table recovered under the existing source gate. The full pre-merge gates remain pending.",
+  "next_steps": [
+    "Continue the existing watched gate without restart",
+    "Use at least8GiB for a fresh build of this table",
+    "Complete the reviewed build, executable-link, and105-root audit gates"
+  ]
+}
