@@ -1516,6 +1516,23 @@ theorem LoopRuns.err : ∀ {env : Env} {S : BitVec 64} {m r : Nat} {s s' : Arm.A
     obtain ⟨e3, p3⟩ := h3.err
     exact ⟨e1.trans (he.trans e3), p1.trans (hp.trans p3)⟩
 
+/-- A straight-line run is determined by its start (`execLines`). -/
+theorem StepsOk.det {env : Env} {ls : List Line} {s s1 s2 : Arm.ArmState}
+    (h1 : StepsOk env ls s s1) (h2 : StepsOk env ls s s2) : s1 = s2 :=
+  Option.some.inj (h1.exec.symm.trans h2.exec)
+
+/-- The loop's run is determined by its start. -/
+theorem LoopRuns.det : ∀ {env : Env} {S : BitVec 64} {m r : Nat} {s s1 s2 : Arm.ArmState},
+    LoopRuns env S m r s s1 → LoopRuns env S m r s s2 → s1 = s2
+  | _, _, _, 0, _, _, _, h1, h2 => by simp only [LoopRuns] at h1 h2; rw [h1, h2]
+  | _, _, _, _ + 1, _, _, _, h1, h2 => by
+    obtain ⟨-, -, t1, b1, h31, hb1, -, -, -, h1⟩ := h1
+    obtain ⟨-, -, t2, b2, h32, hb2, -, -, -, h2⟩ := h2
+    obtain rfl := StepsOk.det h31 h32
+    rw [hb1, Except.ok.injEq] at hb2
+    subst hb2
+    exact LoopRuns.det h1 h2
+
 /-- **The stack-probe loop runs** (`probeLoopBody`) from iteration `m` with `r ≥ 1` iterations
 left (`m + r = ⌈total / 4096⌉`, `x16 = -4096·m`, `x17 = total`, an aligned `sp`): `x16` ends at
 `-4096·(m + r)`, the flags at `loopFlag total`, the 4 bytes at `sp - 4096·i` zeroed for
@@ -1718,18 +1735,27 @@ theorem probeLoop_facts {total : Nat} (hl : probeLoop total = true) :
       exact ⟨by omega, h2, rfl⟩
     · omega
 
-/-- **The stack probes' run** from `s`: the straight-line part (`probeHead`), then the loop's
-iterations (`LoopRuns` from iteration 0 at the `sp` after the head, none without the loop). -/
+/-- **The stack probes' run** from `s`: the straight-line part (`probeHead`, which keeps `sp`),
+then the loop's iterations (`LoopRuns` from iteration 0 at `sp = spOf s`, none without the
+loop); `sp` ends as it started. -/
 def ProbeRun (env : Env) (total : Nat) (s s' : Arm.ArmState) : Prop :=
-  ∃ s1, StepsOk env (probeHead total) s s1 ∧
-    LoopRuns { env with pc := env.pc + 4 * (probeHead total).length } (spOf s1) 0 (loopIters total) s1 s'
+  ∃ s1, StepsOk env (probeHead total) s s1 ∧ spOf s1 = spOf s ∧
+    LoopRuns { env with pc := env.pc + 4 * (probeHead total).length } (spOf s) 0 (loopIters total) s1 s' ∧
+    spOf s' = spOf s
 
 theorem ProbeRun.err {env : Env} {total : Nat} {s s' : Arm.ArmState} (h : ProbeRun env total s s') :
     Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program := by
-  obtain ⟨s1, h1, h2⟩ := h
+  obtain ⟨s1, h1, -, h2, -⟩ := h
   obtain ⟨e1, p1⟩ := h1.err
   obtain ⟨e2, p2⟩ := h2.err
   exact ⟨e2.trans e1, p2.trans p1⟩
+
+theorem ProbeRun.det {env : Env} {total : Nat} {s s1 s2 : Arm.ArmState}
+    (h1 : ProbeRun env total s s1) (h2 : ProbeRun env total s s2) : s1 = s2 := by
+  obtain ⟨t1, hH1, -, hL1, -⟩ := h1
+  obtain ⟨t2, hH2, -, hL2, -⟩ := h2
+  obtain rfl := StepsOk.det hH1 hH2
+  exact LoopRuns.det hL1 hL2
 
 /-- **The stack probes run** (`probeLines`) from an aligned `sp`: `sp` unchanged, the probed bytes
 zeroed (`probeHitB`), the flags those of the loop (`probeFlagT`), the pc after the probe lines;
@@ -1780,8 +1806,9 @@ theorem probeRun_ok (env : Env) (total : Nat) (s : Arm.ArmState) (hal : (spOf s)
     obtain ⟨s', hL, hsp', -, -, hfl', hpc', hf', hm'⟩ :=
       probeLoop_ok { env with pc := env.pc + 4 * (probeHead total).length } hlo hhi (probeCount total) 0 s2
         (by omega) (by omega) (by rw [hsp2]; exact hal) h16 h17
-    refine ⟨s', ⟨s2, by rw [hH]; exact StepsOk.append h1 h2, by rw [hI]; exact hL⟩, by rw [hsp', hsp2], ?_,
-      fun f g1 g2 g3 g4 g5 => ?_, fun fl => ?_, fun a => ?_⟩
+    rw [hsp2] at hL
+    refine ⟨s', ⟨s2, by rw [hH]; exact StepsOk.append h1 h2, hsp2, by rw [hI]; exact hL, by rw [hsp', hsp2]⟩,
+      by rw [hsp', hsp2], ?_, fun f g1 g2 g3 g4 g5 => ?_, fun fl => ?_, fun a => ?_⟩
     · rw [hpc', hpc2, probeLines_split, hH, hLL, BitVec.add_assoc]
       congr 1
       apply BitVec.eq_of_toNat_eq
@@ -1796,7 +1823,8 @@ theorem probeRun_ok (env : Env) (total : Nat) (s : Arm.ArmState) (hal : (spOf s)
     have hH : probeHead total = probeLines total := by simp [probeHead, hl']
     have hI : loopIters total = 0 := by simp [loopIters, hl']
     obtain ⟨s', hP, hsp', hf', hm'⟩ := probeLines_ok env total h3 s hal
-    refine ⟨s', ⟨s', by rw [hH]; exact hP, by rw [hI]; rfl⟩, hsp', hP.pc, fun f g1 g2 _ _ _ => hf' f g1 g2,
+    refine ⟨s', ⟨s', by rw [hH]; exact hP, hsp', by rw [hI]; exact rfl, hsp'⟩, hsp', hP.pc,
+      fun f g1 g2 _ _ _ => hf' f g1 g2,
       fun fl => ?_, hm'⟩
     rw [hf' _ (by simp) (by simp)]; simp [probeFlagT, hl']
 
@@ -1830,28 +1858,37 @@ theorem prologueLines_split {calls : Bool} (saves : List Reg) (size : Nat) :
       (probeLoopL (probeTotal size calls) ++ prologueTail saves size)) := by
   rw [prologueLines_eq, probeLines_split, List.append_assoc]; rfl
 
-/-- **The prologue's run** from `s` to `s'` (its `prologueSteps` instructions): the frame setup,
-the stack probes (`ProbeRun`: the probe loop runs its body `probeCount` times, #581), the
-pushes and the `sp` adjustment. Without the probe loop it is the straight-line run of
-`prologueLines` (`ProRun.stepsOk`). -/
+/-- **The prologue's run** from `s` to `s'` (its `prologueSteps` instructions): the frame setup
+(which lowers `sp` by 16), the stack probes (`ProbeRun`: the probe loop runs its body
+`probeCount` times, #581), the pushes and the `sp` adjustment. Without the probe loop it is the
+straight-line run of `prologueLines` (`ProRun.stepsOk`). -/
 def ProRun (env : Env) (saves : List Reg) (size : Nat) (calls : Bool) (s s' : Arm.ArmState) : Prop :=
-  ∃ s2 sP, StepsOk env fplrLines s s2 ∧ ProbeRun { env with pc := env.pc + 4 + 4 } (probeTotal size calls) s2 sP ∧
+  ∃ s2 sP, StepsOk env fplrLines s s2 ∧ spOf s2 = spOf s - 16#64 ∧
+    ProbeRun { env with pc := env.pc + 4 + 4 } (probeTotal size calls) s2 sP ∧
     StepsOk { env with pc := env.pc + 4 + 4 + 4 * (probeLines (probeTotal size calls)).length }
       (prologueTail saves size) sP s'
 
 theorem ProRun.err {env : Env} {saves : List Reg} {size : Nat} {calls : Bool} {s s' : Arm.ArmState}
     (h : ProRun env saves size calls s s') : Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program := by
-  obtain ⟨s2, sP, h1, h2, h3⟩ := h
+  obtain ⟨s2, sP, h1, -, h2, h3⟩ := h
   obtain ⟨e1, p1⟩ := h1.err
   obtain ⟨e2, p2⟩ := h2.err
   obtain ⟨e3, p3⟩ := h3.err
   exact ⟨e3.trans (e2.trans e1), p3.trans (p2.trans p1)⟩
 
+theorem ProRun.det {env : Env} {saves : List Reg} {size : Nat} {calls : Bool} {s s1 s2 : Arm.ArmState}
+    (h1 : ProRun env saves size calls s s1) (h2 : ProRun env saves size calls s s2) : s1 = s2 := by
+  obtain ⟨t1, u1, hA1, -, hP1, hT1⟩ := h1
+  obtain ⟨t2, u2, hA2, -, hP2, hT2⟩ := h2
+  obtain rfl := StepsOk.det hA1 hA2
+  obtain rfl := ProbeRun.det hP1 hP2
+  exact StepsOk.det hT1 hT2
+
 /-- Without the probe loop the prologue's run is straight-line. -/
 theorem ProRun.stepsOk {env : Env} {saves : List Reg} {size : Nat} {calls : Bool} {s s' : Arm.ArmState}
     (hl : probeLoop (probeTotal size calls) = false) (h : ProRun env saves size calls s s') :
     StepsOk env (prologueLines saves size calls) s s' := by
-  obtain ⟨s2, sP, h1, ⟨s1, hH, hL⟩, h3⟩ := h
+  obtain ⟨s2, sP, h1, -, ⟨s1, hH, -, hL, -⟩, h3⟩ := h
   have hI : loopIters (probeTotal size calls) = 0 := by simp [loopIters, hl]
   rw [hI] at hL
   simp only [LoopRuns] at hL
@@ -1969,7 +2006,7 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (
   have hoP2 : ∀ f, f ≠ .PC → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 → (∀ fl, f ≠ .FLAG fl) →
       Arm.r f sP = Arm.r f s2 := hoP
   refine ⟨s5, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · refine ⟨s2, sP, ?_, hP, StepsOk.append h3 (StepsOk.append h4 h5)⟩
+  · refine ⟨s2, sP, ?_, hsp2, hP, StepsOk.append h3 (StepsOk.append h4 h5)⟩
     show StepsOk env [.ins _ none, .ins _ none] s s2
     refine steps_cons ha1 (by rw [he1]; simp [Arm.r_of_w_same])
       (by rw [he1]; simp [Arm.r_of_w_different, Arm.r_of_write_mem_bytes])

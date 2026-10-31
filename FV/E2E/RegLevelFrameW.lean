@@ -50,50 +50,202 @@ theorem iterN_stepsW {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : A
   apply BitVec.eq_of_toNat_eq
   simp [BitVec.toNat_add]
 
+theorem linesWrites_left {env : Env} {A B : List Line} {s : Arm.ArmState} {P : BitVec 64 → Prop}
+    (h : LinesWrites env (A ++ B) s P) : LinesWrites env A s P := by
+  intro k x t hk s1 hs1
+  have hlt : k < A.length := (List.getElem?_eq_some_iff.1 hk).1
+  refine h k x t (by rw [List.getElem?_append_left hlt]; exact hk) s1 ?_
+  rw [List.take_append_of_le_length (by omega)]
+  exact hs1
+
+/-- **The prologue's states with their writes** (#581, `iterN_proRun` with `RL.GoodXW`): from a
+state satisfying `RL.Good`, every state of the prologue's run before its last step satisfies
+`RL.GoodXW` when `G` avoids the frame top and the probed bytes: fp/lr and the pushes write the
+frame top, the probes (unrolled, or the loop's `str wzr, [sp, x16]`) the probed bytes. -/
+theorem iterN_proRunW {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : Bool}
+    (hsv : SavesOk saves) {T : List Line} {j : Nat} {s s' : Arm.ArmState}
+    (hdrop : R.L.drop j = prologueLines saves size calls ++ T)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None) (hal : (spOf s).toNat % 16 = 0)
+    (h : ProRun (R.envOf j) saves size calls s s')
+    (hP : ∀ k < 16 + clobberBytes saves,
+      ¬ R.G (spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) + BitVec.ofNat 64 k))
+    (hPp : ∀ a, probeHitN (probeCount (probeTotal size calls)) (spOf s) a = true → ¬ R.G a) :
+    R.Good s → ∀ i < prologueSteps saves size calls, R.GoodXW (iterN R.step i s) := by
+  have hins : ∀ ln ∈ prologueLines saves size calls, ∃ x, ln = .ins x none ∧ x.hooked = false :=
+    fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩
+  have hnl := prologueLines_noLoads (calls := calls) saves size
+  have htl := prologueLines_tail (calls := calls) saves size
+  have hwr : LinesWrites (R.envOf j) (prologueLines saves size calls) s (fun a => ¬ R.G a) :=
+    prologue_writes _ hsv s hal hP hPp
+  by_cases hl : probeLoop (probeTotal size calls) = true
+  · obtain ⟨s2, sP, h1, hsp2, ⟨s1, hH, -, hL, hspP⟩, h3⟩ := h
+    have hLL : probeLoopL (probeTotal size calls) = probeLoopBody := by simp [probeLoopL, hl]
+    have hI : loopIters (probeTotal size calls) = probeCount (probeTotal size calls) := by
+      simp [loopIters, hl]
+    have hn4 : 3 < probeCount (probeTotal size calls) := by simpa [probeLoop] using hl
+    have hsplit := prologueLines_split (calls := calls) saves size
+    rw [hLL] at hsplit
+    generalize hA : fplrLines ++ probeHead (probeTotal size calls) = A
+    have hAlen : A.length = 2 + (probeHead (probeTotal size calls)).length := by
+      rw [← hA]; simp [fplrLines]
+    have hPL : (probeLines (probeTotal size calls)).length =
+        (probeHead (probeTotal size calls)).length + 4 := by
+      rw [probeLines_split, hLL]; simp [probeLoopBody]
+    have hdropA : R.L.drop j = A ++ (probeLoopBody ++ (prologueTail saves size ++ T)) := by
+      rw [hdrop, hsplit, ← hA]; simp only [List.append_assoc]
+    have hmemA : ∀ ln ∈ A, ln ∈ prologueLines saves size calls := fun ln h => by
+      rw [hsplit, ← List.append_assoc, hA]; exact List.mem_append_left _ h
+    have hmemT : ∀ ln ∈ prologueTail saves size, ln ∈ prologueLines saves size calls := fun ln h => by
+      rw [hsplit]; simp [h]
+    -- the head: fp/lr and the loop's constants
+    have hA1 : StepsOk (R.envOf j) A s s1 := by
+      rw [← hA]
+      refine StepsOk.append h1 ?_
+      rw [show (R.envOf j).pc + 4 * fplrLines.length = (R.envOf j).pc + 4 + 4 by simp [fplrLines]; omega]
+      exact hH
+    have hinsA : ∀ ln ∈ A, ∃ x, ln = .ins x none ∧ x.hooked = false := fun ln h => hins ln (hmemA ln h)
+    have hwrA : LinesWrites (R.envOf j) A s (fun a => ¬ R.G a) := by
+      rw [hsplit, ← List.append_assoc, hA] at hwr
+      exact linesWrites_left hwr
+    obtain ⟨hitA, hpcA, -, hgxA⟩ := iterN_stepsW hR hdropA hinsA hprog hpc herr hA1
+    obtain ⟨herrA, hprogA⟩ := hA1.err
+    -- the loop
+    have hdropL : R.L.drop (j + A.length) = probeLoopBody ++ (prologueTail saves size ++ T) := by
+      rw [← List.drop_drop, hdropA, List.drop_left]
+    have henvL : R.envOf (j + A.length) =
+        { R.envOf j with pc := (R.envOf j).pc + 4 + 4 + 4 * (probeHead (probeTotal size calls)).length } := by
+      rw [RL.envOf_ins hdropA (fun ln h => by obtain ⟨x, e, -⟩ := hinsA ln h; exact ⟨x, none, e⟩), hAlen]
+      congr 1; omega
+    obtain ⟨xp, hxp, hxph⟩ : ∃ xp, R.L[j + A.length - 1]? = some (.ins xp none) ∧ xp.hooked = false := by
+      obtain ⟨x, e, hx⟩ := hinsA (A[A.length - 1]) (List.getElem_mem _)
+      refine ⟨x, ?_, hx⟩
+      have := congrArg (·[A.length - 1]?) hdropA
+      simp only [List.getElem?_drop] at this
+      rw [show j + A.length - 1 = j + (A.length - 1) by omega, this,
+        List.getElem?_append_left (by omega), List.getElem?_eq_getElem (by omega), e]
+    rw [← henvL, hI] at hL
+    obtain ⟨hitL, hpcL, hgL, hgxL, hlocL⟩ := iterN_loop hR hdropL (by omega) (j := j + A.length) hxp hxph
+      (probeCount (probeTotal size calls)) 0 s1 sP (hprogA.trans hprog) hpcA (herrA.trans herr) hL
+    have hpcL' := hpcL (by omega)
+    obtain ⟨herrL, hprogL⟩ := hL.err
+    -- the tail
+    have hdropT : R.L.drop (j + A.length + 4) = prologueTail saves size ++ T := by
+      rw [← List.drop_drop, hdropL]; rfl
+    have henvT : R.envOf (j + A.length + 4) = { R.envOf j with
+        pc := (R.envOf j).pc + 4 + 4 + 4 * (probeLines (probeTotal size calls)).length } := by
+      have := RL.envOf_ins hdropL (fun ln h => by obtain ⟨x, e, -⟩ := probeLoopBody_ins ln h; exact ⟨x, none, e⟩)
+      rw [henvL] at this
+      rw [show j + A.length + 4 = j + A.length + probeLoopBody.length from rfl, this, hPL]
+      congr 1; simp [probeLoopBody]; omega
+    rw [← henvT] at h3
+    have hinsT : ∀ ln ∈ prologueTail saves size, ∃ x, ln = .ins x none ∧ x.hooked = false :=
+      fun ln h => hins ln (hmemT ln h)
+    obtain ⟨-, -, -, hgxT⟩ := iterN_stepsW hR hdropT hinsT (hprogL.trans (hprogA.trans hprog))
+      hpcL' (herrL.trans (herrA.trans herr)) h3
+    have hwrT : LinesWrites (R.envOf (j + A.length + 4)) (prologueTail saves size) sP
+        (fun a => ¬ R.G a) :=
+      prologueTail_writesX _ size hsv (spOf s) hal sP (by rw [hspP, hsp2]) hP
+    -- the counts
+    have hsteps : prologueSteps saves size calls =
+        A.length + 4 * probeCount (probeTotal size calls) + (prologueTail saves size).length := by
+      have hlen : (prologueLines saves size calls).length = A.length + 4 + (prologueTail saves size).length := by
+        rw [hsplit, ← hA]; simp [probeLoopBody]; omega
+      simp only [prologueSteps, hl, ite_true, hlen]; omega
+    have hgoodP : R.Good sP := by
+      have := hgL (4 * probeCount (probeTotal size calls)) (by omega) (le_refl _)
+      rwa [hitL] at this
+    have hiter : ∀ i, iterN R.step (A.length + i) s = iterN R.step i s1 := fun i => by
+      rw [iterN_add, hitA]
+    have hiter2 : ∀ i, iterN R.step (A.length + 4 * probeCount (probeTotal size calls) + i) s =
+        iterN R.step i sP := fun i => by
+      rw [iterN_add, iterN_add, hitA, hitL]
+    intro h0 i hi
+    rcases Nat.lt_or_ge i A.length with hA' | hA'
+    · exact hgxA (fun x t h => htl x t (hmemA _ h)) h0
+        (linesReads_noLoads fun x t h => hnl x t (hmemA _ h)) hwrA i hA'
+    rcases Nat.lt_or_ge i (A.length + 4 * probeCount (probeTotal size calls)) with hB | hB
+    · obtain ⟨i', rfl⟩ : ∃ i', i = A.length + i' := ⟨i - A.length, by omega⟩
+      rw [hiter]
+      refine ⟨hgxL i' (by omega), ?_⟩
+      -- the loop's lines: only the `str` stores, at a probed byte
+      obtain ⟨k, hk, e, hq⟩ := hlocL i' (by omega)
+      have hlk := congrArg (·[k]?) hdropL
+      simp only [List.getElem?_drop] at hlk
+      rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl
+      · exact RL.writesAt_noStore hR (by rw [hlk]; rfl) e rfl
+      · obtain ⟨q, hq', hspq, h16q⟩ := hq rfl
+        refine RL.writesAt_of_line hR (by rw [hlk]; rfl) e fun _ env a ha p hp b hb => ?_
+        rw [memWrites_str_sp_x16 ha, hspq, h16q] at hp
+        simp only [List.mem_singleton] at hp
+        subst hp
+        apply hPp
+        simp only at hb ⊢
+        rw [hsp2]
+        simp only [probeHitN, probeHitB, List.any_eq_true, List.mem_range]
+        refine ⟨q, hq', ?_⟩
+        simp only [loopOff, Nat.zero_add]
+        rw [show spOf s - 16#64 + (0#64 - BitVec.ofNat 64 (4096 * (q + 1))) + BitVec.ofNat 64 b -
+          (spOf s - 16#64 - BitVec.ofNat 64 (4096 * (q + 1))) = BitVec.ofNat 64 b by
+            generalize BitVec.ofNat 64 (4096 * (q + 1)) = Y; bv_omega]
+        simp only [BitVec.toNat_ofNat, decide_eq_true_eq]
+        omega
+      · exact RL.writesAt_noStore hR (by rw [hlk]; rfl) e rfl
+      · exact RL.writesAt_noStore hR (by rw [hlk]; rfl) e rfl
+    · obtain ⟨i', rfl⟩ : ∃ i', i = A.length + 4 * probeCount (probeTotal size calls) + i' :=
+        ⟨i - (A.length + 4 * probeCount (probeTotal size calls)), by omega⟩
+      rw [hiter2]
+      exact hgxT (fun x t h => htl x t (hmemT _ h)) hgoodP
+        (linesReads_noLoads fun x t h => hnl x t (hmemT _ h)) hwrT i' (by omega)
+  · have hl' : probeLoop (probeTotal size calls) = false := by simpa using hl
+    have hst := ProRun.stepsOk hl' h
+    rw [prologueSteps_of_not hl']
+    obtain ⟨-, -, -, hgx⟩ := iterN_stepsW hR hdrop hins hprog hpc herr hst
+    exact fun h0 => hgx htl h0 (linesReads_noLoads hnl) hwr
+
 /-- **After the prologue**: the machine is at the entry configuration of the allocated code
 (store = the machine's locations, world = any body-entry world `w₀`), `AInv` holds, and every
-field but the pc, x16, x29 and `sp` is as at entry. -/
+field but the pc, x16, x17, x29, `sp` and the flags is as at entry. (#581: x17 and the flags are
+new exceptions: Cranelift's stack-probe loop sets them; the former statement, every field but
+the pc, x16, x29 and `sp`, became false for a probed stack of 16 KiB or more.) -/
 theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
     ∃ n, (∀ i < n, R.GoodXW (iterN R.step i R.s0)) ∧
       Q R (iterN R.step n R.s0) (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
-      ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
-        Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
+      ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
+        (∀ fl, f ≠ .FLAG fl) → Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
   obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, hdrop0⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
-  obtain ⟨s', hsteps, hsp', hfp', ho', hm', -, -⟩ :=
+  obtain ⟨s', hsteps, hsp', hfp', ho', hfl', hm', -, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
-  obtain ⟨hiter, hpc', -, hgx⟩ := iterN_stepsW hR hdrop
-    (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
-    hent.program hpc1 hent.err hsteps
+  obtain ⟨hiter, hpc', -, -, -⟩ := iterN_proRun hR hdrop hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
   -- the prologue's writes: the frame top and the probed bytes, which `G` avoids
-  have hwrP : LinesWrites (R.envOf 1) (prologueLines R.af.saves R.af.frameSize R.af.isCaller) R.s0 (fun a => ¬ R.G a) := by
-    refine prologue_writes _ hsv R.s0 hent.spAligned ?_ fun a hp hG => ?_
-    · intro k hk
+  have hgxw := iterN_proRunW hR hsv hdrop hent.program hpc1 hent.err hent.spAligned hsteps
+    (fun k hk => by
       show ¬ R.G (spv R.s0 - BitVec.ofNat 64 (16 + clobberBytes R.af.saves) + BitVec.ofNat 64 k)
       have hkN : k < R.topN := by simp only [RL.topN]; exact hk
       rw [show (spv R.s0 - BitVec.ofNat 64 (16 + clobberBytes R.af.saves) + BitVec.ofNat 64 k)
         = R.topB + BitVec.ofNat 64 k from by simp only [RL.topB, RL.topN]]
-      exact RL.top_notG hR k hkN
-    · have := hR.gprobe a hG
+      exact RL.top_notG hR k hkN)
+    (fun a hp hG => by
+      have := hR.gprobe a hG
       simp only [probeHit, hframe, Bool.true_and] at this
       have h2 : probeHitN (probeCount (probeTotal R.af.frameSize R.af.isCaller)) (spOf R.s0) a =
         false := this
       rw [h2] at hp
-      cases hp
-  refine ⟨(prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
-    hgx (prologueLines_tail _ _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
-      (linesReads_noLoads (prologueLines_noLoads _ _)) hwrP, ?_⟩
+      cases hp)
+  refine ⟨prologueSteps R.af.saves R.af.frameSize R.af.isCaller,
+    hgxw (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits)), ?_⟩
   have hsP : R.sP = s' := hiter
   rw [hiter]
   have hspB : spOf s' = R.spB := by
@@ -153,8 +305,8 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
     rw [e2] at h2
     rw [hfs] at this h2
     omega
-  have hfield : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
-      Arm.r f s' = Arm.r f R.s0 := ho'
+  have hfield : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
+      (∀ fl, f ≠ .FLAG fl) → Arm.r f s' = Arm.r f R.s0 := ho'
   -- the kept addresses are not the frame top
   have hgk : ∀ a, R.G a → s'.mem a = R.s0.mem a := by
     intro a ha
@@ -177,7 +329,12 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
     · rw [← List.drop_drop, hdrop, List.drop_left]
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
         hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode', hgk, fun _ => hfp'⟩
-      · by_cases h29 : f = .GPR 29#5
+      · by_cases hfl : ∃ fl, f = .FLAG fl
+        · obtain ⟨fl, rfl⟩ := hfl
+          rw [hfl' fl, hbe.other _ hf (by simp) (by simp)]
+          simp [probeR, probeFlag, hframe]
+        have hfl : ∀ fl, f ≠ .FLAG fl := fun fl e => hfl ⟨fl, e⟩
+        by_cases h29 : f = .GPR 29#5
         · subst h29
           have := hbe.fp
           simp only [hframe, ite_true, xreg] at this hfp'
@@ -188,8 +345,9 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
           simp only [spv] at this
           rw [this]; exact hspB
         have h16 : f ≠ .GPR 16#5 := by rintro rfl; exact hf (by simp [Masked])
+        have h17 : f ≠ .GPR 17#5 := by rintro rfl; exact hf (by simp [Masked])
         have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
-        rw [hfield f hpc h29 h31 h16, hbe.other f hf h29 h31]
+        rw [hfield f hpc h29 h31 h16 h17 hfl, hbe.other f hf h29 h31, probeR_of_ne hfl]
       · rw [hprog', hbe.program]
       · rw [checkSP_iff, hspB]
         simp only [RL.spB, hdrop0]
@@ -215,10 +373,10 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
         fun m h1 h2 e => rnum_ne (a := n) (b := m) (by omega) h2 (by omega) (Arm.StateField.GPR.inj e)
       simp only [regVal]
       rw [hfield _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
-        (hne 16 (by omega) (by omega))]
+        (hne 16 (by omega) (by omega)) (hne 17 (by omega) (by omega)) (by simp)]
     | v n =>
       simp only [regVal]
-      rw [hfield _ (by simp) (by simp) (by simp) (by simp)]
+      rw [hfield _ (by simp) (by simp) (by simp) (by simp) (by simp) (by simp)]
     | _ => simp [Reg.isArgReg] at hr
 
 /-- **The return on the machine**: from `Q` at a `Rets` item, the epilogue and `ret` reach the

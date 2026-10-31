@@ -230,7 +230,9 @@ theorem probeLoopBody_ins : ∀ ln ∈ probeLoopBody, ∃ x, ln = .ins x none �
 /-- **The stack-probe loop on the machine** (#581): `probeLoopBody` at line `j`, after an
 unhooked instruction line; `r` iterations (`LoopRuns`) are `4·r` machine steps, ending after the
 loop; every state after the first is no return into the code (`RL.Good`) and every state before
-the last step satisfies `RL.GoodX` (the `b.gt` jumps back to the line after line `j - 1`). -/
+the last step satisfies `RL.GoodX` (the `b.gt` jumps back to the line after line `j - 1`) and is
+at one of the loop's lines; at the `str` (line `j + 1`) of iteration `m + q`, `sp = S` and
+`x16 = -4096·(m + q + 1)`. -/
 theorem iterN_loop {R : RL} (hR : R.Wf) {T : List Line} {j : Nat}
     (hdrop : R.L.drop j = probeLoopBody ++ T) (hj : 0 < j) {xp : Insn} {tp : Option Clif.TrapCode}
     (hprev : R.L[j - 1]? = some (.ins xp tp)) (hxp : xp.hooked = false) {S : BitVec 64} :
@@ -239,13 +241,15 @@ theorem iterN_loop {R : RL} (hR : R.Wf) {T : List Line} {j : Nat}
       iterN R.step (4 * r) s = s' ∧ (0 < r → Arm.r .PC s' = R.pcOf (j + 4)) ∧
       (∀ i, 0 < i → i ≤ 4 * r → R.Good (iterN R.step i s)) ∧
       (∀ i < 4 * r, R.GoodX (iterN R.step i s)) ∧
-      (∀ i < 4 * r, ∃ k < 4, Arm.r .PC (iterN R.step i s) = R.pcOf (j + k))
+      (∀ i < 4 * r, ∃ k < 4, Arm.r .PC (iterN R.step i s) = R.pcOf (j + k) ∧
+        (k = 1 → ∃ q < r, spOf (iterN R.step i s) = S ∧
+          xreg 16 (iterN R.step i s) = loopOff (m + q + 1)))
   | 0, _, s, s', _, _, _, h => by
     simp only [LoopRuns] at h; subst h
     exact ⟨rfl, fun h => absurd h (Nat.lt_irrefl 0), fun i h1 h2 => by omega, fun i h => by omega,
       fun i h => by omega⟩
   | r + 1, m, s, s', hprog, hpc, herr, h => by
-    obtain ⟨-, -, s3, ab, h3, hab, he4, hp4, hpc4, hL⟩ := h
+    obtain ⟨hsp, h16, s3, ab, h3, hab, he4, hp4, hpc4, hL⟩ := h
     have hj1 : j - 1 + 1 = j := by omega
     have hdrop3 : R.L.drop j = probeLoopBody.take 3 ++ ([.ins (.bcondRel .gt (-12)) none] ++ T) := by
       rw [hdrop]; rfl
@@ -259,11 +263,35 @@ theorem iterN_loop {R : RL} (hR : R.Wf) {T : List Line} {j : Nat}
     have hlen3 : (probeLoopBody.take 3).length = 3 := rfl
     have hpcs3 := iterN_steps_pc hR hdrop3 hins3 hprog hpc herr h3
     rw [hlen3] at hit3 hpc3 hg3 hgx3 hpcs3
-    have hloc3 : ∀ i < 4, ∃ k < 4, Arm.r .PC (iterN R.step i s) = R.pcOf (j + k) := fun i hi => by
+    -- the state at the `str`: after the `sub`
+    have hst1 : spOf (iterN R.step 1 s) = S ∧ xreg 16 (iterN R.step 1 s) = loopOff (m + 1) := by
+      have h3' : StepsOk (R.envOf j) [.ins (.aluImm12 .sub true (.x 16) (.x 16) ⟨1, true⟩) none,
+          .ins (.store .store32 .xzr (.regReg .sp (.x 16))) none,
+          .ins (.aluRRR .addS true .xzr (.x 16) (.x 17)) none] s s3 := h3
+      obtain ⟨a1, ha1, hpc1, herr1, hprog1, -⟩ := h3'
+      have hdrop1 : R.L.drop j = [.ins (.aluImm12 .sub true (.x 16) (.x 16) ⟨1, true⟩) none] ++
+          (probeLoopBody.drop 1 ++ T) := by rw [hdrop]; rfl
+      obtain ⟨hit1, -⟩ := iterN_steps hR hdrop1 (fun ln h => by
+          simp only [List.mem_singleton] at h; exact ⟨_, h, rfl⟩) hprog hpc herr
+        (steps_one (t := none) ha1 hpc1 herr1 hprog1)
+      have hit1' : iterN R.step 1 s = Arm.exec_inst a1 s := hit1
+      obtain ⟨a, ha, he⟩ := exec_sub_x16_4096 (R.envOf j) s
+      rw [ha1, Except.ok.injEq] at ha
+      subst ha
+      rw [hit1', he]
+      refine ⟨by rw [← hsp]; simp [spOf, Arm.r_of_w_different], ?_⟩
+      simp only [xreg, Arm.r_of_w_same]
+      simp only [xreg] at h16; rw [h16]
+      rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega, BitVec.ofNat_add]; bv_omega
+    have hloc3 : ∀ i < 4, ∃ k < 4, Arm.r .PC (iterN R.step i s) = R.pcOf (j + k) ∧
+        (k = 1 → ∃ q < r + 1, spOf (iterN R.step i s) = S ∧
+          xreg 16 (iterN R.step i s) = loopOff (m + q + 1)) := fun i hi => by
       rcases Nat.lt_or_ge i 3 with h' | h'
-      · exact ⟨i, hi, hpcs3 i (by omega)⟩
+      · refine ⟨i, hi, hpcs3 i (by omega), fun hk => ⟨0, by omega, ?_⟩⟩
+        subst hk
+        simpa using hst1
       · obtain rfl : i = 3 := by omega
-        exact ⟨3, by omega, by rw [hit3]; exact hpc3⟩
+        exact ⟨3, by omega, by rw [hit3]; exact hpc3, fun h => absurd h (by omega)⟩
     obtain ⟨herr3, hprog3⟩ := h3.err
     -- the `b.gt` line
     have hj3 : R.L[j + 3]? = some (.ins (.bcondRel .gt (-12)) none) := by
@@ -348,7 +376,10 @@ theorem iterN_loop {R : RL} (hR : R.Wf) {T : List Line} {j : Nat}
         · exact hloc3 i h'
         · obtain ⟨i', rfl⟩ : ∃ i', i = 4 + i' := ⟨i - 4, by omega⟩
           rw [hsplit]
-          exact hlocL i' (by omega)
+          obtain ⟨k, hk, e, hq⟩ := hlocL i' (by omega)
+          refine ⟨k, hk, e, fun h1 => ?_⟩
+          obtain ⟨q, hq', h1', h2'⟩ := hq h1
+          exact ⟨q + 1, by omega, h1', by rw [h2', show m + 1 + q + 1 = m + (q + 1) + 1 by omega]⟩
 
 /-- **The prologue on the machine** (#581): its run (`ProRun`) from line `j` is `prologueSteps`
 machine steps (the stack-probe loop's body `probeCount` times), ending after its lines; every
@@ -372,7 +403,7 @@ theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls
   have hnl := prologueLines_noLoads (calls := calls) saves size
   have htl := prologueLines_tail (calls := calls) saves size
   by_cases hl : probeLoop (probeTotal size calls) = true
-  · obtain ⟨s2, sP, h1, ⟨s1, hH, hL⟩, h3⟩ := h
+  · obtain ⟨s2, sP, h1, -, ⟨s1, hH, -, hL, -⟩, h3⟩ := h
     have hLL : probeLoopL (probeTotal size calls) = probeLoopBody := by simp [probeLoopL, hl]
     have hI : loopIters (probeTotal size calls) = probeCount (probeTotal size calls) := by
       simp [loopIters, hl]
@@ -478,7 +509,7 @@ theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls
       · rcases Nat.lt_or_ge i (A.length + 4 * probeCount (probeTotal size calls)) with hB | hB
         · obtain ⟨i', rfl⟩ : ∃ i', i = A.length + i' := ⟨i - A.length, by omega⟩
           rw [hiter]
-          obtain ⟨k, hk, e⟩ := hlocL i' (by omega)
+          obtain ⟨k, hk, e, -⟩ := hlocL i' (by omega)
           exact ⟨A.length + k, by omega, by rw [e, Nat.add_assoc]⟩
         · obtain ⟨i', rfl⟩ : ∃ i', i = A.length + 4 * probeCount (probeTotal size calls) + i' :=
             ⟨i - (A.length + 4 * probeCount (probeTotal size calls)), by omega⟩
