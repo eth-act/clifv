@@ -163,6 +163,24 @@ class StockConfiguredProviderTests(unittest.TestCase):
                     with self.subTest(op=op, ty=ty, reverse=reverse, cleanup=cleanup):
                         self.check_provider(source, cleanup, stock_selected=True)
 
+    def test_configured_load_store_provider_keeps_original_inputs(self):
+        pairs = [("store", ty) for ty in ("i8", "i16", "i32", "i64")]
+        pairs += [("istore8", ty) for ty in ("i8", "i16", "i32", "i64")]
+        pairs += [("istore16", ty) for ty in ("i16", "i32", "i64")]
+        pairs += [("istore32", ty) for ty in ("i32", "i64")]
+        for load_ty in ("i8", "i16", "i32", "i64"):
+            for op, ty in pairs:
+                for distinct in (False, True):
+                    pointer = "v2" if distinct else "v0"
+                    source = (f"function %memory_load_store(i64, {ty}, i64) -> {load_ty} system_v {{\n"
+                              f"block0(v0: i64, v1: {ty}, v2: i64):\n"
+                              f"    v3 = load.{load_ty} notrap v0\n"
+                              f"    {op}.{ty} notrap v1, {pointer}\n    return v3\n}}\n")
+                    for cleanup in (False, True):
+                        with self.subTest(load_ty=load_ty, op=op, ty=ty,
+                                          distinct=distinct, cleanup=cleanup):
+                            self.check_provider(source, cleanup, stock_selected=True)
+
     def test_typed_pipeline_keeps_its_existing_provider(self):
         self.check_provider(MEMORY_CFG, cleanup=False, typed=True)
 
