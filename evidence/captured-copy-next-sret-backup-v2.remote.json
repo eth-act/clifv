@@ -1,0 +1,12 @@
+{
+  "archive": "captured-copy-next-sret-backup-v2.tar.gz",
+  "archive_bytes": 828417,
+  "archive_sha256": "7f75ea3cbe71c682fb4d0da7d1ec6972932d11a5ff6156387e6c2358c900661f",
+  "parts": [
+    {
+      "name": "captured-copy-next-sret-backup-v2.tar.gz.part-000",
+      "bytes": 828417,
+      "sha256": "7f75ea3cbe71c682fb4d0da7d1ec6972932d11a5ff6156387e6c2358c900661f"
+    }
+  ]
+}
