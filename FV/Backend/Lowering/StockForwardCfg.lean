@@ -24,8 +24,24 @@ def eligible (f : Clif.Function) : Bool :=
     | _ => false
   | _ => false
 
+/-- As `controlEligible`, and a block may also end in `trap`. -/
+def controlLeafEligible (f : Clif.Function) (bi : Nat) : Clif.Terminator → Bool
+  | .trap _ => true
+  | term => controlEligible f bi term
+
+/-- Arbitrary-length scalar jump/return/trap graphs, with a jumping entry. -/
+def leafEligible (f : Clif.Function) : Bool :=
+  match f.blocks with
+  | entry :: _ => match entry.term with
+    | .jump _ =>
+      f.blocks.zipIdx.all (fun (b,bi) => controlLeafEligible f bi b.term) &&
+      f.blocks.all (fun b => b.body.all Scalar.maskMixedBodyEligible) &&
+      f.sig.params.all Scalar.narrowAbiEligible && f.sig.returns.all Scalar.narrowAbiEligible
+    | _ => false
+  | _ => false
+
 def sourceOk (f : Clif.Function) : Bool :=
-  eligible f && Backend.Proof.Driver.lowerScopeB f &&
+  leafEligible f && Backend.Proof.Driver.lowerScopeB f &&
     Backend.Proof.Driver.dominatedB f && Backend.sigAbiOk f.sig
 
 def check (f : Clif.Function) (vc : VCode) : Bool :=
