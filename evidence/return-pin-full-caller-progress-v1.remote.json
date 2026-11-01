@@ -1,0 +1,12 @@
+{
+  "archive": "return-pin-full-caller-progress-v1.tar.gz",
+  "archive_bytes": 3266889,
+  "archive_sha256": "085e0bc28cbfe81a29e8f09892557e6f1d8490cfe937f3383aaceaa4144ff0bb",
+  "parts": [
+    {
+      "name": "return-pin-full-caller-progress-v1.tar.gz.part-000",
+      "bytes": 3266889,
+      "sha256": "085e0bc28cbfe81a29e8f09892557e6f1d8490cfe937f3383aaceaa4144ff0bb"
+    }
+  ]
+}
