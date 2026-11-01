@@ -42,7 +42,7 @@ private def checkOne (out : System.FilePath) (captured : String) (cleanup : Bool
         require (SemanticABI.check f raw) "the actual sret artifact failed ABI-aware validation"
         let routed ← get (Stock.MemorySretCopy.lowerWithRoutes [(f.name,20)] f)
         require (decide (routed = raw)) "route20 changed the actual sret artifact"
-      let expected ← get (Backend.prepare (Stock.Arithmetic.stage cleanup raw))
+      let expected ← get (Backend.prepare (Stock.Arithmetic.stageF cleanup f raw))
       require (decide (code = expected)) "allocator input changed from the actual prepared artifact"
     pure (allocateLean codes)) parsed [] cleanup
   require (production.funcs.length == 3 && production.unsupported.isEmpty &&
