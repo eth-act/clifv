@@ -1,4 +1,5 @@
 import FV.E2E.SemanticPreparedMetadata
+import FV.E2E.ReturnPinCheckFast
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
@@ -39,5 +40,18 @@ theorem semanticPreparedReturnPinsResults_sound (stage : Clif.Function → VCode
       facts.check alloc emit layout pins
   · exact CompiledProgramReturnPins.of_checks (cleanup := true) lower prepared facts.prepOk
       facts.check alloc emit layout pins
+
+/-- Build the physical return cache once, then reuse it for every program function. -/
+def okRReturnPinsFast (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
+  okRSemanticFor Stock.MemorySretCopy.check stage I R &&
+    let C := ReturnPinCtx.of I R
+    (progOf R).funcs.all (returnPinsWith C)
+
+@[csimp] theorem okRReturnPins_eq_fast : @okRReturnPins = @okRReturnPinsFast := by
+  funext stage I R
+  unfold okRReturnPins okRReturnPinsFast
+  dsimp only
+  rw [show returnPinsWith (ReturnPinCtx.of I R) = returnPinChecks I R from
+    funext (returnPinsWith_of I R)]
 
 end E2E.LinkCheck
