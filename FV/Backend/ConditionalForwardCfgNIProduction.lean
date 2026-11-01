@@ -23,7 +23,7 @@ def compileFileConditionalForwardCfgNIWhen {m : Type → Type} [Monad m] (enable
     (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
     (preUnverified : List (String × String) := []) (cleanup : Bool := true) : m FileAsm := do
   if !enabled then return ← compileFileConditionalCfgNIWhen false alloc pf preUnverified cleanup
-  if !(pf.funcs.any fun p => p.func.toOption.any Stock.ConditionalForwardCfg.eligible) then
+  if !(pf.funcs.any fun p => p.func.toOption.any Stock.ConditionalForwardCfg.leafEligible) then
     return ← compileFileConditionalCfgNIWhen true alloc pf preUnverified cleanup
   let attempt ← compileFileWithLowering lowerForAllocationConditionalForwardCfgNI VCode.rulesFired
     alloc pf preUnverified cleanup
