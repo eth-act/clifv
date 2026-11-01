@@ -1,0 +1,12 @@
+{
+  "archive": "integer-store-captured-memory-checkpoint-v1.tar.gz",
+  "archive_bytes": 487203,
+  "archive_sha256": "6e720dd17648ef2acafc666c96847ace3f9fcd6c6d076fe52f827c91a68f6303",
+  "parts": [
+    {
+      "name": "integer-store-captured-memory-checkpoint-v1.tar.gz.part-000",
+      "bytes": 487203,
+      "sha256": "6e720dd17648ef2acafc666c96847ace3f9fcd6c6d076fe52f827c91a68f6303"
+    }
+  ]
+}
