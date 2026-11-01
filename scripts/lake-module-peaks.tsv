@@ -4503,7 +4503,7 @@ FV.Opt.Proof.RuleData	1896	64
 FV.Opt.Proof.RuleEmbed	1877	7
 FV.Opt.Proof.RuleExtEmbed	1882	122
 FV.Opt.Proof.RuleExtends	5874	56
-FV.Opt.Proof.RuleExtends2	14328	735
+FV.Opt.Proof.RuleExtends2	10271	654
 FV.Opt.Proof.RuleFloatArms	1754	3
 FV.Opt.Proof.RuleIcmp1	3820	31
 FV.Opt.Proof.RuleIcmp10	2524	13
@@ -4522,12 +4522,12 @@ FV.Opt.Proof.RuleIcmpBounds	2122	14
 FV.Opt.Proof.RuleIcmpCompose	2016	29
 FV.Opt.Proof.RuleIcmpComposeEval	2161	55
 FV.Opt.Proof.RuleIcmpComposeGuard	2040	26
-FV.Opt.Proof.RuleIcmpComposeRhs	2390	212
+FV.Opt.Proof.RuleIcmpComposeRhs	1976	53
 FV.Opt.Proof.RuleIcmpComposeWitness	1936	7
 FV.Opt.Proof.RuleIcmpEmbed	1727	22
 FV.Opt.Proof.RuleIcmpEmbed2	1756	26
 FV.Opt.Proof.RuleIcmpIdentity	1790	24
-FV.Opt.Proof.RuleIcmpSelects	6722	289
+FV.Opt.Proof.RuleIcmpSelects	4905	269
 FV.Opt.Proof.RuleImm	2479	51
 FV.Opt.Proof.RuleInfraAbs	1699	1
 FV.Opt.Proof.RuleInfraConst	1742	2
@@ -4571,7 +4571,7 @@ FV.Opt.Proof.RuleShifts5	3420	88
 FV.Opt.Proof.RuleShiftsConst	2800	171
 FV.Opt.Proof.RuleShiftsConstSem	496	1
 FV.Opt.Proof.RuleShiftsDistribution	1871	12
-FV.Opt.Proof.RuleShiftsRotate	3875	321
+FV.Opt.Proof.RuleShiftsRotate	3072	307
 FV.Opt.Proof.RuleShiftsRotateSem	2506	21
 FV.Opt.Proof.RuleSkel	725	1
 FV.Opt.Proof.RuleSkelEmbed	2498	98
