@@ -105,7 +105,8 @@ class StockConfiguredProviderTests(unittest.TestCase):
                 if not cleanup and stock_selected:
                     self.assertEqual(lowering["allocation_selected"],
                                      lowering["stock_schedule"]["selected"])
-            name = source.splitlines()[0].split("%", 1)[1].split("(", 1)[0]
+            header = next(line for line in source.splitlines() if line.lstrip().startswith("function %"))
+            name = header.split("%", 1)[1].split("(", 1)[0]
             plain_object = ELF(directory / "default/program.o")
             configured_object = ELF(directory / "configured/program.o")
             plain_symbol, plain_code = plain_object.function(name)
@@ -180,6 +181,15 @@ class StockConfiguredProviderTests(unittest.TestCase):
                         with self.subTest(load_ty=load_ty, op=op, ty=ty,
                                           distinct=distinct, cleanup=cleanup):
                             self.check_provider(source, cleanup, stock_selected=True)
+
+    def test_configured_captured_copy_keeps_original_inputs(self):
+        capture = ROOT / "scripts/testdata/stock-memory-captured-copy-original.clif"
+        self.assertEqual(hashlib.sha256(capture.read_bytes()).hexdigest(),
+                         "9d39c7307e7fc9b4c3f334692726fae11926683d31f27ea49d032d46e99e70ce")
+        source = capture.read_text()
+        for cleanup in (False, True):
+            with self.subTest(cleanup=cleanup):
+                self.check_provider(source, cleanup, stock_selected=True)
 
     def test_typed_pipeline_keeps_its_existing_provider(self):
         self.check_provider(MEMORY_CFG, cleanup=False, typed=True)

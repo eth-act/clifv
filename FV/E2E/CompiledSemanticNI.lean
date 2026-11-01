@@ -1,3 +1,5 @@
+import FV.E2E.StockMemoryCapturedCopyNI
+import FV.Backend.Proof.StockMemoryCapturedCopyCheck
 import FV.E2E.StockMemoryLoadStoreNI
 import FV.Backend.Proof.StockMemoryLoadStoreCheck
 import FV.E2E.StockMemoryStoreCfgNI
@@ -104,6 +106,11 @@ inductive CompiledSemanticNI (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemanticNI f k vc vcp rf af fa fb
 
+  | memoryCapturedCopy {cleanup : Bool} {result : Stock.Result} :
+      Stock.Memory.CapturedCopy.CfgClass f → result.code = vc → Stock.MemoryStoreCfg.effectsOnly vc = true →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemanticNI f k vc vcp rf af fa fb
+
 namespace CompiledSemanticNI
 variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -134,6 +141,9 @@ theorem toSemantic (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
   | @memoryLoadStore width kind ty cleanup result family equal effects h =>
     exact .memory (Stock.Memory.LoadStore.SingleClass.domain width kind ty family) equal h
 
+  | memoryCapturedCopy family equal _ h =>
+    exact .memory family.domain equal h
+
 /-- All new semantic and paired premises come from executable checks and actual
 pipeline observations, rather than new accepted-source assumptions. -/
 theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
@@ -149,7 +159,7 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
     | true =>
       exact .stockCleanup ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
   simp only [SemanticNI.check,Bool.or_eq_true,Bool.and_eq_true] at lower
-  rcases lower with legacy | (((((((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg) | memoryUnsigned) | memoryExtending) | memoryStore) | memoryStoreCfg) | memoryLoadStore)
+  rcases lower with legacy | ((((((((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg) | memoryUnsigned) | memoryExtending) | memoryStore) | memoryStoreCfg) | memoryLoadStore) | memoryCapturedCopy)
   · exact .compatible (retained legacy)
   · rcases Stock.Arithmetic.check_sound semantic with legacy | ⟨result,domain,run,equal,_⟩
     · exact .compatible (retained legacy)
@@ -219,6 +229,10 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
   · obtain ⟨width,kind,ty,result,family,run,equal,effects⟩ := Stock.MemoryLoadStore.check_sound memoryLoadStore
     exact .memoryLoadStore (width := width) (kind := kind) (ty := ty) family equal effects
+      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+
+  · obtain ⟨result,family,run,equal,effects⟩ := Stock.MemoryCapturedCopy.check_sound memoryCapturedCopy
+    exact .memoryCapturedCopy family equal effects
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
 end CompiledSemanticNI
@@ -410,5 +424,20 @@ theorem backend_correct_world_niX_semantic {p : Clif.Program} {f : Clif.Function
       obtain ⟨us,outs,w,pins,arity,values,memory,site,base⟩ :=
         (backend_correct_worldX_stock_memory (Stock.Memory.LoadStore.SingleClass.domain width kind ty family) h hcov hsym hslot hcs hrel hargs fuel).1 vals cm returned
       exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ positive => False.elim (tls positive)⟩
+
+  | @memoryCapturedCopy cleanup result family equal effects h =>
+    subst vc
+    classical
+    by_cases tls : XTls F X
+    · intro vals cm returned
+      obtain ⟨us,outs,w,pins,arity,values,memory,site,base,paired⟩ :=
+        backend_correct_world_niX_stock_captured_copy_memory family effects h hcov hsym hslot tls hcs hrel hargs
+          fuel vals cm returned
+      exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ _ => paired⟩
+    · intro vals cm returned
+      obtain ⟨us,outs,w,pins,arity,values,memory,site,base⟩ :=
+        (backend_correct_worldX_stock_memory family.domain h hcov hsym hslot hcs hrel hargs fuel).1 vals cm returned
+      exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ positive => False.elim (tls positive)⟩
+
 
 end E2E
