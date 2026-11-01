@@ -1,0 +1,12 @@
+{
+  "archive": "call-return-pins-backup-v1.tar.gz",
+  "archive_bytes": 13731068,
+  "archive_sha256": "b807d39de01222cc7662a436a46b39d0efb256da496cae72a086794b52593092",
+  "parts": [
+    {
+      "name": "call-return-pins-backup-v1.tar.gz.part-000",
+      "bytes": 13731068,
+      "sha256": "b807d39de01222cc7662a436a46b39d0efb256da496cae72a086794b52593092"
+    }
+  ]
+}
