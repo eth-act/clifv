@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockMemoryStoreReturnSpec
-import FV.Backend.Proof.StockMemoryRetainedReturnSpec
+import FV.Backend.Proof.StockMaskBlockRecords
 
 namespace Backend.Stock.Memory.StoreRoots
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64

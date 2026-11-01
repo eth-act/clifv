@@ -1,5 +1,7 @@
+import FV.E2E.StockMemoryPairedScan
 import FV.E2E.StockMemoryPairedReturn
-import FV.Backend.Proof.StockMemoryReturnRefines
+import FV.Backend.Proof.StockMemorySourceExecution
+import FV.Backend.Proof.StockArithmeticTerminalDefined
 
 namespace E2E.StockMemory
 open Backend Backend.Stock Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

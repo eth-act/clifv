@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockMemoryInput
+import FV.Backend.Proof.StockMemoryLoadWitness
 
 namespace Backend.Stock.Memory.LoadFixture
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64

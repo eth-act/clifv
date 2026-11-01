@@ -1,6 +1,5 @@
 import FV.Backend.Lowering.StockMemoryStoreNI
 import FV.Backend.MemoryStoreNIProduction
-import FVTest.Backend.Lowering.StockScalarTestSupport
 import FV.E2E.SemanticChecksWith
 import FV.E2E.SemanticStackBound
 import FV.Link.ProductionImageWith

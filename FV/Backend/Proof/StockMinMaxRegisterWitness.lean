@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselCmpMinMax
+import FV.Backend.Proof.StockSelectConditions
 import FV.Backend.Proof.StockMinMaxRegisterValues
 import FV.Backend.Proof.StockMinMaxRegisterRuns
 namespace Backend.Stock.Proof.ScalarSelect.MinMaxRegisterWitness

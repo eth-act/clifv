@@ -1,5 +1,6 @@
 import FV.E2E.LinkScopeDefs
 import FV.E2E.EmitTotalIn
+import FV.E2E.LinkOwnCallsStmtHyp
 import FV.E2E.LinkOwnGotLocal
 import FV.E2E.LinkOwnSegRange
 import FV.E2E.LinkOwnFrames

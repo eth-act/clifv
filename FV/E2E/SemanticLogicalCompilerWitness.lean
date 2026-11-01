@@ -1,4 +1,4 @@
-import FV.Link.SemanticExeSourceWith
+import FV.Link.SemanticExeWith
 import FV.Backend.Lowering.StockLogicalNI
 import FV.Clif.Print
 import FV.E2E.StockLogicalFixtures

@@ -1,5 +1,6 @@
 import FV.E2E.StockNarrowWitness
-import FV.E2E.StockAluRootsWitness
+import FV.E2E.StockAluRootsFixtures
+import FV.E2E.StockHighMulWitness
 
 namespace E2E.StockNarrowRootsWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0 E2E.StockNarrowNIWitness

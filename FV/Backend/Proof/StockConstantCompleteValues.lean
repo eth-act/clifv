@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockConstantRecordValues
 import FV.Backend.Proof.StockConstantDispatch
 
 namespace Backend.Stock.Proof.ConstantComplete

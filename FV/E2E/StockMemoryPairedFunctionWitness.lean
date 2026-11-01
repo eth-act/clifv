@@ -1,5 +1,5 @@
 import FV.E2E.StockMemoryPairedFunction
-import FV.Backend.Proof.StockMemorySingleWitness
+import FV.Backend.Proof.StockMemorySingleFixture
 import FV.Backend.Proof.StockMemoryClass
 
 namespace E2E.StockMemoryFunctionWitness

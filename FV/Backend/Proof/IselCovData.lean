@@ -1,4 +1,4 @@
-import FV.Backend.Proof.IselCovSound
+import FV.Backend.Proof.IselCovLe
 
 /-!
 # Form coverage of the ISLE lowering (V3): the instruction data holds no `MInst`

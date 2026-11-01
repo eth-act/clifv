@@ -13,7 +13,6 @@ import FV.Arm.Tactics.Attr
 import Lean
 import Lean.Elab.Tactic.Omega.Frontend
 import Lean.Elab.Tactic.Omega
-import FV.Arm.Tactics.Simp
 
 namespace Arm
 

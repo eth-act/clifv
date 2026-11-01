@@ -1,6 +1,5 @@
 import FV.E2E.LinkSemanticNIContract
 import FV.E2E.CompiledProgramReturnPins
-import FV.E2E.LinkProgramReturnPinsModel
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Clif Opt

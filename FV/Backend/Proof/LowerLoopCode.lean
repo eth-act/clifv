@@ -1,4 +1,4 @@
-import FV.Backend.Proof.LowerSpec
+import FV.Backend.Proof.DriverCheck
 
 /-!
 # `lowerFunction`, restated with named loop bodies

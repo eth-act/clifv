@@ -1,4 +1,3 @@
-import FV.Front.Perm
 import FV.Front.Raw
 import FV.Clif.Print
 import FV.Clif.Parse

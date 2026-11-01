@@ -1,7 +1,7 @@
 import FV.E2E.PreparedReturnPinProgram
 import FV.E2E.ProductionPipelineWith
-import FV.E2E.LinkReturnPinGood
-import FV.E2E.CompiledSemanticReturnPinsWitness
+import FV.Backend.Lowering.StockMemorySretCopyNI
+import FV.Backend.Proof.StockMemoryComputedStoreRecordWitness
 
 namespace E2E.PreparedReturnPinSretWitness
 open Backend Backend.Proof Backend.Proof.Driver LinkCheck

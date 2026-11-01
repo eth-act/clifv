@@ -7,11 +7,7 @@ import FV.Backend.Proof.StockLinearCfgShape
 import FV.Backend.Proof.StockLinearCfgDemand
 import FV.Backend.Proof.StockJumpEntryPrelude
 import FV.Backend.Proof.StockMemoryNopJumpSpec
-import FV.Backend.Proof.StockMemoryNopJumpSource
-import FV.Backend.Proof.StockMemoryNopNonentryReturn
-import FV.Backend.Proof.StockMemoryOrdinaryCfgJumpReturnAt
 import FV.Backend.Proof.StockMemorySretCopyJumpSpec
-import FV.Backend.Proof.StockMemorySretCopyBodySplit
 
 namespace E2E.StockMemory.SretCopy
 open Backend Backend.Stock Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockMemoryInput
+import FV.Backend.Proof.StockMemoryLoadWitness
 import FV.Backend.Proof.StockMemoryNopJumpSpec
 import FV.Backend.Proof.LowerDecide
 import FV.E2E.RegLevelDriverSem

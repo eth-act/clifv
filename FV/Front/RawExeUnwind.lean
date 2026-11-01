@@ -1,4 +1,6 @@
-import FV.Front.RawExe
+import FV.Front.RenameStep
+import FV.Link.DeadCleanupExeSource
+import FV.Front.RawProof
 import FV.Link.ExeUnwind
 
 /-!

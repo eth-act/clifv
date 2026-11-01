@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMemoryContract
 import FV.Backend.Proof.StockMemoryStoreTwoBlockReturn
 import FV.Backend.Proof.StockMemoryCfgNotrap
 

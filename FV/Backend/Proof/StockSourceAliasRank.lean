@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockSourceTerminal
-import FV.Backend.Proof.StockCoverageRecords
+import FV.Backend.Proof.StockRecordedFlow
 
 /-! Reuse the existing provenance-count rank for mapped Stock source aliases.
 The rank is over source IDs, independent of their allocated register numbers. -/

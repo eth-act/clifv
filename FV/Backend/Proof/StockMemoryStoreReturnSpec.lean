@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockStoreRetention
 import FV.Backend.Proof.StockMemoryReturnSpec
-import FV.Backend.Proof.StockMemoryStoreMatch
+import FV.Backend.Proof.StockMemoryStoreSelection
 
 namespace Backend.Stock.Memory.StoreRoots
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64

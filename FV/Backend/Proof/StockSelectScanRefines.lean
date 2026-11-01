@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockSourceDFG
+import FV.Backend.Proof.StockAluOperandCoverage
 import FV.Backend.Proof.StockSelectOriginalSourceValues
 
 /-! Discharge actual select-record scan obligations, carrying the source

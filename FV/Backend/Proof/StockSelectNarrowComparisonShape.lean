@@ -1,6 +1,9 @@
 import FV.Backend.Proof.StockCmpNarrowImmediateObserved
 import FV.Backend.Proof.StockCmpNarrowRhsObserved
-import FV.Backend.Proof.StockSelectWideComparisonShape
+import FV.Backend.Proof.StockCmpMatchedRegister
+import FV.Backend.Proof.StockCmpMatchedImmediate
+import FV.Backend.Proof.StockMinMaxRegisterRuns
+import FV.Backend.Proof.StockSelectZeroConditionShape
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Proof.ScalarCmp MinMaxRegisterFixture

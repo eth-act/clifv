@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockProtectedSinkRules
 import FV.Backend.Proof.StockEligibilitySinkTarget
 import FV.Backend.Proof.StockSinkFrame
 

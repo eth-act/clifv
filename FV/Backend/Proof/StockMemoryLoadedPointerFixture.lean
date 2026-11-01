@@ -1,6 +1,6 @@
-import FV.Backend.Proof.StockMemoryComputedStoreRecordSpec
 import FV.Clif.Parse
 import FV.Backend.Proof.LowerDecide
+import FV.Backend.Proof.StockAluSelectedValues
 
 namespace Backend.Stock.Memory.IntegerRoots.LoadedPointerFixture
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64
