@@ -388,6 +388,7 @@ theorem aPat_prog (p : Program) (st : LState) (q : Pattern) (a : PA) (aenv : AEn
     exact aPatAll_prog p st ps a aenv v env envs must h hv he
   | term ty t args =>
     dsimp only at h
+    rw [termOfT_eq] at h
     rw [matchPat.eq_8]
     cases ht : termOf p t with
     | error e => rw [ht] at h; cases h

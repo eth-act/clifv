@@ -141,6 +141,7 @@ theorem aLast_sound : ∀ (k : Nat) (e : Isle.Expr) (aenv : List AT) (env : Isle
       · cases ha
     · simp only [Bool.and_eq_true] at ha
       obtain ⟨⟨hio, -⟩, ha⟩ := ha
+      rw [rulesOfT_eq] at ha
       split at ha
       · rename_i as hargs
         obtain ⟨hIs1, hv1⟩ := (sa n).args args aenv as env s tr o s1 tr1 hargs he ((hmd s).2 hs) h1
