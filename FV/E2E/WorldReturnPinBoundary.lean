@@ -73,6 +73,9 @@ theorem backend_correct_world_return_pins {p : Clif.Program} {f : Clif.Function}
       exact ⟨n,ret,trace⟩
     · obtain ⟨n,trap,_⟩ := both.2 code trapped H G base ra s entry
       exact ⟨n,trap⟩
+  | voidCall source equal h =>
+    subst vc
+    exact backend_correct_worldX_stock_void_call hsub source h hcov hX hXI hsym hslot hcs hrel hargs htr fuel
 
 theorem backend_correct_world_ni_return_pins {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin} {mode : ReturnPinMode}
