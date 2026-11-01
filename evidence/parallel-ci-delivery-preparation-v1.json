@@ -1,0 +1,37 @@
+{
+  "records": [
+    {
+      "path": "deliver-void-call-file-v2.py",
+      "before_sha256": "32fc01898064d6cd716e39f55ae4e436aa7705267cc7367202b6b6bcec10dc94",
+      "after_sha256": "f5fae6028c4a7efc30be5c858644a4b44777502519e57bc5b9158d43289fc34f",
+      "original_preserved": ".git/agent-evidence/stock-memory-20261029/deliver-void-call-file-v2-before-parallel-ci.py",
+      "local_gates_retained": true
+    },
+    {
+      "path": "deliver-link-image-extension-v2.py",
+      "before_sha256": "b023096f4c862e555f583dfadbb57f07cea32d27ba153ab0bceb50e960effc97",
+      "after_sha256": "75ed13ee21b80a3dc3aa0d523cd52f407c95898fb38ee3d871a8f670bd77b9c7",
+      "original_preserved": ".git/agent-evidence/stock-memory-20261029/deliver-link-image-extension-v2-before-parallel-ci.py",
+      "local_gates_retained": true
+    },
+    {
+      "path": "deliver-return-pin-runtime-v2.py",
+      "before_sha256": "1fe8427471b431fbe5e8d4c9ac6cc486e1ea64f45bc5611195ed7487dfc78b07",
+      "after_sha256": "913377dd26454d859f781ea6c39248104cdc1a97f782d846452000b2a629949e",
+      "original_preserved": ".git/agent-evidence/stock-memory-20261029/deliver-return-pin-runtime-v2-before-parallel-ci.py",
+      "local_gates_retained": true
+    },
+    {
+      "path": "deliver-sret-full-cfg-v2.py",
+      "before_sha256": "37d2ce176514de1e08d1f48ddf07e4231f39f490aa6e5f413c5527f88499b604",
+      "after_sha256": "9c630bc46470e72a41f4d3eb48f32a674d85028eac5690738540c3f017e500e1",
+      "original_preserved": ".git/agent-evidence/stock-memory-20261029/deliver-sret-full-cfg-v2-before-parallel-ci.py",
+      "local_gates_retained": true
+    }
+  ],
+  "syntax_checked": true,
+  "tests_not_yet_run": true,
+  "scope": "Move only push and PR-base selection before the unchanged local gates. Exact-head CI,source hashes,old axiom checks,current-main guards,and merge-tree checks remain.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T19:51:55.904015+00:00"
+}

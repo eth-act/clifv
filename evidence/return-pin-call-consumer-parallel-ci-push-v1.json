@@ -1,0 +1,10 @@
+{
+  "status": "pushed_for_parallel_ci",
+  "pr": 860,
+  "previous_remote_head": "96963e0676962d959b689dcf67b40a24f22da661",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "local_validation": "running; no gates waived",
+  "tracked_source_changed": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-01T19:50:48.674548+00:00"
+}
