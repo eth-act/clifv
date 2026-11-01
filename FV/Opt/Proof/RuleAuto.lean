@@ -37,38 +37,62 @@ types are split by `opt_destruct`). -/
 theorem val_mk_same {t : Ty} {b c : BitVec t.width} : ((⟨t, b⟩ : Val) = ⟨t, c⟩) ↔ b = c := by
   simp
 
-/-- One `simp_all` pass of the left-hand-side unfolding. -/
-macro "lhs_step" : tactic => `(tactic| simp_all only [opt_match, opt_data, Except.ok.injEq,
-  exists_eq_left, exists_eq_left', exists_eq_right, exists_eq_right', List.length_cons,
-  List.length_nil, Nat.reduceAdd, ite_true, ite_false, Bool.false_eq_true, TermFlags.isMulti,
-  reduceIte, V.data.injEq, V.ty.injEq, V.int.injEq, V.value.injEq, V.values.injEq,
-  List.cons.injEq, reduceCtorEq, false_and, and_false, exists_false, or_false, false_or,
-  true_and, and_true, Array.size_replicate, Array.set!_eq_setIfInBounds, Nat.lt_irrefl,
-  Nat.reduceLT, Nat.zero_lt_succ, Nat.lt_add_one, Term.externExtractor?,
-  Array.size_setIfInBounds, Array.getElem?_setIfInBounds, Array.getElem?_replicate, beq_iff_eq,
-  Option.some.injEq, evalNode_unary, evalNode_binary_iff, evalNode_icmp, evalNode_iconst,
-  BinaryOp.isShift, CTy.ofClif_inj, val_mk_same, forall_eq', forall_eq, unaryIdx_eq_iff,
-  binaryIdx_eq_iff, ccIdx_eq_iff, unaryOfIdx?, binaryOfIdx?, ccOfIdx?, evalNode_select,
-  evalNode_bitselect, evalNode_bmask, evalNode_uextend, evalNode_sextend, evalNode_ireduce, true_implies, forall_const, heq_eq_eq, and_imp,
-  forall_apply_eq_imp_iff, forall_eq_apply_imp_iff, Nat.reduceEqDiff, eq_iff_iff, iff_false,
-  iff_true, true_iff, false_iff, not_true_eq_false, not_false_eq_true])
+open Lean Meta in
+/-- `some c` for the constructor `c` of `ind` whose index `idx c` is the numeral argument of `e`,
+`none` if there is none (`e` is `binaryOfIdx? k`, `unaryOfIdx? k` or `ccOfIdx? k`, the inverses of
+`idx`, `binaryIdx_eq_iff`). -/
+def optOfIdx? (idx ind : Name) (e : Lean.Expr) : MetaM (Option Lean.Expr) := do
+  let a ← whnfR e.appArg!
+  let some k := a.nat? <|> a.rawNatLit? | return none
+  let .inductInfo iv ← getConstInfo ind | return none
+  let ty := mkConst ind
+  for c in iv.ctors do
+    let v ← whnfD (mkApp (mkConst idx) (mkConst c))
+    if (v.rawNatLit? <|> v.nat?) == some k then
+      return some (mkApp2 (mkConst ``Option.some [.zero]) ty (mkConst c))
+  return some (mkApp (mkConst ``Option.none [.zero]) ty)
+
+/-- `binaryOfIdx? k` of a numeral by its table, not by unfolding (`lhs_step`). Unfolded, it is a
+`match` on numerals, compiled to a chain of `dite`s: on every visit `simp` instantiated and
+traversed that chain (`reduceMatcher?`, `unfoldNestedDIte`) and tried the `match`'s equations, also
+when `k` is a variable and nothing reduces. That was most of `lhs_step` in `RuleBitops3`/`4`. -/
+dsimproc [opt_lhs] reduceBinaryOfIdx (Isle.Opt.binaryOfIdx? _) := fun e => do
+  let some r ← optOfIdx? ``Isle.Opt.binaryIdx ``Clif.BinaryOp e | return .continue
+  return .done r
+/-- `unaryOfIdx? k` of a numeral (`reduceBinaryOfIdx`). -/
+dsimproc [opt_lhs] reduceUnaryOfIdx (Isle.Opt.unaryOfIdx? _) := fun e => do
+  let some r ← optOfIdx? ``Isle.Opt.unaryIdx ``Clif.UnaryOp e | return .continue
+  return .done r
+/-- `ccOfIdx? k` of a numeral (`reduceBinaryOfIdx`). -/
+dsimproc [opt_lhs] reduceCcOfIdx (Isle.Opt.ccOfIdx? _) := fun e => do
+  let some r ← optOfIdx? ``Isle.Opt.ccIdx ``Clif.IntCC e | return .continue
+  return .done r
+
+attribute [opt_lhs] Except.ok.injEq exists_eq_left exists_eq_left' exists_eq_right exists_eq_right'
+  List.length_cons List.length_nil ite_true ite_false Bool.false_eq_true TermFlags.isMulti
+  V.data.injEq V.ty.injEq V.int.injEq V.value.injEq V.values.injEq List.cons.injEq false_and
+  and_false exists_false or_false false_or true_and and_true Array.size_replicate
+  Array.set!_eq_setIfInBounds Nat.lt_irrefl Nat.zero_lt_succ Nat.lt_add_one Term.externExtractor?
+  Array.size_setIfInBounds Array.getElem?_setIfInBounds Array.getElem?_replicate beq_iff_eq
+  Option.some.injEq evalNode_unary evalNode_binary_iff evalNode_icmp evalNode_iconst
+  BinaryOp.isShift CTy.ofClif_inj val_mk_same forall_eq' forall_eq unaryIdx_eq_iff binaryIdx_eq_iff
+  ccIdx_eq_iff evalNode_select evalNode_bitselect evalNode_bmask evalNode_uextend evalNode_sextend
+  evalNode_ireduce true_implies forall_const heq_eq_eq and_imp forall_apply_eq_imp_iff
+  forall_eq_apply_imp_iff eq_iff_iff iff_false iff_true true_iff false_iff not_true_eq_false
+  not_false_eq_true
+attribute [opt_lhs_proc ↓] opt_match_head
+attribute [opt_lhs_proc] Nat.reduceAdd reduceIte reduceCtorEq Nat.reduceLT Nat.reduceEqDiff
+
+/-- One `simp_all` pass of the left-hand-side unfolding. Its lemmas are the simp set `opt_lhs`
+(above), built once: a list of ~80 names was elaborated into a new set on every call (~30 ms, about
+2,000 calls in `RuleBitops3`). `opt_match_head` leaves the alternatives of a `match` that does not
+reduce alone, as in `opt_norm`. -/
+macro "lhs_step" : tactic => `(tactic| simp_all only [opt_lhs, opt_match, opt_data])
 
 /-- `lhs_step` without the hypotheses as rewrite rules (a fallback: `simp_all` can loop on the
 contradictory hypotheses of a dead branch). -/
-macro "lhs_step'" : tactic => `(tactic| simp (disch := assumption) only [opt_match, opt_data, Except.ok.injEq,
-  exists_eq_left, exists_eq_left', exists_eq_right, exists_eq_right', List.length_cons,
-  List.length_nil, Nat.reduceAdd, ite_true, ite_false, Bool.false_eq_true, TermFlags.isMulti,
-  reduceIte, V.data.injEq, V.ty.injEq, V.int.injEq, V.value.injEq, V.values.injEq,
-  List.cons.injEq, reduceCtorEq, false_and, and_false, exists_false, or_false, false_or,
-  true_and, and_true, Array.size_replicate, Array.set!_eq_setIfInBounds, Nat.lt_irrefl,
-  Nat.reduceLT, Nat.zero_lt_succ, Nat.lt_add_one, Term.externExtractor?,
-  Array.size_setIfInBounds, Array.getElem?_setIfInBounds, Array.getElem?_replicate, beq_iff_eq,
-  Option.some.injEq, evalNode_unary, evalNode_binary_iff, evalNode_icmp, evalNode_iconst,
-  BinaryOp.isShift, CTy.ofClif_inj, val_mk_same, forall_eq', forall_eq, unaryIdx_eq_iff,
-  binaryIdx_eq_iff, ccIdx_eq_iff, unaryOfIdx?, binaryOfIdx?, ccOfIdx?, evalNode_select,
-  evalNode_bitselect, evalNode_bmask, evalNode_uextend, evalNode_sextend, evalNode_ireduce, true_implies, forall_const, heq_eq_eq, and_imp,
-  forall_apply_eq_imp_iff, forall_eq_apply_imp_iff, Nat.reduceEqDiff, eq_iff_iff, iff_false,
-  iff_true, true_iff, false_iff, not_true_eq_false, not_false_eq_true] at *)
+macro "lhs_step'" : tactic =>
+  `(tactic| simp (disch := assumption) only [opt_lhs, opt_match, opt_data] at *)
 
 /-- Phase 2: the left-hand side to a fixpoint (`opt_subst_vars`: no `whnf` of the evaluation). -/
 macro "rule_lhs " hG:ident : tactic => `(tactic|
