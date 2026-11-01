@@ -1,0 +1,12 @@
+{
+  "archive": "return-pin-call-consumers-progress-v22.tar.gz",
+  "archive_bytes": 5965467,
+  "archive_sha256": "0c1658f9d70dd5fa7c695076c0acf4202a9f001076391b4a925911c957de8edd",
+  "parts": [
+    {
+      "name": "return-pin-call-consumers-progress-v22.tar.gz.part-000",
+      "bytes": 5965467,
+      "sha256": "0c1658f9d70dd5fa7c695076c0acf4202a9f001076391b4a925911c957de8edd"
+    }
+  ]
+}
