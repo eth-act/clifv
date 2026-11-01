@@ -1,3 +1,4 @@
+import FV.E2E.CallReturnPins
 import FV.E2E.LinkArm
 import FV.E2E.SemanticNIBoundary
 
@@ -817,31 +818,7 @@ theorem progOsCore_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] (hκ : L.Budge
     · rw [r_set_program]
       exact (hs_ret.ret.savedX 29 (by simp [calleeSavedX]; exact ⟨10, by omega, rfl⟩)).trans
         (r_enterAt _ _ (by simp) (by simp))
-  · -- the results
-    intro p hp
-    obtain ⟨⟨op, r⟩, x⟩ := p
-    rw [defRegs, hdefs] at hp
-    obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hp
-    simp only [List.getElem?_zip_eq_some] at hj
-    obtain ⟨⟨-, hr⟩, hx⟩ := hj
-    simp only [List.getElem?_map, Option.map_eq_some_iff] at hx
-    obtain ⟨j2, hj2, rfl⟩ := hx
-    have hjr : j < (sigRets h.sig).length := by
-      have := (List.getElem?_eq_some_iff.mp hj2).1; simpa using this
-    have hjL : j < Ld.length := by
-      have := (List.getElem?_eq_some_iff.mp hr).1; simpa using this
-    have e : ((Ld.map (·.1)).take (sigRets h.sig).length)[j]? = (Ld.map (·.1))[j]? := by
-      rw [List.getElem?_take]; simp [hjr]
-    rw [← e, hLd] at hr
-    simp only [List.getElem?_map, Option.map_eq_some_iff] at hr
-    obtain ⟨j1, hj1, rfl⟩ := hr
-    rw [List.getElem?_range (by omega : j < min (sigRets h.sig).length Ld.length),
-      Option.some.injEq] at hj1
-    rw [List.getElem?_range hjr, Option.some.injEq] at hj2
-    subst hj1 hj2
-    show regVal _ (Reg.x j) = regVal _ (Reg.x j)
-    rw [hs_eq, regVal_set_program, hc_eq, regVal_set_program]
-    -- the `j`-th result register is a return register of the callee
+  · -- the results use the caller's actual matching return pins
     obtain ⟨Nr, hrunN⟩ := hR.runs M cs _ hrun (.inl ⟨_, _, rfl⟩)
     have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm'
       (runInv_entry hh (clifEntry_initState hpf hinit)) hrunN
@@ -857,14 +834,17 @@ theorem progOsCore_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] (hκ : L.Budge
         have := congrArg List.length hrt
         simp only [List.length_map, Clif.AbiParam.tys] at this
         rw [← this]; exact hhold.1
-    have hju : j < us.length := by omega
-    have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
-      have := congrArg (·[j]?) hus
-      simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some, Option.some.injEq] at this
-      rw [List.getElem?_eq_getElem hju, ← this]
-    have hoj : outsV[j]? = some (outsV[j]'(by omega)) := List.getElem?_eq_getElem _
-    rw [hs_ret.regs j _ _ _ hus_j hoj, hc_ret.regs j _ _ _ hus_j hoj]
+    have same : ∀ pin ∈ (List.range (sigRets h.sig).length).map Reg.x,
+        regVal (L.pcall M h t) pin = regVal (L.pcall M h (L.canon h uses w)) pin := by
+      intro pin member
+      have returnedPin : pin ∈ us.map (·.2) := by
+        rw [hus]
+        obtain ⟨j,bound,rfl⟩ := List.mem_map.mp member
+        exact List.mem_map.mpr ⟨j,List.mem_range.mpr (Nat.lt_of_lt_of_le (List.mem_range.mp bound) hlr),rfl⟩
+      rw [hs_eq,hc_eq,regVal_set_program,regVal_set_program]
+      exact hs_ret.pins_agree hc_ret hlen pin returnedPin
+    have resultRegs := (CallReturnPins.ordinary hLd).defRegs hdefs same
+    simpa only [List.map_map,Function.comp_def] using resultRegs
   · -- the registers the callee preserves
     intro r hr hnd' hnc
     rw [hs_eq, regVal_set_program]
