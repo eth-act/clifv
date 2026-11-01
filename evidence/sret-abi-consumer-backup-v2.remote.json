@@ -1,0 +1,12 @@
+{
+  "archive": "sret-abi-consumer-backup-v2.tar.gz",
+  "archive_bytes": 13157945,
+  "archive_sha256": "2098bc37c086ae17a4151fd4a1416be7a57791a30250b770d05dbeb206c6cebc",
+  "parts": [
+    {
+      "name": "sret-abi-consumer-backup-v2.tar.gz.part-000",
+      "bytes": 13157945,
+      "sha256": "2098bc37c086ae17a4151fd4a1416be7a57791a30250b770d05dbeb206c6cebc"
+    }
+  ]
+}
