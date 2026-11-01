@@ -1,0 +1,12 @@
+{
+  "archive": "sret-copy-proof-backup-v1.tar.gz",
+  "archive_bytes": 11160779,
+  "archive_sha256": "1ad8d9d6577ae8f6664277e3fac2d8e9b90091f43bf74b91a7aa2753b0d32f28",
+  "parts": [
+    {
+      "name": "sret-copy-proof-backup-v1.tar.gz.part-000",
+      "bytes": 11160779,
+      "sha256": "1ad8d9d6577ae8f6664277e3fac2d8e9b90091f43bf74b91a7aa2753b0d32f28"
+    }
+  ]
+}
