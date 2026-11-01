@@ -1,0 +1,12 @@
+{
+  "archive": "shared-return-pin-good-backup-v1.tar.gz",
+  "archive_bytes": 2796802,
+  "archive_sha256": "6345ccaa759bed8930fe5dc2e0dd5a28e469c4034bdf0744fb38943bf92d0a5c",
+  "parts": [
+    {
+      "name": "shared-return-pin-good-backup-v1.tar.gz.part-000",
+      "bytes": 2796802,
+      "sha256": "6345ccaa759bed8930fe5dc2e0dd5a28e469c4034bdf0744fb38943bf92d0a5c"
+    }
+  ]
+}
