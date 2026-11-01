@@ -129,6 +129,7 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 ### Threads per Lean process don't help us
 - Going from 2 to 8 threads gave no measurable gain on the slow modules: they spend their time in one declaration on one thread. Across 4,198 recorded module builds the median CPU/wall ratio was 1.01 (BuildAccel).
 - **Exception:** `Elab.async` matters for `bv_decide`-heavy modules (`RuleExtends`: 1,652 s off vs 174–186 s on, at about twice the memory).
+- **`lean -j2` is not worth it on CI either.** Async elaboration ignores `LEAN_NUM_THREADS` and uses every CPU: alone on a 16-vCPU orb, `RuleBitops3` took 178 s wall / 2,390 CPU-s with `LEAN_NUM_THREADS=2` and 376 s / 720 CPU-s with `-j2`. On a CI-shaped build, `-j2` cut CPU by 8% (8,550 → 7,830 s) but wall time by only 3% (2,491 → 2,406 s; one run each, below scheduling noise). The build was 24 independent `FV.Opt.Proof.Rule*` modules at 01aa959, built with the full-gate shard flags under `taskset -c 0-3`, with 2–3 lean processes. `RuleBitops3` got slower (263 → 388 s) and `RuleBitops4` stayed the same (422 → 418 s), so a shard that ends on a lone multithreaded module loses up to 2× on it. Not adopted (#856).
 
 ### Memory-cap every Lean process; share one Lake cache
 - `scripts/memcap.sh` runs each command in a memory-capped cgroup (with a `/proc` watchdog fallback when the systemd user manager is down, #325). Without caps, one runaway `lean` triggered global OOM kills.
