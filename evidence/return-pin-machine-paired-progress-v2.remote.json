@@ -1,0 +1,12 @@
+{
+  "archive": "return-pin-machine-paired-progress-v2.tar.gz",
+  "archive_bytes": 3360912,
+  "archive_sha256": "48a904a1c106f89001c12ebf2577c34da478553ba803087a87b85890b54c3ff7",
+  "parts": [
+    {
+      "name": "return-pin-machine-paired-progress-v2.tar.gz.part-000",
+      "bytes": 3360912,
+      "sha256": "48a904a1c106f89001c12ebf2577c34da478553ba803087a87b85890b54c3ff7"
+    }
+  ]
+}
