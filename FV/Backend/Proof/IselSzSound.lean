@@ -48,6 +48,7 @@ theorem cApply_aApply {ty : TypeId} {t : TermId} {as : List AW} {c : Nat}
     (h : cApply p tab aw ctab apre aOracle ty t as = some c) :
     ∃ a, aApply p tab actor apre aOracle ty t as = some a := by
   unfold cApply at h
+  rw [termOfT_eq] at h
   unfold aApply
   by_cases hb : as.any AW.isBot = true
   · simp [hb]
@@ -124,7 +125,7 @@ theorem cRuleLe_inv {ins : List AW} {c : Nat} {r : Rule}
 theorem ctabGet_le {t : TermId} {as : List AW} {c : Nat} (h : ctabGet ctab t as = some c) :
     ∃ ins, (t, ins, c) ∈ ctab ∧ AW.leAll as ins = true := by
   unfold ctabGet at h
-  cases hf : ctab.find? (fun e => e.1 == t && AW.leAll as e.2.1) with
+  cases hf : ctab.find? (fun e => e.1 == t && AW.leAllF as e.2.1) with
   | none => rw [hf] at h; cases h
   | some e =>
     rw [hf] at h
@@ -133,7 +134,7 @@ theorem ctabGet_le {t : TermId} {as : List AW} {c : Nat} (h : ctabGet ctab t as 
     have hm := List.mem_of_find?_eq_some hf
     have hp := List.find?_some hf
     simp only [Bool.and_eq_true, beq_iff_eq] at hp
-    exact ⟨e.2.1, by rw [← hp.1]; exact hm, hp.2⟩
+    exact ⟨e.2.1, by rw [← hp.1]; exact hm, AW.leAllF_leAll hp.2⟩
 
 theorem chkCost_mem (hc : chkCost p tab aw ctab aext actor apre aOracle = true) {t : TermId}
     {ins : List AW} {c : Nat} (hm : (t, ins, c) ∈ ctab) :
@@ -416,6 +417,7 @@ theorem costAt (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAt md cfg tab n
   · -- applyTerm
     intro ty t as c vs s tr r s' tr' hca hvs hIs h
     unfold cApply at hca
+    rw [termOfT_eq] at hca
     split at hca
     · rename_i hb
       exact (holds2_bot hb hvs).elim

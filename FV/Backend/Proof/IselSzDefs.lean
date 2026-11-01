@@ -1,3 +1,4 @@
+import FV.Isle.Lookup
 import FV.Backend.Proof.IselCovFns
 import FV.Backend.Proof.DriverCheck
 import FV.Backend.Proof.LowerShape
@@ -141,7 +142,7 @@ abbrev CTab := List (TermId × List AW × Nat)
 
 /-- The weight of an entry of `t` whose inputs are above `as`. -/
 def ctabGet (ctab : CTab) (t : TermId) (as : List AW) : Option Nat :=
-  (ctab.find? fun e => e.1 == t && AW.leAll as e.2.1).map (·.2.2)
+  (ctab.find? fun e => e.1 == t && AW.leAllF as e.2.1).map (·.2.2)
 
 section Eval
 variable (p : Program) (tab : Tab) (aw : TermId → List AW → Option Nat) (ctab : CTab)
@@ -153,7 +154,7 @@ variable (p : Program) (tab : Tab) (aw : TermId → List AW → Option Nat) (cta
 `some` only where `aApply` is). -/
 def cApply (_ty : TypeId) (t : TermId) (as : List AW) : Option Nat :=
   if as.any AW.isBot then some 0 else
-  match termOf p t with
+  match termOfT p t with
   | .ok term =>
     match term.kind with
     | .enumVariant _ => some 0
