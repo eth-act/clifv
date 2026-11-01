@@ -15,6 +15,7 @@ import FV.Backend.Proof.StockScalarMixedDivDomain
 import FV.Backend.Proof.StockScalarReturnedDivDomain
 import FV.Backend.Proof.StockScalarGeneralDivDomain
 import FV.Backend.Proof.StockScalarMaskDomain
+import FV.Backend.Proof.StockTrapRefines
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -433,13 +434,40 @@ theorem domain_of_maskEligible {f : Clif.Function} (eligible : maskEligible f = 
       (fun stm member => maskMixedBodyEligible_sound (List.all_eq_true.mp body stm member)) ret ordinary
   next => cases eligible
 
+theorem domain_of_maskTrapEligible {f : Clif.Function} (eligible : maskTrapEligible f = true)
+    (scope : lowerScopeB f = true) (dominated : dominatedB f = true)
+    (abi : sigAbiOk f.sig = true) : Domain f := by
+  unfold maskTrapEligible at eligible
+  split at eligible
+  next b blocks =>
+    simp only [Bool.and_eq_true] at eligible
+    obtain ⟨⟨⟨body,terminal⟩,params⟩,returns⟩ := eligible
+    have sourceShape : ∃ c,b.term = .trap c := by
+      cases term : b.term <;> simp_all
+    obtain ⟨c,trap⟩ := sourceShape
+    have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
+      apply List.find?_eq_none.mpr
+      intro p member
+      simp [(normal_narrow_abi params) p member]
+    have ordinary : (sigRets f.sig).any (·.purpose == .sret) = false := by
+      rw [sigRets,noSret]
+      apply Bool.eq_false_iff.mpr
+      intro any
+      obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
+      simpa [(normal_narrow_abi returns) p member] using sret
+    exact domain_of_maskTrap (lowerScope_of scope) (dominated_of dominated) abi blocks
+      (fun stm member => maskMixedBodyEligible_sound (List.all_eq_true.mp body stm member)) trap ordinary
+  next => cases eligible
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,productionEligible,Bool.and_eq_true,Bool.or_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
   exact eligible.elim
-    (fun prior => prior.elim (fun old => domain_of_eligible old scope dominated abi)
-      (fun narrow => domain_of_narrowEligible narrow scope dominated abi))
-    (fun mask => domain_of_maskEligible mask scope dominated abi)
+    (fun returned => returned.elim
+      (fun prior => prior.elim (fun old => domain_of_eligible old scope dominated abi)
+        (fun narrow => domain_of_narrowEligible narrow scope dominated abi))
+      (fun mask => domain_of_maskEligible mask scope dominated abi))
+    (fun trap => domain_of_maskTrapEligible trap scope dominated abi)
 
 
 theorem check_sound {f : Clif.Function} {vc : VCode} (checked : check f vc = true) :
