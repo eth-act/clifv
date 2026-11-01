@@ -1,0 +1,178 @@
+name: Turbo Lean shadow experiment
+
+# Independent optional experiment: never a required check or a stock-workflow caller.
+on:
+  workflow_run:
+    workflows: [Full gate]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      stock-run-id:
+        description: Completed Full gate run in this repository (main or opt-in same-repo PR branch)
+        type: string
+        required: true
+      base-sha:
+        description: Optional full PR base SHA; enables the separate statement-policy audit
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  actions: read
+
+# Never shares Full gate's or Stock compiler comparison's concurrency slot.
+concurrency:
+  group: turbo-lean-shadow-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: false
+
+env:
+  TURBO_LEAN_TELEMETRY: 'off'
+  TURBO_LEAN_NO_REMOTE_TELEMETRY: '1'
+  TURBO_LEAN_NO_WORKTREE_LINK: '1'
+
+jobs:
+  turbo-lean-shadow:
+    name: turbo-lean-shadow (optional experiment)
+    if: vars.TURBO_LEAN_SHADOW_DISABLED != 'true'
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    timeout-minutes: 75
+    env:
+      TURBO_SHA: a83cd47b36112c8ba1118f3e2387abaa94fe81a3
+      STOCK_RUN_ID: ${{ inputs.stock-run-id }}
+      PR_BASE: ${{ inputs.base-sha }}
+    steps:
+      # workflow_run's github.sha is trusted default-branch code, never a PR head.
+      - name: Check out experiment controller
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Initialize incomplete record
+        run: |
+          echo "SHADOW_DIR=$RUNNER_TEMP/turbo-shadow" >> "$GITHUB_ENV"
+          SHADOW_DIR="$RUNNER_TEMP/turbo-shadow" python3 .github/scripts/turbo-lean-shadow.py init
+      - name: Read original Full gate attempt and stock job conclusions
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/turbo-lean-shadow.py stock
+      - name: Check out validated stock revision
+        if: steps.plan.outcome == 'success' && steps.plan.outputs.eligible == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.plan.outputs.commit }}
+          path: source
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Select comparison base
+        if: steps.plan.outcome == 'success' && steps.plan.outputs.eligible == 'true'
+        working-directory: source
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/turbo-lean-shadow.py" base
+      # Do not invoke fv-lean: its actions/cache post-step saves shared stock keys.
+      - name: Restore stock Lean toolchain (never save)
+        id: lean-cache
+        if: steps.plan.outcome == 'success' && steps.plan.outputs.eligible == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.tool_cache }}/lean-4.34.1-linux
+          key: lean-4.34.1-linux-47bf4bbd78f70c2e
+      - name: Install pinned stock Lean on cache miss
+        if: steps.plan.outcome == 'success' && steps.plan.outputs.eligible == 'true' && steps.lean-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 10
+        run: |
+          archive="$RUNNER_TEMP/shadow-stock-lean.tar.zst"
+          curl --fail --location --retry 3 \
+            https://github.com/leanprover/lean4/releases/download/v4.34.1/lean-4.34.1-linux.tar.zst -o "$archive"
+          echo "47bf4bbd78f70c2e9670598ab7124d92b6efb7330ff33e5fbb4030f6fd72e4e4  $archive" | sha256sum --check
+          tar --zstd -xf "$archive" -C "$RUNNER_TOOL_CACHE"
+      - name: Restore original run's staged Lake outputs
+        if: steps.plan.outcome == 'success' && steps.plan.outputs.eligible == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: lake-full
+          path: ${{ runner.temp }}/lake-stages/base
+          run-id: ${{ steps.plan.outputs.run }}
+          github-token: ${{ github.token }}
+      - name: Configure isolated Lake cache and four Lean threads
+        if: steps.plan.outcome == 'success' && steps.plan.outputs.eligible == 'true'
+        timeout-minutes: 10
+        working-directory: source
+        env:
+          STAGES: ${{ runner.temp }}/lake-stages
+          LAKE_CACHE_DIR: ${{ runner.temp }}/turbo-shadow-lake-cache
+        run: |
+          export TURBO_LEAN_TELEMETRY=off
+          export PATH="$RUNNER_TOOL_CACHE/lean-4.34.1-linux/bin:$PATH"
+          echo "$RUNNER_TOOL_CACHE/lean-4.34.1-linux/bin" >> "$GITHUB_PATH"
+          {
+            echo "LEAN_BIN_DIR=$RUNNER_TOOL_CACHE/lean-4.34.1-linux/bin"
+            echo "LAKE_CACHE_DIR=$LAKE_CACHE_DIR"
+            echo 'LAKE_ARTIFACT_CACHE=true'
+            echo 'LAKE_RESTORE_ARTIFACTS=true'
+            echo 'LEAN_NUM_THREADS=4'
+            echo 'FV_MEMCAP=12G'
+          } >> "$GITHUB_ENV"
+          scripts/fetch-third-party.sh wasmtime
+          mkdir -p "$LAKE_CACHE_DIR"
+          python3 scripts/lake-unstage.py "$STAGES"
+      - name: Cache pinned turbo-lean executable
+        id: turbo-cache
+        if: steps.plan.outcome == 'success' && steps.plan.outputs.eligible == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/turbo-install/bin
+          key: turbo-shadow-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.TURBO_SHA }}-rust1.96.0-lean4.35.0
+      - name: Cache turbo-lean source build prerequisites
+        if: steps.plan.outcome == 'success' && steps.plan.outputs.eligible == 'true' && steps.turbo-cache.outputs.cache-hit != 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ${{ runner.tool_cache }}/lean-4.35.0-linux
+          key: turbo-shadow-build-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.TURBO_SHA }}
+      - name: Build pinned turbo-lean from source
+        timeout-minutes: 25
+        if: steps.plan.outcome == 'success' && steps.plan.outputs.eligible == 'true' && steps.turbo-cache.outputs.cache-hit != 'true'
+        run: |
+          build_lean="$RUNNER_TOOL_CACHE/lean-4.35.0-linux"
+          if [[ ! -x "$build_lean/bin/lean" ]]; then
+            archive="$RUNNER_TEMP/turbo-lean-toolchain.tar.zst"
+            curl --fail --location --retry 3 \
+              https://github.com/leanprover/lean4/releases/download/v4.35.0/lean-4.35.0-linux.tar.zst -o "$archive"
+            echo "7289597a44543246c9227b8cae501767e095ce17f6d448b95fc4a8dc97268f6d  $archive" | sha256sum --check
+            tar --zstd -xf "$archive" -C "$RUNNER_TOOL_CACHE"
+          fi
+          rustup toolchain install 1.96.0 --profile minimal
+          source_dir="$RUNNER_TEMP/turbo-source"
+          git init "$source_dir"
+          git -C "$source_dir" fetch --depth 1 https://github.com/Th0rgal/turbo-lean.git "$TURBO_SHA"
+          git -C "$source_dir" checkout --detach FETCH_HEAD
+          test "$(git -C "$source_dir" rev-parse HEAD)" = "$TURBO_SHA"
+          # turbo-lean's C ABI is built with its own Lean 4.35; verification uses clifv's 4.34.1.
+          (cd "$source_dir" && PATH="$build_lean/bin:$PATH" \
+            TURBO_LEAN_BIN="$build_lean/bin/lean" cargo +1.96.0 build --locked --release --jobs 4) \
+            > "$SHADOW_DIR/turbo-install.log" 2>&1
+          mkdir -p "$RUNNER_TEMP/turbo-install/bin"
+          install -m 755 "$source_dir/target/release/turbo-lean" "$RUNNER_TEMP/turbo-install/bin/turbo-lean"
+      - name: Shadow CI verification
+        if: steps.plan.outcome == 'success' && steps.plan.outputs.eligible == 'true'
+        working-directory: source
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/turbo-lean-shadow.py" ci
+      - name: Shadow PR statement verification (manual only)
+        if: success() && github.event_name == 'workflow_dispatch' && inputs.base-sha != '' && steps.plan.outputs.eligible == 'true'
+        working-directory: source
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/turbo-lean-shadow.py" pr
+      - name: Finish discrepancy record
+        if: always()
+        run: python3 .github/scripts/turbo-lean-shadow.py report
+      - name: Upload shadow record and logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: turbo-lean-shadow-${{ steps.plan.outputs.commit || github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/turbo-shadow
+          retention-days: 90
+          if-no-files-found: warn
