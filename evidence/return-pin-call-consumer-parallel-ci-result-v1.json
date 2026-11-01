@@ -1,0 +1,54 @@
+{
+  "status": "passed",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T19:51:07Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41343802208/job/124959212581",
+      "name": "Quick checks",
+      "startedAt": "2026-11-01T19:50:56Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T19:56:55Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41343802206/job/124959212707",
+      "name": "Build and compare",
+      "startedAt": "2026-11-01T19:50:56Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T19:57:09Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41343802206/job/124960720999",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-01T19:56:58Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T19:57:11Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41343802206/job/124960720948",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-01T19:56:58Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "comparison_comment": "<!-- clifv-stock-comparison:v1 run=41343802206 attempt=1 -->\n### Stock Cranelift / Lean comparison\n\nCommit: `a4c0726d46c5`. [Run and artifacts](https://github.com/eth-act/clifv/actions/runs/41343802206/attempts/1).\n\n| Check | Result |\n| --- | --- |\n| Official CLIF test inventory | 1,302 / 1,302 (100.0%) files |\n| AArch64 files with outputs compared | 202 / 484 (41.7%) |\n| Exact function outputs | 1,633 / 4,455 (36.7%) |\n| Files with every AArch64 output matching | 92 / 484 (19.0%) |\n| Different function outputs | 364 |\n| Rejected for a setting | 563 |\n| Rejected for an unsupported operation | 1,895 |\n| Complete compiler metadata agreement | Not established |\n| Compiled test functions executed | No |\n\nExact matches require identical bytes, relocations, alignment, and trap records.\nRejected outputs do not pass. Expected stock failures without code are excluded from the output total.\n\nCompared with `main` at `31336bce8a1c` ([run](https://github.com/eth-act/clifv/actions/runs/41335243787/attempts/1)): **+0 / \u22120** exact outputs (1,633 \u2192 1,633).\n\nPipeline time: **193.7 seconds** (build, validation, artifact generation, and comparison).\nPeak runner memory used: **2.74 GiB**, sampled every 0.1 seconds, including the OS.\nThis job uses two comparison workers. Rust toolchain setup is included in the pipeline time.\nLean installation and cache transfers are outside the pipeline time.\n\nA successful measurement job means the measurement completed, not that both compilers fully agree.\nThe \"Check lost matches\" job fails when an output that matched on that `main` commit no longer matches.\nThe label `stock-comparison-accept-losses` accepts intended losses on a pull request.\n",
+  "exact_functions": 1633,
+  "total_functions": 4455,
+  "gained": 0,
+  "lost": 0,
+  "compiled_functions_executed": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-01T20:03:05.203343+00:00"
+}
