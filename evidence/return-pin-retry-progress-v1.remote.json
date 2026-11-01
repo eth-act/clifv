@@ -1,0 +1,12 @@
+{
+  "archive": "return-pin-retry-progress-v1.tar.gz",
+  "archive_bytes": 3155347,
+  "archive_sha256": "32a06421d8703fd416839a0b1b512b509b184f297ee3a7bdb621354e51d415b4",
+  "parts": [
+    {
+      "name": "return-pin-retry-progress-v1.tar.gz.part-000",
+      "bytes": 3155347,
+      "sha256": "32a06421d8703fd416839a0b1b512b509b184f297ee3a7bdb621354e51d415b4"
+    }
+  ]
+}
