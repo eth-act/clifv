@@ -1,0 +1,124 @@
+{
+  "matches": [
+    {
+      "wave": 1,
+      "artifact": 13095609535,
+      "module_last_component": "KillTab",
+      "archive": "3d266abd56a2dde8.ltar"
+    },
+    {
+      "wave": 1,
+      "artifact": 13094650708,
+      "module_last_component": "IselCovTTabC5",
+      "archive": "a48f2796129320d1.ltar"
+    },
+    {
+      "wave": 1,
+      "artifact": 13094650708,
+      "module_last_component": "IselEmitTTabC5",
+      "archive": "c5662115cb8ba63c.ltar"
+    },
+    {
+      "wave": 1,
+      "artifact": 13095345971,
+      "module_last_component": "IselEmitTTabC4",
+      "archive": "bcfb051aea4e5b57.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13098905134,
+      "module_last_component": "KillTab",
+      "archive": "3d266abd56a2dde8.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13098846121,
+      "module_last_component": "KillTab",
+      "archive": "3d266abd56a2dde8.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13098990368,
+      "module_last_component": "KillTab",
+      "archive": "3d266abd56a2dde8.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13098990368,
+      "module_last_component": "IselCovTTabC5",
+      "archive": "a48f2796129320d1.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13098567726,
+      "module_last_component": "KillTab",
+      "archive": "3d266abd56a2dde8.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13099521260,
+      "module_last_component": "KillTab",
+      "archive": "3d266abd56a2dde8.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13099043498,
+      "module_last_component": "KillTab",
+      "archive": "3d266abd56a2dde8.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13099043498,
+      "module_last_component": "IselCovTTabC5",
+      "archive": "a48f2796129320d1.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13099043498,
+      "module_last_component": "IselEmitTTabC4",
+      "archive": "bcfb051aea4e5b57.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13099043498,
+      "module_last_component": "IselEmitTTabC5",
+      "archive": "c5662115cb8ba63c.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13099013532,
+      "module_last_component": "KillTab",
+      "archive": "3d266abd56a2dde8.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13099013532,
+      "module_last_component": "IselCovTTabC5",
+      "archive": "a48f2796129320d1.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13099705776,
+      "module_last_component": "KillTab",
+      "archive": "3d266abd56a2dde8.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13099272862,
+      "module_last_component": "KillTab",
+      "archive": "3d266abd56a2dde8.ltar"
+    },
+    {
+      "wave": 2,
+      "artifact": 13099272862,
+      "module_last_component": "IselCovTTabC5",
+      "archive": "a48f2796129320d1.ltar"
+    }
+  ],
+  "archive_headers_read": 4739,
+  "manifests_contain": "input hashes and archive names,not module names",
+  "caveat": "Headers identify only the final module-name component. An absent or unretained archive cannot establish module absence.",
+  "source_changed": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-01T20:49:00.829263+00:00"
+}

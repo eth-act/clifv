@@ -1,0 +1,15 @@
+{
+  "module": "FV.Backend.Proof.IselEmitTTabC5",
+  "ci_input_key": "6fc9f4c362df962c",
+  "local_input_key": "b5ee92a90f7903f5",
+  "ci_archive": "c5662115cb8ba63c.ltar",
+  "output_descriptors_match": true,
+  "olean_bytes_match": true,
+  "olean_sha256": "0814c493eb09796536e133c884db3f978792f9246d4e3e9c10b94244ac6ddb31",
+  "cache_mappings_changed": false,
+  "build_view_changed": false,
+  "ci_trace_hash_note": "The extraction stamped the authoritative CI manifest key. The archive strips input traces.",
+  "temporary_extract_removed": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-01T20:58:39.642077+00:00"
+}

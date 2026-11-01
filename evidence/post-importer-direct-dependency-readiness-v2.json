@@ -1,0 +1,18 @@
+{
+  "status": "not_ready",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "roots": [
+    "FV.E2E.SemanticBinary",
+    "FV.E2E.PreparedReturnPinCallsWitness",
+    "FV.E2E.SemanticExecBytes",
+    "FV.E2E.SemanticChecksWith",
+    "FV.Backend.Proof.StockMemorySretCopyBodyWitness",
+    "FV.E2E.SemanticCompilerWitness"
+  ],
+  "exit_code": 3,
+  "cache_restore_enabled": false,
+  "builds_started": false,
+  "required_failures": "- FV.E2E.LinkCheck\n- FV.E2E.LinkProduction\n- FV.E2E.LinkSemanticNIContract\n- FV.E2E.LinkReturnPins\n- FV.E2E.SemanticABIBoundary\n- FV.Backend.Proof.IselEmitDefs\n- FV.E2E.SizeDefs\n- FV.Backend.Proof.IselEmitChk\n- FV.Backend.Proof.IselShpRoot\n- FV.Backend.Proof.IselShpCtor\n- FV.Backend.Proof.IselShpCall\n- FV.Backend.Proof.IselShpTry\n- FV.Backend.Proof.IselShpBrTable\n- FV.E2E.LinkGood\n- FV.Backend.Proof.StockMemoryComputedStoreRecordWitness\n- FV.Backend.Proof.SpillEdgesLow\n- FV.E2E.LowerDirect\n- FV.Backend.Proof.FormsCoverComplete\n- FV.Backend.Proof.SpillClsTab\n- FV.Backend.Proof.KillTab\n- FV.Backend.Proof.KillOracle\n- FV.Backend.Proof.DefGenSoundAt\n- FV.Backend.Proof.DefGenOracle\n- FV.Backend.Proof.IselSzSound\n- FV.Backend.Proof.IselPrgTryLast\n- FV.E2E.StockArithmeticNIWitness",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T20:44:10.069368+00:00"
+}

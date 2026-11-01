@@ -1,0 +1,744 @@
+{
+  "status": "passed",
+  "source_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9",
+  "run": 41329973860,
+  "records": [
+    {
+      "artifact": {
+        "id": 13100246854,
+        "node_id": "MDg6QXJ0aWZhY3QxMzEwMDI0Njg1NA==",
+        "name": "stage-w3-0",
+        "size_in_bytes": 146494311,
+        "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13100246854",
+        "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13100246854/zip",
+        "expired": false,
+        "digest": "sha256:45ffecf24c6b3561c3c9c89f737fd0aae65be20fea28caa9997939dee6382be1",
+        "created_at": "2026-11-01T20:40:59Z",
+        "updated_at": "2026-11-01T20:40:59Z",
+        "expires_at": "2026-11-03T20:40:57Z",
+        "workflow_run": {
+          "id": 41329973860,
+          "repository_id": 1391033036,
+          "head_repository_id": 1391033036,
+          "head_branch": "main",
+          "head_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9"
+        }
+      },
+      "producer": {
+        "id": 124969203701,
+        "run_id": 41329973860,
+        "workflow_name": "Full gate",
+        "head_branch": "main",
+        "run_url": "https://api.github.com/repos/eth-act/clifv/actions/runs/41329973860",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUul6zM8AAAAdGL639Q",
+        "head_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9",
+        "url": "https://api.github.com/repos/eth-act/clifv/actions/jobs/124969203701",
+        "html_url": "https://github.com/eth-act/clifv/actions/runs/41329973860/job/124969203701",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-01T20:29:31Z",
+        "started_at": "2026-11-01T20:29:34Z",
+        "completed_at": "2026-11-01T20:41:03Z",
+        "name": "Build wave 3 (0) / shard 0",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-01T20:29:35Z",
+            "completed_at": "2026-11-01T20:29:36Z"
+          },
+          {
+            "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-01T20:29:36Z",
+            "completed_at": "2026-11-01T20:29:40Z"
+          },
+          {
+            "name": "Run ./.github/actions/fv-lean",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-01T20:29:40Z",
+            "completed_at": "2026-11-01T20:33:31Z"
+          },
+          {
+            "name": "Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-01T20:33:31Z",
+            "completed_at": "2026-11-01T20:33:32Z"
+          },
+          {
+            "name": "Build",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-01T20:33:32Z",
+            "completed_at": "2026-11-01T20:40:57Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-01T20:40:57Z",
+            "completed_at": "2026-11-01T20:40:59Z"
+          },
+          {
+            "name": "Memory and swap",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-01T20:40:59Z",
+            "completed_at": "2026-11-01T20:40:59Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-01T20:40:59Z",
+            "completed_at": "2026-11-01T20:41:01Z"
+          },
+          {
+            "name": "Post Run ./.github/actions/fv-lean",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-01T20:41:01Z",
+            "completed_at": "2026-11-01T20:41:01Z"
+          },
+          {
+            "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-01T20:41:01Z",
+            "completed_at": "2026-11-01T20:41:01Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-01T20:41:01Z",
+            "completed_at": "2026-11-01T20:41:01Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/eth-act/clifv/check-runs/124969203701",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000085251,
+        "runner_name": "GitHub Actions 1000085251",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      }
+    },
+    {
+      "artifact": {
+        "id": 13099543729,
+        "node_id": "MDg6QXJ0aWZhY3QxMzA5OTU0MzcyOQ==",
+        "name": "stage-w3-1",
+        "size_in_bytes": 148098319,
+        "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13099543729",
+        "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13099543729/zip",
+        "expired": false,
+        "digest": "sha256:e8713abcdb1050af1779beb3ebc642c703010e7f3f2b9dbb83d1be422b38d820",
+        "created_at": "2026-11-01T20:41:10Z",
+        "updated_at": "2026-11-01T20:41:10Z",
+        "expires_at": "2026-11-03T20:41:08Z",
+        "workflow_run": {
+          "id": 41329973860,
+          "repository_id": 1391033036,
+          "head_repository_id": 1391033036,
+          "head_branch": "main",
+          "head_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9"
+        }
+      },
+      "producer": {
+        "id": 124969203665,
+        "run_id": 41329973860,
+        "workflow_name": "Full gate",
+        "head_branch": "main",
+        "run_url": "https://api.github.com/repos/eth-act/clifv/actions/runs/41329973860",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUul6zM8AAAAdGL630Q",
+        "head_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9",
+        "url": "https://api.github.com/repos/eth-act/clifv/actions/jobs/124969203665",
+        "html_url": "https://github.com/eth-act/clifv/actions/runs/41329973860/job/124969203665",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-01T20:29:31Z",
+        "started_at": "2026-11-01T20:29:34Z",
+        "completed_at": "2026-11-01T20:41:14Z",
+        "name": "Build wave 3 (1) / shard 1",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-01T20:29:35Z",
+            "completed_at": "2026-11-01T20:29:36Z"
+          },
+          {
+            "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-01T20:29:36Z",
+            "completed_at": "2026-11-01T20:29:40Z"
+          },
+          {
+            "name": "Run ./.github/actions/fv-lean",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-01T20:29:40Z",
+            "completed_at": "2026-11-01T20:33:58Z"
+          },
+          {
+            "name": "Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-01T20:33:58Z",
+            "completed_at": "2026-11-01T20:33:59Z"
+          },
+          {
+            "name": "Build",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-01T20:33:59Z",
+            "completed_at": "2026-11-01T20:41:07Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-01T20:41:07Z",
+            "completed_at": "2026-11-01T20:41:10Z"
+          },
+          {
+            "name": "Memory and swap",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-01T20:41:10Z",
+            "completed_at": "2026-11-01T20:41:10Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-01T20:41:10Z",
+            "completed_at": "2026-11-01T20:41:12Z"
+          },
+          {
+            "name": "Post Run ./.github/actions/fv-lean",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-01T20:41:12Z",
+            "completed_at": "2026-11-01T20:41:12Z"
+          },
+          {
+            "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-01T20:41:12Z",
+            "completed_at": "2026-11-01T20:41:12Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-01T20:41:12Z",
+            "completed_at": "2026-11-01T20:41:12Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/eth-act/clifv/check-runs/124969203665",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000085249,
+        "runner_name": "GitHub Actions 1000085249",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      }
+    },
+    {
+      "artifact": {
+        "id": 13099928110,
+        "node_id": "MDg6QXJ0aWZhY3QxMzA5OTkyODExMA==",
+        "name": "stage-w3-4",
+        "size_in_bytes": 131347683,
+        "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13099928110",
+        "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13099928110/zip",
+        "expired": false,
+        "digest": "sha256:f0657477629797a1e4d62c0ee4d5806583f541b3d27bf951c8b7c54e7ea6440b",
+        "created_at": "2026-11-01T20:41:28Z",
+        "updated_at": "2026-11-01T20:41:28Z",
+        "expires_at": "2026-11-03T20:41:26Z",
+        "workflow_run": {
+          "id": 41329973860,
+          "repository_id": 1391033036,
+          "head_repository_id": 1391033036,
+          "head_branch": "main",
+          "head_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9"
+        }
+      },
+      "producer": {
+        "id": 124969203796,
+        "run_id": 41329973860,
+        "workflow_name": "Full gate",
+        "head_branch": "main",
+        "run_url": "https://api.github.com/repos/eth-act/clifv/actions/runs/41329973860",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUul6zM8AAAAdGL64VA",
+        "head_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9",
+        "url": "https://api.github.com/repos/eth-act/clifv/actions/jobs/124969203796",
+        "html_url": "https://github.com/eth-act/clifv/actions/runs/41329973860/job/124969203796",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-01T20:29:31Z",
+        "started_at": "2026-11-01T20:29:34Z",
+        "completed_at": "2026-11-01T20:41:33Z",
+        "name": "Build wave 3 (4) / shard 4",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-01T20:29:35Z",
+            "completed_at": "2026-11-01T20:29:37Z"
+          },
+          {
+            "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-01T20:29:37Z",
+            "completed_at": "2026-11-01T20:29:40Z"
+          },
+          {
+            "name": "Run ./.github/actions/fv-lean",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-01T20:29:40Z",
+            "completed_at": "2026-11-01T20:36:21Z"
+          },
+          {
+            "name": "Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-01T20:36:21Z",
+            "completed_at": "2026-11-01T20:36:22Z"
+          },
+          {
+            "name": "Build",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-01T20:36:22Z",
+            "completed_at": "2026-11-01T20:41:25Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-01T20:41:25Z",
+            "completed_at": "2026-11-01T20:41:28Z"
+          },
+          {
+            "name": "Memory and swap",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-01T20:41:28Z",
+            "completed_at": "2026-11-01T20:41:28Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-01T20:41:28Z",
+            "completed_at": "2026-11-01T20:41:30Z"
+          },
+          {
+            "name": "Post Run ./.github/actions/fv-lean",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-01T20:41:30Z",
+            "completed_at": "2026-11-01T20:41:30Z"
+          },
+          {
+            "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-01T20:41:30Z",
+            "completed_at": "2026-11-01T20:41:31Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-01T20:41:31Z",
+            "completed_at": "2026-11-01T20:41:31Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/eth-act/clifv/check-runs/124969203796",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000085250,
+        "runner_name": "GitHub Actions 1000085250",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      }
+    },
+    {
+      "artifact": {
+        "id": 13099669129,
+        "node_id": "MDg6QXJ0aWZhY3QxMzA5OTY2OTEyOQ==",
+        "name": "stage-w3-2",
+        "size_in_bytes": 219624585,
+        "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13099669129",
+        "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13099669129/zip",
+        "expired": false,
+        "digest": "sha256:5cb4ec3a1290df33c52d10562b7c19d49613d270165d14abc6edfa57034c5289",
+        "created_at": "2026-11-01T20:48:16Z",
+        "updated_at": "2026-11-01T20:48:16Z",
+        "expires_at": "2026-11-03T20:48:13Z",
+        "workflow_run": {
+          "id": 41329973860,
+          "repository_id": 1391033036,
+          "head_repository_id": 1391033036,
+          "head_branch": "main",
+          "head_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9"
+        }
+      },
+      "producer": {
+        "id": 124969203754,
+        "run_id": 41329973860,
+        "workflow_name": "Full gate",
+        "head_branch": "main",
+        "run_url": "https://api.github.com/repos/eth-act/clifv/actions/runs/41329973860",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUul6zM8AAAAdGL64Kg",
+        "head_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9",
+        "url": "https://api.github.com/repos/eth-act/clifv/actions/jobs/124969203754",
+        "html_url": "https://github.com/eth-act/clifv/actions/runs/41329973860/job/124969203754",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-01T20:29:31Z",
+        "started_at": "2026-11-01T20:29:34Z",
+        "completed_at": "2026-11-01T20:48:19Z",
+        "name": "Build wave 3 (2) / shard 2",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-01T20:29:35Z",
+            "completed_at": "2026-11-01T20:29:36Z"
+          },
+          {
+            "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-01T20:29:36Z",
+            "completed_at": "2026-11-01T20:29:40Z"
+          },
+          {
+            "name": "Run ./.github/actions/fv-lean",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-01T20:29:40Z",
+            "completed_at": "2026-11-01T20:33:30Z"
+          },
+          {
+            "name": "Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-01T20:33:30Z",
+            "completed_at": "2026-11-01T20:33:31Z"
+          },
+          {
+            "name": "Build",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-01T20:33:31Z",
+            "completed_at": "2026-11-01T20:48:12Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-01T20:48:12Z",
+            "completed_at": "2026-11-01T20:48:16Z"
+          },
+          {
+            "name": "Memory and swap",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-01T20:48:16Z",
+            "completed_at": "2026-11-01T20:48:16Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-01T20:48:16Z",
+            "completed_at": "2026-11-01T20:48:17Z"
+          },
+          {
+            "name": "Post Run ./.github/actions/fv-lean",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-01T20:48:18Z",
+            "completed_at": "2026-11-01T20:48:18Z"
+          },
+          {
+            "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-01T20:48:18Z",
+            "completed_at": "2026-11-01T20:48:18Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-01T20:48:18Z",
+            "completed_at": "2026-11-01T20:48:18Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/eth-act/clifv/check-runs/124969203754",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000085252,
+        "runner_name": "GitHub Actions 1000085252",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      }
+    },
+    {
+      "artifact": {
+        "id": 13100526399,
+        "node_id": "MDg6QXJ0aWZhY3QxMzEwMDUyNjM5OQ==",
+        "name": "stage-w3-3",
+        "size_in_bytes": 207079626,
+        "url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13100526399",
+        "archive_download_url": "https://api.github.com/repos/eth-act/clifv/actions/artifacts/13100526399/zip",
+        "expired": false,
+        "digest": "sha256:fb2b64f4386d74882cb13a4137e522e688aa0f9ca29c047f19e760d21eef1b53",
+        "created_at": "2026-11-01T20:48:58Z",
+        "updated_at": "2026-11-01T20:48:58Z",
+        "expires_at": "2026-11-03T20:48:54Z",
+        "workflow_run": {
+          "id": 41329973860,
+          "repository_id": 1391033036,
+          "head_repository_id": 1391033036,
+          "head_branch": "main",
+          "head_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9"
+        }
+      },
+      "producer": {
+        "id": 124969203702,
+        "run_id": 41329973860,
+        "workflow_name": "Full gate",
+        "head_branch": "main",
+        "run_url": "https://api.github.com/repos/eth-act/clifv/actions/runs/41329973860",
+        "run_attempt": 1,
+        "node_id": "CR_kwDOUul6zM8AAAAdGL639g",
+        "head_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9",
+        "url": "https://api.github.com/repos/eth-act/clifv/actions/jobs/124969203702",
+        "html_url": "https://github.com/eth-act/clifv/actions/runs/41329973860/job/124969203702",
+        "status": "completed",
+        "conclusion": "success",
+        "created_at": "2026-11-01T20:29:31Z",
+        "started_at": "2026-11-01T20:29:34Z",
+        "completed_at": "2026-11-01T20:49:02Z",
+        "name": "Build wave 3 (3) / shard 3",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1,
+            "started_at": "2026-11-01T20:29:35Z",
+            "completed_at": "2026-11-01T20:29:37Z"
+          },
+          {
+            "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2,
+            "started_at": "2026-11-01T20:29:37Z",
+            "completed_at": "2026-11-01T20:29:40Z"
+          },
+          {
+            "name": "Run ./.github/actions/fv-lean",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3,
+            "started_at": "2026-11-01T20:29:40Z",
+            "completed_at": "2026-11-01T20:34:44Z"
+          },
+          {
+            "name": "Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4,
+            "started_at": "2026-11-01T20:34:44Z",
+            "completed_at": "2026-11-01T20:34:45Z"
+          },
+          {
+            "name": "Build",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5,
+            "started_at": "2026-11-01T20:34:45Z",
+            "completed_at": "2026-11-01T20:48:54Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6,
+            "started_at": "2026-11-01T20:48:54Z",
+            "completed_at": "2026-11-01T20:48:58Z"
+          },
+          {
+            "name": "Memory and swap",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7,
+            "started_at": "2026-11-01T20:48:58Z",
+            "completed_at": "2026-11-01T20:48:58Z"
+          },
+          {
+            "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-11-01T20:48:58Z",
+            "completed_at": "2026-11-01T20:49:00Z"
+          },
+          {
+            "name": "Post Run ./.github/actions/fv-lean",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15,
+            "started_at": "2026-11-01T20:49:00Z",
+            "completed_at": "2026-11-01T20:49:00Z"
+          },
+          {
+            "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 16,
+            "started_at": "2026-11-01T20:49:00Z",
+            "completed_at": "2026-11-01T20:49:00Z"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17,
+            "started_at": "2026-11-01T20:49:00Z",
+            "completed_at": "2026-11-01T20:49:00Z"
+          }
+        ],
+        "check_run_url": "https://api.github.com/repos/eth-act/clifv/check-runs/124969203702",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "runner_id": 1000085248,
+        "runner_name": "GitHub Actions 1000085248",
+        "runner_group_id": 0,
+        "runner_group_name": "GitHub Actions"
+      }
+    }
+  ],
+  "manifests": [
+    {
+      "artifact": 13100246854,
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/main870-ci-wave3-stage-w3-0-outputs-0-v1.jsonl",
+      "sha256": "2faf66f1af9381fba6abcabb6d7a86d08f447215172a0f82b3b8f9e0e01223b5",
+      "entries": 1733
+    },
+    {
+      "artifact": 13099543729,
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/main870-ci-wave3-stage-w3-1-outputs-0-v1.jsonl",
+      "sha256": "803f0d0ca9bfef5311ad19e31f971c66858f52fea61007c1850049a8e3148b0a",
+      "entries": 1747
+    },
+    {
+      "artifact": 13099928110,
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/main870-ci-wave3-stage-w3-4-outputs-0-v1.jsonl",
+      "sha256": "26d6536c46b906fa2c2746bfcfd8a1060a369d5fdf0e08a1d9074e5c77e1dd00",
+      "entries": 1641
+    },
+    {
+      "artifact": 13099669129,
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/main870-ci-wave3-stage-w3-2-outputs-0-v1.jsonl",
+      "sha256": "6193d229e754b5b1b7e095823a50c54a5279316bb57a56f5dd2e52f748bcc03b",
+      "entries": 2938
+    },
+    {
+      "artifact": 13100526399,
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/main870-ci-wave3-stage-w3-3-outputs-0-v1.jsonl",
+      "sha256": "4e9be8500b4614b53c9b20e1af3d0261ba7dadf7ed0f517b5cff1624e48d63f4",
+      "entries": 2816
+    }
+  ],
+  "imported_shards": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "cache": "/home/lee/clifv/.worktrees/driver-proof-resume/.lake/artifact-cache",
+  "utc": "2026-11-01T20:50:46.387752+00:00",
+  "full_goal_complete": false,
+  "source_changed": false,
+  "phase": "producer-jobs",
+  "additive_only": true,
+  "stage_removed": true,
+  "memory_cap": "1G"
+}
