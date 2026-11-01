@@ -29,4 +29,26 @@ theorem domain_of_parameter_jump_cfg {f : Clif.Function} {rank : Nat → Nat}
       (parameter_legacy_compatible terms run scope dominated family refines driver stable env cp)⟩
 
 
+
+theorem domain_of_parameter_jump_leaf_cfg {f : Clif.Function} {rank : Nat → Nat}
+    (scope : LowerScope f) (dominated : Dominated f) (abi : sigAbiOk f.sig = true)
+    (ordinary : (sigRets f.sig).any (·.purpose == .sret) = false)
+    (ranked : Ranked f rank) (terms : ParameterLeafTerms f)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    {entry : Clif.Block} {bc : Clif.BlockCall} (source : f.blocks[0]? = some entry)
+    (jump : entry.term = .jump bc) : Scalar.Domain f := by
+  refine ⟨scope,dominated,abi,ordinary,?_,?_⟩
+  · intro result run args cm fr entered env cp fuel vals mem returned F isem refines driver
+      sb syms memorySem MR stable w memory arguments
+    obtain ⟨ρ,simulation⟩ := parameter_jump_return_frame_of_leaf run scope dominated abi ranked
+      (parameter_leaf_terms_nonentry terms) family source jump entered returned refines driver memorySem stable memory arguments
+    exact ⟨ρ,simulation.legacyCompatible
+      (parameter_legacy_compatible_of_leaf terms run scope dominated family refines driver stable env cp)⟩
+  · intro result run args cm fr entered env cp fuel code trapped F isem refines driver
+      sb syms memorySem MR stable w memory arguments
+    obtain ⟨ρ,simulation⟩ := parameter_jump_trap_frame_of_leaf run scope dominated abi ranked
+      (parameter_leaf_terms_nonentry terms) family source jump entered trapped refines driver memorySem stable memory arguments
+    exact ⟨ρ,simulation.legacyCompatible
+      (parameter_legacy_compatible_of_leaf terms run scope dominated family refines driver stable env cp)⟩
+
 end Backend.Stock.Proof.ParameterCfg
