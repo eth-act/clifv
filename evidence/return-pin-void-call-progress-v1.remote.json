@@ -1,0 +1,12 @@
+{
+  "archive": "return-pin-void-call-progress-v1.tar.gz",
+  "archive_bytes": 3192936,
+  "archive_sha256": "b9d90e935e938ebb9819222feb948c11b0b69c51b5f4b3cdedebc06c17abd600",
+  "parts": [
+    {
+      "name": "return-pin-void-call-progress-v1.tar.gz.part-000",
+      "bytes": 3192936,
+      "sha256": "b9d90e935e938ebb9819222feb948c11b0b69c51b5f4b3cdedebc06c17abd600"
+    }
+  ]
+}
