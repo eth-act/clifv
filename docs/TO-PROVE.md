@@ -1029,7 +1029,7 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   out of date (not their dependents; those are checked the same way, in one batch, once their imports
   are done; a final check over all modules confirms nothing is left). Only the out-of-date modules get
   a memcapped `lake build <M>` each, in import order: cap = recorded peak (`scripts/lake-module-peaks.tsv`,
-  refreshed in `.lake/lake-module-peaks.tsv` with the scope's cgroup `memory.peak`) × 1.2 + 0.5 GB;
+  refreshed in `.lake/lake-module-peaks.tsv` with the scope's cgroup `memory.peak`; at the end the scheduler lists built modules whose time or memory drifted more than 2× from the committed table, and `scripts/peaks-update.py --write <log dirs>` writes measurements back; every full gate reports drift and uploads a refreshed table as the `lake-module-peaks` artifact) × 1.2 + 0.5 GB;
   light modules side by side (≤ 6) within the budget, critical path first, backfilling only modules
   that cannot delay the next one; modules peaking above 12 GB one at a time (their cap counts in the
   budget, so light modules keep running beside them), and only when ≥ 30 GB is

@@ -24,7 +24,7 @@ echo "wave $wave shard $shard: ${#mods[@]} modules"
 python3 scripts/lake-serial-build.py --only "$out/modules.txt" --out "$out/sched" \
   --record "$out/peaks.tsv" --budget "${FV_CI_BUDGET:-15G}" --heavy "${FV_CI_HEAVY:-12G}" \
   --heavy-avail 0 --pause-avail 1G --max-jobs "${FV_CI_MAX_JOBS:-3}" --margin 1.0 --max-cap 48G \
-  --retry-failed \
+  --retry-failed --drift-time-scale 0 \
   "${mods[@]}"
 lake build --no-build "${mods[@]}" -o "$out/outputs.jsonl"
 lake cache stage "$out/outputs.jsonl" "$out/stage"

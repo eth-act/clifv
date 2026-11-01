@@ -59,7 +59,7 @@ reservation, and only modules that cannot delay it are backfilled.
 
 Logs: OUT/sched.log (one line per start/finish/check) and OUT/<module>.log / .time / .mem.
 """
-import argparse, fcntl, hashlib, os, pathlib, re, signal, subprocess, sys, time, tomllib
+import argparse, fcntl, hashlib, importlib.util, os, pathlib, re, signal, subprocess, sys, time, tomllib
 
 GiB = 1024 ** 3
 CGROUP_USER = pathlib.Path(f"/sys/fs/cgroup/user.slice/user-{os.getuid()}.slice/"
@@ -273,6 +273,10 @@ def main():
     ap.add_argument("--profile", action="append",
                     help="peak TSVs (default scripts/lake-module-peaks.tsv, .lake/lake-module-peaks.tsv)")
     ap.add_argument("--record", default=".lake/lake-module-peaks.tsv")
+    ap.add_argument("--drift-time-scale", type=float, default=1.0,
+                    help="at the end, list built modules whose time or memory drifted from "
+                         "scripts/lake-module-peaks.tsv (scripts/peaks-update.py), with measured "
+                         "seconds divided by this factor; 0: off")
     ap.add_argument("--dry-run", action="store_true", help="print the plan and exit")
     ap.add_argument("--only", metavar="FILE",
                     help="build only the modules listed in FILE (whitespace-separated); their "
@@ -906,6 +910,16 @@ def main():
     if batch:
         say(f"{nchecks} batch checks, {tcheck:.0f}s; {deduped} modules restored after another "
             f"worktree built them")
+    if a.drift_time_scale and built:
+        # time or memory far from the committed record: a regression, or a record to refresh
+        spec = importlib.util.spec_from_file_location("peaks_update", root / "scripts/peaks-update.py")
+        pu = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pu)
+        _, rows = pu.read_table(root / "scripts/lake-module-peaks.tsv")
+        meas = {m: (mb, x / a.drift_time_scale) for m, (mb, x) in pu.read_sched(out).items()}
+        for k, m, rec, mv in pu.drift(rows, meas):
+            if k != "new":
+                say(pu.fmt(k, m, rec, mv))
     say(f"END {ok}/{len(want)} ok, {built} built, wall {dt / 60:.1f} min")
     return 0 if ok == len(want) else 1
 
