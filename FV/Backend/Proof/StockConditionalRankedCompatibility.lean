@@ -14,7 +14,7 @@ set_option autoImplicit false
 set_option Elab.async false
 set_option maxRecDepth 20000
 
-private theorem selected_empty {f : Clif.Function} (shape : RankedShape f)
+private theorem selected_empty {f : Clif.Function} (shape : RankedLeafShape f)
     {bi index id : Nat} {b : Clif.Block} {args : List Clif.TryArg}
     (source : f.blocks[bi]? = some b) (selected : (destinations b.term)[index]? = some (id,args)) (entry : bi = 0) :
     bi = 0 ∧ b = shape.entry ∧ ∃ bc,(dests b.term)[index]? = some bc ∧ bc.args = [] := by
@@ -43,9 +43,10 @@ private theorem assembled_arguments {ctx : Ctx} {f : Clif.Function} {b : Clif.Bl
   all_goals cases run; simp_all
 
 /-- The compatible source class derives exact agreement with the existing
-single-vector edge interface, including actual synthetic critical-edge blocks. -/
-theorem RankedShape.legacy_compatible {f : Clif.Function} {result : Result}
-    (shape : RankedShape f) (run : Stock.lower f = .ok result)
+single-vector edge interface, including actual synthetic critical-edge blocks.
+Tail blocks may also end in `trap`, which has no outgoing edge. -/
+theorem RankedLeafShape.legacy_compatible {f : Clif.Function} {result : Result}
+    (shape : RankedLeafShape f) (run : Stock.lower f = .ok result)
     (scope : LowerScope f) (dominated : Dominated f)
     {isem : Backend.Proof.Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
     (spec : ConditionalBodySpec f result shape.entry 0 0 shape.condition shape.yes shape.no isem MR env cp) :
@@ -95,7 +96,7 @@ theorem RankedShape.legacy_compatible {f : Clif.Function} {result : Result}
             · exact stock_lower_deferred_outgoing run tag successor synthetic
           refine ⟨_,spec.placed,?_⟩
           simpa only [outgoingAt,rawArgs,Array.map_empty] using vector
-        · rcases shape.tails bi b source isEntry with ⟨bc,jump⟩ | ⟨xs,ret⟩
+        · rcases shape.tails bi b source isEntry with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,trap⟩
           · have only : index = 0 := by
               cases index with
               | zero => rfl
@@ -114,15 +115,17 @@ theorem RankedShape.legacy_compatible {f : Clif.Function} {result : Result}
               (by simpa only [getElem!_def,row,Option.getD_some] using selected) targetTag
             exact ⟨vb,placed,by simpa only [outgoingAt,arguments] using vector⟩
           · simp only [ret,destinations,List.getElem?_nil] at destination; cases destination
+          · simp only [trap,destinations,List.getElem?_nil] at destination; cases destination
       | edge pred k ti =>
         obtain ⟨b,id,args,source,destination,found⟩ := stock_lower_critical_source run tag
         have isEntry : pred = 0 := by
           apply Classical.byContradiction
           intro nonentry
-          rcases shape.tails pred b source nonentry with ⟨bc,jump⟩ | ⟨xs,ret⟩
+          rcases shape.tails pred b source nonentry with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,trap⟩
           · exact CriticalOwners.jump_no_edge (stock_lower_order run) source jump k ti
               (Array.mem_toList_iff.mpr (Array.mem_of_getElem? tag))
           · simp only [ret,destinations,List.getElem?_nil] at destination; cases destination
+          · simp only [trap,destinations,List.getElem?_nil] at destination; cases destination
         obtain ⟨rfl,rfl,bc,selectedBc,empty⟩ := selected_empty shape source destination isEntry
         obtain ⟨input,next,registers,targetLabel,call,successors,targetTag,placed⟩ :=
           stock_lower_critical_code run tag
@@ -141,5 +144,15 @@ theorem RankedShape.legacy_compatible {f : Clif.Function} {result : Result}
         refine ⟨_,placed,?_⟩
         simpa only [outgoingAt,edgeArgumentNumbers,empty,List.map_nil,
           noRegisters,Array.map_empty] using vector
+
+/-- The compatible source class derives exact agreement with the existing
+single-vector edge interface, including actual synthetic critical-edge blocks. -/
+theorem RankedShape.legacy_compatible {f : Clif.Function} {result : Result}
+    (shape : RankedShape f) (run : Stock.lower f = .ok result)
+    (scope : LowerScope f) (dominated : Dominated f)
+    {isem : Backend.Proof.Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+    (spec : ConditionalBodySpec f result shape.entry 0 0 shape.condition shape.yes shape.no isem MR env cp) :
+    EdgeLegacyCompatible result.code result.edgeArgs :=
+  shape.toLeaf.legacy_compatible run scope dominated spec
 
 end Backend.Stock.ConditionalCfg
