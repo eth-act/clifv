@@ -11,6 +11,10 @@ for name in ['verify-sret-symbolic-heap-packet-v4-core.py','verify-sret-exec-bou
  completed=subprocess.run(['python3',str(e/name)],cwd=b,env=env)
  results.append(dict(script=name,returncode=completed.returncode))
  print('DONE',name,'rc='+str(completed.returncode),flush=True)
+ if name == 'verify-sret-exec-result-bytes-v1.py' and completed.returncode == 0:
+  extraction = subprocess.run(['python3',str(e/'verify-sret-exec-result-bytes-packet-v1.py')],cwd=b,env=env)
+  results.append(dict(script='verify-sret-exec-result-bytes-packet-v1.py',returncode=extraction.returncode))
+  print('CANONICAL executable result bytes rc='+str(extraction.returncode),flush=True)
  if name == 'verify-return-pin-checks-with-v1.py' and completed.returncode == 0:
   checks = subprocess.run(['python3',str(e/'verify-return-pin-checks-packet-v1.py')],cwd=b,env=env)
   results.append(dict(script='verify-return-pin-checks-packet-v1.py',returncode=checks.returncode))
