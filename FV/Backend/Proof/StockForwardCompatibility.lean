@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockGraphEdges
 import FV.Backend.Proof.StockForwardReturn
+import FV.Backend.Proof.StockForwardLeaf
 import FV.Backend.Proof.StockComputedCfg
 import FV.Backend.Proof.StockGraphBounds
 import FV.Backend.Proof.StockEdgeCode
@@ -12,10 +13,10 @@ set_option autoImplicit false
 set_option Elab.async false
 set_option maxRecDepth 20000
 
-/-- Arbitrary jump/return source graphs retain exactly the argument vectors
+/-- Arbitrary jump/return/trap source graphs retain exactly the argument vectors
 consumed by the existing compiler/checker/linker/generated-proof contract. -/
-theorem legacy_compatible {f : Clif.Function} {result : Result}
-    (run : Stock.lower f = .ok result) (scope : LowerScope f) (terms : JumpReturnBlocks f) :
+theorem legacy_compatible_of_leaf {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (terms : JumpLeafBlocks f) :
     EdgeLegacyCompatible result.code result.edgeArgs := by
   obtain ⟨ps,cfg⟩ := stock_lower_computed_cfg run scope
   have sizes := (stock_lower_graph_bounds run).1
@@ -36,14 +37,15 @@ theorem legacy_compatible {f : Clif.Function} {result : Result}
       cases node with
       | edge pred k ti =>
         obtain ⟨b,id,args,source,destination,found⟩ := stock_lower_critical_source run tag
-        rcases terms b (List.mem_of_getElem? source) with ⟨bc,jump⟩ | ⟨xs,ret⟩
+        rcases terms b (List.mem_of_getElem? source) with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,trap⟩
         · exact False.elim (CriticalOwners.jump_no_edge (stock_lower_order run) source jump k ti
             (Array.mem_toList_iff.mpr (Array.mem_of_getElem? tag)))
         · simp only [ret,destinations,List.getElem?_nil] at destination; cases destination
+        · simp only [trap,destinations,List.getElem?_nil] at destination; cases destination
       | original bi =>
         obtain ⟨b,id,args,ti,source,destination,found,targetNode⟩ :=
           stock_lower_indexed_successor_origin run tag row selected
-        rcases terms b (List.mem_of_getElem? source) with ⟨bc,jump⟩ | ⟨xs,ret⟩
+        rcases terms b (List.mem_of_getElem? source) with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,trap⟩
         · have only : index = 0 := by
             cases index with
             | zero => rfl
@@ -62,5 +64,13 @@ theorem legacy_compatible {f : Clif.Function} {result : Result}
             (by simpa only [getElem!_def,row,Option.getD_some] using selected) targetTag
           exact ⟨vb,placed,by simpa only [outgoingAt,arguments] using vector⟩
         · simp only [ret,destinations,List.getElem?_nil] at destination; cases destination
+        · simp only [trap,destinations,List.getElem?_nil] at destination; cases destination
+
+/-- Arbitrary jump/return source graphs retain exactly the argument vectors
+consumed by the existing compiler/checker/linker/generated-proof contract. -/
+theorem legacy_compatible {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (terms : JumpReturnBlocks f) :
+    EdgeLegacyCompatible result.code result.edgeArgs :=
+  legacy_compatible_of_leaf run scope terms.toLeaf
 
 end Backend.Stock.Proof.ForwardSource
