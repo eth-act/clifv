@@ -1,0 +1,12 @@
+{
+  "archive": "captured-copy-backup-v4.tar.gz",
+  "archive_bytes": 377242,
+  "archive_sha256": "7e92d7ba1c9d16bacc308f103b6dcc2a45b5b8738864907db0ccdafdc356d8fa",
+  "parts": [
+    {
+      "name": "captured-copy-backup-v4.tar.gz.part-000",
+      "bytes": 377242,
+      "sha256": "7e92d7ba1c9d16bacc308f103b6dcc2a45b5b8738864907db0ccdafdc356d8fa"
+    }
+  ]
+}
