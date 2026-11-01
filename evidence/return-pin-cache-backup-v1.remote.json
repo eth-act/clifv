@@ -1,0 +1,12 @@
+{
+  "archive": "return-pin-cache-backup-v1.tar.gz",
+  "archive_bytes": 3129050,
+  "archive_sha256": "5fdd26eb3e8fe94f9d1a7e724db2054c8c06534d0d313f541af785af224675da",
+  "parts": [
+    {
+      "name": "return-pin-cache-backup-v1.tar.gz.part-000",
+      "bytes": 3129050,
+      "sha256": "5fdd26eb3e8fe94f9d1a7e724db2054c8c06534d0d313f541af785af224675da"
+    }
+  ]
+}
