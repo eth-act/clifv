@@ -1,0 +1,45 @@
+{
+  "status": "verified_mapping_conflict",
+  "module": "FV.Arm.State",
+  "input_hash": "520f9671c3429ea6",
+  "local_trace": {
+    "synthetic": true,
+    "schemaVersion": "2025-09-10",
+    "outputs": {
+      "o": [
+        "3397ec50eff31ceb.olean"
+      ],
+      "m": false,
+      "i": "1bd5b9b3bd660ff4.ilean",
+      "c": "21adf31d7365f758.c"
+    },
+    "log": [],
+    "inputs": [],
+    "depHash": "520f9671c3429ea6"
+  },
+  "existing_mapping": {
+    "service": null,
+    "schemaVersion": "2026-02-25",
+    "data": {
+      "o": [
+        "3397ec50eff31ceb.olean"
+      ],
+      "m": false,
+      "i": "1bd5b9b3bd660ff4.ilean",
+      "c": "21adf31d7365f758.c"
+    }
+  },
+  "ci_manifest": "main870-ci-wave1-stage-w1-0-outputs-0-v1.jsonl",
+  "ci_mapping": [
+    "520f9671c3429ea6",
+    "35c6bea0f26ac2a9.ltar"
+  ],
+  "existing_olean_sha256": "ace0a6010e5f632df5ce6314a333d247d4e4747321169acac4b028588bb2345a",
+  "ci_olean_sha256": "c4ac55469b7b8d35c0a1d0f898acb6cbbe4fa6a50a6b6628789c36a82bea015e",
+  "byte_evidence": "main870-cache-parent-byte-comparison-v1.json",
+  "changes_to_cache": false,
+  "changes_to_live_artifacts": false,
+  "cause": "The same Arm.State input key has two different output variants. The existing descriptor remains selected after additive CI imports. The downstream Common input keys differ. This establishes a conflicting variant at this cache boundary. It does not establish why the original producers emitted different bytes.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T21:41:53.537445+00:00"
+}
