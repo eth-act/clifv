@@ -50,7 +50,7 @@ example : (scan 7 false [ext4, cmpE4, ext5, cmpE5, liveCset, retCset] []).1 =
 example : ∃ vc : VCode, vc.blocks.size = 1 ∧
     (clean vc).blocks[0]!.insts.toList = [cmp01, liveCset, retCset] := by
   refine ⟨⟨"cset_witness", #[⟨0, #[cmp01, deadCset, cmp01, liveCset, retCset], #[], #[]⟩],
-    #[.int, .int, .int, .int], 0, 0, #[]⟩, ?_, ?_⟩ <;> decide
+    #[.int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_, ?_⟩ <;> decide
 
 example : pureForm (.mov .size64 (.vreg 1 .int) (.vreg 0 .int)) = true :=
   pureForm_of_pureNoFlags rfl
@@ -73,12 +73,12 @@ example : (scan 7 false [cmp01, asr6, cmp0, liveCset, ret2] []).1 =
 whose successor reads the flags first stays. -/
 example : ∃ vc : VCode, (clean vc).blocks[0]!.insts.toList = [.jump 1] := by
   refine ⟨⟨"cset_jump", #[⟨0, #[cmp01, .jump 1], #[], #[]⟩,
-    ⟨1, #[cmp0, liveCset, retCset], #[], #[]⟩], #[.int, .int, .int, .int], 0, 0, #[]⟩, ?_⟩
+    ⟨1, #[cmp0, liveCset, retCset], #[], #[]⟩], #[.int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_⟩
   decide +kernel
 
 example : ∃ vc : VCode, (clean vc).blocks[0]!.insts.toList = [cmp01, .jump 1] := by
   refine ⟨⟨"cset_jump_live", #[⟨0, #[cmp01, .jump 1], #[], #[]⟩,
-    ⟨1, #[liveCset, cmp0, retCset], #[], #[]⟩], #[.int, .int, .int, .int], 0, 0, #[]⟩, ?_⟩
+    ⟨1, #[liveCset, cmp0, retCset], #[], #[]⟩], #[.int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_⟩
   decide +kernel
 
 example : JumpPlain (mspec 0) := mspec_jumpPlain 0
