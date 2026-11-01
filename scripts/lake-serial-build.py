@@ -153,17 +153,23 @@ def heavy_queue_head():
     for f in files:
         try:
             t, pid = map(int, f.name.split("-"))
-            est, mod = f.read_text().split()[:2]
-        except (OSError, ValueError):
+        except ValueError:
             continue
         if not pid_alive(pid):
+            # Dead scheduler: drop its ticket whatever its content (#863: tickets
+            # left empty by a failed write were skipped here forever).
             try:
                 f.unlink()
             except OSError:
                 pass
             continue
+        try:
+            est, mod = f.read_text().split()[:2]
+            est = int(est)
+        except (OSError, ValueError):
+            continue
         if best is None or (t, pid) < best[0]:
-            best = ((t, pid), pid, int(est), mod)
+            best = ((t, pid), pid, est, mod)
     return best[1:] if best else None
 
 
@@ -552,12 +558,15 @@ def main():
             HEAVY_QUEUE.chmod(0o1777)
         except OSError:
             pass
+        p = HEAVY_QUEUE / f"{queued_at.setdefault(m, time.time_ns())}-{me}"
         try:
-            p = HEAVY_QUEUE / f"{queued_at.setdefault(m, time.time_ns())}-{me}"
             p.write_text(f"{est} {m}\n")
             ticket = (p, m)
         except OSError:
-            pass
+            try:
+                p.unlink()   # don't leave an empty ticket behind (#863)
+            except OSError:
+                pass
 
     def dequeue():
         nonlocal ticket
