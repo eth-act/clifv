@@ -1,0 +1,12 @@
+{
+  "archive": "sret-copy-admission-backup-v2.tar.gz",
+  "archive_bytes": 12162895,
+  "archive_sha256": "0af1e6eeb7b44ad57820b6830b98887fe66202d24e688307a65fba61b6b9c7b8",
+  "parts": [
+    {
+      "name": "sret-copy-admission-backup-v2.tar.gz.part-000",
+      "bytes": 12162895,
+      "sha256": "0af1e6eeb7b44ad57820b6830b98887fe66202d24e688307a65fba61b6b9c7b8"
+    }
+  ]
+}
