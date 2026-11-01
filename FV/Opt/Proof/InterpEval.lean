@@ -130,29 +130,97 @@ def optUnfoldEqns : Array Name := #[
   ``Isle.Interp.matchPatN.eq_6, ``Isle.Interp.matchPatN.eq_7, ``Isle.Interp.matchPatN.eq_8,
   ``Isle.Interp.matchArgsN.eq_1, ``Isle.Interp.matchArgsN.eq_2]
 
-open Lean Elab Tactic in
-/-- One step of `opt_eval at h`: unfold the first closed interpreter call in `h`, by the first
-equation lemma of `optUnfoldEqns` that rewrites it. Only the lemmas of functions that occur in `h`
-are tried: a `rw` with any other fails anyway, after traversing the whole hypothesis. -/
+open Lean Meta in
+/-- The closed applications of `e` in the order `kabstract` (`rw`) visits them (pre-order, left to
+right), except inside the alternatives of `match`es: `opt_norm` leaves those alternatives alone
+(`opt_match_head`), so they are evaluated once a `split` has selected one. -/
+partial def optVisible (e : Expr) : StateT (Std.HashSet Expr × Array Expr) MetaM Unit := do
+  if (← get).1.contains e then return
+  modify fun (v, a) => (v.insert e, a)
+  match e with
+  | .app .. =>
+    if !e.hasLooseBVars then modify fun (v, a) => (v, a.push e)
+    let f := e.getAppFn
+    let args := e.getAppArgs
+    let mut alts : Nat × Nat := (0, 0)
+    if let .const n _ := f then
+      if let some info ← getMatcherInfo? n then
+        if args.size ≥ info.arity then
+          let i := info.numParams + 1 + info.numDiscrs
+          alts := (i, i + info.numAlts)
+    optVisible f
+    for h : i in [:args.size] do
+      unless alts.1 ≤ i && i < alts.2 do optVisible args[i]
+  | .lam _ d b _ | .forallE _ d b _ => optVisible d; optVisible b
+  | .letE _ t v b _ => optVisible t; optVisible v; optVisible b
+  | .mdata _ b | .proj _ _ b => optVisible b
+  | _ => pure ()
+
+open Lean Meta Elab Tactic in
+/-- One step of `opt_eval at h`: unfold an interpreter call of `h` by the first equation lemma of
+`optUnfoldEqns` that rewrites one, at the first such call in `rw`'s order outside the
+alternatives of `match`es (`optVisible`). Only the lemmas of functions that occur in `h` are
+tried. -/
 elab "opt_unfold " h:ident : tactic => withMainContext do
-  let used := (← instantiateMVars (← (← getFVarId h).getType)).getUsedConstants
+  let e ← instantiateMVars (← (← getFVarId h).getType)
+  let used := e.getUsedConstants
+  let (_, _, cands) ← (optVisible e).run ({}, #[])
   for l in optUnfoldEqns do
     unless used.contains l.getPrefix do continue
     let s ← saveState
     try
-      evalTactic (← `(tactic| rw [$(mkIdent l):ident] at $h:ident))
-      return
+      let pf ← mkConstWithFreshMVarLevels l
+      let (xs, _, ty) ← forallMetaTelescopeReducing (← inferType pf)
+      let some (_, lhs, _) := ty.eq? | continue
+      let key := (lhs.toHeadIndex, lhs.headNumArgs)
+      for t in cands do
+        unless (t.toHeadIndex, t.headNumArgs) == key do continue
+        if ← withTransparency .instances (isDefEq lhs t) then
+          let eq ← instantiateMVars (mkAppN pf xs)
+          if eq.hasMVar then continue
+          let eqStx ← Term.exprToSyntax eq
+          evalTactic (← `(tactic| rw [$eqStx:term] at $h:ident))
+          return
+      s.restore
     catch _ => s.restore
   throwError "opt_unfold: no equation lemma rewrites {h}"
 
+open Lean Meta Simp in
+/-- Of a `match` whose discriminants, once simplified, select no alternative, keep the
+alternatives as they are (`opt_norm`): the hypothesis of a rule's right-hand side holds the
+interpreter's pending `match`es (the remaining rules of a term, their pattern matches and if-lets),
+and simplifying their alternatives on every step re-traversed all of them (`RuleShiftsRotate`,
+`RuleExtends2`: most of the module). A `match` that reduces is reduced and simplified further. -/
+simproc_decl opt_match_head (_) := fun e => do
+  let .const declName _ := e.getAppFn | return .continue
+  let some info ← getMatcherInfo? declName | return .continue
+  if e.getAppNumArgs < info.arity then return .continue
+  if let some e' ← withSimpMetaConfig <| reduceRecMatcher? e then
+    return .visit { expr := e' }
+  let r ← (simpMatchDiscrs? info e) <&> (·.getD { expr := e })
+  if let some e' ← withSimpMetaConfig <| reduceRecMatcher? r.expr then
+    return .visit (← r.mkEqTrans { expr := e' })
+  match ← simpMatchCore declName r.expr with
+  | .visit r' => return .visit (← r.mkEqTrans r')
+  | _ => return .done r
+
+example (x : Nat) (h : (match x + 0 with | 0 => 0 + 1 | k + 1 => k + 0) = 2) :
+    (match x with | 0 => 0 + 1 | k + 1 => k + 0) = 2 := by
+  simp only [↓opt_match_head, Nat.add_zero] at h; exact h
+
+example (h : (match some 1 with | some a => a + 0 | none => 0) = 1) : True := by
+  simp only [↓opt_match_head, Nat.add_zero] at h; trivial
+
 /-- Normalise between steps: data/constructor facts and monad laws, in one `simp` call. Alternating
 one call per set until neither applies traversed the whole hypothesis again on every call: up to
-a third more heartbeats in `RuleExtends2` and `RuleSkeleton5`. -/
+a third more heartbeats in `RuleExtends2` and `RuleSkeleton5`. The alternatives of a `match` that
+does not reduce are left alone (`opt_match_head`). -/
 syntax "opt_norm " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
 macro_rules
   | `(tactic| opt_norm $h:ident) => `(tactic| opt_norm $h [])
   | `(tactic| opt_norm $h:ident [$ts,*]) => `(tactic|
-      try simp (disch := assumption) only [opt_data, opt_monad, opt_imm, $ts,*] at $h:ident)
+      try simp (disch := assumption) only [↓opt_match_head, opt_data, opt_monad, opt_imm, $ts,*]
+        at $h:ident)
 
 /-- Evaluate the interpreter call in hypothesis `h`: alternate `opt_unfold` and `opt_norm`. -/
 syntax "opt_eval " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic

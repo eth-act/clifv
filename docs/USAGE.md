@@ -1047,6 +1047,27 @@ target/fv/<mode>/tmp` compares, per codegen unit and function, `lean.o` with cg_
 (frame, slot layout, register allocation, dead `cset`, branch layout, instruction selection;
 a heuristic on `llvm-mc` disassembly). Results and the cause issues: #557.
 
+## Checking an edit: which loop to use
+
+Measured on clifv (2026-10-30/31, 16-vCPU orb, `LEAN_NUM_THREADS=2`):
+
+1. **Default: the Lean language server**, for agents through
+   [lean-lsp-mcp](https://github.com/oOo0oOo/lean-lsp-mcp) (`uvx lean-lsp-mcp`, run from the
+   worktree root). After an edit it re-elaborates from the edited declaration on and reports
+   that declaration's diagnostics first. Build the file's imports before opening it
+   (`scripts/lake-serial-build.py <its imports>`). The diagnostics for the edited declaration
+   arrive in 0.2 s (warm) to 2 s in `FV.Clif.Syntax` or `FV.Backend.Regalloc`, 6–9 s in
+   `FV.Backend.Proof.IselTerms`, and 25–27 s in `FV.Opt.Proof.RuleArith5`, whose whole-file check
+   takes about 17 min. On every same-file case tried, it agreed with `lake build`. An open heavy
+   proof file can hold 12–13 GB.
+2. **Heavy files: turbo-lean** (next section). It re-checks one theorem with earlier ones stubbed,
+   using about 0.3 GB instead of 12 GB. A pass is not a proof of the module.
+3. **Small files only: `lake env lean <file>`.** It re-checks the whole file every time: 1.6–14 s for
+   the backend files above, about 18 min for `RuleArith5`.
+4. **Before a commit: `scripts/lake-serial-build.py <module>` with its importers** (or the per-PR
+   gate). Neither fast loop re-checks other files. For example, an edit to `FV.Clif.Syntax`
+   leaves about 4,400 modules out of date.
+
 ## Fast proof-edit loop for agents (`turbo-lean check`, optional)
 
 To iterate on one theorem in a heavy proof module without rebuilding the module (KillTab

@@ -209,21 +209,22 @@ def main():
         heapq.heapify(ready)
         t, run, used = 0.0, [], 0
         while ready or run:
+            # one heavy module at a time, holding its cap in the budget (above it: alone)
             solo = any(is_heavy(x) for _, x in run)
             skipped = []
-            while ready and not solo and len(run) < a.max_jobs:
+            while ready and len(run) < a.max_jobs:
                 item = heapq.heappop(ready)
                 m = item[1]
-                if is_heavy(m):
-                    if run:
-                        skipped.append(item)
-                        break
-                    heapq.heappush(run, (t + secs[m], m)); used += caps[m]; solo = True
-                    break
-                if used + caps[m] > budget:
+                if is_heavy(m) and solo:
                     skipped.append(item)
                     continue
+                if used + caps[m] > budget and run:
+                    skipped.append(item)
+                    if is_heavy(m):
+                        break  # it keeps its turn (the scheduler reserves the budget for it)
+                    continue
                 heapq.heappush(run, (t + secs[m], m)); used += caps[m]
+                solo = solo or is_heavy(m)
             for item in skipped:
                 heapq.heappush(ready, item)
             e, m = heapq.heappop(run)

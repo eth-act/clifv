@@ -192,8 +192,17 @@ def maskEligible (f : Clif.Function) : Bool :=
 def productionEligible (f : Clif.Function) : Bool :=
   (eligible f || narrowEligible f) || maskEligible f
 
-/-- Previously shipped selectors remain fixed; narrow syntax adds a route. -/
-def activationEligible (f : Clif.Function) : Bool := productionEligible f && !Logical.eligible f
+/-- The same bodies when the block ends in `trap` (the trap root, `udf`) instead of `return`. -/
+def maskTrapEligible (f : Clif.Function) : Bool :=
+  match f.blocks with
+  | [b] => b.body.all maskMixedBodyEligible &&
+      (match b.term with | .trap _ => true | _ => false) &&
+      f.sig.params.all narrowAbiEligible && f.sig.returns.all narrowAbiEligible
+  | _ => false
+
+/-- Previously shipped selectors remain fixed; narrow syntax and trap terminators add routes. -/
+def activationEligible (f : Clif.Function) : Bool :=
+  (productionEligible f || maskTrapEligible f) && !Logical.eligible f
 
 def lowerCandidate (f : Clif.Function) : Except String VCode :=
   if !activationEligible f then Logical.lowerCandidate f

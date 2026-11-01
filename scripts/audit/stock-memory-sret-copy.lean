@@ -1,0 +1,63 @@
+import FV.Backend.Proof.StockMemoryOffsetEightStoreExec
+import FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage
+import FV.Backend.Proof.StockMemoryOffsetEightStoreRetention
+import FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues
+import FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines
+import FV.E2E.StockMemoryOffsetEightStorePairedScan
+import FV.Backend.Proof.StockMemoryNopNonentryReturn
+import FV.E2E.StockMemoryNopNonentryPairedReturn
+import FV.Backend.Proof.StockMemorySretCopyBodySpec
+import FV.Backend.Proof.StockMemorySretCopyBody
+import FV.E2E.StockMemorySretCopyPairedBody
+import FV.Backend.Proof.StockMemorySretCopyBodyWitness
+import FV.Backend.Proof.StockMemoryOrdinarySourceTrap
+import FV.Backend.Proof.StockMemoryOrdinarySourceContinuation
+import FV.Backend.Proof.StockMemoryOrdinaryJumpDefined
+import FV.Backend.Proof.StockMemoryOrdinaryCfgJumpReturnAt
+import FV.E2E.StockMemoryOrdinaryPairedJump
+import FV.Backend.Proof.StockBodySplitUnique
+import FV.Backend.Proof.StockMemoryBodyNotrap
+import FV.Backend.Proof.StockMemoryOrdinaryJumpSpec
+import FV.Backend.Proof.StockMemorySretCopyBodySplit
+import FV.E2E.StockMemorySretCopyPairedBodySplit
+import FV.Backend.Proof.StockMemorySretCopyJumpSpec
+import FV.Backend.Proof.StockMemorySretCopyFunction
+import FV.E2E.StockMemorySretCopyPairedFunction
+import FV.E2E.StockMemorySretCopyPairedWitness
+import FV.Backend.Proof.StockMemorySretCopyFunctionObservation
+import FV.E2E.StockMemorySretCopyPairedFunctionObservation
+import FV.Backend.Proof.StockMemoryOrdinaryTrapWitness
+
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_eight_record_run_of_store
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_eight_record_run
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_eight_operand_coverage
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_eight_source_step_of_store
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_eight_source_step
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_eight_scan_fall_refines
+#print axioms E2E.StockMemory.StoreRoots.stock_lower_integer_store_eight_paired_scan
+#print axioms Backend.Stock.Memory.actual_nonentry_nop_return
+#print axioms E2E.StockMemory.actual_nonentry_paired_nop_return
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_eight_definition_emitted
+#print axioms Backend.Stock.Memory.SretCopy.captured_sret_copy_body_spec
+#print axioms Backend.Stock.Memory.SretCopy.captured_sret_copy_body
+#print axioms E2E.StockMemory.SretCopy.captured_sret_copy_paired_body
+#print axioms Backend.Stock.Memory.SretCopy.Fixture.captured_sret_source_shape_witness -- witness: native_decide
+#print axioms Backend.Stock.Memory.SretCopy.Fixture.captured_sret_copy_body_witness -- witness: native_decide
+#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_source_trap
+#print axioms Backend.Stock.Proof.OrdinaryBody.actual_ordinary_source_trap_or_continue
+#print axioms Backend.Stock.Proof.Inherited.ordinary_jump_carry_returns_defined_of_body
+#print axioms Backend.Stock.Proof.Control.ordinary_jump_body_returns_at_of_body
+#print axioms E2E.StockMemory.ordinary_paired_jump_body_returns_at_of_body
+#print axioms Backend.Stock.Proof.SourceBodySplit.unique
+#print axioms Backend.Stock.Proof.OrdinaryBody.source_body_notrap
+#print axioms Backend.Stock.Proof.Control.stock_lower_ordinary_notrap_jump_body_spec
+#print axioms Backend.Stock.Memory.SretCopy.captured_sret_copy_body_of_split
+#print axioms E2E.StockMemory.SretCopy.captured_sret_copy_paired_body_of_split
+#print axioms Backend.Stock.Memory.SretCopy.captured_sret_copy_jump_spec
+#print axioms Backend.Stock.Memory.SretCopy.sret_copy_return_frame
+#print axioms E2E.StockMemory.SretCopy.sret_copy_paired_return_frame
+#print axioms E2E.StockMemorySretCopyFunctionWitness.complete_paired_sret_copy_witness -- witness: native_decide
+#print axioms Backend.Stock.Memory.SretCopy.sret_copy_return_function
+#print axioms E2E.StockMemory.SretCopy.sret_copy_paired_return_function
+#print axioms E2E.StockMemorySretCopyFunctionWitness.complete_paired_sret_function_witness -- witness: native_decide
+#print axioms Backend.Stock.Proof.OrdinaryBody.TrapFixture.ordinary_memory_first_trap_witness -- witness: native_decide

@@ -1,0 +1,30 @@
+import FV.Backend.Proof.StockMemoryIntegerSelected
+import FV.Backend.Proof.StockMemoryIntegerDispatch
+import FV.Backend.Proof.StockMemoryStoreMatch
+import FV.Backend.Proof.StockMemoryStoreDispatch
+import FV.Backend.Proof.StockMemoryStoreSelected
+import FV.Backend.Proof.StockMemoryOffsetEightLoad
+import FV.Backend.Proof.StockMemoryOffsetEightStore
+import FV.Backend.Proof.StockMemoryOffsetEightExecutionWitness
+import FV.Backend.Proof.StockMemoryOffsetEightLoadRecord
+import FV.Backend.Proof.StockMemoryOffsetEightStoreRecord
+import FV.Backend.Proof.StockMemoryOffsetEightRecordWitness
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_match_integer_load_offset
+#print axioms Backend.Stock.Memory.IntegerRoots.integer_load_source_data_offset
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_selected_receipts_offset
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_selected_integer_load_rule_offset
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_selected_id_offset
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_parameter_integer_load_eight_rhs
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_eight_record
+#print axioms Backend.Stock.Memory.IntegerRoots.integer_load_eight_rhs_witness
+#print axioms Backend.Stock.Memory.StoreRoots.stock_match_integer_store_offset
+#print axioms Backend.Stock.Memory.StoreRoots.integer_store_source_data_offset
+#print axioms Backend.Stock.Memory.StoreRoots.stock_selected_integer_store_rule_offset
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_selected_id_offset
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_selected_receipts_offset
+#print axioms Backend.Stock.Memory.StoreRoots.stock_store_side_effect_eight
+#print axioms Backend.Stock.Memory.StoreRoots.stock_parameter_integer_store_eight_rhs
+#print axioms Backend.Stock.Memory.StoreRoots.stock_store_eight_rhs_result
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_eight_record
+#print axioms Backend.Stock.Memory.StoreRoots.integer_store_eight_rhs_witness
+#print axioms Backend.Stock.Memory.StoreRoots.ComputedFixture.captured_offset_eight_records_witness -- witness: native_decide

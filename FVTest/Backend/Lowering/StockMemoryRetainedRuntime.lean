@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMemoryStoreCfgCompatibility
 import FV.Backend.Proof.StockMemoryStoreCompatibility
 import FV.Backend.Proof.StockMemoryExtLoadCompatibility
 import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
@@ -48,6 +49,9 @@ def check (kind : String) : IO Unit := do
         require (!Stock.MemoryStore.eligible f) "retained class overlaps store source selector"
         let store ← get (Stock.MemoryStore.lowerValidated f)
         require (decide (store = extending)) "store provider changed retained artifact/history"
+        require (!Stock.MemoryStoreCfg.eligible f) "retained class overlaps CFG store source selector"
+        let cfgStore ← get (Stock.MemoryStoreCfg.lowerValidated f)
+        require (decide (cfgStore = store)) "CFG store provider changed retained artifact/history"
         cases := cases+1
       for cleanup in [false,true] do
         let allocate : Array VCode → IO (Array (Except String AFunc)) := fun vcs => pure (allocateLean vcs)
@@ -79,6 +83,13 @@ def check (kind : String) : IO Unit := do
           storeFile.unsupported == extendingFile.unsupported && storeFile.unverified == extendingFile.unverified &&
           storeFile.unvalidated == extendingFile.unvalidated)
           "store provider changed retained whole-file bytes/identities/history/stages"
+        let cfgStoreFile ← compileFileMemoryStoreCfgNIWhen true allocate pf [] cleanup
+        let cfgStoreBytes ← get cfgStoreFile.object
+        require (cfgStoreBytes == storeBytes && cfgStoreFile.tableJson == storeFile.tableJson &&
+          cfgStoreFile.text == storeFile.text && cfgStoreFile.rules == storeFile.rules &&
+          cfgStoreFile.unsupported == storeFile.unsupported && cfgStoreFile.unverified == storeFile.unverified &&
+          cfgStoreFile.unvalidated == storeFile.unvalidated)
+          "CFG store provider changed retained whole-file bytes/identities/history/stages"
         programs := programs+1
     else throw (IO.userError "retained class unexpectedly overlaps memory source selector")
   IO.println s!"STOCK_MEMORY_RETAINED_MATRIX_PASS {kind}: {cases} original functions, {programs} whole programs, exact Lean-allocator bytes/history/stages"

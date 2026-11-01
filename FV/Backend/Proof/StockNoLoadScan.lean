@@ -245,4 +245,97 @@ theorem scans_no_load_unsunk {ctx : Ctx} (noLoads : NoLoadData ctx) {block ti : 
       exact ⟨SunkEq.trans step pre,SunkEq.trans step post⟩
 
 
+attribute [local irreducible] commitOpportunistic scanState
+
+/-- A slot-preserving actual lower helper lifts through result binding and every
+scan decision. The helper contract can permit sinking at other source slots. -/
+theorem scan_sunk_at_of_lower {ctx : Ctx} {slot : Nat}
+    (keeps : ∀ {vs st next out trace},
+      Stock.runTerm ctx "lower" vs st = .ok (out,next,trace) →
+        next.sunk[slot]! = st.sunk[slot]!)
+    {block i ti : Nat} {branch : Bool} {st : State} {output : Scan}
+    (run : scanInstruction ctx block i ti branch st = .ok output) :
+    output.state.sunk[slot]! = st.sunk[slot]! := by
+  have emitted {i : Nat} {st : State} {emission : Emission}
+      (h : emitInstruction ctx i st = .ok emission) :
+      emission.state.sunk[slot]! = st.sunk[slot]! := by
+    unfold emitInstruction at h
+    change emitDecoded ctx i (Stock.runTerm ctx "lower" [.inst i] st) = .ok emission at h
+    unfold emitDecoded at h
+    cases hr : Stock.runTerm ctx "lower" [.inst i] st with
+    | error e => simp only [hr,bind,Except.bind] at h; cases h
+    | ok root =>
+      rcases root with ⟨out,next,trace⟩
+      simp only [hr,bind,Except.bind] at h
+      cases out with
+      | none => cases h
+      | some out =>
+        cases out <;> try cases h
+        rename_i rss
+        dsimp only at h
+        split at h
+        · cases h
+        · cases hb : bindResults ctx (ctx.insts[i]!.results.zip rss) next with
+          | error e => simp only [hb] at h; cases h
+          | ok result =>
+            rcases result with ⟨final,copies⟩
+            simp only [hb,pure,Except.pure] at h
+            cases h
+            exact (congrArg (fun bits => bits[slot]!) (binding_stableFields hb)).trans (keeps hr)
+  have scanned : (scanState st i).sunk[slot]! = st.sunk[slot]! :=
+    congrArg (fun bits => bits[slot]!) (scan_state_stableFields st i)
+  have emit (h : (emitInstruction ctx i (scanState st i) >>= fun e =>
+      pure (e.scan block i (scanState st i))) = .ok output) :
+      output.state.sunk[slot]! = st.sunk[slot]! := by
+    cases call : emitInstruction ctx i (scanState st i) with
+    | error e => simp only [call,bind,Except.bind] at h; cases h
+    | ok e =>
+      simp only [call,bind,Except.bind,pure,Except.pure] at h
+      cases h
+      exact (emitted call).trans scanned
+  change decideScan ctx block i ti branch st
+    (emitInstruction ctx i (scanState st i))
+    (commitOpportunistic ctx block i (scanState st i)) = .ok output at run
+  unfold decideScan at run
+  dsimp only at run
+  generalize hm : (if i == ti then true else ctx.insts[i]!.clif.any mustLower) = mandatory at run
+  split at run
+  · cases run; rfl
+  · split at run
+    · cases run; exact scanned
+    · split at run
+      · cases run; exact scanned
+      · split at run
+        · cases hc : commitOpportunistic ctx block i (scanState st i) with
+          | error e => simp only [hc,bind,Except.bind] at run; cases run
+          | ok result =>
+            simp only [hc,bind,Except.bind] at run
+            cases result with
+            | none => exact emit run
+            | some q =>
+              cases run
+              exact (congrArg (fun bits => bits[slot]!) (commit_stableFields hc)).trans scanned
+        · exact emit run
+
+/-- The same actual helper contract reaches every retained record boundary. -/
+theorem scans_sunk_at_of_lower {ctx : Ctx} {slot : Nat}
+    (keeps : ∀ {vs st next out trace},
+      Stock.runTerm ctx "lower" vs st = .ok (out,next,trace) →
+        next.sunk[slot]! = st.sunk[slot]!)
+    {block ti : Nat} {branch : Bool} {indices : List Nat} {st : State} {output : BlockScan}
+    (cert : ScansSpec (fun i => scanInstruction ctx block i ti branch) indices st output) :
+    output.state.sunk[slot]! = st.sunk[slot]! ∧
+      ∀ r ∈ output.records,r.input.sunk[slot]! = st.sunk[slot]! ∧
+        r.output.state.sunk[slot]! = st.sunk[slot]! := by
+  induction cert with
+  | nil st => exact ⟨rfl,by simp⟩
+  | cons head rest ih =>
+    have step := scan_sunk_at_of_lower keeps head
+    refine ⟨ih.1.trans step,?_⟩
+    intro r member
+    rcases List.mem_cons.mp member with rfl | member
+    · exact ⟨rfl,step⟩
+    · obtain ⟨pre,post⟩ := ih.2 r member
+      exact ⟨pre.trans step,post.trans step⟩
+
 end Backend.Stock.Proof.SinkRules

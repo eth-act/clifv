@@ -1,0 +1,10 @@
+import FV.Backend.Proof.StockMemoryComputedStoreRecordSpec
+import FV.Backend.Proof.StockMemoryComputedStoreRecordWitness
+import FV.Backend.Proof.StockMemoryOffsetEightAddress
+import FV.Backend.Proof.StockMemoryOffsetEightWitness
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_source_result_type
+#print axioms Backend.Stock.Memory.StoreRoots.stock_mixed_store_record_spec_of_value_type
+#print axioms Backend.Stock.Memory.StoreRoots.ComputedFixture.captured_computed_store_record_witness -- witness: native_decide
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_parameter_amode_eight_width
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_parameter_load_address_eight_width
+#print axioms Backend.Stock.Memory.IntegerRoots.parameter_offset_eight_address_witness

@@ -12,13 +12,23 @@ import subprocess
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--load-type', choices=('i8', 'i16', 'i32', 'i64'), help='exercise mixed load/store functions')
+    parser.add_argument('--memory-cfg', action='store_true', help='exercise the complete two-block store class')
     parser.add_argument('--store-type', choices=('i8', 'i16', 'i32', 'i64'), default='i64')
     parser.add_argument('--store-op', choices=('store', 'istore8', 'istore16', 'istore32'), default='store')
+    parser.add_argument('--captured-copy', type=Path, help='exercise the unchanged captured load/load/store CFG')
     args = parser.parse_args()
+    if sum(bool(x) for x in [args.load_type, args.memory_cfg, args.captured_copy]) > 1:
+        parser.error("load/store, CFG store and captured-copy modes are separate")
+    if args.captured_copy and (args.store_type != 'i64' or args.store_op != 'store'):
+        parser.error('the captured source retains its original store.i64 instruction')
+    program = "StockMemoryCapturedCopyProduction" if args.captured_copy else "StockMemoryLoadStoreProduction" if args.load_type else "StockMemoryStoreCfgProduction" if args.memory_cfg else "StockMemoryStoreProduction"
     value_bits = int(args.store_type[1:])
     store_bits = value_bits if args.store_op == 'store' else int(args.store_op[6:])
     if store_bits > value_bits:
         parser.error('the store width exceeds the original operand width')
+    if args.captured_copy and hashlib.sha256(args.captured_copy.read_bytes()).hexdigest() != '9d39c7307e7fc9b4c3f334692726fae11926683d31f27ea49d032d46e99e70ce':
+        parser.error('the original captured input bytes changed')
     root = Path(__file__).resolve().parents[1]
     out = args.output.resolve()
     if out == root or root in out.parents:
@@ -41,9 +51,9 @@ def main():
         return log.read_text()
 
     try:
-        run('fixture', [root / '.lake/build/bin/stock-memory-store-linked', generated,
-                        '--store-type', args.store_type, '--store-op', args.store_op])
-        expected = {f'StockMemoryStoreProduction{mode}{policy}{scope}' for mode in ('Plain', 'Cleanup')
+        run('fixture', [root / ('.lake/build/bin/stock-memory-captured-copy-linked' if args.captured_copy else '.lake/build/bin/stock-memory-load-store-linked' if args.load_type else '.lake/build/bin/stock-memory-store-cfg-linked' if args.memory_cfg else '.lake/build/bin/stock-memory-store-linked'), generated,
+                        '--store-type', args.store_type, '--store-op', args.store_op, *(['--load-type', args.load_type] if args.load_type else []), *(['--capture', args.captured_copy.resolve()] if args.captured_copy else [])])
+        expected = {f'{program}{mode}{policy}{scope}' for mode in ('Plain', 'Cleanup')
                     for policy in ('Strict', 'Fallback') for scope in ('Global', 'Entries')}
         assert {p.stem for p in (generated / 'Crates').glob('*.lean')} == expected
         env['LEAN_PATH'] = str(generated) + ':' + run('lean-path', ['lake', 'env', 'printenv', 'LEAN_PATH']).strip().splitlines()[-1]
@@ -74,7 +84,7 @@ def main():
 
         compile_generated()
         for mode, flags in [('Plain', ['--no-dead-cleanup']), ('Cleanup', [])]:
-            bundle = generated / f'StockMemoryStoreProduction{mode}FallbackGlobal-bundle'
+            bundle = generated / f'{program}{mode}FallbackGlobal-bundle'
             proof = generated / 'Crates' / f'MemoryStoreCLI{mode}.lean'
             run('cli-check-' + mode, [root / '.lake/build/bin/link-check', bundle, '--lean', proof,
                                      '--module', proof.stem, *flags])
@@ -90,8 +100,8 @@ def main():
             run('native-link-' + mode, [clang, '--target=aarch64-linux-gnu', '-O2',
                 '-ffreestanding', '-nostdlib', '-fno-builtin', '-fno-stack-protector',
                 '-static', '-fuse-ld=lld', '-Wl,-e,_start', '-DFV_STORE_FREESTANDING',
-                '-DSTORE_BYTES=' + str(store_bits // 8),
-                root / 'scripts/testdata/stock-memory-store-native.c',
+                '-DSTORE_BYTES=' + str(store_bits // 8), *(['-DLOAD_BYTES=' + str(int(args.load_type[1:]) // 8)] if args.load_type else []),
+                root / ('scripts/testdata/stock-memory-captured-copy-native.c' if args.captured_copy else 'scripts/testdata/stock-memory-load-store-native.c' if args.load_type else 'scripts/testdata/stock-memory-store-native.c'),
                 generated / f'memory-{mode}.o', '-o', elf])
             run('native-execute-' + mode, [qemu, elf])
         audit = out / 'GeneratedAxioms.lean'
@@ -101,7 +111,7 @@ run_cmd do
   let env ← getEnv
   let generated := fun (name : Name) =>
     let owner := (privateToUserName? name).getD name
-    owner.toString.startsWith "Crates.StockMemoryStoreProduction" || owner.toString.startsWith "Crates.MemoryStoreCLI"
+    owner.toString.startsWith "Crates.StockMemoryStoreProduction" || owner.toString.startsWith "Crates.StockMemoryLoadStoreProduction" || owner.toString.startsWith "Crates.MemoryStoreCLI"
   let mut count : Nat := 0
   for (name, _) in env.constants.toList do
     unless generated name do continue
@@ -112,12 +122,15 @@ run_cmd do
     count := count + 1
   unless count > 0 do throwError "empty generated-proof audit"
   logInfo m!"STOCK_MEMORY_STORE_GENERATED_AXIOMS_PASS {count}"
-''')
+'''.replace('Crates.StockMemoryStoreProduction', 'Crates.' + program))
         assert 'STOCK_MEMORY_STORE_GENERATED_AXIOMS_PASS ' in run('generated-axioms', ['lean', '--root=' + str(out), audit])
-        report = dict(state='passed', generated_sources=built, native_store_calls=44, retained_calls=2,
-                      native_reference='original argument bytes with arbitrary upper bits; unchanged surrounding bytes',
-                      store_type=args.store_type, store_op=args.store_op, cleanup_modes=2,
-                      operand_orders=2, generated_roots=sorted(expected), commands=records)
+        report = dict(state='passed', generated_sources=built, native_store_calls=128 if args.captured_copy else 88 if args.load_type else 44, retained_calls=2,
+                      captured_copy=str(args.captured_copy.resolve()) if args.captured_copy else None,
+                      captured_source_sha256=sha(args.captured_copy) if args.captured_copy else None,
+                      native_reference=('loaded destination; four alias modes; eight full-width payloads; original and interspersed NOPs; unchanged surrounding bytes' if args.captured_copy else 'pre-store load; same/distinct pointers; original argument bytes with arbitrary upper bits; unchanged surrounding bytes' if args.load_type else 'original argument bytes with arbitrary upper bits; unchanged surrounding bytes'),
+                      load_type=args.load_type, store_type=args.store_type, store_op=args.store_op, memory_cfg=args.memory_cfg, cleanup_modes=2,
+                      operand_orders=2, alias_modes=4 if args.captured_copy else 2,
+                      payloads=8 if args.captured_copy else 11, generated_roots=sorted(expected), commands=records)
     except BaseException as error:
         report = dict(state='failed', error=repr(error), commands=records)
         raise

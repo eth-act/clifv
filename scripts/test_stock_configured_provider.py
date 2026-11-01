@@ -105,7 +105,8 @@ class StockConfiguredProviderTests(unittest.TestCase):
                 if not cleanup and stock_selected:
                     self.assertEqual(lowering["allocation_selected"],
                                      lowering["stock_schedule"]["selected"])
-            name = source.splitlines()[0].split("%", 1)[1].split("(", 1)[0]
+            header = next(line for line in source.splitlines() if line.lstrip().startswith("function %"))
+            name = header.split("%", 1)[1].split("(", 1)[0]
             plain_object = ELF(directory / "default/program.o")
             configured_object = ELF(directory / "configured/program.o")
             plain_symbol, plain_code = plain_object.function(name)
@@ -145,6 +146,50 @@ class StockConfiguredProviderTests(unittest.TestCase):
                 for cleanup in (False, True):
                     with self.subTest(op=op, ty=ty, reverse=reverse, cleanup=cleanup):
                         self.check_provider(source, cleanup, stock_selected=True)
+
+    def test_configured_cfg_store_provider_keeps_original_inputs(self):
+        pairs = [("store", ty) for ty in ("i8", "i16", "i32", "i64")]
+        pairs += [("istore8", ty) for ty in ("i8", "i16", "i32", "i64")]
+        pairs += [("istore16", ty) for ty in ("i16", "i32", "i64")]
+        pairs += [("istore32", ty) for ty in ("i32", "i64")]
+        for op, ty in pairs:
+            for reverse in (False, True):
+                params = f"{ty}, i64" if reverse else f"i64, {ty}"
+                block = f"v0: {ty}, v1: i64" if reverse else f"v0: i64, v1: {ty}"
+                value, pointer = ("v0", "v1") if reverse else ("v1", "v0")
+                source = (f"function %memory_store_cfg({params}) system_v {{\n"
+                          f"block0({block}):\n    nop\n    jump block1\nblock1:\n    nop\n"
+                          f"    {op}.{ty} notrap {value}, {pointer}\n    nop\n    nop\n    return\n}}\n")
+                for cleanup in (False, True):
+                    with self.subTest(op=op, ty=ty, reverse=reverse, cleanup=cleanup):
+                        self.check_provider(source, cleanup, stock_selected=True)
+
+    def test_configured_load_store_provider_keeps_original_inputs(self):
+        pairs = [("store", ty) for ty in ("i8", "i16", "i32", "i64")]
+        pairs += [("istore8", ty) for ty in ("i8", "i16", "i32", "i64")]
+        pairs += [("istore16", ty) for ty in ("i16", "i32", "i64")]
+        pairs += [("istore32", ty) for ty in ("i32", "i64")]
+        for load_ty in ("i8", "i16", "i32", "i64"):
+            for op, ty in pairs:
+                for distinct in (False, True):
+                    pointer = "v2" if distinct else "v0"
+                    source = (f"function %memory_load_store(i64, {ty}, i64) -> {load_ty} system_v {{\n"
+                              f"block0(v0: i64, v1: {ty}, v2: i64):\n"
+                              f"    v3 = load.{load_ty} notrap v0\n"
+                              f"    {op}.{ty} notrap v1, {pointer}\n    return v3\n}}\n")
+                    for cleanup in (False, True):
+                        with self.subTest(load_ty=load_ty, op=op, ty=ty,
+                                          distinct=distinct, cleanup=cleanup):
+                            self.check_provider(source, cleanup, stock_selected=True)
+
+    def test_configured_captured_copy_keeps_original_inputs(self):
+        capture = ROOT / "scripts/testdata/stock-memory-captured-copy-original.clif"
+        self.assertEqual(hashlib.sha256(capture.read_bytes()).hexdigest(),
+                         "9d39c7307e7fc9b4c3f334692726fae11926683d31f27ea49d032d46e99e70ce")
+        source = capture.read_text()
+        for cleanup in (False, True):
+            with self.subTest(cleanup=cleanup):
+                self.check_provider(source, cleanup, stock_selected=True)
 
     def test_typed_pipeline_keeps_its_existing_provider(self):
         self.check_provider(MEMORY_CFG, cleanup=False, typed=True)
