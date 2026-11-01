@@ -94,4 +94,24 @@ theorem compiled_sret_pipeline_witness (cleanup : Bool) :
     exact .memorySretCopy family equal effects
       ⟨lowered,d.preparedRun,d.prepOk,d.checkRun,d.allocRun,d.emitRun,d.layoutRun⟩
 
+/-- Expose the actual stage for additive consumers without changing the previous artifact witness. -/
+theorem compiled_sret_stage_witness (cleanup : Bool) :
+    ∃ (result : Stock.Result) (prepared : VCode) (allocated : RFunc) (frame : AFunc)
+      (assembly : FnAsm) (binary : FnBin),
+      Stock.lower function = .ok result ∧
+      Stock.MemorySretCopy.lowerValidated function = .ok result.code ∧
+      Stock.MemorySretCopy.check function result.code = true ∧
+      CompiledStockArithmeticStage function cleanup 0 result prepared allocated frame assembly binary ∧
+      FormsCovered ⟨assembly.k,frame.slotBase⟩ prepared := by
+  have available : (candidate cleanup).isOk = true := by
+    have both := Bool.and_eq_true_iff.mp candidates_ok
+    cases cleanup with
+    | false => exact both.1
+    | true => exact both.2
+  cases found : candidate cleanup with
+  | error message => rw [found] at available; cases available
+  | ok d =>
+    exact ⟨d.result,d.prepared,d.allocated,d.frame,d.assembly,d.binary,d.lowered,d.provider,d.source,
+      ⟨d.lowered,d.preparedRun,d.prepOk,d.checkRun,d.allocRun,d.emitRun,d.layoutRun⟩,d.covered⟩
+
 end E2E.StockMemorySretCopyCompiledWitness
