@@ -1,0 +1,12 @@
+{
+  "archive": "program-return-pins-checkpoint-v3.tar.gz",
+  "archive_bytes": 2797874,
+  "archive_sha256": "4f9f40fb1fd0071582bb7b90551b744ac73abd639b2158a3d805a90dd95d2d10",
+  "parts": [
+    {
+      "name": "program-return-pins-checkpoint-v3.tar.gz.part-000",
+      "bytes": 2797874,
+      "sha256": "4f9f40fb1fd0071582bb7b90551b744ac73abd639b2158a3d805a90dd95d2d10"
+    }
+  ]
+}
