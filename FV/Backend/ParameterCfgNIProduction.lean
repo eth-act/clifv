@@ -23,7 +23,7 @@ def compileFileParameterCfgNIWhen {m : Type → Type} [Monad m] (enabled : Bool)
     (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
     (preUnverified : List (String × String) := []) (cleanup : Bool := true) : m FileAsm := do
   if !enabled then return ← compileFileConditionalForwardCfgNIWhen false alloc pf preUnverified cleanup
-  if !(pf.funcs.any fun p => p.func.toOption.any Stock.ParameterCfg.eligible) then
+  if !(pf.funcs.any fun p => p.func.toOption.any Stock.ParameterCfg.leafEligible) then
     return ← compileFileConditionalForwardCfgNIWhen true alloc pf preUnverified cleanup
   let attempt ← compileFileWithLowering lowerForAllocationParameterCfgNI VCode.rulesFired
     alloc pf preUnverified cleanup

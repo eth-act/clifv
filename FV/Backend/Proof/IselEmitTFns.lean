@@ -1,3 +1,4 @@
+import FV.Isle.Lookup
 import FV.Backend.Proof.IselCovTFns
 import FV.Backend.Proof.IselEmitFns
 
@@ -338,7 +339,7 @@ def aLast : Nat → Isle.Expr → List AT → Bool
     else
       internalOne p t && (aOracle t []).isNone &&
       match aArgs p tab actor apre aOracle args env with
-      | some as => (p.rulesOf t).all fun r =>
+      | some as => (rulesOfT p t).all fun r =>
         match aRuleEnvs p tab aext actor apre aOracle as r with
         | some envs => envs.all (aLast n r.rhs)
         | none => false

@@ -7,7 +7,7 @@ set_option autoImplicit false
 /-- The compatible conditional CFG is checked before publication. Every failure uses
 exactly the previous complete CFG provider on the original function. -/
 def lowerValidated (f : Clif.Function) : Except String VCode :=
-  if !eligible f then ForwardCfg.lowerValidated f
+  if !leafEligible f then ForwardCfg.lowerValidated f
   else
     let attempt := do
       let result ← Stock.lower f

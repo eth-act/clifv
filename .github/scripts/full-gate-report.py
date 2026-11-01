@@ -9,7 +9,7 @@ shard-logs-w<W>-<S>/sched/sched.log (scheduler logs) and ci-plan/ci-plan.json.
 The first line is `**Result: GREEN …` iff every build and gate job succeeded (or was skipped
 because there was nothing to build).
 """
-import json, os, pathlib, re, sys
+import importlib.util, json, os, pathlib, re, sys
 
 GATES = ["assemble", "audit", "crate-proofs", "e2e", "runtime", "cargo-fv"]
 BUILD = ["plan", "wave1", "wave2", "wave3"]
@@ -62,8 +62,41 @@ def main():
         out += ["--- longest", *(f"{rss:5.1f}G {secs:6d}s {m}"
                                  for m, secs, rss in sorted(mods, key=lambda x: -x[1])[:8])]
         out += ["```", "", "</details>"]
+    out += drift_section(rep, sorted(p.parent for p in rep.glob("shard-logs-*/sched/sched.log")))
     print("\n".join(out))
     return 0
+
+
+def drift_section(rep, scheds):
+    """Modules whose runner time or memory drifted from scripts/lake-module-peaks.tsv
+    (scripts/peaks-update.py, in table units: runner seconds / FULL_GATE_TIME_SCALE, FV.Opt.Proof.*
+    a further / 1.5 as in the plan), and REPORT_DIR/lake-module-peaks.tsv: the table with those
+    rows and the new modules replaced by this run's measurements."""
+    if not scheds:
+        return []
+    root = pathlib.Path(__file__).resolve().parent.parent.parent
+    spec = importlib.util.spec_from_file_location("peaks_update", root / "scripts/peaks-update.py")
+    pu = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pu)
+    ts = float(os.environ.get("TIME_SCALE") or 2.0)
+    header, rows = pu.read_table(root / "scripts/lake-module-peaks.tsv")
+    meas = {}
+    for d in scheds:
+        for m, (mb, secs) in pu.read_sched(d).items():
+            meas[m] = (mb, secs / pu.scale_of(m, ts, [("FV.Opt.Proof.", 1.5)]))
+    found = pu.drift(rows, meas)
+    for _, m, _, _ in found:
+        rows[m] = (meas[m][0], max(1.0, round(meas[m][1])))
+    (rep / "lake-module-peaks.tsv").write_text(
+        "\n".join(header + [f"{m}\t{mb}\t{x:.0f}" for m, (mb, x) in sorted(rows.items())]) + "\n")
+    shown = [pu.fmt(*f) for f in found if f[0] != "new"]
+    new = sum(1 for f in found if f[0] == "new")
+    res = ["", f"Timing table: {len(meas)} modules built, {len(shown)} drifted (2x and 60 s or 1 GB), "
+           f"{new} without a record; refreshed table in the `lake-module-peaks` artifact."]
+    if shown:
+        res += ["", "<details><summary>Timing-table drift</summary>", "", "```", *shown, "```",
+                "", "</details>"]
+    return res
 
 
 if __name__ == "__main__":

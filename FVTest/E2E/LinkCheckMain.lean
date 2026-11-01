@@ -38,7 +38,7 @@ def main (args : List String) : IO UInt32 := do
       let route (fi : FnInput) : Option (String × Nat) :=
         let f := fi.func
         if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f ||
-            Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f || (((((((Stock.MemoryCapturedCopy.eligible f || Stock.MemoryLoadStore.eligible f) || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.eligible f || Stock.ConditionalForwardCfg.eligible f) || Stock.ConditionalCfg.eligible f) || Stock.ForwardCfg.eligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f)) &&
+            Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f || (((((((Stock.MemoryCapturedCopy.eligible f || Stock.MemoryLoadStore.eligible f) || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.leafEligible f || Stock.ConditionalForwardCfg.leafEligible f) || Stock.ConditionalCfg.leafEligible f) || Stock.ForwardCfg.leafEligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f)) &&
             !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
           -- Probe each complete route before its transactional retry. A retained
           -- logical/mixed artifact must not be skipped directly to legacy.
@@ -47,7 +47,7 @@ def main (args : List String) : IO UInt32 := do
             | .error _ => false
             | .ok a => artB I0 rd phs a
           let idx := (found.map (·.2)).getD 4
-          if idx != 0 || (((((((Stock.MemoryCapturedCopy.eligible f || Stock.MemoryLoadStore.eligible f) || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.eligible f || Stock.ConditionalForwardCfg.eligible f) || Stock.ConditionalCfg.eligible f) || Stock.ForwardCfg.eligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f) then some (f.name, idx) else none
+          if idx != 0 || (((((((Stock.MemoryCapturedCopy.eligible f || Stock.MemoryLoadStore.eligible f) || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.leafEligible f || Stock.ConditionalForwardCfg.leafEligible f) || Stock.ConditionalCfg.leafEligible f) || Stock.ForwardCfg.leafEligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f) then some (f.name, idx) else none
         else none
       (Link.parMap route I0.funcs).filterMap id
   let actualLower := Stock.MemoryCapturedCopy.lowerWithRoutes choices

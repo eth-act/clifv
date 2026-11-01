@@ -433,6 +433,7 @@ theorem pcAt : ∀ n, PCAt f ctx p tab aext actor aidata cfg n := by
       (∀ w, r = some w → γ f ctx a w) ∧ (must = true → r.isSome) := by
     intro ty t as a must c vs s r s' ha hvs h
     unfold aApply at ha
+    rw [termOfT_eq] at ha
     split at ha
     · exact (γL_any_isBot ‹_› hvs).elim
     rw [applyTerm.eq_2] at h
