@@ -14,7 +14,7 @@ def CrateStmtReturnPins (I : LinkInput) (R : Res) (name : String) : Prop :=
 /-- Executable checks and pipeline observations supply every program premise internally. -/
 theorem preparedReturnPins_correct (stage : Clif.Function → VCode → VCode)
     {I : LinkInput} {R : Res}
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (prepared : PreparedResults stage I R) (checked : okRReturnPins stage I R = true)
     (name : String) : CrateStmtReturnPins I R name := by
   intro B F base world f found M ra s w₀ args cs entry room frame free image body arguments source

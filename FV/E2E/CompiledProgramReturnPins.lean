@@ -78,8 +78,8 @@ variable {L : LinkSys} {g : Clif.Function}
 
 /-- Actual executable checks and pipeline observations construct the complete compilation field. -/
 theorem of_checks {cleanup : Bool} (lower : SemanticABI.check g (L.A g).vc = true)
-    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup (L.A g).vc) = .ok (L.A g).vcp)
-    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup (L.A g).vc) (L.A g).vcp = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stageF cleanup g (L.A g).vc) = .ok (L.A g).vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stageF cleanup g (L.A g).vc) (L.A g).vcp = true)
     (check : Backend.checkAlloc (L.A g).vcp (L.A g).rf = .ok ())
     (alloc : lowerRFunc (L.A g).vcp (L.A g).rf = .ok (L.A g).af)
     (emit : emitFunc (L.A g).k (L.A g).af = .ok (L.A g).fa)
