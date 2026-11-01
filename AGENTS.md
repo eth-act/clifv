@@ -17,3 +17,9 @@ agents must follow this discipline.
 - Follow `docs/TO-PROVE.md` §§7–8 for proof-work rules and task claims.
 - All merges must be squash merges (`gh pr merge --squash`). This grants no
   permission to push or merge.
+
+# Verification tooling
+
+- Before changing anything that decides what counts as proved (axiom audit, statement
+  diff, caches of proof results, gates, agent check loops), apply LEARNINGS.md
+  "Verification tooling" and get an independent review, with a regression test per finding.
