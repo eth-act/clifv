@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "source_sha256": "dfa955a32a784c56bb1737878972a1acb4d3ecac14b0d8e2d562001a3e3294b4",
+  "generic_roots": 1,
+  "fixed_roots": 0,
+  "full_goal_complete": false,
+  "scope": "Constructive non-vacuity for the generic byte-result adapters. It inhabits validity,MemAgree,and the abstract model-result premise. Its zero-step identity machine is only an adapter witness,not execution of compiled code. Existing captured fixtures and the required linked witness remain unchanged",
+  "utc": "2026-11-01T19:36:57.670709+00:00"
+}

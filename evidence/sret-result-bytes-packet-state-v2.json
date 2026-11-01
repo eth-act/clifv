@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "scripts/audit/sret-copy-result-bytes.lean": "48fa712f69ef3d9427da3957f97bf6e5f674cf5b84e408d073eff21407313f6f",
+    "FV/E2E/SretCopyResultBytes.lean": "00e15ab46e657cf881e0005d305e34b4a17d8f96c950886edc279fae0582ffba",
+    "FV/E2E/SretCopyResultBytesWitness.lean": "5dbbee3536ffc6c7e46a2fa4929907c732c4d2ce804d16357dbbd235133ab52f"
+  },
+  "modules": 2,
+  "modules_checked": 1,
+  "modules_reused": 1,
+  "generic_roots": 6,
+  "fixed_witness_roots": 0,
+  "full_goal_complete": false,
+  "scope": "Both original source allocations remain live after return. The existing model result yields all destination and source bytes for arbitrary contents. This is a conclusion adapter,not an accepted-input execution certificate. A constructive witness inhabits every conditional adapter premise. It uses an identity machine only for abstract non-vacuity. Actual compiled execution,default activation,and full140 remain open",
+  "utc": "2026-11-01T19:37:32.074407+00:00"
+}

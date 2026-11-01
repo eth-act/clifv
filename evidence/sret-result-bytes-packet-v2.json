@@ -1,0 +1,10 @@
+{
+  "files": {
+    "scripts/audit/sret-copy-result-bytes.lean": "48fa712f69ef3d9427da3957f97bf6e5f674cf5b84e408d073eff21407313f6f",
+    "FV/E2E/SretCopyResultBytes.lean": "00e15ab46e657cf881e0005d305e34b4a17d8f96c950886edc279fae0582ffba",
+    "FV/E2E/SretCopyResultBytesWitness.lean": "5dbbee3536ffc6c7e46a2fa4929907c732c4d2ce804d16357dbbd235133ab52f"
+  },
+  "full_goal_complete": false,
+  "generic_roots": 6,
+  "fixed_roots": 0
+}
