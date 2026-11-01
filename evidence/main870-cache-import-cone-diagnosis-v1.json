@@ -1,0 +1,61 @@
+{
+  "import_closure": 153,
+  "changed_closure_modules": [],
+  "matching_header_candidates": 146,
+  "different_header_candidates": [
+    {
+      "module": "FV.Arm.BitVec",
+      "local_olean": "6815ad645f4d5a56.olean",
+      "ci_archives": [
+        "8e2ef015fbbe9690.ltar"
+      ]
+    },
+    {
+      "module": "FV.Arm.Insts.Common",
+      "local_olean": "2c3730cad1e37099.olean",
+      "ci_archives": [
+        "863ac18e052d3558.ltar",
+        "1bce7f859e9731c3.ltar"
+      ]
+    },
+    {
+      "module": "FV.Arm.State",
+      "local_olean": "3397ec50eff31ceb.olean",
+      "ci_archives": [
+        "35c6bea0f26ac2a9.ltar"
+      ]
+    },
+    {
+      "module": "FV.Backend.Proof.AbiClass",
+      "local_olean": "094e3b345df7fbf1.olean",
+      "ci_archives": [
+        "401ca279d057331e.ltar"
+      ]
+    },
+    {
+      "module": "FV.Backend.Proof.RegallocOperands",
+      "local_olean": "5f907eb214c9cf04.olean",
+      "ci_archives": [
+        "b7bd0a40a750a499.ltar"
+      ]
+    },
+    {
+      "module": "FV.Clif.Parse",
+      "local_olean": "ea42f880d133e782.olean",
+      "ci_archives": [
+        "8c6b7abdfcbe31cc.ltar"
+      ]
+    },
+    {
+      "module": "FV.Clif.Run",
+      "local_olean": "b6aacf41333dd927.olean",
+      "ci_archives": [
+        "36c90b5bf0b56307.ltar"
+      ]
+    }
+  ],
+  "unindexed_modules": [],
+  "warning": "Header fingerprints identify candidates only. Verify extracted bytes before inferring a cause.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T21:07:35.257463+00:00"
+}

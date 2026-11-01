@@ -1,0 +1,113 @@
+{
+  "import_closure": 153,
+  "changed_source_modules": [],
+  "comparisons": [
+    {
+      "module": "FV.Arm.BitVec",
+      "local_sha256": "a744881ac5acff8d59c39ada3f61026cdcba18a3fb77a8d66b9969cb2b0eacb3",
+      "local_bytes": 2264824,
+      "ci_variants": [
+        {
+          "archive": "8e2ef015fbbe9690.ltar",
+          "bytes_match": true,
+          "ci_sha256": "a744881ac5acff8d59c39ada3f61026cdcba18a3fb77a8d66b9969cb2b0eacb3",
+          "ci_bytes": 2264824
+        }
+      ]
+    },
+    {
+      "module": "FV.Arm.Insts.Common",
+      "local_sha256": "600d066529c3797931569fd9d82982eb15cd7d28b41fbfa417d0a640e81554a8",
+      "local_bytes": 3922392,
+      "ci_variants": [
+        {
+          "archive": "863ac18e052d3558.ltar",
+          "bytes_match": false,
+          "ci_sha256": "c78c0b22a829efe5ee010b7ae2919db97eb58ac7278e167f1365dff5bd274164",
+          "ci_bytes": 3916272
+        },
+        {
+          "archive": "1bce7f859e9731c3.ltar",
+          "bytes_match": false,
+          "ci_sha256": "0cdc41b1508dec81cf2ee7a8b0bc575967255f085dafadad7e1f0d710813d2c8",
+          "ci_bytes": 277840
+        }
+      ]
+    },
+    {
+      "module": "FV.Arm.State",
+      "local_sha256": "ace0a6010e5f632df5ce6314a333d247d4e4747321169acac4b028588bb2345a",
+      "local_bytes": 4089696,
+      "ci_variants": [
+        {
+          "archive": "35c6bea0f26ac2a9.ltar",
+          "bytes_match": false,
+          "ci_sha256": "c4ac55469b7b8d35c0a1d0f898acb6cbbe4fa6a50a6b6628789c36a82bea015e",
+          "ci_bytes": 4084216
+        }
+      ]
+    },
+    {
+      "module": "FV.Backend.Proof.AbiClass",
+      "local_sha256": "3db239eee18c3a4b7295762314f0b206a8a7d6cbe1afd8a12ff430efc4b4b6ba",
+      "local_bytes": 1066400,
+      "ci_variants": [
+        {
+          "archive": "401ca279d057331e.ltar",
+          "bytes_match": true,
+          "ci_sha256": "3db239eee18c3a4b7295762314f0b206a8a7d6cbe1afd8a12ff430efc4b4b6ba",
+          "ci_bytes": 1066400
+        }
+      ]
+    },
+    {
+      "module": "FV.Backend.Proof.RegallocOperands",
+      "local_sha256": "4da421ca4b28d5c51bdbfec78354d7177d84042592aaa3d91fbd199302ab2bca",
+      "local_bytes": 5090712,
+      "ci_variants": [
+        {
+          "archive": "b7bd0a40a750a499.ltar",
+          "bytes_match": true,
+          "ci_sha256": "4da421ca4b28d5c51bdbfec78354d7177d84042592aaa3d91fbd199302ab2bca",
+          "ci_bytes": 5090712
+        }
+      ]
+    },
+    {
+      "module": "FV.Clif.Parse",
+      "local_sha256": "3ad328159dfb7a9d8b84bb7527367c580d714155877438e8589bb61183413d42",
+      "local_bytes": 4210392,
+      "ci_variants": [
+        {
+          "archive": "8c6b7abdfcbe31cc.ltar",
+          "bytes_match": true,
+          "ci_sha256": "3ad328159dfb7a9d8b84bb7527367c580d714155877438e8589bb61183413d42",
+          "ci_bytes": 4210392
+        }
+      ]
+    },
+    {
+      "module": "FV.Clif.Run",
+      "local_sha256": "e85297ca1b19165095b860edda4278b50081869f210ff365d636e0c4849ec89e",
+      "local_bytes": 1966336,
+      "ci_variants": [
+        {
+          "archive": "36c90b5bf0b56307.ltar",
+          "bytes_match": true,
+          "ci_sha256": "e85297ca1b19165095b860edda4278b50081869f210ff365d636e0c4849ec89e",
+          "ci_bytes": 1966336
+        }
+      ]
+    }
+  ],
+  "temporary_extracts_removed": true,
+  "diagnostic_trace_hash": "zero in temporary extraction only; no cache mappings or build artifacts changed",
+  "cause": "Two unchanged-source dependency artifacts differ from every inspected CI variant. The cause of these byte differences remains unproven.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T21:09:28.812147+00:00",
+  "verified_different_modules": [
+    "FV.Arm.Insts.Common",
+    "FV.Arm.State"
+  ],
+  "matching_module_count": 5
+}
