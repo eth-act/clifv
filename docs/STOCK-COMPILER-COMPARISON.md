@@ -6,6 +6,19 @@ tests prepare a module, compile functions and signature trampolines, then normal
 allocate executable memory, resolve relocations and call the functions. We capture
 their compiler output before allocation/relocation; we do not execute the tests.
 
+## Two parity metrics
+
+This comparison is one of the two stock-parity metrics. Both count (`AGENTS.md`).
+
+| | Filetest comparison (this document) | Crate parity |
+|---|---|---|
+| Input | every function of Cranelift's own filetests, under their declared settings | every function of real Rust crates that cg_clif compiles (one default setting) |
+| A function that Lean does not compile | counts as a miss | almost none occur |
+| What it rewards | coverage and identical output (SIMD, tail calls, floats, settings) | identical output on ordinary Rust code |
+| Where it runs | CI, on every PR and main push | by hand: `scripts/stock-crate-parity.py` (`docs/USAGE.md`), results in #557 |
+
+A parity PR reports both results and loses no match on either.
+
 ## Reproduce
 
 One command from a fresh checkout builds all three executables, validates the
