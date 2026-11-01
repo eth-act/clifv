@@ -137,7 +137,7 @@ theorem aApply_internal_eqSzT {t : TermId} {term : Term} {flags : TermFlags} {ex
         match aOracle t as with
         | some a => some a
         | none => tabGet covTabT t as := by
-  unfold aApply; rw [ht]; simp only [hk]; rfl
+  unfold aApply; rw [termOfT_eq, ht]; simp only [hk]; rfl
 
 /-- An `Option AT` that is `some (.reg 1)`, as a test. -/
 def isReg1 : Option AT → Bool
