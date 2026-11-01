@@ -1,0 +1,12 @@
+{
+  "archive": "semantic-return-pins-backup-v1.tar.gz",
+  "archive_bytes": 17332708,
+  "archive_sha256": "7fa9b45f4aef7f05f9893a1c8b463af8fb326522897289a8d500a98fd8c15e5e",
+  "parts": [
+    {
+      "name": "semantic-return-pins-backup-v1.tar.gz.part-000",
+      "bytes": 17332708,
+      "sha256": "7fa9b45f4aef7f05f9893a1c8b463af8fb326522897289a8d500a98fd8c15e5e"
+    }
+  ]
+}
