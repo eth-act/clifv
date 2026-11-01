@@ -1,0 +1,7 @@
+{
+  "files": {
+    "FV/E2E/SretCopyResultBytes.lean": "00e15ab46e657cf881e0005d305e34b4a17d8f96c950886edc279fae0582ffba",
+    "scripts/audit/sret-copy-result-bytes.lean": "1d735e3f5113f231e833b4bd63df4cb60c757f55e97dd3c27e6503308ab9178c"
+  },
+  "full_goal_complete": false
+}

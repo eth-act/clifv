@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "source_sha256": "ce1f9e1ef0144cbb5d40dd5b64dd6b11b6518b32bb1454e87d5cf004b1de7bd1",
+  "generic_roots": 5,
+  "fixed_roots": 0,
+  "full_goal_complete": false,
+  "scope": "The existing model-return result yields every destination and source byte for arbitrary contents. Both original allocations remain live after source return. This result eliminates an existing theorem conclusion; it does not add an accepted-input execution premise. The actual linked executable instance,default activation,and full140 remain open",
+  "utc": "2026-11-01T19:30:20.237472+00:00"
+}

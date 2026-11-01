@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "FV/E2E/SretCopyResultBytes.lean": "00e15ab46e657cf881e0005d305e34b4a17d8f96c950886edc279fae0582ffba",
+    "scripts/audit/sret-copy-result-bytes.lean": "1d735e3f5113f231e833b4bd63df4cb60c757f55e97dd3c27e6503308ab9178c"
+  },
+  "modules": 1,
+  "generic_roots": 5,
+  "fixed_witness_roots": 0,
+  "full_goal_complete": false,
+  "scope": "Both original source allocations remain live after return. The existing model result yields all destination and source bytes for arbitrary contents. This is a conclusion adapter,not an accepted-input execution certificate. Actual linked execution,default activation,and full140 remain open",
+  "utc": "2026-11-01T19:31:21.467815+00:00"
+}
