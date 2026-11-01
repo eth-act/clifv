@@ -121,7 +121,7 @@ theorem refines : ∃ k M, Clif.runLoopX xe { funcs := [] } k
 /-- The compiler's outputs on the optimised function (the defaults are never used:
 `checks_true`). -/
 def vc : VCode := (lowerFunction gO).toOption.getD default
-def vcp : VCode := (Backend.prepare (prune vc)).toOption.getD default
+def vcp : VCode := (Backend.prepare (cleanupStage gO vc)).toOption.getD default
 def rf : RFunc := spillAlloc vcp
 def af : AFunc := (lowerRFunc vcp rf).toOption.getD default
 def fa : FnAsm := (emitFunc 0 af).toOption.getD default
@@ -137,7 +137,7 @@ on the compiled optimised function (it has a landing pad: `lsda.isSome`, no indi
 def checks : Bool :=
   Backend.verifiable src && lowerScopeB gO && !hasTls gO && (indSigs gO).isEmpty &&
   (lowerFunction gO).toBool && lowerCheckU gO vc &&
-  (Backend.prepare (prune vc)).toBool && prepCheck (prune vc) vcp &&
+  (Backend.prepare (cleanupStage gO vc)).toBool && prepCheck (cleanupStage gO vc) vcp &&
   (checkAlloc vcp rf).toBool && (lowerRFunc vcp rf).toBool && (emitFunc 0 af).toBool &&
   fa.layout.toBool && savedCheck vcp rf && padsNonzeroB af fa && lastCallsOk af fa &&
   (callSites af fa).toBool && lsda.isSome && (unwindRows af fa).toBool
@@ -316,7 +316,7 @@ open E2E.DeadCleanupUnwindWitness (Xr Uw calleeUnwOkG_raise ok_getD ok_unit)
 abbrev gLO : Clif.Function := Opt.optimizeExe gL Opt.exeConfig
 
 def vc : VCode := (lowerFunction gLO).toOption.getD default
-def vcp : VCode := (Backend.prepare (prune vc)).toOption.getD default
+def vcp : VCode := (Backend.prepare (cleanupStage gLO vc)).toOption.getD default
 def rf : RFunc := spillAlloc vcp
 def af : AFunc := (lowerRFunc vcp rf).toOption.getD default
 def fa : FnAsm := (emitFunc 0 af).toOption.getD default
@@ -330,7 +330,7 @@ def T : Unw.FnTables := ⟨cieInsns, insnsFrom 0 rows, lsda.map (List.map (·.en
 def checks : Bool :=
   Backend.verifiable gL && lowerScopeB gLO && !hasTls gLO && (indSigs gLO).isEmpty &&
   (lowerFunction gLO).toBool && lowerCheckU gLO vc &&
-  (Backend.prepare (prune vc)).toBool && prepCheck (prune vc) vcp &&
+  (Backend.prepare (cleanupStage gLO vc)).toBool && prepCheck (cleanupStage gLO vc) vcp &&
   (checkAlloc vcp rf).toBool && (lowerRFunc vcp rf).toBool && (emitFunc 0 af).toBool &&
   fa.layout.toBool && savedCheck vcp rf && padsNonzeroB af fa && lastCallsOk af fa &&
   (callSites af fa).toBool && lsda.isSome && (unwindRows af fa).toBool

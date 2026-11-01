@@ -35,6 +35,23 @@ theorem VTryRaiseFrom.prefix {vc : VCode} {sem : Sem} {XR : XRaise}
   obtain ⟨b, k, ρ, w, vb, info, ti, ops, obj, w', hs, h1⟩ := h'
   exact ⟨b, k, ρ, w, vb, info, ti, ops, obj, w', h.trans hs, h1⟩
 
+/-- `VTryRaiseFrom`, executing only from configurations satisfying `P` (the `tryCall`'s
+included). -/
+def VTryRaiseFromP (P : VConf CV Arm.ArmState → Prop) (vc : VCode) (sem : Sem) (XR : XRaise)
+    (vs : VState CV Arm.ArmState) : Prop :=
+  ∃ b k ρ w vb info ti ops obj w',
+    Backend.Proof.Driver.StarP (VStep vc sem) P (.run vs) (.run ⟨b, k, ρ, w⟩) ∧
+    P (.run ⟨b, k, ρ, w⟩) ∧
+    vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.tryCall info ti) ∧
+    (MInst.tryCall info ti).operands = .ok ops ∧
+    XR.raise (callDest info) (vuses ops ρ) w = some (obj, w')
+
+theorem VTryRaiseFromP.toVTryRaiseFrom {P : VConf CV Arm.ArmState → Prop} {vc : VCode}
+    {sem : Sem} {XR : XRaise} {vs : VState CV Arm.ArmState} (h : VTryRaiseFromP P vc sem XR vs) :
+    VTryRaiseFrom vc sem XR vs := by
+  obtain ⟨b, k, ρ, w, vb, info, ti, ops, obj, w', hs, -, h1⟩ := h
+  exact ⟨b, k, ρ, w, vb, info, ti, ops, obj, w', hs.star, h1⟩
+
 end E2E
 
 namespace Backend.Proof.Driver
@@ -48,16 +65,16 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {F : BitVec 64 → Prop} {X : ExtSem} {XR : XRaise} {sb : Nat} {syms : String → Option Nat}
   {out : Nat}
 
-/-- **A `try_call`/`try_call_indirect` whose extern unwinds, up to its call**: the VCode run
-reaches the terminator's `tryCall`, whose callee raises (`term_step_try_exn` without the
-handler). -/
-theorem term_step_try_stop (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)
+/-- **A `try_call`/`try_call_indirect` whose extern unwinds, up to its call**, with the zone of
+the run (the terminator's code): the VCode run reaches the terminator's `tryCall`, whose callee
+raises (`term_step_try_exn` without the handler). -/
+theorem term_step_try_stopP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)
     (HU : UnwShape f vc ctx R gn bl A) (HR : RaiseHyp f sem MR env F X XR sb syms out)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
     {et : Clif.ExnTable} (hT : IsTryWith s.frame.term et)
     {e : Clif.Exn} {mm : Clif.Mem} (hr : Clif.raiseAt? env p s = some (e, mm)) :
-    VTryRaiseFrom vc sem XR ⟨b, k, ρ, w⟩ := by
+    VTryRaiseFromP (TermZone vc b k) vc sem XR ⟨b, k, ρ, w⟩ := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
   subst hk
@@ -201,7 +218,9 @@ theorem term_step_try_stop (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEn
     show (tryFix T.info _).map _ = _
     rw [hfix]
   rw [htseg] at hsegat
-  obtain ⟨hstar, -, hi, hops', -, -, -⟩ := seqRun_stop_star hvb hsegat hsr'
+  obtain ⟨hstar, -, hi, hops', -, -, -⟩ := seqRun_stop_starP hvb hsegat hsr'
+  replace hstar := hstar.mono (Q := TermZone vc b (pos f R bl b B.body.length)) (by
+    rintro c ⟨i, -, ρ', w', rfl⟩; exact .inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩)
   -- the uses of the call are kept by the renaming
   have hu : ∀ o ∈ ops.toList, o.isUse = true → D o.vreg ∨ ¬ D (gn o.vreg) := by
     intro o ho hou
@@ -216,8 +235,19 @@ theorem term_step_try_stop (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEn
     obtain ⟨dd, us, ds⟩ := ci'
     cases dd <;> exact ⟨_, _, rfl, rfl⟩
   rw [hci''] at hi hops'
-  exact ⟨b, _, ρ₁', w₁, vb, ci'', ti'', ops.map (rnOp gn), obj, w₂, hstar, hvb, hi, hops',
-    by rw [hdest, hvu]; exact hra⟩
+  exact ⟨b, _, ρ₁', w₁, vb, ci'', ti'', ops.map (rnOp gn), obj, w₂, hstar,
+    .inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩, hvb, hi, hops', by rw [hdest, hvu]; exact hra⟩
+
+/-- **A `try_call`/`try_call_indirect` whose extern unwinds, up to its call**
+(`term_step_try_stopP` without the zone). -/
+theorem term_step_try_stop (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)
+    (HU : UnwShape f vc ctx R gn bl A) (HR : RaiseHyp f sem MR env F X XR sb syms out)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : Arm.ArmState}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    {et : Clif.ExnTable} (hT : IsTryWith s.frame.term et)
+    {e : Clif.Exn} {mm : Clif.Mem} (hr : Clif.raiseAt? env p s = some (e, mm)) :
+    VTryRaiseFrom vc sem XR ⟨b, k, ρ, w⟩ :=
+  VTryRaiseFromP.toVTryRaiseFrom (term_step_try_stopP H HU HR hm hbody hT hr)
 
 /-- The step from a `try_call`'s pending `jump` never traps. -/
 theorem step_tryNext_ne_trapped {env' : Clif.Env} {s : Clif.State} {regs : Clif.Regs}

@@ -79,13 +79,14 @@ theorem backend_correct_final_total_input {p : Clif.Program} {f : Clif.Function}
 set_option linter.unusedVariables false in
 /-- **The cleanup pipeline's end-to-end theorem, total from the input conditions** (V7):
 `backend_correct_final_cleanup_total_emit_input` without the premises `lowerFunction f = .ok vc`
-and `prepare (prune vc) = .ok vcp`. -/
+and `prepare (cleanupStage f vc) = .ok vcp` (the production cleanup stage; formerly
+`prepare (prune vc)`: the compiler now runs Cranelift's skip of unused instructions first). -/
 theorem backend_correct_final_cleanup_total_input {p : Clif.Program} {f : Clif.Function} {k : Nat}
     (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)
     (har : Spill.arityOkB f = true) (hent : Spill.entryParamsB f = true)
     (hw : extendsWidenB f = true) (hsz : sizeOkB f = true) (hdrv : driverInB f = true)
     (hin : Prg.iselInB f = true) (ra : Except String RFunc) :
-    ∃ vc vcp, lowerFunction f = .ok vc ∧ Backend.prepare (DeadCleanup.prune vc) = .ok vcp ∧
+    ∃ vc vcp, lowerFunction f = .ok vc ∧ Backend.prepare (cleanupStage f vc) = .ok vcp ∧
       ∃ af, lowerAllocReady vcp ra = .ok af ∧
       ∃ fa fb, emitFunc k af = .ok fa ∧ fa.layout = .ok fb ∧
       ∀ {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
@@ -126,7 +127,7 @@ theorem backend_correct_final_cleanup_total_input {p : Clif.Program} {f : Clif.F
       ArmRefines fb base ra' (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) := by
   obtain ⟨vc, hl⟩ := Prg.lowerFunction_ok_input hsub.subsetE hsub.abiSigs.1 hd hs har hent hw hdrv hin
   obtain ⟨vcp, hp⟩ := Prep.prepare_ok hd hs hl
-  have hp' := DeadCleanup.prune_prepare_ok hp
+  have hp' := cleanupStage_prepare_ok (f := f) hp
   exact ⟨vc, _, hl, hp',
     backend_correct_final_cleanup_total_emit_input hsub hd hs har hw hsz hl hp' ra⟩
 

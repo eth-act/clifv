@@ -24,7 +24,7 @@ def actualLower (f : Clif.Function) : Except String VCode := do
     pure (Stock.D0.compact f.name r)
   else .error "nonempty edge operands in prologue witness"
 
-def stage (cleanup : Bool) : Clif.Function → VCode → VCode := fun _ => cond cleanup DeadCleanup.prune id
+def stage (cleanup : Bool) : Clif.Function → VCode → VCode := fun f => cond cleanup (cleanupStage f) id
 def result (cleanup : Bool) : Except String Art :=
   pipeTWithLowering actualLower (stage cleanup) source 0 4096 .null
 def artifact (cleanup : Bool) : Art := getOk (result cleanup)

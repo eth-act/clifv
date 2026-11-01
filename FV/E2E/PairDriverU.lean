@@ -1,6 +1,8 @@
 import FV.E2E.PairRaise
 import FV.E2E.IselSimU
 import FV.Backend.Proof.LowerSimUCheck
+import FV.Backend.Proof.CleanupStageU
+import FV.Backend.Proof.LowerSimSkipUW
 
 /-!
 # Non-interference of a compiled function's VCode run with unwinding (S10f, #233)
@@ -167,6 +169,79 @@ variable {p : Clif.Program} {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : 
   {out : Nat}
 
 /-- **Non-interference of the VCode run with unwinding, from the driver's hypotheses** (on one
+world and on pairs of worlds), for `vcK`, the lowering `vc` or its kept code (`SkipHyp`). -/
+theorem vcode_niU_core_of {vcK : VCode} {drop : Nat → Nat → Bool}
+    (H : DriverHyp f vc ctx st0 R gn bl A semU (RelW ⟨F, syms, slotOff, ib⟩ f c) env.toEnv p)
+    (HP : DriverHyp f vc ctx st0 R gn bl A (pairSem semU) (MRP ⟨F, syms, slotOff, ib⟩ f c D)
+      env.toEnv p)
+    (HU : UnwShape f vc ctx R gn bl A)
+    (HR : RaiseHypW f (pairSem semU) (pairRaise XR) (MRP ⟨F, syms, slotOff, ib⟩ f c D) env p out)
+    (hds : DriverSem semU) (hmem : MemRefines F slotOff syms semU)
+    (hsk : vcK = vc ∨ SkipHyp f vc R bl drop vcK)
+    {args : List Clif.Val} {cs : Clif.State} {w₀ w₀' : Arm.ArmState}
+    (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, ib⟩ f c cs.frame.slots cs.mem w₀)
+    (hrel' : RelW ⟨F, syms, slotOff, ib⟩ f c cs.frame.slots cs.mem w₀')
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
+    (htr : TrapsExplicitX env p cs) (fuel : Nat) :
+    (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
+      ∃ us outs w w', VReturns vcK semU ρ₀ w₀ us outs w ∧ VReturns vcK semU ρ₀ w₀' us outs w' ∧
+        SameWorld (fun b => F b ∨ D b) w w') ∧
+    (∀ e cm, Clif.runLoopX env p fuel cs.toX = .unwound e cm →
+      ∃ obj w w', VUnwinds vcK semU XR ρ₀ w₀ obj w ∧ VUnwinds vcK semU XR ρ₀ w₀' obj w' ∧
+        SameWorld (fun b => F b ∨ D b) w w') := by
+  let Γ : Rel := ⟨F, syms, slotOff, ib⟩
+  obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
+  have hB0 : f.blocks[0]? = some B0 := by
+    simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
+  have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
+  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2Z H hds hmem
+    (mrStable_relW Γ f c) hB0 hce.callers hce.func rfl hbody hterm hregs hty.symm hce.sig
+    (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
+  have hFD : ∀ a, F a → F a ∨ D a := fun a h => .inl h
+  have hmP : Match f ctx R gn bl A (MRP Γ f c D) cs.frame.slots cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ := by
+    refine ⟨hm1.1, hm1.2.1, hm1.2.2.1, ⟨hm1.2.2.2.1, hm2.2.2.2.1, ?_⟩, hm1.2.2.2.2⟩
+    have h01 : SameWorld (fun b => F b ∨ D b) w₁ w₁' :=
+      SameWorld.trans (SameWorld.mono hFD hsw1)
+        (SameWorld.trans hsw (SameWorld.symm (SameWorld.mono hFD hsw2)))
+    exact sameWorld_zof hm1.2.2.2.1.1.1 hm2.2.2.2.1.1.1 h01 (fun b h => h)
+  rcases hsk with rfl | hK
+  · have hR := sim_runXW HP HU HR hce.func htr fuel cs.toX _ (.refl _) hmP
+    refine ⟨fun vals cm hrun => ?_, fun e cm hrun => ?_⟩
+    · rw [hrun] at hR
+      obtain ⟨us, outs, w, cm0, hret, -, -, -, hmr, -⟩ := hR
+      obtain ⟨h1, h2⟩ := vRetFrom_pair hret
+      exact ⟨us, outs, w.1, w.2, VRetFrom.prefix hs1.star h1, VRetFrom.prefix hs2.star h2,
+        SameWorld.mono (zof_sub cm0) hmr.2.2⟩
+    · rw [hrun] at hR
+      obtain ⟨obj, w, cm0, hu, -, hmr, -⟩ := hR
+      obtain ⟨h1, h2⟩ := vUnwFrom_pair hu
+      exact ⟨obj, w.1, w.2, VUnwFrom.prefix hs1.star h1, VUnwFrom.prefix hs2.star h2,
+        SameWorld.mono (zof_sub cm0) hmr.2.2⟩
+  · have hkk := entry_pos hB0 hbody hm1
+    have hs1K := entry_runK hK hB0 hkk hs1
+    have hs2K := entry_runK hK hB0 hkk hs2
+    have hR := sim_runXWK HP HU HR hK hce.func htr fuel cs.toX
+      ⟨0, kidx (skipMask f R bl vc drop 0) kk, ρ₁, (w₁, w₁')⟩ (.refl _)
+      ⟨⟨0, kk, ρ₁, (w₁, w₁')⟩, ⟨rfl, rfl, rfl, fun _ _ => rfl⟩, hmP⟩
+    refine ⟨fun vals cm hrun => ?_, fun e cm hrun => ?_⟩
+    · rw [hrun] at hR
+      obtain ⟨us, outs, w, cm0, hret, -, -, -, hmr, -⟩ := hR
+      obtain ⟨h1, h2⟩ := vRetFrom_pair hret
+      exact ⟨us, outs, w.1, w.2, VRetFrom.prefix hs1K h1, VRetFrom.prefix hs2K h2,
+        SameWorld.mono (zof_sub cm0) hmr.2.2⟩
+    · rw [hrun] at hR
+      obtain ⟨obj, w, cm0, hu, -, hmr, -⟩ := hR
+      obtain ⟨h1, h2⟩ := vUnwFrom_pair hu
+      exact ⟨obj, w.1, w.2, VUnwFrom.prefix hs1K h1, VUnwFrom.prefix hs2K h2,
+        SameWorld.mono (zof_sub cm0) hmr.2.2⟩
+
+/-- **Non-interference of the VCode run with unwinding, from the driver's hypotheses** (on one
 world and on pairs of worlds). -/
 theorem vcode_niU_core
     (H : DriverHyp f vc ctx st0 R gn bl A semU (RelW ⟨F, syms, slotOff, ib⟩ f c) env.toEnv p)
@@ -191,34 +266,9 @@ theorem vcode_niU_core
         SameWorld (fun b => F b ∨ D b) w w') ∧
     (∀ e cm, Clif.runLoopX env p fuel cs.toX = .unwound e cm →
       ∃ obj w w', VUnwinds vc semU XR ρ₀ w₀ obj w ∧ VUnwinds vc semU XR ρ₀ w₀' obj w' ∧
-        SameWorld (fun b => F b ∨ D b) w w') := by
-  let Γ : Rel := ⟨F, syms, slotOff, ib⟩
-  obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
-  have hB0 : f.blocks[0]? = some B0 := by
-    simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
-  have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
-  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2 H hds hmem
-    (mrStable_relW Γ f c) hB0 hce.callers hce.func rfl hbody hterm hregs hty.symm hce.sig
-    (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
-  have hFD : ∀ a, F a → F a ∨ D a := fun a h => .inl h
-  have hmP : Match f ctx R gn bl A (MRP Γ f c D) cs.frame.slots cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ := by
-    refine ⟨hm1.1, hm1.2.1, hm1.2.2.1, ⟨hm1.2.2.2.1, hm2.2.2.2.1, ?_⟩, hm1.2.2.2.2⟩
-    have h01 : SameWorld (fun b => F b ∨ D b) w₁ w₁' :=
-      SameWorld.trans (SameWorld.mono hFD hsw1)
-        (SameWorld.trans hsw (SameWorld.symm (SameWorld.mono hFD hsw2)))
-    exact sameWorld_zof hm1.2.2.2.1.1.1 hm2.2.2.2.1.1.1 h01 (fun b h => h)
-  have hR := sim_runXW HP HU HR hce.func htr fuel cs.toX _ (.refl _) hmP
-  refine ⟨fun vals cm hrun => ?_, fun e cm hrun => ?_⟩
-  · rw [hrun] at hR
-    obtain ⟨us, outs, w, cm0, hret, -, -, -, hmr, -⟩ := hR
-    obtain ⟨h1, h2⟩ := vRetFrom_pair hret
-    exact ⟨us, outs, w.1, w.2, VRetFrom.prefix hs1 h1, VRetFrom.prefix hs2 h2,
-      SameWorld.mono (zof_sub cm0) hmr.2.2⟩
-  · rw [hrun] at hR
-    obtain ⟨obj, w, cm0, hu, -, hmr, -⟩ := hR
-    obtain ⟨h1, h2⟩ := vUnwFrom_pair hu
-    exact ⟨obj, w.1, w.2, VUnwFrom.prefix hs1 h1, VUnwFrom.prefix hs2 h2,
-      SameWorld.mono (zof_sub cm0) hmr.2.2⟩
+        SameWorld (fun b => F b ∨ D b) w w') :=
+  vcode_niU_core_of (drop := fun _ _ => false) H HP HU HR hds hmem (.inl rfl) ρ₀ hce hrel hrel'
+    hargs hsw hreg hstk htr fuel
 
 end
 
@@ -333,6 +383,118 @@ theorem vcode_niU (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
       hRNI)
     hdU (memRefines_csemU _ _ X XR hslot hsym) ρ₀ hce hrel hrel' hargs hsw hreg hstk htr fuel
 
+/-- `vcode_niU_value` for `vcK`, the lowering `vc` or its kept code (`SkipHyp`), from the lowering
+obligations of `vc` with its `UnwShape`. -/
+theorem vcode_niU_value_of {vcK : VCode} (hsub : InSubset p f)
+    (hc : CompiledCleanup f k vc vcp rf af fa fb)
+    {ctx : Ctx} {st0 : LState} {R : Reg → Reg} {gn : Nat → Nat} {bl : List BLow}
+    {A : Nat → Nat → List Clif.ValueId} {drop : Nat → Nat → Bool}
+    (hshape : LowerShape f vc ctx st0 R gn bl) (hcert : Cert f ctx st0 gn bl A)
+    (hbr : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) (hUs : UnwShape f vc ctx R gn bl A)
+    (hsk : vcK = vc ∨ SkipHyp f vc R bl drop vcK)
+    {X : ExtSem} {XR : XRaise} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.XEnv}
+    {F : BitVec 64 → Prop} {c : BitVec 64}
+    (hX : XCallsOk env.toEnv (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env.toEnv (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXR : XRaiseOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X XR)
+    (hXRi : XRaiseIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X XR)
+    (hexcl : ∀ d uses w, X.call d uses w ≠ none → XR.raise d uses w = none)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg env.toEnv (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
+    (hRNI : XRNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLgR env (f.externs.map (·.2)) (indSigs f)) X XR)
+    {args : List Clif.Val} {cs : Clif.State} {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop}
+    (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hrel' : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem
+      w₀')
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
+    (htr : TrapsExplicitX env p cs) (fuel : Nat) :
+    (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
+      ∃ us outs w w', VReturns vcK (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) ρ₀ w₀ us outs w ∧
+        VReturns vcK (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) ρ₀ w₀' us outs w' ∧
+        SameWorld (fun b => F b ∨ D b) w w') ∧
+    (∀ e cm, Clif.runLoopX env p fuel cs.toX = .unwound e cm →
+      ∃ obj w w', VUnwinds vcK (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) XR ρ₀ w₀ obj w ∧
+        VUnwinds vcK (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) XR ρ₀ w₀' obj w' ∧
+        SameWorld (fun b => F b ∨ D b) w w') := by
+  let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
+  have hRef : Refines F (valueSem F ⟨fa.k, af.slotBase⟩ X) := refines_valueSem _ _ X
+  have hmem : MemRefines F slotOff syms (valueSem F ⟨fa.k, af.slotBase⟩ X) :=
+    memRefines_valueSem _ _ X hslot hsym
+  have hcalls := callsRefine_valueSem (F := F) (ctx := ⟨fa.k, af.slotBase⟩) hX
+  have hicalls := indCallsRefine_valueSem (F := F) (ctx := ⟨fa.k, af.slotBase⟩) hXI hsym
+    (fun _ _ _ h => h.1.1.symbols)
+  have houtB := outgoing_le_intBaseCleanupA hc.toA
+  have H : DriverHyp f vc ctx st0 R gn bl A (valueSem F ⟨fa.k, af.slotBase⟩ X) (RelW Γ f c)
+      env.toEnv p := {
+    shape := hshape
+    cert := hcert
+    dsem := (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X).toDriverSemG
+    insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
+      indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
+      (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (memRelOk_relW Γ f c)
+    terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
+      branchExcludedUnmatchable hRef (mrStable_relW Γ f c)
+    ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
+    indSig := indSig_of_subset hsub
+    subE := hsub.subsetE
+    entryLocs := entryOk_of_check hc.lowerOk
+    brIdx := hbr
+    noTail := noTail_of_subset hsub
+    tries := ⟨_, tryCalls_of_rules tryRulesCorrect tryUnmatchable hRef (mrStable_relW Γ f c) hmem
+      (outArgsOk_relW Γ f c) hcalls, tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
+    tryExt := hsub.tryExterns
+    tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef (mrStable_relW Γ f c)
+      hicalls
+    tryIndSig := tryIndSig_of_subset hsub
+    cfg := by
+      obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
+      exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
+  have HP : DriverHyp f vc ctx st0 R gn bl A (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X))
+      (MRP Γ f c D) env.toEnv p := {
+    shape := hshape
+    cert := hcert
+    dsem := driverSemG_pair_value F ⟨fa.k, af.slotBase⟩ X
+    insts := instCalls_pair_value hc hX hXI hsym hslot hNI hTls
+    terms := termCalls_pair_value Γ rfl hTls ⟨fa.k, af.slotBase⟩
+    ext := H.ext
+    indSig := H.indSig
+    subE := H.subE
+    entryLocs := H.entryLocs
+    brIdx := H.brIdx
+    noTail := H.noTail
+    tries := ⟨_, tryCalls_pair_value hc hX hsym hslot hNI hTls,
+      tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
+    tryExt := H.tryExt
+    tryInd := tryIndCalls_pair_value hc hXI hsym hNI hTls
+    tryIndSig := H.tryIndSig
+    cfg := H.cfg }
+  have hsubU : ∀ i us w r, valueSem F ⟨fa.k, af.slotBase⟩ X i us w = some r →
+      valueSemU F ⟨fa.k, af.slotBase⟩ X XR i us w = some r :=
+    fun _ _ _ _ h => valueSemU_of_valueSem hexcl h
+  have hdU := driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X XR
+  exact vcode_niU_core_of (H.sub hsubU hdU.toDriverSemG) (HP.sub (pairSem_sub hsubU)
+      (driverSemG_pair_of hdU)) hUs
+    (raiseHypW_pair_valueSemU (D := D) (p := p) ⟨fa.k, af.slotBase⟩ hslot hTls hexcl
+      (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (tryStack_mono (tryStack_of_check hc.lowerOk) houtB) (outArgsOk_relW Γ f c) hXR hXRi hsym
+      hRNI)
+    hdU (memRefines_valueSemU _ _ X XR hslot hsym) hsk ρ₀ hce hrel hrel' hargs hsw hreg hstk htr
+    fuel
+
 /-- **Non-interference of a compiled function's VCode run with unwinding** (the shipped
 dead-cleanup pipeline, `valueSemU`). -/
 theorem vcode_niU_value (hsub : InSubset p f) (hc : CompiledCleanup f k vc vcp rf af fa fb)
@@ -375,70 +537,53 @@ theorem vcode_niU_value (hsub : InSubset p f) (hc : CompiledCleanup f k vc vcp r
         VUnwinds vc (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) XR ρ₀ w₀' obj w' ∧
         SameWorld (fun b => F b ∨ D b) w w') := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs⟩ := loweringU_of_check hlU
-  let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
-  have hRef : Refines F (valueSem F ⟨fa.k, af.slotBase⟩ X) := refines_valueSem _ _ X
-  have hmem : MemRefines F slotOff syms (valueSem F ⟨fa.k, af.slotBase⟩ X) :=
-    memRefines_valueSem _ _ X hslot hsym
-  have hcalls := callsRefine_valueSem (F := F) (ctx := ⟨fa.k, af.slotBase⟩) hX
-  have hicalls := indCallsRefine_valueSem (F := F) (ctx := ⟨fa.k, af.slotBase⟩) hXI hsym
-    (fun _ _ _ h => h.1.1.symbols)
-  have houtB := outgoing_le_intBaseCleanupA hc.toA
-  have H : DriverHyp f vc ctx st0 R gn bl A (valueSem F ⟨fa.k, af.slotBase⟩ X) (RelW Γ f c)
-      env.toEnv p := {
-    shape := hshape
-    cert := hcert
-    dsem := (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X).toDriverSemG
-    insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
-      indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
-      (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-      (memRelOk_relW Γ f c)
-    terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
-      branchExcludedUnmatchable hRef (mrStable_relW Γ f c)
-    ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
-    indSig := indSig_of_subset hsub
-    subE := hsub.subsetE
-    entryLocs := entryOk_of_check hc.lowerOk
-    brIdx := hbr
-    noTail := noTail_of_subset hsub
-    tries := ⟨_, tryCalls_of_rules tryRulesCorrect tryUnmatchable hRef (mrStable_relW Γ f c) hmem
-      (outArgsOk_relW Γ f c) hcalls, tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
-    tryExt := hsub.tryExterns
-    tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef (mrStable_relW Γ f c)
-      hicalls
-    tryIndSig := tryIndSig_of_subset hsub
-    cfg := by
-      obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-      exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
-  have HP : DriverHyp f vc ctx st0 R gn bl A (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X))
-      (MRP Γ f c D) env.toEnv p := {
-    shape := hshape
-    cert := hcert
-    dsem := driverSemG_pair_value F ⟨fa.k, af.slotBase⟩ X
-    insts := instCalls_pair_value hc hX hXI hsym hslot hNI hTls
-    terms := termCalls_pair_value Γ rfl hTls ⟨fa.k, af.slotBase⟩
-    ext := H.ext
-    indSig := H.indSig
-    subE := H.subE
-    entryLocs := H.entryLocs
-    brIdx := H.brIdx
-    noTail := H.noTail
-    tries := ⟨_, tryCalls_pair_value hc hX hsym hslot hNI hTls,
-      tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
-    tryExt := H.tryExt
-    tryInd := tryIndCalls_pair_value hc hXI hsym hNI hTls
-    tryIndSig := H.tryIndSig
-    cfg := H.cfg }
-  have hsubU : ∀ i us w r, valueSem F ⟨fa.k, af.slotBase⟩ X i us w = some r →
-      valueSemU F ⟨fa.k, af.slotBase⟩ X XR i us w = some r :=
-    fun _ _ _ _ h => valueSemU_of_valueSem hexcl h
-  have hdU := driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X XR
-  exact vcode_niU_core (H.sub hsubU hdU.toDriverSemG) (HP.sub (pairSem_sub hsubU)
-      (driverSemG_pair_of hdU)) hUs
-    (raiseHypW_pair_valueSemU (D := D) (p := p) ⟨fa.k, af.slotBase⟩ hslot hTls hexcl
-      (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-      (tryStack_mono (tryStack_of_check hc.lowerOk) houtB) (outArgsOk_relW Γ f c) hXR hXRi hsym
-      hRNI)
-    hdU (memRefines_valueSemU _ _ X XR hslot hsym) ρ₀ hce hrel hrel' hargs hsw hreg hstk htr fuel
+  exact vcode_niU_value_of (drop := fun _ _ => false) hsub hc hshape hcert hbr hUs (.inl rfl) hX
+    hXI hXR hXRi hexcl hsym hslot hNI hTls hRNI ρ₀ hce hrel hrel' hargs hsw hreg hstk htr fuel
+
+/-- **`vcode_niU_value` for the code after the skip of unused instructions** (`skipStage f vc`). -/
+theorem vcode_niU_value_stage (hsub : InSubset p f) (hc : CompiledCleanup f k vc vcp rf af fa fb)
+    (hlU : lowerCheckU f vc = true)
+    {X : ExtSem} {XR : XRaise} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.XEnv}
+    {F : BitVec 64 → Prop} {c : BitVec 64}
+    (hX : XCallsOk env.toEnv (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXI : XCallsIndOk env.toEnv (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
+    (hXR : XRaiseOk env (f.externs.map (·.2))
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X XR)
+    (hXRi : XRaiseIndOk env (indSigs f)
+      (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X XR)
+    (hexcl : ∀ d uses w, X.call d uses w ≠ none → XR.raise d uses w = none)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hNI : XNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLg env.toEnv (f.externs.map (·.2)) (indSigs f)) X) (hTls : XTls F X)
+    (hRNI : XRNI F syms (f.externs.map (·.2)) (indSigs f) c
+      (CallLgR env (f.externs.map (·.2)) (indSigs f)) X XR)
+    {args : List Clif.Val} {cs : Clif.State} {w₀ w₀' : Arm.ArmState} {D : BitVec 64 → Prop}
+    (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hrel' : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem
+      w₀')
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
+    (htr : TrapsExplicitX env p cs) (fuel : Nat) :
+    (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
+      ∃ us outs w w', VReturns (skipStage f vc) (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) ρ₀ w₀ us
+          outs w ∧
+        VReturns (skipStage f vc) (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) ρ₀ w₀' us outs w' ∧
+        SameWorld (fun b => F b ∨ D b) w w') ∧
+    (∀ e cm, Clif.runLoopX env p fuel cs.toX = .unwound e cm →
+      ∃ obj w w', VUnwinds (skipStage f vc) (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) XR ρ₀ w₀ obj w ∧
+        VUnwinds (skipStage f vc) (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) XR ρ₀ w₀' obj w' ∧
+        SameWorld (fun b => F b ∨ D b) w w') := by
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs, hsk⟩ := skipStage_specU hlU
+  exact vcode_niU_value_of hsub hc hshape hcert hbr hUs hsk hX hXI hXR hXRi hexcl hsym hslot hNI
+    hTls hRNI ρ₀ hce hrel hrel' hargs hsw hreg hstk htr fuel
 
 end
 

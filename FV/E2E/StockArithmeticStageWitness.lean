@@ -96,7 +96,10 @@ theorem compiled_exists (cleanup : Bool) :
                 | ok value => cases value; rfl
               exact ⟨result,vcp,rf,af,fa,fb,
                 ⟨lowered,prepared,prepOk,check,physical,emitted,layout⟩,
-                CompiledSemantic.of_checks semantic prepared prepOk check physical emitted layout,
+                CompiledSemantic.of_checks semantic
+                  (by rwa [Stock.Arithmetic.stageF_of_lowerCheck_false legacy])
+                  (by rwa [Stock.Arithmetic.stageF_of_lowerCheck_false legacy])
+                  check physical emitted layout,
                 lowerCheckedSemanticWith_success candidateRun semantic,
                 allocated,(formsCoveredB_iff _ _).mp covered,legacy⟩
 

@@ -22,8 +22,8 @@ theorem vcp_outgoing_le {g : Clif.Function} {k : Nat} {base : BitVec 64} {o : Le
     (hpipe : pipeCleanupT g k base o = .ok a) (hs : LowerScope g) (hob : outBoundB g = true) :
     a.vcp.outgoing ≤ 32560 := by
   obtain ⟨hl, hp, -⟩ := pipeCleanupT_spec hpipe
-  rw [Prep.prepare_outgoing hp (DeadCleanup.prune_prepDomain (Driver.prepDomain_of hs hl)),
-    DeadCleanup.prune_outgoing]
+  rw [Prep.prepare_outgoing hp (cleanupStage_prepDomain g (Driver.prepDomain_of hs hl)),
+    cleanupStage_outgoing]
   exact lowerFunction_outgoing_le hs hob hl
 
 end Link.EhCheck.Complete

@@ -36,10 +36,16 @@ theorem checked_sret_pins_witness (cleanup : Bool) :
     simpa only [Bool.not_eq_true'] using rejected
   have mode : ReturnPinMode.checked function result.code = .stockABI := by
     simp only [ReturnPinMode.checked,old,Bool.false_eq_true,↓reduceIte]
+  have legacy : lowerCheck function result.code = false := by
+    cases hl : lowerCheck function result.code
+    · rfl
+    · simp [SemanticNI.check,hl] at old
   have artifact : CompiledSemanticReturnPins function 0 result.code prepared allocated frame assembly binary
       (ReturnPinMode.checked function result.code) :=
-    CompiledSemanticReturnPins.of_checks (by simp only [SemanticABI.check,source,Bool.or_true])
-      stage.prepare stage.prepOk stage.check stage.alloc stage.emit stage.layout
+    CompiledSemanticReturnPins.of_checks (cleanup := cleanup) (by simp only [SemanticABI.check,source,Bool.or_true])
+      (by rw [Stock.Arithmetic.stageF_of_lowerCheck_false legacy]; exact stage.prepare)
+      (by rw [Stock.Arithmetic.stageF_of_lowerCheck_false legacy]; exact stage.prepOk)
+      stage.check stage.alloc stage.emit stage.layout
   exact ⟨result,prepared,allocated,frame,assembly,binary,lowered,provider,mode,artifact,artifact.erase,covered⟩
 
 /-- The original source selects x8. The retained ordinary mode still selects x0. -/

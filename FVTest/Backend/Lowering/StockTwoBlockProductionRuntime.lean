@@ -166,7 +166,7 @@ private def checkConfiguration (entry scalarEntry linear forward : Bool) (label 
           | .error message => throw (IO.userError message)
         -- Allocation receives staged raw code; the allocator performs checked preparation.
         -- Retain the previous preparation-identity checks for the older cohorts.
-        let expected ← if parameter || conditional || conditionalForward then pure (Stock.Arithmetic.stage cleanup selected) else match prepare (Stock.Arithmetic.stage cleanup selected) with
+        let expected ← if parameter || conditional || conditionalForward then pure (Stock.Arithmetic.stageF cleanup f selected) else match prepare (Stock.Arithmetic.stageF cleanup f selected) with
           | .ok prepared => pure prepared
           | .error message => throw (IO.userError message)
         require (decide (vc = expected)) s!"allocator did not receive raw Stock: {f.name}"

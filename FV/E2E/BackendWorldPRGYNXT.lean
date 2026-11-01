@@ -1,4 +1,5 @@
 import FV.E2E.ExtSemGuardRY
+import FV.E2E.IselSimINTSkip
 import FV.E2E.RegLevelCorrectPRSNXT
 import FV.E2E.TrapWorldW
 
@@ -101,9 +102,10 @@ theorem backend_correct_world_cleanupPRINXT {p : Clif.Program} {f : Clif.Functio
             Clif.step env p u = .trapped c' := by
   intro c' hrun H G base ra Kp cc P R s he
   obtain ⟨nc, hv, u, hu, hd⟩ :=
-    iselSim_relWI_cleanupNT hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs htr fuel c'
+    iselSim_relWI_cleanupNT_stage hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs htr
+      fuel c'
       hrun
-  have hPr := prune_correctWT (vc := vc) (sem := valueSemI F ⟨fa.k, af.slotBase⟩ XI)
+  have hPr := prune_correctWT (vc := skipStage f vc) (sem := valueSemI F ⟨fa.k, af.slotBase⟩ XI)
     (fun _ _ _ _ _ _ hi hs => counted_pure (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) hi hs)
     (cmpOverwrite_counted fun n => valueSem_cmpOverwrite _ _ _) (fun _ => 0) (w₀, 0)
     (fun w => w.2 = nc)

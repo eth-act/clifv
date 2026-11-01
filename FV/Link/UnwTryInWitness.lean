@@ -30,7 +30,7 @@ theorem inputs_facts :
   obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := h
   exact ⟨dominated_of h1, lowerScope_of h2, Spill.arityOk_of h3, h4, h5⟩
 
-theorem pipe : lowerFunction source = .ok vc ∧ Backend.prepare (DeadCleanup.prune vc) = .ok vcp := by
+theorem pipe : lowerFunction source = .ok vc ∧ Backend.prepare (cleanupStage source vc) = .ok vcp := by
   obtain ⟨-, -, -, ⟨hl, -, hp, -, -, -, -, -⟩, -⟩ := facts
   exact ⟨hl, hp⟩
 

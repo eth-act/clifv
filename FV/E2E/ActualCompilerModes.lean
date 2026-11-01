@@ -78,7 +78,7 @@ theorem LinkInput.resultsWithLowering_legacy (I : LinkInput) :
 
 theorem LinkInput.resultsWithLowering_sound (I : LinkInput)
     (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode)
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (hI : okRWith stage I (I.resultsWithLowering lower stage) = true)
     {B : BaseEnv} {F : BitVec 64 → Prop}
     (hB : BaseOk (ofRes I (I.resultsWithLowering lower stage) B F))
@@ -96,7 +96,7 @@ def CrateStmtWithCompilerModes (I : LinkInput)
 
 theorem crate_correct_withCompilerModes (I : LinkInput)
     (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode)
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (hI : okRWith stage I (I.resultsWithLowering lower stage) = true) (n : String) :
     CrateStmtWithCompilerModes I lower stage n :=
   fun _ _ hB hF f hf M _ _ _ _ _ hent hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr =>

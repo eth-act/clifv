@@ -2,18 +2,20 @@ import FV.E2E.FinalT
 import FV.E2E.DeadCleanupPipeline
 import FV.E2E.DeadCleanupContracts
 import FV.E2E.DeadCleanupRegLevel
+import FV.E2E.CleanupStageT
 
 /-!
 # The typed dead-cleanup chain (S11e5 Stage C, slice 7)
 
-The shipped route (`cargo fv --lean-link`) lowers, prunes dead pure producers
-(`Backend.DeadCleanup.prune`) and prepares the pruned code; its semantics is the value semantics
-`valueSem` (pure producers by their specification). For the typed movement scope:
+The shipped route (`cargo fv --lean-link`) lowers, runs the cleanup stage (`cleanupStage`: the
+skip of unused instructions, then `Backend.DeadCleanup.prune` of dead pure producers) and prepares
+the cleaned code; its semantics is the value semantics `valueSem` (pure producers by their
+specification). For the typed movement scope:
 
 * `CompiledCleanupT`/`CompiledCleanupAT` (`CompiledCleanup[A]` with `lowerCheckT`), integer
   `.toT`;
 * `backend_correct_of_rules_cleanup_exT` (and `_ex_ofT` for integer returns: `ArmRefines`), from
-  `iselSimT_of_rules` and `prune_correct`;
+  `iselSimT_stage` and `prune_correct`;
 * at `valueSem`: `memRefinesFP_valueSem`, `backend_correct_m4_cleanup_exT`,
   `backend_correct_final_cleanup_exT`, `backend_correct_final_cleanupT` (`ArmRefinesT` under
   `TypedRules`), and the integer specialization `backend_correct_final_cleanup_ofT`
@@ -23,25 +25,27 @@ The shipped route (`cargo fv --lean-link`) lowers, prunes dead pure producers
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 
-/-- `CompiledCleanup` with the typed lowering validator. -/
+/-- `CompiledCleanup` with the typed lowering validator. (Its `prepare`/`prepOk` were about
+`DeadCleanup.prune vc`; the compiler now runs `cleanupStage f vc` there.) -/
 structure CompiledCleanupT (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : RFunc)
     (af : AFunc) (fa : FnAsm) (fb : FnBin) : Prop where
   lower : lowerFunction f = .ok vc
   lowerOk : lowerCheckT f vc = true
-  prepare : prepare (Backend.DeadCleanup.prune vc) = .ok vcp
-  prepOk : prepCheck (Backend.DeadCleanup.prune vc) vcp = true
+  prepare : prepare (cleanupStage f vc) = .ok vcp
+  prepOk : prepCheck (cleanupStage f vc) vcp = true
   check : checkAlloc vcp rf = .ok ()
   alloc : lowerRFunc vcp rf = .ok af
   emit : emitFunc k af = .ok fa
   layout : fa.layout = .ok fb
 
-/-- `CompiledCleanupA` with the typed lowering validator. -/
+/-- `CompiledCleanupA` with the typed lowering validator. (Its `prepare`/`prepOk` are about
+`cleanupStage f vc`, as `CompiledCleanupT`'s.) -/
 structure CompiledCleanupAT (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : RFunc)
     (af : AFunc) (fa : FnAsm) (fb : FnBin) : Prop where
   lower : lowerFunction f = .ok vc
   lowerOk : lowerCheckT f vc = true
-  prepare : prepare (Backend.DeadCleanup.prune vc) = .ok vcp
-  prepOk : prepCheck (Backend.DeadCleanup.prune vc) vcp = true
+  prepare : prepare (cleanupStage f vc) = .ok vcp
+  prepOk : prepCheck (cleanupStage f vc) vcp = true
   check : AllocChecked vcp rf
   alloc : lowerRFunc vcp rf = .ok af
   emit : emitFunc k af = .ok fa
@@ -82,6 +86,21 @@ theorem prepareCorrect_prune {sem : Sem} {vc vcp : VCode} (hds : DriverSem sem)
     obtain ⟨pr, pt⟩ := prepareCorrect_of_check hds h a w
     exact ⟨fun _ _ _ h => pr _ _ _ (hr _ _ _ h), fun _ h => pt _ (ht _ h)⟩
 
+theorem cfg_of_prepare_cleanupStage {f : Clif.Function} {vc vcp : VCode}
+    (h : prepare (cleanupStage f vc) = .ok vcp) : ∃ ss ps, vc.cfg = .ok (ss, ps) := by
+  obtain ⟨ss, ps, he⟩ := cfg_of_prepare h
+  exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩
+
+/-- The cleanup stage's pruning then preparing preserves returns and traps of the code after the
+skip (`prepareCorrect_prune` for `skipStage f vc`). -/
+theorem prepareCorrect_cleanupStage {sem : Sem} {f : Clif.Function} {vc vcp : VCode}
+    (hds : DriverSem sem)
+    (hPure : ∀ i us w outs w' ctl, pureForm i = true →
+      sem i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
+    (hcmp : CmpOverwrite sem)
+    (h : prepCheck (cleanupStage f vc) vcp = true) : PrepareCorrect sem (skipStage f vc) vcp :=
+  prepareCorrect_prune hds hPure hcmp h
+
 /-- **The typed dead-cleanup `backend_correct`** from the typed rule families (`ArmRefinesT`). -/
 theorem backend_correct_of_rules_cleanup_exT {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -112,11 +131,11 @@ theorem backend_correct_of_rules_cleanup_exT {p : Clif.Program} {f : Clif.Functi
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefinesT fb base ra astep s (Clif.runLoop env p fuel cs) :=
   backend_correct_of_layers_exT
-    (iselSimT_of_rules hsub hc.lowerOk (cfg_of_prepare_prune hc.prepare)
+    (iselSimT_stage hsub hc.lowerOk (cfg_of_prepare_cleanupStage hc.prepare)
       lowerRulesCorrectTI_program hrulesF hrulesA nonEUnmatchableT_program hT.callsT hT.indT
       memRulesCorrectRTI_program hmemF hT.term hT.termUn hT.branch hT.branchEx hT.tryT
       hT.tryUn hT.tryIndT hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
-    (fun s' => prepareCorrect_prune (hds s') (hPure s') (hCmp s') hc.prepOk)
+    (fun s' => prepareCorrect_cleanupStage (hds s') (hPure s') (hCmp s') hc.prepOk)
     hM6 hent hres hbe
     (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
     hcs hrel htr fuel
@@ -152,11 +171,11 @@ theorem backend_correct_of_rules_cleanup_ex_ofT {p : Clif.Program} {f : Clif.Fun
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
   backend_correct_of_layers_ex_ofT hint
-    (iselSimT_of_rules hsub hc.lowerOk (cfg_of_prepare_prune hc.prepare)
+    (iselSimT_stage hsub hc.lowerOk (cfg_of_prepare_cleanupStage hc.prepare)
       lowerRulesCorrectTI_program hrulesF hrulesA nonEUnmatchableT_program hT.callsT hT.indT
       memRulesCorrectRTI_program hmemF hT.term hT.termUn hT.branch hT.branchEx hT.tryT
       hT.tryUn hT.tryIndT hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
-    (fun s' => prepareCorrect_prune (hds s') (hPure s') (hCmp s') hc.prepOk)
+    (fun s' => prepareCorrect_cleanupStage (hds s') (hPure s') (hCmp s') hc.prepOk)
     hM6 hent hres hbe
     (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
     hcs hrel htr fuel
@@ -177,14 +196,15 @@ theorem hasTry_of_hasTryCallCleanupAT {f : Clif.Function} {k : Nat} {vc vcp : VC
   Classical.byContradiction fun hn => by
     have hf : ∀ B ∈ f.blocks, B.term.isTry = false := fun B hB =>
       Bool.eq_false_iff.mpr fun ht => hn ⟨B, hB, ht⟩
-    rw [noTryCall_of_prepCheck hc.prepOk (prune_noTryCall (noTryCallT_of_check hc.lowerOk hf))] at h
+    rw [noTryCall_of_prepCheck hc.prepOk
+      (cleanupStage_noTryCall f (noTryCallT_of_check hc.lowerOk hf))] at h
     cases h
 
 theorem hasTls_of_vcodeCleanupAT {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
     {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : CompiledCleanupAT f k vc vcp rf af fa fb)
     (h : vcp.hasTls = true) : hasTls f = true := by
   cases hf : hasTls f
-  · rw [noTls_of_prepCheck hc.prepOk (prune_noTls (noTlsT_of_check hc.lowerOk hf))] at h
+  · rw [noTls_of_prepCheck hc.prepOk (cleanupStage_noTls f (noTlsT_of_check hc.lowerOk hf))] at h
     cases h
   · rfl
 
@@ -192,7 +212,7 @@ theorem outgoing_le_intBaseCleanupAT {f : Clif.Function} {k : Nat} {vc vcp : VCo
     {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : CompiledCleanupAT f k vc vcp rf af fa fb) :
     vc.outgoing ≤ (RAFrame.compute vcp rf).intBase := by
   simp only [RAFrame.compute]
-  rw [outgoing_of_prepCheck hc.prepOk, prune_outgoing]
+  rw [outgoing_of_prepCheck hc.prepOk, cleanupStage_outgoing]
   exact le_alignTo _ 16 (by decide)
 
 set_option maxHeartbeats 1000000 in

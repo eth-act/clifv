@@ -8,11 +8,12 @@ import FV.E2E.PairGuardS
 `pairSemD` (`PairGuardS.lean`): the `Args` step is not a load form; each stack-argument load
 reads bytes outside `F` that are equal on both worlds, so its reads avoid `F` and the difference
 set (`csem_load` at that set). Same proofs. The pair guard does not depend on the semantics, so
-the proofs are for any semantics with the memory forms (`entryLoads_runPDG`, `entry_step2PDG`;
-the value semantics of the cleanup path uses them); the `csem` forms are their instances.
+the proofs are for any semantics with the memory forms (`entryLoads_runPDG`, `entry_step2PDGZ`,
+whose runs stay in the entry code as the skip of unused instructions needs; `entry_step2PDG`; the
+value semantics of the cleanup path uses them); the `csem` forms are their instances.
 
 * `entryLoads_runPDG`, `entryLoads_runPD`;
-* **`entry_step2PDG`**, **`entry_step2PD`**.
+* **`entry_step2PDGZ`**, **`entry_step2PDG`**, **`entry_step2PD`**.
 -/
 
 namespace Backend.Proof.Driver
@@ -155,8 +156,8 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
 
 /-- **`entry_step2P` with the paired run guarded** (its proof), for any semantics with the memory
-forms. -/
-theorem entry_step2PDG (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+forms; the three runs in the entry code (`AtSeg 0 0 k`, as `entry_step2Z`). -/
+theorem entry_step2PDGZ (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR) {ctx' : FnCtx} {X : ExtSem}
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
@@ -172,11 +173,12 @@ theorem entry_step2PDG (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds 
     (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
       w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
         w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) :
-    ∃ k ρ₁ w₁ w₁', Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
+    ∃ k ρ₁ w₁ w₁', StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀⟩)
+        (.run ⟨0, k, ρ₁, w₁⟩) ∧
       Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
-      Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
+      StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
       Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁'⟩ ∧ SameWorld F w₁' w₀' ∧
-      Star (VStep vc (pairSemD sem F ctx' X)) (.run ⟨0, 0, ρ₀, (w₀, w₀')⟩)
+      StarP (VStep vc (pairSemD sem F ctx' X)) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, (w₀, w₀')⟩)
         (.run ⟨0, k, ρ₁, (w₁, w₁')⟩) := by
   obtain ⟨L, hL⟩ := H.blow hB0
   obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk 0 B0 L hB0 hL
@@ -368,9 +370,9 @@ theorem entry_step2PDG (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds 
     simpa using this
   have hlt : 1 + (E.filterMap (entryLoadOf R)).length < vb.insts.size := by
     rw [hpre] at hsz; simp at hsz; omega
-  have hstar := seqRun_fall_star hvb hseg1 hlt hrun
-  have hstar' := seqRun_fall_star hvb hseg1 hlt hrun'
-  have hstarP := seqRun_fall_star hvb hseg1 hlt hrunP
+  have hstar := seqRun_fall_starP hvb hseg1 hlt hrun
+  have hstar' := seqRun_fall_starP hvb hseg1 hlt hrun'
+  have hstarP := seqRun_fall_starP hvb hseg1 hlt hrunP
   -- the vreg file holds the parameters, the DFG facts
   have hheld : Held gn (A 0 0) ρ₂ cs.frame := by
     intro x hx
@@ -426,11 +428,48 @@ theorem entry_step2PDG (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds 
       obtain ⟨q, hq, rfl, hqt⟩ := setMany_param_ty hregs hnd hty (hA x hx0).1 hv
       rw [H.cert.paramTy B0 hB0mem q hq] at ht
       rw [hqt]; exact Option.some.inj ht
-  refine ⟨1 + (E.filterMap (entryLoadOf R)).length, ρ₂, w₂, w₂', .step hstep hstar,
+  have hmono : ∀ {W : Type} (c : VConf CV W),
+      AtSeg 0 1 (E.filterMap (entryLoadOf R)).length c →
+      AtSeg 0 0 (1 + (E.filterMap (entryLoadOf R)).length) c := by
+    rintro W c ⟨i, hi, ρ', w', rfl⟩
+    exact ⟨i + 1, by omega, ρ', w', by rw [Nat.zero_add, Nat.add_comm]⟩
+  refine ⟨1 + (E.filterMap (entryLoadOf R)).length, ρ₂, w₂, w₂',
+    .step (AtSeg.zero _ _ _ (by omega) _ _) hstep (hstar.mono fun c h => hmono c h),
     ⟨hcall, hfunc, hslots, hmr₂, B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
-      by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2, .step hstep' hstar',
+      by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2,
+    .step (AtSeg.zero _ _ _ (by omega) _ _) hstep' (hstar'.mono fun c h => hmono c h),
     ⟨hcall, hfunc, hslots, hmr₂', B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
-      by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2', .step hstepP hstarP⟩
+      by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2',
+    .step (AtSeg.zero _ _ _ (by omega) _ _) hstepP (hstarP.mono fun c h => hmono c h)⟩
+
+/-- **`entry_step2P` with the paired run guarded**, for any semantics with the memory forms
+(`entry_step2PDGZ` as plain runs). -/
+theorem entry_step2PDG (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR) {ctx' : FnCtx} {X : ExtSem}
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ w₀' : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hmr' : MR slots cs.mem w₀') (hargs : ArgsAtEntry F f.sig args w₀)
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) :
+    ∃ k ρ₁ w₁ w₁', Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
+      Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁'⟩ ∧ SameWorld F w₁' w₀' ∧
+      Star (VStep vc (pairSemD sem F ctx' X)) (.run ⟨0, 0, ρ₀, (w₀, w₀')⟩)
+        (.run ⟨0, k, ρ₁, (w₁, w₁')⟩) :=
+  let ⟨k, ρ₁, w₁, w₁', h1, h2, h3, h4, h5, h6, h7⟩ := entry_step2PDGZ H hds hMem hMR
+    (ctx' := ctx') (X := X) hB0 hcall hfunc hslots hbody hterm hregs hty hsig (ρ₀ := ρ₀) hmr hmr'
+    hargs hreg h29 hstk
+  ⟨k, ρ₁, w₁, w₁', h1.star, h2, h3, h4.star, h5, h6, h7.star⟩
 
 /-- **`entry_step2P` with the paired run guarded** (`entry_step2PDG` at `csem`). -/
 theorem entry_step2PD (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)

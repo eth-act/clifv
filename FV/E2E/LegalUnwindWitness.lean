@@ -382,7 +382,7 @@ open E2E.DeadCleanupUnwindWitness (Xr Uw calleeUnwOkG_raise ok_getD ok_unit)
 
 /-- The compiler's outputs on the legalisation (the defaults are never used: `checks_true`). -/
 def vc : VCode := (lowerFunction gL).toOption.getD default
-def vcp : VCode := (Backend.prepare (prune vc)).toOption.getD default
+def vcp : VCode := (Backend.prepare (cleanupStage gL vc)).toOption.getD default
 def rf : RFunc := spillAlloc vcp
 def af : AFunc := (lowerRFunc vcp rf).toOption.getD default
 def fa : FnAsm := (emitFunc 0 af).toOption.getD default
@@ -398,7 +398,7 @@ on the compiled legalisation (it has a landing pad: `lsda.isSome`, no indirect c
 def checks : Bool :=
   Backend.verifiable gL && lowerScopeB gL && !hasTls gL && (indSigs gL).isEmpty &&
   (lowerFunction gL).toBool && lowerCheckU gL vc &&
-  (Backend.prepare (prune vc)).toBool && prepCheck (prune vc) vcp &&
+  (Backend.prepare (cleanupStage gL vc)).toBool && prepCheck (cleanupStage gL vc) vcp &&
   (checkAlloc vcp rf).toBool && (lowerRFunc vcp rf).toBool && (emitFunc 0 af).toBool &&
   fa.layout.toBool && savedCheck vcp rf && padsNonzeroB af fa && lastCallsOk af fa &&
   (callSites af fa).toBool && lsda.isSome && (unwindRows af fa).toBool

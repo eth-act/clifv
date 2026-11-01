@@ -14,3 +14,4 @@ import FV.Backend.Proof.LowerSimSkip
 #print axioms Backend.Proof.Driver.term_step_abiP
 #print axioms Backend.Proof.Driver.term_step_tryP
 #print axioms Backend.Proof.Driver.entry_stepP
+#print axioms Backend.Proof.Driver.skipDead_eq_impl

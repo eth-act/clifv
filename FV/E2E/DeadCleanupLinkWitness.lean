@@ -1,5 +1,5 @@
 import FV.E2E.DeadCleanupLinkCheck
-import FV.E2E.DeadCleanupLinkFrames
+import FV.E2E.DeadCleanupStageFrames
 import FV.E2E.DeadCleanupWitness
 
 namespace E2E.DeadCleanupLinkWitness
@@ -20,10 +20,11 @@ set_option maxHeartbeats 10000000 in
 theorem checkers_accept : okB input = true ∧ okBCleanup input = true := by native_decide
 
 /-- Frame and entry-register transports apply to an actual source compilation
-which deletes an instruction and emits laid-out code. -/
+which deletes an instruction and emits laid-out code. (`vcp` is the production cleanup stage's
+prepared code `stagePrepared`, formerly `preparedCleanup vc raw`.) -/
 theorem frame_entry_witness : ∃ vc raw vcp rf af fa fb,
     lowerFunction DeadCleanupWitness.source = .ok vc ∧
-    Backend.prepare vc = .ok raw ∧ vcp = preparedCleanup vc raw ∧
+    Backend.prepare vc = .ok raw ∧ vcp = stagePrepared DeadCleanupWitness.source vc raw ∧
     lowerRFunc vcp rf = .ok af ∧ emitFunc 0 af = .ok fa ∧ fa.layout = .ok fb ∧
     entryB DeadCleanupWitness.source vcp = true ∧
     ((!DeadCleanupWitness.source.slots.isEmpty ||
@@ -31,15 +32,15 @@ theorem frame_entry_witness : ∃ vc raw vcp rf af fa fb,
       slotFitsB DeadCleanupWitness.source ⟨0, vc, vcp, rf, af, fa, fb, 0⟩) = true ∧
     (prune vc).blocks[0]!.insts.size < vc.blocks[0]!.insts.size := by
   obtain ⟨hd, hs, har, vc, vcp, af, fa, fb, hc, hshr⟩ := DeadCleanupWitness.compiled_exists
-  obtain ⟨raw, hp, hv⟩ := prune_prepare_ok_inv hc.prepare
+  obtain ⟨raw, hp, hv⟩ := cleanupStage_prepare_ok_inv hc.prepare
   refine ⟨vc, raw, vcp, spillAlloc vcp, af, fa, fb, hc.lower, hp, hv, hc.alloc,
     hc.emit, hc.layout, ?_, ?_, hshr⟩
   · rw [hv]
-    exact entryB_cleanup_of_lower (by
+    exact entryB_stage_of_lower (by
       have h := DeadCleanupWitness.checks_true
       simp only [DeadCleanupWitness.checks, Bool.and_eq_true] at h
       exact h.1.1.1.2) hc.lower hp
-  · exact frame_cleanup_of_lower
+  · exact frame_stage_of_lower
       (a := ⟨0, vc, vcp, spillAlloc vcp, af, fa, fb, 0⟩) hc.lower hp hv hc.alloc
 
 end E2E.DeadCleanupLinkWitness

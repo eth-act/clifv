@@ -4,6 +4,7 @@ import FV.Backend.Proof.SpillEdges
 import FV.Backend.Proof.SpillStep4Cfg
 import FV.Backend.Proof.DeadCleanupPrepareMap
 import FV.Backend.Proof.TryRegs
+import FV.Backend.Proof.CleanupStageFacts
 
 /-!
 # The `try_call` handlers of the prepared code from the input (S10g, #404)
@@ -423,23 +424,24 @@ theorem findIdx?_first {α : Type} {p : α → Bool} {xs : Array α} {k : Nat}
   exact ⟨hk, h1, fun i hi => by simpa using h2 i hi⟩
 
 /-- **`TryInfoOk` of the pipeline's prepared code from the input**: on in-scope input whose
-`try_call` tables have only `tag 0`/`tag 1` items (`tryTablesB`), `prepare (prune vc)` of
-`lowerFunction`'s output satisfies `TryInfoOk`. -/
+`try_call` tables have only `tag 0`/`tag 1` items (`tryTablesB`), `prepare (cleanupStage f vc)`
+of `lowerFunction`'s output satisfies `TryInfoOk`. (`hp` is about the production cleanup stage,
+formerly `prune vc`.) -/
 theorem tryInfoOk_of_input {f : Clif.Function} {vc vcp : VCode} (hd : Dominated f)
     (hs : LowerScope f) (har : Spill.ArityOk f) (ht : tryTablesB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : prepare (DeadCleanup.prune vc) = .ok vcp) :
+    (hl : lowerFunction f = .ok vc) (hp : prepare (cleanupStage f vc) = .ok vcp) :
     TryInfoOk vcp := by
-  obtain ⟨raw, hraw, rfl⟩ := DeadCleanup.prune_prepare_ok_inv hp
+  obtain ⟨raw, hraw, rfl⟩ := cleanupStage_prepare_ok_inv hp
   have hgraw := prepare_good hraw (lower_good hs ht hl)
-  have hg : ∀ vb ∈ (DeadCleanup.preparedCleanup vc raw).blocks.toList, Good vb.insts.toList := by
+  have hg : ∀ vb ∈ (stagePrepared f vc raw).blocks.toList, Good vb.insts.toList := by
     intro vb hvb
-    rw [DeadCleanup.preparedCleanup_blocks, Array.toList_map, List.mem_map] at hvb
+    rw [stagePrepared_eq, mapBlocks_blocks, Array.toList_map, List.mem_map] at hvb
     obtain ⟨vb0, h0, rfl⟩ := hvb
-    exact good_sublist (DeadCleanup.preparedCleanupBlock_sublist vc vb0) (hgraw vb0 h0)
+    exact good_sublist ((stagePrepared_delMap f vc).sub vb0) (hgraw vb0 h0)
   obtain ⟨ss, ps, hcfg⟩ := Spill.cfg_ok_of_prepare hraw (prepDomain_of_lower hs hl hs.nonempty)
   have hent := (Spill.edgesHyp_of hd hs har hl hraw ss ps hcfg).entry.2.1
-  have hcfg' : (DeadCleanup.preparedCleanup vc raw).cfg = .ok (ss, ps) := by
-    rw [DeadCleanup.preparedCleanup_cfg]; exact hcfg
+  have hcfg' : (stagePrepared f vc raw).cfg = .ok (ss, ps) := by
+    rw [stagePrepared_cfg]; exact hcfg
   have cs := Prep.cfg_spec hcfg'
   intro vb hvb c ti hi
   obtain ⟨htags, -⟩ := hg vb hvb
@@ -447,7 +449,7 @@ theorem tryInfoOk_of_input {f : Clif.Function} {vc vcp : VCode} (hd : Dominated 
   obtain ⟨hne, hall⟩ := hgood.2 _ hi c ti rfl
   refine ⟨hne, fun h hh => ⟨hall h hh, ?_⟩⟩
   obtain ⟨b, hb⟩ := List.mem_iff_getElem?.1 hvb
-  have hb' : (DeadCleanup.preparedCleanup vc raw).blocks[b]? = some vb := by simpa using hb
+  have hb' : (stagePrepared f vc raw).blocks[b]? = some vb := by simpa using hb
   obtain ⟨k, hk⟩ := List.mem_iff_getElem?.1 hi
   have hlast := htags k c ti hk
   have hback : vb.insts.back? = some (.tryCall c ti) := by
@@ -478,7 +480,7 @@ with `HandlersOk` from `tryInfoOk_of_input`. -/
 theorem callSites_complete_input {f : Clif.Function} {vc vcp : VCode} {rf : RFunc} {af : AFunc}
     {k : Nat} {fa : FnAsm} (hd : Dominated f) (hs : LowerScope f) (har : Spill.ArityOk f)
     (ht : tryTablesB f = true) (hl : lowerFunction f = .ok vc)
-    (hp : prepare (DeadCleanup.prune vc) = .ok vcp) (halloc : lowerRFunc vcp rf = .ok af)
+    (hp : prepare (cleanupStage f vc) = .ok vcp) (halloc : lowerRFunc vcp rf = .ok af)
     (hsize : rf.blocks.size = vcp.blocks.size) (hemit : emitFunc k af = .ok fa) :
     ∃ l, callSites af fa = .ok l :=
   callSites_complete hemit (handlersOk_of_tryInfo halloc hsize (tryInfoOk_of_input hd hs har ht hl hp))
@@ -488,7 +490,7 @@ theorem callSites_complete_input {f : Clif.Function} {vc vcp : VCode} {rf : RFun
 theorem padsNonzero_complete_input {f : Clif.Function} {vc vcp : VCode} {rf : RFunc} {af : AFunc}
     {k : Nat} {fa : FnAsm} {fb : FnBin} (hd : Dominated f) (hs : LowerScope f)
     (har : Spill.ArityOk f) (ht : tryTablesB f = true) (hl : lowerFunction f = .ok vc)
-    (hp : prepare (DeadCleanup.prune vc) = .ok vcp) (halloc : lowerRFunc vcp rf = .ok af)
+    (hp : prepare (cleanupStage f vc) = .ok vcp) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlay : fa.layout = .ok fb) {vb : VBlock}
     {items : Array RItem} (hvb : vcp.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items) :
     padsNonzeroB af fa = true :=

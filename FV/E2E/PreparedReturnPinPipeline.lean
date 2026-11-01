@@ -22,7 +22,7 @@ def okRReturnPins (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R
 /-- The complete ABI-aware contract follows from executable checks and real pipeline observations. -/
 theorem semanticPreparedReturnPinsResults_sound (stage : Clif.Function → VCode → VCode)
     {I : LinkInput} {R : Res}
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (hR : PreparedResults stage I R) (hI : okRReturnPins stage I R = true)
     {B : BaseEnv} {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F))
     (hF : ∀ a,(ofRes I R B F).Img a → F a) : (ofRes I R B F).OkSemanticReturnPins := by

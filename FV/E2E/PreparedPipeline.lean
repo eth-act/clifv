@@ -105,7 +105,7 @@ theorem preparedIndFacts (stage : Clif.Function → VCode → VCode) {I : LinkIn
   revert hb8
   cases hb : sigParamBytes h'.sig <;> simp
 
-theorem preparedResults_sound (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune)) (hR : PreparedResults stage I R) (hI : okRWith stage I R = true) {B : BaseEnv}
+theorem preparedResults_sound (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = (fun _ => id) ∨ stage = cleanupStage) (hR : PreparedResults stage I R) (hI : okRWith stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
     (ofRes I R B F).OkProduction := by
   have hn := okRWith_names stage hI

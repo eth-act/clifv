@@ -10,7 +10,8 @@ def legacyLowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode
   pure vc
 
 def legacyLowerForAllocation (f : Clif.Function) (verify deadCleanup : Bool) : Except String VCode :=
-  (legacyLowerChecked f verify).map fun vc => if deadCleanup then Backend.DeadCleanup.prune vc else vc
+  (legacyLowerChecked f verify).map fun vc =>
+    if deadCleanup then Backend.cleanupStageChecked verify f vc else vc
 
 theorem lowerChecked_eq_legacy (f : Clif.Function) (verify : Bool) :
     Backend.lowerChecked f verify = legacyLowerChecked f verify := by

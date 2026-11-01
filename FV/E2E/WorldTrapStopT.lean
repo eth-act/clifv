@@ -1,6 +1,7 @@
 import FV.E2E.WorldTrapStop
 import FV.E2E.TrapCallTryPrep
 import FV.E2E.RegLevelTrapCallTry
+import FV.E2E.TrapCallTryStopSkip
 
 /-!
 # The per-function world theorem with callee traps, `try_call`s included (S9e, #408)
@@ -412,7 +413,7 @@ theorem backend_correct_world_cleanup_trapstopT {p : Clif.Program} {f : Clif.Fun
   have hicalls := indCallsRefine_valueSemU (F := F) (ctx := fctx)
     (xCallsIndOk_trapEnv (c := tc) hXI) hsym (fun _ _ _ h => h.1.1.symbols) hexcl
   -- CLIF → VCode up to the trapping step, on the proof device `trapEnv env tc`
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs⟩ := loweringU_of_check hlU
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs, hsk⟩ := skipStage_specU hlU
   have HD : DriverHyp f vc ctx st0 R gn bl A sem (RelW Γ f c) (trapEnv env tc).toEnv p :=
     { shape := hshape
       cert := hcert
@@ -437,7 +438,7 @@ theorem backend_correct_world_cleanup_trapstopT {p : Clif.Program} {f : Clif.Fun
       tryIndSig := tryIndSig_of_subset hsub
       cfg := by
         obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-        exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+        exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
   have HR : RaiseHyp f sem (RelW Γ f c) (trapEnv env tc) F X (xrT XT) slotOff syms
       (RAFrame.compute vcp rf).intBase :=
     ⟨raiseSem_valueSemU _ _ X (xrT XT), hRef, hmem, mrStable_relW Γ f c, outArgsOk_relW Γ f c,
@@ -447,13 +448,13 @@ theorem backend_correct_world_cleanup_trapstopT {p : Clif.Program} {f : Clif.Fun
   obtain ⟨B0, hentB, hbody, hterm, hty, hregs⟩ := hcs.entry
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hentB
-  have hD := driver_trapStop (slots := cs.frame.slots) (ρ₀ := fun _ => 0) hp HD hUs HR
+  have hD := driver_trapStop_stage (slots := cs.frame.slots) (ρ₀ := fun _ => 0) hp HD hUs HR hsk
     (driverSem_valueSemU F fctx X (xrT XT)) hB0 hcs.callers hcs.func rfl hbody hterm hregs
     hty.symm hcs.sig hrel hargs htr hrun
   -- `prune` + `prepare`
-  have hP := prepareCorrectU_cleanup (driverSem_valueSemU F fctx X (xrT XT))
-    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk
-    (xrT XT)
+  have hP := prepareCorrectU_cleanup (vc := skipStage f vc)
+    (driverSem_valueSemU F fctx X (xrT XT))
+    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk (xrT XT)
   intro H G base ra s he
   obtain ⟨hR1, hR2, hR3⟩ := regLevel_trapStop_worldT hc.check hc.alloc hc.emit hc.layout hcov XT
     he (fun _ => 0)
@@ -465,9 +466,8 @@ theorem backend_correct_world_cleanup_trapstopT {p : Clif.Program} {f : Clif.Fun
       hR2 obj w' (vUnwinds_gotV_gen (gotPair_valueU _ _ _) (hP.2 _ _ _ _ h))
     exact ⟨n, ht, hsp, hprog, .inr hct⟩
   · obtain ⟨n, ht, hsp, hprog, hct⟩ := hR3 (vTryRaise_gotV_gen (gotPair_valueU _ _ _)
-      (tryRaise_cleanup (driverSem_valueSemU F fctx X (xrT XT))
-        (fun _ _ _ _ _ _ hp' h' => valueSemU_pure hp' h') (valueSemU_cmpOverwrite _ _ _ _)
-        hc.prepOk (xrT XT) h))
+      (tryRaise_cleanup (vc := skipStage f vc) (driverSem_valueSemU F fctx X (xrT XT))
+        (fun _ _ _ _ _ _ hp' h' => valueSemU_pure hp' h') (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk (xrT XT) h))
     exact ⟨n, ht, hsp, hprog, .inr hct⟩
 
 end E2E
