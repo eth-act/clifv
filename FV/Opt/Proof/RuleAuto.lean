@@ -1,5 +1,6 @@
 import FV.Opt.Proof.RuleImm
 import FV.Opt.Proof.KernelBV
+import FV.Opt.Proof.RuleInfraEval
 
 /-!
 # The batching template: `rule_ok`
@@ -126,7 +127,7 @@ set_option hygiene false in
 macro_rules
   | `(tactic| rule_rhs) => `(tactic| rule_rhs [])
   | `(tactic| rule_rhs [$ts,*]) => `(tactic| (
-      opt_eval hev [$ts,*]
+      opt_eval_bind hev [$ts,*]
       repeat' (split at hev <;> try opt_norm hev)
       all_goals (try simp only [Option.map_eq_some_iff, Option.map_eq_none_iff] at *)
       opt_destruct
