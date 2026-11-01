@@ -23,17 +23,17 @@ theorem returnPinArtMap_get (R : Res) (g : Clif.Function) :
       have forward : (e.1.name == g.name) = false := by simpa using same
       simpa only [forward,reverse,Bool.false_eq_true,if_false] using ih
 
-/-- One target's source function, physical result pins, and argument arity. -/
+/-- One target's source function, delayed result pins, and argument arity. -/
 structure ReturnPinEntry where
   function : Clif.Function
-  pins : List Reg
+  pins : Thunk (List Reg)
   arity : Nat
 
 def ReturnPinEntry.of (A : Clif.Function → Art) (g : Clif.Function) : ReturnPinEntry :=
-  ⟨g,ReturnPinCheck.pins g (A g).vc,(regLocs g.sig).length⟩
+  ⟨g,Thunk.mk (fun _ => ReturnPinCheck.pins g (A g).vc),(regLocs g.sig).length⟩
 
 def ReturnPinEntry.check (e : ReturnPinEntry) (definitions : List (Reg × Reg)) : Bool :=
-  decide ((definitions.map (·.1)).take e.pins.length = e.pins.take definitions.length)
+  decide ((definitions.map (·.1)).take e.pins.get.length = e.pins.get.take definitions.length)
 
 theorem ReturnPinEntry.check_of (A : Clif.Function → Art) (g : Clif.Function)
     (definitions : List (Reg × Reg)) :
