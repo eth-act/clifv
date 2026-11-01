@@ -1,0 +1,67 @@
+{
+  "status": "superseded",
+  "source_sha": "893eee2f6e85bd40e92be35420f3714fee0e74a9",
+  "run": 41329973860,
+  "records": [],
+  "manifests": [],
+  "cache": "/home/lee/clifv/.worktrees/driver-proof-resume/.lake/artifact-cache",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T19:26:20.892575+00:00",
+  "phase": "producer-jobs",
+  "producer_status": [
+    {
+      "id": 124942403768,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 124942403788,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 124942403838,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 124942403840,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 124942403876,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 124942403896,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 124942403904,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 124942403908,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 124942403943,
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 124942403967,
+      "status": "in_progress",
+      "conclusion": null
+    }
+  ],
+  "successor": "import-main870-ci-wave2-v2.py",
+  "reason": "Import independently successful shards before the slowest producer finishes",
+  "actual_waiter_terminated": 3627534,
+  "active_build_stopped": false
+}
