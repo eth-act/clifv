@@ -4,6 +4,7 @@ import FV.E2E.StockMemorySretCopyNI
 import FV.Backend.Proof.StockMemorySretCopyCheck
 import FV.Backend.Proof.StockMemorySretCopyDomain
 import FV.Backend.SemanticABICheck
+import FV.E2E.StockVoidCallNI
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
@@ -17,6 +18,11 @@ inductive CompiledSemanticABI (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledSemanticABI f k vc vcp rf af fa fb
   | memorySretCopy {cleanup : Bool} {result : Stock.Result} :
       Stock.Memory.SretCopy.CfgClass f → result.code = vc → Stock.MemoryStoreCfg.effectsOnly vc = true →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemanticABI f k vc vcp rf af fa fb
+
+  | voidCall {cleanup : Bool} {result : Stock.Result} :
+      Stock.VoidCall.NI.check f result.code = true → result.code = vc →
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemanticABI f k vc vcp rf af fa fb
 
@@ -37,25 +43,41 @@ theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)
     exact .memorySretCopy family equal effects
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
+theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls f vc = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
+    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
+    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
+    CompiledSemanticABI f k vc vcp rf af fa fb := by
+  rcases Bool.or_eq_true_iff.mp lower with old | caller
+  · exact of_checks old prepared prepOk check alloc emit layout
+  · obtain ⟨result,run,equal,_,_,_,_,_⟩ := Stock.VoidCall.check_sound (Bool.and_eq_true_iff.mp caller).1
+    exact .voidCall (by rwa [equal]) equal
+      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+
 theorem check (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : Backend.checkAlloc vcp rf = .ok () := by
   cases hc with
   | compatible h => exact h.check
   | memorySretCopy _ _ _ h => exact h.check
+  | voidCall _ _ h => exact h.check
 
 theorem alloc (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : lowerRFunc vcp rf = .ok af := by
   cases hc with
   | compatible h => exact h.alloc
   | memorySretCopy _ _ _ h => exact h.alloc
+  | voidCall _ _ h => exact h.alloc
 
 theorem emit (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : emitFunc k af = .ok fa := by
   cases hc with
   | compatible h => exact h.emit
   | memorySretCopy _ _ _ h => exact h.emit
+  | voidCall _ _ h => exact h.emit
 
 theorem layout (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : fa.layout = .ok fb := by
   cases hc with
   | compatible h => exact h.layout
   | memorySretCopy _ _ _ h => exact h.layout
+  | voidCall _ _ h => exact h.layout
 
 end CompiledSemanticABI
 
@@ -120,5 +142,12 @@ theorem backend_correct_world_niX_semantic_abi {p : Clif.Program} {f : Clif.Func
       obtain ⟨us,outs,w,pins,arity,values,memory,site,run⟩ :=
         (backend_correct_worldX_stock_memory_abi family.domainABI h hcov hsym hslot hcs hrel hargs fuel).1 vals cm returned
       exact ⟨us,outs,w,.inr pins,arity,values,memory,site,run,fun _ positive => False.elim (tls positive)⟩
+  | voidCall source equal h =>
+    subst vc
+    intro vals cm returned
+    obtain ⟨us,outs,w,pins,arity,values,memory,site,run,paired⟩ :=
+      backend_correct_world_niX_stock_void_call hsub source h hcov hX hXI hsym hslot hcs hrel hargs htr
+        fuel vals cm returned
+    exact ⟨us,outs,w,.inr pins,arity,values,memory,site,run,paired⟩
 
 end E2E

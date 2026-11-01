@@ -88,6 +88,17 @@ theorem of_checks {cleanup : Bool} (lower : SemanticABI.check g (L.A g).vc = tru
   ⟨CompiledSemanticReturnPins.of_checks lower prepared prepOk check alloc emit layout,
     L.returnPinsB_sound pins⟩
 
+theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls g (L.A g).vc = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup (L.A g).vc) = .ok (L.A g).vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup (L.A g).vc) (L.A g).vcp = true)
+    (check : Backend.checkAlloc (L.A g).vcp (L.A g).rf = .ok ())
+    (alloc : lowerRFunc (L.A g).vcp (L.A g).rf = .ok (L.A g).af)
+    (emit : emitFunc (L.A g).k (L.A g).af = .ok (L.A g).fa)
+    (layout : (L.A g).fa.layout = .ok (L.A g).fb)
+    (pins : L.returnPinsB g = true) : CompiledProgramReturnPins L g :=
+  ⟨CompiledSemanticReturnPins.of_checks_calls lower prepared prepOk check alloc emit layout,
+    L.returnPinsB_sound pins⟩
+
 theorem check {modes : Clif.Function → ReturnPinMode} (hc : CompiledProgramReturnPins L g modes) : checkAlloc (L.A g).vcp (L.A g).rf = .ok () :=
   hc.artifact.erase.check
 
