@@ -54,7 +54,7 @@ compiler cache is saved. All writable Actions cache keys start with `turbo-shado
 
 The executable is built from the **personal repository**
 [Th0rgal/turbo-lean](https://github.com/Th0rgal/turbo-lean), pinned to
-**0212d865be1a1093decef308225a0badcdccb526**; it is not an official Lean binary. The workflow
+**a83cd47b36112c8ba1118f3e2387abaa94fe81a3**; it is not an official Lean binary. The workflow
 checks the fetched commit SHA and uses its Cargo lockfile, Rust 1.96.0, its own Lean 4.35.0
 build toolchain and pinned LeanSys dependency. Downloads of both Lean archives are checked
 against pinned SHA-256 sums. The executable cache includes SHA, OS, architecture and

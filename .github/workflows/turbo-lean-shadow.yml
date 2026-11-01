@@ -39,7 +39,7 @@ jobs:
     continue-on-error: true
     timeout-minutes: 75
     env:
-      TURBO_SHA: 0212d865be1a1093decef308225a0badcdccb526
+      TURBO_SHA: a83cd47b36112c8ba1118f3e2387abaa94fe81a3
       STOCK_RUN_ID: ${{ inputs.stock-run-id }}
       PR_BASE: ${{ inputs.base-sha }}
     steps:
