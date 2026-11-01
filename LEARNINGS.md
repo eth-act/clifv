@@ -186,6 +186,34 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Trick:** `let sm := assocMap I.syms` before the call, pass `fun n => sm[n]?`; `budMapFast_eq` unchanged (`simp` zeta-reduces). Also one task per function (`Link.parMap`, `parMap_eq`) for the routing recovery's up to five pipelines per function.
 - **Numbers:** std bundle link-check >67 min (killed) → 5 min 19 s (stack bound 65 s, max RSS 1.2 GB); same output on 22 non-std executables (`FV/E2E/BinCheckFast.lean`, `FVTest/E2E/LinkCheckMain.lean`).
 
+## Verification tooling (anything that decides what counts as proved)
+
+Axiom audits, statement diffs, caches of proof results, gates, agent check loops. Each rule below is a hole an automated review found in turbo-lean's integration of our changes (Th0rgal/turbo-lean#275, reviewing #273). Every one would have reported "verified" for something that was not. Before merging a change to such tooling, check it against these rules and get an independent review, with a regression test for each finding.
+
+### Key a cached verdict by everything that decides it
+- **Hole:** turbo-lean namespaced whole-theorem results by axiom policy but not their per-`have` ("fission") entries, so a proof verified under a wide allowlist was reused under a strict one without a new audit.
+- **Rule:** a cache key for "proved" covers the toolchain, sources, options **and the trust policy** (allowed axioms, `native_decide` allowance). Here: Lake's trace covers sources/options/toolchain; `lake-serial-build`'s dedup key adds lakefile and manifest; nothing caches an axiom-audit verdict.
+
+### One verification entry point; fast paths may not skip the gate
+- **Hole:** the dependent re-check ran only from the CLI; the in-process MCP `agent_step` path returned success for an edit the CLI rejected.
+- **Rule:** every path that can say "ok" (CLI, MCP, server, batch) goes through the same gate function. A loop that skips part of the gate is labelled a dev loop, never a gate. Here: the language server and turbo-lean are dev loops; `lake-serial-build` on the importers and the full gate are the gates (docs/USAGE.md, "Checking an edit").
+
+### One source of truth for the trust policy, decided by Lean
+- **Hole:** a Rust substring test for `bv_decide` disagreed with the kernel's glob matching of generated axioms, so the two gates admitted different proofs.
+- **Rule:** decide axiom admission once, from Lean's own answer (`#print axioms`, the kernel's constant list), not by re-implementing it in another language or by grepping source text. Here: `scripts/axiom-audit.py` parses `#print axioms` output against an exact list.
+
+### "Everything downstream" includes executables and outside consumers
+- **Hole:** the dependent re-check seeded its graph with `lean_lib` targets only; a statement edit could break a `lean_exe` root while the check passed.
+- **Rule:** a closure of importers includes `lean_exe` roots and every consumer outside the libraries. Here: `ci-build-plan.py` plans executables (#752); `scripts/shake` protects `scripts/audit/*.lean`, `scripts/rust-clif/*.lean`, `float-spec` and `crate-proofs`.
+
+### The policy travels with the request, never through inherited state
+- **Hole:** a parent's config-loaded allowlist leaked into subprocesses via an environment variable and overrode the base policy; a remote server checked shards under its own allowlist, not the caller's.
+- **Rule:** pass the policy explicitly to every subprocess and remote call, and reject mismatches. Don't let an environment variable set for one purpose decide another.
+
+### Untrusted input never widens the policy
+- **Hole (fixed in turbo-lean):** the allowlist could be read from the PR's own `turbo-lean.toml`.
+- **Rule:** read the policy from the base revision; reject `sorryAx` and `Lean.trustCompiler` even under `*`. **Open here:** CI runs the PR's own `scripts/axiom-audit.py`, and the allowlist and `-- witness: native_decide` markers live in files a PR can edit; there is no CODEOWNERS. Candidate fixes: CODEOWNERS for the audit files, or run main's audit script on the PR's build.
+
 ## From other projects (not yet measured in clifv)
 
 From [Th0rgal/evm.fast-dev](https://github.com/Th0rgal/evm.fast-dev) (`docs/PROOF-PERFORMANCE.md`). All keep ordinary kernel checking and standard axioms. Move an entry up into the sections above once it has been measured here.
