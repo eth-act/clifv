@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockLogicalRecordWitness
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerValueRelations
 import FV.Backend.Proof.StockLogicalCompleteValues
 import FV.Backend.Proof.StockLogicalScanRefines
 import FV.Backend.Proof.StockLogicalBodyRefines

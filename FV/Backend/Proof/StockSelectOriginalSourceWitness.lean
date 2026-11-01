@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockSelectScalarDriverRuns
 import FV.Backend.Proof.StockSelectOriginalSourceValues
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerValueRelations
 namespace Backend.Stock.Proof.ScalarSelect.OriginalSourceWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000
