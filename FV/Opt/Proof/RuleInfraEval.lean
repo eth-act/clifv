@@ -21,7 +21,7 @@ continuation (`fun p => …` of a `bind`, with its unreduced `match`es), and eve
   could not match those. The others are tried by `rw` in `opt_unfold`'s order.
 
 Rule modules opt in by calling `opt_eval_head`/`opt_norm_head` in their templates (the skeleton
-`div` templates do).
+`div` templates do). `opt_eval_bind` (below) is the variant `rule_rhs` uses.
 -/
 
 namespace Opt.Proof
@@ -98,5 +98,21 @@ macro_rules
   | `(tactic| opt_eval_head $h:ident) => `(tactic| opt_eval_head $h [])
   | `(tactic| opt_eval_head $h:ident [$ts,*]) => `(tactic|
       (opt_norm_head $h [$ts,*]; repeat (opt_unfold_head $h; opt_norm_head $h [$ts,*])))
+
+/-- `opt_eval` (`rule_rhs`) whose `simp` calls between the steps leave the continuations of
+`bind`s alone (`↓opt_bind_head`, next to `opt_norm`'s `↓opt_match_head`), then one full
+`opt_norm`. That last call gives `hev` the normal form the `split`s and the closing steps of
+`rule_rhs` expect. Using `opt_bind_head` in `opt_norm` itself, also inside the `split` loop, left
+`hev` unsolved in `RuleShiftsRotate`. Between the steps it is one call, as in `opt_norm`, not
+`opt_norm_head`'s two. -/
+syntax "opt_eval_bind " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
+macro_rules
+  | `(tactic| opt_eval_bind $h:ident) => `(tactic| opt_eval_bind $h [])
+  | `(tactic| opt_eval_bind $h:ident [$ts,*]) => `(tactic| (
+      try simp (disch := assumption) only [↓opt_bind_head, ↓opt_match_head, opt_data, opt_monad,
+        opt_imm, $ts,*] at $h:ident
+      repeat (opt_unfold $h; try simp (disch := assumption) only [↓opt_bind_head, ↓opt_match_head,
+        opt_data, opt_monad, opt_imm, $ts,*] at $h:ident)
+      opt_norm $h [$ts,*]))
 
 end Opt.Proof
