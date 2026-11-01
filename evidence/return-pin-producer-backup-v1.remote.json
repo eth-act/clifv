@@ -1,0 +1,12 @@
+{
+  "archive": "return-pin-producer-backup-v1.tar.gz",
+  "archive_bytes": 3021341,
+  "archive_sha256": "ff3347d29873f98a7f0dd2f8c1c2f8102d27b7211c94bd29bc444131d00182f0",
+  "parts": [
+    {
+      "name": "return-pin-producer-backup-v1.tar.gz.part-000",
+      "bytes": 3021341,
+      "sha256": "ff3347d29873f98a7f0dd2f8c1c2f8102d27b7211c94bd29bc444131d00182f0"
+    }
+  ]
+}
