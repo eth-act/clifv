@@ -48,7 +48,7 @@ private theorem nonentry_prelude {f : Clif.Function} {result : Result} {b : Clif
 
 /-- Instruction-zero simulation of the original three-block memory copy, including
 inherited source values across empty-argument jumps. The source signature retains its original implicit sret return. -/
-theorem sret_copy_paired_return_frame {f : Clif.Function} {result : Result}
+theorem sret_copy_paired_return_frame_canonical {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     (abi : sigAbiOk f.sig = true) {entry middle target : Clif.Block}
     {first second : Clif.BlockCall} {xs : List Nat}
@@ -83,7 +83,7 @@ theorem sret_copy_paired_return_frame {f : Clif.Function} {result : Result}
     {w0 w1 : Arm.ArmState} (memory : MRP Γ f c D fr.slots cm (w0,w1))
     (arguments : ArgsAtEntry Γ.F f.sig args w0) (otherArguments : ArgsAtEntry Γ.F f.sig args w1)
     (registers : ∀ pin v,(.reg pin,v) ∈ (locsOf f.sig).zip args → regVal w1 pin = regVal w0 pin) :
-    ∃ ρ0,RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D) fr.slots ⟨0,0,ρ0,(w0,w1)⟩ (.returned vals outMem) := by
+    RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D) fr.slots ⟨0,0,entrySeed result.ctx fr,(w0,w1)⟩ (.returned vals outMem) := by
   have source : f.blocks[0]? = some entry := by simp [blocks]
   have middleSource : f.blocks[1]? = some middle := by simp [blocks]
   have targetSource : f.blocks[2]? = some target := by simp [blocks]
@@ -208,6 +208,60 @@ theorem sret_copy_paired_return_frame {f : Clif.Function} {result : Result}
     rfl remaining atTerm
     (by simpa only [es.atBlock] using Control.source_defined_entry_frame dominated result.ctx entered)
     returned guarded
-  exact ⟨entrySeed es.core.scan.ctx fr,RunOkABIAt.prefix path finished⟩
+  have seed : entrySeed es.core.scan.ctx fr = entrySeed result.ctx fr := by
+    classical
+    let make (lookup : Nat → Option Reg) (key : Nat) : CV :=
+      if h : ∃ pair : Nat × Clif.Val,
+          lookup pair.1 = some (.vreg key .int) ∧ fr.regs pair.1 = some pair.2 then
+        (Classical.choose h).2.bits.setWidth 128
+      else 0
+    change make es.core.scan.ctx.valueReg? = make result.ctx.valueReg?
+    rw [funext (stock_lower_record_context run scope es.events).2.1]
+  rw [← seed]
+  exact RunOkABIAt.prefix path finished
+
+
+/-- Preserve the existing existential seed variant. -/
+theorem sret_copy_paired_return_frame {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) {entry middle target : Clif.Block}
+    {first second : Clif.BlockCall} {xs : List Nat}
+    (blocks : f.blocks = [entry,middle,target])
+    (firstJump : entry.term = .jump first) (secondJump : middle.term = .jump second)
+    (ret : target.term = .ret xs)
+    (firstDestination : first.block = middle.id) (secondDestination : second.block = target.id)
+    (entryMiddle : entry.id ≠ middle.id) (entryTarget : entry.id ≠ target.id)
+    (middleTarget : middle.id ≠ target.id)
+    (entryNops : ∀ stm ∈ entry.body,stm.inst = .nop)
+    (targetNops : ∀ stm ∈ target.body,stm.inst = .nop)
+    {i0 i8 j0 j8 base destination low high : Nat} {lf0 lf8 sf0 sf8 : Clif.MemFlags}
+    (loadLow : middle.body[i0]? = some ⟨[low],.load .load .i64 lf0 base 0⟩)
+    (loadHigh : middle.body[i8]? = some ⟨[high],.load .load .i64 lf8 base 8⟩)
+    (storeLow : middle.body[j0]? = some ⟨[],.store .store .i64 sf0 low destination 0⟩)
+    (storeHigh : middle.body[j8]? = some ⟨[],.store .store .i64 sf8 high destination 8⟩)
+    (lowEarlier : i0 < j0) (highEarlier : i8 < j8)
+    (shape : ∀ j stm,middle.body[j]? = some stm → j = i0 ∨ j = i8 ∨ j = j0 ∨ j = j8 ∨ stm.inst = .nop)
+    (baseParameter : base ∈ entry.params.map (·.1))
+    (destinationParameter : destination ∈ entry.params.map (·.1))
+    (loadLowNotrap : lf0.trapCode = none) (loadHighNotrap : lf8.trapCode = none)
+    (storeLowNotrap : sf0.trapCode = none) (storeHighNotrap : sf8.trapCode = none)
+    {env : Clif.Env} {cp : Clif.Program} {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr)
+    (registerOnly : ∀ loc ∈ locsOf f.sig,∃ pin,loc = .reg pin)
+    {fuel : Nat} {vals : List Clif.Val} {outMem : Clif.Mem}
+    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals outMem)
+    {Γ : Rel} {c : BitVec 64} {D : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
+    (slot : fc.slotBase = Γ.slotOff)
+    (symbols : ∀ n a,Γ.syms n = some a → X.sym n 0 = BitVec.ofNat 64 a)
+    (tls : XTls Γ.F X)
+    {w0 w1 : Arm.ArmState} (memory : MRP Γ f c D fr.slots cm (w0,w1))
+    (arguments : ArgsAtEntry Γ.F f.sig args w0) (otherArguments : ArgsAtEntry Γ.F f.sig args w1)
+    (registers : ∀ pin v,(.reg pin,v) ∈ (locsOf f.sig).zip args → regVal w1 pin = regVal w0 pin) :
+    ∃ ρ0,RunOkABIAt f result.code result.edgeArgs (pairSem (csem Γ.F fc X)) (MRP Γ f c D) fr.slots ⟨0,0,ρ0,(w0,w1)⟩ (.returned vals outMem) := by
+  exact ⟨entrySeed result.ctx fr,sret_copy_paired_return_frame_canonical run scope dominated abi
+    blocks firstJump secondJump ret firstDestination secondDestination entryMiddle entryTarget middleTarget
+    entryNops targetNops loadLow loadHigh storeLow storeHigh lowEarlier highEarlier shape
+    baseParameter destinationParameter loadLowNotrap loadHighNotrap storeLowNotrap storeHighNotrap
+    entered registerOnly returned slot symbols tls memory arguments otherArguments registers⟩
 
 end E2E.StockMemory.SretCopy
