@@ -78,4 +78,4 @@ theorem captured_entry (cleanup : Bool) (contents : Nat → BitVec 8) :
 
 end E2E.SretCapturedEntry
 
-#print axioms E2E.SretCapturedEntry.captured_entry
+#print axioms E2E.SretCapturedEntry.captured_entry -- witness: native_decide

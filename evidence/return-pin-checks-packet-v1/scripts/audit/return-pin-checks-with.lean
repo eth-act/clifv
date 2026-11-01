@@ -5,5 +5,5 @@ import FV.E2E.ReturnPinChecksWithWitness
 #print axioms E2E.ReturnPinChecksWith.okRProduction_of_checks
 #print axioms E2E.ReturnPinChecksWith.crate_correct_production
 #print axioms E2E.ReturnPinChecksWith.accepts_previous
-#print axioms E2E.ReturnPinChecksWithWitness.captured_program
-#print axioms E2E.ReturnPinChecksWithWitness.previous_program
+#print axioms E2E.ReturnPinChecksWithWitness.captured_program -- witness: native_decide
+#print axioms E2E.ReturnPinChecksWithWitness.previous_program -- witness: native_decide

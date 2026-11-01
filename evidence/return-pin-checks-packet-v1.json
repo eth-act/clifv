@@ -2,7 +2,7 @@
   "files": {
     "FV/E2E/ReturnPinChecksWith.lean": "9b114c497051d84b6d81d35a9427c1906bad64143b02e064a06fc942268d2ed1",
     "FV/E2E/ReturnPinChecksWithWitness.lean": "4ed3fe5e89550398d76506a551f63ea45c3d691953265a9992fd1af47c5d62b8",
-    "scripts/audit/return-pin-checks-with.lean": "def58a5bb12385cadf2a809bdfd6f6b8c4a04025a212b75018ad2e8147d11d7b"
+    "scripts/audit/return-pin-checks-with.lean": "bc56353c0064af117cdf039ad2d94ab1b6cae51456f3adacc82405c48f4b85f1"
   },
   "generic_roots": 5,
   "fixed_roots": 2,

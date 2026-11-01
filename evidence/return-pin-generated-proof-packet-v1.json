@@ -1,0 +1,21 @@
+{
+  "files": {
+    "scripts/audit/return-pin-generated-stack.lean": "9f7c279e59f59133f130272f6af73165640bc3be5b79e268834fd0a36f2ea232",
+    "FVTest/E2E/ReturnPinLinkProofWith.lean": "b77d9303b903cd3d7cc42b1d03bd91dca3ccc30f74e64932dc9ba2bfeb24f5e3",
+    "FV/E2E/ReturnPinGeneratedStack.lean": "66a23bac8b6428a40d4b465cd7153ee6e8e6260de418c78aa0fb008716373409"
+  },
+  "generic_roots": 2,
+  "previous_emitter_sha256": "399a832ad556dd52e5b2b2e55919fb0b32df91d0cade3864c508c01cb89da8eb",
+  "previous_emitter_unchanged": true,
+  "proof_status": "pending",
+  "prerequisites": [
+    "return-pin-checks-packet-v1",
+    "return-pin-binary-packet-v1"
+  ],
+  "full_goal_complete": false,
+  "driver": "EmitReturnPinGeneratedWitnessV2.lean",
+  "driver_sha256": "c4b484f80eba6310553d8a939141bdd80ac2534673228e46ff43afd7463a508b",
+  "integration_cases": 12,
+  "fixed_generated_roots": 72,
+  "gate_started": false
+}
