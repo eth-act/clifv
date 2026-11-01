@@ -17,6 +17,16 @@ branch = 'agent/stock-void-call-file-20261101'
 def run(*args):
     return subprocess.check_output(args, cwd=r, env=env, text=True).strip()
 
+# Keep the shared source view stable until its independent proof owner exits.
+while True:
+    try:
+        proof_owner = Path('/proc/3507911/cmdline').read_bytes()
+    except FileNotFoundError:
+        break
+    if b'captured-symbolic-packet-after-importers-v1' not in proof_owner:
+        break
+    time.sleep(10)
+
 parent = json.loads((e / 'return-pin-call-consumer-landed-v1.json').read_text())
 assert parent['status'] == 'landed' and parent['tree_equal']
 assert run('git', 'status', '--porcelain') == ''

@@ -1,0 +1,20 @@
+{
+  "status": "prepared_not_running",
+  "changes": [
+    {
+      "file": "verify-return-pin-call-consumer-outside-v2.py",
+      "previous_sha256": "454033b1e35cac84a0db40f1a049c4b29787933cee521dda69e0a4fdca4157fd",
+      "sha256": "1438533978febe283465a8b1859f1963a5ecc3811d219161d471047dfeb5c575",
+      "original_gate_logic_retained": true
+    },
+    {
+      "file": "deliver-void-call-file-v2.py",
+      "previous_sha256": "f5fae6028c4a7efc30be5c858644a4b44777502519e57bc5b9158d43289fc34f",
+      "sha256": "08199a1c5f673cab8c2db4a5b33c16f86a5dc2e5b60ec2d578a8d479919e5f3a",
+      "original_gate_logic_retained": true
+    }
+  ],
+  "scope": "The recovery outside gate waits before releasing the source view. The next delivery also waits before its first branch switch. Neither wait stops a compiler or removes a validation condition.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T21:51:13.271685+00:00"
+}
