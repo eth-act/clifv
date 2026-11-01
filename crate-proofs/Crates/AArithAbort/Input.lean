@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockMemoryStoreNI
+import FV.Backend.Lowering.StockMemoryCapturedCopyNI
 import FV.E2E.SemanticChecksWith
 import FV.E2E.SemanticStackBound
 import FV.E2E.SemanticChecksWith
@@ -477,7 +477,7 @@ def input : LinkInput where
 def compilerInput : SemanticStackBound.CompilerInput where
   toLinkInput := input
   cleanup := true
-  lower := (Backend.Stock.MemoryStore.lowerWithRoutes [("__fv_2d233519df5f__RNvMs0_NtCsazjiGSRkgVH_4core3numl14saturating_add", 0), ("__fv_2d233519df5f__RNvMs4_NtCsazjiGSRkgVH_4core3numh15overflowing_sub", 0), ("__fv_2d233519df5f__RNvMs5_NtCsazjiGSRkgVH_4core3numt14saturating_sub", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm10count_ones", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm10swap_bytes", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12reverse_bits", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_mul", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_sub", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm13leading_zeros", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm14trailing_zeros", 0), ("__fv_2d233519df5f__RNvMs7_NtCsazjiGSRkgVH_4core3numy11rotate_left", 0), ("__fv_2d233519df5f__RNxC7a_arith11HWFwZ4wQf3o", 0), ("__fv_2d233519df5f__RNxC7a_arith12H2soo2NWb9D4", 5), ("_RNxC7a_arith12H7wxOPhf5s91", 5), ("__fv_2d233519df5f__RNxC7a_arith12H8XUdHxLtvOg", 0), ("__fv_2d233519df5f__RNxC7a_arith12HcVb05lrc6rQ", 0), ("__fv_2d233519df5f__RNxC7a_arith12Hl8ZEUnMLg9D", 0)])
+  lower := (Backend.Stock.MemoryCapturedCopy.lowerWithRoutes [("__fv_2d233519df5f__RNvMs0_NtCsazjiGSRkgVH_4core3numl14saturating_add", 0), ("__fv_2d233519df5f__RNvMs4_NtCsazjiGSRkgVH_4core3numh15overflowing_sub", 0), ("__fv_2d233519df5f__RNvMs5_NtCsazjiGSRkgVH_4core3numt14saturating_sub", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm10count_ones", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm10swap_bytes", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12reverse_bits", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_mul", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_sub", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm13leading_zeros", 0), ("__fv_2d233519df5f__RNvMs6_NtCsazjiGSRkgVH_4core3numm14trailing_zeros", 0), ("__fv_2d233519df5f__RNvMs7_NtCsazjiGSRkgVH_4core3numy11rotate_left", 0), ("__fv_2d233519df5f__RNxC7a_arith11HWFwZ4wQf3o", 0), ("__fv_2d233519df5f__RNxC7a_arith12H2soo2NWb9D4", 5), ("_RNxC7a_arith12H7wxOPhf5s91", 5), ("__fv_2d233519df5f__RNxC7a_arith12H8XUdHxLtvOg", 0), ("__fv_2d233519df5f__RNxC7a_arith12HcVb05lrc6rQ", 0), ("__fv_2d233519df5f__RNxC7a_arith12Hl8ZEUnMLg9D", 0)])
 
 abbrev actualLower := compilerInput.lower
 

@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockMemoryStoreNI
+import FV.Backend.Lowering.StockMemoryCapturedCopyNI
 import FV.E2E.SemanticChecksWith
 import FV.E2E.SemanticStackBound
 import FV.E2E.SemanticChecksWith
@@ -513,7 +513,7 @@ def input : LinkInput where
 def compilerInput : SemanticStackBound.CompilerInput where
   toLinkInput := input
   cleanup := true
-  lower := (Backend.Stock.MemoryStore.lowerWithRoutes [("__fv_c4f1b93b9687__RNvMs5_NtCsazjiGSRkgVH_4core3numt12wrapping_sub", 0), ("__fv_c4f1b93b9687__RNvMs6_NtCsazjiGSRkgVH_4core3numm11rotate_left", 0), ("__fv_c4f1b93b9687__RNvMs6_NtCsazjiGSRkgVH_4core3numm12rotate_right", 0), ("__fv_c4f1b93b9687__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add", 0), ("__fv_c4f1b93b9687__RNxC8f_crypto12H1nPRDDeSNKs", 5), ("__fv_c4f1b93b9687__RNxC8f_crypto12Hi5p372B4x00", 0)])
+  lower := (Backend.Stock.MemoryCapturedCopy.lowerWithRoutes [("__fv_c4f1b93b9687__RNvMs5_NtCsazjiGSRkgVH_4core3numt12wrapping_sub", 0), ("__fv_c4f1b93b9687__RNvMs6_NtCsazjiGSRkgVH_4core3numm11rotate_left", 0), ("__fv_c4f1b93b9687__RNvMs6_NtCsazjiGSRkgVH_4core3numm12rotate_right", 0), ("__fv_c4f1b93b9687__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add", 0), ("__fv_c4f1b93b9687__RNxC8f_crypto12H1nPRDDeSNKs", 5), ("__fv_c4f1b93b9687__RNxC8f_crypto12Hi5p372B4x00", 0)])
 
 abbrev actualLower := compilerInput.lower
 

@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockMemoryStoreNI
+import FV.Backend.Lowering.StockMemoryCapturedCopyNI
 import FV.E2E.SemanticChecksWith
 import FV.E2E.SemanticStackBound
 import Crates.AArith.Input

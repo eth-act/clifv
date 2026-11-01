@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockMemoryStoreNI
+import FV.Backend.Lowering.StockMemoryCapturedCopyNI
 import FV.E2E.SemanticChecksWith
 import FV.E2E.SemanticStackBound
 import FV.E2E.SemanticChecksWith
@@ -373,7 +373,7 @@ def input : LinkInput where
 def compilerInput : SemanticStackBound.CompilerInput where
   toLinkInput := input
   cleanup := true
-  lower := (Backend.Stock.MemoryStore.lowerWithRoutes [("__fv_8f2c4f318f6b__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add", 0), ("_RNxC15e_option_result12Hc7nNl0m8JO0", 5), ("__fv_8f2c4f318f6b__RNxC15e_option_result12HlI6F4DxSkn8", 5)])
+  lower := (Backend.Stock.MemoryCapturedCopy.lowerWithRoutes [("__fv_8f2c4f318f6b__RNvMs6_NtCsazjiGSRkgVH_4core3numm12wrapping_add", 0), ("_RNxC15e_option_result12Hc7nNl0m8JO0", 5), ("__fv_8f2c4f318f6b__RNxC15e_option_result12HlI6F4DxSkn8", 5)])
 
 abbrev actualLower := compilerInput.lower
 
