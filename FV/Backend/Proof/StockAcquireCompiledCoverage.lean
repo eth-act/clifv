@@ -48,7 +48,7 @@ theorem acquire_compile_sound {cleanup : Bool} {artifact : AcquireArtifacts}
 private theorem covered_observed : [false,true].all (fun cleanup =>
     (acquire_compile cleanup).any fun artifact =>
       formsCoveredB ⟨artifact.assembly.k,artifact.physical.slotBase⟩ artifact.prepared) = true := by
-  native_decide
+  native_decide -- witness: native_decide
 
 /-- Both actual checked modes also discharge every machine form internally. -/
 theorem acquire_complete_covered_compilation (cleanup : Bool) :

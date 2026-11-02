@@ -21,7 +21,7 @@ private def shapes_observed : Option Bool :=
         prepCheck (acquire_stage cleanup result.code) prepared &&
           prepared.blocks.all (fun block => block.insts.all acquireByteShapeB)
 
-private theorem shapes_observed_true : shapes_observed = some true := by native_decide
+private theorem shapes_observed_true : shapes_observed = some true := by native_decide -- witness: native_decide
 
 /-- Both actual preparation modes retain only the required ordinary access forms.
 The shape proof is internal and does not restrict source arguments or memory. -/

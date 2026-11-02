@@ -31,11 +31,11 @@ private theorem trapped_of_code (out : Clif.Outcome) {code : Clif.TrapCode}
 
 private theorem return_observed :
     (Clif.runLoop {} ⟨[],[],[function]⟩ 8 ⟨faultEntry 0 1,[],completeMemory⟩).returnedVals? =
-      some [Clif.Val.ofNat .i64 0] := by native_decide
+      some [Clif.Val.ofNat .i64 0] := by native_decide -- witness: native_decide
 
 private theorem division_observed :
     trapCode (Clif.runLoop {} ⟨[],[],[function]⟩ 6 ⟨faultEntry 0 0,[],completeMemory⟩) =
-      some .intDivz := by native_decide
+      some .intDivz := by native_decide -- witness: native_decide
 
 /-- All seven statements execute and the unchanged complete mixed function returns. -/
 theorem mixed_complete_return :

@@ -12,7 +12,7 @@ private def retained : Option Bool :=
       (List.range 7).all fun i => event.output.records.any fun record =>
         decide (record.inst = i) && record.output.step.any fun step => decide (step.decision = .emitted)
 
-private theorem retained_true : retained = some true := by native_decide
+private theorem retained_true : retained = some true := by native_decide -- witness: native_decide
 
 private theorem successful_exists {α : Type} (value : Except String α) (test : α → Bool)
     (success : value.toOption.map test = some true) :

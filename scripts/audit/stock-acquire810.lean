@@ -33,15 +33,15 @@ import FV.Backend.Proof.StockAcquireTrapBoundary
 import FV.Backend.Proof.StockAcquireValue
 import FV.Backend.Proof.StockAcquireVirtualReturn
 
-#print axioms Backend.Stock.Proof.Acquire810.original_scope_selects810
+#print axioms Backend.Stock.Proof.Acquire810.original_scope_selects810 -- witness: native_decide
 #print axioms Backend.Stock.Proof.Acquire810.acquire_allocated_boundary
 #print axioms Backend.Stock.Proof.Acquire810.acquire_byte_line
 #print axioms Backend.Stock.Proof.Acquire810.instFaults_acquire_byte
 #print axioms Backend.Stock.Proof.Acquire810.acquire_result_binding
 #print axioms Backend.Stock.Proof.Acquire810.acquire_byte_pair_run
 #print axioms Backend.Stock.Proof.Acquire810.acquire_compile_sound
-#print axioms Backend.Stock.Proof.Acquire810.acquire_complete_covered_compilation
-#print axioms Backend.Stock.Proof.Acquire810.acquire_complete_compilation
+#print axioms Backend.Stock.Proof.Acquire810.acquire_complete_covered_compilation -- witness: native_decide
+#print axioms Backend.Stock.Proof.Acquire810.acquire_complete_compilation -- witness: native_decide
 #print axioms Backend.Stock.Proof.Acquire810.acquire_byte_encoding
 #print axioms Backend.Stock.Proof.Acquire810.encoded_acquire_byte_fault
 #print axioms Backend.Stock.Proof.Acquire810.encoded_acquire_byte_fault_step
@@ -61,20 +61,20 @@ import FV.Backend.Proof.StockAcquireVirtualReturn
 #print axioms Backend.Stock.Proof.Acquire810.regLevel_acquire_fault_world_value
 #print axioms Backend.Stock.Proof.Acquire810.regLevel_acquire_fault_boundary_world_value
 #print axioms Backend.Stock.Proof.Acquire810.regLevel_acquire_fault_boundary_worldX_value
-#print axioms Backend.Stock.Proof.Acquire810.acquire_no_i128
-#print axioms Backend.Stock.Proof.Acquire810.acquire_legalize_identity
-#print axioms Backend.Stock.Proof.Acquire810.acquire_original_complete_compilation
+#print axioms Backend.Stock.Proof.Acquire810.acquire_no_i128 -- witness: native_decide
+#print axioms Backend.Stock.Proof.Acquire810.acquire_legalize_identity -- witness: native_decide
+#print axioms Backend.Stock.Proof.Acquire810.acquire_original_complete_compilation -- witness: native_decide
 #print axioms Backend.Stock.Proof.Acquire810.acquireTraps_clean
 #print axioms Backend.Stock.Proof.Acquire810.acquireTraps_prune
 #print axioms Backend.Stock.Proof.Acquire810.acquireTraps_prepare
-#print axioms Backend.Stock.Proof.Acquire810.prepared_acquire_shapes
+#print axioms Backend.Stock.Proof.Acquire810.prepared_acquire_shapes -- witness: native_decide
 #print axioms Backend.Stock.Proof.Acquire810.realizes_haltAcquire
-#print axioms Backend.Stock.Proof.Acquire810.actual_record_binding
+#print axioms Backend.Stock.Proof.Acquire810.actual_record_binding -- witness: native_decide
 #print axioms Backend.Stock.Proof.Acquire810.acquire_register_level_boundary
 #print axioms Backend.Stock.Proof.Acquire810.acquireByteShape_of_check
-#print axioms Backend.Stock.Proof.Acquire810.original_returns
-#print axioms Backend.Stock.Proof.Acquire810.original_traps
-#print axioms E2E.backend_correct_worldX_stock_acquire810
+#print axioms Backend.Stock.Proof.Acquire810.original_returns -- witness: native_decide
+#print axioms Backend.Stock.Proof.Acquire810.original_traps -- witness: native_decide
+#print axioms E2E.backend_correct_worldX_stock_acquire810 -- witness: native_decide
 #print axioms Backend.Stock.Proof.Acquire810.source_three_steps
 #print axioms Backend.Stock.Proof.Acquire810.source_more_steps
 #print axioms Backend.Stock.Proof.Acquire810.source_first_trap
@@ -85,7 +85,7 @@ import FV.Backend.Proof.StockAcquireVirtualReturn
 #print axioms Backend.Stock.Proof.Acquire810.realizes_haltAcquire_trace
 #print axioms Backend.Stock.Proof.Acquire810.acquire_allocated_boundary_trace
 #print axioms Backend.Stock.Proof.Acquire810.acquire_register_level_boundary_from_trace
-#print axioms Backend.Stock.Proof.Acquire810.lowered_args_prefix
-#print axioms Backend.Stock.Proof.Acquire810.lowered_byte_access_fault
+#print axioms Backend.Stock.Proof.Acquire810.lowered_args_prefix -- witness: native_decide
+#print axioms Backend.Stock.Proof.Acquire810.lowered_byte_access_fault -- witness: native_decide
 #print axioms Backend.Stock.Proof.Acquire810.acquire_byte_widened_value
-#print axioms Backend.Stock.Proof.Acquire810.lowered_byte_return
+#print axioms Backend.Stock.Proof.Acquire810.lowered_byte_return -- witness: native_decide
