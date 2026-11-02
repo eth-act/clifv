@@ -1,3 +1,4 @@
+import FV.Clif.MemTrap
 import FV.Backend.Proof.StockMemoryContract
 import FV.Backend.Proof.StockMemoryAccessTrap
 
@@ -40,7 +41,7 @@ structure DomainWithAccessTraps (f : Clif.Function) : Prop where
     ∀ (Q : Nat → Nat → Prop),
       (∀ s a n,Reach env cp ⟨fr,[],cm⟩ s → Clif.MemTrapAt env cp s code a n → Q a n) →
       ∃ ρ,VTrapFrom result.code isem ⟨0,0,ρ,w⟩ code ∨
-        VAccessTrapFrom sb result.code isem ⟨0,0,ρ,w⟩ code (addrPred Q)
+        VAccessTrapFrom sb result.code isem ⟨0,0,ρ,w⟩ code (sourceAddrPred Q)
 
 /-- Retain every existing memory-domain theorem through the explicit-trap branch. -/
 theorem domainWithAccessTraps_of_domain {f : Clif.Function} (old : Backend.Stock.Memory.Domain f) :

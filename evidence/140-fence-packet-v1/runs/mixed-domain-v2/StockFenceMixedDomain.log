@@ -1,0 +1,15 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMixedDomain.lean:43:6: error: Type mismatch: After simplification, term
+  steps
+ has type
+  @SourceSteps SourcePoint (IndexedSourceInst env cp function event.ctx event.block)
+    (List.map (fun x => blockStart function event.block + x)
+      (List.range
+        [{ results := [63], inst := Clif.Inst.load Clif.LoadOp.load Clif.Ty.i64 { } 7 0 }, { inst := Clif.Inst.fence },
+            { results := [100], inst := Clif.Inst.binary Clif.BinaryOp.iadd Clif.Ty.i64 63 31 },
+            { inst := Clif.Inst.store Clif.StoreOp.store Clif.Ty.i64 { } 100 7 8 }, { inst := Clif.Inst.fence },
+            { results := [144], inst := Clif.Inst.div Clif.DivOp.udiv Clif.Ty.i64 100 31 },
+            { results := [128], inst := Clif.Inst.load Clif.LoadOp.load Clif.Ty.i64 { } 7 16 }].length))
+    before after
+but is expected to have type
+  @SourceSteps SourcePoint (IndexedSourceInst env cp function event.ctx event.block)
+    (List.map (fun x => blockStart function event.block + x) (List.range function.blocks[0]!.body.length)) before after

@@ -1,0 +1,36 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryLoadAccessTrap.lean:60:6: error: Type mismatch
+  Eq.trans actual (congrArg some equal)
+has type
+  point.snd.fst.regs x = some value
+but is expected to have type
+  some actualValue = some value
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryLoadAccessTrap.lean:95:4: error: Type mismatch: After simplification, term
+  address
+ has type
+  @Eq (Option (BitVec 64))
+    (amodeAddr sb (AMode.unsignedOffset (Reg.vreg nreg RegClass.int) 16) width.loadOp.bytes
+      [ρ (aliasNum result.final.alias nreg)] world)
+    (some (BitVec.ofNat 64 (Clif.effAddr value ↑16)))
+but is expected to have type
+  @Eq (Option (BitVec 64))
+    (amodeAddr sb (AMode.unsignedOffset (Reg.vreg (aliasNum result.final.alias nreg) RegClass.int) 16)
+      width.loadOp.bytes [ρ (aliasNum result.final.alias nreg)] world)
+    (some (BitVec.ofNat 64 (Clif.effAddr value ↑16)))
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryLoadAccessTrap.lean:97:40: error: Type mismatch: After simplification, term
+  property
+ has type
+  Q (Clif.effAddr value 16)
+    (Clif.LoadOp.size
+      (match width with
+      | Width.w8 => Clif.Ty.i8
+      | Width.w16 => Clif.Ty.i16
+      | Width.w32 => Clif.Ty.i32
+      | Width.w64 => Clif.Ty.i64)
+      Clif.LoadOp.load)
+but is expected to have type
+  Q (Clif.effAddr value 16)
+    (match width with
+      | Width.w8 => LoadOp.uload8
+      | Width.w16 => LoadOp.uload16
+      | Width.w32 => LoadOp.uload32
+      | Width.w64 => LoadOp.uload64).bytes

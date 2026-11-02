@@ -1,0 +1,36 @@
+'Backend.Stock.Proof.LiveCallArithmetic.virtual_live' depends on axioms: [propext]
+'Backend.Stock.Proof.LiveCallArithmetic.source_live' depends on axioms: [propext]
+'Backend.Stock.Proof.LiveCallArithmetic.call_then_add' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.LiveCallArithmetic.sum_holds' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.LiveCallArithmetic.source_call_continues' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.LiveCallArithmetic.continued_live' depends on axioms: [propext]
+'Backend.Stock.Proof.LiveCallArithmetic.source_add_returns' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.LiveCall.Layout.source_fields' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.LiveCall.Layout.scan_fields' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.LiveCall.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.LiveCall.callB_false' depends on axioms: [propext]
+'Backend.Stock.LiveCall.prefixReads_of_append' depends on axioms: [propext]
+'Backend.Stock.LiveCall.prelude_read_checks' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.LiveCall.Layout.source_result' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.LiveCall.Layout.return_function_for' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.LiveCall.Layout.return_function' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.LiveCall.source_call_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.LiveCall.check_domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LiveCallFixture.actual_retained_and_saved' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallFixture.observed_true._native.native_decide.ax_1✝,
+ E2E.LiveCallFixture.observed_true._native.native_decide.ax_2✝]
+'Backend.Stock.LiveCall.execute_tail' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.LiveCall.Layout.ready' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.LiveCall.Ready.sum_holds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.LiveCall.Ready.virtual_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.LiveCall.Ready.execute' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.LiveCall.Ready.execute_other' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.LiveCall.checked_instruction' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.LiveCall.noTls_of_codeCheck' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.LiveCall.noTryCall_of_codeCheck' depends on axioms: [propext, Quot.sound]
+'E2E.backend_correct_world_niX_stock_live_call' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_worldX_stock_live_call' depends on axioms: [propext, Classical.choice, Quot.sound]

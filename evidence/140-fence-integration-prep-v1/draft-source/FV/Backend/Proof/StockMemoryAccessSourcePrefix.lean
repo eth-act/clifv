@@ -1,7 +1,7 @@
 import FV.Backend.Proof.StockMemoryOrdinarySourceTrap
 import FV.Backend.Proof.StockMemoryNotrap
 
-/-! Draft: generalize the existing source-prefix proof to ordinary memory effects.
+/-! Draft: generalize the existing source-front proof to ordinary memory effects.
 No kernel command ran for this source. -/
 namespace Backend.Stock.Proof.MemoryFaults
 open Backend.Proof Backend.Proof.Driver
@@ -15,7 +15,7 @@ private theorem ordinary_step {env : Clif.Env} {cp : Clif.Program}
       (fun (vs,cm) => Clif.continueWith s rest stm.results vs cm) :=
   Clif.step_inst env cp s stm rest remaining family.1 family.2
 
-/-- A real trapped original run supplies the complete executable prefix up to
+/-- A real trapped original run supplies the complete executable front up to
 its first trapping local instruction. The empty returned body cannot trap. -/
 theorem actual_ordinary_source_trap_execution {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) {event : BlockScanEvent}

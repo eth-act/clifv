@@ -1,0 +1,4 @@
+Source-only inventory attempt, 2026-11-02.
+Current main84b384b264a32e4b0bc9663f22f2a8b0464e5767 lacks FV/Backend/ReturnPinProduction.lean.
+The prior complete49-source packet imports that module from its immutable production90c51c88 predecessor.
+No compilation ran. No source changed. The next inventory must declare that missing canonical892 provider explicitly.

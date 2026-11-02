@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockMemoryAccessSourceTrap
 import FV.Backend.Proof.StockFenceSourceRefines
+import FV.Backend.Proof.LowerSim
 
 /-! Draft: preserve actual source reachability inside the proof relation.
 This relation is internal and adds no compiler acceptance condition. -/
@@ -31,10 +32,11 @@ theorem ordinary_result_next {ctx : Ctx} {i : Nat} {env : Clif.Env} {cp : Clif.P
   have family := ordinary info inst found original
   rw [ordinary_outcome family] at outcome
   rw [Clif.step_inst env cp (pointState initial before) ⟨info.results,inst⟩ rest remaining
-    family.1 family.2,outcome]
+    family.1 family.2]
+  simp only [pointState] at *
+  rw [outcome]
   simp only [Clif.StepResult.ofRes,Clif.continueWith,written]
   rw [frame]
-  rfl
 
 /-- An indexed original ordinary trap is the actual trapped Clif step. -/
 theorem ordinary_trap_step {f : Clif.Function} {ctx : Ctx} {bi i : Nat}
@@ -48,7 +50,9 @@ theorem ordinary_trap_step {f : Clif.Function} {ctx : Ctx} {bi i : Nat}
   have family := ordinary info inst found original
   rw [ordinary_outcome family] at outcome
   rw [Clif.step_inst env cp (pointState initial point) ⟨info.results,inst⟩ rest remaining
-    family.1 family.2,outcome]
+    family.1 family.2]
+  simp only [pointState] at *
+  rw [outcome]
   rfl
 
 /-- Keep the original guarded relation and actual source reachability together. -/
@@ -89,8 +93,11 @@ theorem indexed_load_memtrap_at {f : Clif.Function} {ctx : Ctx} {bi i : Nat} {in
     intro actual inst present source
     cases Option.some.inj (present.symm.trans found)
     cases Option.some.inj (source.symm.trans original)
-    exact ⟨by intro fn args impossible; cases impossible,
-      by intro sig callee args impossible; cases impossible⟩
+    constructor
+    · intro fn args impossible
+      cases impossible
+    · intro sig callee args impossible
+      cases impossible
   have trapped := ordinary_trap_step initial ordinary failed
   obtain ⟨index,actual,inst,rest,present,source,remaining,outcome⟩ := failed
   cases Option.some.inj (present.symm.trans found)
@@ -128,8 +135,11 @@ theorem indexed_store_memtrap_at {f : Clif.Function} {ctx : Ctx} {bi i : Nat} {i
     intro actual inst present source
     cases Option.some.inj (present.symm.trans found)
     cases Option.some.inj (source.symm.trans original)
-    exact ⟨by intro fn args impossible; cases impossible,
-      by intro sig callee args impossible; cases impossible⟩
+    constructor
+    · intro fn args impossible
+      cases impossible
+    · intro sig callee args impossible
+      cases impossible
   have trapped := ordinary_trap_step initial ordinary failed
   obtain ⟨index,actual,inst,rest,present,source,remaining,outcome⟩ := failed
   cases Option.some.inj (present.symm.trans found)

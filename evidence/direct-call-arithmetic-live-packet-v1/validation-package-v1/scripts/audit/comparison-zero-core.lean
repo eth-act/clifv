@@ -1,0 +1,8 @@
+import FV.Backend.Proof.StockComparisonZeroCoresWitness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_zero_branch_values_last
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_zero_branch_values
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_zero_emission_size
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_comparison_zero_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_comparison_zero_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ComparisonZeroCoreWitness.returning_comparison_zero_core_witness -- witness: native_decide

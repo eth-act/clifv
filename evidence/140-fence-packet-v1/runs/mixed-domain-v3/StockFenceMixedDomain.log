@@ -1,0 +1,153 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMixedDomain.lean:65:21: error: don't know how to synthesize implicit argument `sb`
+  @mixed_record_access_trap result run scope dominated event events function.blocks[0]! term body split F isem refines
+    env cp ?m.541 { frame := fr, callers := [], mem := cm } ?m.543 code Q allFaults
+context:
+actual : Result
+event✝ : BlockScanEvent
+lowered : lower function = Except.ok actual
+scope : LowerScope function
+dominated : Dominated function
+events✝ : event✝ ∈ actual.blockScans.toList
+witness :
+  ∀ (i : Nat),
+    i ∈ [1, 4] →
+      ∃ record info,
+        record ∈ event✝.output.records ∧
+          record.inst = i ∧
+            event✝.ctx.insts[record.inst]? = some info ∧
+              info.clif = some Clif.Inst.fence ∧
+                ∃ step,
+                  record.output.step = some step ∧
+                    step.decision = Decision.emitted ∧
+                      step.results = [] ∧
+                        step.rules.getLast? = some 1024 ∧
+                          record.output.emitted = #[MInst.fence] ∧
+                            record.output.state =
+                              have __src := scanState record.input record.inst;
+                              { base := (scanState record.input record.inst).base.emit MInst.fence,
+                                demand := __src.demand, uses := __src.uses, instBlock := __src.instBlock,
+                                entryColor := __src.entryColor, endColor := __src.endColor, tryRegs := __src.tryRegs,
+                                current := __src.current, color := __src.color, sunk := __src.sunk,
+                                opportunistic := __src.opportunistic, alias := __src.alias }
+result : Result
+run : lower function = Except.ok result
+args : List Clif.Val
+cm : Clif.Mem
+fr : Clif.Frame
+entered : SourceEntry function args fr
+env : Clif.Env
+cp : Clif.Program
+fuel : Nat
+code : Clif.TrapCode
+trapped : Clif.runLoop env cp fuel { frame := fr, callers := [], mem := cm } = Clif.Outcome.trapped code
+F : BitVec 64 → Prop
+isem : Sem
+refines : Refines F isem
+driver : DriverSem isem
+sb : Nat
+syms : String → Option Nat
+memorySem : MemRefines F sb syms isem
+MR : MemRelT
+stable : MRStable F MR
+memoryOk : MemRelOk F sb syms function MR
+w : Arm.ArmState
+memory : MR fr.slots cm w
+arguments : ArgsAtEntry F function.sig args w
+Q : Nat → Nat → Prop
+allFaults :
+  ∀ (s : Clif.State) (a n : Nat),
+    Reach env cp { frame := fr, callers := [], mem := cm } s → Clif.MemTrapAt env cp s code a n → Q a n
+event : BlockScanEvent
+events : event ∈ result.blockScans.toList
+term : ScanRecord
+body : BlockScan
+split : SourceBodySplit function event function.blocks[0]! term body
+normal :
+  ∀ (record : ScanRecord),
+    record ∈ body.records →
+      ScanFallRefines (IndexedSourceInst env cp function event.ctx event.block) isem result.final.alias
+        (GuardedScanRel function result event.ctx event.block MR) record
+reachedNormal :
+  ∀ (record : ScanRecord),
+    record ∈ body.records →
+      ScanFallRefines (IndexedSourceInst env cp function event.ctx event.block) isem result.final.alias
+        (ReachedGuardedRel function result event.ctx event.block MR env cp { frame := fr, callers := [], mem := cm })
+        record
+⊢ Nat
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMixedDomain.lean:65:21: error: don't know how to synthesize implicit argument `MR`
+  @mixed_record_access_trap result run scope dominated event events function.blocks[0]! term body split F isem refines
+    env cp ?m.541 { frame := fr, callers := [], mem := cm } ?m.543 code Q allFaults
+context:
+actual : Result
+event✝ : BlockScanEvent
+lowered : lower function = Except.ok actual
+scope : LowerScope function
+dominated : Dominated function
+events✝ : event✝ ∈ actual.blockScans.toList
+witness :
+  ∀ (i : Nat),
+    i ∈ [1, 4] →
+      ∃ record info,
+        record ∈ event✝.output.records ∧
+          record.inst = i ∧
+            event✝.ctx.insts[record.inst]? = some info ∧
+              info.clif = some Clif.Inst.fence ∧
+                ∃ step,
+                  record.output.step = some step ∧
+                    step.decision = Decision.emitted ∧
+                      step.results = [] ∧
+                        step.rules.getLast? = some 1024 ∧
+                          record.output.emitted = #[MInst.fence] ∧
+                            record.output.state =
+                              have __src := scanState record.input record.inst;
+                              { base := (scanState record.input record.inst).base.emit MInst.fence,
+                                demand := __src.demand, uses := __src.uses, instBlock := __src.instBlock,
+                                entryColor := __src.entryColor, endColor := __src.endColor, tryRegs := __src.tryRegs,
+                                current := __src.current, color := __src.color, sunk := __src.sunk,
+                                opportunistic := __src.opportunistic, alias := __src.alias }
+result : Result
+run : lower function = Except.ok result
+args : List Clif.Val
+cm : Clif.Mem
+fr : Clif.Frame
+entered : SourceEntry function args fr
+env : Clif.Env
+cp : Clif.Program
+fuel : Nat
+code : Clif.TrapCode
+trapped : Clif.runLoop env cp fuel { frame := fr, callers := [], mem := cm } = Clif.Outcome.trapped code
+F : BitVec 64 → Prop
+isem : Sem
+refines : Refines F isem
+driver : DriverSem isem
+sb : Nat
+syms : String → Option Nat
+memorySem : MemRefines F sb syms isem
+MR : MemRelT
+stable : MRStable F MR
+memoryOk : MemRelOk F sb syms function MR
+w : Arm.ArmState
+memory : MR fr.slots cm w
+arguments : ArgsAtEntry F function.sig args w
+Q : Nat → Nat → Prop
+allFaults :
+  ∀ (s : Clif.State) (a n : Nat),
+    Reach env cp { frame := fr, callers := [], mem := cm } s → Clif.MemTrapAt env cp s code a n → Q a n
+event : BlockScanEvent
+events : event ∈ result.blockScans.toList
+term : ScanRecord
+body : BlockScan
+split : SourceBodySplit function event function.blocks[0]! term body
+normal :
+  ∀ (record : ScanRecord),
+    record ∈ body.records →
+      ScanFallRefines (IndexedSourceInst env cp function event.ctx event.block) isem result.final.alias
+        (GuardedScanRel function result event.ctx event.block MR) record
+reachedNormal :
+  ∀ (record : ScanRecord),
+    record ∈ body.records →
+      ScanFallRefines (IndexedSourceInst env cp function event.ctx event.block) isem result.final.alias
+        (ReachedGuardedRel function result event.ctx event.block MR env cp { frame := fr, callers := [], mem := cm })
+        record
+⊢ MemRelT
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMixedDomain.lean:65:9: error: failed to infer `have` declaration type

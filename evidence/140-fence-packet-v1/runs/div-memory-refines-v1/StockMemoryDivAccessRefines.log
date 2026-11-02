@@ -1,0 +1,6 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryDivAccessRefines.lean:46:30: error(lean.invalidField): Invalid field `toNF`: The environment does not contain `And.toNF`, so it is not possible to project the field `toNF` from an expression
+  same
+of type
+  (∀ (f : Arm.StateField),
+      ¬Masked f → (∀ (fl : Arm.PFlag), f ≠ Arm.StateField.FLAG fl) → Arm.r f next = Arm.r f world) ∧
+    (∀ (a : BitVec 64), ¬F a → next.mem a = world.mem a) ∧ next.program = world.program

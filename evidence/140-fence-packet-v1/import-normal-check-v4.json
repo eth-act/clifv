@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "snapshot_sha256": "c219c6c993274e964b4398a1fc88a5912c32731bca27a94d0264fedd4c205fdc",
+  "record": {
+    "label": "normal-import-check",
+    "argv": [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Lowering.Stock",
+      "FV.Backend.Proof.IselAtomic",
+      "FV.Backend.Proof.IselCmpInv",
+      "FV.Backend.Proof.IselCtlRuleIds",
+      "FV.Backend.Proof.IselScopedProjectionInv",
+      "FV.Backend.Proof.LowerSeq",
+      "FV.Backend.Proof.StockDivReturnRefines",
+      "FV.Backend.Proof.StockEntryPrelude",
+      "FV.Backend.Proof.StockLocalSourceTrap",
+      "FV.Backend.Proof.StockMemoryContract",
+      "FV.Backend.Proof.StockMemoryNotrap",
+      "FV.Backend.Proof.StockMemoryOrdinarySourceTrap",
+      "FV.Backend.Proof.StockMemorySourceExecution",
+      "FV.Backend.Proof.StockProjection",
+      "FV.Backend.Proof.StockProtectedSinkDriver",
+      "FV.Backend.Proof.StockPureDriverUnsunk",
+      "FV.Backend.Proof.StockRootOpcodeMatch",
+      "FV.Backend.Proof.StockScanTrapSemantics",
+      "FV.Backend.Proof.StockSelectionReceipts",
+      "FV.Backend.Proof.StockSourceDFG"
+    ],
+    "exit": 0,
+    "seconds": 0.39887166023254395,
+    "memstats": "peak 67219456\noom 0\noom_kill 0\n"
+  }
+}

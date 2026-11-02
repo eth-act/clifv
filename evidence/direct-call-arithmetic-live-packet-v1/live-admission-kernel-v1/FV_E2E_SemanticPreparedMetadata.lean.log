@@ -1,0 +1,25 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/SemanticPreparedMetadata.lean:54:34: warning: This simp argument is unused:
+  bne_iff_ne
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [List.all_eq_true, decide_eq_true_eq, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_true,
+    beq_iff_eq, ne_eq] at h8 h9 h10 h11 h12 h14 h16 h18 h22
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/SemanticPreparedMetadata.lean:54:46: warning: This simp argument is unused:
+  ne_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [List.all_eq_true, decide_eq_true_eq, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_true,
+    beq_iff_eq, bne_iff_ne] at h8 h9 h10 h11 h12 h14 h16 h18 h22
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/SemanticPreparedMetadata.lean:368:43: warning: This simp argument is unused:
+  Bool.not_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [addrSlotsB, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_false_iff, List.any_eq_false,
+    List.all_eq_true, bne_iff_ne, ne_eq, Decidable.not_not, Bool.or_eq_true, Option.isNone_iff_eq_none,
+    List.isEmpty_iff] at haddr
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

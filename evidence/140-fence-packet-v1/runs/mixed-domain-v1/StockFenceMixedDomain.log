@@ -1,0 +1,175 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMixedDomain.lean:15:57: error: Tactic `subst` failed: invalid equality proof, it is not of the form (x = t) or (t = x)
+  stm = { results := [128], inst := Clif.Inst.load Clif.LoadOp.load Clif.Ty.i64 { } 7 16 } ∨ stm ∈ []
+
+case inr.inr.inr.inr.inr.inr
+stm : Clif.Stmt
+h✝ : stm = { results := [128], inst := Clif.Inst.load Clif.LoadOp.load Clif.Ty.i64 { } 7 16 } ∨ stm ∈ []
+⊢ OrdinaryBody.OrdinaryInst stm.inst
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMixedDomain.lean:14:60: warning: This simp argument is unused:
+  List.mem_singleton
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [function, List.getElem!_cons_zero, List.mem_cons] at member
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMixedDomain.lean:41:19: error: don't know how to synthesize implicit argument `cp`
+  @mixed_record_fall_refines result run scope dominated event events function.blocks[0]! term body split F isem refines
+    sb syms memorySem MR stable memoryOk ?m.185 ?m.186
+context:
+actual : Result
+event✝ : BlockScanEvent
+lowered : lower function = Except.ok actual
+scope : LowerScope function
+dominated : Dominated function
+events✝ : event✝ ∈ actual.blockScans.toList
+witness :
+  ∀ (i : Nat),
+    i ∈ [1, 4] →
+      ∃ record info,
+        record ∈ event✝.output.records ∧
+          record.inst = i ∧
+            event✝.ctx.insts[record.inst]? = some info ∧
+              info.clif = some Clif.Inst.fence ∧
+                ∃ step,
+                  record.output.step = some step ∧
+                    step.decision = Decision.emitted ∧
+                      step.results = [] ∧
+                        step.rules.getLast? = some 1024 ∧
+                          record.output.emitted = #[MInst.fence] ∧
+                            record.output.state =
+                              have __src := scanState record.input record.inst;
+                              { base := (scanState record.input record.inst).base.emit MInst.fence,
+                                demand := __src.demand, uses := __src.uses, instBlock := __src.instBlock,
+                                entryColor := __src.entryColor, endColor := __src.endColor, tryRegs := __src.tryRegs,
+                                current := __src.current, color := __src.color, sunk := __src.sunk,
+                                opportunistic := __src.opportunistic, alias := __src.alias }
+result : Result
+run : lower function = Except.ok result
+args : List Clif.Val
+cm : Clif.Mem
+fr : Clif.Frame
+entered : SourceEntry function args fr
+env : Clif.Env
+cp : Clif.Program
+fuel : Nat
+vals : List Clif.Val
+mem : Clif.Mem
+returned : Clif.runLoop env cp fuel { frame := fr, callers := [], mem := cm } = Clif.Outcome.returned vals mem
+F : BitVec 64 → Prop
+isem : Sem
+refines : Refines F isem
+driver : DriverSem isem
+sb : Nat
+syms : String → Option Nat
+memorySem : MemRefines F sb syms isem
+MR : MemRelT
+stable : MRStable F MR
+memoryOk : MemRelOk F sb syms function MR
+w : Arm.ArmState
+memory : MR fr.slots cm w
+arguments : ArgsAtEntry F function.sig args w
+event : BlockScanEvent
+events : event ∈ result.blockScans.toList
+term : ScanRecord
+body : BlockScan
+split : SourceBodySplit function event function.blocks[0]! term body
+before after : SourcePoint
+steps :
+  SourceSteps (IndexedSourceInst env cp function event.ctx event.block)
+    (List.map (fun x => blockStart function event.block + x)
+      (List.range
+        { id := 0, params := [(7, Clif.Ty.i64), (31, Clif.Ty.i64)],
+              body :=
+                [{ results := [63], inst := Clif.Inst.load Clif.LoadOp.load Clif.Ty.i64 { } 7 0 },
+                  { inst := Clif.Inst.fence },
+                  { results := [100], inst := Clif.Inst.binary Clif.BinaryOp.iadd Clif.Ty.i64 63 31 },
+                  { inst := Clif.Inst.store Clif.StoreOp.store Clif.Ty.i64 { } 100 7 8 }, { inst := Clif.Inst.fence },
+                  { results := [144], inst := Clif.Inst.div Clif.DivOp.udiv Clif.Ty.i64 100 31 },
+                  { results := [128], inst := Clif.Inst.load Clif.LoadOp.load Clif.Ty.i64 { } 7 16 }],
+              term := Clif.Terminator.ret [128] }.body.length))
+    before after
+ρ : Nat → CV
+world : Arm.ArmState
+held : GuardedScanRel function result event.ctx event.block MR event.output.state before ρ world
+⊢ Clif.Program
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMixedDomain.lean:41:19: error: don't know how to synthesize implicit argument `env`
+  @mixed_record_fall_refines result run scope dominated event events function.blocks[0]! term body split F isem refines
+    sb syms memorySem MR stable memoryOk ?m.185 ?m.186
+context:
+actual : Result
+event✝ : BlockScanEvent
+lowered : lower function = Except.ok actual
+scope : LowerScope function
+dominated : Dominated function
+events✝ : event✝ ∈ actual.blockScans.toList
+witness :
+  ∀ (i : Nat),
+    i ∈ [1, 4] →
+      ∃ record info,
+        record ∈ event✝.output.records ∧
+          record.inst = i ∧
+            event✝.ctx.insts[record.inst]? = some info ∧
+              info.clif = some Clif.Inst.fence ∧
+                ∃ step,
+                  record.output.step = some step ∧
+                    step.decision = Decision.emitted ∧
+                      step.results = [] ∧
+                        step.rules.getLast? = some 1024 ∧
+                          record.output.emitted = #[MInst.fence] ∧
+                            record.output.state =
+                              have __src := scanState record.input record.inst;
+                              { base := (scanState record.input record.inst).base.emit MInst.fence,
+                                demand := __src.demand, uses := __src.uses, instBlock := __src.instBlock,
+                                entryColor := __src.entryColor, endColor := __src.endColor, tryRegs := __src.tryRegs,
+                                current := __src.current, color := __src.color, sunk := __src.sunk,
+                                opportunistic := __src.opportunistic, alias := __src.alias }
+result : Result
+run : lower function = Except.ok result
+args : List Clif.Val
+cm : Clif.Mem
+fr : Clif.Frame
+entered : SourceEntry function args fr
+env : Clif.Env
+cp : Clif.Program
+fuel : Nat
+vals : List Clif.Val
+mem : Clif.Mem
+returned : Clif.runLoop env cp fuel { frame := fr, callers := [], mem := cm } = Clif.Outcome.returned vals mem
+F : BitVec 64 → Prop
+isem : Sem
+refines : Refines F isem
+driver : DriverSem isem
+sb : Nat
+syms : String → Option Nat
+memorySem : MemRefines F sb syms isem
+MR : MemRelT
+stable : MRStable F MR
+memoryOk : MemRelOk F sb syms function MR
+w : Arm.ArmState
+memory : MR fr.slots cm w
+arguments : ArgsAtEntry F function.sig args w
+event : BlockScanEvent
+events : event ∈ result.blockScans.toList
+term : ScanRecord
+body : BlockScan
+split : SourceBodySplit function event function.blocks[0]! term body
+before after : SourcePoint
+steps :
+  SourceSteps (IndexedSourceInst env cp function event.ctx event.block)
+    (List.map (fun x => blockStart function event.block + x)
+      (List.range
+        { id := 0, params := [(7, Clif.Ty.i64), (31, Clif.Ty.i64)],
+              body :=
+                [{ results := [63], inst := Clif.Inst.load Clif.LoadOp.load Clif.Ty.i64 { } 7 0 },
+                  { inst := Clif.Inst.fence },
+                  { results := [100], inst := Clif.Inst.binary Clif.BinaryOp.iadd Clif.Ty.i64 63 31 },
+                  { inst := Clif.Inst.store Clif.StoreOp.store Clif.Ty.i64 { } 100 7 8 }, { inst := Clif.Inst.fence },
+                  { results := [144], inst := Clif.Inst.div Clif.DivOp.udiv Clif.Ty.i64 100 31 },
+                  { results := [128], inst := Clif.Inst.load Clif.LoadOp.load Clif.Ty.i64 { } 7 16 }],
+              term := Clif.Terminator.ret [128] }.body.length))
+    before after
+ρ : Nat → CV
+world : Arm.ArmState
+held : GuardedScanRel function result event.ctx event.block MR event.output.state before ρ world
+⊢ Clif.Env
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMixedDomain.lean:41:9: error: failed to infer `have` declaration type

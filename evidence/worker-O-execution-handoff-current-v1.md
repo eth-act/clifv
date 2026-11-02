@@ -1,83 +1,77 @@
 # Worker-O execution handoff
 
-Full original140 remains ACTIVE and INCOMPLETE. The original objective is the attachment named in PLAN_STOCK_DRIVER.
-The conversational parent/root owns user conversation. This execution coordinator owns implementation, delivery, plan, index,44,resources,cleanup.
+Read /home/lee/clifv/docs/ai/PROJECTS.md and the active PLAN_STOCK_DRIVER.md first.
+The full original140 goal remains active and incomplete. The parent owns conversation; this delegate owns execution.
 
-## Actual deliveries and publication
+## Current owners
 
-513 LANDED3d8e0c5d25e4f0849f76670b1fd492e8eb2cadae from0d511cd99af1cde474739469737c33010fb68c74.
-All4freshCIpassed; tested/merged treeec8c66695fcafd41ffec4bfc3bc72dfac69ed6df;226importsources;12missingbaseline+7candidatekernels;8fulltype/AXexact;372headers/203bodies/8moveddeclsexact.
-Receipt513-recovered-landed-v1.json. The short A hold is RELEASED.
+- Normal scheduler326832 and observer456502 remain healthy. Never restart them for a status query.
+- The normal package is892-joint-current-context-v2/package. The queue has2895 targets on code tree405776ad.
+- source_guarantees owns2GiB and the complete independent live-call class/provider current-main gate.
+- investigate_513 owns1GiB and fault-aware fence integration. Its old513 delivery is complete.
+- Total O allocation is16GiB. The normal share is12GiB. Do not infer a larger cap from host headroom.
 
-892 CURRENTpublished85b0aa1f2cf1cf0ff4d442d65d688ffa306eea87,baseaa7faec76474eb768ec67009eb484334778d73e3,tree5b924d76f99cd81bede204d7906e16dd72889b32.
-Authority: production-independent-delivery-prepared-v5.json,peer-review-v5,config-v5.
-All18implementationfiles and entirepatch remain identical to A-reviewed90c,36dd,a455 heads. Normal ancestry only,noamend/force.
-Actualcodecontext405776adaffb7cf5a7b47a35b2da797fe4863c91 onmain2e4c9d1c includes884/885/886/898/899.
-PublicationdiffisONLYLEARNINGS.md (#900). Configs3and2895projectcodeprovider sources match exactly.
-Later901/902/903addfilesoutside892closure; reconcile final Git/CI/treewithoutrestartingunchanged dependencies.
-Required final pass wrapper:892-joint-current-context-v2/reviewed-publication-state-v5.json. DOESNOTEXISTYET; neverfabricate.
-Use merge-independent-packet-delivery-v3.py,whichENFORCEScurrentreceipt/head/tree/baseline/hash/oldheaders/AX review before4CI/main/tree/squashgates.
-NOACTIVE892MERGECONTROLLER. Do not use old scripts/configv1–v4.
+## Landed checkpoint
 
-## Current normal owner and resource cap
+PR911 landed80ffeab133a5a241381144e1a374d7afedc24e46 from7d76ba38f9af63eada8ccc994fe015917c770889.
+Its19 files passed799 source hashes,proper normal keys,and43 roots:38 standard and5 marked fixed.
+One direct cheap A review and all four CI checks passed. The tested/merged tree matchesc3405919.
+Source/gate/review/delivery authority is direct-call-delivery-units-v1/class-foundation-*-v1.json.
+The foundation build outputs were removed after5828 hashes and verified remote preservation.
+Its source,logs and receipts remain. Its native normal artifacts remain in the existing owned CI cache.
+Do not rebuild StockSourceCallWitness under1GiB or3GiB. Both measured caps failed.
+Its unchanged proof passed at6.12GB in39seconds during one safe12GiB priority handoff.
+The same normal scheduler resumed. Both handoff owners and the guard ended normally.
 
-O TOTAL16GiB: normal12 + sourceproof2 + temporaryIO/backup1 +overhead1. No new warmcache/worktree.
-Existingpackage:E/892-joint-current-context-v2/package. OwnedCIcache:E/892-current-main-context-v1/package/.lake/ci-cache.
-Globalwarmcache driver-proof-resume/.lake/artifact-cache NEVERWRITTEN by recovery.
-Underlyinghealthy normalscheduler PID326832 (PPID1). Originalwatcher326819failedONLYobservercmdlineemptyexit race.
-NEWwatcher456502 attaches toSAMEscheduler. No restart/signal. It performs actual final no-build gate,then original sixaudits/oldtypedAX/sixobject/eightCLI/68generatedroot matrix.
-Sourceproof2GiB uses explicit-j1. Normalexplicit-j2,onejob,12GiB.15observedOSthreads doesnotmeantwoOSthreads;preserveactualflags.
-Allraw47outputs and3113normaltrace/outputfingerprints preserved. Normalpreflight1539/2895reused;89directstale1267blocked.
-Largeold owner3477137andall dependents ended;old4984FV/15audits/86crate buildPASSED. Stalepushfailednotcompiler. Vswitchedclean toruntimef32b851a.
-Do NOTrunoldrecoverypublication/watchers orassertVa4anymore.
-PinnedLakeclearOutputArtifactsUNLINKSownedoutputsBEFOREcompile;verifiedreceipt normal-output-ownership-safety-v1.json. OldcacheSHAunchanged.
-No raw1589-provider rerun. Rawchecks cannotreplacepropernormalkeys; avoidduplicate raw-then-normalwork.
+PR513 also landed3d8e0c5d. Earlier ABI consumers through891 remain landed.
+PR892 remains open at85b0aa1f with all four CI checks and one carried direct review.
+Its final current normal/audit/actual-matrix receipt does not exist yet. Never manufacture it.
+Use merge-independent-packet-delivery-v3.py only after the actual reviewed-publication-state-v5.json passes.
 
-## Delegates
+## Current implementation
 
-source_guarantees owns result-call class/consumers/actualexecution,2GiB. Contextprior90c plusdeclaredownedchanges,NOTcurrentmain. 2945sourceinventory;16missingVprovidersandSemanticBinarydifference handledexplicitly. Olda4contractbaseline usesVf32onlyafter1738source/config equalityproof.
-investigate_513 owns currentnormal/consumerchain,fullqueuepreparation andread-only517family/effectledger. No branchwrites. CapacityerrorsrecoverSAMEhandle/defaultmodel, no duplicateowner.
-No reviewagents. ONEQUICK,DIRTY,CHEAP direct A review is user'sauthorized alternative toalltests. Exactcontext/currentgates/CI/tree stillmandatory.
+The full49-source result-call production packet remains frozen and remotely backed up.
+Its actual four-case CLI/generated-proof matrix,linked ArmRet/x0 execution and108 exact old axiom sets pass in the preserved context.
+Its complete current-main consumer delivery remains required.
 
-## Passed result-call implementation, not yet published
+The next admission/binary partition has13 source files plus one113-root audit,including68 old roots.
+Sources and read-only readiness are in direct-call-delivery-units-v1/admission-binary-*.
+It has no892 dependency. Its shared constructor boundary is unresolved.
 
-5filebindingpacket:11Std+2fixed completewitness. finalpeak256MB. Source31→mapped193→virtual194→physicalx0; arbitrarycallee effects/memory retained.
-11moduleclass:25Std+3fixed; Domain/Pair/Run/Machine/NI/Provider/Witness; actualpreviousloweringwaslegacysoCANDIDATEFIRSTrequired; completepreviousretryretained.
-Sharedadmission: oldcheckCalls andprevious_exact_callsBYTEEXACT. CorrectedoldPreparedReturnPinCalls/ReturnPinChecksWith restoredBYTEEXACT.
-SeparateReturnPinAdmission callbackkernel preserves50oldAXsets and8newStdroots. DoNOTbroadenoldokRReturnPinCalls:oldReturnPinBinary.facts_for explicitly concludesoldreturnPinCallsExtra.
-Binarykernel:16proofbodiesONCE;old18headers/AXexact;new16wrappersStd. Receiptbinary-kernel-state-v1.json SHA93e9346b4d91e24352f4ff6e676b497a9088a9f8138377e247baa07b77e4f591.
-ExecKernel:30proofbodiesONCE;old30headers/AXexact;new30wrappersStd. Executable-kernel-state-v1.json SHAf244818d1f56cdfdbf7aa3c72cf19acefd59a0433f2afaf698a835895bf2f3f6;24sourceversionssnapshot.
-Compiler/source:ONEfactory retainsoldscopechecks,writer,errorstrings.10generic+12newStd;old11headers/AXexact inclsource/peak. Compiler-kernel-state-v1.json SHA48272f9a2230b6b59c2cc05bf6c5e29f2f4fbff226356b5c5bba6a29cd651914;30sourcesnapshot.
-Actualdefaultselection,threeCLI/generatedflows,completeARMret/exactsymbolicwordbothcleanupmodes STILLPENDING. Integercaller/callee MUSTselectStock; distinctfloatvariantretainscomplete typedfallback/allocatorcallbacks. Laterarith/memoryconsumption,livevalues,multiplecalls,stackargs remain.
-Allfailedsources/logs retained. Snapshotoldb63ReturnPinAdmission available source-history-v1/ReturnPinAdmission-fixed-checker-bound.lean;all27admission/binarysourcecopiespreserved.
+Pause only these three edits:
+FV/E2E/CompiledSemanticABI.lean
+FV/E2E/CompiledSemanticReturnPins.lean
+FV/E2E/CompiledProgramReturnPins.lean
+Published843 changes old stage premises to stageF in those files.
+Comment6579056939 requests Kev's actual reconciled head and additive old-stage/stageF variants.
+No broad hold applies. All old theorem variants,input conditions,axiom sets and callbacks remain required.
 
-## Full queue
+The live-call unit preserves source7 throughx19 across a callee that changesx0.
+Its six-step source outcome is(word+13)+word. Both complete checked pipelines and predecessor selection pass.
+The complete source/domain/paired/machineNI/provider unit uses new files over landed911.
+source_guarantees now owns its immutable manifest and real current-main gate within2GiB.
+I retain exclusive branch/PR publication. Do not overlay the three frozen constructor copies into that standalone gate.
 
-E/513-shared-gate-queue-v4 preparationONLY.5282mods207audits97crateproofs46tools beforelaterAnewfiles.
-Reviewfoundidentitygap:mustpreserveALL1997compiledproductionidentities incl364nonmatching,plus1633exact;fixedharnessunchangedpasses anddifferent→unsupported mutationfailswithtupleintact.
-Streamingjq--stream bounded1GiB peak56.9MB;firstdiagnosticsretained.
-WorkerisupdatingreleaseguardsforBOTH456502observerAND326832schedulerplusactualnormal/consumerreceipthashes.
-DoNOTexecutequeuebeforeOreviewupdatedmanifestandactualownerrelease. Original8settingsrejects,8objects,1302hashes,4501stageids,1159E2EidsPERmode,4849oldAXsets,allruntime/encoder/unwind/rawStockANDproductioncomparisons/cratebyteparity remain.
-Nextindependentnormalphase3outsideprovidersStockSourceCallWitness,StockSourceResults,ExtSemGuard;thenfrozen5filebindingprefix3kernels+13rootaudit. No duplicateactiveproviders or unproved raw artifactreuse.
-Fulloriginal140everyrule/effect/control/call/source/block/whole simulation/completeness remains;finiteclasses/checkedattemptsuccessisNOTtotality.
+The universal fence checkpoint passes35 roots with686 normal-checked imports.
+The ordinary-access core passes nine kernels and24 standard-only roots against791 normal-checked imports.
+Ten exact sources are frozen under140-fence-integration-prep-v1/access-core-canonical-source-v1.
+Full mixed DomainM,ordinary ARM fault transfer,atomic embedding and production consumers remain open.
+IselMemTrap's historical peak is10GiB and its normal key is stale. Its provisional outputs were removed.
+Never load those historical artifacts or run that10GiB baseline beside the12GiB owner.
+The worker continues offset16 loads,offset8 stores and actual first-trap composition with no input guard.
 
-## Peer boundaries
+## Coordination and preservation
 
-Aowns22ParameterArgsand23ComparisonCfg. OtakesNORAWINDEX;ourparameterizeddefaultwrapssuppliedpredecessor,checkerprobesdefaultthenexplicitoldroutes.
-AplannedBackend/ABIReadCfgadditionalcondflags,E2E/ABIReadCfgNZCVproofs,possibleSemanticNIBoundarysimp. OhasNOownededitsinthose3files. Aownsafter843 andsendshead/hashesbeforemerge. No blankethold.
-OownsReturnPinAdmission andparameterizedbinary/executable/compilerkernels/wrappers. OurresultcallneedsSemanticABIBoundarybranches,NOTSemanticNIBoundary.
-Alloldstatements/predicates/AXpreserved. EmittedcodeequalitydoesNOTprovesourcecontextunchanged.
-Ireviewed8987e526440,8997597d5fc,901df085b49,902718c8c96,903376f59ca DIRECTCHEAP, no builds/agents;repliesviaai-coordsent. ReceiptsE/peer-reviews.
+A owns CFG/loop classes,routes22/23 and announced ABIReadCfg/SemanticNIBoundary work.
+O takes no raw route index. Reviews must be one QUICK,DIRTY,CHEAP direct pass,no builds or review agents.
+A reviews908,909,910 and912 are closed with no blocker. Receipts are under peer-reviews/.
+The user authorizes squash merges after all tests OR one direct cheap peer review,plus exact current per-PR/CI/tree gates.
 
-## Durable status and cleanup
+Latest verified backup is4dc76ac21bb5b8d91454a469552baf6b5a58c603 with2314 updated files.
+It preserves every911 source and final receipt exactly. Earlier full backups remain reachable.
+The base plan and PROJECTS index were refreshed;the exact prior plan is archived as the foundation checkpoint.
+Current status issue44 uses integer-production-status-current-v223.md.
+Disk last had329GiB free. Preserve primary dirty user files and all saved worktrees.
+Do not print author-env-v1.json. It contains secrets. Never archive .lake outputs or symlinks.
 
-Baseonlycanonicalplan docs/ai/plan/PLAN_STOCK_DRIVER.md,indexdocs/ai/PROJECTS.md,nevercommit.
-44latestbodyv218(beforelatestobserver/new3kernelcheckpoints);updateafterreviewedcheckpoint.
-LatestREMOTEVERIFIEDbackup6fa507d093e8a049539f79f04e14974c68f2d138,v8,18997files. Backupbranchagent/stock-cfg-body-progress-20261025T025359Z.
-Newcompiler/execcheckpointandobserver/fullqueuefixsourcesneednextbackup. Neverincludeauthor-env-v1.json (SECRETS). Loadsilentlyonly.
-Old119baselineoutputs332MBremovedafter357hashes;coherent224/226contextsretained. Source/evidenceonlybackups excludeevery.lake path.
-Lastdisk347GiBfree. DirtyprimaryAGENTS/comparisondoc/helper/researchcapturesUNTOUCHED. Dirtydriver-proof-resume/stock-loweringpreserved.
-MainVcleanruntimef32 actsreadonlyartifactcarrier forsourceagent;doNOTcleanupwhileactive.
-CurrentCImeasurementa455:1633/4455exact,92/484matchingfiles,1302inventory,+0/-0;measurementCLIchanged. NOTexecution/fullmetadataequivalence. Actual85freshCIquerywhenneeded.
-
-Reviewed UTC:2026-11-02T12:06:45.515892+00:00
+Continue full original140. Root inventories and intermediate classes do not establish completeness.

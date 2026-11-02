@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockMemoryFaultIntegrationAudit",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryFaultIntegrationAudit.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryFaultIntegrationAudit.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryFaultIntegrationAudit.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.8401620388031006,
+      "memstats": "peak 219975680\noom 0\noom_kill 0\n",
+      "source_sha256": "a1ebc22215cac2abc6fc32a1cc7a8d9225876d0479b1f8bd748e1d35672da0ee",
+      "olean_sha256": "0849b66dfdcc5eb924aa1d28809f4c8d37bcabd48ab7a9e02d16c1a158271924"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryLoadAccessTrap.lean:146:9: error: Tactic `rcases` failed: `x✝ : StateT.run
+      (Isle.Interp.evalExpr Isle.Aarch64.program (sem event.ctx) { } (?m.370 + 120) width.root.rhs
+        (env3 (V.value x) (V.op (Opnd.memFlags flags)) (V.int 0)))
+      (scanState record.input record.inst, #[]) =
+    Except.ok (some ?m.374, ?m.373, ?m.375) →
+  runTerm event.ctx "lower" [V.inst record.inst] (scanState record.input record.inst) =
+      Except.ok (some ?m.374, ?m.373, ?m.376) →
+    step.results = [[Reg.vreg record.input.base.nextVreg RegClass.int]] ∧
+      record.output.emitted =
+          #[MInst.load width.loadOp (Reg.vreg record.input.base.nextVreg RegClass.int)
+              (AMode.unsignedOffset (Reg.vreg nreg RegClass.int) 0) flags] ∧
+        record.output.state.base.nextVreg = record.input.base.nextVreg + 1 ∧
+          aliasNum result.final.alias a = record.input.base.nextVreg` is not an inductive datatype

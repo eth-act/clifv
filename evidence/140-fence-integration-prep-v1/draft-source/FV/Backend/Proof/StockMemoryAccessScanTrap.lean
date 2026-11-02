@@ -11,8 +11,8 @@ set_option Elab.async false
 def AccessTrapRun (sb : Nat) (isem : Backend.Proof.Sem) (code : List MInst)
     (ρ : Nat → CV) (world : Arm.ArmState) (trap : Clif.TrapCode)
     (property : BitVec 64 → Nat → Prop) : Prop :=
-  ∃ prefix inst suffix regs next operands uses address bytes,
-    code = prefix ++ inst :: suffix ∧ seqRun isem prefix ρ world = some (.fall regs next) ∧
+  ∃ front inst suffix regs next operands uses address bytes,
+    code = front ++ inst :: suffix ∧ seqRun isem front ρ world = some (.fall regs next) ∧
     inst.operands = .ok operands ∧ vuses operands regs = uses ∧
     AccessAt sb inst uses next trap address bytes ∧ property address bytes
 
@@ -21,8 +21,8 @@ theorem AccessTrapRun.append {sb : Nat} {isem : Backend.Proof.Sem} {first rest :
     {property : BitVec 64 → Nat → Prop}
     (reached : AccessTrapRun sb isem first ρ world trap property) :
     AccessTrapRun sb isem (first ++ rest) ρ world trap property := by
-  obtain ⟨prefix,inst,suffix,regs,next,operands,uses,address,bytes,code,executed,tail⟩ := reached
-  refine ⟨prefix,inst,suffix ++ rest,regs,next,operands,uses,address,bytes,?_,executed,tail⟩
+  obtain ⟨front,inst,suffix,regs,next,operands,uses,address,bytes,code,executed,tail⟩ := reached
+  refine ⟨front,inst,suffix ++ rest,regs,next,operands,uses,address,bytes,?_,executed,tail⟩
   rw [code,List.append_assoc]
   rfl
 
@@ -32,9 +32,9 @@ theorem AccessTrapRun.prefix {sb : Nat} {isem : Backend.Proof.Sem} {first rest :
     (executed : seqRun isem first ρ world = some (.fall regs next))
     (reached : AccessTrapRun sb isem rest regs next trap property) :
     AccessTrapRun sb isem (first ++ rest) ρ world trap property := by
-  obtain ⟨prefix,inst,suffix,finalRegs,finalWorld,operands,uses,address,bytes,
+  obtain ⟨front,inst,suffix,finalRegs,finalWorld,operands,uses,address,bytes,
     code,prefixRun,tail⟩ := reached
-  refine ⟨first ++ prefix,inst,suffix,finalRegs,finalWorld,operands,uses,address,bytes,
+  refine ⟨first ++ front,inst,suffix,finalRegs,finalWorld,operands,uses,address,bytes,
     ?_,seqRun_append_fall' isem executed prefixRun,tail⟩
   rw [code,List.append_assoc]
 

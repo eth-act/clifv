@@ -1,0 +1,5 @@
+{
+  "FV/Backend/StockResultCallCheck.lean": "24998a50c31698f328f28d604d581f6a1581a2f8766c02d9a843f06d7ffbe205",
+  "FV/Backend/StockLiveCallCheck.lean": "6e0e6411a6ddb5a8c45347b35c65d7f5dc3b9ccd4200beea1cb9a920d8859c27",
+  "FV/Backend/Proof/StockDirectCallResult.lean": "fd9c70d16c1c14085a5da7b5d47dd894f426e317005ca82a809c990d5f631f34"
+}

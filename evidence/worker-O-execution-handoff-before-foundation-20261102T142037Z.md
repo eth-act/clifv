@@ -1,0 +1,83 @@
+# Worker-O execution handoff
+
+Full original140 remains ACTIVE and INCOMPLETE. The original objective is the attachment named in PLAN_STOCK_DRIVER.
+The conversational parent/root owns user conversation. This execution coordinator owns implementation, delivery, plan, index,44,resources,cleanup.
+
+## Actual deliveries and publication
+
+513 LANDED3d8e0c5d25e4f0849f76670b1fd492e8eb2cadae from0d511cd99af1cde474739469737c33010fb68c74.
+All4freshCIpassed; tested/merged treeec8c66695fcafd41ffec4bfc3bc72dfac69ed6df;226importsources;12missingbaseline+7candidatekernels;8fulltype/AXexact;372headers/203bodies/8moveddeclsexact.
+Receipt513-recovered-landed-v1.json. The short A hold is RELEASED.
+
+892 CURRENTpublished85b0aa1f2cf1cf0ff4d442d65d688ffa306eea87,baseaa7faec76474eb768ec67009eb484334778d73e3,tree5b924d76f99cd81bede204d7906e16dd72889b32.
+Authority: production-independent-delivery-prepared-v5.json,peer-review-v5,config-v5.
+All18implementationfiles and entirepatch remain identical to A-reviewed90c,36dd,a455 heads. Normal ancestry only,noamend/force.
+Actualcodecontext405776adaffb7cf5a7b47a35b2da797fe4863c91 onmain2e4c9d1c includes884/885/886/898/899.
+PublicationdiffisONLYLEARNINGS.md (#900). Configs3and2895projectcodeprovider sources match exactly.
+Later901/902/903addfilesoutside892closure; reconcile final Git/CI/treewithoutrestartingunchanged dependencies.
+Required final pass wrapper:892-joint-current-context-v2/reviewed-publication-state-v5.json. DOESNOTEXISTYET; neverfabricate.
+Use merge-independent-packet-delivery-v3.py,whichENFORCEScurrentreceipt/head/tree/baseline/hash/oldheaders/AX review before4CI/main/tree/squashgates.
+NOACTIVE892MERGECONTROLLER. Do not use old scripts/configv1–v4.
+
+## Current normal owner and resource cap
+
+O TOTAL16GiB: normal12 + sourceproof2 + temporaryIO/backup1 +overhead1. No new warmcache/worktree.
+Existingpackage:E/892-joint-current-context-v2/package. OwnedCIcache:E/892-current-main-context-v1/package/.lake/ci-cache.
+Globalwarmcache driver-proof-resume/.lake/artifact-cache NEVERWRITTEN by recovery.
+Underlyinghealthy normalscheduler PID326832 (PPID1). Originalwatcher326819failedONLYobservercmdlineemptyexit race.
+NEWwatcher456502 attaches toSAMEscheduler. No restart/signal. It performs actual final no-build gate,then original sixaudits/oldtypedAX/sixobject/eightCLI/68generatedroot matrix.
+Sourceproof2GiB uses explicit-j1. Normalexplicit-j2,onejob,12GiB.15observedOSthreads doesnotmeantwoOSthreads;preserveactualflags.
+Allraw47outputs and3113normaltrace/outputfingerprints preserved. Normalpreflight1539/2895reused;89directstale1267blocked.
+Largeold owner3477137andall dependents ended;old4984FV/15audits/86crate buildPASSED. Stalepushfailednotcompiler. Vswitchedclean toruntimef32b851a.
+Do NOTrunoldrecoverypublication/watchers orassertVa4anymore.
+PinnedLakeclearOutputArtifactsUNLINKSownedoutputsBEFOREcompile;verifiedreceipt normal-output-ownership-safety-v1.json. OldcacheSHAunchanged.
+No raw1589-provider rerun. Rawchecks cannotreplacepropernormalkeys; avoidduplicate raw-then-normalwork.
+
+## Delegates
+
+source_guarantees owns result-call class/consumers/actualexecution,2GiB. Contextprior90c plusdeclaredownedchanges,NOTcurrentmain. 2945sourceinventory;16missingVprovidersandSemanticBinarydifference handledexplicitly. Olda4contractbaseline usesVf32onlyafter1738source/config equalityproof.
+investigate_513 owns currentnormal/consumerchain,fullqueuepreparation andread-only517family/effectledger. No branchwrites. CapacityerrorsrecoverSAMEhandle/defaultmodel, no duplicateowner.
+No reviewagents. ONEQUICK,DIRTY,CHEAP direct A review is user'sauthorized alternative toalltests. Exactcontext/currentgates/CI/tree stillmandatory.
+
+## Passed result-call implementation, not yet published
+
+5filebindingpacket:11Std+2fixed completewitness. finalpeak256MB. Source31→mapped193→virtual194→physicalx0; arbitrarycallee effects/memory retained.
+11moduleclass:25Std+3fixed; Domain/Pair/Run/Machine/NI/Provider/Witness; actualpreviousloweringwaslegacysoCANDIDATEFIRSTrequired; completepreviousretryretained.
+Sharedadmission: oldcheckCalls andprevious_exact_callsBYTEEXACT. CorrectedoldPreparedReturnPinCalls/ReturnPinChecksWith restoredBYTEEXACT.
+SeparateReturnPinAdmission callbackkernel preserves50oldAXsets and8newStdroots. DoNOTbroadenoldokRReturnPinCalls:oldReturnPinBinary.facts_for explicitly concludesoldreturnPinCallsExtra.
+Binarykernel:16proofbodiesONCE;old18headers/AXexact;new16wrappersStd. Receiptbinary-kernel-state-v1.json SHA93e9346b4d91e24352f4ff6e676b497a9088a9f8138377e247baa07b77e4f591.
+ExecKernel:30proofbodiesONCE;old30headers/AXexact;new30wrappersStd. Executable-kernel-state-v1.json SHAf244818d1f56cdfdbf7aa3c72cf19acefd59a0433f2afaf698a835895bf2f3f6;24sourceversionssnapshot.
+Compiler/source:ONEfactory retainsoldscopechecks,writer,errorstrings.10generic+12newStd;old11headers/AXexact inclsource/peak. Compiler-kernel-state-v1.json SHA48272f9a2230b6b59c2cc05bf6c5e29f2f4fbff226356b5c5bba6a29cd651914;30sourcesnapshot.
+Actualdefaultselection,threeCLI/generatedflows,completeARMret/exactsymbolicwordbothcleanupmodes STILLPENDING. Integercaller/callee MUSTselectStock; distinctfloatvariantretainscomplete typedfallback/allocatorcallbacks. Laterarith/memoryconsumption,livevalues,multiplecalls,stackargs remain.
+Allfailedsources/logs retained. Snapshotoldb63ReturnPinAdmission available source-history-v1/ReturnPinAdmission-fixed-checker-bound.lean;all27admission/binarysourcecopiespreserved.
+
+## Full queue
+
+E/513-shared-gate-queue-v4 preparationONLY.5282mods207audits97crateproofs46tools beforelaterAnewfiles.
+Reviewfoundidentitygap:mustpreserveALL1997compiledproductionidentities incl364nonmatching,plus1633exact;fixedharnessunchangedpasses anddifferent→unsupported mutationfailswithtupleintact.
+Streamingjq--stream bounded1GiB peak56.9MB;firstdiagnosticsretained.
+WorkerisupdatingreleaseguardsforBOTH456502observerAND326832schedulerplusactualnormal/consumerreceipthashes.
+DoNOTexecutequeuebeforeOreviewupdatedmanifestandactualownerrelease. Original8settingsrejects,8objects,1302hashes,4501stageids,1159E2EidsPERmode,4849oldAXsets,allruntime/encoder/unwind/rawStockANDproductioncomparisons/cratebyteparity remain.
+Nextindependentnormalphase3outsideprovidersStockSourceCallWitness,StockSourceResults,ExtSemGuard;thenfrozen5filebindingprefix3kernels+13rootaudit. No duplicateactiveproviders or unproved raw artifactreuse.
+Fulloriginal140everyrule/effect/control/call/source/block/whole simulation/completeness remains;finiteclasses/checkedattemptsuccessisNOTtotality.
+
+## Peer boundaries
+
+Aowns22ParameterArgsand23ComparisonCfg. OtakesNORAWINDEX;ourparameterizeddefaultwrapssuppliedpredecessor,checkerprobesdefaultthenexplicitoldroutes.
+AplannedBackend/ABIReadCfgadditionalcondflags,E2E/ABIReadCfgNZCVproofs,possibleSemanticNIBoundarysimp. OhasNOownededitsinthose3files. Aownsafter843 andsendshead/hashesbeforemerge. No blankethold.
+OownsReturnPinAdmission andparameterizedbinary/executable/compilerkernels/wrappers. OurresultcallneedsSemanticABIBoundarybranches,NOTSemanticNIBoundary.
+Alloldstatements/predicates/AXpreserved. EmittedcodeequalitydoesNOTprovesourcecontextunchanged.
+Ireviewed8987e526440,8997597d5fc,901df085b49,902718c8c96,903376f59ca DIRECTCHEAP, no builds/agents;repliesviaai-coordsent. ReceiptsE/peer-reviews.
+
+## Durable status and cleanup
+
+Baseonlycanonicalplan docs/ai/plan/PLAN_STOCK_DRIVER.md,indexdocs/ai/PROJECTS.md,nevercommit.
+44latestbodyv218(beforelatestobserver/new3kernelcheckpoints);updateafterreviewedcheckpoint.
+LatestREMOTEVERIFIEDbackup6fa507d093e8a049539f79f04e14974c68f2d138,v8,18997files. Backupbranchagent/stock-cfg-body-progress-20261025T025359Z.
+Newcompiler/execcheckpointandobserver/fullqueuefixsourcesneednextbackup. Neverincludeauthor-env-v1.json (SECRETS). Loadsilentlyonly.
+Old119baselineoutputs332MBremovedafter357hashes;coherent224/226contextsretained. Source/evidenceonlybackups excludeevery.lake path.
+Lastdisk347GiBfree. DirtyprimaryAGENTS/comparisondoc/helper/researchcapturesUNTOUCHED. Dirtydriver-proof-resume/stock-loweringpreserved.
+MainVcleanruntimef32 actsreadonlyartifactcarrier forsourceagent;doNOTcleanupwhileactive.
+CurrentCImeasurementa455:1633/4455exact,92/484matchingfiles,1302inventory,+0/-0;measurementCLIchanged. NOTexecution/fullmetadataequivalence. Actual85freshCIquerywhenneeded.
+
+Reviewed UTC:2026-11-02T12:06:45.515892+00:00

@@ -1,0 +1,260 @@
+{
+  "status": "immutable_unverified_production_sources",
+  "sources": {
+    "FV/Backend/SemanticABICheck.lean": {
+      "sha256": "1f7a629ef3866ccfabbee28d3a46b805b07811a587ef13e30f2c54c40e24f048",
+      "imports": [
+        "FV.Backend.StockLiveCallCheck",
+        "FV.Backend.SemanticNICheck",
+        "FV.Backend.StockMemorySretCopyCheck",
+        "FV.Backend.StockVoidCallNICheck",
+        "FV.Backend.StockResultCallCheck"
+      ],
+      "status": "passed prior preserved admission gate"
+    },
+    "FV/Backend/LiveCallProduction.lean": {
+      "sha256": "40a85d015793699793e558ee38616fdf742ef0bf3d8b3547888fcfa8405267c3",
+      "imports": [
+        "FV.Backend.ResultCallProduction",
+        "FV.Backend.Lowering.StockLiveCallRoutes"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FV/E2E/CompiledSemanticABI.lean": {
+      "sha256": "160243eac3465a9d6ff4e8e93729378de59d775301f6378a75a2fb02e8cdb7f7",
+      "imports": [
+        "FV.E2E.StockLiveCallNI",
+        "FV.E2E.SemanticNIBoundary",
+        "FV.E2E.StockMemoryABIWorldX",
+        "FV.E2E.StockMemorySretCopyNI",
+        "FV.Backend.Proof.StockMemorySretCopyCheck",
+        "FV.Backend.Proof.StockMemorySretCopyDomain",
+        "FV.Backend.SemanticABICheck",
+        "FV.E2E.StockVoidCallNI",
+        "FV.E2E.StockResultCallNI"
+      ],
+      "status": "passed prior preserved admission gate"
+    },
+    "FV/E2E/CompiledSemanticReturnPins.lean": {
+      "sha256": "7bd5daa2b36136e4f934762e9df9e728768507526d2d192bff533731f0f66d4b",
+      "imports": [
+        "FV.E2E.StockLiveCallNI",
+        "FV.E2E.CompiledSemanticABI",
+        "FV.E2E.StockResultCallNI"
+      ],
+      "status": "passed prior preserved admission gate"
+    },
+    "FV/E2E/CompiledProgramReturnPins.lean": {
+      "sha256": "67de661d6f265006c2ff06d98cb885d42e2ee480ad411818de307e6545fb3516",
+      "imports": [
+        "FV.E2E.ReturnPinCheckSound",
+        "FV.E2E.LinkCheck"
+      ],
+      "status": "passed prior preserved admission gate"
+    },
+    "FV/E2E/SemanticABIBoundary.lean": {
+      "sha256": "2cf4b5de026b0ccee48effd49d8d75446bc72ed02f489959df8072b6892205e0",
+      "imports": [
+        "FV.E2E.StockLiveCallFlags",
+        "FV.E2E.CompiledSemanticABI"
+      ],
+      "status": "passed prior preserved admission gate"
+    },
+    "FV/E2E/WorldReturnPinBoundary.lean": {
+      "sha256": "0cc97f8e5483912cca81a422adf7843ebbaa792c58ebea0c060e0216cccbd06e",
+      "imports": [
+        "FV.E2E.CompiledProgramReturnPins",
+        "FV.E2E.SemanticABIBoundary"
+      ],
+      "status": "passed prior preserved admission gate"
+    },
+    "FV/E2E/LinkReturnPinWorldX.lean": {
+      "sha256": "edc61ddf30a10bab458845a1e68fa31b3d545c6cc460ea51fb9c500244b3275f",
+      "imports": [
+        "FV.E2E.LinkReturnPinProgram"
+      ],
+      "status": "passed prior preserved admission gate"
+    },
+    "FV/E2E/ReturnPinAdmission.lean": {
+      "sha256": "66fae1f3e3618f8613da2e7e6dadc1339f50a7053c6fb4ca56dc24d06e6de6d6",
+      "imports": [
+        "FV.E2E.PreparedReturnPinCalls"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FV/E2E/LiveCallBinary.lean": {
+      "sha256": "44cd1dd102a18ecf7e51f910289d57fb29e9a0f182974ae21841926eb447ec2b",
+      "imports": [
+        "FV.E2E.ReturnPinBinaryKernel"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FV/E2E/LiveCallExec.lean": {
+      "sha256": "46d533b8b2e679e5ae23b451f35d1cd814aba325cd06f9618c0a68a2179736be",
+      "imports": [
+        "FV.E2E.ReturnPinExecutableKernel"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FV/E2E/LiveCallChecks.lean": {
+      "sha256": "e959f070995db2fe5481b12bf20d735e3af85a4be23a95648f83609ac3fbd4a6",
+      "imports": [
+        "FV.E2E.ReturnPinChecksKernel",
+        "FV.E2E.ResultCallChecks"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FV/E2E/LiveCallGeneratedStack.lean": {
+      "sha256": "146e6583b6aa5d0e0a611308892f2163956b27a67a6c25a90e5ee9e5b3b933ef",
+      "imports": [
+        "FV.E2E.LiveCallBinary",
+        "FV.E2E.ReturnPinGeneratedStackKernel"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FV/E2E/LiveCallProductionExec.lean": {
+      "sha256": "d746423f93bb4cfe9fb4aeb47b94067c2e73e7e24c8a9c615ce6320716c33fec",
+      "imports": [
+        "FV.Opt.Proof.LegalArith",
+        "FV.Link.LiveCallExeWith",
+        "FV.E2E.LiveCallBinary",
+        "FV.Backend.Lowering.StockLiveCallRoutes",
+        "FV.E2E.StockLiveCallWitness",
+        "FV.Link.Ld.Plan",
+        "FV.Backend.Proof.StockPrologueSource"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FV/E2E/LiveCallProductionSelection.lean": {
+      "sha256": "f8ac493f2c1e12ca2436bc910e8279478bf0fd4d12817e02a28b2e9fddb6b0a7",
+      "imports": [
+        "FV.Backend.LiveCallProduction",
+        "FV.E2E.LiveCallProductionExec",
+        "FV.E2E.StockLiveCallWitness"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FV/Link/LiveCallExeWith.lean": {
+      "sha256": "283b43dd2417ff3b2b53a1ef29212321e1207358851cfa58fbc16cf052cc1a81",
+      "imports": [
+        "FV.Link.ResultCallExeWith",
+        "FV.Link.ReturnPinCompilerSourceKernel"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FVTest/E2E/LiveCallLinkProofWith.lean": {
+      "sha256": "bfdea36868a444cd4951a929ec6bae28ca2eb1abc692f0586ef78941baeadf09",
+      "imports": [
+        "FVTest.E2E.ReturnPinLinkProofWith",
+        "FV.E2E.LiveCallChecks",
+        "FV.E2E.LiveCallGeneratedStack"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FVTest/E2E/LinkCheckMain.lean": {
+      "sha256": "a8701ad98f4eef6d74baf07ffdb2bf5634d250a1921a07877e3cbe3555a246f2",
+      "imports": [
+        "FV.Backend.Lowering.StockLiveCallRoutes",
+        "FV.E2E.LiveCallChecks",
+        "FVTest.E2E.LiveCallLinkProofWith",
+        "FV.E2E.ProductionPipelineWith",
+        "FV.Backend.Lowering.StockVoidCallNI",
+        "FV.Backend.Lowering.StockResultCallRoutes",
+        "FV.E2E.ResultCallChecks",
+        "FVTest.E2E.ResultCallLinkProofWith",
+        "FVTest.E2E.TypedLinkProofWith",
+        "FV.Front.Read",
+        "FVTest.E2E.LinkProof",
+        "FVTest.E2E.SemanticLinkProofWith",
+        "FV.E2E.BinCheckFast",
+        "FV.Link.Image",
+        "FV.E2E.DeadCleanupLinkCheckT",
+        "FV.E2E.SemanticPipelineCheckT"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FVTest/Backend/Main.lean": {
+      "sha256": "c6716182f44433580e526eca2e7455c0e9a51d7fb230fd007bb53bb0ed15fd1a",
+      "imports": [
+        "FV.Backend",
+        "FV.Backend.LiveCallProduction",
+        "FV.Opt.Legalize128Pass",
+        "FV.Opt.LegalExn",
+        "FVTest.Opt.Common",
+        "FVTest.Backend.StockConfig",
+        "FVTest.Backend.AllocChoice",
+        "FVTest.Backend.CraneliftInput",
+        "FV.Backend.Proof.LowerSimUCheck",
+        "FV.Backend.Proof.LowerSimUCheckTC",
+        "FV.Compile.SubsetTC",
+        "FV.E2E.RegLevelFrameSaved",
+        "FV.E2E.RegLevelUTry"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "FVTest/Link/LeanLinkMain.lean": {
+      "sha256": "8d87b5b3bad497c26fc2532519950f92d03d3bd355436186af58d439fc0f2ef1",
+      "imports": [
+        "FV.Backend.Lowering.StockLiveCallRoutes",
+        "FV.Link.LiveCallExeWith",
+        "FV.Backend.Lowering.StockResultCallRoutes",
+        "FV.Link.TypedCompileSourceModes",
+        "FV.Link.ResultCallExeWith",
+        "FV.Backend.Lowering.StockMemoryCapturedCopyNI",
+        "FV.Link.Compile",
+        "FV.Link.DeadCleanupCompile",
+        "FV.Link.DeadCleanupCompileT3",
+        "FV.Link.TailCompile",
+        "FV.Link.OptCompile",
+        "FV.Link.Placed",
+        "FV.E2E.SrcScopeDefs",
+        "FV.Front.Read",
+        "FV.E2E.LinkScopeInputDefs",
+        "FV.E2E.LinkScopeInputDefsT",
+        "FV.E2E.LinkScopeInputDefsTC",
+        "FV.Link.Ld.Spec",
+        "FV.Link.ReachCheck",
+        "FV.Link.Ld.SpecTotal",
+        "FV.Link.Ld.RelsFast",
+        "FVTest.Link.LdArgs",
+        "FV.Link.ExeUCompile",
+        "FV.Link.SemanticCompileDefs",
+        "FV.Link.UnwReport",
+        "FV.Link.SemanticCompileT"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "PrepareLiveCallBundlesV1.lean": {
+      "sha256": "35e2d090fdb220c2362b2b9b7ce461313dd08665360b79c0fc3ec8b854cda4f1",
+      "imports": [
+        "FV.Link.ReturnPinCompileDefs",
+        "FV.Front.Read",
+        "FV.E2E.ProductionBoundaryWitness",
+        "FV.Backend.Lowering.StockLiveCallRoutes",
+        "FV.E2E.StockLiveCallFixture"
+      ],
+      "status": "source_only_not_verified"
+    },
+    "ReflowLiveCallBundleV1.lean": {
+      "sha256": "fc08eb1a59dc26a7cf7e6fc57d54d1cebcdef17969b42e9bf3661590847dba39",
+      "imports": [
+        "FV.Backend.Lowering.StockLiveCallRoutes",
+        "FV.Link.ResultCallExeWith",
+        "FV.Backend.Lowering.StockResultCallRoutes",
+        "FV.Front.Read",
+        "FV.Link.Ld.Plan"
+      ],
+      "status": "source_only_not_verified"
+    }
+  },
+  "standalone_current_gate": "standalone-current-gate-v1/receipt.json",
+  "predecessor": "immutable direct-call-production-class-packet-v1 complete49-source packet",
+  "frozen_constructor_sources_exact": true,
+  "new_raw_route_index": null,
+  "complete_previous_file_action_retained": true,
+  "complete_previous_linker_action_retained": true,
+  "typed_modes_retained": true,
+  "proofslot": "idle at parent request",
+  "production_complete": false,
+  "utc": "2026-11-02T14:32:19.434110+00:00"
+}

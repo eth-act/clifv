@@ -1,0 +1,138 @@
+{
+  "status": "passed",
+  "modules": 9,
+  "audited_roots": 24,
+  "standard_roots": 24,
+  "fixed_roots": 0,
+  "source_hashes": {
+    "StockMemoryAccessAudit.lean": "170fe95919d8013c63d060c5b3b5b94f1ff1c10a854bb6d97f6ed53c44da1765",
+    "StockMemoryAccessEntryTrap.lean": "262fcc0c298d7592a0ead64c92448f186ab883a9d78aab3db6fa824b473aba9e",
+    "StockMemoryAccessPlacement.lean": "0306f1d21e599d1c42895f57579e198a89158993781fdcf68d8e12ee9ed6a645",
+    "StockMemoryAccessReach.lean": "5c4995018ba1ac250f361a99af7e2b162eaf58f49da024720454f96e0e6087e2",
+    "StockMemoryAccessScanTrap.lean": "2779afc86abffc9dc65a1408c200b6b505db03d44f96242c4ac3e5561e0de442",
+    "StockMemoryAccessSourcePrefix.lean": "6cf119874f054a25d98e24feb1ea517043f85609f8bd81adb36953f6bea68bca",
+    "StockMemoryAccessSourceTrap.lean": "2de968540a2ab02998750269e9fab86995eff086b0bd7ca3cd29c737d3540307",
+    "StockMemoryAccessStoreEmission.lean": "5cff4a1d2a357eedf4b672819d133f47fa2b711f50d0360ba32146f46ed3e75f",
+    "StockMemoryAccessTrap.lean": "83aec7e70595c7f3810dbffc4998501832cabb626f8c6f19f938b60879fbfe73",
+    "StockMemoryFaultContract.lean": "9b9fcc345e196ae54363ecee00eca95d622a6a852ed6082ade437c3027000fee"
+  },
+  "axioms": {
+    "Backend.Stock.Proof.MemoryFaults.actual_ordinary_entry_access_trap_refines_frame": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.accessTrapRun_at": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.trapOrAccessRun_at": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.trapOrAccessRun_inbounds": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.ordinary_result_next": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.ordinary_trap_step": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.guarded_with_reach": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.indexed_load_memtrap_at": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.indexed_load_property": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.indexed_store_memtrap_at": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.indexed_store_property": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.AccessTrapRun.append": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.AccessTrapRun.prefix": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.TrapOrAccessRun.append": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.TrapOrAccessRun.prefix": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.scans_access_trap_refines": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.actual_ordinary_source_trap_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.source_load_trap": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.source_store_trap": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.indexed_source_load_trap": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.indexed_source_store_trap": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.stock_lower_store_emission": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.VAccessTrapFrom.prefix": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.domainWithAccessTraps_of_domain": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "import_snapshot": ".git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/import-snapshot-v4.json",
+  "import_snapshot_sha256": "c219c6c993274e964b4398a1fc88a5912c32731bca27a94d0264fedd4c205fdc",
+  "import_normal_check_sha256": "04390fb6b429133077a34694245ca06ed819595ad7c4bd3516e399566adfdc30",
+  "kernel_runs": [
+    "access-core-focused-v2",
+    "access-core-focused-v3",
+    "access-core-focused-v5"
+  ],
+  "audit_run": "access-core-audit-v1",
+  "legacy_embedding_verified": false,
+  "complete_mixed_domain_verified": false,
+  "production_consumers_verified": false,
+  "full_fence_closure": false,
+  "full_goal_complete": false,
+  "remaining": [
+    "coherent heavy IselMemTrap dependency for old atomic bridge",
+    "derive all actual records and normal/trap refinements for unchanged seven-statement function",
+    "instantiate complete DomainWithAccessTraps internally",
+    "ordinary load/store ARM fault transfer using existing MapFaults",
+    "production selector/checker/linker/generated consumers and original full gates"
+  ]
+}

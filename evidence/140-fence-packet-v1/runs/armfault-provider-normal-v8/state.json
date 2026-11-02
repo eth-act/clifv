@@ -1,0 +1,50 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "label": "normal-import-check",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+        "build",
+        "--no-build",
+        "FV.ArmFault.Step",
+        "FV.Backend.Lowering.Stock",
+        "FV.Backend.Proof.IselAtomic",
+        "FV.Backend.Proof.IselCmpInv",
+        "FV.Backend.Proof.IselCtlRuleIds",
+        "FV.Backend.Proof.IselScopedProjectionInv",
+        "FV.Backend.Proof.LowerSeq",
+        "FV.Backend.Proof.StockAluRecordValues",
+        "FV.Backend.Proof.StockDivReturnRefines",
+        "FV.Backend.Proof.StockDivSourceTrap",
+        "FV.Backend.Proof.StockDivUdivWideSourceValues",
+        "FV.Backend.Proof.StockEntryPrelude",
+        "FV.Backend.Proof.StockGuardedRecordValues",
+        "FV.Backend.Proof.StockLocalSourceTrap",
+        "FV.Backend.Proof.StockMemoryContract",
+        "FV.Backend.Proof.StockMemoryIntegerAddress",
+        "FV.Backend.Proof.StockMemoryIntegerDispatch",
+        "FV.Backend.Proof.StockMemoryIntegerLoadSelection",
+        "FV.Backend.Proof.StockMemoryIntegerScanRefines",
+        "FV.Backend.Proof.StockMemoryLoad",
+        "FV.Backend.Proof.StockMemoryNotrap",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+        "FV.Backend.Proof.StockMemoryOffsetEightValues",
+        "FV.Backend.Proof.StockMemoryOrdinarySourceTrap",
+        "FV.Backend.Proof.StockMemoryReturnRefines",
+        "FV.Backend.Proof.StockMemorySourceExecution",
+        "FV.Backend.Proof.StockProjection",
+        "FV.Backend.Proof.StockProtectedSinkDriver",
+        "FV.Backend.Proof.StockPureDriverUnsunk",
+        "FV.Backend.Proof.StockRootOpcodeMatch",
+        "FV.Backend.Proof.StockScanTrapSemantics",
+        "FV.Backend.Proof.StockSelectionReceipts",
+        "FV.Backend.Proof.StockSourceDFG"
+      ],
+      "exit": 3,
+      "seconds": 0.4022033214569092,
+      "memstats": "peak 54292480\noom 0\noom_kill 0\n"
+    }
+  ]
+}

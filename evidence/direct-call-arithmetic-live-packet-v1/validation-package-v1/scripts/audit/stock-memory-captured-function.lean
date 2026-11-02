@@ -1,0 +1,31 @@
+import FV.Backend.Proof.StockMemoryCapturedCopyBody
+import FV.Backend.Proof.StockMemoryCapturedCopyDomain
+import FV.Backend.Proof.StockMemoryCapturedCopyFunction
+import FV.Backend.Proof.StockMemoryCapturedCopyNonentry
+import FV.Backend.Proof.StockMemoryCapturedCopyWitness
+import FV.Backend.Proof.StockMemoryOffsetEightPairedRecord
+import FV.E2E.StockMemoryCapturedCopyPairedBody
+import FV.E2E.StockMemoryCapturedCopyPairedFunction
+import FV.E2E.StockMemoryCapturedCopyPairedNonentry
+import FV.E2E.StockMemoryCapturedCopyPairedWitness
+import FV.E2E.StockMemoryLoadedPointerPairedScan
+import FV.E2E.StockMemoryOffsetEightPairedScan
+import FV.E2E.StockMemoryOffsetEightPairedSource
+#print axioms Backend.Stock.Memory.CapturedCopy.captured_copy_body
+#print axioms Backend.Stock.Memory.CapturedCopy.domain_of_two_block_captured_copy
+#print axioms Backend.Stock.Memory.CapturedCopy.two_block_captured_copy_return
+#print axioms Backend.Stock.Memory.CapturedCopy.two_block_captured_copy_return_function
+#print axioms Backend.Stock.Memory.CapturedCopy.actual_nonentry_captured_copy_return
+#print axioms Backend.Stock.Memory.CapturedCopy.Fixture.captured_source_shape_witness -- witness: native_decide
+#print axioms Backend.Stock.Memory.CapturedCopy.Fixture.captured_domain_witness -- witness: native_decide
+#print axioms Backend.Stock.Memory.CapturedCopy.Fixture.captured_domain_and_lower_witness -- witness: native_decide
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_eight_paired_record
+#print axioms E2E.StockMemory.CapturedCopy.captured_copy_paired_body
+#print axioms E2E.StockMemory.CapturedCopy.two_block_captured_copy_paired
+#print axioms E2E.StockMemory.CapturedCopy.two_block_captured_copy_paired_function
+#print axioms E2E.StockMemory.CapturedCopy.actual_nonentry_paired_captured_copy_return
+#print axioms E2E.StockMemoryCapturedCopyFunctionWitness.complete_paired_captured_copy_witness -- witness: native_decide
+#print axioms E2E.StockMemory.StoreRoots.stock_lower_loaded_pointer_store_paired_scan
+#print axioms E2E.StockMemory.IntegerRoots.stock_lower_integer_load_eight_paired_scan
+#print axioms E2E.StockMemory.IntegerRoots.stock_lower_integer_load_eight_paired_source_step
+#print axioms E2E.StockMemory.IntegerRoots.stock_lower_integer_load_eight_scan_pair

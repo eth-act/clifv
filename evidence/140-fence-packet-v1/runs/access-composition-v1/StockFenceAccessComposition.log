@@ -1,0 +1,8 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceAccessComposition.lean:48:70: error: Application type mismatch: The argument
+  split.retained record member
+has type
+  record ∈ event.output.records
+but is expected to have type
+  (BlockScanEvent.ctx ?m.366).insts[ScanRecord.inst ?m.367]? = some ?m.370
+in the application
+  stock_lower_fence_fall_refines run scope ?m.368 ?m.369 (split.retained record member)

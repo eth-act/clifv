@@ -1,0 +1,240 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:34:22: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  Clif.evalInst before.snd.fst before.snd.snd inst
+in the target expression
+  (Clif.StepResult.ofRes
+      (Clif.evalInst (pointState initial before).frame (pointState initial before).mem
+        { results := info.results, inst := inst }.inst)
+      fun x =>
+      match x with
+      | (vals, mem) =>
+        Clif.continueWith (pointState initial before) rest { results := info.results, inst := inst }.results vals mem) =
+    Clif.StepResult.next (pointState initial after)
+
+ctx : Ctx
+i : Nat
+env : Clif.Env
+cp : Clif.Program
+initial : Clif.State
+before after : SourcePoint
+ordinary :
+  ∀ (info : IInfo) (inst : Clif.Inst),
+    ctx.insts[i]? = some info → info.clif = some inst → OrdinaryBody.OrdinaryInst inst
+info : IInfo
+inst : Clif.Inst
+values : List Clif.Val
+regs : Clif.Regs
+rest : List Clif.Stmt
+found : ctx.insts[i]? = some info
+original : info.clif = some inst
+remaining : before.snd.fst.body = { results := info.results, inst := inst } :: rest
+outcome : Clif.evalInst before.snd.fst before.snd.snd inst = Clif.Res.ok (values, after.snd.snd)
+written : before.snd.fst.regs.setMany info.results values = some regs
+frame :
+  after.snd.fst =
+    have __src := before.snd.fst;
+    { func := __src.func, regs := regs, slots := __src.slots, body := rest, term := __src.term }
+family : OrdinaryBody.OrdinaryInst inst
+⊢ (Clif.StepResult.ofRes
+      (Clif.evalInst (pointState initial before).frame (pointState initial before).mem
+        { results := info.results, inst := inst }.inst)
+      fun x =>
+      match x with
+      | (vals, mem) =>
+        Clif.continueWith (pointState initial before) rest { results := info.results, inst := inst }.results vals mem) =
+    Clif.StepResult.next (pointState initial after)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:51:22: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  Clif.evalInst point.snd.fst point.snd.snd inst
+in the target expression
+  (Clif.StepResult.ofRes
+      (Clif.evalInst (pointState initial point).frame (pointState initial point).mem
+        { results := info.results, inst := inst }.inst)
+      fun x =>
+      match x with
+      | (vals, mem) =>
+        Clif.continueWith (pointState initial point) rest { results := info.results, inst := inst }.results vals mem) =
+    Clif.StepResult.trapped code
+
+f : Clif.Function
+ctx : Ctx
+bi i : Nat
+env : Clif.Env
+cp : Clif.Program
+initial : Clif.State
+point : SourcePoint
+code : Clif.TrapCode
+ordinary :
+  ∀ (info : IInfo) (inst : Clif.Inst),
+    ctx.insts[i]? = some info → info.clif = some inst → OrdinaryBody.OrdinaryInst inst
+index : i = blockStart f bi + point.fst
+info : IInfo
+inst : Clif.Inst
+rest : List Clif.Stmt
+found : ctx.insts[i]? = some info
+original : info.clif = some inst
+remaining : point.snd.fst.body = { results := info.results, inst := inst } :: rest
+outcome : Clif.evalInst point.snd.fst point.snd.snd inst = Clif.Res.trap code
+family : OrdinaryBody.OrdinaryInst inst
+⊢ (Clif.StepResult.ofRes
+      (Clif.evalInst (pointState initial point).frame (pointState initial point).mem
+        { results := info.results, inst := inst }.inst)
+      fun x =>
+      match x with
+      | (vals, mem) =>
+        Clif.continueWith (pointState initial point) rest { results := info.results, inst := inst }.results vals mem) =
+    Clif.StepResult.trapped code
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:59:4: error(lean.unknownIdentifier): Unknown identifier `Reach`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:62:8: warning: declaration uses `sorry`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:65:5: warning: Variable name `ordinary` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _ordinary
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:93:8: error: unexpected identifier; expected '⟩'
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:92:10: error: Insufficient number of fields for `⟨...⟩` constructor: Constructor `And.intro` has 2 explicit field, but only 1 was provided
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:93:6: error: unsolved goals
+f : Clif.Function
+ctx : Ctx
+bi i : Nat
+info : IInfo
+env : Clif.Env
+cp : Clif.Program
+initial : Clif.State
+point : SourcePoint
+code : Clif.TrapCode
+op : Clif.LoadOp
+ty : Clif.Ty
+flags : Clif.MemFlags
+pointer : Nat
+offset : Int
+found : ctx.insts[i]? = some info
+original : info.clif = some (Clif.Inst.load op ty flags pointer offset)
+failed : LocalBody.IndexedSourceTrap env cp f ctx bi i point code
+value : Clif.Val
+pointerValue : point.snd.fst.get pointer = Clif.Res.ok value
+access :
+  Clif.Access point.snd.fst (Clif.Inst.load op ty flags pointer offset) (Clif.effAddr value offset)
+    (Clif.LoadOp.size ty op)
+invalid : point.snd.snd.valid (Clif.effAddr value offset) (Clif.LoadOp.size ty op) = false
+flag : flags.trapCode = some code
+present : ctx.insts[i]? = some info
+source : info.clif = some (Clif.Inst.load op ty flags pointer offset)
+fn : Clif.FnRef
+args : List Clif.ValueId
+impossible : Clif.Inst.load op ty flags pointer offset = Clif.Inst.call fn args
+⊢ ?m.194
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:92:40: error: Missing eliminator: An eliminator must be provided when multiple induction targets are specified and no default eliminator has been registered
+
+Hint: Write `using <eliminator-name>` to specify an eliminator, or register a default eliminator with the attribute `[cases_eliminator]`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:85:36: error: unsolved goals
+f : Clif.Function
+ctx : Ctx
+bi i : Nat
+info : IInfo
+env : Clif.Env
+cp : Clif.Program
+initial : Clif.State
+point : SourcePoint
+code : Clif.TrapCode
+op : Clif.LoadOp
+ty : Clif.Ty
+flags : Clif.MemFlags
+pointer : Nat
+offset : Int
+found : ctx.insts[i]? = some info
+original : info.clif = some (Clif.Inst.load op ty flags pointer offset)
+failed : LocalBody.IndexedSourceTrap env cp f ctx bi i point code
+value : Clif.Val
+pointerValue : point.snd.fst.get pointer = Clif.Res.ok value
+access :
+  Clif.Access point.snd.fst (Clif.Inst.load op ty flags pointer offset) (Clif.effAddr value offset)
+    (Clif.LoadOp.size ty op)
+invalid : point.snd.snd.valid (Clif.effAddr value offset) (Clif.LoadOp.size ty op) = false
+flag : flags.trapCode = some code
+ordinary :
+  ∀ (actual : IInfo) (inst : Clif.Inst),
+    ctx.insts[i]? = some actual → actual.clif = some inst → OrdinaryBody.OrdinaryInst inst
+⊢ ∃ value,
+    point.snd.fst.get pointer = Clif.Res.ok value ∧
+      Clif.MemTrapAt env cp (pointState initial point) code (Clif.effAddr value offset) (Clif.LoadOp.size ty op) ∧
+        flags.trapCode = some code
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:106:29: error(lean.unknownIdentifier): Unknown identifier `Reach`
+
+Note: It is not possible to treat `Reach` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:107:15: error(lean.unknownIdentifier): Unknown identifier `Reach`
+
+Note: It is not possible to treat `Reach` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:132:8: error: unexpected identifier; expected '⟩'
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:131:10: error: Insufficient number of fields for `⟨...⟩` constructor: Constructor `And.intro` has 2 explicit field, but only 1 was provided
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:132:6: error: unsolved goals
+f : Clif.Function
+ctx : Ctx
+bi i : Nat
+info : IInfo
+env : Clif.Env
+cp : Clif.Program
+initial : Clif.State
+point : SourcePoint
+code : Clif.TrapCode
+op : Clif.StoreOp
+ty : Clif.Ty
+flags : Clif.MemFlags
+stored pointer : Nat
+offset : Int
+found : ctx.insts[i]? = some info
+original : info.clif = some (Clif.Inst.store op ty flags stored pointer offset)
+failed : LocalBody.IndexedSourceTrap env cp f ctx bi i point code
+value : Clif.Val
+pointerValue : point.snd.fst.get pointer = Clif.Res.ok value
+access :
+  Clif.Access point.snd.fst (Clif.Inst.store op ty flags stored pointer offset) (Clif.effAddr value offset)
+    (Clif.StoreOp.size ty op)
+invalid : point.snd.snd.valid (Clif.effAddr value offset) (Clif.StoreOp.size ty op) = false
+flag : flags.trapCode = some code
+present : ctx.insts[i]? = some info
+source : info.clif = some (Clif.Inst.store op ty flags stored pointer offset)
+fn : Clif.FnRef
+args : List Clif.ValueId
+impossible : Clif.Inst.store op ty flags stored pointer offset = Clif.Inst.call fn args
+⊢ ?m.195
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:131:40: error: Missing eliminator: An eliminator must be provided when multiple induction targets are specified and no default eliminator has been registered
+
+Hint: Write `using <eliminator-name>` to specify an eliminator, or register a default eliminator with the attribute `[cases_eliminator]`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:124:36: error: unsolved goals
+f : Clif.Function
+ctx : Ctx
+bi i : Nat
+info : IInfo
+env : Clif.Env
+cp : Clif.Program
+initial : Clif.State
+point : SourcePoint
+code : Clif.TrapCode
+op : Clif.StoreOp
+ty : Clif.Ty
+flags : Clif.MemFlags
+stored pointer : Nat
+offset : Int
+found : ctx.insts[i]? = some info
+original : info.clif = some (Clif.Inst.store op ty flags stored pointer offset)
+failed : LocalBody.IndexedSourceTrap env cp f ctx bi i point code
+value : Clif.Val
+pointerValue : point.snd.fst.get pointer = Clif.Res.ok value
+access :
+  Clif.Access point.snd.fst (Clif.Inst.store op ty flags stored pointer offset) (Clif.effAddr value offset)
+    (Clif.StoreOp.size ty op)
+invalid : point.snd.snd.valid (Clif.effAddr value offset) (Clif.StoreOp.size ty op) = false
+flag : flags.trapCode = some code
+ordinary :
+  ∀ (actual : IInfo) (inst : Clif.Inst),
+    ctx.insts[i]? = some actual → actual.clif = some inst → OrdinaryBody.OrdinaryInst inst
+⊢ ∃ value,
+    point.snd.fst.get pointer = Clif.Res.ok value ∧
+      Clif.MemTrapAt env cp (pointState initial point) code (Clif.effAddr value offset) (Clif.StoreOp.size ty op) ∧
+        flags.trapCode = some code
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:145:29: error(lean.unknownIdentifier): Unknown identifier `Reach`
+
+Note: It is not possible to treat `Reach` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessReach.lean:146:15: error(lean.unknownIdentifier): Unknown identifier `Reach`
+
+Note: It is not possible to treat `Reach` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.

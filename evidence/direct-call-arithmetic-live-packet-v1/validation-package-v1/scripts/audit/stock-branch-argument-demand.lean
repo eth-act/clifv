@@ -1,0 +1,5 @@
+import FV.Backend.Proof.StockBranchArgumentDemandWitness
+
+#print axioms Backend.Stock.Proof.stock_branchArgs_selected_marks
+#print axioms Backend.Stock.Proof.stock_branchArgs_selected_mapping
+#print axioms Backend.Stock.Proof.BranchDemandWitness.duplicate_argument_marks_witness

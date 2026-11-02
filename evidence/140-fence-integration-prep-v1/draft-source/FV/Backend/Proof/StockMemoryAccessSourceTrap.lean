@@ -1,3 +1,4 @@
+import FV.Clif.MemTrap
 import FV.Backend.Proof.StockMemoryAccessTrap
 import FV.Backend.Proof.StockLocalSourceTrap
 

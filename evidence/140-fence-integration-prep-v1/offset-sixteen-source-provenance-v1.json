@@ -1,0 +1,44 @@
+[
+  {
+    "source": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemoryOffsetEightAddress.lean",
+    "source_sha256": "b3413436d9a620434c3caa7fa0e6afd17c831fa9cbb34001cf7c924f96a8ab83",
+    "draft": ".git/agent-evidence/stock-memory-20261029/140-fence-integration-prep-v1/draft-source/FV/Backend/Proof/StockMemoryOffsetSixteenAddress.lean",
+    "draft_sha256": "32a45dd2f7dcbfc9ffceea56dd0df10d3d44f0d9131e7ec3b4d646723130ad54",
+    "change": "new name and actual offset16; preserve I8 width"
+  },
+  {
+    "source": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemoryOffsetEightLoad.lean",
+    "source_sha256": "fa9d7a43cc5b4b2aea0b94459621b078385bab4e28ea490938c1c76c0747237c",
+    "draft": ".git/agent-evidence/stock-memory-20261029/140-fence-integration-prep-v1/draft-source/FV/Backend/Proof/StockMemoryOffsetSixteenLoad.lean",
+    "draft_sha256": "01947dbb58477cfdce7aca21cddf33ff17a2e1b0b1cbe40e7caccd5dfc45b7cc",
+    "change": "new name and actual offset16; preserve I8 width"
+  },
+  {
+    "source": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemoryOffsetEightLoadRecord.lean",
+    "source_sha256": "5a97bcec09e098669f0c6cda4d1bd4b4dd211d2a4e1b66f22bad125aec348d80",
+    "draft": ".git/agent-evidence/stock-memory-20261029/140-fence-integration-prep-v1/draft-source/FV/Backend/Proof/StockMemoryOffsetSixteenLoadRecord.lean",
+    "draft_sha256": "f5a16f1ab28b617f4915390816f1367e3d9c5c748a76796c3bd4ddfe2b7a99be",
+    "change": "new name and actual offset16; preserve I8 width"
+  },
+  {
+    "source": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemoryOffsetEightValues.lean",
+    "source_sha256": "42308520660d72e1578fbb485a3e8d69b577ea91d3f85c3dc33c7ce73e1de9f7",
+    "draft": ".git/agent-evidence/stock-memory-20261029/140-fence-integration-prep-v1/draft-source/FV/Backend/Proof/StockMemoryOffsetSixteenValues.lean",
+    "draft_sha256": "4d2463411d8536b02f92f069c4208d5b013e2a73984fec105cad1d7592e0d6c1",
+    "change": "new name and actual offset16; preserve I8 width"
+  },
+  {
+    "source": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemoryOffsetEightSourceValues.lean",
+    "source_sha256": "30872ad8dff7d0262c09bd66f05e98df447824d6cd4f8edb8feea04a2f20f618",
+    "draft": ".git/agent-evidence/stock-memory-20261029/140-fence-integration-prep-v1/draft-source/FV/Backend/Proof/StockMemoryOffsetSixteenSourceValues.lean",
+    "draft_sha256": "de4a3acf961bc92c5a132c5ce74b8548b65b3cd169a9a3c97633bdb8468e6924",
+    "change": "new name and actual offset16; preserve I8 width"
+  },
+  {
+    "source": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemoryOffsetEightScanRefines.lean",
+    "source_sha256": "541332c56e8972c8bcb1b8f08dfd5ac4b52ba14efed2f362b2fbe2a41741bbda",
+    "draft": ".git/agent-evidence/stock-memory-20261029/140-fence-integration-prep-v1/draft-source/FV/Backend/Proof/StockMemoryOffsetSixteenScanRefines.lean",
+    "draft_sha256": "d33ad69938c8b2dfd0a2238aba20f21cdf74d5845dcd61998373f165a08b75f4",
+    "change": "new name and actual offset16; preserve I8 width"
+  }
+]

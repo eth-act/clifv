@@ -1,0 +1,2 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/ReturnPinCheckFast.lean:24:53: warning: `if_false` has been deprecated: Use `ite_false` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/ReturnPinCheckFast.lean:68:53: warning: `if_false` has been deprecated: Use `ite_false` instead

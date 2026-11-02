@@ -15,15 +15,15 @@ theorem accessTrapRun_at {sb : Nat} {vc : VCode} {isem : Backend.Proof.Sem}
     {property : BitVec 64 → Nat → Prop}
     (reached : AccessTrapRun sb isem code ρ world trap property) :
     VAccessTrapFrom sb vc isem ⟨label,start,ρ,world⟩ trap property := by
-  obtain ⟨prefix,inst,suffix,regs,next,operands,uses,address,bytes,
+  obtain ⟨front,inst,suffix,regs,next,operands,uses,address,bytes,
     parts,executed,decoded,inputs,access,allowed⟩ := reached
   rw [parts] at segment
-  have before : SegAt block start prefix := segment.append_left
-  have instruction : block.insts[start+prefix.length]? = some inst := segment.append_right.head
-  have room : start+prefix.length < block.insts.size :=
+  have before : SegAt block start front := segment.append_left
+  have instruction : block.insts[start+front.length]? = some inst := segment.append_right.head
+  have room : start+front.length < block.insts.size :=
     (Array.getElem?_eq_some_iff.mp instruction).1
   have path := seqRun_fall_star (vc := vc) (sem := isem) placed before room executed
-  exact ⟨label,start+prefix.length,regs,next,block,inst,operands,uses,address,bytes,
+  exact ⟨label,start+front.length,regs,next,block,inst,operands,uses,address,bytes,
     path,placed,instruction,decoded,inputs,access,allowed⟩
 
 /-- Both local trap variants transfer to the actual complete VCode function. -/
@@ -50,7 +50,7 @@ theorem trapOrAccessRun_inbounds {sb : Nat} {isem : Backend.Proof.Sem}
     rcases reached with explicit | memory
     · obtain ⟨k,inst,operands,regs,next,outs,final,run,flag⟩ := explicit
       cases run
-    · obtain ⟨prefix,inst,suffix,regs,next,operands,uses,address,bytes,parts,rest⟩ := memory
+    · obtain ⟨front,inst,suffix,regs,next,operands,uses,address,bytes,parts,rest⟩ := memory
       have length := congrArg List.length parts
       simp only [List.length_nil,List.length_append,List.length_cons] at length
       omega

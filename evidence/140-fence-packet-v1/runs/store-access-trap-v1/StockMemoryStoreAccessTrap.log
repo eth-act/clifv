@@ -1,0 +1,111 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryStoreAccessTrap.lean:79:92: error: unsolved goals
+f : Clif.Function
+result : Result
+run : lower f = Except.ok result
+scope : LowerScope f
+dominated : Dominated f
+event : BlockScanEvent
+record : ScanRecord
+events : event ∈ result.blockScans.toList
+records : record ∈ event.output.records
+bi j : Nat
+b : Clif.Block
+stm : Clif.Stmt
+block : f.blocks[bi]? = some b
+statement : b.body[j]? = some stm
+current : record.inst = blockStart f bi + j
+info : IInfo
+value pointer valueReg pointerReg : Nat
+flags : Clif.MemFlags
+source : event.ctx.insts[record.inst]? = some info
+clif : info.clif = some (Clif.Inst.store Clif.StoreOp.store Clif.Ty.i64 flags value pointer 8)
+typed : event.ctx.valueType? value = some (CTy.int 64)
+parameter : event.ctx.defInst? pointer = none
+pointerMapped : event.ctx.valueReg? pointer = some (Reg.vreg pointerReg RegClass.int)
+valueMapped : event.ctx.valueReg? value = some (Reg.vreg valueReg RegClass.int)
+step : Step
+recorded : record.output.step = some step
+emitted : step.decision = Decision.emitted
+env : Clif.Env
+cp : Clif.Program
+initial : Clif.State
+code : Clif.TrapCode
+sb : Nat
+isem : Sem
+MR : MemRelT
+Q : Nat → Nat → Prop
+allFaults :
+  ∀ (state : Clif.State) (addr bytes : Nat),
+    Reach env cp initial state → Clif.MemTrapAt env cp state code addr bytes → Q addr bytes
+point : SourcePoint
+failed : LocalBody.IndexedSourceTrap env cp f event.ctx bi record.inst point code
+ρ : Nat → CV
+world : Arm.ArmState
+related : ReachedGuardedRel f result event.ctx bi MR env cp initial record.output.state point ρ world
+typed' : Kind.plain64.sourceOp = Clif.StoreOp.store → event.ctx.valueType? value = some (CTy.int 64)
+required :
+  ∀ (key : Nat),
+    key = value ∨ key = pointer → Demanded record.output.state key ∧ key ∈ availOf f (availIn f result.ctx) bi j
+needPointer : Demanded record.output.state pointer ∧ pointer ∈ availOf f (availIn f result.ctx) bi j
+position : point.fst = j
+addressValue : Clif.Val
+pointerValue : point.snd.fst.get pointer = Clif.Res.ok addressValue
+property : Q (Clif.effAddr addressValue 8) (Clif.StoreOp.size Clif.Ty.i64 Clif.StoreOp.store)
+flag : flags.trapCode = some code
+func : point.snd.fst.func = f
+dfg : DFGCons event.ctx (restrict point.snd.fst (availOf f (availIn f result.ctx) bi j))
+memory : MR point.snd.fst.slots point.snd.snd world
+held :
+  ValuesHeld (fun x => Demanded record.output.state x ∧ x ∈ availOf f (availIn f result.ctx) bi j) event.ctx
+    point.snd.fst fun k => ρ (aliasNum result.final.alias k)
+pointerRegs : point.snd.fst.regs pointer = some addressValue
+restrictedHeld :
+  ValueHeld event.ctx (restrict point.snd.fst (availOf f (availIn f result.ctx) bi j))
+    (fun k => ρ (aliasNum result.final.alias k)) pointer
+pointerType : event.ctx.valueType? pointer = some (CTy.int 64)
+address :
+  amodeAddr sb (AMode.unsignedOffset (Reg.vreg pointerReg RegClass.int) 8) 8
+      [ρ (aliasNum result.final.alias pointerReg)] world =
+    some (BitVec.ofNat 64 (Clif.effAddr addressValue ↑8))
+empty : info.results = []
+allowed : DemandAllowed event.ctx (scanState record.input record.inst) value
+outputs : step.results = []
+state :
+  record.output.state =
+    have __src := ((scanState record.input record.inst).mark pointer).mark value;
+    {
+      base :=
+        (scanState record.input record.inst).base.emit
+          (MInst.store Kind.plain64.storeOp (Reg.vreg valueReg RegClass.int)
+            (AMode.unsignedOffset (Reg.vreg pointerReg RegClass.int) 8) flags),
+      demand := __src.demand, uses := __src.uses, instBlock := __src.instBlock, entryColor := __src.entryColor,
+      endColor := __src.endColor, tryRegs := __src.tryRegs, current := __src.current, color := __src.color,
+      sunk := __src.sunk, opportunistic := __src.opportunistic, alias := __src.alias }
+codeShape :
+  record.output.emitted =
+    #[MInst.store Kind.plain64.storeOp (Reg.vreg valueReg RegClass.int)
+        (AMode.unsignedOffset (Reg.vreg pointerReg RegClass.int) 8) flags]
+upper : record.output.state.base.nextVreg = record.input.base.nextVreg
+alias : record.output.state.alias = record.input.alias
+demands : record.output.state.demand = ((record.input.mark pointer).mark value).demand
+⊢ [MInst.store StoreOp.store64
+        (Reg.vreg (chaseF (fun n => result.final.alias[n]?.join) (result.final.alias.size + 1) valueReg) RegClass.int)
+        (AMode.unsignedOffset
+          (Reg.vreg (chaseF (fun n => result.final.alias[n]?.join) (result.final.alias.size + 1) pointerReg)
+            RegClass.int)
+          8)
+        flags] =
+    [MInst.store StoreOp.store64 (Reg.vreg (aliasNum result.final.alias valueReg) RegClass.int)
+        (AMode.unsignedOffset (Reg.vreg (aliasNum result.final.alias pointerReg) RegClass.int) 8) flags]
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryStoreAccessTrap.lean:88:4: error: Type mismatch: After simplification, term
+  address
+ has type
+  @Eq (Option (BitVec 64))
+    (if True ∧ 8 ≤ 4095 * 8 then some (lo64 (ρ (aliasNum result.final.alias pointerReg)) + 8#64) else none)
+    (some (BitVec.ofNat 64 (Clif.effAddr addressValue ↑8)))
+but is expected to have type
+  @Eq (Option (BitVec 64))
+    (if 8 % StoreOp.store64.bytes = 0 ∧ 8 ≤ 4095 * StoreOp.store64.bytes then
+      some (lo64 (ρ (aliasNum result.final.alias pointerReg)) + 8#64)
+    else none)
+    (some (BitVec.ofNat 64 (Clif.effAddr addressValue ↑8)))
