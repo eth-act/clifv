@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockComparisonComputedArgsLoopWitness
+import FV.Backend.Proof.StockComparisonComputedArgsFibonacci
 
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.computed_branch_calls
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_selected_computed_carry_below
@@ -33,3 +34,4 @@ import FV.Backend.Proof.StockComparisonComputedArgsLoopWitness
 #print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.source_ok_sound
 #print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.check_sound
 #print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.Fixture.count_to_witness -- witness: native_decide
+#print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.Fibonacci.fibonacci_witness -- witness: native_decide
