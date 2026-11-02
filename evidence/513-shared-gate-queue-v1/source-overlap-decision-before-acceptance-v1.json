@@ -1,0 +1,18 @@
+{
+  "status": "requires coordinator acceptance before materialization",
+  "intentional_typed_cli_replacement": {
+    "FVTest/E2E/LinkCheckMain.lean": {
+      "prior": {
+        "owner": "production activation",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/FVTest/E2E/LinkCheckMain.lean",
+        "sha256": "225821bf40ad7634f607f22902905c9c4b5c08205bcbbff7b3ee86be94bda732"
+      },
+      "replacement": {
+        "owner": "typed production",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/FVTest/E2E/LinkCheckMain.lean",
+        "sha256": "3e234b481a1dff1620abd230b5e3bc64494c14285bd64b5a56016fd0d05d7f16"
+      }
+    }
+  },
+  "no_other_packet_conflicts": true
+}

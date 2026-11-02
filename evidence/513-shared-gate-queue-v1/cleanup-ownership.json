@@ -1,0 +1,16 @@
+{
+  "owner": "worker-O execution coordinator / investigate_513",
+  "temporary_index_files_remaining": [],
+  "created_worktrees": [],
+  "created_caches": [],
+  "started_builds": [],
+  "proof_slot": "not held; typed activation owns the existing3GiBslot",
+  "retained": [
+    "queue scripts",
+    "source tree/hash inventories",
+    "combined patch",
+    "preservation/reuse and per-PR binding manifests"
+  ],
+  "future_cleanup": "Remove queue-owned temporary generated outputs only after retaining unique diagnostics and source. The coordinator owns the existing shared source view and warm cache.",
+  "utc": "2026-11-02T07:23:09.786626+00:00"
+}

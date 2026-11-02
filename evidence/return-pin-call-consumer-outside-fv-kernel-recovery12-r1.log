@@ -208,3 +208,68 @@
 02:13:18 start FV.Backend.Proof.StockCmpZero32DefinedDriverRuns cap=12G running=1 avail=205.2G
 02:14:12 done FV.Backend.Proof.StockCmpZero32DefinedDriverRuns rc=0 54s maxrss=9.1G cgpeak=7.6G built -> ok
 02:14:12 start FV.Backend.Proof.StockCmpZero8RightDefinedDriverRuns cap=12G running=1 avail=203.8G
+02:15:06 done FV.Backend.Proof.StockCmpZero8RightDefinedDriverRuns rc=0 54s maxrss=9.2G cgpeak=7.8G built -> ok
+02:15:06 start FV.Backend.Proof.StockCmpNarrowImmediate8DriverRuns cap=12G running=1 avail=203.7G
+02:16:00 done FV.Backend.Proof.StockCmpNarrowImmediate8DriverRuns rc=0 53s maxrss=8.9G cgpeak=7.6G built -> ok
+02:16:00 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+02:16:00 start FV.Backend.Proof.StockCmpNonencodable64DriverRuns cap=12G running=1 avail=203.7G
+02:16:55 done FV.Backend.Proof.StockCmpNonencodable64DriverRuns rc=0 55s maxrss=9.0G cgpeak=7.6G built -> ok
+02:16:55 start FV.Backend.Proof.StockCmpPredecessor32K8193DriverRuns cap=12G running=1 avail=203.6G
+02:17:48 done FV.Backend.Proof.StockCmpPredecessor32K8193DriverRuns rc=0 53s maxrss=8.9G cgpeak=7.5G built -> ok
+02:17:48 start FV.Backend.Proof.StockCmpZero32DriverRuns cap=12G running=1 avail=203.4G
+02:18:40 done FV.Backend.Proof.StockCmpZero32DriverRuns rc=0 52s maxrss=8.8G cgpeak=7.4G built -> ok
+02:18:40 start FV.Backend.Proof.StockCmpZero32RightDefinedDriverRuns cap=12G running=1 avail=204.6G
+02:19:33 done FV.Backend.Proof.StockCmpZero32RightDefinedDriverRuns rc=0 52s maxrss=9.1G cgpeak=7.7G built -> ok
+02:19:33 start FV.Backend.Proof.StockCmpZero64RightDefinedDriverRuns cap=12G running=1 avail=205.1G
+02:20:29 done FV.Backend.Proof.StockCmpZero64RightDefinedDriverRuns rc=0 56s maxrss=9.3G cgpeak=7.8G built -> ok
+02:20:29 start FV.Backend.Proof.StockCmpZero8LeftDriverRuns cap=12G running=1 avail=204.5G
+02:21:22 done FV.Backend.Proof.StockCmpZero8LeftDriverRuns rc=0 53s maxrss=8.8G cgpeak=7.3G built -> ok
+02:21:22 start FV.Backend.Proof.StockCmpZeroDriverRuns cap=12G running=1 avail=202.9G
+02:22:13 done FV.Backend.Proof.StockCmpZeroDriverRuns rc=0 51s maxrss=8.8G cgpeak=7.3G built -> ok
+02:22:13 start FV.Backend.Proof.StockCmpPredecessor64K4097DriverRuns cap=12G running=1 avail=202.0G
+02:23:05 done FV.Backend.Proof.StockCmpPredecessor64K4097DriverRuns rc=0 51s maxrss=8.9G cgpeak=7.4G built -> ok
+02:23:05 start FV.Backend.Proof.StockCmpZero16DriverRuns cap=12G running=1 avail=205.4G
+02:23:58 done FV.Backend.Proof.StockCmpZero16DriverRuns rc=0 53s maxrss=8.9G cgpeak=7.4G built -> ok
+02:23:58 start FV.Backend.Proof.StockCmpZero32LeftDriverRuns cap=12G running=1 avail=207.7G
+02:24:49 done FV.Backend.Proof.StockCmpZero32LeftDriverRuns rc=0 51s maxrss=8.8G cgpeak=7.4G built -> ok
+02:24:49 start FV.Backend.Proof.StockCmpZeroLeftDriverRuns cap=12G running=1 avail=210.8G
+02:25:40 done FV.Backend.Proof.StockCmpZeroLeftDriverRuns rc=0 51s maxrss=8.8G cgpeak=7.4G built -> ok
+02:25:40 start FV.Backend.Proof.StockCmpNarrowImmediate16DriverRuns cap=12G running=1 avail=214.0G
+02:26:33 done FV.Backend.Proof.StockCmpNarrowImmediate16DriverRuns rc=0 53s maxrss=8.9G cgpeak=7.4G built -> ok
+02:26:34 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+02:26:34 start FV.Backend.Proof.StockCmpPredecessor64K8193DriverRuns cap=12G running=1 avail=212.7G
+02:27:25 done FV.Backend.Proof.StockCmpPredecessor64K8193DriverRuns rc=0 51s maxrss=8.9G cgpeak=7.4G built -> ok
+02:27:25 start FV.Backend.Proof.StockCmpZero16LeftDriverRuns cap=12G running=1 avail=207.2G
+02:28:16 done FV.Backend.Proof.StockCmpZero16LeftDriverRuns rc=0 51s maxrss=8.8G cgpeak=7.5G built -> ok
+02:28:16 start FV.Backend.Proof.StockCmpZero8DefinedDriverRuns cap=12G running=1 avail=204.9G
+02:29:08 done FV.Backend.Proof.StockCmpZero8DefinedDriverRuns rc=0 52s maxrss=9.1G cgpeak=7.7G built -> ok
+02:29:08 start FV.Backend.Proof.StockCmpZero8DriverRuns cap=12G running=1 avail=205.2G
+02:29:59 done FV.Backend.Proof.StockCmpZero8DriverRuns rc=0 51s maxrss=8.9G cgpeak=7.4G built -> ok
+02:29:59 start FV.Backend.Proof.StockPerEdgeDirectWitness cap=11G running=1 avail=205.6G
+02:31:25 done FV.Backend.Proof.StockPerEdgeDirectWitness rc=0 85s maxrss=7.8G cgpeak=6.6G built -> ok
+02:31:25 start FV.Backend.Proof.StockDivRhsWitness cap=4G running=1 avail=207.1G
+02:32:41 done FV.Backend.Proof.StockDivRhsWitness rc=0 76s maxrss=2.7G cgpeak=1.3G built -> ok
+02:32:41 start FV.Backend.Proof.StockCmpImmediateSelection cap=4G running=1 avail=209.6G
+02:32:42 done FV.Backend.Proof.StockCmpImmediateSelection rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+02:32:42 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+02:32:42 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+02:32:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+02:32:43 start FV.Backend.Proof.StockScopePartition cap=9G running=1 avail=209.0G
+02:33:46 done FV.Backend.Proof.StockScopePartition rc=0 63s maxrss=6.8G cgpeak=5.4G built -> ok
+02:33:46 start FV.E2E.StockNarrowWitness cap=4G running=1 avail=204.9G
+02:33:48 done FV.E2E.StockNarrowWitness rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+02:33:48 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+02:33:48 start FV.Backend.Proof.StockCmpWideConstantLeftSelection cap=4G running=1 avail=204.7G
+02:33:49 done FV.Backend.Proof.StockCmpWideConstantLeftSelection rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+02:33:49 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+02:33:50 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+02:33:50 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+02:33:50 start FV.Backend.Proof.StockConditionalTrapLeafWitness cap=6G running=1 avail=204.7G
+02:33:52 done FV.Backend.Proof.StockConditionalTrapLeafWitness rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+02:33:52 start FV.Backend.Proof.StockForwardLeafWitness cap=6G running=1 avail=204.9G
+02:33:54 done FV.Backend.Proof.StockForwardLeafWitness rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+02:33:54 start FV.Backend.Proof.StockLowerProjectionWitness cap=6G running=1 avail=204.7G
+02:34:23 done FV.Backend.Proof.StockLowerProjectionWitness rc=0 29s maxrss=6.7G cgpeak=5.4G built -> ok
+02:34:23 start FV.Backend.Proof.StockMemoryEntryWitness cap=6G running=1 avail=203.5G
+02:34:24 done FV.Backend.Proof.StockMemoryEntryWitness rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+02:34:24 start FV.Backend.Proof.StockMemoryExtLoadGuardedWitness cap=6G running=1 avail=203.5G

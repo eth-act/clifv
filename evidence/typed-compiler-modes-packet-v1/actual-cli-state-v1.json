@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "cases": 2,
+  "actual_generic_compiler_selected": true,
+  "source_and_peak_theorems_reported": true,
+  "original_inputs_and_actual_allocator_answers_exact": true,
+  "generated_roots": 20,
+  "generated_hashes": {
+    "bundles/Crates/WorkerOTypedCompilerRaw.lean": "d02ef93cb135a39cde730258ee349d035671a01628725d7d4086e07cccddd652",
+    "bundles/Crates/WorkerOTypedCompilerCleanup.lean": "4cec968a976b33205072f573bd2e9af3d9a64765801d10e6a145418cc707a607"
+  },
+  "reuse_manifest": "actual-cli-v1/reuse-manifest.json",
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T07:27:54.058125+00:00"
+}

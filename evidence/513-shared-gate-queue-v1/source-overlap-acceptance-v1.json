@@ -1,0 +1,24 @@
+{
+  "status": "accepted",
+  "accepted_by": "worker-O execution coordinator",
+  "source": "Explicit parent instruction; this is not a new correctness review",
+  "path": "FVTest/E2E/LinkCheckMain.lean",
+  "prior_sha256": "225821bf40ad7634f607f22902905c9c4b5c08205bcbbff7b3ee86be94bda732",
+  "replacement_sha256": "3e234b481a1dff1620abd230b5e3bc64494c14285bd64b5a56016fd0d05d7f16",
+  "canonical_manifest": "return-pin-production-activation-packet-v2.json",
+  "canonical_manifest_sha256": "892932766cfdccde1d4d041566830a8bfb8388a6e05a04cff73277c8505bf90c",
+  "canonical_source_matches": true,
+  "verified_actual_bundle_cases": 6,
+  "verified_fixed_generated_roots": 48,
+  "reviewed_receipt_sha256": {
+    "return-pin-production-activation-packet-v1/actual-bundle-reviewed-v1.json": "5b3ae87ed8705e444bfaa4860bb0fc485d286317adc0f1746a0e3b0c6cce52e1",
+    "return-pin-typed-proof-packet-v1/reviewed-state-v1.json": "940203df8ff6bc95abac3632dcbb35575c114aae3474a670d3dad9f7b2573f90",
+    "return-pin-production-activation-packet-v2.json": "892932766cfdccde1d4d041566830a8bfb8388a6e05a04cff73277c8505bf90c"
+  },
+  "conditions_preserved": [
+    "actual allocation/preparation/semantic route selection",
+    "actual typed versus integer emitter choice"
+  ],
+  "scope": "This exact typed replacement only. Final typed compiler modes and CLI hashes remain pending.",
+  "utc": "2026-11-02T07:26:32.246079+00:00"
+}

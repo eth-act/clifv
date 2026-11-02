@@ -1,0 +1,24 @@
+{
+  "513": {
+    "original_head": "5aae55c32030e3e9f15ab6515a2cccf268751646",
+    "planned_tree_without_activation": "e0dd63039d419577544c7b3f95be14c7364a874e",
+    "status": "unpublished reconciled candidate; no correctness/merge approval"
+  },
+  "activation": {
+    "planned_tree_without513": "1e1440b4f58fb9005357bbc03f53698ed2e1697c",
+    "status": "unpublished combined activation/typed projection"
+  },
+  "integration": {
+    "planned_tree": "f29ccd6477b9c1cdb4be7053058e71c1d2f34540",
+    "status": "one shared full-goal validation snapshot; not a per-PR tested-tree receipt"
+  },
+  "required_per_pr": [
+    "actual head SHA",
+    "actual import-source equality evidence",
+    "one approved direct cheap review OR all per-PR tests",
+    "exact-head GitHub checks",
+    "tested tree SHA",
+    "actual merged tree SHA and equality"
+  ],
+  "do_not_infer_all_tests_from_comparison_ci": true
+}

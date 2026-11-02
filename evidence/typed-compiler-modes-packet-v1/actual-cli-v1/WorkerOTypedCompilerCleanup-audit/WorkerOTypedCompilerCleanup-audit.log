@@ -1,0 +1,54 @@
+'Crates.WorkerOTypedCompilerCleanup.okB_input' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerCleanup.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerCleanup.link_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerCleanup.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerCleanup.base_closed' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerCleanup.noTls._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerCleanup.bin_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerCleanup.data_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.hdr_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.slice0_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.syms_bin._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerCleanup.correct_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerCleanup.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerCleanup.correct_1' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerCleanup.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerCleanup.correct_2' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerCleanup.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerCleanup.correct_stack_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerCleanup.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.slice0_ok._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.stack_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerCleanup.correct_stack_1' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerCleanup.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.slice0_ok._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.stack_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerCleanup.correct_stack_2' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerCleanup.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.slice0_ok._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerCleanup.stack_ok._native.native_decide.ax_1_1]

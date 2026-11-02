@@ -1,0 +1,30 @@
+{
+  "WorkerOTypedCompilerRaw": {
+    "original": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/actual-bundle-v1/bundles/WorkerOActualTypedCapturedRaw",
+    "stable_hashes": {
+      "fn0.clif": "530911e013489c1eea4bed99c6ba4c54dff0dfa29080463eb009f7bbe737ab20",
+      "fn0.ra.json": "e3850f5693369c24bf1795ea3b53cc532ad6c0daad61d9dd665c0a2511d4583f",
+      "fn1.clif": "0b185694808983b997a28a2b37b1f293959ee406c8fe28ad7cbbead758d6601f",
+      "fn1.ra.json": "28f66a1cd907c0914df309252aa5d5749687dab27026dd6da05f1589be412a50",
+      "fn2.clif": "208bca62e606ad58f6fc31081a7a693535b5d82ba962db385abd4b63441f2ac1",
+      "fn2.ra.json": "9319b1eeb8ee3c97ecd68e199afe5f1c8047510b5ca3e5f377f31ddcf8649910",
+      "input.clif": "9cc46b50f3915b0c56fb9c4dd3b4a2f1bba11411e65093b92481b17de99fb04b",
+      "actual-ra.json": "e23cb3e4c00f8cb80536dd83c9a74a54de8a7af9a580c6d7d86848f176ac618e"
+    },
+    "source_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/actual-bundle-state-v1.json"
+  },
+  "WorkerOTypedCompilerCleanup": {
+    "original": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/actual-bundle-v1/bundles/WorkerOActualTypedCapturedCleanup",
+    "stable_hashes": {
+      "fn0.clif": "530911e013489c1eea4bed99c6ba4c54dff0dfa29080463eb009f7bbe737ab20",
+      "fn0.ra.json": "e3850f5693369c24bf1795ea3b53cc532ad6c0daad61d9dd665c0a2511d4583f",
+      "fn1.clif": "0b185694808983b997a28a2b37b1f293959ee406c8fe28ad7cbbead758d6601f",
+      "fn1.ra.json": "28f66a1cd907c0914df309252aa5d5749687dab27026dd6da05f1589be412a50",
+      "fn2.clif": "208bca62e606ad58f6fc31081a7a693535b5d82ba962db385abd4b63441f2ac1",
+      "fn2.ra.json": "9319b1eeb8ee3c97ecd68e199afe5f1c8047510b5ca3e5f377f31ddcf8649910",
+      "input.clif": "9cc46b50f3915b0c56fb9c4dd3b4a2f1bba11411e65093b92481b17de99fb04b",
+      "actual-ra.json": "e23cb3e4c00f8cb80536dd83c9a74a54de8a7af9a580c6d7d86848f176ac618e"
+    },
+    "source_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/actual-bundle-state-v1.json"
+  }
+}

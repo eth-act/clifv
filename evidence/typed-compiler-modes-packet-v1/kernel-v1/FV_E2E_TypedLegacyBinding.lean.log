@@ -1,0 +1,2 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/E2E/TypedLegacyBinding.lean:24:59: error(lean.unknownIdentifier): Unknown identifier `Stock.Arithmetic.stage`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/E2E/TypedLegacyBinding.lean:24:2: error: `simp` made no progress

@@ -1,0 +1,7 @@
+The default backend, linker and checker now use the ABI-aware Stock path for the proved caller/sret classes. Failed admission retains the complete previous-file action with the original allocator. The checker validates allocation, preparation and semantics before selecting matching bytes. Route indices and the previous class order remain.
+
+Typed files use a class-aware emitter. The linker now proves ordinary, depth, peak, original-source and peak-source execution in raw and cleanup modes. It reports these theorems only after the corresponding compiler attempt succeeds. The old compiler variants and complete fallbacks remain.
+
+Validation:17 standard-only generic roots,6 marked fixed support roots,and6 exact old theorem/header/axiom variants. Six backend object comparisons pass. Six complete integer/typed bundles pass all three CLI flows;68 generated roots pass. The cases retain the complete original caller/callee, previous identity, the same added float leaf, both cleanup modes and actual allocator answers. Source, settings, layout and failed diagnostics remain recorded. Actual current-main import sources match the checked context.
+
+Delivery uses the user-authorized alternative: ONE QUICK, DIRTY, CHEAP direct peer review, exact-head CI with no lost matches, and tested/merged tree equality. Broader current-main build/runtime/filetest/encoder/comparison/identity/generated-consumer gates remain mandatory in the shared activation+#513 snapshot. This incremental activation does not complete #140 or establish whole-driver completeness.

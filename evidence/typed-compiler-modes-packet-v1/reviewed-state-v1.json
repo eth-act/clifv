@@ -1,0 +1,339 @@
+{
+  "status": "reviewed_passed",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "FV/Link/TypedCompileModes.lean": "5bfd4466930426b0e6eed235d5ee7c97af04b2d2dbd8fa595bb892f1b2075cee",
+    "FV/Link/TypedCompileSourceModes.lean": "fedba072a7316f7a11a15786ad378bdc775677c8ebfdc624e7ee3a6e9fdc6e3f",
+    "FV/Link/TypedCompileSourceModesWitness.lean": "b75b9d502be1c73a030a989e67641d423f7dbdb48d4d3a4716dedd35ca572f5b",
+    "FV/Link/TypedCompileModesWitness.lean": "a9eb4d946d92df2cfc9f40773378c21e43c87be721351081b501a606157bd6d5",
+    "FV/E2E/TypedLegacyBinding.lean": "d772c0474fe528a6872d3e2c42056b9b2cd3d6946b28530e1a17bcf3cbbd6838",
+    "FVTest/Link/LeanLinkMain.lean": "cbe614dd4078ccc337e7b5c87a2b4d6982d4176c4be78d5cf1410e58c23a5840",
+    "scripts/audit/typed-compiler-modes.lean": "eb28cbc7a4029663c45d7f9e133ed58c0d0eab425581a9c1c52446bf066a6c8a",
+    "scripts/audit/typed-compiler-modes-witness.lean": "e84c62eb23dd2ed479849de3ff2ca6e5de33428b615dd192be1532644e6aa535",
+    "scripts/audit/typed-compiler-old-variants.lean": "e92f9e38daf15e3e2ab2bdd2a0860d2ad3fce51995128d7c5a984a7f79249c9c"
+  },
+  "generic_roots": 10,
+  "fixed_support_roots": 4,
+  "fixed_actual_generated_roots": 20,
+  "generic_receipt": "state-v5.json",
+  "consumer_receipt": "consumer-state-v1.json",
+  "witness_receipt": "witness-state-v1.json",
+  "actual_cli_receipt": "actual-cli-state-v1.json",
+  "old_variant_parity": "old-variant-parity-v1.json",
+  "complete_source_witness": "Both cleanup modes discharge every source and peak premise on the unchanged linked identity with arbitrary i64 argument. Actual full captured caller/callee plus float inputs separately prove attempt success in both stages, with unchanged allocator answers.",
+  "legacy_typed_binding": "Generic exact equality binds resultsCleanup to resultsProductionWith lowerFunction true, including original k/j/oracle/base and allocation-fallback flag. All concrete mixed fixtures select typedS because their class-aware checks pass. The retained legacy branch is cleanup-only; generic production_legacy_binding also covers the raw stage.",
+  "truthful_linker_selection": "Try the typed compiler only after the complete previous compiler fails. Keep every previous fallback. Report typed executable/source/peak roots only when the corresponding typed attempt succeeds.",
+  "measured_memory": {
+    "kernel-v1/FV_E2E_BinaryBoundaryDefs.lean.mem": {
+      "peak": 271912960,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v1/FV_E2E_LinkImageExtension.lean.mem": {
+      "peak": 231825408,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v1/FV_E2E_TypedLegacyBinding.lean.mem": {
+      "peak": 226664448,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v2/FV_E2E_TypedLegacyBinding.lean.mem": {
+      "peak": 228372480,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_TypedLegacyBinding.lean.mem": {
+      "peak": 237858816,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_BinaryBoundaryFacts.lean.mem": {
+      "peak": 294146048,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticBinary.lean.mem": {
+      "peak": 286187520,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticBinaryGood.lean.mem": {
+      "peak": 291475456,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticBinaryTS.lean.mem": {
+      "peak": 322232320,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticExecBytes.lean.mem": {
+      "peak": 477118464,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticBinaryGoodTS.lean.mem": {
+      "peak": 291655680,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticExecFrameSim.lean.mem": {
+      "peak": 259121152,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticExecStatic.lean.mem": {
+      "peak": 926121984,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticExecRunN.lean.mem": {
+      "peak": 299905024,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticExecGoodRun.lean.mem": {
+      "peak": 315523072,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticExecGoodReads.lean.mem": {
+      "peak": 299589632,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticExecGot.lean.mem": {
+      "peak": 353071104,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticExecProven.lean.mem": {
+      "peak": 276090880,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_SemanticExecTS.lean.mem": {
+      "peak": 393228288,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_Link_SemanticExeWith.lean.mem": {
+      "peak": 300064768,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_Link_SemanticCompileT.lean.mem": {
+      "peak": 288006144,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_Link_SemanticExeSourceWith.lean.mem": {
+      "peak": 304893952,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_Link_SemanticExeSourceT.lean.mem": {
+      "peak": 312676352,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_Link_TypedCompileModes.lean.mem": {
+      "peak": 282664960,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_Link_TypedCompileModes.lean.mem": {
+      "peak": 289071104,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_Link_TypedCompileSourceModes.lean.mem": {
+      "peak": 295313408,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v5/FV_Link_TypedCompileSourceModes.lean.mem": {
+      "peak": 280322048,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_Backend_VoidCallABIProduction.lean.mem": {
+      "peak": 228020224,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_E2E_ReturnPinBinary.lean.mem": {
+      "peak": 293535744,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_E2E_ReturnPinChecksWith.lean.mem": {
+      "peak": 270749696,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_E2E_TypedProductionChecks.lean.mem": {
+      "peak": 270540800,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_Link_ReturnPinCompileDefs.lean.mem": {
+      "peak": 281600000,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_Backend_ReturnPinProduction.lean.mem": {
+      "peak": 220590080,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_E2E_ReturnPinExecStatic.lean.mem": {
+      "peak": 321298432,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_E2E_ReturnPinGeneratedStack.lean.mem": {
+      "peak": 267960320,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FVTest_E2E_TypedLinkProofWith.lean.mem": {
+      "peak": 287260672,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_E2E_ReturnPinExecGot.lean.mem": {
+      "peak": 295796736,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FVTest_Backend_Main.lean.mem": {
+      "peak": 275980288,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FVTest_E2E_ReturnPinLinkProofWith.lean.mem": {
+      "peak": 283410432,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_E2E_ReturnPinExecProven.lean.mem": {
+      "peak": 272297984,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FVTest_E2E_LinkCheckMain.lean.mem": {
+      "peak": 350957568,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_Link_ReturnPinExeWith.lean.mem": {
+      "peak": 304230400,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FV_Link_ReturnPinExeSourceWith.lean.mem": {
+      "peak": 301780992,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "consumer-kernel-v1/FVTest_Link_LeanLinkMain.lean.mem": {
+      "peak": 282161152,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/FV_E2E_ProductionExecGot.lean.mem": {
+      "peak": 322756608,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/FV_E2E_ProductionExecProven.lean.mem": {
+      "peak": 243949568,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/FV_Link_ProductionExe.lean.mem": {
+      "peak": 269139968,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/FV_E2E_ProductionBoundaryWitness.lean.mem": {
+      "peak": 335769600,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/FV_E2E_ReturnPinBinaryWitness.lean.mem": {
+      "peak": 307785728,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/FV_Link_TypedCompileModesWitness.lean.mem": {
+      "peak": 410251264,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/FV_Link_TypedCompileSourceModesWitness.lean.mem": {
+      "peak": 279842816,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "actual-cli-v1/WorkerOTypedCompilerRaw-linker.mem": {
+      "peak": 444751872,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "actual-cli-v1/WorkerOTypedCompilerRaw-checker.mem": {
+      "peak": 419598336,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "actual-cli-v1/WorkerOTypedCompilerRaw-generated.mem": {
+      "peak": 345690112,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "actual-cli-v1/WorkerOTypedCompilerRaw-audit.mem": {
+      "peak": 264384512,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "actual-cli-v1/WorkerOTypedCompilerCleanup-linker.mem": {
+      "peak": 418283520,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "actual-cli-v1/WorkerOTypedCompilerCleanup-checker.mem": {
+      "peak": 402608128,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "actual-cli-v1/WorkerOTypedCompilerCleanup-generated.mem": {
+      "peak": 344608768,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "actual-cli-v1/WorkerOTypedCompilerCleanup-audit.mem": {
+      "peak": 266944512,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "old-variant-kernel-v1/audit.mem": {
+      "peak": 278159360,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  },
+  "max_peak_bytes": 926121984,
+  "owned_artifacts": "owned-artifacts-v1.json",
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "remaining": [
+    "Current-main importer, exact CI, and publication gates",
+    "Input-only typed and whole-driver totality/completeness across the original domain",
+    "Every remaining original #140 obligation"
+  ],
+  "utc": "2026-11-02T07:31:16.240432+00:00",
+  "cleanup": "Removed only the owned isolated .lake. Source, configuration, original and failed diagnostics, actual objects, generated Lean, receipts and hashes remain."
+}

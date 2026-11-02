@@ -1,0 +1,472 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:53:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput
+in the target expression
+  (SemanticCompilerWith.input lower S cleanup).prog = prog (SemanticCompilerWith.input lower S cleanup)
+
+lower : ProductionLowering
+S : LinkSpec
+cleanup : Bool
+file0 file : ByteArray
+h : attempt lower S file0 cleanup = Except.ok file
+hsrc : SrcScopeB (SemanticCompilerWith.input lower S cleanup).toLinkInput = true
+B : BaseEnv
+hB : BaseOk (sys (SemanticCompilerWith.input lower S cleanup) B)
+hH : HooksSim (SemanticCompilerWith.input lower S cleanup) B
+hlegal :
+  (∃ f, f ∈ (SemanticCompilerWith.input lower S cleanup).srcProg.funcs ∧ mentions128 f = true) →
+    Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env
+hsig :
+  (∃ g, g ∈ (prog (SemanticCompilerWith.input lower S cleanup)).funcs ∧ ¬Clif.IndFree g) →
+    ∀ (n : String), B.env.sigOf n = none
+n : String
+f : Clif.Function
+hf : (SemanticCompilerWith.input lower S cleanup).srcProg.func? n = some f
+hc :
+  ¬SemanticStackBound.CycleFrom
+      (SemanticStackBound.Calls (SemanticCompilerWith.input lower S cleanup).toLinkInput
+        (ProductionStackBound.CompilerInput.results (SemanticCompilerWith.input lower S cleanup)))
+      (legalize f)
+r : Arm.ArmState
+args args' : List Clif.Val
+cs cs' : Clif.State
+hX : (imageOf file).Intact r
+ho :
+  OutsideCall (SemanticCompilerWith.input lower S cleanup)
+    (roByte (SemanticCompilerWith.input lower S cleanup).toLinkInput S.data) (legalize f)
+    (SemanticStackBound.stackFn (SemanticCompilerWith.input lower S cleanup) (legalize f)) r args' cs'.mem
+hr : ClifRun (SemanticCompilerWith.input lower S cleanup) B (legalize f) r args' cs'
+hcs : ClifEntry f args cs
+hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args'
+hsl : cs'.frame.slots = cs.frame.slots
+hmem : cs'.mem = cs.mem
+hbnd :
+  ∀ (s' : Clif.State),
+    Opt.Legal.SReach B.env (SemanticCompilerWith.input lower S cleanup).srcProg cs s' → Opt.Legal.MemBounded s'.mem
+M : Nat
+hin : SemanticStackBound.okBTS (SemanticCompilerWith.input lower S cleanup) = true
+hl : leanLinkProductionWith lower S file0 cleanup = Except.ok file
+hL : (SemanticStackBound.ofInput (SemanticCompilerWith.input lower S cleanup) B fun x => True).OkT
+hpe :
+  Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput =
+    legalProg (SemanticCompilerWith.input lower S cleanup).srcProg
+⊢ (SemanticCompilerWith.input lower S cleanup).prog = prog (SemanticCompilerWith.input lower S cleanup)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:61:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput
+in the target expression
+  (prog (SemanticCompilerWith.input lower S cleanup)).func? n = some (legalize f)
+
+lower : ProductionLowering
+S : LinkSpec
+cleanup : Bool
+file0 file : ByteArray
+h : attempt lower S file0 cleanup = Except.ok file
+hsrc : SrcScopeB (SemanticCompilerWith.input lower S cleanup).toLinkInput = true
+B : BaseEnv
+hB : BaseOk (sys (SemanticCompilerWith.input lower S cleanup) B)
+hH : HooksSim (SemanticCompilerWith.input lower S cleanup) B
+hlegal :
+  (∃ f, f ∈ (SemanticCompilerWith.input lower S cleanup).srcProg.funcs ∧ mentions128 f = true) →
+    Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env
+hsig :
+  (∃ g, g ∈ (prog (SemanticCompilerWith.input lower S cleanup)).funcs ∧ ¬Clif.IndFree g) →
+    ∀ (n : String), B.env.sigOf n = none
+n : String
+f : Clif.Function
+hf : (SemanticCompilerWith.input lower S cleanup).srcProg.func? n = some f
+hc :
+  ¬SemanticStackBound.CycleFrom
+      (SemanticStackBound.Calls (SemanticCompilerWith.input lower S cleanup).toLinkInput
+        (ProductionStackBound.CompilerInput.results (SemanticCompilerWith.input lower S cleanup)))
+      (legalize f)
+r : Arm.ArmState
+args args' : List Clif.Val
+cs cs' : Clif.State
+hX : (imageOf file).Intact r
+ho :
+  OutsideCall (SemanticCompilerWith.input lower S cleanup)
+    (roByte (SemanticCompilerWith.input lower S cleanup).toLinkInput S.data) (legalize f)
+    (SemanticStackBound.stackFn (SemanticCompilerWith.input lower S cleanup) (legalize f)) r args' cs'.mem
+hr : ClifRun (SemanticCompilerWith.input lower S cleanup) B (legalize f) r args' cs'
+hcs : ClifEntry f args cs
+hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args'
+hsl : cs'.frame.slots = cs.frame.slots
+hmem : cs'.mem = cs.mem
+hbnd :
+  ∀ (s' : Clif.State),
+    Opt.Legal.SReach B.env (SemanticCompilerWith.input lower S cleanup).srcProg cs s' → Opt.Legal.MemBounded s'.mem
+M : Nat
+hin : SemanticStackBound.okBTS (SemanticCompilerWith.input lower S cleanup) = true
+hl : leanLinkProductionWith lower S file0 cleanup = Except.ok file
+hL : (SemanticStackBound.ofInput (SemanticCompilerWith.input lower S cleanup) B fun x => True).OkT
+hpe :
+  Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput =
+    legalProg (SemanticCompilerWith.input lower S cleanup).srcProg
+hpe' : (SemanticCompilerWith.input lower S cleanup).prog = prog (SemanticCompilerWith.input lower S cleanup)
+hC :
+  ProgCtx (SemanticCompilerWith.input lower S cleanup).srcProg B.env fun n =>
+    List.lookup n (SemanticCompilerWith.input lower S cleanup).syms
+hfP : f ∈ (SemanticCompilerWith.input lower S cleanup).srcProg.funcs
+⊢ (prog (SemanticCompilerWith.input lower S cleanup)).func? n = some (legalize f)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:91:65: error: Application type mismatch: The argument
+  hk
+has type
+  Clif.runLoop B.env (Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput) (K + 1) cs' = o
+but is expected to have type
+  Clif.runLoop B.env (prog (SemanticCompilerWith.input lower S cleanup)) (K + 1) cs' = o
+in the application
+  htr K hk
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:92:10: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  Clif.runLoop B.env (Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput) (K + 1) cs'
+in the target expression
+  ExecBytes.ExecRefinesT (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).fb
+    (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).base (xreg 30 r)
+    (step (SemanticCompilerWith.input lower S cleanup) B file) r
+    (RelocAtWithResults (SemanticCompilerWith.input lower S cleanup).toLinkInput
+      (ProductionStackBound.CompilerInput.results (SemanticCompilerWith.input lower S cleanup)))
+    (Clif.runLoop B.env (prog (SemanticCompilerWith.input lower S cleanup)) (K + 1) cs')
+
+case succ
+lower : ProductionLowering
+S : LinkSpec
+cleanup : Bool
+file0 file : ByteArray
+h : attempt lower S file0 cleanup = Except.ok file
+hsrc : SrcScopeB (SemanticCompilerWith.input lower S cleanup).toLinkInput = true
+B : BaseEnv
+hB : BaseOk (sys (SemanticCompilerWith.input lower S cleanup) B)
+hH : HooksSim (SemanticCompilerWith.input lower S cleanup) B
+hlegal :
+  (∃ f, f ∈ (SemanticCompilerWith.input lower S cleanup).srcProg.funcs ∧ mentions128 f = true) →
+    Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env
+hsig :
+  (∃ g, g ∈ (prog (SemanticCompilerWith.input lower S cleanup)).funcs ∧ ¬Clif.IndFree g) →
+    ∀ (n : String), B.env.sigOf n = none
+n : String
+f : Clif.Function
+hf : (SemanticCompilerWith.input lower S cleanup).srcProg.func? n = some f
+hc :
+  ¬SemanticStackBound.CycleFrom
+      (SemanticStackBound.Calls (SemanticCompilerWith.input lower S cleanup).toLinkInput
+        (ProductionStackBound.CompilerInput.results (SemanticCompilerWith.input lower S cleanup)))
+      (legalize f)
+r : Arm.ArmState
+args args' : List Clif.Val
+cs cs' : Clif.State
+hX : (imageOf file).Intact r
+ho :
+  OutsideCall (SemanticCompilerWith.input lower S cleanup)
+    (roByte (SemanticCompilerWith.input lower S cleanup).toLinkInput S.data) (legalize f)
+    (SemanticStackBound.stackFn (SemanticCompilerWith.input lower S cleanup) (legalize f)) r args' cs'.mem
+hr : ClifRun (SemanticCompilerWith.input lower S cleanup) B (legalize f) r args' cs'
+hcs : ClifEntry f args cs
+hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args'
+hsl : cs'.frame.slots = cs.frame.slots
+hmem : cs'.mem = cs.mem
+hbnd :
+  ∀ (s' : Clif.State),
+    Opt.Legal.SReach B.env (SemanticCompilerWith.input lower S cleanup).srcProg cs s' → Opt.Legal.MemBounded s'.mem
+M : Nat
+hin : SemanticStackBound.okBTS (SemanticCompilerWith.input lower S cleanup) = true
+hl : leanLinkProductionWith lower S file0 cleanup = Except.ok file
+hL : (SemanticStackBound.ofInput (SemanticCompilerWith.input lower S cleanup) B fun x => True).OkT
+hpe :
+  Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput =
+    legalProg (SemanticCompilerWith.input lower S cleanup).srcProg
+hpe' : (SemanticCompilerWith.input lower S cleanup).prog = prog (SemanticCompilerWith.input lower S cleanup)
+hC :
+  ProgCtx (SemanticCompilerWith.input lower S cleanup).srcProg B.env fun n =>
+    List.lookup n (SemanticCompilerWith.input lower S cleanup).syms
+hfP : f ∈ (SemanticCompilerWith.input lower S cleanup).srcProg.funcs
+hf' : (prog (SemanticCompilerWith.input lower S cleanup)).func? n = some (legalize f)
+hcs' : ClifEntry (legalize f) args' cs'
+b : Clif.Block
+hb : f.entry? = some b
+h2 : cs.frame.body = b.body
+h3 : cs.frame.term = b.term
+h4 : List.map (fun x => x.snd) b.params = List.map (fun x => x.ty) args
+h5 : Clif.Regs.empty.setMany (List.map (fun x => x.fst) b.params) args = some cs.frame.regs
+b' : Clif.Block
+hb' : (legalize f).entry? = some b'
+h2' : cs'.frame.body = b'.body
+h3' : cs'.frame.term = b'.term
+h5' : Clif.Regs.empty.setMany (List.map (fun x => x.fst) b'.params) args' = some cs'.frame.regs
+hE : EntryRel f args args' cs.frame cs'.frame
+hst : { frame := cs.frame, callers := [], mem := cs.mem } = cs
+hst' : { frame := cs'.frame, callers := [], mem := cs.mem } = cs'
+hLe : Clif.LInv (SemanticCompilerWith.input lower S cleanup).srcProg cs
+hsym :
+  SomeInd (legalProg (SemanticCompilerWith.input lower S cleanup).srcProg) →
+    Opt.EnvKeepsSymbols B.env ∧
+      cs.mem.symbols = fun n => List.lookup n (SemanticCompilerWith.input lower S cleanup).syms
+hfP' : legalize f ∈ (prog (SemanticCompilerWith.input lower S cleanup)).funcs
+o : Clif.Outcome
+hof : o ≠ Clif.Outcome.outOfFuel
+htr :
+  ∀ (K : Nat),
+    Clif.runLoop B.env (prog (SemanticCompilerWith.input lower S cleanup)) (K + 1) cs' = o →
+      TrapsExplicit (Clif.linkEnvN (prog (SemanticCompilerWith.input lower S cleanup)) B.env K)
+        (prog (SemanticCompilerWith.input lower S cleanup)).bare cs'
+K : Nat
+hk : Clif.runLoop B.env (Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput) (K + 1) cs' = o
+this :
+  ExecBytes.ExecRefinesT (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).fb
+    (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).base (xreg 30 r)
+    (step (SemanticCompilerWith.input lower S cleanup) B file) r
+    (RelocAtWithResults (SemanticCompilerWith.input lower S cleanup).toLinkInput
+      (ProductionStackBound.CompilerInput.results (SemanticCompilerWith.input lower S cleanup)))
+    (Clif.runLoop B.env (prog (SemanticCompilerWith.input lower S cleanup)) (K + 1) cs')
+⊢ ExecBytes.ExecRefinesT (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).fb
+    (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).base (xreg 30 r)
+    (step (SemanticCompilerWith.input lower S cleanup) B file) r
+    (RelocAtWithResults (SemanticCompilerWith.input lower S cleanup).toLinkInput
+      (ProductionStackBound.CompilerInput.results (SemanticCompilerWith.input lower S cleanup)))
+    o
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:157:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput
+in the target expression
+  (SemanticCompilerWith.input lower S cleanup).prog = prog (SemanticCompilerWith.input lower S cleanup)
+
+lower : ProductionLowering
+S : LinkSpec
+cleanup : Bool
+file0 file : ByteArray
+h : attempt lower S file0 cleanup = Except.ok file
+hsrc : SrcScopeB (SemanticCompilerWith.input lower S cleanup).toLinkInput = true
+B : BaseEnv
+hB : BaseOk (sys (SemanticCompilerWith.input lower S cleanup) B)
+hH : HooksSim (SemanticCompilerWith.input lower S cleanup) B
+hlegal :
+  (∃ f, f ∈ (SemanticCompilerWith.input lower S cleanup).srcProg.funcs ∧ mentions128 f = true) →
+    Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env
+hsig :
+  (∃ g, g ∈ (prog (SemanticCompilerWith.input lower S cleanup)).funcs ∧ ¬Clif.IndFree g) →
+    ∀ (n : String), B.env.sigOf n = none
+n : String
+f : Clif.Function
+hf : (SemanticCompilerWith.input lower S cleanup).srcProg.func? n = some f
+d : Nat
+r : Arm.ArmState
+args args' : List Clif.Val
+cs cs' : Clif.State
+hX : (imageOf file).Intact r
+ho :
+  OutsideCall (SemanticCompilerWith.input lower S cleanup)
+    (roByte (SemanticCompilerWith.input lower S cleanup).toLinkInput S.data) (legalize f)
+    (frameDrop (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).af +
+      (SemanticCompilerWith.input lower S cleanup).D * d)
+    r args' cs'.mem
+hr : ClifRun (SemanticCompilerWith.input lower S cleanup) B (legalize f) r args' cs'
+hcs : ClifEntry f args cs
+hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args'
+hsl : cs'.frame.slots = cs.frame.slots
+hmem : cs'.mem = cs.mem
+hbnd :
+  ∀ (s' : Clif.State),
+    Opt.Legal.SReach B.env (SemanticCompilerWith.input lower S cleanup).srcProg cs s' → Opt.Legal.MemBounded s'.mem
+hd : Clif.DepthLe B.env (SemanticCompilerWith.input lower S cleanup).srcProg d cs
+M : Nat
+hin : SemanticStackBound.okBTS (SemanticCompilerWith.input lower S cleanup) = true
+hl : leanLinkProductionWith lower S file0 cleanup = Except.ok file
+hL : (SemanticStackBound.ofInput (SemanticCompilerWith.input lower S cleanup) B fun x => True).OkT
+hpe :
+  Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput =
+    legalProg (SemanticCompilerWith.input lower S cleanup).srcProg
+⊢ (SemanticCompilerWith.input lower S cleanup).prog = prog (SemanticCompilerWith.input lower S cleanup)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:165:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput
+in the target expression
+  (prog (SemanticCompilerWith.input lower S cleanup)).func? n = some (legalize f)
+
+lower : ProductionLowering
+S : LinkSpec
+cleanup : Bool
+file0 file : ByteArray
+h : attempt lower S file0 cleanup = Except.ok file
+hsrc : SrcScopeB (SemanticCompilerWith.input lower S cleanup).toLinkInput = true
+B : BaseEnv
+hB : BaseOk (sys (SemanticCompilerWith.input lower S cleanup) B)
+hH : HooksSim (SemanticCompilerWith.input lower S cleanup) B
+hlegal :
+  (∃ f, f ∈ (SemanticCompilerWith.input lower S cleanup).srcProg.funcs ∧ mentions128 f = true) →
+    Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env
+hsig :
+  (∃ g, g ∈ (prog (SemanticCompilerWith.input lower S cleanup)).funcs ∧ ¬Clif.IndFree g) →
+    ∀ (n : String), B.env.sigOf n = none
+n : String
+f : Clif.Function
+hf : (SemanticCompilerWith.input lower S cleanup).srcProg.func? n = some f
+d : Nat
+r : Arm.ArmState
+args args' : List Clif.Val
+cs cs' : Clif.State
+hX : (imageOf file).Intact r
+ho :
+  OutsideCall (SemanticCompilerWith.input lower S cleanup)
+    (roByte (SemanticCompilerWith.input lower S cleanup).toLinkInput S.data) (legalize f)
+    (frameDrop (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).af +
+      (SemanticCompilerWith.input lower S cleanup).D * d)
+    r args' cs'.mem
+hr : ClifRun (SemanticCompilerWith.input lower S cleanup) B (legalize f) r args' cs'
+hcs : ClifEntry f args cs
+hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args'
+hsl : cs'.frame.slots = cs.frame.slots
+hmem : cs'.mem = cs.mem
+hbnd :
+  ∀ (s' : Clif.State),
+    Opt.Legal.SReach B.env (SemanticCompilerWith.input lower S cleanup).srcProg cs s' → Opt.Legal.MemBounded s'.mem
+hd : Clif.DepthLe B.env (SemanticCompilerWith.input lower S cleanup).srcProg d cs
+M : Nat
+hin : SemanticStackBound.okBTS (SemanticCompilerWith.input lower S cleanup) = true
+hl : leanLinkProductionWith lower S file0 cleanup = Except.ok file
+hL : (SemanticStackBound.ofInput (SemanticCompilerWith.input lower S cleanup) B fun x => True).OkT
+hpe :
+  Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput =
+    legalProg (SemanticCompilerWith.input lower S cleanup).srcProg
+hpe' : (SemanticCompilerWith.input lower S cleanup).prog = prog (SemanticCompilerWith.input lower S cleanup)
+hC :
+  ProgCtx (SemanticCompilerWith.input lower S cleanup).srcProg B.env fun n =>
+    List.lookup n (SemanticCompilerWith.input lower S cleanup).syms
+hfP : f ∈ (SemanticCompilerWith.input lower S cleanup).srcProg.funcs
+⊢ (prog (SemanticCompilerWith.input lower S cleanup)).func? n = some (legalize f)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:197:73: error: Application type mismatch: The argument
+  hk
+has type
+  Clif.runLoop B.env (Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput) (F + 1) cs' = o
+but is expected to have type
+  Clif.runLoop B.env (prog (SemanticCompilerWith.input lower S cleanup)) (F + 1) cs' = o
+in the application
+  htr F hk
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:198:10: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  Clif.runLoop B.env (Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput) (F + 1) cs'
+in the target expression
+  ExecBytes.ExecRefinesT (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).fb
+    (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).base (xreg 30 r)
+    (step (SemanticCompilerWith.input lower S cleanup) B file) r
+    (RelocAtWithResults (SemanticCompilerWith.input lower S cleanup).toLinkInput
+      (ProductionStackBound.CompilerInput.results (SemanticCompilerWith.input lower S cleanup)))
+    (Clif.runLoop B.env (prog (SemanticCompilerWith.input lower S cleanup)) (F + 1) cs')
+
+case succ
+lower : ProductionLowering
+S : LinkSpec
+cleanup : Bool
+file0 file : ByteArray
+h : attempt lower S file0 cleanup = Except.ok file
+hsrc : SrcScopeB (SemanticCompilerWith.input lower S cleanup).toLinkInput = true
+B : BaseEnv
+hB : BaseOk (sys (SemanticCompilerWith.input lower S cleanup) B)
+hH : HooksSim (SemanticCompilerWith.input lower S cleanup) B
+hlegal :
+  (∃ f, f ∈ (SemanticCompilerWith.input lower S cleanup).srcProg.funcs ∧ mentions128 f = true) →
+    Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env
+hsig :
+  (∃ g, g ∈ (prog (SemanticCompilerWith.input lower S cleanup)).funcs ∧ ¬Clif.IndFree g) →
+    ∀ (n : String), B.env.sigOf n = none
+n : String
+f : Clif.Function
+hf : (SemanticCompilerWith.input lower S cleanup).srcProg.func? n = some f
+d : Nat
+r : Arm.ArmState
+args args' : List Clif.Val
+cs cs' : Clif.State
+hX : (imageOf file).Intact r
+ho :
+  OutsideCall (SemanticCompilerWith.input lower S cleanup)
+    (roByte (SemanticCompilerWith.input lower S cleanup).toLinkInput S.data) (legalize f)
+    (frameDrop (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).af +
+      (SemanticCompilerWith.input lower S cleanup).D * d)
+    r args' cs'.mem
+hr : ClifRun (SemanticCompilerWith.input lower S cleanup) B (legalize f) r args' cs'
+hcs : ClifEntry f args cs
+hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args'
+hsl : cs'.frame.slots = cs.frame.slots
+hmem : cs'.mem = cs.mem
+hbnd :
+  ∀ (s' : Clif.State),
+    Opt.Legal.SReach B.env (SemanticCompilerWith.input lower S cleanup).srcProg cs s' → Opt.Legal.MemBounded s'.mem
+hd : Clif.DepthLe B.env (SemanticCompilerWith.input lower S cleanup).srcProg d cs
+M : Nat
+hin : SemanticStackBound.okBTS (SemanticCompilerWith.input lower S cleanup) = true
+hl : leanLinkProductionWith lower S file0 cleanup = Except.ok file
+hL : (SemanticStackBound.ofInput (SemanticCompilerWith.input lower S cleanup) B fun x => True).OkT
+hpe :
+  Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput =
+    legalProg (SemanticCompilerWith.input lower S cleanup).srcProg
+hpe' : (SemanticCompilerWith.input lower S cleanup).prog = prog (SemanticCompilerWith.input lower S cleanup)
+hC :
+  ProgCtx (SemanticCompilerWith.input lower S cleanup).srcProg B.env fun n =>
+    List.lookup n (SemanticCompilerWith.input lower S cleanup).syms
+hfP : f ∈ (SemanticCompilerWith.input lower S cleanup).srcProg.funcs
+hf' : (prog (SemanticCompilerWith.input lower S cleanup)).func? n = some (legalize f)
+hcs' : ClifEntry (legalize f) args' cs'
+b : Clif.Block
+hb : f.entry? = some b
+h2 : cs.frame.body = b.body
+h3 : cs.frame.term = b.term
+h4 : List.map (fun x => x.snd) b.params = List.map (fun x => x.ty) args
+h5 : Clif.Regs.empty.setMany (List.map (fun x => x.fst) b.params) args = some cs.frame.regs
+b' : Clif.Block
+hb' : (legalize f).entry? = some b'
+h2' : cs'.frame.body = b'.body
+h3' : cs'.frame.term = b'.term
+h5' : Clif.Regs.empty.setMany (List.map (fun x => x.fst) b'.params) args' = some cs'.frame.regs
+hE : EntryRel f args args' cs.frame cs'.frame
+hst : { frame := cs.frame, callers := [], mem := cs.mem } = cs
+hst' : { frame := cs'.frame, callers := [], mem := cs.mem } = cs'
+hLe : Clif.LInv (SemanticCompilerWith.input lower S cleanup).srcProg cs
+hd' :
+  Clif.DepthLe B.env (SemanticCompilerWith.input lower S cleanup).srcProg d
+    { frame := cs.frame, callers := [], mem := cs.mem }
+hsym :
+  SomeInd (legalProg (SemanticCompilerWith.input lower S cleanup).srcProg) →
+    Opt.EnvKeepsSymbols B.env ∧
+      cs.mem.symbols = fun n => List.lookup n (SemanticCompilerWith.input lower S cleanup).syms
+hfP' : legalize f ∈ (prog (SemanticCompilerWith.input lower S cleanup)).funcs
+o : Clif.Outcome
+hof : o ≠ Clif.Outcome.outOfFuel
+hdT : Clif.DepthLe B.env (prog (SemanticCompilerWith.input lower S cleanup)) d cs'
+htr :
+  ∀ (F : Nat),
+    Clif.runLoop B.env (prog (SemanticCompilerWith.input lower S cleanup)) (F + 1) cs' = o →
+      TrapsExplicit (Clif.linkEnvD (prog (SemanticCompilerWith.input lower S cleanup)) B.env F d)
+        (prog (SemanticCompilerWith.input lower S cleanup)).bare cs'
+F : Nat
+hk : Clif.runLoop B.env (Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput) (F + 1) cs' = o
+this :
+  ExecBytes.ExecRefinesT (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).fb
+    (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).base (xreg 30 r)
+    (step (SemanticCompilerWith.input lower S cleanup) B file) r
+    (RelocAtWithResults (SemanticCompilerWith.input lower S cleanup).toLinkInput
+      (ProductionStackBound.CompilerInput.results (SemanticCompilerWith.input lower S cleanup)))
+    (Clif.runLoop B.env (prog (SemanticCompilerWith.input lower S cleanup)) (F + 1) cs')
+⊢ ExecBytes.ExecRefinesT (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).fb
+    (art (SemanticCompilerWith.input lower S cleanup) (legalize f)).base (xreg 30 r)
+    (step (SemanticCompilerWith.input lower S cleanup) B file) r
+    (RelocAtWithResults (SemanticCompilerWith.input lower S cleanup).toLinkInput
+      (ProductionStackBound.CompilerInput.results (SemanticCompilerWith.input lower S cleanup)))
+    o
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:210:59: error: Application type mismatch: The argument
+  hdT
+has type
+  Clif.DepthLe B.env (Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput) d cs'
+but is expected to have type
+  Clif.DepthLe B.env (prog (SemanticCompilerWith.input lower S cleanup)) d cs'
+in the application
+  hexe (Clif.Outcome.returned rv' cm) (Exists.intro k hk) (fun h => ?m.566) hdT
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:211:54: error: Application type mismatch: The argument
+  hdT
+has type
+  Clif.DepthLe B.env (Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput) d cs'
+but is expected to have type
+  Clif.DepthLe (SemanticStackBound.ofInput (SemanticCompilerWith.input lower S cleanup) B fun x => True).base
+    (SemanticStackBound.ofInput (SemanticCompilerWith.input lower S cleanup) B fun x => True).P d cs'
+in the application
+  trapsExplicit_of_runDTS hL hfP' hcs' ho.symbols hdT
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileSourceModes.lean:221:47: error: Application type mismatch: The argument
+  hdT
+has type
+  Clif.DepthLe B.env (Binary.prog (SemanticCompilerWith.input lower S cleanup).toLinkInput) d cs'
+but is expected to have type
+  Clif.DepthLe B.env (prog (SemanticCompilerWith.input lower S cleanup)) d cs'
+in the application
+  hexe (Clif.Outcome.trapped c) (Exists.intro k hk) (fun h => ?m.674) hdT

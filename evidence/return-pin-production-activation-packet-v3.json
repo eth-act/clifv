@@ -1,0 +1,817 @@
+{
+  "status": "kernel_actual_modes_source_witnesses_and_old_parity_passed",
+  "files": {
+    "FV/Backend/ReturnPinProduction.lean": {
+      "packet": "return-pin-production-activation-packet-v1",
+      "sha256": "070955a00765b28cb3a810152cb00b20e1a1da179ecc5a74d0d627d2f43e29f8"
+    },
+    "FV/E2E/ReturnPinProductionWitness.lean": {
+      "packet": "return-pin-production-activation-packet-v1",
+      "sha256": "d909dd35bbce83cc8cf963afa8db74bd78277373afaf7a4f5f9a659249e00ff7"
+    },
+    "FVTest/Backend/Main.lean": {
+      "packet": "return-pin-production-activation-packet-v1",
+      "sha256": "2a67d21b232a2774bb3e45ab7f17e8752a8e6b794402b5fb615d1a7e4b4051ba"
+    },
+    "FVTest/Link/LeanLinkMain.lean": {
+      "packet": "typed-compiler-modes-packet-v1",
+      "sha256": "cbe614dd4078ccc337e7b5c87a2b4d6982d4176c4be78d5cf1410e58c23a5840"
+    },
+    "FVTest/E2E/LinkCheckMain.lean": {
+      "sha256": "3e234b481a1dff1620abd230b5e3bc64494c14285bd64b5a56016fd0d05d7f16",
+      "packet": "return-pin-typed-proof-packet-v1"
+    },
+    "scripts/audit/return-pin-production.lean": {
+      "packet": "return-pin-production-activation-packet-v1",
+      "sha256": "e07167e17950941a053ae85474c3c5e5c738c3659ebef305527a7fe30b8f8264"
+    },
+    "scripts/audit/return-pin-production-witness.lean": {
+      "packet": "return-pin-production-activation-packet-v1",
+      "sha256": "ee9cb4e3de277f11fba1f77676459e2bcac309337f64e0276d191a9d453c6c6e"
+    },
+    "FV/E2E/TypedProductionChecks.lean": {
+      "sha256": "af3a692df8cfc1425104f6d77c6bafad0aa4c3a970b9790222cd1802b1297f72",
+      "packet": "return-pin-typed-proof-packet-v1"
+    },
+    "FVTest/E2E/TypedLinkProofWith.lean": {
+      "sha256": "15d00feee2f09d83cd3044fbd33e65d17e3baaee0e3797cd9cd06e20ca03e9d9",
+      "packet": "return-pin-typed-proof-packet-v1"
+    },
+    "scripts/audit/typed-production.lean": {
+      "sha256": "aade6a7361e57859f16453aeb7e1c8ef54691c40cfc8c984ef6bc67b5e2d7c6f",
+      "packet": "return-pin-typed-proof-packet-v1"
+    },
+    "FV/Link/TypedCompileModes.lean": {
+      "packet": "typed-compiler-modes-packet-v1",
+      "sha256": "5bfd4466930426b0e6eed235d5ee7c97af04b2d2dbd8fa595bb892f1b2075cee"
+    },
+    "FV/Link/TypedCompileSourceModes.lean": {
+      "packet": "typed-compiler-modes-packet-v1",
+      "sha256": "fedba072a7316f7a11a15786ad378bdc775677c8ebfdc624e7ee3a6e9fdc6e3f"
+    },
+    "FV/Link/TypedCompileSourceModesWitness.lean": {
+      "packet": "typed-compiler-modes-packet-v1",
+      "sha256": "b75b9d502be1c73a030a989e67641d423f7dbdb48d4d3a4716dedd35ca572f5b"
+    },
+    "FV/Link/TypedCompileModesWitness.lean": {
+      "packet": "typed-compiler-modes-packet-v1",
+      "sha256": "a9eb4d946d92df2cfc9f40773378c21e43c87be721351081b501a606157bd6d5"
+    },
+    "FV/E2E/TypedLegacyBinding.lean": {
+      "packet": "typed-compiler-modes-packet-v1",
+      "sha256": "d772c0474fe528a6872d3e2c42056b9b2cd3d6946b28530e1a17bcf3cbbd6838"
+    },
+    "scripts/audit/typed-compiler-modes.lean": {
+      "packet": "typed-compiler-modes-packet-v1",
+      "sha256": "eb28cbc7a4029663c45d7f9e133ed58c0d0eab425581a9c1c52446bf066a6c8a"
+    },
+    "scripts/audit/typed-compiler-modes-witness.lean": {
+      "packet": "typed-compiler-modes-packet-v1",
+      "sha256": "e84c62eb23dd2ed479849de3ff2ca6e5de33428b615dd192be1532644e6aa535"
+    },
+    "scripts/audit/typed-compiler-old-variants.lean": {
+      "packet": "typed-compiler-modes-packet-v1",
+      "sha256": "e92f9e38daf15e3e2ab2bdd2a0860d2ad3fce51995128d7c5a984a7f79249c9c"
+    }
+  },
+  "generic_roots": 17,
+  "fixed_support_roots": 6,
+  "actual_backend_cases": 6,
+  "actual_bundle_cases": 6,
+  "fixed_generated_roots": 68,
+  "integer_receipt": "return-pin-production-activation-packet-v1/actual-bundle-reviewed-v1.json",
+  "typed_receipt": "return-pin-typed-proof-packet-v1/reviewed-state-v1.json",
+  "source_adapter_manifest": "return-pin-source-adapter-packet-v1.json",
+  "max_measured_peak_bytes": 945799168,
+  "measured_memory": {
+    "return-pin-production-activation-packet-v1/kernel-v1/FV_Backend_VoidCallABIProduction.lean.mem": {
+      "peak": 226873344,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v1/FV_E2E_BinaryBoundaryDefs.lean.mem": {
+      "peak": 278462464,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v1/FV_E2E_LinkImageExtension.lean.mem": {
+      "peak": 231686144,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v1/FV_E2E_ReturnPinChecksWith.lean.mem": {
+      "peak": 270159872,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v1/FV_Link_ReturnPinCompileDefs.lean.mem": {
+      "peak": 278126592,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v1/FV_Backend_ReturnPinProduction.lean.mem": {
+      "peak": 210018304,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v3/FV_Backend_ReturnPinProduction.lean.mem": {
+      "peak": 218689536,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v3/FV_E2E_BinaryBoundaryFacts.lean.mem": {
+      "peak": 292155392,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v3/FV_E2E_ReturnPinProductionWitness.lean.mem": {
+      "peak": 291717120,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_ReturnPinProductionWitness.lean.mem": {
+      "peak": 307417088,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticBinary.lean.mem": {
+      "peak": 293543936,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FVTest_Backend_Main.lean.mem": {
+      "peak": 273985536,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticBinaryGood.lean.mem": {
+      "peak": 291700736,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticBinaryTS.lean.mem": {
+      "peak": 369770496,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticExecBytes.lean.mem": {
+      "peak": 497098752,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_ReturnPinBinary.lean.mem": {
+      "peak": 290643968,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticBinaryGoodTS.lean.mem": {
+      "peak": 295735296,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticExecFrameSim.lean.mem": {
+      "peak": 264179712,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticExecStatic.lean.mem": {
+      "peak": 945799168,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_ReturnPinGeneratedStack.lean.mem": {
+      "peak": 267137024,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticExecRunN.lean.mem": {
+      "peak": 302907392,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticExecGoodRun.lean.mem": {
+      "peak": 307683328,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FVTest_E2E_ReturnPinLinkProofWith.lean.mem": {
+      "peak": 286064640,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticExecGoodReads.lean.mem": {
+      "peak": 301711360,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticExecGot.lean.mem": {
+      "peak": 360513536,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FVTest_E2E_LinkCheckMain.lean.mem": {
+      "peak": 354762752,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_ReturnPinExecStatic.lean.mem": {
+      "peak": 322367488,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticExecProven.lean.mem": {
+      "peak": 272900096,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_SemanticExecTS.lean.mem": {
+      "peak": 397414400,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_ReturnPinExecGot.lean.mem": {
+      "peak": 293691392,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_Link_SemanticExeWith.lean.mem": {
+      "peak": 301649920,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_E2E_ReturnPinExecProven.lean.mem": {
+      "peak": 272039936,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_Link_SemanticCompileT.lean.mem": {
+      "peak": 283414528,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_Link_SemanticExeSourceWith.lean.mem": {
+      "peak": 303001600,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_Link_ReturnPinExeWith.lean.mem": {
+      "peak": 302657536,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FV_Link_ReturnPinExeSourceWith.lean.mem": {
+      "peak": 309325824,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v4/FVTest_Link_LeanLinkMain.lean.mem": {
+      "peak": 263856128,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/entrypoint-smoke-v1/backend.mem": {
+      "peak": 258150400,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/entrypoint-smoke-v2/backend.mem": {
+      "peak": 289673216,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v6/FV_Backend_ReturnPinProduction.lean.mem": {
+      "peak": 224329728,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v6/FV_E2E_ReturnPinProductionWitness.lean.mem": {
+      "peak": 306642944,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/kernel-v6/FVTest_Backend_Main.lean.mem": {
+      "peak": 265506816,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/entrypoint-smoke-v3/backend.mem": {
+      "peak": 285913088,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_Backend_VoidCallABIProduction.lean.mem": {
+      "peak": 227749888,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_BinaryBoundaryDefs.lean.mem": {
+      "peak": 275234816,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_LinkImageExtension.lean.mem": {
+      "peak": 233062400,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_ReturnPinChecksWith.lean.mem": {
+      "peak": 269148160,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_Link_ReturnPinCompileDefs.lean.mem": {
+      "peak": 277360640,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_Backend_ReturnPinProduction.lean.mem": {
+      "peak": 222388224,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_BinaryBoundaryFacts.lean.mem": {
+      "peak": 296124416,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_ReturnPinProductionWitness.lean.mem": {
+      "peak": 293814272,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticBinary.lean.mem": {
+      "peak": 264773632,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FVTest_Backend_Main.lean.mem": {
+      "peak": 270622720,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticBinaryGood.lean.mem": {
+      "peak": 288239616,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticBinaryTS.lean.mem": {
+      "peak": 328294400,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticExecBytes.lean.mem": {
+      "peak": 507203584,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_ReturnPinBinary.lean.mem": {
+      "peak": 290754560,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticBinaryGoodTS.lean.mem": {
+      "peak": 289652736,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticExecFrameSim.lean.mem": {
+      "peak": 263573504,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticExecStatic.lean.mem": {
+      "peak": 943824896,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_ReturnPinGeneratedStack.lean.mem": {
+      "peak": 267272192,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticExecRunN.lean.mem": {
+      "peak": 300863488,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticExecGoodRun.lean.mem": {
+      "peak": 313987072,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FVTest_E2E_ReturnPinLinkProofWith.lean.mem": {
+      "peak": 285376512,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticExecGoodReads.lean.mem": {
+      "peak": 296677376,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticExecGot.lean.mem": {
+      "peak": 349663232,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FVTest_E2E_LinkCheckMain.lean.mem": {
+      "peak": 349511680,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_ReturnPinExecStatic.lean.mem": {
+      "peak": 320229376,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticExecProven.lean.mem": {
+      "peak": 274030592,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_SemanticExecTS.lean.mem": {
+      "peak": 389308416,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_ReturnPinExecGot.lean.mem": {
+      "peak": 291491840,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_Link_SemanticExeWith.lean.mem": {
+      "peak": 296292352,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_E2E_ReturnPinExecProven.lean.mem": {
+      "peak": 271667200,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_Link_SemanticCompileT.lean.mem": {
+      "peak": 283652096,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_Link_SemanticExeSourceWith.lean.mem": {
+      "peak": 305582080,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_Link_ReturnPinExeWith.lean.mem": {
+      "peak": 304517120,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FV_Link_ReturnPinExeSourceWith.lean.mem": {
+      "peak": 302841856,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/fresh-kernel-v1/FVTest_Link_LeanLinkMain.lean.mem": {
+      "peak": 265506816,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v1/prepare.mem": {
+      "peak": 268804096,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v2/prepare.mem": {
+      "peak": 271831040,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v3/prepare.mem": {
+      "peak": 298004480,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v4/prepare.mem": {
+      "peak": 299986944,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v5/prepare.mem": {
+      "peak": 297123840,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v6/prepare.mem": {
+      "peak": 301305856,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v6/WorkerOActualPreviousRaw-backend.mem": {
+      "peak": 278265856,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v6/WorkerOActualPreviousRaw-linker.mem": {
+      "peak": 399876096,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v6/WorkerOActualPreviousRaw-checker.mem": {
+      "peak": 363175936,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v6/WorkerOActualPreviousRaw-generated.mem": {
+      "peak": 341413888,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v6/WorkerOActualPreviousRaw-audit.mem": {
+      "peak": 266928128,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v6/WorkerOActualCapturedRaw-backend.mem": {
+      "peak": 272912384,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v6/WorkerOActualCapturedRaw-linker.mem": {
+      "peak": 401993728,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v6/WorkerOActualCapturedRaw-reflow.mem": {
+      "peak": 295325696,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v6/WorkerOActualCapturedRaw-checker.mem": {
+      "peak": 382189568,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnose-v1/backend.mem": {
+      "peak": 266067968,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnose-v2/backend.mem": {
+      "peak": 345661440,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/prepare.mem": {
+      "peak": 301305856,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualPreviousRaw-backend.mem": {
+      "peak": 278265856,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualPreviousRaw-linker.mem": {
+      "peak": 399876096,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualPreviousRaw-checker.mem": {
+      "peak": 363175936,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualPreviousRaw-generated.mem": {
+      "peak": 341413888,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualPreviousRaw-audit.mem": {
+      "peak": 266928128,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualCapturedRaw-backend.mem": {
+      "peak": 272912384,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualCapturedRaw-linker.mem": {
+      "peak": 401993728,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualCapturedRaw-reflow.mem": {
+      "peak": 295325696,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualCapturedRaw-checker.mem": {
+      "peak": 382189568,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/layout-evidence.mem": {
+      "peak": 297267200,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualPreviousRaw-checker.mem": {
+      "peak": 362377216,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualPreviousRaw-generated.mem": {
+      "peak": 345006080,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualPreviousRaw-audit.mem": {
+      "peak": 268488704,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualCapturedRaw-checker.mem": {
+      "peak": 392306688,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualCapturedRaw-generated.mem": {
+      "peak": 331816960,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualCapturedRaw-audit.mem": {
+      "peak": 257982464,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualPreviousCleanup-backend.mem": {
+      "peak": 273997824,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualPreviousCleanup-reflow.mem": {
+      "peak": 292409344,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualPreviousCleanup-linker.mem": {
+      "peak": 400949248,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualPreviousCleanup-checker.mem": {
+      "peak": 361312256,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualPreviousCleanup-generated.mem": {
+      "peak": 328908800,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualPreviousCleanup-audit.mem": {
+      "peak": 270098432,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualCapturedCleanup-backend.mem": {
+      "peak": 278302720,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualCapturedCleanup-reflow.mem": {
+      "peak": 294699008,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualCapturedCleanup-linker.mem": {
+      "peak": 418312192,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualCapturedCleanup-checker.mem": {
+      "peak": 376356864,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualCapturedCleanup-generated.mem": {
+      "peak": 330489856,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-production-activation-packet-v1/actual-bundle-v9/WorkerOActualCapturedCleanup-audit.mem": {
+      "peak": 267988992,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/kernel-v1/0.mem": {
+      "peak": 258211840,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/kernel-v2/0.mem": {
+      "peak": 242470912,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/kernel-v2/1.mem": {
+      "peak": 276811776,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/kernel-v2/2.mem": {
+      "peak": 327806976,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/kernel-v3/0.mem": {
+      "peak": 266227712,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/kernel-v4/0.mem": {
+      "peak": 263929856,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/prepare.mem": {
+      "peak": 301285376,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedRaw-backend.mem": {
+      "peak": 279203840,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedRaw-reflow.mem": {
+      "peak": 293928960,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedRaw-linker.mem": {
+      "peak": 454356992,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedRaw-checker.mem": {
+      "peak": 396632064,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedRaw-generated.mem": {
+      "peak": 342515712,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedRaw-audit.mem": {
+      "peak": 267366400,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedCleanup-backend.mem": {
+      "peak": 277016576,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedCleanup-reflow.mem": {
+      "peak": 299016192,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedCleanup-linker.mem": {
+      "peak": 404668416,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedCleanup-checker.mem": {
+      "peak": 393535488,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedCleanup-generated.mem": {
+      "peak": 338309120,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "return-pin-typed-proof-packet-v1/actual-bundle-v1/WorkerOActualTypedCapturedCleanup-audit.mem": {
+      "peak": 266366976,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  },
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "remaining": [
+    "Current-main importer, exact CI, and publication gates",
+    "Input-only typed and whole-driver totality/completeness across the original domain",
+    "Every remaining original #140 obligation"
+  ],
+  "utc": "2026-11-02T07:31:16.356903+00:00",
+  "typed_compiler_manifest": "typed-compiler-modes-packet-v1.json",
+  "typed_compiler_receipt": "typed-compiler-modes-packet-v1/reviewed-state-v1.json",
+  "actual_bundle_configurations": 6,
+  "actual_cli_runs_verified": 8,
+  "old_typed_variants_exact": 6,
+  "owned_build_outputs_removed": true
+}

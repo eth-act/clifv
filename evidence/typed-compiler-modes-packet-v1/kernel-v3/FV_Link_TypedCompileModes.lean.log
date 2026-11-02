@@ -1,0 +1,72 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileModes.lean:56:22: error: Application type mismatch: The argument
+  hl
+has type
+  leanLinkProductionWith lower S file0 cleanup = Except.ok file
+but is expected to have type
+  leanLink ?m.36 ?m.37 = Except.ok ?m.38
+in the application
+  codeMap_leanLink hl
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileModes.lean:56:79: error: Application type mismatch: The argument
+  hl
+has type
+  leanLinkProductionWith lower S file0 cleanup = Except.ok file
+but is expected to have type
+  leanLink ?m.44 ?m.45 = Except.ok ?m.46
+in the application
+  gotOk_leanLink hl
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileModes.lean:57:36: error: Application type mismatch: The argument
+  hl
+has type
+  leanLinkProductionWith lower S file0 cleanup = Except.ok file
+but is expected to have type
+  leanLink ?m.52 ?m.53 = Except.ok ?m.54
+in the application
+  outsideAvoids_leanLink hl
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileModes.lean:80:22: error: Application type mismatch: The argument
+  hl
+has type
+  leanLinkProductionWith lower S file0 cleanup = Except.ok file
+but is expected to have type
+  leanLink ?m.43 ?m.44 = Except.ok ?m.45
+in the application
+  codeMap_leanLink hl
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileModes.lean:80:79: error: Application type mismatch: The argument
+  hl
+has type
+  leanLinkProductionWith lower S file0 cleanup = Except.ok file
+but is expected to have type
+  leanLink ?m.51 ?m.52 = Except.ok ?m.53
+in the application
+  gotOk_leanLink hl
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileModes.lean:81:31: error: Application type mismatch: The argument
+  hl
+has type
+  leanLinkProductionWith lower S file0 cleanup = Except.ok file
+but is expected to have type
+  leanLink ?m.59 ?m.60 = Except.ok ?m.61
+in the application
+  outsideAvoids_leanLink hl
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileModes.lean:106:22: error: Application type mismatch: The argument
+  hl
+has type
+  leanLinkProductionWith lower S file0 cleanup = Except.ok file
+but is expected to have type
+  leanLink ?m.43 ?m.44 = Except.ok ?m.45
+in the application
+  codeMap_leanLink hl
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileModes.lean:106:79: error: Application type mismatch: The argument
+  hl
+has type
+  leanLinkProductionWith lower S file0 cleanup = Except.ok file
+but is expected to have type
+  leanLink ?m.51 ?m.52 = Except.ok ?m.53
+in the application
+  gotOk_leanLink hl
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/TypedCompileModes.lean:107:34: error: Application type mismatch: The argument
+  hl
+has type
+  leanLinkProductionWith lower S file0 cleanup = Except.ok file
+but is expected to have type
+  leanLink ?m.59 ?m.60 = Except.ok ?m.61
+in the application
+  outsideAvoids_leanLink hl

@@ -1,0 +1,10 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/ReturnPinExeWith.lean:70:13: warning: Variable name `k` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _k
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/ReturnPinExeWith.lean:163:10: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/ReturnPinExeWith.lean:166:12: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/ReturnPinExeWith.lean:163:10: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/Link/ReturnPinExeWith.lean:166:12: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead

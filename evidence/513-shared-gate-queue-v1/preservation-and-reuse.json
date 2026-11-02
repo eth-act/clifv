@@ -1,0 +1,38 @@
+{
+  "preserved_513": {
+    "old_current_main_headers": 372,
+    "complete_non_import_consumer_bodies": 203,
+    "moved_declarations": 8,
+    "current_types_and_exact_axiom_sets": 8,
+    "evidence_sha256": {
+      ".git/agent-evidence/stock-memory-20261029/513-recovery-packet-v1/current-header-parity.json": "4b0e3978877157fdd25f3699c0d3c73e6df382b9fa2de5d9520731e5007769f7",
+      ".git/agent-evidence/stock-memory-20261029/513-recovery-packet-v1/consumer-body-parity.json": "35f200d516e81f6fad510c175dac225a9f01bac1f6091fae84f76dbab02014a5",
+      ".git/agent-evidence/stock-memory-20261029/513-recovery-packet-v1/moved-declaration-parity.json": "2d30c95297d38129a1dbc363629df08930bc4f03dfd4c29dc7622dc334a60a53",
+      ".git/agent-evidence/stock-memory-20261029/513-recovery-packet-v1/focused-current-main-state-v1.json": "74c6982f19d203a5d76081d4b322884fabb04c1a22ce8b914dac01c9f7a2be5b",
+      ".git/agent-evidence/stock-memory-20261029/513-recovery-packet-v1/current-main-77088aba-equality-v1.json": "1f0d2c66c1fd5cc907e5a8e8fe613bdc62aed6b7c593c0767fae2fc81b9b833d",
+      ".git/agent-evidence/stock-memory-20261029/513-recovery-packet-v1/focused-cleanup-v1.json": "e347fdfeaee183bf01f81aed4308da1dad456cd5e6fed9c08aec1ccd6344561c"
+    }
+  },
+  "reusable_focused_result": {
+    "source_context_paths": 230,
+    "all_context_blobs_match_combined_tree": true,
+    "outputs_removed_after_hashing": true,
+    "normal_lake_key_products_still_required": true
+  },
+  "potential_normal_cache_reuse": {
+    "frozen_source_closure_equal_modules": 3004,
+    "policy": "Use the existing normal Lake cache and upstream scheduler key checks. Source equality alone does not certify an installed output. Do not count partial old jobs as passes."
+  },
+  "required_additional_bindings_before_all_tests_claim": [
+    "coordinator release of protected owners and reviewed packet overlap",
+    "official baseline comparison and both cleanup identity reports before default-source mutation",
+    "complete baseline audit sets or exact-context reusable baseline receipts",
+    "actual original captured/retained runtime matrices with unchanged fixture/settings/allocator hashes",
+    "all three actual CLI entrypoints, both linkers, mixed typed bundles and kernel-checked generated proofs on combined snapshot",
+    "preservation comparison for old accepted identities/settings/successful stages/artifact hashes",
+    "separate current-main per-PR import-source contexts, exact-head CI and tested/merged tree receipts"
+  ],
+  "green_comparison_ci_is_not_full_validation": true,
+  "slot_held": false,
+  "builds_started": false
+}

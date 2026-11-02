@@ -1,0 +1,54 @@
+'Crates.WorkerOTypedCompilerRaw.okB_input' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerRaw.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerRaw.link_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerRaw.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerRaw.base_closed' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerRaw.noTls._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerRaw.bin_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerRaw.data_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.hdr_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.slice0_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.syms_bin._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerRaw.correct_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerRaw.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerRaw.correct_1' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerRaw.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerRaw.correct_2' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerRaw.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerRaw.correct_stack_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerRaw.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.slice0_ok._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.stack_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerRaw.correct_stack_1' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerRaw.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.slice0_ok._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.stack_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOTypedCompilerRaw.correct_stack_2' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOTypedCompilerRaw.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.slice0_ok._native.native_decide.ax_1_1,
+ Crates.WorkerOTypedCompilerRaw.stack_ok._native.native_decide.ax_1_1]

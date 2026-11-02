@@ -1,0 +1,276 @@
+{
+  "generic_allowed": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "rule": "Preserve every exact old set, including names and universe syntax where the existing audit reports it. Fixed native axioms require existing explicit annotations; never promote them to generic correctness.",
+  "captured_exact_old_root_sets": {
+    "Backend.Stock.Memory.stock_retained_load_return_spec": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.RetainedLoadReturnSpec.nop_records": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.stock_lower_omitted_paired_scan": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.stock_nop_load_return_body": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.stock_nop_load_return_paired_body": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OrdinaryBody.actual_ordinary_return_refines_at_block": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Inherited.local_jump_carry_returns_defined_of_body": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Control.jump_body_returns_at_of_body": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.stock_nop_body": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.stock_nop_paired_body": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.stock_nop_body_with_traps": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Control.stock_lower_nop_jump_body_spec": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.CapturedFixture.scope": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.CapturedFixture.dominated": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.CapturedFixture.lowered": [
+      "Backend.Stock.Memory.CapturedFixture.lowered_entry._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.CapturedFixture.entry_tag": [
+      "Backend.Stock.Memory.CapturedFixture.lowered_entry._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.CapturedFixture.nop_jump_witness": [
+      "Backend.Stock.Memory.CapturedFixture.lowered_entry._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.stock_lower_return_record_paired_runOkAt": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.actual_ordinary_paired_return_refines_at_block": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.paired_jump_body_returns_at_of_body": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.stock_nop_paired_body_of_split": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.paired_nop_jump_body_returns_at": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.CapturedFixture.source_entered": [
+      "propext"
+    ],
+    "Backend.Stock.Memory.CapturedFixture.source_returned": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.CapturedFixture.source_entry": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.actual_nonentry_paired_load_return": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.original_entry_prelude_paired": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.stock_two_block_load_return_paired": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.stock_two_block_load_return_paired_function": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemoryCapturedWitness.complete_captured_paired_function_witness": [
+      "Backend.Stock.Memory.CapturedFixture.lowered_entry._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.MemoryCfg.sourceOk_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.MemoryCfg.check_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.MemoryCfg.effectsOnly_noTls": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemoryCfg.effectsOnly_instruction": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemoryCfg.return_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemoryCfg.machine_return": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemoryCfg.paired_returns": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_world_niX_stock_memory_cfg": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.MemoryCfg.captured_source_class": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OrdinaryCfg.ordinary_jump_return_notrap": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.MemoryCfg.TwoBlockClass.source_notrap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemoryCfg.fixedTlsFlags_ok": [
+      "propext"
+    ],
+    "E2E.StockMemoryCfg.return_original_tls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_worldX_stock_memory_cfg": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.MemoryCfg.previous_file_exact": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.MemoryCfg.previous_file_exact_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticNI.of_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_world_niX_semantic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "historical_reference_hashes": {
+    "integer-store-load-store-prior-axioms-v1.json": {
+      "sha256": "ea11572ed9e606206ced905b9550aaa03898bdf9ea33591c1df58640e49b3b68",
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-store-load-store-prior-axioms-v1.json"
+    },
+    "captured-pc0-audit-v8.log": {
+      "sha256": "2be4b044871c63dfd40b34c94ff4dcbcb7fab848eae5e73d51bcbca140815493",
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/captured-pc0-audit-v8.log"
+    },
+    "captured-consumer-audit-v1.log": {
+      "sha256": "7e56f4d20150cfa5b6a1914b885ac253f0f0d53115e945986da07d33abc0f8af",
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/captured-consumer-audit-v1.log"
+    },
+    "integer-store-load-store-preservation-state-v1.json": {
+      "sha256": "b77d03c0f62f55cb341cf357592a35df5dd87a776df122c6969167250039f4dc",
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/integer-store-load-store-preservation-state-v1.json"
+    },
+    "captured-copy-production-official-state-v1.json": {
+      "sha256": "d849f0808c94ac0be270e7af86d3354ca7300fe1338ce682c12cc514fba2d24c",
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/captured-copy-production-official-state-v1.json"
+    },
+    "run-captured-copy-production-full-v1.py": {
+      "sha256": "07e08d31953d043dbf44d8c29f3cea2dc924dd09dfb24e8cdd34ac4ec3629854",
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/run-captured-copy-production-full-v1.py"
+    },
+    "author-runtime-manifest-v2.json": {
+      "sha256": "a64be1a23fed1291d7b19585fa1868763921f340f1ae0d5c1ecad45004c79cf6",
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/author-runtime-manifest-v2.json"
+    }
+  },
+  "additional_required": "Collect or prove exact-context reuse for every current-main audit root, including old binary25, expanded86928 and runtime16 roots. Compare all old roots with the combined exact-head audit; no missing or changed old sets."
+}

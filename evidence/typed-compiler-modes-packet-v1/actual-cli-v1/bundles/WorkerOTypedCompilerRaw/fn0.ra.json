@@ -1,0 +1,1 @@
+{"functions": [{"name": "_RNxC7fv_demo11HawPMC3YC2b", "ok": true, "num_spillslots": 0, "allocs": [["x8", "x0"], [], ["x9", "x0"], ["x10", "x0"], ["x9", "x8"], ["x10", "x8"], [], ["x0"]], "edits": [{"inst": 7, "pos": "before", "from": "x8", "to": "x0"}], "checker": "ok"}]}

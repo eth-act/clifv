@@ -1,0 +1,66 @@
+{
+  "status": "passed",
+  "pairs": {
+    "attempt_spec": {
+      "old": "Link.SemanticCompilerWith.attemptT_spec",
+      "new": "Link.TypedCompilerWith.attempt_spec",
+      "header_sha256": "b10d29f3e5f96909c0859315e9a1dd0019884b31fc2c92e288110f5810201ccb",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "attempt_correct": {
+      "old": "Link.SemanticCompilerWith.attemptT_correct",
+      "new": "Link.TypedCompilerWith.attempt_correct",
+      "header_sha256": "c0080aba395a4cbba9b72ea4b3040f0af6749536cf44eff3f696acefd5c2eb4e",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "attempt_correct_depth": {
+      "old": "Link.SemanticCompilerWith.attemptT_correct_depth",
+      "new": "Link.TypedCompilerWith.attempt_correct_depth",
+      "header_sha256": "1f19fb5ea4ee4bf5be5a06646b248ae0976bf3b3a45accdc92cbb5946f76863c",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "attempt_correct_peak": {
+      "old": "Link.SemanticCompilerWith.attemptT_correct_peak",
+      "new": "Link.TypedCompilerWith.attempt_correct_peak",
+      "header_sha256": "b398ca2724d3c87ded40cf8a9d314023e563f92419a76848c36ab4f2f132fef9",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "attempt_correct_source": {
+      "old": "Link.SemanticCompilerWith.attemptT_correct_source",
+      "new": "Link.TypedCompilerWith.attempt_correct_source",
+      "header_sha256": "a8f2871ffe5285b17f5cc72c09d812de50c13bb402b715e6579e3bc2b166f4b3",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "attempt_correct_source_peak": {
+      "old": "Link.SemanticCompilerWith.attemptT_correct_source_peak",
+      "new": "Link.TypedCompilerWith.attempt_correct_source_peak",
+      "header_sha256": "01d1813f600fb1c254d495d0baaed903099673d790727b9a403a8780b6446abe",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    }
+  },
+  "old_source_files_unchanged": true
+}

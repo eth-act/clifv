@@ -1,0 +1,8 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/validation-package-v1/FV/E2E/TypedLegacyBinding.lean:24:22: warning: This simp argument is unused:
+  Bool.cond_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkInput.pipeOfWithLowering, LinkInput.pipeCleanupOf, flag, cond, pipeCleanup, pipeCleanupT,
+    pipeWithLowering, pipeTWithLowering, productionStage, Stock.D0.defaultLower_eq_legacy]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
