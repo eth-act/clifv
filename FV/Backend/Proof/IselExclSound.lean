@@ -97,6 +97,7 @@ theorem fails_sound : ∀ (q : Pattern) (a : AV) (v : V) (st : LState) (env env'
   | .term ty t args, a, v, st, env, env', hf, ha, hm => by
     rw [fails.eq_def] at hf
     try dsimp only at hf
+    simp only [termOfT_eq] at hf
     cases ht : termOf p t with
     | error e => exact matchPat_termOf_error ht hm
     | ok term =>

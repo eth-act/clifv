@@ -1,3 +1,5 @@
+import FV.E2E.StockSretPointerPairedWitness
+import FV.E2E.StockSretPointerWorldWitness
 import FV.Backend.Proof.StockMemorySretCopyEntryValueWitness
 
 #print axioms Backend.Stock.Proof.source_reach_trans
@@ -28,3 +30,11 @@ import FV.Backend.Proof.StockMemorySretCopyEntryValueWitness
 #print axioms Backend.Stock.Proof.sret_stableXB_of_original_scope
 #print axioms Backend.Stock.Proof.ordinary_source_result_step
 #print axioms Backend.Stock.Proof.ordinary_source_steps_reach
+
+#print axioms E2E.backend_correct_worldX_stock_sret_original_pointer
+#print axioms E2E.sret_original_pointer_world_of_stage
+#print axioms E2E.StockMemorySretCopyCompiledWitness.compiled_sret_original_x8_world_witness -- witness: native_decide
+
+#print axioms E2E.backend_correct_world_niX_stock_sret_original_pointer
+#print axioms E2E.sret_original_pointer_paired_of_stage
+#print axioms E2E.StockMemorySretCopyCompiledWitness.compiled_sret_original_x8_paired_witness -- witness: native_decide
