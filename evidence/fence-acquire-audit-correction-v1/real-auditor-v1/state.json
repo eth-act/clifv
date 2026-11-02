@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "python3",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/fence-acquire-audit-correction-v1/tools/scripts/axiom-audit.py",
+    "--cwd",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+    "--log-dir",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/fence-acquire-audit-correction-v1/real-auditor-v1",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/scripts/audit/stock-fence-memory.lean",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/scripts/audit/stock-acquire810.lean"
+  ],
+  "exit": 0,
+  "auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "thread_wrapper_sha256": "45ad1c80bd73b14b97170ff61fcbad9292f86470435276f863167f6ab95bc9f2",
+  "memstats": "peak 241848320\noom 0\noom_kill 0\n",
+  "stdout_sha256": "f12051ccc1549106280613a719c148eb8f682d7a070122d7402f9b3c716f9bf4"
+}

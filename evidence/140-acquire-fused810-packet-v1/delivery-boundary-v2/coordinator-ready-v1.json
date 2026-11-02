@@ -1,0 +1,16 @@
+{
+  "status": "approved_for_publication",
+  "manifest_sha256": "ea75fd778d0d5edca0bc4d738336ddc849a840d10229000c91cbbb09fe40e330",
+  "gate_sha256": "cc78e56299e0b5ee093d962d74dd417cd898d75d7313a16314f5e773b5c4d9ef",
+  "current_main": "91dd0ee31c122ac91ca2630693751dccb0da3598",
+  "files": 35,
+  "kernels": 34,
+  "roots": 56,
+  "whitespace_only": [
+    "FV/Backend/Proof/StockAcquireRealizes.lean",
+    "FV/Backend/Proof/StockAcquireAllocated.lean",
+    "FV/Backend/Proof/StockAcquireTrace.lean"
+  ],
+  "full_goal_complete": false,
+  "utc": "2026-11-02T17:32:43.266161+00:00"
+}

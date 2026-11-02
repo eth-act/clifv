@@ -1,0 +1,10 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSinkForward.lean:27:36: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.ty` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `V.ty`
+  [apply] `Clif.AbiParam.ty`
+  [apply] `Clif.Parse.ty`
+  [apply] `Clif.Val.ty`
+  [apply] `Const.ty`
+  [apply] `Field.ty`
+  [apply] `Lean.IR.Param.ty`

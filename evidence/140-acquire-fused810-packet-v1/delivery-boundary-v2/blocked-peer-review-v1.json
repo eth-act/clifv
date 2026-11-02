@@ -1,0 +1,8 @@
+{
+  "status": "blocked",
+  "head": "5e04093c521588a914a6371a7114c3671f964c8f",
+  "reviewer": "worker-A",
+  "blocking_defect": "The audit has no recognized witness:native_decide markers. The14 fixed roots and source sites need explicit markers. Run the real repository audit.",
+  "no_merge_authorized_for_this_head": true,
+  "utc": "2026-11-02T17:36:23.136085+00:00"
+}

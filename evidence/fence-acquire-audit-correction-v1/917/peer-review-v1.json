@@ -1,0 +1,9 @@
+{
+  "head": "b169fd6940977435478c2f98cbad05a3305b72a5",
+  "verdict": "no blocking defect",
+  "method": "ONE QUICK, DIRTY, CHEAP direct peer review; no builds or review agents",
+  "reviewer": "worker-A",
+  "source": "Root relayed the actual direct review in this thread.",
+  "notes": "Comments only. All14 native-dependent fixed roots have recognized markers. backend_correct_worldX_stock_fence is fixed to FenceFixture.function.",
+  "utc": "2026-11-02T17:51:12.446691+00:00"
+}

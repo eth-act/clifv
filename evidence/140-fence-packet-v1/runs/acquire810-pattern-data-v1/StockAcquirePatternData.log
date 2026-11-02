@@ -1,0 +1,85 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquirePatternData.lean:55:64: error: don't know how to synthesize implicit argument `ctx`
+  @backend_unData_inv ?m.591 152 17 info.data (opcode :: rest) decoded
+context:
+ctx : Ctx
+st matched : State
+before after : Array RuleId
+env : Interp.Env V
+n ii : Nat
+run :
+  StateT.run (matchRule program (sem ctx) { } (n + 1) rule_inst_3905 [V.inst ii]) (st, before) =
+    Except.ok (some env, matched, after)
+initial : Interp.Env V
+args :
+  matchArgs program (sem ctx) st
+      [Pattern.bind 18 1
+          (Pattern.term 18 209
+            [Pattern.wildcard 14,
+              Pattern.term 152 2464
+                [Pattern.term 151 2442 [], Pattern.bind 15 0 (Pattern.wildcard 15), Pattern.wildcard 137]])]
+      [V.inst ii] (Array.replicate [("addr", 15), ("x", 18), ("_", 13)].length none) =
+    Except.ok (some initial)
+iflets :
+  StateT.run (matchIfLets program (sem ctx) { } n rule_inst_3905.iflets initial) (st, before) =
+    Except.ok (some env, matched, after)
+env1 : Interp.Env V
+head :
+  matchPat program (sem ctx) st
+      (Pattern.bind 18 1
+        (Pattern.term 18 209
+          [Pattern.wildcard 14,
+            Pattern.term 152 2464
+              [Pattern.term 151 2442 [], Pattern.bind 15 0 (Pattern.wildcard 15), Pattern.wildcard 137]]))
+      (V.inst ii) (Array.replicate [("addr", 15), ("x", 18), ("_", 13)].length none) =
+    Except.ok (some env1)
+tail : matchArgs program (sem ctx) st [] [] env1 = Except.ok (some initial)
+left✝¹ : 1 < (Array.replicate [("addr", 15), ("x", 18), ("_", 13)].length none).size
+inner :
+  matchPat program (sem ctx) st
+      (Pattern.term 18 209
+        [Pattern.wildcard 14,
+          Pattern.term 152 2464
+            [Pattern.term 151 2442 [], Pattern.bind 15 0 (Pattern.wildcard 15), Pattern.wildcard 137]])
+      (V.inst ii) ((Array.replicate [("addr", 15), ("x", 18), ("_", 13)].length none).set! 1 (some (V.inst ii))) =
+    Except.ok (some env1)
+info : IInfo
+installed : ctx.insts[ii]? = some info
+fields :
+  matchArgs program (sem ctx) st
+      [Pattern.wildcard 14,
+        Pattern.term 152 2464 [Pattern.term 151 2442 [], Pattern.bind 15 0 (Pattern.wildcard 15), Pattern.wildcard 137]]
+      [V.ty (info.resTys.head?.getD CTy.invalid), info.data]
+      ((Array.replicate [("addr", 15), ("x", 18), ("_", 13)].length none).set! 1 (some (V.inst ii))) =
+    Except.ok (some env1)
+env2 : Interp.Env V
+left✝ :
+  matchPat program (sem ctx) st (Pattern.wildcard 14) (V.ty (info.resTys.head?.getD CTy.invalid))
+      ((Array.replicate [("addr", 15), ("x", 18), ("_", 13)].length none).set! 1 (some (V.inst ii))) =
+    Except.ok (some env2)
+remaining :
+  matchArgs program (sem ctx) st
+      [Pattern.term 152 2464 [Pattern.term 151 2442 [], Pattern.bind 15 0 (Pattern.wildcard 15), Pattern.wildcard 137]]
+      [info.data] env2 =
+    Except.ok (some env1)
+env3 : Interp.Env V
+data :
+  matchPat program (sem ctx) st
+      (Pattern.term 152 2464 [Pattern.term 151 2442 [], Pattern.bind 15 0 (Pattern.wildcard 15), Pattern.wildcard 137])
+      info.data env2 =
+    Except.ok (some env3)
+right✝¹ : matchArgs program (sem ctx) st [] [] env3 = Except.ok (some env1)
+opcode : V
+rest : List V
+decoded : (sem ctx).unData 152 info.data = some (17, opcode :: rest)
+arguments :
+  matchArgs program (sem ctx) st
+      [Pattern.term 151 2442 [], Pattern.bind 15 0 (Pattern.wildcard 15), Pattern.wildcard 137] (opcode :: rest) env2 =
+    Except.ok (some env3)
+env4 : Interp.Env V
+opMatch : matchPat program (sem ctx) st (Pattern.term 151 2442 []) opcode env2 = Except.ok (some env4)
+right✝ :
+  matchArgs program (sem ctx) st [Pattern.bind 15 0 (Pattern.wildcard 15), Pattern.wildcard 137] rest env4 =
+    Except.ok (some env3)
+opDecoded : (sem ctx).unData 151 opcode = some (158, [])
+emptyMatch : matchArgs program (sem ctx) st [] [] env2 = Except.ok (some env4)
+⊢ Ctx

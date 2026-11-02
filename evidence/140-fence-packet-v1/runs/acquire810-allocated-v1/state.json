@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockAcquireRealizes",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireRealizes.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireRealizes.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireRealizes.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.8512203693389893,
+      "memstats": "peak 216645632\noom 0\noom_kill 0\n",
+      "source_sha256": "698863fd7002568994de6cb9efcfa55c641194fbb3aadeb58647a0967d93d7f0",
+      "olean_sha256": "3b2542f1747b88a677b15b66a2fd93fe07c6788d862e941aca433a041e8cee54"
+    },
+    {
+      "label": "StockAcquireAllocated",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireAllocated.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireAllocated.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireAllocated.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.8726592063903809,
+      "memstats": "peak 220278784\noom 0\noom_kill 0\n",
+      "source_sha256": "3be4f3d1429d6d2c5f9eb8800507a9541186f7eb5e80d9cbfe30c54b5eb60f82",
+      "olean_sha256": "c2660141476a8d463fce5915a8e7bde6472ba0216d3984a9a29bba85f6d4ef66"
+    }
+  ]
+}

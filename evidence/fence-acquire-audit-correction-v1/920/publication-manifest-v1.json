@@ -1,0 +1,3028 @@
+{
+  "status": "reviewed_fixed_function_source_to_machine",
+  "baseline": "770e543c350bf158dc782b7f80afb9748817e0af",
+  "source_sha256": {
+    "FV/Backend/Proof/StockAcquire810Witness.lean": "cd112e8e4dfad068ea21ed80e069f31a9d07d613626f453b3f0c4649c53acff9",
+    "FV/Backend/Proof/StockAcquireHelpers.lean": "61bc6f1ac571b601123eaa963563055bf46b2c619208bfd7e4c3afffd600ea8a",
+    "scripts/audit/stock-acquire810.lean": "9be190ee556f92fca95f8fe5f48a3f3229b9412e7afd598ad53a7c312d1d7627",
+    "FV/Backend/Proof/StockAcquireValue.lean": "a34128884fb861701efda48c4b0d5f1ebeac25cbbd905f82582ea4350487fc8e",
+    "FV/Backend/Proof/StockAcquireForward.lean": "050b65e1a20495296a97a9a3be87dfa1758d57f6b3c9c895acc9f5669c80ce89",
+    "FV/Backend/Proof/StockAcquireBinding.lean": "1da644e5b59bf7963e49be631abeda46acceea0f2d992711a4e32657b9aa61a8",
+    "FV/Backend/Proof/StockAcquireSourceOutcome.lean": "a8fd660e95d903efed30cc9119847b5358d45c509444f1f28ac2b602afa778a4",
+    "FV/Backend/Proof/StockAcquireEntry.lean": "db4f32c16498e63fe405b6f9656f8cc8d96a51658344cee2a75066abb4fe7e82",
+    "FV/Backend/Proof/StockAcquireRecordWitness.lean": "2c79d976eec640e3806728e28561f0233ac6ff333d3ec2d8368f043ba82fdb88",
+    "FV/Backend/Proof/StockAcquireVirtualReturn.lean": "0bf30e2a52f28d59ac57c3de91484366a7d883d492022f13a146013c98bf7ca1",
+    "FV/Backend/Proof/StockAcquireEntryNormal.lean": "c8600c48e81adc45a9d4752b0b83ccbe657727e376b8680775cd3c3490b94ceb",
+    "FV/Backend/Proof/StockAcquireTrapBoundary.lean": "e7d0209a6f8ce563603ceba4f7c7a3dde018c69dee236269e94695b6f7b99289",
+    "FV/Backend/Proof/StockAcquireSourceReturn.lean": "c65cd5bc98339c2ecd0023affa707432838d57333038b33a9a6c31ed0dc2fd42",
+    "FV/Backend/Proof/StockAcquireSourceDomain.lean": "d3e777f32bd78d9806447f2e1645af69759e39d62953e17895725906d0b85ac6",
+    "FV/Backend/Proof/StockAcquireArmFault.lean": "0e1482e58c0051681425bc91ce89ad2a19fa62f21e299396666ab718ab37e234",
+    "FV/Backend/Proof/StockAcquireEncodingFault.lean": "dec53f89a67e3bdf11b60c5df0eb187433d0137da19963fc622a25cbf46d05b6",
+    "FV/Backend/Proof/StockAcquireLineFault.lean": "45b366f4ab677451c25db6c95cac53a05fc6df7992599e10ef4bc379020b9bf4",
+    "FV/Backend/Proof/StockAcquireHalt.lean": "0ad4f60b5cf4d51b7a3f9204766b2c97864cc8d3cc3413c80f06b494078fc810",
+    "FV/Backend/Proof/StockAcquireRealizes.lean": "ae4c6bcf741dfb3de2d223e102a23f53127e44689488d91dcbb9c718d264a1d3",
+    "FV/Backend/Proof/StockAcquireAllocated.lean": "0f39c3e48c1eecf7d855d3b37b17134072f3ee064308f571797c3dcdf05da9b1",
+    "FV/Backend/Proof/StockAcquireAllocatedLine.lean": "70af59bfe3fe3c6af93fec868fa05909e30b7095bf8e51b0b5a0b51ea530e3ee",
+    "FV/Backend/Proof/StockAcquireFaultSite.lean": "95a9e8c4e5eb97be2d6f412b088032f5d45b9218e25fdf9b74da96b1238ab14f",
+    "FV/Backend/Proof/StockAcquireRegisterLevel.lean": "ea3652fa3a223c61606d750e520a61638eab63718155b603f74f3ee869fc406c",
+    "FV/Backend/Proof/StockAcquireMachine.lean": "b27916030975a7b19dbf1a8dd96f9ca862378b4ec7037fec335e8c864c2f20d8",
+    "FV/Backend/Proof/StockAcquireTrace.lean": "75498211cb2b21d253efd2e7b719fcdc138b2b7fc011f43ee06447e196dc5ce3",
+    "FV/Backend/Proof/StockAcquirePrepare.lean": "543f3efb21826da43e8da8b492caaf83b5f9d36ad346bc97ae9605a0794cb858",
+    "FV/Backend/Proof/StockAcquireMachineBoundary.lean": "45b097a0ca565005b3391e7cc91d532f73fe2d877e89d5d756105e39bc5a71a0",
+    "FV/Backend/Proof/StockAcquireMachineCheck.lean": "1c19f7c2030ce5ed6bd324e533c9545766cc00fb5f37bf02f1511e1620684b01",
+    "FV/Backend/Proof/StockAcquireStage.lean": "3a8aece740d4e8eb7336c6e121d089672b896868bc9aeb5720c795dd0a2098b1",
+    "FV/Backend/Proof/StockAcquireShapeCheck.lean": "7a54fc58bc8a1e0aef9d0f9923ace48ebe8303cbea940e4a29ced820214d36fe",
+    "FV/Backend/Proof/StockAcquirePreparedShapes.lean": "0321300c29368cfa19b76b63394da9cd2f3807140f67c9b0caeb656478463b84",
+    "FV/Backend/Proof/StockAcquireSourceMachine.lean": "803ee9fbc9c54831378f8d0767118e30ef9c4af8df7d75865710ec2dbfbc17ec",
+    "FV/Backend/Proof/StockAcquireCompiledWitness.lean": "9ba4403a239d4171eea3bee40f16e22720bee462201329dfe7d71167edc634b4",
+    "FV/Backend/Proof/StockAcquireCompiledCoverage.lean": "07980be59270559f51e49d6d02d1ec6854170a4ace5cc89f3e9943a6163d0306",
+    "FV/Backend/Proof/StockAcquireOriginal.lean": "57e3dcefc65c4a9a673ad83d3031e398ac38d147c922a3acec9f5991c07e3f64"
+  },
+  "provider_source_projection": {
+    "FV.Backend.Proof.StockPatternSink": {
+      "path": "FV/Backend/Proof/StockPatternSink.lean",
+      "canonical_sha256": "e07fc9bdcefcecb0a10d557d7281a68906be0c48ccae6ba2b664fe9193ce416b"
+    },
+    "FV.Backend.Proof.StockSinkProvenance": {
+      "path": "FV/Backend/Proof/StockSinkProvenance.lean",
+      "canonical_sha256": "5a253181e48ef44fce9fb6deb950ee17dc1905ed75e46ed08c002ac56957fd6e"
+    },
+    "FV.Backend.Proof.StockPolicy": {
+      "path": "FV/Backend/Proof/StockPolicy.lean",
+      "canonical_sha256": "86eabe376bc2b95dc22225b84c51c88a74ee9afeaaf9b230452154d14fbdc3f2"
+    },
+    "FV.Backend.Lowering.Stock": {
+      "path": "FV/Backend/Lowering/Stock.lean",
+      "canonical_sha256": "b81f1973800ac6ac42d127968d1f5448da8722dd8c22a135fb6d8c9451f22e3e"
+    },
+    "FV.Backend.RegallocOps": {
+      "path": "FV/Backend/RegallocOps.lean",
+      "canonical_sha256": "68f27e38269d0e8281a146d3af6a43a1497fffa874715afb56c79b853da0a9f9"
+    },
+    "FV.Backend.Isel": {
+      "path": "FV/Backend/Isel.lean",
+      "canonical_sha256": "0f045515440bfdee0eaaee14ed93f55a3bebe323e98fb76081c348a8d188ad6d"
+    },
+    "FV.Isle.Interp": {
+      "path": "FV/Isle/Interp.lean",
+      "canonical_sha256": "4aa45099acb5ee25492992a4a010d448d8cd7beed06ca601f2620052d572c82d"
+    },
+    "FV.Isle.Syntax": {
+      "path": "FV/Isle/Syntax.lean",
+      "canonical_sha256": "09825b7c796533b335806ba901a7104bd48901400a763c0e9be440ae3f861edf"
+    },
+    "FV.Backend.MInst": {
+      "path": "FV/Backend/MInst.lean",
+      "canonical_sha256": "504d2b8c5fb87e5ff69b50f512cc833f7d943aa56324904590ef320875ee7e5f"
+    },
+    "FV.Clif": {
+      "path": "FV/Clif.lean",
+      "canonical_sha256": "af190442e090937659e21fc84a24f173653056239857ca2b9746769e889471ba"
+    },
+    "FV.Clif.Syntax": {
+      "path": "FV/Clif/Syntax.lean",
+      "canonical_sha256": "c253dae51602c3ea9ebef6df4d4c1651bd3b4d62dad74fabba372025e0c1010f"
+    },
+    "FV.Clif.Sem": {
+      "path": "FV/Clif/Sem.lean",
+      "canonical_sha256": "164b58992f3c92bba9030021d3706d7c7dc50179a299ba869d2196d2a70dd87a"
+    },
+    "FV.Clif.Mem": {
+      "path": "FV/Clif/Mem.lean",
+      "canonical_sha256": "c6435ce9f98d74e9ba2e8b8d6ee6d916adc19ffc7f192721c53a5a0f24bdca98"
+    },
+    "FV.Clif.Run": {
+      "path": "FV/Clif/Run.lean",
+      "canonical_sha256": "b0eb7e63b6d57a3f6bc1d2a0bb16f16937c53dd5d3122590cb85de0df174f05f"
+    },
+    "FV.Clif.FSem": {
+      "path": "FV/Clif/FSem.lean",
+      "canonical_sha256": "1db282b8fac9e46a49a58351f41e35b58d84954ce6b76c9d71241d922f798a9e"
+    },
+    "FV.Float": {
+      "path": "FV/Float.lean",
+      "canonical_sha256": "8447f3b693714aa928c09b729e9d2ace271be72bd9ec5310dcd3eb2a9abf6791"
+    },
+    "FV.Float.Basic": {
+      "path": "FV/Float/Basic.lean",
+      "canonical_sha256": "d1b14ce396ebfa7ec1de27e3c5e364eda9ef336b0a996cdb7b3c469880facdf7"
+    },
+    "FV.Float.Round": {
+      "path": "FV/Float/Round.lean",
+      "canonical_sha256": "db9fbde3e2a0e4160edcf8fffdbc22fa6f4c982b193ece2dd47e1c6e89b5af25"
+    },
+    "FV.Float.Arith": {
+      "path": "FV/Float/Arith.lean",
+      "canonical_sha256": "e673c55dcd1bf7eee46bd9462196d0a439deae0b1ca3916234ec3292ec2d95dd"
+    },
+    "FV.Float.Convert": {
+      "path": "FV/Float/Convert.lean",
+      "canonical_sha256": "051ce61f637f65052581d63e0c39e8c3c901dce56adbae431f049233b942327d"
+    },
+    "FV.Clif.Print": {
+      "path": "FV/Clif/Print.lean",
+      "canonical_sha256": "25c2b885d5ddfa72e85a9d2818ddc74efff586b6bbad1afe6d04effba1d35418"
+    },
+    "FV.Clif.FloatLit": {
+      "path": "FV/Clif/FloatLit.lean",
+      "canonical_sha256": "f72e88c9e14dc177aa9e5fdac843f0e778820876d078ab76e9b6f2333b3d5daf"
+    },
+    "FV.Clif.Parse": {
+      "path": "FV/Clif/Parse.lean",
+      "canonical_sha256": "032cecf71e3ad50531f0e2f2725bf0e57af2bf2d9bc18bd23cad38a5f3bb5510"
+    },
+    "FV.Clif.Rust": {
+      "path": "FV/Clif/Rust.lean",
+      "canonical_sha256": "4fca9fa20a816615cf77777dc172dc61ef9ef18fa4361dd1feb69c942f343944"
+    },
+    "FV.Isle.Generated.Program": {
+      "path": "FV/Isle/Generated/Program.lean",
+      "canonical_sha256": "022c862de2605cfdfe7694c0274dc052e9b16a202c2a48cbc520492e572ae8f9"
+    },
+    "FV.Isle.Generated.Ids": {
+      "path": "FV/Isle/Generated/Ids.lean",
+      "canonical_sha256": "47fae191044e29284bdf8870ba3fdf5ae34434846f1da84458b5543d058e3d48"
+    },
+    "FV.Isle.Generated.TypeArray": {
+      "path": "FV/Isle/Generated/TypeArray.lean",
+      "canonical_sha256": "39fdbc2e2cd3a61eabf12db6406e7251812459968c7dc0acccb3bc4c43f9cd1b"
+    },
+    "FV.Isle.Generated.Types00": {
+      "path": "FV/Isle/Generated/Types00.lean",
+      "canonical_sha256": "0679ac95982b2ad1ea6abc8321cb88e5fb67f21b91e05d66101d0513a518340d"
+    },
+    "FV.Isle.Generated.TermTable": {
+      "path": "FV/Isle/Generated/TermTable.lean",
+      "canonical_sha256": "c9bf4d1850a5c28edd2c0f6f13f2b2f4c80acc852ec6c9e06f8926a0ae70391d"
+    },
+    "FV.Isle.Generated.Terms00": {
+      "path": "FV/Isle/Generated/Terms00.lean",
+      "canonical_sha256": "57c7e821497e8c63cc74fc3afa3fabe0c29c279b052a26f8f6c240492e4e5c4a"
+    },
+    "FV.Isle.Generated.Terms01": {
+      "path": "FV/Isle/Generated/Terms01.lean",
+      "canonical_sha256": "11b3be644a1e29ce3cc6ffdab7223a1e0b33d660b86366aafeac12d39b43aede"
+    },
+    "FV.Isle.Generated.Terms02": {
+      "path": "FV/Isle/Generated/Terms02.lean",
+      "canonical_sha256": "6b6a988e375feada0e1a236a2286b8c3ce5470ba0c11f1cd77d8f1da8db66515"
+    },
+    "FV.Isle.Generated.RuleArray": {
+      "path": "FV/Isle/Generated/RuleArray.lean",
+      "canonical_sha256": "428a6bc5fcad236b23497b70f17cea437987f5c69f17e5d16149d3890c082e03"
+    },
+    "FV.Isle.Generated.Rules00": {
+      "path": "FV/Isle/Generated/Rules00.lean",
+      "canonical_sha256": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5"
+    },
+    "FV.Isle.Generated.Rules01": {
+      "path": "FV/Isle/Generated/Rules01.lean",
+      "canonical_sha256": "2f9964c0eec71285d47f1250afd0d610aaaa2df091275ca258a05f760e301550"
+    },
+    "FV.Isle.Generated.Rules02": {
+      "path": "FV/Isle/Generated/Rules02.lean",
+      "canonical_sha256": "cc5eb3ecef520bd778f7e7b0997334206a9c94e0996c4f1c6960234e0065fcc9"
+    },
+    "FV.Isle.Generated.Rules03": {
+      "path": "FV/Isle/Generated/Rules03.lean",
+      "canonical_sha256": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f"
+    },
+    "FV.Isle.Generated.RuleTable": {
+      "path": "FV/Isle/Generated/RuleTable.lean",
+      "canonical_sha256": "6e775b3482f37ef6bfeefd75f5f0f373c0a64a74128bddf6a7b01d1c12d95c3a"
+    },
+    "FV.Isle.Generated.RuleLists00": {
+      "path": "FV/Isle/Generated/RuleLists00.lean",
+      "canonical_sha256": "9084c5e4292e91c059ad478e1721d2de10c3b0c54ef9762a1f40af74b2db7a18"
+    },
+    "FV.Isle.Generated.Specs00": {
+      "path": "FV/Isle/Generated/Specs00.lean",
+      "canonical_sha256": "166a502a6405594b092e66749336fcbafa5a7d51fa28c1e69a837fafb4ced36e"
+    },
+    "FV.Isle.Generated.Specs01": {
+      "path": "FV/Isle/Generated/Specs01.lean",
+      "canonical_sha256": "7705775f30f7ed522d4102d1539c640ef6cdd31438c345a864e0f9a615ca7561"
+    },
+    "FV.Isle.Generated.Specs02": {
+      "path": "FV/Isle/Generated/Specs02.lean",
+      "canonical_sha256": "82fe0c7433f496c4086c3450ed7ba1fbce94011c45ab3aaab6474708babf8518"
+    },
+    "FV.Isle.Generated.Specs03": {
+      "path": "FV/Isle/Generated/Specs03.lean",
+      "canonical_sha256": "d9951a29ba5935bc39d4f07c9ef7368faf18132f6ff585cbe89b34064255b18e"
+    },
+    "FV.Isle.Generated.Specs04": {
+      "path": "FV/Isle/Generated/Specs04.lean",
+      "canonical_sha256": "4ad21cc7d44d3977d039d0739e5c20498aa55f755e2d9dbe93a80347a401fc22"
+    },
+    "FV.Isle.Generated.Specs05": {
+      "path": "FV/Isle/Generated/Specs05.lean",
+      "canonical_sha256": "e35b48c875bfff317cf3c48678584fd300162daf91a5e644944782e5000f2bfe"
+    },
+    "FV.Isle.Generated.Specs06": {
+      "path": "FV/Isle/Generated/Specs06.lean",
+      "canonical_sha256": "f3d64cae4362c0ceae3acd5674cd884153a231424a578b12bcea83042eabb941"
+    },
+    "FV.Backend.Lowering.StockAlloc": {
+      "path": "FV/Backend/Lowering/StockAlloc.lean",
+      "canonical_sha256": "7195c4d7e64fd424ab1d916756525f2f83a5878c814915145e3a9492f3a86dde"
+    },
+    "FV.Backend.Proof.IselInterp": {
+      "path": "FV/Backend/Proof/IselInterp.lean",
+      "canonical_sha256": "9b17ce927d0363c817390589ee9e530302b2f6190db595e4b422c3ccd89dfdc1"
+    },
+    "FV.Backend.Proof.IselData": {
+      "path": "FV/Backend/Proof/IselData.lean",
+      "canonical_sha256": "4e88c0b032a0e706f900e1df0336aab61d1487d888f081a5ad47e52e6915c4f7"
+    },
+    "FV.Backend.Proof.IselAttr": {
+      "path": "FV/Backend/Proof/IselAttr.lean",
+      "canonical_sha256": "57f66baafbf3221a2622bfb2005c95bdccd31141e5cab6969266f54a638a9510"
+    },
+    "FV.Backend.Proof.IselGeneric": {
+      "path": "FV/Backend/Proof/IselGeneric.lean",
+      "canonical_sha256": "66fcf8218f508dbbbd15d135034e154e7359fa2ad98a05fabd98165e23e0d7d7"
+    },
+    "FV.Backend.Proof.StockPatternBindings": {
+      "path": "FV/Backend/Proof/StockPatternBindings.lean",
+      "canonical_sha256": "6c3aef8d4279af751bdf3730ba096f0ef2cf241e1a7757931ad1cdd33a4abaf9"
+    },
+    "FV.Backend.Proof.LowerDecide": {
+      "path": "FV/Backend/Proof/LowerDecide.lean",
+      "canonical_sha256": "83ba1c5867f94211e9584195f86e6b2f53febbfe69efd654b84adad9111ccef2"
+    },
+    "FV.Backend.Proof.LowerLoopCtx": {
+      "path": "FV/Backend/Proof/LowerLoopCtx.lean",
+      "canonical_sha256": "12bad0d06e322b11be51352d80346de7bdc5b898e61d549891c654186994b834"
+    },
+    "FV.Backend.Proof.LowerSpec": {
+      "path": "FV/Backend/Proof/LowerSpec.lean",
+      "canonical_sha256": "8de0d8fd0bee0a06df60268b6674a1f110c1d034b0dab6bed8a20e29feddc378"
+    },
+    "FV.Backend.Proof.LowerShape": {
+      "path": "FV/Backend/Proof/LowerShape.lean",
+      "canonical_sha256": "30fa008eff979656665129411ae02c04c3e2485146dc59042e91d12d9dd50220"
+    },
+    "FV.Backend.Proof.LowerFrame": {
+      "path": "FV/Backend/Proof/LowerFrame.lean",
+      "canonical_sha256": "a6ce0d9baf0f028d4613304c6b48049041a3e2c733f624657417da80c3973337"
+    },
+    "FV.Backend.Proof.LowerContract": {
+      "path": "FV/Backend/Proof/LowerContract.lean",
+      "canonical_sha256": "02e46f5e19f715454e6dd3fb1ea451be4e5a14e132c18240b9e95676f23d9520"
+    },
+    "FV.Backend.Proof.DriverCheck": {
+      "path": "FV/Backend/Proof/DriverCheck.lean",
+      "canonical_sha256": "bf2185099fe1e9bf3df2a96be600d0c82298a5e604ca8f46e2ba8c22a46cb970"
+    },
+    "FV.Compile.Subset": {
+      "path": "FV/Compile/Subset.lean",
+      "canonical_sha256": "2b2073672f303a13ef73d7ed773a00f8d0d9e039e4d5dd058d67fa68a0285109"
+    },
+    "FV.Backend.Proof.LowerRename": {
+      "path": "FV/Backend/Proof/LowerRename.lean",
+      "canonical_sha256": "938705f5974e5d90ba1d16a056928d6cc26850d43abbb745bf7d8173b7b589b7"
+    },
+    "FV.Backend.Proof.LowerSeq": {
+      "path": "FV/Backend/Proof/LowerSeq.lean",
+      "canonical_sha256": "1c882bc934a20334bf622c90e86300182beb235b0e843a97f5412683b3756d38"
+    },
+    "FV.Backend.Proof.IselContract": {
+      "path": "FV/Backend/Proof/IselContract.lean",
+      "canonical_sha256": "4c6c88b66498b4e75672f44350632a11155838cf88930b6c17d7aeec430cc8e7"
+    },
+    "FV.Isle.Generated.Closure": {
+      "path": "FV/Isle/Generated/Closure.lean",
+      "canonical_sha256": "7a891317a52696f44b271f9c45b43b6e2f3d7e33b84008f3f06419f878584342"
+    },
+    "FV.Backend.Proof.RegallocOperands": {
+      "path": "FV/Backend/Proof/RegallocOperands.lean",
+      "canonical_sha256": "ca26281fbf738f6138bc380ba0d083491cb0d8ee10c18d689351717f0548bcc7"
+    },
+    "FV.Backend.Proof.RegallocLemmas": {
+      "path": "FV/Backend/Proof/RegallocLemmas.lean",
+      "canonical_sha256": "493d519eeca92626ab908dfc9a30b09563645d62903124dee1aac2eb924aad9c"
+    },
+    "FV.Backend.Proof.RegallocState": {
+      "path": "FV/Backend/Proof/RegallocState.lean",
+      "canonical_sha256": "680b4c9a4405cc02204755897a6279bc0f2ace7c1c8b12ebc963f477a1287ab0"
+    },
+    "FV.Backend.Proof.VCodeSem": {
+      "path": "FV/Backend/Proof/VCodeSem.lean",
+      "canonical_sha256": "00d75e483b3a242ff59703fc5acc4a765c2791c111ca52db9cde7759ba8497a2"
+    },
+    "FV.Backend.RegallocCheck": {
+      "path": "FV/Backend/RegallocCheck.lean",
+      "canonical_sha256": "9f60d5a7fa4bd50f07073921bc0fc8bc4c73d4268d62359b7a72d219d9221b09"
+    },
+    "FV.Backend.Encode": {
+      "path": "FV/Backend/Encode.lean",
+      "canonical_sha256": "55ec20591f95b6ca9a92cae605cfac649a796b9190fbdeacd63e5d86caa14970"
+    },
+    "FV.Backend.Asm": {
+      "path": "FV/Backend/Asm.lean",
+      "canonical_sha256": "11dcba2076a3185f3a4ef80073272212c7fdcded7c28f6aa7603e5c18757f129"
+    },
+    "FV.Backend.StackAlloc": {
+      "path": "FV/Backend/StackAlloc.lean",
+      "canonical_sha256": "2b2a23752cb6d4eba6348ef25f475c216bb05aa848e4a0fcbe3e422699a4270c"
+    },
+    "FV.Arm.Decode": {
+      "path": "FV/Arm/Decode.lean",
+      "canonical_sha256": "fe17d28c4ce27295fb80140cb42780bed32801b82e02af23f6bb9dda40cb4768"
+    },
+    "FV.Arm.Decode.DPI": {
+      "path": "FV/Arm/Decode/DPI.lean",
+      "canonical_sha256": "5005bf2fe6a98a4c865bac16f6e2635a29ba7b4102531df67b310ac819cde5fe"
+    },
+    "FV.Arm.BitVec": {
+      "path": "FV/Arm/BitVec.lean",
+      "canonical_sha256": "7cba19aba48e113c99e4cd8c7984159ecbd6e57f3f08c86680ea340014642552"
+    },
+    "FV.Arm.Attr": {
+      "path": "FV/Arm/Attr.lean",
+      "canonical_sha256": "4cd69b144655b5fcf8fba4da788c8706c732d3e9358b71c217f805f844b77ccb"
+    },
+    "FV.Arm.Decode.DPR": {
+      "path": "FV/Arm/Decode/DPR.lean",
+      "canonical_sha256": "2d09a824aba741eceae40659d815cde7998d7515f78ae6b81d73c1a9a427313d"
+    },
+    "FV.Arm.Decode.BR": {
+      "path": "FV/Arm/Decode/BR.lean",
+      "canonical_sha256": "f4bad0b421a87773ff0528b75a00a99de80091fdb4ce21fbb8e67188423b1a67"
+    },
+    "FV.Arm.Decode.LDST": {
+      "path": "FV/Arm/Decode/LDST.lean",
+      "canonical_sha256": "4f88460608a6a3e65103a2fb43017e429d16d47d82088f7209517e38b2a7df6b"
+    },
+    "FV.Arm.Decode.DPSFP": {
+      "path": "FV/Arm/Decode/DPSFP.lean",
+      "canonical_sha256": "f73dde07aade489ca00727b32b67dd7bf3fcc8e4f0482bff6daba6a0d8b5f1f6"
+    },
+    "FV.Arm.Decode.Reserved": {
+      "path": "FV/Arm/Decode/Reserved.lean",
+      "canonical_sha256": "025023e80c6c113998c1b4f724dbeb737b15c7f0a642610c6c67a0fcb17c193c"
+    },
+    "FV.Arm.Exec": {
+      "path": "FV/Arm/Exec.lean",
+      "canonical_sha256": "235da0fe88cbd9411d407d0b7cb132e2bf04aa304e08fbeeaea9c6a2091e8e6f"
+    },
+    "FV.Arm.Insts": {
+      "path": "FV/Arm/Insts.lean",
+      "canonical_sha256": "0f25164588288f5d82951896814846444381cd3a4d54d526c0cb6ce22d99425a"
+    },
+    "FV.Arm.Insts.DPI.Insts": {
+      "path": "FV/Arm/Insts/DPI/Insts.lean",
+      "canonical_sha256": "a7f1758b7956c43113c5e1e5ef335d64c891e89e8b869ad9475c5acadacbfac5"
+    },
+    "FV.Arm.Insts.DPI.Add_sub_imm": {
+      "path": "FV/Arm/Insts/DPI/Add_sub_imm.lean",
+      "canonical_sha256": "6c8dc513e4f518ca9fac3a2aef00a3bfec4c4eac20939b0dde7993a98631c08d"
+    },
+    "FV.Arm.Insts.Common": {
+      "path": "FV/Arm/Insts/Common.lean",
+      "canonical_sha256": "bf7be971ad784f903a251bffc6cb9ee29b72c96865f5af580850c9ec9930038e"
+    },
+    "FV.Arm.State": {
+      "path": "FV/Arm/State.lean",
+      "canonical_sha256": "fd97dc0578bdb263ebe91c2fcadb81d9a4153328ad41d840cd5bb3a335bc7eca"
+    },
+    "FV.Arm.Map": {
+      "path": "FV/Arm/Map.lean",
+      "canonical_sha256": "290f58f2e6d582e6942c9be9520c4356b2c8f33c66ace7bfae48708db7cc2f18"
+    },
+    "FV.Arm.MinTheory": {
+      "path": "FV/Arm/MinTheory.lean",
+      "canonical_sha256": "a67cd7160c8c3f5edf44c6a627f791647d79ea49491eb5837e49a5299560c083"
+    },
+    "FV.Arm.Insts.DPI.PC_rel_addressing": {
+      "path": "FV/Arm/Insts/DPI/PC_rel_addressing.lean",
+      "canonical_sha256": "9bf487888effec5398d905dabc7a44ad50d0de688759ffd6a45207e47ee2bf35"
+    },
+    "FV.Arm.Insts.DPI.Logical_imm": {
+      "path": "FV/Arm/Insts/DPI/Logical_imm.lean",
+      "canonical_sha256": "6abdcd8a33329aaeeb36789791029f7d1c4a1dec6bdcbb6b42a891c4381631a7"
+    },
+    "FV.Arm.Insts.DPI.Bitfield": {
+      "path": "FV/Arm/Insts/DPI/Bitfield.lean",
+      "canonical_sha256": "d9a8f534ddb3ce11b0b45058a315609aa5781e4ec88729bada3b6798dc80f4f5"
+    },
+    "FV.Arm.Insts.DPI.Move_wide_imm": {
+      "path": "FV/Arm/Insts/DPI/Move_wide_imm.lean",
+      "canonical_sha256": "f0499bd79ccd19e03553d81a2536e3afe11b2381f24ff66b1b1bff98d745c9bc"
+    },
+    "FV.Arm.Insts.DPI.Extract": {
+      "path": "FV/Arm/Insts/DPI/Extract.lean",
+      "canonical_sha256": "3e9f99eb7fed3903aab32c627dde4fa9a0bcfb58bc7c76455f5fa510f7cdc7cc"
+    },
+    "FV.Arm.Insts.DPR.Insts": {
+      "path": "FV/Arm/Insts/DPR/Insts.lean",
+      "canonical_sha256": "5d65f49984274a12a000fa1494eec8c1b671eb2927b9ab04e4dd8e21cea89b96"
+    },
+    "FV.Arm.Insts.DPR.Add_sub_carry": {
+      "path": "FV/Arm/Insts/DPR/Add_sub_carry.lean",
+      "canonical_sha256": "7a95a012752aa542aed9e335aa3e1712556d0f86964a0bdaa30099faecb2aa24"
+    },
+    "FV.Arm.Insts.DPR.Add_sub_shifted_reg": {
+      "path": "FV/Arm/Insts/DPR/Add_sub_shifted_reg.lean",
+      "canonical_sha256": "81d87a8266b7bcc6fd50b18f34f4bb9bd83ba11c21f676c1a5af4f13400df3a0"
+    },
+    "FV.Arm.Insts.DPR.Conditional_select": {
+      "path": "FV/Arm/Insts/DPR/Conditional_select.lean",
+      "canonical_sha256": "855316c25d75e9658555abeec9d2be54ab952021f34ebc450ccfe0748cb35a86"
+    },
+    "FV.Arm.Insts.DPR.Data_processing_one_source": {
+      "path": "FV/Arm/Insts/DPR/Data_processing_one_source.lean",
+      "canonical_sha256": "60679cf44169d0b6f7319c4963c7697e4cc1020ec0b43a2a27d153d4a00bd199"
+    },
+    "FV.Arm.Insts.DPR.Data_processing_two_source": {
+      "path": "FV/Arm/Insts/DPR/Data_processing_two_source.lean",
+      "canonical_sha256": "899a81400609c09719001a09462b50b184ad60a1dcc5a5f7c191a09b3089279b"
+    },
+    "FV.Arm.Insts.DPR.Logical_shifted_reg": {
+      "path": "FV/Arm/Insts/DPR/Logical_shifted_reg.lean",
+      "canonical_sha256": "fe878544f6f9d3084c5b9b5dd4ad56825839f55ead36d4f33b5d2943c77979a3"
+    },
+    "FV.Arm.Insts.DPR.Data_processing_three_source": {
+      "path": "FV/Arm/Insts/DPR/Data_processing_three_source.lean",
+      "canonical_sha256": "bba248d790437610e4e786fbecd0bce73aba219544128489f2e2a55f69e7d2a9"
+    },
+    "FV.Arm.Insts.DPR.Add_sub_ext_reg": {
+      "path": "FV/Arm/Insts/DPR/Add_sub_ext_reg.lean",
+      "canonical_sha256": "88cabff6618ce633ff375fb21844700c5723921fab0c6bfd4bda99681b2b4501"
+    },
+    "FV.Arm.Insts.DPR.Conditional_compare": {
+      "path": "FV/Arm/Insts/DPR/Conditional_compare.lean",
+      "canonical_sha256": "336fa45e93cf5fb3f5dfd8955ef3cb84cab71f864079fd179b170852f6de50d3"
+    },
+    "FV.Arm.Insts.BR.Insts": {
+      "path": "FV/Arm/Insts/BR/Insts.lean",
+      "canonical_sha256": "b3e9cff326a49dd238a7b239919c60a139a2bd97e01df5b3459fda8daae6b7d0"
+    },
+    "FV.Arm.Insts.BR.Compare_branch": {
+      "path": "FV/Arm/Insts/BR/Compare_branch.lean",
+      "canonical_sha256": "2166500749dd635a38bcc4d83f76bc1fd4ff1fee285b8596bac4379b56c41f48"
+    },
+    "FV.Arm.Insts.BR.Uncond_branch_imm": {
+      "path": "FV/Arm/Insts/BR/Uncond_branch_imm.lean",
+      "canonical_sha256": "7b1c528251377b98d899367921036dad18614b85da7f8df437b457e1a958e93e"
+    },
+    "FV.Arm.Insts.BR.Uncond_branch_reg": {
+      "path": "FV/Arm/Insts/BR/Uncond_branch_reg.lean",
+      "canonical_sha256": "40c9f19f8362c66531bbf58ef077aafc18cf21608bf13bbb10e904f1a17db762"
+    },
+    "FV.Arm.Insts.BR.Cond_branch_imm": {
+      "path": "FV/Arm/Insts/BR/Cond_branch_imm.lean",
+      "canonical_sha256": "7315976b7977065b20f052893bb05f259148b228e961802e157c55d60241c62c"
+    },
+    "FV.Arm.Insts.BR.Hints": {
+      "path": "FV/Arm/Insts/BR/Hints.lean",
+      "canonical_sha256": "1a1b3a610058ee88f254c1ecb8798db2ce81c3ca6ea04cd6934ca76635188fef"
+    },
+    "FV.Arm.Insts.BR.Barrier": {
+      "path": "FV/Arm/Insts/BR/Barrier.lean",
+      "canonical_sha256": "fb96947914bd407db7a4a3748fa0c1de3410809f4e17fb8d1c595044821e95c8"
+    },
+    "FV.Arm.Insts.BR.Test_branch": {
+      "path": "FV/Arm/Insts/BR/Test_branch.lean",
+      "canonical_sha256": "369ca8abce83d03198eef005eeb18aedb0388cc5ba877508fe2fea2114a851ec"
+    },
+    "FV.Arm.Insts.BR.Mrs": {
+      "path": "FV/Arm/Insts/BR/Mrs.lean",
+      "canonical_sha256": "2358d8fd72375eac16411eb211c4ce0a8f28e71c25ae086e809c6c5dac54fcdf"
+    },
+    "FV.Arm.Insts.DPSFP.Insts": {
+      "path": "FV/Arm/Insts/DPSFP/Insts.lean",
+      "canonical_sha256": "3b9789dc9fe79ca795041aae31b4f23ab5d209d20c82b4167f90994e2aaba7b2"
+    },
+    "FV.Arm.Insts.DPSFP.Advanced_simd_copy": {
+      "path": "FV/Arm/Insts/DPSFP/Advanced_simd_copy.lean",
+      "canonical_sha256": "4ead5874fb11094eb50a03ff6725eb1f8ae7b1fe859b8427a0f1f23bee247913"
+    },
+    "FV.Arm.Insts.DPSFP.Advanced_simd_two_reg_misc": {
+      "path": "FV/Arm/Insts/DPSFP/Advanced_simd_two_reg_misc.lean",
+      "canonical_sha256": "07897ba7404ab01acc5ab3317e1c6447574b2a8f0dbe231a52c1ff47516b7c67"
+    },
+    "FV.Arm.Insts.DPSFP.Advanced_simd_three_same": {
+      "path": "FV/Arm/Insts/DPSFP/Advanced_simd_three_same.lean",
+      "canonical_sha256": "85e43a8d7ade5f15d9fc0aa84692c2350e207bf9f42c195cad6989a5110199b1"
+    },
+    "FV.Arm.Insts.DPSFP.Conversion_between_FP_and_Int": {
+      "path": "FV/Arm/Insts/DPSFP/Conversion_between_FP_and_Int.lean",
+      "canonical_sha256": "22107809869bf566481f7ff3ec92b6af92e0bcd02eae05218e4a921a61885925"
+    },
+    "FV.Arm.Insts.DPSFP.FP_data_processing_one_source": {
+      "path": "FV/Arm/Insts/DPSFP/FP_data_processing_one_source.lean",
+      "canonical_sha256": "da8a126f1f01c972e8f366b3ab30b3a3c0e766c75adc121374406a43bdd8ffc8"
+    },
+    "FV.Arm.Insts.DPSFP.Advanced_simd_across_lanes": {
+      "path": "FV/Arm/Insts/DPSFP/Advanced_simd_across_lanes.lean",
+      "canonical_sha256": "68df7434e813c86d3b011b8cf9819d23ab799a49526479981a58905d6eb4501f"
+    },
+    "FV.Arm.Insts.DPSFP.Advanced_simd_modified_immediate": {
+      "path": "FV/Arm/Insts/DPSFP/Advanced_simd_modified_immediate.lean",
+      "canonical_sha256": "b9464802158728b9d880a83eb688849080d5ec4687bb0aa4e0929da43de1ccb5"
+    },
+    "FV.Arm.Insts.DPSFP.FP_immediate": {
+      "path": "FV/Arm/Insts/DPSFP/FP_immediate.lean",
+      "canonical_sha256": "28fe1ac6c6dc83e0e8e42499ae7f33258dfac04882d231b4ee0ba0b40aba5d2f"
+    },
+    "FV.Arm.Insts.DPSFP.FP_conditional_select": {
+      "path": "FV/Arm/Insts/DPSFP/FP_conditional_select.lean",
+      "canonical_sha256": "1419195a4b7b8607a3f44198ad3e1dfc10c290ff8c4fc7d2213e8f513dc3eae7"
+    },
+    "FV.Arm.Insts.DPSFP.FP_data_processing_two_source": {
+      "path": "FV/Arm/Insts/DPSFP/FP_data_processing_two_source.lean",
+      "canonical_sha256": "c325c660734ecbedf655050e51e744d53c817e51074f0c7e0da4d40ea6078f54"
+    },
+    "FV.Arm.Insts.DPSFP.FP_data_processing_three_source": {
+      "path": "FV/Arm/Insts/DPSFP/FP_data_processing_three_source.lean",
+      "canonical_sha256": "06abc312ea9ca2029678bb5663a4434fe8c276dd27597f4db7ca66c13e50043a"
+    },
+    "FV.Arm.Insts.DPSFP.FP_compare": {
+      "path": "FV/Arm/Insts/DPSFP/FP_compare.lean",
+      "canonical_sha256": "5d7d8f783f70c2986a9a5736e4612e17f378092db06026f13d75d1f6fa0d9551"
+    },
+    "FV.Arm.Insts.LDST.Insts": {
+      "path": "FV/Arm/Insts/LDST/Insts.lean",
+      "canonical_sha256": "846af37972d8c9438d78586492ce9cb351d21cd45f6be92248cae15e3d5b0f2d"
+    },
+    "FV.Arm.Insts.LDST.Reg_imm": {
+      "path": "FV/Arm/Insts/LDST/Reg_imm.lean",
+      "canonical_sha256": "3d0ef0e9a3d3a745bce82c56ffd0e18dffffe5802f4ff7c1fd386f64a84c9b5b"
+    },
+    "FV.Arm.Insts.LDST.Reg_unscaled_imm": {
+      "path": "FV/Arm/Insts/LDST/Reg_unscaled_imm.lean",
+      "canonical_sha256": "123ca1e3e9d1e341b011ce266e4101d0f617a2be647bfacd46346a8ae8b4493a"
+    },
+    "FV.Arm.Insts.LDST.Reg_pair": {
+      "path": "FV/Arm/Insts/LDST/Reg_pair.lean",
+      "canonical_sha256": "beee9349db63f8e66f3e4e6ec4e7788b25a680c915ebd4b768eed5d53d849bc2"
+    },
+    "FV.Arm.Insts.LDST.Reg_literal": {
+      "path": "FV/Arm/Insts/LDST/Reg_literal.lean",
+      "canonical_sha256": "3b1426a6099058d14dbda14f40799f0ac1d88a7e0feea4b75bfcd394efed8ec7"
+    },
+    "FV.Arm.Insts.Reserved.Udf": {
+      "path": "FV/Arm/Insts/Reserved/Udf.lean",
+      "canonical_sha256": "4fd33c3d226f4f978695b4ccde1396bad8ad72054ddf3ffd977a75e2bef84749"
+    },
+    "FV.Backend.Proof.AbiClass": {
+      "path": "FV/Backend/Proof/AbiClass.lean",
+      "canonical_sha256": "47f14425bcfaf4d6aaca2f7b76b268b223983259d4fad1679b607f9b358d4952"
+    },
+    "FV.Clif.FloatFacts": {
+      "path": "FV/Clif/FloatFacts.lean",
+      "canonical_sha256": "0dd90efcd475b3aee3f01ec1784a7caf70084df9df3894f14a0533012d0b42a0"
+    },
+    "FV.Backend.Proof.DriverCheckSound": {
+      "path": "FV/Backend/Proof/DriverCheckSound.lean",
+      "canonical_sha256": "fe3821e43abd4459c1f7ecdbc5516550fdecca0a5016e632a12f65a2faf2e14c"
+    },
+    "FV.Backend.Proof.LowerFix": {
+      "path": "FV/Backend/Proof/LowerFix.lean",
+      "canonical_sha256": "b3e961d9c3a83eecbe7ff259e4c2aafa066afd0b2196fdebc3a045f3faaea553"
+    },
+    "FV.Backend.Proof.StockProjection": {
+      "path": "FV/Backend/Proof/StockProjection.lean",
+      "canonical_sha256": "ca6df05098e43cdb765415c2cd9c208a3dfe59d1f40a39c2ddd4ad8fea15e23b"
+    },
+    "FV.Isle.InterpProjection": {
+      "path": "FV/Isle/InterpProjection.lean",
+      "canonical_sha256": "5999e1541a775d366be09f6c89d684962b009714453d50025146690f2dc9824f"
+    },
+    "FV.Backend.Proof.IselScopedProjectionInv": {
+      "path": "FV/Backend/Proof/IselScopedProjectionInv.lean",
+      "canonical_sha256": "10f819df131b084c011454be10576104f941f75608c162e7beaa7f458cba8192"
+    },
+    "FV.Backend.Proof.IselScopedProjection": {
+      "path": "FV/Backend/Proof/IselScopedProjection.lean",
+      "canonical_sha256": "b6d6b1c685e75c3dce91ff59b69583d62bc661d0e7a23fe9c3036a54a1fefd8c"
+    },
+    "FV.Backend.Proof.IselCmpInv": {
+      "path": "FV/Backend/Proof/IselCmpInv.lean",
+      "canonical_sha256": "db229c9530b467144de247f6fbe14d4e9dcbb113fc8860bcd0d0386320cd789e"
+    },
+    "FV.Backend.Proof.IselAtomic": {
+      "path": "FV/Backend/Proof/IselAtomic.lean",
+      "canonical_sha256": "3b26843f2a6878e26a6ad95e07ec5854fbc2926067b3f9e0a03e3ae064ded54b"
+    },
+    "FV.Backend.Proof.IselMemFuncAddr": {
+      "path": "FV/Backend/Proof/IselMemFuncAddr.lean",
+      "canonical_sha256": "829e8389e443d9d3d8cdc30b69b986bc816f52bb7a1f604a4335b0d7bffde099"
+    },
+    "FV.Backend.Proof.IselMemRoots": {
+      "path": "FV/Backend/Proof/IselMemRoots.lean",
+      "canonical_sha256": "2c82780bb090080b4960b8828e657acccda5643d58b11ab3da84dd6109d13cd5"
+    },
+    "FV.Backend.Proof.IselMemAmodeTop": {
+      "path": "FV/Backend/Proof/IselMemAmodeTop.lean",
+      "canonical_sha256": "53f999b375f1f1c4875229bbdab9b0a4741d9dde694a42f66278297e8661e29d"
+    },
+    "FV.Backend.Proof.IselMemNoIconst": {
+      "path": "FV/Backend/Proof/IselMemNoIconst.lean",
+      "canonical_sha256": "f2a69deec6647b5e4619a61b3d863be247e356c7a430734fef267a6df1e33ab1"
+    },
+    "FV.Backend.Proof.IselMemAmode": {
+      "path": "FV/Backend/Proof/IselMemAmode.lean",
+      "canonical_sha256": "cc1acbe5e5ee9e97d16205f36e3ca87dd4462e15b2db5c414ac5f124e8514b98"
+    },
+    "FV.Backend.Proof.IselTermsImm": {
+      "path": "FV/Backend/Proof/IselTermsImm.lean",
+      "canonical_sha256": "6610e9a3a34f9fe2c5b4a091f76451bc7346dcb757848744c2bcbfb4d5a53054"
+    },
+    "FV.Backend.Proof.IselRulesALU": {
+      "path": "FV/Backend/Proof/IselRulesALU.lean",
+      "canonical_sha256": "a1b954b6e2de93b8724f4447416d6fe5180f8d53519970e6a1f3bd63c76d2b65"
+    },
+    "FV.Backend.Proof.IselRules": {
+      "path": "FV/Backend/Proof/IselRules.lean",
+      "canonical_sha256": "847ce987f06f42f5dff4248e011cec150e1d8fe10ba7ad84819244261b585c51"
+    },
+    "FV.Backend.Proof.IselTerms": {
+      "path": "FV/Backend/Proof/IselTerms.lean",
+      "canonical_sha256": "deaf99e43a36538532efabeb2326a13a050a3ec88cb9d96befdf1412b5d28e6f"
+    },
+    "FV.Backend.Proof.IselExtern": {
+      "path": "FV/Backend/Proof/IselExtern.lean",
+      "canonical_sha256": "27cedbc4ee69d531ade14e354e83f3a204492d9bf829dcd074a55af71a7c5565"
+    },
+    "FV.Backend.Proof.IselLcf": {
+      "path": "FV/Backend/Proof/IselLcf.lean",
+      "canonical_sha256": "1d334fe4fe23a75fd691ed5b7b1213e78650068ad6694a9b5bd6b8f83a89a6bc"
+    },
+    "FV.Backend.Proof.IselFamAluBBase": {
+      "path": "FV/Backend/Proof/IselFamAluBBase.lean",
+      "canonical_sha256": "dd6a20c29e4f2030f0b5651cdde48f0c015b4e005fbd88e9ad080b43e9cae95c"
+    },
+    "FV.Backend.Proof.IselFamily": {
+      "path": "FV/Backend/Proof/IselFamily.lean",
+      "canonical_sha256": "d7b408533d6d0121fbdf559e293bf5be3c6d4f21d900ec9fcdda5a2687430f21"
+    },
+    "FV.Backend.Proof.IselTermsAluB": {
+      "path": "FV/Backend/Proof/IselTermsAluB.lean",
+      "canonical_sha256": "d302970bf7e3e26ff51b0d649b10671819b1dc87322b825655b5ee77e5cbd7e0"
+    },
+    "FV.Backend.Proof.IselMemBase": {
+      "path": "FV/Backend/Proof/IselMemBase.lean",
+      "canonical_sha256": "427587d69be425381a221906df12ebcc518de4644bc414c6181ad3cf01d7a3a7"
+    },
+    "FV.Backend.Proof.IselCmpTerms": {
+      "path": "FV/Backend/Proof/IselCmpTerms.lean",
+      "canonical_sha256": "2bd60af38dd3f669602d97d17e5366bc615a00b55486f4a2019e211e343caba0"
+    },
+    "FV.Backend.Proof.FastSubst": {
+      "path": "FV/Backend/Proof/FastSubst.lean",
+      "canonical_sha256": "1ab6b781980c0e1265e8b835c63cb8c6a70228747404bc724412a94df39e2352"
+    },
+    "FV.Backend.Proof.IselCmpBase": {
+      "path": "FV/Backend/Proof/IselCmpBase.lean",
+      "canonical_sha256": "63fa6f0412a0375a6bcfd7399b5afb49144fa4f01d363f5814731aa3fa407ca6"
+    },
+    "FV.Backend.Proof.IselCtlCall": {
+      "path": "FV/Backend/Proof/IselCtlCall.lean",
+      "canonical_sha256": "f0ab20c82c5610099a9c6b668e6344b6a7bbda8b54e7424ab01d78b08e7105cb"
+    },
+    "FV.Backend.Proof.IselCtlTerm": {
+      "path": "FV/Backend/Proof/IselCtlTerm.lean",
+      "canonical_sha256": "d1ad61e0a77b09b002e6fadf7107ab5285670959ba0fe4788ca67fe333e6e24e"
+    },
+    "FV.Backend.Proof.IselCmpRun": {
+      "path": "FV/Backend/Proof/IselCmpRun.lean",
+      "canonical_sha256": "c91a16cd2217130f0a5ca014d29c1cc4f46cdac8c8af2f749a3d87015c3b10d1"
+    },
+    "FV.Backend.Proof.IselCtlBase": {
+      "path": "FV/Backend/Proof/IselCtlBase.lean",
+      "canonical_sha256": "b97fa2314936a84f7551c965957a98cc06ff38c50925d79ecfb0c8c29961d693"
+    },
+    "FV.Backend.Proof.LowerLemmas": {
+      "path": "FV/Backend/Proof/LowerLemmas.lean",
+      "canonical_sha256": "b3c1f2a3f2cf0ad3f507545d4ea7a16b460c04036e85d187ad55ececdd77b09c"
+    },
+    "FV.Backend.Proof.IselMemRun": {
+      "path": "FV/Backend/Proof/IselMemRun.lean",
+      "canonical_sha256": "3a9bf2bfc7396fd2ec152697e8535e27790b41ec90d5aa7e2969793de0d1d14d"
+    },
+    "FV.Backend.Proof.IselTermsALUA": {
+      "path": "FV/Backend/Proof/IselTermsALUA.lean",
+      "canonical_sha256": "ce8b982250003154d42a0ba49a90f866af0e866a21880177c03b11ddb8663139"
+    },
+    "FV.Backend.Proof.IselFamALUA": {
+      "path": "FV/Backend/Proof/IselFamALUA.lean",
+      "canonical_sha256": "66ef8ff93433fd3983d84db09c020108362e6b88959f8a2691e1551aaef78e66"
+    },
+    "FV.Backend.Proof.IselFamALUAMul": {
+      "path": "FV/Backend/Proof/IselFamALUAMul.lean",
+      "canonical_sha256": "3a7a4a3c5f58fbdeeebc49ea37d2c7bd06203fe62deb62f9ffeb9634284d939e"
+    },
+    "FV.Backend.Proof.IselTermsALUAMul": {
+      "path": "FV/Backend/Proof/IselTermsALUAMul.lean",
+      "canonical_sha256": "3b2ab31faa38d1cb1c4f3b7d657d6c9b5b0d999ef585dd2ec80bbb5c17e24c21"
+    },
+    "FV.Backend.Proof.IselFamALUARules": {
+      "path": "FV/Backend/Proof/IselFamALUARules.lean",
+      "canonical_sha256": "2a5e00e30da3cd84438571484d5d1c5dfa853a4054bb45adeef2876dc9f2dc7f"
+    },
+    "FV.Backend.Proof.IselRulesALUA": {
+      "path": "FV/Backend/Proof/IselRulesALUA.lean",
+      "canonical_sha256": "a22fc1acf37ab56240477a108ddd42cfde8e6d243109eaaff2595c14eac87a4d"
+    },
+    "FV.Backend.Proof.IselFamilyALU": {
+      "path": "FV/Backend/Proof/IselFamilyALU.lean",
+      "canonical_sha256": "45eb9a584b7e6cd190163f8a74758028ffb829587f74caec4b1102dc20636dac"
+    },
+    "FV.Backend.Proof.IselMemAddr": {
+      "path": "FV/Backend/Proof/IselMemAddr.lean",
+      "canonical_sha256": "ab6005f6d3330ac71c2a65ef8e266cb197a928047c8c660674aa3869819452d2"
+    },
+    "FV.Backend.Proof.IselFamALUAExt": {
+      "path": "FV/Backend/Proof/IselFamALUAExt.lean",
+      "canonical_sha256": "34e1054c467df89a4df79fa7e047015f65e92b1ed679af82cf3f2fd97da105bb"
+    },
+    "FV.Backend.Proof.IselTermsALUAExt": {
+      "path": "FV/Backend/Proof/IselTermsALUAExt.lean",
+      "canonical_sha256": "17a78bfd64976b447f544f53d6ede097d68c1ae4a9e7b1487d353057868112e2"
+    },
+    "FV.Backend.Proof.IselFamAluBIconst": {
+      "path": "FV/Backend/Proof/IselFamAluBIconst.lean",
+      "canonical_sha256": "fee1b5bf784da610206c041aec3e14f26a0eb6eef8f762bd140ba410cf68bc77"
+    },
+    "FV.Backend.Proof.IselMemSem": {
+      "path": "FV/Backend/Proof/IselMemSem.lean",
+      "canonical_sha256": "7f237208c078eb143815b9ee5cd3c177570cd8ee8cdcf479672159e97d413a0a"
+    },
+    "FV.Backend.Proof.IselMemArm": {
+      "path": "FV/Backend/Proof/IselMemArm.lean",
+      "canonical_sha256": "6eb14daddff9dd87979490f8955d8ee6953bebfafe33ad52a0c37cd65342f857"
+    },
+    "FV.Backend.Proof.IselMemHelpers": {
+      "path": "FV/Backend/Proof/IselMemHelpers.lean",
+      "canonical_sha256": "e9f919adcbbd93ad658cf7040a45b61cbbd1f01fa45fe19d1a846c24f667d2d2"
+    },
+    "FV.Backend.Proof.IselTls": {
+      "path": "FV/Backend/Proof/IselTls.lean",
+      "canonical_sha256": "e4922ce5754fd772917e223f33603ed0fbfb37f490504dbe978058098ceba196"
+    },
+    "FV.Backend.Proof.IselCmpCond": {
+      "path": "FV/Backend/Proof/IselCmpCond.lean",
+      "canonical_sha256": "5b4db55da2ec30ef408e93ec7177590615227527f30298e626f6202fb83506d7"
+    },
+    "FV.Backend.Proof.IselSemCmp": {
+      "path": "FV/Backend/Proof/IselSemCmp.lean",
+      "canonical_sha256": "26f46bbda5a62b261f9740e188ac95e6e410fadfc808a5e52c96ad8ed8c05c9b"
+    },
+    "FV.Backend.Proof.IselFamAluBShiftTerms": {
+      "path": "FV/Backend/Proof/IselFamAluBShiftTerms.lean",
+      "canonical_sha256": "a0f56e6d4be2051859ea7a9b198ad774cca38c2928af2e4dc8fdf5f81a987bb2"
+    },
+    "FV.Backend.Proof.IselFamAluBShiftBase": {
+      "path": "FV/Backend/Proof/IselFamAluBShiftBase.lean",
+      "canonical_sha256": "10667e32a62fe287984ae9c6c06979cb970b2307b368db392e116a05da92dfdb"
+    },
+    "FV.Backend.Proof.IselTermsShift": {
+      "path": "FV/Backend/Proof/IselTermsShift.lean",
+      "canonical_sha256": "5a9e228bec966430d03397fa38f4973b0fdfdff1698413e9f0e556e6e8f038f0"
+    },
+    "FV.Backend.Proof.IselCmpRoot": {
+      "path": "FV/Backend/Proof/IselCmpRoot.lean",
+      "canonical_sha256": "391ed72b6cbfa24e77a0bf86aeef38c45b74399ea50c705734698a89ff593dce"
+    },
+    "FV.Backend.Proof.IselCmpEmit": {
+      "path": "FV/Backend/Proof/IselCmpEmit.lean",
+      "canonical_sha256": "9b1b2ba46c3e6ae0caab15f1212849dfd54f725273f8a9859560ea2d32dd8955"
+    },
+    "FV.Backend.Proof.IselCmpIcmp": {
+      "path": "FV/Backend/Proof/IselCmpIcmp.lean",
+      "canonical_sha256": "bdf1a1e00565f870cbe80f3a75b5b756735d27be0edc8fd8db5f7fac68c76968"
+    },
+    "FV.Backend.Proof.IselCmpExt": {
+      "path": "FV/Backend/Proof/IselCmpExt.lean",
+      "canonical_sha256": "fcaf4318edad2d60c90f39d8ed61d3b2a0515cf14a989d6bf5f7e06bbb8da558"
+    },
+    "FV.Backend.Proof.IselFloatCmpEmit": {
+      "path": "FV/Backend/Proof/IselFloatCmpEmit.lean",
+      "canonical_sha256": "a95429f93c9d6b9ef4c97df32bb54856c4033cfb3b8f6e7fc6ee4dde33c883cd"
+    },
+    "FV.Backend.Proof.IselFloatArith": {
+      "path": "FV/Backend/Proof/IselFloatArith.lean",
+      "canonical_sha256": "02da842499c3b480264b70db1fdce9779f891a9687c2baad76486e732ec87983"
+    },
+    "FV.Backend.Proof.IselFloatBitcast": {
+      "path": "FV/Backend/Proof/IselFloatBitcast.lean",
+      "canonical_sha256": "fe28defb4dd8b2367c9eefd87399f39f431d057a3a058cd26c29766d48f93de8"
+    },
+    "FV.Backend.Proof.IselFamAluBPopcnt": {
+      "path": "FV/Backend/Proof/IselFamAluBPopcnt.lean",
+      "canonical_sha256": "2ec07a6961ac4ad15e2fa319f56d15c4443e7da839037abc23c3b4e5aff569ad"
+    },
+    "FV.Backend.Proof.IselFamAluBRotTerms": {
+      "path": "FV/Backend/Proof/IselFamAluBRotTerms.lean",
+      "canonical_sha256": "6c7412e12f0011f12fa77abd38a840895db991d80b60ca4a4722989b8f49b575"
+    },
+    "FV.Backend.Proof.IselFamAluBShift": {
+      "path": "FV/Backend/Proof/IselFamAluBShift.lean",
+      "canonical_sha256": "27240c08233393f09a5fd86d7d6c379c6205d09f9fa119bd9afd9f5541b2d0f0"
+    },
+    "FV.Backend.Proof.IselFloatVac": {
+      "path": "FV/Backend/Proof/IselFloatVac.lean",
+      "canonical_sha256": "fadb345f512f1d18afa3efd6f4bf5bd720fbf3c0bd347f83662cb6a88c88259a"
+    },
+    "FV.Backend.Proof.IselExclSound": {
+      "path": "FV/Backend/Proof/IselExclSound.lean",
+      "canonical_sha256": "931d068959cf4d0df91e34d5183dc8af57452f786ca2fbeebc78c65963a6eea1"
+    },
+    "FV.Backend.Proof.IselExclData": {
+      "path": "FV/Backend/Proof/IselExclData.lean",
+      "canonical_sha256": "fc5b56af9156265a4e66a4a79696bd3a5623b926fa404c60cae65bc746e30ded"
+    },
+    "FV.Backend.Proof.IselExclBase": {
+      "path": "FV/Backend/Proof/IselExclBase.lean",
+      "canonical_sha256": "4937305038a57480077756d88b5d58dae8ddab40a0a778992775090b53fd42ef"
+    },
+    "FV.Isle.Lookup": {
+      "path": "FV/Isle/Lookup.lean",
+      "canonical_sha256": "b0f92490a0106932ce3faf77267ed92fb83f76ec4e3fe32ec032e508047f898b"
+    },
+    "FV.Backend.Proof.StockGuardedRecordValues": {
+      "path": "FV/Backend/Proof/StockGuardedRecordValues.lean",
+      "canonical_sha256": "75316e10bbc1caf295fdff5c79bfaf549fb98969d6e14b3b9cb92c5755274a8c"
+    },
+    "FV.Backend.Proof.StockAvailableValues": {
+      "path": "FV/Backend/Proof/StockAvailableValues.lean",
+      "canonical_sha256": "316da090be350863858ed1594456c5f06289599945b6d0245b1dcdb7add29cab"
+    },
+    "FV.Backend.Proof.StockAliasSemantics": {
+      "path": "FV/Backend/Proof/StockAliasSemantics.lean",
+      "canonical_sha256": "0288c06057cc6dfa61c7ce2fd3ff935c4254d71744930f5517a4bceb5953ae9f"
+    },
+    "FV.Backend.Proof.StockResults": {
+      "path": "FV/Backend/Proof/StockResults.lean",
+      "canonical_sha256": "038d1e249af8b1d9abc1f1ff8c59c25009940f5b913ee3820fda0cdff48df4ca"
+    },
+    "FV.Backend.Proof.StockImm": {
+      "path": "FV/Backend/Proof/StockImm.lean",
+      "canonical_sha256": "bdcb7dcc5934ccb1472e3a68fcc1dcf06c98d74bc7ae9bf16e0aa2d3c18996f9"
+    },
+    "FV.Backend.Proof.IselFlowGen": {
+      "path": "FV/Backend/Proof/IselFlowGen.lean",
+      "canonical_sha256": "308f930e135d63ecfe84d712e3e4d73427cc1ca1fe5f3d4eb520526d940e1a58"
+    },
+    "FV.Backend.Proof.StockDFG": {
+      "path": "FV/Backend/Proof/StockDFG.lean",
+      "canonical_sha256": "f600eaed74277f1472d762e1cdd561cbac1d9005aae692b88fb5d248c24a0203"
+    },
+    "FV.Backend.Proof.StockContext": {
+      "path": "FV/Backend/Proof/StockContext.lean",
+      "canonical_sha256": "35826e2a8b3eb49c0722e1d86a0bccbf76d2bac5f563890c9d7c1bcb92c8cd33"
+    },
+    "FV.Backend.Proof.StockValues": {
+      "path": "FV/Backend/Proof/StockValues.lean",
+      "canonical_sha256": "d2ed21096bc95d707fa666553e24cc03b4411f73f20ff931f9dadb61fce7ba2c"
+    },
+    "FV.Backend.Proof.LowerAlias": {
+      "path": "FV/Backend/Proof/LowerAlias.lean",
+      "canonical_sha256": "f1fe4da96c2d30bdb4d1bd7c3ed9cc65b0cfe37c93f452b13bbe9fb291615cc6"
+    },
+    "FV.Backend.Proof.CSemRename": {
+      "path": "FV/Backend/Proof/CSemRename.lean",
+      "canonical_sha256": "d61fb2718da9be634c2d7eaf3ef8e3cafe4de649a0be29a900c991a943c22558"
+    },
+    "FV.Backend.Proof.RegallocCSem": {
+      "path": "FV/Backend/Proof/RegallocCSem.lean",
+      "canonical_sha256": "aa624f5317372ad0545ca0c627261cb45a67a7e258f1faa0da045596cc9e85b3"
+    },
+    "FV.Backend.Proof.LowerCertBase": {
+      "path": "FV/Backend/Proof/LowerCertBase.lean",
+      "canonical_sha256": "17ea7c026684ad0d2d7b40a044160c04296949bd669bb5288e64530c055afbd9"
+    },
+    "FV.Backend.Proof.IselFlow": {
+      "path": "FV/Backend/Proof/IselFlow.lean",
+      "canonical_sha256": "33399d1e405b90fe6d548cd71dea4c301493f50166cfde6fbf47799ab67677b8"
+    },
+    "FV.Backend.Proof.IselFlowInst": {
+      "path": "FV/Backend/Proof/IselFlowInst.lean",
+      "canonical_sha256": "8f846f8874b88f3aae33b9abd9c9b57cc312170f992a5f257550929670155e0c"
+    },
+    "FV.Backend.Proof.IselFlowData": {
+      "path": "FV/Backend/Proof/IselFlowData.lean",
+      "canonical_sha256": "86a443c3ed303798f2caca6d08b5036eec55318512a82fec38ee18a640537e04"
+    },
+    "FV.Backend.Proof.IselFlowExt": {
+      "path": "FV/Backend/Proof/IselFlowExt.lean",
+      "canonical_sha256": "3f81146fe649ae31836eccf9d06890ee0e43f1de4f9d525fe0d99955e60558e1"
+    },
+    "FV.Backend.Proof.IselFlowSplit": {
+      "path": "FV/Backend/Proof/IselFlowSplit.lean",
+      "canonical_sha256": "57e4dcfbf3c7a7ef45ea326c3d1b94ee0128ae5a0e94c47043c056e10c035e8b"
+    },
+    "FV.Backend.Proof.IselFlowCheck": {
+      "path": "FV/Backend/Proof/IselFlowCheck.lean",
+      "canonical_sha256": "a886f05dfbfd88be5475e536962d158e21a9cec4de74018eb84cb249ff053fcb"
+    },
+    "FV.Backend.Proof.IselExcl": {
+      "path": "FV/Backend/Proof/IselExcl.lean",
+      "canonical_sha256": "24d66a8f25057fcb0e46721973a1f8e717ef0256b4e66b77bfe581af3d3c7940"
+    },
+    "FV.Backend.Proof.IselFlowRootF": {
+      "path": "FV/Backend/Proof/IselFlowRootF.lean",
+      "canonical_sha256": "5de057194fb6577cb0a0a7ce3b53af9aa4a07fade73caeeb54fbdd9cd82e8573"
+    },
+    "FV.Backend.Proof.IselFlowTabF": {
+      "path": "FV/Backend/Proof/IselFlowTabF.lean",
+      "canonical_sha256": "f5b17e8c06f47eec0eb0ee99362e2d7e8207a52d4728930d4ba96c5d2a1dee9b"
+    },
+    "FV.Backend.Proof.IselFlowRootT": {
+      "path": "FV/Backend/Proof/IselFlowRootT.lean",
+      "canonical_sha256": "f32eb32872ecbac606e6a983bca859722b2660f20ce344a74cd622ce1643be33"
+    },
+    "FV.Backend.Proof.IselFlowTabT": {
+      "path": "FV/Backend/Proof/IselFlowTabT.lean",
+      "canonical_sha256": "0df9c6943a16ba01bea3787116e5c5a9773cb642c1aaf00e56a9af15651cb360"
+    },
+    "FV.Backend.Proof.IselCtlUnmatch": {
+      "path": "FV/Backend/Proof/IselCtlUnmatch.lean",
+      "canonical_sha256": "5d0ef5ccf65249d3a5156bac2d7c83d401eebd66aaa48b35beaea51e0fff77b7"
+    },
+    "FV.Backend.Proof.TryRegs": {
+      "path": "FV/Backend/Proof/TryRegs.lean",
+      "canonical_sha256": "6b1b985e5c3eabbbab54db6270e730d781f4a8ec88600ace0257633816698f69"
+    },
+    "FV.Backend.Proof.StockRecordIntervals": {
+      "path": "FV/Backend/Proof/StockRecordIntervals.lean",
+      "canonical_sha256": "31be120c50d41abddb5cc3d33d30b73d4c0f4142311cb81d5a7acaa0d6a5a7b9"
+    },
+    "FV.Backend.Proof.StockAliasAvailable": {
+      "path": "FV/Backend/Proof/StockAliasAvailable.lean",
+      "canonical_sha256": "a26eeb5f0549e481a7e8ca0c2722838f49824f512cc5367f0401914229be5866"
+    },
+    "FV.Backend.Proof.StockFreshAlias": {
+      "path": "FV/Backend/Proof/StockFreshAlias.lean",
+      "canonical_sha256": "8edd916948532e6f9fb5ceb8d7cce04fe1542172399dbce6d7a86fa81fcf05dd"
+    },
+    "FV.Backend.Proof.StockRecordedFlow": {
+      "path": "FV/Backend/Proof/StockRecordedFlow.lean",
+      "canonical_sha256": "28121ea55269df622fca5fa605cd46a117e0709e444841f87ab8a5943399989a"
+    },
+    "FV.Backend.Proof.StockSelectedBindingFlow": {
+      "path": "FV/Backend/Proof/StockSelectedBindingFlow.lean",
+      "canonical_sha256": "d4a2169b00d030db0b6d6a3e5030e0bdbbdc5cb2182705116550fc81e0e0a67f"
+    },
+    "FV.Backend.Proof.StockReservedScanFlow": {
+      "path": "FV/Backend/Proof/StockReservedScanFlow.lean",
+      "canonical_sha256": "3e2024bb8a1c00c4e83346b26496054ce56fe4276d0df09e4d0871a81e854db7"
+    },
+    "FV.Backend.Proof.StockSelectedFlow": {
+      "path": "FV/Backend/Proof/StockSelectedFlow.lean",
+      "canonical_sha256": "532fb56fbcf6948a144d48b2c74a6f2a63951dbb5ce07668c63041bf2fa21021"
+    },
+    "FV.Backend.Proof.StockRootFlow": {
+      "path": "FV/Backend/Proof/StockRootFlow.lean",
+      "canonical_sha256": "d6c558ebcd7c36d7101f57d7273b87013abd4bc512831808cbdcc6be2c604dfe"
+    },
+    "FV.Backend.Proof.StockSourceView": {
+      "path": "FV/Backend/Proof/StockSourceView.lean",
+      "canonical_sha256": "f14a23b8a337f58da08f9fe33948c681e68a6a1231a100face07bc198b73d89c"
+    },
+    "FV.Backend.Proof.StockPatternSource": {
+      "path": "FV/Backend/Proof/StockPatternSource.lean",
+      "canonical_sha256": "405f5c99e070f51e499717b0001a5208ec80d0e5bfdf09bd8b1ea1b6100845ca"
+    },
+    "FV.Backend.Proof.IselFamAluBMisc": {
+      "path": "FV/Backend/Proof/IselFamAluBMisc.lean",
+      "canonical_sha256": "be08e25cf8ebe89545a1aa60e4fc14caf8b23a29f7a1ac059c90e1cdead76fab"
+    },
+    "FV.Backend.Proof.IselFamAluBUnary": {
+      "path": "FV/Backend/Proof/IselFamAluBUnary.lean",
+      "canonical_sha256": "419d5bcd26f62c913e7b6c792dd916f1c2964b2a9f78e5a7ef638ab93d69aacb"
+    },
+    "FV.Backend.Proof.StockMappedFlow": {
+      "path": "FV/Backend/Proof/StockMappedFlow.lean",
+      "canonical_sha256": "52d3c7a4c9eb339329893956d1edb15d99904160684d23fee24dff426612e6d5"
+    },
+    "FV.Backend.Proof.StockAllocationFlow": {
+      "path": "FV/Backend/Proof/StockAllocationFlow.lean",
+      "canonical_sha256": "23ace8611421146397bbbf0266da7cb014e14c8632758cb5055c60d2223f848d"
+    },
+    "FV.Backend.Proof.StockScanBounds": {
+      "path": "FV/Backend/Proof/StockScanBounds.lean",
+      "canonical_sha256": "046d4516392c55725fe823e814044364069bcf1d4d040d6881a6b1178051ca69"
+    },
+    "FV.Backend.Proof.StockAliasBounds": {
+      "path": "FV/Backend/Proof/StockAliasBounds.lean",
+      "canonical_sha256": "91e5231e200faba55ab22872d3f7aa7372000481ebd47d7a0bb93aa7abb80794"
+    },
+    "FV.Backend.Proof.StockBlockScan": {
+      "path": "FV/Backend/Proof/StockBlockScan.lean",
+      "canonical_sha256": "05aa1d4b1c5f2101429cd8fcf66d2ded2e4b2a2f0de95b8dd83e77023c8f1126"
+    },
+    "FV.Backend.Proof.StockScan": {
+      "path": "FV/Backend/Proof/StockScan.lean",
+      "canonical_sha256": "b8b82a0a857b3c954e394e93184eaf2fc6cde8b41b9ab31b02a0c9c25b3eb98f"
+    },
+    "FV.Backend.Lowering.StockReplay": {
+      "path": "FV/Backend/Lowering/StockReplay.lean",
+      "canonical_sha256": "7ab86815da797af3917eb9bdecbc7c3a0e6de14621fed831e1e60038efb2c44a"
+    },
+    "FV.Backend.Proof.StockCtorFlow": {
+      "path": "FV/Backend/Proof/StockCtorFlow.lean",
+      "canonical_sha256": "0626783fd5b43649f0493086ce98008812910f0a0aec6be7890cb9aa1626c2d2"
+    },
+    "FV.Backend.Proof.StockReservedFlow": {
+      "path": "FV/Backend/Proof/StockReservedFlow.lean",
+      "canonical_sha256": "1825c3ce56aa5ae746996560d0fd4e3a818546328b4adf5d2d5907bf80fa26e3"
+    },
+    "FV.Backend.Proof.StockConstantRoot": {
+      "path": "FV/Backend/Proof/StockConstantRoot.lean",
+      "canonical_sha256": "7aad3f2e8e3f01d887da0124753046f6293a90ce4ceb881d7a238980119f4cb7"
+    },
+    "FV.Backend.Proof.StockSelectedProvenance": {
+      "path": "FV/Backend/Proof/StockSelectedProvenance.lean",
+      "canonical_sha256": "d4053e52e76f5094450696a09f532aef42ef6e4ef57559f743e7d83c5189ccf1"
+    },
+    "FV.Backend.Proof.StockAvailableProvenance": {
+      "path": "FV/Backend/Proof/StockAvailableProvenance.lean",
+      "canonical_sha256": "3547c2f31d0e60d205235bca672159f80d4d26eee4320f0491b65f9b201a2cfc"
+    },
+    "FV.Backend.Proof.StockAliasWrites": {
+      "path": "FV/Backend/Proof/StockAliasWrites.lean",
+      "canonical_sha256": "930aed42f656e6c5bfca84466feffab4f9d1d335671025d7dddc27433f541e51"
+    },
+    "FV.Backend.Proof.StockBindingFlow": {
+      "path": "FV/Backend/Proof/StockBindingFlow.lean",
+      "canonical_sha256": "f07ec77bac0291544918bf78a7adb40d2f3e1ec5445119c7ae2ae79c3927f2a7"
+    },
+    "FV.Backend.Proof.StockEmittedScan": {
+      "path": "FV/Backend/Proof/StockEmittedScan.lean",
+      "canonical_sha256": "f6daef04a94f7d45211b72b1c2c6461ab76d149e4b762eae0f29bdae5be667bc"
+    },
+    "FV.Backend.Proof.StockEmissionSemantics": {
+      "path": "FV/Backend/Proof/StockEmissionSemantics.lean",
+      "canonical_sha256": "f458133860bd7bae29b8db6a3d49ece6e5bd8809eb5b0bcacf8edb4be1e431c4"
+    },
+    "FV.Backend.Proof.StockScanSemantics": {
+      "path": "FV/Backend/Proof/StockScanSemantics.lean",
+      "canonical_sha256": "f4f4145983cc1ebc695a1e3c58aa14d78d25d7f8eaa84ba3b1645dbc0b799c63"
+    },
+    "FV.Backend.Proof.StockOmission": {
+      "path": "FV/Backend/Proof/StockOmission.lean",
+      "canonical_sha256": "8e41b94800f6a860ec98bc04cb81359dc71057d307b621364a862296ee75c66c"
+    },
+    "FV.Opt.Proof.SemFacts": {
+      "path": "FV/Opt/Proof/SemFacts.lean",
+      "canonical_sha256": "2804cc158692947f42bee4880850498f994532fae703f6c607a651f1e9346b50"
+    },
+    "FV.Opt.Proof.Sem": {
+      "path": "FV/Opt/Proof/Sem.lean",
+      "canonical_sha256": "7e52bfc041a9faffd7b5d7cf83836bce8ee09f0435d3ee1dc0439e3eaef0a250"
+    },
+    "FV.Opt.Basic": {
+      "path": "FV/Opt/Basic.lean",
+      "canonical_sha256": "8d22fa58a352bfa5638872127eb04a7a21ceffc56372d0cd2290d6edf69f33b4"
+    },
+    "FV.Opt.Rules": {
+      "path": "FV/Opt/Rules.lean",
+      "canonical_sha256": "76976b9eb60e23b81a73ff059bea9fb6c63bbc07ccab0ee2e0d3a4b8950d8b5d"
+    },
+    "FV.Isle.Opt.Simplify": {
+      "path": "FV/Isle/Opt/Simplify.lean",
+      "canonical_sha256": "22549a74605d851da39ddb52b453a4abcfda3ad2d0fdfe6f7ee619ba66ec3cb4"
+    },
+    "FV.Isle.Generated.Opt.Program": {
+      "path": "FV/Isle/Generated/Opt/Program.lean",
+      "canonical_sha256": "3e81f79fdeae64015edd21270062fc482061f0ab9447f3c9bd4f5c46f3bfe848"
+    },
+    "FV.Isle.Generated.Opt.Ids": {
+      "path": "FV/Isle/Generated/Opt/Ids.lean",
+      "canonical_sha256": "3588588c46037af0279f8dce0e1b689cbe02d92c85be6c45e4df0b4faa1874b9"
+    },
+    "FV.Isle.Generated.Opt.TypeArray": {
+      "path": "FV/Isle/Generated/Opt/TypeArray.lean",
+      "canonical_sha256": "4c7014d897b5e3d1884a1bf24f473ff31ab600dc5f95ed90d8bfbe148421137a"
+    },
+    "FV.Isle.Generated.Opt.Types00": {
+      "path": "FV/Isle/Generated/Opt/Types00.lean",
+      "canonical_sha256": "f175ca1fec060822819f173f3ae9ab77dc5d5a344cf5e3dfb8202874f0f5b8bf"
+    },
+    "FV.Isle.Generated.Opt.TermTable": {
+      "path": "FV/Isle/Generated/Opt/TermTable.lean",
+      "canonical_sha256": "57b5a794974140c4c0b7c874b928c73b1b0a4b72372004460337f14984186ba0"
+    },
+    "FV.Isle.Generated.Opt.Terms00": {
+      "path": "FV/Isle/Generated/Opt/Terms00.lean",
+      "canonical_sha256": "6276ea895f6f28b536dcd1fa445864bddc9b11f385a5dbf0961ff8a9d8ceb890"
+    },
+    "FV.Isle.Generated.Opt.Terms01": {
+      "path": "FV/Isle/Generated/Opt/Terms01.lean",
+      "canonical_sha256": "7de531aea46ffa9d8f2f6293d4db9a1f0f6a62c16e3d9504f691add4e6175df6"
+    },
+    "FV.Isle.Generated.Opt.RuleArray": {
+      "path": "FV/Isle/Generated/Opt/RuleArray.lean",
+      "canonical_sha256": "4dc997382bff55386d3f4ab38b2bcaf733006bbdc6402488f726c44329bb55ac"
+    },
+    "FV.Isle.Generated.Opt.Rules00": {
+      "path": "FV/Isle/Generated/Opt/Rules00.lean",
+      "canonical_sha256": "9ace889508637b84287bec5ab9d166be5a42b8f2802287a1de3342097d620ee6"
+    },
+    "FV.Isle.Generated.Opt.Rules01": {
+      "path": "FV/Isle/Generated/Opt/Rules01.lean",
+      "canonical_sha256": "4de594b85f9f6edf1996a684812b4ae0ded11aa9a21810751a72abd78e4822d7"
+    },
+    "FV.Isle.Generated.Opt.Rules02": {
+      "path": "FV/Isle/Generated/Opt/Rules02.lean",
+      "canonical_sha256": "e3d7ee2347d4770ed43f1d042ba59eb7973970b9c404750aa5575d8d3628ce8c"
+    },
+    "FV.Isle.Generated.Opt.Rules03": {
+      "path": "FV/Isle/Generated/Opt/Rules03.lean",
+      "canonical_sha256": "99e134934154bb0afec6748c9020a3ba7157e05d90910d10ad294ef385ac3a0b"
+    },
+    "FV.Isle.Generated.Opt.Rules04": {
+      "path": "FV/Isle/Generated/Opt/Rules04.lean",
+      "canonical_sha256": "0e4a291da1868e780c0a9aed1f5e51b0217a1e8f291944e9a9a8d5daae7b349c"
+    },
+    "FV.Isle.Generated.Opt.Rules05": {
+      "path": "FV/Isle/Generated/Opt/Rules05.lean",
+      "canonical_sha256": "eaa0c5e254c07f0383e6ce1c58277d84bdbe35124b42075f7629c6d79e324d29"
+    },
+    "FV.Isle.Generated.Opt.RuleTable": {
+      "path": "FV/Isle/Generated/Opt/RuleTable.lean",
+      "canonical_sha256": "42a459d05f14dcb6f56e7d7cdef18f15ad628800176f026089dd5023ff620ff4"
+    },
+    "FV.Isle.Generated.Opt.RuleLists00": {
+      "path": "FV/Isle/Generated/Opt/RuleLists00.lean",
+      "canonical_sha256": "4744ec3802ef4d3efb099d6fdc69a5dc49a6939ae7e5841ce85dc63ef6df9da1"
+    },
+    "FV.Isle.Generated.Opt.Specs00": {
+      "path": "FV/Isle/Generated/Opt/Specs00.lean",
+      "canonical_sha256": "6544facdce978679267479cf3635acbda3702d665299efacf7375f6efdc25ae5"
+    },
+    "FV.Isle.Generated.Opt.Specs01": {
+      "path": "FV/Isle/Generated/Opt/Specs01.lean",
+      "canonical_sha256": "28fa951bf8fb257318f335807310644500c61bf442f410948e75bc7b4a2bb7fc"
+    },
+    "FV.Isle.Opt.Helpers": {
+      "path": "FV/Isle/Opt/Helpers.lean",
+      "canonical_sha256": "823f509dae89c280dc72fe0513e90a8f7cfa4cdd999d7801241bb7ef7049af62"
+    },
+    "FV.Opt.Proof.SemSim": {
+      "path": "FV/Opt/Proof/SemSim.lean",
+      "canonical_sha256": "219ad1fc4e8e4206bd2c3acd7d24d58af9b09ae5e7dd384ac995b2875fb63f68"
+    },
+    "FV.Opt.Proof.Dom": {
+      "path": "FV/Opt/Proof/Dom.lean",
+      "canonical_sha256": "22f2c9b7c3bdd66855b1b5a768448c3ce4ac72b5b42ef215f69fd3a4efafd1fa"
+    },
+    "FV.Opt.Check": {
+      "path": "FV/Opt/Check.lean",
+      "canonical_sha256": "021541131ef309d2aa2db0f1c05b1c2d60cdb0c5263079462053c4a5b6044f1a"
+    },
+    "FV.Opt.Cfg": {
+      "path": "FV/Opt/Cfg.lean",
+      "canonical_sha256": "9a81bcef8d550bbf55101446b24844b263ba39f8603ac5d4bb1617dc4727d0ca"
+    },
+    "FV.Backend.Proof.StockDriverBounds": {
+      "path": "FV/Backend/Proof/StockDriverBounds.lean",
+      "canonical_sha256": "d2d70a7fb6cfc941e4634e667da907976ac4b8f72853d8c9ce71c1a4b5c4c996"
+    },
+    "FV.Backend.Proof.StockScanFrontiers": {
+      "path": "FV/Backend/Proof/StockScanFrontiers.lean",
+      "canonical_sha256": "a8d16fa042be596f235f607d5b3e8b607e6d54bc4b875ae37e03e1109fada0b7"
+    },
+    "FV.Backend.Proof.StockRecordFinalAlias": {
+      "path": "FV/Backend/Proof/StockRecordFinalAlias.lean",
+      "canonical_sha256": "40de8cb571e220afc5be029affa17613d9b3144bc490087f4a24d55f06cbceaf"
+    },
+    "FV.Backend.Proof.StockSSAScanConnection": {
+      "path": "FV/Backend/Proof/StockSSAScanConnection.lean",
+      "canonical_sha256": "2cc11d6d0754306f4103af816bec939599a03bf43d9d882a895bbd3ebb57fcac"
+    },
+    "FV.Backend.Proof.StockSourceSSA": {
+      "path": "FV/Backend/Proof/StockSourceSSA.lean",
+      "canonical_sha256": "3a0c6464f1b998289d52dc9f5511423af5707ce36b45fcc7aa35b3894402d968"
+    },
+    "FV.Backend.Proof.StockAliasScanEntries": {
+      "path": "FV/Backend/Proof/StockAliasScanEntries.lean",
+      "canonical_sha256": "a7c30f6c7ea16cbb39d9a47d2270403e64b85532ff6ae1c98779db1abcb44048"
+    },
+    "FV.Backend.Proof.StockTraversalAliasConnection": {
+      "path": "FV/Backend/Proof/StockTraversalAliasConnection.lean",
+      "canonical_sha256": "fc881fd94beeaa61287f4ffe3ffa21dfafe9c2e4990d22d385c355f2002b0ff2"
+    },
+    "FV.Backend.Proof.StockNodeAliasConnection": {
+      "path": "FV/Backend/Proof/StockNodeAliasConnection.lean",
+      "canonical_sha256": "8bc5004c099918b3fa4d77f9302a9e40185eb8006b7e664cf051c5cc446fb6f4"
+    },
+    "FV.Backend.Proof.StockEdgeAliasFrame": {
+      "path": "FV/Backend/Proof/StockEdgeAliasFrame.lean",
+      "canonical_sha256": "352ebac9bbd58c58a45086851c6f69a7513df11a4451063f0d2e1c9052b891f6"
+    },
+    "FV.Backend.Proof.StockBlockRanges": {
+      "path": "FV/Backend/Proof/StockBlockRanges.lean",
+      "canonical_sha256": "dd39f6f857180e908be1e5d002b1b6deda9229399229a03bef692e6fde742cdc"
+    },
+    "FV.Backend.Proof.StockSourceOrder": {
+      "path": "FV/Backend/Proof/StockSourceOrder.lean",
+      "canonical_sha256": "e558baa3b26530b7bbcd9c930a93c52c2e59f1686d26edc8edb79717cf2e6142"
+    },
+    "FV.Backend.Proof.PrepareComplete": {
+      "path": "FV/Backend/Proof/PrepareComplete.lean",
+      "canonical_sha256": "7cf692386246887ac24b9edd5b87ccc3a95dc0701155e815793dde16827b2b51"
+    },
+    "FV.Backend.Proof.PrepareCheck": {
+      "path": "FV/Backend/Proof/PrepareCheck.lean",
+      "canonical_sha256": "37524774002fa31c68ee9ccd5cec1f693e5629f5f8351323289c7b39d56111af"
+    },
+    "FV.Backend.Proof.StockBackwardSuffixSplit": {
+      "path": "FV/Backend/Proof/StockBackwardSuffixSplit.lean",
+      "canonical_sha256": "988477b81e47293f29d43ce054650fde1876a7a946d89dc81eaada8e2668e3c1"
+    },
+    "FV.Backend.Proof.StockTraversalRecordOrigin": {
+      "path": "FV/Backend/Proof/StockTraversalRecordOrigin.lean",
+      "canonical_sha256": "5c6618b3b509106534e986188370e7f025e8661b6528cede660a5f6cd6e6098d"
+    },
+    "FV.Backend.Proof.StockNodeRecordOrigin": {
+      "path": "FV/Backend/Proof/StockNodeRecordOrigin.lean",
+      "canonical_sha256": "958d70c0c2751211fa51f7ebdb52429d8aa6063aaa017898d6c7961052a3c5f1"
+    },
+    "FV.Backend.Proof.StockCoreScanOrigin": {
+      "path": "FV/Backend/Proof/StockCoreScanOrigin.lean",
+      "canonical_sha256": "25f95f9974fbbf6741d22fecb607fb8b4f32cb3342292b8400aad011194aef1f"
+    },
+    "FV.Backend.Proof.StockAliasTerminal": {
+      "path": "FV/Backend/Proof/StockAliasTerminal.lean",
+      "canonical_sha256": "636dac9fb48411c8ddf11ff3388dbe6ece45491361b708706ad9474212cea160"
+    },
+    "FV.Backend.Proof.StockPayloadAliasOrigins": {
+      "path": "FV/Backend/Proof/StockPayloadAliasOrigins.lean",
+      "canonical_sha256": "6b40e9f1af66288c8efafe8cc0c0f7cd0da6c527fd4f5f7ae34e516540958bcd"
+    },
+    "FV.Backend.Proof.LowerLoopCode": {
+      "path": "FV/Backend/Proof/LowerLoopCode.lean",
+      "canonical_sha256": "094dbd20e3bbbb1c52852eb58ef8ac54c07b70a35bfc303121fdcb68a2991fd8"
+    },
+    "FV.Backend.Proof.IselCtlTry": {
+      "path": "FV/Backend/Proof/IselCtlTry.lean",
+      "canonical_sha256": "5fe2cff63da5f9796272e57594a7a94918a1a8a6e18acd7521ba1d7e0b53347c"
+    },
+    "FV.Backend.Proof.IselCtlCallRules": {
+      "path": "FV/Backend/Proof/IselCtlCallRules.lean",
+      "canonical_sha256": "9d76098ed77966a74b32aae6b60e7825726299b3aa35637779ea9b658e2a2542"
+    },
+    "FV.Arm.Memory.MemoryProofs": {
+      "path": "FV/Arm/Memory/MemoryProofs.lean",
+      "canonical_sha256": "51f53947ae91b111c2f7f13de335de819c8a56ea5263dceb3effce8ccb551eb8"
+    },
+    "FV.Arm.FromMathlib": {
+      "path": "FV/Arm/FromMathlib.lean",
+      "canonical_sha256": "1fa45239aaf408bbe7ae603c7179d122c0948bf3187d8921e6e4c3fcc4fabc1f"
+    },
+    "FV.Arm.Memory.Separate": {
+      "path": "FV/Arm/Memory/Separate.lean",
+      "canonical_sha256": "e0e985e39e9ccecdb8b9d61ba2c601eac14823fbbfa88952d89891713ef472dc"
+    },
+    "FV.Arm.Tactics.BvOmegaBench": {
+      "path": "FV/Arm/Tactics/BvOmegaBench.lean",
+      "canonical_sha256": "3c80ad4043cc5f8344149120b9634df33a8c95d4b8090b6ad06d37d82986ca5e"
+    },
+    "FV.Arm.Tactics.Attr": {
+      "path": "FV/Arm/Tactics/Attr.lean",
+      "canonical_sha256": "2451825adf3c9a989d397e9c48e5be1d286e5afbac715afbe079a46e21590e4b"
+    },
+    "FV.Arm.Memory.SeparateProofs": {
+      "path": "FV/Arm/Memory/SeparateProofs.lean",
+      "canonical_sha256": "e6643ed4aa723c7b57150636a22d38e7bfd821299ca32b9cbc88b65ae422a289"
+    },
+    "FV.Backend.Proof.IselContractP": {
+      "path": "FV/Backend/Proof/IselContractP.lean",
+      "canonical_sha256": "e27532f10207b20149c397fe5900e0ff5c3d92d4d46bc918478853a070eaf784"
+    },
+    "FV.Backend.Proof.StockReservedTerminal": {
+      "path": "FV/Backend/Proof/StockReservedTerminal.lean",
+      "canonical_sha256": "f965dc3bf6b5116d2c5ad91fcfd73a8bcea16aac871f8ff72d4928b40efb8c49"
+    },
+    "FV.Backend.Proof.StockAliasDomain": {
+      "path": "FV/Backend/Proof/StockAliasDomain.lean",
+      "canonical_sha256": "7ae5f917786098527784df080bd60d6bbc628a5301c37e917262cb692752b16e"
+    },
+    "FV.Backend.Proof.StockSourceAliasRecords": {
+      "path": "FV/Backend/Proof/StockSourceAliasRecords.lean",
+      "canonical_sha256": "ead2c8ba624cd3ae7187ea99a5ce44ecaef3945a2a3e3f2785651d74d12090e4"
+    },
+    "FV.Backend.Proof.StockCoverageRecords": {
+      "path": "FV/Backend/Proof/StockCoverageRecords.lean",
+      "canonical_sha256": "9457edce2968f5d4135cdc457c27a3d76246468ff820a315c597ff7388a23cad"
+    },
+    "FV.Backend.Proof.StockCoverageDriver": {
+      "path": "FV/Backend/Proof/StockCoverageDriver.lean",
+      "canonical_sha256": "c6de8c71195195c00d8db694381749b00007912bb5d0bd169a04f3296a2871fa"
+    },
+    "FV.Backend.Proof.StockCoverageBlock": {
+      "path": "FV/Backend/Proof/StockCoverageBlock.lean",
+      "canonical_sha256": "5fb652ffad6e416ce5ad35e3308fa066683466c274b550139049e2eed4ce3e49"
+    },
+    "FV.Backend.Proof.StockCoverageScans": {
+      "path": "FV/Backend/Proof/StockCoverageScans.lean",
+      "canonical_sha256": "8b91fff2a1181d750b4a089ae44b5b55c483a228615a5c179b59ac486d4a8e44"
+    },
+    "FV.Backend.Proof.StockCoverageTerms": {
+      "path": "FV/Backend/Proof/StockCoverageTerms.lean",
+      "canonical_sha256": "0036a8ed0fa4b0e902af2102dfe18dbc55590bc5992c545b382bb354d070eff6"
+    },
+    "FV.Backend.Proof.StockCoverageRoots": {
+      "path": "FV/Backend/Proof/StockCoverageRoots.lean",
+      "canonical_sha256": "c019c2cbbfcd677d7f7ffbe996491738c7f165681f2d53f3e792d3b21ec09d6b"
+    },
+    "FV.Backend.Proof.StockCoverageModel": {
+      "path": "FV/Backend/Proof/StockCoverageModel.lean",
+      "canonical_sha256": "0679695d1129f97dc8dd2550f372fb5634d0109c67a0b847ec74c360f048f0cb"
+    },
+    "FV.Backend.Proof.StockNoOpportunityTable": {
+      "path": "FV/Backend/Proof/StockNoOpportunityTable.lean",
+      "canonical_sha256": "64785463ef6e9232de7d3d79ebaefc7dcdf283bee9e75a049834db5788291819"
+    },
+    "FV.Backend.Proof.StockNoOpportunityPre": {
+      "path": "FV/Backend/Proof/StockNoOpportunityPre.lean",
+      "canonical_sha256": "3b4d2200214b39c459900d6598334bfe25dfaf3077e9a86e11d4e36b8b79dace"
+    },
+    "FV.Backend.Proof.IselCovFns": {
+      "path": "FV/Backend/Proof/IselCovFns.lean",
+      "canonical_sha256": "9796a316f786d44ab0489e9c8e672069a273001e4adeb628a61f7ec6546986b6"
+    },
+    "FV.Backend.Proof.IselCovCheck": {
+      "path": "FV/Backend/Proof/IselCovCheck.lean",
+      "canonical_sha256": "8b4b2dce24f281e3d21c0cfbe36572d114e91f1f662d5881b29a05d82e6beee4"
+    },
+    "FV.Backend.Proof.IselCovLe": {
+      "path": "FV/Backend/Proof/IselCovLe.lean",
+      "canonical_sha256": "d3314bdcc9feb473505f8849bbd12f604bfb2485151386e56cbf75a9e6a36172"
+    },
+    "FV.Backend.Proof.IselCovForm": {
+      "path": "FV/Backend/Proof/IselCovForm.lean",
+      "canonical_sha256": "99d36c50790b3c96d49174f2a4abdf0d91899ff77313dd6dc8912e9400ec7230"
+    },
+    "FV.Backend.Proof.IselCovSem": {
+      "path": "FV/Backend/Proof/IselCovSem.lean",
+      "canonical_sha256": "c5eba0b93541b0677984faa0eaf6ee9470135b023ac5db601906232ad46438a9"
+    },
+    "FV.Backend.Proof.IselCovDom": {
+      "path": "FV/Backend/Proof/IselCovDom.lean",
+      "canonical_sha256": "a336485224cfe14ef3b2c200eb95ba9e6623ecf7808b04c49323ab9eb84ab5bf"
+    },
+    "FV.Backend.Proof.IselCovTab": {
+      "path": "FV/Backend/Proof/IselCovTab.lean",
+      "canonical_sha256": "8b22a89a34a5cc0e9420c91eed99735dab2efadb095fdf0c337781e7a46597ba"
+    },
+    "FV.Backend.Proof.IselCovSound": {
+      "path": "FV/Backend/Proof/IselCovSound.lean",
+      "canonical_sha256": "33e32d0aa865b3eea9a6cbd6e146dd548c17bfd3eb50ff64a8d1cb2b139baf0c"
+    },
+    "FV.Backend.Proof.StockNoOpportunityCtor": {
+      "path": "FV/Backend/Proof/StockNoOpportunityCtor.lean",
+      "canonical_sha256": "1ab684e6956cca23e7712326bdae8c28a05f132bf34e6fa200fb3abf08c639a8"
+    },
+    "FV.Backend.Proof.IselCovClean": {
+      "path": "FV/Backend/Proof/IselCovClean.lean",
+      "canonical_sha256": "c3c59d48a4d0b0e32f6310a713d2a4657c265cbe178826d0574deb83bbbcbae9"
+    },
+    "FV.Backend.Proof.IselCovData": {
+      "path": "FV/Backend/Proof/IselCovData.lean",
+      "canonical_sha256": "c729abf3d4e5dd9dabd1ed1a71b15aa6be761e6d6eb70ecf61c5f53f86e9cc66"
+    },
+    "FV.Backend.Proof.IselCovExt": {
+      "path": "FV/Backend/Proof/IselCovExt.lean",
+      "canonical_sha256": "8044963d190849592b2c94bf497c11d274224a0a8b253d548215917dac3440ec"
+    },
+    "FV.Backend.Proof.StockCoverageSound": {
+      "path": "FV/Backend/Proof/StockCoverageSound.lean",
+      "canonical_sha256": "029ea093eb31863c0fce9a9f610911acd0565f145dca9344973f1cd9ce922a1d"
+    },
+    "FV.Backend.Proof.LogicImmComplete": {
+      "path": "FV/Backend/Proof/LogicImmComplete.lean",
+      "canonical_sha256": "10a3c190395f2265e4f81e300dbdbe1eaae3b62e74ff9c0c38fb1cd11f335bae"
+    },
+    "FV.Backend.Proof.StockCoverageCtor": {
+      "path": "FV/Backend/Proof/StockCoverageCtor.lean",
+      "canonical_sha256": "6bcedb87558fe8777b508f7c713a60a84428f08efde50f3b009865a26f88196f"
+    },
+    "FV.Backend.Proof.IselCovCtor": {
+      "path": "FV/Backend/Proof/IselCovCtor.lean",
+      "canonical_sha256": "9ef32050678b98344fb0790ba09c10df10ffff1be5fc877e275bcc2f11bc636b"
+    },
+    "FV.Backend.Proof.StockCoverageOracle": {
+      "path": "FV/Backend/Proof/StockCoverageOracle.lean",
+      "canonical_sha256": "cc9ebd0f56f9820ed91f854ac66ef106a8c93f3590e0bfeeeac5c38a7aa663ae"
+    },
+    "FV.Backend.Proof.IselCovModel": {
+      "path": "FV/Backend/Proof/IselCovModel.lean",
+      "canonical_sha256": "b51040e74941d018dde4c8a6c814f71af3d577023e672412f3ab6edcf568c7ab"
+    },
+    "FV.Backend.Proof.IselCovDriver": {
+      "path": "FV/Backend/Proof/IselCovDriver.lean",
+      "canonical_sha256": "69b16c2a9dfa00ca669776c215b58efa15e95dbca331cf902c4763ab148f12f8"
+    },
+    "FV.Backend.Proof.IselCovCall": {
+      "path": "FV/Backend/Proof/IselCovCall.lean",
+      "canonical_sha256": "636449b824cdadecede5e21f734b8675c00820777263d8d08de2844bf97be1db"
+    },
+    "FV.Backend.Proof.IselCtlRuleIds": {
+      "path": "FV/Backend/Proof/IselCtlRuleIds.lean",
+      "canonical_sha256": "556c37aac69ca975f62648a927a672423672db753aa7b53d65ebe269042951d4"
+    },
+    "FV.Backend.Proof.IselCtlCallInd": {
+      "path": "FV/Backend/Proof/IselCtlCallInd.lean",
+      "canonical_sha256": "6b30d673888d96ddbe3e2c58f2b6a310e528faa2003e7d2e755137cd62c5d612"
+    },
+    "FV.Backend.Proof.StockSourceAliasRank": {
+      "path": "FV/Backend/Proof/StockSourceAliasRank.lean",
+      "canonical_sha256": "57cbaa56594bef40d0a3bc8ebce0c6d3e433f2e3c89cb9f89c87b95c45dda922"
+    },
+    "FV.Backend.Proof.StockSourceTerminal": {
+      "path": "FV/Backend/Proof/StockSourceTerminal.lean",
+      "canonical_sha256": "371c6d9e172c5ed7839f2435a20d6b5d861c4188f76501846cddc98db8170164"
+    },
+    "FV.Backend.Proof.StockDemandMono": {
+      "path": "FV/Backend/Proof/StockDemandMono.lean",
+      "canonical_sha256": "bf23347483f739a4df9b5ce50252e589f7303f6b0753a189f792ae709a131f44"
+    },
+    "FV.Backend.Proof.StockFreshRecordValues": {
+      "path": "FV/Backend/Proof/StockFreshRecordValues.lean",
+      "canonical_sha256": "87ac5c5a9bd34aea9c809f7d47b63384c5bef44522dfcccd05defad9b86fc2c0"
+    },
+    "FV.Backend.Proof.StockRecordContext": {
+      "path": "FV/Backend/Proof/StockRecordContext.lean",
+      "canonical_sha256": "84e39b6ce8b5da4b3fed5933a03464b579e912bca710f0b3746e4120b18695ea"
+    },
+    "FV.E2E.Statement": {
+      "path": "FV/E2E/Statement.lean",
+      "canonical_sha256": "e29edf24fc8433378540881d2631d095f8f446bb595933c746f92392807d3b32"
+    },
+    "FV.Backend.InputScope": {
+      "path": "FV/Backend/InputScope.lean",
+      "canonical_sha256": "c53434b25f78510302845174f337f8de579024446d45a2af63ef7469abf6a26f"
+    },
+    "FV.Compile.StoreTyped": {
+      "path": "FV/Compile/StoreTyped.lean",
+      "canonical_sha256": "750f082d83461d19f42cfa9a0bbf39da300269544fb61bcbe8922787afefac03"
+    },
+    "FV.Compile.SubsetT": {
+      "path": "FV/Compile/SubsetT.lean",
+      "canonical_sha256": "2e480d08986ee223f2ec9103294f3b89ad31e8d756e3c7b1d74636b8c89dc2a9"
+    },
+    "FV.Backend.Regalloc": {
+      "path": "FV/Backend/Regalloc.lean",
+      "canonical_sha256": "24523e4c73a241b223dcf87226bd4f0f47a15c654fb73617116d9e3fd87ca37b"
+    },
+    "FV.Backend.SpillAlloc": {
+      "path": "FV/Backend/SpillAlloc.lean",
+      "canonical_sha256": "ff27eacab259ca30908d97e69ce0772fe2928ad2e9102514b85fe2af0584c5c8"
+    },
+    "FV.Backend.Proof.RegallocSound": {
+      "path": "FV/Backend/Proof/RegallocSound.lean",
+      "canonical_sha256": "1607441a65ce042ecc8a78f20f4e4cba8d920dab448baae90cb7f1c907af1aac"
+    },
+    "FV.Backend.Proof.EncodeStep": {
+      "path": "FV/Backend/Proof/EncodeStep.lean",
+      "canonical_sha256": "92b4159c30b0b522c73e0dcd8362aa7c287009ef44830f2ba0880163e45317ee"
+    },
+    "FV.Backend.Proof.EncodeLayout": {
+      "path": "FV/Backend/Proof/EncodeLayout.lean",
+      "canonical_sha256": "cb26bbf19bab6fd0a11b058f23f79d74f967cc59e0a53c68e785abe1cb532c6a"
+    },
+    "FV.Backend.Proof.EncodeBranch": {
+      "path": "FV/Backend/Proof/EncodeBranch.lean",
+      "canonical_sha256": "4b4fb978e701835064301d54c5eb60744c8c0b021350d373563ee3e9b32b8702"
+    },
+    "FV.Backend.Proof.Encode": {
+      "path": "FV/Backend/Proof/Encode.lean",
+      "canonical_sha256": "bd2b71e27f94af73f81fbd481e641d86e5fecf8e923a0defd6df132937c9d6eb"
+    },
+    "FV.Backend.Proof.EncodeDPI": {
+      "path": "FV/Backend/Proof/EncodeDPI.lean",
+      "canonical_sha256": "2129dc986dad3f901e8203e5620306b5e40f087a332067306b4f039c86c88379"
+    },
+    "FV.Backend.Proof.EncodeBase": {
+      "path": "FV/Backend/Proof/EncodeBase.lean",
+      "canonical_sha256": "2ec9816eab481a6348bbefcc59d6c778502d25e3888c6d6d5a5795d8453ecfd1"
+    },
+    "FV.Backend.Proof.EncodeBR": {
+      "path": "FV/Backend/Proof/EncodeBR.lean",
+      "canonical_sha256": "3329e7383418fa64588c8e8f3a10ad89b9bf6d1531a32ad5533b76bb9bccace5"
+    },
+    "FV.Backend.Proof.EncodeDPR": {
+      "path": "FV/Backend/Proof/EncodeDPR.lean",
+      "canonical_sha256": "e9a46a2d1a97849accb4b5f392f746f8225e9ce6af827c849e8a3f74d53b155d"
+    },
+    "FV.Backend.Proof.EncodeDPSFP": {
+      "path": "FV/Backend/Proof/EncodeDPSFP.lean",
+      "canonical_sha256": "a9e674815b14ae058b90f60d3fc8d44ddaa0147a1fad34e71feef1ac934a6e11"
+    },
+    "FV.Backend.Proof.EncodeLDST": {
+      "path": "FV/Backend/Proof/EncodeLDST.lean",
+      "canonical_sha256": "efa256d6924aeacfc50eda967eca3de20221b292fce4ea0fc63878f3bc9b998b"
+    },
+    "FV.Backend.Proof.EncodeRES": {
+      "path": "FV/Backend/Proof/EncodeRES.lean",
+      "canonical_sha256": "627ee4ba5eca5f1b04ecc0b4b8140b8efa50a5995e4e34708ffb263d994ee3a5"
+    },
+    "FV.Backend.Proof.LowerOutcomes": {
+      "path": "FV/Backend/Proof/LowerOutcomes.lean",
+      "canonical_sha256": "c4e9fe5d643181395cfe42bde8c5bcfe4f2a2696ab652c6ef3531984f029a34f"
+    },
+    "FV.Clif.MemTrap": {
+      "path": "FV/Clif/MemTrap.lean",
+      "canonical_sha256": "2488f6ece0437511075374b74e53bf5b0fea3ee21a3cb83f9fbf1eebb6b17c3b"
+    },
+    "FV.E2E.MemTrapStatement": {
+      "path": "FV/E2E/MemTrapStatement.lean",
+      "canonical_sha256": "3f10556452099db13e1270142554870f4a8c8d481cbca0e9b7c7c0af273557d9"
+    },
+    "FV.ArmFault.Step": {
+      "path": "FV/ArmFault/Step.lean",
+      "canonical_sha256": "f1bc77ec2e3c213f4445f88ff15f3554907a060a9d5d2c2ba461967eb3208473"
+    },
+    "FV.Concurrency.ArmInstFoot": {
+      "path": "FV/Concurrency/ArmInstFoot.lean",
+      "canonical_sha256": "4aed5c33781737604799dcd2b449b8ccde1ff3f684ac99ba7783a91ed263f9e2"
+    },
+    "FV.Concurrency.ArmThread": {
+      "path": "FV/Concurrency/ArmThread.lean",
+      "canonical_sha256": "9fe32bf5309fcff84ce8b0284aec7f6182619c335bca055abbb82224ee40c11a"
+    },
+    "FV.Concurrency.ArmFootprint": {
+      "path": "FV/Concurrency/ArmFootprint.lean",
+      "canonical_sha256": "b26136b32d4d8184787249da052097402716e3c9711b10b3b219a2a339b8c6c6"
+    },
+    "FV.Concurrency.Armv8": {
+      "path": "FV/Concurrency/Armv8.lean",
+      "canonical_sha256": "72f6218046dcdc6ed572b027d83de66836b6e0b078fa1c0b59c8d5cbdb7e53d8"
+    },
+    "FV.Concurrency.Exec": {
+      "path": "FV/Concurrency/Exec.lean",
+      "canonical_sha256": "2075de9493c600490c838ee277b1acfc6586c20d979a76167e97667adbee48a7"
+    },
+    "FV.Concurrency.Rel": {
+      "path": "FV/Concurrency/Rel.lean",
+      "canonical_sha256": "b28bfe32a77374cbd10ff166f04af26b666a1bc8ac99f5a18bf5b82664fa7902"
+    },
+    "FV.E2E.RegLevelCorrect": {
+      "path": "FV/E2E/RegLevelCorrect.lean",
+      "canonical_sha256": "2858142d95164dee4abf8dfea3909778d9bd6f733320162be86d496701a556e1"
+    },
+    "FV.E2E.RegLevelTls": {
+      "path": "FV/E2E/RegLevelTls.lean",
+      "canonical_sha256": "b2bb5418e25b62ea72e5efef329a48c808c1859bd8bc5b9731f4d13bcc3c3657"
+    },
+    "FV.E2E.RegLevelCall": {
+      "path": "FV/E2E/RegLevelCall.lean",
+      "canonical_sha256": "ed521fa34920d7f32b6a4428c1b579f450e1f445876c9ab5743e449520646cc6"
+    },
+    "FV.E2E.RegLevelNext": {
+      "path": "FV/E2E/RegLevelNext.lean",
+      "canonical_sha256": "e75e03252722cd051a67e27711a0e1bca427c6b520423ebd591ffdde8deb5c17"
+    },
+    "FV.E2E.RegLevelGoto": {
+      "path": "FV/E2E/RegLevelGoto.lean",
+      "canonical_sha256": "bb8326befa657c3aa5cad27e4a1439e372ab9c1fef1e9a5b269b128805152f00"
+    },
+    "FV.E2E.RegLevelArgs": {
+      "path": "FV/E2E/RegLevelArgs.lean",
+      "canonical_sha256": "c966f6cd5cd3cc02ca0efd5f7b4b65ffbee7dc3ce5cabe3a3ce6585816797880"
+    },
+    "FV.E2E.RegLevelOp": {
+      "path": "FV/E2E/RegLevelOp.lean",
+      "canonical_sha256": "8f4460be8df2bd7be93441242c83f25225aaf67542757faadb3a6dd148fc80c4"
+    },
+    "FV.E2E.RegLevelGoodX": {
+      "path": "FV/E2E/RegLevelGoodX.lean",
+      "canonical_sha256": "54f16c8854f0f032a741cf13c4edeb5670aac55ab174299d1b573509cff080ee"
+    },
+    "FV.E2E.RegLevelRelax": {
+      "path": "FV/E2E/RegLevelRelax.lean",
+      "canonical_sha256": "2bfdeeb8640fb36947c12560883e4d75b47f4856279177e03ee60f0111323a75"
+    },
+    "FV.E2E.RegLevelEmit": {
+      "path": "FV/E2E/RegLevelEmit.lean",
+      "canonical_sha256": "bfd5b29eaa58511b6d085a2a6bd689956127de4d591d153f7304494a79f39aa7"
+    },
+    "FV.E2E.RegLevelMove": {
+      "path": "FV/E2E/RegLevelMove.lean",
+      "canonical_sha256": "7956381cc4074e80243d10dc06646e45e9d13d1b3a7d02bf1738dd92fb765c23"
+    },
+    "FV.E2E.RegLevelSim": {
+      "path": "FV/E2E/RegLevelSim.lean",
+      "canonical_sha256": "b915702798c8ca050af63518a71e9f87068df6afb0cae4a0bf1364b1fb1bc4b2"
+    },
+    "FV.E2E.RegLevelMachine": {
+      "path": "FV/E2E/RegLevelMachine.lean",
+      "canonical_sha256": "c195644d2b2ff1f8d05bf8c09fec38b86afe81ac933a9bc23657ffd78810e686"
+    },
+    "FV.Backend.Proof.RegallocFwd": {
+      "path": "FV/Backend/Proof/RegallocFwd.lean",
+      "canonical_sha256": "7bf134fc653bc0fb31b062615de450217b8be0aef8f80cba834ed81e72ee94d4"
+    },
+    "FV.Backend.Proof.RegallocFrame": {
+      "path": "FV/Backend/Proof/RegallocFrame.lean",
+      "canonical_sha256": "7dfe80bd97a9ced6ad1d32eda73eb2dbf7c00f2cde8ca706f8c71c053e815664"
+    },
+    "FV.Backend.Proof.RegallocMoves": {
+      "path": "FV/Backend/Proof/RegallocMoves.lean",
+      "canonical_sha256": "928bfa8dea0b8684de69dba1873944bd04fdf2c95be1afada467847a645aa30d"
+    },
+    "FV.Backend.Proof.RegallocLayout": {
+      "path": "FV/Backend/Proof/RegallocLayout.lean",
+      "canonical_sha256": "80b62b41bdb03caac2a3369fd7d629149f4d3385bcd87a7b62ba4c7717713d7f"
+    },
+    "FV.Backend.Proof.RegallocSlotsFar": {
+      "path": "FV/Backend/Proof/RegallocSlotsFar.lean",
+      "canonical_sha256": "4a7eb75f85fca7c6fb2a2d742d36d0354566aa8779b2a88957d2545b564fc4dc"
+    },
+    "FV.Backend.Proof.RegallocSlots": {
+      "path": "FV/Backend/Proof/RegallocSlots.lean",
+      "canonical_sha256": "012b38499eb178d1dddf29d5a49ec02f5f04917a456adfc286ecd886e9530ce0"
+    },
+    "FV.Backend.Proof.RegallocMemAddr": {
+      "path": "FV/Backend/Proof/RegallocMemAddr.lean",
+      "canonical_sha256": "b3e5964c16f54164e469eacaa66ac43f49200a3f8dc8636501a8ac6f79d09f23"
+    },
+    "FV.Backend.Proof.RegallocMem": {
+      "path": "FV/Backend/Proof/RegallocMem.lean",
+      "canonical_sha256": "1f55e93372f3cbc6725aacfbe50f20a026b0dba2f9980604aa501e0cfa1d535f"
+    },
+    "FV.Backend.Proof.RegallocOS": {
+      "path": "FV/Backend/Proof/RegallocOS.lean",
+      "canonical_sha256": "4048b6859c4bb2809b4909bb921403a2346098ea0bdc01ffe961a1a6f5f836e1"
+    },
+    "FV.Backend.Proof.RegallocInstsInt": {
+      "path": "FV/Backend/Proof/RegallocInstsInt.lean",
+      "canonical_sha256": "9331b0975e39006677bfec1d5321ac6cae52cef21c8d3313a7a77c9f54e3fafc"
+    },
+    "FV.Backend.Proof.RegallocTac": {
+      "path": "FV/Backend/Proof/RegallocTac.lean",
+      "canonical_sha256": "75c9d15aa7e23512b351bb02d5c71f9edeebb29dc25dba4d362b819feb9442f9"
+    },
+    "FV.Backend.Proof.RegallocInstsZR": {
+      "path": "FV/Backend/Proof/RegallocInstsZR.lean",
+      "canonical_sha256": "5917604a9dd5f6df2ef39d97eb32389bd14e9225f4dfca8d27d05e81538672c1"
+    },
+    "FV.Backend.Proof.RegallocInstsFP": {
+      "path": "FV/Backend/Proof/RegallocInstsFP.lean",
+      "canonical_sha256": "c8a251a64134ab16c1953abf4819d710406ea3d332bc3e0659da1a28e4401838"
+    },
+    "FV.E2E.RegLevelPush": {
+      "path": "FV/E2E/RegLevelPush.lean",
+      "canonical_sha256": "edd8e9cdd0543cf424fe6cea87deef42d232b5285471c35a82ad629018805781"
+    },
+    "FV.E2E.ExecReads": {
+      "path": "FV/E2E/ExecReads.lean",
+      "canonical_sha256": "d03af2f2d810b523fe445e6778f4fb1b6e26b4df0422823d25f03f4839a32458"
+    },
+    "FV.E2E.ExecFrame": {
+      "path": "FV/E2E/ExecFrame.lean",
+      "canonical_sha256": "29c0f3c7cb45817921e8c66dbb11f84c991951c7c5c62e0f634bea0d5a12b808"
+    },
+    "FV.E2E.MoveReads": {
+      "path": "FV/E2E/MoveReads.lean",
+      "canonical_sha256": "fbb9b99a650f652971268810bced4f361c3753b4687b1271502288c087d1afa7"
+    },
+    "FV.Backend.Proof.PairsC": {
+      "path": "FV/Backend/Proof/PairsC.lean",
+      "canonical_sha256": "aac9e18144db502f3c84e8bbaad2235e199d52871cd28e1f43ab4059c46e423b"
+    },
+    "FV.E2E.RegLevelBranch": {
+      "path": "FV/E2E/RegLevelBranch.lean",
+      "canonical_sha256": "03a56257ec3a55f8b1e34bfd4ab40a7ff4a8fd715d4c7a9c22b1b95f518613ef"
+    },
+    "FV.E2E.RegLevelTrap": {
+      "path": "FV/E2E/RegLevelTrap.lean",
+      "canonical_sha256": "80e5d1a9d6c8502aa6e096db5fdcf4bd4406d38c6e3b36cb6b0092639efa708c"
+    },
+    "FV.E2E.RegLevelFrame": {
+      "path": "FV/E2E/RegLevelFrame.lean",
+      "canonical_sha256": "bec869b68c2dd2d6079a08c5c346ad226d15d95809acef29e60dee895b6298fc"
+    },
+    "FV.E2E.RegLevelTry": {
+      "path": "FV/E2E/RegLevelTry.lean",
+      "canonical_sha256": "28643888126156d012898a7f9e2cee0ff98f580dc394db0d4bff7c96d7d8fc0c"
+    },
+    "FV.Backend.Proof.RegallocCover": {
+      "path": "FV/Backend/Proof/RegallocCover.lean",
+      "canonical_sha256": "677d6de5a02cf417f33acaccafb6a984a01bf34ac583e278373a84529a1c13bb"
+    },
+    "FV.Backend.Proof.RegallocAtomic": {
+      "path": "FV/Backend/Proof/RegallocAtomic.lean",
+      "canonical_sha256": "fc85c415c4802117dba26f03af3aee8088246c1ff5fd81d0305e3780c4730c78"
+    },
+    "FV.Backend.Proof.RegallocMemCorr": {
+      "path": "FV/Backend/Proof/RegallocMemCorr.lean",
+      "canonical_sha256": "792fc77f56913d33512d826bc7512bef1c061c353d76d01f9154813f01376d99"
+    },
+    "FV.Backend.Proof.RegallocMemFP": {
+      "path": "FV/Backend/Proof/RegallocMemFP.lean",
+      "canonical_sha256": "32e0cd93fe33b0f78ec9018618c2614f19e4f267f9a62a2350cff77db5207abb"
+    },
+    "FV.Backend.Proof.RegallocMemOS": {
+      "path": "FV/Backend/Proof/RegallocMemOS.lean",
+      "canonical_sha256": "9c45a20abd1fc53cd275fee0e89873ff93e0b8cd23c3625e7aaf2d16227d3d6b"
+    },
+    "FV.Backend.Proof.RegallocCSemWorld": {
+      "path": "FV/Backend/Proof/RegallocCSemWorld.lean",
+      "canonical_sha256": "8caa2881c1e1ffd8275c3a582b5e2424f4fd8fdae1e7113e889bef577f07d567"
+    },
+    "FV.E2E.RegLevelAtomic": {
+      "path": "FV/E2E/RegLevelAtomic.lean",
+      "canonical_sha256": "f14a42ad51da3d6b66a6fcb174819cd51f99192e47da30984ebcecb6ac59a1b2"
+    },
+    "FV.E2E.RegLevelJT": {
+      "path": "FV/E2E/RegLevelJT.lean",
+      "canonical_sha256": "3420cbbf07748709cc825e76936afa894270877a5db89d20ce74f258c2852453"
+    },
+    "FV.Backend.Proof.LoopRun": {
+      "path": "FV/Backend/Proof/LoopRun.lean",
+      "canonical_sha256": "52cc96460e7751e9eaf67ac95986823dd88d39e87b1558b6f631507ef03250ac"
+    },
+    "FV.E2E.RegLevelOpReads": {
+      "path": "FV/E2E/RegLevelOpReads.lean",
+      "canonical_sha256": "006554b67f133576ad288362ef333f4e027b0c0952ff770327fbc71929ddc1ad"
+    },
+    "FV.E2E.RegLevelU": {
+      "path": "FV/E2E/RegLevelU.lean",
+      "canonical_sha256": "be986e20e6dbdbbfbbcb7c97cd01d191423587d521e2ba670816a421e96aeee7"
+    },
+    "FV.E2E.UnwindSem": {
+      "path": "FV/E2E/UnwindSem.lean",
+      "canonical_sha256": "27c29d1d009b6d528da86d1b2d3a3bdd6ca6862d55e69337c4cc381b8205b071"
+    },
+    "FV.E2E.RegLevelDriverSem": {
+      "path": "FV/E2E/RegLevelDriverSem.lean",
+      "canonical_sha256": "67de963d50aa454eb70bf7019c66dd57f5164cca69f774462c56e72a269a9a5d"
+    },
+    "FV.Unw.Model": {
+      "path": "FV/Unw/Model.lean",
+      "canonical_sha256": "93e0122b859109bef12248f071ae6e78bb7fd0dcc914482db0b8a87386d40b36"
+    },
+    "FV.Unw.Dwarf": {
+      "path": "FV/Unw/Dwarf.lean",
+      "canonical_sha256": "da1cfed621f3cd929804a5c0e11fe6a64ffe7d9ccc4c91a5659569042ad16f9e"
+    },
+    "FV.E2E.RegLevelCorrectU": {
+      "path": "FV/E2E/RegLevelCorrectU.lean",
+      "canonical_sha256": "cd5e53e5d110a5d757b522abbcfbff4d153a2ddf642a842344069227357a4b70"
+    },
+    "FV.E2E.RegLevelUTry": {
+      "path": "FV/E2E/RegLevelUTry.lean",
+      "canonical_sha256": "80f3b49a347fc1220839d0458f2afce062f70a3ef7e3df0ba558b99c68fb5535"
+    },
+    "FV.E2E.RegLevelCallSite": {
+      "path": "FV/E2E/RegLevelCallSite.lean",
+      "canonical_sha256": "4f33aa8f03cc4b07bfaf98428c541f6ab63a21d8cc36dc53e2f1a3494ddb05c3"
+    },
+    "FV.E2E.RegLevelUnwind": {
+      "path": "FV/E2E/RegLevelUnwind.lean",
+      "canonical_sha256": "b69a9d703517fe9d872d08b853defb0e8d601ab10c78bf9ae5c909d54f1fe883"
+    },
+    "FV.Backend.Proof.UnwindTables": {
+      "path": "FV/Backend/Proof/UnwindTables.lean",
+      "canonical_sha256": "864f5a71705316c3769308fb659b5b96388923ab87671983ef19d3e96fce0220"
+    },
+    "FV.Backend.Obj": {
+      "path": "FV/Backend/Obj.lean",
+      "canonical_sha256": "4ae149bbc0eb33798f97b08989c1664c4e55e3b44b50d0250285bb9a70706292"
+    },
+    "FV.Backend.Unwind": {
+      "path": "FV/Backend/Unwind.lean",
+      "canonical_sha256": "28cacc0ed34ba02c112cff96763a12a1414d4b3a719691f20b160cf745f32b23"
+    },
+    "FV.E2E.RegLevelFrameSaved": {
+      "path": "FV/E2E/RegLevelFrameSaved.lean",
+      "canonical_sha256": "e60da1281c935b342d26ab84124a29ba9a4e9c95b7d60de2088b49dc6d8c89a0"
+    },
+    "FV.E2E.UnwindStatement": {
+      "path": "FV/E2E/UnwindStatement.lean",
+      "canonical_sha256": "258d4478b096e9fd67e9c5fbb6f3e7965a1e4e9b227cd3e7271d87a8158dd49c"
+    },
+    "FV.E2E.Compose": {
+      "path": "FV/E2E/Compose.lean",
+      "canonical_sha256": "0031d6cbbd49b131b62c0682431523ad8b82240e3b7d5eac5f25cca1c07df1a9"
+    },
+    "FV.Clif.Unwind": {
+      "path": "FV/Clif/Unwind.lean",
+      "canonical_sha256": "1f94152ba2442d483d1ab57278bb64bab17067de8ee95e163613b463d1fbf040"
+    },
+    "FV.Backend.Proof.StockTermContract": {
+      "path": "FV/Backend/Proof/StockTermContract.lean",
+      "canonical_sha256": "fdbd7dfced4ddbeca91c100714f1e9a6f5af77c01bc2007ce51f811694cbcf4d"
+    },
+    "FV.Backend.Proof.StockReturnABI": {
+      "path": "FV/Backend/Proof/StockReturnABI.lean",
+      "canonical_sha256": "71b4a58d0a9f25058b1132ceeadff45f0f7889233774229a09c31be9aefeceb9"
+    },
+    "FV.Backend.Proof.LowerSim": {
+      "path": "FV/Backend/Proof/LowerSim.lean",
+      "canonical_sha256": "b531937dc953cb4f65027d4be7258283a713e0c66d53745c2f452771a9a6d575"
+    },
+    "FV.Backend.Proof.LowerValueRelations": {
+      "path": "FV/Backend/Proof/LowerValueRelations.lean",
+      "canonical_sha256": "d1bb6b5034a03c46dfc4bd16d2f62ae9d2ec247f4e51b02ef05e75bd67e3c579"
+    },
+    "FV.Backend.Proof.PrepareSound": {
+      "path": "FV/Backend/Proof/PrepareSound.lean",
+      "canonical_sha256": "a189311d8a057630fcf1113ccde926c8cf54266fca57954acc1a7617f2ed9be1"
+    },
+    "FV.Backend.Proof.DeadCleanupPrepare": {
+      "path": "FV/Backend/Proof/DeadCleanupPrepare.lean",
+      "canonical_sha256": "62b42ddbceb9e403c277eda122d7cc2f6f8ec5aec1bb6193453ea3c589700969"
+    },
+    "FV.Backend.Proof.DeadCleanupCorrect": {
+      "path": "FV/Backend/Proof/DeadCleanupCorrect.lean",
+      "canonical_sha256": "d1f8ca2280377ef4c520f0c6f0cad55492f6ea5a04df987201414beabedb638e"
+    },
+    "FV.Backend.Proof.DeadCleanupSimulation": {
+      "path": "FV/Backend/Proof/DeadCleanupSimulation.lean",
+      "canonical_sha256": "4f5d2f846f868539d6edd44ac09d324e180b0a0f94e6a15993a7129a0328c1ad"
+    },
+    "FV.Backend.Proof.DeadCleanupEdges": {
+      "path": "FV/Backend/Proof/DeadCleanupEdges.lean",
+      "canonical_sha256": "8944cc2ec0cc182043dd821fe5a6c678da35b7f3a65b726eba17a9cfd8bef243"
+    },
+    "FV.Backend.Proof.DeadCleanupCFG": {
+      "path": "FV/Backend/Proof/DeadCleanupCFG.lean",
+      "canonical_sha256": "87e459d8dc63903720ddd67fb08be881f64457afe0371bfa22488f0100da6c07"
+    },
+    "FV.Backend.Proof.DeadCleanupFlow": {
+      "path": "FV/Backend/Proof/DeadCleanupFlow.lean",
+      "canonical_sha256": "951ced74cb14e522c3249192cd80870d44c4a5bcf7b8a2db2c35b2eb4e7459a7"
+    },
+    "FV.Backend.Proof.DeadCleanupLive": {
+      "path": "FV/Backend/Proof/DeadCleanupLive.lean",
+      "canonical_sha256": "27fec58fc6a1fc5b3d1b09abbc7e2da9d8c9936ecef487ed9cab19a831ce10d0"
+    },
+    "FV.Backend.Proof.DeadCleanupStructure": {
+      "path": "FV/Backend/Proof/DeadCleanupStructure.lean",
+      "canonical_sha256": "30390e8442af9a2b573205ac4b9672c74eb20fb09cef6caccdd243617a1e5da3"
+    },
+    "FV.Backend.DeadCleanup": {
+      "path": "FV/Backend/DeadCleanup.lean",
+      "canonical_sha256": "df732a2cf6ad36a990a36b570312e6d8ad23ba5dd8ee099e3643932db173ac89"
+    },
+    "FV.E2E.DeadCleanupRealizes": {
+      "path": "FV/E2E/DeadCleanupRealizes.lean",
+      "canonical_sha256": "3120bd166babaf943e80ae665e4b6508600f840d9755522569adad48e06efb8f"
+    },
+    "FV.Backend.Proof.DeadCleanupAdapter": {
+      "path": "FV/Backend/Proof/DeadCleanupAdapter.lean",
+      "canonical_sha256": "cb9bca849417feca9bf961a4183fe2804b711bbb7d93f9cffb98f5b0460a8d01"
+    },
+    "FV.Backend.Proof.DeadCleanupSem": {
+      "path": "FV/Backend/Proof/DeadCleanupSem.lean",
+      "canonical_sha256": "ec2316759c6469e586c263931ff868957b762718b4e5198df257f1b4025cec6d"
+    },
+    "FV.Backend.Proof.RefinesCSem": {
+      "path": "FV/Backend/Proof/RefinesCSem.lean",
+      "canonical_sha256": "e22e135b0a7fd93fd9f56d0f26e1240faf123dab0c9d2c52290cb3694426a660"
+    },
+    "FV.Backend.Proof.RefinesInsts2": {
+      "path": "FV/Backend/Proof/RefinesInsts2.lean",
+      "canonical_sha256": "cb8564137524787f22888ce9e64ed242a732aa5159681d07db56a59e7239d8cd"
+    },
+    "FV.Backend.Proof.RefinesInsts": {
+      "path": "FV/Backend/Proof/RefinesInsts.lean",
+      "canonical_sha256": "ddb22a8ad306d5ec6d2f51a0c22148c15818e4d7a324505e37fe422cb31b93bb"
+    },
+    "FV.Backend.Proof.MemRefines": {
+      "path": "FV/Backend/Proof/MemRefines.lean",
+      "canonical_sha256": "35de1fd72f98c488730664169e2ee3f86254c93e5c7687efacaa6cb0cde29b22"
+    },
+    "FV.E2E.StockArithmeticStageContract": {
+      "path": "FV/E2E/StockArithmeticStageContract.lean",
+      "canonical_sha256": "1f804ac289e2042320aeec117ff78a34bebe3c1b6445e1a61a83ebe5f2218712"
+    },
+    "FV.Backend.Lowering.StockArithmetic": {
+      "path": "FV/Backend/Lowering/StockArithmetic.lean",
+      "canonical_sha256": "30ac48d3dd37980b1cf91cf97453bc8b2189bd1f6c6d66d735315cd936ff039c"
+    },
+    "FV.Backend.Lowering.StockScalarProduction": {
+      "path": "FV/Backend/Lowering/StockScalarProduction.lean",
+      "canonical_sha256": "0fe6296ff7746f4eb5355bb65fcfff5bbcce5262ea9d0668924870815daf669a"
+    },
+    "FV.Backend.Lowering.StockPrologueAll": {
+      "path": "FV/Backend/Lowering/StockPrologueAll.lean",
+      "canonical_sha256": "e51b3a89adaf5cd152ea76d8122ed93893ea0bfd3410a42c1318dbd120910c2b"
+    },
+    "FV.Backend.Lowering.StockProduction": {
+      "path": "FV/Backend/Lowering/StockProduction.lean",
+      "canonical_sha256": "858cdc90638eb8b5e234c4e5acbf6ee0c0106efa2428e87cfed579a2fb2faed5"
+    },
+    "FV.Backend.Lowering.StockPrologue": {
+      "path": "FV/Backend/Lowering/StockPrologue.lean",
+      "canonical_sha256": "aff7c9319f0d207b6593e96376d899186ccd1204902d8b92c3da5f9bc1f3451c"
+    },
+    "FV.Backend.Lowering.StockD0": {
+      "path": "FV/Backend/Lowering/StockD0.lean",
+      "canonical_sha256": "58e8578b5781f7a7fd0e8a455352f78ba11e86731d556430a017546d0422a5f3"
+    },
+    "FV.Backend.Lowering.StockScalarAdd": {
+      "path": "FV/Backend/Lowering/StockScalarAdd.lean",
+      "canonical_sha256": "134ed4325be2efb65b5c8bddc84f8bb342ac1713e233e07ba65f0db346970b3e"
+    },
+    "FV.E2E.DeadCleanupContracts": {
+      "path": "FV/E2E/DeadCleanupContracts.lean",
+      "canonical_sha256": "23f0cdd75119dc714d17e3ad7c01a18de40c52af5b1067568138ca3c0e8095c0"
+    },
+    "FV.E2E.DeadCleanupGot": {
+      "path": "FV/E2E/DeadCleanupGot.lean",
+      "canonical_sha256": "67a81ea25d96ec8bb54533f50eef6ec013f7d7b7ce4a8ddf109af6dfd1f6559f"
+    },
+    "FV.E2E.GotFlow": {
+      "path": "FV/E2E/GotFlow.lean",
+      "canonical_sha256": "36cef2cc7d7c62d67ac7aa68f236f25a27a388bcd67783514e2971eb7615b58e"
+    },
+    "FV.Backend.Proof.StockMemoryContract": {
+      "path": "FV/Backend/Proof/StockMemoryContract.lean",
+      "canonical_sha256": "2730e58de3713f9495ebe5155f4c7835ba01f5fcf2a2c150743cbca48f6a5698"
+    },
+    "FV.Backend.Proof.StockScalarContract": {
+      "path": "FV/Backend/Proof/StockScalarContract.lean",
+      "canonical_sha256": "e8bd012a2b0b8d5a879c86a623e3fe986e70b43d8c1258d6a5af58aa5e9839a7"
+    },
+    "FV.Backend.Proof.StockSourceEntry": {
+      "path": "FV/Backend/Proof/StockSourceEntry.lean",
+      "canonical_sha256": "b029a9e4521d1d9389250800b3132740cf90e4daf445ad3c1809c5bee1d37807"
+    },
+    "FV.Backend.Proof.StockSourceDefined": {
+      "path": "FV/Backend/Proof/StockSourceDefined.lean",
+      "canonical_sha256": "503166fbfbcf47994c9556da0bfcbe2a0864d27e91546094b10dbbd5a7995141"
+    },
+    "FV.E2E.LinkWorld": {
+      "path": "FV/E2E/LinkWorld.lean",
+      "canonical_sha256": "b33ed0f9ee9d2f1a468a5e8ba5142ec2ee63d4457afac37e9535513b37890b00"
+    },
+    "FV.E2E.Final": {
+      "path": "FV/E2E/Final.lean",
+      "canonical_sha256": "e15d3d1248b95ec5c3d7509d1f2514c96ccab9c1ca12e4efd7e5b288b9b6bab1"
+    },
+    "FV.E2E.Main": {
+      "path": "FV/E2E/Main.lean",
+      "canonical_sha256": "d8abd35c671d0a810f75fa02a4f4e5ad2691151061945d80c99944d9c001b685"
+    },
+    "FV.Backend.Proof.IselLowerAll": {
+      "path": "FV/Backend/Proof/IselLowerAll.lean",
+      "canonical_sha256": "8e7a79a7875ae2717e2a0a611d5869e7c1c04e0c856f575d0b2cc99ffc32737c"
+    },
+    "FV.Backend.Proof.IselFloatConst": {
+      "path": "FV/Backend/Proof/IselFloatConst.lean",
+      "canonical_sha256": "3899593fae5af04f9e0bf61e7e93c584012c00f82c07659575c4248384186fe3"
+    },
+    "FV.Backend.Proof.IselCmpDiv": {
+      "path": "FV/Backend/Proof/IselCmpDiv.lean",
+      "canonical_sha256": "f839d0f97b41598f27e9e28877f303f9dd4e0f4cdd480ea7555b96a827812497"
+    },
+    "FV.Backend.Proof.IselFloatCvt": {
+      "path": "FV/Backend/Proof/IselFloatCvt.lean",
+      "canonical_sha256": "1963c9978e97e620c7c0f5520eb13b5ec45f9e4b29f57d8b74dc863c2d8e8d67"
+    },
+    "FV.Backend.Proof.IselFloatRound": {
+      "path": "FV/Backend/Proof/IselFloatRound.lean",
+      "canonical_sha256": "2b2b9f8d330109e946b9d0c0a0f448b9c53df62fd3dda5efe698fa97edddf9c4"
+    },
+    "FV.Backend.Proof.IselFloatSelect": {
+      "path": "FV/Backend/Proof/IselFloatSelect.lean",
+      "canonical_sha256": "7c993ddd3762606c88357d9326930382765a86984b1c7a7247bedd81e172ca61"
+    },
+    "FV.Backend.Proof.IselCmpSelect": {
+      "path": "FV/Backend/Proof/IselCmpSelect.lean",
+      "canonical_sha256": "a6c122a6ee95453f5f21016092efc9e06c2662dd452d9b29b4f1d702d0baf957"
+    },
+    "FV.Backend.Proof.IselFloatCmp": {
+      "path": "FV/Backend/Proof/IselFloatCmp.lean",
+      "canonical_sha256": "d0b05b73b11daa67d3d5a30526d25ea72b3a5ddacbbcb86fb9a34d7b09683497"
+    },
+    "FV.Backend.Proof.IselFamALUATI": {
+      "path": "FV/Backend/Proof/IselFamALUATI.lean",
+      "canonical_sha256": "c7145976231072286b04494630a2ff2d00b7494f49e2420fedc5b1a6ade3e6ca"
+    },
+    "FV.Backend.Proof.IselFamALUALogic": {
+      "path": "FV/Backend/Proof/IselFamALUALogic.lean",
+      "canonical_sha256": "8790760163a51fa89c69292eb46b4c96adfe8420646abd11c559ab16f5f45e3f"
+    },
+    "FV.Backend.Proof.IselTermsLogic": {
+      "path": "FV/Backend/Proof/IselTermsLogic.lean",
+      "canonical_sha256": "a65f8a8dfffba303120df38b6e6603a4eaa5a7f62d1c13796ebd6bad07286b0b"
+    },
+    "FV.Backend.Proof.IselFamALUAMulN": {
+      "path": "FV/Backend/Proof/IselFamALUAMulN.lean",
+      "canonical_sha256": "b0ac0fe2dcdf343426eee19992282fb77e7e22b20b6ee9044c8e02b2751ad22a"
+    },
+    "FV.Backend.Proof.IselTermsALUAMulN": {
+      "path": "FV/Backend/Proof/IselTermsALUAMulN.lean",
+      "canonical_sha256": "2eba60f973bf4521745363108053e36f13b01cbc0ae977639c7a91444a6362d3"
+    },
+    "FV.Backend.Proof.IselTermsALUAExtr": {
+      "path": "FV/Backend/Proof/IselTermsALUAExtr.lean",
+      "canonical_sha256": "8b6f6a2fb61449d860a4a673065380d0393a7e0d80c70ea2b2aeb832377e07ab"
+    },
+    "FV.Backend.Proof.IselCmpDivRoot": {
+      "path": "FV/Backend/Proof/IselCmpDivRoot.lean",
+      "canonical_sha256": "532d52d0928443ae75567a248c546b5d6b77c5106dd57528b5e93b3beb4ac107"
+    },
+    "FV.Backend.Proof.IselCmpSdiv": {
+      "path": "FV/Backend/Proof/IselCmpSdiv.lean",
+      "canonical_sha256": "6d5e86a8171eed3be9800a9a22a137ca1f0031ff9d33c57c44ea694ae10aa09b"
+    },
+    "FV.Backend.Proof.IselCmpDivRem": {
+      "path": "FV/Backend/Proof/IselCmpDivRem.lean",
+      "canonical_sha256": "8d98bfeac21a2a177514c00f3560bce64849838a9a074b77d1fbdf11691b653a"
+    },
+    "FV.Backend.Proof.IselCmpMinMax": {
+      "path": "FV/Backend/Proof/IselCmpMinMax.lean",
+      "canonical_sha256": "dd62bd27fbf2fd85d8db0fe5c3535041ddb6ff875423b29f6632c04bbf277262"
+    },
+    "FV.Backend.Proof.IselCmpVec": {
+      "path": "FV/Backend/Proof/IselCmpVec.lean",
+      "canonical_sha256": "26b9c2a627a1dfff6bae7d90c6ef604cefbf9dd0aab5d6c603a736d1c62e7d2d"
+    },
+    "FV.Backend.Proof.IselFamAluBExtend": {
+      "path": "FV/Backend/Proof/IselFamAluBExtend.lean",
+      "canonical_sha256": "5687c7a2e355b33224757533ced5dc080ba5e377cf1f54c40d70360b96c92369"
+    },
+    "FV.Backend.Proof.IselFamAluBNotShift": {
+      "path": "FV/Backend/Proof/IselFamAluBNotShift.lean",
+      "canonical_sha256": "f06b4fbd7c32c194a90d20041ef0dfe12ac83c0217b452a64bb856d507989d0c"
+    },
+    "FV.Backend.Proof.IselFamALUALogicNot": {
+      "path": "FV/Backend/Proof/IselFamALUALogicNot.lean",
+      "canonical_sha256": "75b9a36cd54f6499336cebb7bed1d494435b87c8eeabea1867cf199b391478aa"
+    },
+    "FV.Backend.Proof.IselTermsLogicNot": {
+      "path": "FV/Backend/Proof/IselTermsLogicNot.lean",
+      "canonical_sha256": "f711e91d0c415f2bbe76895c877f0e75a68942e7e87cde5a2f0b755f88238f77"
+    },
+    "FV.Backend.Proof.IselFamALUAExtr": {
+      "path": "FV/Backend/Proof/IselFamALUAExtr.lean",
+      "canonical_sha256": "d7f942ab25ac8fcb07caf8d480f2e49b2c200ec75549d3c12fcd6b6ee383e483"
+    },
+    "FV.Backend.Proof.IselFamAluBBfm": {
+      "path": "FV/Backend/Proof/IselFamAluBBfm.lean",
+      "canonical_sha256": "c491f9d7c5b7e27186d83a76aedd63c5c7f005fda0c843aa128755c6b4b161c4"
+    },
+    "FV.Backend.Proof.IselFamAluBRot": {
+      "path": "FV/Backend/Proof/IselFamAluBRot.lean",
+      "canonical_sha256": "7e526731d461f58094f7ae9a3f8e29fa31c4e58e9e6007d9310f54d4ec609650"
+    },
+    "FV.Backend.Proof.IselFamAluBBitrev": {
+      "path": "FV/Backend/Proof/IselFamAluBBitrev.lean",
+      "canonical_sha256": "2a29af558d38b7968feaa3ac5556119cddeaeab9dca0f43f93272a1c0a419f0b"
+    },
+    "FV.Backend.Proof.IselFamAluBClz": {
+      "path": "FV/Backend/Proof/IselFamAluBClz.lean",
+      "canonical_sha256": "3cea499bc986bb5506e4829629cd4893c58d06f4e7714e6a5dfe9edac3cb89a7"
+    },
+    "FV.Backend.Proof.IselFamAluBBswap": {
+      "path": "FV/Backend/Proof/IselFamAluBBswap.lean",
+      "canonical_sha256": "5e23bacf32f54c457c16b08db884b146cbaecbbef1a873efbf919b39c09377c3"
+    },
+    "FV.Backend.Proof.IselCtl": {
+      "path": "FV/Backend/Proof/IselCtl.lean",
+      "canonical_sha256": "b97b5af361b2445b5b76c0cda324791eb4d42a629c88740e73c4e3b21453c507"
+    },
+    "FV.Backend.Proof.IselCtlBranch": {
+      "path": "FV/Backend/Proof/IselCtlBranch.lean",
+      "canonical_sha256": "f3cc602f46f51d742a127cb1f608edb19393ae068d475da7424011b5115a3375"
+    },
+    "FV.Backend.Proof.IselCtlBrif": {
+      "path": "FV/Backend/Proof/IselCtlBrif.lean",
+      "canonical_sha256": "042c6d348dc37dcabad7f6ef02c9ecd3e087fbbc566249aa1fd6843b233ee830"
+    },
+    "FV.Backend.Proof.IselCtlTbz": {
+      "path": "FV/Backend/Proof/IselCtlTbz.lean",
+      "canonical_sha256": "071b75c58c1d12c2f4139c9fd13ed89db0a67cb8cc8c87c46afe335c6ac4dc41"
+    },
+    "FV.Backend.Proof.IselCtlBrTable": {
+      "path": "FV/Backend/Proof/IselCtlBrTable.lean",
+      "canonical_sha256": "d0f50371ff0fbb53e2b1c8de2d1e812f733d5aac64d8181dedf738f8b89d2dbb"
+    },
+    "FV.Backend.Proof.IselCtlTryInd": {
+      "path": "FV/Backend/Proof/IselCtlTryInd.lean",
+      "canonical_sha256": "4fd2a988608332813875c04905c24519d2f14b3d1774571fb1f6a931267d5023"
+    },
+    "FV.E2E.StockArithmeticSemantics": {
+      "path": "FV/E2E/StockArithmeticSemantics.lean",
+      "canonical_sha256": "1903474e4ce239594146b23183251248d4e3a95ed8985e9235106f25721ef5c0"
+    },
+    "FV.Backend.Proof.StockArithmeticEntryRefines": {
+      "path": "FV/Backend/Proof/StockArithmeticEntryRefines.lean",
+      "canonical_sha256": "8b3057bffdc5604129534d4a0b723227e55867464c5534c7c0841e5997d3e2ff"
+    },
+    "FV.Backend.Proof.StockEntryPrelude": {
+      "path": "FV/Backend/Proof/StockEntryPrelude.lean",
+      "canonical_sha256": "a1bcfdf93f49d52822273cd5682615e7afa06a6dd13764364d30ed6617271cfb"
+    },
+    "FV.Backend.Proof.StockEntrySeed": {
+      "path": "FV/Backend/Proof/StockEntrySeed.lean",
+      "canonical_sha256": "b9bc456838399f5966581bad20f54fb51ee48a7a1c486b79ce137eaad14fd746"
+    },
+    "FV.Backend.Proof.StockEntryAliases": {
+      "path": "FV/Backend/Proof/StockEntryAliases.lean",
+      "canonical_sha256": "6f07e051f611d9cc9d036a04190b7970381539103265d2772e64651d85df7bbf"
+    },
+    "FV.Backend.Proof.StockSelectScanRefines": {
+      "path": "FV/Backend/Proof/StockSelectScanRefines.lean",
+      "canonical_sha256": "265daabcc6d76b727cead39771bc041708173e01ba7432dc9985ae4270f9604d"
+    },
+    "FV.Backend.Proof.StockSourceDFG": {
+      "path": "FV/Backend/Proof/StockSourceDFG.lean",
+      "canonical_sha256": "6fd640a0d035782ad02150bbcb49e055feaa6b9421773beeef798637da4ac425"
+    },
+    "FV.Backend.Proof.StockAluOperandCoverage": {
+      "path": "FV/Backend/Proof/StockAluOperandCoverage.lean",
+      "canonical_sha256": "41d7fbef8672436221734c15062a7c4f138ad8a7669e76cad2f6a0049ec87974"
+    },
+    "FV.Backend.Proof.StockDemand": {
+      "path": "FV/Backend/Proof/StockDemand.lean",
+      "canonical_sha256": "32910ea4f7c257a667e98f09e10dbda7a9ceea7efe0f8ae38042cd15280f467e"
+    },
+    "FV.Backend.Proof.StockDemandExtent": {
+      "path": "FV/Backend/Proof/StockDemandExtent.lean",
+      "canonical_sha256": "aa097fff86048900e4b38c9e608cc2437870c14972d8f2da0fbe5de52fa90723"
+    },
+    "FV.Backend.Proof.StockAluRecordValues": {
+      "path": "FV/Backend/Proof/StockAluRecordValues.lean",
+      "canonical_sha256": "81ca89e471fd468e91e3408fb5912f2c62a6e2bcc09b6cc0c05f6647e2088c2f"
+    },
+    "FV.Backend.Proof.StockRequestSuccess": {
+      "path": "FV/Backend/Proof/StockRequestSuccess.lean",
+      "canonical_sha256": "dbf8f7c579a0db30ac937cd8ff403d8f3936da0b0892e438256ce4ad26355bc7"
+    },
+    "FV.Backend.Proof.StockAlu": {
+      "path": "FV/Backend/Proof/StockAlu.lean",
+      "canonical_sha256": "2c2304b944fc1c06257b1ffa2736b13e326b735be168ebc2210e9c97b20cc10f"
+    },
+    "FV.Backend.Proof.StockSelectOriginalSourceValues": {
+      "path": "FV/Backend/Proof/StockSelectOriginalSourceValues.lean",
+      "canonical_sha256": "9680b5a407ffb200ac45d74ec527fb3fe9988a43dfc2fe71728357536e2f4292"
+    },
+    "FV.Backend.Proof.StockSelectOriginalRecordValues": {
+      "path": "FV/Backend/Proof/StockSelectOriginalRecordValues.lean",
+      "canonical_sha256": "6d285739631098479ada2ec626e93548353d91315884a2cae12f409f38aa364b"
+    },
+    "FV.Backend.Proof.StockSelectOriginalRootValues": {
+      "path": "FV/Backend/Proof/StockSelectOriginalRootValues.lean",
+      "canonical_sha256": "fedcb00b879e04ce876483fa0356ec429ca72d2b29be87c4e920f85eebd1968c"
+    },
+    "FV.Backend.Proof.StockSelectOriginalConditionValues": {
+      "path": "FV/Backend/Proof/StockSelectOriginalConditionValues.lean",
+      "canonical_sha256": "6c90e547b246faa9c0b605d9009e924a3a46e95a536f5ea68df9db92b323c1c5"
+    },
+    "FV.Backend.Proof.StockSelectNonzeroActualValues": {
+      "path": "FV/Backend/Proof/StockSelectNonzeroActualValues.lean",
+      "canonical_sha256": "cf3b5d3844facce5d7cd38d341304588acd1d4651f29556912cc3577e9c4a4e7"
+    },
+    "FV.Backend.Proof.StockSelectNonzero8Values": {
+      "path": "FV/Backend/Proof/StockSelectNonzero8Values.lean",
+      "canonical_sha256": "02376db7b209ce080ac6c7f1c7e949f061eeb28329eaae58cf8aca97fb8e8a8a"
+    },
+    "FV.Backend.Proof.StockCmpNonzero8Emission": {
+      "path": "FV/Backend/Proof/StockCmpNonzero8Emission.lean",
+      "canonical_sha256": "6e00c11035686f5b73ff2bfefa8b022d10153287d29d7c595190548222a64bcb"
+    },
+    "FV.Backend.Proof.StockCmpTestBuilder": {
+      "path": "FV/Backend/Proof/StockCmpTestBuilder.lean",
+      "canonical_sha256": "b83b9c34c622f98dc3317a69987002d765792bd380189c3c60776de42622494d"
+    },
+    "FV.Backend.Proof.StockDivPure": {
+      "path": "FV/Backend/Proof/StockDivPure.lean",
+      "canonical_sha256": "068fd64dfb7efdfe09b0d0678f358e9057c1aaf59a696225b2a546547702382f"
+    },
+    "FV.Backend.Proof.StockCmpNonzero8OriginalSelection": {
+      "path": "FV/Backend/Proof/StockCmpNonzero8OriginalSelection.lean",
+      "canonical_sha256": "8c4ef554b90f16d2cf11fb811dbe41a1f14fbae70c9630fbfe45ff7d4b9641e3"
+    },
+    "FV.Backend.Proof.StockExtendRequests": {
+      "path": "FV/Backend/Proof/StockExtendRequests.lean",
+      "canonical_sha256": "0208e7f983e8cadc5813f0c9dbdc04870b804165eb73ebbdf0bb1baa55b4a1f8"
+    },
+    "FV.Backend.Proof.StockShiftHelper": {
+      "path": "FV/Backend/Proof/StockShiftHelper.lean",
+      "canonical_sha256": "fc7cb0cf0b9cf1bb5cbc3d4137c89733ea4afe5357f8497bc9dc7652927d5bb8"
+    },
+    "FV.Backend.Proof.StockOverflowPatterns": {
+      "path": "FV/Backend/Proof/StockOverflowPatterns.lean",
+      "canonical_sha256": "870c71bd1ecbeba6ecea0be0d511ace7243a07b24818914f6ed9a28d00d8e230"
+    },
+    "FV.Backend.Proof.StockCmpTestFlags": {
+      "path": "FV/Backend/Proof/StockCmpTestFlags.lean",
+      "canonical_sha256": "4445fca85f4d5237eee8200dd1558c805237d9d28d1181265ec8c8f25ba82ec8"
+    },
+    "FV.Backend.Proof.StockSelectSourceValues": {
+      "path": "FV/Backend/Proof/StockSelectSourceValues.lean",
+      "canonical_sha256": "a0d3166962363508d21c132ead5f9f984bc3ab7685dc3ce26297ee5f27b1a241"
+    },
+    "FV.Backend.Proof.StockSelectObserved": {
+      "path": "FV/Backend/Proof/StockSelectObserved.lean",
+      "canonical_sha256": "3792f74a4299d1efc008edff175ef74ce6ad8c642e0e91b709e24cf231e902a3"
+    },
+    "FV.Backend.Proof.StockSelectRequests": {
+      "path": "FV/Backend/Proof/StockSelectRequests.lean",
+      "canonical_sha256": "0d148deab5e0b92e259159e0d50c6ef54e6a7cb4bbfd30c44a3ba14899bf6bde"
+    },
+    "FV.Backend.Proof.StockSelectBuilders": {
+      "path": "FV/Backend/Proof/StockSelectBuilders.lean",
+      "canonical_sha256": "2161d178aa70789f6bd2e45825f291b2947276b7074bdc36e4bae397276730f1"
+    },
+    "FV.Backend.Proof.StockCmpWithFlags": {
+      "path": "FV/Backend/Proof/StockCmpWithFlags.lean",
+      "canonical_sha256": "41506234d11403ff288e06cf831360e391028eb449b9729d6b6330d7c7d46543"
+    },
+    "FV.Backend.Proof.StockSelectValues": {
+      "path": "FV/Backend/Proof/StockSelectValues.lean",
+      "canonical_sha256": "d50f2bd907447244cabb9b9729b14f07acbc0cee81acfa24a909f4517aeb9117"
+    },
+    "FV.Backend.Proof.StockCmpConditionValues": {
+      "path": "FV/Backend/Proof/StockCmpConditionValues.lean",
+      "canonical_sha256": "c0526123d7b5a5c92e80563c8f5a288ad69463e3e4c4710171eeb7ace46e7f10"
+    },
+    "FV.Backend.Proof.StockCmpMachineValues": {
+      "path": "FV/Backend/Proof/StockCmpMachineValues.lean",
+      "canonical_sha256": "d239bafc7b43659ccadac3924984b4ac8da534f63c9d2ec72ac4b7a3368b4616"
+    },
+    "FV.Backend.Proof.StockCmpFlags": {
+      "path": "FV/Backend/Proof/StockCmpFlags.lean",
+      "canonical_sha256": "ea2fd4232851dc9c94372146920e6f6254e93fabe9df5021ef804dee8c3b903a"
+    },
+    "FV.Backend.Proof.StockCmpCondition": {
+      "path": "FV/Backend/Proof/StockCmpCondition.lean",
+      "canonical_sha256": "a6fcec930abf9566333418e800c1630789dbb88f72c7255f7879bf17fd8ed891"
+    },
+    "FV.Backend.Proof.StockCmpBuilders": {
+      "path": "FV/Backend/Proof/StockCmpBuilders.lean",
+      "canonical_sha256": "bda1a65005047076e9f0350b9250840f07e164ffa5ab7f825cd7ae2783ef1315"
+    },
+    "FV.Backend.Proof.StockCmpPure": {
+      "path": "FV/Backend/Proof/StockCmpPure.lean",
+      "canonical_sha256": "7d185909c1aaf26326d94775624aac4c9c8fdf3f995081e50e41378305439cb5"
+    },
+    "FV.Backend.Proof.StockSelectNonzero16Values": {
+      "path": "FV/Backend/Proof/StockSelectNonzero16Values.lean",
+      "canonical_sha256": "8aecfe830839527da19b231d0ccbbd43f63da908fd8444f359e53f4be36b2314"
+    },
+    "FV.Backend.Proof.StockCmpNonzero16Values": {
+      "path": "FV/Backend/Proof/StockCmpNonzero16Values.lean",
+      "canonical_sha256": "4c0de6ba4443bf499801235185112c3ff7bdb72d4c2b5a70aea0cf8bbfa1ef9f"
+    },
+    "FV.Backend.Proof.StockCmpNonzero16PrefixValues": {
+      "path": "FV/Backend/Proof/StockCmpNonzero16PrefixValues.lean",
+      "canonical_sha256": "f73a759efaeaadc6d00fbe4b63ccfb47aec43b830edaa5bed1e323213b75a089"
+    },
+    "FV.Backend.Proof.StockExtendValues": {
+      "path": "FV/Backend/Proof/StockExtendValues.lean",
+      "canonical_sha256": "3e222cad3d448ffa5743bdd29372fd7c7e853e59674179e311689edf37d223e3"
+    },
+    "FV.Backend.Proof.StockExtendSemantics": {
+      "path": "FV/Backend/Proof/StockExtendSemantics.lean",
+      "canonical_sha256": "1f27d27f1549673efaf594f65b42a0306c721eeaa2deb6d71e68e9567ae69cea"
+    },
+    "FV.Backend.Proof.StockCmpNonzeroNarrowCalls": {
+      "path": "FV/Backend/Proof/StockCmpNonzeroNarrowCalls.lean",
+      "canonical_sha256": "6a02b3f298b4bb7a417acc749544294155e42f3fe1a2c8817563900548cbad29"
+    },
+    "FV.Backend.Proof.StockSelectNonzero16Shape": {
+      "path": "FV/Backend/Proof/StockSelectNonzero16Shape.lean",
+      "canonical_sha256": "5d1720e1f0f3d708b689c8b12d7ca4a8e9dba08b0da73dbbbd6f01e5d6c1f2b0"
+    },
+    "FV.Backend.Proof.StockCmpNonzero16OriginalSelection": {
+      "path": "FV/Backend/Proof/StockCmpNonzero16OriginalSelection.lean",
+      "canonical_sha256": "c8e750cd38421f51a6faeb304ac59f626093a75bdb33a80bf3d0f1d8595dedd5"
+    },
+    "FV.Backend.Proof.StockSelectZeroObserved": {
+      "path": "FV/Backend/Proof/StockSelectZeroObserved.lean",
+      "canonical_sha256": "5d182c608195ea08eb05b899ad0b58d7f6c54ccd044a88c4f8a0e13411039157"
+    },
+    "FV.Backend.Proof.StockSelectZeroReplacementResolved": {
+      "path": "FV/Backend/Proof/StockSelectZeroReplacementResolved.lean",
+      "canonical_sha256": "6443be12306afb02f0a0f1d8db0cb93d4e1f16d2f8cef87ff298cfdb45dfad19"
+    },
+    "FV.Backend.Proof.StockSelectZeroReplacement": {
+      "path": "FV/Backend/Proof/StockSelectZeroReplacement.lean",
+      "canonical_sha256": "46496109a7fa40dc2c358225a5f65620c172dce3d5c738f73a156c896325c13c"
+    },
+    "FV.Backend.Proof.StockSelectCompanionFragment": {
+      "path": "FV/Backend/Proof/StockSelectCompanionFragment.lean",
+      "canonical_sha256": "347ba2be534c3ec8223fd21b5d19b8933591783f71f7bf1eab0e689c76b0f5a9"
+    },
+    "FV.Backend.Proof.StockSelectNonzeroWideValues": {
+      "path": "FV/Backend/Proof/StockSelectNonzeroWideValues.lean",
+      "canonical_sha256": "b772ac57fc897fe93a5de00c2b76a068d4153c08d42915564f0ba8ca653d16ad"
+    },
+    "FV.Backend.Proof.StockSelectNonzeroWideShape": {
+      "path": "FV/Backend/Proof/StockSelectNonzeroWideShape.lean",
+      "canonical_sha256": "33acc3b2efd582f4b80447b09873e610050fd1962f13198c7214e362516fbe8c"
+    },
+    "FV.Backend.Proof.StockCmpZeroHelpers": {
+      "path": "FV/Backend/Proof/StockCmpZeroHelpers.lean",
+      "canonical_sha256": "016c37f847b280743e3bc7634a798090fa67eeaa65a156d3eda8c0563b3d8dca"
+    },
+    "FV.Backend.Proof.StockCmpNonzero32RhsValues": {
+      "path": "FV/Backend/Proof/StockCmpNonzero32RhsValues.lean",
+      "canonical_sha256": "3038de97de31ef5b5f55bf6fa4ed55004875db2600baffdfd50d67f265511cf2"
+    },
+    "FV.Backend.Proof.StockCmpNonzero32OriginalSelection": {
+      "path": "FV/Backend/Proof/StockCmpNonzero32OriginalSelection.lean",
+      "canonical_sha256": "882649e9401ac03791c3b0cf9f181342fd20f80953c457fc3e239a98d959ff36"
+    },
+    "FV.Backend.Proof.StockCmpNonzero64OriginalSelection": {
+      "path": "FV/Backend/Proof/StockCmpNonzero64OriginalSelection.lean",
+      "canonical_sha256": "8ec1a1bebb448a7ef025863c34fbcef130ecf3886916c26afb1f9485031441d4"
+    },
+    "FV.Backend.Proof.StockSelectZeroSourceValues": {
+      "path": "FV/Backend/Proof/StockSelectZeroSourceValues.lean",
+      "canonical_sha256": "93d5b03b8878f743a74f73fbfa03c3c3f3bfc55cd63ddcb4c79e75102d8eec14"
+    },
+    "FV.Backend.Proof.StockSelectComparisonValues": {
+      "path": "FV/Backend/Proof/StockSelectComparisonValues.lean",
+      "canonical_sha256": "858e5d89759ef0b31618fe20eb76e112b8e6189a3ca250be3ac337455e673608"
+    },
+    "FV.Backend.Proof.StockSelectComparisonCompanionValues": {
+      "path": "FV/Backend/Proof/StockSelectComparisonCompanionValues.lean",
+      "canonical_sha256": "b5b396f7174065583809585b140441c6e5a418e8d161d3e3363942eb4cbb2fbd"
+    },
+    "FV.Backend.Proof.StockCmpWideActualValues": {
+      "path": "FV/Backend/Proof/StockCmpWideActualValues.lean",
+      "canonical_sha256": "b6bed9ef8bbf2087cfed06b32b1940b5465215f57523e0135e278704862dc158"
+    },
+    "FV.Backend.Proof.StockCmpMatchedPredecessor": {
+      "path": "FV/Backend/Proof/StockCmpMatchedPredecessor.lean",
+      "canonical_sha256": "787d03766fb357540f8ab27e79f59f6d616ccb243c35934b58fc2505c1110aca"
+    },
+    "FV.Backend.Proof.StockCmpNarrowMatchedValues": {
+      "path": "FV/Backend/Proof/StockCmpNarrowMatchedValues.lean",
+      "canonical_sha256": "ebe57f0ad081968e55eaf79510b78f62efe468019edcd2f379f0f9a2522c3e08"
+    },
+    "FV.Backend.Proof.StockCmpMatchedZero": {
+      "path": "FV/Backend/Proof/StockCmpMatchedZero.lean",
+      "canonical_sha256": "2093a22c5ad957b0a8b36885b7042d36dc7909042d7a8d551a967c423e09c155"
+    },
+    "FV.Backend.Proof.StockCmpMatchedRegister": {
+      "path": "FV/Backend/Proof/StockCmpMatchedRegister.lean",
+      "canonical_sha256": "24f91dd9175c1226009c8c977f5d55b9007226c3b180a5b3b595ffe191595482"
+    },
+    "FV.Backend.Proof.StockCmpMatchedImmediate": {
+      "path": "FV/Backend/Proof/StockCmpMatchedImmediate.lean",
+      "canonical_sha256": "b1e33c6d91d6a5e73d5af5ea2ae0af2cc7ded4b964ab5a180b79b1285a46a226"
+    },
+    "FV.Backend.Proof.StockCmpNarrowImmediateSourceValues": {
+      "path": "FV/Backend/Proof/StockCmpNarrowImmediateSourceValues.lean",
+      "canonical_sha256": "53bafc2b4834264192edc7004732df29588ee54775a09dc83da6d865bf7707ab"
+    },
+    "FV.Backend.Proof.StockCmpNarrowImmediateObserved": {
+      "path": "FV/Backend/Proof/StockCmpNarrowImmediateObserved.lean",
+      "canonical_sha256": "638e4811e8b9fe8256168ec304628c9835900a0b290c64186efba0b4016e5535"
+    },
+    "FV.Backend.Proof.StockCmpNarrowImmediateRhs": {
+      "path": "FV/Backend/Proof/StockCmpNarrowImmediateRhs.lean",
+      "canonical_sha256": "ef6ff9a666f7457a80b723f44e0fba4997431d28eb2ab110e57afb371feb0022"
+    },
+    "FV.Backend.Proof.StockCmpNarrowExtendRequest": {
+      "path": "FV/Backend/Proof/StockCmpNarrowExtendRequest.lean",
+      "canonical_sha256": "8d69b8928bc33f79cd0b07bb2452a4c11517f759c51c05ab94ee490cd30a9805"
+    },
+    "FV.Backend.Proof.StockDivConstantSource": {
+      "path": "FV/Backend/Proof/StockDivConstantSource.lean",
+      "canonical_sha256": "c63e70476d645aeabf462759b20d1ed784bdd89be1deb6219fbc0ccaf544fe40"
+    },
+    "FV.Backend.Proof.StockCmpNarrowSourceValues": {
+      "path": "FV/Backend/Proof/StockCmpNarrowSourceValues.lean",
+      "canonical_sha256": "b96a2d093727ad6a3291c74842b113fd232d19b2814f2b79a4dea90ce7305864"
+    },
+    "FV.Backend.Proof.StockCmpNarrowRhsObserved": {
+      "path": "FV/Backend/Proof/StockCmpNarrowRhsObserved.lean",
+      "canonical_sha256": "d4a1ef16ab6bbfb1129baab53e25351ad8bd64a8ffc2e5d714d96eac06db7cc7"
+    },
+    "FV.Backend.Proof.StockCmpNarrowRhs": {
+      "path": "FV/Backend/Proof/StockCmpNarrowRhs.lean",
+      "canonical_sha256": "386bcdd778d6efe0cbd569102b778b32f0635f433482cdf6c4e9372ea65e25cd"
+    },
+    "FV.Backend.Proof.StockCmpExtendBuilder": {
+      "path": "FV/Backend/Proof/StockCmpExtendBuilder.lean",
+      "canonical_sha256": "18beb3a481a9a43d830607bda4e3ced5f89850443c68be72f3c7ec534291c400"
+    },
+    "FV.Backend.Proof.StockCmpNarrowExtendOp": {
+      "path": "FV/Backend/Proof/StockCmpNarrowExtendOp.lean",
+      "canonical_sha256": "7ca85611c0d5fc4288402913c37889724a5ecf4f74a8029245ce44f012636d2f"
+    },
+    "FV.Backend.Proof.StockCmpNarrowFlags": {
+      "path": "FV/Backend/Proof/StockCmpNarrowFlags.lean",
+      "canonical_sha256": "098e8ebe067bc45e1c9280715ad6aa523d5582faaf984b203039e7257a70e186"
+    },
+    "FV.Backend.Proof.StockCmpZero8OriginalRhsValues": {
+      "path": "FV/Backend/Proof/StockCmpZero8OriginalRhsValues.lean",
+      "canonical_sha256": "5bcf47b211b25e961cb7f818f9f28b6639ac83b2ea217dc8e7128c250e8caf37"
+    },
+    "FV.Backend.Proof.StockCmpZero32RuleCalls": {
+      "path": "FV/Backend/Proof/StockCmpZero32RuleCalls.lean",
+      "canonical_sha256": "ba32a1e52b450d0600b17f1f9830349ce84d7c206a9e6eab1d65a188c835f595"
+    },
+    "FV.Backend.Proof.StockCmpNonzero8Values": {
+      "path": "FV/Backend/Proof/StockCmpNonzero8Values.lean",
+      "canonical_sha256": "f4216a19b6749d15145c55da551a13e0d39be1c1fd3fd9a1300caf3982a071bc"
+    },
+    "FV.Backend.Proof.StockCmpEqualZero8Values": {
+      "path": "FV/Backend/Proof/StockCmpEqualZero8Values.lean",
+      "canonical_sha256": "cf5f3b06af7ba4a3598c0bccdcd224b1dc3e5ca8df16553a1a6c2c6a8efd1e06"
+    },
+    "FV.Backend.Proof.StockCmpFlagInvert": {
+      "path": "FV/Backend/Proof/StockCmpFlagInvert.lean",
+      "canonical_sha256": "c2b60acbb4f7f45778e7ed575b0f1a5efc9207b7f29c2bf4804225f0841efdac"
+    },
+    "FV.Backend.Proof.StockCmpZero16OriginalRhsValues": {
+      "path": "FV/Backend/Proof/StockCmpZero16OriginalRhsValues.lean",
+      "canonical_sha256": "7a91684131608f4f4f65f629968f3564ba030cc1b27ac237d5e146f8ffcdcc2f"
+    },
+    "FV.Backend.Proof.StockCmpEqualZero16Values": {
+      "path": "FV/Backend/Proof/StockCmpEqualZero16Values.lean",
+      "canonical_sha256": "2d420c0484a8039c6f7d736a69fa6cd168d4efd29c69f72b8a547648c9d9298a"
+    },
+    "FV.Backend.Proof.StockCmpImmediateSourceValues": {
+      "path": "FV/Backend/Proof/StockCmpImmediateSourceValues.lean",
+      "canonical_sha256": "d6f2d8d4cef7ba6da845de840702836a9b9fafc58379aa790aad1f372d05bae9"
+    },
+    "FV.Backend.Proof.StockCmpImmediateEmission": {
+      "path": "FV/Backend/Proof/StockCmpImmediateEmission.lean",
+      "canonical_sha256": "87782ffd041a69077bacc21af294d495d4804d6ecabd623329150200be206343"
+    },
+    "FV.Backend.Proof.StockCmpRegisterTraceValues": {
+      "path": "FV/Backend/Proof/StockCmpRegisterTraceValues.lean",
+      "canonical_sha256": "1fb81a65951da0bd80c8e001e0966f6aa681ff166c39d37cb5277f97fccb33cf"
+    },
+    "FV.Backend.Proof.StockCmpRegisterEmission": {
+      "path": "FV/Backend/Proof/StockCmpRegisterEmission.lean",
+      "canonical_sha256": "65501142f72669508bbefb47b495e074d39b5074f74245ef8d9e353e70066516"
+    },
+    "FV.Backend.Proof.StockCmpPredecessorSignedSourceValues": {
+      "path": "FV/Backend/Proof/StockCmpPredecessorSignedSourceValues.lean",
+      "canonical_sha256": "75bb59e880f73d30169a2b64d61f2e12d1a22c72da4625cd6c6e9bedf8b910a7"
+    },
+    "FV.Backend.Proof.StockCmpPredecessorSignedEmission": {
+      "path": "FV/Backend/Proof/StockCmpPredecessorSignedEmission.lean",
+      "canonical_sha256": "d7087e2eb5444c1b5a1c3140efb0d6309ee104312b2e2b2e627b6e9a0bbf6f6b"
+    },
+    "FV.Backend.Proof.StockCmpPredecessorUnsignedSourceValues": {
+      "path": "FV/Backend/Proof/StockCmpPredecessorUnsignedSourceValues.lean",
+      "canonical_sha256": "0a8c66a6c7b6ec0eeb80e637cb4eea5191479391dc33d53e85174028a358f21d"
+    },
+    "FV.Backend.Proof.StockCmpPredecessorUnsignedEmission": {
+      "path": "FV/Backend/Proof/StockCmpPredecessorUnsignedEmission.lean",
+      "canonical_sha256": "5c72433c60b671fafbcd0244a686b41ef5b905b7167042315f2621cead2ec223"
+    },
+    "FV.Backend.Proof.StockCmpZero32OriginalRhsValues": {
+      "path": "FV/Backend/Proof/StockCmpZero32OriginalRhsValues.lean",
+      "canonical_sha256": "04d7e7af6f5c0e9d3447b6ef902b3468a679c4ff942264393a29d51224d23087"
+    },
+    "FV.Backend.Proof.StockCmpNonzero32OriginalValues": {
+      "path": "FV/Backend/Proof/StockCmpNonzero32OriginalValues.lean",
+      "canonical_sha256": "a7e0adc4623e2d6e10263aa016ba175fce93340b74585c543b3bb062d4eb06fa"
+    },
+    "FV.Backend.Proof.StockCmpZero64OriginalRhsValues": {
+      "path": "FV/Backend/Proof/StockCmpZero64OriginalRhsValues.lean",
+      "canonical_sha256": "441cf717e700f0fcb5a0c7ba21d6e32910c8f1bd2c64fa3a2a05edfac439e855"
+    },
+    "FV.Backend.Proof.StockCmpZeroRuleCalls": {
+      "path": "FV/Backend/Proof/StockCmpZeroRuleCalls.lean",
+      "canonical_sha256": "7106a2097fa12d95cdecdb0f3164061dacd71f0a299536e280b3b7c936406c84"
+    },
+    "FV.Backend.Proof.StockCmpNonzero64OriginalValues": {
+      "path": "FV/Backend/Proof/StockCmpNonzero64OriginalValues.lean",
+      "canonical_sha256": "be1a332207e54d51777876eb5296c3f2eff4abdd93661eb437b4c929527bd005"
+    },
+    "FV.Backend.Proof.StockSelectComparisonConditionShape": {
+      "path": "FV/Backend/Proof/StockSelectComparisonConditionShape.lean",
+      "canonical_sha256": "c819728462311c42f6ed6f0aa9076ff47a240997e814dffc35f94eee66270732"
+    },
+    "FV.Backend.Proof.StockSelectWideComparisonShape": {
+      "path": "FV/Backend/Proof/StockSelectWideComparisonShape.lean",
+      "canonical_sha256": "6ee7615676d5705c7a9234200e67fa40da6413add6e25bebc6d2875c41ee0af1"
+    },
+    "FV.Backend.Proof.StockMinMaxRegisterRuns": {
+      "path": "FV/Backend/Proof/StockMinMaxRegisterRuns.lean",
+      "canonical_sha256": "0a9755111cad6f60405d19a73538860735344bafcd615862328e625467731d83"
+    },
+    "FV.Backend.Proof.StockSelectZeroConditionShape": {
+      "path": "FV/Backend/Proof/StockSelectZeroConditionShape.lean",
+      "canonical_sha256": "d4e72740fb6c56048f0f22e6fa6bff2ada9a2514261b9d7e9086bc1b06c17eca"
+    },
+    "FV.Backend.Proof.StockSelectNonzeroConditionShape": {
+      "path": "FV/Backend/Proof/StockSelectNonzeroConditionShape.lean",
+      "canonical_sha256": "f9e1557f6aba85e08d304d2931a52c56edc977fe0d9e9d88581fe32d6c50fd16"
+    },
+    "FV.Backend.Proof.StockSelectConditionInvertShape": {
+      "path": "FV/Backend/Proof/StockSelectConditionInvertShape.lean",
+      "canonical_sha256": "3a53d493833c78f03935ba0d84882c832daabc385e929b2b76c2bc2e3a3fa0dc"
+    },
+    "FV.Backend.Proof.StockSelectNarrowComparisonShape": {
+      "path": "FV/Backend/Proof/StockSelectNarrowComparisonShape.lean",
+      "canonical_sha256": "37b8d08ddd03e7d274f8beea74da55b116027c3035b4b0efdc6dbe6d5426aa5d"
+    },
+    "FV.Backend.Proof.StockSelectConditionCompanion": {
+      "path": "FV/Backend/Proof/StockSelectConditionCompanion.lean",
+      "canonical_sha256": "2381c5228d6c005d432927342bbb72ac17e5f17bc02cfd06ef54df79dc260b3b"
+    },
+    "FV.Backend.Proof.StockSelectConditionReplacement": {
+      "path": "FV/Backend/Proof/StockSelectConditionReplacement.lean",
+      "canonical_sha256": "be2040bdb2cf0d0e827c9f3b3c0550dfc9dd577a70b2f6a2d1105d4054adbd1b"
+    },
+    "FV.Backend.Proof.StockSelectReplacementResolved": {
+      "path": "FV/Backend/Proof/StockSelectReplacementResolved.lean",
+      "canonical_sha256": "f2c0c0ef66a5e411c58293c704255fd5a608eab3ac6a3bc4e8fb85fd2daf7747"
+    },
+    "FV.Backend.Proof.StockSelectReplacement": {
+      "path": "FV/Backend/Proof/StockSelectReplacement.lean",
+      "canonical_sha256": "d5635de5abc53b339509fe282356857084be8d4d088b560a1e40a41139d5e93f"
+    },
+    "FV.Backend.Proof.StockSelectConditionObserved": {
+      "path": "FV/Backend/Proof/StockSelectConditionObserved.lean",
+      "canonical_sha256": "4900f89ef0b8f8db4a8e05f575f0c7e7f578a080d052d88c5ca00990fcd1e296"
+    },
+    "FV.Backend.Proof.StockSelectDecodedObserved": {
+      "path": "FV/Backend/Proof/StockSelectDecodedObserved.lean",
+      "canonical_sha256": "e6873202785847a324c73cd6a16e97a4bfd8a3f1df36fdb0c128026e15ce046c"
+    },
+    "FV.Backend.Proof.StockSelectDecodedRequests": {
+      "path": "FV/Backend/Proof/StockSelectDecodedRequests.lean",
+      "canonical_sha256": "01ceeab5b7dee3d512c2bbe3c51fb816bba6796fafeaa7bbf0de5d5f8f713e2c"
+    },
+    "FV.Backend.Proof.StockSelectDecodeFlags": {
+      "path": "FV/Backend/Proof/StockSelectDecodeFlags.lean",
+      "canonical_sha256": "5caf4147e666261f1edad2aaa4b0b5f084da693a6422531cec6a3d002b7e2dd9"
+    },
+    "FV.Backend.Proof.StockSelectConditionOriginValues": {
+      "path": "FV/Backend/Proof/StockSelectConditionOriginValues.lean",
+      "canonical_sha256": "1650749196e558826e9175a180b1a2a3a8bb159f3ffb42ffcfa993ef98b861d4"
+    },
+    "FV.Backend.Proof.StockSelectConditionCalls": {
+      "path": "FV/Backend/Proof/StockSelectConditionCalls.lean",
+      "canonical_sha256": "dc7f0f2d0a34f3fcb412e89b1d3c6192b095a46b24e3a73b5ef6052054d3c937"
+    },
+    "FV.Backend.Proof.StockSelectOriginalSourceMatch": {
+      "path": "FV/Backend/Proof/StockSelectOriginalSourceMatch.lean",
+      "canonical_sha256": "315b1d82b546f26b71a12996bb4d842b84d38a5df6e45f9694a7345ccbdb0ee9"
+    },
+    "FV.Backend.Proof.StockRootOpcodeMatch": {
+      "path": "FV/Backend/Proof/StockRootOpcodeMatch.lean",
+      "canonical_sha256": "487674a651af05cade4407cae3d4bbb5c56179299d5f3c85986340cd0789afc5"
+    },
+    "FV.Backend.Proof.StockScopeRoots": {
+      "path": "FV/Backend/Proof/StockScopeRoots.lean",
+      "canonical_sha256": "18cd95dedc2402de46b01edbe108648c72a7b9bb6813295c4d3906fee4a0c1b2"
+    },
+    "FV.Backend.Proof.StockSelectionReceipts": {
+      "path": "FV/Backend/Proof/StockSelectionReceipts.lean",
+      "canonical_sha256": "a73d18be7f5ebecbdf6598e2509de547d3d0a94abe5fc9c56b68bc97c5a26b57"
+    },
+    "FV.Backend.Proof.StockRootOpcode": {
+      "path": "FV/Backend/Proof/StockRootOpcode.lean",
+      "canonical_sha256": "cb546d2ee1a9d11c26b7e9181065d8fd31fff9c4ddee40844c3843745236697e"
+    },
+    "FV.Backend.Proof.StockSelectRootCalls": {
+      "path": "FV/Backend/Proof/StockSelectRootCalls.lean",
+      "canonical_sha256": "1c717de19c0d47d52147262afd3e2480e32c085fd513cdc4bcca1525aa8758cb"
+    },
+    "FV.Backend.Proof.StockAvailableTypes": {
+      "path": "FV/Backend/Proof/StockAvailableTypes.lean",
+      "canonical_sha256": "7d98dc460674d1e97d34c79b6209f5320be3358e731f583bdf59467cea129821"
+    },
+    "FV.Backend.Proof.StockEntryABI": {
+      "path": "FV/Backend/Proof/StockEntryABI.lean",
+      "canonical_sha256": "fd30d4484f4b4b3bde4eb17e912ea8d4c18b0365786e125f73da59206bce7372"
+    },
+    "FV.Isle.Generated.Manifest": {
+      "path": "FV/Isle/Generated/Manifest.lean",
+      "canonical_sha256": "a1c2ac698a78cf3f37431e810fffc22f01f30a69e645226052ff14bc1869687e"
+    },
+    "FV.Backend.Proof.StockEntryAssembly": {
+      "path": "FV/Backend/Proof/StockEntryAssembly.lean",
+      "canonical_sha256": "f2825f931bdd9f1a024a826a408e0f8199c84b09bcc82df1f94e30ec5ae22be4"
+    },
+    "FV.Backend.Proof.StockEntryArgs": {
+      "path": "FV/Backend/Proof/StockEntryArgs.lean",
+      "canonical_sha256": "96ad9f1728ebe625261465563aea4f68c4ddda9ca8f4b28d39b20f6ddc15ccf6"
+    },
+    "FV.Backend.Proof.StockEntryLoads": {
+      "path": "FV/Backend/Proof/StockEntryLoads.lean",
+      "canonical_sha256": "7921a69059c0f831c8d68b2dfb6abe84ed529ceda16c062a424384debf398111"
+    },
+    "FV.Backend.Proof.StockEntryCode": {
+      "path": "FV/Backend/Proof/StockEntryCode.lean",
+      "canonical_sha256": "2dc0a6fe0eeb9b11abe482cfbe8acca6eeecbfc18ca094430e7d34f566dbae81"
+    },
+    "FV.Backend.Proof.StockEntryOrder": {
+      "path": "FV/Backend/Proof/StockEntryOrder.lean",
+      "canonical_sha256": "0b0dae1989d69957d1bbe01c9e7a2154fbcc29a1cb919704c4450dc3ce9ae5c7"
+    },
+    "FV.Backend.Proof.StockArithmeticReturnRefines": {
+      "path": "FV/Backend/Proof/StockArithmeticReturnRefines.lean",
+      "canonical_sha256": "18f5bcbce3e8ef15c13a94e238e472d2977a29c5289c9e6efdbac2cdfd54fc27"
+    },
+    "FV.Backend.Proof.StockArithmeticSourceFrame": {
+      "path": "FV/Backend/Proof/StockArithmeticSourceFrame.lean",
+      "canonical_sha256": "0351efd442e62a4f834ac352b2d078815c1117c240c0fe0971d65470e33355b8"
+    },
+    "FV.Backend.Proof.StockArithmeticSourceRefines": {
+      "path": "FV/Backend/Proof/StockArithmeticSourceRefines.lean",
+      "canonical_sha256": "b77979a789e0457693b4d1d2127ad6fdee5368787125cfee32a8a60c4917718c"
+    },
+    "FV.Backend.Proof.StockArithmeticBodyRefines": {
+      "path": "FV/Backend/Proof/StockArithmeticBodyRefines.lean",
+      "canonical_sha256": "6ceb1f16549a29339f1cf2f9080fb5ccbcd21a69968b20e16289e50dcc150ba6"
+    },
+    "FV.Backend.Proof.StockPureRecordCoverage": {
+      "path": "FV/Backend/Proof/StockPureRecordCoverage.lean",
+      "canonical_sha256": "7044b6dfc4e3fcc3f9cb706fe150f9f6eee599d4ae873575392ddb0e62864d56"
+    },
+    "FV.Backend.Proof.StockPureDriverUnsunk": {
+      "path": "FV/Backend/Proof/StockPureDriverUnsunk.lean",
+      "canonical_sha256": "09d6196802fb992062060fff342464f91ac31ca6015c92226925593d6f36a4be"
+    },
+    "FV.Backend.Proof.StockPureUnsunk": {
+      "path": "FV/Backend/Proof/StockPureUnsunk.lean",
+      "canonical_sha256": "2aeac73e017bdc22b1007fb08b85802c8bfd62d73f2aedf6ac944b95598c4155"
+    },
+    "FV.Backend.Proof.StockSinkFrame": {
+      "path": "FV/Backend/Proof/StockSinkFrame.lean",
+      "canonical_sha256": "2838400e1c408018c85e3fea85aff49ec525d79f07373b32b83097805adcf712"
+    },
+    "FV.Backend.Proof.StockPureSourceColors": {
+      "path": "FV/Backend/Proof/StockPureSourceColors.lean",
+      "canonical_sha256": "037fa43c18066710bb990bc93bd10f40af28d5ee814be9489eb80623a58b3de1"
+    },
+    "FV.Backend.Proof.StockBodyScanOrigin": {
+      "path": "FV/Backend/Proof/StockBodyScanOrigin.lean",
+      "canonical_sha256": "d7fe452527534dfda330c2e4dd99f7d3c9bb7c405e491fe4ac4005c3ae6a462c"
+    },
+    "FV.Backend.Proof.StockAddSubScanRefines": {
+      "path": "FV/Backend/Proof/StockAddSubScanRefines.lean",
+      "canonical_sha256": "a9de4a8a60211a1ce10ab116ede08b88247ab7b398dd3e4351d075e252310f54"
+    },
+    "FV.Backend.Proof.StockBodyScanRefines": {
+      "path": "FV/Backend/Proof/StockBodyScanRefines.lean",
+      "canonical_sha256": "e3f28b91372e42c8428bb53b4a90b8b8e245106dc4a2b9f16fc14090df9e90c3"
+    },
+    "FV.Backend.Proof.StockGuardedOmission": {
+      "path": "FV/Backend/Proof/StockGuardedOmission.lean",
+      "canonical_sha256": "66ae9903483c9092fc7513934e827974a268f9309099ff39d237c21f11b1e42e"
+    },
+    "FV.Backend.Proof.StockAddSubAllSourceValues": {
+      "path": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "canonical_sha256": "b22039b5acc9e80628cea6eaddd1115981864537dc5ef11ddd5add651bf5d55a"
+    },
+    "FV.Backend.Proof.StockAddSubSourceValues": {
+      "path": "FV/Backend/Proof/StockAddSubSourceValues.lean",
+      "canonical_sha256": "29352fbbc06bb0b7bf218a64018c63fee43b4b0b2a69b160340506345fc925d5"
+    },
+    "FV.Backend.Proof.StockAddSubRecordValues": {
+      "path": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "canonical_sha256": "46e381ac903953a0dd3e4c14fd40fb046f4a397968ef89c4997c183351a94d50"
+    },
+    "FV.Backend.Proof.StockAddSubUnifiedValues": {
+      "path": "FV/Backend/Proof/StockAddSubUnifiedValues.lean",
+      "canonical_sha256": "e9386bdf6701589680693021e0d385b26faab4cbac40a8b0faf2138ea5040bd0"
+    },
+    "FV.Backend.Proof.StockAddSubValues": {
+      "path": "FV/Backend/Proof/StockAddSubValues.lean",
+      "canonical_sha256": "cfec67b8c2e38edd318ada8f264f88abf6aacdfa2a1a089111bd8be8f0429ce6"
+    },
+    "FV.Backend.Proof.StockAddSubSemantics": {
+      "path": "FV/Backend/Proof/StockAddSubSemantics.lean",
+      "canonical_sha256": "345b6bb7d0ddffe2258bebc72e0d1c28108c4eff717efbcfa23fd9929a07fd7e"
+    },
+    "FV.Backend.Proof.StockAddSubObserved": {
+      "path": "FV/Backend/Proof/StockAddSubObserved.lean",
+      "canonical_sha256": "1aa9ddb69c7ba850a93c6afd256528fca6b0bbb099de90ec8aa84cd93824f184"
+    },
+    "FV.Backend.Proof.StockAddSubSelected": {
+      "path": "FV/Backend/Proof/StockAddSubSelected.lean",
+      "canonical_sha256": "1770b62adbd67323c5d7fa617b8b64f3ad0bb8437bb77ae9aad3153f8bcc68e0"
+    },
+    "FV.Backend.Proof.StockAddSubRhs": {
+      "path": "FV/Backend/Proof/StockAddSubRhs.lean",
+      "canonical_sha256": "977e791d171cfc306e5b3022bf965c395751283b386352be0fb9830fe1fb396c"
+    },
+    "FV.Backend.Proof.StockLogicalForms": {
+      "path": "FV/Backend/Proof/StockLogicalForms.lean",
+      "canonical_sha256": "ddcc13bfe4cf5a57c3eaf3377fb0b77bc0123a72aeb8ea21f2da1a414cee738e"
+    },
+    "FV.Backend.Proof.StockImm12Helper": {
+      "path": "FV/Backend/Proof/StockImm12Helper.lean",
+      "canonical_sha256": "9d0ebd5c97ebf2c177953f51370914d0cdb13a6319fa87822e749205edc23a6f"
+    },
+    "FV.Backend.Proof.StockAddSubPure": {
+      "path": "FV/Backend/Proof/StockAddSubPure.lean",
+      "canonical_sha256": "4da303f5bcbf852cfc38a0357cea94d25b9d8d1a8e3d43dcfc4d6b4dd282d821"
+    },
+    "FV.Backend.Proof.StockAddSubMatch": {
+      "path": "FV/Backend/Proof/StockAddSubMatch.lean",
+      "canonical_sha256": "1c5e6636219363b53dcfe44685377c92fa5f96209b17305d5a938d7307f4016b"
+    },
+    "FV.Backend.Proof.StockLogicalLookthrough": {
+      "path": "FV/Backend/Proof/StockLogicalLookthrough.lean",
+      "canonical_sha256": "26032369404d4350d8139f38e21edfc56f3828753f9d310eeb46b114497f5ab3"
+    },
+    "FV.Backend.Proof.StockAddSubImmediateValues": {
+      "path": "FV/Backend/Proof/StockAddSubImmediateValues.lean",
+      "canonical_sha256": "c03e2e0732a3ff0504162fda21e86378a7a9f6087c83e4dcb5e52cb319080ea7"
+    },
+    "FV.Backend.Proof.StockAddSubImmediateMatch": {
+      "path": "FV/Backend/Proof/StockAddSubImmediateMatch.lean",
+      "canonical_sha256": "2446674738b75bdc00dba7802ce197056e7164b75029b4c210cdf7ee9f25dcd6"
+    },
+    "FV.Backend.Proof.StockAddSubNegativeValues": {
+      "path": "FV/Backend/Proof/StockAddSubNegativeValues.lean",
+      "canonical_sha256": "c8ba590a62e3b55d98bed879d71978e5d0c56a14c6c27f3bd501eec7d9384f83"
+    },
+    "FV.Backend.Proof.StockAddSubNegativeMatch": {
+      "path": "FV/Backend/Proof/StockAddSubNegativeMatch.lean",
+      "canonical_sha256": "9fd23155522e578ae9cf9234c1ad1daeb17869d335b8952491127de2eac4f4a1"
+    },
+    "FV.Backend.Proof.StockAddSubNegativePure": {
+      "path": "FV/Backend/Proof/StockAddSubNegativePure.lean",
+      "canonical_sha256": "17cec20c368f31240ed6891f6f22239b4d0b2414c1f97e0f6682d16890506eaa"
+    },
+    "FV.Backend.Proof.StockAddSubAllValues": {
+      "path": "FV/Backend/Proof/StockAddSubAllValues.lean",
+      "canonical_sha256": "f9773e13d14302ea1e2b454851cfbaea3b7aa91194ef484e4f4ac89c89315571"
+    },
+    "FV.Backend.Proof.StockAluSelectedValues": {
+      "path": "FV/Backend/Proof/StockAluSelectedValues.lean",
+      "canonical_sha256": "8c6c1edaceccd7402530c7175e601c464bd0a0f461e2f5d5785d441520ad991b"
+    },
+    "FV.Backend.Proof.StockMulFusedRecordValues": {
+      "path": "FV/Backend/Proof/StockMulFusedRecordValues.lean",
+      "canonical_sha256": "e72f03c678959b12c0da3bdabf78849f23b956770097446c37b28df6614db05a"
+    },
+    "FV.Backend.Proof.StockMulFusedValues": {
+      "path": "FV/Backend/Proof/StockMulFusedValues.lean",
+      "canonical_sha256": "652b48a98df677ecf933d4dd9bd61320c84adb2721d5ab7aa53594ad379c1789"
+    },
+    "FV.Backend.Proof.StockMulFusedSemantics": {
+      "path": "FV/Backend/Proof/StockMulFusedSemantics.lean",
+      "canonical_sha256": "0da6ab5b05b76fab6d5cee1e76271e05df18071720e26225a6d061a6bff80086"
+    },
+    "FV.Backend.Proof.StockMulFusedRhs": {
+      "path": "FV/Backend/Proof/StockMulFusedRhs.lean",
+      "canonical_sha256": "dbe246f7d8a461f206ef357d83229082a2b3d12d0586e92aa4ff12b261059967"
+    },
+    "FV.Backend.Proof.StockMulHelper": {
+      "path": "FV/Backend/Proof/StockMulHelper.lean",
+      "canonical_sha256": "23ca2873285910172d48c3c5c5fe333f64816e7d4ea8927885b4c4df54a787e5"
+    },
+    "FV.Backend.Proof.StockMulFusedMatch": {
+      "path": "FV/Backend/Proof/StockMulFusedMatch.lean",
+      "canonical_sha256": "52f3a581ef2bac2ef6a0d46f377a75f654e2b5d4bc72a35df028aa1180910cad"
+    },
+    "FV.Backend.Proof.StockMulValues": {
+      "path": "FV/Backend/Proof/StockMulValues.lean",
+      "canonical_sha256": "29c509d0dd3c3e9774bd0bf7c5231bbdff1b354e762307d7c59d3ff56589b317"
+    },
+    "FV.Backend.Proof.StockMulRhs": {
+      "path": "FV/Backend/Proof/StockMulRhs.lean",
+      "canonical_sha256": "43139316384aa539edd2aca0bde7aed276a14cd4dcc01668c5035cb858e8c680"
+    },
+    "FV.Backend.Proof.StockMulSemantics": {
+      "path": "FV/Backend/Proof/StockMulSemantics.lean",
+      "canonical_sha256": "56901ddde0cbdacfa5b1ee11b291caf1e019dc4fae1c9788394a7de40fa93962"
+    },
+    "FV.Backend.Proof.StockAddSubDispatch": {
+      "path": "FV/Backend/Proof/StockAddSubDispatch.lean",
+      "canonical_sha256": "16a5cfb2f4264685eb8930c9f3ad44cbf6c39b4592276512dc36a27ed704dec5"
+    },
+    "FV.Backend.Proof.StockArithmeticTerminalDefined": {
+      "path": "FV/Backend/Proof/StockArithmeticTerminalDefined.lean",
+      "canonical_sha256": "d2d8772b901243d6989c5364bfe4a73def57712e3bf77c0ce38af72f40f8c492"
+    },
+    "FV.Backend.Proof.StockArithmeticSourceExecution": {
+      "path": "FV/Backend/Proof/StockArithmeticSourceExecution.lean",
+      "canonical_sha256": "f9aca93bc4589d78acc39df169f54dfa013f154d07505771d3ba2207b9e5c804"
+    },
+    "FV.Backend.Proof.StockReturnContract": {
+      "path": "FV/Backend/Proof/StockReturnContract.lean",
+      "canonical_sha256": "b74760524913791241d5c26f6b4e6b4c0af84904626a34887fb9191a4f70c51f"
+    },
+    "FV.Backend.Proof.StockReturnAutomaticSource": {
+      "path": "FV/Backend/Proof/StockReturnAutomaticSource.lean",
+      "canonical_sha256": "2a793f086775f341848566231edad837b31281d19daf8ab38640738f3f5a3ec5"
+    },
+    "FV.Backend.Proof.StockTerminalEmission": {
+      "path": "FV/Backend/Proof/StockTerminalEmission.lean",
+      "canonical_sha256": "08676f6b11afe272da1da7cfc50d252d9a50ad9f4a928fa7a5be3c04a7a28742"
+    },
+    "FV.Backend.Proof.StockTerminalDriver": {
+      "path": "FV/Backend/Proof/StockTerminalDriver.lean",
+      "canonical_sha256": "207d07049316e60f9aca73ebe4ea3a9941ca0a71a3a117ae57601424f9a6fcfc"
+    },
+    "FV.Backend.Proof.StockTerminalBlocks": {
+      "path": "FV/Backend/Proof/StockTerminalBlocks.lean",
+      "canonical_sha256": "add4c4e7582b57db7271989ed26e9c173c312b27600ccf16b4aaaba8b9079752"
+    },
+    "FV.Backend.Proof.StockTerminalScans": {
+      "path": "FV/Backend/Proof/StockTerminalScans.lean",
+      "canonical_sha256": "db5ccda5442fa198ae32bb5c9c3b2b681d84536ad872fa9d05e7e418ae7328af"
+    },
+    "FV.Backend.Proof.StockTerminalRoots": {
+      "path": "FV/Backend/Proof/StockTerminalRoots.lean",
+      "canonical_sha256": "08584182111b7f84b8d825e9a338ccb3411fa07d562c95d05e78336c798a4e4e"
+    },
+    "FV.Backend.Proof.StockSourceSinkModel": {
+      "path": "FV/Backend/Proof/StockSourceSinkModel.lean",
+      "canonical_sha256": "be1a289507b5019c514c9a69afddf53405a4eedcc79131bc3088ec2af581a107"
+    },
+    "FV.Backend.Proof.StockCoverageInvariant": {
+      "path": "FV/Backend/Proof/StockCoverageInvariant.lean",
+      "canonical_sha256": "2b7897f0418ed6393436c9964a5af6cee997a70bbacb2fccdde1ed7e34ddf449"
+    },
+    "FV.Backend.Proof.StockSourceSinkTable": {
+      "path": "FV/Backend/Proof/StockSourceSinkTable.lean",
+      "canonical_sha256": "9c5d0e54b98b7713bffc81b5fec61d6dec8736f2b046b11318073f4144c372aa"
+    },
+    "FV.Backend.Proof.StockReturnRecordSource": {
+      "path": "FV/Backend/Proof/StockReturnRecordSource.lean",
+      "canonical_sha256": "7733853452bfea4cb227455fddb22899e7632238aa44b04d73731f27fc7dde43"
+    },
+    "FV.Backend.Proof.StockReturnRecordCalls": {
+      "path": "FV/Backend/Proof/StockReturnRecordCalls.lean",
+      "canonical_sha256": "1df1146f7df95b70b7794f8a75faa56ce8b8f2bf5e63acbac4aee06ecb31eeed"
+    },
+    "FV.Backend.Proof.StockReturnHelpers": {
+      "path": "FV/Backend/Proof/StockReturnHelpers.lean",
+      "canonical_sha256": "236eac2420993935936459c1d120e2fb2323b1f4ca2903764304785a4b6db6f5"
+    },
+    "FV.Backend.Proof.StockReturnRootCalls": {
+      "path": "FV/Backend/Proof/StockReturnRootCalls.lean",
+      "canonical_sha256": "0265f8ce0a758a3b58da72ee31ed3340b2bfef5b33df2467c27d5717fd097c02"
+    },
+    "FV.Backend.Proof.StockTermDataOrigin": {
+      "path": "FV/Backend/Proof/StockTermDataOrigin.lean",
+      "canonical_sha256": "ed94b698086f15a66e23404b28f89ed5386cd557cb3a2f88014e3f6d32ad1b5b"
+    },
+    "FV.Backend.Proof.StockReturnSourceRuns": {
+      "path": "FV/Backend/Proof/StockReturnSourceRuns.lean",
+      "canonical_sha256": "f7915a3011a809f3fed466d927d6d0c56cb2d833e946a8ee95057fcda7ea3e49"
+    },
+    "FV.Backend.Proof.StockReturnArity": {
+      "path": "FV/Backend/Proof/StockReturnArity.lean",
+      "canonical_sha256": "322443e1025244ab59bb983a15d25fa87342b8b5e19bf4cae081707c13ba5602"
+    },
+    "FV.Backend.Proof.StockBlockCode": {
+      "path": "FV/Backend/Proof/StockBlockCode.lean",
+      "canonical_sha256": "3b56951b3e11df3c614214637ba26f2814d652f1cc56f23a0b3613f29b38b862"
+    },
+    "FV.Backend.Proof.StockPreparedSemantics": {
+      "path": "FV/Backend/Proof/StockPreparedSemantics.lean",
+      "canonical_sha256": "a0606314b07cec637b11d5fad1fc81746854edf6e6628fbf5482506970f1dc04"
+    },
+    "FV.E2E.DeadCleanupRegLevelX": {
+      "path": "FV/E2E/DeadCleanupRegLevelX.lean",
+      "canonical_sha256": "faabba1bf9c5a13cab665c53034c6e300ab3d9c6f0f6876a39c867b022e4e824"
+    },
+    "FV.E2E.DeadCleanupRegLevel": {
+      "path": "FV/E2E/DeadCleanupRegLevel.lean",
+      "canonical_sha256": "8ab17e18f32308f616696419f0ca946e761440c745c8259e06208501af803778"
+    },
+    "FV.Opt.Legalize128Pre": {
+      "path": "FV/Opt/Legalize128Pre.lean",
+      "canonical_sha256": "de95359abaf0750b76cfb21f8cf9d801e7b615db3e9e75cc57db9ca1311a4ad6"
+    },
+    "FV.Opt.Legalize128Pass": {
+      "path": "FV/Opt/Legalize128Pass.lean",
+      "canonical_sha256": "75da999fcf8c0f171d26c38fd57785de21c8707780e0c038825e757b54a73bb3"
+    },
+    "FV.Opt.Legal": {
+      "path": "FV/Opt/Legal.lean",
+      "canonical_sha256": "b5db4d29b1b2521e9cded086381323df4f90c04faa48565d97cebd5c97190c8e"
+    },
+    "FV.Opt.Legalize128": {
+      "path": "FV/Opt/Legalize128.lean",
+      "canonical_sha256": "d29708a1291a45cb81ae3ca337f01e430e8f4d2d2d0e623a0e063dbe5165504b"
+    },
+    "FV.Backend.Proof.StockMemoryAccessArmFault": {
+      "path": "FV/Backend/Proof/StockMemoryAccessArmFault.lean",
+      "canonical_sha256": "b039b5c0597a96e24d8ef06f1fd8d718faa7a58a728fb8387b2fc5b57023ba21"
+    },
+    "FV.Backend.Proof.StockMemoryAccessTrap": {
+      "path": "FV/Backend/Proof/StockMemoryAccessTrap.lean",
+      "canonical_sha256": "83aec7e70595c7f3810dbffc4998501832cabb626f8c6f19f938b60879fbfe73"
+    },
+    "FV.Backend.Proof.StockMemoryAccessLineFacts": {
+      "path": "FV/Backend/Proof/StockMemoryAccessLineFacts.lean",
+      "canonical_sha256": "144ac622484c78a0fbc6c5b871f37a9bbb84c88259ff87a5d3274b0939508cf6"
+    },
+    "FV.Backend.Proof.StockMemoryAccessStage": {
+      "path": "FV/Backend/Proof/StockMemoryAccessStage.lean",
+      "canonical_sha256": "439eb00e16ed51fbd71c69185dc8ef6a3fe8ec509be17da78ef0307eba9281b4"
+    },
+    "FV.Backend.Proof.StockMemoryAccessPrepare": {
+      "path": "FV/Backend/Proof/StockMemoryAccessPrepare.lean",
+      "canonical_sha256": "7ddcc5a657c2867617aed231d5931ca9bb2d656ad373238ba1cb440e4b734274"
+    },
+    "FV.Backend.Proof.StockMemoryFaultContract": {
+      "path": "FV/Backend/Proof/StockMemoryFaultContract.lean",
+      "canonical_sha256": "9b9fcc345e196ae54363ecee00eca95d622a6a852ed6082ade437c3027000fee"
+    }
+  },
+  "public_roots": [
+    "Backend.Stock.Proof.Acquire810.original_scope_selects810",
+    "Backend.Stock.Proof.Acquire810.acquire_allocated_boundary",
+    "Backend.Stock.Proof.Acquire810.acquire_byte_line",
+    "Backend.Stock.Proof.Acquire810.instFaults_acquire_byte",
+    "Backend.Stock.Proof.Acquire810.acquire_result_binding",
+    "Backend.Stock.Proof.Acquire810.acquire_byte_pair_run",
+    "Backend.Stock.Proof.Acquire810.acquire_compile_sound",
+    "Backend.Stock.Proof.Acquire810.acquire_complete_covered_compilation",
+    "Backend.Stock.Proof.Acquire810.acquire_complete_compilation",
+    "Backend.Stock.Proof.Acquire810.acquire_byte_encoding",
+    "Backend.Stock.Proof.Acquire810.encoded_acquire_byte_fault",
+    "Backend.Stock.Proof.Acquire810.encoded_acquire_byte_fault_step",
+    "Backend.Stock.Proof.Acquire810.original_source_entry",
+    "Backend.Stock.Proof.Acquire810.first_source_memory_trap",
+    "Backend.Stock.Proof.Acquire810.original_entry_normal_form",
+    "Backend.Stock.Proof.Acquire810.acquire_byte_fault_site",
+    "Backend.Stock.Proof.AcquireHelpers.acquire_forward",
+    "Backend.Stock.Proof.Acquire810.VAcquireTrapFrom.boundary",
+    "Backend.Stock.Proof.Acquire810.star_haltAcquire",
+    "Backend.Stock.Proof.Acquire810.acquireTrap_halt",
+    "Backend.Stock.Proof.AcquireHelpers.acquire_helpers_project_and_preserve",
+    "Backend.Stock.Proof.AcquireHelpers.acquire_helper_success",
+    "Backend.Stock.Proof.AcquireHelpers.stock_acquire_call",
+    "Backend.Stock.Proof.Acquire810.acquire_byte_line_fault",
+    "Backend.Stock.Proof.Acquire810.regLevel_acquire_fault_world_value",
+    "Backend.Stock.Proof.Acquire810.regLevel_acquire_fault_boundary_world_value",
+    "Backend.Stock.Proof.Acquire810.regLevel_acquire_fault_boundary_worldX_value",
+    "Backend.Stock.Proof.Acquire810.acquire_no_i128",
+    "Backend.Stock.Proof.Acquire810.acquire_legalize_identity",
+    "Backend.Stock.Proof.Acquire810.acquire_original_complete_compilation",
+    "Backend.Stock.Proof.Acquire810.acquireTraps_clean",
+    "Backend.Stock.Proof.Acquire810.acquireTraps_prune",
+    "Backend.Stock.Proof.Acquire810.acquireTraps_prepare",
+    "Backend.Stock.Proof.Acquire810.prepared_acquire_shapes",
+    "Backend.Stock.Proof.Acquire810.realizes_haltAcquire",
+    "Backend.Stock.Proof.Acquire810.actual_record_binding",
+    "Backend.Stock.Proof.Acquire810.acquire_register_level_boundary",
+    "Backend.Stock.Proof.Acquire810.acquireByteShape_of_check",
+    "Backend.Stock.Proof.Acquire810.original_returns",
+    "Backend.Stock.Proof.Acquire810.original_traps",
+    "E2E.backend_correct_worldX_stock_acquire810",
+    "Backend.Stock.Proof.Acquire810.source_three_steps",
+    "Backend.Stock.Proof.Acquire810.source_more_steps",
+    "Backend.Stock.Proof.Acquire810.source_first_trap",
+    "Backend.Stock.Proof.Acquire810.source_returned_read",
+    "Backend.Stock.Proof.Acquire810.entry_returned_read",
+    "Backend.Stock.Proof.Acquire810.acquireTrap_stage",
+    "Backend.Stock.Proof.Acquire810.acquireTrap_gotV_value",
+    "Backend.Stock.Proof.Acquire810.realizes_haltAcquire_trace",
+    "Backend.Stock.Proof.Acquire810.acquire_allocated_boundary_trace",
+    "Backend.Stock.Proof.Acquire810.acquire_register_level_boundary_from_trace",
+    "Backend.Stock.Proof.Acquire810.lowered_args_prefix",
+    "Backend.Stock.Proof.Acquire810.lowered_byte_access_fault",
+    "Backend.Stock.Proof.Acquire810.acquire_byte_widened_value",
+    "Backend.Stock.Proof.Acquire810.lowered_byte_return",
+    "Backend.Stock.Proof.Acquire810.AcquireAt.load_inv"
+  ],
+  "standard_roots": 42,
+  "fixed_roots": 14,
+  "original_manifest_sha256": "363ef40e66bb3387ab3b4953ed045233395c66792587d420939607e4333a800f",
+  "fixed_function_only": true,
+  "full_acquire_closure": false,
+  "no_earlier_physical_faults_complete": false,
+  "full_goal_complete": false,
+  "whitespace_only_changes": [
+    "FV/Backend/Proof/StockAcquireRealizes.lean",
+    "FV/Backend/Proof/StockAcquireAllocated.lean",
+    "FV/Backend/Proof/StockAcquireTrace.lean"
+  ],
+  "comment_only_correction": {
+    "FV/Backend/Proof/StockAcquire810Witness.lean": {
+      "old_sha256": "7bdc702e59be761702b83724695b621086769e848b948f6e3a9e3c40f15f5273",
+      "new_sha256": "cd112e8e4dfad068ea21ed80e069f31a9d07d613626f453b3f0c4649c53acff9"
+    },
+    "scripts/audit/stock-acquire810.lean": {
+      "old_sha256": "329cff94dd63fa66b3ec678e208150f921abfaecc2020b4390386ce8c6c4a28c",
+      "new_sha256": "9be190ee556f92fca95f8fe5f48a3f3229b9412e7afd598ad53a7c312d1d7627"
+    },
+    "FV/Backend/Proof/StockAcquireRecordWitness.lean": {
+      "old_sha256": "778c775f1a182ca908ff3bd3c2ccf9008480d730822d34c366b93d23c06d9b37",
+      "new_sha256": "2c79d976eec640e3806728e28561f0233ac6ff333d3ec2d8368f043ba82fdb88"
+    },
+    "FV/Backend/Proof/StockAcquirePreparedShapes.lean": {
+      "old_sha256": "f4e366293b3faa42faf5a193797cecadaf71f449910ff53856e667d5e1778045",
+      "new_sha256": "0321300c29368cfa19b76b63394da9cd2f3807140f67c9b0caeb656478463b84"
+    },
+    "FV/Backend/Proof/StockAcquireCompiledWitness.lean": {
+      "old_sha256": "e4664c64091fcc574077c50fbee5a8ae8ddd0b06a7acc679e97b612e92eae119",
+      "new_sha256": "9ba4403a239d4171eea3bee40f16e22720bee462201329dfe7d71167edc634b4"
+    },
+    "FV/Backend/Proof/StockAcquireCompiledCoverage.lean": {
+      "old_sha256": "2688b9ffd9c27ac98fd86c49ff04fe5f5314c18deabb5a42d79f5ab787479c77",
+      "new_sha256": "07980be59270559f51e49d6d02d1ec6854170a4ace5cc89f3e9943a6163d0306"
+    },
+    "FV/Backend/Proof/StockAcquireOriginal.lean": {
+      "old_sha256": "98eb56279d5268016d0f8897e04011d0ce27b332714d68d6dff09b946351f35b",
+      "new_sha256": "57e3dcefc65c4a9a673ad83d3031e398ac38d147c922a3acec9f5991c07e3f64"
+    }
+  },
+  "real_repository_audit_passed": true
+}

@@ -26,7 +26,7 @@ private def selected : Option Bool :=
           | .loadAcquire ty _ _ flags => decide (ty = .int 8 ∧ flags = ({} : Clif.MemFlags))
           | _ => false)
 
-private theorem selected_true : selected = some true := by native_decide
+private theorem selected_true : selected = some true := by native_decide -- witness: native_decide
 
 private theorem successful_exists {α : Type} (value : Except String α) (test : α → Bool)
     (success : value.toOption.map test = some true) :

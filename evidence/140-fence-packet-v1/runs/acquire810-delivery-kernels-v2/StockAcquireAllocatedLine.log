@@ -1,0 +1,22 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireAllocatedLine.lean:53:25: warning: This simp argument is unused:
+  memFinalize
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [MInst.lines, pure, Except.pure, bind, Except.bind, Except.ok.injEq, Prod.mk.injEq] at actualLines
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireAllocatedLine.lean:53:54: warning: This simp argument is unused:
+  bind
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [MInst.lines, memFinalize, pure, Except.pure, Except.bind, Except.ok.injEq,
+    Prod.mk.injEq] at actualLines
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireAllocatedLine.lean:53:59: warning: This simp argument is unused:
+  Except.bind
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [MInst.lines, memFinalize, pure, Except.pure, bind, Except.ok.injEq, Prod.mk.injEq] at actualLines
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

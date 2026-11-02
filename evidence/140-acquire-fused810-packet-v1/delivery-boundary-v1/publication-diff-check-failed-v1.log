@@ -1,0 +1,8 @@
+FV/Backend/Proof/StockAcquireAllocated.lean:11: trailing whitespace.
++theorem acquire_allocated_boundary {R : RL} {isem : Backend.Proof.Sem} 
+FV/Backend/Proof/StockAcquireRealizes.lean:12: trailing whitespace.
++theorem realizes_haltAcquire {R : RL} {isem : Backend.Proof.Sem} 
+FV/Backend/Proof/StockAcquireTrace.lean:11: trailing whitespace.
++theorem realizes_haltAcquire_trace {R : RL} {good : Arm.ArmState → Prop} {isem : Backend.Proof.Sem} 
+FV/Backend/Proof/StockAcquireTrace.lean:48: trailing whitespace.
++theorem acquire_allocated_boundary_trace {R : RL} {good : Arm.ArmState → Prop} {isem : Backend.Proof.Sem} 

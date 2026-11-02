@@ -1,0 +1,40 @@
+{
+  "status": "passed",
+  "real_exit": 0,
+  "actual_unchanged_repository_auditor": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+  "auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "argv": [
+    "python3",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+    "--cwd",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "--log-dir",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/real-repository-audits-v1/audit",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/standalone-class-canonical-v1/scripts/audit/stock-call-store-class-final.lean",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/scripts/audit/stock-call-store-callee-final.lean"
+  ],
+  "resource_wrapper_sha256": "f3df5686cb55c980ebbe1bcdb737740c74a07a5ec12d55585d5b1e6145a292c3",
+  "wrapper_only_adds_j1": true,
+  "actual_lean_commands": [
+    [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+      "env",
+      "lean",
+      "-j1",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/standalone-class-canonical-v1/scripts/audit/stock-call-store-class-final.lean"
+    ],
+    [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+      "env",
+      "lean",
+      "-j1",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/scripts/audit/stock-call-store-callee-final.lean"
+    ]
+  ],
+  "audits": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/standalone-class-canonical-v1/scripts/audit/stock-call-store-class-final.lean": "5fc33f65af493d244434aad4fbadbcd976b4b2bd4bc51f5166bcd038cb6ed391",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/scripts/audit/stock-call-store-callee-final.lean": "da7e65e65a305966ef1184b75682271c2b005751fdd38f8a2ebf1ee1633f2419"
+  },
+  "stats": "peak 267554816\noom 0\noom_kill 0\n",
+  "utc": "2026-11-02T17:41:03.944513+00:00"
+}

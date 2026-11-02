@@ -1,0 +1,9 @@
+{
+  "status": "approved_for_publication",
+  "manifest_sha256": "9d249f12a8195ec4501147017666d8f8f4179631dfc3274cf4ab7c6b1228213c",
+  "gate_sha256": "b5eebbb24ea8b4d9925b23d2b95da2dfc054284b9c9efb106feb361a1731a3cf",
+  "real_repository_auditor_exit": 0,
+  "all_56_axiom_sets_exact": true,
+  "source_context_rechecked_at": "770e543c350bf158dc782b7f80afb9748817e0af",
+  "comment_only": true
+}

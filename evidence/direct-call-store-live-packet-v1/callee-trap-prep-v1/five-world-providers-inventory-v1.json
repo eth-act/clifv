@@ -1,0 +1,15 @@
+{
+  "roots": [
+    "FV.E2E.WorldTrapCall"
+  ],
+  "missing": [
+    "FV/E2E/WorldUnwindGot.lean",
+    "FV/E2E/WorldUnwindReg.lean",
+    "FV/E2E/WorldUnwindCore.lean",
+    "FV/E2E/WorldUnwind.lean",
+    "FV/E2E/WorldTrapCall.lean"
+  ],
+  "dependency_modules": 385,
+  "existing_providers": 380,
+  "build_not_authorized_or_started": true
+}

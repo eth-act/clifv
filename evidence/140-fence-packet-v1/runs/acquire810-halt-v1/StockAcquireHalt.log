@@ -1,0 +1,188 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:47:43: error(lean.unknownIdentifier): Unknown identifier `sb`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:53:31: error(lean.unknownIdentifier): Unknown identifier `sb`
+
+Note: It is not possible to treat `sb` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:54:16: error(lean.unknownIdentifier): Unknown identifier `sb`
+
+Note: It is not possible to treat `sb` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:54:80: error: unsolved goals
+code : Clif.TrapCode
+property : BitVec 64 → Nat → Prop
+isem : Sem
+inst : MInst
+uses : List CV
+world : Arm.ArmState
+normal : ¬sorry
+⊢ sorry () = isem inst uses world
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:55:8: warning: This simp argument is unused:
+  haltAcquire
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [normal]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:55:20: warning: This simp argument is unused:
+  normal
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [haltAcquire]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:55:8: warning: declaration uses `sorry`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:60:28: error(lean.unknownIdentifier): Unknown identifier `sb`
+
+Note: It is not possible to treat `sb` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:61:16: error(lean.unknownIdentifier): Unknown identifier `sb`
+
+Note: It is not possible to treat `sb` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:61:85: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.halt` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Ctl.halt`
+  [apply] `IsSimulation.halt`
+  [apply] `MConf.halt`
+  [apply] `MNext.halt`
+  [apply] `VConf.halt`
+  [apply] `VNext.halt`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:62:20: error: Invalid argument: Variable `fault` is not a proposition or let-declaration
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:61:95: error: unsolved goals
+code : Clif.TrapCode
+property : BitVec 64 → Nat → Prop
+isem : Sem
+inst : MInst
+uses : List CV
+world : Arm.ArmState
+fault : sorry
+⊢ sorry () = some (haltOutputs inst, world, sorry ())
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:62:8: warning: This simp argument is unused:
+  haltAcquire
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [fault]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:75:54: error(lean.unknownIdentifier): Unknown identifier `sb`
+
+Note: It is not possible to treat `sb` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:77:36: error(lean.unknownIdentifier): Unknown identifier `sb`
+
+Note: It is not possible to treat `sb` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:80:25: error(lean.unknownIdentifier): Unknown identifier `sb`
+
+Note: It is not possible to treat `sb` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:88:38: error(lean.unknownIdentifier): Unknown identifier `sb`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:91:38: error(lean.unknownIdentifier): Unknown identifier `sb`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:93:29: error(lean.unknownIdentifier): Unknown identifier `sb`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:92:103: error: unsolved goals
+code : Clif.TrapCode
+property : BitVec 64 → Nat → Prop
+vc : VCode
+isem : Sem
+before after b✝ c✝ : VConf CV Arm.ArmState
+tail : Star (VStep vc isem) b✝ c✝
+ih :
+  ∀ {last : VState CV Arm.ArmState},
+    c✝ = VConf.run last →
+      (∃ block inst operands,
+          vc.blocks[last.b]? = some block ∧
+            block.insts[last.k]? = some inst ∧ inst.operands = Except.ok operands ∧ sorry) →
+        ∃ reached,
+          Star (VStep vc sorry) b✝ (VConf.run reached) ∧
+            ∃ block inst operands,
+              vc.blocks[reached.b]? = some block ∧
+                block.insts[reached.k]? = some inst ∧ inst.operands = Except.ok operands ∧ sorry
+last : VState CV Arm.ArmState
+same : c✝ = VConf.run last
+boundary :
+  ∃ block inst operands,
+    vc.blocks[last.b]? = some block ∧ block.insts[last.k]? = some inst ∧ inst.operands = Except.ok operands ∧ sorry
+b k : Nat
+regs : Nat → CV
+world : Arm.ArmState
+block : VBlock
+inst : MInst
+operands : Array Operand
+outs : List CV
+next : Arm.ArmState
+ctl : Ctl
+found : vc.blocks[b]? = some block
+located : block.insts[k]? = some inst
+valid : inst.operands = Except.ok operands
+execution :
+  isem inst (List.map (fun x => regs x.vreg) (List.filter Operand.isUse operands.toList)) world = some (outs, next, ctl)
+length : outs.length = (List.filter Operand.isDef operands.toList).length
+advance :
+  VNext vc b k block.insts.size inst (List.map (fun x => regs x.vreg) (List.filter Operand.isUse operands.toList))
+    (writeV (writeV regs (List.filter (fun x => x.fst.isEarly) ((List.filter Operand.isDef operands.toList).zip outs)))
+      (List.filter (fun x => x.fst.isLate) ((List.filter Operand.isDef operands.toList).zip outs)))
+    next ctl b✝
+fault : ¬sorry
+reached : VState CV Arm.ArmState
+path' : Star (VStep vc sorry) b✝ (VConf.run reached)
+boundary' :
+  ∃ block inst operands,
+    vc.blocks[reached.b]? = some block ∧
+      block.insts[reached.k]? = some inst ∧ inst.operands = Except.ok operands ∧ sorry
+⊢ Clif.TrapCode
+
+code : Clif.TrapCode
+property : BitVec 64 → Nat → Prop
+vc : VCode
+isem : Sem
+before after b✝ c✝ : VConf CV Arm.ArmState
+tail : Star (VStep vc isem) b✝ c✝
+ih :
+  ∀ {last : VState CV Arm.ArmState},
+    c✝ = VConf.run last →
+      (∃ block inst operands,
+          vc.blocks[last.b]? = some block ∧
+            block.insts[last.k]? = some inst ∧ inst.operands = Except.ok operands ∧ sorry) →
+        ∃ reached,
+          Star (VStep vc sorry) b✝ (VConf.run reached) ∧
+            ∃ block inst operands,
+              vc.blocks[reached.b]? = some block ∧
+                block.insts[reached.k]? = some inst ∧ inst.operands = Except.ok operands ∧ sorry
+last : VState CV Arm.ArmState
+same : c✝ = VConf.run last
+boundary :
+  ∃ block inst operands,
+    vc.blocks[last.b]? = some block ∧ block.insts[last.k]? = some inst ∧ inst.operands = Except.ok operands ∧ sorry
+b k : Nat
+regs : Nat → CV
+world : Arm.ArmState
+block : VBlock
+inst : MInst
+operands : Array Operand
+outs : List CV
+next : Arm.ArmState
+ctl : Ctl
+found : vc.blocks[b]? = some block
+located : block.insts[k]? = some inst
+valid : inst.operands = Except.ok operands
+execution :
+  isem inst (List.map (fun x => regs x.vreg) (List.filter Operand.isUse operands.toList)) world = some (outs, next, ctl)
+length : outs.length = (List.filter Operand.isDef operands.toList).length
+advance :
+  VNext vc b k block.insts.size inst (List.map (fun x => regs x.vreg) (List.filter Operand.isUse operands.toList))
+    (writeV (writeV regs (List.filter (fun x => x.fst.isEarly) ((List.filter Operand.isDef operands.toList).zip outs)))
+      (List.filter (fun x => x.fst.isLate) ((List.filter Operand.isDef operands.toList).zip outs)))
+    next ctl b✝
+fault : ¬sorry
+reached : VState CV Arm.ArmState
+path' : Star (VStep vc sorry) b✝ (VConf.run reached)
+boundary' :
+  ∃ block inst operands,
+    vc.blocks[reached.b]? = some block ∧
+      block.insts[reached.k]? = some inst ∧ inst.operands = Except.ok operands ∧ sorry
+⊢ BitVec 64 → Nat → Prop
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:104:34: error(lean.unknownIdentifier): Unknown identifier `sb`
+
+Note: It is not possible to treat `sb` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:107:23: error(lean.unknownIdentifier): Unknown identifier `sb`
+
+Note: It is not possible to treat `sb` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:108:30: error(lean.unknownIdentifier): Unknown identifier `sb`
+
+Note: It is not possible to treat `sb` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:110:33: error(lean.unknownIdentifier): Unknown identifier `sb`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean:116:34: error(lean.unknownIdentifier): Unknown identifier `haltAcquire_of`

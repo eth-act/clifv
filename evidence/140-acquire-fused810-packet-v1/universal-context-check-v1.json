@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "actual_main": "91dd0ee31c122ac91ca2630693751dccb0da3598",
+  "normal_snapshot_sha256": "0b0053762ac8e7ce56f38276f12067825cf3b3437f2825d05c8acf00623f73c6",
+  "acquire_current_gate_sha256": "0bead2991fff2d5ce8ba0dc696cb01aac8f481ecb2dff0963e24da3076f9dea3",
+  "fence_gate_sha256": "4451ec4d22b0ad19a7bfee14be556822a7f55781070292b234b5ebb037d91fbe",
+  "extra_raw_provider": {
+    "source_sha256": "92927e520337a1e2eafe3e950fe36cffbea7e122817d579f8c00df3ec6c0fb7a",
+    "olean_sha256": "896c705bca93e64741f1d53efb16de6784ed18d3bbaf7063e03e8a7697e46df8"
+  },
+  "new_provider_builds": false
+}

@@ -1,0 +1,8 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireMatchSource.lean:38:24: error: Application type mismatch: The argument
+  available
+has type
+  env[3]? = some (some (V.value value))
+but is expected to have type
+  some (some (V.value value)) = some (some (V.value value))
+in the application
+  And.intro available

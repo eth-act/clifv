@@ -1,0 +1,18 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireShapeCheck.lean:20:61: error: unsolved goals
+case h_3
+world : Arm.ArmState
+code : Clif.TrapCode
+ty : CTy
+flags : Clif.MemFlags
+value : CV
+atomic : AtomTy ty
+flag : flags.trapCode = some code
+n✝¹ : Nat
+cls✝¹ : RegClass
+n✝ : Nat
+cls✝ : RegClass
+x✝¹ : MInst
+x✝ :
+  ∀ (ty_1 : CTy) (rt rn : Reg) (flags_1 : Clif.MemFlags),
+    ty = ty_1 → Reg.vreg n✝¹ cls✝¹ = rt → Reg.vreg n✝ cls✝ = rn → ¬flags = flags_1
+⊢ ty = CTy.int 8 ∧ cls✝¹ = RegClass.int ∧ cls✝ = RegClass.int

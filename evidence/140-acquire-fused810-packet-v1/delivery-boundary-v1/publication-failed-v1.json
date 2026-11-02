@@ -1,0 +1,11 @@
+{
+  "status": "stopped_before_commit_or_PR",
+  "stage": "git diff --check",
+  "exit": 2,
+  "tree": "d35d3092eaea9cd99ade033524db4441a32fb690",
+  "source_gate_remains_historical_pass": true,
+  "diagnosis": "Four trailing spaces in three new theorem headers. No semantic change is required.",
+  "script_sha256": "211c6a0e90eef1b9c3d5e328b5f56b093e49a1a24ef686a273a8719747491f4d",
+  "no_branch_pushed": true,
+  "utc": "2026-11-02T17:30:13.140342+00:00"
+}

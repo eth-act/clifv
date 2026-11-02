@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockAcquireRhsReceipts",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireRhsReceipts.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireRhsReceipts.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireRhsReceipts.ilean"
+      ],
+      "exit": 0,
+      "seconds": 1.2736124992370605,
+      "memstats": "peak 255029248\noom 0\noom_kill 0\n",
+      "source_sha256": "9642c1a6379c0dde9a77c69a99dddf0ee8df69658bcab61cbeb53c406fdf245e",
+      "olean_sha256": "cba8c97da22598a0b388a513b7aebfda679bf08fc75a8d6a9e22de569fd856b3"
+    },
+    {
+      "label": "StockAcquireRuleProvenance",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireRuleProvenance.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireRuleProvenance.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireRuleProvenance.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.83756422996521,
+      "memstats": "peak 203100160\noom 0\noom_kill 0\n",
+      "source_sha256": "5d09e80b993591145952f5bee1d129fa5a0b42228ecd9b0588b97a58995c3d9c",
+      "olean_sha256": "812dbb60fbe2c1dec9861b970f0207cef81476f51e8cdd4979ea2c6d4aab428c"
+    }
+  ]
+}

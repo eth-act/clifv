@@ -1,0 +1,9 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceReturn.lean:23:43: warning: This simp argument is unused:
+  Clif.Regs.set
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Clif.runLoop, Clif.step, Clif.evalInst, Clif.StepResult.ofRes, Clif.continueWith, Clif.Frame.get,
+    Clif.Regs.setMany, Clif.Res.ofOption, Clif.Res.check, bind, Clif.Res.bind, Nat.mod_one, Clif.Ty.width,
+    Clif.Ty.bytes, entry, function, loaded] at returned
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

@@ -1,0 +1,39 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "label": "StockAcquireColorSegment",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireColorSegment.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireColorSegment.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireColorSegment.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.7377099990844727,
+      "memstats": "peak 188633088\noom 0\noom_kill 0\n",
+      "source_sha256": "437248d5d9214398d96c089c0a6f978f3ad7a53270ccd189a054bc963c88e458",
+      "olean_sha256": "4b4b09bd4a56dfc6c7210a8d93829b56d7e6a4bb8a1b08cf02305980837f5a8f"
+    },
+    {
+      "label": "StockAcquireValueAllWidths",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireValueAllWidths.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireValueAllWidths.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireValueAllWidths.ilean"
+      ],
+      "exit": 1,
+      "seconds": 0.8826887607574463,
+      "memstats": "peak 200601600\noom 0\noom_kill 0\n"
+    }
+  ]
+}

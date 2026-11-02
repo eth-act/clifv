@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockAcquireHalt",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHalt.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireHalt.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireHalt.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.910254955291748,
+      "memstats": "peak 219385856\noom 0\noom_kill 0\n",
+      "source_sha256": "0ad4f60b5cf4d51b7a3f9204766b2c97864cc8d3cc3413c80f06b494078fc810",
+      "olean_sha256": "bfb8958ab4a939f1ce33b377f112dc21d43a4fe075fbdd07ed705bd0fd3e7479"
+    }
+  ]
+}

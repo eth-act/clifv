@@ -1,0 +1,15 @@
+{
+  "roots": [
+    "FV.E2E.LinkTrapCallInd"
+  ],
+  "missing": [
+    "FV/E2E/LinkTrapCallInd.lean",
+    "FV/E2E/RegLevelTrapCallTry.lean",
+    "FV/E2E/TrapCallTry.lean",
+    "FV/E2E/TrapCallTryStop.lean",
+    "FV/E2E/WorldTrapStop.lean"
+  ],
+  "dependency_modules": 396,
+  "existing_providers": 391,
+  "build_not_authorized_or_started": true
+}

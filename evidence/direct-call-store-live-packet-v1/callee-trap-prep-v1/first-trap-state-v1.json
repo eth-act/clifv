@@ -1,0 +1,48 @@
+{
+  "status": "passed-source-virtual-machine-first-traps",
+  "source_hashes": {
+    "FV/E2E/StockCallStoreTrapTail.lean": "18fbf374a2986a2f8190e3c3486e18628924a1058a14167e8d5b2e5f7e7e95d0",
+    "FV/E2E/StockCallStoreTrapReady.lean": "9f774bf74f3c6213946aa9001287b418c167d0974196c2446c11876dc91961b2",
+    "FV/E2E/StockCallStoreTrapRun.lean": "f0c320872ef58131a45b0f7da56fac14230204731a6d5f4bb0a0a974c68ba5a9",
+    "FV/E2E/StockCallStoreTrapSourceWitness.lean": "ac065111081ae674216c600703a409a040893c3ffc717d8e11be3f533ea7a141",
+    "FV/E2E/StockCallStoreTrapStage.lean": "ae50986509a65723061129ad96ec2a4934c08104996f46f1bdc7ae3ff6b3a8dd",
+    "FV/E2E/StockCallStoreNoTry.lean": "63a10d1216279e1e5ec15119402ca031e22878e0807738a2827b787a716f654c",
+    "FV/E2E/StockCallStoreFirstTrap.lean": "7d34520cdb4f8274d7a2f04deadc58987dd8c36b20e2ab002c70cf7549587db3",
+    "FV/E2E/StockCallStoreFirstTrapWitness.lean": "f55cf2f798e5a7e6505c970c2f7eaf926d5f5cbf291a3b9d18b27e88254f90f4"
+  },
+  "audit_sha256": "da7e65e65a305966ef1184b75682271c2b005751fdd38f8a2ebf1ee1633f2419",
+  "receipts": {
+    "trap-tail-v2/receipt.json": "bf0453b4b8c13645c53ce4013118bf407cb455a97e57ca542b46b2e4a4bc0caf",
+    "trap-ready-v1/receipt.json": "6a29b44c1da2e3ec244b06a6b76fefc9e5676378e6da8d3445099bdfa2743eea",
+    "trap-run-v1/receipt.json": "2f738d94778ca1d15919ea3d59d4b26875c22b779c8f2c37709b607e0d91091f",
+    "trap-source-witness-v3/receipt.json": "a626de4eec33b270841ff3aa9347063bf4790d4a274324998a0da01f88a7b05f",
+    "trap-stage-v1/receipt.json": "16c0119f29ad371f62d1ccb86bb96b29107f094772c90fa1e3f6527117a9e5f1",
+    "no-try-v1/receipt.json": "80031ebfb06b6dfc93e8cfbbccafadd0c8ddc5bd63f42fdd0e3419d2be8b4770",
+    "first-trap-v1/receipt.json": "6e0c1cb74b4ddf54ee8a1b2d65f2bae84ca8272f9702283e7015ad2b36341a83",
+    "first-trap-witness-v1/receipt.json": "262468a473345125409c3099122eac6c8b165c6206e57e98c44c3c7f22a66f02",
+    "audit-v2/receipt.json": "353770cee939c2b6adfce9d363b1140f631570e4e04df704dc84d3af2bf0fa27",
+    "nine-providers-v1/receipt.json": "e72640f231d27f07f63a9396ce58d776d0001209c03d4778fe25e4ff42f1bf71",
+    "five-world-providers-v1/receipt.json": "caf078c7823318ad558182e45481de39c48b23f397fdf7f3b72da750bddd3370",
+    "published-918-origin-bridge-v1.json": "c4519bc4ce6d34bbe28805758253fc24af715ebe6851e86cfa54d2c71ff95c0b"
+  },
+  "combined_roots": 56,
+  "standard_roots": 48,
+  "fixed_roots": 8,
+  "new_standard_roots": 9,
+  "new_fixed_roots": 1,
+  "old46_axiom_sets_exact": true,
+  "scope": "Original source yields a callee trap or the first post-call store fault. Uses unchanged XCallsOk/XTrapsOk, actual retained arguments, valueSemU/xrT, both preparation modes, and the existing world machine adapter.",
+  "internal_shape_boundary": "The generic machine theorem retains the ordinary-access shape obligation. The original fixed caller derives it internally in both modes. Generic shape derivation from all class artifacts remains required.",
+  "source_witness": "The original caller has an additional actual trapping-callee program for arbitrary pointer, word, memory, and placement oracle. The original arithmetic caller/callee bytes remain unchanged.",
+  "open": [
+    "Additive linked trap-provider kernel without legacy CompiledCleanup/CompiledEither restrictions",
+    "Generic ordinary-access shape derivation for every classified artifact",
+    "Actual linked ARM and three CLI/generated-proof matrix with original program and separate float variant",
+    "Default callStore production case; three frozen constructors untouched",
+    "Every remaining original140 obligation"
+  ],
+  "budget": "2GiB explicit-j1; temporary3GiB grants ended after each provider batch",
+  "utc": "2026-11-02T17:39:18.528827+00:00",
+  "snapshot": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/reviewed-first-trap-v1",
+  "manifest_sha256": "f99f22ebac136daa18a7be34f1c6d396128dbe21fa2fae533cdceafc994b3c20"
+}

@@ -1,0 +1,59 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockAcquireStage",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireStage.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireStage.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireStage.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.877666711807251,
+      "memstats": "peak 212582400\noom 0\noom_kill 0\n",
+      "source_sha256": "3a8aece740d4e8eb7336c6e121d089672b896868bc9aeb5720c795dd0a2098b1",
+      "olean_sha256": "78836460bd157e1a9728fb7c336527c6ba292b505388a59ef470c324c14f137a"
+    },
+    {
+      "label": "StockAcquireMachineBoundary",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireMachineBoundary.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireMachineBoundary.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireMachineBoundary.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.8925576210021973,
+      "memstats": "peak 217116672\noom 0\noom_kill 0\n",
+      "source_sha256": "45b097a0ca565005b3391e7cc91d532f73fe2d877e89d5d756105e39bc5a71a0",
+      "olean_sha256": "6c4768a20cf29acc68cd7207a6556116e8da4be8dd7aeb8a3775414cd31422dc"
+    },
+    {
+      "label": "StockAcquireMachineCheck",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireMachineCheck.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireMachineCheck.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireMachineCheck.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.892559289932251,
+      "memstats": "peak 215187456\noom 0\noom_kill 0\n",
+      "source_sha256": "1c19f7c2030ce5ed6bd324e533c9545766cc00fb5f37bf02f1511e1620684b01",
+      "olean_sha256": "89b6887557a7c9fa91e1a95e3e1a8b592a2583d6b6f435da4a948cdaf66e029d"
+    }
+  ]
+}

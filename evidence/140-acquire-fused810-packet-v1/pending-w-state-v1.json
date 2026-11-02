@@ -1,0 +1,22 @@
+{
+  "status": "source_only_unverified",
+  "sources": {
+    "StockAcquireMachineBoundaryW.lean": "ab4c22c5175a59d9a4308e0a3baaaf395768bcb577ffe268eb14646bdc08179d",
+    "StockAcquireMachineCheckW.lean": "98b5e89190d15e5eb0ae26ac1a0171930e6ead3b0d2a2975de731dc56102ef9c",
+    "StockAcquireSourceMachineW.lean": "48476a6863f85c04813d8baf0a5e5e2cc3faee9c21018660274c9410349d3a6d",
+    "StockAcquireOriginalW.lean": "524639027c0188cdbdaa7418962810cc7bccb2acd87fc63348a867a4d4d4bb03"
+  },
+  "providers": [
+    "FV.E2E.DeadCleanupRealizesW",
+    "FV.E2E.DeadCleanupRegLevelW"
+  ],
+  "provider_owner": "coordinator broad normal queue",
+  "old_interfaces_unchanged": true,
+  "no_build_while_share_released": true,
+  "remaining": [
+    "complete normal-key provider snapshot",
+    "four W kernels and exact AX comparison",
+    "WithResults/Semantic executable/source/peak/generated/default transfer"
+  ],
+  "full_goal_complete": false
+}

@@ -1,0 +1,217 @@
+{
+  "status": "passed",
+  "command": "git diff --no-index --check /dev/null FILE",
+  "exit1_means_file_differs_from_dev_null": true,
+  "files": [
+    {
+      "source": "FV/Backend/Proof/StockAcquire810Witness.lean",
+      "sha256": "7bdc702e59be761702b83724695b621086769e848b948f6e3a9e3c40f15f5273",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireAllocated.lean",
+      "sha256": "0f39c3e48c1eecf7d855d3b37b17134072f3ee064308f571797c3dcdf05da9b1",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireAllocatedLine.lean",
+      "sha256": "70af59bfe3fe3c6af93fec868fa05909e30b7095bf8e51b0b5a0b51ea530e3ee",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireArmFault.lean",
+      "sha256": "0e1482e58c0051681425bc91ce89ad2a19fa62f21e299396666ab718ab37e234",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireBinding.lean",
+      "sha256": "1da644e5b59bf7963e49be631abeda46acceea0f2d992711a4e32657b9aa61a8",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireCompiledCoverage.lean",
+      "sha256": "2688b9ffd9c27ac98fd86c49ff04fe5f5314c18deabb5a42d79f5ab787479c77",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireCompiledWitness.lean",
+      "sha256": "e4664c64091fcc574077c50fbee5a8ae8ddd0b06a7acc679e97b612e92eae119",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireEncodingFault.lean",
+      "sha256": "dec53f89a67e3bdf11b60c5df0eb187433d0137da19963fc622a25cbf46d05b6",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireEntry.lean",
+      "sha256": "db4f32c16498e63fe405b6f9656f8cc8d96a51658344cee2a75066abb4fe7e82",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireEntryNormal.lean",
+      "sha256": "c8600c48e81adc45a9d4752b0b83ccbe657727e376b8680775cd3c3490b94ceb",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireFaultSite.lean",
+      "sha256": "95a9e8c4e5eb97be2d6f412b088032f5d45b9218e25fdf9b74da96b1238ab14f",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireForward.lean",
+      "sha256": "050b65e1a20495296a97a9a3be87dfa1758d57f6b3c9c895acc9f5669c80ce89",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireHalt.lean",
+      "sha256": "0ad4f60b5cf4d51b7a3f9204766b2c97864cc8d3cc3413c80f06b494078fc810",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireHelpers.lean",
+      "sha256": "61bc6f1ac571b601123eaa963563055bf46b2c619208bfd7e4c3afffd600ea8a",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireLineFault.lean",
+      "sha256": "45b366f4ab677451c25db6c95cac53a05fc6df7992599e10ef4bc379020b9bf4",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireMachine.lean",
+      "sha256": "b27916030975a7b19dbf1a8dd96f9ca862378b4ec7037fec335e8c864c2f20d8",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireMachineBoundary.lean",
+      "sha256": "45b097a0ca565005b3391e7cc91d532f73fe2d877e89d5d756105e39bc5a71a0",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireMachineCheck.lean",
+      "sha256": "1c19f7c2030ce5ed6bd324e533c9545766cc00fb5f37bf02f1511e1620684b01",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireOriginal.lean",
+      "sha256": "98eb56279d5268016d0f8897e04011d0ce27b332714d68d6dff09b946351f35b",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquirePrepare.lean",
+      "sha256": "543f3efb21826da43e8da8b492caaf83b5f9d36ad346bc97ae9605a0794cb858",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquirePreparedShapes.lean",
+      "sha256": "f4e366293b3faa42faf5a193797cecadaf71f449910ff53856e667d5e1778045",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireRealizes.lean",
+      "sha256": "ae4c6bcf741dfb3de2d223e102a23f53127e44689488d91dcbb9c718d264a1d3",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireRecordWitness.lean",
+      "sha256": "778c775f1a182ca908ff3bd3c2ccf9008480d730822d34c366b93d23c06d9b37",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireRegisterLevel.lean",
+      "sha256": "ea3652fa3a223c61606d750e520a61638eab63718155b603f74f3ee869fc406c",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireShapeCheck.lean",
+      "sha256": "7a54fc58bc8a1e0aef9d0f9923ace48ebe8303cbea940e4a29ced820214d36fe",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireSourceDomain.lean",
+      "sha256": "d3e777f32bd78d9806447f2e1645af69759e39d62953e17895725906d0b85ac6",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireSourceMachine.lean",
+      "sha256": "803ee9fbc9c54831378f8d0767118e30ef9c4af8df7d75865710ec2dbfbc17ec",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireSourceOutcome.lean",
+      "sha256": "a8fd660e95d903efed30cc9119847b5358d45c509444f1f28ac2b602afa778a4",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireSourceReturn.lean",
+      "sha256": "c65cd5bc98339c2ecd0023affa707432838d57333038b33a9a6c31ed0dc2fd42",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireStage.lean",
+      "sha256": "3a8aece740d4e8eb7336c6e121d089672b896868bc9aeb5720c795dd0a2098b1",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireTrace.lean",
+      "sha256": "75498211cb2b21d253efd2e7b719fcdc138b2b7fc011f43ee06447e196dc5ce3",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireTrapBoundary.lean",
+      "sha256": "e7d0209a6f8ce563603ceba4f7c7a3dde018c69dee236269e94695b6f7b99289",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireValue.lean",
+      "sha256": "a34128884fb861701efda48c4b0d5f1ebeac25cbbd905f82582ea4350487fc8e",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "FV/Backend/Proof/StockAcquireVirtualReturn.lean",
+      "sha256": "0bf30e2a52f28d59ac57c3de91484366a7d883d492022f13a146013c98bf7ca1",
+      "exit": 1,
+      "diagnostics": ""
+    },
+    {
+      "source": "scripts/audit/stock-acquire810.lean",
+      "sha256": "329cff94dd63fa66b3ec678e208150f921abfaecc2020b4390386ce8c6c4a28c",
+      "exit": 1,
+      "diagnostics": ""
+    }
+  ]
+}

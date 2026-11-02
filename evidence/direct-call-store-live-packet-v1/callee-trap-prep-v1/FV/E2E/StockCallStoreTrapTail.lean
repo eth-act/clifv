@@ -19,10 +19,10 @@ theorem trap_call_tail {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR :
     VUnwinds vc (valueSemU F ctx X XR) XR seed initial obj after := by
   have segment : SegAt block 0 (prelude ++ [.call info]) :=
     segAt_of_toList (L₁ := []) (by simpa only [List.nil_append,List.append_assoc,List.cons_append,List.nil_append] using code)
-  have prefix : SegAt block 0 prelude := segment.append_left
+  have frontSeg : SegAt block 0 prelude := segment.append_left
   have instruction : block.insts[0+prelude.length]? = some (.call info) := segment.append_right.head
   have room := (Array.getElem?_eq_some_iff.mp instruction).1
-  have path := seqRun_fall_star (vc := vc) placed prefix room preRun
+  have path := seqRun_fall_star (vc := vc) placed frontSeg room preRun
   refine ⟨0,0+prelude.length,values,before,block,info,ops,
     (defCons (.call info)).map (fun _ => ofX 0),path,placed,instruction,operands,raised,
     valueSemU_call_raise raised,?_⟩

@@ -29,7 +29,7 @@ private def facts (result : Stock.Result) : Bool :=
         producer.output.step.any (fun step => decide (step.decision = .sunk)))
 
 private def observed : Option Bool := (Stock.lower function).toOption.map facts
-private theorem observed_true : observed = some true := by native_decide
+private theorem observed_true : observed = some true := by native_decide -- witness: native_decide
 
 /-- Actual source records derive the deferred producer, exact fresh result and final alias.
 The complete code is the original Stock result, including its real ABI entry and return. -/

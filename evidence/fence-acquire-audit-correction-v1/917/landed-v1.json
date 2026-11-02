@@ -1,0 +1,76 @@
+{
+  "status": "landed",
+  "pr": 921,
+  "source": "b169fd6940977435478c2f98cbad05a3305b72a5",
+  "base": "91dd0ee31c122ac91ca2630693751dccb0da3598",
+  "merged": "770e543c350bf158dc782b7f80afb9748817e0af",
+  "tested_tree": "11fe76bbe845a39b9229a844ca0428e949c46114",
+  "tree_equal": true,
+  "import_source_count": 1029,
+  "current_gate_sha256": "e6e452417dac3528b4eb2ec20132971331fb87bf6c3a8e7328fbbe777d10502d",
+  "source_hashes": {
+    "FV/Backend/Proof/StockFenceBodyFacts.lean": "fd152e51fc5ca9bfb0a9dc2669dedb75ec5047c7150a627310553fe590978bf2",
+    "FV/Backend/Proof/StockFenceCompiledWitness.lean": "90015fcf7e461007f7ed03f5ae1befe0db1c85ed0dedf36b918a8a9f2affa79e",
+    "FV/Backend/Proof/StockFenceMixedNonvacuity.lean": "5ce8226806be98a8e6246f3b8e929cddc181286e4fc2ccd23bfdb7675e713b60",
+    "FV/Backend/Proof/StockFenceOriginal.lean": "accff760533f23f991a44491e73490605b3220c54f1b7d8907888a0419e1e5b5",
+    "FV/Backend/Proof/StockFencePreparedShapes.lean": "2cc28fb845deb5f1f442d31d87a437ae876107620840b83e35f858f127a98e10",
+    "FV/Backend/Proof/StockFenceRetainedWitness.lean": "2a84d82a39f265e98255c9f3b18f7542f8af0915c26b6975f2cfabb19a6b09f2",
+    "scripts/audit/stock-fence-memory.lean": "d9d3ce60e6fac988ab33bfe11460a91c34986ce5ae9178f9f5e9a0d1cdb02a90"
+  },
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T17:49:38Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41494752050/job/125446641645",
+      "name": "Quick checks",
+      "startedAt": "2026-11-02T17:49:26Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T17:57:10Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41494752077/job/125446641630",
+      "name": "Build and compare",
+      "startedAt": "2026-11-02T17:49:26Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T17:57:27Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41494752077/job/125450799358",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-02T17:57:13Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T17:57:23Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41494752077/job/125450799441",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-02T17:57:13Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "direct_review": {
+    "head": "b169fd6940977435478c2f98cbad05a3305b72a5",
+    "verdict": "no blocking defect",
+    "method": "ONE QUICK, DIRTY, CHEAP direct peer review; no builds or review agents",
+    "reviewer": "worker-A",
+    "source": "Root relayed the actual direct review in this thread.",
+    "notes": "Comments only. All14 native-dependent fixed roots have recognized markers. backend_correct_worldX_stock_fence is fixed to FenceFixture.function.",
+    "utc": "2026-11-02T17:51:12.446691+00:00"
+  },
+  "old_source_files_unchanged": true,
+  "production_activation": false,
+  "full_acquire_closure": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T17:57:41.110703+00:00"
+}

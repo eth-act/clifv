@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "axiom_sets": {
+    "Backend.Stock.CallStore.trap_call_tail": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Layout.trap_ready": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "roots": 2,
+  "standard_roots": 2,
+  "receipts": {
+    "trap-tail-v2/receipt.json": "bf0453b4b8c13645c53ce4013118bf407cb455a97e57ca542b46b2e4a4bc0caf",
+    "trap-ready-v1/receipt.json": "6a29b44c1da2e3ec244b06a6b76fefc9e5676378e6da8d3445099bdfa2743eea"
+  },
+  "audit_sha256": "0afb1849089fa43dd70b969f1a160af551a9deed40a53e7b73c0803b9591e285",
+  "stats": "peak 208805888\noom 0\noom_kill 0\n",
+  "no_machine_or_linked_completion_claim": true,
+  "utc": "2026-11-02T17:15:20.720216+00:00"
+}

@@ -1,0 +1,9 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireAllocatedLine.lean:26:73: error: Type mismatch
+  rfl
+has type
+  ?m.361 = ?m.361
+but is expected to have type
+  (MInst.loadAcquire (CTy.int 8) (Reg.vreg d RegClass.int) (Reg.vreg pointer RegClass.int) flags).operands =
+    Except.ok
+      #[{ vreg := d, cls := RegClass.int, kind := OpKind.def, pos := OpPos.late, con := Constraint.reg },
+        { vreg := pointer, cls := RegClass.int, kind := OpKind.use, pos := OpPos.early, con := Constraint.reg }]

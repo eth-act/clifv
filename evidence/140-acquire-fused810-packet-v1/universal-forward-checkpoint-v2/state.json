@@ -1,0 +1,78 @@
+{
+  "status": "passed_generic_match_forward_value_metadata_checkpoint",
+  "source_hashes": {
+    "FV/Backend/Proof/StockAcquireColorSegment.lean": "437248d5d9214398d96c089c0a6f978f3ad7a53270ccd189a054bc963c88e458",
+    "FV/Backend/Proof/StockAcquireValueAllWidths.lean": "a81ba96a06236efb2df4756d25e1d6145f63093e4088bbe22c0117d9069ff371",
+    "FV/Backend/Proof/StockAcquireMatchSource.lean": "0a68e2a351306b5964337f001c9751972e62ea69956b8c5cc7947a0615ea30a8",
+    "FV/Backend/Proof/StockAcquireSinkForward.lean": "c9914059b8b41151e06d8295e39d7e70f85a3b2424716bdd3577ceb6dfc721ce",
+    "FV/Backend/Proof/StockAcquireRootForward.lean": "094e57194981235cd3eed4b3097bdcb4a3de35f41f36689cf9f8dff9f13a9468",
+    "scripts/audit/stock-acquire-universal.lean": "7259e9281660a277fdb8d394d65e036f32d684adb4b8125f4a055014093e5e33"
+  },
+  "artifact_hashes": {
+    "StockAcquireColorSegment": "4b4b09bd4a56dfc6c7210a8d93829b56d7e6a4bb8a1b08cf02305980837f5a8f",
+    "StockAcquireValueAllWidths": "4b6f223ade10712b8e5d4fc787921c55235f3997b44cccb22780f430e5d0222d",
+    "StockAcquireMatchSource": "efe48babda5ee6abd9eaa967eec5084ed41055acdb08417946f0efc715232382",
+    "StockAcquireSinkForward": "a4f94f598b4fa0da0f2d04eab818b6dd3b6fc9f55fbb90717ba054a3b6e53af1",
+    "StockAcquireRootForward": "1442f1077bfffefac9f52a638a4260a6c57b5bcac1f80778b307f742f996f706"
+  },
+  "axioms": {
+    "Backend.Stock.Proof.Acquire810.body_color_count": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_unchanged_color_quiet": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_widened_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_iflet_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_match_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.output_reg_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "roots": 8,
+  "standard_roots": 8,
+  "old_three_ax_exact": true,
+  "real_auditor_exit": 0,
+  "real_auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "real_stdout_sha256": "5ba3b51732cf1c1905ee8cc6f9c420ef535a8f68232330f595664035ed984752",
+  "real_audit_log_sha256": "f7a6f5345a9fa42f1802daef720f8d59a372978179113e9d06e37c282938d4ff",
+  "memstats": "peak 227561472\noom 0\noom_kill 0\n",
+  "normal_snapshot_sha256": "0b0053762ac8e7ce56f38276f12067825cf3b3437f2825d05c8acf00623f73c6",
+  "context_check_sha256": "60d9401f375ee9397646719f403cc509f68c45eea736843f3af064a6b96d049c",
+  "claims": {
+    "all_admitted_widths_value_relation": true,
+    "actual_root_match_derives_eligible_source": true,
+    "complete_rhs_forward_given_internal_constructor_receipts": true,
+    "metadata_color_count": true,
+    "universal_root_record_refinement": false,
+    "universal_deferred_first_fault_composition": false,
+    "full_goal_complete": false
+  },
+  "utc": "2026-11-02T17:44:53.996465+00:00"
+}

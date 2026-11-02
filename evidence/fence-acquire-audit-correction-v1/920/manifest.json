@@ -1,0 +1,411 @@
+{
+  "status": "prepared_comment_only_correction",
+  "unit": "920",
+  "old_source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/delivery-boundary-v2/source",
+  "old_manifest": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/delivery-boundary-v2/manifest.json",
+  "old_manifest_sha256": "363ef40e66bb3387ab3b4953ed045233395c66792587d420939607e4333a800f",
+  "old_gate": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/delivery-boundary-v2/current-gate-v1.json",
+  "old_gate_sha256": "cc78e56299e0b5ee093d962d74dd417cd898d75d7313a16314f5e773b5c4d9ef",
+  "changes": {
+    "FV/Backend/Proof/StockAcquire810Witness.lean": {
+      "old_sha256": "7bdc702e59be761702b83724695b621086769e848b948f6e3a9e3c40f15f5273",
+      "new_sha256": "cd112e8e4dfad068ea21ed80e069f31a9d07d613626f453b3f0c4649c53acff9"
+    },
+    "scripts/audit/stock-acquire810.lean": {
+      "old_sha256": "329cff94dd63fa66b3ec678e208150f921abfaecc2020b4390386ce8c6c4a28c",
+      "new_sha256": "9be190ee556f92fca95f8fe5f48a3f3229b9412e7afd598ad53a7c312d1d7627"
+    },
+    "FV/Backend/Proof/StockAcquireRecordWitness.lean": {
+      "old_sha256": "778c775f1a182ca908ff3bd3c2ccf9008480d730822d34c366b93d23c06d9b37",
+      "new_sha256": "2c79d976eec640e3806728e28561f0233ac6ff333d3ec2d8368f043ba82fdb88"
+    },
+    "FV/Backend/Proof/StockAcquirePreparedShapes.lean": {
+      "old_sha256": "f4e366293b3faa42faf5a193797cecadaf71f449910ff53856e667d5e1778045",
+      "new_sha256": "0321300c29368cfa19b76b63394da9cd2f3807140f67c9b0caeb656478463b84"
+    },
+    "FV/Backend/Proof/StockAcquireCompiledWitness.lean": {
+      "old_sha256": "e4664c64091fcc574077c50fbee5a8ae8ddd0b06a7acc679e97b612e92eae119",
+      "new_sha256": "9ba4403a239d4171eea3bee40f16e22720bee462201329dfe7d71167edc634b4"
+    },
+    "FV/Backend/Proof/StockAcquireCompiledCoverage.lean": {
+      "old_sha256": "2688b9ffd9c27ac98fd86c49ff04fe5f5314c18deabb5a42d79f5ab787479c77",
+      "new_sha256": "07980be59270559f51e49d6d02d1ec6854170a4ace5cc89f3e9943a6163d0306"
+    },
+    "FV/Backend/Proof/StockAcquireOriginal.lean": {
+      "old_sha256": "98eb56279d5268016d0f8897e04011d0ce27b332714d68d6dff09b946351f35b",
+      "new_sha256": "57e3dcefc65c4a9a673ad83d3031e398ac38d147c922a3acec9f5991c07e3f64"
+    }
+  },
+  "all_project_source_sha256": {
+    "FV/Backend/Proof/StockAcquire810Witness.lean": "cd112e8e4dfad068ea21ed80e069f31a9d07d613626f453b3f0c4649c53acff9",
+    "FV/Backend/Proof/StockAcquireHelpers.lean": "61bc6f1ac571b601123eaa963563055bf46b2c619208bfd7e4c3afffd600ea8a",
+    "scripts/audit/stock-acquire810.lean": "9be190ee556f92fca95f8fe5f48a3f3229b9412e7afd598ad53a7c312d1d7627",
+    "FV/Backend/Proof/StockAcquireValue.lean": "a34128884fb861701efda48c4b0d5f1ebeac25cbbd905f82582ea4350487fc8e",
+    "FV/Backend/Proof/StockAcquireForward.lean": "050b65e1a20495296a97a9a3be87dfa1758d57f6b3c9c895acc9f5669c80ce89",
+    "FV/Backend/Proof/StockAcquireBinding.lean": "1da644e5b59bf7963e49be631abeda46acceea0f2d992711a4e32657b9aa61a8",
+    "FV/Backend/Proof/StockAcquireSourceOutcome.lean": "a8fd660e95d903efed30cc9119847b5358d45c509444f1f28ac2b602afa778a4",
+    "FV/Backend/Proof/StockAcquireEntry.lean": "db4f32c16498e63fe405b6f9656f8cc8d96a51658344cee2a75066abb4fe7e82",
+    "FV/Backend/Proof/StockAcquireRecordWitness.lean": "2c79d976eec640e3806728e28561f0233ac6ff333d3ec2d8368f043ba82fdb88",
+    "FV/Backend/Proof/StockAcquireVirtualReturn.lean": "0bf30e2a52f28d59ac57c3de91484366a7d883d492022f13a146013c98bf7ca1",
+    "FV/Backend/Proof/StockAcquireEntryNormal.lean": "c8600c48e81adc45a9d4752b0b83ccbe657727e376b8680775cd3c3490b94ceb",
+    "FV/Backend/Proof/StockAcquireTrapBoundary.lean": "e7d0209a6f8ce563603ceba4f7c7a3dde018c69dee236269e94695b6f7b99289",
+    "FV/Backend/Proof/StockAcquireSourceReturn.lean": "c65cd5bc98339c2ecd0023affa707432838d57333038b33a9a6c31ed0dc2fd42",
+    "FV/Backend/Proof/StockAcquireSourceDomain.lean": "d3e777f32bd78d9806447f2e1645af69759e39d62953e17895725906d0b85ac6",
+    "FV/Backend/Proof/StockAcquireArmFault.lean": "0e1482e58c0051681425bc91ce89ad2a19fa62f21e299396666ab718ab37e234",
+    "FV/Backend/Proof/StockAcquireEncodingFault.lean": "dec53f89a67e3bdf11b60c5df0eb187433d0137da19963fc622a25cbf46d05b6",
+    "FV/Backend/Proof/StockAcquireLineFault.lean": "45b366f4ab677451c25db6c95cac53a05fc6df7992599e10ef4bc379020b9bf4",
+    "FV/Backend/Proof/StockAcquireHalt.lean": "0ad4f60b5cf4d51b7a3f9204766b2c97864cc8d3cc3413c80f06b494078fc810",
+    "FV/Backend/Proof/StockAcquireRealizes.lean": "ae4c6bcf741dfb3de2d223e102a23f53127e44689488d91dcbb9c718d264a1d3",
+    "FV/Backend/Proof/StockAcquireAllocated.lean": "0f39c3e48c1eecf7d855d3b37b17134072f3ee064308f571797c3dcdf05da9b1",
+    "FV/Backend/Proof/StockAcquireAllocatedLine.lean": "70af59bfe3fe3c6af93fec868fa05909e30b7095bf8e51b0b5a0b51ea530e3ee",
+    "FV/Backend/Proof/StockAcquireFaultSite.lean": "95a9e8c4e5eb97be2d6f412b088032f5d45b9218e25fdf9b74da96b1238ab14f",
+    "FV/Backend/Proof/StockAcquireRegisterLevel.lean": "ea3652fa3a223c61606d750e520a61638eab63718155b603f74f3ee869fc406c",
+    "FV/Backend/Proof/StockAcquireMachine.lean": "b27916030975a7b19dbf1a8dd96f9ca862378b4ec7037fec335e8c864c2f20d8",
+    "FV/Backend/Proof/StockAcquireTrace.lean": "75498211cb2b21d253efd2e7b719fcdc138b2b7fc011f43ee06447e196dc5ce3",
+    "FV/Backend/Proof/StockAcquirePrepare.lean": "543f3efb21826da43e8da8b492caaf83b5f9d36ad346bc97ae9605a0794cb858",
+    "FV/Backend/Proof/StockAcquireMachineBoundary.lean": "45b097a0ca565005b3391e7cc91d532f73fe2d877e89d5d756105e39bc5a71a0",
+    "FV/Backend/Proof/StockAcquireMachineCheck.lean": "1c19f7c2030ce5ed6bd324e533c9545766cc00fb5f37bf02f1511e1620684b01",
+    "FV/Backend/Proof/StockAcquireStage.lean": "3a8aece740d4e8eb7336c6e121d089672b896868bc9aeb5720c795dd0a2098b1",
+    "FV/Backend/Proof/StockAcquireShapeCheck.lean": "7a54fc58bc8a1e0aef9d0f9923ace48ebe8303cbea940e4a29ced820214d36fe",
+    "FV/Backend/Proof/StockAcquirePreparedShapes.lean": "0321300c29368cfa19b76b63394da9cd2f3807140f67c9b0caeb656478463b84",
+    "FV/Backend/Proof/StockAcquireSourceMachine.lean": "803ee9fbc9c54831378f8d0767118e30ef9c4af8df7d75865710ec2dbfbc17ec",
+    "FV/Backend/Proof/StockAcquireCompiledWitness.lean": "9ba4403a239d4171eea3bee40f16e22720bee462201329dfe7d71167edc634b4",
+    "FV/Backend/Proof/StockAcquireCompiledCoverage.lean": "07980be59270559f51e49d6d02d1ec6854170a4ace5cc89f3e9943a6163d0306",
+    "FV/Backend/Proof/StockAcquireOriginal.lean": "57e3dcefc65c4a9a673ad83d3031e398ac38d147c922a3acec9f5991c07e3f64"
+  },
+  "kernel_queue": [
+    "FV.Backend.Proof.StockAcquire810Witness",
+    "FV.Backend.Proof.StockAcquireRecordWitness",
+    "FV.Backend.Proof.StockAcquireSourceOutcome",
+    "FV.Backend.Proof.StockAcquireEntry",
+    "FV.Backend.Proof.StockAcquireTrapBoundary",
+    "FV.Backend.Proof.StockAcquireHalt",
+    "FV.Backend.Proof.StockAcquireRealizes",
+    "FV.Backend.Proof.StockAcquireAllocated",
+    "FV.Backend.Proof.StockAcquireAllocatedLine",
+    "FV.Backend.Proof.StockAcquireVirtualReturn",
+    "FV.Backend.Proof.StockAcquireEntryNormal",
+    "FV.Backend.Proof.StockAcquireSourceReturn",
+    "FV.Backend.Proof.StockAcquireSourceDomain",
+    "FV.Backend.Proof.StockAcquirePrepare",
+    "FV.Backend.Proof.StockAcquireShapeCheck",
+    "FV.Backend.Proof.StockAcquirePreparedShapes",
+    "FV.Backend.Proof.StockAcquireFaultSite",
+    "FV.Backend.Proof.StockAcquireRegisterLevel",
+    "FV.Backend.Proof.StockAcquireTrace",
+    "FV.Backend.Proof.StockAcquireMachineBoundary",
+    "FV.Backend.Proof.StockAcquireMachineCheck",
+    "FV.Backend.Proof.StockAcquireStage",
+    "FV.Backend.Proof.StockAcquireSourceMachine",
+    "FV.Backend.Proof.StockAcquireCompiledWitness",
+    "FV.Backend.Proof.StockAcquireCompiledCoverage",
+    "FV.Backend.Proof.StockAcquireMachine",
+    "FV.Backend.Proof.StockAcquireOriginal"
+  ],
+  "axioms": {
+    "Backend.Stock.Proof.Acquire810.original_scope_selects810": [
+      "Backend.Stock.Proof.Acquire810.selected_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_allocated_boundary": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_byte_line": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.instFaults_acquire_byte": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_result_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_byte_pair_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_compile_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_complete_covered_compilation": [
+      "Backend.Stock.Proof.Acquire810.covered_observed._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_complete_compilation": [
+      "Backend.Stock.Proof.Acquire810.compile_observed._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_byte_encoding": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.encoded_acquire_byte_fault": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.encoded_acquire_byte_fault_step": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.original_source_entry": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.first_source_memory_trap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.original_entry_normal_form": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_byte_fault_site": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.VAcquireTrapFrom.boundary": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.star_haltAcquire": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquireTrap_halt": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_helpers_project_and_preserve": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_helper_success": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.stock_acquire_call": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_byte_line_fault": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.regLevel_acquire_fault_world_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.regLevel_acquire_fault_boundary_world_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.regLevel_acquire_fault_boundary_worldX_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_no_i128": [
+      "Backend.Stock.Proof.Acquire810.acquire_no_i128._native.native_decide.ax_1",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_legalize_identity": [
+      "Backend.Stock.Proof.Acquire810.acquire_no_i128._native.native_decide.ax_1",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_original_complete_compilation": [
+      "Backend.Stock.Proof.Acquire810.acquire_no_i128._native.native_decide.ax_1",
+      "Backend.Stock.Proof.Acquire810.compile_observed._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquireTraps_clean": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquireTraps_prune": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquireTraps_prepare": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.prepared_acquire_shapes": [
+      "Backend.Stock.Proof.Acquire810.shapes_observed_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.realizes_haltAcquire": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.actual_record_binding": [
+      "Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_register_level_boundary": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquireByteShape_of_check": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.original_returns": [
+      "Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.original_traps": [
+      "Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_worldX_stock_acquire810": [
+      "Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1\u271d",
+      "Backend.Stock.Proof.Acquire810.shapes_observed_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_three_steps": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_more_steps": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_first_trap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_returned_read": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.entry_returned_read": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquireTrap_stage": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquireTrap_gotV_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.realizes_haltAcquire_trace": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_allocated_boundary_trace": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_register_level_boundary_from_trace": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.lowered_args_prefix": [
+      "Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.lowered_byte_access_fault": [
+      "Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_byte_widened_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.lowered_byte_return": [
+      "Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.AcquireAt.load_inv": []
+  },
+  "fixed_roots": [
+    "Backend.Stock.Proof.Acquire810.original_scope_selects810",
+    "Backend.Stock.Proof.Acquire810.acquire_complete_covered_compilation",
+    "Backend.Stock.Proof.Acquire810.acquire_complete_compilation",
+    "Backend.Stock.Proof.Acquire810.acquire_no_i128",
+    "Backend.Stock.Proof.Acquire810.acquire_legalize_identity",
+    "Backend.Stock.Proof.Acquire810.acquire_original_complete_compilation",
+    "Backend.Stock.Proof.Acquire810.prepared_acquire_shapes",
+    "Backend.Stock.Proof.Acquire810.actual_record_binding",
+    "Backend.Stock.Proof.Acquire810.original_returns",
+    "Backend.Stock.Proof.Acquire810.original_traps",
+    "E2E.backend_correct_worldX_stock_acquire810",
+    "Backend.Stock.Proof.Acquire810.lowered_args_prefix",
+    "Backend.Stock.Proof.Acquire810.lowered_byte_access_fault",
+    "Backend.Stock.Proof.Acquire810.lowered_byte_return"
+  ],
+  "theorem_bodies_headers_inputs_unchanged": true,
+  "normal_provider_keys_unchanged": true,
+  "new_normal_candidate_build_claim": false,
+  "full_goal_complete": false
+}

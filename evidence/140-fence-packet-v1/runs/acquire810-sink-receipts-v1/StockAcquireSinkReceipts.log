@@ -1,0 +1,1 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSinkReceipts.lean:34:14: error(lean.unknownIdentifier): Unknown constant `Bool.true_eq_true`

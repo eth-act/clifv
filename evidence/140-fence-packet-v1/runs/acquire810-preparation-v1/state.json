@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockAcquireTrace",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireTrace.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireTrace.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireTrace.ilean"
+      ],
+      "exit": 0,
+      "seconds": 1.0180089473724365,
+      "memstats": "peak 223088640\noom 0\noom_kill 0\n",
+      "source_sha256": "45b262386ea4001a95528e77831a47b0f585c8974c773a4722902d6a3d01cf98",
+      "olean_sha256": "0b765dddc1f41cf1b976e9d8e2e41101575973309f0bd172ba49c4eb3a016258"
+    },
+    {
+      "label": "StockAcquirePrepare",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquirePrepare.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquirePrepare.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquirePrepare.ilean"
+      ],
+      "exit": 0,
+      "seconds": 1.0573129653930664,
+      "memstats": "peak 227758080\noom 0\noom_kill 0\n",
+      "source_sha256": "543f3efb21826da43e8da8b492caaf83b5f9d36ad346bc97ae9605a0794cb858",
+      "olean_sha256": "d457b399c0d0b1742fd6463526810370ef2d300e681bee83613518888532731b"
+    }
+  ]
+}

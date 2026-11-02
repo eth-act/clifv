@@ -1,0 +1,1 @@
+{"status":"failed_before_manifest_or_prefix_mutation","error":"UnboundLocalError in whitespace line-count generator; outer old path shadowed by generator variable"}

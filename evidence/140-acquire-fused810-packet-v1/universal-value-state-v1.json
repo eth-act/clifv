@@ -1,0 +1,31 @@
+{
+  "status": "passed_generic_values_and_metadata_count",
+  "source_hashes": {
+    "StockAcquireColorSegment.lean": "437248d5d9214398d96c089c0a6f978f3ad7a53270ccd189a054bc963c88e458",
+    "StockAcquireValueAllWidths.lean": "a81ba96a06236efb2df4756d25e1d6145f63093e4088bbe22c0117d9069ff371",
+    "StockAcquireUniversalAudit.lean": "3075df49b72db7d1e2ece04cefafb940c417b98a8559a6133b7eecc49895fd08"
+  },
+  "axioms": {
+    "Backend.Stock.Proof.Acquire810.body_color_count": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_unchanged_color_quiet": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_widened_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "context_receipt_sha256": "60d9401f375ee9397646719f403cc509f68c45eea736843f3af064a6b96d049c",
+  "audit_receipt_sha256": "abfba7007a81b78e8dc676613285f97d0ca75d25be36ff526bd3cde2150be90c",
+  "kernel_receipts": [
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/acquire810-universal-value-v1/state.json",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/acquire810-universal-value-v2/state.json"
+  ],
+  "universal_root810_refinement": false,
+  "full_goal_complete": false
+}

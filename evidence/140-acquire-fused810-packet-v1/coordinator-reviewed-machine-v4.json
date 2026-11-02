@@ -1,0 +1,21 @@
+{
+  "status": "reviewed_complete_fixed_source_to_machine_boundary",
+  "receipt_sha256": "7d6c7a7fffb38064647aee8c6139ef60e64b99fb7de9ee1b161ddc1194b7cb03",
+  "sources_exact": 35,
+  "kernels": 34,
+  "roots": 56,
+  "standard_roots": 42,
+  "fixed_roots": 14,
+  "old_22_axioms_exact": true,
+  "input_scope": "original atomic i8/default flags/pointer1/result0 fixture unchanged; arbitrary source arguments,memory,fuel preserved",
+  "remaining": [
+    "universal accepted-root810 retained/deferred invariant",
+    "actual W no-earlier-fault/compiler/source/peak transfer",
+    "linker/generated/default consumers",
+    "fence W/production integration"
+  ],
+  "universal_root810_complete": false,
+  "physical_first_fault_executable_complete": false,
+  "production_complete": false,
+  "utc": "2026-11-02T17:19:09.363246+00:00"
+}

@@ -1,0 +1,81 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireValueAllWidths.lean:53:44: error: Application type mismatch: The argument
+  inputSource
+has type
+  (withValue fr z small).regs z = some input
+but is expected to have type
+  some ?m.341 = some ?m.342
+in the application
+  Option.some.inj inputSource
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireValueAllWidths.lean:27:75: error: unsolved goals
+F : BitVec 64 → Prop
+sb : Nat
+syms : String → Option Nat
+isem : Sem
+MR : MemRelT
+f : Clif.Function
+stable : MRStable F MR
+memorySem : MemRefines F sb syms isem
+memoryOk : MemRelOk F sb syms f MR
+fr : Clif.Frame
+cm cm' cm'' : Clif.Mem
+p z d nr : Nat
+pointer small widened : Clif.Val
+sourceTy targetTy : Clif.Ty
+atomicType : eTy sourceTy = true
+fits : targetTy.width ≤ 64
+flags : Clif.MemFlags
+little : flags.endianness ≠ some Clif.Endianness.big
+pointerSource : fr.regs p = some pointer
+pointerType : pointer.ty = Clif.Ty.i64
+use : CV
+pointerHeld : VHolds pointer use
+source : Clif.evalInst fr cm (Clif.Inst.atomicLoad sourceTy flags p) = Clif.Res.ok ([small], cm')
+extension :
+  Clif.evalInst (withValue fr z small) cm' (Clif.Inst.extend Clif.ExtendOp.uextend targetTy z) =
+    Clif.Res.ok ([widened], cm'')
+world : Arm.ArmState
+memory : MR fr.slots cm world
+raw : BitVec sourceTy.width
+values : [small] = [{ ty := sourceTy, bits := raw }]
+sameMemory : cm' = cm
+found : fr.regs p = some pointer
+valid : cm.valid (Clif.effAddr pointer 0) sourceTy.bytes = true
+read : cm.readBits false (Clif.effAddr pointer 0) sourceTy.bytes sourceTy.width = some raw
+smallEq : small = { ty := sourceTy, bits := raw }
+address : lo64 use = BitVec.ofNat 64 (Clif.effAddr pointer 0)
+bound : Clif.effAddr pointer 0 + sourceTy.bytes ≤ 2 ^ 64
+free : ∀ (k : Nat), k < sourceTy.bytes → ¬F (BitVec.ofNat 64 (Clif.effAddr pointer 0 + k))
+avoids : Avoids F (CTy.ofClif sourceTy).bytes (lo64 use)
+next : Arm.ArmState
+sameWorld : SameWorld F next world
+bits :
+  ∀ (j : Nat),
+    raw.getLsbD j =
+      (Arm.read_mem_bytes (CTy.ofClif sourceTy).bytes (BitVec.ofNat 64 (Clif.effAddr pointer 0)) world).getLsbD j
+bytes :
+  BitVec.setWidth 64 raw =
+    BitVec.setWidth 64 (Arm.read_mem_bytes (CTy.ofClif sourceTy).bytes (BitVec.ofNat 64 (Clif.effAddr pointer 0)) world)
+executed :
+  isem (MInst.loadAcquire (CTy.ofClif sourceTy) (Reg.vreg d RegClass.int) (Reg.vreg nr RegClass.int) flags) [use]
+      world =
+    some ([ofX (BitVec.setWidth 64 raw)], next, Ctl.next)
+sameExtension : cm'' = cm'
+inputSource : (withValue fr z small).regs z = some small
+grows : small.ty.width < targetTy.width
+outputs : [widened] = [{ ty := targetTy, bits := Clif.Sem.uextend targetTy.width small.bits }]
+widenedEq : widened = { ty := targetTy, bits := Clif.Sem.uextend targetTy.width small.bits }
+⊢ BitVec.setWidth targetTy.width (BitVec.setWidth 128 (BitVec.setWidth 64 raw)) = BitVec.setWidth targetTy.width raw
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireValueAllWidths.lean:60:17: warning: This simp argument is unused:
+  BitVec.setWidth_setWidth_of_le _ (show 64 ≤ 128 by decide)
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [ofX, BitVec.setWidth_setWidth_of_le _ fits]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireValueAllWidths.lean:61:4: warning: This simp argument is unused:
+  BitVec.setWidth_setWidth_of_le _ fits
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [ofX, BitVec.setWidth_setWidth_of_le _ (show 64 ≤ 128 by decide)]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

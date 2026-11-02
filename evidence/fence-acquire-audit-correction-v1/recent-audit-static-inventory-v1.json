@@ -1,0 +1,9 @@
+{
+  "status": "static_known_root_inventory",
+  "main": "770e543c350bf158dc782b7f80afb9748817e0af",
+  "repository_parser_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "audit_files": 235,
+  "known_root_map": 4849,
+  "findings": [],
+  "scope": "Known historical root sets only. Unmapped roots remain unverified. This does not replace real repository execution."
+}

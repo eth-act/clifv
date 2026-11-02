@@ -1,0 +1,131 @@
+{
+  "status": "passed_actual_root_original_source_and_sink_provenance",
+  "source_hashes": {
+    "FV/Backend/Proof/StockAcquireColorSegment.lean": "437248d5d9214398d96c089c0a6f978f3ad7a53270ccd189a054bc963c88e458",
+    "FV/Backend/Proof/StockAcquireValueAllWidths.lean": "a81ba96a06236efb2df4756d25e1d6145f63093e4088bbe22c0117d9069ff371",
+    "FV/Backend/Proof/StockAcquireMatchSource.lean": "0a68e2a351306b5964337f001c9751972e62ea69956b8c5cc7947a0615ea30a8",
+    "FV/Backend/Proof/StockAcquireSinkForward.lean": "c9914059b8b41151e06d8295e39d7e70f85a3b2424716bdd3577ceb6dfc721ce",
+    "FV/Backend/Proof/StockAcquireRootForward.lean": "094e57194981235cd3eed4b3097bdcb4a3de35f41f36689cf9f8dff9f13a9468",
+    "FV/Backend/Proof/StockAcquireSinkReceipts.lean": "26ac17e50dfca4936e4648eb996a8f22272cf3e1fa7234ebe492170d2ae465b6",
+    "FV/Backend/Proof/StockAcquireRhsReceipts.lean": "9642c1a6379c0dde9a77c69a99dddf0ee8df69658bcab61cbeb53c406fdf245e",
+    "FV/Backend/Proof/StockAcquireRuleProvenance.lean": "5d09e80b993591145952f5bee1d129fa5a0b42228ecd9b0588b97a58995c3d9c",
+    "FV/Backend/Proof/StockAcquirePatternData.lean": "e68f455709b011bd9853a54f85b93b0fc36f8d3d7485e3570f08bec83ba9722d",
+    "FV/Backend/Proof/StockAcquireRuleSource.lean": "111359d5907773d7bca72b832798b2a14497416cc2e8c3b98d1e7e5c00c4179b",
+    "scripts/audit/stock-acquire-provenance.lean": "c714971c44db655cab9cf12e5b478dbb649bf95a90f1a1b9cbd3b450ded87c35"
+  },
+  "artifact_hashes": {
+    "StockAcquireColorSegment": "4b4b09bd4a56dfc6c7210a8d93829b56d7e6a4bb8a1b08cf02305980837f5a8f",
+    "StockAcquireValueAllWidths": "4b6f223ade10712b8e5d4fc787921c55235f3997b44cccb22780f430e5d0222d",
+    "StockAcquireMatchSource": "efe48babda5ee6abd9eaa967eec5084ed41055acdb08417946f0efc715232382",
+    "StockAcquireSinkForward": "a4f94f598b4fa0da0f2d04eab818b6dd3b6fc9f55fbb90717ba054a3b6e53af1",
+    "StockAcquireRootForward": "1442f1077bfffefac9f52a638a4260a6c57b5bcac1f80778b307f742f996f706",
+    "StockAcquireSinkReceipts": "0b6072a2ecf71c481d7a12449486c7ab599f7d1fb87b2316fac33ee6900b7f63",
+    "StockAcquireRhsReceipts": "cba8c97da22598a0b388a513b7aebfda679bf08fc75a8d6a9e22de569fd856b3",
+    "StockAcquireRuleProvenance": "812dbb60fbe2c1dec9861b970f0207cef81476f51e8cdd4979ea2c6d4aab428c",
+    "StockAcquirePatternData": "5e25098ef7525a3c581124251c5bb3cf8267851d551db1c8f5e2f09e4e20397a",
+    "StockAcquireRuleSource": "16e9f3a0bb314bd899dd7bc3eab6047a7236a0c79ebc3e6aaf1e6b95553c0832"
+  },
+  "axioms": {
+    "Backend.Stock.Proof.Acquire810.body_color_count": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_unchanged_color_quiet": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_widened_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_iflet_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_match_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.output_reg_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_call_receipt": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_sink_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_inputs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rule_sink_provenance": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_match_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.mapped_atomic_producer": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_call_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rule_original_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "roots": 16,
+  "standard_roots": 16,
+  "old_eight_ax_exact": true,
+  "real_auditor_exit": 0,
+  "real_auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "real_stdout_sha256": "49f0cd2713d9af22fa967b44c05fd3b6671616672e633e77d5929311914b5f14",
+  "real_audit_log_sha256": "124e6c7cdd297b604426a87d920de988c0c23ec1ca5061a42ddcd0873f9a0afb",
+  "memstats": "peak 226623488\noom 0\noom_kill 0\n",
+  "normal_snapshot_sha256": "0b0053762ac8e7ce56f38276f12067825cf3b3437f2825d05c8acf00623f73c6",
+  "context_check_sha256": "60d9401f375ee9397646719f403cc509f68c45eea736843f3af064a6b96d049c",
+  "claims": {
+    "all_admitted_widths_value_relation": true,
+    "actual_root_match_derives_eligible_source": true,
+    "actual_rhs_derives_sink_receipt": true,
+    "actual_mapped_producer_is_original_admitted_atomic_load": true,
+    "unique_use_adjacent_color_and_no_result_demand_derived": true,
+    "complete_rhs_forward_given_internal_constructor_receipts": true,
+    "metadata_color_count": true,
+    "universal_root_record_refinement": false,
+    "universal_deferred_first_fault_composition": false,
+    "full_goal_complete": false
+  },
+  "utc": "2026-11-02T17:57:35.007134+00:00"
+}

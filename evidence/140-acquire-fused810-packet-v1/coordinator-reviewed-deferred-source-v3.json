@@ -1,0 +1,16 @@
+{
+  "status": "reviewed_scoped_deferred_source_fixture",
+  "receipt_sha256": "b990ff0f151cfc5d3d7ce79ab702fc59c8a54c3e7a286332e9c853010283df8d",
+  "canonical_source_hashes_exact": 14,
+  "standard_roots": 15,
+  "fixed_roots": 7,
+  "root_count": 22,
+  "input_scope": "original fixed atomic i8/default-flags function; arbitrary pointer,memory,fuel",
+  "remaining": [
+    "universal root810 refinement",
+    "physical machine fault order",
+    "executable/default production"
+  ],
+  "full_goal_complete": false,
+  "utc": "2026-11-02T17:10:38.161447+00:00"
+}

@@ -7,7 +7,7 @@ set_option autoImplicit false
 set_option Elab.async false
 
 /-- The original complete function contains no widened integer operation. -/
-theorem mixed_no_i128 : Opt.Legalize128.mentions128 function = false := by native_decide
+theorem mixed_no_i128 : Opt.Legalize128.mentions128 function = false := by native_decide -- witness: native_decide
 
 /-- The existing legalizer leaves the original complete function unchanged. -/
 theorem mixed_legalize_identity : Opt.Legalize128.legalize function = function := by
