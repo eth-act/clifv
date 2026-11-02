@@ -51,6 +51,11 @@ inductive CompiledSemanticReturnPins (f : Clif.Function) (k : Nat) (vc vcp : VCo
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemanticReturnPins f k vc vcp rf af fa fb .stockABI
 
+  | voidCall {cleanup : Bool} {result : Stock.Result} :
+      Stock.VoidCall.NI.check f result.code = true → result.code = vc →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemanticReturnPins f k vc vcp rf af fa fb .stockABI
+
 namespace CompiledSemanticReturnPins
 variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
     {af : AFunc} {fa : FnAsm} {fb : FnBin} {mode : ReturnPinMode}
@@ -61,6 +66,7 @@ theorem erase (hc : CompiledSemanticReturnPins f k vc vcp rf af fa fb mode) :
   cases hc with
   | compatible h => exact .compatible h
   | memorySretCopy family equal effects h => exact .memorySretCopy family equal effects h
+  | voidCall source equal h => exact .voidCall source equal h
 
 /-- The actual checker and pipeline derive the mode internally. -/
 theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)
@@ -78,6 +84,23 @@ theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)
     simp only [ReturnPinMode.checked,rejected,Bool.false_eq_true,↓reduceIte]
     obtain ⟨result,family,run,equal,effects⟩ := Stock.MemorySretCopy.check_sound memory
     exact .memorySretCopy family equal effects
+      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+
+theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls f vc = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
+    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
+    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
+    CompiledSemanticReturnPins f k vc vcp rf af fa fb (ReturnPinMode.checked f vc) := by
+  by_cases old : SemanticABI.check f vc = true
+  · exact of_checks old prepared prepOk check alloc emit layout
+  · have caller : Stock.VoidCall.NI.check f vc = true :=
+      (Bool.or_eq_true_iff.mp lower).resolve_left old
+    have ordinary : SemanticNI.check f vc = false := Bool.eq_false_iff.mpr
+      (fun accepted => old (SemanticABI.previous_check accepted))
+    simp only [ReturnPinMode.checked,ordinary,Bool.false_eq_true,↓reduceIte]
+    obtain ⟨result,run,equal,_,_,_,_,_⟩ := Stock.VoidCall.check_sound (Bool.and_eq_true_iff.mp caller).1
+    exact .voidCall (by rwa [equal]) equal
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
 end CompiledSemanticReturnPins
@@ -144,6 +167,9 @@ theorem backend_correct_world_niX_semantic_return_pins {p : Clif.Program} {f : C
       obtain ⟨us,outs,w,pins,arity,values,memory,site,run⟩ :=
         (backend_correct_worldX_stock_memory_abi family.domainABI h hcov hsym hslot hcs hrel hargs fuel).1 vals cm returned
       exact ⟨us,outs,w,pins,arity,values,memory,site,run,fun _ positive => False.elim (tls positive)⟩
+  | voidCall source equal h =>
+    subst vc
+    exact backend_correct_world_niX_stock_void_call hsub source h hcov hX hXI hsym hslot hcs hrel hargs htr fuel
 
 
 end E2E

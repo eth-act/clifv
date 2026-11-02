@@ -1,0 +1,5 @@
+import FV.Backend.Proof.StockConditionalArgsAtWitness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_original_parameter_at
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_original_parameter_at
+#print axioms Backend.Stock.Proof.ConditionalValues.ArgsAtWitness.returning_original_parameter_at_witness
