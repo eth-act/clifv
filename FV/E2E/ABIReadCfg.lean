@@ -21,19 +21,46 @@ theorem memory (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
     (symbols : ∀ n b,syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
     MemRefines F sb syms (sem F ctx X) := DivBoundary.memory F ctx X base symbols
 
-private def branchControl (i : MInst) (us : List CV) : Ctl :=
+private def branchControl (i : MInst) (us : List CV) (w : Arm.ArmState) : Ctl :=
   match i with
-  | .condBr _ _ kind => .goto (if kind.holds us Arm.ArmState.default then 0 else 1)
+  | .condBr _ _ kind => .goto (if kind.holds us w then 0 else 1)
   | _ => .goto 0
+
+/-- Branch control reads only the uses and the unmasked NZCV flags. -/
+private theorem branchControl_world {i : MInst} {us : List CV} {Z : BitVec 64 → Prop}
+    {w w' : Arm.ArmState} (worlds : SameWorld Z w w') : branchControl i us w = branchControl i us w' := by
+  have flags : ∀ fl,Arm.r (.FLAG fl) w = Arm.r (.FLAG fl) w' :=
+    fun fl => worlds.1 (.FLAG fl) (by simp [Masked])
+  have same : ∀ c : Cond,Arm.ConditionHolds c.bits w = Arm.ConditionHolds c.bits w' := by
+    intro c
+    have read : ∀ fl,Arm.read_flag fl w = Arm.read_flag fl w' := flags
+    unfold Arm.ConditionHolds
+    rw [read .N,read .Z,read .C,read .V]
+  cases i <;> try rfl
+  case condBr taken notTaken kind =>
+    cases kind
+    case cond c =>
+      have holds : (CondBrKind.cond c).holds us w = (CondBrKind.cond c).holds us w' := same c
+      show Ctl.goto (if (CondBrKind.cond c).holds us w = true then 0 else 1) =
+        Ctl.goto (if (CondBrKind.cond c).holds us w' = true then 0 else 1)
+      rw [holds]
+    all_goals
+      cases us with
+      | nil => rfl
+      | cons a rest => cases rest <;> rfl
 
 private theorem branch_sem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem)
     {i : MInst} (checked : Backend.ABIReadCfg.additional i = true) (us : List CV) (w : Arm.ArmState) :
-    sem F ctx X i us w = some ([],w,branchControl i us) ∧
-      valueSem F ctx X i us w = some ([],w,branchControl i us) := by
+    sem F ctx X i us w = some ([],w,branchControl i us w) ∧
+      valueSem F ctx X i us w = some ([],w,branchControl i us w) := by
   cases i <;> try cases checked
   case jump label => exact ⟨rfl,rfl⟩
   case condBr taken notTaken kind =>
     cases kind <;> try cases checked
+    case cond c =>
+      cases us with
+      | nil => exact ⟨rfl,rfl⟩
+      | cons a rest => cases rest <;> exact ⟨rfl,rfl⟩
     all_goals rename_i r size
     all_goals cases r <;> try cases checked
     all_goals rename_i key cls
@@ -95,7 +122,7 @@ theorem checked_step_transport {sig : Clif.Signature} {args : List Clif.Val}
   · rw [(branch_sem F ctx X jumped us w).1] at run
     simp only [Option.some.injEq,Prod.mk.injEq] at run
     obtain ⟨rfl,rfl,rfl⟩ := run
-    exact ⟨w',(branch_sem F ctx X jumped us w').1,worlds⟩
+    exact ⟨w',by rw [branchControl_world worlds]; exact (branch_sem F ctx X jumped us w').1,worlds⟩
 
 namespace Realize
 theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
@@ -118,7 +145,7 @@ theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
   · rw [(branch_sem F ctx X jumped us w).1] at executed
     simp only [Option.some.injEq,Prod.mk.injEq] at executed
     obtain ⟨rfl,rfl,rfl⟩ := executed
-    exact ⟨t,(branch_sem F ctx X jumped us t).2,worlds⟩
+    exact ⟨t,by rw [← branchControl_world worlds]; exact (branch_sem F ctx X jumped us t).2,worlds⟩
 
 end Realize
 
