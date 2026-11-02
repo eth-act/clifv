@@ -1,0 +1,35 @@
+import FV.Backend.Proof.StockComparisonComputedArgsLoopWitness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.computed_branch_calls
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_selected_computed_carry_below
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_selected_computed_carry_below
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_comparison_zero_computed_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_comparison_zero_computed_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.computed_zero_branch_calls
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_computed_zero_any_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_computed_zero_any_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_selected_computed_zero_carry_below
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_selected_computed_zero_carry_below
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.ZeroResult.metadata
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.ZeroOperand.metadata
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.ComputedArgsCondition.metadata
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.condition_metadata
+#print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.condition_sound
+#print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.source_leaf_eligible_facts
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.branch_args_carry_returns
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_returns_below
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_returns
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.branch_args_carry_traps
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_traps_below
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_traps
+#print axioms Backend.Stock.Proof.ConditionalValues.comparison_zero_computed_entry_prelude
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.branch_entry_prelude
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_jump_entry_returns
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_jump_entry_traps
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_branch_entry_returns
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_branch_entry_traps
+#print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.domainAt_of_computed_args_loop_cfg
+#print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.domainAt_of_source_leaf_eligible
+#print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.source_ok_sound
+#print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.check_sound
+#print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.Fixture.count_to_witness -- witness: native_decide
