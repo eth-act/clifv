@@ -1,0 +1,24 @@
+{
+  "status": "read_only_delivery_partition_not_validated",
+  "admission_binary_files": [
+    "FV/Backend/SemanticABICheck.lean",
+    "FV/E2E/CompiledProgramReturnPins.lean",
+    "FV/E2E/CompiledSemanticABI.lean",
+    "FV/E2E/CompiledSemanticReturnPins.lean",
+    "FV/E2E/LinkReturnPinWorldX.lean",
+    "FV/E2E/ResultCallBinary.lean",
+    "FV/E2E/ReturnPinAdmission.lean",
+    "FV/E2E/ReturnPinBinary.lean",
+    "FV/E2E/ReturnPinBinaryKernel.lean",
+    "FV/E2E/ReturnPinChecksWith.lean",
+    "FV/E2E/SemanticABIBoundary.lean",
+    "FV/E2E/WorldReturnPinBoundary.lean"
+  ],
+  "transitive_dependencies_on_other_consumer_packet_files": [
+    "FV/E2E/ReturnPinChecksKernel.lean"
+  ],
+  "transitive_dependencies_on_892_files": [],
+  "closure": 1707,
+  "foundation_dependency": true,
+  "full_goal_complete": false
+}

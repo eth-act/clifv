@@ -1,0 +1,251 @@
+{
+  "status": "passed",
+  "actual_main_observed": "5980cdfddf37e0828345b60b525be6120ce41959",
+  "historical_git_base": "aa7faec76474eb768ec67009eb484334778d73e3",
+  "fault_source_tree": "5b924d76f99cd81bede204d7906e16dd72889b32",
+  "changed_files": [
+    {
+      "filename": "FV/Backend/Lowering/StockComparisonImmCfg.lean",
+      "status": "added",
+      "sha": "76e3720ab65b0482bd01c5c59cc1dc01a6bf9f1a"
+    },
+    {
+      "filename": "FV/Backend/Lowering/StockComparisonZeroCfg.lean",
+      "status": "added",
+      "sha": "8d9a8c9d2c22f11db441a7feb268476db0d9ed68"
+    },
+    {
+      "filename": "FV/Backend/Lowering/StockParameterLoopCfg.lean",
+      "status": "added",
+      "sha": "f6d010a78dd61d6cae15c48313d26a43cef39029"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonImmAt.lean",
+      "status": "added",
+      "sha": "43aa7ed86d76014a0dfb1f329e89b27663930824"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonImmClass.lean",
+      "status": "added",
+      "sha": "bdaf9c120a2ed545d2a86d92203b437015df7738"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonImmCompatibility.lean",
+      "status": "added",
+      "sha": "24dbb90a83b102c977111aa76894d57198180d7c"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonImmCores.lean",
+      "status": "added",
+      "sha": "766071070a4c6303ea3c4f66b6930939d864ff8d"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonImmCoresWitness.lean",
+      "status": "added",
+      "sha": "fc26fcc73e9a6aae063780eeba92202b15b99614"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonImmDomain.lean",
+      "status": "added",
+      "sha": "9a309238a0859f9c29c4d9c36b29b7a097db1c2f"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonImmFacts.lean",
+      "status": "added",
+      "sha": "62aa71613491d053ccaad468129c8006e7a646dc"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonImmFactsWitness.lean",
+      "status": "added",
+      "sha": "c8ab643dea62692c73f8928909cebea073c62e16"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonImmValues.lean",
+      "status": "added",
+      "sha": "d2e4d8f59000ebcd4062f400e5f81760c7d888bf"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonImmWitness.lean",
+      "status": "added",
+      "sha": "9c16fdacfb5cdcddcb1051a8f62ed7baebedecd3"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonZeroAt.lean",
+      "status": "added",
+      "sha": "419f1792f738a4e2e3f583b5a5dd6e7ee4009e63"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonZeroClass.lean",
+      "status": "added",
+      "sha": "8913c5d4338d044afd4dd31c58f03807404b70dd"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonZeroCompatibility.lean",
+      "status": "added",
+      "sha": "c7f8a6335209661a79e1587c0e8d28a9a226406c"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonZeroCores.lean",
+      "status": "added",
+      "sha": "152a8d9ad94bb880c1b911eba3dfd4a20b9a12bc"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonZeroCoresWitness.lean",
+      "status": "added",
+      "sha": "b2a840ed836a646a41ec9a2167644099a87dce6e"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonZeroDomain.lean",
+      "status": "added",
+      "sha": "e1185fdca77cbece3aaa6810dfa79abbb66a8d45"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonZeroFacts.lean",
+      "status": "added",
+      "sha": "154098723e5f37039cb05e7ee94e2a076641f068"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonZeroFactsWitness.lean",
+      "status": "added",
+      "sha": "60128c7cded7ff1afc341eae429507d12ba9cfae"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonZeroValues.lean",
+      "status": "added",
+      "sha": "a9515b6e6cf93469f98c55d5418e55fcbd39cf8a"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockComparisonZeroWitness.lean",
+      "status": "added",
+      "sha": "8b99d1f651be16063ffc44a2cefeed7e6e016d33"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockLoopBounded.lean",
+      "status": "added",
+      "sha": "45d12b16c0f412b43f2f3fbf3d0972f68fd4e1eb"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockLoopBoundedWitness.lean",
+      "status": "added",
+      "sha": "2ca7833afe3f7d2bc5a8e4dd10618525870fff5d"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockLoopCarry.lean",
+      "status": "added",
+      "sha": "8dddf0637c467ca0a9b0969b0b6411f3dfa46c30"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockLoopCarryBounded.lean",
+      "status": "added",
+      "sha": "1e980be195234ed17870003ed57f581d4ca00da8"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockLoopCarryGlobal.lean",
+      "status": "added",
+      "sha": "9ac340953306a1eeea7d267ebf6f3dddf034fe74"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockLoopCarryWitness.lean",
+      "status": "added",
+      "sha": "712d13b7e78534e68ca49b5014ea301f64236d7f"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockLoopDefBefore.lean",
+      "status": "added",
+      "sha": "02aedf46389142048d7b4ba6398c73da7bdcff8d"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockLoopDefBeforeWitness.lean",
+      "status": "added",
+      "sha": "ee54af0d40318e45257c0037e9ff98287345c09a"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockParameterLoopCheck.lean",
+      "status": "added",
+      "sha": "aecc8cf8596c0fe35c9cacdabd65a9cf8b4d398d"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockParameterLoopDomain.lean",
+      "status": "added",
+      "sha": "63b42ca7f8c556594cdca47eccd82513897789d9"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockParameterLoopProbe.lean",
+      "status": "added",
+      "sha": "4bd8c801939f65f504f0c2dab5053d2feac46f82"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockParameterLoopReturn.lean",
+      "status": "added",
+      "sha": "fe34774e6f9aa5a6a766c34ae1d4615aa14299e9"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockParameterLoopTrap.lean",
+      "status": "added",
+      "sha": "5214e26698990f5d6ccb1e64150704a6e6f23feb"
+    },
+    {
+      "filename": "FV/Backend/Proof/StockParameterLoopWitness.lean",
+      "status": "added",
+      "sha": "7f938f14bed9ed988ebeb67b72c3ff118cce94af"
+    },
+    {
+      "filename": "scripts/audit/comparison-imm-class.lean",
+      "status": "added",
+      "sha": "80268d220a4278b9ec1bd3a71d2cc6e967d48eb6"
+    },
+    {
+      "filename": "scripts/audit/comparison-imm-core.lean",
+      "status": "added",
+      "sha": "d231e76d6da40ab2f8974b2a7ec5e205d34c4701"
+    },
+    {
+      "filename": "scripts/audit/comparison-imm-facts.lean",
+      "status": "added",
+      "sha": "87ab69b55ff4f1711cc71a1249cb5393c719017e"
+    },
+    {
+      "filename": "scripts/audit/comparison-zero-class.lean",
+      "status": "added",
+      "sha": "dfdd36985b7d5e3d0b7d733e63d6c0ca6fe73a6b"
+    },
+    {
+      "filename": "scripts/audit/comparison-zero-core.lean",
+      "status": "added",
+      "sha": "593f16ef11a8d4546341cfb68794a6659357ae48"
+    },
+    {
+      "filename": "scripts/audit/comparison-zero-facts.lean",
+      "status": "added",
+      "sha": "8424fd4b9624f4d026216c48fe964f03ba9bb7cc"
+    },
+    {
+      "filename": "scripts/audit/loop-bounded.lean",
+      "status": "added",
+      "sha": "be39f5e2f909ff387601a2e9160a610400989b75"
+    },
+    {
+      "filename": "scripts/audit/loop-carry.lean",
+      "status": "added",
+      "sha": "9a93230a5bc74f8a47e4182d0ccae9acfa951d77"
+    },
+    {
+      "filename": "scripts/audit/loop-defbefore.lean",
+      "status": "added",
+      "sha": "86486dfea9221aa12eb692b2ad7fd9c010610495"
+    },
+    {
+      "filename": "scripts/audit/parameter-loop-class.lean",
+      "status": "added",
+      "sha": "1e86ac0e55fb28f0e054f466d798111ba2c566fd"
+    },
+    {
+      "filename": "scripts/audit/parameter-loop-domain.lean",
+      "status": "added",
+      "sha": "9d83803f9e0dfc45f4ebe7c7070350821ece13fa"
+    }
+  ],
+  "fault_source_overlap": [],
+  "all_changed_files_are_added": true,
+  "note": "Source-only drift bridge;no current kernel or full validation claim."
+}

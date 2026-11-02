@@ -1,0 +1,25 @@
+{
+  "status": "preserved_source_prepared_not_current_validated",
+  "implementation_files": 13,
+  "audit_files": 1,
+  "files": {
+    "FV/Backend/SemanticABICheck.lean": "2eaa6c12b6618144896fae16bee22d0fe661dce6a2ee78a3833431534af56017",
+    "FV/E2E/CompiledProgramReturnPins.lean": "758b48fca8caa8e93128ccb155d143b6871b3b8a8a6f60dea2c5a8149b5c3fe8",
+    "FV/E2E/CompiledSemanticABI.lean": "f3768b5ee01ae86dd340afba030639293694c25f064b4b86d9f1fede370193fa",
+    "FV/E2E/CompiledSemanticReturnPins.lean": "ec9199eca3adcd25305ba9917506d3476f99aa94b5a4225383fdc7aa7c4c9fa6",
+    "FV/E2E/LinkReturnPinWorldX.lean": "5bdc5d9e5bdfe63dfda5c99044db9694349d11360f9825eee0ca0dd40e63b8dc",
+    "FV/E2E/ResultCallBinary.lean": "1a0a80c0d7e681d489db27d2d9e17105b62ba6c703b52d67305023e36695bf27",
+    "FV/E2E/ReturnPinAdmission.lean": "947ce095baee89074a27674af28f851afbfe89ef5a1b54f2b21eea0a8443d6d3",
+    "FV/E2E/ReturnPinBinary.lean": "ac30184be932c39b82623b5dfacf5263db173a86a7d52b0a84e75a98ff4d0697",
+    "FV/E2E/ReturnPinBinaryKernel.lean": "eefcb24df59e008e601da68a45f29ea1d16da05f1f5c1071371cfa739b77cd87",
+    "FV/E2E/ReturnPinChecksKernel.lean": "1f5a711a27508d950437ab336a98951383b7a3c9bb76f7ad8643abbb4ed9ca2e",
+    "FV/E2E/ReturnPinChecksWith.lean": "da4f574e94a28abc34c5e385b830d83feb402151dcb609821b319427df774b57",
+    "FV/E2E/SemanticABIBoundary.lean": "9bbd92e75efb4867d1691f32ff99093797e3c3ebed45f62eb86d7983ad91cba5",
+    "FV/E2E/WorldReturnPinBoundary.lean": "30aef10a85f7bc575ade8731b73fcd6197781a26f8b077883df68d9970a2da79",
+    "scripts/audit/stock-result-call-admission-binary.lean": "2721acc4e93429fc0b3c9eb3e88d52e8e5c7fe103839eca520fa4ca44ca79d93"
+  },
+  "public_audit_roots": 113,
+  "foundation_dependency": true,
+  "no_892_dependency": true,
+  "full_goal_complete": false
+}

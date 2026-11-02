@@ -1,0 +1,17 @@
+{
+  "status": "draft_not_built",
+  "files": {
+    "FV/Backend/Proof/StockMemoryAccessTrap.lean": "4f991af028c9c08645ead17495f1cb68870053154a3ff54bfa05181452568c98",
+    "FV/Backend/Proof/StockMemoryFaultContract.lean": "a0c151147fe35d69293b288ad2c5bcd632074d07aa9938a1123610b1a533f90b"
+  },
+  "proofs_verified": false,
+  "complete_mixed_domain_proved": false,
+  "heap_guard_added": false,
+  "caller_execution_certificate_added": false,
+  "old_shared_interfaces_changed": false,
+  "slot_status": "released_to_parent",
+  "source_context": "source-context-expanded-v2.json",
+  "current_main_bridge": "current-main-fault-source-bridge-v1.json",
+  "next_kernel_gate": "requires explicit1GiB lease return;opaque small modules first",
+  "cleanup_owner": "investigate_513"
+}

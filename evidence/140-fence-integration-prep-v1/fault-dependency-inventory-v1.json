@@ -1,0 +1,33 @@
+{
+  "tree": "5b924d76f99cd81bede204d7906e16dd72889b32",
+  "project_sources": 213,
+  "new_to_fence_prefix": 6,
+  "new_provider_availability": {
+    "FV.Backend.Proof.IselMemTrap": {
+      "live": false,
+      "frozen": true
+    },
+    "FV.Backend.Proof.LowerOutcomes": {
+      "live": true,
+      "frozen": false
+    },
+    "FV.Backend.Proof.LowerSim": {
+      "live": true,
+      "frozen": true
+    },
+    "FV.Backend.Proof.LowerSimMemTrap": {
+      "live": false,
+      "frozen": true
+    },
+    "FV.Backend.Proof.LowerValueRelations": {
+      "live": true,
+      "frozen": false
+    },
+    "FV.Clif.MemTrap": {
+      "live": true,
+      "frozen": true
+    }
+  },
+  "missing": [],
+  "status": "read_only_inventory_not_context_equality"
+}

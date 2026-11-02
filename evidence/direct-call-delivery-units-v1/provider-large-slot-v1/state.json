@@ -1,5 +1,5 @@
 {
-  "status": "handoff_in_progress",
+  "status": "passed",
   "scheduler": 326832,
   "scheduler_birth": 1793618715.44,
   "scheduler_args": [
@@ -2981,5 +2981,11 @@
         "--json"
       ]
     }
-  ]
+  ],
+  "all_children_finished_normally_before_slot": true,
+  "slot_start_utc": "2026-11-02T13:52:25.402836+00:00",
+  "exit": 0,
+  "memstats": "peak 6115139584\noom 0\noom_kill 0\n",
+  "same_controller_resumed": true,
+  "resume_utc": "2026-11-02T13:53:04.744712+00:00"
 }

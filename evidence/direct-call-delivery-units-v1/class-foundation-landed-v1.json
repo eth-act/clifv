@@ -1,0 +1,86 @@
+{
+  "status": "landed",
+  "pr": 911,
+  "source": "7d76ba38f9af63eada8ccc994fe015917c770889",
+  "base": "723b8a48ee742cfc3f8e06f7f2825a1f078742b2",
+  "merged": "80ffeab133a5a241381144e1a374d7afedc24e46",
+  "tested_tree": "c3405919127e0cf020bb5a06d66c2a8315098904",
+  "tree_equal": true,
+  "import_source_count": 799,
+  "current_gate_sha256": "8f1f12025d992d509206a6a9366ac7c2c45e436cbe8b31401abc5eadd9eb8f98",
+  "source_hashes": {
+    "FV/Backend/StockResultCallCheck.lean": "0e3c6533013e18cdb9e3d8e96f57379675baa0c0a68c972954c86e06ab35d7f9",
+    "FV/E2E/StockResultCallSource.lean": "d1bc05819777f72578b0739dc11dfd9da1780e5d082560dc7da3665ddd104fcc",
+    "FV/E2E/StockResultCallLayout.lean": "71dd131e176ba18d80249f7c14d12af2b035068648160f4e996ed584788c0807",
+    "FV/E2E/StockResultCallPair.lean": "e2c19b796e9386b5051be942f668e8094f4934e08e315d3de4b0e91607bf621b",
+    "FV/E2E/StockResultCallRun.lean": "6e200eb797d954c40b3ab628ea53691861b0023502e869d7f13ae4bf9a15ac28",
+    "FV/E2E/StockResultCallDomain.lean": "f795571754f362279420cb18344bc7df3b813a8f9153fc622eb2620cbf616c2f",
+    "FV/E2E/StockResultCallMachine.lean": "bdb19a43946259701f79d5bd83ee2cb78478f0a319667333c1b6a9b8970036db",
+    "FV/E2E/StockResultCallNI.lean": "10f8a4427ec678c07272617817b414959dc2e4e2596e03940987fbcbf12ec61a",
+    "FV/E2E/StockResultCallProvider.lean": "ff693c75a5dc786f8f18c792ff896fb8146883775f1000cf29caeceb2807a258",
+    "FV/E2E/StockResultCallWitness.lean": "72eb67baef61153a1adddff0704182cf76bbe1fc2e4d402395ffd45b65780dec",
+    "FV/Backend/Lowering/StockResultCallWith.lean": "b12de0fffe280f074076b4000a4ddab9c9b7f842063d8f9ce76f568b1c150cf3",
+    "FV/Backend/Lowering/StockResultCallRoutes.lean": "153383b76e83235ef96677ce250a8a5e26a18f972c2b36584d41e3c3fd46222d",
+    "FV/Backend/Proof/StockDirectCallResult.lean": "1808f16d7be8f2a99ad69b7cb08d138c26c44ecf65758757f0b34578774f854b",
+    "FV/Backend/Proof/StockDirectCallResultWitness.lean": "a6f8660e7a86fc647ccab55c5780dc341b08512c8a9e32a485df541ec18370d1",
+    "FV/Backend/Proof/StockDirectCallResultFixture.lean": "3323b3bcef117f3a45c3a9d5525ca29ee032249ee83176636e6c821ecf21d785",
+    "scripts/audit/stock-direct-call-result.lean": "60be430d6f005d67bb4f9b8870809952dcddb421e08327b5e78339480daf8a0d",
+    "scripts/audit/stock-direct-call-result-witness.lean": "9b32110f947b80966e06e74ddc234e08c4f33f9995ee1b443304f724f45467bc",
+    "scripts/audit/stock-result-call.lean": "bdc9751c8677aac6050bff9881d69b8208907bd676b023b65387b01bedbb1595",
+    "scripts/audit/stock-result-call-witness.lean": "9000cb5c05a30a230f0c849503ad3608238afdcd15ae83e3610c25118abbf4dd"
+  },
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T13:53:59Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41456931835/job/125315869895",
+      "name": "Quick checks",
+      "startedAt": "2026-11-02T13:53:49Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T14:00:06Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41456931989/job/125315870929",
+      "name": "Build and compare",
+      "startedAt": "2026-11-02T13:53:49Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T14:00:28Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41456931989/job/125319013513",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-02T14:00:19Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T14:00:25Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41456931989/job/125319014074",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-02T14:00:10Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "direct_review": {
+    "head": "7d76ba38f9af63eada8ccc994fe015917c770889",
+    "verdict": "no blocking defect",
+    "reviewer": "worker-A",
+    "method": "ONE QUICK, DIRTY, CHEAP direct peer review; no builds or review agents",
+    "nonblocking_note": "The fixed actual_checked source line lacks a witness comment; its dependent binding_of_run audit line is correctly marked. Preserve this reviewed head.",
+    "utc": "2026-11-02T13:55:41.935189+00:00"
+  },
+  "old_source_files_unchanged": true,
+  "production_activation": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T14:00:41.531005+00:00"
+}

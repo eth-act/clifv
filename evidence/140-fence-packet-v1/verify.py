@@ -3,7 +3,7 @@ import argparse,hashlib,json,os,subprocess,time
 O=Path(__file__).resolve().parent;P=O/'package';E=O.parent
 a=argparse.ArgumentParser();a.add_argument('--attempt',required=True);a.add_argument('--preflight',action='store_true');a.add_argument('modules',nargs='*');args=a.parse_args()
 assert os.environ.get('WORKER_O_PROOF_SLOT_GRANTED')=='fence-1G'
-SNAP=O/'import-snapshot-v2.json'
+SNAP=O/'import-snapshot-v3.json'
 S=json.loads(SNAP.read_text())
 log=O/'runs'/args.attempt;log.mkdir(parents=True,exist_ok=False)
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
@@ -27,9 +27,9 @@ def run(label,cmd):
 if args.preflight:
     run('normal-import-check',[str(Path(lean).with_name('lake')),'build','--no-build',*S['roots']])
     # Genuine normal-key checks must succeed before candidate kernels.
-    (O/'import-normal-check-v2.json').write_text(json.dumps({'status':'passed','snapshot_sha256':sha(SNAP),'record':records[-1]},indent=2)+'\n')
+    (O/'import-normal-check-v3.json').write_text(json.dumps({'status':'passed','snapshot_sha256':sha(SNAP),'record':records[-1]},indent=2)+'\n')
 else:
-    assert json.loads((O/'import-normal-check-v2.json').read_text())['status']=='passed'
+    assert json.loads((O/'import-normal-check-v3.json').read_text())['status']=='passed'
 for mod in args.modules:
     rel=Path(mod.replace('.','/')+'.lean');stem=P/'.lake/build/lib/lean'/rel.with_suffix('');stem.parent.mkdir(parents=True,exist_ok=True)
     assert mod not in S['modules'],'Do not overwrite borrowed imports'

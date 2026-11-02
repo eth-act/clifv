@@ -1,0 +1,14 @@
+{
+  "status": "three_conflicting_files_paused_pending_exact_boundary",
+  "head843": "93ebdee95fd1e861544cb5ee5fa58a0753081bd3",
+  "files": [
+    "FV/E2E/CompiledSemanticABI.lean",
+    "FV/E2E/CompiledSemanticReturnPins.lean",
+    "FV/E2E/CompiledProgramReturnPins.lean"
+  ],
+  "old_stage_variants_required": true,
+  "stageF_variants_additive": true,
+  "foundation_and_892_no_direct_overlap": true,
+  "broad_hold": false,
+  "utc": "2026-11-02T14:00:48.778344+00:00"
+}

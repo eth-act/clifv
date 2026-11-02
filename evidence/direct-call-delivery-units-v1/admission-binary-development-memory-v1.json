@@ -1,0 +1,54 @@
+{
+  "FV/Backend/SemanticABICheck.lean": {
+    "recorded_scopes": 1,
+    "max_peak": 208179200
+  },
+  "FV/E2E/CompiledProgramReturnPins.lean": {
+    "recorded_scopes": 1,
+    "max_peak": 256454656
+  },
+  "FV/E2E/CompiledSemanticABI.lean": {
+    "recorded_scopes": 1,
+    "max_peak": 271908864
+  },
+  "FV/E2E/CompiledSemanticReturnPins.lean": {
+    "recorded_scopes": 1,
+    "max_peak": 266780672
+  },
+  "FV/E2E/LinkReturnPinWorldX.lean": {
+    "recorded_scopes": 2,
+    "max_peak": 262918144
+  },
+  "FV/E2E/ResultCallBinary.lean": {
+    "recorded_scopes": 3,
+    "max_peak": 265048064
+  },
+  "FV/E2E/ReturnPinAdmission.lean": {
+    "recorded_scopes": 5,
+    "max_peak": 269529088
+  },
+  "FV/E2E/ReturnPinBinary.lean": {
+    "recorded_scopes": 11,
+    "max_peak": 292335616
+  },
+  "FV/E2E/ReturnPinBinaryKernel.lean": {
+    "recorded_scopes": 5,
+    "max_peak": 292335616
+  },
+  "FV/E2E/ReturnPinChecksKernel.lean": {
+    "recorded_scopes": 3,
+    "max_peak": 267677696
+  },
+  "FV/E2E/ReturnPinChecksWith.lean": {
+    "recorded_scopes": 5,
+    "max_peak": 265871360
+  },
+  "FV/E2E/SemanticABIBoundary.lean": {
+    "recorded_scopes": 2,
+    "max_peak": 285806592
+  },
+  "FV/E2E/WorldReturnPinBoundary.lean": {
+    "recorded_scopes": 2,
+    "max_peak": 264990720
+  }
+}
