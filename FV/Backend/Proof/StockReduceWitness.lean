@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockReduceSourceValues
 import FV.Backend.Proof.StockCastWitness
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerValueRelations
 namespace Backend.Stock.Proof.ScalarCast.Reduce.Witness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open ScalarCast.Witness (Pair)
