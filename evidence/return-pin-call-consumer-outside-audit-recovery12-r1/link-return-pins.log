@@ -1,0 +1,22 @@
+'E2E.ReturnPinMode.pins_prefix_of_valid' depends on axioms: [propext, Quot.sound]
+'E2E.LinkSys.progXWithPins_ordinary' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkSys.progXWithPins_some' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkSys.progXWithPins_call_results' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkSys.progXABI_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkSys.checkedReturnPins_sret' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkSys.XWithPins_ordinary' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkSys.XWithPins_base' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkSys.XWithPins_prog' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkReturnPinsWitness.successful_program_call_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LinkWitness.entryFactsB_true._native.native_decide.ax_1_1,
+ E2E.LinkWitness.okB_true._native.native_decide.ax_1_1,
+ E2E.LinkReturnPinsWitness.fixedFacts._native.native_decide.ax_1✝,
+ E2E.LinkReturnPinsWitness.old_check._native.native_decide.ax_1✝,
+ E2E.LinkReturnPinsWitness.sourceCheck_true._native.native_decide.ax_1✝]
+'E2E.LinkReturnPinsWitness.sret_prefix_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.CompiledSemanticReturnPinsWitness.physical_pin_witness._native.native_decide.ax_1,
+ Backend.Stock.Memory.SretCopy.Fixture.captured_sret_source_shape_witness._native.native_decide.ax_1]

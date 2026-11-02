@@ -1,0 +1,28 @@
+{
+  "baseline_sources": 224,
+  "missing_output_files": [
+    "FV/E2E/ABIReadOnlyRealize.lean",
+    "FV/E2E/ABIReadOnlyTransport.lean",
+    "FV/E2E/ABIReadOnlyCheck.lean",
+    "FV/E2E/Lockstep.lean",
+    "FV/Backend/Proof/MemRefines.lean",
+    "FV/E2E/ABIReadOnlySem.lean",
+    "FV/E2E/DeadCleanupContracts.lean",
+    "FV/Backend/Proof/DeadCleanupAdapter.lean",
+    "FV/Backend/Proof/DeadCleanupSem.lean",
+    "FV/Backend/Proof/RefinesCSem.lean",
+    "FV/E2E/Pair.lean",
+    "FV/E2E/Main.lean"
+  ],
+  "explicit_missing_normal_key_providers": [
+    "FV/Backend/Proof/DeadCleanupSem.lean",
+    "FV/Backend/Proof/MemRefines.lean",
+    "FV/Backend/Proof/RefinesCSem.lean",
+    "FV/E2E/Pair.lean",
+    "FV/E2E/ABIReadOnlyCheck.lean",
+    "FV/E2E/Main.lean"
+  ],
+  "heavy_reuse": "Copy the ENTIRE43-module successful normal-key project closure into a separate CI-based baseline context; retain all119fresh outputs separately. Do not insert only IselData into fresh119context. Prefer complete224normalkey restoration when remaining producers arrive.",
+  "permission": "No transfer, compiler, or standalone output mutation approved or performed",
+  "receipt": "ci-normal-context-attempt-4/513-core-context.json"
+}

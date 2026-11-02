@@ -1,0 +1,12 @@
+{
+  "reason": "Explicit parent instruction:1GiB I/O recovery; remaining2GiB assigned separately; no automatic kernel start",
+  "old_sleeping_controller": 3198520,
+  "old_watch_owner": 3198517,
+  "new_io_cap": "1G",
+  "kernel_grant": "revoked until new explicit parent grant",
+  "source_context_restart": false,
+  "artifact_downloads_restarted": false,
+  "retained_producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+  "all_metadata_preserved": true,
+  "utc": "2026-11-02T08:57:13.292777+00:00"
+}

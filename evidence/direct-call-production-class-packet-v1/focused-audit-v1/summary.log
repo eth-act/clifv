@@ -1,0 +1,5 @@
+ok   stock-result-call.lean: theorems 24/24 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-witness.lean: theorems 4/4 rc=0 errors=0 other_axioms=[]
+ok   stock-direct-call-result.lean: theorems 10/10 rc=0 errors=0 other_axioms=[]
+ok   stock-direct-call-result-witness.lean: theorems 3/3 rc=0 errors=0 other_axioms=[]
+axiom audit: 4/4 files ok

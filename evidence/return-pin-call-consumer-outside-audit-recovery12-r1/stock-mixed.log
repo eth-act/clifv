@@ -1,0 +1,35 @@
+'Backend.Stock.Proof.MixedBody.actual_mixed_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MixedBody.actual_mixed_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MixedBody.mixed_source_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Mixed.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Mixed.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.MixedFlagBoundary.Realize.return_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.MixedFlagBoundary.machine_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_mixed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_worldX_stock_mixed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.SemanticCompilerWith.compileWithFallback_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.SemanticCompilerWith.accepts_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMixedNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockMixedNIWitness.source_returns' depends on axioms: [propext, Quot.sound]
+'E2E.StockMixedNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMixedNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockMixedNIWitness.source_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMixedNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockMixedNIWitness.compiled_semantic_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMixedNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.SemanticMixedCompilerWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SemanticMixedCompilerWitness.checks_true._native.native_decide.ax_1]
+'E2E.SemanticFallbackWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SemanticFallbackWitness.checks_true._native.native_decide.ax_1]

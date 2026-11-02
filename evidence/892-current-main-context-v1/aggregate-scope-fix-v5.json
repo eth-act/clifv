@@ -1,0 +1,10 @@
+{
+  "nested_scope_error": "preserved in nested-scope-collision-v3.log",
+  "v4_cap_guard": "stopped before work because nonempty FV_MEMCAP_OFF=0 bypassed memcap; no unstage or compiler ran",
+  "v5_launch": "FV_MEMCAP_OFF unset; verified aggregate cap required in recover-ci.py; internal unstage/no-build execute directly",
+  "watcher": 3355825,
+  "scope": "worker-o-892-current-io-v5.scope",
+  "resource": "1GiB I/O only; no auto kernels",
+  "stage_w1_6": "preserved without redownload",
+  "utc": "2026-11-02T09:55:12.063299+00:00"
+}

@@ -1,0 +1,39 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Backend/Proof/IselCmpInv.lean:34:78: warning: This simp argument is unused:
+  StateT.bind
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [liftM, monadLift, MonadLift.monadLift, StateT.lift, bind, Except.bind, pure, StateT.pure, Except.pure,
+    StateT.run]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Backend/Proof/IselCmpInv.lean:444:25: warning: This simp argument is unused:
+  hc
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Functor.map, Except.map, M.run_bind, M.run_set, M.except_ok_bind, M.run_pure, Except.ok.injEq,
+    Prod.mk.injEq, Option.some.injEq, ExtResult.ok.injEq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Backend/Proof/IselCmpInv.lean:444:29: warning: This simp argument is unused:
+  Functor.map
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hc, Except.map, M.run_bind, M.run_set, M.except_ok_bind, M.run_pure, Except.ok.injEq,
+    Prod.mk.injEq, Option.some.injEq, ExtResult.ok.injEq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Backend/Proof/IselCmpInv.lean:444:42: warning: This simp argument is unused:
+  Except.map
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hc, Functor.map, M.run_bind, M.run_set, M.except_ok_bind, M.run_pure, Except.ok.injEq,
+    Prod.mk.injEq, Option.some.injEq, ExtResult.ok.injEq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Backend/Proof/IselCmpInv.lean:450:25: warning: This simp argument is unused:
+  hc
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

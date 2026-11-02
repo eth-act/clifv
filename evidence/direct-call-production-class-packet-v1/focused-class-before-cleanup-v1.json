@@ -1,0 +1,40 @@
+{
+  "status": "focused_class_passed_linked_execution_pending",
+  "context": "a4c0726d preserved source; fast inner-loop development only; not current-main validation",
+  "module_count": 11,
+  "standard_generic_roots": 24,
+  "standard_source_witness_roots": 1,
+  "marked_fixed_roots": 3,
+  "accepted_binding_roots_exact": 13,
+  "old_audit_bytes_exact": {
+    "stock-direct-call-result.log": "7f8ec7e657a60c8b80e2bd4d113a3ca3bc133014607913693a6c0e932b5880bb",
+    "stock-direct-call-result-witness.log": "ec52eac3291ad5fd0d159d1450b9dc6ad4965e41ea8dd5e67ac95d08e4a88d88"
+  },
+  "kernel_receipt": "focused-kernel-v7/result.json",
+  "audit_receipt": "focused-audit-v1/receipt.json",
+  "source_hashes": {
+    "FV/Backend/Lowering/StockResultCallWith.lean": "b12de0fffe280f074076b4000a4ddab9c9b7f842063d8f9ce76f568b1c150cf3",
+    "FV/Backend/StockResultCallCheck.lean": "0e3c6533013e18cdb9e3d8e96f57379675baa0c0a68c972954c86e06ab35d7f9",
+    "FV/E2E/StockResultCallDomain.lean": "f795571754f362279420cb18344bc7df3b813a8f9153fc622eb2620cbf616c2f",
+    "FV/E2E/StockResultCallLayout.lean": "71dd131e176ba18d80249f7c14d12af2b035068648160f4e996ed584788c0807",
+    "FV/E2E/StockResultCallMachine.lean": "bdb19a43946259701f79d5bd83ee2cb78478f0a319667333c1b6a9b8970036db",
+    "FV/E2E/StockResultCallNI.lean": "10f8a4427ec678c07272617817b414959dc2e4e2596e03940987fbcbf12ec61a",
+    "FV/E2E/StockResultCallPair.lean": "e2c19b796e9386b5051be942f668e8094f4934e08e315d3de4b0e91607bf621b",
+    "FV/E2E/StockResultCallProvider.lean": "ff693c75a5dc786f8f18c792ff896fb8146883775f1000cf29caeceb2807a258",
+    "FV/E2E/StockResultCallRun.lean": "6e200eb797d954c40b3ab628ea53691861b0023502e869d7f13ae4bf9a15ac28",
+    "FV/E2E/StockResultCallSource.lean": "d1bc05819777f72578b0739dc11dfd9da1780e5d082560dc7da3665ddd104fcc",
+    "FV/E2E/StockResultCallWitness.lean": "72eb67baef61153a1adddff0704182cf76bbe1fc2e4d402395ffd45b65780dec",
+    "scripts/audit/stock-result-call-witness.lean": "9000cb5c05a30a230f0c849503ad3608238afdcd15ae83e3610c25118abbf4dd",
+    "scripts/audit/stock-result-call.lean": "e43ae2667244fc0e97cd2f9fdce1bbffd65ee5ace33633184160b6a373b9ff3d"
+  },
+  "actual_predecessor": "Stock.VoidCall.NI.lowerValidated; compiled_caller and actual_predecessor_selection passed in both cleanup modes",
+  "actual_linked_arm_execution": false,
+  "actual_production_entrypoint": false,
+  "peak_bytes": 279457792,
+  "all_oom_zero": true,
+  "proof_share": "2GiB; lean -j1; one job",
+  "isolated_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1",
+  "owned_outputs": "Retained for active linked-execution integration only; cleanup remains owned by this child",
+  "pending_shared_interface_decision": "checkResultCalls additive predicate; retain exact checkCalls/previous_exact_calls; extend matching artifact constructors and program admission",
+  "utc": "2026-11-02T10:07:38.204475+00:00"
+}

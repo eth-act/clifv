@@ -1,0 +1,364 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:163:32: warning: This simp argument is unused:
+  Nat.add_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:163:44: warning: This simp argument is unused:
+  Nat.add_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:185:47: warning: This simp argument is unused:
+  BitVec.and_self
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [write_mem, ArmState.mk.injEq, and_true, true_and]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:211:34: warning: This simp argument is unused:
+  Nat.add_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [write_mem_bytes, Nat.add_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:211:46: warning: This simp argument is unused:
+  Nat.add_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [write_mem_bytes, Nat.add_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:242:19: warning: This simp argument is unused:
+  Nat.reduceSucc
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Nat.succ_sub_succ_eq_sub, Nat.sub_self, BitVec.add_zero] at h3
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:316:40: warning: This simp argument is unused:
+  Nat.add_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [write_mem_bytes, Nat.add_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:316:52: warning: This simp argument is unused:
+  Nat.add_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [write_mem_bytes, Nat.add_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:339:29: warning: This simp argument is unused:
+  Bool.decide_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [mem_subset, Bool.or_eq_true, decide_eq_true_eq, Bool.and_eq_true]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:425:32: warning: This simp argument is unused:
+  Nat.add_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [write_mem_bytes, Nat.add_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:425:44: warning: This simp argument is unused:
+  Nat.add_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [write_mem_bytes, Nat.add_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:525:13: warning: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [BitVec.cast_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:536:57: warning: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, rm_lemma, BitVec.cast_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:541:31: warning: This simp argument is unused:
+  Nat.add_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_zero, rm_lemma, Nat.sub_zero, BitVec.cast_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:541:43: warning: This simp argument is unused:
+  Nat.add_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_eq, rm_lemma, Nat.sub_zero, BitVec.cast_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:542:25: warning: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_eq, Nat.add_zero, rm_lemma, BitVec.cast_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:542:39: warning: This simp argument is unused:
+  BitVec.cast_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_eq, Nat.add_zero, rm_lemma, Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:543:39: warning: This simp argument is unused:
+  Nat.add_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Nat.add_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:543:51: warning: This simp argument is unused:
+  Nat.add_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Nat.add_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:555:19: warning: This simp argument is unused:
+  Nat.add_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Nat.add_zero, read_mem_bytes, BitVec.cast_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:555:31: warning: This simp argument is unused:
+  Nat.add_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Nat.add_eq, read_mem_bytes, BitVec.cast_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:618:28: warning: This simp argument is unused:
+  Bool.and_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [h₀, Nat.testBit_shiftRight, Nat.testBit_mod_two_pow, decide_true, Bool.true_and]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:621:34: warning: This simp argument is unused:
+  Bool.and_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [h₁, decide_true, Bool.true_and]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:664:36: warning: This simp argument is unused:
+  Nat.succ.injEq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [write_mem_bytes, Nat.zero_lt_succ, Nat.succ_sub_succ_eq_sub, Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:688:21: warning: This simp argument is unused:
+  toNat_cast
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsb', toNat_setWidth]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:690:38: warning: This simp argument is unused:
+  toNat_ofNatLT
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [toNat_ofNat]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:691:51: warning: This simp argument is unused:
+  Nat.succ_sub_succ_eq_sub
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [BitVec.sub_of_add_is_sub_sub, Nat.mod_eq_of_lt, Nat.reduceLT, Nat.mod_add_mod, Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:692:21: warning: This simp argument is unused:
+  Nat.mod_eq_of_lt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [BitVec.sub_of_add_is_sub_sub, Nat.succ_sub_succ_eq_sub, Nat.reduceLT, Nat.mod_add_mod,
+    Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:692:39: warning: This simp argument is unused:
+  Nat.reduceLT
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [BitVec.sub_of_add_is_sub_sub, Nat.succ_sub_succ_eq_sub, Nat.mod_eq_of_lt, Nat.mod_add_mod,
+    Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:692:53: warning: This simp argument is unused:
+  Nat.mod_add_mod
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [BitVec.sub_of_add_is_sub_sub, Nat.succ_sub_succ_eq_sub, Nat.mod_eq_of_lt, Nat.reduceLT,
+    Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:693:21: warning: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [BitVec.sub_of_add_is_sub_sub, Nat.succ_sub_succ_eq_sub, Nat.mod_eq_of_lt, Nat.reduceLT,
+    Nat.mod_add_mod]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:707:21: warning: This simp argument is unused:
+  read_mem_of_write_mem_bytes_subset_helper_5
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [mod_lt_conc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:730:3: warning: Variable name `h4` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _h4
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:744:47: warning: This simp argument is unused:
+  BitVec.toNat_ofNat
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [h₀, decide_true, Bool.true_and, BitVec.toNat_append, Nat.testBit_or]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:745:15: warning: This simp argument is unused:
+  BitVec.toNat_append
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [h₀, decide_true, Bool.true_and, BitVec.toNat_ofNat, Nat.testBit_or]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:758:21: warning: This simp argument is unused:
+  l1
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [decide_true, Bool.true_and, Nat.add_mod_mod]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:758:53: warning: This simp argument is unused:
+  Nat.add_mod_mod
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [l1, decide_true, Bool.true_and]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:761:19: warning: This simp argument is unused:
+  BitVec.toNat_ofNat
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [h₀, BitVec.toNat_append, Nat.testBit_or]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:761:39: warning: This simp argument is unused:
+  BitVec.toNat_append
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [h₀, BitVec.toNat_ofNat, Nat.testBit_or]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:823:33: warning: This simp argument is unused:
+  Nat.add_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:823:45: warning: This simp argument is unused:
+  Nat.add_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:850:51: warning: This simp argument is unused:
+  Nat.add_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [toNat_add (addr2 - addr1) 1#64, Nat.add_zero, toNat_ofNat, Nat.add_mod_mod, cast_ofNat,
+    toNat_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:850:63: warning: This simp argument is unused:
+  Nat.add_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [toNat_add (addr2 - addr1) 1#64, Nat.add_eq, toNat_ofNat, Nat.add_mod_mod, cast_ofNat, toNat_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:851:49: warning: This simp argument is unused:
+  cast_ofNat
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [toNat_add (addr2 - addr1) 1#64, Nat.add_eq, Nat.add_zero, toNat_ofNat, Nat.add_mod_mod,
+    toNat_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:881:3: warning: Variable name `h1` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _h1
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:953:8: warning: This simp argument is unused:
+  ushiftRight
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [ShiftRight.shiftRight, BitVec.toNat_ofNat]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:953:21: warning: This simp argument is unused:
+  ShiftRight.shiftRight
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [ushiftRight, BitVec.toNat_ofNat]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:953:44: warning: This simp argument is unused:
+  BitVec.toNat_ofNat
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [ushiftRight, ShiftRight.shiftRight]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:966:29: warning: This simp argument is unused:
+  Nat.add_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_zero, toNat_eq, extractLsb'_toNat, toNat_cast, toNat_append,
+    Nat.shiftRight_zero, Nat.reduceAdd]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:966:41: warning: This simp argument is unused:
+  Nat.add_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_eq, toNat_eq, extractLsb'_toNat, toNat_cast, toNat_append,
+    Nat.shiftRight_zero, Nat.reduceAdd]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Memory/MemoryProofs.lean:967:60: warning: This simp argument is unused:
+  Nat.reduceAdd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [read_mem_bytes, Nat.add_eq, Nat.add_zero, toNat_eq, extractLsb'_toNat, toNat_cast, toNat_append,
+    Nat.shiftRight_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

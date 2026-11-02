@@ -1,0 +1,43 @@
+{
+  "status": "source_prepared_baseline_context_guard_blocked",
+  "old_theorem_headers_exact": 34,
+  "old_checkCalls_and_previous_exact_calls": "byte-identical, including proofs",
+  "files": {
+    "FV/Backend/SemanticABICheck.lean": {
+      "old_header_count": 4,
+      "headers_exact": true,
+      "source_sha256": "2eaa6c12b6618144896fae16bee22d0fe661dce6a2ee78a3833431534af56017",
+      "old_source_sha256": "82ea22a6a7594723b1f2ef818dd9c098af48c145d1c72638ec96b4b1dca60dde"
+    },
+    "FV/E2E/CompiledSemanticABI.lean": {
+      "old_header_count": 7,
+      "headers_exact": true,
+      "source_sha256": "f3768b5ee01ae86dd340afba030639293694c25f064b4b86d9f1fede370193fa",
+      "old_source_sha256": "1d0706c6ada07178a817451bc1d9612f8bfedd290748a0c8364c37d58e47e0ff"
+    },
+    "FV/E2E/CompiledSemanticReturnPins.lean": {
+      "old_header_count": 5,
+      "headers_exact": true,
+      "source_sha256": "ec9199eca3adcd25305ba9917506d3476f99aa94b5a4225383fdc7aa7c4c9fa6",
+      "old_source_sha256": "1af97b633a63618309b503852b859662dafad932ed62c55ae16ec8e200190be4"
+    },
+    "FV/E2E/CompiledProgramReturnPins.lean": {
+      "old_header_count": 7,
+      "headers_exact": true,
+      "source_sha256": "758b48fca8caa8e93128ccb155d143b6871b3b8a8a6f60dea2c5a8149b5c3fe8",
+      "old_source_sha256": "c1af67a373150b9433993e57eeb4ba165d2e38a17e84387b7c2bc874d21c84b2"
+    },
+    "FV/E2E/PreparedReturnPinCalls.lean": {
+      "old_header_count": 11,
+      "headers_exact": true,
+      "source_sha256": "eb65ccb1864418091893c5b24e3c32b00f91368fda172e84390eed0aa2ee20c1",
+      "old_source_sha256": "da7e92e419e72872794b7488843787fdbe0b4c23ce34e7a4154576524dc79515"
+    }
+  },
+  "axiom_parity": "pending baseline kernel/audit; no shared integration kernel ran",
+  "declared_context": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "observed_V_head": "f32b851a08ad239fd5daa4e8f6137cbc802ebe4e",
+  "baseline_source": "7c979e18457fd49d96b6f88f5f364ef62490f94c",
+  "shared_tracked_files_edited": [],
+  "utc": "2026-11-02T10:16:05.589050+00:00"
+}

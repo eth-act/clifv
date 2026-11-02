@@ -1,0 +1,3 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/Backend/StockResultCallCheck.lean:60:61: error(lean.unknownIdentifier): Unknown identifier `regLocs`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/Backend/StockResultCallCheck.lean:73:16: error(lean.unknownIdentifier): Unknown identifier `aliasNum`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/Backend/StockResultCallCheck.lean:73:51: error(lean.unknownIdentifier): Unknown identifier `aliasNum`

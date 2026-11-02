@@ -1,0 +1,100 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:48:23: warning: This simp argument is unused:
+  setWidth_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [AddWithCarry, setWidth_zero, setWidth_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:48:36: warning: This simp argument is unused:
+  setWidth_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [AddWithCarry, setWidth_eq, setWidth_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:48:51: warning: This simp argument is unused:
+  setWidth_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [AddWithCarry, setWidth_eq, setWidth_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:60:23: warning: This simp argument is unused:
+  setWidth_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [AddWithCarry, setWidth_zero, setWidth_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:60:36: warning: This simp argument is unused:
+  setWidth_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [AddWithCarry, setWidth_eq, setWidth_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:60:51: warning: This simp argument is unused:
+  setWidth_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [AddWithCarry, setWidth_eq, setWidth_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:62:87: warning: This simp argument is unused:
+  Nat.pow_one
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [toNat_setWidth, toNat_add, Nat.add_mod_mod, Nat.mod_add_mod, toNat_ofNat, Nat.reduceMod, toNat_sub,
+    toNat_not]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:63:4: warning: This simp argument is unused:
+  Nat.reduceMod
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [toNat_setWidth, toNat_add, Nat.add_mod_mod, Nat.mod_add_mod, toNat_ofNat, Nat.pow_one, toNat_sub,
+    toNat_not]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:303:58: warning: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [CheckSPAlignment, read_gpr, setWidth_eq, add_eq, Aligned_AddWithCarry_64_4]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:468:65: warning: This simp argument is unused:
+  imp_false
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [Bool.ite_eq_false_distrib, ite_eq_left_iff]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:590:35: warning: This simp argument is unused:
+  gt_iff_lt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [Nat.shiftLeft_eq, Nat.zero_lt_succ, Nat.zero_lt_two, Nat.pow_pos, Nat.mul_pos_iff_of_pos_left]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:591:2: warning: This simp argument is unused:
+  Nat.zero_lt_two
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [Nat.shiftLeft_eq, gt_iff_lt, Nat.zero_lt_succ, Nat.pow_pos, Nat.mul_pos_iff_of_pos_left]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:621:21: warning: This simp argument is unused:
+  ge_iff_le
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [Nat.add_sub_cancel', h1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/Common.lean:621:53: warning: This simp argument is unused:
+  h1
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [ge_iff_le, Nat.add_sub_cancel']
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

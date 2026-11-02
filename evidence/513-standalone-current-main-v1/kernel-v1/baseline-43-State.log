@@ -1,0 +1,60 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:401:0: warning: Definition `ArmState.r_GPR_0_eq_x0` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:403:0: warning: Definition `ArmState.r_GPR_1_eq_x1` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:405:0: warning: Definition `ArmState.r_GPR_31_eq_sp` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:407:0: warning: Definition `ArmState.r_FLAG_V_eq_V` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:409:0: warning: Definition `ArmState.r_FLAG_C_eq_C` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:411:0: warning: Definition `ArmState.r_FLAG_Z_eq_Z` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:413:0: warning: Definition `ArmState.r_FLAG_N_eq_N` is a proposition; use `theorem` instead of `def`
+
+Note: This linter can be disabled with `set_option linter.defProp false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:1013:27: warning: This simp argument is unused:
+  ArmState.read_mem_eq_mem_read
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [write_mem_bytes, ih, write_mem, write_bytes]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:1105:62: warning: This simp argument is unused:
+  Nat.reduceAdd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [write_of_eq rfl, BitVec.extractLsByte_def, Nat.reduceMul, Nat.add_one_sub_one, Nat.sub_zero,
+    BitVec.cast_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:1106:10: warning: This simp argument is unused:
+  Nat.add_one_sub_one
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [write_of_eq rfl, BitVec.extractLsByte_def, Nat.reduceAdd, Nat.reduceMul, Nat.sub_zero,
+    BitVec.cast_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:1106:31: warning: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [write_of_eq rfl, BitVec.extractLsByte_def, Nat.reduceAdd, Nat.reduceMul, Nat.add_one_sub_one,
+    BitVec.cast_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/State.lean:1106:45: warning: This simp argument is unused:
+  BitVec.cast_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [write_of_eq rfl, BitVec.extractLsByte_def, Nat.reduceAdd, Nat.reduceMul, Nat.add_one_sub_one,
+    Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

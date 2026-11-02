@@ -1,0 +1,9 @@
+ℹ [388/388] Built FV.E2E.LoweringPipeline (731ms)
+info: FV/E2E/LoweringPipeline.lean:51:0: 'E2E.LinkCheck.LoweringPipeline.pipe_legacy' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: FV/E2E/LoweringPipeline.lean:52:0: 'E2E.LinkCheck.LoweringPipeline.pipeT_legacy' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: FV/E2E/LoweringPipeline.lean:53:0: 'E2E.LinkCheck.LoweringPipeline.pipeCleanup_legacy' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: FV/E2E/LoweringPipeline.lean:54:0: 'E2E.LinkCheck.LoweringPipeline.pipeCleanupT_legacy' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: FV/E2E/LoweringPipeline.lean:55:0: 'E2E.LinkCheck.LoweringPipeline.pipeWithLowering_congr' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: FV/E2E/LoweringPipeline.lean:56:0: 'E2E.LinkCheck.LoweringPipeline.pipeTWithLowering_congr' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: FV/E2E/LoweringPipeline.lean:57:0: 'E2E.LinkCheck.LoweringPipeline.legacy_consumer_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+Build completed successfully (388 jobs).

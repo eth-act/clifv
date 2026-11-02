@@ -1,0 +1,31 @@
+{
+  "stage": "stage-w1-6",
+  "staged_archives": 733,
+  "IselData_archives": [
+    ".git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-stages/stage-w1-6/f82231381f071a23.ltar"
+  ],
+  "baseline_project_sources": 224,
+  "candidate_project_sources": 226,
+  "baseline_leaf_names_seen": 198,
+  "missing_leaf_names": [
+    "ABIReadOnlyCheck",
+    "ABIReadOnlyRealize",
+    "ABIReadOnlySem",
+    "ABIReadOnlyTransport",
+    "DeadCleanupAdapter",
+    "DeadCleanupContracts",
+    "DeadCleanupLive",
+    "DeadCleanupSem",
+    "DeadCleanupStructure",
+    "Lockstep",
+    "Main",
+    "MemRefines",
+    "Pair",
+    "RefinesCSem",
+    "RefinesInsts",
+    "RefinesInsts2",
+    "SemSim",
+    "VCodeSemISeq"
+  ],
+  "scope": "Leaf-name inventory only. Full-path disambiguation and all current input keys/dependency outputs must pass before any reuse."
+}

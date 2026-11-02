@@ -1,0 +1,18 @@
+{
+  "status": "stopped_after_single_failure",
+  "base": "3b586e45bb65855c9e6c0640f3e9f5f75abd4446",
+  "candidate_tree": "115baa5cc12179216ffb6ef94cf61d1d1c993ba6",
+  "source": "FV/Backend/Proof/IselData.lean",
+  "source_sha256": "4e88c0b032a0e706f900e1df0336aab61d1487d888f081a5ad47e52e6915c4f7",
+  "exit": 137,
+  "elapsed_seconds": 377.371835072001,
+  "memstats": "peak 2147483648\noom 1\noom_kill 1\n",
+  "observed_max_lean_os_threads": 6,
+  "previous119_artifacts_verified_unchanged": true,
+  "fresh_baseline_modules_passed": 119,
+  "no_other_kernel_ran": true,
+  "kernel_slot": "released2GiB; no further kernel grant",
+  "strategy": "stopped; no retry or budget increase",
+  "full_receipt_sha256": "c4da847077fd3dab9f7d1c15c3f357a82a7dc90030d256cd509ed17c6ba61db6",
+  "utc": "2026-11-02T09:55:12.063182+00:00"
+}

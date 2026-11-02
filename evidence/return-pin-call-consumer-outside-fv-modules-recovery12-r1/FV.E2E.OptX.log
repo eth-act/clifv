@@ -1,0 +1,8 @@
+⚠ [415/546] Replayed FV.Opt.Proof.RuleImm
+warning: FV/Opt/Proof/RuleImm.lean:653:23: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [526/546] Replayed FV.Opt.Proof.RuleIcmpComposeWitness
+warning: FV/Opt/Proof/RuleIcmpComposeWitness.lean:46:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/RuleIcmpComposeWitness.lean:58:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/RuleIcmpComposeWitness.lean:63:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+✔ [546/546] Built FV.E2E.OptX (2.0s)
+Build completed successfully (546 jobs).

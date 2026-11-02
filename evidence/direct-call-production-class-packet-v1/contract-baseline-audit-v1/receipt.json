@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "exit_code": 0,
+  "context": "preserved frozen source, fast inner loop only",
+  "stats": "peak 258342912\noom 0\noom_kill 0\n",
+  "source_hashes": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-contracts.lean": "ba6c3d79f1d3210c7e5beb4c8aab119b08ee1dcc3a54eeb7b28f205a18a58cef"
+  },
+  "utc": "2026-11-02T10:29:43.680888+00:00"
+}

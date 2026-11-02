@@ -1,0 +1,215 @@
+{
+  "artifacts": {
+    ".lake/build/lib/lean/FV/Backend/Lowering/StockResultCallWith.olean": {
+      "sha256": "2482502475b34244871f7c1d9b8f53df560f9cd11b33303d24f8a2bb95e09801",
+      "bytes": 77224,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Lowering/StockResultCallWith.ilean": {
+      "sha256": "7debf839d8c8766a9be3b38b9c51f997a78ab7b97ecf460db68637162051d49f",
+      "bytes": 10090,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Lowering/StockResultCallWith.c": {
+      "sha256": "cc3c2906241c7d9fe23c3a5eb9aa0d5d2a2fbbe6ea34c1b712272d3e90fffd36",
+      "bytes": 5349,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResult.olean": {
+      "sha256": "cb1c711193ca23115b3000ef78b1ffb72c6051a9e5de7998bc0c696e2e83e21f",
+      "bytes": 240984,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResult.ilean": {
+      "sha256": "6cf8055aed3824f6cadfe4c881fde5194b0b9c4fdbded73d70d4d744b11d97fe",
+      "bytes": 37384,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResult.c": {
+      "sha256": "f47cb34e590ab7ceb18e984f86d49b41e64f5e17aec48490387a0f5c0e1bf6b8",
+      "bytes": 5919,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultFixture.olean": {
+      "sha256": "304486b591d34b8fc46641c66ff5a17807831e18dc37eee09a3ff420cc859a99",
+      "bytes": 350760,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultFixture.ilean": {
+      "sha256": "dcb936119281372414d60eaf44260b074bf3183158f844026bbc314a179de9e8",
+      "bytes": 39319,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultFixture.c": {
+      "sha256": "f8bb4724bc919ff7114bde2bcc0db1fbf2b6b1af9383b3d2010c816c88e2de1b",
+      "bytes": 62882,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultWitness.olean": {
+      "sha256": "30da3de31751a8fe886afe9a3403b5237e783a7ef808458c76025a195f322388",
+      "bytes": 170352,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultWitness.ilean": {
+      "sha256": "1f5b2fe83cefba476f6b9f7842a4a4121326d5a8effbde53e0bf848dbddcf1d4",
+      "bytes": 16777,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultWitness.c": {
+      "sha256": "febd436b8c4d4780f6482b00ba4cc1a098d8f82c851b1da2afae8c9d5f77ad6f",
+      "bytes": 1742,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/StockResultCallCheck.olean": {
+      "sha256": "478758aca52ba9f44c0d134e44f44487a76d1b4b2655969d1bf0cb4f21f04c15",
+      "bytes": 548496,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/StockResultCallCheck.ilean": {
+      "sha256": "520c3136f783676829a31dfea9dd196bdf33664cbfc1f3370c7e221b7c41ac02",
+      "bytes": 27124,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/Backend/StockResultCallCheck.c": {
+      "sha256": "0708b22d8abc33eb647143cafdf74598bb96e93c084ff548fdf34f3a4d093c18",
+      "bytes": 70404,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallDomain.olean": {
+      "sha256": "c246d58339ed99091ab9e70b7f1673a06685727d87992fa9c2682741b5b5def3",
+      "bytes": 1878488,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallDomain.ilean": {
+      "sha256": "b01f6b3da9e53ebe813b54b60894dc95f82ecaf49d0f4ef1dac702a49d4dcf1b",
+      "bytes": 47926,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallDomain.c": {
+      "sha256": "2e8e48f118b7b78acd05c5cacde13f0632296bd935ad89945ea872d53d589ac9",
+      "bytes": 229834,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallLayout.olean": {
+      "sha256": "2b943219fb71ac62fbcc2390f5e869f0da099a7db72dfd7e44a2879690519453",
+      "bytes": 974800,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallLayout.ilean": {
+      "sha256": "b61fad8cd40da458000112e93e96e04f58bef347966bf37dad3fcee2119c9366",
+      "bytes": 33019,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallLayout.c": {
+      "sha256": "549c8d8a3ef83b6074903860181e2cf69071c104789129e6976e94d888f0f1e3",
+      "bytes": 23262,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallMachine.olean": {
+      "sha256": "5a8f59e6e1d00653328d6f3a7ec1050d09d9680ba0c0d04531fc2f7b90420988",
+      "bytes": 119200,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallMachine.ilean": {
+      "sha256": "47b96fcfdf52def25ecd81e2ea943f38612cc4efde75a6364f4a43f1a0dad168",
+      "bytes": 9735,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallMachine.c": {
+      "sha256": "12f21859452da4030eecde55de5a4c5ef86718b8e1f14760225e2a637e2e3989",
+      "bytes": 2343,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallNI.olean": {
+      "sha256": "8566ab4511aa99d23dc0320f3f2641ff328d0e2995cf4783502d03ee4a3ccdd0",
+      "bytes": 534832,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallNI.ilean": {
+      "sha256": "47afd42fff6680a9d535525f19661b0e3f59db111d5ecc40759fd3349e396e6f",
+      "bytes": 30339,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallNI.c": {
+      "sha256": "c74ec6985470e41f74d4f89f4fa71840eecf8999f9fabdf4e132f378859669ac",
+      "bytes": 1378,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallPair.olean": {
+      "sha256": "8c61813adbf90fa37708a2f7715e22880281a30cb8e101ddae030923e11db321",
+      "bytes": 134352,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallPair.ilean": {
+      "sha256": "bc52bc8f57ab309859ff042fd6df3579d48db96377564c33cda479607814d3d6",
+      "bytes": 8104,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallPair.c": {
+      "sha256": "7f876b21ef9a3e1beabd1b1875fe5433d3176bcfbb9581f4a17b0f5e695c85ff",
+      "bytes": 3182,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallProvider.olean": {
+      "sha256": "5f5cd6d8b8290f484115e5e881b1127c109ad468768b3c753129d049a6663f94",
+      "bytes": 45520,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallProvider.ilean": {
+      "sha256": "ed5efed1a4404f1f68eebc26bbe08dd5f8b655bd00176a2a1081acbeabbf5c79",
+      "bytes": 5094,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallProvider.c": {
+      "sha256": "71656a9bb38e45c2f5ef5cc1076ff34a2226e42fbfd5dbfe4bddc4c4f34eb8dc",
+      "bytes": 1643,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallRun.olean": {
+      "sha256": "0533d856de16a58fd2e0370316bcc1d37a5dcaa08662a42218533dab1700ed24",
+      "bytes": 2275688,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallRun.ilean": {
+      "sha256": "11e4cd4f006e297de236bb1e2f2d6c409f114d6f9bc9047b39ad5652f62aafea",
+      "bytes": 66517,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallRun.c": {
+      "sha256": "50a947c8ab1d8a24d8bd5fa898337fbf9a6d718cc63af038362c5db84dd229c6",
+      "bytes": 229533,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallSource.olean": {
+      "sha256": "d6182eec9a9f15d55b53b8f3368fc53a986ca6da3058e7e767ac4c232fbc44e6",
+      "bytes": 221800,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallSource.ilean": {
+      "sha256": "4e6af32b9b80fd07c5184d2bde9215c168f4ebdce5845398e59fe003acbfd171",
+      "bytes": 19371,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallSource.c": {
+      "sha256": "7b4f6a03d888783e9c148f98eb26d12e700d76e74dd16aad10c6379027a3055c",
+      "bytes": 1916,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallWitness.olean": {
+      "sha256": "55fdeb6ac44db9f4fe38059739a3806021183b96a88c8577c3cad91724ede0e5",
+      "bytes": 408776,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallWitness.ilean": {
+      "sha256": "b0ef2c6bfadf13358ff4b60643b8d678b20faaad51ce6cb3d1ea779e919a515a",
+      "bytes": 42242,
+      "links": 1
+    },
+    ".lake/build/lib/lean/FV/E2E/StockResultCallWitness.c": {
+      "sha256": "e38d7fe6154af6bf45d233ccbcc65fdb9bb59fbc398079b8fc980fe7b5db59bd",
+      "bytes": 39934,
+      "links": 1
+    }
+  },
+  "purpose": "Focused class checkpoint; sources and logs retained; expendable outputs removed after hashes"
+}

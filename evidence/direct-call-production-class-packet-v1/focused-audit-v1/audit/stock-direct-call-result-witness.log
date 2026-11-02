@@ -1,0 +1,9 @@
+'Backend.Stock.Proof.DirectCallResultWitness.original_call_binding' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.DirectCallResultFixture.actual_checked._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.DirectCallResultWitness.memory_effect' depends on axioms: [propext]
+'Backend.Stock.Proof.DirectCallResultFixture.binding_of_run' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.DirectCallResultFixture.actual_checked._native.native_decide.ax_1✝]

@@ -1,0 +1,12 @@
+{
+  "owner": "worker-O execution coordinator delegate investigate_513",
+  "allocation": "1GiB I/O only under watcher3203909; parent owns the other2GiB. No automatic kernel start.",
+  "frozen_owner": "12GiB owner and every shared artifact mapping remain untouched",
+  "cache_policy": "Only disposable ci-cache/ci-stages under the owned isolated package. No new warm cache. No global cache import. Remove all temporary artifact staging after recorded proof/matrix evidence.",
+  "artifact_policy": "Only successful producers from exact push head3a6719b4/run41408842551. Each shard archive<=2GiB; assembled exact-head archive<=8GiB; cumulative<=40GiB; at least100GiB free. Streaming hashes and extraction.",
+  "coherence_gate": "lake build --no-build on all required current-main baseline modules. A cache miss is not a pass and cannot start a compiler.",
+  "kernel_gate": "Prepared only. Requires a new explicit coordinator3GiB grant after coherent context.",
+  "cleanup_owner": "delegate",
+  "publication_owner": "parent exclusively; no branch writes or publication",
+  "utc": "2026-11-02T08:54:25.895173+00:00"
+}

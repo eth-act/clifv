@@ -1,0 +1,33 @@
+{
+  "status": "measured3GiBOOM,stopped",
+  "base": "3b586e45bb65855c9e6c0640f3e9f5f75abd4446",
+  "candidate_tree": "115baa5cc12179216ffb6ef94cf61d1d1c993ba6",
+  "passed_fresh_project_modules_retained": 119,
+  "failed_command": {
+    "stage": "baseline",
+    "source": "FV/Backend/Proof/IselData.lean",
+    "source_sha256": "4e88c0b032a0e706f900e1df0336aab61d1487d888f081a5ad47e52e6915c4f7",
+    "command": [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+      "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Backend/Proof/IselData.lean",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/.lake/build/lib/lean/FV/Backend/Proof/IselData.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/.lake/build/lib/lean/FV/Backend/Proof/IselData.ilean",
+      "-c",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/.lake/build/lib/lean/FV/Backend/Proof/IselData.c"
+    ],
+    "LEAN_PATH": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/.lake/build/lib/lean:/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/lib/lean",
+    "exit": 137,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "memstats": "peak 3221225472\noom 1\noom_kill 1\n",
+    "outputs": {}
+  },
+  "candidate_kernels_run": 0,
+  "types_axiom_comparisons_run": 0,
+  "automatic_retry": false,
+  "kernel_slot": "released",
+  "next": "Preserve artifacts and report before any further retry. Resume1GiB I/O only.",
+  "utc": "2026-11-02T09:23:51.387784+00:00"
+}

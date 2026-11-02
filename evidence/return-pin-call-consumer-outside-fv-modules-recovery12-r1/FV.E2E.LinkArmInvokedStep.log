@@ -1,0 +1,4 @@
+⚠ [379/392] Replayed FV.E2E.LinkArmEnvOfB
+warning: FV/E2E/LinkArmEnvOfB.lean:46:47: `if_pos` has been deprecated: Use `ite_eq_left` instead
+✔ [392/392] Built FV.E2E.LinkArmInvokedStep (866ms)
+Build completed successfully (392 jobs).

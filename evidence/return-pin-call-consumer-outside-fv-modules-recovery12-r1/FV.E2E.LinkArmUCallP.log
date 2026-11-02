@@ -1,0 +1,5 @@
+⚠ [397/397] Built FV.E2E.LinkArmUCallP (1.5s)
+warning: FV/E2E/LinkArmUCallP.lean:222:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmUCallP.lean:232:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmUCallP.lean:240:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+Build completed successfully (397 jobs).

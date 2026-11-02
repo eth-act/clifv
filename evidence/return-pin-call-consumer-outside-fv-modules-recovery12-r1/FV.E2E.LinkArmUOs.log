@@ -1,0 +1,15 @@
+⚠ [397/399] Replayed FV.E2E.LinkArmUCallP
+warning: FV/E2E/LinkArmUCallP.lean:222:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmUCallP.lean:232:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmUCallP.lean:240:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [398/399] Replayed FV.E2E.LinkArmUCallNI
+warning: FV/E2E/LinkArmUCallNI.lean:211:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmUCallNI.lean:221:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmUCallNI.lean:229:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmUCallNI.lean:340:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmUCallNI.lean:380:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmUCallNI.lean:380:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [399/399] Built FV.E2E.LinkArmUOs (1.3s)
+warning: FV/E2E/LinkArmUOs.lean:182:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmUOs.lean:183:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+Build completed successfully (399 jobs).

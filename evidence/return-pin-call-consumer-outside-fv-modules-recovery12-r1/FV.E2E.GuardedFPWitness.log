@@ -1,0 +1,9 @@
+⚠ [364/366] Replayed FV.E2E.GuardedFPPair
+warning: FV/E2E/GuardedFPPair.lean:43:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/GuardedFPPair.lean:43:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/GuardedFPPair.lean:50:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [366/366] Built FV.E2E.GuardedFPWitness (857ms)
+warning: FV/E2E/GuardedFPWitness.lean:56:25: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/GuardedFPWitness.lean:97:42: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/GuardedFPWitness.lean:149:75: `if_pos` has been deprecated: Use `ite_eq_left` instead
+Build completed successfully (366 jobs).

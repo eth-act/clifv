@@ -1,0 +1,36 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/Backend/Lowering/StockResultCallWith.lean:40:4: error: Tactic `split` failed: Could not split an `if` or `match` expression in the type
+  (do
+      let result ← Except.ok result
+      if check f result.code = true then pure result.code
+        else throw "Stock direct result caller failed source and result-binding checks") =
+    Except.ok vc
+of `accepted`
+
+Hint: Use `set_option trace.split.failure true` to display additional diagnostic information
+
+case ok
+f : Clif.Function
+vc : VCode
+result : Result
+lowered : lower f = Except.ok result
+accepted :
+  (do
+      let result ← Except.ok result
+      if check f result.code = true then pure result.code
+        else throw "Stock direct result caller failed source and result-binding checks") =
+    Except.ok vc
+⊢ ∃ result_1, Except.ok result = Except.ok result_1 ∧ result_1.code = vc
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/Backend/Lowering/StockResultCallWith.lean:37:40: warning: This simp argument is unused:
+  Except.bind
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [lowered] at accepted
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/Backend/Lowering/StockResultCallWith.lean:39:23: warning: This simp argument is unused:
+  Except.bind
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [lowered] at accepted
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

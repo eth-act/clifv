@@ -1,0 +1,128 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/StockResultCallRun.lean:96:58: error: unsolved goals
+f : Clif.Function
+result : Result
+layout : Layout f result
+run : lower f = Except.ok result
+scope : LowerScope f
+dominated : Dominated f
+env : Clif.Env
+cp : Clif.Program
+subset : InSubset cp f
+args : List Clif.Val
+fr : Clif.Frame
+cm outMem : Clif.Mem
+entered : SourceEntry f args fr
+fuel : Nat
+vals : List Clif.Val
+returned : Clif.runLoop env cp fuel { frame := fr, callers := [], mem := cm } = Clif.Outcome.returned vals outMem
+Γ : E2E.Rel
+fc : FnCtx
+X : ExtSem
+c : BitVec 64
+slot : fc.slotBase = Γ.slotOff
+symbols : ∀ (n : String) (b : Nat), Γ.syms n = some b → X.sym n 0 = BitVec.ofNat 64 b
+w : Arm.ArmState
+memory : RelW Γ f c fr.slots cm w
+arguments : ArgsAtEntry Γ.F f.sig args w
+blocks : f.blocks = [layout.data.block]
+body :
+  layout.data.block.body = [{ results := [layout.data.result], inst := Clif.Inst.call layout.data.fn layout.data.args }]
+term : layout.data.block.term = Clif.Terminator.ret [layout.data.result]
+returns : f.sig.returns = [layout.data.returned]
+calleeReturns : layout.data.ext.sig.returns = [layout.data.returned]
+integer : layout.data.returned.ty = Clif.Ty.i64
+lookup : f.extern? layout.data.fn = some layout.data.ext
+sizes : sigParamBytes layout.data.ext.sig = Except.ok layout.data.bytes
+registers : layout.data.bytes.length ≤ 8
+pins : returnPins f 1 = some [Reg.x 0]
+g : List Clif.Val → Clif.Mem → Clif.Outcome
+sourceArgs : List Clif.Val
+after : Clif.Mem
+value : Clif.Val
+callee : env.extern layout.data.ext.name = some g
+read : fr.getMany layout.data.args = Clif.Res.ok sourceArgs
+argTypes : List.map (fun x => x.ty) sourceArgs = Clif.AbiParam.tys layout.data.ext.sig.params
+called : g sourceArgs cm = Clif.Outcome.returned [value] after
+valueType : value.ty = Clif.Ty.i64
+equal : vals = [value]
+freed : outMem = (after.free (List.map (fun x => x.snd) fr.slots)).leave
+event : BlockScanEvent
+block : VBlock
+prelude tail : Array MInst
+ρ : Nat → CV
+events : event ∈ result.blockScans.toList
+entryBlock : event.block = 0
+placed : result.code.blocks[0]? = some block
+parts : block.insts = prelude ++ tail
+values : ValuesHeld (fun x => True) event.ctx fr ρ
+noCalls : ∀ (i : MInst), i ∈ prelude.toList → ∀ (info : CallInfo), i ≠ MInst.call info
+suffix : Array MInst
+tailEq :
+  tail =
+    Array.map (fun x => MInst.mapRegs (lowerFunction.resolve result.final.alias (result.final.alias.size + 1)) x)
+        event.output.code ++
+      suffix
+readChecks : VoidCall.NI.codeCheck f.sig result.code = true
+reads : ∀ (j : Nat) (i : MInst), prelude.toList[j]? = some i → ABIReadOnly.instruction f.sig 0 j i = true
+b : Clif.Block
+regs : Clif.Regs
+found : f.entry? = some b
+types : List.map (fun x => x.ty) args = Clif.AbiParam.tys f.sig.params
+paramTypes : List.map (fun x => x.ty) args = List.map (fun x => x.snd) b.params
+set : Clif.Regs.empty.setMany (List.map (fun x => x.fst) b.params) args = some regs
+frame : fr = { func := f, regs := regs, slots := fr.slots, body := b.body, term := b.term }
+inputTypes : List.map (fun x => x.ty) args = List.map (fun x => x.ty) f.sig.params
+preRun : seqRun (ABIReadOnly.sem Γ.F fc X) prelude.toList (entrySeed event.ctx fr) w = some (SeqEnd.fall ρ w)
+mem1 : RelW Γ f c fr.slots cm w
+same : SameWorld Γ.F w w
+held : ValuesHeld (fun x => True) event.ctx fr fun key => ρ (aliasNum result.final.alias key)
+inputValues : List CV :=
+  List.map (fun x => ρ (aliasNum result.final.alias (VoidCall.sourceKey event.ctx x))) layout.data.args
+holds : AllHold sourceArgs inputValues
+arity : sourceArgs.length = layout.data.ext.sig.params.length
+argsAt : ∀ (world : Arm.ArmState), ArgsAt layout.data.ext.sig sourceArgs inputValues world
+member : layout.data.ext ∈ List.map (fun x => x.snd) f.externs
+root destination : Nat
+pairs : List (Nat × Reg)
+mapped : event.ctx.valueReg? layout.data.result = some (Reg.vreg root RegClass.int)
+code :
+  event.output.code =
+    #[MInst.call
+        { dest := CallDest.sym layout.data.ext.name, uses := retPairs pairs,
+          defs := callDefs [(Reg.x 0, destination)] },
+      MInst.rets (retPairs [(root, Reg.x 0)])]
+aliases : aliasNum result.final.alias root = aliasNum result.final.alias destination
+keys : List.map (fun x => x.fst) pairs = List.map (VoidCall.sourceKey event.ctx) layout.data.args
+resolve : Reg → Reg := lowerFunction.resolve result.final.alias (result.final.alias.size + 1)
+resolvedPairs : List (Nat × Reg) := List.map (fun p => (aliasNum result.final.alias p.fst, p.snd)) pairs
+resolvedDestination : Nat := aliasNum result.final.alias destination
+actualArgs : List.map (fun x => ρ x.fst) resolvedPairs = inputValues
+⊢ ((∀ (a : Nat) (b : Reg),
+        (a, b) ∈ pairs →
+          chaseF (fun n => result.final.alias[n]?.join) (result.final.alias.size + 1) a =
+            aliasNum result.final.alias a) ∧
+      chaseF (fun n => result.final.alias[n]?.join) (result.final.alias.size + 1) destination =
+        aliasNum result.final.alias destination) ∧
+    chaseF (fun n => result.final.alias[n]?.join) (result.final.alias.size + 1) root =
+      aliasNum result.final.alias destination
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/StockResultCallRun.lean:99:97: warning: This simp argument is unused:
+  aliases
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [MInst.mapRegs, retPairs, callDefs, resolve, resolve_vreg, resolvedPairs, resolvedDestination]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/StockResultCallRun.lean:106:35: warning: This simp argument is unused:
+  Array.toList_push
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_append, Array.toList_empty, List.append_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/StockResultCallRun.lean:106:53: warning: This simp argument is unused:
+  Array.toList_empty
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_append, Array.toList_push, List.append_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

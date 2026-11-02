@@ -1,0 +1,7 @@
+{
+  "watcher": 3549511,
+  "stopped_idle_child": 3549526,
+  "no_children": true,
+  "reason": "Exclusive coherent snapshot before513kernel",
+  "utc": "2026-11-02T10:28:11.879764+00:00"
+}

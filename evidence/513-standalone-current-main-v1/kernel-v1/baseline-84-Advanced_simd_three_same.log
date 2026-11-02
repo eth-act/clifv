@@ -1,0 +1,22 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/DPSFP/Advanced_simd_three_same.lean:173:3: warning: Variable name `h_no_err` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _h_no_err
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/DPSFP/Advanced_simd_three_same.lean:179:13: warning: This simp argument is unused:
+  Bool.and_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [exec_advanced_simd_three_same, exec_binary_vector, beq_iff_eq, binary_vector_op, ofNat_eq_ofNat,
+    zero_eq, exec_logic_vector, logic_vector_op, exec_addp_vector]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/DPSFP/Advanced_simd_three_same.lean:179:31: warning: This simp argument is unused:
+  beq_iff_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [exec_advanced_simd_three_same, exec_binary_vector, Bool.and_eq_true, binary_vector_op,
+    ofNat_eq_ofNat, zero_eq, exec_logic_vector, logic_vector_op, exec_addp_vector]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

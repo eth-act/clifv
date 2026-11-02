@@ -1,0 +1,21 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/DPSFP/Advanced_simd_two_reg_misc.lean:112:21: warning: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [Nat.shiftLeft_eq, Nat.not_le, beq_iff_eq, esize]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/DPSFP/Advanced_simd_two_reg_misc.lean:112:65: warning: This simp argument is unused:
+  beq_iff_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only [Nat.sub_zero, Nat.shiftLeft_eq, Nat.not_le, esize]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/baseline/FV/Arm/Insts/DPSFP/Advanced_simd_two_reg_misc.lean:114:17: warning: This simp argument is unused:
+  gt_iff_lt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Nat.zero_lt_two, Nat.pow_pos]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

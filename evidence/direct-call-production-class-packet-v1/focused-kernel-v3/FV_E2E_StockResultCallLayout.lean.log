@@ -1,0 +1,11 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/StockResultCallLayout.lean:75:39: error: Application type mismatch: The argument
+  reads
+has type
+  codeCheck f.sig vc = true
+but is expected to have type
+  codeCheck f.sig result.code = true
+in the application
+  { data := source, source := sourceOk, finalCode := code, records := records, reads := reads }
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/StockResultCallLayout.lean:79:51: error(lean.unknownIdentifier): Unknown identifier `InSubset`
+
+Note: It is not possible to treat `InSubset` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.

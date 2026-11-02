@@ -1,0 +1,11 @@
+{
+  "approval": "Explicit parent grant after119successful kernels and measured2GiBIselDataOOM",
+  "io_watcher": 3203909,
+  "stopped_only_sleeping_metadata_child": 3203916,
+  "no_transfer_or_compiler_child_active": true,
+  "artifacts_preserved": true,
+  "new_kernel_cap": "3G",
+  "main12GiB_owner_untouched": true,
+  "resume_io_after_gate": "1G only, no automatic kernels",
+  "utc": "2026-11-02T09:19:29.823922+00:00"
+}

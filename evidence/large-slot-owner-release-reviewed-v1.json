@@ -1,0 +1,21 @@
+{
+  "status": "reviewed_released",
+  "utc": "2026-11-02T10:28:29.965047+00:00",
+  "old_owners": [
+    3477137,
+    1849857,
+    3478090,
+    3478318,
+    3507911
+  ],
+  "old_owners_live": false,
+  "historical_full_validation": "passed",
+  "historical_publication": "normal_push_rejected_remote_advanced",
+  "view_head": "f32b851a08ad239fd5daa4e8f6137cbc802ebe4e",
+  "allocation": {
+    "513_kernel_gib": 12,
+    "source_kernel_gib": 2,
+    "io_gib": 1,
+    "aggregate_limit_gib": 16
+  }
+}

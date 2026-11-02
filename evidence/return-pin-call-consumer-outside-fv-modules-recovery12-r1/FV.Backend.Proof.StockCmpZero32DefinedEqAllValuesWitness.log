@@ -162,3 +162,5 @@ warning: FV/Backend/Proof/StockCoverageCtor.lean:284:6: `if_neg` has been deprec
 warning: FV/Backend/Proof/StockCoverageCtor.lean:284:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
 warning: FV/Backend/Proof/StockCoverageCtor.lean:513:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
 warning: FV/Backend/Proof/StockCoverageCtor.lean:516:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [383/383] Built FV.Backend.Proof.StockCmpZero32DefinedEqAllValuesWitness (25s)
+Build completed successfully (383 jobs).

@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "exit_code": 0,
+  "context": "read-only frozen V artifacts; diagnostic only, not current-main validation",
+  "source_sha256": "6bd854c160c4124494c788fa4ea96f02fcdfeed13b0ddfb8b0d44030b7203236",
+  "stats": "peak 230404096\noom 0\noom_kill 0\n",
+  "utc": "2026-11-02T09:37:10.550859+00:00"
+}

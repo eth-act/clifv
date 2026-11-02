@@ -1,0 +1,14 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/StockResultCallDomain.lean:140:37: warning: This simp argument is unused:
+  Array.toList_push
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_append, Array.toList_empty, List.append_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/StockResultCallDomain.lean:140:55: warning: This simp argument is unused:
+  Array.toList_empty
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_append, Array.toList_push, List.append_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

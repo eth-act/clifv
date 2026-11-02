@@ -1,0 +1,28 @@
+{
+  "status": "prepared_not_run",
+  "order": [
+    "FV/Backend/StockResultCallCheck.lean",
+    "FV/E2E/StockResultCallSource.lean",
+    "FV/E2E/StockResultCallLayout.lean",
+    "FV/E2E/StockResultCallPair.lean",
+    "FV/E2E/StockResultCallRun.lean",
+    "FV/E2E/StockResultCallDomain.lean",
+    "FV/E2E/StockResultCallMachine.lean",
+    "FV/E2E/StockResultCallNI.lean",
+    "FV/Backend/Lowering/StockResultCallWith.lean",
+    "FV/E2E/StockResultCallProvider.lean",
+    "FV/E2E/StockResultCallWitness.lean"
+  ],
+  "requires_explicit_slot_transfer": true,
+  "imports": "Use the already-owned current-main proof context. Reconcile this source packet with the accepted direct-call-result packet without changing the frozen view.",
+  "source_only": true,
+  "steps": [
+    "Compile the checker, source transport, layout and pair kernels first",
+    "Compile the internal execution, Domain, machine and inherited-provider kernels",
+    "Run the generic audit and reject every nonstandard axiom",
+    "Compile the unchanged caller witness in raw and cleanup modes",
+    "Run the witness audit with fixed roots explicitly marked",
+    "Build an actual linked caller/callee execution witness, retaining original sparse IDs",
+    "Record source hashes and memcap peak/oom/oom_kill; clean owned outputs"
+  ]
+}

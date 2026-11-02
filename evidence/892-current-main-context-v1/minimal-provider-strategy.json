@@ -679,6 +679,6 @@
       "profile": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/scripts/lake-module-peaks.tsv"
     }
   },
-  "certificate_policy": "PENDING explicit coordinator acceptance; do not run this narrower strategy automatically",
+  "certificate_policy": "NOT SELECTED. Parent requires coherent exact-current CI artifacts and normal-key verification instead of an old-artifact interface bridge.",
   "strict_reverse_queue_count": 2683
 }
