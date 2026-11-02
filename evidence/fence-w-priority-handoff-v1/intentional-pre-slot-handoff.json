@@ -1,0 +1,6 @@
+{
+  "reason": "Use the actual scheduler environment instead of the runner parent environment. No slot, compiler, or shared write started.",
+  "owner": 2886667,
+  "before_state": "waiting_for_natural_boundary",
+  "utc": "2026-11-02T18:35:17.082834+00:00"
+}

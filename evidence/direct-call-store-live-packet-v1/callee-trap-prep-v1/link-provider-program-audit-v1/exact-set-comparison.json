@@ -1,0 +1,425 @@
+{
+  "status": "passed",
+  "axiom_sets": {
+    "E2E.callCont_restrictS": [
+      "propext"
+    ],
+    "E2E.callExternAt_restrictS": [
+      "propext"
+    ],
+    "E2E.indCont_restrictS": [
+      "propext"
+    ],
+    "E2E.step_restrictS": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.step_of_restrictS": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.step_congrE": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.cutO_eq": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.cutO_returned": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.cutO_trapped": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.cutEnv_restrictsS": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.cutEnv_extern": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.cutEnv_map": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.xCallsOk_cut": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.xCallsIndOk_cut": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.junkAt_err": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.enterAt_err": [
+      "propext"
+    ],
+    "E2E.armStepX_err": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.runX_err": [],
+    "E2E.LinkSys.trapsD_eq": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.TrapIn.stop": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.noRet_of_stop": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.pcall_junk": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.callHook_err": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.hooks_err": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.mach_err": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.runX_mach_err": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progCallTG": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progCallT": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.linkInitState_ne_trap": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progX_noneG": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progX_none": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.stackArgsAvoid_decl": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.envOf_prog": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.linkEnvR_trap": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.xTrapsOkG": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.xTrapsOk": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.step_cut_link": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.reach_cut": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.trapsExplicitC_cut": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.runLoop_cut": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.noRet_of_stop_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.pcall_junk_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progCallTG_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progX_noneG_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.stackArgsAvoid_decl_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.xTrapsOkG_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.actInv_step_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.step_envOf_link_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.step_cut_link_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.reach_cut_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.trapsExplicitC_cut_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.runLoop_cut_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.destOf_eq_callDest": [],
+    "E2E.LinkSys.mach_callAt": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.insnAt_callAt": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progCallOk_bl": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progCallOk_blr": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.blSite": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.blrSite": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.callerOk_of_regs": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.trapIn_callTrapG": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.trapIn_callTrap": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.thmT_of": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.thmT": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.stop_withCrun": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.trapIn_withCrun": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.TrapsOk.withCrun": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.BaseTrapsOk.withCrun": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_program_trap_core": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_program_trap_budget": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_program_trap": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_program_trap_peak": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.mach_callAt_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.insnAt_callAt_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progCallOk_bl_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progCallOk_blr_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.blSite_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.blrSite_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.callerOk_of_regs_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.trapIn_callTrapG_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.trapIn_callTrap_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.thmT_of_provider": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.thmT_provider": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_program_trap_core_provider": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_program_trap_budget_provider": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_program_trap_provider": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_program_trap_peak_provider": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "roots": 87,
+  "old60_exact": true,
+  "old_header_counts": {
+    "LinkTrapCall": 40,
+    "LinkTrapCallInd": 20
+  },
+  "header_parser": "Raw declaration header ends before :=, equation clause, or where; all roots retained."
+}

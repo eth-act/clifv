@@ -1,0 +1,6 @@
+{
+  "status": "harness-setup-failed-no-Lean",
+  "reason": "Canonical Path C was shadowed by prior manifest dict",
+  "source_unchanged": true,
+  "diagnostic": "worker-O-20261102-131100-direct-call-store-current-main-callee-gate-v1.log"
+}

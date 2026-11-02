@@ -1,0 +1,9 @@
+{
+  "status": "kernel-passed-pending-reuse-correction-and-audit",
+  "source_hashes": {
+    "FV/E2E/LinkTrapCall.lean": "c134dedb1f670275e3414030a81002732d9f9a05ac0ab385385e4970a66b1c79",
+    "FV/E2E/LinkTrapCallInd.lean": "69a0dd62c748e77a40a0a4cd351e5465245200f29dab8e68ba70e13d132fe65a"
+  },
+  "receipt_sha256": "312e30116c56b5a658215623d9cee5f3b077c6fc87d2aa8c2bb2070347087204",
+  "note": "Two mode-aware static helpers will be removed in favor of existing LinkReturnPinProgram definitions."
+}

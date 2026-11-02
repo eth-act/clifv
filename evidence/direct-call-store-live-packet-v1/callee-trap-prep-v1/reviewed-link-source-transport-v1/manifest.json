@@ -1,0 +1,22 @@
+{
+  "status": "passed-staged-integration-context",
+  "base": "770e543c350bf158dc782b7f80afb9748817e0af",
+  "source_hashes": {
+    "FV/E2E/LinkTrapCall.lean": "c134dedb1f670275e3414030a81002732d9f9a05ac0ab385385e4970a66b1c79",
+    "FV/E2E/LinkTrapCallInd.lean": "d300ac18746d3f938a867ad7caefb86721329e1b887565a6bb6d4ba343cd75eb"
+  },
+  "receipts": {
+    "link-source-transport-v1/receipt.json": "fb330de777577c7819722c18a77c08123b6e62824d2016a880ededac7dc91521",
+    "link-source-transport-consumer-v1/receipt.json": "5d5301796d018e293633af76cd4b469fd8a5625711c54f5082205e61be89d4da",
+    "link-source-transport-audit-v1/receipt.json": "efd3fbb6b7e0521c89022f1b977e7129dbda5d980eeb789d81737b13a85bc665",
+    "link-source-transport-audit-v1/exact-set-comparison.json": "cabd2f745480a66ec294a3b307c795bf64438939c3af2482dcf94f0a6cb7fe95"
+  },
+  "old_header_counts": {
+    "LinkTrapCall": 40,
+    "LinkTrapCallInd": 20
+  },
+  "old_axiom_sets_exact": 60,
+  "new_standard_roots": 21,
+  "actual_repository_auditor_roots": 81,
+  "frozen_constructor_edits": []
+}

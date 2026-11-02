@@ -1,0 +1,225 @@
+{
+  "status": "passed",
+  "old40_headers_exact": true,
+  "old40_axiom_sets_exact": true,
+  "new6_standard": true,
+  "axiom_sets": {
+    "E2E.callCont_restrictS": [
+      "propext"
+    ],
+    "E2E.callExternAt_restrictS": [
+      "propext"
+    ],
+    "E2E.indCont_restrictS": [
+      "propext"
+    ],
+    "E2E.step_restrictS": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.step_of_restrictS": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.step_congrE": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.cutO_eq": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.cutO_returned": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.cutO_trapped": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.cutEnv_restrictsS": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.cutEnv_extern": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.cutEnv_map": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.xCallsOk_cut": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.xCallsIndOk_cut": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.junkAt_err": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.enterAt_err": [
+      "propext"
+    ],
+    "E2E.armStepX_err": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.runX_err": [],
+    "E2E.LinkSys.trapsD_eq": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.TrapIn.stop": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.noRet_of_stop": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.pcall_junk": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.callHook_err": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.hooks_err": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.mach_err": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.runX_mach_err": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progCallTG": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progCallT": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.linkInitState_ne_trap": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progX_noneG": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progX_none": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.stackArgsAvoid_decl": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.envOf_prog": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.linkEnvR_trap": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.xTrapsOkG": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.xTrapsOk": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.step_cut_link": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.reach_cut": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.trapsExplicitC_cut": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.runLoop_cut": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.noRet_of_stop_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.pcall_junk_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progCallTG_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.progX_noneG_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.stackArgsAvoid_decl_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.LinkSys.xTrapsOkG_return_pins": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "source_sha256": "3953c6dbb0b2c924ed0e539780b52a8f5078728ad25822553565f6e4740dc7e5",
+  "header_manifest_sha256": "9575578df03eee71df00dac2fd75311b602e0bc4d9581629817fa780df2d4f9a",
+  "real_auditor_receipt_sha256": "f9578c4bd9c281303089445f9ff94008c59dd0a4def3484926755b7ad21a73db",
+  "parser_fix": "Stop before equation-style theorem clauses. The old parser crossed runX_err into GoesBase. No Lean source changed."
+}

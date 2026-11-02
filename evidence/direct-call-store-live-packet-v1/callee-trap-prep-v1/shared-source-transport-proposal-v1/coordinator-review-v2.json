@@ -1,0 +1,16 @@
+{
+  "status": "approved_corrected_exact_diff_for_isolated_verification",
+  "diff_sha256": "1bdab30030d82f1bdff9336d8e1ffbd124ea63f24f11001a123314c011c007a7",
+  "shared_path": "FV/E2E/LinkTrapCall.lean",
+  "new_kernels": 6,
+  "old_cut_wrappers": 4,
+  "LinkArm_unchanged": true,
+  "review": "Two mode-aware static invariant helpers and four cut-environment kernels retain old ordinary wrappers and all trap alternatives. No new input guard. Duplicate imported ordinary declarations removed before compilation.",
+  "required_gates": [
+    "all60oldheaders and axiom sets exact",
+    "actual repository auditor",
+    "candidate kernels and affected consumers",
+    "linked mode-aware induction and original source transfer"
+  ],
+  "utc": "2026-11-02T18:21:50.640750+00:00"
+}

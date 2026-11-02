@@ -1,0 +1,297 @@
+--- a/FV/E2E/LinkTrapCall.lean
++++ b/FV/E2E/LinkTrapCall.lean
+@@ -1,3 +1,4 @@
++import FV.E2E.LinkReturnPinCallbacks
+ import FV.E2E.LinkGood
+ import FV.E2E.DeadCleanupTrapCall
+ 
+@@ -270,7 +271,7 @@
+ namespace LinkSys
+ 
+ variable (L : LinkSys)
+-variable {κ : Nat → Clif.Function → Nat}
++variable {κ : Nat → Clif.Function → Nat} {modes : Clif.Function → ReturnPinMode}
+ 
+ /-- The hooks of the linked machine send the call `info` at `u` outside `P`: a call of an extern
+ outside `P`, or a `blr` whose target is no function of `P`. -/
+@@ -411,14 +412,14 @@
+ 
+ /-- **A stopping run never returns**: from the entry of `h` for a call at `t` (return address
+ allowed for `h`, `RaOk`), no state of a stopping run is a return to `t` (`RetOf`). -/
+-theorem noRet_of_stop (hL : L.Ok) {M : Nat} {h : Clif.Function} (hh : h ∈ L.P.funcs)
++theorem noRet_of_stop_return_pins (hL : L.OkReturnPins modes) {M : Nat} {h : Clif.Function} (hh : h ∈ L.P.funcs)
+     {t : Arm.ArmState} {n : Nat} (hst : L.Stop M h (enterAt (L.A h) t) n)
+     (hra : RaOk (L.A h) (Arm.r .PC t)) :
+     ∀ k, ¬ RetOf (L.A h) t (runX (L.mach M h) k (enterAt (L.A h) t)) := by
+   intro k hk
+   have hc := hL.compiled h hh
+   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
+-  have hfd : 0 < frameDrop (L.A h).af := by rw [L.frameDrop_eq hL hh]; omega
++  have hfd : 0 < frameDrop (L.A h).af := by rw [L.frameDrop_eq_return_pins hL hh]; omega
+   have hroom := hst.room
+   rw [spv_enterAt] at hroom
+   have hlt := (spv t).isLt
+@@ -448,14 +449,21 @@
+     rw [show n + (k - n - 1) + 1 = k by omega] at this
+     exact this hk.2.1
+ 
++
++theorem noRet_of_stop (hL : L.Ok) {M : Nat} {h : Clif.Function} (hh : h ∈ L.P.funcs)
++    {t : Arm.ArmState} {n : Nat} (hst : L.Stop M h (enterAt (L.A h) t) n)
++    (hra : RaOk (L.A h) (Arm.r .PC t)) :
++    ∀ k, ¬ RetOf (L.A h) t (runX (L.mach M h) k (enterAt (L.A h) t)) := by
++  exact L.noRet_of_stop_return_pins hL.toSemanticNI.toReturnPins hh hst hra
++
+ /-- **The linked call of a trapping program callee is an error state** (`junkAt`). -/
+-theorem pcall_junk (hL : L.Ok) {M : Nat} {h : Clif.Function} {c : Clif.TrapCode}
++theorem pcall_junk_return_pins (hL : L.OkReturnPins modes) {M : Nat} {h : Clif.Function} {c : Clif.TrapCode}
+     {t : Arm.ArmState} (hh : h ∈ L.P.funcs) (hT : L.TrapIn M h (enterAt (L.A h) t) c)
+     (hra : RaOk (L.A h) (Arm.r .PC t)) : L.pcall (M + 1) h t = junkAt t := by
+   obtain ⟨n, hst⟩ := hT.stop
+   show linkedCall _ _ _ = _
+   unfold linkedCall
+-  exact dite_eq_right_of_eq_false (eq_false fun ⟨k, hk⟩ => L.noRet_of_stop hL hh hst hra k hk)
++  exact dite_eq_right_of_eq_false (eq_false fun ⟨k, hk⟩ => L.noRet_of_stop_return_pins hL hh hst hra k hk)
+ 
+ /-! ## Error states of the linked machine -/
+ 
+@@ -471,6 +479,12 @@
+   · split
+     · exact hpc _ _ h
+     · exact hB.err _ _ h
++
++
++theorem pcall_junk (hL : L.Ok) {M : Nat} {h : Clif.Function} {c : Clif.TrapCode}
++    {t : Arm.ArmState} (hh : h ∈ L.P.funcs) (hT : L.TrapIn M h (enterAt (L.A h) t) c)
++    (hra : RaOk (L.A h) (Arm.r .PC t)) : L.pcall (M + 1) h t = junkAt t := by
++  exact L.pcall_junk_return_pins hL.toSemanticNI.toReturnPins hh hT hra
+ 
+ /-- **The linked machine keeps an error state** (under the outside code's error contract). -/
+ theorem hooks_err (hB : L.BaseTrapsOk) :
+@@ -523,7 +537,7 @@
+ the callee's stack: from every caller state compatible with `w` (`CallerOk`), the callee's
+ activation has the trap observable one level down (the trap counterpart of `progCall`; each
+ caller state is entered with its own body-entry world, no non-interference needed). -/
+-theorem progCallTG (hL : L.Ok) [hR : L.CrunOk] {D : Nat → Clif.Function → Clif.State → Prop}
++theorem progCallTG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {D : Nat → Clif.Function → Clif.State → Prop}
+     {M : Nat} (hM : 0 < M) (ih : L.ThmTG D κ (M - 1))
+     {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
+     (hcal : ∃ g ∈ L.P.funcs, L.Callee g h) {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
+@@ -542,8 +556,8 @@
+   subst hname
+   have hc := hL.compiled h hh
+   have hfr := lowerRFunc_frame hc.alloc
+-  have hdrop := L.frameDrop_eq hL hh
+-  have hfs := L.frameSize_mod hL hh
++  have hdrop := L.frameDrop_eq_return_pins hL hh
++  have hfs := L.frameSize_mod_return_pins hL hh
+   obtain ⟨hnd, harg, hwid⟩ := hL.argRegs h hh
+   have hsl0 : ¬ L.NeedSlots → h.slots = [] := fun hn => Classical.byContradiction fun hne => by
+     obtain ⟨g, hg, hcg⟩ := hcal
+@@ -751,6 +765,23 @@
+     · rw [hspt]; exact ha.2
+   exact ih h hh Fh vals cs w₀ m tc hWE hTD hm G (Arm.r .PC t + 4) (enterAt (L.A h) t) hME
+ 
++
++theorem progCallTG (hL : L.Ok) [hR : L.CrunOk] {D : Nat → Clif.Function → Clif.State → Prop}
++    {M : Nat} (hM : 0 < M) (ih : L.ThmTG D κ (M - 1))
++    {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
++    (hcal : ∃ g ∈ L.P.funcs, L.Callee g h) {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
++    {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
++    (hal : (spv w).toNat % 16 = 0)
++    (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
++    (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
++    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {tc : Clif.TrapCode}
++    (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
++    (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
++    (hinit : Clif.initState L.P n vals cm = .ok cs) (hrun : L.crun M cs = .trapped tc)
++    (hTD : D (M - 1) h cs) :
++    ∀ t, L.CallerOk F h uses w t → L.TrapIn (M - 1) h (enterAt (L.A h) t) tc := by
++  exact L.progCallTG_return_pins hL.toSemanticNI.toReturnPins hM ih hpf hcal himgF herr hal hroom hdead hmr hargs hsav hpl hinit hrun hTD
++
+ /-- `progCallTG` for the run premise `TrapsD`. -/
+ theorem progCallT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.ThmT κ (M - 1))
+     {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
+@@ -784,6 +815,31 @@
+ entry related to the world `w` traps and its activation satisfies the run premise `D` one level
+ down, the linked machine's call from the canonical state does not return (`progCallTG`,
+ `pcall_junk`). -/
++theorem progX_noneG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {D : Nat → Clif.Function → Clif.State → Prop}
++    {M : Nat} (ih : 0 < M → L.ThmTG D κ (M - 1))
++    {h : Clif.Function} (hh : h ∈ L.P.funcs) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
++    {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {sl : List (Clif.SlotId × Nat)}
++    {slotOff out : Nat} {g : Clif.Function} {c : BitVec 64} {cm : Clif.Mem} {w : Arm.ArmState}
++    {args : List CV} {vals : List Clif.Val} {cs : Clif.State} {tc : Clif.TrapCode}
++    (hargs : ArgsAt h.sig vals args w) (hsav : StackArgsAvoid F h.sig vals w)
++    (hmr : RelW ⟨F, L.syms, slotOff, out⟩ g c sl cm w) (hpl : L.NeedSlots → L.PlaceAt cm c)
++    (hinit : Clif.initState L.P h.name vals cm = .ok cs) (hret : L.crun M cs = .trapped tc)
++    (hTD : 0 < M → D (M - 1) h cs) :
++    L.progXMode modes κ M F h args w = none := by
++  have hpf := func?_of_mem hL.names hh
++  unfold progXMode progXWithPins
++  rw [if_neg]
++  rintro ⟨⟨hM, herrw, halw, hroom, hdead, -⟩, herr'⟩
++  obtain ⟨⟨hmemR0, -, -⟩, hsp, -⟩ := hmr
++  have hT := L.progCallTG_return_pins hL hM (ih hM) hpf hcal himgF herrw halw hroom hdead hmemR0 hargs hsav
++    (fun hN => by rw [hsp]; exact hpl hN) hinit hret (hTD hM) _
++    (L.callerOk_canon_return_pins hL hh himgF args w)
++  obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
++  rw [show L.pcall (M' + 1) h (L.canon h args w) = junkAt (L.canon h args w) from
++    L.pcall_junk_return_pins hL hh hT (L.callerOk_canon_return_pins hL hh himgF args w).ra] at herr'
++  exact junkAt_err _ herr'
++
++
+ theorem progX_noneG (hL : L.Ok) [hR : L.CrunOk] {D : Nat → Clif.Function → Clif.State → Prop}
+     {M : Nat} (ih : 0 < M → L.ThmTG D κ (M - 1))
+     {h : Clif.Function} (hh : h ∈ L.P.funcs) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
+@@ -795,18 +851,7 @@
+     (hinit : Clif.initState L.P h.name vals cm = .ok cs) (hret : L.crun M cs = .trapped tc)
+     (hTD : 0 < M → D (M - 1) h cs) :
+     L.progX κ M F h args w = none := by
+-  have hpf := func?_of_mem hL.names hh
+-  unfold progX
+-  rw [if_neg]
+-  rintro ⟨⟨hM, herrw, halw, hroom, hdead, -⟩, herr'⟩
+-  obtain ⟨⟨hmemR0, -, -⟩, hsp, -⟩ := hmr
+-  have hT := L.progCallTG hL hM (ih hM) hpf hcal himgF herrw halw hroom hdead hmemR0 hargs hsav
+-    (fun hN => by rw [hsp]; exact hpl hN) hinit hret (hTD hM) _
+-    (L.callerOk_canon hL hh himgF args w)
+-  obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
+-  rw [show L.pcall (M' + 1) h (L.canon h args w) = junkAt (L.canon h args w) from
+-    L.pcall_junk hL hh hT (L.callerOk_canon hL hh himgF args w).ra] at herr'
+-  exact junkAt_err _ herr'
++  simpa only [L.progXMode_ordinary] using L.progX_noneG_return_pins hL.toSemanticNI.toReturnPins ih hh hcal himgF hargs hsav hmr hpl hinit hret hTD
+ 
+ /-- `progX_noneG` for the run premise `TrapsD`. -/
+ theorem progX_none (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1))
+@@ -823,7 +868,7 @@
+ 
+ /-- The stack-passed arguments of a call of a function `h` of `P` that `g` declares are in `g`'s
+ outgoing area, outside the world (`outFits`). -/
+-theorem stackArgsAvoid_decl (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
++theorem stackArgsAvoid_decl_return_pins (hL : L.OkReturnPins modes) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
+     {ext : Clif.ExtFunc} (hin : ext ∈ g.externs.map (·.2)) (hpf : L.P.func? ext.name = some h)
+     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State}
+     (hinit : Clif.initState L.P ext.name vals cm = .ok cs) {F : BitVec 64 → Prop}
+@@ -856,6 +901,16 @@
+   have hav : Avoids F (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase (spv w) := hout.2.1
+   exact hav (off + k) (by omega)
+ 
++
++theorem stackArgsAvoid_decl (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
++    {ext : Clif.ExtFunc} (hin : ext ∈ g.externs.map (·.2)) (hpf : L.P.func? ext.name = some h)
++    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State}
++    (hinit : Clif.initState L.P ext.name vals cm = .ok cs) {F : BitVec 64 → Prop}
++    {slotOff : Nat} {c : BitVec 64} {sl : List (Clif.SlotId × Nat)} {w : Arm.ArmState}
++    (hmr : RelW ⟨F, L.syms, slotOff, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩ g c sl cm w) :
++    StackArgsAvoid F h.sig vals w := by
++  exact L.stackArgsAvoid_decl_return_pins hL.toSemanticNI.toReturnPins hg hin hpf hinit hmr
++
+ /-- An extern of `envOf` that is a function of `P` (`g` may reach it): the linked environment's,
+ guarded by the slot-placement oracle. -/
+ theorem envOf_prog {M : Nat} {g : Clif.Function} {c : BitVec 64} {n : String}
+@@ -902,14 +957,14 @@
+ premise `D` one level down): the base's for the externs outside `P` (`BaseTrapsOk.xt`), and for a
+ function of `P` the linked machine's call does not return (`progX_noneG`, from the trap
+ statement one level down). -/
+-theorem xTrapsOkG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk)
++theorem xTrapsOkG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hB : L.BaseTrapsOk)
+     {D : Nat → Clif.Function → Clif.State → Prop} {Dn : Clif.Function → Clif.State → Prop}
+     {M : Nat} (hDn : ∀ {h : Clif.Function} {cs : Clif.State}, Dn h cs → 0 < M → D (M - 1) h cs)
+     (ih : 0 < M → L.ThmTG D κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
+     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {c : BitVec 64} :
+     XTrapsOk (cutEnv (L.envOf M g c) (L.covQ Dn)) (g.externs.map (·.2)) (indSigs g)
+       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
+-        g c) (L.X κ M g F) := by
++        g c) (L.XMode modes κ M g F) := by
+   refine ⟨fun ext hin G' sl cm w d uses args vals tc hG' hd hargs hmr htr => ?_,
+     fun sig hsig n G' sl cm w u args vals tc hG' hsg hu hl8 hall hmr htr hty => ?_⟩
+   · obtain ⟨G, hG, rfl⟩ := cutEnv_extern hG'
+@@ -922,10 +977,10 @@
+         (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c).1 ext
+         (List.mem_filter.mpr ⟨hin, by simp [hpf]⟩) G sl cm w d uses args vals tc hb hd hargs hmr htrG
+       rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, -, rfl⟩
+-      · rw [L.X_base hpf _ _ F]; exact hx
+-      · rw [L.X_none (by
++      · rw [L.XMode_base hpf _ _ F]; exact hx
++      · rw [L.XMode_none (by
+           show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 (ofX (L.Xb.sym ext.name 0))) = none
+-          rw [lo64_ofX]; exact (L.find_sym hL ext.name).2 hpf)]
++          rw [lo64_ofX]; exact (L.find_sym_return_pins hL ext.name).2 hpf)]
+         exact hx
+     | some h =>
+       obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
+@@ -935,16 +990,16 @@
+       obtain ⟨cs, hinit, hret⟩ := L.linkEnvR_trap hpf hG0 ht0
+       have hTD : 0 < M → D (M - 1) h cs := fun hM => hDn (hQ h cs hpf hinit) hM
+       rw [hsig] at hargs
+-      have hsav := L.stackArgsAvoid_decl hL hg hin hpf hinit hmr
++      have hsav := L.stackArgsAvoid_decl_return_pins hL hg hin hpf hinit hmr
+       rw [← hname] at hinit
+-      have hnone := L.progX_noneG (κ := κ) hL ih hh ⟨g, hg, .inr (.inl ⟨ext, hin, hpf⟩)⟩ himgF hargs
++      have hnone := L.progX_noneG_return_pins (κ := κ) hL ih hh ⟨g, hg, .inr (.inl ⟨ext, hin, hpf⟩)⟩ himgF hargs
+         hsav hmr hpl hinit hret hTD
+       rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, -, rfl⟩
+-      · rw [L.X_prog hpf]; exact hnone
+-      · have hs : symCallee L.Xb L.P (lo64 (ofX ((L.X κ M g F).sym ext.name 0))) = some h := by
++      · rw [L.XMode_prog hpf]; exact hnone
++      · have hs : symCallee L.Xb L.P (lo64 (ofX ((L.XMode modes κ M g F).sym ext.name 0))) = some h := by
+           show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 (ofX (L.Xb.sym ext.name 0))) = some h
+-          rw [lo64_ofX]; exact (L.find_sym hL ext.name).1 h hpf
+-        rw [L.X_ind hs]
++          rw [lo64_ofX]; exact (L.find_sym_return_pins hL ext.name).1 h hpf
++        rw [L.XMode_ind hs]
+         split
+         · exact hnone
+         · rfl
+@@ -954,13 +1009,13 @@
+     | none =>
+       have hs : symCallee L.Xb L.P (lo64 u) = none := by
+         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = none
+-        rw [hu]; exact (L.find_sym hL n).2 hpf
++        rw [hu]; exact (L.find_sym_return_pins hL n).2 hpf
+       have hb : L.base.extern n = some G := by
+         simpa [envOf, hpf, Clif.linkEnvR_none hpf] using hG
+       have hx := (hB.xt g hg F (L.A g).af.slotBase
+         (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase c).2 sig hsig n G sl cm w u args vals tc
+         hb (fun _ h => nomatch h) hu hl8 hall hmr htrG hty
+-      rw [L.X_none hs]; exact hx
++      rw [L.XMode_none hs]; exact hx
+     | some h =>
+       obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
+       subst hname
+@@ -973,7 +1028,7 @@
+       have hdeclS := hL.indSig g hg hnf
+       have hs : symCallee L.Xb L.P (lo64 u) = some h := by
+         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = some h
+-        rw [hu]; exact (L.find_sym hL h.name).1 h hpf
++        rw [hu]; exact (L.find_sym_return_pins hL h.name).1 h hpf
+       have hce := clifEntry_initState (f := h) hpf hinit
+       have hvl : vals.length = h.sig.params.length := by
+         have := congrArg List.length hce.sig
+@@ -986,12 +1041,23 @@
+         intro off v hm
+         obtain ⟨r, hr⟩ := (locsOf_small hb hb8).2 _ (List.of_mem_zip hm).1
+         cases hr
+-      have hnone := L.progX_noneG (κ := κ) hL ih hh ⟨g, hg, .inr (.inr ⟨hh, hdecl⟩)⟩ himgF hargs
++      have hnone := L.progX_noneG_return_pins (κ := κ) hL ih hh ⟨g, hg, .inr (.inr ⟨hh, hdecl⟩)⟩ himgF hargs
+         hsav hmr hpl hinit hret hTD
+-      rw [L.X_ind hs]
++      rw [L.XMode_ind hs]
+       split
+       · exact hnone
+       · rfl
++
++
++theorem xTrapsOkG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk)
++    {D : Nat → Clif.Function → Clif.State → Prop} {Dn : Clif.Function → Clif.State → Prop}
++    {M : Nat} (hDn : ∀ {h : Clif.Function} {cs : Clif.State}, Dn h cs → 0 < M → D (M - 1) h cs)
++    (ih : 0 < M → L.ThmTG D κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
++    {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {c : BitVec 64} :
++    XTrapsOk (cutEnv (L.envOf M g c) (L.covQ Dn)) (g.externs.map (·.2)) (indSigs g)
++      (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
++        g c) (L.X κ M g F) := by
++  simpa only [L.XMode_ordinary] using L.xTrapsOkG_return_pins hL.toSemanticNI.toReturnPins hB hDn ih hg himgF
+ 
+ /-- `xTrapsOkG` for the run premise `TrapsD`. -/
+ theorem xTrapsOk (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) {M : Nat}

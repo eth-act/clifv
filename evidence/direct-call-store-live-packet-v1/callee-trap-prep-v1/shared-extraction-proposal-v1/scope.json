@@ -1,0 +1,16 @@
+{
+  "base": "37fc00cb",
+  "path": "FV/E2E/LinkTrapCall.lean",
+  "old_sha256": "cad1e379d0c48c4d2ca22afd26c773dfd699e6dbf08e4a1e2d81d72c2a02884c",
+  "candidate_sha256": "9f34d30e2696ae6846c302100eabdfb8201286e2edb47b15b0b737c95316bc25",
+  "extractions": [
+    "noRet_of_stop",
+    "pcall_junk",
+    "progCallTG",
+    "progX_noneG",
+    "stackArgsAvoid_decl",
+    "xTrapsOkG"
+  ],
+  "status": "proposal-only-unverified",
+  "old_headers_preserved": true
+}

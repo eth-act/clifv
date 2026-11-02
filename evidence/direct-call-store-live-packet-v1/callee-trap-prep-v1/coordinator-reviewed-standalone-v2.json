@@ -1,0 +1,22 @@
+{
+  "status": "approved_current_main_gate_not_production_completion",
+  "manifest_sha256": "52827e83343b316c14e16ef538179184b4681fa6933f5227d479eab707e5f58e",
+  "state_sha256": "cb5f4d05e29377847a2cf208651007123b63b86ff1f20178959c179b7716bb12",
+  "reviewed_modules": [
+    "StockCallStoreFirstTrapChecked",
+    "WorldTrapStopProvider"
+  ],
+  "coverage": "The existing check derives prepared shapes internally. Generic source and machine theorems retain calls, traps, MapFaults and original memory conditions. The provider separates explicit callee traps from store faults.",
+  "roots": 68,
+  "standard_roots": 60,
+  "fixed_roots": 8,
+  "prior_axiom_sets_exact": 56,
+  "open": [
+    "current-main gate",
+    "linked mode-aware extraction",
+    "actual complete linked ARM execution",
+    "CLI/generated proof flows",
+    "default production constructors"
+  ],
+  "utc": "2026-11-02T18:10:26.191567+00:00"
+}

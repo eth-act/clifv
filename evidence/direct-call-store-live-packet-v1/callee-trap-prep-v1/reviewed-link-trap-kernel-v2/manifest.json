@@ -1,0 +1,17 @@
+{
+  "source_hashes": {
+    "FV/E2E/LinkTrapCall.lean": "3953c6dbb0b2c924ed0e539780b52a8f5078728ad25822553565f6e4740dc7e5"
+  },
+  "receipts": {
+    "link-trap-kernel-state-v2.json": "0638a53b7cac0ccd33e77f959de0f31ce5aad19731050dfadd6745a8bffd1f06",
+    "link-extraction-v1/receipt.json": "a0d853b6cf2eb40729b9925dffe8af9a9bfd978aa2b3d63785c9f4534a4af657",
+    "link-trap-kernel-audit-v1/receipt.json": "f9578c4bd9c281303089445f9ff94008c59dd0a4def3484926755b7ad21a73db",
+    "shared-extraction-proposal-v1/old-public-headers-v2.json": "9575578df03eee71df00dac2fd75311b602e0bc4d9581629817fa780df2d4f9a",
+    "link-trap-old-audit-v1/exact-set-comparison.json": "3bdaf981092c0ab0620ad215033fa9cd90c006c88491cd896a9226d2ba0e46b6"
+  },
+  "status": "passed-current-main-preserved-context",
+  "base": "770e543c350bf158dc782b7f80afb9748817e0af",
+  "old_headers": 40,
+  "old_axiom_sets": 40,
+  "new_standard_roots": 6
+}

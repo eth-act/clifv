@@ -1,0 +1,49 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireAllWidthsBinding.lean:51:81: error: unsolved goals
+ctx : Ctx
+ii : Nat
+info : IInfo
+z key d : Nat
+installed : ctx.insts[ii]? = some info
+results : info.results = [z]
+mapped : ctx.valueReg? z = some (Reg.vreg key RegClass.int)
+before next : State
+trace : List RuleId
+root : runTerm ctx "lower" [V.inst ii] before = Except.ok (some (V.regsVec [[Reg.vreg d RegClass.int]]), next, trace)
+binding :
+  bindResults ctx (List.map (fun p => (p.fst, [Reg.vreg p.snd.snd RegClass.int])) [(z, key, d)]) next =
+    Except.ok
+      ({ base := next.base, demand := next.demand, uses := next.uses, instBlock := next.instBlock,
+          entryColor := next.entryColor, endColor := next.endColor, tryRegs := next.tryRegs, current := next.current,
+          color := next.color, sunk := next.sunk, opportunistic := next.opportunistic,
+          alias := List.foldl aliasStep next.alias (List.map (fun x => x.snd) [(z, key, d)]) },
+        #[])
+emission : Emission :=
+  {
+    state :=
+      { base := next.base, demand := next.demand, uses := next.uses, instBlock := next.instBlock,
+        entryColor := next.entryColor, endColor := next.endColor, tryRegs := next.tryRegs, current := next.current,
+        color := next.color, sunk := next.sunk, opportunistic := next.opportunistic,
+        alias := aliasStep next.alias (key, d) },
+    code := next.base.emitted, results := [[Reg.vreg d RegClass.int]], rules := trace }
+infoBang : ctx.insts[ii]! = info
+⊢ (do
+      let __x ← bindResults ctx [(z, [Reg.vreg d RegClass.int])] next
+      Except.ok
+          { state := __x.fst, code := __x.fst.base.emitted ++ __x.snd, results := [[Reg.vreg d RegClass.int]],
+            rules := trace }) =
+    Except.ok
+      {
+        state :=
+          { base := next.base, demand := next.demand, uses := next.uses, instBlock := next.instBlock,
+            entryColor := next.entryColor, endColor := next.endColor, tryRegs := next.tryRegs, current := next.current,
+            color := next.color, sunk := next.sunk, opportunistic := next.opportunistic,
+            alias := aliasStep next.alias (key, d) },
+        code := next.base.emitted, results := [[Reg.vreg d RegClass.int]], rules := trace }
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireAllWidthsBinding.lean:62:16: warning: This simp argument is unused:
+  binding
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [results, emission]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireAllWidthsBinding.lean:78:62: error(lean.unknownIdentifier): Unknown identifier `record_execute`

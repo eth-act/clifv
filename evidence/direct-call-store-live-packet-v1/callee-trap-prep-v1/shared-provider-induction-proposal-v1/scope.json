@@ -1,0 +1,8 @@
+{
+  "status": "proposal-only-unverified",
+  "new_kernel": "thmT_of_provider",
+  "old_wrapper": "thmT_of",
+  "preserves": "all20oldheaders/AX; ordinary,indirect,GOT,depth/peak wrappers; actual mode-aware callbacks",
+  "provider": "Internal artifact-derived WorldTrapStopProvider, with old cleanup and Stock constructors",
+  "requires": "approved source-transport kernels"
+}

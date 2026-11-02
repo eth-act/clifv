@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "real_exit": 0,
+  "actual_unchanged_repository_auditor": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+  "auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "argv": [
+    "python3",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+    "--cwd",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "--log-dir",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/link-trap-ind-kernel-audit-v1/audit",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/shared-induction-proposal-v1/link-trap-ind-kernel-contracts.lean"
+  ],
+  "resource_wrapper_sha256": "f3df5686cb55c980ebbe1bcdb737740c74a07a5ec12d55585d5b1e6145a292c3",
+  "wrapper_only_adds_j1": true,
+  "actual_lean_commands": [
+    [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+      "env",
+      "lean",
+      "-j1",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/shared-induction-proposal-v1/link-trap-ind-kernel-contracts.lean"
+    ]
+  ],
+  "audits": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/shared-induction-proposal-v1/link-trap-ind-kernel-contracts.lean": "b2df028b439555db3482c7dbc1f387a4e41c9ca66b04b5c51dc98f4f161b2662"
+  },
+  "stats": "peak 265424896\noom 0\noom_kill 0\n",
+  "utc": "2026-11-02T18:19:59.964700+00:00"
+}

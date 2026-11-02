@@ -1,0 +1,12 @@
+{
+  "status": "passed_additive_current_main_reconciliation",
+  "old_head": "f97cc59ef618be2248ab30e7ed5a3273639c6d89",
+  "head": "70e7b39a4be137ba603fc40760309efc429bb506",
+  "base": "270c9322af48bb3ec831ff4130226c53ac51bb24",
+  "reviewed_source_count": 15,
+  "closure_sources_exact": 1164,
+  "config_exact": true,
+  "old_CI_preserved": true,
+  "fresh_CI_required": true,
+  "full_goal_complete": false
+}

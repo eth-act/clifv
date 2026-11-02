@@ -1,0 +1,86 @@
+{
+  "status": "landed",
+  "pr": 922,
+  "source": "70e7b39a4be137ba603fc40760309efc429bb506",
+  "base": "270c9322af48bb3ec831ff4130226c53ac51bb24",
+  "merged": "43ea5d915daaf3bf92dfde834f18ec29e0e72312",
+  "tested_tree": "76fe5f10d3520b5edb030371400171dd4c81c69d",
+  "tree_equal": true,
+  "import_source_count": 1164,
+  "current_gate_sha256": "af604d4f3ec5e63df34d8e9a0378d4c33a0db223bca0b39d389c14006afa1ea6",
+  "source_hashes": {
+    "FV/E2E/StockCallStoreTrapTail.lean": "18fbf374a2986a2f8190e3c3486e18628924a1058a14167e8d5b2e5f7e7e95d0",
+    "FV/E2E/StockCallStoreTrapReady.lean": "9f774bf74f3c6213946aa9001287b418c167d0974196c2446c11876dc91961b2",
+    "FV/E2E/StockCallStoreTrapRun.lean": "f0c320872ef58131a45b0f7da56fac14230204731a6d5f4bb0a0a974c68ba5a9",
+    "FV/E2E/StockCallStoreTrapSourceWitness.lean": "ac065111081ae674216c600703a409a040893c3ffc717d8e11be3f533ea7a141",
+    "FV/E2E/StockCallStoreTrapStage.lean": "ae50986509a65723061129ad96ec2a4934c08104996f46f1bdc7ae3ff6b3a8dd",
+    "FV/E2E/StockCallStoreNoTry.lean": "63a10d1216279e1e5ec15119402ca031e22878e0807738a2827b787a716f654c",
+    "FV/E2E/StockCallStoreFirstTrap.lean": "3731598e74601c4bd9a4f0a11af64ff2109084e56cc5606daf7f495e589fb1fa",
+    "FV/E2E/StockCallStoreFirstTrapWitness.lean": "f55cf2f798e5a7e6505c970c2f7eaf926d5f5cbf291a3b9d18b27e88254f90f4",
+    "FV/E2E/StockCallStoreExplicitC.lean": "dd8531d9dc0b1c55779ff76782f0ddf8aee9230d40ed200d6ab6fbb0d82d106a",
+    "FV/E2E/StockCallStoreTrapMachine.lean": "88d58b73f27f7c0b8a90444a3cc736983bf1e6d0cbe4cd10dc82e27f73864e75",
+    "FV/E2E/StockCallStoreCalleeTrap.lean": "09c707c86a5b874261eb3a439075f5cb6bbf9e8f70232eb2f926912a321b533f",
+    "FV/E2E/StockCallStoreAccessShape.lean": "a1ac4abfbd8d3b692faf071aedc93b47bb2c2490374e8f9d8fe9cf74204af23c",
+    "FV/E2E/StockCallStoreFirstTrapChecked.lean": "6702fb5bbfae0d796afa35f7b86818bc0037e453981ad9d4838bd9c7ddbab0f9",
+    "FV/E2E/WorldTrapStopProvider.lean": "8d9c1d6d2c1c649df0506d6be33f0ae505f3b5d81e187fce7d72bd732efc33d4",
+    "scripts/audit/stock-call-store-callee-complete.lean": "87fbec49427fcf3e1c4776d30881a76cbb53ab32f55c941cdc6f3e013044968e"
+  },
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T18:31:19Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41501264162/job/125469047256",
+      "name": "Quick checks",
+      "startedAt": "2026-11-02T18:31:02Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T18:37:21Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41501264310/job/125469048856",
+      "name": "Build and compare",
+      "startedAt": "2026-11-02T18:31:02Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T18:37:32Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41501264310/job/125472665599",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-02T18:37:24Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T18:37:38Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41501264310/job/125472665588",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-02T18:37:24Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "direct_review": {
+    "head": "70e7b39a4be137ba603fc40760309efc429bb506",
+    "verdict": "no blocking defect",
+    "method": "ONE QUICK, DIRTY, CHEAP direct peer review; no builds or review agents",
+    "reviewer": "worker-A",
+    "details": "Native source comments present;8/68recognized fixed-root markers",
+    "source": "Explicit A verdict relayed by root",
+    "utc": "2026-11-02T18:14:18.357740+00:00",
+    "reviewed_head": "0715e9307b1e9bb035a990d27ddf53291e39d3da",
+    "carry_basis": "All15originalreviewedfiles and1149imported sources/config remain exact; parent-only additive main reconciliation."
+  },
+  "old_source_files_unchanged": true,
+  "production_activation": false,
+  "full_class_callee_trap_complete": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T18:37:56.534637+00:00"
+}

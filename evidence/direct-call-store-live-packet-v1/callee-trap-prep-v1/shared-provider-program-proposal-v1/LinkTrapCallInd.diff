@@ -1,0 +1,82 @@
+--- a/FV/E2E/LinkTrapCallInd.lean
++++ b/FV/E2E/LinkTrapCallInd.lean
+@@ -654,6 +654,14 @@
+     (fun g hg => worldTrapStopProvider_cleanup (hL.subset g hg) (hT.cleanup g hg)
+       (hT.lowerU g hg) rfl (hT.noTry g hg)) hB hκ ih
+ 
++/-- The artifact-derived world providers establish every linked call depth. -/
++theorem thmT_provider (hL : L.OkReturnPins modes) [L.CrunOk]
++    (providers : ∀ g ∈ L.P.funcs,WorldTrapStopProvider L.P.bare g
++      (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb)
++    (hB : L.BaseTrapsOk) (hκ : L.Budget κ) : ∀ M,L.ThmT κ M
++  | 0 => L.thmT_of_provider hL providers hB hκ fun h => absurd h (Nat.lt_irrefl 0)
++  | M + 1 => L.thmT_of_provider hL providers hB hκ fun _ => thmT_provider hL providers hB hκ M
++
+ /-- **The trap statement at every depth.** -/
+ theorem thmT (hL : L.Ok) [L.CrunOk] (hT : L.TrapsOk) (hB : L.BaseTrapsOk) (hκ : L.Budget κ) :
+     ∀ M, L.ThmT κ M
+@@ -707,8 +715,9 @@
+ `f`'s activation that is a run of the program without functions under `envR M f`, under the run
+ premise `TrapsD`, the linked machine of depth `M` has the trap observable (the trap counterpart of
+ `backend_correct_program_core`). -/
+-theorem backend_correct_program_trap_core (L : LinkSys) (hL : L.Ok) [L.CrunOk]
+-    (hT : L.TrapsOk) (hB : L.BaseTrapsOk)
++theorem backend_correct_program_trap_core_provider (L : LinkSys) {modes : Clif.Function → ReturnPinMode} (hL : L.OkReturnPins modes) [L.CrunOk]
++    (providers : ∀ g ∈ L.P.funcs,WorldTrapStopProvider L.P.bare g
++      (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb) (hB : L.BaseTrapsOk)
+     {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) {f : Clif.Function}
+     (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
+     {cs : Clif.State}
+@@ -732,10 +741,10 @@
+   have hWE : L.WorldEntry κ M f L.F args cs w₀ := by
+     refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
+     · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
+-    · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm k hk hk' => ?_
++    · refine argsAtEntry_body hfr hc.entryRegs hbe hargs fun off v hm k hk hk' => ?_
+       rw [hF] at hk'
+       rcases hk' with hw | hi
+-      · exact stackArgsAvoid_frameW_pipeline hc hres hent hargs off v hm k hk hw
++      · exact stackArgsAvoid_frameW_return_pins hc hres hent hargs off v hm k hk hw
+       · exact hsav off v hm k hk hi
+     · rw [hbe.sp, hB']; omega
+     · intro a ha
+@@ -746,13 +755,37 @@
+       exact ⟨by omega, by omega⟩
+     · rw [hbe.sp, hB', hd]
+       have := hent.spAligned
+-      have := L.frameSize_mod hL hf
++      have := L.frameSize_mod_return_pins hL hf
+       omega
+   have hME : L.MachEntry κ M f L.F L.Img ra s w₀ :=
+     ⟨hent.toCall, hres, hgfree, hF.symm, fun _ h => h, himg,
+       hbe.w L.F fun r ⟨_, _, hvb, hi, _, hv⟩ =>
+         ((ctlCheck_args (lowerRFunc_ok hc.alloc).2.2 hvb hi).2.2 _ hv).2⟩
+-  exact L.thmT hL hT hB hκ M f hf L.F args cs w₀ m tc hWE htr hrun L.Img ra s hME
++  exact L.thmT_provider hL providers hB hκ M f hf L.F args cs w₀ m tc hWE htr hrun L.Img ra s hME
++
++
++theorem backend_correct_program_trap_core (L : LinkSys) (hL : L.Ok) [L.CrunOk]
++    (hT : L.TrapsOk) (hB : L.BaseTrapsOk)
++    {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) {f : Clif.Function}
++    (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
++    {cs : Clif.State}
++    (hent : AbiEntry (L.A f).fb (L.A f).base ra s) (hres : StackAvail (κ M f) (L.A f).af s)
++    (hF : L.F = frameWG (κ M f) (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase
++      (RAFrame.compute (L.A f).vcp (L.A f).rf).size (L.A f).af L.Img s)
++    (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + κ M f) (spv s) a)
++    (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
++    (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
++    (hsav : StackArgsAvoid L.Img f.sig args s)
++    (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
++      (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
++    (hpl : L.NeedSlots → L.PlaceAt cs.mem (spv w₀))
++    (htr : L.TrapsD M f cs) {tc : Clif.TrapCode} {m : Nat}
++    (hrun : Clif.runLoop (L.envR M f) L.P.bare m cs = .trapped tc) :
++    L.TrapIn M f s tc := by
++  exact backend_correct_program_trap_core_provider L hL.toSemanticNI.toReturnPins
++    (fun g hg => worldTrapStopProvider_cleanup (hL.subset g hg) (hT.cleanup g hg)
++      (hT.lowerU g hg) rfl (hT.noTry g hg)) hB hκ hf M hent hres hF hgfree himg hbe hargs hcs
++    hsav hrel hpl htr hrun
+ 
+ /-- **The whole-program theorem with callee traps, per-function stack budget `κ`**
+ (`backend_correct_program_budget`'s trap case widened): for a function `f` of the linked program

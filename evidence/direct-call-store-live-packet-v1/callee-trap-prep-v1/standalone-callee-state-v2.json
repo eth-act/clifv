@@ -1,0 +1,29 @@
+{
+  "manifest_sha256": "52827e83343b316c14e16ef538179184b4681fa6933f5227d479eab707e5f58e",
+  "canonical": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/standalone-callee-canonical-v2",
+  "new_modules": 14,
+  "audit_roots": 68,
+  "standard_roots": 60,
+  "fixed_roots": 8,
+  "old_roots_exact": 56,
+  "actual_repository_auditor_exit": 0,
+  "receipt_hashes": {
+    "world-provider-v1/receipt.json": "443e779b9efa170edced27270c476aef254351799a25805ca91cd0ab735b7a8c",
+    "first-trap-checked-v1/receipt.json": "c29826f0680daed3dac5d4193439781297ccd7b48d115185d5907cfa4641cc23",
+    "access-shape-v5/receipt.json": "14cf8d444a514d6ddacd7955cd634e4a51bf7496397014e2d193ad737e856ebe",
+    "callee-only-v2/receipt.json": "56919249a8b28f6f7a6d8c68ac9a36c57836d3632208c81573574e045c12d199",
+    "trap-machine-v3/receipt.json": "1268f9458c2956fa677d556938cbc0d6f04b100cb1321ddf1f40241dd9417d98",
+    "first-trap-v2/receipt.json": "ed890583e526fb310d8ddf50ee6e4730c26453141e28c82fd9a42fd49475880c",
+    "trap-source-witness-v3/receipt.json": "a626de4eec33b270841ff3aa9347063bf4790d4a274324998a0da01f88a7b05f",
+    "first-trap-witness-v1/receipt.json": "262468a473345125409c3099122eac6c8b165c6206e57e98c44c3c7f22a66f02",
+    "real-repository-audits-v2/receipt.json": "dd8c80ddd2a2b1c45687f1b9e2e54074987fd265cf1ce00088044557f2409f54",
+    "real-repository-audits-v2/exact-set-comparison.json": "58fc044b3f361691978ea9e3aa2b3541c528388ee4969c496badb65e50239876"
+  },
+  "status": "passed-preserved-context-not-current-main",
+  "open": [
+    "mode-aware linked trap provider extraction",
+    "actual complete linked ARM execution",
+    "three CLI/generated proof flows in both modes and float variant",
+    "default production admission; three843 constructors remain frozen"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "status": "passed-preserved-context-not-current-main",
+  "base": "37fc00cb91cf37557777f0664878a164c59587cf",
+  "source_hashes": {
+    "FV/E2E/StockCallStoreTrapTail.lean": "18fbf374a2986a2f8190e3c3486e18628924a1058a14167e8d5b2e5f7e7e95d0",
+    "FV/E2E/StockCallStoreTrapReady.lean": "9f774bf74f3c6213946aa9001287b418c167d0974196c2446c11876dc91961b2",
+    "FV/E2E/StockCallStoreTrapRun.lean": "f0c320872ef58131a45b0f7da56fac14230204731a6d5f4bb0a0a974c68ba5a9",
+    "FV/E2E/StockCallStoreTrapSourceWitness.lean": "ac065111081ae674216c600703a409a040893c3ffc717d8e11be3f533ea7a141",
+    "FV/E2E/StockCallStoreTrapStage.lean": "ae50986509a65723061129ad96ec2a4934c08104996f46f1bdc7ae3ff6b3a8dd",
+    "FV/E2E/StockCallStoreNoTry.lean": "63a10d1216279e1e5ec15119402ca031e22878e0807738a2827b787a716f654c",
+    "FV/E2E/StockCallStoreFirstTrap.lean": "3731598e74601c4bd9a4f0a11af64ff2109084e56cc5606daf7f495e589fb1fa",
+    "FV/E2E/StockCallStoreFirstTrapWitness.lean": "f55cf2f798e5a7e6505c970c2f7eaf926d5f5cbf291a3b9d18b27e88254f90f4",
+    "FV/E2E/StockCallStoreExplicitC.lean": "dd8531d9dc0b1c55779ff76782f0ddf8aee9230d40ed200d6ab6fbb0d82d106a",
+    "FV/E2E/StockCallStoreTrapMachine.lean": "88d58b73f27f7c0b8a90444a3cc736983bf1e6d0cbe4cd10dc82e27f73864e75",
+    "FV/E2E/StockCallStoreCalleeTrap.lean": "09c707c86a5b874261eb3a439075f5cb6bbf9e8f70232eb2f926912a321b533f",
+    "FV/E2E/StockCallStoreAccessShape.lean": "a1ac4abfbd8d3b692faf071aedc93b47bb2c2490374e8f9d8fe9cf74204af23c",
+    "FV/E2E/StockCallStoreFirstTrapChecked.lean": "6702fb5bbfae0d796afa35f7b86818bc0037e453981ad9d4838bd9c7ddbab0f9",
+    "FV/E2E/WorldTrapStopProvider.lean": "8d9c1d6d2c1c649df0506d6be33f0ae505f3b5d81e187fce7d72bd732efc33d4",
+    "scripts/audit/stock-call-store-callee-complete.lean": "87fbec49427fcf3e1c4776d30881a76cbb53ab32f55c941cdc6f3e013044968e"
+  },
+  "receipts": {
+    "world-provider-v1/receipt.json": "443e779b9efa170edced27270c476aef254351799a25805ca91cd0ab735b7a8c",
+    "first-trap-checked-v1/receipt.json": "c29826f0680daed3dac5d4193439781297ccd7b48d115185d5907cfa4641cc23",
+    "access-shape-v5/receipt.json": "14cf8d444a514d6ddacd7955cd634e4a51bf7496397014e2d193ad737e856ebe",
+    "callee-only-v2/receipt.json": "56919249a8b28f6f7a6d8c68ac9a36c57836d3632208c81573574e045c12d199",
+    "trap-machine-v3/receipt.json": "1268f9458c2956fa677d556938cbc0d6f04b100cb1321ddf1f40241dd9417d98",
+    "first-trap-v2/receipt.json": "ed890583e526fb310d8ddf50ee6e4730c26453141e28c82fd9a42fd49475880c",
+    "trap-source-witness-v3/receipt.json": "a626de4eec33b270841ff3aa9347063bf4790d4a274324998a0da01f88a7b05f",
+    "first-trap-witness-v1/receipt.json": "262468a473345125409c3099122eac6c8b165c6206e57e98c44c3c7f22a66f02",
+    "real-repository-audits-v2/receipt.json": "dd8c80ddd2a2b1c45687f1b9e2e54074987fd265cf1ce00088044557f2409f54",
+    "real-repository-audits-v2/exact-set-comparison.json": "58fc044b3f361691978ea9e3aa2b3541c528388ee4969c496badb65e50239876"
+  },
+  "original_inputs": {
+    "original-caller.clif": "dd3a48bed0088809a32af0e148db48046ca403b990b702ec753f0083e54cca83",
+    "original-callee.clif": "97277383ff351de032d121fdcde17db75d67ccf2faccddb9ff8a88ea67bbb33a"
+  },
+  "old_contracts_unchanged": true,
+  "frozen_constructor_edits": [],
+  "resources": "2GiB, one job, explicit -j1",
+  "scope": "source/virtual/raw-cleanup/checked-world first store fault or callee trap; internally derived prepared shapes; generic world stop provider",
+  "open": [
+    "mode-aware linked trap provider extraction",
+    "actual complete linked ARM execution",
+    "three CLI/generated proof flows in both modes and float variant",
+    "default production admission; three843 constructors remain frozen"
+  ],
+  "utc": "2026-11-02T18:08:36.016254+00:00"
+}

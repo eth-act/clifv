@@ -1,0 +1,2 @@
+["/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake", "env", "lean", "-j1", "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/standalone-class-canonical-v1/scripts/audit/stock-call-store-class-final.lean"]
+["/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake", "env", "lean", "-j1", "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/scripts/audit/stock-call-store-callee-complete.lean"]

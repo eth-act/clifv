@@ -1,0 +1,10 @@
+{
+  "status": "proposal-only-unverified",
+  "reason": "Existing LinkReturnPinProgram already proves both mode-aware source helpers. Reuse them rather than redeclare them.",
+  "existing_helpers": [
+    "actInv_step_return_pins",
+    "step_envOf_link_return_pins"
+  ],
+  "removed_proofs": 2,
+  "changed_public_old_contracts": 0
+}

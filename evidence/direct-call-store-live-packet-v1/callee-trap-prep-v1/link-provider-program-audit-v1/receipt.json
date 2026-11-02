@@ -1,0 +1,40 @@
+{
+  "status": "passed",
+  "real_exit": 0,
+  "actual_unchanged_repository_auditor": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+  "auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "argv": [
+    "python3",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+    "--cwd",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "--log-dir",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/link-provider-program-audit-v1/audit",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/shared-source-transport-proposal-v1/link-source-transport-contracts.lean",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/shared-provider-program-proposal-v1/link-provider-program-contracts.lean"
+  ],
+  "resource_wrapper_sha256": "f3df5686cb55c980ebbe1bcdb737740c74a07a5ec12d55585d5b1e6145a292c3",
+  "wrapper_only_adds_j1": true,
+  "actual_lean_commands": [
+    [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+      "env",
+      "lean",
+      "-j1",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/shared-source-transport-proposal-v1/link-source-transport-contracts.lean"
+    ],
+    [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+      "env",
+      "lean",
+      "-j1",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/shared-provider-program-proposal-v1/link-provider-program-contracts.lean"
+    ]
+  ],
+  "audits": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/shared-source-transport-proposal-v1/link-source-transport-contracts.lean": "3e82304019c10f474529fbf887f59e3fd16d018a278bb43a06cb27d77ac08e22",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/shared-provider-program-proposal-v1/link-provider-program-contracts.lean": "2edc33fa096cc52aaa67211c611be72a32e3fd553716cbd41498b8c846bc933b"
+  },
+  "stats": "peak 262680576\noom 0\noom_kill 0\n",
+  "utc": "2026-11-02T18:31:53.481356+00:00"
+}

@@ -1,0 +1,430 @@
+--- a/FV/E2E/LinkTrapCallInd.lean
++++ b/FV/E2E/LinkTrapCallInd.lean
+@@ -35,7 +35,7 @@
+ namespace LinkSys
+ 
+ variable (L : LinkSys)
+-variable {κ : Nat → Clif.Function → Nat}
++variable {κ : Nat → Clif.Function → Nat} {modes : Clif.Function → ReturnPinMode}
+ 
+ /-- **The program's functions as the trap theorem needs them** (beyond `LinkSys.Ok`, all decided
+ by the compiler): compiled by the shipped dead-cleanup pipeline, passing the lowering's
+@@ -49,7 +49,7 @@
+ /-! ## The call at a callee-trap state -/
+ 
+ /-- At a call line of `g`'s code the linked machine's step is the hooked call. -/
+-theorem mach_callAt (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.funcs)
++theorem mach_callAt_return_pins (hL : L.OkReturnPins modes) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.funcs)
+     {u : Arm.ArmState} {info : CallInfo} (hsite : (L.A g).vcp.CallSite info) {regs : Array Reg}
+     {i' : MInst} (hprog : u.program = (L.A g).fb.program (L.A g).base)
+     (hasg : (MInst.call info).assign regs = .ok i')
+@@ -84,8 +84,17 @@
+     subst hx
+     simp only [mach, ArmStepX, hins, destOf]
+ 
++
++theorem mach_callAt (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.funcs)
++    {u : Arm.ArmState} {info : CallInfo} (hsite : (L.A g).vcp.CallSite info) {regs : Array Reg}
++    {i' : MInst} (hprog : u.program = (L.A g).fb.program (L.A g).base)
++    (hasg : (MInst.call info).assign regs = .ok i')
++    (hca : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i') :
++    L.mach M g u = (L.hooks M).call (destOf info) u := by
++  exact L.mach_callAt_return_pins hL.toSemanticNI.toReturnPins hg hsite hprog hasg hca
++
+ /-- At a call line of `g`'s code: the instruction there is the allocated call's. -/
+-theorem insnAt_callAt (hL : L.Ok) {g : Clif.Function} (hg : g ∈ L.P.funcs) {u : Arm.ArmState}
++theorem insnAt_callAt_return_pins (hL : L.OkReturnPins modes) {g : Clif.Function} (hg : g ∈ L.P.funcs) {u : Arm.ArmState}
+     {i' : MInst} (hca : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i') :
+     ∃ x, insnAt (L.A g).fa (L.A g).base (Arm.r .PC u) = some x ∧ i'.callInsn? = some x := by
+   have hc := hL.compiled g hg
+@@ -94,13 +103,19 @@
+   have hfit := hL.fits g hg
+   exact ⟨x, by rw [hpc]; exact insnAt_line (by omega) hj, hx⟩
+ 
++
++theorem insnAt_callAt (hL : L.Ok) {g : Clif.Function} (hg : g ∈ L.P.funcs) {u : Arm.ArmState}
++    {i' : MInst} (hca : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i') :
++    ∃ x, insnAt (L.A g).fa (L.A g).base (Arm.r .PC u) = some x ∧ i'.callInsn? = some x := by
++  exact L.insnAt_callAt_return_pins hL.toSemanticNI.toReturnPins hg hca
++
+ /-- **`ProgCallOk` at a `bl h`.** -/
+-theorem progCallOk_bl (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
++theorem progCallOk_bl_return_pins (hL : L.OkReturnPins modes) {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
+     {u : Arm.ArmState} {info : CallInfo} {regs : Array Reg} {i' : MInst} {n : String}
+     (hd : info.dest = .sym n) (hasg : (MInst.call info).assign regs = .ok i')
+     (hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i')
+     (hcode : ∀ a, L.Img a → u.mem a = L.imgMem a) : L.ProgCallOk g h u := by
+-  obtain ⟨x, hins, hx⟩ := L.insnAt_callAt hL hg hP
++  obtain ⟨x, hins, hx⟩ := L.insnAt_callAt_return_pins hL hg hP
+   obtain ⟨d, us, ds⟩ := info
+   simp only at hd
+   subst hd
+@@ -111,8 +126,16 @@
+   · rw [hins] at h'; cases h'
+   · rw [hins] at h1; cases h1
+ 
++
++theorem progCallOk_bl (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
++    {u : Arm.ArmState} {info : CallInfo} {regs : Array Reg} {i' : MInst} {n : String}
++    (hd : info.dest = .sym n) (hasg : (MInst.call info).assign regs = .ok i')
++    (hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i')
++    (hcode : ∀ a, L.Img a → u.mem a = L.imgMem a) : L.ProgCallOk g h u := by
++  exact L.progCallOk_bl_return_pins hL.toSemanticNI.toReturnPins hg hh hd hasg hP hcode
++
+ /-- **`ProgCallOk` at a `blr` of `h`** (through the vreg `tv` by which `g` may enter `h`). -/
+-theorem progCallOk_blr (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
++theorem progCallOk_blr_return_pins (hL : L.OkReturnPins modes) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
+     (hh : h ∈ L.P.funcs) {u : Arm.ArmState} {info : CallInfo} {regs : Array Reg} {i' : MInst}
+     {tv : Nat} (hsite : (L.A g).vcp.CallSite info) (hd : info.dest = .reg (.vreg tv .int))
+     {c : CheckCtx} {wh : String} {ops : Array Operand}
+@@ -122,7 +145,7 @@
+     (hcode : ∀ a, L.Img a → u.mem a = L.imgMem a)
+     (hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h) (hBlr : L.BlrTo g tv h) :
+     L.ProgCallOk g h u := by
+-  obtain ⟨x, hins, hx⟩ := L.insnAt_callAt hL hg hP
++  obtain ⟨x, hins, hx⟩ := L.insnAt_callAt_return_pins hL hg hP
+   obtain ⟨d, us, ds⟩ := info
+   simp only at hd
+   subst hd
+@@ -137,9 +160,22 @@
+     cases h2
+     exact ⟨_, tv, hsite, rfl, hBlr⟩
+ 
++
++theorem progCallOk_blr (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
++    (hh : h ∈ L.P.funcs) {u : Arm.ArmState} {info : CallInfo} {regs : Array Reg} {i' : MInst}
++    {tv : Nat} (hsite : (L.A g).vcp.CallSite info) (hd : info.dest = .reg (.vreg tv .int))
++    {c : CheckCtx} {wh : String} {ops : Array Operand}
++    (hst : c.checkStatic wh ops (regs.map .reg) (MInst.call info).clobbers = .ok ())
++    (hasg : (MInst.call info).assign regs = .ok i')
++    (hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i')
++    (hcode : ∀ a, L.Img a → u.mem a = L.imgMem a)
++    (hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h) (hBlr : L.BlrTo g tv h) :
++    L.ProgCallOk g h u := by
++  exact L.progCallOk_blr_return_pins hL.toSemanticNI.toReturnPins hg hh hsite hd hst hasg hP hcode hb hBlr
++
+ /-- **A `bl` call site of a function `h` of `P`**: its operand values are `h`'s parameter
+ registers' values. -/
+-theorem blSite (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs) {info : CallInfo}
++theorem blSite_return_pins (hL : L.OkReturnPins modes) {g h : Clif.Function} (hg : g ∈ L.P.funcs) {info : CallInfo}
+     (hsite : L.ProgSite g info h) {u : Arm.ArmState} {c : CheckCtx} {wh : String}
+     {ops : Array Operand} {regs : Array Reg}
+     (hops : (MInst.call info).operands = .ok ops)
+@@ -157,9 +193,19 @@
+     (fun p hp r hr => (hloc p hp).2 r hr)
+   exact ⟨Lu, hLu, call_useVals hregs u⟩
+ 
++
++theorem blSite (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs) {info : CallInfo}
++    (hsite : L.ProgSite g info h) {u : Arm.ArmState} {c : CheckCtx} {wh : String}
++    {ops : Array Operand} {regs : Array Reg}
++    (hops : (MInst.call info).operands = .ok ops)
++    (hst : c.checkStatic wh ops (regs.map .reg) (MInst.call info).clobbers = .ok ()) :
++    ∃ Lu : List (Nat × Reg), Lu.map (·.2) = regLocs h.sig ∧
++      useVals ops regs u = Lu.map (fun q => regVal u q.2) := by
++  exact L.blSite_return_pins hL.toSemanticNI.toReturnPins hg hsite hops hst
++
+ /-- **A `blr` call site**: the target register, the parameter registers of the functions of `P`
+ it may enter, the operand values, and the target the machine reads. -/
+-theorem blrSite (hL : L.Ok) {g : Clif.Function} (hg : g ∈ L.P.funcs) {info : CallInfo}
++theorem blrSite_return_pins (hL : L.OkReturnPins modes) {g : Clif.Function} (hg : g ∈ L.P.funcs) {info : CallInfo}
+     (hsite : (L.A g).vcp.CallSite info) (hreg : ∀ n, info.dest ≠ .sym n) {u : Arm.ArmState}
+     {c : CheckCtx} {wh : String} {ops : Array Operand} {regs : Array Reg} {i' : MInst}
+     (hops : (MInst.call info).operands = .ok ops)
+@@ -203,9 +249,27 @@
+   exact ⟨tv, Lu, Ld, n0, rfl, fun h hh hb hl => (hregs h hh hb hl).1, call_useVals_reg hregs0 u,
+     htgt, rfl⟩
+ 
++
++theorem blrSite (hL : L.Ok) {g : Clif.Function} (hg : g ∈ L.P.funcs) {info : CallInfo}
++    (hsite : (L.A g).vcp.CallSite info) (hreg : ∀ n, info.dest ≠ .sym n) {u : Arm.ArmState}
++    {c : CheckCtx} {wh : String} {ops : Array Operand} {regs : Array Reg} {i' : MInst}
++    (hops : (MInst.call info).operands = .ok ops)
++    (hst : c.checkStatic wh ops (regs.map .reg) (MInst.call info).clobbers = .ok ())
++    (hasg : (MInst.call info).assign regs = .ok i')
++    (hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i')
++    (hcode : ∀ a, L.Img a → u.mem a = L.imgMem a) :
++    ∃ (tv : Nat) (Lu : List (Nat × Reg)) (Ld : List (Reg × Nat)) (n0 : Nat),
++      info = ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩ ∧
++      (∀ h ∈ L.P.funcs, L.BlrTo g tv h → (regLocs h.sig).length = Lu.length →
++        Lu.map (·.2) = regLocs h.sig) ∧
++      useVals ops regs u = regVal u (.x n0) :: Lu.map (fun q => regVal u q.2) ∧
++      blrTarget u = some (lo64 (regVal u (.x n0))) ∧
++      ops = (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray := by
++  exact L.blrSite_return_pins hL.toSemanticNI.toReturnPins hg hsite hreg hops hst hasg hP hcode
++
+ /-- A caller state whose parameter registers of `h` hold the call's arguments is compatible with
+ the canonical call state (`CallerOk`). -/
+-theorem callerOk_of_regs (hL : L.Ok) {h : Clif.Function} (hh : h ∈ L.P.funcs)
++theorem callerOk_of_regs_return_pins (hL : L.OkReturnPins modes) {h : Clif.Function} (hh : h ∈ L.P.funcs)
+     {F : BitVec 64 → Prop} {u w : Arm.ArmState} {Lu : List (Nat × Reg)}
+     (hLu : Lu.map (·.2) = regLocs h.sig) (hsw : SameWorld F u w)
+     (himg : ∀ a, L.Img a → u.mem a = L.imgMem a) (hra : RaOk (L.A h) (Arm.r .PC u)) :
+@@ -224,13 +288,21 @@
+ 
+ /-! ## The induction step -/
+ 
++
++theorem callerOk_of_regs (hL : L.Ok) {h : Clif.Function} (hh : h ∈ L.P.funcs)
++    {F : BitVec 64 → Prop} {u w : Arm.ArmState} {Lu : List (Nat × Reg)}
++    (hLu : Lu.map (·.2) = regLocs h.sig) (hsw : SameWorld F u w)
++    (himg : ∀ a, L.Img a → u.mem a = L.imgMem a) (hra : RaOk (L.A h) (Arm.r .PC u)) :
++    L.CallerOk F h (Lu.map (fun q => regVal u q.2)) w u := by
++  exact L.callerOk_of_regs_return_pins hL.toSemanticNI.toReturnPins hh hLu hsw himg hra
++
+ /-- **A callee-trap state of an activation at depth `M`** (the per-function theorem's
+ `CallTrapAtT`, at a call site of either kind, under the activation's environment with the callee
+ traps outside `covQ Dn` stuck, `Dn` the run premise `D` one level down): the call goes outside
+ `P` and its callee traps there (the base hook errs, `BaseTrapsOk.stop`), or it goes to a function
+ `h` of `P` whose activation from the call state has the trap observable one level down
+ (`progCallTG`; its linked call is `junkAt`). Either way the run stops (`hstop`). -/
+-theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : L.Budget κ)
++theorem trapIn_callTrapG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : L.Budget κ)
+     {D : Nat → Clif.Function → Clif.State → Prop} {Dn : Clif.Function → Clif.State → Prop}
+     {M : Nat} (hDnM : ∀ {h : Clif.Function} {cs : Clif.State}, Dn h cs → ∃ M', M = M' + 1 ∧ D M' h cs)
+     (ih : 0 < M → L.ThmTG D κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
+@@ -239,12 +311,12 @@
+     (hME : L.MachEntry κ M g F G ra s w₀) {n : Nat} {tc : Clif.TrapCode}
+     (hstop : Arm.r .ERR (L.mach M g (runX (L.mach M g) n s)) ≠ .None → L.Stop M g s n)
+     (hprog : (runX (L.mach M g) n s).program = (L.A g).fb.program (L.A g).base)
+-    (hct : CallTrapAtT (L.A g).vcp F (κ M g) G s (L.A g).fa (L.A g).base (L.X κ M g F)
++    (hct : CallTrapAtT (L.A g).vcp F (κ M g) G s (L.A g).fa (L.A g).base (L.XMode modes κ M g F)
+       (GotV (L.A g).vcp)
+       (TrapCallSem (cutEnv (L.envOf M g (spv w₀)) (L.covQ Dn)) (g.externs.map (·.2))
+         (indSigs g)
+         (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
+-          g (spv w₀)) (L.X κ M g F) tc)
++          g (spv w₀)) (L.XMode modes κ M g F) tc)
+       (runX (L.mach M g) n s)) :
+     L.TrapIn M g s tc := by
+   obtain ⟨info, hsite, -, -, hGk, cc, wh, ops, regs, i', w, hops, hst, hasg, hP, hsw,
+@@ -252,7 +324,7 @@
+   generalize hu : runX (L.mach M g) n s = u at hstop hprog hGk hP hsw herr hgg hX0 hdisj
+   have hcode : ∀ a, L.Img a → u.mem a = L.imgMem a := fun a ha =>
+     (hGk a (hME.imgG a ha)).trans (hME.imgS a ha)
+-  have hstep := L.mach_callAt (M := M) hL hg hsite hprog hasg hP
++  have hstep := L.mach_callAt_return_pins (M := M) hL hg hsite hprog hasg hP
+   rcases hdisj with ⟨ext, hin, G', sl, cm, args, vals', hG', hd, hargs, hmr, htr'⟩ |
+     ⟨sig, hsig, nm, G', sl, cm, u0, args, vals', hG', hsg, hu0, hl8, hall, hmr, htr', hty, hdn, hus⟩
+   · -- an extern of `g` (`bl`, or `blr` of its GOT address)
+@@ -262,13 +334,13 @@
+     | none =>
+       have hbase : L.base.extern ext.name = some Gb := by
+         simpa [envOf, hpf, Clif.linkEnvR_none hpf] using hGb
+-      have hsn : symCallee L.Xb L.P (lo64 (ofX ((L.X κ M g F).sym ext.name 0))) = none := by
++      have hsn : symCallee L.Xb L.P (lo64 (ofX ((L.XMode modes κ M g F).sym ext.name 0))) = none := by
+         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 (ofX (L.Xb.sym ext.name 0))) = none
+-        rw [lo64_ofX]; exact (L.find_sym hL ext.name).2 hpf
++        rw [lo64_ofX]; exact (L.find_sym_return_pins hL ext.name).2 hpf
+       have hX0' : L.Xb.call (callDest info) (useVals ops regs u) w = none := by
+         rcases hd with ⟨hd1, hd2⟩ | ⟨hd1, -, hd2⟩
+-        · rw [hd1] at hX0 ⊢; rwa [L.X_base hpf] at hX0
+-        · rw [hd1, hd2] at hX0 ⊢; rwa [L.X_none hsn] at hX0
++        · rw [hd1] at hX0 ⊢; rwa [L.XMode_base hpf] at hX0
++        · rw [hd1, hd2] at hX0 ⊢; rwa [L.XMode_none hsn] at hX0
+       have hgb : L.GoesBase info u := by
+         refine ⟨?_, fun hdn => ?_⟩
+         · rcases hd with ⟨hd1, -⟩ | ⟨hd1, -, -⟩
+@@ -277,7 +349,7 @@
+         · have hreg : ∀ nm, info.dest ≠ .sym nm := fun nm e => by
+             simp [destOf, e] at hdn
+           obtain ⟨tv, Lu, Ld, n0, -, -, huv, htgt, -⟩ :=
+-            L.blrSite hL hg hsite hreg hops hst hasg hP hcode
++            L.blrSite_return_pins hL hg hsite hreg hops hst hasg hP hcode
+           rcases hd with ⟨hd1, -⟩ | ⟨-, -, hd2⟩
+           · rw [← destOf_eq_callDest, hdn] at hd1; cases hd1
+           · rw [huv] at hd2
+@@ -316,37 +388,37 @@
+           | sym nm => simp [callDest, hi] at hd1; rw [hd1]
+           | reg r => simp [callDest, hi] at hd1
+         have hps : L.ProgSite g info h := ⟨hsite, ext.name, hdest, hpf⟩
+-        obtain ⟨Lu, hLu, huv⟩ := L.blSite hL hg hps hops hst (u := u)
++        obtain ⟨Lu, hLu, huv⟩ := L.blSite_return_pins hL hg hps hops hst (u := u)
+         have hra := hL.raCall g hg info h hps _ hP.callPc
+-        have hcOk := L.callerOk_of_regs hL hh hLu hsw hcode hra
++        have hcOk := L.callerOk_of_regs_return_pins hL hh hLu hsw hcode hra
+         rw [← huv, hd2] at hcOk
+-        have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
++        have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG_return_pins hL (Nat.succ_pos M')
+           (ih (Nat.succ_pos M')) hpfh ⟨g, hg, hcallee⟩
+           hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
+-        have hjunk := L.pcall_junk hL hh hTI hra
++        have hjunk := L.pcall_junk_return_pins hL hh hTI hra
+         have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
+           rw [destOf_eq_callDest, hd1]; exact L.hooks_some hpf u
+         refine .prog (hstop ?_) (by rw [hu]; exact ⟨info, regs, i', hsite, hasg, hP, herr,
+           .inl (by rw [destOf_eq_callDest, hd1, hname])⟩)
+-          (by rw [hu]; exact L.progCallOk_bl hL hg hh hdest hasg hP hcode)
++          (by rw [hu]; exact L.progCallOk_bl_return_pins hL hg hh hdest hasg hP hcode)
+           (by rw [hu]; exact hra) (by rw [hu]; exact hTI)
+         rw [hstep, hhook, hjunk]; exact junkAt_err u
+       · -- `blr` of `h`'s GOT entry
+         have hreg : ∀ nm, info.dest ≠ .sym nm := fun nm e => by simp [callDest, e] at hd1
+         obtain ⟨tv, Lu, Ld, n0, hinfo, hLuB, huv, htgt, hops'⟩ :=
+-          L.blrSite hL hg hsite hreg hops hst hasg hP hcode
++          L.blrSite_return_pins hL hg hsite hreg hops hst hasg hP hcode
+         rw [huv] at hd2
+         obtain ⟨h1, h2⟩ := List.cons.inj hd2
+         have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
+           rw [h1]
+           show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 (ofX (L.Xb.sym ext.name 0))) = some h
+-          rw [lo64_ofX]; exact (L.find_sym hL ext.name).1 h hpf
++          rw [lo64_ofX]; exact (L.find_sym_return_pins hL ext.name).1 h hpf
+         have hgot : ∀ nm, GotV (L.A g).vcp tv nm → nm = h.name := by
+           intro nm hn
+           have e := hgg tv nm ops (by rw [hinfo]) hn hops (by rw [hops']; simp [tgtOp, Operand.isUse])
+           rw [huv] at e
+           simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+-          exact L.got_target hL hs e
++          exact L.got_target_return_pins hL hs e
+         have hmay : L.MayCall g h.name := by rw [hname]; exact hdecl
+         have hBlr : L.BlrTo g tv h :=
+           ⟨⟨hmay, .inl ⟨by
+@@ -359,18 +431,18 @@
+           simpa using this.symm
+         have hLu := hLuB h hh hBlr hlen
+         have hra := hL.raBlr g hg info hsite hreg h hh hmay _ hP.callPc
+-        have hcOk := L.callerOk_of_regs hL hh hLu hsw hcode hra
++        have hcOk := L.callerOk_of_regs_return_pins hL hh hLu hsw hcode hra
+         rw [h2] at hcOk
+-        have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
++        have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG_return_pins hL (Nat.succ_pos M')
+           (ih (Nat.succ_pos M')) hpfh ⟨g, hg, hcallee⟩
+           hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
+-        have hjunk := L.pcall_junk hL hh hTI hra
++        have hjunk := L.pcall_junk_return_pins hL hh hTI hra
+         have hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
+         have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
+           rw [destOf_eq_callDest, hd1]; exact L.hooks_none hb
+         refine .prog (hstop ?_) (by rw [hu]; exact ⟨info, regs, i', hsite, hasg, hP, herr,
+           .inr ⟨by rw [destOf_eq_callDest, hd1], hb⟩⟩)
+-          (by rw [hu]; exact L.progCallOk_blr hL hg hh hsite (by rw [hinfo]) hst hasg hP hcode hb hBlr)
++          (by rw [hu]; exact L.progCallOk_blr_return_pins hL hg hh hsite (by rw [hinfo]) hst hasg hP hcode hb hBlr)
+           (by rw [hu]; exact hra) (by rw [hu]; exact hTI)
+         rw [hstep, hhook, hjunk]; exact junkAt_err u
+   · -- an indirect call
+@@ -378,7 +450,7 @@
+     obtain ⟨htrG, hQ⟩ := cutO_trapped htr'
+     have hreg : ∀ nm', info.dest ≠ .sym nm' := fun nm' e => by simp [callDest, e] at hdn
+     obtain ⟨tv, Lu, Ld, n0, hinfo, hLuB, huv, htgt, hops'⟩ :=
+-      L.blrSite hL hg hsite hreg hops hst hasg hP hcode
++      L.blrSite_return_pins hL hg hsite hreg hops hst hasg hP hcode
+     have hus' := hus
+     rw [huv] at hus'
+     obtain ⟨h1, h2⟩ := List.cons.inj hus'
+@@ -386,13 +458,13 @@
+     | none =>
+       have hs : symCallee L.Xb L.P (lo64 u0) = none := by
+         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u0) = none
+-        rw [hu0]; exact (L.find_sym hL nm).2 hpf
++        rw [hu0]; exact (L.find_sym_return_pins hL nm).2 hpf
+       have hbase : L.base.extern nm = some Gb := by
+         simpa [envOf, hpf, Clif.linkEnvR_none hpf] using hGb
+       have hgb : L.GoesBase info u :=
+         ⟨.inl (by rw [destOf_eq_callDest, hdn]), fun _ => by rw [htgt, h1]; exact hs⟩
+       have hX0' : L.Xb.call (callDest info) (useVals ops regs u) w = none := by
+-        rw [hdn, hus] at hX0 ⊢; rwa [L.X_none hs] at hX0
++        rw [hdn, hus] at hX0 ⊢; rwa [L.XMode_none hs] at hX0
+       have hBT : L.BaseTrapCallI g tc info u := ⟨hsite, hgb, herr, ops, regs, i', w, F, _, _,
+         spv w₀, hops, hasg, hP, hsw, hX0', .inr ⟨sig, hsig, nm, Gb, sl, cm, u0, args, vals', hbase,
+         (fun _ h => nomatch h), hu0, hl8, hall, hmr, htrG, hty, hdn, hus⟩⟩
+@@ -432,13 +504,13 @@
+       have hs : symCallee L.Xb L.P (lo64 (regVal u (.x n0))) = some h := by
+         rw [h1]
+         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u0) = some h
+-        rw [hu0]; exact (L.find_sym hL h.name).1 h hpf
++        rw [hu0]; exact (L.find_sym_return_pins hL h.name).1 h hpf
+       have hgot : ∀ nm, GotV (L.A g).vcp tv nm → nm = h.name := by
+         intro nm hn
+         have e := hgg tv nm ops (by rw [hinfo]) hn hops (by rw [hops']; simp [tgtOp, Operand.isUse])
+         rw [huv] at e
+         simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
+-        exact L.got_target hL hs e
++        exact L.got_target_return_pins hL hs e
+       have hBlr : L.BlrTo g tv h := ⟨⟨hdecl, .inr ⟨sig, hsig, hm, hm.returns_length⟩⟩, hgot⟩
+       have hlen : (regLocs h.sig).length = Lu.length := by
+         have := argsAt_regLocs hargs
+@@ -446,22 +518,64 @@
+         simpa using this.symm
+       have hLu := hLuB h hh hBlr hlen
+       have hra := hL.raBlr g hg info hsite hreg h hh hdecl _ hP.callPc
+-      have hcOk := L.callerOk_of_regs hL hh hLu hsw hcode hra
++      have hcOk := L.callerOk_of_regs_return_pins hL hh hLu hsw hcode hra
+       rw [h2] at hcOk
+-      have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
++      have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG_return_pins hL (Nat.succ_pos M')
+         (ih (Nat.succ_pos M')) hpf ⟨g, hg, hcallee⟩
+         hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
+-      have hjunk := L.pcall_junk hL hh hTI hra
++      have hjunk := L.pcall_junk_return_pins hL hh hTI hra
+       have hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
+       have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
+         rw [destOf_eq_callDest, hdn]; exact L.hooks_none hb
+       refine .prog (hstop ?_) (by rw [hu]; exact ⟨info, regs, i', hsite, hasg, hP, herr,
+         .inr ⟨by rw [destOf_eq_callDest, hdn], hb⟩⟩)
+-        (by rw [hu]; exact L.progCallOk_blr hL hg hh hsite (by rw [hinfo]) hst hasg hP hcode hb hBlr)
++        (by rw [hu]; exact L.progCallOk_blr_return_pins hL hg hh hsite (by rw [hinfo]) hst hasg hP hcode hb hBlr)
+         (by rw [hu]; exact hra) (by rw [hu]; exact hTI)
+       rw [hstep, hhook, hjunk]; exact junkAt_err u
+ 
++
++theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : L.Budget κ)
++    {D : Nat → Clif.Function → Clif.State → Prop} {Dn : Clif.Function → Clif.State → Prop}
++    {M : Nat} (hDnM : ∀ {h : Clif.Function} {cs : Clif.State}, Dn h cs → ∃ M', M = M' + 1 ∧ D M' h cs)
++    (ih : 0 < M → L.ThmTG D κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
++    {F G : BitVec 64 → Prop} {vals : List Clif.Val} {cs : Clif.State} {w₀ : Arm.ArmState}
++    {ra : BitVec 64} {s : Arm.ArmState} (hWE : L.WorldEntry κ M g F vals cs w₀)
++    (hME : L.MachEntry κ M g F G ra s w₀) {n : Nat} {tc : Clif.TrapCode}
++    (hstop : Arm.r .ERR (L.mach M g (runX (L.mach M g) n s)) ≠ .None → L.Stop M g s n)
++    (hprog : (runX (L.mach M g) n s).program = (L.A g).fb.program (L.A g).base)
++    (hct : CallTrapAtT (L.A g).vcp F (κ M g) G s (L.A g).fa (L.A g).base (L.X κ M g F)
++      (GotV (L.A g).vcp)
++      (TrapCallSem (cutEnv (L.envOf M g (spv w₀)) (L.covQ Dn)) (g.externs.map (·.2))
++        (indSigs g)
++        (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
++          g (spv w₀)) (L.X κ M g F) tc)
++      (runX (L.mach M g) n s)) :
++    L.TrapIn M g s tc := by
++  apply L.trapIn_callTrapG_return_pins hL.toSemanticNI.toReturnPins hB hκ hDnM ih hg hWE hME hstop hprog
++  simpa only [L.XMode_ordinary] using hct
++
+ /-- `trapIn_callTrapG` for the run premise `TrapsD` and a `call` site (`CallTrapAt`). -/
++theorem trapIn_callTrap_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : L.Budget κ)
++    {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
++    {F G : BitVec 64 → Prop} {vals : List Clif.Val} {cs : Clif.State} {w₀ : Arm.ArmState}
++    {ra : BitVec 64} {s : Arm.ArmState} (hWE : L.WorldEntry κ M g F vals cs w₀)
++    (hME : L.MachEntry κ M g F G ra s w₀) {n : Nat} {tc : Clif.TrapCode}
++    (hstop : Arm.r .ERR (L.mach M g (runX (L.mach M g) n s)) ≠ .None → L.Stop M g s n)
++    (hprog : (runX (L.mach M g) n s).program = (L.A g).fb.program (L.A g).base)
++    (hct : CallTrapAt (L.A g).vcp F (κ M g) G s (L.A g).fa (L.A g).base (L.XMode modes κ M g F)
++      (GotV (L.A g).vcp)
++      (TrapCallSem (cutEnv (L.envOf M g (spv w₀)) (L.covQ (L.TrapsDn M))) (g.externs.map (·.2))
++        (indSigs g)
++        (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
++          g (spv w₀)) (L.XMode modes κ M g F) tc)
++      (runX (L.mach M g) n s)) :
++    L.TrapIn M g s tc :=
++  L.trapIn_callTrapG_return_pins (D := L.TrapsD) hL hB hκ (fun {h cs} hD => by
++    cases M with
++    | zero => exact hD.elim
++    | succ M' => exact ⟨M', rfl, hD⟩) ih hg hWE hME hstop hprog hct.toT
++
++
+ theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : L.Budget κ)
+     {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
+     {F G : BitVec 64 → Prop} {vals : List Clif.Val} {cs : Clif.State} {w₀ : Arm.ArmState}
+@@ -476,11 +590,9 @@
+         (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
+           g (spv w₀)) (L.X κ M g F) tc)
+       (runX (L.mach M g) n s)) :
+-    L.TrapIn M g s tc :=
+-  L.trapIn_callTrapG (D := L.TrapsD) hL hB hκ (fun {h cs} hD => by
+-    cases M with
+-    | zero => exact hD.elim
+-    | succ M' => exact ⟨M', rfl, hD⟩) ih hg hWE hME hstop hprog hct.toT
++    L.TrapIn M g s tc := by
++  apply L.trapIn_callTrap_return_pins hL.toSemanticNI.toReturnPins hB hκ ih hg hWE hME hstop hprog
++  simpa only [L.XMode_ordinary] using hct
+ 
+ /-- **The induction step**: the trap statement at depth `M` from the one at depth `M - 1` (and
+ the linking statement `LinkSys.thm` for the returning callees). -/

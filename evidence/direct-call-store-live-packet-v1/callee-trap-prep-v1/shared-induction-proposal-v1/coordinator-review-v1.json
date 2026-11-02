@@ -1,0 +1,15 @@
+{
+  "status": "approved_for_isolated_implementation_and_verification",
+  "diff_sha256": "fec23dc88bcf04c992f6d436a4211dfda4d34f561303102ca38ab5dca9bc463f",
+  "shared_path": "FV/E2E/LinkTrapCallInd.lean",
+  "review": "Nine mode-aware kernels preserve ordinary wrappers and direct/indirect/GOT branches. Existing static callbacks supply frames; no caller execution guard added.",
+  "required_gates": [
+    "all20oldheaders exact",
+    "all20oldAXsets exact",
+    "actual repository auditor",
+    "candidate kernels and affected consumers",
+    "linked depth/peak contracts",
+    "current-main publication gates"
+  ],
+  "utc": "2026-11-02T18:17:44.014249+00:00"
+}

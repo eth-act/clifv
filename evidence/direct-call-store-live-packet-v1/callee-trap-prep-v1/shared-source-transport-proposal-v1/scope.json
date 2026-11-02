@@ -1,0 +1,15 @@
+{
+  "status": "proposal-only-unverified",
+  "new_static_helpers": [
+    "actInv_step_return_pins",
+    "step_envOf_link_return_pins"
+  ],
+  "extractions": [
+    "step_cut_link",
+    "reach_cut",
+    "trapsExplicitC_cut",
+    "runLoop_cut"
+  ],
+  "old_contracts": "All40oldheaders/AX remain exact. No LinkArm edit. No frozen constructor edit.",
+  "purpose": "Source environment transport for the internal provider-driven linked induction"
+}

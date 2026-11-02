@@ -1,0 +1,11 @@
+{
+  "status": "old_pre_slot_guard_retired",
+  "reason": "The old owner exited before pausing the scheduler. It built no provider. Retire its guard before the successor can assign the slot.",
+  "old_state": "failed_inspect_exact_diagnostics",
+  "old_controller_paused": false,
+  "old_guard": 2886705,
+  "new_owner": 2893796,
+  "broad_scheduler": 1713178,
+  "broad_status": "sleeping",
+  "utc": "2026-11-02T18:36:03.310027+00:00"
+}

@@ -1,0 +1,12 @@
+{
+  "worker": "worker-A",
+  "verdict": "no overlap with LinkTrapCall",
+  "pending_shared_paths": [
+    "Backend/ABIReadCfg",
+    "E2E/ABIReadCfg",
+    "SemanticNICheck",
+    "CompiledSemanticNI"
+  ],
+  "source": "Explicit A confirmation relayed by root",
+  "utc": "2026-11-02T18:08:57.347469+00:00"
+}

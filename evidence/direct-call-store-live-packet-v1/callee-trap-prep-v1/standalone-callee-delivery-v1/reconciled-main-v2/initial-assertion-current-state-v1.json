@@ -1,0 +1,33 @@
+{
+  "status": "all_three_fields_now_match",
+  "actual": {
+    "baseRefName": "main",
+    "headRefOid": "f97cc59ef618be2248ab30e7ed5a3273639c6d89",
+    "state": "OPEN",
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "0001-01-01T00:00:00Z",
+        "conclusion": "",
+        "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41500056736/job/125464917239",
+        "name": "Build and compare",
+        "startedAt": "2026-11-02T18:23:10Z",
+        "status": "IN_PROGRESS",
+        "workflowName": "Stock compiler comparison"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-11-02T18:23:24Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41500056678/job/125464917694",
+        "name": "Quick checks",
+        "startedAt": "2026-11-02T18:23:10Z",
+        "status": "COMPLETED",
+        "workflowName": "Quick checks"
+      }
+    ]
+  },
+  "expected_head": "f97cc59ef618be2248ab30e7ed5a3273639c6d89",
+  "historical_failure": "The old assertion did not log its read values. Its failing field cannot be recovered exactly. A transient API view is an inference, not an established cause.",
+  "utc": "2026-11-02T18:23:48.687085+00:00"
+}

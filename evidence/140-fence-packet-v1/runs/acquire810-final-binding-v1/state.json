@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockAcquireAllWidthsBinding",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireAllWidthsBinding.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireAllWidthsBinding.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireAllWidthsBinding.ilean"
+      ],
+      "exit": 0,
+      "seconds": 1.3945658206939697,
+      "memstats": "peak 206983168\noom 0\noom_kill 0\n",
+      "source_sha256": "cad324f16c293554e0dbab030edf6026b6b3698636bb722180637e55ef244834",
+      "olean_sha256": "36a755df73cab57b333aa1ead9a4694a3771e5b2e14b7c7fe9b11d4164853b97"
+    }
+  ]
+}

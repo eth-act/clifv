@@ -1,0 +1,11 @@
+{
+  "status": "all_initial_jobs_exited_zero",
+  "jobs": [
+    {
+      "module": "FV.Backend.Proof.StockLogicalNotRecordWitness",
+      "exit": 0,
+      "time_sha256": "f4cd6cf09a2c6175a03c1c1aa507f97f90a374a22207d955f7796faa67146539"
+    }
+  ],
+  "signals_to_compilers": []
+}

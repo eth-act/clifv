@@ -1,0 +1,17 @@
+{
+  "status": "approved_exact_program_provider_proposal_for_verification",
+  "source_sha256": {
+    "LinkTrapCallInd.diff": "42803ec5b4ba0cec467defdfb3dbce8b9cce1ec086a921a113405595c0025b91",
+    "LinkTrapProviderProgram.lean": "19bc9d862354bf9d1562f4ac81d2395795f6f88840144907f28852d9b3720e1c"
+  },
+  "review": "All-depth induction reuses the provider core. The old whole-program core remains an exact cleanup wrapper. New budget/depth/peak adapters retain the original source-run and DepthLe bridges, entry/frame/oracle conditions, and internal provider derivation.",
+  "required_gates": [
+    "all60oldheaders and AXsets exact",
+    "real repository auditor",
+    "generic linked trap transfer",
+    "old budget/depth/peak consumers",
+    "complete original inputs and callbacks"
+  ],
+  "open": "MapFaults/TrapAtF and actual complete production execution remain separate required obligations.",
+  "utc": "2026-11-02T18:29:58.852539+00:00"
+}

@@ -1,0 +1,12 @@
+{
+  "status": "approved_continue_linked_induction_proposal",
+  "state_sha256": "0638a53b7cac0ccd33e77f959de0f31ce5aad19731050dfadd6745a8bffd1f06",
+  "manifest_sha256": "40e260003f285933cde68bb544cb9ce82aeac4e72aaa9d9a5b7cbd180afa9d4d",
+  "public_old_headers": 40,
+  "old_axiom_sets_exact": 40,
+  "real_auditor_roots": 46,
+  "runX_err_preserved": true,
+  "diagnostic": "The old parser crossed equation-style body into GoesBase. The corrected boundary retains runX_err. No statement changed.",
+  "scope": "Development context, not current-main publication",
+  "utc": "2026-11-02T18:15:53.998085+00:00"
+}

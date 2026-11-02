@@ -1,0 +1,27 @@
+{
+  "status": "passed-staged-integration-context",
+  "base": "770e543c350bf158dc782b7f80afb9748817e0af",
+  "source_hashes": {
+    "FV/E2E/LinkTrapCall.lean": "844a60154684606d93a589576bc392c27cd53fa73b4f1a382b5e412e5b9f6828",
+    "FV/E2E/LinkTrapCallInd.lean": "69a0dd62c748e77a40a0a4cd351e5465245200f29dab8e68ba70e13d132fe65a",
+    "FV/E2E/WorldTrapStopProvider.lean": "8d9c1d6d2c1c649df0506d6be33f0ae505f3b5d81e187fce7d72bd732efc33d4"
+  },
+  "receipts": {
+    "link-provider-reuse-v1/receipt.json": "63095c1db9cc896ac8c6305c6d8b6dcaf5566f66c010eb2de3711ea5d69d517e",
+    "link-provider-audit-v1/receipt.json": "6901bb4c3bc23b5c8fa555dea1c8fde54a5574e5366475a55c6324ee4474dd3e",
+    "link-provider-audit-v1/exact-set-comparison.json": "19405da43e0195ef149dc72142e76882e125954bac9a332c9dd4088067f4846c"
+  },
+  "old_headers_exact": 60,
+  "old_axiom_sets_exact": 60,
+  "new_generic_standard_roots": 20,
+  "existing_static_helper_roots": 2,
+  "audited_roots": 82,
+  "scope": "provider-driven explicit/callee-trap induction; correct mode-aware calls; old cleanup wrapper",
+  "open": [
+    "generic whole-program core/provider depth/peak adapters",
+    "MapFaults/TrapAtF executable integration",
+    "actual linked and production execution",
+    "three frozen artifact constructors"
+  ],
+  "duplicate_static_helpers_removed": true
+}

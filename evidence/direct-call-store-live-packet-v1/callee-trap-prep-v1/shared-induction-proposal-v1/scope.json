@@ -1,0 +1,20 @@
+{
+  "base": "770e543c",
+  "path": "FV/E2E/LinkTrapCallInd.lean",
+  "extractions": [
+    "mach_callAt",
+    "insnAt_callAt",
+    "progCallOk_bl",
+    "progCallOk_blr",
+    "blSite",
+    "blrSite",
+    "callerOk_of_regs",
+    "trapIn_callTrapG",
+    "trapIn_callTrap"
+  ],
+  "status": "proposal-only-unverified",
+  "old_header_count": 20,
+  "old_source_sha256": "73925332d15cf287d1b8936674c77a189dcfd63eb1a8b41368dc6cc795178410",
+  "proposed_source_sha256": "545a0e53b5a002a9a507399e10ce4445406afc65ed3c46c76cc15b91bfdc1ac0",
+  "world_provider_induction": "Subsequent new provider kernel will reuse these mode-aware helpers. Existing depth/peak wrappers remain unchanged."
+}

@@ -1,0 +1,19 @@
+{
+  "status": "passed-preserved-current-main-context",
+  "base": "770e543c350bf158dc782b7f80afb9748817e0af",
+  "source_hashes": {
+    "FV/E2E/LinkTrapCall.lean": "3953c6dbb0b2c924ed0e539780b52a8f5078728ad25822553565f6e4740dc7e5",
+    "FV/E2E/LinkTrapCallInd.lean": "d300ac18746d3f938a867ad7caefb86721329e1b887565a6bb6d4ba343cd75eb"
+  },
+  "receipt_hashes": {
+    "link-extraction-v1/receipt.json": "a0d853b6cf2eb40729b9925dffe8af9a9bfd978aa2b3d63785c9f4534a4af657",
+    "link-trap-kernel-state-v2.json": "0638a53b7cac0ccd33e77f959de0f31ce5aad19731050dfadd6745a8bffd1f06",
+    "link-induction-extraction-v2/receipt.json": "0ef04b5504df9abd4979ba30a2a343432c12843888f0611f8fe275f167dad1d6",
+    "link-trap-ind-kernel-audit-v1/receipt.json": "da9405549a3ded40185bd61e583983e60280d2f4a6e7a7d98cbdce60a39201b5",
+    "link-trap-ind-kernel-audit-v1/exact-set-comparison.json": "170730f96b2d7dbaa85fee2a9596b0b02e5f2cefa6e7471442426ec24825b9b3"
+  },
+  "old_headers_exact": 60,
+  "old_axiom_sets_exact": 60,
+  "new_standard_roots": 15,
+  "frozen_constructor_edits": []
+}

@@ -1,0 +1,8 @@
+{
+  "status": "approved_for_publication",
+  "manifest_sha256": "b9b74758bbb6622d04a2c89e25c80c1083789d14a262187e86a889375a61bd1d",
+  "gate_sha256": "af604d4f3ec5e63df34d8e9a0378d4c33a0db223bca0b39d389c14006afa1ea6",
+  "real_repository_auditor_exit": 0,
+  "roots": 68,
+  "utc": "2026-11-02T18:13:17.809434+00:00"
+}

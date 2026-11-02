@@ -1,0 +1,81 @@
+--- a/FV/E2E/LinkTrapCallInd.lean
++++ b/FV/E2E/LinkTrapCallInd.lean
+@@ -1,3 +1,5 @@
++import FV.E2E.WorldTrapStopProvider
++import FV.E2E.LinkReturnPinGood
+ import FV.E2E.LinkTrapCall
+ import FV.E2E.WorldTrapStop
+ import FV.E2E.RegLevelTrapCallTry
+@@ -596,7 +598,8 @@
+ 
+ /-- **The induction step**: the trap statement at depth `M` from the one at depth `M - 1` (and
+ the linking statement `LinkSys.thm` for the returning callees). -/
+-theorem thmT_of (hL : L.Ok) [hR : L.CrunOk] (hT : L.TrapsOk) (hB : L.BaseTrapsOk)
++theorem thmT_of_provider (hL : L.OkReturnPins modes) [hR : L.CrunOk] (providers : ∀ g ∈ L.P.funcs,WorldTrapStopProvider L.P.bare g
++      (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb) (hB : L.BaseTrapsOk)
+     (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1)) : L.ThmT κ M := by
+   intro g hg F vals cs w₀ fuel tc hWE hTD hrun G ra s hME
+   have hc := hL.compiled g hg
+@@ -606,29 +609,30 @@
+   obtain ⟨htrC, hcut⟩ := hTD
+   have hrunE : Clif.runLoop (cutEnv (L.envOf M g (spv w₀)) (L.covQ (L.TrapsDn M))) L.P.bare fuel cs =
+       .trapped tc := by
+-    rw [L.runLoop_cut hL hg fuel cs hJ]; exact hcut fuel tc hrun
+-  have htrE := L.trapsExplicitC_cut hL hg (Q := L.covQ (L.TrapsDn M)) hJ htrC
+-  have ihR : 0 < M → L.Thm κ (M - 1) := fun _ => L.thm hL hκ (M - 1)
++    rw [L.runLoop_cut_return_pins hL hg fuel cs hJ]; exact hcut fuel tc hrun
++  have htrE := L.trapsExplicitC_cut_return_pins hL hg (Q := L.covQ (L.TrapsDn M)) hJ htrC
++  have ihR : 0 < M → L.ThmReturnPins modes κ (M - 1) := fun _ => L.thm_return_pins hL hκ (M - 1)
+   have hAE : ActEntry (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G
+-      (L.X κ M g F) (L.hooks M) (L.A g).base ra s w₀ :=
+-    ⟨hME.abi, hME.stack, hME.gfree, hME.hF, L.calleeOk hL hκ ihR hg hME,
+-      fun _ => L.calleeTryOk hL hκ ihR hg hME,
+-      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipeline hc ht) F (κ M g)), hME.body⟩
+-  obtain ⟨n, htrace, hsp, hprog, hcase⟩ := backend_correct_world_cleanup_trapstop
+-    (hL.subset g hg) (hT.cleanup g hg) (hT.lowerU g hg) rfl (hT.noTry g hg)
+-    (X := L.X κ M g F) (syms := L.syms) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
+-    (xCallsOk_cut (L.xCallsOk hL hκ ihR hg hWE.img hWE.room hWE.dead hWE.align))
+-    (xCallsIndOk_cut (L.xCallsIndOk hL hκ ihR hg hWE.img hWE.room hWE.dead hWE.align))
+-    (L.xTrapsOk hL hB ih hg hWE.img)
++      (L.XMode modes κ M g F) (L.hooks M) (L.A g).base ra s w₀ :=
++    ⟨hME.abi, hME.stack, hME.gfree, hME.hF, L.calleeOk_return_pins hL hκ ihR hg hME,
++      fun _ => L.calleeTryOk_return_pins hL hκ ihR hg hME,
++      fun ht => L.tlsOk_hooks_mode (hL.baseTls g hg (hasTls_of_vcode_return_pins hc ht) F (κ M g)), hME.body⟩
++  obtain ⟨n, htrace, hsp, hprog, hcase⟩ := (providers g hg).run
++    (X := L.XMode modes κ M g F) (syms := L.syms) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
++    (xCallsOk_cut (L.xCallsOk_return_pins hL hκ ihR hg hWE.img hWE.room hWE.dead hWE.align))
++    (xCallsIndOk_cut (L.xCallsIndOk_return_pins hL hκ ihR hg hWE.img hWE.room hWE.dead hWE.align))
++    (L.xTrapsOkG_return_pins (D := L.TrapsD) hL hB (fun {h cs} hD hM => by
++      obtain ⟨M',rfl⟩ : ∃ M',M = M' + 1 := ⟨M - 1,by omega⟩
++      exact hD) ih hg hWE.img)
+     (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args htrE hrunE
+     (L.hooks M) G (L.A g).base ra s hAE
+   have hroom : frameDrop (L.A g).af ≤ (spv s).toNat := by
+-    rw [L.frameDrop_eq hL hg]; have := hME.stack.1; omega
++    rw [L.frameDrop_eq_return_pins hL hg]; have := hME.stack.1; omega
+   have htr : PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n :=
+     by have := postTrace_of_actGoodX htrace; exact this
+   have hgoodOf : (∀ m, Arm.r .ERR (runX (L.mach M g) (n + m + 1) s) ≠ .None) →
+       L.RunGoodL M g s := fun hh =>
+-    L.runGood_of_trace hL (fun _ => L.thmG hL hκ (M - 1)) hg hME (by exact htrace)
++    L.runGood_of_trace_return_pins hL (fun _ => L.thmG_return_pins hL hκ (M - 1)) hg hME (by exact htrace)
+       fun k _ he => Nat.lt_of_not_le fun hle => hh (k - n) (by
+         rw [show n + (k - n) + 1 = k + 1 by omega]; exact he)
+   rcases hcase with ⟨hat, hhalt⟩ | hct
+@@ -640,8 +644,15 @@
+         ∀ m, Arm.r .ERR (runX (L.mach M g) (n + m + 1) s) ≠ .None := fun he m => by
+       rw [show n + m + 1 = n + (m + 1) by omega, runX_add]
+       exact L.runX_mach_err hB M g m _ he
+-    exact L.trapIn_callTrap hL hB hκ ih hg hWE hME
++    exact L.trapIn_callTrap_return_pins hL hB hκ ih hg hWE hME
+       (fun he => ⟨hroom, htr, herr, hprog, hsp, hhalt he, hgoodOf (hhalt he)⟩) hprog hct
++
++
++theorem thmT_of (hL : L.Ok) [hR : L.CrunOk] (hT : L.TrapsOk) (hB : L.BaseTrapsOk)
++    (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1)) : L.ThmT κ M := by
++  exact L.thmT_of_provider hL.toSemanticNI.toReturnPins
++    (fun g hg => worldTrapStopProvider_cleanup (hL.subset g hg) (hT.cleanup g hg)
++      (hT.lowerU g hg) rfl (hT.noTry g hg)) hB hκ ih
+ 
+ /-- **The trap statement at every depth.** -/
+ theorem thmT (hL : L.Ok) [L.CrunOk] (hT : L.TrapsOk) (hB : L.BaseTrapsOk) (hκ : L.Budget κ) :

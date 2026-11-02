@@ -1,0 +1,37 @@
+{
+  "status": "reviewed_backup_and_owned_cleanup",
+  "backup_commit": "0c52089ba5e8e9613e1c8ba04641fb1f2015110e",
+  "unique_evidence": [
+    {
+      "path": "evidence/fence-acquire-audit-correction-v1/917/landed-v1.json",
+      "sha256": "4330fc1172fd73e3bf5382cb0c625e1f77db7c37257d96834fd165009e840d0d",
+      "backed_up_exact": true
+    },
+    {
+      "path": "evidence/fence-acquire-audit-correction-v1/920/published-v1.json",
+      "sha256": "cc78a0f1a46906a77f5d3b5f9f52149537e460062a1ca68a2e8898094dcb40f5",
+      "backed_up_exact": true
+    },
+    {
+      "path": "evidence/fence-acquire-audit-correction-v1/920/publication-current-gate-v1.json",
+      "sha256": "b5eebbb24ea8b4d9925b23d2b95da2dfc054284b9c9efb106feb361a1731a3cf",
+      "backed_up_exact": true
+    },
+    {
+      "path": "evidence/fence-acquire-audit-correction-v1/920/peer-review-v1.json",
+      "sha256": "c7fa2176154d8b9bf15871b06d1e1d51801d21e3e6eac7aed22e16ef100fd1f1",
+      "backed_up_exact": true
+    },
+    {
+      "path": "evidence/fence-acquire-audit-correction-v1/real-auditor-v1/state.json",
+      "sha256": "1fcdd584e584a6d740c0686bdca20de80d3314bd1699aa0a911f64ac46889576",
+      "backed_up_exact": true
+    }
+  ],
+  "backup_index_removed": true,
+  "removed_outputs": [],
+  "retained_outputs_reason": "Current fence, call-store, and broad validation outputs have active owners. No completed obsolete output prefix was created by this correction batch.",
+  "free_bytes": 337656541184,
+  "fence_share_returned": true,
+  "utc": "2026-11-02T18:06:57.810415+00:00"
+}

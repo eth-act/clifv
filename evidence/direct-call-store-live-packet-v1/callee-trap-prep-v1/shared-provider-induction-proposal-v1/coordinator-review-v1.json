@@ -1,0 +1,16 @@
+{
+  "status": "approved_exact_provider_induction_for_isolated_verification",
+  "diff_sha256": "ca616686f93ed5f79007011ed4cf58d8a4b691039b528fdaadef087621bcf7fd",
+  "shared_path": "FV/E2E/LinkTrapCallInd.lean",
+  "review": "The mode-aware kernel retains the old induction body, depth decrement, returning-call induction, direct/indirect/GOT paths, source transport, stack/program facts, and old cleanup wrapper. The static artifact provider must be derived internally.",
+  "import_cycle_check": "No path to LinkTrapCallInd from either added import;1673modules checked",
+  "required_gates": [
+    "all60oldheaders and axiom sets exact",
+    "real repository auditor",
+    "affected consumers",
+    "generic linked trap transfer",
+    "complete original input and callback conditions"
+  ],
+  "open": "MapFaults/TrapAtF observable integration remains separate required work; this explicit-callee-trap induction does not close it.",
+  "utc": "2026-11-02T18:24:45.272277+00:00"
+}

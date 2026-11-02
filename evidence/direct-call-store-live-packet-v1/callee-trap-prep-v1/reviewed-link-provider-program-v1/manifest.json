@@ -1,0 +1,31 @@
+{
+  "status": "passed-staged-integration-context",
+  "base": "770e543c350bf158dc782b7f80afb9748817e0af",
+  "source_hashes": {
+    "FV/E2E/LinkTrapCall.lean": "844a60154684606d93a589576bc392c27cd53fa73b4f1a382b5e412e5b9f6828",
+    "FV/E2E/LinkTrapCallInd.lean": "29dd6a1c1bd42708838415583a6bd7095974f41c19ca07bbcb7964f2d4bda6b6",
+    "FV/E2E/LinkTrapProviderProgram.lean": "19bc9d862354bf9d1562f4ac81d2395795f6f88840144907f28852d9b3720e1c"
+  },
+  "actual_source_closure": 1679,
+  "full_closure_receipt_sha256": "5a8c48d1548cd5025c83d0ca4394e7c4d5300456bdfb3e782b42513aa80497d1",
+  "normal_output_manifest_sha256": "18b4c9e8e712c90172c8805d90481bdfd3218671399ecbea5179d9f338bd554a",
+  "audit_receipt_sha256": "6a1c0a4ddbfbd1f5e49ee3a327875b1664b81ad92765f640cd6ecff269c0b68c",
+  "exact_axiom_comparison_sha256": "984c12589c9db54106092e34dbde3b4dde0860ef46ddab2bf1d2fdc0fbf14311",
+  "old_headers_exact": 60,
+  "old_axiom_sets_exact": 60,
+  "new_generic_standard_roots": 25,
+  "existing_static_helper_roots": 2,
+  "audited_roots": 87,
+  "original_inputs": {
+    "original-caller.clif": "dd3a48bed0088809a32af0e148db48046ca403b990b702ec753f0083e54cca83",
+    "original-callee.clif": "97277383ff351de032d121fdcde17db75d67ccf2faccddb9ff8a88ea67bbb33a"
+  },
+  "canonical_callee_manifest_sha256": "52827e83343b316c14e16ef538179184b4681fa6933f5227d479eab707e5f58e",
+  "frozen_constructor_edits": [],
+  "open": [
+    "MapFaults/TrapAtF executable integration",
+    "actual linked ARM and all three CLI/generated flows, both modes and distinct float variant",
+    "default production admission; three843 constructors stay frozen"
+  ],
+  "utc": "2026-11-02T18:32:54.892114+00:00"
+}

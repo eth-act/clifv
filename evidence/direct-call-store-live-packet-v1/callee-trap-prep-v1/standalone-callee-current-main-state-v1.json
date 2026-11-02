@@ -1,0 +1,12 @@
+{
+  "manifest_sha256": "52827e83343b316c14e16ef538179184b4681fa6933f5227d479eab707e5f58e",
+  "current_main_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current-main-callee-gate-v3/receipt.json",
+  "receipt_sha256": "af604d4f3ec5e63df34d8e9a0378d4c33a0db223bca0b39d389c14006afa1ea6",
+  "base": "770e543c350bf158dc782b7f80afb9748817e0af",
+  "tree": "11fe76bbe845a39b9229a844ca0428e949c46114",
+  "roots": 68,
+  "sources": 1163,
+  "normal_keys": 1163,
+  "status": "passed-current-main",
+  "canonical": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/standalone-callee-canonical-v2"
+}

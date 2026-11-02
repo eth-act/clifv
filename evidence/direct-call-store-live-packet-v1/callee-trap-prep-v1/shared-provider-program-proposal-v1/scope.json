@@ -1,0 +1,7 @@
+{
+  "status": "proposal-only-unverified",
+  "new_driver": "thmT_provider",
+  "extraction": "backend_correct_program_trap_core_provider",
+  "old_wrapper": "backend_correct_program_trap_core",
+  "preserves": "All original stack,source,entry,memory,slot,input and budget conditions; old budget/depth/peak statements remain unchanged"
+}
