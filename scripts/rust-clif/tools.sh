@@ -5,14 +5,14 @@
 #   cargo build --release --manifest-path rust/Cargo.toml -p clif-oracle -p clif2obj
 #   lake build FV.Clif lean-backend clif-decode
 #
-# usage: scripts/rust-clif/tools.sh [OUT_DIR]      (default /tmp/rust-clif-survey/out)
+# usage: scripts/rust-clif/tools.sh [OUT_DIR]      (default ${TMPDIR:-/tmp}/rust-clif-survey/out)
 # Writes OUT_DIR/../tools/: decoded files (clif-decode), `raw-parse.tsv` and `parse*.tsv` (file, function,
 # ok|unsupported|malformed, reason), per-file tool logs; prints summaries.
 set -uo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
 here="$root/scripts/rust-clif"
-out=${1:-/tmp/rust-clif-survey/out}
+out=${1:-${TMPDIR:-/tmp}/rust-clif-survey/out}
 tools="$out/../tools"
 rm -rf "$tools"
 mkdir -p "$tools"

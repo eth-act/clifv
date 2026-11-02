@@ -9,8 +9,12 @@ exactly the previous complete CFG provider on the original function. -/
 def eligible (f : Clif.Function) : Bool :=
   sourceEligible f && hasNonentryConditional f
 
+/-- The same class when nonentry blocks may also end in `trap`. -/
+def leafEligible (f : Clif.Function) : Bool :=
+  sourceLeafEligible f && hasNonentryConditional f
+
 def lowerValidated (f : Clif.Function) : Except String VCode :=
-  if !eligible f then ConditionalForwardCfg.lowerValidated f
+  if !leafEligible f then ConditionalForwardCfg.lowerValidated f
   else
     let attempt := do
       let result ← Stock.lower f

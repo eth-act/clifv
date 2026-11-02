@@ -11,7 +11,7 @@ set_option Elab.async false
 private def special : MInst → Bool
   | .aluRRR op .. => op == .sDiv || op == .uDiv
   | .aluRRImm12 op .. => op == .addS
-  | .ccmpImm .. | .trapIf .. => true
+  | .ccmpImm .. | .trapIf .. | .udf .. => true
   | _ => false
 
 noncomputable def sem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : Sem :=
@@ -60,6 +60,7 @@ private theorem old_not_special {sig : Clif.Signature} {b k : Nat} {i : MInst}
   | aluRRImm12 op sz rd rn imm => cases op <;> first | rfl | cases checked
   | ccmpImm sz rn imm nzcv c => cases checked
   | trapIf kind code => cases checked
+  | udf code => cases checked
   | _ => rfl
 
 private theorem additional_special {i : MInst} (checked : Backend.ABIReadDiv.additional i = true) :
@@ -69,6 +70,7 @@ private theorem additional_special {i : MInst} (checked : Backend.ABIReadDiv.add
   | aluRRImm12 op sz rd rn imm => cases op <;> first | rfl | cases checked
   | ccmpImm sz rn imm nzcv c => rfl
   | trapIf kind code => rfl
+  | udf code => rfl
   | _ => cases checked
 
 theorem checked_step_frame {sig : Clif.Signature} {b k : Nat} {i : MInst}

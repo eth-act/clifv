@@ -1,6 +1,7 @@
 import FV.Backend.Proof.IselFamAluBMisc
 import FV.Backend.Proof.IselCovClean
 import FV.Backend.Proof.IselFlow
+import FV.Backend.Proof.SpillClsTab
 import FV.Backend.Proof.SpillClsModel
 
 /-!

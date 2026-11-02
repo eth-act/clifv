@@ -430,4 +430,234 @@ theorem stock_lower_scalar_div_unsunk {f : Clif.Function} {result : Result}
   stock_lower_no_load_unsunk run scope
     (fun b hb stm hs => scalar_div_formats (family b hb stm hs)) q
 
+/-- Equality of one installed sink flag across an actual driver boundary. -/
+structure SlotEq (slot : Nat) (st next : State) : Prop where
+  sunk : next.sunk[slot]! = st.sunk[slot]!
+
+private theorem slot_refl (slot : Nat) (st : State) : SlotEq slot st st := ⟨rfl⟩
+private theorem slot_trans {slot : Nat} {a b c : State}
+    (ab : SlotEq slot a b) (bc : SlotEq slot b c) : SlotEq slot a c :=
+  ⟨bc.sunk.trans ab.sunk⟩
+
+private theorem branch_decoded_slot {slot : Nat} {f : Clif.Function} {t : Clif.Terminator}
+    {bi ti : Nat} {targets : Array Nat} {before : State} {output : BranchEmission}
+    {root : Except String (Option V × State × List RuleId)}
+    (keeps : ∀ {out next trace},root = .ok (out,next,trace) → SlotEq slot before next)
+    (run : branchDecoded f t bi ti targets before root = .ok output) :
+    SlotEq slot before output.state := by
+  unfold branchDecoded at run
+  cases executed : root with
+  | error e => simp only [executed,bind,Except.bind] at run; cases run
+  | ok result =>
+    rcases result with ⟨out,next,fired⟩
+    simp only [executed,bind,Except.bind] at run
+    split at run
+    · cases run
+    · cases code : branchCode f t targets next.base.emitted with
+      | error e => simp only [code] at run; cases run
+      | ok instructions =>
+        simp only [code,pure,Except.pure] at run
+        cases run
+        exact keeps executed
+
+private theorem branch_slot_of_helper {slot : Nat} {f : Clif.Function} {ctx : Ctx}
+    (keeps : ∀ {vs st next out trace},Stock.runTerm ctx "lower_branch" vs st = .ok (out,next,trace) →
+      next.sunk[slot]! = st.sunk[slot]!)
+    {t : Clif.Terminator} {bi ti : Nat} {targets : Array Nat}
+    {input : State} {output : BranchEmission}
+    (run : emitBranch ctx f t bi ti targets input = .ok output) : SlotEq slot input output.state := by
+  let before : State := {input with current := some ti,color := none,base.emitted := #[]}
+  unfold emitBranch at run
+  have framed : SlotEq slot before output.state :=
+    branch_decoded_slot (f := f) (t := t) (bi := bi) (ti := ti)
+      (targets := targets) (before := before)
+      (root := Stock.runTerm ctx "lower_branch" [.inst ti,.labels targets.toList] before)
+      (fun call => ⟨keeps call⟩) run
+  exact slot_trans (a := input) (b := before) ⟨rfl⟩ framed
+
+private theorem optional_branch_slot {slot : Nat} {flag : Bool} {input : State}
+    {result : Except String BranchEmission} {br : Option BranchEmission}
+    (keeps : ∀ e,result = .ok e → SlotEq slot input e.state)
+    (run : (if flag then some <$> result else pure none) = .ok br) :
+    SlotEq slot input (br.map (·.state) |>.getD input) := by
+  split at run
+  · cases executed : result with
+    | error message => simp only [executed,Functor.map,Except.map] at run; cases run
+    | ok e =>
+      simp only [executed,Functor.map,Except.map] at run
+      cases run
+      exact keeps e executed
+  · cases run; exact slot_refl _ _
+
+/-- Actual branch and statement helper frames lift through a complete original block. -/
+theorem slot_blockCore_of_helpers {slot : Nat} {ctx : Ctx} {order : Order} {f : Clif.Function}
+    {b : Clif.Block} {bi start stop : Nat} {data : V} {targets : Array Nat}
+    {input : State} {output : LoweredBlockCore}
+    (helperKeeps : ∀ (reservations : List Reg × List Reg) (branch : Bool) {vs st next out trace},
+      Stock.runTerm {ctx with insts := ctx.insts.set! (stop-1) ⟨data,[],[],none⟩,tryRegs := reservations}
+        (if branch then "lower_branch" else "lower") vs st = .ok (out,next,trace) →
+          next.sunk[slot]! = st.sunk[slot]!)
+    (run : lowerBlockCore ctx order f b bi start stop data targets input = .ok output) :
+    SlotEq slot input output.state ∧ SlotEq slot input output.scan.input ∧
+      ∀ r ∈ output.scan.output.records,SlotEq slot input r.input ∧ SlotEq slot input r.output.state := by
+  let ti := stop-1
+  let tc : Ctx := {ctx with insts := ctx.insts.set! ti ⟨data,[],[],none⟩,tryRegs := input.tryRegs[ti]!}
+  let branchCall : Except String (Option BranchEmission) :=
+    if isBranch b.term then some <$> emitBranch tc f b.term bi ti targets input else pure none
+  have branch_keeps {br : Option BranchEmission} (call : branchCall = .ok br) :
+      SlotEq slot input (br.map (·.state) |>.getD input) :=
+    optional_branch_slot (flag := isBranch b.term)
+      (result := emitBranch tc f b.term bi ti targets input)
+      (fun e run => branch_slot_of_helper (fun call => helperKeeps input.tryRegs[ti]! true call) run) call
+  have normal : lowerBlockCore ctx order f b bi start stop data targets input = ((do
+    let br ← branchCall
+    let edge ← collectOutgoing ctx order bi targets (br.map (·.state) |>.getD input)
+    let beforeScan := {edge.1 with color := some edge.1.endColor[bi]!}
+    let indices := ((Array.range (stop-start)).map (start+·)).reverse.toList
+    let scanned ← scanBlock tc bi ti (isBranch b.term) indices beforeScan
+    pure ⟨scanned.state,scanned.code ++ (br.map (·.code) |>.getD #[]),edge.2,br,
+      ⟨tc,bi,ti,isBranch b.term,indices,beforeScan,scanned⟩⟩) : Except String LoweredBlockCore) := by
+    unfold lowerBlockCore
+    dsimp only [branchCall,isBranch,tc,ti]
+    split <;> simp_all only [isBranch,tc,ti] <;> rfl
+  rw [normal] at run
+  cases branch : branchCall with
+  | error e => simp only [branch,bind,Except.bind] at run; cases run
+  | ok br =>
+    simp only [branch,bind,Except.bind] at run
+    cases edges : collectOutgoing ctx order bi targets (br.map (·.state) |>.getD input) with
+    | error e => simp only [edges,bind,Except.bind] at run; cases run
+    | ok edge =>
+      rcases edge with ⟨next,outgoing⟩
+      simp only [edges,bind,Except.bind] at run
+      let before : State := {next with color := some next.endColor[bi]!}
+      let indices := ((Array.range (stop-start)).map (start+·)).reverse.toList
+      cases scans : scanBlock tc bi ti (isBranch b.term) indices before with
+      | error e =>
+        dsimp only [indices,before] at scans
+        simp only [scans] at run
+        cases run
+      | ok scanned =>
+        dsimp only [indices,before] at scans
+        simp only [scans,pure,Except.pure] at run
+        cases run
+        have outgoingKeeps : SlotEq slot (br.map (·.state) |>.getD input) next :=
+          ⟨congrArg (fun bits => bits[slot]!) (outgoing_frame edges)⟩
+        have pre : SlotEq slot input before :=
+          slot_trans (branch_keeps branch) (slot_trans outgoingKeeps ⟨rfl⟩)
+        unfold scanBlock at scans
+        have frames := scans_sunk_at_of_lower
+          (fun call => helperKeeps input.tryRegs[ti]! false call) (runScans_spec scans)
+        refine ⟨slot_trans pre ⟨frames.1⟩,pre,?_⟩
+        intro r member
+        obtain ⟨a,b⟩ := frames.2 r member
+        exact ⟨slot_trans pre ⟨a⟩,slot_trans pre ⟨b⟩⟩
+
+/-- Every retained event has the same protected flag at all record boundaries. -/
+def SlotRecords (slot : Nat) (initial : State) (events : Array BlockScanEvent) : Prop :=
+  ∀ event ∈ events.toList,SlotEq slot initial event.input ∧
+    ∀ record ∈ event.output.records,SlotEq slot initial record.input ∧
+      SlotEq slot initial record.output.state
+
+/-- Actual original and critical-edge nodes inherit a derived block contract. -/
+theorem slot_node_of_core {slot : Nat} {ctx : Ctx} {ranges : Array (Nat × Nat)} {order : Order}
+    {f : Clif.Function} {params : List Nat} {label : Nat} {input output : DriverState}
+    (coreKeeps : ∀ bi,order.nodes[label]! = .original bi → ∀ (data : V)
+      {before : State} {core : LoweredBlockCore},
+      lowerBlockCore ctx order f f.blocks[bi]! bi ranges[bi]!.1 ranges[bi]!.2
+        data order.successors[label]! before = .ok core →
+      SlotEq slot before core.state ∧ SlotEq slot before core.scan.input ∧
+        ∀ record ∈ core.scan.output.records,SlotEq slot before record.input ∧
+          SlotEq slot before record.output.state)
+    (run : lowerNode ctx ranges order f params label input = .ok output) :
+    SlotEq slot input.state output.state ∧
+      ∀ initial,SlotEq slot initial input.state → SlotRecords slot initial input.blockScans →
+        SlotRecords slot initial output.blockScans := by
+  cases node : order.nodes[label]! with
+  | edge pred k target =>
+    unfold lowerNode at run
+    simp only [node] at run
+    cases edge : branchArgs ctx input.state pred k with
+    | error e => simp only [edge,bind,Except.bind] at run; cases run
+    | ok pair =>
+      rcases pair with ⟨args,next⟩
+      simp only [edge,bind,Except.bind,pure,Except.pure] at run
+      cases run
+      exact ⟨⟨congrArg (fun bits => bits[slot]!) (branch_frame edge)⟩,fun _ _ old => old⟩
+  | original bi =>
+    let b := f.blocks[bi]!
+    let start := ranges[bi]!.1
+    let stop := ranges[bi]!.2
+    let reject : Bool := (match b.term with | .ret .. => true | _ => false) &&
+      (sretRet f).isEmpty && (sigRets f.sig != f.sig.returns)
+    have normal : lowerNode ctx ranges order f params label input = (do
+        let data ← blockData f b.term
+        if reject then throw "sret parameter is not an entry-block parameter"
+        let lowered ← lowerBlockCore ctx order f b bi start stop data order.successors[label]! input.state
+        let assembled ← assembleOriginalBlock ctx f b bi label order.successors[label]!
+          lowered.outgoing params lowered.state.uses lowered.code
+        pure {recordCore input lowered bi stop with
+          blocks := input.blocks.set! label assembled,
+          edgeArgs := input.edgeArgs.set! label lowered.outgoing}) := by
+      unfold lowerNode
+      simp only [node]
+      dsimp only [blockData,reject,b,start,stop]
+      split <;> simp_all only [reject] <;> rfl
+    rw [normal] at run
+    cases dataRun : blockData f b.term with
+    | error e => simp only [dataRun,bind,Except.bind] at run; cases run
+    | ok data =>
+      simp only [dataRun,bind,Except.bind] at run
+      split at run
+      · cases run
+      · cases core : lowerBlockCore ctx order f b bi start stop data order.successors[label]! input.state with
+        | error e => simp only [core] at run; cases run
+        | ok lowered =>
+          simp only [core] at run
+          cases assembled : assembleOriginalBlock ctx f b bi label order.successors[label]!
+              lowered.outgoing params lowered.state.uses lowered.code with
+          | error e => simp only [assembled] at run; cases run
+          | ok finished =>
+            simp only [assembled,pure,Except.pure] at run
+            cases run
+            have facts := coreKeeps bi node data core
+            refine ⟨facts.1,?_⟩
+            intro initial prior old event member
+            change event ∈ (input.blockScans.push lowered.scan).toList at member
+            simp only [Array.toList_push,List.mem_append,List.mem_singleton] at member
+            rcases member with member | rfl
+            · exact old event member
+            · refine ⟨slot_trans prior facts.2.1,?_⟩
+              intro record retained
+              obtain ⟨pre,post⟩ := facts.2.2 record retained
+              exact ⟨slot_trans prior pre,slot_trans prior post⟩
+
+/-- Complete traversal transports the protected flag and every retained event. -/
+theorem slot_traversal_of_cores {slot : Nat} {ctx : Ctx} {ranges : Array (Nat × Nat)} {order : Order}
+    {f : Clif.Function} {params labels : List Nat} {input output : DriverState}
+    (coreKeeps : ∀ label ∈ labels,∀ bi,order.nodes[label]! = .original bi → ∀ (data : V)
+      {before : State} {core : LoweredBlockCore},
+      lowerBlockCore ctx order f f.blocks[bi]! bi ranges[bi]!.1 ranges[bi]!.2
+        data order.successors[label]! before = .ok core →
+      SlotEq slot before core.state ∧ SlotEq slot before core.scan.input ∧
+        ∀ record ∈ core.scan.output.records,SlotEq slot before record.input ∧
+          SlotEq slot before record.output.state)
+    (run : labels.foldlM (fun d label => lowerNode ctx ranges order f params label d) input = .ok output) :
+    SlotEq slot input.state output.state ∧
+      ∀ initial,SlotEq slot initial input.state → SlotRecords slot initial input.blockScans →
+        SlotRecords slot initial output.blockScans := by
+  induction labels generalizing input with
+  | nil => cases run; exact ⟨slot_refl _ _,fun _ _ old => old⟩
+  | cons label labels ih =>
+    rw [List.foldlM_cons] at run
+    cases call : lowerNode ctx ranges order f params label input with
+    | error e => simp only [call,bind,Except.bind] at run; cases run
+    | ok next =>
+      simp only [call,bind,Except.bind] at run
+      have head := slot_node_of_core (coreKeeps label (List.mem_cons_self ..)) call
+      have tail := ih (fun k member => coreKeeps k (List.mem_cons_of_mem _ member)) run
+      refine ⟨slot_trans head.1 tail.1,?_⟩
+      intro initial prior old
+      exact tail.2 initial (slot_trans prior head.1) (head.2 initial prior old)
+
 end Backend.Stock.Proof.SinkRules

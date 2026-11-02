@@ -2,7 +2,7 @@
 """Aggregate the CLIF dumped by scripts/rust-clif/dump.sh.
 
 usage: analyze.py [OUT_DIR] [--json FILE] [--extra NAME=CLIF_DIR]...
-       (default OUT_DIR /tmp/rust-clif-survey/out; --extra adds e.g. core.sh's core/alloc dirs)
+       (default OUT_DIR ${TMPDIR:-/tmp}/rust-clif-survey/out; --extra adds e.g. core.sh's core/alloc dirs)
 
 Reads OUT_DIR/<profile>/<crate>/<crate>.clif/*.{unopt,opt}.clif and prints markdown tables:
 opcode histograms (per profile, per category), E/S/neither classification, types, memory
@@ -11,6 +11,7 @@ counters. E and S are clif-subset-v1 (docs/contracts/clif-subset.md).
 """
 
 import json
+import os
 import re
 import sys
 from collections import Counter, defaultdict
@@ -337,7 +338,7 @@ def main():
         else:
             extras.append(args[i + 1].split("=", 1))
         del args[i:i + 2]
-    out = Path(args[0] if args else "/tmp/rust-clif-survey/out")
+    out = Path(args[0] if args else (os.environ.get("TMPDIR") or "/tmp") + "/rust-clif-survey/out")
     funcs = load(out)
     md = ["## Corpus"] + report(funcs, PROFILES, ["debug", "release"], True)
     if extras:

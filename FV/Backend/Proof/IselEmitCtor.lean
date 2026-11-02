@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselCovCtor
+import FV.Backend.Proof.RegallocTac
 import FV.Backend.Proof.IselEmitDefs
 
 /-!

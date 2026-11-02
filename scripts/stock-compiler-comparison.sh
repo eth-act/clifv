@@ -91,6 +91,7 @@ step trace-validation guard python3 -m unittest discover -s scripts -p test_lowe
 step schedule-validation guard python3 -m unittest discover -s scripts -p test_stock_lowering_schedule.py -v
 step validation guard python3 -m unittest discover -s scripts -p test_stock_compiler_compare.py -v
 step pipeline-validation guard python3 -m unittest discover -s scripts -p test_stock_pipeline.py -v
+step configured-provider-validation guard python3 -m unittest discover -s scripts -p test_stock_configured_provider.py -v
 step exporter-validation guard python3 -m unittest discover -s scripts -p test_stock_exporter.py -v
 
 set +e

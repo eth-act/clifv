@@ -2,9 +2,10 @@ import FV.Backend.Proof.RelaxLayout
 import FV.E2E.EmitCondsDefs
 import FV.E2E.RegLevelEmit
 import FV.Backend.Proof.AssignOk
-import FV.E2E.AllocTotal
+import FV.Backend.Proof.LowerLoop
 import FV.E2E.RegLevelOp
 import FV.E2E.RegLevelSim
+import FV.Backend.Proof.LowerDecide
 
 /-!
 # The labels of the spill allocation's code (V6b)

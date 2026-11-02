@@ -116,6 +116,7 @@ theorem apply_prog {n : Nat} (hP : Progress f ctx p cfg tab n) {ty : TypeId} {t 
     ∃ r s', (applyTerm p (sem ctx) cfg n ty t vs).run s = .ok (r, s') := by
   obtain ⟨st, tr⟩ := s
   unfold aApply at ha
+  rw [termOfT_eq] at ha
   split at ha
   · exact (γL_any_isBot ‹_› hvs).elim
   cases ht : termOf p t with

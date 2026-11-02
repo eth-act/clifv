@@ -177,10 +177,11 @@ def rejectionPrefix : String := "stock configuration unsupported for this functi
 
 /-- Allocate, then apply `configure`. `clif name` is the CLIF of function `name`. Each rejection
 is recorded in `rejected` as (name, reason), for the receipt. -/
-def allocate (c : Config) (clif : String → List Clif.Function)
-    (rejected : IO.Ref (Array (String × String))) (a : Allocator) (vcs : Array VCode) :
+def allocateWith (c : Config) (clif : String → List Clif.Function)
+    (rejected : IO.Ref (Array (String × String)))
+    (run : Array VCode → IO (Array (Except String AFunc))) (vcs : Array VCode) :
     IO (Array (Except String AFunc)) := do
-  let results ← a.run vcs
+  let results ← run vcs
   (vcs.zip results).mapM fun (vc, result) => do
     match result with
     | .error e => pure (.error e)
@@ -190,6 +191,12 @@ def allocate (c : Config) (clif : String → List Clif.Function)
       | .error why =>
         rejected.modify (·.push (vc.name, why))
         pure (.error (rejectionPrefix ++ why))
+
+/-- Retain the original allocator entry point for existing comparison consumers. -/
+def allocate (c : Config) (clif : String → List Clif.Function)
+    (rejected : IO.Ref (Array (String × String))) (a : Allocator) (vcs : Array VCode) :
+    IO (Array (Except String AFunc)) :=
+  allocateWith c clif rejected a.run vcs
 
 /-- Allocate Stock code together with its actual per-successor vectors. -/
 def allocateAt (c : Config) (clif : String → List Clif.Function)

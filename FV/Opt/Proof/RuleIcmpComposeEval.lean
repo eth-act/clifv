@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleInfraIcmp
+import FV.Opt.Proof.RuleInfraEval
 
 set_option linter.unusedSimpArgs false
 set_option maxRecDepth 8000
@@ -38,18 +39,14 @@ def icmpDecomposeRule : IntCC → RuleId
   | .uge => rule_icmp_221.id | .sge => rule_icmp_222.id
   | .ne => rule_icmp_223.id
 
--- Keep evaluation local and bounded. In particular, expose ccIdx's named
--- aliases before comparing tags, and normalize between interpreter equations.
+-- Keep evaluation local and bounded: one `simp` call per step that normalises only the head
+-- computation of each `bind` (`opt_bind_head`, `RuleInfraEval.lean`) and exposes ccIdx's named
+-- aliases before comparing tags. Two calls per step over the whole hypothesis, each run twice,
+-- re-traversed every pending continuation (24 s per leaf on an orb, 96% of the module).
 set_option hygiene false in
-local macro "compose_lookup_pair" : tactic => `(tactic| (
-  try simp (disch := assumption) only [opt_data, ccIdx, Nat.reduceBEq,
-    VIdx.IntCC.Equal, VIdx.IntCC.NotEqual, VIdx.IntCC.SignedGreaterThan,
-    VIdx.IntCC.SignedGreaterThanOrEqual, VIdx.IntCC.SignedLessThan,
-    VIdx.IntCC.SignedLessThanOrEqual, VIdx.IntCC.UnsignedGreaterThan,
-    VIdx.IntCC.UnsignedGreaterThanOrEqual, VIdx.IntCC.UnsignedLessThan,
-    VIdx.IntCC.UnsignedLessThanOrEqual,
-    Isle.Interp.matchAll.eq_1, Isle.Interp.matchAll.eq_2] at hrun
-  try simp (disch := assumption) only [opt_monad, opt_imm, ccIdx, Nat.reduceBEq,
+local macro "compose_lookup_norm" : tactic => `(tactic| (
+  try simp (disch := assumption) only [↓opt_bind_head, opt_data, opt_monad, opt_imm, ccIdx,
+    Nat.reduceBEq,
     VIdx.IntCC.Equal, VIdx.IntCC.NotEqual, VIdx.IntCC.SignedGreaterThan,
     VIdx.IntCC.SignedGreaterThanOrEqual, VIdx.IntCC.SignedLessThan,
     VIdx.IntCC.SignedLessThanOrEqual, VIdx.IntCC.UnsignedGreaterThan,
@@ -71,9 +68,8 @@ set_option hygiene false in
 local macro "compose_lookup_step" : tactic => `(tactic| (
   first
   | compose_lookup_finish hrun
-  | (opt_unfold hrun
-     compose_lookup_pair
-     compose_lookup_pair)))
+  | (opt_unfold_head hrun
+     compose_lookup_norm)))
 
 open Lean Meta Elab Tactic in
 elab "compose_lookup_steps" : tactic => do
@@ -85,8 +81,7 @@ set_option hygiene false in
 local macro "compose_lookup " termId:num cc:term : tactic => `(tactic| (
   generalize hrun : (Interp.applyTerm p (sem G).toSem cfg (n + 16) 4 $termId
     [V.data 46 (ccIdx $cc:term) []]).run (s, tr) = result
-  compose_lookup_pair
-  compose_lookup_pair
+  compose_lookup_norm
   compose_lookup_steps
   all_goals exact hrun.symm))
 

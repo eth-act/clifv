@@ -87,7 +87,7 @@ theorem termProg (hP : PInv f ctx) (hb : buildCtx f = .ok (ctx, ranges, st0))
   exact ⟨w, s', tr, hrun⟩
 
 /-- **`try_call`s.** -/
-theorem tryProg (hP : PInv f ctx) (hb : buildCtx f = .ok (ctx, ranges, st0))
+theorem tryProg (hP : PInv f ctx) (hctx : CtxInv f ctx) (hb : buildCtx f = .ok (ctx, ranges, st0))
     (hdom : dominatedB f = true) (hin : iselInB f = true) : TryProg f ctx := by
   intro ti t et data sig items trs st1 st2 targets s _ hph hB het hd hx hr hlen
   obtain ⟨q, hq, hq1, hγ⟩ := try_root hP hb hdom hin hph hB het hd hx hr hlen
@@ -96,7 +96,7 @@ theorem tryProg (hP : PInv f ctx) (hb : buildCtx f = .ok (ctx, ranges, st0))
   rw [hq1] at he
   obtain ⟨w, s', tr, hrun, -⟩ := root_run (model_of hP') (handOk hP' rfl prgTab) prgTab_ok
     program_termByName_lower_branch (T := T.lower_branch) he hos hfu hγ s
-  obtain ⟨c, hc⟩ := tryCall_last hP hd hph (trs := trs) (targets := targets) (s := s) hrun
+  obtain ⟨c, hc⟩ := tryCall_last hP hctx hd hph (trs := trs) (targets := targets) (s := s) hrun
   exact ⟨w, s', tr, c, hrun, hc⟩
 
 /-- **The ISLE side of the driver's totality**, for input in scope. -/
@@ -104,7 +104,8 @@ theorem iselProg_of_input (hdom : dominatedB f = true) (hs : lowerScopeB f = tru
     (hw : extendsWidenB f = true) (hin : iselInB f = true) (hdrv : driverInB f = true)
     (hb : buildCtx f = .ok (ctx, ranges, st0)) : IselProg f ctx :=
   have hP := pinv_build hdom hs hw hin hb
-  ⟨stmtProg hP, termProg hP hb hdom hin hdrv, tryProg hP hb hdom hin⟩
+  ⟨stmtProg hP, termProg hP hb hdom hin hdrv,
+    tryProg hP (ctxOk_sound (ctxOk_complete (lowerScope_of hs) hb)) hb hdom hin⟩
 
 /-- **`lowerFunction` is total on input in scope.** -/
 theorem lowerFunction_ok_input (hE : Compile.functionE f = true) (hsig : sigAbiOk f.sig = true)

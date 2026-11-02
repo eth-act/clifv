@@ -1,7 +1,6 @@
 import FV.Backend.Proof.StockSelectOriginalRootValues
 import FV.Backend.Proof.StockAvailableTypes
 import FV.Backend.Proof.StockGuardedRecordValues
-import FV.Backend.Proof.StockCmpNarrowAllocation
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 open MinMaxRegisterFixture Backend.Stock.Proof.ScalarCmp

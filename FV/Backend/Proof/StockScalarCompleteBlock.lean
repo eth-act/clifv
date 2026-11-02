@@ -1,6 +1,5 @@
 import FV.Backend.Proof.StockScalarCompletePre
 import FV.Backend.Proof.AbiClass
-import FV.Backend.Proof.StockContext
 
 /-!
 # Completeness of the scalar route, phase 2: one `ret` block

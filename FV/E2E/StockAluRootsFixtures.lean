@@ -7,9 +7,8 @@ set_option Elab.async false
 /-- A constant outside every imm12 form, so the extend roots keep a register operand. -/
 def wide : Nat := 0x123456789abcdef
 
-/-- Immediate, negated-immediate, shifted-operand and `bnot`-operand forms of
-add/sub/and/or/xor, in the original value type. `extr` (roots 862/863) emits
-`aluRRRShift .extr`, which `ABIReadScalar.bitProducer` does not admit, so it stays out. -/
+/-- Immediate, negated-immediate, shifted-operand, `bnot`-operand and both `extr` forms of
+add/sub/and/or/xor, in the original value type. -/
 def operandBody (config : Configuration) : List Clif.Stmt :=
   let ty := valueType config
   let w := ty.width
@@ -26,7 +25,12 @@ def operandBody (config : Configuration) : List Clif.Stmt :=
    ⟨[5033],.unary .bnot ty 8⟩,⟨[5034],.binary .band ty 5033 2⟩,
    ⟨[5035],.unary .bnot ty 1⟩,⟨[5036],.binary .bor ty 8 5035⟩,
    ⟨[5037],.unary .bnot ty 2⟩,⟨[5038],.binary .bor ty 5037 1⟩,
-   ⟨[5039],.unary .bnot ty 8⟩,⟨[5040],.binary .bxor ty 2 5039⟩]
+   ⟨[5039],.unary .bnot ty 8⟩,⟨[5040],.binary .bxor ty 2 5039⟩,
+   ⟨[5041],.iconst ty (w-1 : Nat)⟩,⟨[5042],.iconst ty 1⟩,
+   ⟨[5043],.binary .ishl ty 1 5041⟩,⟨[5044],.binary .ushr ty 2 5042⟩,
+   ⟨[5045],.binary .bor ty 5043 5044⟩,
+   ⟨[5046],.binary .ishl ty 8 5041⟩,⟨[5047],.binary .ushr ty 1 5042⟩,
+   ⟨[5048],.binary .bor ty 5047 5046⟩]
 
 /-- Extended-operand add/sub. The class admits only i32/i64 casts, so i32 configurations
 extend into i64 arithmetic and reduce the result back. -/
@@ -57,7 +61,8 @@ def combineBody (config : Configuration) : List Clif.Stmt :=
    ⟨[5111],.binary .bxor ty 5110 5027⟩,⟨[5112],.binary .bxor ty 5111 5030⟩,
    ⟨[5113],.binary .bxor ty 5112 5032⟩,⟨[5114],.binary .bxor ty 5113 5034⟩,
    ⟨[5115],.binary .bxor ty 5114 5036⟩,⟨[5116],.binary .bxor ty 5115 5038⟩,
-   ⟨[5117],.binary .bxor ty 5116 5040⟩]
+   ⟨[5117],.binary .bxor ty 5116 5040⟩,⟨[5118],.binary .bxor ty 5117 5045⟩,
+   ⟨[5119],.binary .bxor ty 5118 5048⟩]
 
 def extraBody (config : Configuration) : List Clif.Stmt :=
   operandBody config ++ extendBody config ++ combineBody config
@@ -65,5 +70,5 @@ def extraBody (config : Configuration) : List Clif.Stmt :=
 def function (config : Configuration) : Clif.Function :=
   let old := E2E.StockHighMulNIWitness.function config
   {old with name := "stock_alu_roots",blocks := old.blocks.map fun b =>
-    {b with body := b.body ++ extraBody config,term := .ret [5117]}}
+    {b with body := b.body ++ extraBody config,term := .ret [5119]}}
 end E2E.StockAluRootsWitness

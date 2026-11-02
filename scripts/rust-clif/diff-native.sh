@@ -27,7 +27,7 @@ set -euo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
 here="$root/scripts/rust-clif"
-out=${1:-/tmp/rust-clif-survey/out}
+out=${1:-${TMPDIR:-/tmp}/rust-clif-survey/out}
 work=${DIFF_WORK:-$out/../diff-native}
 VECTORS=${VECTORS:-64}
 MIN_VECTORS=${MIN_VECTORS:-50}

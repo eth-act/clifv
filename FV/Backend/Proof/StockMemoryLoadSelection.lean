@@ -1,3 +1,5 @@
+import FV.Backend.Proof.IselRules
+import FV.Backend.Proof.StockMemorySelection
 import FV.Backend.Proof.StockMemoryAddressSelection
 
 namespace Backend.Stock.Memory

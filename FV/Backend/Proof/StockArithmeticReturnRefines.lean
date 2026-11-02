@@ -1,6 +1,8 @@
+import FV.Isle.Generated.Manifest
 import FV.Backend.Proof.StockArithmeticSourceFrame
 import FV.Backend.Proof.StockArithmeticTerminalDefined
-import FV.Backend.Proof.StockReturnVCode
+import FV.Backend.Proof.StockReturnContract
+import FV.Backend.Proof.StockBlockCode
 namespace Backend.Stock.Proof.ArithmeticBody
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option autoImplicit false

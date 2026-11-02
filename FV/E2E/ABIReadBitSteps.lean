@@ -59,6 +59,21 @@ theorem step_frame {i : MInst} (checked : Backend.ABIReadScalar.bitProducer i = 
           · simp only [shiftVal,Option.map_some] at run
             exact same_frame run
           · simp [mspec,ispec] at run
+  | aluRRRShift op sz rd rn rm sh =>
+    cases op <;> try cases checked
+    cases us with
+    | nil => simp [mspec,ispec] at run
+    | cons a rest =>
+      cases rest with
+      | nil => cases rn <;> simp [mspec,ispec,aluShiftable] at run
+      | cons b tail =>
+        cases tail with
+        | cons c rest => simp [mspec,ispec] at run
+        | nil =>
+          simp only [mspec,ispec] at run
+          split at run
+          · exact same_frame run
+          · cases run
   | _ => cases checked
 
 theorem no_mem {i : MInst} (checked : Backend.ABIReadScalar.bitProducer i = true) : i.isMemAcc = false := by

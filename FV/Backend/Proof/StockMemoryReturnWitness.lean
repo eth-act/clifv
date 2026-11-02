@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockBlockCode
 import FV.Backend.Proof.StockMemoryReturnRefines
 import FV.Backend.Proof.StockMemoryAutoScan
 import FV.Backend.Proof.StockMemoryBodyFixture

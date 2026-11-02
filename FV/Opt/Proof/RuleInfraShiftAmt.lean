@@ -17,9 +17,10 @@ close, decided by targeted kernel-checked rewriting (no SAT certificates, no `Le
   `sshr_shl_signExtend`) or sign-extends a zero extension shifted to the top bit
   (`sshr_shl_setWidth_top`), the negated sign bit is the sign mask (`neg_ushiftRight_pred`), a mask
   moves across a shift left then right (`and_shl_shr_of`), two shifts left by one amount are
-  collected (`shl_or_shl_of`), all ones stay all ones under an arithmetic shift right
-  (`allOnes_sshiftRight`), and the remaining shifts are compared by their amounts (`congr`,
-  `omega`). The amount conditions of these lemmas are discharged by `omega`.
+  collected (`shl_or_shl_of`), so are two shifts by one amount under an exclusive or
+  (`shl_xor_shl_of`, `ushr_xor_ushr_of`, `sshr_xor_sshr_of`), all ones stay all ones under an
+  arithmetic shift right (`allOnes_sshiftRight`), and the remaining shifts are compared by their
+  amounts (`congr`, `omega`). The amount conditions of these lemmas are discharged by `omega`.
 * `kbv_cmp`: comparisons (`slt`, `ult`, …) as `decide`s on `toInt`/`toNat`, every `if` split, each
   case closed by evaluation or `omega`. Both use only explicit `simp only` sets, so the `@[simp]`
   lemmas of the importing module do not change them.
@@ -146,6 +147,25 @@ theorem shl_or_shl_of {w : Nat} (x y : BitVec w) {a b : Nat} (hb : b = a) :
   subst hb; exact (BitVec.shiftLeft_or_distrib ..).symm
 
 example : 0x81#8 <<< 3 ||| 0x12#8 <<< 3 = (0x81#8 ||| 0x12#8) <<< 3 := shl_or_shl_of _ _ rfl
+
+/-- Two shifts by the same amount (`b = a`) of an exclusive or's operands (`arithmetic.isle`:
+`bxor` of two `ishl`/`ushr`/`sshr` by one amount). -/
+theorem shl_xor_shl_of {w : Nat} (x y : BitVec w) {a b : Nat} (hb : b = a) :
+    x <<< a ^^^ y <<< b = (x ^^^ y) <<< a := by
+  subst hb; exact (BitVec.shiftLeft_xor_distrib ..).symm
+
+theorem ushr_xor_ushr_of {w : Nat} (x y : BitVec w) {a b : Nat} (hb : b = a) :
+    x >>> a ^^^ y >>> b = (x ^^^ y) >>> a := by
+  subst hb; exact (BitVec.ushiftRight_xor_distrib ..).symm
+
+theorem sshr_xor_sshr_of {w : Nat} (x y : BitVec w) {a b : Nat} (hb : b = a) :
+    x.sshiftRight a ^^^ y.sshiftRight b = (x ^^^ y).sshiftRight a := by
+  subst hb; exact (BitVec.sshiftRight_xor_distrib ..).symm
+
+example : 0x81#8 <<< 3 ^^^ 0x12#8 <<< 3 = (0x81#8 ^^^ 0x12#8) <<< 3 := shl_xor_shl_of _ _ rfl
+example : 0x81#8 >>> 3 ^^^ 0x12#8 >>> 3 = (0x81#8 ^^^ 0x12#8) >>> 3 := ushr_xor_ushr_of _ _ rfl
+example : (0x81#8).sshiftRight 3 ^^^ (0x12#8).sshiftRight 3 = (0x81#8 ^^^ 0x12#8).sshiftRight 3 :=
+  sshr_xor_sshr_of _ _ rfl
 
 /-- An arithmetic shift right of all ones is all ones. -/
 theorem allOnes_sshiftRight {w : Nat} (n : Nat) :
@@ -295,7 +315,9 @@ macro "kbv_amt" : tactic => `(tactic| (
     Opt.Proof.ShiftAmt.sshr_shl_setWidth,
     Opt.Proof.ShiftAmt.sshr_shl_signExtend, Opt.Proof.ShiftAmt.sshr_shl_setWidth_top,
     Opt.Proof.ShiftAmt.neg_ushiftRight_pred, Opt.Proof.ShiftAmt.and_shl_shr_of,
-    Opt.Proof.ShiftAmt.shl_or_shl_of, Opt.Proof.ShiftAmt.allOnes_sshiftRight])
+    Opt.Proof.ShiftAmt.shl_or_shl_of, Opt.Proof.ShiftAmt.shl_xor_shl_of,
+    Opt.Proof.ShiftAmt.ushr_xor_ushr_of, Opt.Proof.ShiftAmt.sshr_xor_sshr_of,
+    Opt.Proof.ShiftAmt.allOnes_sshiftRight])
   (try simp only [Opt.Proof.ShiftAmt.rotateLeft_rotateLeft'])
   (try simp (disch := omega) only [Opt.Proof.ShiftAmt.rotateLeft_of_mod_eq_zero])
   all_goals amt_congr))

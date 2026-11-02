@@ -1,3 +1,4 @@
+import FV.E2E.LinkImageExtension
 import FV.E2E.SemanticExecGoodRun
 
 /-! # D4: the GOT slots of the executable's `adrp`/`ldr` pairs (L3 (c))
@@ -38,8 +39,6 @@ open Backend Backend.Proof E2E.LinkCheck E2E.BinCheck Elf
 namespace LinkSys
 
 /-- `L` with exterior `F` and the code image extended by `S`, holding `m`. -/
-def extImgProduction (L : LinkSys) (F S : BitVec 64 → Prop) (m : Arm.Memory) : LinkSys :=
-  { L with F := F, Img := fun a => L.Img a ∨ S a, imgMem := m }
 
 theorem hooks_extImg_semantic (L : LinkSys) (F S : BitVec 64 → Prop) (m : Arm.Memory) :
     ∀ M, (L.extImgProduction F S m).hooks M = L.hooks M
@@ -65,8 +64,6 @@ theorem OkSemanticNI.extImgProduction {L : LinkSys} (hL : L.OkSemanticNI) {F S :
     imgCode := fun g hg t ht => hL.imgCode g hg t fun a ha => (ht a (.inl ha)).trans (hm a ha)
     imgF := hF }
 
-theorem Budget.extImgProduction {L : LinkSys} {κ : Nat → Clif.Function → Nat} (h : L.Budget κ)
-    (F S : BitVec 64 → Prop) (m : Arm.Memory) : (L.extImgProduction F S m).Budget κ := h
 
 theorem reachL_extImg_semantic {L : LinkSys} {F S : BitVec 64 → Prop} {m : Arm.Memory} {M : Nat}
     {f : Clif.Function} {c : Arm.ArmState} {M' : Nat} {g : Clif.Function} {c' t : Arm.ArmState}

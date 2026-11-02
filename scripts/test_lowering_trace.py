@@ -95,6 +95,64 @@ block0(v0: i64, v1: i64):
         self.check_compilation(source, explicit_allocator=False)
 
 
+    def test_memory_production_diagnostics_match_allocator_input(self):
+        source = """function %memory(i64) -> i32 {
+block0(v0: i64):
+    v1 = load.i32 notrap v0
+    return v1
+}
+"""
+        for cleanup in (True, False):
+            with self.subTest(dead_cleanup=cleanup):
+                self.check_compilation(source, cleanup)
+
+
+    def test_memory_cfg_production_diagnostics_match_allocator_input(self):
+        source = """function %memory_cfg(i64) -> i32 {
+block0(v0: i64):
+    nop
+    jump block1
+block1:
+    nop
+    v2 = load.i32 notrap v0
+    return v2
+}
+"""
+        for cleanup in (True, False):
+            with self.subTest(dead_cleanup=cleanup):
+                self.check_compilation(source, cleanup)
+
+    def test_unsigned_memory_widths_match_actual_allocator_input(self):
+        for ty in ('i8', 'i16', 'i64'):
+            source = f"""function %memory_width(i64) -> {ty} {{
+block0(v0: i64):
+    v2 = load.{ty} notrap v0
+    return v2
+}}
+"""
+            for cleanup in (True, False):
+                with self.subTest(ty=ty, dead_cleanup=cleanup):
+                    self.check_compilation(source, cleanup)
+
+
+    def test_extending_memory_forms_match_actual_allocator_input(self):
+        for op, types in (("uload8", ("i16", "i32", "i64")),
+                          ("sload8", ("i16", "i32", "i64")),
+                          ("uload16", ("i32", "i64")),
+                          ("sload16", ("i32", "i64")),
+                          ("uload32", ("i64",)), ("sload32", ("i64",))):
+            for ty in types:
+                source = f"""function %memory_extend(i64) -> {ty} {{
+block0(v0: i64):
+    v2 = {op}.{ty} notrap v0
+    return v2
+}}
+"""
+                for cleanup in (True, False):
+                    with self.subTest(op=op, ty=ty, dead_cleanup=cleanup):
+                        self.check_compilation(source, cleanup)
+
+
 class StockLoweringTraceTests(unittest.TestCase):
     def test_logging_preserves_stock_bytes_and_metadata(self):
         exporter = ROOT / "tools/prejit-export/target/debug/prejit-export"

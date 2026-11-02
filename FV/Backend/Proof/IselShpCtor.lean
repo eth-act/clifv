@@ -1,6 +1,5 @@
 import FV.Backend.Proof.IselShpBase
 import FV.Backend.Proof.IselShpFns
-import FV.Backend.Proof.IselCovModel
 import FV.Backend.Proof.LogicImmComplete
 
 /-!

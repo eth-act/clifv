@@ -362,8 +362,9 @@ theorem mapM_reg (hP : PInv f ctx) :
   | x :: ns, h => by
     obtain ⟨t, ht⟩ := Option.isSome_iff_exists.1 (h x (List.mem_cons_self ..))
     obtain ⟨rs, hrs, hl⟩ := mapM_reg hP ns (fun y hy => h y (List.mem_cons_of_mem _ hy))
-    refine ⟨.vreg x .int :: rs, ?_, by simp [hl]⟩
-    simp [List.mapM_cons, hP.ctxInv.typedReg x t ht, hrs]
+    obtain ⟨n, hn⟩ := hP.ctxInv.typedSome x t ht
+    refine ⟨.vreg n .int :: rs, ?_, by simp [hl]⟩
+    simp [List.mapM_cons, hn, hrs]
 
 theorem single_mapM_eq {g : List Reg → Option Reg} (hg : ∀ r, g [r] = some r) :
     ∀ (rss : List (List Reg)), (∀ rs ∈ rss, rs.length = 1) →

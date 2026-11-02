@@ -2,7 +2,6 @@ import FV.Backend.Proof.IselMemFuncAddr
 import FV.Backend.Proof.IselTls
 import FV.Backend.Proof.IselCmpCond
 import FV.Backend.Proof.IselFamAluBShiftTerms
-import FV.Backend.Proof.IselCtlUnmatch
 import FV.Backend.Proof.IselCmpRoot
 import FV.Backend.Proof.IselFloatVac
 

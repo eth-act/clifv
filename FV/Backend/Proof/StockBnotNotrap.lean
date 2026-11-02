@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockBnotBodyRefines
-import FV.Backend.Proof.StockConstantNotrap
 import FV.Backend.Proof.StockLogicalNotrap
 
 namespace Backend.Stock.Proof.BnotBody

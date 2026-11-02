@@ -18,7 +18,7 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 dir=$(cd "$1" && pwd); shift
 tc=${TOOLCHAIN:-nightly-2026-09-26}
 baseline=${BASELINE:-llvm}
-tmp=$(mktemp -d /tmp/fv-compare.XXXXXX)
+tmp=$(mktemp -d "${TMPDIR:-/tmp}/fv-compare.XXXXXX")
 outcomes() { # cargo test output -> "binary-stem test-name outcome" lines, sorted
   awk '/^ *Running /{ n = split($2, p, "/"); b = p[n]; sub(/-[0-9a-f]+$/, "", b) }
        /^ *Doc-tests /{ b = "doctests-" $2 }

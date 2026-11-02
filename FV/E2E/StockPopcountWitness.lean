@@ -1,4 +1,5 @@
 import FV.E2E.StockPopcountFixtures
+import FV.Backend.Proof.StockScalarPopcountDomain
 import FV.E2E.StockBitWitness
 import FV.E2E.StockScalarNI
 import FV.E2E.CompiledSemanticNI

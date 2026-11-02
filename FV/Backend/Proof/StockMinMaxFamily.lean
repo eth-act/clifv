@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockPopcountFamily
-import FV.Backend.Proof.StockMinMaxActualDispatch
 import FV.Backend.Proof.StockAvailableTypes
 namespace Backend.Stock.Proof.MinMaxBody
 open Backend.Proof Backend.Proof.Driver

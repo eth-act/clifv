@@ -1,3 +1,4 @@
+import FV.Isle.Lookup
 import FV.Backend.Proof.IselPrgDom
 
 /-!
@@ -141,7 +142,7 @@ def aPat (a : PA) (q : Pattern) (env : AEnv) : Option (List AEnv × Bool) :=
   | .wildcard _ => some ([env], true)
   | .and _ ps => aPatAll a ps env
   | .term ty t args =>
-    match termOf p t with
+    match termOfT p t with
     | .error _ => none
     | .ok term =>
       match term.kind with
@@ -188,7 +189,7 @@ end
 it is surely a value, and the fuel `applyTerm` needs. -/
 def aApply (ty : TypeId) (t : TermId) (as : List PA) : Option (PA × Bool × Nat) :=
   if as.any PA.isBot then some (.bot, true, 1) else
-  match termOf p t with
+  match termOfT p t with
   | .error _ => none
   | .ok term =>
     match term.kind with

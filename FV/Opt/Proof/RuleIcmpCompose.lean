@@ -1,6 +1,5 @@
 import FV.Opt.Proof.RuleIcmpComposeGuard
 import FV.Opt.Proof.RuleIcmpComposeRhs
-import FV.Opt.Proof.RuleIcmpComposeWitness
 
 set_option linter.unusedSimpArgs false
 set_option maxRecDepth 8000

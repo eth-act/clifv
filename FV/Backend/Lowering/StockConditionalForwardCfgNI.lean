@@ -9,8 +9,12 @@ exactly the previous complete CFG provider on the original function. -/
 def eligible (f : Clif.Function) : Bool :=
   ConditionalCfg.rankedEligible f && !ConditionalCfg.eligible f
 
+/-- The same split when leaf blocks may also end in `trap`. -/
+def leafEligible (f : Clif.Function) : Bool :=
+  ConditionalCfg.rankedLeafEligible f && !ConditionalCfg.leafEligible f
+
 def lowerValidated (f : Clif.Function) : Except String VCode :=
-  if !eligible f then ConditionalCfg.lowerValidated f
+  if !leafEligible f then ConditionalCfg.lowerValidated f
   else
     let attempt := do
       let result ← Stock.lower f

@@ -77,7 +77,7 @@ theorem compiled_exists (config : Configuration) (cleanup : Bool) :
   obtain ⟨⟨⟨scope,dominated⟩,abi⟩,h⟩ := h
   have domain : Stock.Scalar.Domain (function config) :=
     Stock.Scalar.domain_of_highmul (lowerScope_of scope) (dominated_of dominated) abi
-      (b := (function config).blocks[0]!) rfl (family config) (xs := [5117]) rfl (by rfl)
+      (b := (function config).blocks[0]!) rfl (family config) (xs := [5119]) rfl (by rfl)
   refine ⟨domain,?_⟩
   cases lowered : Stock.lower (function config) with
   | error message => simp [lowered] at h
@@ -116,11 +116,10 @@ end E2E.StockAluRootsWitness
 
 namespace E2E.StockAluRootsWitness
 /-- Every scalar add/sub/and/or/xor root and the fused multiply roots of the original
-inventory (`stock_addsub_selected_rule_ids`, `LogicalComplete.selected_rule_ids`), except
-`extr` (862/863), whose emitted form the scalar ABI boundary does not admit. -/
+inventory (`stock_addsub_selected_rule_ids`, `LogicalComplete.selected_rule_ids`). -/
 def aluRoots : List Nat :=
   [588,589,590,591,592,593,594,595,596,597,598,599,745,746,747,748,749,
-   836,841,842,849,854,855,864,869,870]
+   836,841,842,849,854,855,862,863,864,869,870]
 
 def aluRootsCovered (result : Backend.Stock.Result) : Bool :=
   aluRoots.all (E2E.StockHighMulNIWitness.selectedRoots result).contains
@@ -150,7 +149,7 @@ theorem classifier_accepts (config : Backend.Stock.D0.Configuration) :
         aluRootsCovered result = true := by simpa only [lowered,Bool.and_eq_true] using h
     exact ⟨result,rfl,source,both.1⟩
 
-/-- Every ABI selects all 26 non-`extr` scalar integer ALU roots in one production-class function. -/
+/-- Every ABI selects all 28 scalar integer ALU roots in one production-class function. -/
 theorem selected_roots_present (config : Backend.Stock.D0.Configuration) :
     ∃ result, Backend.Stock.lower (function config) = .ok result ∧
       ∀ id ∈ aluRoots, id ∈ E2E.StockHighMulNIWitness.selectedRoots result := by

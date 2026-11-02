@@ -1,5 +1,5 @@
 import FV.Clif
-import FV.Isle
+import FV.Isle.Generated.Program
 
 /-!
 # Typed view of the aarch64 `MInst` subset (M4 backend)
