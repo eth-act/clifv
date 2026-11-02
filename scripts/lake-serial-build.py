@@ -789,6 +789,8 @@ def main():
                 ood.update(redo)
                 say(f"final check: {len(redo)} modules still out of date: {' '.join(sorted(redo)[:10])}")
                 continue
+            if ticket and ticket[1] not in ready:
+                dequeue()   # its module started elsewhere or left the plan: don't hold the queue (#925)
             avail = mem_available()
             wait = ""
             room = slice_room() if use_slice else None
@@ -813,7 +815,11 @@ def main():
                 # keeps its turn: it goes first and holds the reservation, so it is not starved.
                 if draining not in ready:
                     draining = None
-                for m in ([draining] if draining else []) + [m for m in ready if m != draining]:
+                # While we hold the oldest ticket of the machine-wide queue, our queued heavy module
+                # goes first (it drains our own modules): otherwise our solo modules keep their turn
+                # and every other scheduler's heavy modules wait behind a ticket we never act on (#925).
+                first = ticket[1] if ticket and head and head[0] == me else draining
+                for m in ([first] if first else []) + [m for m in ready if m != first]:
                     c = retry_cap.get(m, cap[m])
                     est = est_peak(m, c)
                     solo = m in retry_cap or is_heavy(m, c)
