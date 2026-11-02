@@ -45,10 +45,16 @@ def main (args : List String) : IO UInt32 := do
             !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
           -- Probe each complete route before its transactional retry. A retained
           -- logical/mixed artifact must not be skipped directly to legacy.
-          let found := Stock.VoidCall.NI.lowerRoutes.zipIdx.find? fun (lower, _) =>
+          let routes := Stock.VoidCall.NI.lowerRoutes.zipIdx
+          let probes := if Stock.MemorySretCopy.eligible f || (Stock.VoidCall.sourceData? f).isSome then
+              routes.drop 21 ++ routes.take 21
+            else routes
+          let found := probes.find? fun (lower, _) =>
             match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
             | .error _ => false
-            | .ok a => artB I0 rd phs a
+            | .ok a => (checkAlloc a.vcp a.rf).toBool &&
+                Backend.Proof.Driver.prepCheck (productionStage o.deadCleanup f a.vc) a.vcp &&
+                (SemanticABI.checkCalls f a.vc || lowerOkTSB f a.vc) && artB I0 rd phs a
           let idx := (found.map (·.2)).getD 4
           if idx != 0 || Stock.MemorySretCopy.eligible f || (Stock.VoidCall.sourceData? f).isSome || (((((((Stock.MemoryCapturedCopy.eligible f || Stock.MemoryLoadStore.eligible f) || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.leafEligible f || Stock.ConditionalForwardCfg.leafEligible f) || Stock.ConditionalCfg.leafEligible f) || Stock.ForwardCfg.leafEligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f) then some (f.name, idx) else none
         else none
@@ -91,7 +97,7 @@ def main (args : List String) : IO UInt32 := do
   -- integer validators reject and the executable holds `R0I`'s code wherever it is not
   -- `lowerFunction`'s; theorem `E2E.SemanticExecBytes.binary_correct_exec_provenTS`
   let stockTS : Option (List (String × List (String × Bool))) :=
-    if o.deadCleanup && !failI.isEmpty then
+    if !failI.isEmpty then
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
       let statS := Link.parMap (fun e => (e.1.name, staticChksWithTS (productionStage o.deadCleanup)
         { I0 with D := D0 } e.1 e.2)) R0I

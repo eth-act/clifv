@@ -1,0 +1,15 @@
+{
+  "status": "complete",
+  "removed": ".git/agent-evidence/stock-memory-20261029/513-recovery-packet-v1/focused-package-v1/.lake",
+  "retained": [
+    "source",
+    "focused-package-v1 source and config",
+    "historical evidence",
+    "attempts/kernel-v1 logs and output hashes",
+    "focused context and ownership manifests",
+    "current-main equality and passed receipts"
+  ],
+  "shared_outputs_removed": false,
+  "proofslot": "released",
+  "utc": "2026-11-02T07:08:54.824478+00:00"
+}

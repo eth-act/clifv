@@ -1,0 +1,473 @@
+{
+  "status": "reviewed_passed",
+  "actual_bundle_receipt": "actual-bundle-state-v9.json",
+  "actual_cli_sources": {
+    "backend": "2a67d21b232a2774bb3e45ab7f17e8752a8e6b794402b5fb615d1a7e4b4051ba",
+    "linker": "85786cfec5468f284845bb2206172a5c4467fae0ea6cb15fd9eca11712d54873",
+    "checker": "b9dcb81e197738a1abd8855d26896e537f4ed85a4b87243d41bb6c8e88c3afc0"
+  },
+  "cases": 4,
+  "generated_roots": 28,
+  "artifacts": {
+    "actual-bundle-v9/reuse-manifest.json": {
+      "sha256": "6e53a7f62bb31f1ef28ca4663a1bb2a69bf12a82c9bb78f6d0782f5d9b61b62a",
+      "bytes": 1929
+    },
+    "actual-bundle-v9/layout-evidence.log": {
+      "sha256": "c9ab11358b01665a4a48d34ddc78adf7d11efb04425085e2343efe831bb75523",
+      "bytes": 260
+    },
+    "actual-bundle-v9/reconstructed-invalid-initial.elf": {
+      "sha256": "f551aaaeb58f58fa623398a17ab679514568713d5e42626dc8bdeb8e38d0a675",
+      "bytes": 1032
+    },
+    "actual-bundle-v9/layout-evidence.mem": {
+      "sha256": "1f1a34e6430c8899df5ff321c4cc2d13a4cf47e21db4f4984da5b5884d04a1fd",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualPreviousRaw-checker.log": {
+      "sha256": "92252d815002e14bc970fe77b0d1035eade6b88fcafc8a3fa069d3dfcbef7acb",
+      "bytes": 1223
+    },
+    "actual-bundle-v9/WorkerOActualPreviousRaw-checker.mem": {
+      "sha256": "ca54ea731877592f1c4886f135148f980f1020d6e8a83f2b1413e8cdd9e057d8",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualPreviousRaw-generated.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "actual-bundle-v9/WorkerOActualPreviousRaw-generated.mem": {
+      "sha256": "40091c0fc4aada52ca371cc043544ed0488baecab9fb42190b0d66b0173c232d",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualPreviousRaw-audit.lean": {
+      "sha256": "cc210c219b1b358b8c955e96e020007529d81350cc5d5fc942e7038d306a62bc",
+      "bytes": 534
+    },
+    "actual-bundle-v9/WorkerOActualPreviousRaw-audit.log": {
+      "sha256": "533529d4dbb57678a962f47696367fa4c977374abbcd7c88ac10043150bc1d91",
+      "bytes": 111
+    },
+    "actual-bundle-v9/WorkerOActualPreviousRaw-audit.mem": {
+      "sha256": "e9d7dc8b6367a6477d84b73ccdf9f3323e62679f361f9d4bebf65e7d6943e44b",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualCapturedRaw-checker.log": {
+      "sha256": "f6ed4a785d37df1faca213bdead5c3f4cf233f8a5ff78590a021ce4bc3ccaf40",
+      "bytes": 1216
+    },
+    "actual-bundle-v9/WorkerOActualCapturedRaw-checker.mem": {
+      "sha256": "1753398c4a1a4cf08d569d243832a9892f66d4d8eaab781454b488ec59bc567d",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualCapturedRaw-generated.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "actual-bundle-v9/WorkerOActualCapturedRaw-generated.mem": {
+      "sha256": "070f2009728344fa19a33572c1df0f178006ae9b19a0ace38226e0f205387e1c",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualCapturedRaw-audit.lean": {
+      "sha256": "93ad661537341da6a34d380b6b808ee6670367518d1812429b6e1139dc549231",
+      "bytes": 704
+    },
+    "actual-bundle-v9/WorkerOActualCapturedRaw-audit.log": {
+      "sha256": "61d2c6e5106bfabc13d0a95333cd756c0d6609ccda6aea743696307e85245d5d",
+      "bytes": 111
+    },
+    "actual-bundle-v9/WorkerOActualCapturedRaw-audit.mem": {
+      "sha256": "a865302a4e7d5164e43d4a4a2bb101efe63be09696627a7aada05739e9ef04a9",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-backend.log": {
+      "sha256": "81f49130eb1e765f13577491567a43c225896deac9cdffd18582180dfaf8402c",
+      "bytes": 446
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-backend.mem": {
+      "sha256": "70ac8cd933c5afd43eb7fc714b39dc3f182015626fc48e1a61e5626eb789d934",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-reflow.log": {
+      "sha256": "48310c25a50c998d719b9b8d20a933250d7410cd8904a2dc137fe2702feafdca",
+      "bytes": 57
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-reflow.mem": {
+      "sha256": "a7f42b68b103d5eaac0fa359836e562a50579fa078465cd0311cc22d8053c0b7",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-linker.log": {
+      "sha256": "435104b012643114e0eb29b9a493e0e13ba54c80acd0d4baf5f9a37e3397574f",
+      "bytes": 891
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-linker.mem": {
+      "sha256": "9b5b0d530569f4cd98292cdfef2adc5c1bf8c5938f64f8a6246eabbd53441194",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-checker.log": {
+      "sha256": "b64be0ecf899046adff9eb00b5402a6a1689fb6556af2b1f2dd0d78581754b1b",
+      "bytes": 1231
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-checker.mem": {
+      "sha256": "6ced35f3964bc0e113c28ec0829cb4fd3b2f135bd3bf9a6db047f3553dc46990",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-generated.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-generated.mem": {
+      "sha256": "8092753801c950bf98c84a2414c229425be93f94a5ac53689e5e12fa71a91a86",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-audit.lean": {
+      "sha256": "572e9d929afe562f1f182081daab0efa83eb67654c76a2337b04f09d2ad28920",
+      "bytes": 562
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-audit.log": {
+      "sha256": "83bff0cc735a2db8c7bfb67009f7e1a81410b2d5040e75b40aead3329ac30752",
+      "bytes": 115
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-audit.mem": {
+      "sha256": "9e7568cac76cd51e5ef86c2f91c67f5d5aa67f804306c38dbe7963861362a02c",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-backend.log": {
+      "sha256": "81f49130eb1e765f13577491567a43c225896deac9cdffd18582180dfaf8402c",
+      "bytes": 446
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-backend.mem": {
+      "sha256": "471cdd549151a84704bd685db7ec01d6ce9fb9c7a6227781ed31ec4a21c84b82",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-reflow.log": {
+      "sha256": "e6e9f778c47ce06cc9a282906bee328dc7b2575d15b697c385d68e9e99c4ce56",
+      "bytes": 88
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-reflow.mem": {
+      "sha256": "401dcb183d2341ae58a86d5b2e1d3c465bed2f986423456225ce15e695d0616c",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-linker.log": {
+      "sha256": "57d3daf90b56aba06093b712175dcc9c5412ae426948919eec6daec6ac4be0c4",
+      "bytes": 840
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-linker.mem": {
+      "sha256": "2105f4b9a6ceb2b4ed53b1bc062ef48c04ded579a0b5c15b54d34bca8d66b919",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-checker.log": {
+      "sha256": "1ceea435f80686399ada961ffe939556e245e7d5845ec3836af2c837d0eb0fed",
+      "bytes": 1224
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-checker.mem": {
+      "sha256": "314a15dfafcebe903083d32d2f5bc6db319cf40b5fbf4e77d1a94981cb856e82",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-generated.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-generated.mem": {
+      "sha256": "2c4e8fd42b55c4535c580ba83780fd9d5e326c7527030f412e6caf97fb72829a",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-audit.lean": {
+      "sha256": "b1d9d23bbec1651f6981c63261e41b2bf17ddc45ee8d2603144d0ba1d3bb09ba",
+      "bytes": 740
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-audit.log": {
+      "sha256": "859ce4f629f7dd536e0058e57cc0688b0439635dfa7c11473722a3a782222819",
+      "bytes": 115
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-audit.mem": {
+      "sha256": "8725fc2c2e03ef18587b6f0a9d5439a6f663e99bb85fc50b883328686b26031f",
+      "bytes": 32
+    },
+    "actual-bundle-v9/WorkerOActualPreviousRaw-audit/WorkerOActualPreviousRaw-audit.log": {
+      "sha256": "13a27abcca7b47f6be4125209c9ad2d1ea45391d05669d91cf24501e3f8de38d",
+      "bytes": 1663
+    },
+    "actual-bundle-v9/WorkerOActualCapturedRaw-audit/WorkerOActualCapturedRaw-audit.log": {
+      "sha256": "63426cab5acb0f7e4d493d67d7a44ea6dca279e6d724773d2d64d85baf711df5",
+      "bytes": 2251
+    },
+    "actual-bundle-v9/WorkerOActualPreviousCleanup-audit/WorkerOActualPreviousCleanup-audit.log": {
+      "sha256": "102bf626a36775225192b7b51fa00c8b7477b5706dbb31e368e4ae793d06688e",
+      "bytes": 1743
+    },
+    "actual-bundle-v9/WorkerOActualCapturedCleanup-audit/WorkerOActualCapturedCleanup-audit.log": {
+      "sha256": "7e5e22b3e4e8dd4c768bff0048c70031c09b6774727c9ed8fd495674d20a340f",
+      "bytes": 2359
+    },
+    "actual-bundle-v6/bundles/manifest.json": {
+      "sha256": "478e707962fc82c581bd56437526bd65d74156b6b478337933af95634b138aee",
+      "bytes": 2631
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/program.elf": {
+      "sha256": "780b80334afaccae321b6f1c0506f774be609192c245d202c70ffbbf289c3936",
+      "bytes": 816
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/fn0.clif": {
+      "sha256": "57d305ce5675b6e1df4ff402341284f612e7631ceada97f2ed98082d22815a63",
+      "bytes": 196
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/fn0.ra.json": {
+      "sha256": "27a06c500509a628cbe63fae77079d5ffeb3c8c8f87117fdc703db5c36ad4d05",
+      "bytes": 144
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/data.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/bundle.json": {
+      "sha256": "257934835539c2c5dd7216a2c419d549f19f64c14ef15e6b747b91170372799c",
+      "bytes": 1036
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/input.clif": {
+      "sha256": "8ec1cb31a209fbfddf711388a6ae1e59635a3117a79f44e67f08e36539734c76",
+      "bytes": 126
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/actual-ra.json": {
+      "sha256": "f25e25c75bcbf5cba8a4f2578eb8aa6601e8b0c1c18d2ea96187f34910aef94b",
+      "bytes": 130
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/actual.o": {
+      "sha256": "01e1e88956596b1f2415f70c95d62fa404d58d55e030a26eeb845a0df4ea474d",
+      "bytes": 864
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/program.elf": {
+      "sha256": "fa5f73f430249b9cfa1484068de6b8880978bb3e6957b7f4c004d55ce4857d2f",
+      "bytes": 824
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/fn0.clif": {
+      "sha256": "cd0c8eeee88be3816a7c15da69877c394becd5fb25f485340be504a7352e1f14",
+      "bytes": 1380
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/fn0.ra.json": {
+      "sha256": "957fc46db1ca139a0e08f0ff9a738d2bb93009c6ad9c75360334fe14c6bdc743",
+      "bytes": 219
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/fn1.clif": {
+      "sha256": "0cc3852f99eba959eb8c028432d68ad5f56c26de2cea4354edeaa42537c45891",
+      "bytes": 275
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/fn1.ra.json": {
+      "sha256": "82cd692ae406990e0110e02b079bbade5ccc671d29f74434231457012ed7e8b9",
+      "bytes": 258
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/data.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/bundle.json": {
+      "sha256": "bd9b7da1171584d8edc20a5d68b791a540cdfed2ecc880a858da84ffce135328",
+      "bytes": 1695
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/input.clif": {
+      "sha256": "77fd8a1afaf15a693c474871237137355e930bad56723e5c21460ef0ff9cc9ab",
+      "bytes": 1447
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/actual-ra.json": {
+      "sha256": "bf9294288c054cc26d5e3e701802277f2cb1006d45df2aedb25a3eb6af52a646",
+      "bytes": 406
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/actual.o": {
+      "sha256": "c0cd06c6f80cb410e171116ed545cc8476c88157509f882a07ad346790fba356",
+      "bytes": 1040
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/actual-layout.json": {
+      "sha256": "f619ed69be62ae9336ddb97aea74f125f9c245c70834b8d1ba6d299c81c03090",
+      "bytes": 67
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/program.elf": {
+      "sha256": "a9bf61001f3d703758455c1a5337e62fcda138605a0b69ad7d459372c2a737a5",
+      "bytes": 728
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/fn0.clif": {
+      "sha256": "57d305ce5675b6e1df4ff402341284f612e7631ceada97f2ed98082d22815a63",
+      "bytes": 196
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/fn0.ra.json": {
+      "sha256": "27a06c500509a628cbe63fae77079d5ffeb3c8c8f87117fdc703db5c36ad4d05",
+      "bytes": 144
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/data.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/bundle.json": {
+      "sha256": "b543665fa2c30abd86b96561ccdb517ef809a1ed2386b45a4077bed4a0e69244",
+      "bytes": 1182
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/input.clif": {
+      "sha256": "8ec1cb31a209fbfddf711388a6ae1e59635a3117a79f44e67f08e36539734c76",
+      "bytes": 126
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/actual-ra.json": {
+      "sha256": "f25e25c75bcbf5cba8a4f2578eb8aa6601e8b0c1c18d2ea96187f34910aef94b",
+      "bytes": 130
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/actual.o": {
+      "sha256": "01e1e88956596b1f2415f70c95d62fa404d58d55e030a26eeb845a0df4ea474d",
+      "bytes": 864
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/actual-layout.json": {
+      "sha256": "6739e777ad8fd0775d7b8c1c97ad4467ab421353240ab7f11013cc4e56258d4a",
+      "bytes": 34
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/program.elf": {
+      "sha256": "fa5f73f430249b9cfa1484068de6b8880978bb3e6957b7f4c004d55ce4857d2f",
+      "bytes": 824
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/fn0.clif": {
+      "sha256": "cd0c8eeee88be3816a7c15da69877c394becd5fb25f485340be504a7352e1f14",
+      "bytes": 1380
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/fn0.ra.json": {
+      "sha256": "957fc46db1ca139a0e08f0ff9a738d2bb93009c6ad9c75360334fe14c6bdc743",
+      "bytes": 219
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/fn1.clif": {
+      "sha256": "0cc3852f99eba959eb8c028432d68ad5f56c26de2cea4354edeaa42537c45891",
+      "bytes": 275
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/fn1.ra.json": {
+      "sha256": "82cd692ae406990e0110e02b079bbade5ccc671d29f74434231457012ed7e8b9",
+      "bytes": 258
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/data.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/bundle.json": {
+      "sha256": "903fafad931c4939e623b88e63c7bd6083c0d6c5cc29d34f7173c7bbfd245fc1",
+      "bytes": 1723
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/input.clif": {
+      "sha256": "77fd8a1afaf15a693c474871237137355e930bad56723e5c21460ef0ff9cc9ab",
+      "bytes": 1447
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/actual-ra.json": {
+      "sha256": "bf9294288c054cc26d5e3e701802277f2cb1006d45df2aedb25a3eb6af52a646",
+      "bytes": 406
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/actual.o": {
+      "sha256": "c0cd06c6f80cb410e171116ed545cc8476c88157509f882a07ad346790fba356",
+      "bytes": 1040
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/actual-layout.json": {
+      "sha256": "f619ed69be62ae9336ddb97aea74f125f9c245c70834b8d1ba6d299c81c03090",
+      "bytes": 67
+    },
+    "actual-bundle-v6/bundles/Crates/WorkerOActualPreviousRaw.lean": {
+      "sha256": "20b6c74113ba5b7a24f5561fedf7471bf0d3262453d16f11abe918702a822d16",
+      "bytes": 10181
+    },
+    "actual-bundle-v6/bundles/Crates/WorkerOActualCapturedRaw.lean": {
+      "sha256": "f675fa5407a1af2372f8653ce72efb0e67e4468dcd840bb00b5bce73efed5fca",
+      "bytes": 12894
+    },
+    "actual-bundle-v6/bundles/Crates/WorkerOActualPreviousCleanup.lean": {
+      "sha256": "613045c3d961385735756914166edd5da9dc5d0d537bb4c6601a56394150748e",
+      "bytes": 10187
+    },
+    "actual-bundle-v6/bundles/Crates/WorkerOActualCapturedCleanup.lean": {
+      "sha256": "e18ccb69a2e0a9c0b7e4fcf7010a24c17bcd5fa1182eff1ed192b552b90bc39c",
+      "bytes": 12898
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/actual-dump/_RNxC7fv_demo11HawPMC3YC2b.bin": {
+      "sha256": "5f20ee646bfcaa3ec989799dc308ba4c0d8e248fc210968d8fe8989bce410161",
+      "bytes": 32
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/actual-dump/_RNxC7fv_demo11HawPMC3YC2b.relocs.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/actual-dump/_RNxC7fv_demo11HawPMC3YC2b.traps.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/actual-dump/sret_caller.bin": {
+      "sha256": "d0849666a40a1a70f22e98d18f3aded880b25f9f8781fc623575a197a5c2f356",
+      "bytes": 28
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/actual-dump/sret_caller.relocs.json": {
+      "sha256": "ab7035e853da34f092cb9daa9b4500e4707319b335bb21a6553811e6e8be8342",
+      "bytes": 91
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/actual-dump/sret_caller.traps.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/actual-dump/production_boundary.bin": {
+      "sha256": "27a4135f0ef448195b3aaba32a661f2d0e290090b19501c7b4274d71cf655f69",
+      "bytes": 16
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/actual-dump/production_boundary.relocs.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/actual-dump/production_boundary.traps.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/actual-dump/_RNxC7fv_demo11HawPMC3YC2b.bin": {
+      "sha256": "5f20ee646bfcaa3ec989799dc308ba4c0d8e248fc210968d8fe8989bce410161",
+      "bytes": 32
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/actual-dump/_RNxC7fv_demo11HawPMC3YC2b.relocs.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/actual-dump/_RNxC7fv_demo11HawPMC3YC2b.traps.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/actual-dump/sret_caller.bin": {
+      "sha256": "d0849666a40a1a70f22e98d18f3aded880b25f9f8781fc623575a197a5c2f356",
+      "bytes": 28
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/actual-dump/sret_caller.relocs.json": {
+      "sha256": "ab7035e853da34f092cb9daa9b4500e4707319b335bb21a6553811e6e8be8342",
+      "bytes": 91
+    },
+    "actual-bundle-v6/bundles/WorkerOActualCapturedRaw/actual-dump/sret_caller.traps.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/actual-dump/production_boundary.bin": {
+      "sha256": "27a4135f0ef448195b3aaba32a661f2d0e290090b19501c7b4274d71cf655f69",
+      "bytes": 16
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/actual-dump/production_boundary.relocs.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "actual-bundle-v6/bundles/WorkerOActualPreviousRaw/actual-dump/production_boundary.traps.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "recovered-original-diagnostics-e8a70763/WorkerOActualCapturedRaw-linker.log": {
+      "sha256": "079dba27539f80d11db6cad0828ea7722c08bca62c2bf8db748a5282cc15cc6e",
+      "bytes": 245
+    },
+    "recovered-original-diagnostics-e8a70763/provenance-v1.json": {
+      "sha256": "08d4f72e207ef896de48193df6d02a6a15daf799deb2e47623e668118a1ab671",
+      "bytes": 292
+    }
+  },
+  "layout_evidence": {
+    "original_functions_and_settings_exact": true,
+    "old_caller_address": 2097664,
+    "actual_caller_address": 2097540,
+    "reconstructed_old_symbols_valid": false,
+    "actual_symbols_valid": true,
+    "original_error_recovered_from": "e8a70763:evidence/return-pin-production-activation-packet-v1/actual-bundle-v6/WorkerOActualCapturedRaw-linker.log"
+  },
+  "reuse_manifest": "actual-bundle-v9/reuse-manifest.json",
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T07:08:44.277280+00:00"
+}

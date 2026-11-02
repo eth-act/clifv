@@ -1,0 +1,21 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/FVTest/E2E/LinkCheckMain.lean:399:37: warning: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+link-check: /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/program.elf
+  checker: integer
+  static checks (the validators): 0 function(s) fail
+  static checks done in 412 ms
+  1 functions, 1 link-map addresses, 0 CLIF image symbols, D = 16; checked in 413 ms
+  okB: true
+  relocations: 0 bl, address pairs 0 nop+adr, 0 adrp+add, 0 adrp+ldr (GOT), 0 TLSDESC sequences
+  binary checks done in 1 ms
+  binary: ok (1 functions, 4 words, 0 data objects, 1 symbols)
+  code map: ok
+  stack: 16 bytes at most (no call cycle)
+  stack: 1 entries (no caller in the program):
+      16  production_boundary
+  wrote /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/Crates/WorkerOActualPreviousCleanup.lean
+  1 functions, 1 entries

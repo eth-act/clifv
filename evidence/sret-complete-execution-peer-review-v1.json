@@ -1,0 +1,8 @@
+{
+  "published_source": "1067effce74f9b9b295ecf12da9df5f8c3a2e20d",
+  "verdict": "no blocking defect",
+  "reviewer": "worker-A",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review. No builds or review agents.",
+  "notes": "Fourteen new files; natives only fixed image/parsed fixtures including original_program/original_caller;four fixed audit roots marked.",
+  "utc": "2026-11-02T07:00:53.126878+00:00"
+}

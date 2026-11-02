@@ -1,0 +1,4 @@
+function %plain(i64) -> i64 {
+block0(v0: i64):
+ return v0
+}

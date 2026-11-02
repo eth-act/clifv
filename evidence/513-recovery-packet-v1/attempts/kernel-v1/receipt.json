@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "base": "34e39ec6b12abc4fb0dd509cc9cf56281f2c4c42",
+  "candidate_tree": "bd41bb462f03e0f13233b97a6768cb3381c63da4",
+  "modules": [
+    "FV/Backend/Proof/LowerOutcomes.lean",
+    "FV/Backend/Proof/LowerValueRelations.lean",
+    "FV/Backend/Proof/PrepareSound.lean",
+    "FV/E2E/Statement.lean",
+    "FV/Backend/Proof/LowerSim.lean",
+    "FV/E2E/ABIReadOnlyRealize.lean",
+    "FV/E2E/Main.lean"
+  ],
+  "exact_type_axiom_roots": [
+    "Backend.Proof.Driver.VTrapFrom",
+    "Backend.Proof.Driver.VRetFrom",
+    "Backend.Proof.Driver.VTrapFrom.prefix",
+    "Backend.Proof.Driver.VRetFrom.prefix",
+    "Backend.Proof.Driver.ArgsAtEntry",
+    "Backend.Proof.Driver.Reach",
+    "Backend.Proof.Driver.dfgCons_congr",
+    "Backend.Proof.Driver.loadVal_congr"
+  ],
+  "baseline_context_sources_equal_frozen": 228,
+  "candidate_context_sources": 230,
+  "output_hashes": {
+    "FV/Backend/Proof/LowerOutcomes.lean": "f5ec91c3cbee4a58e57a5562c39b210292ae5341f456bfe669b69c54820b7ada",
+    "FV/Backend/Proof/LowerValueRelations.lean": "41532ed6ab3ef012941f44b1f5e9a0426ccc8bba817dc4c296ca4acc22c5f707",
+    "FV/Backend/Proof/PrepareSound.lean": "c688da4b0c0ee85995b43f1268b3bdf74dbd90584af132033a85ccf6b8691671",
+    "FV/E2E/Statement.lean": "20ad97b246837ece177c6505a0c25e140423b6d6fed0b12a09488672f79b06e4",
+    "FV/Backend/Proof/LowerSim.lean": "d743014d1890dfcf32bb759935242742dab8eed2bf1836cd7a08e827064bc05e",
+    "FV/E2E/ABIReadOnlyRealize.lean": "4311e4854c01ae389013b4c2b2cc08b663abeb2eed3d1cc37ba4fbfa9b7e867f",
+    "FV/E2E/Main.lean": "304844655e09d283d9a148c19347d908a0bc7b97d29fa96071aa24e8f7f2b720"
+  },
+  "all_import_snapshots_unchanged": true,
+  "full_affected_gates": "PENDING",
+  "full_goal_complete": false,
+  "utc": "2026-11-02T07:08:27.367553+00:00"
+}

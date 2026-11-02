@@ -1,0 +1,9 @@
+function u0:2(f64) -> f64 {
+block0(v0: f64):
+ return v0
+}
+; clifv-extnames 1
+; decl u0:0 func Export "_RNxC7fv_demo11HawPMC3YC2b"
+; decl u0:1 func Export "sret_caller"
+; decl u0:2 func Export "float_leaf"
+; end clifv-extnames

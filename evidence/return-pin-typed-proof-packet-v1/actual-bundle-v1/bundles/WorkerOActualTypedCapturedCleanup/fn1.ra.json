@@ -1,0 +1,1 @@
+{"functions": [{"name": "sret_caller", "ok": true, "num_spillslots": 0, "allocs": [["x0", "x1"], ["x8", "x0", "x0"], []], "edits": [{"inst": 1, "pos": "before", "from": "x0", "to": "x8"}, {"inst": 1, "pos": "before", "from": "x1", "to": "x0"}], "checker": "ok"}]}

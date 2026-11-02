@@ -1,0 +1,32 @@
+{
+  "prepare": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/prepare.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "exit_code": 0,
+    "source": "successful prior run, preserved snapshot"
+  },
+  "WorkerOActualPreviousRaw-backend": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualPreviousRaw-backend.log",
+    "sha256": "81f49130eb1e765f13577491567a43c225896deac9cdffd18582180dfaf8402c",
+    "exit_code": 0,
+    "source": "successful prior run, preserved snapshot"
+  },
+  "WorkerOActualPreviousRaw-linker": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualPreviousRaw-linker.log",
+    "sha256": "eeeaa2e4e1ae71fd553753f9418ff2dfca0a2945a7ec6bc26e2c5beb3a9ce52c",
+    "exit_code": 0,
+    "source": "successful prior run, preserved snapshot"
+  },
+  "WorkerOActualCapturedRaw-backend": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualCapturedRaw-backend.log",
+    "sha256": "81f49130eb1e765f13577491567a43c225896deac9cdffd18582180dfaf8402c",
+    "exit_code": 0,
+    "source": "successful prior run, preserved snapshot"
+  },
+  "WorkerOActualCapturedRaw-linker": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-diagnostics-preserved-v1/WorkerOActualCapturedRaw-linker.log",
+    "sha256": "b5a7cd868690b7b2773e1596a479802bcbc7df0ef27d843bc81cc9644ff53d7e",
+    "exit_code": 0,
+    "source": "successful prior run, preserved snapshot"
+  }
+}

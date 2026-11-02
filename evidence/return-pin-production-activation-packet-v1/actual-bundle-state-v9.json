@@ -1,0 +1,63 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "module": "WorkerOActualPreviousRaw",
+      "input": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousRaw/input.clif",
+      "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousRaw/program.elf",
+      "entries": [
+        "production_boundary"
+      ],
+      "dir": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousRaw",
+      "cleanup": false,
+      "captured": false
+    },
+    {
+      "module": "WorkerOActualCapturedRaw",
+      "input": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedRaw/input.clif",
+      "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedRaw/program.elf",
+      "entries": [
+        "_RNxC7fv_demo11HawPMC3YC2b",
+        "sret_caller"
+      ],
+      "dir": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedRaw",
+      "cleanup": false,
+      "captured": true
+    },
+    {
+      "module": "WorkerOActualPreviousCleanup",
+      "input": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/input.clif",
+      "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/program.elf",
+      "entries": [
+        "production_boundary"
+      ],
+      "dir": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup",
+      "cleanup": true,
+      "captured": false
+    },
+    {
+      "module": "WorkerOActualCapturedCleanup",
+      "input": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/input.clif",
+      "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/program.elf",
+      "entries": [
+        "_RNxC7fv_demo11HawPMC3YC2b",
+        "sret_caller"
+      ],
+      "dir": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedCleanup",
+      "cleanup": true,
+      "captured": true
+    }
+  ],
+  "all_three_actual_clis": true,
+  "actual_allocator_answers_reused": true,
+  "generated_roots": 28,
+  "generated_hashes": {
+    "Crates/WorkerOActualPreviousRaw.lean": "20b6c74113ba5b7a24f5561fedf7471bf0d3262453d16f11abe918702a822d16",
+    "Crates/WorkerOActualCapturedRaw.lean": "f675fa5407a1af2372f8653ce72efb0e67e4468dcd840bb00b5bce73efed5fca",
+    "Crates/WorkerOActualPreviousCleanup.lean": "613045c3d961385735756914166edd5da9dc5d0d537bb4c6601a56394150748e",
+    "Crates/WorkerOActualCapturedCleanup.lean": "e18ccb69a2e0a9c0b7e4fcf7010a24c17bcd5fa1182eff1ed192b552b90bc39c"
+  },
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T07:05:06.064492+00:00"
+}

@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "generic_roots": 4,
+  "source_hashes": {
+    "FVTest/E2E/LinkCheckMain.lean": "b9dcb81e197738a1abd8855d26896e537f4ed85a4b87243d41bb6c8e88c3afc0"
+  },
+  "isolated_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v2",
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T07:03:14.423565+00:00"
+}

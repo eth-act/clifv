@@ -1,0 +1,2607 @@
+diff --git a/FV/Backend/Proof/LowerOutcomes.lean b/FV/Backend/Proof/LowerOutcomes.lean
+new file mode 100644
+index 00000000..9305f7ff
+--- /dev/null
++++ b/FV/Backend/Proof/LowerOutcomes.lean
+@@ -0,0 +1,57 @@
++import FV.Backend.Proof.LowerLemmas
++import FV.Backend.Proof.TryRegs
++
++/-! Stable VCode return/trap outcomes, separate from CLIF simulation proofs. -/
++namespace Backend.Proof.Driver
++open Backend Backend.Proof
++
++/-- From `vs`, the VCode run reaches an instruction that halts with trap code `c`. -/
++def VTrapFrom {W : Type} (vc : VCode) (sem : ISem CV W) (vs : VState CV W) (c : Clif.TrapCode) :
++    Prop :=
++  ∃ b k ρ w vb i ops outs w', Star (VStep vc sem) (.run vs) (.run ⟨b, k, ρ, w⟩) ∧
++    vc.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧ i.operands = .ok ops ∧
++    sem i (vuses ops ρ) w = some (outs, w', .halt) ∧ trapCode? i = some c
++
++/-- From `vs`, the VCode run executes `rets us` with use values `vals`, final world `w`. -/
++def VRetFrom {W : Type} (vc : VCode) (sem : ISem CV W) (vs : VState CV W) (us : List (Reg × Reg))
++    (vals : List CV) (w : W) : Prop :=
++  ∃ b k ρ w₁ vb ops outs, Star (VStep vc sem) (.run vs) (.run ⟨b, k, ρ, w₁⟩) ∧
++    vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.rets us) ∧
++    (MInst.rets us).operands = .ok ops ∧ vals = vuses ops ρ ∧
++    sem (.rets us) vals w₁ = some (outs, w, .ret)
++
++theorem VTrapFrom.prefix {W : Type} {vc : VCode} {sem : ISem CV W} {vs vs' : VState CV W}
++    {c : Clif.TrapCode} (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : VTrapFrom vc sem vs' c) :
++    VTrapFrom vc sem vs c := by
++  obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hs, h1⟩ := h'
++  exact ⟨b, k, ρ, w, vb, i, ops, outs, w', h.trans hs, h1⟩
++
++theorem VRetFrom.prefix {W : Type} {vc : VCode} {sem : ISem CV W} {vs vs' : VState CV W}
++    {us : List (Reg × Reg)} {vals : List CV} {w : W}
++    (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : VRetFrom vc sem vs' us vals w) :
++    VRetFrom vc sem vs us vals w := by
++  obtain ⟨b, k, ρ, w₁, vb, ops, outs, hs, h1⟩ := h'
++  exact ⟨b, k, ρ, w₁, vb, ops, outs, h.trans hs, h1⟩
++
++/-- The arguments in the body-entry world `w` as the entry code reads them (the driver's entry
++premise): a register-passed parameter in its argument register (low bits), a stack-passed one
++in the caller's outgoing area at `fp + 16 + off` (above the saved fp/lr pair), whose bytes avoid
++the frame addresses `F`. -/
++def ArgsAtEntry (F : BitVec 64 → Prop) (sig : Clif.Signature) (args : List Clif.Val)
++    (w : Arm.ArmState) : Prop :=
++  ∀ loc v, (loc, v) ∈ (locsOf sig).zip args → match loc with
++    | .reg r => VHolds v (regVal w r)
++    | .stack off =>
++      Avoids F v.ty.bytes (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int))) ∧
++      (Arm.read_mem_bytes v.ty.bytes (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int)))
++        w).setWidth v.ty.width = v.bits
++
++
++/-- `s'` is reachable from `s` by CLIF steps that continue. -/
++inductive Reach (env : Clif.Env) (p : Clif.Program) : Clif.State → Clif.State → Prop
++  | refl (s : Clif.State) : Reach env p s s
++  | step {s s' s'' : Clif.State} : Clif.step env p s = .next s' → Reach env p s' s'' →
++      Reach env p s s''
++
++
++end Backend.Proof.Driver
+diff --git a/FV/Backend/Proof/LowerSim.lean b/FV/Backend/Proof/LowerSim.lean
+index 5b849719..d024fa69 100644
+--- a/FV/Backend/Proof/LowerSim.lean
++++ b/FV/Backend/Proof/LowerSim.lean
+@@ -1,4 +1,4 @@
+-import FV.Backend.Proof.LowerLemmas
++import FV.Backend.Proof.LowerValueRelations
+ import FV.Backend.Proof.TryRegs
+ 
+ /-!
+@@ -37,33 +37,6 @@ def Match (f : Clif.Function) (ctx : Ctx) (R : Reg → Reg) (gn : Nat → Nat) (
+     s.frame.body = B.body.drop j ∧ vs.k = pos f R bl vs.b j ∧
+     Held gn (A vs.b j) vs.ρ s.frame ∧ DFGCons ctx (restrict s.frame (A vs.b j))
+ 
+-/-- From `vs`, the VCode run reaches an instruction that halts with trap code `c`. -/
+-def VTrapFrom {W : Type} (vc : VCode) (sem : ISem CV W) (vs : VState CV W) (c : Clif.TrapCode) :
+-    Prop :=
+-  ∃ b k ρ w vb i ops outs w', Star (VStep vc sem) (.run vs) (.run ⟨b, k, ρ, w⟩) ∧
+-    vc.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧ i.operands = .ok ops ∧
+-    sem i (vuses ops ρ) w = some (outs, w', .halt) ∧ trapCode? i = some c
+-
+-/-- From `vs`, the VCode run executes `rets us` with use values `vals`, final world `w`. -/
+-def VRetFrom {W : Type} (vc : VCode) (sem : ISem CV W) (vs : VState CV W) (us : List (Reg × Reg))
+-    (vals : List CV) (w : W) : Prop :=
+-  ∃ b k ρ w₁ vb ops outs, Star (VStep vc sem) (.run vs) (.run ⟨b, k, ρ, w₁⟩) ∧
+-    vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.rets us) ∧
+-    (MInst.rets us).operands = .ok ops ∧ vals = vuses ops ρ ∧
+-    sem (.rets us) vals w₁ = some (outs, w, .ret)
+-
+-theorem VTrapFrom.prefix {W : Type} {vc : VCode} {sem : ISem CV W} {vs vs' : VState CV W}
+-    {c : Clif.TrapCode} (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : VTrapFrom vc sem vs' c) :
+-    VTrapFrom vc sem vs c := by
+-  obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hs, h1⟩ := h'
+-  exact ⟨b, k, ρ, w, vb, i, ops, outs, w', h.trans hs, h1⟩
+-
+-theorem VRetFrom.prefix {W : Type} {vc : VCode} {sem : ISem CV W} {vs vs' : VState CV W}
+-    {us : List (Reg × Reg)} {vals : List CV} {w : W}
+-    (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : VRetFrom vc sem vs' us vals w) :
+-    VRetFrom vc sem vs us vals w := by
+-  obtain ⟨b, k, ρ, w₁, vb, ops, outs, hs, h1⟩ := h'
+-  exact ⟨b, k, ρ, w₁, vb, ops, outs, h.trans hs, h1⟩
+ 
+ /-- `VTrapFrom`, executing only from configurations satisfying `P` (the halting instruction's
+ included). -/
+@@ -658,14 +631,6 @@ theorem enter_match_br (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+   subst hx
+   rw [hρ₂ a haA]; exact hh
+ 
+-/-- DFG consistency only depends on the frame's function, slots and registers. -/
+-theorem dfgCons_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func) (hs : fr'.slots = fr.slots)
+-    (hr : fr'.regs = fr.regs) (h : DFGCons ctx fr) : DFGCons ctx fr' := by
+-  refine ⟨fun x j info cl v hd hi hc hp hv => ?_, fun x t v ht hv => h.2 x t v ht (hr ▸ hv)⟩
+-  obtain ⟨vals, hev, hlk⟩ := h.1 x j info cl v hd hi hc hp (hr ▸ hv)
+-  exact ⟨vals, fun cm => by rw [evalInst_congr hf hs cm cl (fun y _ => by rw [hr])]; exact hev cm,
+-    hlk⟩
+-
+ /-! ## CLIF terminator steps -/
+ 
+ theorem stepTerm_branch {env : Clif.Env} {p : Clif.Program} {s s' : Clif.State}
+@@ -1837,26 +1802,6 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg 
+   {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
+   {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
+ 
+-/-- The arguments in the body-entry world `w` as the entry code reads them (the driver's entry
+-premise): a register-passed parameter in its argument register (low bits), a stack-passed one
+-in the caller's outgoing area at `fp + 16 + off` (above the saved fp/lr pair), whose bytes avoid
+-the frame addresses `F`. -/
+-def ArgsAtEntry (F : BitVec 64 → Prop) (sig : Clif.Signature) (args : List Clif.Val)
+-    (w : Arm.ArmState) : Prop :=
+-  ∀ loc v, (loc, v) ∈ (locsOf sig).zip args → match loc with
+-    | .reg r => VHolds v (regVal w r)
+-    | .stack off =>
+-      Avoids F v.ty.bytes (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int))) ∧
+-      (Arm.read_mem_bytes v.ty.bytes (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int)))
+-        w).setWidth v.ty.width = v.bits
+-
+-theorem loadVal_congr {F : BitVec 64 → Prop} {s t : Arm.ArmState} (op : LoadOp) {a : BitVec 64}
+-    (h : ∀ x, ¬ F x → s.mem x = t.mem x) (hav : Avoids F op.bytes a) :
+-    loadVal op a s = loadVal op a t := by
+-  have hr : Arm.read_mem_bytes op.bytes a s = Arm.read_mem_bytes op.bytes a t :=
+-    read_mem_bytes_congr _ a (fun k hk => h _ (hav k hk))
+-  simp only [loadVal, hr]
+-
+ theorem loadOpOfBytes_facts {b : Nat} (hb : b = 1 ∨ b = 2 ∨ b = 4 ∨ b = 8) :
+     (loadOpOfBytes b).bytes = b ∧ loadOpOfBytes b ≠ .fpuLoad128 ∧ loadSigned (loadOpOfBytes b) = false := by
+   rcases hb with rfl | rfl | rfl | rfl <;> exact ⟨rfl, by decide, rfl⟩
+@@ -2470,12 +2415,6 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
+ 
+ end
+ 
+-/-- `s'` is reachable from `s` by CLIF steps that continue. -/
+-inductive Reach (env : Clif.Env) (p : Clif.Program) : Clif.State → Clif.State → Prop
+-  | refl (s : Clif.State) : Reach env p s s
+-  | step {s s' s'' : Clif.State} : Clif.step env p s = .next s' → Reach env p s' s'' →
+-      Reach env p s s''
+-
+ theorem Reach.snoc {env : Clif.Env} {p : Clif.Program} {s s' s'' : Clif.State}
+     (h : Reach env p s s') (h' : Clif.step env p s' = .next s'') : Reach env p s s'' := by
+   induction h with
+diff --git a/FV/Backend/Proof/LowerValueRelations.lean b/FV/Backend/Proof/LowerValueRelations.lean
+new file mode 100644
+index 00000000..70c23ca5
+--- /dev/null
++++ b/FV/Backend/Proof/LowerValueRelations.lean
+@@ -0,0 +1,20 @@
++import FV.Backend.Proof.LowerOutcomes
++namespace Backend.Proof.Driver
++open Backend Backend.Proof
++variable {ctx : Ctx}
++
++/-- DFG consistency only depends on the frame's function, slots and registers. -/
++theorem dfgCons_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func) (hs : fr'.slots = fr.slots)
++    (hr : fr'.regs = fr.regs) (h : DFGCons ctx fr) : DFGCons ctx fr' := by
++  refine ⟨fun x j info cl v hd hi hc hp hv => ?_, fun x t v ht hv => h.2 x t v ht (hr ▸ hv)⟩
++  obtain ⟨vals, hev, hlk⟩ := h.1 x j info cl v hd hi hc hp (hr ▸ hv)
++  exact ⟨vals, fun cm => by rw [evalInst_congr hf hs cm cl (fun y _ => by rw [hr])]; exact hev cm,
++    hlk⟩
++
++theorem loadVal_congr {F : BitVec 64 → Prop} {s t : Arm.ArmState} (op : LoadOp) {a : BitVec 64}
++    (h : ∀ x, ¬ F x → s.mem x = t.mem x) (hav : Avoids F op.bytes a) :
++    loadVal op a s = loadVal op a t := by
++  have hr : Arm.read_mem_bytes op.bytes a s = Arm.read_mem_bytes op.bytes a t :=
++    read_mem_bytes_congr _ a (fun k hk => h _ (hav k hk))
++  simp only [loadVal, hr]
++end Backend.Proof.Driver
+diff --git a/FV/Backend/Proof/PrepareSound.lean b/FV/Backend/Proof/PrepareSound.lean
+index 8b7cb7c6..92d4b033 100644
+--- a/FV/Backend/Proof/PrepareSound.lean
++++ b/FV/Backend/Proof/PrepareSound.lean
+@@ -1,4 +1,4 @@
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerOutcomes
+ import FV.Backend.Proof.PrepareCheck
+ import FV.Backend.Proof.DriverCheckSound
+ 
+diff --git a/FV/Backend/Proof/StockAddSubExtensionWitness.lean b/FV/Backend/Proof/StockAddSubExtensionWitness.lean
+index a62c28f6..5786b13c 100644
+--- a/FV/Backend/Proof/StockAddSubExtensionWitness.lean
++++ b/FV/Backend/Proof/StockAddSubExtensionWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockAddSubAllSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarAddSub.ExtensionWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockAddSubImmediateWitness.lean b/FV/Backend/Proof/StockAddSubImmediateWitness.lean
+index c373114d..e0c910ab 100644
+--- a/FV/Backend/Proof/StockAddSubImmediateWitness.lean
++++ b/FV/Backend/Proof/StockAddSubImmediateWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockAddSubAllSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarAddSub.ImmediateWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockAddSubNegativeWitness.lean b/FV/Backend/Proof/StockAddSubNegativeWitness.lean
+index 2a781e64..28b8d8db 100644
+--- a/FV/Backend/Proof/StockAddSubNegativeWitness.lean
++++ b/FV/Backend/Proof/StockAddSubNegativeWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockAddSubAllSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarAddSub.NegativeWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockAddSubShiftEdgeWitness.lean b/FV/Backend/Proof/StockAddSubShiftEdgeWitness.lean
+index 8e1ba507..e41ca229 100644
+--- a/FV/Backend/Proof/StockAddSubShiftEdgeWitness.lean
++++ b/FV/Backend/Proof/StockAddSubShiftEdgeWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockAddSubAllSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarAddSub.ShiftEdgeWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockAddSubShiftWitness.lean b/FV/Backend/Proof/StockAddSubShiftWitness.lean
+index e959b12d..b82ac6bf 100644
+--- a/FV/Backend/Proof/StockAddSubShiftWitness.lean
++++ b/FV/Backend/Proof/StockAddSubShiftWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockAddSubAllSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarAddSub.ShiftWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockBitrevDispatchWitness.lean b/FV/Backend/Proof/StockBitrevDispatchWitness.lean
+index 01c40c03..bb0e5189 100644
+--- a/FV/Backend/Proof/StockBitrevDispatchWitness.lean
++++ b/FV/Backend/Proof/StockBitrevDispatchWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockUnaryDispatch
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarBit.BitrevDispatchWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockBitrevWitness.lean b/FV/Backend/Proof/StockBitrevWitness.lean
+index 39fa9571..e9d8d988 100644
+--- a/FV/Backend/Proof/StockBitrevWitness.lean
++++ b/FV/Backend/Proof/StockBitrevWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockBitrevSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarBit.Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockBnotWitness.lean b/FV/Backend/Proof/StockBnotWitness.lean
+index 7c8ef521..36e35c57 100644
+--- a/FV/Backend/Proof/StockBnotWitness.lean
++++ b/FV/Backend/Proof/StockBnotWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockBnotRecordValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.Bnot
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockBswapDispatchWitness.lean b/FV/Backend/Proof/StockBswapDispatchWitness.lean
+index e58dd052..0009a59b 100644
+--- a/FV/Backend/Proof/StockBswapDispatchWitness.lean
++++ b/FV/Backend/Proof/StockBswapDispatchWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockUnaryDispatch
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarBit.BswapDispatchWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockBswapWitness.lean b/FV/Backend/Proof/StockBswapWitness.lean
+index 7bee6993..f668328a 100644
+--- a/FV/Backend/Proof/StockBswapWitness.lean
++++ b/FV/Backend/Proof/StockBswapWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockUnarySourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarBit.BswapWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockCastWitness.lean b/FV/Backend/Proof/StockCastWitness.lean
+index 70ff4b3f..f994f2e0 100644
+--- a/FV/Backend/Proof/StockCastWitness.lean
++++ b/FV/Backend/Proof/StockCastWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCastPair
+ import FV.Backend.Proof.StockCastSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarCast.Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockCmpActualBothNonzero32AllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualBothNonzero32AllValuesWitness.lean
+index 79b9d2a6..0f0cf914 100644
+--- a/FV/Backend/Proof/StockCmpActualBothNonzero32AllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualBothNonzero32AllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpBothNonzeroDriverRuns
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpZero32OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualBothNonzero32AllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualImmediateDriverWitness.lean b/FV/Backend/Proof/StockCmpActualImmediateDriverWitness.lean
+index 9908eabd..66270b68 100644
+--- a/FV/Backend/Proof/StockCmpActualImmediateDriverWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualImmediateDriverWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpImmediateDriverRuns
+ import FV.Backend.Proof.StockCmpImmediateTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualImmediateDriverWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualNarrowActual16UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualNarrowActual16UnsignedAllValuesWitness.lean
+index beb8d2d1..550fecf1 100644
+--- a/FV/Backend/Proof/StockCmpActualNarrowActual16UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualNarrowActual16UnsignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpNarrow16DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualNarrowActual16UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualNarrowActual8SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualNarrowActual8SignedAllValuesWitness.lean
+index c71e2516..4fe93e72 100644
+--- a/FV/Backend/Proof/StockCmpActualNarrowActual8SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualNarrowActual8SignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpNarrow8DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualNarrowActual8SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualNonencodable32SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualNonencodable32SignedAllValuesWitness.lean
+index 0f055778..a9424f7e 100644
+--- a/FV/Backend/Proof/StockCmpActualNonencodable32SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualNonencodable32SignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpNonencodable32DriverRuns
+ import FV.Backend.Proof.StockCmpNonencodableSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualNonencodable32SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualNonencodable64UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualNonencodable64UnsignedAllValuesWitness.lean
+index 25385198..f6ae7a45 100644
+--- a/FV/Backend/Proof/StockCmpActualNonencodable64UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualNonencodable64UnsignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpNonencodable64DriverRuns
+ import FV.Backend.Proof.StockCmpNonencodableSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualNonencodable64UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualPredecessor32K4097SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualPredecessor32K4097SignedAllValuesWitness.lean
+index ca62a6a2..ed78843f 100644
+--- a/FV/Backend/Proof/StockCmpActualPredecessor32K4097SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualPredecessor32K4097SignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpPredecessor32K4097DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorSignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualPredecessor32K4097SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualPredecessor32K4097UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualPredecessor32K4097UnsignedAllValuesWitness.lean
+index 80732fca..a119546f 100644
+--- a/FV/Backend/Proof/StockCmpActualPredecessor32K4097UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualPredecessor32K4097UnsignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpPredecessor32K4097DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualPredecessor32K4097UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualPredecessor32K8193SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualPredecessor32K8193SignedAllValuesWitness.lean
+index 9473670f..b175550c 100644
+--- a/FV/Backend/Proof/StockCmpActualPredecessor32K8193SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualPredecessor32K8193SignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpPredecessor32K8193DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorSignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualPredecessor32K8193SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualPredecessor32K8193UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualPredecessor32K8193UnsignedAllValuesWitness.lean
+index 5273d3b7..fee7972f 100644
+--- a/FV/Backend/Proof/StockCmpActualPredecessor32K8193UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualPredecessor32K8193UnsignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpPredecessor32K8193DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualPredecessor32K8193UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualPredecessor64K4097SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualPredecessor64K4097SignedAllValuesWitness.lean
+index 4cc14fe0..927eaab5 100644
+--- a/FV/Backend/Proof/StockCmpActualPredecessor64K4097SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualPredecessor64K4097SignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpPredecessor64K4097DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorSignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualPredecessor64K4097SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualPredecessor64K4097UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualPredecessor64K4097UnsignedAllValuesWitness.lean
+index d4e62e56..fcb5d63b 100644
+--- a/FV/Backend/Proof/StockCmpActualPredecessor64K4097UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualPredecessor64K4097UnsignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpPredecessor64K4097DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualPredecessor64K4097UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualPredecessor64K8193SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualPredecessor64K8193SignedAllValuesWitness.lean
+index e2a2bcd2..0059cda7 100644
+--- a/FV/Backend/Proof/StockCmpActualPredecessor64K8193SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualPredecessor64K8193SignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpPredecessor64K8193DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorSignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualPredecessor64K8193SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualPredecessor64K8193UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualPredecessor64K8193UnsignedAllValuesWitness.lean
+index d587d47d..90c4c37a 100644
+--- a/FV/Backend/Proof/StockCmpActualPredecessor64K8193UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualPredecessor64K8193UnsignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpPredecessor64K8193DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualPredecessor64K8193UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualWideConstantLeft32UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualWideConstantLeft32UnsignedAllValuesWitness.lean
+index b7bc4bae..2df8cb57 100644
+--- a/FV/Backend/Proof/StockCmpActualWideConstantLeft32UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualWideConstantLeft32UnsignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpWideConstantLeft32UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpWideConstantLeftSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualWideConstantLeft32UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualWideConstantLeft64SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualWideConstantLeft64SignedAllValuesWitness.lean
+index 973a2a2e..f805aae8 100644
+--- a/FV/Backend/Proof/StockCmpActualWideConstantLeft64SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualWideConstantLeft64SignedAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpWideConstantLeft64SignedDriverRuns
+ import FV.Backend.Proof.StockCmpWideConstantLeftSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualWideConstantLeft64SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualZero32EqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualZero32EqAllValuesWitness.lean
+index 75140580..e5fd30a7 100644
+--- a/FV/Backend/Proof/StockCmpActualZero32EqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualZero32EqAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpZero32DriverRuns
+ import FV.Backend.Proof.StockCmpZero32Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualZero32EqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpActualZero64DefinedNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpActualZero64DefinedNeAllValuesWitness.lean
+index 493ead58..75ec5f84 100644
+--- a/FV/Backend/Proof/StockCmpActualZero64DefinedNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpActualZero64DefinedNeAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpActualDispatch
+ import FV.Backend.Proof.StockCmpZero64DefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero64OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ActualZero64DefinedNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpConstantLeft16UnifiedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpConstantLeft16UnifiedAllValuesWitness.lean
+index 7ea4bcbe..925bd646 100644
+--- a/FV/Backend/Proof/StockCmpConstantLeft16UnifiedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpConstantLeft16UnifiedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstantLeft16UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpConstantLeftDispatch
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ConstantLeft16UnifiedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpConstantLeft32UnifiedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpConstantLeft32UnifiedAllValuesWitness.lean
+index fb5b1ebf..4f09deab 100644
+--- a/FV/Backend/Proof/StockCmpConstantLeft32UnifiedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpConstantLeft32UnifiedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpWideConstantLeft32UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpConstantLeftDispatch
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ConstantLeft32UnifiedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpConstantLeft64UnifiedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpConstantLeft64UnifiedAllValuesWitness.lean
+index ea0d32ba..3810cf0a 100644
+--- a/FV/Backend/Proof/StockCmpConstantLeft64UnifiedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpConstantLeft64UnifiedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpWideConstantLeft64UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpConstantLeftDispatch
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ConstantLeft64UnifiedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpConstantLeft8UnifiedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpConstantLeft8UnifiedAllValuesWitness.lean
+index 40a67363..b1857f57 100644
+--- a/FV/Backend/Proof/StockCmpConstantLeft8UnifiedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpConstantLeft8UnifiedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstantLeft8UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpConstantLeftDispatch
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ConstantLeft8UnifiedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpImmediateDriverWitness.lean b/FV/Backend/Proof/StockCmpImmediateDriverWitness.lean
+index e1470cb1..a48d2270 100644
+--- a/FV/Backend/Proof/StockCmpImmediateDriverWitness.lean
++++ b/FV/Backend/Proof/StockCmpImmediateDriverWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpImmediateDriverRuns
+ import FV.Backend.Proof.StockCmpImmediateTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ImmediateDriverWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrow16SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrow16SignedAllValuesWitness.lean
+index 9c4d5215..61b2cd2c 100644
+--- a/FV/Backend/Proof/StockCmpNarrow16SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrow16SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrow16DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Narrow16SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrow16UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrow16UnsignedAllValuesWitness.lean
+index 7f8fef23..b68c8301 100644
+--- a/FV/Backend/Proof/StockCmpNarrow16UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrow16UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrow16DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Narrow16UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrow8SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrow8SignedAllValuesWitness.lean
+index 32b4969f..46df8374 100644
+--- a/FV/Backend/Proof/StockCmpNarrow8SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrow8SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrow8DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Narrow8SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrow8UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrow8UnsignedAllValuesWitness.lean
+index 3776a3da..3564fc13 100644
+--- a/FV/Backend/Proof/StockCmpNarrow8UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrow8UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrow8DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Narrow8UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActual16SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActual16SignedAllValuesWitness.lean
+index 9a9fb889..7246fdab 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActual16SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActual16SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrow16DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActual16SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActual16UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActual16UnsignedAllValuesWitness.lean
+index 22314013..16364e83 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActual16UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActual16UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrow16DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActual16UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActual8SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActual8SignedAllValuesWitness.lean
+index 0a6bc01f..09b16a07 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActual8SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActual8SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrow8DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActual8SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActual8UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActual8UnsignedAllValuesWitness.lean
+index 60d9edca..57e81685 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActual8UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActual8UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrow8DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActual8UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualConstantLeft16SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualConstantLeft16SignedAllValuesWitness.lean
+index a317352b..74094696 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualConstantLeft16SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualConstantLeft16SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstantLeft16SignedDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualConstantLeft16SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualConstantLeft16UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualConstantLeft16UnsignedAllValuesWitness.lean
+index 627d58ec..1fbb1ae5 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualConstantLeft16UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualConstantLeft16UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstantLeft16UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualConstantLeft16UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualConstantLeft8SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualConstantLeft8SignedAllValuesWitness.lean
+index a15f9fa4..76af7c25 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualConstantLeft8SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualConstantLeft8SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstantLeft8SignedDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualConstantLeft8SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualConstantLeft8UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualConstantLeft8UnsignedAllValuesWitness.lean
+index 95dbb9f9..cb973ac2 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualConstantLeft8UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualConstantLeft8UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstantLeft8UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualConstantLeft8UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualImmediate16LargeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualImmediate16LargeAllValuesWitness.lean
+index bde3f66b..f1808ea0 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualImmediate16LargeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualImmediate16LargeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowImmediate16DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualImmediate16LargeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualImmediate16SmallAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualImmediate16SmallAllValuesWitness.lean
+index c176439c..97a6ef02 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualImmediate16SmallAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualImmediate16SmallAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowImmediate16DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualImmediate16SmallAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualImmediate8LargeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualImmediate8LargeAllValuesWitness.lean
+index 6e22b071..9729f46d 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualImmediate8LargeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualImmediate8LargeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowImmediate8DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualImmediate8LargeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualImmediate8SmallAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualImmediate8SmallAllValuesWitness.lean
+index 3822c530..12d418ea 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualImmediate8SmallAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualImmediate8SmallAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowImmediate8DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualImmediate8SmallAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualZero16EqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualZero16EqAllValuesWitness.lean
+index 45029af7..7d3f3e9f 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualZero16EqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualZero16EqAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+ import FV.Backend.Proof.StockCmpZero16DriverRuns
+ import FV.Backend.Proof.StockCmpZero16Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualZero16EqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualZero16LeftEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualZero16LeftEqAllValuesWitness.lean
+index 9d45e72a..b1ebf355 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualZero16LeftEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualZero16LeftEqAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+ import FV.Backend.Proof.StockCmpZero16LeftDriverRuns
+ import FV.Backend.Proof.StockCmpZero16LeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualZero16LeftEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualZero16LeftNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualZero16LeftNeAllValuesWitness.lean
+index 7755906c..7d204766 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualZero16LeftNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualZero16LeftNeAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+ import FV.Backend.Proof.StockCmpZero16LeftDriverRuns
+ import FV.Backend.Proof.StockCmpZero16LeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualZero16LeftNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualZero16NeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualZero16NeAllValuesWitness.lean
+index 261e3b4f..ef852a39 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualZero16NeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualZero16NeAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+ import FV.Backend.Proof.StockCmpZero16DriverRuns
+ import FV.Backend.Proof.StockCmpZero16Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualZero16NeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualZero8EqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualZero8EqAllValuesWitness.lean
+index 750169b0..55853a4b 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualZero8EqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualZero8EqAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+ import FV.Backend.Proof.StockCmpZero8DriverRuns
+ import FV.Backend.Proof.StockCmpZero8Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualZero8EqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualZero8LeftEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualZero8LeftEqAllValuesWitness.lean
+index 550f1267..2bd20dd8 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualZero8LeftEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualZero8LeftEqAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+ import FV.Backend.Proof.StockCmpZero8LeftDriverRuns
+ import FV.Backend.Proof.StockCmpZero8LeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualZero8LeftEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualZero8LeftNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualZero8LeftNeAllValuesWitness.lean
+index 4680d550..221fd169 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualZero8LeftNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualZero8LeftNeAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+ import FV.Backend.Proof.StockCmpZero8LeftDriverRuns
+ import FV.Backend.Proof.StockCmpZero8LeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualZero8LeftNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowActualZero8NeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowActualZero8NeAllValuesWitness.lean
+index d9088963..bdf84af6 100644
+--- a/FV/Backend/Proof/StockCmpNarrowActualZero8NeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowActualZero8NeAllValuesWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+ import FV.Backend.Proof.StockCmpZero8DriverRuns
+ import FV.Backend.Proof.StockCmpZero8Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowActualZero8NeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowConstant16SignedHighAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowConstant16SignedHighAllValuesWitness.lean
+index cf1b6ded..4fa9a058 100644
+--- a/FV/Backend/Proof/StockCmpNarrowConstant16SignedHighAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowConstant16SignedHighAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstant16SignedHighDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowConstantOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowConstant16SignedHighAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowConstant16SignedZeroAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowConstant16SignedZeroAllValuesWitness.lean
+index c2993d05..3cad7757 100644
+--- a/FV/Backend/Proof/StockCmpNarrowConstant16SignedZeroAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowConstant16SignedZeroAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstant16SignedZeroDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowConstantOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowConstant16SignedZeroAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowConstant16UnsignedLargeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowConstant16UnsignedLargeAllValuesWitness.lean
+index cee6a028..e63f28aa 100644
+--- a/FV/Backend/Proof/StockCmpNarrowConstant16UnsignedLargeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowConstant16UnsignedLargeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstant16UnsignedLargeDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowConstantOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowConstant16UnsignedLargeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowConstant8SignedHighAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowConstant8SignedHighAllValuesWitness.lean
+index e421f53b..aa12ee6f 100644
+--- a/FV/Backend/Proof/StockCmpNarrowConstant8SignedHighAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowConstant8SignedHighAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstant8SignedHighDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowConstantOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowConstant8SignedHighAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowConstant8SignedZeroAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowConstant8SignedZeroAllValuesWitness.lean
+index 82b0f019..249e9ecd 100644
+--- a/FV/Backend/Proof/StockCmpNarrowConstant8SignedZeroAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowConstant8SignedZeroAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstant8SignedZeroDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowConstantOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowConstant8SignedZeroAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowConstantLeft16SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowConstantLeft16SignedAllValuesWitness.lean
+index 44d85b8a..03ea3d57 100644
+--- a/FV/Backend/Proof/StockCmpNarrowConstantLeft16SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowConstantLeft16SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstantLeft16SignedDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowConstantLeftOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowConstantLeft16SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowConstantLeft16UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowConstantLeft16UnsignedAllValuesWitness.lean
+index f7d99447..93c1a791 100644
+--- a/FV/Backend/Proof/StockCmpNarrowConstantLeft16UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowConstantLeft16UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstantLeft16UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowConstantLeftOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowConstantLeft16UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowConstantLeft8SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowConstantLeft8SignedAllValuesWitness.lean
+index e94d39fa..1a3e3bdd 100644
+--- a/FV/Backend/Proof/StockCmpNarrowConstantLeft8SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowConstantLeft8SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstantLeft8SignedDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowConstantLeftOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowConstantLeft8SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowConstantLeft8UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowConstantLeft8UnsignedAllValuesWitness.lean
+index 8d3cde0b..ec0d0edc 100644
+--- a/FV/Backend/Proof/StockCmpNarrowConstantLeft8UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowConstantLeft8UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowConstantLeft8UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpNarrowConstantLeftOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowConstantLeft8UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowImmediate16LargeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowImmediate16LargeAllValuesWitness.lean
+index 4f70810c..c75b569e 100644
+--- a/FV/Backend/Proof/StockCmpNarrowImmediate16LargeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowImmediate16LargeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowImmediate16DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowImmediateOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowImmediate16LargeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowImmediate16SmallAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowImmediate16SmallAllValuesWitness.lean
+index 6bbcc358..8da82bf0 100644
+--- a/FV/Backend/Proof/StockCmpNarrowImmediate16SmallAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowImmediate16SmallAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowImmediate16DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowImmediateOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowImmediate16SmallAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowImmediate8LargeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowImmediate8LargeAllValuesWitness.lean
+index 6a333768..3710a18c 100644
+--- a/FV/Backend/Proof/StockCmpNarrowImmediate8LargeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowImmediate8LargeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowImmediate8DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowImmediateOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowImmediate8LargeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNarrowImmediate8SmallAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNarrowImmediate8SmallAllValuesWitness.lean
+index bdabc748..e1f4c2e5 100644
+--- a/FV/Backend/Proof/StockCmpNarrowImmediate8SmallAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNarrowImmediate8SmallAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNarrowImmediate8DriverRuns
+ import FV.Backend.Proof.StockCmpNarrowImmediateOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.NarrowImmediate8SmallAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNonconstantDriverWitness.lean b/FV/Backend/Proof/StockCmpNonconstantDriverWitness.lean
+index f3071c47..e0cc5e7e 100644
+--- a/FV/Backend/Proof/StockCmpNonconstantDriverWitness.lean
++++ b/FV/Backend/Proof/StockCmpNonconstantDriverWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNonconstantDriverRuns
+ import FV.Backend.Proof.StockCmpNonconstantSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.DefinedDriverWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNonencodable32SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNonencodable32SignedAllValuesWitness.lean
+index 4fb25dcc..81e9c688 100644
+--- a/FV/Backend/Proof/StockCmpNonencodable32SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNonencodable32SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNonencodable32DriverRuns
+ import FV.Backend.Proof.StockCmpNonencodableSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Nonencodable32SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNonencodable32UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNonencodable32UnsignedAllValuesWitness.lean
+index 6f89c9a7..bd320981 100644
+--- a/FV/Backend/Proof/StockCmpNonencodable32UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNonencodable32UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNonencodable32DriverRuns
+ import FV.Backend.Proof.StockCmpNonencodableSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Nonencodable32UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNonencodable64SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNonencodable64SignedAllValuesWitness.lean
+index 1bde37c0..8ff09c4e 100644
+--- a/FV/Backend/Proof/StockCmpNonencodable64SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNonencodable64SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNonencodable64DriverRuns
+ import FV.Backend.Proof.StockCmpNonencodableSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Nonencodable64SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpNonencodable64UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpNonencodable64UnsignedAllValuesWitness.lean
+index 55880898..3e407025 100644
+--- a/FV/Backend/Proof/StockCmpNonencodable64UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpNonencodable64UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpNonencodable64DriverRuns
+ import FV.Backend.Proof.StockCmpNonencodableSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Nonencodable64UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpParameterDriverWitness.lean b/FV/Backend/Proof/StockCmpParameterDriverWitness.lean
+index 0e8436b3..69d5b5fe 100644
+--- a/FV/Backend/Proof/StockCmpParameterDriverWitness.lean
++++ b/FV/Backend/Proof/StockCmpParameterDriverWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpParameterDriverRuns
+ import FV.Backend.Proof.StockCmpParameterSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ParameterDriverWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpPredecessor32K4097SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpPredecessor32K4097SignedAllValuesWitness.lean
+index 3d5cc030..81eb7b2b 100644
+--- a/FV/Backend/Proof/StockCmpPredecessor32K4097SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpPredecessor32K4097SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpPredecessor32K4097DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorSignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Predecessor32K4097SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpPredecessor32K4097UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpPredecessor32K4097UnsignedAllValuesWitness.lean
+index b0770c88..cba87a86 100644
+--- a/FV/Backend/Proof/StockCmpPredecessor32K4097UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpPredecessor32K4097UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpPredecessor32K4097DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Predecessor32K4097UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpPredecessor32K8193SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpPredecessor32K8193SignedAllValuesWitness.lean
+index 4b0818c1..3be039a3 100644
+--- a/FV/Backend/Proof/StockCmpPredecessor32K8193SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpPredecessor32K8193SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpPredecessor32K8193DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorSignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Predecessor32K8193SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpPredecessor32K8193UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpPredecessor32K8193UnsignedAllValuesWitness.lean
+index cac64600..ca6aaea0 100644
+--- a/FV/Backend/Proof/StockCmpPredecessor32K8193UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpPredecessor32K8193UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpPredecessor32K8193DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Predecessor32K8193UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpPredecessor64K4097SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpPredecessor64K4097SignedAllValuesWitness.lean
+index e8457d52..19da4429 100644
+--- a/FV/Backend/Proof/StockCmpPredecessor64K4097SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpPredecessor64K4097SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpPredecessor64K4097DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorSignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Predecessor64K4097SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpPredecessor64K4097UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpPredecessor64K4097UnsignedAllValuesWitness.lean
+index b92a0a1e..f9414ad9 100644
+--- a/FV/Backend/Proof/StockCmpPredecessor64K4097UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpPredecessor64K4097UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpPredecessor64K4097DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Predecessor64K4097UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpPredecessor64K8193SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpPredecessor64K8193SignedAllValuesWitness.lean
+index f095813c..80058789 100644
+--- a/FV/Backend/Proof/StockCmpPredecessor64K8193SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpPredecessor64K8193SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpPredecessor64K8193DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorSignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Predecessor64K8193SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpPredecessor64K8193UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpPredecessor64K8193UnsignedAllValuesWitness.lean
+index b5469af5..622aed26 100644
+--- a/FV/Backend/Proof/StockCmpPredecessor64K8193UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpPredecessor64K8193UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpPredecessor64K8193DriverRuns
+ import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Predecessor64K8193UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpWideConstantLeft32SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpWideConstantLeft32SignedAllValuesWitness.lean
+index 1969a770..08e1002c 100644
+--- a/FV/Backend/Proof/StockCmpWideConstantLeft32SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpWideConstantLeft32SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpWideConstantLeft32SignedDriverRuns
+ import FV.Backend.Proof.StockCmpWideConstantLeftSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.WideConstantLeft32SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpWideConstantLeft32UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpWideConstantLeft32UnsignedAllValuesWitness.lean
+index db4630cf..9baea1aa 100644
+--- a/FV/Backend/Proof/StockCmpWideConstantLeft32UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpWideConstantLeft32UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpWideConstantLeft32UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpWideConstantLeftSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.WideConstantLeft32UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpWideConstantLeft64SignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpWideConstantLeft64SignedAllValuesWitness.lean
+index 5a71e8b0..9254aee4 100644
+--- a/FV/Backend/Proof/StockCmpWideConstantLeft64SignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpWideConstantLeft64SignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpWideConstantLeft64SignedDriverRuns
+ import FV.Backend.Proof.StockCmpWideConstantLeftSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.WideConstantLeft64SignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpWideConstantLeft64UnsignedAllValuesWitness.lean b/FV/Backend/Proof/StockCmpWideConstantLeft64UnsignedAllValuesWitness.lean
+index fad9f4db..e06b94fd 100644
+--- a/FV/Backend/Proof/StockCmpWideConstantLeft64UnsignedAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpWideConstantLeft64UnsignedAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpWideConstantLeft64UnsignedDriverRuns
+ import FV.Backend.Proof.StockCmpWideConstantLeftSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.WideConstantLeft64UnsignedAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16ConstantThreeEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16ConstantThreeEqAllValuesWitness.lean
+index 95cf46ed..96c565d1 100644
+--- a/FV/Backend/Proof/StockCmpZero16ConstantThreeEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16ConstantThreeEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero16OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16ConstantThreeEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16ConstantThreeNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16ConstantThreeNeAllValuesWitness.lean
+index 3c56faf2..59314b61 100644
+--- a/FV/Backend/Proof/StockCmpZero16ConstantThreeNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16ConstantThreeNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero16OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16ConstantThreeNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16ConstantZeroEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16ConstantZeroEqAllValuesWitness.lean
+index ba28cba5..a8119978 100644
+--- a/FV/Backend/Proof/StockCmpZero16ConstantZeroEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16ConstantZeroEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero16OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16ConstantZeroEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16ConstantZeroNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16ConstantZeroNeAllValuesWitness.lean
+index 996fa535..83d768a4 100644
+--- a/FV/Backend/Proof/StockCmpZero16ConstantZeroNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16ConstantZeroNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero16OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16ConstantZeroNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16DefinedEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16DefinedEqAllValuesWitness.lean
+index 4124f713..3eaeb6d7 100644
+--- a/FV/Backend/Proof/StockCmpZero16DefinedEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16DefinedEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16DefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero16OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16DefinedEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16DefinedNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16DefinedNeAllValuesWitness.lean
+index da2e0664..88b63f62 100644
+--- a/FV/Backend/Proof/StockCmpZero16DefinedNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16DefinedNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16DefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero16OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16DefinedNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16EqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16EqAllValuesWitness.lean
+index e5883fa5..2979866f 100644
+--- a/FV/Backend/Proof/StockCmpZero16EqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16EqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16DriverRuns
+ import FV.Backend.Proof.StockCmpZero16Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16EqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16LeftEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16LeftEqAllValuesWitness.lean
+index 308d618d..1b0511a2 100644
+--- a/FV/Backend/Proof/StockCmpZero16LeftEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16LeftEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16LeftDriverRuns
+ import FV.Backend.Proof.StockCmpZero16LeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16LeftEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16LeftNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16LeftNeAllValuesWitness.lean
+index fb2c33c1..1272198a 100644
+--- a/FV/Backend/Proof/StockCmpZero16LeftNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16LeftNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16LeftDriverRuns
+ import FV.Backend.Proof.StockCmpZero16LeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16LeftNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16NeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16NeAllValuesWitness.lean
+index 4926b401..16fa69fb 100644
+--- a/FV/Backend/Proof/StockCmpZero16NeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16NeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16DriverRuns
+ import FV.Backend.Proof.StockCmpZero16Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16NeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16RightDefinedEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16RightDefinedEqAllValuesWitness.lean
+index 9c8fa45f..f42634b1 100644
+--- a/FV/Backend/Proof/StockCmpZero16RightDefinedEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16RightDefinedEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16RightDefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero16OriginalRightTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16RightDefinedEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero16RightDefinedNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero16RightDefinedNeAllValuesWitness.lean
+index 1a0083c9..062c1fec 100644
+--- a/FV/Backend/Proof/StockCmpZero16RightDefinedNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero16RightDefinedNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero16RightDefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero16OriginalRightTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero16RightDefinedNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32ConstantThreeEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32ConstantThreeEqAllValuesWitness.lean
+index bf00f40b..8ebc618b 100644
+--- a/FV/Backend/Proof/StockCmpZero32ConstantThreeEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32ConstantThreeEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero32OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32ConstantThreeEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32ConstantThreeNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32ConstantThreeNeAllValuesWitness.lean
+index b2a57aaf..9e92f204 100644
+--- a/FV/Backend/Proof/StockCmpZero32ConstantThreeNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32ConstantThreeNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero32OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32ConstantThreeNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32ConstantZeroEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32ConstantZeroEqAllValuesWitness.lean
+index e920bb1f..5248313d 100644
+--- a/FV/Backend/Proof/StockCmpZero32ConstantZeroEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32ConstantZeroEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero32OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32ConstantZeroEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32ConstantZeroNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32ConstantZeroNeAllValuesWitness.lean
+index 33311483..13683e76 100644
+--- a/FV/Backend/Proof/StockCmpZero32ConstantZeroNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32ConstantZeroNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero32OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32ConstantZeroNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32DefinedEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32DefinedEqAllValuesWitness.lean
+index 2a252416..67b24f13 100644
+--- a/FV/Backend/Proof/StockCmpZero32DefinedEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32DefinedEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32DefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero32OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32DefinedEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32DefinedNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32DefinedNeAllValuesWitness.lean
+index 50a9a8d1..7c6d0960 100644
+--- a/FV/Backend/Proof/StockCmpZero32DefinedNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32DefinedNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32DefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero32OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32DefinedNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32EqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32EqAllValuesWitness.lean
+index b463d653..dd279680 100644
+--- a/FV/Backend/Proof/StockCmpZero32EqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32EqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32DriverRuns
+ import FV.Backend.Proof.StockCmpZero32Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32EqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32LeftEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32LeftEqAllValuesWitness.lean
+index b5a692a7..a8af9e4c 100644
+--- a/FV/Backend/Proof/StockCmpZero32LeftEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32LeftEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32LeftDriverRuns
+ import FV.Backend.Proof.StockCmpZero32LeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32LeftEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32LeftNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32LeftNeAllValuesWitness.lean
+index 510fc7e8..6b19bec1 100644
+--- a/FV/Backend/Proof/StockCmpZero32LeftNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32LeftNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32LeftDriverRuns
+ import FV.Backend.Proof.StockCmpZero32LeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32LeftNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32NeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32NeAllValuesWitness.lean
+index dea5f37f..ce7ccc2d 100644
+--- a/FV/Backend/Proof/StockCmpZero32NeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32NeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32DriverRuns
+ import FV.Backend.Proof.StockCmpZero32Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32NeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32RightDefinedEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32RightDefinedEqAllValuesWitness.lean
+index c73c9181..6491ade4 100644
+--- a/FV/Backend/Proof/StockCmpZero32RightDefinedEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32RightDefinedEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32RightDefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero32OriginalRightTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32RightDefinedEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero32RightDefinedNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero32RightDefinedNeAllValuesWitness.lean
+index 404f45aa..49a5b47c 100644
+--- a/FV/Backend/Proof/StockCmpZero32RightDefinedNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero32RightDefinedNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero32RightDefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero32OriginalRightTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero32RightDefinedNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero64ConstantThreeEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero64ConstantThreeEqAllValuesWitness.lean
+index 3689c8c3..d462f9d3 100644
+--- a/FV/Backend/Proof/StockCmpZero64ConstantThreeEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero64ConstantThreeEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero64ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero64OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero64ConstantThreeEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero64ConstantThreeNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero64ConstantThreeNeAllValuesWitness.lean
+index 6556ceb4..ef10af86 100644
+--- a/FV/Backend/Proof/StockCmpZero64ConstantThreeNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero64ConstantThreeNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero64ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero64OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero64ConstantThreeNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero64ConstantZeroEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero64ConstantZeroEqAllValuesWitness.lean
+index d3cf975b..523a655f 100644
+--- a/FV/Backend/Proof/StockCmpZero64ConstantZeroEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero64ConstantZeroEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero64ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero64OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero64ConstantZeroEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero64ConstantZeroNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero64ConstantZeroNeAllValuesWitness.lean
+index 64976930..c42bc8f0 100644
+--- a/FV/Backend/Proof/StockCmpZero64ConstantZeroNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero64ConstantZeroNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero64ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero64OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero64ConstantZeroNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero64DefinedEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero64DefinedEqAllValuesWitness.lean
+index cdeed597..1e611e27 100644
+--- a/FV/Backend/Proof/StockCmpZero64DefinedEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero64DefinedEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero64DefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero64OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero64DefinedEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero64DefinedNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero64DefinedNeAllValuesWitness.lean
+index 6249962a..89f5669c 100644
+--- a/FV/Backend/Proof/StockCmpZero64DefinedNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero64DefinedNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero64DefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero64OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero64DefinedNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero64RightDefinedEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero64RightDefinedEqAllValuesWitness.lean
+index 9e1388bf..34efc44c 100644
+--- a/FV/Backend/Proof/StockCmpZero64RightDefinedEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero64RightDefinedEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero64RightDefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero64OriginalRightTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero64RightDefinedEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero64RightDefinedNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero64RightDefinedNeAllValuesWitness.lean
+index 3c33f3c6..f2ed6fe4 100644
+--- a/FV/Backend/Proof/StockCmpZero64RightDefinedNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero64RightDefinedNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero64RightDefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero64OriginalRightTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero64RightDefinedNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8ConstantThreeEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8ConstantThreeEqAllValuesWitness.lean
+index 4d375624..4ff26306 100644
+--- a/FV/Backend/Proof/StockCmpZero8ConstantThreeEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8ConstantThreeEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero8OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8ConstantThreeEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8ConstantThreeNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8ConstantThreeNeAllValuesWitness.lean
+index 14c3887a..20acdc16 100644
+--- a/FV/Backend/Proof/StockCmpZero8ConstantThreeNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8ConstantThreeNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero8OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8ConstantThreeNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8ConstantZeroEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8ConstantZeroEqAllValuesWitness.lean
+index fa0340bd..d2888e78 100644
+--- a/FV/Backend/Proof/StockCmpZero8ConstantZeroEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8ConstantZeroEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero8OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8ConstantZeroEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8ConstantZeroNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8ConstantZeroNeAllValuesWitness.lean
+index 12bd23a6..b2fd0e10 100644
+--- a/FV/Backend/Proof/StockCmpZero8ConstantZeroNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8ConstantZeroNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8ConstantDriverRuns
+ import FV.Backend.Proof.StockCmpZero8OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8ConstantZeroNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8DefinedEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8DefinedEqAllValuesWitness.lean
+index 3cdc5d0a..e0f093d6 100644
+--- a/FV/Backend/Proof/StockCmpZero8DefinedEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8DefinedEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8DefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero8OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8DefinedEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8DefinedNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8DefinedNeAllValuesWitness.lean
+index ce6ae90d..1bbe1d72 100644
+--- a/FV/Backend/Proof/StockCmpZero8DefinedNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8DefinedNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8DefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero8OriginalLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8DefinedNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8EqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8EqAllValuesWitness.lean
+index 351be04b..e4a2a9e8 100644
+--- a/FV/Backend/Proof/StockCmpZero8EqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8EqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8DriverRuns
+ import FV.Backend.Proof.StockCmpZero8Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8EqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8LeftEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8LeftEqAllValuesWitness.lean
+index 09fe19fd..b3b0ec00 100644
+--- a/FV/Backend/Proof/StockCmpZero8LeftEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8LeftEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8LeftDriverRuns
+ import FV.Backend.Proof.StockCmpZero8LeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8LeftEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8LeftNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8LeftNeAllValuesWitness.lean
+index 83be1c4c..78fa0c24 100644
+--- a/FV/Backend/Proof/StockCmpZero8LeftNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8LeftNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8LeftDriverRuns
+ import FV.Backend.Proof.StockCmpZero8LeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8LeftNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8NeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8NeAllValuesWitness.lean
+index 4f8fc227..530babd0 100644
+--- a/FV/Backend/Proof/StockCmpZero8NeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8NeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8DriverRuns
+ import FV.Backend.Proof.StockCmpZero8Transfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8NeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8RightDefinedEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8RightDefinedEqAllValuesWitness.lean
+index dfa38501..fb199665 100644
+--- a/FV/Backend/Proof/StockCmpZero8RightDefinedEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8RightDefinedEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8RightDefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero8OriginalRightTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8RightDefinedEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZero8RightDefinedNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZero8RightDefinedNeAllValuesWitness.lean
+index 9e26a021..7a32feb5 100644
+--- a/FV/Backend/Proof/StockCmpZero8RightDefinedNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZero8RightDefinedNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZero8RightDefinedDriverRuns
+ import FV.Backend.Proof.StockCmpZero8OriginalRightTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.Zero8RightDefinedNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZeroEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZeroEqAllValuesWitness.lean
+index 162df38a..de37e914 100644
+--- a/FV/Backend/Proof/StockCmpZeroEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZeroEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZeroDriverRuns
+ import FV.Backend.Proof.StockCmpZeroTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ZeroEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZeroEqDriverWitness.lean b/FV/Backend/Proof/StockCmpZeroEqDriverWitness.lean
+index f3130ed1..1f5dfeef 100644
+--- a/FV/Backend/Proof/StockCmpZeroEqDriverWitness.lean
++++ b/FV/Backend/Proof/StockCmpZeroEqDriverWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZeroDriverRuns
+ import FV.Backend.Proof.StockCmpZeroTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ZeroEqDriverWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZeroLeftEqAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZeroLeftEqAllValuesWitness.lean
+index 8713a081..681a0c56 100644
+--- a/FV/Backend/Proof/StockCmpZeroLeftEqAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZeroLeftEqAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZeroLeftDriverRuns
+ import FV.Backend.Proof.StockCmpZeroLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ZeroLeftEqAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZeroLeftNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZeroLeftNeAllValuesWitness.lean
+index a552df9e..17f583eb 100644
+--- a/FV/Backend/Proof/StockCmpZeroLeftNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZeroLeftNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZeroLeftDriverRuns
+ import FV.Backend.Proof.StockCmpZeroLeftTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ZeroLeftNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZeroNeAllValuesWitness.lean b/FV/Backend/Proof/StockCmpZeroNeAllValuesWitness.lean
+index 973ed517..73946d19 100644
+--- a/FV/Backend/Proof/StockCmpZeroNeAllValuesWitness.lean
++++ b/FV/Backend/Proof/StockCmpZeroNeAllValuesWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZeroDriverRuns
+ import FV.Backend.Proof.StockCmpZeroTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ZeroNeAllValuesWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCmpZeroNeDriverWitness.lean b/FV/Backend/Proof/StockCmpZeroNeDriverWitness.lean
+index 28408f62..0477c0dd 100644
+--- a/FV/Backend/Proof/StockCmpZeroNeDriverWitness.lean
++++ b/FV/Backend/Proof/StockCmpZeroNeDriverWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockCmpZeroDriverRuns
+ import FV.Backend.Proof.StockCmpZeroTransfer
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarCmp.ZeroNeDriverWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockCountClzNonzeroWitness.lean b/FV/Backend/Proof/StockCountClzNonzeroWitness.lean
+index 681e2a04..49474c58 100644
+--- a/FV/Backend/Proof/StockCountClzNonzeroWitness.lean
++++ b/FV/Backend/Proof/StockCountClzNonzeroWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockCountSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarCount.ClzNonzeroWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockCountClzZeroWitness.lean b/FV/Backend/Proof/StockCountClzZeroWitness.lean
+index ce0d5701..2d348f49 100644
+--- a/FV/Backend/Proof/StockCountClzZeroWitness.lean
++++ b/FV/Backend/Proof/StockCountClzZeroWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockCountSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarCount.ClzZeroWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockCountCtzNonzeroWitness.lean b/FV/Backend/Proof/StockCountCtzNonzeroWitness.lean
+index 7180b9a5..2c9bbb3c 100644
+--- a/FV/Backend/Proof/StockCountCtzNonzeroWitness.lean
++++ b/FV/Backend/Proof/StockCountCtzNonzeroWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockCountSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarCount.CtzNonzeroWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockCountCtzZeroWitness.lean b/FV/Backend/Proof/StockCountCtzZeroWitness.lean
+index 1c1df9c2..26b21a97 100644
+--- a/FV/Backend/Proof/StockCountCtzZeroWitness.lean
++++ b/FV/Backend/Proof/StockCountCtzZeroWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockCountSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarCount.CtzZeroWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockDivSdiv16BoundaryWitness.lean b/FV/Backend/Proof/StockDivSdiv16BoundaryWitness.lean
+index ece332f5..65ab0896 100644
+--- a/FV/Backend/Proof/StockDivSdiv16BoundaryWitness.lean
++++ b/FV/Backend/Proof/StockDivSdiv16BoundaryWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdiv16WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Sdiv16BoundaryWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdiv16Witness.lean b/FV/Backend/Proof/StockDivSdiv16Witness.lean
+index ea4dd769..09754268 100644
+--- a/FV/Backend/Proof/StockDivSdiv16Witness.lean
++++ b/FV/Backend/Proof/StockDivSdiv16Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdiv16WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Sdiv16Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdiv32BoundaryWitness.lean b/FV/Backend/Proof/StockDivSdiv32BoundaryWitness.lean
+index ea5a7ca8..0a39d3d1 100644
+--- a/FV/Backend/Proof/StockDivSdiv32BoundaryWitness.lean
++++ b/FV/Backend/Proof/StockDivSdiv32BoundaryWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdiv32WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Sdiv32BoundaryWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdiv32Witness.lean b/FV/Backend/Proof/StockDivSdiv32Witness.lean
+index 732f11b6..02da5166 100644
+--- a/FV/Backend/Proof/StockDivSdiv32Witness.lean
++++ b/FV/Backend/Proof/StockDivSdiv32Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdiv32WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Sdiv32Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdiv64BoundaryWitness.lean b/FV/Backend/Proof/StockDivSdiv64BoundaryWitness.lean
+index 1862250e..4819aa7c 100644
+--- a/FV/Backend/Proof/StockDivSdiv64BoundaryWitness.lean
++++ b/FV/Backend/Proof/StockDivSdiv64BoundaryWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdiv64WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Sdiv64BoundaryWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdiv64Witness.lean b/FV/Backend/Proof/StockDivSdiv64Witness.lean
+index a7a39585..8b104363 100644
+--- a/FV/Backend/Proof/StockDivSdiv64Witness.lean
++++ b/FV/Backend/Proof/StockDivSdiv64Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdiv64WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Sdiv64Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdiv8BoundaryWitness.lean b/FV/Backend/Proof/StockDivSdiv8BoundaryWitness.lean
+index 5920ec45..03214188 100644
+--- a/FV/Backend/Proof/StockDivSdiv8BoundaryWitness.lean
++++ b/FV/Backend/Proof/StockDivSdiv8BoundaryWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdiv8WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Sdiv8BoundaryWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdiv8Witness.lean b/FV/Backend/Proof/StockDivSdiv8Witness.lean
+index 0db602b3..75ecdd4e 100644
+--- a/FV/Backend/Proof/StockDivSdiv8Witness.lean
++++ b/FV/Backend/Proof/StockDivSdiv8Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdiv8WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Sdiv8Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdivSafe16Witness.lean b/FV/Backend/Proof/StockDivSdivSafe16Witness.lean
+index 7a87fbcd..347d605a 100644
+--- a/FV/Backend/Proof/StockDivSdivSafe16Witness.lean
++++ b/FV/Backend/Proof/StockDivSdivSafe16Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdivSafe16WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.SdivSafe16Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdivSafe32Witness.lean b/FV/Backend/Proof/StockDivSdivSafe32Witness.lean
+index c6285977..3840f3d4 100644
+--- a/FV/Backend/Proof/StockDivSdivSafe32Witness.lean
++++ b/FV/Backend/Proof/StockDivSdivSafe32Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdivSafe32WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.SdivSafe32Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdivSafe64Witness.lean b/FV/Backend/Proof/StockDivSdivSafe64Witness.lean
+index 48307745..88b14a5a 100644
+--- a/FV/Backend/Proof/StockDivSdivSafe64Witness.lean
++++ b/FV/Backend/Proof/StockDivSdivSafe64Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdivSafe64WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.SdivSafe64Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSdivSafe8Witness.lean b/FV/Backend/Proof/StockDivSdivSafe8Witness.lean
+index 754b9c2d..a761b778 100644
+--- a/FV/Backend/Proof/StockDivSdivSafe8Witness.lean
++++ b/FV/Backend/Proof/StockDivSdivSafe8Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSdivSafe8WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.SdivSafe8Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSrem16BoundaryWitness.lean b/FV/Backend/Proof/StockDivSrem16BoundaryWitness.lean
+index 9b16422c..b93394e3 100644
+--- a/FV/Backend/Proof/StockDivSrem16BoundaryWitness.lean
++++ b/FV/Backend/Proof/StockDivSrem16BoundaryWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSrem16WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Srem16BoundaryWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSrem16Witness.lean b/FV/Backend/Proof/StockDivSrem16Witness.lean
+index 0731941d..b1bcc227 100644
+--- a/FV/Backend/Proof/StockDivSrem16Witness.lean
++++ b/FV/Backend/Proof/StockDivSrem16Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSrem16WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Srem16Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSrem32BoundaryWitness.lean b/FV/Backend/Proof/StockDivSrem32BoundaryWitness.lean
+index 013ee425..9104de3c 100644
+--- a/FV/Backend/Proof/StockDivSrem32BoundaryWitness.lean
++++ b/FV/Backend/Proof/StockDivSrem32BoundaryWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSrem32WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Srem32BoundaryWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSrem32Witness.lean b/FV/Backend/Proof/StockDivSrem32Witness.lean
+index 12d7c5b2..3fb91d56 100644
+--- a/FV/Backend/Proof/StockDivSrem32Witness.lean
++++ b/FV/Backend/Proof/StockDivSrem32Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSrem32WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Srem32Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSrem64BoundaryWitness.lean b/FV/Backend/Proof/StockDivSrem64BoundaryWitness.lean
+index 2badb3f6..3dd52466 100644
+--- a/FV/Backend/Proof/StockDivSrem64BoundaryWitness.lean
++++ b/FV/Backend/Proof/StockDivSrem64BoundaryWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSrem64WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Srem64BoundaryWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSrem64Witness.lean b/FV/Backend/Proof/StockDivSrem64Witness.lean
+index e1de82b9..166a4413 100644
+--- a/FV/Backend/Proof/StockDivSrem64Witness.lean
++++ b/FV/Backend/Proof/StockDivSrem64Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSrem64WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Srem64Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSrem8BoundaryWitness.lean b/FV/Backend/Proof/StockDivSrem8BoundaryWitness.lean
+index 8845d4a0..a394286a 100644
+--- a/FV/Backend/Proof/StockDivSrem8BoundaryWitness.lean
++++ b/FV/Backend/Proof/StockDivSrem8BoundaryWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSrem8WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Srem8BoundaryWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivSrem8Witness.lean b/FV/Backend/Proof/StockDivSrem8Witness.lean
+index b89b1ae3..ac5c6915 100644
+--- a/FV/Backend/Proof/StockDivSrem8Witness.lean
++++ b/FV/Backend/Proof/StockDivSrem8Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivSrem8WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Srem8Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivUdiv16Witness.lean b/FV/Backend/Proof/StockDivUdiv16Witness.lean
+index d259cc48..dbefd49c 100644
+--- a/FV/Backend/Proof/StockDivUdiv16Witness.lean
++++ b/FV/Backend/Proof/StockDivUdiv16Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivUdiv16WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Udiv16Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivUdiv32Witness.lean b/FV/Backend/Proof/StockDivUdiv32Witness.lean
+index d944170a..21283399 100644
+--- a/FV/Backend/Proof/StockDivUdiv32Witness.lean
++++ b/FV/Backend/Proof/StockDivUdiv32Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivUdiv32WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Udiv32Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivUdiv8Witness.lean b/FV/Backend/Proof/StockDivUdiv8Witness.lean
+index 72248d94..112544b4 100644
+--- a/FV/Backend/Proof/StockDivUdiv8Witness.lean
++++ b/FV/Backend/Proof/StockDivUdiv8Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivUdiv8WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Udiv8Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivUdivWideWitness.lean b/FV/Backend/Proof/StockDivUdivWideWitness.lean
+index 9f7ab3a2..6a2238a4 100644
+--- a/FV/Backend/Proof/StockDivUdivWideWitness.lean
++++ b/FV/Backend/Proof/StockDivUdivWideWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivUdivWideWitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.UdivWideWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivUrem16Witness.lean b/FV/Backend/Proof/StockDivUrem16Witness.lean
+index d5ab79df..aa6c6300 100644
+--- a/FV/Backend/Proof/StockDivUrem16Witness.lean
++++ b/FV/Backend/Proof/StockDivUrem16Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivUrem16WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Urem16Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivUrem32Witness.lean b/FV/Backend/Proof/StockDivUrem32Witness.lean
+index 2d7a4d3f..2fb568fb 100644
+--- a/FV/Backend/Proof/StockDivUrem32Witness.lean
++++ b/FV/Backend/Proof/StockDivUrem32Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivUrem32WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Urem32Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivUrem64Witness.lean b/FV/Backend/Proof/StockDivUrem64Witness.lean
+index 14f24fbb..6d4ef71d 100644
+--- a/FV/Backend/Proof/StockDivUrem64Witness.lean
++++ b/FV/Backend/Proof/StockDivUrem64Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivUrem64WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Urem64Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockDivUrem8Witness.lean b/FV/Backend/Proof/StockDivUrem8Witness.lean
+index b2244b95..bc763231 100644
+--- a/FV/Backend/Proof/StockDivUrem8Witness.lean
++++ b/FV/Backend/Proof/StockDivUrem8Witness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockDivUrem8WitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarDiv.Urem8Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockHighMulWitness.lean b/FV/Backend/Proof/StockHighMulWitness.lean
+index 0538b97d..76a790bb 100644
+--- a/FV/Backend/Proof/StockHighMulWitness.lean
++++ b/FV/Backend/Proof/StockHighMulWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockHighMulWitnessRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarHighMul.Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockLogicalNotRecordWitness.lean b/FV/Backend/Proof/StockLogicalNotRecordWitness.lean
+index ca173e8d..b2c89950 100644
+--- a/FV/Backend/Proof/StockLogicalNotRecordWitness.lean
++++ b/FV/Backend/Proof/StockLogicalNotRecordWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockLogicalNotRecord
+ import FV.Backend.Proof.StockLogicalNotXorRecord
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.LogicalNot.MirrorWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockLogicalNotXorFusedWitness.lean b/FV/Backend/Proof/StockLogicalNotXorFusedWitness.lean
+index d8c39419..8974da02 100644
+--- a/FV/Backend/Proof/StockLogicalNotXorFusedWitness.lean
++++ b/FV/Backend/Proof/StockLogicalNotXorFusedWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockLogicalNotRecord
+ import FV.Backend.Proof.StockLogicalNotXorRecord
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.LogicalNot.XorFusedWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockLogicalNotXorWitness.lean b/FV/Backend/Proof/StockLogicalNotXorWitness.lean
+index ab6de52b..a3b52b91 100644
+--- a/FV/Backend/Proof/StockLogicalNotXorWitness.lean
++++ b/FV/Backend/Proof/StockLogicalNotXorWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockLogicalNotRecord
+ import FV.Backend.Proof.StockLogicalNotXorRecord
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.LogicalNot.XorWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockLogicalSourceWitness.lean b/FV/Backend/Proof/StockLogicalSourceWitness.lean
+index 1e8aeec7..a846fdff 100644
+--- a/FV/Backend/Proof/StockLogicalSourceWitness.lean
++++ b/FV/Backend/Proof/StockLogicalSourceWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockLogicalRecordWitness
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ import FV.Backend.Proof.StockLogicalCompleteValues
+ import FV.Backend.Proof.StockLogicalScanRefines
+ import FV.Backend.Proof.StockLogicalBodyRefines
+diff --git a/FV/Backend/Proof/StockMinMaxNarrowBothConstantWitness.lean b/FV/Backend/Proof/StockMinMaxNarrowBothConstantWitness.lean
+index c59499dd..51da6db1 100644
+--- a/FV/Backend/Proof/StockMinMaxNarrowBothConstantWitness.lean
++++ b/FV/Backend/Proof/StockMinMaxNarrowBothConstantWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockMinMaxNarrowBothConstantDriverRuns
+ import FV.Backend.Proof.StockMinMaxActualDispatch
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarSelect.NarrowBothConstantWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ open Backend.Stock.Proof.ScalarSelect Backend.Stock.Proof.ScalarSelect.MinMaxRegisterFixture
+diff --git a/FV/Backend/Proof/StockMinMaxNarrowConstantWitness.lean b/FV/Backend/Proof/StockMinMaxNarrowConstantWitness.lean
+index b0a513c9..3318730a 100644
+--- a/FV/Backend/Proof/StockMinMaxNarrowConstantWitness.lean
++++ b/FV/Backend/Proof/StockMinMaxNarrowConstantWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns
+ import FV.Backend.Proof.StockMinMaxActualDispatch
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarSelect.NarrowConstantWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ open Backend.Stock.Proof.ScalarSelect Backend.Stock.Proof.ScalarSelect.MinMaxRegisterFixture
+diff --git a/FV/Backend/Proof/StockMinMaxNarrowDriverWitness.lean b/FV/Backend/Proof/StockMinMaxNarrowDriverWitness.lean
+index eceac724..66a5c813 100644
+--- a/FV/Backend/Proof/StockMinMaxNarrowDriverWitness.lean
++++ b/FV/Backend/Proof/StockMinMaxNarrowDriverWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockMinMaxNarrowDriverRuns
+ import FV.Backend.Proof.StockMinMaxActualDispatch
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarSelect.MinMaxNarrowDriverWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockMinMaxRegisterDriverWitness.lean b/FV/Backend/Proof/StockMinMaxRegisterDriverWitness.lean
+index 073ffbd1..feb35ed2 100644
+--- a/FV/Backend/Proof/StockMinMaxRegisterDriverWitness.lean
++++ b/FV/Backend/Proof/StockMinMaxRegisterDriverWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockMinMaxRegisterDriverRuns
+ import FV.Backend.Proof.StockMinMaxRegisterSourceReads
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarSelect.MinMaxDriverWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockMinMaxWideBothConstantWitness.lean b/FV/Backend/Proof/StockMinMaxWideBothConstantWitness.lean
+index a5fb77dd..c06b9eaf 100644
+--- a/FV/Backend/Proof/StockMinMaxWideBothConstantWitness.lean
++++ b/FV/Backend/Proof/StockMinMaxWideBothConstantWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockMinMaxWideBothConstantDriverRuns
+ import FV.Backend.Proof.StockMinMaxWideSourceReads
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarSelect.WideBothConstantWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ open Backend.Stock.Proof.ScalarSelect Backend.Stock.Proof.ScalarSelect.MinMaxRegisterFixture
+diff --git a/FV/Backend/Proof/StockMinMaxWideConstantWitness.lean b/FV/Backend/Proof/StockMinMaxWideConstantWitness.lean
+index 9d3e8020..460a3871 100644
+--- a/FV/Backend/Proof/StockMinMaxWideConstantWitness.lean
++++ b/FV/Backend/Proof/StockMinMaxWideConstantWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockMinMaxWideConstantDriverRuns
+ import FV.Backend.Proof.StockMinMaxWideSourceReads
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarSelect.WideConstantWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ open Backend.Stock.Proof.ScalarSelect Backend.Stock.Proof.ScalarSelect.MinMaxRegisterFixture
+diff --git a/FV/Backend/Proof/StockMinMaxWideDriverWitness.lean b/FV/Backend/Proof/StockMinMaxWideDriverWitness.lean
+index aaa9f022..8b80658b 100644
+--- a/FV/Backend/Proof/StockMinMaxWideDriverWitness.lean
++++ b/FV/Backend/Proof/StockMinMaxWideDriverWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockMinMaxWideDriverRuns
+ import FV.Backend.Proof.StockMinMaxWideSourceReads
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarSelect.MinMaxWideDriverWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockMixedBodyWitness.lean b/FV/Backend/Proof/StockMixedBodyWitness.lean
+index f2cec28c..2c680539 100644
+--- a/FV/Backend/Proof/StockMixedBodyWitness.lean
++++ b/FV/Backend/Proof/StockMixedBodyWitness.lean
+@@ -2,7 +2,7 @@ import FV.Backend.Proof.StockSourceDefined
+ import FV.Backend.Proof.StockActualBodyRefines
+ import FV.Backend.Proof.StockBodyScanRefines
+ import FV.Backend.Proof.StockMinMaxRegisterDriverRuns
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.MixedBodyWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockMulFusedWitness.lean b/FV/Backend/Proof/StockMulFusedWitness.lean
+index 9464bacf..8f23c729 100644
+--- a/FV/Backend/Proof/StockMulFusedWitness.lean
++++ b/FV/Backend/Proof/StockMulFusedWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockMulFusedRecordValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarMul.Fused.Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockMulWitness.lean b/FV/Backend/Proof/StockMulWitness.lean
+index 6e5dd6b5..f7330182 100644
+--- a/FV/Backend/Proof/StockMulWitness.lean
++++ b/FV/Backend/Proof/StockMulWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockMulRecordValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ namespace Backend.Stock.Proof.ScalarMul.Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+diff --git a/FV/Backend/Proof/StockNegDispatchWitness.lean b/FV/Backend/Proof/StockNegDispatchWitness.lean
+index d6ed9cbe..5db6295a 100644
+--- a/FV/Backend/Proof/StockNegDispatchWitness.lean
++++ b/FV/Backend/Proof/StockNegDispatchWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockUnaryDispatch
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.Neg.DispatchWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockNegWitness.lean b/FV/Backend/Proof/StockNegWitness.lean
+index 4db25266..88045c66 100644
+--- a/FV/Backend/Proof/StockNegWitness.lean
++++ b/FV/Backend/Proof/StockNegWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockNegSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.Neg.Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockPopcountNonzeroWitness.lean b/FV/Backend/Proof/StockPopcountNonzeroWitness.lean
+index 45301286..06feced9 100644
+--- a/FV/Backend/Proof/StockPopcountNonzeroWitness.lean
++++ b/FV/Backend/Proof/StockPopcountNonzeroWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockPopcountSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarPopcount.NonzeroWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockPopcountZeroWitness.lean b/FV/Backend/Proof/StockPopcountZeroWitness.lean
+index 0e6899ff..0d6c58fc 100644
+--- a/FV/Backend/Proof/StockPopcountZeroWitness.lean
++++ b/FV/Backend/Proof/StockPopcountZeroWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockPopcountSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarPopcount.ZeroWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockReduceWitness.lean b/FV/Backend/Proof/StockReduceWitness.lean
+index b9af6cf3..475d1f43 100644
+--- a/FV/Backend/Proof/StockReduceWitness.lean
++++ b/FV/Backend/Proof/StockReduceWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockReduceSourceValues
+ import FV.Backend.Proof.StockCastWitness
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarCast.Reduce.Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ open ScalarCast.Witness (Pair)
+diff --git a/FV/Backend/Proof/StockRotateLeftImmediateWitness.lean b/FV/Backend/Proof/StockRotateLeftImmediateWitness.lean
+index 5fc0cc2f..a19e8d9d 100644
+--- a/FV/Backend/Proof/StockRotateLeftImmediateWitness.lean
++++ b/FV/Backend/Proof/StockRotateLeftImmediateWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockRotateSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockRotateLeftRegisterWitness.lean b/FV/Backend/Proof/StockRotateLeftRegisterWitness.lean
+index cdbc0e81..5ad81b7b 100644
+--- a/FV/Backend/Proof/StockRotateLeftRegisterWitness.lean
++++ b/FV/Backend/Proof/StockRotateLeftRegisterWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockRotateSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockRotateRightImmediateWitness.lean b/FV/Backend/Proof/StockRotateRightImmediateWitness.lean
+index 3cbf7e2a..4a234267 100644
+--- a/FV/Backend/Proof/StockRotateRightImmediateWitness.lean
++++ b/FV/Backend/Proof/StockRotateRightImmediateWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockRotateSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarRotate.RightImmediateWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockRotateRightRegisterWitness.lean b/FV/Backend/Proof/StockRotateRightRegisterWitness.lean
+index b7b52b07..5b7e4801 100644
+--- a/FV/Backend/Proof/StockRotateRightRegisterWitness.lean
++++ b/FV/Backend/Proof/StockRotateRightRegisterWitness.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockRotateSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarRotate.RightRegisterWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockScalarAddScanWitness.lean b/FV/Backend/Proof/StockScalarAddScanWitness.lean
+index e4c64193..f532671d 100644
+--- a/FV/Backend/Proof/StockScalarAddScanWitness.lean
++++ b/FV/Backend/Proof/StockScalarAddScanWitness.lean
+@@ -4,7 +4,7 @@ import FV.Backend.Proof.StockScalarAddWitness
+ import FV.Backend.Proof.StockPureUnsunk
+ import FV.Backend.Proof.StockPureDriverUnsunk
+ import FV.Backend.Proof.StockPureRecordCoverage
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ 
+ /-! Real retained-record and body non-vacuity witness for the arithmetic scan
+ composition. Native checks describe this fixed compiler trace only. -/
+diff --git a/FV/Backend/Proof/StockSelectOriginalSourceWitness.lean b/FV/Backend/Proof/StockSelectOriginalSourceWitness.lean
+index f5c3f323..d7e4c441 100644
+--- a/FV/Backend/Proof/StockSelectOriginalSourceWitness.lean
++++ b/FV/Backend/Proof/StockSelectOriginalSourceWitness.lean
+@@ -1,6 +1,6 @@
+ import FV.Backend.Proof.StockSelectScalarDriverRuns
+ import FV.Backend.Proof.StockSelectOriginalSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarSelect.OriginalSourceWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockSelectParameterSourceWitness.lean b/FV/Backend/Proof/StockSelectParameterSourceWitness.lean
+index a408fda5..9f4b3ccc 100644
+--- a/FV/Backend/Proof/StockSelectParameterSourceWitness.lean
++++ b/FV/Backend/Proof/StockSelectParameterSourceWitness.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Proof.StockSelectScanRefines
+ import FV.Backend.Proof.StockSelectScalarDriverRuns
+ import FV.Backend.Proof.StockSelectParameterDerivedSourceValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarSelect.ParameterSourceWitness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/Backend/Proof/StockShiftWitnessInputs.lean b/FV/Backend/Proof/StockShiftWitnessInputs.lean
+index 335a1ae1..ef402ee2 100644
+--- a/FV/Backend/Proof/StockShiftWitnessInputs.lean
++++ b/FV/Backend/Proof/StockShiftWitnessInputs.lean
+@@ -1,5 +1,5 @@
+ import FV.Backend.Proof.StockShiftRecordValues
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerValueRelations
+ namespace Backend.Stock.Proof.ScalarShift.Witness
+ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+ set_option maxRecDepth 20000
+diff --git a/FV/E2E/ABIReadOnlyRealize.lean b/FV/E2E/ABIReadOnlyRealize.lean
+index e3056d5f..8198b52f 100644
+--- a/FV/E2E/ABIReadOnlyRealize.lean
++++ b/FV/E2E/ABIReadOnlyRealize.lean
+@@ -1,3 +1,4 @@
++import FV.Backend.Proof.LowerValueRelations
+ import FV.E2E.ABIReadOnlyTransport
+ 
+ namespace E2E.ABIReadOnly
+diff --git a/FV/E2E/Main.lean b/FV/E2E/Main.lean
+index 544c5bec..0f40c249 100644
+--- a/FV/E2E/Main.lean
++++ b/FV/E2E/Main.lean
+@@ -1,4 +1,5 @@
+ import FV.E2E.Compose
++import FV.Backend.Proof.LowerSim
+ import FV.Backend.Proof.DriverCheckSound
+ import FV.Backend.Proof.PrepareSound
+ import FV.Backend.Proof.IselMemArm
+diff --git a/FV/E2E/Statement.lean b/FV/E2E/Statement.lean
+index f4be571d..e4e418fb 100644
+--- a/FV/E2E/Statement.lean
++++ b/FV/E2E/Statement.lean
+@@ -4,7 +4,7 @@ import FV.Backend.Regalloc
+ import FV.Backend.Proof.RegallocSound
+ import FV.Backend.Proof.RegallocOperands
+ import FV.Backend.Proof.EncodeStep
+-import FV.Backend.Proof.LowerSim
++import FV.Backend.Proof.LowerOutcomes
+ import FV.Backend.Proof.DriverCheck
+ import FV.Backend.Proof.PrepareCheck
+ import FV.Compile.Subset
+diff --git a/scripts/audit/lower-outcome-interface.lean b/scripts/audit/lower-outcome-interface.lean
+new file mode 100644
+index 00000000..673d7d3b
+--- /dev/null
++++ b/scripts/audit/lower-outcome-interface.lean
+@@ -0,0 +1,9 @@
++import FV.Backend.Proof.LowerValueRelations
++#print axioms Backend.Proof.Driver.VTrapFrom
++#print axioms Backend.Proof.Driver.VRetFrom
++#print axioms Backend.Proof.Driver.VTrapFrom.prefix
++#print axioms Backend.Proof.Driver.VRetFrom.prefix
++#print axioms Backend.Proof.Driver.ArgsAtEntry
++#print axioms Backend.Proof.Driver.Reach
++#print axioms Backend.Proof.Driver.dfgCons_congr
++#print axioms Backend.Proof.Driver.loadVal_congr

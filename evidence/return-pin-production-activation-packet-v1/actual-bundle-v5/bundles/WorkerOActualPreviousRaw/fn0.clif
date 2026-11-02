@@ -1,0 +1,10 @@
+function %production_boundary(i64) -> i64 system_v {
+block0(v0: i64):
+    nop
+    jump block1
+block1:
+    nop
+    return v0
+}
+; clifv-extnames 1
+; end clifv-extnames

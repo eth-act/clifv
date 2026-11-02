@@ -1,0 +1,15 @@
+{
+  "actual_current_main": "77088aba2b9c528264aead43ab563d7ee17a102e",
+  "actual_candidate_tree": "e0dd63039d419577544c7b3f95be14c7364a874e",
+  "prepared_main": "34e39ec6b12abc4fb0dd509cc9cf56281f2c4c42",
+  "prepared_candidate_tree": "bd41bb462f03e0f13233b97a6768cb3381c63da4",
+  "dependency_paths_checked": 230,
+  "existing_baseline_sources_equal": 228,
+  "new_provider_paths_still_absent": [
+    "FV/Backend/Proof/LowerOutcomes.lean",
+    "FV/Backend/Proof/LowerValueRelations.lean"
+  ],
+  "seven_focused_target_baselines_unchanged": true,
+  "all_207_candidate_sources_exact": true,
+  "utc": "2026-11-02T07:08:09.537348+00:00"
+}

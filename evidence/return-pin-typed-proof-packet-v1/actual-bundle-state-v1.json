@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "module": "WorkerOActualTypedCapturedRaw",
+      "input": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/actual-bundle-v1/bundles/WorkerOActualTypedCapturedRaw/input.clif",
+      "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/actual-bundle-v1/bundles/WorkerOActualTypedCapturedRaw/program.elf",
+      "entries": [
+        "_RNxC7fv_demo11HawPMC3YC2b",
+        "sret_caller",
+        "float_leaf"
+      ],
+      "dir": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/actual-bundle-v1/bundles/WorkerOActualTypedCapturedRaw",
+      "cleanup": false,
+      "captured": true
+    },
+    {
+      "module": "WorkerOActualTypedCapturedCleanup",
+      "input": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/actual-bundle-v1/bundles/WorkerOActualTypedCapturedCleanup/input.clif",
+      "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/actual-bundle-v1/bundles/WorkerOActualTypedCapturedCleanup/program.elf",
+      "entries": [
+        "_RNxC7fv_demo11HawPMC3YC2b",
+        "sret_caller",
+        "float_leaf"
+      ],
+      "dir": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/actual-bundle-v1/bundles/WorkerOActualTypedCapturedCleanup",
+      "cleanup": true,
+      "captured": true
+    }
+  ],
+  "all_three_actual_clis": true,
+  "actual_allocator_answers_reused": true,
+  "generated_roots": 20,
+  "generated_hashes": {
+    "Crates/WorkerOActualTypedCapturedRaw.lean": "6bb9489f32a90674a131f4295b67949ceab3f1cdeb6654cf393c8d29d6c30e02",
+    "Crates/WorkerOActualTypedCapturedCleanup.lean": "b97f8df27286d66eb4e14b52b39016985a99c61bea987386150cc8f74e9d7956"
+  },
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T07:10:21.102427+00:00"
+}

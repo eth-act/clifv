@@ -1,20 +1,34 @@
-{"version": 2,
- "units":
- [{"tag": "WorkerOActualPreviousCleanup",
-   "names": {},
-   "locals": [],
-   "local_addrs": [],
-   "functions":
-   [{"ra":
-     "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/fn0.ra.json",
-     "name": "production_boundary",
-     "dump":
-     "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/fn0.clif"}],
-   "data":
-   "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/data.txt"}],
- "symbols": [["production_boundary", 2097504]],
- "skipped": [],
- "markers": [["production_boundary", 2097504]],
- "format": "clifv-frontend-bundle",
- "exe":
- "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/program.elf"}
+{
+  "version": 2,
+  "units": [
+    {
+      "tag": "WorkerOActualPreviousCleanup",
+      "names": {},
+      "locals": [],
+      "local_addrs": [],
+      "functions": [
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/fn0.ra.json",
+          "name": "production_boundary",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/fn0.clif"
+        }
+      ],
+      "data": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/data.txt"
+    }
+  ],
+  "symbols": [
+    [
+      "production_boundary",
+      2097504
+    ]
+  ],
+  "skipped": [],
+  "markers": [
+    [
+      "production_boundary",
+      2097504
+    ]
+  ],
+  "format": "clifv-frontend-bundle",
+  "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/program.elf"
+}

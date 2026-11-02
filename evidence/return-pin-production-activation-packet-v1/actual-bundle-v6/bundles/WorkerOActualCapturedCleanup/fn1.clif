@@ -1,0 +1,10 @@
+function u0:1(i64, i64) system_v {
+    fn0 = colocated u0:0(i64 sret, i64) system_v
+block0(v0: i64, v1: i64):
+    call fn0(v0, v1)
+    return
+}
+; clifv-extnames 1
+; decl u0:0 func Export "_RNxC7fv_demo11HawPMC3YC2b"
+; decl u0:1 func Export "sret_caller"
+; end clifv-extnames

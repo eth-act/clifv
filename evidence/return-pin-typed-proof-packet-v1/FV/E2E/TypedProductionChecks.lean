@@ -2,7 +2,7 @@ import FV.E2E.SemanticChecksWith
 import FV.E2E.SemanticStackBoundTS
 
 namespace E2E.TypedProductionChecks
-open Backend E2E.LinkCheck E2E.StackBound
+open Backend Backend.Proof Backend.Proof.Driver E2E.LinkCheck E2E.StackBound
 set_option autoImplicit false
 set_option Elab.async false
 variable {lower : ProductionLowering}

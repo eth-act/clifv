@@ -1,1 +1,1 @@
-null
+{"functions": [{"name": "production_boundary", "ok": true, "num_spillslots": 0, "allocs": [["x0"], [], ["x0"]], "edits": [], "checker": "ok"}]}

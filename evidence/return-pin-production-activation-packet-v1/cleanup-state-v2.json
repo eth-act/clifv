@@ -1,0 +1,8 @@
+{
+  "status": "done",
+  "removed": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v2/.lake",
+  "owned_artifact_hashes": "owned-artifacts-v2.json",
+  "source_configuration_logs_generated_lean_and_objects_preserved": true,
+  "owned_output_bytes": 47896153,
+  "utc": "2026-11-02T07:12:21.564191+00:00"
+}

@@ -1,0 +1,8 @@
+{
+  "purpose": "Remove obsolete REPL build outputs from the retained clean historical source view. Active warm cache and running packages are unchanged.",
+  "path": "/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build",
+  "files": 113,
+  "bytes": 239863433,
+  "tracked_view_clean": true,
+  "utc": "2026-11-02T07:03:56.353475+00:00"
+}

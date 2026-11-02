@@ -1,0 +1,4 @@
+'E2E.TypedProductionChecks.fnsBProduction_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.TypedProductionChecks.okRProduction_of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.TypedProductionChecks.crate_correct_production' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.TypedProductionChecks.crate_correct_stack' depends on axioms: [propext, Classical.choice, Quot.sound]

@@ -1,0 +1,72 @@
+{
+  "status": "landed",
+  "pr": 890,
+  "branch": "agent/stock-return-pin-consumers-20261102",
+  "source": "f3d79243c9bd78ac9a32e8f0cd06df29f7132ebf",
+  "published_source": "f3d79243c9bd78ac9a32e8f0cd06df29f7132ebf",
+  "validated_source": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "base": "5ad38ddf6df268dc875200caff8f5b57d5c2cc6c",
+  "merged": "8472b190421be2410ac937cabb704c8c3bbaff49",
+  "tested_tree": "ab2eb7fb6885b633cfb902af3b420dfd0f736bcf",
+  "tree_equal": true,
+  "source_hashes": {
+    "scripts/audit/return-pin-routed-compile.lean": "a6f70da54239a3cbd7738fd0ce98fe598ba2eaa88c1eae40960cba46b8c99863",
+    "FV/Link/ReturnPinCompileRoutes.lean": "fdbf61949a66f434993eeeea2eab4ddc826af5e99674a21047e2528c0000c65a",
+    "FV/Link/ReturnPinCompileRoutesWitness.lean": "a49712ddeab2996671b9833e51a04823e86af08c0eaaec4b19f1b0e7506a5bd6",
+    "FV/E2E/ReturnPinChecksWith.lean": "481db95e28b00aa600fe628e3ef186decdbcbd99e78d07d80a17ae11f0ff607a",
+    "FV/E2E/ReturnPinChecksWithWitness.lean": "320ccf55ed8c1e0e47c642ee5b4b921ca3c1a2f115ee39083d0782ad4a61294e",
+    "scripts/audit/return-pin-checks-with.lean": "bc56353c0064af117cdf039ad2d94ab1b6cae51456f3adacc82405c48f4b85f1",
+    "scripts/audit/return-pin-generated-stack.lean": "9f7c279e59f59133f130272f6af73165640bc3be5b79e268834fd0a36f2ea232",
+    "FVTest/E2E/ReturnPinLinkProofWith.lean": "b77d9303b903cd3d7cc42b1d03bd91dca3ccc30f74e64932dc9ba2bfeb24f5e3",
+    "FV/E2E/ReturnPinGeneratedStack.lean": "7e811f158e5cd8af14b9073ec1399051f2331bee24d9942bbcede5a63e29bae8"
+  },
+  "import_source_closure_equal": true,
+  "import_source_count": 1995,
+  "validation": "consumer-integration-reviewed-state-v1.json",
+  "peer_review": "consumer-integration-peer-review-v1.json",
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T06:51:38Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41402566920/job/125137371569",
+      "name": "Quick checks",
+      "startedAt": "2026-11-02T06:51:29Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T06:57:51Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41402566919/job/125137371504",
+      "name": "Build and compare",
+      "startedAt": "2026-11-02T06:51:30Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T06:58:03Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41402566919/job/125139399389",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-02T06:57:54Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T06:58:04Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41402566919/job/125139399307",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-02T06:57:54Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "independent_delivery": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T07:01:05.294526+00:00"
+}

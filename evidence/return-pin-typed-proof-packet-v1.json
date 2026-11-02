@@ -1,0 +1,22 @@
+{
+  "status": "kernel_and_actual_matrix_passed",
+  "files": {
+    "FV/E2E/TypedProductionChecks.lean": "af3a692df8cfc1425104f6d77c6bafad0aa4c3a970b9790222cd1802b1297f72",
+    "FVTest/E2E/TypedLinkProofWith.lean": "15d00feee2f09d83cd3044fbd33e65d17e3baaee0e3797cd9cd06e20ca03e9d9",
+    "FVTest/E2E/LinkCheckMain.lean": "3e234b481a1dff1620abd230b5e3bc64494c14285bd64b5a56016fd0d05d7f16",
+    "scripts/audit/typed-production.lean": "aade6a7361e57859f16453aeb7e1c8ef54691c40cfc8c984ef6bc67b5e2d7c6f"
+  },
+  "generic_roots": 4,
+  "fixed_roots": 20,
+  "reviewed_receipt": "return-pin-typed-proof-packet-v1/reviewed-state-v1.json",
+  "implementation": {
+    "class_aware_check": "okRWithTS on actual production results",
+    "ordinary_return": "ArmRefinesT",
+    "stack": "SemanticStackBound.StackStmtTS",
+    "raw_typed_probe": true,
+    "legacy_typed_selection": "actual lowerFunction output",
+    "routes": "0-21 unchanged; route21 tried first only for new ABI classes; all probes must pass allocation, preparation and ABI-or-typed semantic admission"
+  },
+  "requires_current_main_gates": true,
+  "full_goal_complete": false
+}
