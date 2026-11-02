@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "WorkerOAcquire810Inspect",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/WorkerOAcquire810Inspect.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/WorkerOAcquire810Inspect.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/WorkerOAcquire810Inspect.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.987316370010376,
+      "memstats": "peak 208912384\noom 0\noom_kill 0\n",
+      "source_sha256": "59ce2e9579096d07e38121a7eed3c8eeb7ad548ebf144a6bc0da81d7706ef401",
+      "olean_sha256": "e29e711973c05a41a9e3c3d576c378aee935f41607c262d8ed994d161b1479ed"
+    }
+  ]
+}

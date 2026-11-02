@@ -1,0 +1,39 @@
+{
+  "status": "reviewed_fixed_witness",
+  "source_sha256": "7bdc702e59be761702b83724695b621086769e848b948f6e3a9e3c40f15f5273",
+  "kernel_receipt_sha256": "e7d6363775966929f8cc78da40d5e318d5e50897052ab46d0c33098a2b4f9605",
+  "actual_facts": [
+    "Stock.lower function succeeds",
+    "LowerScope and Dominated hold",
+    "retained source instruction1 has fired810 in its successful rule trace",
+    "same retained record emits i8 loadAcquire with default flags"
+  ],
+  "not_established": [
+    "universal root810 correctness",
+    "deferred value and memory binding",
+    "first-trap ordering",
+    "production execution coverage"
+  ],
+  "generic_complete": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T16:12:24.652138+00:00",
+  "successful_witness_record": {
+    "label": "StockAcquire810Witness",
+    "argv": [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+      "-j1",
+      "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquire810Witness.lean",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquire810Witness.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquire810Witness.ilean"
+    ],
+    "exit": 0,
+    "seconds": 24.367955684661865,
+    "memstats": "peak 333783040\noom 0\noom_kill 0\n",
+    "source_sha256": "7bdc702e59be761702b83724695b621086769e848b948f6e3a9e3c40f15f5273",
+    "olean_sha256": "48892dfb1497937a814e59222e610343a258a2142decd27b1e4888206b271156"
+  },
+  "later_helper_failure_preserved": true
+}

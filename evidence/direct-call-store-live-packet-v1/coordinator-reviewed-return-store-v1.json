@@ -1,0 +1,11 @@
+{
+  "status": "reviewed_scoped_return_store_contract",
+  "receipt_sha256": "8d47e0f24a4855e35a0b657feda213df17d6e368ac7b99d28ed8e7f066253504",
+  "immutable_sources_exact": 17,
+  "standard_roots": 28,
+  "fixed_roots": 3,
+  "scope": "Returned call+default store+return, paired machine NI, both actual checked allocations, source return and first-store fault. Generic callee trap and machine store fault transfer remain open. No complete production claim.",
+  "full_class_complete": false,
+  "production_complete": false,
+  "utc": "2026-11-02T16:39:37.131619+00:00"
+}

@@ -1,0 +1,24 @@
+'Backend.Stock.Proof.CallStoreResult.call_then_store_of_source' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.source_pointer' depends on axioms: [propext]
+'Backend.Stock.Proof.CallStoreResult.source_store_returns' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.source_store_faults' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.source_call_fault_or_continues' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.call_then_store_access' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.source_fault_decomposition' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.CallStoreSourceWitness.default_store_fault' depends on axioms: [propext, Quot.sound]
+'E2E.CallStoreSourceWitness.store_reached' depends on axioms: [propext, Quot.sound]
+'E2E.CallStoreSourceWitness.store_fault_at' depends on axioms: [propext, Quot.sound]
+'E2E.CallStoreSourceWitness.default_store_return' depends on axioms: [propext, Quot.sound]
+'E2E.CallStoreFixture.original_source_exact' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.CallStoreFixture.original_source_exact._native.native_decide.ax_1]
+'E2E.CallStoreFixture.actual_retained_and_saved' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.CallStoreFixture.observed_true._native.native_decide.ax_1✝,
+ E2E.CallStoreFixture.observed_true._native.native_decide.ax_2✝]

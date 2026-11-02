@@ -1,0 +1,9 @@
+'Backend.Stock.Proof.Acquire810.original_scope_selects810' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.Acquire810.selected_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.AcquireHelpers.acquire_helpers_project_and_preserve' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_helper_success' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.stock_acquire_call' depends on axioms: [propext, Classical.choice, Quot.sound]

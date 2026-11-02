@@ -1,0 +1,2540 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceOutcome.lean:29:11: error: unsolved goals
+case ok
+env : Clif.Env
+program : Clif.Program
+pointer : BitVec 64
+memory : Clif.Mem
+raw : BitVec 8
+loaded : memory.load { } (Clif.effAddr { ty := Clif.Ty.i64, bits := pointer } 0) 1 8 = Clif.Res.ok raw
+⊢ (match
+      match do
+        if Clif.effAddr { ty := Clif.Ty.i64, bits := pointer } 0 % 1 = 0 then Clif.Res.ok ()
+          else Clif.Res.stuck "misaligned atomic access"
+        Clif.Res.ok ([{ ty := Clif.Ty.i8, bits := raw }], memory) with
+      | Clif.Res.ok a =>
+        match
+          Clif.Regs.setMany (fun x => if x = 1 then some { ty := Clif.Ty.i64, bits := pointer } else none) [0]
+            a.fst with
+        | some regs =>
+          Clif.StepResult.next
+            {
+              frame :=
+                {
+                  func :=
+                    { name := "stock_acquire_fused810",
+                      sig :=
+                        { params := [{ ty := Clif.Ty.i64 }], returns := [{ ty := Clif.Ty.i64 }],
+                          callConv := some Clif.CallConv.systemV },
+                      blocks :=
+                        [{ id := 0, params := [(1, Clif.Ty.i64)],
+                            body :=
+                              [{ results := [0], inst := Clif.Inst.atomicLoad Clif.Ty.i8 { } 1 },
+                                { results := [2], inst := Clif.Inst.extend Clif.ExtendOp.uextend Clif.Ty.i64 0 }],
+                            term := Clif.Terminator.ret [2] }] },
+                  regs := regs, slots := [],
+                  body := [{ results := [2], inst := Clif.Inst.extend Clif.ExtendOp.uextend Clif.Ty.i64 0 }],
+                  term := Clif.Terminator.ret [2] },
+              callers := [], mem := a.snd }
+        | none => Clif.StepResult.stuck "result arity mismatch"
+      | Clif.Res.trap c => Clif.StepResult.trapped c
+      | Clif.Res.stuck m => Clif.StepResult.stuck m with
+    | ⋯ =>
+      match
+        match s'.frame.body with
+        | [] =>
+          match s'.frame.term with
+          | Clif.Terminator.jump dest =>
+            match Clif.enterBlock s'.frame dest with
+            | Clif.Res.ok a => Clif.StepResult.next { frame := a, callers := s'.callers, mem := s'.mem }
+            | Clif.Res.trap c => Clif.StepResult.trapped c
+            | Clif.Res.stuck m => Clif.StepResult.stuck m
+          | Clif.Terminator.brif c t e =>
+            match
+              match s'.frame.regs c with
+              | some a => Clif.Res.ok a
+              | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c) with
+            | Clif.Res.ok a =>
+              match Clif.enterBlock s'.frame (if Clif.Sem.truthy a.bits = true then t else e) with
+              | Clif.Res.ok a => Clif.StepResult.next { frame := a, callers := s'.callers, mem := s'.mem }
+              | Clif.Res.trap c => Clif.StepResult.trapped c
+              | Clif.Res.stuck m => Clif.StepResult.stuck m
+            | Clif.Res.trap c => Clif.StepResult.trapped c
+            | Clif.Res.stuck m => Clif.StepResult.stuck m
+          | Clif.Terminator.brTable x dflt table =>
+            match
+              match s'.frame.regs x with
+              | some a => Clif.Res.ok a
+              | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x) with
+            | Clif.Res.ok a =>
+              match Clif.enterBlock s'.frame (table[a.toNat]?.getD dflt) with
+              | Clif.Res.ok a => Clif.StepResult.next { frame := a, callers := s'.callers, mem := s'.mem }
+              | Clif.Res.trap c => Clif.StepResult.trapped c
+              | Clif.Res.stuck m => Clif.StepResult.stuck m
+            | Clif.Res.trap c => Clif.StepResult.trapped c
+            | Clif.Res.stuck m => Clif.StepResult.stuck m
+          | Clif.Terminator.ret xs =>
+            match s'.frame.getMany xs with
+            | Clif.Res.ok a =>
+              match
+                if List.map (fun x => x.ty) a = List.map (fun x => x.ty) s'.frame.func.sig.returns then Clif.Res.ok ()
+                else
+                  Clif.Res.stuck
+                    (toString (toString "return values of %" ++ toString s'.frame.func.name) ++
+                      toString ": type/arity mismatch") with
+              | Clif.Res.ok a_1 =>
+                match s'.callers with
+                | [] => Clif.StepResult.done a (s'.mem.free (List.map (fun x => x.snd) s'.frame.slots)).leave
+                | (caller, results) :: callers =>
+                  match caller.regs.setMany results a with
+                  | some regs =>
+                    Clif.StepResult.next
+                      {
+                        frame :=
+                          { func := caller.func, regs := regs, slots := caller.slots, body := caller.body,
+                            term := caller.term },
+                        callers := callers, mem := (s'.mem.free (List.map (fun x => x.snd) s'.frame.slots)).leave }
+                  | none => Clif.StepResult.stuck "call result arity mismatch"
+              | Clif.Res.trap c => Clif.StepResult.trapped c
+              | Clif.Res.stuck m => Clif.StepResult.stuck m
+            | Clif.Res.trap c => Clif.StepResult.trapped c
+            | Clif.Res.stuck m => Clif.StepResult.stuck m
+          | Clif.Terminator.returnCall fn args => Clif.stepReturnCall env program s' fn args
+          | Clif.Terminator.trap c => Clif.StepResult.trapped c
+          | Clif.Terminator.tryCall fn args et => Clif.stepTryCall env program s' fn args et
+          | Clif.Terminator.tryCallIndirect callee args et => Clif.stepTryCallIndirect env program s' callee args et
+        | st :: rest =>
+          match st.inst with
+          | Clif.Inst.call fn args => Clif.stepCall env program s' rest st.results fn args
+          | Clif.Inst.callIndirect sig callee args =>
+            Clif.stepCallIndirect env program s' rest st.results sig callee args
+          | inst =>
+            match
+              match inst with
+              | Clif.Inst.iconst ty imm => Clif.Res.ok ([{ ty := ty, bits := imm }], s'.mem)
+              | Clif.Inst.unary op ty x => do
+                let a ← s'.frame.getAs x ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.unary op a }], s'.mem)
+              | Clif.Inst.binary op ty x y => do
+                let a ← s'.frame.getAs x ty
+                if op.isShift = true then do
+                    let b ←
+                      match s'.frame.regs y with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr y)
+                    let r ←
+                      match Clif.Sem.shift op a b.bits with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck "not a shift"
+                    Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                  else do
+                    let b ← s'.frame.getAs y ty
+                    Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.binary op a b }], s'.mem)
+              | Clif.Inst.div op ty x y => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                let r ← Clif.Res.ofExcept (Clif.Sem.div op a b)
+                Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+              | Clif.Inst.overflow op ty x y => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok
+                    ([{ ty := ty, bits := (Clif.Sem.overflow op a b).fst },
+                        Clif.Val.ofBool (Clif.Sem.overflow op a b).snd],
+                      s'.mem)
+              | Clif.Inst.carry op ty x y c => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                let cin ← s'.frame.getAs c Clif.Ty.i8
+                Clif.Res.ok
+                    ([{ ty := ty, bits := (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).fst },
+                        Clif.Val.ofBool (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).snd],
+                      s'.mem)
+              | Clif.Inst.uaddOverflowTrap ty x y code => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                let r ← Clif.Res.ofExcept (Clif.Sem.uaddOverflowTrap a b code)
+                Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+              | Clif.Inst.icmp cc ty x y => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := Clif.Ty.i8, bits := Clif.Sem.icmp cc a b }], s'.mem)
+              | Clif.Inst.select ty c x y => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+              | Clif.Inst.selectSpectreGuard ty c x y => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+              | Clif.Inst.bitselect ty c x y => do
+                let cv ← s'.frame.getAs c ty
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bitselect cv a b }], s'.mem)
+              | Clif.Inst.bmask ty x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bmask a.bits }], s'.mem)
+              | Clif.Inst.extend op ty x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                if
+                      decide
+                          ((match a.ty with
+                            | Clif.Ty.i8 => 8
+                            | Clif.Ty.i16 => 16
+                            | Clif.Ty.i32 => 32
+                            | Clif.Ty.i64 => 64
+                            | Clif.Ty.i128 => 128
+                            | Clif.Ty.f32 => 32
+                            | Clif.Ty.f64 => 64) <
+                            match ty with
+                            | Clif.Ty.i8 => 8
+                            | Clif.Ty.i16 => 16
+                            | Clif.Ty.i32 => 32
+                            | Clif.Ty.i64 => 64
+                            | Clif.Ty.i128 => 128
+                            | Clif.Ty.f32 => 32
+                            | Clif.Ty.f64 => 64) =
+                        true then
+                    Clif.Res.ok ()
+                  else Clif.Res.stuck "extend must widen"
+                match op with
+                  | Clif.ExtendOp.uextend =>
+                    Clif.Res.ok
+                      ([{ ty := ty,
+                            bits :=
+                              BitVec.zeroExtend
+                                (match ty with
+                                | Clif.Ty.i8 => 8
+                                | Clif.Ty.i16 => 16
+                                | Clif.Ty.i32 => 32
+                                | Clif.Ty.i64 => 64
+                                | Clif.Ty.i128 => 128
+                                | Clif.Ty.f32 => 32
+                                | Clif.Ty.f64 => 64)
+                                a.bits }],
+                        s'.mem)
+                  | Clif.ExtendOp.sextend =>
+                    Clif.Res.ok
+                      ([{ ty := ty,
+                            bits :=
+                              Clif.Sem.sextend
+                                (match ty with
+                                | Clif.Ty.i8 => 8
+                                | Clif.Ty.i16 => 16
+                                | Clif.Ty.i32 => 32
+                                | Clif.Ty.i64 => 64
+                                | Clif.Ty.i128 => 128
+                                | Clif.Ty.f32 => 32
+                                | Clif.Ty.f64 => 64)
+                                a.bits }],
+                        s'.mem)
+              | Clif.Inst.ireduce ty x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                if
+                      decide
+                          ((match ty with
+                            | Clif.Ty.i8 => 8
+                            | Clif.Ty.i16 => 16
+                            | Clif.Ty.i32 => 32
+                            | Clif.Ty.i64 => 64
+                            | Clif.Ty.i128 => 128
+                            | Clif.Ty.f32 => 32
+                            | Clif.Ty.f64 => 64) <
+                            match a.ty with
+                            | Clif.Ty.i8 => 8
+                            | Clif.Ty.i16 => 16
+                            | Clif.Ty.i32 => 32
+                            | Clif.Ty.i64 => 64
+                            | Clif.Ty.i128 => 128
+                            | Clif.Ty.f32 => 32
+                            | Clif.Ty.f64 => 64) =
+                        true then
+                    Clif.Res.ok ()
+                  else Clif.Res.stuck "ireduce must narrow"
+                Clif.Res.ok
+                    ([{ ty := ty,
+                          bits :=
+                            Clif.Sem.ireduce
+                              (match ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64)
+                              a.bits }],
+                      s'.mem)
+              | Clif.Inst.iconcat ty lo hi => do
+                let t2 ←
+                  match ty.double? with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck "iconcat: no double-width type"
+                let l ← s'.frame.getAs lo ty
+                let h ← s'.frame.getAs hi ty
+                Clif.Res.ok
+                    ([{ ty := t2,
+                          bits :=
+                            BitVec.setWidth
+                              (match t2 with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64)
+                              (Clif.Sem.iconcat l h) }],
+                      s'.mem)
+              | Clif.Inst.isplit ty x => do
+                let th ←
+                  match ty.half? with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck "isplit: no half-width type"
+                let a ← s'.frame.getAs x ty
+                Clif.Res.ok
+                    ([{ ty := th,
+                          bits :=
+                            (Clif.Sem.isplit
+                                (match th with
+                                | Clif.Ty.i8 => 8
+                                | Clif.Ty.i16 => 16
+                                | Clif.Ty.i32 => 32
+                                | Clif.Ty.i64 => 64
+                                | Clif.Ty.i128 => 128
+                                | Clif.Ty.f32 => 32
+                                | Clif.Ty.f64 => 64)
+                                a).fst },
+                        { ty := th,
+                          bits :=
+                            (Clif.Sem.isplit
+                                (match th with
+                                | Clif.Ty.i8 => 8
+                                | Clif.Ty.i16 => 16
+                                | Clif.Ty.i32 => 32
+                                | Clif.Ty.i64 => 64
+                                | Clif.Ty.i128 => 128
+                                | Clif.Ty.f32 => 32
+                                | Clif.Ty.f64 => 64)
+                                a).snd }],
+                      s'.mem)
+              | Clif.Inst.load op ty flags p offset => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if
+                      decide
+                          (Clif.LoadOp.size ty op ≤
+                            (match ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) /
+                              8) =
+                        true then
+                    Clif.Res.ok ()
+                  else Clif.Res.stuck "load: access wider than result"
+                let raw ←
+                  s'.mem.load flags (Clif.effAddr pv offset) (Clif.LoadOp.size ty op) (8 * Clif.LoadOp.size ty op)
+                Clif.Res.ok
+                    ([{ ty := ty,
+                          bits :=
+                            if op.signed = true then
+                              BitVec.signExtend
+                                (match ty with
+                                | Clif.Ty.i8 => 8
+                                | Clif.Ty.i16 => 16
+                                | Clif.Ty.i32 => 32
+                                | Clif.Ty.i64 => 64
+                                | Clif.Ty.i128 => 128
+                                | Clif.Ty.f32 => 32
+                                | Clif.Ty.f64 => 64)
+                                raw
+                            else
+                              BitVec.setWidth
+                                (match ty with
+                                | Clif.Ty.i8 => 8
+                                | Clif.Ty.i16 => 16
+                                | Clif.Ty.i32 => 32
+                                | Clif.Ty.i64 => 64
+                                | Clif.Ty.i128 => 128
+                                | Clif.Ty.f32 => 32
+                                | Clif.Ty.f64 => 64)
+                                raw }],
+                      s'.mem)
+              | Clif.Inst.store op ty flags x p offset => do
+                let a ← s'.frame.getAs x ty
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if
+                      decide
+                          (Clif.StoreOp.size ty op ≤
+                            (match ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) /
+                              8) =
+                        true then
+                    Clif.Res.ok ()
+                  else Clif.Res.stuck "store: access wider than value"
+                let mem' ← s'.mem.store flags (Clif.effAddr pv offset) (Clif.StoreOp.size ty op) a
+                Clif.Res.ok ([], mem')
+              | Clif.Inst.stackAddr ty slot offset => do
+                let base ←
+                  match List.lookup slot s'.frame.slots with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown stack slot ss" ++ Nat.repr slot)
+                Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+              | Clif.Inst.atomicRmw op ty flags p x => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                let a ← s'.frame.getAs x ty
+                if
+                      Clif.effAddr pv 0 %
+                          ((match ty with
+                            | Clif.Ty.i8 => 8
+                            | Clif.Ty.i16 => 16
+                            | Clif.Ty.i32 => 32
+                            | Clif.Ty.i64 => 64
+                            | Clif.Ty.i128 => 128
+                            | Clif.Ty.f32 => 32
+                            | Clif.Ty.f64 => 64) /
+                            8) =
+                        0 then
+                    Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let old ←
+                  s'.mem.load flags (Clif.effAddr pv 0)
+                      ((match ty with
+                        | Clif.Ty.i8 => 8
+                        | Clif.Ty.i16 => 16
+                        | Clif.Ty.i32 => 32
+                        | Clif.Ty.i64 => 64
+                        | Clif.Ty.i128 => 128
+                        | Clif.Ty.f32 => 32
+                        | Clif.Ty.f64 => 64) /
+                        8)
+                      (match ty with
+                      | Clif.Ty.i8 => 8
+                      | Clif.Ty.i16 => 16
+                      | Clif.Ty.i32 => 32
+                      | Clif.Ty.i64 => 64
+                      | Clif.Ty.i128 => 128
+                      | Clif.Ty.f32 => 32
+                      | Clif.Ty.f64 => 64)
+                let mem' ←
+                  s'.mem.store flags (Clif.effAddr pv 0)
+                      ((match ty with
+                        | Clif.Ty.i8 => 8
+                        | Clif.Ty.i16 => 16
+                        | Clif.Ty.i32 => 32
+                        | Clif.Ty.i64 => 64
+                        | Clif.Ty.i128 => 128
+                        | Clif.Ty.f32 => 32
+                        | Clif.Ty.f64 => 64) /
+                        8)
+                      (Clif.Sem.atomicRmw op old a)
+                Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+              | Clif.Inst.atomicCas ty flags p e x => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                let ev ← s'.frame.getAs e ty
+                let a ← s'.frame.getAs x ty
+                if
+                      Clif.effAddr pv 0 %
+                          ((match ty with
+                            | Clif.Ty.i8 => 8
+                            | Clif.Ty.i16 => 16
+                            | Clif.Ty.i32 => 32
+                            | Clif.Ty.i64 => 64
+                            | Clif.Ty.i128 => 128
+                            | Clif.Ty.f32 => 32
+                            | Clif.Ty.f64 => 64) /
+                            8) =
+                        0 then
+                    Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let old ←
+                  s'.mem.load flags (Clif.effAddr pv 0)
+                      ((match ty with
+                        | Clif.Ty.i8 => 8
+                        | Clif.Ty.i16 => 16
+                        | Clif.Ty.i32 => 32
+                        | Clif.Ty.i64 => 64
+                        | Clif.Ty.i128 => 128
+                        | Clif.Ty.f32 => 32
+                        | Clif.Ty.f64 => 64) /
+                        8)
+                      (match ty with
+                      | Clif.Ty.i8 => 8
+                      | Clif.Ty.i16 => 16
+                      | Clif.Ty.i32 => 32
+                      | Clif.Ty.i64 => 64
+                      | Clif.Ty.i128 => 128
+                      | Clif.Ty.f32 => 32
+                      | Clif.Ty.f64 => 64)
+                if (old == ev) = true then do
+                    let mem' ←
+                      s'.mem.store flags (Clif.effAddr pv 0)
+                          ((match ty with
+                            | Clif.Ty.i8 => 8
+                            | Clif.Ty.i16 => 16
+                            | Clif.Ty.i32 => 32
+                            | Clif.Ty.i64 => 64
+                            | Clif.Ty.i128 => 128
+                            | Clif.Ty.f32 => 32
+                            | Clif.Ty.f64 => 64) /
+                            8)
+                          a
+                    Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+                  else Clif.Res.ok ([{ ty := ty, bits := old }], s'.mem)
+              | Clif.Inst.atomicLoad ty flags p => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if
+                      Clif.effAddr pv 0 %
+                          ((match ty with
+                            | Clif.Ty.i8 => 8
+                            | Clif.Ty.i16 => 16
+                            | Clif.Ty.i32 => 32
+                            | Clif.Ty.i64 => 64
+                            | Clif.Ty.i128 => 128
+                            | Clif.Ty.f32 => 32
+                            | Clif.Ty.f64 => 64) /
+                            8) =
+                        0 then
+                    Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let v ←
+                  s'.mem.load flags (Clif.effAddr pv 0)
+                      ((match ty with
+                        | Clif.Ty.i8 => 8
+                        | Clif.Ty.i16 => 16
+                        | Clif.Ty.i32 => 32
+                        | Clif.Ty.i64 => 64
+                        | Clif.Ty.i128 => 128
+                        | Clif.Ty.f32 => 32
+                        | Clif.Ty.f64 => 64) /
+                        8)
+                      (match ty with
+                      | Clif.Ty.i8 => 8
+                      | Clif.Ty.i16 => 16
+                      | Clif.Ty.i32 => 32
+                      | Clif.Ty.i64 => 64
+                      | Clif.Ty.i128 => 128
+                      | Clif.Ty.f32 => 32
+                      | Clif.Ty.f64 => 64)
+                Clif.Res.ok ([{ ty := ty, bits := v }], s'.mem)
+              | Clif.Inst.atomicStore ty flags x p => do
+                let a ← s'.frame.getAs x ty
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if
+                      Clif.effAddr pv 0 %
+                          ((match ty with
+                            | Clif.Ty.i8 => 8
+                            | Clif.Ty.i16 => 16
+                            | Clif.Ty.i32 => 32
+                            | Clif.Ty.i64 => 64
+                            | Clif.Ty.i128 => 128
+                            | Clif.Ty.f32 => 32
+                            | Clif.Ty.f64 => 64) /
+                            8) =
+                        0 then
+                    Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let mem' ←
+                  s'.mem.store flags (Clif.effAddr pv 0)
+                      ((match ty with
+                        | Clif.Ty.i8 => 8
+                        | Clif.Ty.i16 => 16
+                        | Clif.Ty.i32 => 32
+                        | Clif.Ty.i64 => 64
+                        | Clif.Ty.i128 => 128
+                        | Clif.Ty.f32 => 32
+                        | Clif.Ty.f64 => 64) /
+                        8)
+                      a
+                Clif.Res.ok ([], mem')
+              | Clif.Inst.fence => Clif.Res.ok ([], s'.mem)
+              | Clif.Inst.bitcast ty flags x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                if h :
+                      (match a.ty with
+                        | Clif.Ty.i8 => 8
+                        | Clif.Ty.i16 => 16
+                        | Clif.Ty.i32 => 32
+                        | Clif.Ty.i64 => 64
+                        | Clif.Ty.i128 => 128
+                        | Clif.Ty.f32 => 32
+                        | Clif.Ty.f64 => 64) =
+                        match ty with
+                        | Clif.Ty.i8 => 8
+                        | Clif.Ty.i16 => 16
+                        | Clif.Ty.i32 => 32
+                        | Clif.Ty.i64 => 64
+                        | Clif.Ty.i128 => 128
+                        | Clif.Ty.f32 => 32
+                        | Clif.Ty.f64 => 64 then
+                    Clif.Res.ok ([{ ty := ty, bits := h ▸ a.bits }], s'.mem)
+                  else
+                    Clif.Res.stuck
+                      (toString "bitcast: " ++ toString a.ty.name ++ toString " and " ++ toString ty.name ++
+                        toString " differ in width")
+              | Clif.Inst.float op ty args => do
+                let vs ← s'.frame.getMany args
+                let r ← Clif.evalFloat op ty vs
+                Clif.Res.ok ([r], s'.mem)
+              | Clif.Inst.call fn args => Clif.Res.stuck "evalInst: call is handled by step"
+              | Clif.Inst.callIndirect sig callee args => Clif.Res.stuck "evalInst: call is handled by step"
+              | Clif.Inst.funcAddr ty fn => do
+                let ext ←
+                  match s'.frame.func.extern? fn with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown function reference fn" ++ Nat.repr fn)
+                let base ←
+                  match s'.mem.symbols ext.name with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "func_addr: undefined symbol %" ++ toString ext.name)
+                Clif.Res.ok ([Clif.Val.ofInt ty ↑base], s'.mem)
+              | Clif.Inst.trapz c code => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                if Clif.Sem.truthy cv.bits = true then Clif.Res.ok ([], s'.mem) else Clif.Res.trap code
+              | Clif.Inst.trapnz c code => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                if Clif.Sem.truthy cv.bits = true then Clif.Res.trap code else Clif.Res.ok ([], s'.mem)
+              | Clif.Inst.nop => Clif.Res.ok ([], s'.mem)
+              | Clif.Inst.symbolValue ty gv => do
+                let g ←
+                  match List.lookup gv s'.frame.func.globals with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                match g with
+                  | Clif.GlobalValue.symbol name offset colocated => do
+                    let base ←
+                      match s'.mem.symbols name with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck (toString "symbol_value: undefined symbol %" ++ toString name)
+                    Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                  | x => Clif.Res.stuck (toString "symbol_value: gv" ++ gv.repr ++ toString " is not a symbol")
+              | Clif.Inst.tlsValue ty gv => do
+                let g ←
+                  match List.lookup gv s'.frame.func.globals with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                match g with
+                  | Clif.GlobalValue.tlsSymbol name offset colocated => do
+                    let base ←
+                      match s'.mem.symbols name with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck (toString "tls_value: undefined symbol %" ++ toString name)
+                    Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                  | x => Clif.Res.stuck (toString "tls_value: gv" ++ gv.repr ++ toString " is not a tls symbol") with
+            | Clif.Res.ok a =>
+              match s'.frame.regs.setMany st.results a.fst with
+              | some regs =>
+                Clif.StepResult.next
+                  {
+                    frame :=
+                      { func := s'.frame.func, regs := regs, slots := s'.frame.slots, body := rest,
+                        term := s'.frame.term },
+                    callers := s'.callers, mem := a.snd }
+              | none => Clif.StepResult.stuck "result arity mismatch"
+            | Clif.Res.trap c => Clif.StepResult.trapped c
+            | Clif.Res.stuck m => Clif.StepResult.stuck m with
+      | ⋯ =>
+        match
+          match s'.frame.body with
+          | ⋯ =>
+            match s'.frame.term with
+            | Clif.Terminator.jump dest =>
+              match Clif.enterBlock s'.frame dest with
+              | Clif.Res.ok a => Clif.StepResult.next { frame := a, callers := s'.callers, mem := s'.mem }
+              | Clif.Res.trap c => Clif.StepResult.trapped c
+              | Clif.Res.stuck m => Clif.StepResult.stuck m
+            | Clif.Terminator.brif c t e =>
+              match
+                match s'.frame.regs c with
+                | some a => Clif.Res.ok a
+                | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c) with
+              | Clif.Res.ok a =>
+                match Clif.enterBlock s'.frame (if Clif.Sem.truthy a.bits = true then t else e) with
+                | Clif.Res.ok a => Clif.StepResult.next { frame := a, callers := s'.callers, mem := s'.mem }
+                | Clif.Res.trap c => Clif.StepResult.trapped c
+                | Clif.Res.stuck m => Clif.StepResult.stuck m
+              | Clif.Res.trap c => Clif.StepResult.trapped c
+              | Clif.Res.stuck m => Clif.StepResult.stuck m
+            | Clif.Terminator.brTable x dflt table =>
+              match
+                match s'.frame.regs x with
+                | some a => Clif.Res.ok a
+                | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x) with
+              | Clif.Res.ok a =>
+                match Clif.enterBlock s'.frame (table[a.toNat]?.getD dflt) with
+                | Clif.Res.ok a => Clif.StepResult.next { frame := a, callers := s'.callers, mem := s'.mem }
+                | Clif.Res.trap c => Clif.StepResult.trapped c
+                | Clif.Res.stuck m => Clif.StepResult.stuck m
+              | Clif.Res.trap c => Clif.StepResult.trapped c
+              | Clif.Res.stuck m => Clif.StepResult.stuck m
+            | Clif.Terminator.ret xs =>
+              match s'.frame.getMany xs with
+              | Clif.Res.ok a =>
+                match
+                  if List.map (fun x => x.ty) a = List.map (fun x => x.ty) s'.frame.func.sig.returns then Clif.Res.ok ()
+                  else
+                    Clif.Res.stuck
+                      (toString (toString "return values of %" ++ toString s'.frame.func.name) ++
+                        toString ": type/arity mismatch") with
+                | Clif.Res.ok a_1 =>
+                  match s'.callers with
+                  | [] => Clif.StepResult.done a (s'.mem.free (List.map (fun x => x.snd) s'.frame.slots)).leave
+                  | (caller, results) :: callers =>
+                    match caller.regs.setMany results a with
+                    | some regs =>
+                      Clif.StepResult.next
+                        {
+                          frame :=
+                            { func := caller.func, regs := regs, slots := caller.slots, body := caller.body,
+                              term := caller.term },
+                          callers := callers, mem := (s'.mem.free (List.map (fun x => x.snd) s'.frame.slots)).leave }
+                    | none => Clif.StepResult.stuck "call result arity mismatch"
+                | Clif.Res.trap c => Clif.StepResult.trapped c
+                | Clif.Res.stuck m => Clif.StepResult.stuck m
+              | Clif.Res.trap c => Clif.StepResult.trapped c
+              | Clif.Res.stuck m => Clif.StepResult.stuck m
+            | Clif.Terminator.returnCall fn args => Clif.stepReturnCall env program s' fn args
+            | Clif.Terminator.trap c => Clif.StepResult.trapped c
+            | Clif.Terminator.tryCall fn args et => Clif.stepTryCall env program s' fn args et
+            | Clif.Terminator.tryCallIndirect callee args et => Clif.stepTryCallIndirect env program s' callee args et
+          | ⋯ =>
+            match st.inst with
+            | ⋯ => Clif.stepCall env program s' rest st.results fn args
+            | ⋯ => Clif.stepCallIndirect env program s' rest st.results sig callee args
+            | ⋯ =>
+              match
+                match inst with
+                | ⋯ => Clif.Res.ok ([{ ty := ty, bits := imm }], s'.mem)
+                | ⋯ => do
+                  let a ← s'.frame.getAs x ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.unary op a }], s'.mem)
+                | ⋯ => do
+                  let a ← s'.frame.getAs x ty
+                  if op.isShift = true then do
+                      let b ←
+                        match s'.frame.regs y with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr y)
+                      let r ←
+                        match Clif.Sem.shift op a b.bits with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck "not a shift"
+                      Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                    else do
+                      let b ← s'.frame.getAs y ty
+                      Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.binary op a b }], s'.mem)
+                | ⋯ => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  let r ← Clif.Res.ofExcept (Clif.Sem.div op a b)
+                  Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                | ⋯ => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok
+                      ([{ ty := ty, bits := (Clif.Sem.overflow op a b).fst },
+                          Clif.Val.ofBool (Clif.Sem.overflow op a b).snd],
+                        s'.mem)
+                | ⋯ => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  let cin ← s'.frame.getAs c Clif.Ty.i8
+                  Clif.Res.ok
+                      ([{ ty := ty, bits := (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).fst },
+                          Clif.Val.ofBool (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).snd],
+                        s'.mem)
+                | ⋯ => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  let r ← Clif.Res.ofExcept (Clif.Sem.uaddOverflowTrap a b code)
+                  Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                | ⋯ => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := Clif.Ty.i8, bits := Clif.Sem.icmp cc a b }], s'.mem)
+                | ⋯ => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+                | ⋯ => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+                | ⋯ => do
+                  let cv ← s'.frame.getAs c ty
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bitselect cv a b }], s'.mem)
+                | ⋯ => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bmask a.bits }], s'.mem)
+                | ⋯ => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  if
+                        decide
+                            ((match a.ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) <
+                              match ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) =
+                          true then
+                      Clif.Res.ok ()
+                    else Clif.Res.stuck "extend must widen"
+                  match op with
+                    | Clif.ExtendOp.uextend =>
+                      Clif.Res.ok
+                        ([{ ty := ty,
+                              bits :=
+                                BitVec.zeroExtend
+                                  (match ty with
+                                  | Clif.Ty.i8 => 8
+                                  | Clif.Ty.i16 => 16
+                                  | Clif.Ty.i32 => 32
+                                  | Clif.Ty.i64 => 64
+                                  | Clif.Ty.i128 => 128
+                                  | Clif.Ty.f32 => 32
+                                  | Clif.Ty.f64 => 64)
+                                  a.bits }],
+                          s'.mem)
+                    | Clif.ExtendOp.sextend =>
+                      Clif.Res.ok
+                        ([{ ty := ty,
+                              bits :=
+                                Clif.Sem.sextend
+                                  (match ty with
+                                  | Clif.Ty.i8 => 8
+                                  | Clif.Ty.i16 => 16
+                                  | Clif.Ty.i32 => 32
+                                  | Clif.Ty.i64 => 64
+                                  | Clif.Ty.i128 => 128
+                                  | Clif.Ty.f32 => 32
+                                  | Clif.Ty.f64 => 64)
+                                  a.bits }],
+                          s'.mem)
+                | ⋯ => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  if
+                        decide
+                            ((match ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) <
+                              match a.ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) =
+                          true then
+                      Clif.Res.ok ()
+                    else Clif.Res.stuck "ireduce must narrow"
+                  Clif.Res.ok
+                      ([{ ty := ty,
+                            bits :=
+                              Clif.Sem.ireduce
+                                (match ty with
+                                | Clif.Ty.i8 => 8
+                                | Clif.Ty.i16 => 16
+                                | Clif.Ty.i32 => 32
+                                | Clif.Ty.i64 => 64
+                                | Clif.Ty.i128 => 128
+                                | Clif.Ty.f32 => 32
+                                | Clif.Ty.f64 => 64)
+                                a.bits }],
+                        s'.mem)
+                | ⋯ => do
+                  let t2 ←
+                    match ty.double? with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck "iconcat: no double-width type"
+                  let l ← s'.frame.getAs lo ty
+                  let h ← s'.frame.getAs hi ty
+                  Clif.Res.ok
+                      ([{ ty := t2,
+                            bits :=
+                              BitVec.setWidth
+                                (match t2 with
+                                | Clif.Ty.i8 => 8
+                                | Clif.Ty.i16 => 16
+                                | Clif.Ty.i32 => 32
+                                | Clif.Ty.i64 => 64
+                                | Clif.Ty.i128 => 128
+                                | Clif.Ty.f32 => 32
+                                | Clif.Ty.f64 => 64)
+                                (Clif.Sem.iconcat l h) }],
+                        s'.mem)
+                | ⋯ => do
+                  let th ←
+                    match ty.half? with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck "isplit: no half-width type"
+                  let a ← s'.frame.getAs x ty
+                  Clif.Res.ok
+                      ([{ ty := th,
+                            bits :=
+                              (Clif.Sem.isplit
+                                  (match th with
+                                  | Clif.Ty.i8 => 8
+                                  | Clif.Ty.i16 => 16
+                                  | Clif.Ty.i32 => 32
+                                  | Clif.Ty.i64 => 64
+                                  | Clif.Ty.i128 => 128
+                                  | Clif.Ty.f32 => 32
+                                  | Clif.Ty.f64 => 64)
+                                  a).fst },
+                          { ty := th,
+                            bits :=
+                              (Clif.Sem.isplit
+                                  (match th with
+                                  | Clif.Ty.i8 => 8
+                                  | Clif.Ty.i16 => 16
+                                  | Clif.Ty.i32 => 32
+                                  | Clif.Ty.i64 => 64
+                                  | Clif.Ty.i128 => 128
+                                  | Clif.Ty.f32 => 32
+                                  | Clif.Ty.f64 => 64)
+                                  a).snd }],
+                        s'.mem)
+                | ⋯ => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if
+                        decide
+                            (Clif.LoadOp.size ty op ≤
+                              (match ty with
+                                | Clif.Ty.i8 => 8
+                                | Clif.Ty.i16 => 16
+                                | Clif.Ty.i32 => 32
+                                | Clif.Ty.i64 => 64
+                                | Clif.Ty.i128 => 128
+                                | Clif.Ty.f32 => 32
+                                | Clif.Ty.f64 => 64) /
+                                8) =
+                          true then
+                      Clif.Res.ok ()
+                    else Clif.Res.stuck "load: access wider than result"
+                  let raw ←
+                    s'.mem.load flags (Clif.effAddr pv offset) (Clif.LoadOp.size ty op) (8 * Clif.LoadOp.size ty op)
+                  Clif.Res.ok
+                      ([{ ty := ty,
+                            bits :=
+                              if op.signed = true then
+                                BitVec.signExtend
+                                  (match ty with
+                                  | Clif.Ty.i8 => 8
+                                  | Clif.Ty.i16 => 16
+                                  | Clif.Ty.i32 => 32
+                                  | Clif.Ty.i64 => 64
+                                  | Clif.Ty.i128 => 128
+                                  | Clif.Ty.f32 => 32
+                                  | Clif.Ty.f64 => 64)
+                                  raw
+                              else
+                                BitVec.setWidth
+                                  (match ty with
+                                  | Clif.Ty.i8 => 8
+                                  | Clif.Ty.i16 => 16
+                                  | Clif.Ty.i32 => 32
+                                  | Clif.Ty.i64 => 64
+                                  | Clif.Ty.i128 => 128
+                                  | Clif.Ty.f32 => 32
+                                  | Clif.Ty.f64 => 64)
+                                  raw }],
+                        s'.mem)
+                | ⋯ => do
+                  let a ← s'.frame.getAs x ty
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if
+                        decide
+                            (Clif.StoreOp.size ty op ≤
+                              (match ty with
+                                | Clif.Ty.i8 => 8
+                                | Clif.Ty.i16 => 16
+                                | Clif.Ty.i32 => 32
+                                | Clif.Ty.i64 => 64
+                                | Clif.Ty.i128 => 128
+                                | Clif.Ty.f32 => 32
+                                | Clif.Ty.f64 => 64) /
+                                8) =
+                          true then
+                      Clif.Res.ok ()
+                    else Clif.Res.stuck "store: access wider than value"
+                  let mem' ← s'.mem.store flags (Clif.effAddr pv offset) (Clif.StoreOp.size ty op) a
+                  Clif.Res.ok ([], mem')
+                | ⋯ => do
+                  let base ←
+                    match List.lookup slot s'.frame.slots with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown stack slot ss" ++ Nat.repr slot)
+                  Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                | ⋯ => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  let a ← s'.frame.getAs x ty
+                  if
+                        Clif.effAddr pv 0 %
+                            ((match ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) /
+                              8) =
+                          0 then
+                      Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let old ←
+                    s'.mem.load flags (Clif.effAddr pv 0)
+                        ((match ty with
+                          | Clif.Ty.i8 => 8
+                          | Clif.Ty.i16 => 16
+                          | Clif.Ty.i32 => 32
+                          | Clif.Ty.i64 => 64
+                          | Clif.Ty.i128 => 128
+                          | Clif.Ty.f32 => 32
+                          | Clif.Ty.f64 => 64) /
+                          8)
+                        (match ty with
+                        | Clif.Ty.i8 => 8
+                        | Clif.Ty.i16 => 16
+                        | Clif.Ty.i32 => 32
+                        | Clif.Ty.i64 => 64
+                        | Clif.Ty.i128 => 128
+                        | Clif.Ty.f32 => 32
+                        | Clif.Ty.f64 => 64)
+                  let mem' ←
+                    s'.mem.store flags (Clif.effAddr pv 0)
+                        ((match ty with
+                          | Clif.Ty.i8 => 8
+                          | Clif.Ty.i16 => 16
+                          | Clif.Ty.i32 => 32
+                          | Clif.Ty.i64 => 64
+                          | Clif.Ty.i128 => 128
+                          | Clif.Ty.f32 => 32
+                          | Clif.Ty.f64 => 64) /
+                          8)
+                        (Clif.Sem.atomicRmw op old a)
+                  Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+                | ⋯ => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  let ev ← s'.frame.getAs e ty
+                  let a ← s'.frame.getAs x ty
+                  if
+                        Clif.effAddr pv 0 %
+                            ((match ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) /
+                              8) =
+                          0 then
+                      Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let old ←
+                    s'.mem.load flags (Clif.effAddr pv 0)
+                        ((match ty with
+                          | Clif.Ty.i8 => 8
+                          | Clif.Ty.i16 => 16
+                          | Clif.Ty.i32 => 32
+                          | Clif.Ty.i64 => 64
+                          | Clif.Ty.i128 => 128
+                          | Clif.Ty.f32 => 32
+                          | Clif.Ty.f64 => 64) /
+                          8)
+                        (match ty with
+                        | Clif.Ty.i8 => 8
+                        | Clif.Ty.i16 => 16
+                        | Clif.Ty.i32 => 32
+                        | Clif.Ty.i64 => 64
+                        | Clif.Ty.i128 => 128
+                        | Clif.Ty.f32 => 32
+                        | Clif.Ty.f64 => 64)
+                  if (old == ev) = true then do
+                      let mem' ←
+                        s'.mem.store flags (Clif.effAddr pv 0)
+                            ((match ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) /
+                              8)
+                            a
+                      Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+                    else Clif.Res.ok ([{ ty := ty, bits := old }], s'.mem)
+                | ⋯ => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if
+                        Clif.effAddr pv 0 %
+                            ((match ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) /
+                              8) =
+                          0 then
+                      Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let v ←
+                    s'.mem.load flags (Clif.effAddr pv 0)
+                        ((match ty with
+                          | Clif.Ty.i8 => 8
+                          | Clif.Ty.i16 => 16
+                          | Clif.Ty.i32 => 32
+                          | Clif.Ty.i64 => 64
+                          | Clif.Ty.i128 => 128
+                          | Clif.Ty.f32 => 32
+                          | Clif.Ty.f64 => 64) /
+                          8)
+                        (match ty with
+                        | Clif.Ty.i8 => 8
+                        | Clif.Ty.i16 => 16
+                        | Clif.Ty.i32 => 32
+                        | Clif.Ty.i64 => 64
+                        | Clif.Ty.i128 => 128
+                        | Clif.Ty.f32 => 32
+                        | Clif.Ty.f64 => 64)
+                  Clif.Res.ok ([{ ty := ty, bits := v }], s'.mem)
+                | ⋯ => do
+                  let a ← s'.frame.getAs x ty
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if
+                        Clif.effAddr pv 0 %
+                            ((match ty with
+                              | Clif.Ty.i8 => 8
+                              | Clif.Ty.i16 => 16
+                              | Clif.Ty.i32 => 32
+                              | Clif.Ty.i64 => 64
+                              | Clif.Ty.i128 => 128
+                              | Clif.Ty.f32 => 32
+                              | Clif.Ty.f64 => 64) /
+                              8) =
+                          0 then
+                      Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let mem' ←
+                    s'.mem.store flags (Clif.effAddr pv 0)
+                        ((match ty with
+                          | Clif.Ty.i8 => 8
+                          | Clif.Ty.i16 => 16
+                          | Clif.Ty.i32 => 32
+                          | Clif.Ty.i64 => 64
+                          | Clif.Ty.i128 => 128
+                          | Clif.Ty.f32 => 32
+                          | Clif.Ty.f64 => 64) /
+                          8)
+                        a
+                  Clif.Res.ok ([], mem')
+                | ⋯ => Clif.Res.ok ([], s'.mem)
+                | ⋯ => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  if h :
+                        (match a.ty with
+                          | Clif.Ty.i8 => 8
+                          | Clif.Ty.i16 => 16
+                          | Clif.Ty.i32 => 32
+                          | Clif.Ty.i64 => 64
+                          | Clif.Ty.i128 => 128
+                          | Clif.Ty.f32 => 32
+                          | Clif.Ty.f64 => 64) =
+                          match ty with
+                          | Clif.Ty.i8 => 8
+                          | Clif.Ty.i16 => 16
+                          | Clif.Ty.i32 => 32
+                          | Clif.Ty.i64 => 64
+                          | Clif.Ty.i128 => 128
+                          | Clif.Ty.f32 => 32
+                          | Clif.Ty.f64 => 64 then
+                      Clif.Res.ok ([{ ty := ty, bits := h ▸ a.bits }], s'.mem)
+                    else
+                      Clif.Res.stuck
+                        (toString "bitcast: " ++ toString a.ty.name ++ toString " and " ++ toString ty.name ++
+                          toString " differ in width")
+                | ⋯ => do
+                  let vs ← s'.frame.getMany args
+                  let r ← Clif.evalFloat op ty vs
+                  Clif.Res.ok ([r], s'.mem)
+                | ⋯ => Clif.Res.stuck "evalInst: call is handled by step"
+                | ⋯ => Clif.Res.stuck "evalInst: call is handled by step"
+                | ⋯ => do
+                  let ext ←
+                    match s'.frame.func.extern? fn with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown function reference fn" ++ Nat.repr fn)
+                  let base ←
+                    match s'.mem.symbols ext.name with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "func_addr: undefined symbol %" ++ toString ext.name)
+                  Clif.Res.ok ([Clif.Val.ofInt ty ↑base], s'.mem)
+                | ⋯ => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  if Clif.Sem.truthy cv.bits = true then Clif.Res.ok ([], s'.mem) else Clif.Res.trap code
+                | ⋯ => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  if Clif.Sem.truthy cv.bits = true then Clif.Res.trap code else Clif.Res.ok ([], s'.mem)
+                | ⋯ => Clif.Res.ok ([], s'.mem)
+                | ⋯ => do
+                  let g ←
+                    match List.lookup gv s'.frame.func.globals with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                  match g with
+                    | Clif.GlobalValue.symbol name offset ⋯ => do
+                      let base ←
+                        match s'.mem.symbols name with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck (toString "symbol_value: undefined symbol %" ++ toString name)
+                      Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                    | ⋯ => Clif.Res.stuck (toString "symbol_value: gv" ++ gv.repr ++ toString " is not a symbol")
+                | ⋯ => ⋯ with
+              | ⋯ => ⋯
+              | ⋯ => ⋯
+              | ⋯ => ⋯ with
+        | ⋯ => ⋯
+        | ⋯ => ⋯
+        | ⋯ => ⋯
+        | ⋯ => ⋯
+      | ⋯ => ⋯
+      | ⋯ => ⋯
+      | ⋯ => ⋯
+    | ⋯ => ⋯
+    | ⋯ => ⋯
+    | ⋯ => ⋯) =
+    ⋯
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceOutcome.lean:34:14: error: unsolved goals
+case trap
+env : Clif.Env
+program : Clif.Program
+pointer : BitVec 64
+memory : Clif.Mem
+code : Clif.TrapCode
+loaded : memory.load { } (Clif.effAddr { ty := Clif.Ty.i64, bits := pointer } 0) 1 8 = Clif.Res.trap code
+⊢ (match
+      match do
+        if Clif.effAddr { ty := Clif.Ty.i64, bits := pointer } 0 % (Clif.Ty.i8.width / 8) = 0 then Clif.Res.ok ()
+          else Clif.Res.stuck "misaligned atomic access"
+        let v ←
+          memory.load { } (Clif.effAddr { ty := Clif.Ty.i64, bits := pointer } 0) (Clif.Ty.i8.width / 8)
+              Clif.Ty.i8.width
+        Clif.Res.ok ([{ ty := Clif.Ty.i8, bits := v }], memory) with
+      | Clif.Res.ok a =>
+        Clif.continueWith
+          {
+            frame :=
+              {
+                func :=
+                  { name := "stock_acquire_fused810",
+                    sig :=
+                      { params := [{ ty := Clif.Ty.i64 }], returns := [{ ty := Clif.Ty.i64 }],
+                        callConv := some Clif.CallConv.systemV },
+                    blocks :=
+                      [{ id := 0, params := [(1, Clif.Ty.i64)],
+                          body :=
+                            [{ results := [0], inst := Clif.Inst.atomicLoad Clif.Ty.i8 { } 1 },
+                              { results := [2], inst := Clif.Inst.extend Clif.ExtendOp.uextend Clif.Ty.i64 0 }],
+                          term := Clif.Terminator.ret [2] }] },
+                regs := fun x => if x = 1 then some { ty := Clif.Ty.i64, bits := pointer } else none, slots := [],
+                body :=
+                  [{ results := [0], inst := Clif.Inst.atomicLoad Clif.Ty.i8 { } 1 },
+                    { results := [2], inst := Clif.Inst.extend Clif.ExtendOp.uextend Clif.Ty.i64 0 }],
+                term := Clif.Terminator.ret [2] },
+            callers := [], mem := memory }
+          [{ results := [2], inst := Clif.Inst.extend Clif.ExtendOp.uextend Clif.Ty.i64 0 }] [0] a.fst a.snd
+      | Clif.Res.trap c => Clif.StepResult.trapped c
+      | Clif.Res.stuck m => Clif.StepResult.stuck m with
+    | Clif.StepResult.next s' =>
+      match
+        match s'.frame.body with
+        | [] => Clif.stepTerm env program s' s'.frame.term
+        | st :: rest =>
+          match st.inst with
+          | Clif.Inst.call fn args => Clif.stepCall env program s' rest st.results fn args
+          | Clif.Inst.callIndirect sig callee args =>
+            Clif.stepCallIndirect env program s' rest st.results sig callee args
+          | inst =>
+            match
+              match inst with
+              | Clif.Inst.iconst ty imm => Clif.Res.ok ([{ ty := ty, bits := imm }], s'.mem)
+              | Clif.Inst.unary op ty x => do
+                let a ← s'.frame.getAs x ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.unary op a }], s'.mem)
+              | Clif.Inst.binary op ty x y => do
+                let a ← s'.frame.getAs x ty
+                if op.isShift = true then do
+                    let b ←
+                      match s'.frame.regs y with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr y)
+                    let r ←
+                      match Clif.Sem.shift op a b.bits with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck "not a shift"
+                    Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                  else do
+                    let b ← s'.frame.getAs y ty
+                    Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.binary op a b }], s'.mem)
+              | Clif.Inst.div op ty x y => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                let r ← Clif.Res.ofExcept (Clif.Sem.div op a b)
+                Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+              | Clif.Inst.overflow op ty x y => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok
+                    ([{ ty := ty, bits := (Clif.Sem.overflow op a b).fst },
+                        Clif.Val.ofBool (Clif.Sem.overflow op a b).snd],
+                      s'.mem)
+              | Clif.Inst.carry op ty x y c => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                let cin ← s'.frame.getAs c Clif.Ty.i8
+                Clif.Res.ok
+                    ([{ ty := ty, bits := (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).fst },
+                        Clif.Val.ofBool (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).snd],
+                      s'.mem)
+              | Clif.Inst.uaddOverflowTrap ty x y code => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                let r ← Clif.Res.ofExcept (Clif.Sem.uaddOverflowTrap a b code)
+                Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+              | Clif.Inst.icmp cc ty x y => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := Clif.Ty.i8, bits := Clif.Sem.icmp cc a b }], s'.mem)
+              | Clif.Inst.select ty c x y => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+              | Clif.Inst.selectSpectreGuard ty c x y => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+              | Clif.Inst.bitselect ty c x y => do
+                let cv ← s'.frame.getAs c ty
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bitselect cv a b }], s'.mem)
+              | Clif.Inst.bmask ty x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bmask a.bits }], s'.mem)
+              | Clif.Inst.extend op ty x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                if a.ty.width < ty.width then Clif.Res.ok () else Clif.Res.stuck "extend must widen"
+                match op with
+                  | Clif.ExtendOp.uextend =>
+                    Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.uextend ty.width a.bits }], s'.mem)
+                  | Clif.ExtendOp.sextend =>
+                    Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.sextend ty.width a.bits }], s'.mem)
+              | Clif.Inst.ireduce ty x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                if ty.width < a.ty.width then Clif.Res.ok () else Clif.Res.stuck "ireduce must narrow"
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.ireduce ty.width a.bits }], s'.mem)
+              | Clif.Inst.iconcat ty lo hi => do
+                let t2 ←
+                  match ty.double? with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck "iconcat: no double-width type"
+                let l ← s'.frame.getAs lo ty
+                let h ← s'.frame.getAs hi ty
+                Clif.Res.ok ([{ ty := t2, bits := BitVec.setWidth t2.width (Clif.Sem.iconcat l h) }], s'.mem)
+              | Clif.Inst.isplit ty x => do
+                let th ←
+                  match ty.half? with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck "isplit: no half-width type"
+                let a ← s'.frame.getAs x ty
+                Clif.Res.ok
+                    ([{ ty := th, bits := (Clif.Sem.isplit th.width a).fst },
+                        { ty := th, bits := (Clif.Sem.isplit th.width a).snd }],
+                      s'.mem)
+              | Clif.Inst.load op ty flags p offset => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if decide (Clif.LoadOp.size ty op ≤ ty.width / 8) = true then Clif.Res.ok ()
+                  else Clif.Res.stuck "load: access wider than result"
+                let raw ←
+                  s'.mem.load flags (Clif.effAddr pv offset) (Clif.LoadOp.size ty op) (8 * Clif.LoadOp.size ty op)
+                Clif.Res.ok
+                    ([{ ty := ty,
+                          bits :=
+                            if op.signed = true then BitVec.signExtend ty.width raw
+                            else BitVec.setWidth ty.width raw }],
+                      s'.mem)
+              | Clif.Inst.store op ty flags x p offset => do
+                let a ← s'.frame.getAs x ty
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if decide (Clif.StoreOp.size ty op ≤ ty.width / 8) = true then Clif.Res.ok ()
+                  else Clif.Res.stuck "store: access wider than value"
+                let mem' ← s'.mem.store flags (Clif.effAddr pv offset) (Clif.StoreOp.size ty op) a
+                Clif.Res.ok ([], mem')
+              | Clif.Inst.stackAddr ty slot offset => do
+                let base ←
+                  match List.lookup slot s'.frame.slots with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown stack slot ss" ++ Nat.repr slot)
+                Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+              | Clif.Inst.atomicRmw op ty flags p x => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                let a ← s'.frame.getAs x ty
+                if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let old ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) (Clif.Sem.atomicRmw op old a)
+                Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+              | Clif.Inst.atomicCas ty flags p e x => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                let ev ← s'.frame.getAs e ty
+                let a ← s'.frame.getAs x ty
+                if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let old ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                if old = ev then do
+                    let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) a
+                    Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+                  else Clif.Res.ok ([{ ty := ty, bits := old }], s'.mem)
+              | Clif.Inst.atomicLoad ty flags p => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let v ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                Clif.Res.ok ([{ ty := ty, bits := v }], s'.mem)
+              | Clif.Inst.atomicStore ty flags x p => do
+                let a ← s'.frame.getAs x ty
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) a
+                Clif.Res.ok ([], mem')
+              | Clif.Inst.fence => Clif.Res.ok ([], s'.mem)
+              | Clif.Inst.bitcast ty flags x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                if h : a.ty.width = ty.width then Clif.Res.ok ([{ ty := ty, bits := ⋯ ▸ a.bits }], s'.mem)
+                  else
+                    Clif.Res.stuck
+                      (toString "bitcast: " ++ toString a.ty.name ++ toString " and " ++ toString ty.name ++
+                        toString " differ in width")
+              | Clif.Inst.float op ty args => do
+                let vs ← s'.frame.getMany args
+                let r ← Clif.evalFloat op ty vs
+                Clif.Res.ok ([r], s'.mem)
+              | Clif.Inst.call fn args => Clif.Res.stuck "evalInst: call is handled by step"
+              | Clif.Inst.callIndirect sig callee args => Clif.Res.stuck "evalInst: call is handled by step"
+              | Clif.Inst.funcAddr ty fn => do
+                let ext ←
+                  match s'.frame.func.extern? fn with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown function reference fn" ++ Nat.repr fn)
+                let base ←
+                  match s'.mem.symbols ext.name with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "func_addr: undefined symbol %" ++ toString ext.name)
+                Clif.Res.ok ([Clif.Val.ofInt ty ↑base], s'.mem)
+              | Clif.Inst.trapz c code => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                if Clif.Sem.truthy cv.bits = true then Clif.Res.ok ([], s'.mem) else Clif.Res.trap code
+              | Clif.Inst.trapnz c code => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                if Clif.Sem.truthy cv.bits = true then Clif.Res.trap code else Clif.Res.ok ([], s'.mem)
+              | Clif.Inst.nop => Clif.Res.ok ([], s'.mem)
+              | Clif.Inst.symbolValue ty gv => do
+                let g ←
+                  match List.lookup gv s'.frame.func.globals with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                match g with
+                  | Clif.GlobalValue.symbol name offset colocated => do
+                    let base ←
+                      match s'.mem.symbols name with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck (toString "symbol_value: undefined symbol %" ++ toString name)
+                    Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                  | x => Clif.Res.stuck (toString "symbol_value: gv" ++ gv.repr ++ toString " is not a symbol")
+              | Clif.Inst.tlsValue ty gv => do
+                let g ←
+                  match List.lookup gv s'.frame.func.globals with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                match g with
+                  | Clif.GlobalValue.tlsSymbol name offset colocated => do
+                    let base ←
+                      match s'.mem.symbols name with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck (toString "tls_value: undefined symbol %" ++ toString name)
+                    Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                  | x => Clif.Res.stuck (toString "tls_value: gv" ++ gv.repr ++ toString " is not a tls symbol") with
+            | Clif.Res.ok a => Clif.continueWith s' rest st.results a.fst a.snd
+            | Clif.Res.trap c => Clif.StepResult.trapped c
+            | Clif.Res.stuck m => Clif.StepResult.stuck m with
+      | Clif.StepResult.next s' =>
+        match
+          match s'.frame.body with
+          | [] => Clif.stepTerm env program s' s'.frame.term
+          | st :: rest =>
+            match st.inst with
+            | Clif.Inst.call fn args => Clif.stepCall env program s' rest st.results fn args
+            | Clif.Inst.callIndirect sig callee args =>
+              Clif.stepCallIndirect env program s' rest st.results sig callee args
+            | inst =>
+              match
+                match inst with
+                | Clif.Inst.iconst ty imm => Clif.Res.ok ([{ ty := ty, bits := imm }], s'.mem)
+                | Clif.Inst.unary op ty x => do
+                  let a ← s'.frame.getAs x ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.unary op a }], s'.mem)
+                | Clif.Inst.binary op ty x y => do
+                  let a ← s'.frame.getAs x ty
+                  if op.isShift = true then do
+                      let b ←
+                        match s'.frame.regs y with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr y)
+                      let r ←
+                        match Clif.Sem.shift op a b.bits with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck "not a shift"
+                      Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                    else do
+                      let b ← s'.frame.getAs y ty
+                      Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.binary op a b }], s'.mem)
+                | Clif.Inst.div op ty x y => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  let r ← Clif.Res.ofExcept (Clif.Sem.div op a b)
+                  Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                | Clif.Inst.overflow op ty x y => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok
+                      ([{ ty := ty, bits := (Clif.Sem.overflow op a b).fst },
+                          Clif.Val.ofBool (Clif.Sem.overflow op a b).snd],
+                        s'.mem)
+                | Clif.Inst.carry op ty x y c => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  let cin ← s'.frame.getAs c Clif.Ty.i8
+                  Clif.Res.ok
+                      ([{ ty := ty, bits := (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).fst },
+                          Clif.Val.ofBool (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).snd],
+                        s'.mem)
+                | Clif.Inst.uaddOverflowTrap ty x y code => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  let r ← Clif.Res.ofExcept (Clif.Sem.uaddOverflowTrap a b code)
+                  Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                | Clif.Inst.icmp cc ty x y => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := Clif.Ty.i8, bits := Clif.Sem.icmp cc a b }], s'.mem)
+                | Clif.Inst.select ty c x y => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+                | Clif.Inst.selectSpectreGuard ty c x y => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+                | Clif.Inst.bitselect ty c x y => do
+                  let cv ← s'.frame.getAs c ty
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bitselect cv a b }], s'.mem)
+                | Clif.Inst.bmask ty x => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bmask a.bits }], s'.mem)
+                | Clif.Inst.extend op ty x => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  if a.ty.width < ty.width then Clif.Res.ok () else Clif.Res.stuck "extend must widen"
+                  match op with
+                    | Clif.ExtendOp.uextend =>
+                      Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.uextend ty.width a.bits }], s'.mem)
+                    | Clif.ExtendOp.sextend =>
+                      Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.sextend ty.width a.bits }], s'.mem)
+                | Clif.Inst.ireduce ty x => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  if ty.width < a.ty.width then Clif.Res.ok () else Clif.Res.stuck "ireduce must narrow"
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.ireduce ty.width a.bits }], s'.mem)
+                | Clif.Inst.iconcat ty lo hi => do
+                  let t2 ←
+                    match ty.double? with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck "iconcat: no double-width type"
+                  let l ← s'.frame.getAs lo ty
+                  let h ← s'.frame.getAs hi ty
+                  Clif.Res.ok ([{ ty := t2, bits := BitVec.setWidth t2.width (Clif.Sem.iconcat l h) }], s'.mem)
+                | Clif.Inst.isplit ty x => do
+                  let th ←
+                    match ty.half? with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck "isplit: no half-width type"
+                  let a ← s'.frame.getAs x ty
+                  Clif.Res.ok
+                      ([{ ty := th, bits := (Clif.Sem.isplit th.width a).fst },
+                          { ty := th, bits := (Clif.Sem.isplit th.width a).snd }],
+                        s'.mem)
+                | Clif.Inst.load op ty flags p offset => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if decide (Clif.LoadOp.size ty op ≤ ty.width / 8) = true then Clif.Res.ok ()
+                    else Clif.Res.stuck "load: access wider than result"
+                  let raw ←
+                    s'.mem.load flags (Clif.effAddr pv offset) (Clif.LoadOp.size ty op) (8 * Clif.LoadOp.size ty op)
+                  Clif.Res.ok
+                      ([{ ty := ty,
+                            bits :=
+                              if op.signed = true then BitVec.signExtend ty.width raw
+                              else BitVec.setWidth ty.width raw }],
+                        s'.mem)
+                | Clif.Inst.store op ty flags x p offset => do
+                  let a ← s'.frame.getAs x ty
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if decide (Clif.StoreOp.size ty op ≤ ty.width / 8) = true then Clif.Res.ok ()
+                    else Clif.Res.stuck "store: access wider than value"
+                  let mem' ← s'.mem.store flags (Clif.effAddr pv offset) (Clif.StoreOp.size ty op) a
+                  Clif.Res.ok ([], mem')
+                | Clif.Inst.stackAddr ty slot offset => do
+                  let base ←
+                    match List.lookup slot s'.frame.slots with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown stack slot ss" ++ Nat.repr slot)
+                  Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                | Clif.Inst.atomicRmw op ty flags p x => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  let a ← s'.frame.getAs x ty
+                  if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let old ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                  let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) (Clif.Sem.atomicRmw op old a)
+                  Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+                | Clif.Inst.atomicCas ty flags p e x => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  let ev ← s'.frame.getAs e ty
+                  let a ← s'.frame.getAs x ty
+                  if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let old ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                  if old = ev then do
+                      let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) a
+                      Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+                    else Clif.Res.ok ([{ ty := ty, bits := old }], s'.mem)
+                | Clif.Inst.atomicLoad ty flags p => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let v ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                  Clif.Res.ok ([{ ty := ty, bits := v }], s'.mem)
+                | Clif.Inst.atomicStore ty flags x p => do
+                  let a ← s'.frame.getAs x ty
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) a
+                  Clif.Res.ok ([], mem')
+                | Clif.Inst.fence => Clif.Res.ok ([], s'.mem)
+                | Clif.Inst.bitcast ty flags x => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  if h : a.ty.width = ty.width then Clif.Res.ok ([{ ty := ty, bits := ⋯ ▸ a.bits }], s'.mem)
+                    else
+                      Clif.Res.stuck
+                        (toString "bitcast: " ++ toString a.ty.name ++ toString " and " ++ toString ty.name ++
+                          toString " differ in width")
+                | Clif.Inst.float op ty args => do
+                  let vs ← s'.frame.getMany args
+                  let r ← Clif.evalFloat op ty vs
+                  Clif.Res.ok ([r], s'.mem)
+                | Clif.Inst.call fn args => Clif.Res.stuck "evalInst: call is handled by step"
+                | Clif.Inst.callIndirect sig callee args => Clif.Res.stuck "evalInst: call is handled by step"
+                | Clif.Inst.funcAddr ty fn => do
+                  let ext ←
+                    match s'.frame.func.extern? fn with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown function reference fn" ++ Nat.repr fn)
+                  let base ←
+                    match s'.mem.symbols ext.name with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "func_addr: undefined symbol %" ++ toString ext.name)
+                  Clif.Res.ok ([Clif.Val.ofInt ty ↑base], s'.mem)
+                | Clif.Inst.trapz c code => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  if Clif.Sem.truthy cv.bits = true then Clif.Res.ok ([], s'.mem) else Clif.Res.trap code
+                | Clif.Inst.trapnz c code => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  if Clif.Sem.truthy cv.bits = true then Clif.Res.trap code else Clif.Res.ok ([], s'.mem)
+                | Clif.Inst.nop => Clif.Res.ok ([], s'.mem)
+                | Clif.Inst.symbolValue ty gv => do
+                  let g ←
+                    match List.lookup gv s'.frame.func.globals with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                  match g with
+                    | Clif.GlobalValue.symbol name offset colocated => do
+                      let base ←
+                        match s'.mem.symbols name with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck (toString "symbol_value: undefined symbol %" ++ toString name)
+                      Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                    | x => Clif.Res.stuck (toString "symbol_value: gv" ++ gv.repr ++ toString " is not a symbol")
+                | Clif.Inst.tlsValue ty gv => do
+                  let g ←
+                    match List.lookup gv s'.frame.func.globals with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                  match g with
+                    | Clif.GlobalValue.tlsSymbol name offset colocated => do
+                      let base ←
+                        match s'.mem.symbols name with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck (toString "tls_value: undefined symbol %" ++ toString name)
+                      Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                    | x => Clif.Res.stuck (toString "tls_value: gv" ++ gv.repr ++ toString " is not a tls symbol") with
+              | Clif.Res.ok a => Clif.continueWith s' rest st.results a.fst a.snd
+              | Clif.Res.trap c => Clif.StepResult.trapped c
+              | Clif.Res.stuck m => Clif.StepResult.stuck m with
+        | Clif.StepResult.next s' => Clif.Outcome.outOfFuel
+        | Clif.StepResult.done vals mem => Clif.Outcome.returned vals mem
+        | Clif.StepResult.trapped c => Clif.Outcome.trapped c
+        | Clif.StepResult.stuck m => Clif.Outcome.stuck m
+      | Clif.StepResult.done vals mem => Clif.Outcome.returned vals mem
+      | Clif.StepResult.trapped c => Clif.Outcome.trapped c
+      | Clif.StepResult.stuck m => Clif.Outcome.stuck m
+    | Clif.StepResult.done vals mem => Clif.Outcome.returned vals mem
+    | Clif.StepResult.trapped c => Clif.Outcome.trapped c
+    | Clif.StepResult.stuck m => Clif.Outcome.stuck m) =
+    Clif.Outcome.trapped code
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceOutcome.lean:37:18: error: unsolved goals
+case stuck
+env : Clif.Env
+program : Clif.Program
+pointer : BitVec 64
+memory : Clif.Mem
+message : String
+loaded : memory.load { } (Clif.effAddr { ty := Clif.Ty.i64, bits := pointer } 0) 1 8 = Clif.Res.stuck message
+⊢ (match
+      match do
+        if Clif.effAddr { ty := Clif.Ty.i64, bits := pointer } 0 % (Clif.Ty.i8.width / 8) = 0 then Clif.Res.ok ()
+          else Clif.Res.stuck "misaligned atomic access"
+        let v ←
+          memory.load { } (Clif.effAddr { ty := Clif.Ty.i64, bits := pointer } 0) (Clif.Ty.i8.width / 8)
+              Clif.Ty.i8.width
+        Clif.Res.ok ([{ ty := Clif.Ty.i8, bits := v }], memory) with
+      | Clif.Res.ok a =>
+        Clif.continueWith
+          {
+            frame :=
+              {
+                func :=
+                  { name := "stock_acquire_fused810",
+                    sig :=
+                      { params := [{ ty := Clif.Ty.i64 }], returns := [{ ty := Clif.Ty.i64 }],
+                        callConv := some Clif.CallConv.systemV },
+                    blocks :=
+                      [{ id := 0, params := [(1, Clif.Ty.i64)],
+                          body :=
+                            [{ results := [0], inst := Clif.Inst.atomicLoad Clif.Ty.i8 { } 1 },
+                              { results := [2], inst := Clif.Inst.extend Clif.ExtendOp.uextend Clif.Ty.i64 0 }],
+                          term := Clif.Terminator.ret [2] }] },
+                regs := fun x => if x = 1 then some { ty := Clif.Ty.i64, bits := pointer } else none, slots := [],
+                body :=
+                  [{ results := [0], inst := Clif.Inst.atomicLoad Clif.Ty.i8 { } 1 },
+                    { results := [2], inst := Clif.Inst.extend Clif.ExtendOp.uextend Clif.Ty.i64 0 }],
+                term := Clif.Terminator.ret [2] },
+            callers := [], mem := memory }
+          [{ results := [2], inst := Clif.Inst.extend Clif.ExtendOp.uextend Clif.Ty.i64 0 }] [0] a.fst a.snd
+      | Clif.Res.trap c => Clif.StepResult.trapped c
+      | Clif.Res.stuck m => Clif.StepResult.stuck m with
+    | Clif.StepResult.next s' =>
+      match
+        match s'.frame.body with
+        | [] => Clif.stepTerm env program s' s'.frame.term
+        | st :: rest =>
+          match st.inst with
+          | Clif.Inst.call fn args => Clif.stepCall env program s' rest st.results fn args
+          | Clif.Inst.callIndirect sig callee args =>
+            Clif.stepCallIndirect env program s' rest st.results sig callee args
+          | inst =>
+            match
+              match inst with
+              | Clif.Inst.iconst ty imm => Clif.Res.ok ([{ ty := ty, bits := imm }], s'.mem)
+              | Clif.Inst.unary op ty x => do
+                let a ← s'.frame.getAs x ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.unary op a }], s'.mem)
+              | Clif.Inst.binary op ty x y => do
+                let a ← s'.frame.getAs x ty
+                if op.isShift = true then do
+                    let b ←
+                      match s'.frame.regs y with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr y)
+                    let r ←
+                      match Clif.Sem.shift op a b.bits with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck "not a shift"
+                    Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                  else do
+                    let b ← s'.frame.getAs y ty
+                    Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.binary op a b }], s'.mem)
+              | Clif.Inst.div op ty x y => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                let r ← Clif.Res.ofExcept (Clif.Sem.div op a b)
+                Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+              | Clif.Inst.overflow op ty x y => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok
+                    ([{ ty := ty, bits := (Clif.Sem.overflow op a b).fst },
+                        Clif.Val.ofBool (Clif.Sem.overflow op a b).snd],
+                      s'.mem)
+              | Clif.Inst.carry op ty x y c => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                let cin ← s'.frame.getAs c Clif.Ty.i8
+                Clif.Res.ok
+                    ([{ ty := ty, bits := (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).fst },
+                        Clif.Val.ofBool (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).snd],
+                      s'.mem)
+              | Clif.Inst.uaddOverflowTrap ty x y code => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                let r ← Clif.Res.ofExcept (Clif.Sem.uaddOverflowTrap a b code)
+                Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+              | Clif.Inst.icmp cc ty x y => do
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := Clif.Ty.i8, bits := Clif.Sem.icmp cc a b }], s'.mem)
+              | Clif.Inst.select ty c x y => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+              | Clif.Inst.selectSpectreGuard ty c x y => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+              | Clif.Inst.bitselect ty c x y => do
+                let cv ← s'.frame.getAs c ty
+                let a ← s'.frame.getAs x ty
+                let b ← s'.frame.getAs y ty
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bitselect cv a b }], s'.mem)
+              | Clif.Inst.bmask ty x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bmask a.bits }], s'.mem)
+              | Clif.Inst.extend op ty x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                if a.ty.width < ty.width then Clif.Res.ok () else Clif.Res.stuck "extend must widen"
+                match op with
+                  | Clif.ExtendOp.uextend =>
+                    Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.uextend ty.width a.bits }], s'.mem)
+                  | Clif.ExtendOp.sextend =>
+                    Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.sextend ty.width a.bits }], s'.mem)
+              | Clif.Inst.ireduce ty x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                if ty.width < a.ty.width then Clif.Res.ok () else Clif.Res.stuck "ireduce must narrow"
+                Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.ireduce ty.width a.bits }], s'.mem)
+              | Clif.Inst.iconcat ty lo hi => do
+                let t2 ←
+                  match ty.double? with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck "iconcat: no double-width type"
+                let l ← s'.frame.getAs lo ty
+                let h ← s'.frame.getAs hi ty
+                Clif.Res.ok ([{ ty := t2, bits := BitVec.setWidth t2.width (Clif.Sem.iconcat l h) }], s'.mem)
+              | Clif.Inst.isplit ty x => do
+                let th ←
+                  match ty.half? with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck "isplit: no half-width type"
+                let a ← s'.frame.getAs x ty
+                Clif.Res.ok
+                    ([{ ty := th, bits := (Clif.Sem.isplit th.width a).fst },
+                        { ty := th, bits := (Clif.Sem.isplit th.width a).snd }],
+                      s'.mem)
+              | Clif.Inst.load op ty flags p offset => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if decide (Clif.LoadOp.size ty op ≤ ty.width / 8) = true then Clif.Res.ok ()
+                  else Clif.Res.stuck "load: access wider than result"
+                let raw ←
+                  s'.mem.load flags (Clif.effAddr pv offset) (Clif.LoadOp.size ty op) (8 * Clif.LoadOp.size ty op)
+                Clif.Res.ok
+                    ([{ ty := ty,
+                          bits :=
+                            if op.signed = true then BitVec.signExtend ty.width raw
+                            else BitVec.setWidth ty.width raw }],
+                      s'.mem)
+              | Clif.Inst.store op ty flags x p offset => do
+                let a ← s'.frame.getAs x ty
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if decide (Clif.StoreOp.size ty op ≤ ty.width / 8) = true then Clif.Res.ok ()
+                  else Clif.Res.stuck "store: access wider than value"
+                let mem' ← s'.mem.store flags (Clif.effAddr pv offset) (Clif.StoreOp.size ty op) a
+                Clif.Res.ok ([], mem')
+              | Clif.Inst.stackAddr ty slot offset => do
+                let base ←
+                  match List.lookup slot s'.frame.slots with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown stack slot ss" ++ Nat.repr slot)
+                Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+              | Clif.Inst.atomicRmw op ty flags p x => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                let a ← s'.frame.getAs x ty
+                if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let old ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) (Clif.Sem.atomicRmw op old a)
+                Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+              | Clif.Inst.atomicCas ty flags p e x => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                let ev ← s'.frame.getAs e ty
+                let a ← s'.frame.getAs x ty
+                if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let old ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                if old = ev then do
+                    let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) a
+                    Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+                  else Clif.Res.ok ([{ ty := ty, bits := old }], s'.mem)
+              | Clif.Inst.atomicLoad ty flags p => do
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let v ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                Clif.Res.ok ([{ ty := ty, bits := v }], s'.mem)
+              | Clif.Inst.atomicStore ty flags x p => do
+                let a ← s'.frame.getAs x ty
+                let pv ←
+                  match s'.frame.regs p with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                  else Clif.Res.stuck "misaligned atomic access"
+                let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) a
+                Clif.Res.ok ([], mem')
+              | Clif.Inst.fence => Clif.Res.ok ([], s'.mem)
+              | Clif.Inst.bitcast ty flags x => do
+                let a ←
+                  match s'.frame.regs x with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                if h : a.ty.width = ty.width then Clif.Res.ok ([{ ty := ty, bits := ⋯ ▸ a.bits }], s'.mem)
+                  else
+                    Clif.Res.stuck
+                      (toString "bitcast: " ++ toString a.ty.name ++ toString " and " ++ toString ty.name ++
+                        toString " differ in width")
+              | Clif.Inst.float op ty args => do
+                let vs ← s'.frame.getMany args
+                let r ← Clif.evalFloat op ty vs
+                Clif.Res.ok ([r], s'.mem)
+              | Clif.Inst.call fn args => Clif.Res.stuck "evalInst: call is handled by step"
+              | Clif.Inst.callIndirect sig callee args => Clif.Res.stuck "evalInst: call is handled by step"
+              | Clif.Inst.funcAddr ty fn => do
+                let ext ←
+                  match s'.frame.func.extern? fn with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown function reference fn" ++ Nat.repr fn)
+                let base ←
+                  match s'.mem.symbols ext.name with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "func_addr: undefined symbol %" ++ toString ext.name)
+                Clif.Res.ok ([Clif.Val.ofInt ty ↑base], s'.mem)
+              | Clif.Inst.trapz c code => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                if Clif.Sem.truthy cv.bits = true then Clif.Res.ok ([], s'.mem) else Clif.Res.trap code
+              | Clif.Inst.trapnz c code => do
+                let cv ←
+                  match s'.frame.regs c with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                if Clif.Sem.truthy cv.bits = true then Clif.Res.trap code else Clif.Res.ok ([], s'.mem)
+              | Clif.Inst.nop => Clif.Res.ok ([], s'.mem)
+              | Clif.Inst.symbolValue ty gv => do
+                let g ←
+                  match List.lookup gv s'.frame.func.globals with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                match g with
+                  | Clif.GlobalValue.symbol name offset colocated => do
+                    let base ←
+                      match s'.mem.symbols name with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck (toString "symbol_value: undefined symbol %" ++ toString name)
+                    Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                  | x => Clif.Res.stuck (toString "symbol_value: gv" ++ gv.repr ++ toString " is not a symbol")
+              | Clif.Inst.tlsValue ty gv => do
+                let g ←
+                  match List.lookup gv s'.frame.func.globals with
+                    | some a => Clif.Res.ok a
+                    | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                match g with
+                  | Clif.GlobalValue.tlsSymbol name offset colocated => do
+                    let base ←
+                      match s'.mem.symbols name with
+                        | some a => Clif.Res.ok a
+                        | none => Clif.Res.stuck (toString "tls_value: undefined symbol %" ++ toString name)
+                    Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                  | x => Clif.Res.stuck (toString "tls_value: gv" ++ gv.repr ++ toString " is not a tls symbol") with
+            | Clif.Res.ok a => Clif.continueWith s' rest st.results a.fst a.snd
+            | Clif.Res.trap c => Clif.StepResult.trapped c
+            | Clif.Res.stuck m => Clif.StepResult.stuck m with
+      | Clif.StepResult.next s' =>
+        match
+          match s'.frame.body with
+          | [] => Clif.stepTerm env program s' s'.frame.term
+          | st :: rest =>
+            match st.inst with
+            | Clif.Inst.call fn args => Clif.stepCall env program s' rest st.results fn args
+            | Clif.Inst.callIndirect sig callee args =>
+              Clif.stepCallIndirect env program s' rest st.results sig callee args
+            | inst =>
+              match
+                match inst with
+                | Clif.Inst.iconst ty imm => Clif.Res.ok ([{ ty := ty, bits := imm }], s'.mem)
+                | Clif.Inst.unary op ty x => do
+                  let a ← s'.frame.getAs x ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.unary op a }], s'.mem)
+                | Clif.Inst.binary op ty x y => do
+                  let a ← s'.frame.getAs x ty
+                  if op.isShift = true then do
+                      let b ←
+                        match s'.frame.regs y with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr y)
+                      let r ←
+                        match Clif.Sem.shift op a b.bits with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck "not a shift"
+                      Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                    else do
+                      let b ← s'.frame.getAs y ty
+                      Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.binary op a b }], s'.mem)
+                | Clif.Inst.div op ty x y => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  let r ← Clif.Res.ofExcept (Clif.Sem.div op a b)
+                  Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                | Clif.Inst.overflow op ty x y => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok
+                      ([{ ty := ty, bits := (Clif.Sem.overflow op a b).fst },
+                          Clif.Val.ofBool (Clif.Sem.overflow op a b).snd],
+                        s'.mem)
+                | Clif.Inst.carry op ty x y c => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  let cin ← s'.frame.getAs c Clif.Ty.i8
+                  Clif.Res.ok
+                      ([{ ty := ty, bits := (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).fst },
+                          Clif.Val.ofBool (Clif.Sem.carry op a b (Clif.Sem.truthy cin)).snd],
+                        s'.mem)
+                | Clif.Inst.uaddOverflowTrap ty x y code => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  let r ← Clif.Res.ofExcept (Clif.Sem.uaddOverflowTrap a b code)
+                  Clif.Res.ok ([{ ty := ty, bits := r }], s'.mem)
+                | Clif.Inst.icmp cc ty x y => do
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := Clif.Ty.i8, bits := Clif.Sem.icmp cc a b }], s'.mem)
+                | Clif.Inst.select ty c x y => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+                | Clif.Inst.selectSpectreGuard ty c x y => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.select cv.bits a b }], s'.mem)
+                | Clif.Inst.bitselect ty c x y => do
+                  let cv ← s'.frame.getAs c ty
+                  let a ← s'.frame.getAs x ty
+                  let b ← s'.frame.getAs y ty
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bitselect cv a b }], s'.mem)
+                | Clif.Inst.bmask ty x => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.bmask a.bits }], s'.mem)
+                | Clif.Inst.extend op ty x => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  if a.ty.width < ty.width then Clif.Res.ok () else Clif.Res.stuck "extend must widen"
+                  match op with
+                    | Clif.ExtendOp.uextend =>
+                      Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.uextend ty.width a.bits }], s'.mem)
+                    | Clif.ExtendOp.sextend =>
+                      Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.sextend ty.width a.bits }], s'.mem)
+                | Clif.Inst.ireduce ty x => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  if ty.width < a.ty.width then Clif.Res.ok () else Clif.Res.stuck "ireduce must narrow"
+                  Clif.Res.ok ([{ ty := ty, bits := Clif.Sem.ireduce ty.width a.bits }], s'.mem)
+                | Clif.Inst.iconcat ty lo hi => do
+                  let t2 ←
+                    match ty.double? with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck "iconcat: no double-width type"
+                  let l ← s'.frame.getAs lo ty
+                  let h ← s'.frame.getAs hi ty
+                  Clif.Res.ok ([{ ty := t2, bits := BitVec.setWidth t2.width (Clif.Sem.iconcat l h) }], s'.mem)
+                | Clif.Inst.isplit ty x => do
+                  let th ←
+                    match ty.half? with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck "isplit: no half-width type"
+                  let a ← s'.frame.getAs x ty
+                  Clif.Res.ok
+                      ([{ ty := th, bits := (Clif.Sem.isplit th.width a).fst },
+                          { ty := th, bits := (Clif.Sem.isplit th.width a).snd }],
+                        s'.mem)
+                | Clif.Inst.load op ty flags p offset => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if decide (Clif.LoadOp.size ty op ≤ ty.width / 8) = true then Clif.Res.ok ()
+                    else Clif.Res.stuck "load: access wider than result"
+                  let raw ←
+                    s'.mem.load flags (Clif.effAddr pv offset) (Clif.LoadOp.size ty op) (8 * Clif.LoadOp.size ty op)
+                  Clif.Res.ok
+                      ([{ ty := ty,
+                            bits :=
+                              if op.signed = true then BitVec.signExtend ty.width raw
+                              else BitVec.setWidth ty.width raw }],
+                        s'.mem)
+                | Clif.Inst.store op ty flags x p offset => do
+                  let a ← s'.frame.getAs x ty
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if decide (Clif.StoreOp.size ty op ≤ ty.width / 8) = true then Clif.Res.ok ()
+                    else Clif.Res.stuck "store: access wider than value"
+                  let mem' ← s'.mem.store flags (Clif.effAddr pv offset) (Clif.StoreOp.size ty op) a
+                  Clif.Res.ok ([], mem')
+                | Clif.Inst.stackAddr ty slot offset => do
+                  let base ←
+                    match List.lookup slot s'.frame.slots with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown stack slot ss" ++ Nat.repr slot)
+                  Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                | Clif.Inst.atomicRmw op ty flags p x => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  let a ← s'.frame.getAs x ty
+                  if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let old ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                  let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) (Clif.Sem.atomicRmw op old a)
+                  Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+                | Clif.Inst.atomicCas ty flags p e x => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  let ev ← s'.frame.getAs e ty
+                  let a ← s'.frame.getAs x ty
+                  if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let old ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                  if old = ev then do
+                      let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) a
+                      Clif.Res.ok ([{ ty := ty, bits := old }], mem')
+                    else Clif.Res.ok ([{ ty := ty, bits := old }], s'.mem)
+                | Clif.Inst.atomicLoad ty flags p => do
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let v ← s'.mem.load flags (Clif.effAddr pv 0) (ty.width / 8) ty.width
+                  Clif.Res.ok ([{ ty := ty, bits := v }], s'.mem)
+                | Clif.Inst.atomicStore ty flags x p => do
+                  let a ← s'.frame.getAs x ty
+                  let pv ←
+                    match s'.frame.regs p with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr p)
+                  if Clif.effAddr pv 0 % (ty.width / 8) = 0 then Clif.Res.ok ()
+                    else Clif.Res.stuck "misaligned atomic access"
+                  let mem' ← s'.mem.store flags (Clif.effAddr pv 0) (ty.width / 8) a
+                  Clif.Res.ok ([], mem')
+                | Clif.Inst.fence => Clif.Res.ok ([], s'.mem)
+                | Clif.Inst.bitcast ty flags x => do
+                  let a ←
+                    match s'.frame.regs x with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr x)
+                  if h : a.ty.width = ty.width then Clif.Res.ok ([{ ty := ty, bits := ⋯ ▸ a.bits }], s'.mem)
+                    else
+                      Clif.Res.stuck
+                        (toString "bitcast: " ++ toString a.ty.name ++ toString " and " ++ toString ty.name ++
+                          toString " differ in width")
+                | Clif.Inst.float op ty args => do
+                  let vs ← s'.frame.getMany args
+                  let r ← Clif.evalFloat op ty vs
+                  Clif.Res.ok ([r], s'.mem)
+                | Clif.Inst.call fn args => Clif.Res.stuck "evalInst: call is handled by step"
+                | Clif.Inst.callIndirect sig callee args => Clif.Res.stuck "evalInst: call is handled by step"
+                | Clif.Inst.funcAddr ty fn => do
+                  let ext ←
+                    match s'.frame.func.extern? fn with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown function reference fn" ++ Nat.repr fn)
+                  let base ←
+                    match s'.mem.symbols ext.name with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "func_addr: undefined symbol %" ++ toString ext.name)
+                  Clif.Res.ok ([Clif.Val.ofInt ty ↑base], s'.mem)
+                | Clif.Inst.trapz c code => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  if Clif.Sem.truthy cv.bits = true then Clif.Res.ok ([], s'.mem) else Clif.Res.trap code
+                | Clif.Inst.trapnz c code => do
+                  let cv ←
+                    match s'.frame.regs c with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "use of undefined value v" ++ Nat.repr c)
+                  if Clif.Sem.truthy cv.bits = true then Clif.Res.trap code else Clif.Res.ok ([], s'.mem)
+                | Clif.Inst.nop => Clif.Res.ok ([], s'.mem)
+                | Clif.Inst.symbolValue ty gv => do
+                  let g ←
+                    match List.lookup gv s'.frame.func.globals with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                  match g with
+                    | Clif.GlobalValue.symbol name offset colocated => do
+                      let base ←
+                        match s'.mem.symbols name with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck (toString "symbol_value: undefined symbol %" ++ toString name)
+                      Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                    | x => Clif.Res.stuck (toString "symbol_value: gv" ++ gv.repr ++ toString " is not a symbol")
+                | Clif.Inst.tlsValue ty gv => do
+                  let g ←
+                    match List.lookup gv s'.frame.func.globals with
+                      | some a => Clif.Res.ok a
+                      | none => Clif.Res.stuck (toString "unknown global value gv" ++ gv.repr)
+                  match g with
+                    | Clif.GlobalValue.tlsSymbol name offset colocated => do
+                      let base ←
+                        match s'.mem.symbols name with
+                          | some a => Clif.Res.ok a
+                          | none => Clif.Res.stuck (toString "tls_value: undefined symbol %" ++ toString name)
+                      Clif.Res.ok ([Clif.Val.ofInt ty (↑base + offset)], s'.mem)
+                    | x => Clif.Res.stuck (toString "tls_value: gv" ++ gv.repr ++ toString " is not a tls symbol") with
+              | Clif.Res.ok a => Clif.continueWith s' rest st.results a.fst a.snd
+              | Clif.Res.trap c => Clif.StepResult.trapped c
+              | Clif.Res.stuck m => Clif.StepResult.stuck m with
+        | Clif.StepResult.next s' => Clif.Outcome.outOfFuel
+        | Clif.StepResult.done vals mem => Clif.Outcome.returned vals mem
+        | Clif.StepResult.trapped c => Clif.Outcome.trapped c
+        | Clif.StepResult.stuck m => Clif.Outcome.stuck m
+      | Clif.StepResult.done vals mem => Clif.Outcome.returned vals mem
+      | Clif.StepResult.trapped c => Clif.Outcome.trapped c
+      | Clif.StepResult.stuck m => Clif.Outcome.stuck m
+    | Clif.StepResult.done vals mem => Clif.Outcome.returned vals mem
+    | Clif.StepResult.trapped c => Clif.Outcome.trapped c
+    | Clif.StepResult.stuck m => Clif.Outcome.stuck m) =
+    Clif.Outcome.stuck message
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceOutcome.lean:31:57: warning: This simp argument is unused:
+  Clif.Frame.getMany
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Clif.runLoop, Clif.step, Clif.stepTerm, Clif.evalInst, Clif.StepResult.ofRes, Clif.continueWith,
+    Clif.returnValues, Clif.Frame.get, Clif.Regs.setMany, Clif.Regs.set, Clif.Res.ofOption, Clif.Res.check,
+    Clif.checkTys, Clif.AbiParam.tys, Clif.Sem.uextend, Clif.Ty.width, Clif.Ty.bytes, entry, function, loaded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceOutcome.lean:32:6: warning: This simp argument is unused:
+  Clif.Regs.setMany
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Clif.runLoop, Clif.step, Clif.stepTerm, Clif.evalInst, Clif.StepResult.ofRes, Clif.continueWith,
+    Clif.returnValues, Clif.Frame.get, Clif.Frame.getMany, Clif.Regs.set, Clif.Res.ofOption, Clif.Res.check,
+    Clif.checkTys, Clif.AbiParam.tys, Clif.Sem.uextend, Clif.Ty.width, Clif.Ty.bytes, entry, function, loaded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceOutcome.lean:32:24: warning: This simp argument is unused:
+  Clif.Regs.set
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Clif.runLoop, Clif.step, Clif.stepTerm, Clif.evalInst, Clif.StepResult.ofRes, Clif.continueWith,
+    Clif.returnValues, Clif.Frame.get, Clif.Frame.getMany, Clif.Regs.setMany, Clif.Res.ofOption, Clif.Res.check,
+    Clif.checkTys, Clif.AbiParam.tys, Clif.Sem.uextend, Clif.Ty.width, Clif.Ty.bytes, entry, function, loaded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceOutcome.lean:36:83: warning: This simp argument is unused:
+  loaded
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Clif.runLoop, Clif.step, Clif.evalInst, Clif.StepResult.ofRes, Clif.Frame.get, Clif.Res.ofOption,
+    Clif.Res.check, Clif.Ty.bytes, entry, function]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceOutcome.lean:39:83: warning: This simp argument is unused:
+  loaded
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Clif.runLoop, Clif.step, Clif.evalInst, Clif.StepResult.ofRes, Clif.Frame.get, Clif.Res.ofOption,
+    Clif.Res.check, Clif.Ty.bytes, entry, function]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

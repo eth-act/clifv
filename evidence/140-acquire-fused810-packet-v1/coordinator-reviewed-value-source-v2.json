@@ -1,0 +1,11 @@
+{
+  "status": "reviewed_scoped_acquire_value_and_source",
+  "receipt_sha256": "8221b67c6e33babea16ac906041c4ab0b7bfdab279de155f7266c8ce37cf1a2c",
+  "source_hashes_exact": 8,
+  "standard_roots": 12,
+  "fixed_roots": 1,
+  "source_first_trap_scope": "original fixed function for arbitrary pointer,memory,fuel",
+  "universal_root810_complete": false,
+  "machine_or_production_complete": false,
+  "utc": "2026-11-02T16:39:37.131759+00:00"
+}

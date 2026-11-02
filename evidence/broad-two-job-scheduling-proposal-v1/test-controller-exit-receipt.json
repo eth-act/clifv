@@ -1,0 +1,15 @@
+{
+  "status": "passed_process_control_simulation",
+  "no_Lean_or_Lake_compiler_ran": true,
+  "controller_SIGTERM_drains_healthy_children": true,
+  "third_job_not_launched": true,
+  "events": [
+    "START FV.A 4096M",
+    "START FV.B 4096M",
+    "SUCCESS FV.A",
+    "SUCCESS FV.B"
+  ],
+  "returncode": 143,
+  "helper_sha256": "5541150fba870bcf6614df808af04f7f54c85a045b2d314080cb933c361783bc",
+  "utc": "2026-11-02T16:25:19.214105+00:00"
+}

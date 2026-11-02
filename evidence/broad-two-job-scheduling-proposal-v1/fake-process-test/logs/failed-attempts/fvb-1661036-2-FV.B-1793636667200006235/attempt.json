@@ -1,0 +1,11 @@
+{
+  "module": "FV.B",
+  "unit": "fvb-1661036-2-FV.B",
+  "cap_bytes": 4294967296,
+  "returncode": 2,
+  "seconds": 1.0024218559265137,
+  "module_source_sha256": "5c6d201d1bd0a8a286f3c4af1a0e604d8b3759c531c0765489193a2692802680",
+  "artifacts": {
+    "FV.B.log": "2c856f12c9f43ff8be99c3aeaca3b649f0e995c800231c9ddae0e7126dd52529"
+  }
+}

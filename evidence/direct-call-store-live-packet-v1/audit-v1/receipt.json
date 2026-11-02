@@ -1,0 +1,75 @@
+{
+  "status": "passed",
+  "roots": 13,
+  "standard_roots": 11,
+  "fixed_roots": 2,
+  "axiom_sets": {
+    "Backend.Stock.Proof.CallStoreResult.call_then_store_of_source": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_pointer": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_store_returns": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_store_faults": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_call_fault_or_continues": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.call_then_store_access": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_fault_decomposition": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreSourceWitness.default_store_fault": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreSourceWitness.store_reached": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreSourceWitness.store_fault_at": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreSourceWitness.default_store_return": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreFixture.original_source_exact": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound",
+      "E2E.CallStoreFixture.original_source_exact._native.native_decide.ax_1"
+    ],
+    "E2E.CallStoreFixture.actual_retained_and_saved": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound",
+      "E2E.CallStoreFixture.observed_true._native.native_decide.ax_1\u271d",
+      "E2E.CallStoreFixture.observed_true._native.native_decide.ax_2\u271d"
+    ]
+  },
+  "source_audit_sha256": "f1cd0377cc4d79231944bcc08a95facddcdfee106da0033a1e99ec0a3c86bec1",
+  "context_receipts": {
+    "fault-v3/receipt.json": "4b325c4402d95d848f9cfd1a3060362605916283ca611e93577b4d8ee20b9914",
+    "source-witness-v1/receipt.json": "02cd5d2b7625c70f998507121d6cd28c0ae4f0dd052e7852c0f698cc17da8ac8",
+    "published-917-origin-bridge-v1.json": "da9b21a6e78f42d6c59933d86404cca3b476c7db359157067a11494e0d20007b"
+  },
+  "stats": "peak 231186432\noom 0\noom_kill 0\n",
+  "no_class_or_production_completion_claim": true,
+  "utc": "2026-11-02T16:11:18.050367+00:00"
+}

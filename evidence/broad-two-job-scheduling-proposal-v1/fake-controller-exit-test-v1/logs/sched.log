@@ -1,0 +1,4 @@
+11:25:16 want 3 modules (0 assumed built) budget=12G max_jobs=2 heavy>16G
+11:25:16 start FV.A cap=4G running=1 avail=195.6G
+11:25:16 start FV.B cap=4G running=2 avail=195.6G
+11:25:16 draining 2 builds without signals

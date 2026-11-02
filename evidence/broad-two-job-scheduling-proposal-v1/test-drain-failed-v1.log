@@ -1,0 +1,13 @@
+3 modules (0 heavy, 0 without a record); critical path 0.28 h, serial 0.53 h (recorded)
+11:24:26 want 3 modules (0 assumed built) budget=12G max_jobs=2 heavy>16G
+11:24:26 start FV.A cap=4G running=1 avail=200.5G
+11:24:26 start FV.B cap=4G running=2 avail=200.5G
+11:24:27 first failure FV.A rc=2; stop launches and drain existing builds
+11:24:27 first failure FV.B rc=2; stop launches and drain existing builds
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/broad-two-job-scheduling-proposal-v1/lake-serial-build-drain.py", line 937, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/broad-two-job-scheduling-proposal-v1/lake-serial-build-drain.py", line 768, in main
+    raise RuntimeError(f"Stopped after draining builds: {first_failure}")
+RuntimeError: Stopped after draining builds: ('FV.A', 2)

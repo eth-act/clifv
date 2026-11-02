@@ -116,3 +116,13 @@ This unit avoids A's control work and O's call-result work.
 It closes one effect obligation. It does not replace original 140 with a fence classifier.
 Acquire/release and all RMW/CAS forms follow with their real result and memory bindings.
 Root 810 andgeneral deferred effects remain explicit throughout.
+
+
+### Reviewed root810 fixture
+
+The later StockAcquire810Witness proof establishes one actual original-scope fixture.
+Stock.lower succeeds, and LowerScope and Dominated hold for the exact atomic i8/default-flags input.
+Its retained instruction1 record contains fired rule810 and emits the original i8 acquire load.
+The interpreter records a rule only after its right-hand side succeeds.
+This fixed witness does not prove universal correctness, deferred binding, first-trap ordering, or production execution.
+The review receipt is ../140-acquire-fused810-packet-v1/coordinator-reviewed-selection-v1.json.

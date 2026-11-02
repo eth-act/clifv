@@ -1,0 +1,47 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireValue.lean:25:75: error: unsolved goals
+F : BitVec 64 → Prop
+sb : Nat
+syms : String → Option Nat
+isem : Sem
+MR : MemRelT
+f : Clif.Function
+stable : MRStable F MR
+memorySem : MemRefines F sb syms isem
+memoryOk : MemRelOk F sb syms f MR
+fr : Clif.Frame
+cm cm' : Clif.Mem
+p z d nr : Nat
+pointer small : Clif.Val
+flags : Clif.MemFlags
+little : flags.endianness ≠ some Clif.Endianness.big
+pointerSource : fr.regs p = some pointer
+pointerType : pointer.ty = Clif.Ty.i64
+use : CV
+pointerHeld : VHolds pointer use
+source : Clif.evalInst fr cm (Clif.Inst.atomicLoad Clif.Ty.i8 flags p) = Clif.Res.ok ([small], cm')
+world : Arm.ArmState
+memory : MR fr.slots cm world
+raw : BitVec Clif.Ty.i8.width
+values : [small] = [{ ty := Clif.Ty.i8, bits := raw }]
+sameMemory : cm' = cm
+found : fr.regs p = some pointer
+valid : cm.valid (Clif.effAddr pointer 0) Clif.Ty.i8.bytes = true
+read : cm.readBits false (Clif.effAddr pointer 0) Clif.Ty.i8.bytes Clif.Ty.i8.width = some raw
+smallEq : small = { ty := Clif.Ty.i8, bits := raw }
+address : lo64 use = BitVec.ofNat 64 (Clif.effAddr pointer 0)
+bound : Clif.effAddr pointer 0 + Clif.Ty.i8.bytes ≤ 2 ^ 64
+free : ∀ (k : Nat), k < Clif.Ty.i8.bytes → ¬F (BitVec.ofNat 64 (Clif.effAddr pointer 0 + k))
+avoids : Avoids F 1 (lo64 use)
+next : Arm.ArmState
+sameWorld : SameWorld F next world
+bits :
+  ∀ (j : Nat),
+    raw.getLsbD j =
+      (Arm.read_mem_bytes (CTy.ofClif Clif.Ty.i8).bytes (BitVec.ofNat 64 (Clif.effAddr pointer 0)) world).getLsbD j
+bytes : raw = Arm.read_mem_bytes 1 (BitVec.ofNat 64 (Clif.effAddr pointer 0)) world
+executed :
+  isem (MInst.loadAcquire (CTy.int 8) (Reg.vreg d RegClass.int) (Reg.vreg nr RegClass.int) flags) [use] world =
+    some ([ofX (BitVec.setWidth 64 raw)], next, Ctl.next)
+⊢ Clif.Ty.i8.width < Clif.Ty.i64.width ∧
+    { ty := Clif.Ty.i64, bits := BitVec.setWidth Clif.Ty.i64.width raw } =
+      { ty := Clif.Ty.i64, bits := BitVec.setWidth 64 raw }

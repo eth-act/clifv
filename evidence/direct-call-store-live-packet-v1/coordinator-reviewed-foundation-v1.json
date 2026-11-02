@@ -1,0 +1,14 @@
+{
+  "status": "reviewed_foundation_only",
+  "receipt_sha256": "88e049a0fc8e8bc57d4ea1e25662266a8c609666f6d2361007e33bff38620d88",
+  "immutable_sources_exact": 6,
+  "standard_roots": 11,
+  "fixed_roots": 2,
+  "default_flags_preserved": true,
+  "both_source_outcomes": true,
+  "arbitrary_post_call_memory": true,
+  "full_class_complete": false,
+  "callee_trap_propagation_complete": false,
+  "production_complete": false,
+  "utc": "2026-11-02T16:15:44.866273+00:00"
+}

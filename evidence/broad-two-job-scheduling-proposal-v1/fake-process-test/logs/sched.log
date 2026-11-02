@@ -1,0 +1,5 @@
+11:24:26 want 3 modules (0 assumed built) budget=12G max_jobs=2 heavy>16G
+11:24:26 start FV.A cap=4G running=1 avail=200.5G
+11:24:26 start FV.B cap=4G running=2 avail=200.5G
+11:24:27 first failure FV.A rc=2; stop launches and drain existing builds
+11:24:27 first failure FV.B rc=2; stop launches and drain existing builds

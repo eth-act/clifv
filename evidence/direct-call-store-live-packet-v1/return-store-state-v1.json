@@ -1,0 +1,44 @@
+{
+  "status": "passed-return-store-contract",
+  "sources": {
+    "FV/Backend/StockCallStoreCheck.lean": "fb00acd24163d1abba13e795beadb57826b1476d165b8ad82ec1e20997ff8e7e",
+    "FV/E2E/StockCallStoreFixture.lean": "a2d08aeef2d713808d5121df0a93a78bd5b14c6d4179df8a85351c5ee99f9488",
+    "FV/E2E/StockCallStoreSourceWitness.lean": "3bf0fce0bcd2f9f9d3836bc0ad12a3696ff6a1bdf91acf72fa537c81822dbe84",
+    "FV/E2E/StockCallStoreLayout.lean": "f1ec4dd9673af8e1097d81663849e13cdffebc802d1927a7ffda0705bc630b30",
+    "FV/E2E/StockCallStoreSourceResult.lean": "df443220035db2addcae6229f651e90078773754e3c0dfc15a829a96eb91ea05",
+    "FV/E2E/StockCallStoreTail.lean": "e33ad371fb66197c025ad56adb2741d82ec7f5fed6817bd0edf00d9dafe2535d",
+    "FV/E2E/StockCallStoreFunction.lean": "aaf36fb0c48e688223aeb390c4e6c1f20bae9083db6afdb25fc58c7527308338",
+    "FV/E2E/StockCallStoreNoTrap.lean": "676e882e9f4bc13fd9327db0237bd1356c8bfb9c5df774382f0e5711af2642b7",
+    "FV/E2E/StockCallStoreDomain.lean": "fc0e9a35db4b41007aef017962e84bf6d80c6e9bf414f52b7c4afbe4e1aa60e4",
+    "FV/E2E/StockCallStoreCompiledWitness.lean": "98294242cac0cdf0a2da23ce8626d503aef382fac4b4890c85c4de23c7361759",
+    "FV/E2E/StockCallStoreReady.lean": "3e50f73160c2a022733cc8b476ba57c0c0f1d685bf4a401343fa296da2613402",
+    "FV/E2E/StockCallStoreRun.lean": "be1fb7d3c2a3ffb3554fba21307f959333728f1b6a844db937929f5e76fd2e42",
+    "FV/E2E/StockCallStoreNI.lean": "944930028a97dc7cdfad2dc4b223a1030696273ed29c36753358d3b931c727f1",
+    "FV/Backend/Proof/StockCallStoreResult.lean": "6031740667cd1e25dbfc1d74bff642e34e0fd059d673b283429a1695de495171",
+    "FV/Backend/Proof/StockCallStoreSource.lean": "b5917dcd08d0c9cf102f2780405beb2882d1a12c479745e3a4bd02b22a057c3d",
+    "FV/Backend/Proof/StockCallStoreFault.lean": "f484c436fc6a1556a85e2bf9cf2aba4b41edf3dce41e23205ec79ecac91eb42f",
+    "FV/Backend/Proof/StockCallStoreAddress.lean": "393acd3fb92b0272f17e5d4d4b4021f75f4fd2771e1e27a6ec5c52fd9a81da56"
+  },
+  "receipts": {
+    "foundation-state-v1.json": "88e049a0fc8e8bc57d4ea1e25662266a8c609666f6d2361007e33bff38620d88",
+    "return-function-v1/receipt.json": "d069945d031c65e6bf7e5f95751ba6caa280b13478924ae67f243e0a154ffa42",
+    "no-trap-v1/receipt.json": "dda73592c56ffe61d3efa34c99a392021a4e9c8e2ff01ae97d317f0e9435d58f",
+    "return-domain-v1/receipt.json": "dc83332480ba7fcb1940f125b2a97ae837e7fbec9c5578bb2d232607bdb3bcc3",
+    "compiled-witness-v1/receipt.json": "aac2b3c8935008d454df09b6702b451d33fe6320356ae1e4657cc129264a96bc",
+    "ready-v1/receipt.json": "346f9221f2b8daa31ed171c7ab899a28aa701edf006d8a409918ebe5607613f7",
+    "paired-run-v2/receipt.json": "b49b95537c3b5832e41186cea68356c8783756ea4efb6cc4b7a2190c4b8610c7",
+    "return-machine-v1/receipt.json": "8635ddc44faaf9a7e2019514f914ce46f9beef0c9e4ea2c323f3bfa7cfb5711b",
+    "audit-returns-v1/receipt.json": "66d39ef66aaf254d8ce39826ca8994fae2cc3366ca7ee142643b0de5fd928a16"
+  },
+  "audit_roots": 31,
+  "standard_roots": 28,
+  "fixed_roots": 3,
+  "unchanged_original_sources": {
+    "original-caller.clif": "dd3a48bed0088809a32af0e148db48046ca403b990b702ec753f0083e54cca83",
+    "original-callee.clif": "97277383ff351de032d121fdcde17db75d67ccf2faccddb9ff8a88ea67bbb33a"
+  },
+  "scope": "Returned call+default store+return, paired machine NI, both actual checked allocations, source return and first-store fault. Generic callee trap and machine store fault transfer remain open. No complete production claim.",
+  "budget": "2GiB explicit-j1",
+  "utc": "2026-11-02T16:38:38.156103+00:00",
+  "snapshot": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/reviewed-return-store-v1"
+}

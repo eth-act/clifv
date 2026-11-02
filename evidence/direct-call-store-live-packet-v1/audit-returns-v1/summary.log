@@ -1,0 +1,2 @@
+ok   stock-call-store-returns.lean: theorems 31/31 rc=0 errors=0 other_axioms=[]
+axiom audit: 1/1 files ok

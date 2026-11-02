@@ -1,0 +1,33 @@
+{
+  "status": "replacement_normal_runner_started",
+  "old_scheduler": 1496812,
+  "old_phase": 1496809,
+  "old_watcher": 1496808,
+  "compiler_signals_sent": false,
+  "utc": "2026-11-02T16:33:03.938949+00:00",
+  "first_job": {
+    "pid": 1681499,
+    "module": "FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns"
+  },
+  "completed_at_boundary": [
+    {
+      "module": "FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns",
+      "files": {
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v5/runs/combined/normal/v5-initial/scheduler/FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns.time": "84a205b9a4eb0015cd028de5927b72cf6b24e51e6ddbe76d88e6524eb3fcfbd2",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v5/runs/combined/normal/v5-initial/scheduler/FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns.log": "f1014597aedf88d98364feeb0621c372cb8e8126c62757cc083296d17580d2ad",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v5/runs/combined/normal/v5-initial/scheduler/FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns.mem": "283a4218324f9e8b664f5e01cf12e3dedb835a7d357846c345eb0c0fae23f945"
+      },
+      "time_text": "Maximum resident set size (kbytes): 9212520\nElapsed seconds: 925.7629377650446\nExit status: 0\n",
+      "memory_text": "peak 8131981312\noom 0\noom_kill 0\n"
+    }
+  ],
+  "no_live_compiler_or_artifact_writer": true,
+  "preserved_trace_count": 3325,
+  "old_module_jobs_success": true,
+  "old_parent_watcher_exit_expected": true,
+  "new_runner": 1713176,
+  "new_attempt": "v5-twojob-v1",
+  "profile_sha256": "c4e38498183ed779500449ef272df03b9a4732cc442315f08dfa7b4289cebd2f",
+  "helper_sha256": "5541150fba870bcf6614df808af04f7f54c85a045b2d314080cb933c361783bc",
+  "new_scheduler": 1713178
+}

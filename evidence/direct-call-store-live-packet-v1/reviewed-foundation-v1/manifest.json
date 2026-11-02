@@ -1,0 +1,8 @@
+{
+  "FV/E2E/StockCallStoreFixture.lean": "a2d08aeef2d713808d5121df0a93a78bd5b14c6d4179df8a85351c5ee99f9488",
+  "FV/E2E/StockCallStoreSourceWitness.lean": "3bf0fce0bcd2f9f9d3836bc0ad12a3696ff6a1bdf91acf72fa537c81822dbe84",
+  "FV/Backend/Proof/StockCallStoreResult.lean": "6031740667cd1e25dbfc1d74bff642e34e0fd059d673b283429a1695de495171",
+  "FV/Backend/Proof/StockCallStoreSource.lean": "b5917dcd08d0c9cf102f2780405beb2882d1a12c479745e3a4bd02b22a057c3d",
+  "FV/Backend/Proof/StockCallStoreFault.lean": "f484c436fc6a1556a85e2bf9cf2aba4b41edf3dce41e23205ec79ecac91eb42f",
+  "scripts/audit/stock-call-store-foundation.lean": "f1cd0377cc4d79231944bcc08a95facddcdfee106da0033a1e99ec0a3c86bec1"
+}

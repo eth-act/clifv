@@ -1,0 +1,54 @@
+{
+  "status": "proposal_only_not_launched",
+  "current_owner": 1496812,
+  "current_watch": 1496808,
+  "aggregate_broad_budget_GiB": 12,
+  "max_jobs": 2,
+  "min_cap_GiB": 4,
+  "default_cap_GiB": 12,
+  "max_cap_GiB": 12,
+  "margin": 2,
+  "known_heavy_exclusive_reason": "Every recorded peak >=4GiB gets cap>=9GiB; minimum companion4GiB cannot fit the12GiB budget.",
+  "unknown_exclusive_reason": "Unknown modules retain12GiB caps.",
+  "profile_policy": "Use the maximum real recorded peak from canonical cold RSS and local cgroup records. Never reduce a cap from one low warm measurement.",
+  "module_cap_distribution": {
+    "4": 1140,
+    "5": 1462,
+    "6": 1336,
+    "7": 229,
+    "8": 167,
+    "9": 85,
+    "10": 24,
+    "11": 26,
+    "12": 941
+  },
+  "module_count": 5410,
+  "profile_inputs": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/lake-module-peaks.tsv": "3b793e35a56c79729d51b01404f888b7d8b693f7766410f835f77e611ef1fc1b",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/lake-module-peaks.tsv": "75b100b7504bbcc2488e5b05355c39863b176b76d2120ab77f6df89d4b1d3e60"
+  },
+  "helper_sha256": "5541150fba870bcf6614df808af04f7f54c85a045b2d314080cb933c361783bc",
+  "existing_helper_untouched": true,
+  "compiler_flags_unchanged": "explicit-j2",
+  "failure_policy": "Stop launches on first failure; drain every healthy build without signals; preserve the first failed source/log.",
+  "handoff_not_authorized_yet": false,
+  "source_snapshot_and_cache_unchanged": true,
+  "utc": "2026-11-02T16:23:47.797009+00:00",
+  "handoff_approved": true,
+  "approval": "Root approved controller-only handoff after active compiler exits normally. Preserve aggregate12GiB and exclusive heavy/unknown modules.",
+  "profile_sha256": "c4e38498183ed779500449ef272df03b9a4732cc442315f08dfa7b4289cebd2f",
+  "runner_sha256": "171f2139ccc7dc3a56358537cad5a5d45cf35d0958907b8ab353150f741dbe1a",
+  "profile_units_verified": "MiB",
+  "boundary_harvest": [
+    {
+      "module": "FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns",
+      "files": {
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v5/runs/combined/normal/v5-initial/scheduler/FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns.time": "84a205b9a4eb0015cd028de5927b72cf6b24e51e6ddbe76d88e6524eb3fcfbd2",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v5/runs/combined/normal/v5-initial/scheduler/FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns.log": "f1014597aedf88d98364feeb0621c372cb8e8126c62757cc083296d17580d2ad",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v5/runs/combined/normal/v5-initial/scheduler/FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns.mem": "283a4218324f9e8b664f5e01cf12e3dedb835a7d357846c345eb0c0fae23f945"
+      },
+      "time_text": "Maximum resident set size (kbytes): 9212520\nElapsed seconds: 925.7629377650446\nExit status: 0\n",
+      "memory_text": "peak 8131981312\noom 0\noom_kill 0\n"
+    }
+  ]
+}

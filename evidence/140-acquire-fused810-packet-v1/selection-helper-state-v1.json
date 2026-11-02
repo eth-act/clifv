@@ -1,0 +1,98 @@
+{
+  "status": "passed_scoped_selection_and_acquire_helper",
+  "source_hashes": {
+    "StockAcquire810Witness.lean": "7bdc702e59be761702b83724695b621086769e848b948f6e3a9e3c40f15f5273",
+    "StockAcquireHelpers.lean": "61bc6f1ac571b601123eaa963563055bf46b2c619208bfd7e4c3afffd600ea8a",
+    "StockAcquire810Audit.lean": "d4d7df3c0f1434b7c4696120bb7bf276c1c1ed9605e3af34744f2fc59232c176"
+  },
+  "axioms": {
+    "Backend.Stock.Proof.Acquire810.original_scope_selects810": [
+      "Backend.Stock.Proof.Acquire810.selected_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_helpers_project_and_preserve": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_helper_success": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.stock_acquire_call": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "roots": 4,
+  "standard_roots": 3,
+  "fixed_roots": [
+    "Backend.Stock.Proof.Acquire810.original_scope_selects810"
+  ],
+  "witness_kernel": {
+    "label": "StockAcquire810Witness",
+    "argv": [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+      "-j1",
+      "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquire810Witness.lean",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquire810Witness.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquire810Witness.ilean"
+    ],
+    "exit": 0,
+    "seconds": 24.367955684661865,
+    "memstats": "peak 333783040\noom 0\noom_kill 0\n",
+    "source_sha256": "7bdc702e59be761702b83724695b621086769e848b948f6e3a9e3c40f15f5273",
+    "olean_sha256": "48892dfb1497937a814e59222e610343a258a2142decd27b1e4888206b271156"
+  },
+  "helper_kernel": {
+    "label": "StockAcquireHelpers",
+    "argv": [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+      "-j1",
+      "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHelpers.lean",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireHelpers.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireHelpers.ilean"
+    ],
+    "exit": 0,
+    "seconds": 1.3367602825164795,
+    "memstats": "peak 337043456\noom 0\noom_kill 0\n",
+    "source_sha256": "61bc6f1ac571b601123eaa963563055bf46b2c619208bfd7e4c3afffd600ea8a",
+    "olean_sha256": "03755365a17a364061e4e215c6cb1211fb63380994a72317c628eafdc7cb7703"
+  },
+  "audit_receipt_sha256": "8d243bf9719c74414904e63f1a84972213df9e7cfe5548fa5a407c19ff463b42",
+  "normal_snapshot_sha256": "6e7feaf2cd9d1e4db2f4f5e230e232801b65456a093fac0ccd75f1bb74d650cb",
+  "normal_receipt_sha256": "26dcc6cbd89c8d700bfd59b1295e2a8075af20e22786d28473381fe3abb252d1",
+  "distinctions": {
+    "evaluator_call_witness": "stock_loadSink_call_witness true; preserved original input source",
+    "reachable_actual_scope_witness": "Stock.lower Acquire810.function succeeds under LowerScope and Dominated; retained inst1 fires810 and emits default-flags acquire i8",
+    "source_call_required": false,
+    "legacy_nonmatch_used": false
+  },
+  "input_preservation": "atomicLoad i8/defaultflags/pointer1/result0 preserved exactly; original complete helper witness source archived",
+  "actual_claims": [
+    "one reachable original-scope selected function; no universal root completeness claim",
+    "all actual acquire422 helper evaluations project and preserve scheduling state",
+    "exact fresh register and acquire instruction emission reuse old load_acquire_ok"
+  ],
+  "remaining": [
+    "universal root810 selection/RHS proof",
+    "retained/deferred result binding and original memory effect",
+    "source first-trap order and complete source/machine composition",
+    "W/executable/compiler/source/peak/generated/default production integration",
+    "all original140 obligations"
+  ],
+  "full_acquire810_closure": false,
+  "full_fence_closure": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T16:16:39.825442+00:00"
+}

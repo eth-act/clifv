@@ -1,0 +1,47 @@
+'Backend.Stock.Proof.CallStoreResult.call_then_store_of_source' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.source_pointer' depends on axioms: [propext]
+'Backend.Stock.Proof.CallStoreResult.source_store_returns' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.source_store_faults' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.source_call_fault_or_continues' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.call_then_store_access' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.source_fault_decomposition' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.CallStoreSourceWitness.default_store_fault' depends on axioms: [propext, Quot.sound]
+'E2E.CallStoreSourceWitness.store_reached' depends on axioms: [propext, Quot.sound]
+'E2E.CallStoreSourceWitness.store_fault_at' depends on axioms: [propext, Quot.sound]
+'E2E.CallStoreSourceWitness.default_store_return' depends on axioms: [propext, Quot.sound]
+'E2E.CallStoreFixture.original_source_exact' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.CallStoreFixture.original_source_exact._native.native_decide.ax_1]
+'E2E.CallStoreFixture.actual_retained_and_saved' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.CallStoreFixture.observed_true._native.native_decide.ax_1✝,
+ E2E.CallStoreFixture.observed_true._native.native_decide.ax_2✝]
+'Backend.Stock.CallStore.Layout.source_fields' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.CallStore.Layout.scan_fields' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.CallStore.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.CallStore.prelude_read_checks' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.CallStore.Layout.pointer_type' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.CallStore.Layout.source_result' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.CallStoreResult.pointer_address' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.CallStore.execute_tail' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.CallStore.Layout.return_function_for' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.CallStore.Layout.return_function' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.CallStore.no_trap_under_original_condition' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.CallStore.check_return_store_domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.CallStore.Layout.ready' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.CallStore.Ready.virtual_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.CallStore.Ready.execute' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.CallStore.Ready.execute_other' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_call_store_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CallStoreCompiledWitness.complete_caller' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.CallStoreCompiledWitness.compiled_ok._native.native_decide.ax_1✝,
+ E2E.CallStoreFixture.observed_true._native.native_decide.ax_1✝,
+ E2E.CallStoreFixture.observed_true._native.native_decide.ax_2✝]

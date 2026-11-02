@@ -1,0 +1,31 @@
+{
+  "status": "passed_foundation_only",
+  "sources": {
+    "FV/E2E/StockCallStoreFixture.lean": "a2d08aeef2d713808d5121df0a93a78bd5b14c6d4179df8a85351c5ee99f9488",
+    "FV/E2E/StockCallStoreSourceWitness.lean": "3bf0fce0bcd2f9f9d3836bc0ad12a3696ff6a1bdf91acf72fa537c81822dbe84",
+    "FV/Backend/Proof/StockCallStoreResult.lean": "6031740667cd1e25dbfc1d74bff642e34e0fd059d673b283429a1695de495171",
+    "FV/Backend/Proof/StockCallStoreSource.lean": "b5917dcd08d0c9cf102f2780405beb2882d1a12c479745e3a4bd02b22a057c3d",
+    "FV/Backend/Proof/StockCallStoreFault.lean": "f484c436fc6a1556a85e2bf9cf2aba4b41edf3dce41e23205ec79ecac91eb42f",
+    "scripts/audit/stock-call-store-foundation.lean": "f1cd0377cc4d79231944bcc08a95facddcdfee106da0033a1e99ec0a3c86bec1"
+  },
+  "audit_sha256": "e1aeaccaa30d3092fdc347642a19d6377ef8dc89edff3ca52d0343ac5fa7e25d",
+  "standard_roots": 11,
+  "fixed_roots": 2,
+  "default_trapping_flags": true,
+  "both_source_outcomes": true,
+  "arbitrary_post_call_memory": true,
+  "actual_pointer_saved": "x19",
+  "source_call_result_binding": "source31 to mapped194 to virtual195 to physicalx0",
+  "source_fixture": "fixture-v1.json",
+  "published_dependency_bridge": "published-917-origin-bridge-v1.json",
+  "full_class_complete": false,
+  "callee_trap_propagation_complete": false,
+  "paired_machine_production_complete": false,
+  "remaining": [
+    "Return/store contract and checked class layout",
+    "Paired/machine NI and first-store-fault transfer",
+    "Actual linked raw/cleanup/default consumer execution",
+    "Generic callee-trap propagation without new admission guards"
+  ],
+  "utc": "2026-11-02T16:14:38.069768+00:00"
+}

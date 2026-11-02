@@ -1,0 +1,68 @@
+--- immutable-v5-helper
++++ proposed-draining-helper
+@@ -634,9 +634,8 @@
+         timing = (["/usr/bin/time", "-v", "-o", str(out / f"{m}.time")]
+                   if pathlib.Path("/usr/bin/time").is_file() else
+                   [sys.executable, str(root / "scripts/lake-time.py"), str(out / f"{m}.time")])
+-        # own process group: on exit (SIGTERM, Ctrl-C, crash) the scheduler stops its builds, so a
+-        # restarted scheduler never builds a module twice in one worktree (the second lean then
+-        # fails writing over the first one's read-only cache links)
++        # Keep each build in its own group. On controller exit, drain existing builds.
++        # Never start a replacement scheduler before every old build exits.
+         p = subprocess.Popen([*timing, memcap, "lake", "build", m], cwd=root, env=env, stdout=f,
+                              stderr=subprocess.STDOUT, start_new_session=True)
+         running[m] = (p, time.time(), c, unit)
+@@ -694,6 +693,7 @@
+     verify_rounds = 0
+     last_wait = ""
+     draining = None  # the solo module waiting for the running ones to finish
++    first_failure = None
+     try:
+         while True:
+             for m, (p, t0, c, unit) in list(running.items()):
+@@ -730,7 +730,10 @@
+                 why = ""
+                 if rc != 0:
+                     archive_failed_attempt(out, m, mods[m], unit, c, rc, dt)
+-                    raise RuntimeError(f"Stop at first failed normal-key module: {m} rc={rc}")
++                    status[m] = "fail"
++                    first_failure = first_failure or (m, rc)
++                    say(f"first failure {m} rc={rc}; stop launches and drain existing builds")
++                    continue
+                 if rc == 0:
+                     status[m] = "ok"
+                     if did_build:
+@@ -758,6 +761,11 @@
+                          f"retry {gib(retry_cap[m])}")
+                 say(f"done {m} rc={rc} {dt:.0f}s maxrss={rss / GiB:.1f}G cgpeak={peak / GiB:.1f}G "
+                     f"{'built' if did_build else 'up-to-date'} -> {after}")
++            if first_failure is not None:
++                if running:
++                    time.sleep(1)
++                    continue
++                raise RuntimeError(f"Stopped after draining builds: {first_failure}")
+             changed = True
+             while changed:
+                 changed = False
+@@ -894,18 +902,9 @@
+             time.sleep(1)
+     finally:
+         if running:
+-            say(f"stopping {len(running)} running builds: {' '.join(sorted(running))}")
+-            for sig in (signal.SIGTERM, signal.SIGKILL):
+-                for p, _, _, unit in running.values():
+-                    try:
+-                        os.killpg(p.pid, sig)
+-                    except OSError:
+-                        pass
+-                    subprocess.run(["systemctl", "--user", "kill", f"--signal={sig.name}",
+-                                    f"{unit}.scope"], stdout=subprocess.DEVNULL,
+-                                   stderr=subprocess.DEVNULL)
+-                t_end = time.time() + 10
+-                while time.time() < t_end and any(p.poll() is None for p, _, _, _ in running.values()):
++            say(f"draining {len(running)} builds without signals")
++            for p, _, _, _ in running.values():
++                while p.poll() is None:
+                     time.sleep(0.2)
+         dequeue()
+         for m in list(locks):

@@ -1,0 +1,98 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireVirtualReturn.lean:37:27: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  regs1 192
+in the target expression
+  VHolds { ty := Clif.Ty.i64, bits := pointer } (?m.192 192)
+
+result : Result
+lowered : lower function = Except.ok result
+F : BitVec 64 → Prop
+sb : Nat
+syms : String → Option Nat
+isem : Sem
+MR : MemRelT
+refines : Refines F isem
+driver : DriverSem isem
+stable : MRStable F MR
+memorySem : MemRefines F sb syms isem
+memoryOk : MemRelOk F sb syms function MR
+pointer : BitVec 64
+memory : Clif.Mem
+raw : BitVec 8
+read : memory.load { } (Clif.effAddr { ty := Clif.Ty.i64, bits := pointer } 0) 1 8 = Clif.Res.ok raw
+regs : Nat → CV
+world : Arm.ArmState
+related : MR [] memory world
+argument : VHolds { ty := Clif.Ty.i64, bits := pointer } (regVal world (Reg.x 0))
+maps :
+  result.ctx.valueReg? 1 = some (Reg.vreg 192 RegClass.int) ∧
+    result.ctx.valueReg? 0 = some (Reg.vreg 193 RegClass.int) ∧
+      result.ctx.valueReg? 2 = some (Reg.vreg 194 RegClass.int) ∧ result.final.alias[194]?.join = some 195
+recordFacts :
+  ∃ event,
+    event ∈ result.blockScans.toList ∧
+      event.block = 0 ∧
+        ∃ consumer,
+          consumer ∈ event.output.records ∧
+            consumer.inst = 1 ∧
+              consumer.output.emitted = #[acquireInstruction] ∧
+                consumer.output.state.sunk[0]! = true ∧
+                  (∃ step,
+                      consumer.output.step = some step ∧
+                        step.decision = Decision.emitted ∧
+                          step.results = [[Reg.vreg 195 RegClass.int]] ∧ step.rules.getLast? = some 810) ∧
+                    ∃ producer,
+                      producer ∈ event.output.records ∧
+                        producer.inst = 0 ∧
+                          producer.output.emitted = #[] ∧
+                            producer.input.sunk[0]! = true ∧
+                              producer.input.demand[0]! = 0 ∧
+                                ∃ step, producer.output.step = some step ∧ step.decision = Decision.sunk
+block : VBlock
+found : result.code.blocks[0]? = some block
+code : block.insts = completeCode
+argsOps : Array Operand :=
+  #[{ vreg := 192, cls := RegClass.int, kind := OpKind.def, pos := OpPos.late, con := Constraint.fixed (Reg.x 0) }]
+regs1 : Nat → CV := vdefUpd argsOps [regVal world (Reg.x 0)] regs
+argsRun : seqRun isem [MInst.args [(Reg.vreg 192 RegClass.int, Reg.x 0)]] regs world = some (SeqEnd.fall regs1 world)
+value192 : regs1 192 = regVal world (Reg.x 0)
+atomic :
+  Clif.evalInst (entry pointer) memory (Clif.Inst.atomicLoad Clif.Ty.i8 { } 1) =
+    Clif.Res.ok ([{ ty := Clif.Ty.i8, bits := raw }], memory)
+⊢ VHolds { ty := Clif.Ty.i64, bits := pointer } (?m.192 192)
+
+Note: The target expression is not type-correct under the `implicit` transparency level, which may have triggered the failure. This is usually caused by unfolding of semireducible definitions in prior tactic steps. Use `set_option linter.tacticCheckInstances true` to investigate the source of the issue.
+Full error:
+  Application type mismatch: The argument
+    pointer
+  has type
+    BitVec 64
+  but is expected to have type
+    BitVec Clif.Ty.i64.width
+  in the application
+    { ty := Clif.Ty.i64, bits := pointer }
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireVirtualReturn.lean:46:14: error: Type mismatch: After simplification, term
+  have this := rfl;
+  this
+ has type
+  @Eq (Option MInst)
+    #[MInst.args [(Reg.vreg 192 RegClass.int, Reg.x 0)], acquireInstruction,
+        MInst.rets [(Reg.vreg 195 RegClass.int, Reg.x 0)]][0]?
+    (some (MInst.args [(Reg.vreg 192 RegClass.int, Reg.x 0)]))
+but is expected to have type
+  @Eq (Option MInst)
+    #[MInst.args [(Reg.vreg 192 RegClass.int, Reg.x 0)], acquireInstruction,
+        MInst.rets [(Reg.vreg 195 RegClass.int, Reg.x 0)]][0 + 0]?
+    (some [MInst.args [(Reg.vreg 192 RegClass.int, Reg.x 0)], acquireInstruction][0])
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireVirtualReturn.lean:49:16: error: Type mismatch: After simplification, term
+  have this := rfl;
+  this
+ has type
+  @Eq (Option MInst)
+    #[MInst.args [(Reg.vreg 192 RegClass.int, Reg.x 0)], acquireInstruction,
+        MInst.rets [(Reg.vreg 195 RegClass.int, Reg.x 0)]][1]?
+    (some acquireInstruction)
+but is expected to have type
+  @Eq (Option MInst)
+    #[MInst.args [(Reg.vreg 192 RegClass.int, Reg.x 0)], acquireInstruction,
+        MInst.rets [(Reg.vreg 195 RegClass.int, Reg.x 0)]][0 + (0 + 1)]?
+    (some [MInst.args [(Reg.vreg 192 RegClass.int, Reg.x 0)], acquireInstruction][0 + 1])

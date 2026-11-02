@@ -1,0 +1,1 @@
+-- Process-control fixture. No Lean compiler runs.

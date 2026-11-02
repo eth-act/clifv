@@ -1,0 +1,12 @@
+{
+  "module": "FV.A",
+  "unit": "fvb-1662641-1-FV.A",
+  "cap_bytes": 4294967296,
+  "returncode": 1,
+  "seconds": 1.0009326934814453,
+  "module_source_sha256": "5c6d201d1bd0a8a286f3c4af1a0e604d8b3759c531c0765489193a2692802680",
+  "artifacts": {
+    "FV.A.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "FV.A.time": "fffb5c19b99e76a16c88f74276f52669f797e658748f08c23e35453a2cf9ef4b"
+  }
+}
