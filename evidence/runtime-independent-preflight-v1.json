@@ -1,0 +1,27 @@
+{
+  "packets": [
+    "link-image-extension-packet-v1",
+    "return-pin-linker-runtime-packet-v5"
+  ],
+  "roots": [
+    "FV/E2E/LinkImageExtension.lean",
+    "FV/E2E/ProductionExecGot.lean",
+    "FV/E2E/SemanticExecGot.lean",
+    "FV/Link/ReturnPinCompileDefs.lean",
+    "FV/Link/ReturnPinCompileWith.lean",
+    "FV/Link/ReturnPinRetryWitness.lean"
+  ],
+  "affected": [
+    "FV/E2E/LinkImageExtension.lean",
+    "FV/E2E/ProductionBoundaryWitness.lean",
+    "FV/E2E/ProductionExecGot.lean",
+    "FV/E2E/ProductionExecProven.lean",
+    "FV/E2E/SemanticExecGot.lean",
+    "FV/Link/ProductionExe.lean",
+    "FV/Link/ReturnPinCompileDefs.lean",
+    "FV/Link/ReturnPinCompileWith.lean",
+    "FV/Link/ReturnPinRetryWitness.lean"
+  ],
+  "closure": 1949,
+  "status": "preflight_only"
+}

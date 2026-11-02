@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "validated_source": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "FV/Link/ReturnPinCompileDefs.lean": "541d7b517efe9f9be36a9c0df1e4b627d92c0b0f69ed2a7f00c0e785a2ce6c96",
+    "FV/Link/ReturnPinCompileWith.lean": "f32daef208c6aa56dab3eac781f7f4dd9b3f8db9141661ee7e23f70aa4e4cc84",
+    "FV/Link/ReturnPinRetryWitness.lean": "7d00b245fa32f717279a092aa20c515c89953f9fa39041b400e745139af2d510",
+    "scripts/audit/return-pin-compile.lean": "205b49ed739e04852798034b22a0a55df1fd090b8e7505d22f5f8dfd8a95792f"
+  },
+  "support_source_hashes": {
+    "FV/E2E/LinkImageExtension.lean": "7efb7374210c47c14be1953acbccaff9da6416bb5a61a657d3bd003d083bfd66",
+    "FV/E2E/SemanticExecGot.lean": "629e998a0a9101fa88afee2fdff0c4bb4725ba6635bc29d6f1fe772e896cf0cc",
+    "FV/E2E/ProductionExecGot.lean": "e7070409dd8d696d3783d94107118128f1c2b90fdbefee5a58574bd26498cc49"
+  },
+  "modules": [
+    "FV/E2E/LinkImageExtension.lean",
+    "FV/Link/ReturnPinCompileDefs.lean",
+    "FV/E2E/ProductionExecGot.lean",
+    "FV/E2E/SemanticExecGot.lean",
+    "FV/Link/ReturnPinCompileWith.lean",
+    "FV/E2E/ProductionExecProven.lean",
+    "FV/Link/ProductionExe.lean",
+    "FV/E2E/ProductionBoundaryWitness.lean",
+    "FV/Link/ReturnPinRetryWitness.lean"
+  ],
+  "generic_roots": 10,
+  "fixed_roots": 6,
+  "old_axiom_sets_exact": 16,
+  "actual_context": "Frozen a4c0726d plus exact866 image extension and runtimev5; no future binary factoring.",
+  "isolated_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/runtime-independent-package-v1",
+  "requires_current_main_import_source_equality": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T05:36:55.320927+00:00"
+}

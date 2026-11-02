@@ -1,0 +1,61 @@
+{
+  "status": "landed",
+  "pr": 860,
+  "source": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_role": "Validated frozen proof source and legacy delivery handoff head; published_source identifies the exact PR head.",
+  "published_source": "6b31a2ed060236c465342ee2746cece07ee37838",
+  "base": "3fda390fbbdb10580f2208153064cb2dea3dfb88",
+  "merged": "5a7be04ec27d7683fe4e08f49f77b57167e08602",
+  "tested_tree": "ffcad3c6d32675b782efc936337886191c15c701",
+  "tree_equal": true,
+  "import_source_closure_equal": true,
+  "import_source_count": 1747,
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T05:26:24Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41394011415/job/125111321775",
+      "name": "Quick checks",
+      "startedAt": "2026-11-02T05:26:14Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T05:39:59Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41394011324/job/125111321478",
+      "name": "Build and compare",
+      "startedAt": "2026-11-02T05:26:14Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T05:40:18Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41394011324/job/125115377677",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-02T05:40:09Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T05:40:31Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41394011324/job/125115377742",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-02T05:40:10Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "peer_review": "860-independent-peer-review-v1.json",
+  "importer_receipt": "return-pin-call-consumer-current-main-state-recovery12-r1.json",
+  "independent_delivery": true,
+  "full_local_gate": "Healthy recovery3477137 continues on the frozen validated snapshot. Its eventual stale push cannot overwrite the newer remote ref. The existing dependent queue waits for its actual exit and verifies this source head before starting865.",
+  "full_goal_complete": false,
+  "utc": "2026-11-02T05:40:45.368987+00:00"
+}

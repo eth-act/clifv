@@ -17,6 +17,20 @@ branch = 'agent/stock-return-pin-linker-runtime-20261101'
 def run(*args):
     return subprocess.check_output(args, cwd=r, env=env, text=True).strip()
 
+from runpy import run_path
+_prepared_path = e / 'runtime-independent-delivery-prepared-v1.json'
+if _prepared_path.exists():
+    _prepared = json.loads(_prepared_path.read_text())
+    _wait_helper = run_path(str(e / 'independent-delivery-handoff-v1.py'))
+    _wait_helper['wait_for_independent_delivery'](_prepared['pr'], 'runtime-independent-delivery-prepared-v1.json', 'return-pin-runtime-landed-v1.json')
+_independent_receipt = e / 'return-pin-runtime-landed-v1.json'
+if _independent_receipt.exists():
+    _metadata = json.loads(_independent_receipt.read_text())
+    if _metadata.get('independent_delivery'):
+        _helper = run_path(str(e / 'independent-delivery-handoff-v1.py'))
+        if _helper['recognize_landed'](_metadata['pr'], 'return-pin-runtime-landed-v1.json', env=env, activate_view=True):
+            raise SystemExit(0)
+
 parent = json.loads((e / 'link-image-extension-landed-v1.json').read_text())
 assert parent['status'] == 'landed' and parent['tree_equal']
 assert run('git', 'status', '--porcelain') == ''

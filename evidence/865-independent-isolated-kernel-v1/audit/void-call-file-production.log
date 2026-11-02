@@ -1,0 +1,43 @@
+'Backend.ReturnPinFile.Entry.matches_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.ReturnPinFile.context_direct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.finishFileVoidCallABI_choice' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.VoidCallFile.direct_ofResults' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.VoidCallFile.site_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.VoidCallFile.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.VoidCallFile.entry_of_artifact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.VoidCallFile.entries_of_artifacts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.VoidCallFile.checked_artifacts_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.VoidCallFile.results_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.VoidCallFile.results_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.VoidCallFileWitness.File.mixed_entry_checks' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallFileWitness.File.mixed_entry_checks._native.native_decide.ax_1_1]
+'E2E.VoidCallFileWitness.File.mixed_file_checks' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallFileWitness.File.mixed_file_checks._native.native_decide.ax_1_1]
+'E2E.VoidCallFileWitness.File.complete_allocation_retry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallFileWitness.File.complete_allocation_retry._native.native_decide.ax_1_1]
+'E2E.VoidCallFileWitness.Program.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallFileWitness.Program.checks_true._native.native_decide.ax_1]
+'E2E.VoidCallFileWitness.Program.checked' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallFileWitness.Program.checks_true._native.native_decide.ax_1]
+'E2E.VoidCallFileWitness.Program.base_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallFileWitness.Program.checks_true._native.native_decide.ax_1]
+'E2E.VoidCallFileWitness.Program.system_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallFileWitness.Program.checks_true._native.native_decide.ax_1]
+'E2E.VoidCallFileWitness.Program.program_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallFileWitness.Program.checks_true._native.native_decide.ax_1]

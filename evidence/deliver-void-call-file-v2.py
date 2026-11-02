@@ -27,6 +27,12 @@ while True:
         break
     time.sleep(10)
 
+from runpy import run_path
+_helper = run_path(str(e / 'independent-delivery-handoff-v1.py'))
+_helper['wait_for_independent_delivery'](865, '865-independent-delivery-prepared-v1.json', 'void-call-file-landed-v1.json')
+if _helper['recognize_landed'](865, 'void-call-file-landed-v1.json', env=env):
+    raise SystemExit(0)
+
 parent = json.loads((e / 'return-pin-call-consumer-landed-v1.json').read_text())
 assert parent['status'] == 'landed' and parent['tree_equal']
 assert run('git', 'status', '--porcelain') == ''

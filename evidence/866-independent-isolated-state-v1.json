@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "validated_source": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "FV/E2E/LinkImageExtension.lean": "7efb7374210c47c14be1953acbccaff9da6416bb5a61a657d3bd003d083bfd66",
+    "FV/E2E/SemanticExecGot.lean": "629e998a0a9101fa88afee2fdff0c4bb4725ba6635bc29d6f1fe772e896cf0cc",
+    "FV/E2E/ProductionExecGot.lean": "e7070409dd8d696d3783d94107118128f1c2b90fdbefee5a58574bd26498cc49"
+  },
+  "modules": [
+    "FV/E2E/LinkImageExtension.lean",
+    "FV/E2E/ProductionExecGot.lean",
+    "FV/E2E/SemanticExecGot.lean"
+  ],
+  "generic_roots": 34,
+  "fixed_roots": 0,
+  "old_headers_exact": 34,
+  "old_axiom_sets_exact": 34,
+  "isolated_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/866-independent-package-v1",
+  "requires_current_main_import_source_equality": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T05:33:36.359070+00:00"
+}

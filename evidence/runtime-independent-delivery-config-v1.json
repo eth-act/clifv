@@ -1,0 +1,13 @@
+{
+  "pr": null,
+  "packet": "return-pin-linker-runtime-packet-v5",
+  "validation": "runtime-independent-reviewed-state-v1.json",
+  "source_overlays": [
+    "link-image-extension-packet-v1"
+  ],
+  "parent": "link-image-extension-landed-v1.json",
+  "prospective_parent": "866-independent-delivery-prepared-v1.json",
+  "branch": "agent/stock-return-pin-linker-runtime-20261101",
+  "prepared": "runtime-independent-delivery-prepared-v1.json",
+  "commit_message": "Reconcile the complete-file ABI linker adapter onto shared image definitions"
+}

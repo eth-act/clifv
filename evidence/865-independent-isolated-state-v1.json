@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "validated_source": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "scripts/audit/void-call-file-production.lean": "c4d27c258fc7fb870e0e3ddf990b1e66f30bbe37eb5fe722054a8dce57319d90",
+    "FV/Backend/VoidCallABIProduction.lean": "b1653d717363cf9590aed57640760037e534c1457dcdf8051f8dbb08cfc9921a",
+    "FV/E2E/VoidCallFilePipeline.lean": "7574cbe3dea42b11d4bbe4567b088d39e2399db66d91908949fe0e89b8c63fb4",
+    "FV/E2E/VoidCallFileWitness.lean": "5f8bf3d284646975cf84bd0f5aa5514ee364157794634366895a2797d0d53beb"
+  },
+  "modules": [
+    "FV/Backend/VoidCallABIProduction.lean",
+    "FV/E2E/VoidCallFilePipeline.lean",
+    "FV/E2E/VoidCallFileWitness.lean"
+  ],
+  "generic_roots": 11,
+  "fixed_roots": 8,
+  "isolated_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/865-independent-package-v1",
+  "requires_current_main_import_source_equality": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T05:31:08.813896+00:00"
+}

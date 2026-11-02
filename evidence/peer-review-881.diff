@@ -1,0 +1,940 @@
+diff --git a/FV/Backend/Lowering/StockParameterArgsCfg.lean b/FV/Backend/Lowering/StockParameterArgsCfg.lean
+new file mode 100644
+index 000000000..8028bef9a
+--- /dev/null
++++ b/FV/Backend/Lowering/StockParameterArgsCfg.lean
+@@ -0,0 +1,41 @@
++import FV.Backend.Lowering.StockParameterCfg
++import FV.Backend.Lowering.StockConditionalArgsCfg
++import FV.Backend.EdgeSplit
++
++namespace Backend.Stock.ParameterArgsCfg
++open Backend.Proof.Driver
++set_option autoImplicit false
++
++/-- `ParameterCfg.controlEligible`, where a parameter branch may pass block arguments. -/
++def controlEligible (f : Clif.Function) (bi : Nat) : Clif.Terminator → Bool
++  | .jump bc => ParameterCfg.targetAfter f bi bc
++  | .ret _ => true
++  | .brif c yes no => ParameterCfg.parameterEligible f c &&
++    ParameterCfg.targetAfter f bi yes && ParameterCfg.targetAfter f bi no
++  | _ => false
++
++/-- As `controlEligible`, and a nonentry block may also end in `trap`. -/
++def controlLeafEligible (f : Clif.Function) (bi : Nat) : Clif.Terminator → Bool
++  | .trap _ => bi != 0
++  | term => controlEligible f bi term
++
++/-- Ranked forward CFGs whose parameter branches may pass block arguments, in a lowered order
++without critical-edge nodes. -/
++def sourceLeafEligible (f : Clif.Function) : Bool :=
++  f.blocks.zipIdx.all (fun (b,bi) => controlLeafEligible f bi b.term) &&
++  f.blocks.all (fun b => b.body.all Scalar.maskMixedBodyEligible) &&
++  f.sig.params.all Scalar.narrowAbiEligible && f.sig.returns.all Scalar.narrowAbiEligible &&
++  ConditionalArgsCfg.originalOrder f
++
++def sourceOk (f : Clif.Function) : Bool :=
++  sourceLeafEligible f && lowerScopeB f && dominatedB f && sigAbiOk f.sig
++
++/-- The published code is the actual edge split of the actual Stock lowering. -/
++def check (f : Clif.Function) (vc : VCode) : Bool :=
++  sourceOk f && match Stock.lower f with
++  | .error _ => false
++  | .ok result => match splitEdgesChecked result.code result.edgeArgs with
++    | .ok split => decide (split.code = vc)
++    | .error _ => false
++
++end Backend.Stock.ParameterArgsCfg
+diff --git a/FV/Backend/Proof/StockConditionalOriginalLabels.lean b/FV/Backend/Proof/StockConditionalOriginalLabels.lean
+new file mode 100644
+index 000000000..3a201b6ad
+--- /dev/null
++++ b/FV/Backend/Proof/StockConditionalOriginalLabels.lean
+@@ -0,0 +1,61 @@
++import FV.Backend.Proof.StockConditionalArgsAt
++import FV.Backend.Proof.StockConditionalBodyCalls
++import FV.Backend.Proof.StockSelectedGraph
++
++/-! When the lowered order has only original nodes, the actual successor labels of any
++conditional block on a parameter are two original blocks. These are the label premises of the
++argument-carrying compositions (`returning/trapping_original_parameter_at`) at any block. -/
++
++namespace Backend.Stock.Proof.ConditionalValues
++open Backend.Proof Backend.Proof.Driver
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- Every node of an order with only original nodes is original. -/
++def OriginalOrder (order : Order) : Prop :=
++  ∀ (label : Nat) (node : Node),order.nodes[label]? = some node → ∃ bi,node = .original bi
++
++/-- A selected successor of an original block in an all-original order is an original block at
++the selected label. -/
++theorem original_selected_successor {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (original : OriginalOrder result.order)
++    {label bi index : Nat} {b : Clif.Block} {bc : Clif.BlockCall}
++    (tag : result.order.nodes[label]? = some (.original bi))
++    (block : f.blocks[bi]? = some b) (selected : (dests b.term)[index]? = some bc) :
++    ∃ target targetLabel,blockIdx? f bc.block = some target ∧ target ≠ 0 ∧
++      result.order.successors[label]![index]? = some targetLabel ∧
++      result.order.nodes[targetLabel]? = some (.original target) := by
++  obtain ⟨target,targetLabel,lookup,nonentry,successor,node⟩ :=
++    stock_lower_selected_successor run scope tag block selected
++  refine ⟨target,targetLabel,lookup,nonentry,successor,?_⟩
++  rcases node with node | synthetic
++  · exact node
++  · obtain ⟨_,same⟩ := original _ _ synthetic
++    cases same
++
++/-- The two actual successor labels of a conditional block on a parameter are original blocks. -/
++theorem ConditionalBodySpec.original_successor_labels {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (original : OriginalOrder result.order)
++    {b : Clif.Block} {label bi c : Nat} {yes no : Clif.BlockCall}
++    {isem : Backend.Proof.Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
++    (spec : ConditionalBodySpec f result b label bi c yes no isem MR env cp)
++    (tag : result.order.nodes[label]? = some (.original bi))
++    (block : f.blocks[bi]? = some b) (term : b.term = .brif c yes no)
++    (parameter : result.ctx.defInst? c = none) :
++    ∃ first second yesBlock noBlock,result.order.successors[label]! = #[first,second] ∧
++      result.order.nodes[first]? = some (.original yesBlock) ∧
++      result.order.nodes[second]? = some (.original noBlock) := by
++  obtain ⟨calls,_⟩ := spec.parameter_calls block term parameter
++  have labels : result.order.successors[label]! = #[calls.yes,calls.no] := Array.toList_inj.mp calls.labels_eq
++  obtain ⟨yesBlock,first,_,_,firstSuccessor,firstTag⟩ :=
++    original_selected_successor run scope original tag block (index := 0) (bc := yes) (by simp [term,dests])
++  obtain ⟨noBlock,second,_,_,secondSuccessor,secondTag⟩ :=
++    original_selected_successor run scope original tag block (index := 1) (bc := no) (by simp [term,dests])
++  rw [labels] at firstSuccessor secondSuccessor
++  simp only [List.getElem?_toArray,List.getElem?_cons_zero,List.getElem?_cons_succ,
++    Option.some.injEq] at firstSuccessor secondSuccessor
++  subst first second
++  exact ⟨calls.yes,calls.no,yesBlock,noBlock,labels,firstTag,secondTag⟩
++
++end Backend.Stock.Proof.ConditionalValues
+diff --git a/FV/Backend/Proof/StockParameterArgsCheck.lean b/FV/Backend/Proof/StockParameterArgsCheck.lean
+new file mode 100644
+index 000000000..760522e43
+--- /dev/null
++++ b/FV/Backend/Proof/StockParameterArgsCheck.lean
+@@ -0,0 +1,163 @@
++import FV.Backend.Lowering.StockParameterArgsCfg
++import FV.Backend.Proof.StockParameterArgsDomain
++import FV.Backend.Proof.StockConditionalArgsClass
++import FV.Backend.Proof.StockScalarCodeDomain
++import FV.Backend.Proof.StockScalarCheck
++
++namespace Backend.Stock.ParameterArgsCfg
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Proof.ParameterCfg
++  Backend.Stock.Proof.ConditionalValues
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++private theorem parameter_eligible_sound {f : Clif.Function} {c : Nat}
++    (checked : ParameterCfg.parameterEligible f c = true) : ParameterCondition f c := by
++  obtain ⟨b,member,eligible⟩ := List.any_eq_true.mp checked
++  obtain ⟨bi,block⟩ := List.mem_iff_getElem?.mp member
++  obtain ⟨pair,parameter,good⟩ := List.any_eq_true.mp eligible
++  obtain ⟨value,ty⟩ := pair
++  change (value == c && (ty == .i32 || ty == .i64)) = true at good
++  simp only [Bool.and_eq_true,Bool.or_eq_true,beq_iff_eq] at good
++  obtain ⟨same,wide⟩ := good
++  subst value
++  exact ⟨bi,b,ty,block,parameter,wide⟩
++
++private theorem target_after_sound {f : Clif.Function} {bi : Nat} {bc : Clif.BlockCall}
++    (checked : ParameterCfg.targetAfter f bi bc = true) :
++    ∃ ti,f.blocks.findIdx? (·.id == bc.block) = some ti ∧ bi < ti := by
++  simp only [ParameterCfg.targetAfter] at checked
++  cases target : f.blocks.findIdx? (·.id == bc.block) with
++  | none => simp only [target] at checked; cases checked
++  | some ti => simp only [target,decide_eq_true_eq] at checked; exact ⟨ti,rfl,checked⟩
++
++private theorem control_facts {f : Clif.Function} {bi : Nat} {term : Clif.Terminator}
++    (checked : controlEligible f bi term = true) :
++    ((∃ bc,term = .jump bc) ∨ (∃ xs,term = .ret xs) ∨
++      (∃ c yes no,term = .brif c yes no ∧ ParameterCondition f c)) ∧
++    ∀ (ti : Nat) (destination : Nat × List Clif.TryArg),destination ∈ destinations term →
++      f.blocks.findIdx? (·.id == destination.1) = some ti → bi < ti := by
++  cases term <;> simp only [controlEligible] at checked
++  case jump bc =>
++    refine ⟨Or.inl ⟨bc,rfl⟩,?_⟩
++    intro ti destination present target
++    simp only [destinations,List.mem_singleton] at present
++    subst destination
++    obtain ⟨next,lookup,later⟩ := target_after_sound checked
++    have same := Option.some.inj (lookup.symm.trans target)
++    simpa only [same] using later
++  case ret xs =>
++    refine ⟨Or.inr (Or.inl ⟨xs,rfl⟩),?_⟩
++    intro ti destination present target
++    simp only [destinations] at present; cases present
++  case brif c yes no =>
++    simp only [Bool.and_eq_true] at checked
++    obtain ⟨⟨parameter,yesGood⟩,noGood⟩ := checked
++    refine ⟨Or.inr (Or.inr ⟨c,yes,no,rfl,parameter_eligible_sound parameter⟩),?_⟩
++    intro ti destination present target
++    simp only [destinations,List.mem_cons,List.not_mem_nil,or_false] at present
++    rcases present with rfl | rfl
++    · obtain ⟨next,lookup,later⟩ := target_after_sound yesGood
++      have same := Option.some.inj (lookup.symm.trans target)
++      simpa only [same] using later
++    · obtain ⟨next,lookup,later⟩ := target_after_sound noGood
++      have same := Option.some.inj (lookup.symm.trans target)
++      simpa only [same] using later
++  all_goals cases checked
++
++private theorem control_leaf_facts {f : Clif.Function} {bi : Nat} {term : Clif.Terminator}
++    (checked : controlLeafEligible f bi term = true) :
++    ((∃ bc,term = .jump bc) ∨ (∃ xs,term = .ret xs) ∨
++      (∃ c yes no,term = .brif c yes no ∧ ParameterCondition f c) ∨
++      (∃ c,term = .trap c ∧ bi ≠ 0)) ∧
++    ∀ (ti : Nat) (destination : Nat × List Clif.TryArg),destination ∈ destinations term →
++      f.blocks.findIdx? (·.id == destination.1) = some ti → bi < ti := by
++  cases term
++  case trap c =>
++    simp only [controlLeafEligible,bne_iff_ne,ne_eq] at checked
++    refine ⟨Or.inr (Or.inr (Or.inr ⟨c,rfl,checked⟩)),?_⟩
++    intro ti destination present target
++    simp only [destinations] at present; cases present
++  all_goals
++    obtain ⟨kind,ranks⟩ := control_facts (by simpa only [controlLeafEligible] using checked)
++    refine ⟨?_,ranks⟩
++    rcases kind with jump | ret | branch
++    · exact Or.inl jump
++    · exact Or.inr (Or.inl ret)
++    · exact Or.inr (Or.inr (Or.inl branch))
++
++/-- Source control, parameter provenance, ranking, body families and the all-original order are
++derived by the selector. -/
++theorem source_leaf_eligible_facts {f : Clif.Function} (checked : sourceLeafEligible f = true) :
++    ArgsParameterLeafTerms f ∧ (∀ b,f.blocks[0]? = some b → ∀ c,b.term ≠ .trap c) ∧
++    ForwardSource.Ranked f id ∧ (∀ order,blockOrder f = .ok order → OriginalOrder order) ∧
++    (∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst) ∧
++    f.sig.params.all Scalar.narrowAbiEligible = true ∧ f.sig.returns.all Scalar.narrowAbiEligible = true := by
++  simp only [sourceLeafEligible,Bool.and_eq_true] at checked
++  obtain ⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,ordered⟩ := checked
++  have each : ∀ (bi : Nat) (b : Clif.Block),f.blocks[bi]? = some b → controlLeafEligible f bi b.term = true := by
++    intro bi b found
++    exact List.all_eq_true.mp controls (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
++  refine ⟨?_,?_,?_,?_,?_,params,returns⟩
++  · intro bi b found
++    rcases (control_leaf_facts (each bi b found)).1 with jump | ret | branch | ⟨c,trap,_⟩
++    · exact Or.inl jump
++    · exact Or.inr (Or.inl ret)
++    · exact Or.inr (Or.inr (Or.inl branch))
++    · exact Or.inr (Or.inr (Or.inr ⟨c,trap⟩))
++  · intro b found c trap
++    rcases (control_leaf_facts (each 0 b found)).1 with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c',yes,no,branch,_⟩ | ⟨c',trap',entry⟩
++    · rw [trap] at jump; cases jump
++    · rw [trap] at ret; cases ret
++    · rw [trap] at branch; cases branch
++    · exact entry rfl
++  · intro bi b ti destination found present target
++    exact (control_leaf_facts (each bi b found)).2 ti destination present target
++  · exact ConditionalArgsCfg.originalOrder_sound ordered
++  · intro b member stm present
++    exact Scalar.maskMixedBodyEligible_sound (List.all_eq_true.mp (List.all_eq_true.mp bodies b member) stm present)
++
++private theorem ordinary_params {params : List Clif.AbiParam}
++    (all : params.all Scalar.narrowAbiEligible = true) : ∀ p ∈ params,p.purpose = .normal := by
++  intro p member
++  have good := List.all_eq_true.mp all p member
++  simp only [Scalar.narrowAbiEligible,Bool.and_eq_true] at good
++  exact beq_iff_eq.mp good.1
++
++theorem domainAt_of_source_leaf_eligible {f : Clif.Function} (checked : sourceLeafEligible f = true)
++    (scope : LowerScope f) (dominated : Dominated f) (abi : sigAbiOk f.sig = true) : Scalar.DomainAt f := by
++  obtain ⟨terms,entryKind,ranked,original,family,params,returns⟩ := source_leaf_eligible_facts checked
++  have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
++    apply List.find?_eq_none.mpr
++    intro p member
++    simp [(ordinary_params params) p member]
++  have ordinary : (sigRets f.sig).any (·.purpose == .sret) = false := by
++    rw [sigRets,noSret]
++    apply Bool.eq_false_iff.mpr
++    intro any
++    obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
++    simpa [(ordinary_params returns) p member] using sret
++  exact domainAt_of_args_parameter_leaf_cfg scope dominated abi ordinary ranked terms original entryKind family
++
++theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Scalar.DomainAt f := by
++  simp only [sourceOk,Bool.and_eq_true] at checked
++  obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
++  exact domainAt_of_source_leaf_eligible eligible (lowerScope_of scope) (dominated_of dominated) abi
++
++/-- The executable check derives the code domain of the published split code. -/
++theorem check_sound {f : Clif.Function} {vc : VCode} (checked : check f vc = true) :
++    Scalar.CodeDomain f vc := by
++  simp only [check,Bool.and_eq_true] at checked
++  obtain ⟨source,lowered⟩ := checked
++  cases run : Stock.lower f with
++  | error message => simp [run] at lowered
++  | ok result =>
++    simp only [run] at lowered
++    cases splitRun : splitEdgesChecked result.code result.edgeArgs with
++    | error message => simp [splitRun] at lowered
++    | ok split =>
++      simp only [splitRun,decide_eq_true_eq] at lowered
++      subst vc
++      exact (sourceOk_sound source).code run splitRun
++
++end Backend.Stock.ParameterArgsCfg
+diff --git a/FV/Backend/Proof/StockParameterArgsDomain.lean b/FV/Backend/Proof/StockParameterArgsDomain.lean
+new file mode 100644
+index 000000000..c4d9914ea
+--- /dev/null
++++ b/FV/Backend/Proof/StockParameterArgsDomain.lean
+@@ -0,0 +1,103 @@
++import FV.Backend.Proof.StockParameterArgsLeaf
++import FV.Backend.Proof.StockParameterDomain
++import FV.Backend.Proof.StockScalarDomainAt
++
++/-! The ranked parameter CFG class whose parameter branches may pass block arguments satisfies the
++per-successor production domain. The entry jumps, returns or branches on a parameter; nonentry
++blocks may also end in `trap`. Every lowered node is an original block. -/
++
++namespace Backend.Stock.Proof.ParameterCfg
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ConditionalValues Backend.Stock.Proof.ForwardSource
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- Every block jumps, returns, branches on a parameter with any arguments, or ends in `trap`. -/
++def ArgsParameterLeafTerms (f : Clif.Function) : Prop :=
++  ∀ (bi : Nat) (b : Clif.Block),f.blocks[bi]? = some b →
++    (∃ bc,b.term = .jump bc) ∨ (∃ xs,b.term = .ret xs) ∨ ArgsParameterBranch f b ∨ ∃ c,b.term = .trap c
++
++theorem args_parameter_leaf_terms_nonentry {f : Clif.Function} (terms : ArgsParameterLeafTerms f) :
++    NonentryArgsParameterLeafTerms f :=
++  fun bi b block _ => terms bi b block
++
++theorem domainAt_of_args_parameter_leaf_cfg {f : Clif.Function} {rank : Nat → Nat}
++    (scope : LowerScope f) (dominated : Dominated f) (abi : sigAbiOk f.sig = true)
++    (ordinary : (sigRets f.sig).any (·.purpose == .sret) = false)
++    (ranked : Ranked f rank) (terms : ArgsParameterLeafTerms f)
++    (original : ∀ order,blockOrder f = .ok order → OriginalOrder order)
++    (entryKind : ∀ b,f.blocks[0]? = some b → ∀ c,b.term ≠ .trap c)
++    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst) : Scalar.DomainAt f := by
++  have entry : ∃ (b : Clif.Block),f.blocks[0]? = some b := by
++    cases blocks : f.blocks with
++    | nil => exact False.elim (scope.nonempty blocks)
++    | cons b rest => exact ⟨b,by simp only [blocks,List.getElem?_cons_zero]⟩
++  obtain ⟨entryBlock,source⟩ := entry
++  have nonentryTerms := args_parameter_leaf_terms_nonentry terms
++  refine ⟨scope,dominated,abi,ordinary,?_,?_⟩
++  · intro result run args cm fr entered env cp fuel vals mem returned F isem refines driver
++      sb syms memorySem MR stable world memory arguments
++    have order := original _ (stock_lower_order run)
++    rcases terms 0 entryBlock source with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,yes,no,term,parameter⟩ | ⟨leafCode,trap⟩
++    · exact args_parameter_jump_return_frame_of_leaf run scope dominated abi ranked nonentryTerms order family
++        source jump entered returned refines driver memorySem stable memory arguments
++    · exact parameter_return_entry_frame run scope dominated abi family source ret entered returned refines driver
++        memorySem stable memory arguments
++    · have tag := stock_blockOrder_entry (stock_lower_order run) scope.nonempty
++      obtain ⟨spec⟩ := stock_lower_conditional_body_spec run scope dominated family tag source term
++        refines driver stable env cp
++      have metadata := parameter_metadata parameter dominated.ssa spec.build
++      obtain ⟨first,second,yesBlock,noBlock,labels,firstTag,secondTag⟩ :=
++        spec.original_successor_labels run scope order tag source term metadata.1
++      have successors : ∀ (index : Nat) (bc : Clif.BlockCall),(dests entryBlock.term)[index]? = some bc →
++          Nonempty (SuccessorReturn f result 0 bc isem MR env cp vals mem) := by
++        intro index bc selected
++        obtain ⟨tl,targetLabel,b,lookup,found,targetSource,targetTag,nonentry,forward⟩ :=
++          selected_ranked_target run scope ranked tag source selected
++        exact args_parameter_return_successor_of_leaf run scope dominated abi ranked nonentryTerms order family
++          refines driver stable lookup found targetSource targetTag nonentry forward
++      obtain ⟨_,remaining,atTerm⟩ := entry_frame_parts source entered
++      obtain ⟨ρ,w,path,guarded,values,sameWorld⟩ := conditional_entry_prelude run scope dominated spec
++        term metadata.1 metadata.2 entered driver memorySem stable memory arguments
++      have defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 fr := by
++        rw [spec.atBlock]
++        exact source_defined_entry_frame dominated result.ctx entered
++      have finished := spec.returning_original_parameter_at run scope dominated family refines driver stable
++        tag term metadata.1 metadata.2 labels firstTag secondTag successors rfl remaining atTerm defined
++        returned guarded
++      exact ⟨entrySeed spec.core.scan.ctx fr,RunOkABIAt.prefix path finished⟩
++    · exact False.elim (entryKind entryBlock source leafCode trap)
++  · intro result run args cm fr entered env cp fuel code trapped F isem refines driver
++      sb syms memorySem MR stable world memory arguments
++    have order := original _ (stock_lower_order run)
++    rcases terms 0 entryBlock source with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,yes,no,term,parameter⟩ | ⟨leafCode,trap⟩
++    · exact args_parameter_jump_trap_frame_of_leaf run scope dominated abi ranked nonentryTerms order family
++        source jump entered trapped refines driver memorySem stable memory arguments
++    · exact parameter_return_entry_trap_frame run scope dominated abi family source ret entered trapped refines
++        driver memorySem stable memory arguments
++    · have tag := stock_blockOrder_entry (stock_lower_order run) scope.nonempty
++      obtain ⟨spec⟩ := stock_lower_conditional_body_spec run scope dominated family tag source term
++        refines driver stable env cp
++      have metadata := parameter_metadata parameter dominated.ssa spec.build
++      obtain ⟨first,second,yesBlock,noBlock,labels,firstTag,secondTag⟩ :=
++        spec.original_successor_labels run scope order tag source term metadata.1
++      have successors : ∀ (index : Nat) (bc : Clif.BlockCall),(dests entryBlock.term)[index]? = some bc →
++          Nonempty (SuccessorTrap f result 0 bc isem MR env cp code) := by
++        intro index bc selected
++        obtain ⟨tl,targetLabel,b,lookup,found,targetSource,targetTag,nonentry,forward⟩ :=
++          selected_ranked_target run scope ranked tag source selected
++        exact args_parameter_trap_successor_of_leaf run scope dominated abi ranked nonentryTerms order family
++          refines driver stable lookup found targetSource targetTag nonentry forward
++      obtain ⟨_,remaining,atTerm⟩ := entry_frame_parts source entered
++      obtain ⟨ρ,w,path,guarded,values,sameWorld⟩ := conditional_entry_prelude run scope dominated spec
++        term metadata.1 metadata.2 entered driver memorySem stable memory arguments
++      have defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 fr := by
++        rw [spec.atBlock]
++        exact source_defined_entry_frame dominated result.ctx entered
++      have finished := spec.trapping_original_parameter_at run scope dominated family refines driver stable
++        tag term metadata.1 metadata.2 labels firstTag secondTag successors rfl remaining atTerm defined
++        trapped guarded
++      exact ⟨entrySeed spec.core.scan.ctx fr,RunOkABIAt.prefix path finished⟩
++    · exact False.elim (entryKind entryBlock source leafCode trap)
++
++end Backend.Stock.Proof.ParameterCfg
+diff --git a/FV/Backend/Proof/StockParameterArgsLeaf.lean b/FV/Backend/Proof/StockParameterArgsLeaf.lean
+new file mode 100644
+index 000000000..0024713a5
+--- /dev/null
++++ b/FV/Backend/Proof/StockParameterArgsLeaf.lean
+@@ -0,0 +1,439 @@
++import FV.Backend.Proof.StockParameterLeaf
++import FV.Backend.Proof.StockParameterSuccessor
++import FV.Backend.Proof.StockParameterEntry
++import FV.Backend.Proof.StockConditionalOriginalLabels
++
++/-!
++# Parameter CFG compositions with block arguments
++
++The parameter route's return and first-trap inductions, where a parameter branch may pass block
++arguments to its successors. In an order with only original nodes, every branch's successor labels
++are original blocks, so each branch uses the argument-carrying compositions
++(`returning/trapping_original_parameter_at`). Jump, return and trap blocks are as before.
++-/
++
++namespace Backend.Stock.Proof.ParameterCfg
++open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof.ConditionalValues Backend.Stock.Proof.ForwardSource
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++
++/-- A branch on an original wide parameter; its successors may take block arguments. -/
++def ArgsParameterBranch (f : Clif.Function) (b : Clif.Block) : Prop :=
++  ∃ c yes no,b.term = .brif c yes no ∧ ParameterCondition f c
++
++/-- Every nonentry block jumps, returns, branches on a parameter (with any arguments), or ends
++in `trap`. -/
++def NonentryArgsParameterLeafTerms (f : Clif.Function) : Prop :=
++  ∀ bi b,f.blocks[bi]? = some b → bi ≠ 0 →
++    (∃ bc,b.term = .jump bc) ∨ (∃ xs,b.term = .ret xs) ∨ ArgsParameterBranch f b ∨ ∃ c,b.term = .trap c
++
++private theorem local_family {f : Clif.Function} {b : Clif.Block} {bi : Nat}
++    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst) (source : f.blocks[bi]? = some b) :
++    ∀ stm ∈ b.body,LocalBody.LocalInst stm.inst := by
++  intro stm member
++  rcases family b (List.mem_of_getElem? source) stm member with
++    (scalar | ⟨op,ty,x,y,shape⟩) | ⟨ty,x,shape⟩ | shape
++  · exact LocalBody.LocalInst.of_pure (HighMulBody.family_pure scalar)
++  all_goals simp [LocalBody.LocalInst,shape]
++
++/-- Returns compose through jump blocks and parameter branches to return leaves; trap leaves
++never return. -/
++theorem nonentry_args_parameter_returns_of_leaf {f : Clif.Function} {result : Result} {rank : Nat → Nat}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : NonentryArgsParameterLeafTerms f)
++    (original : OriginalOrder result.order)
++    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
++    (env : Clif.Env) (cp : Clif.Program) {label bi : Nat} {b : Clif.Block}
++    (tag : result.order.nodes[label]? = some (.original bi))
++    (block : f.blocks[bi]? = some b) (nonentry : bi ≠ 0) :
++    ∃ event,event ∈ result.blockScans.toList ∧ event.block = bi ∧
++      ReturnsAt f result label bi b event isem MR env cp := by
++  have nonempty : f.blocks.length ≠ 0 := fun h => scope.nonempty (List.length_eq_zero_iff.mp h)
++  obtain ⟨source,computed,size,bounded⟩ := stock_blockOrder_sourceTable (stock_lower_order run)
++  have composed : ∀ n label bi b,result.order.nodes.size-label = n →
++      result.order.nodes[label]? = some (.original bi) → f.blocks[bi]? = some b → bi ≠ 0 →
++      ∃ event,event ∈ result.blockScans.toList ∧ event.block = bi ∧
++        ReturnsAt f result label bi b event isem MR env cp := by
++    intro n
++    induction n using Nat.strongRecOn with
++    | ind n ih =>
++      intro label bi b count tag block nonentry
++      rcases terms bi b block nonentry with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,yes,no,term,parameter⟩ | ⟨leafCode,trap⟩
++      · obtain ⟨spec⟩ := Control.stock_lower_jump_body_spec run scope dominated family tag block jump refines driver stable env cp
++        obtain ⟨tl,targetLabel,targetIndex,targetNonentry,successors,targetTag⟩ :=
++          CriticalOwners.jump_successor run scope tag block jump
++        have sameTarget : spec.target = targetLabel := by
++          have row : result.order.successors[label]! = #[targetLabel] := by
++            simp only [getElem!_def,successors,Option.getD_some]
++          have targets := spec.targets
++          rw [row] at targets
++          exact (List.cons.inj targets).1.symm
++        have sourceRow := jump_source_row computed block jump targetIndex
++        have edge : tl ∈ source[bi]!.toList := by rw [sourceRow]; simp
++        have later := successor_labels (stock_lower_order run) nonempty ranked computed tag targetTag edge
++        have targetBound := (Array.getElem?_eq_some_iff.mp targetTag).1
++        have smaller : result.order.nodes.size-targetLabel < n := by omega
++        obtain ⟨targetBlock,targetFound,targetSource⟩ := block?_of_idx targetIndex
++        obtain ⟨next,nextEvent,nextBlock,nextReturns⟩ := ih _ smaller targetLabel tl targetBlock rfl targetTag targetSource targetNonentry
++        have demand := successor_demand run scope ranked computed
++          (by simpa only [spec.atBlock] using tag)
++          (by simpa only [nextBlock] using targetTag)
++          (by simpa only [spec.atBlock,nextBlock] using edge) spec.events nextEvent spec.split
++        refine ⟨spec.core.scan,spec.events,spec.atBlock,?_⟩
++        intro fuel s vals cm ρ w func callers remaining atTerm defined returned held
++        have continuation : ∀ (fuel : Nat) (s : Clif.State) (ρ : Nat → CV) (w : Arm.ArmState),
++            s.frame.func = f → s.callers = [] → s.frame.body = targetBlock.body → s.frame.term = targetBlock.term →
++            SourceDefinedAt f result.ctx tl 0 s.frame → Clif.runLoop env cp fuel s = .returned vals cm →
++            GuardedScanRel f result next.ctx next.block MR next.output.state (0,s.frame,s.mem) ρ w →
++            RunOkABIAt f result.code result.edgeArgs isem MR s.frame.slots ⟨spec.target,0,ρ,w⟩ (.returned vals cm) := by
++          intro fuel s ρ w func callers remaining atTerm defined returned held
++          simpa only [sameTarget] using nextReturns fuel s vals cm ρ w func callers remaining atTerm defined returned held
++        have finished := Control.jump_body_returns_at run scope dominated family refines driver stable spec tag jump
++          (by simpa only [sameTarget] using targetTag) targetIndex targetFound nextEvent nextBlock demand continuation
++          callers remaining atTerm (by simpa only [spec.atBlock] using defined) returned held
++        simpa only [jump_nonentry_prelude spec nonentry] using finished
++      · obtain ⟨spec⟩ := CfgReturn.stock_lower_return_block_spec run scope dominated abi family tag block ret refines driver stable env cp
++        refine ⟨spec.core.scan,spec.events,spec.atBlock,?_⟩
++        intro fuel s vals cm ρ w func callers remaining atTerm defined returned held
++        have finished := CfgReturnAt.return_block_returns_at run scope dominated abi family ret refines driver stable spec
++          func callers remaining atTerm (by simpa only [spec.atBlock] using defined) returned held
++        simpa only [spec.noPrelude nonentry] using finished
++      · obtain ⟨spec⟩ := stock_lower_conditional_body_spec run scope dominated family tag block term refines driver stable env cp
++        have metadata := parameter_metadata parameter dominated.ssa spec.build
++        refine ⟨spec.core.scan,spec.events,spec.atBlock,?_⟩
++        intro fuel s vals cm ρ w func callers remaining atTerm defined returned held
++        have successors : ∀ (index : Nat) (bc : Clif.BlockCall),(dests b.term)[index]? = some bc →
++            Nonempty (SuccessorReturn f result label bc isem MR env cp vals cm) := by
++          intro index bc selected
++          obtain ⟨tl,targetLabel,targetBlock,lookup,found,source,targetTag,targetNonentry,forward⟩ :=
++            selected_ranked_target run scope ranked tag block selected
++          have targetBound := (Array.getElem?_eq_some_iff.mp targetTag).1
++          have smaller : result.order.nodes.size-targetLabel < n := by omega
++          obtain ⟨next,member,atBlock,nextReturns⟩ :=
++            ih _ smaller targetLabel tl targetBlock rfl targetTag source targetNonentry
++          refine ⟨{
++            index := tl
++            targetLabel := targetLabel
++            block := targetBlock
++            event := next
++            lookup := lookup
++            found := found
++            tag := targetTag
++            member := member
++            atBlock := atBlock
++            forward := forward
++            returns := ?_ }⟩
++          intro fuel s ρ w func callers remaining atTerm defined returned held
++          exact nextReturns fuel s vals cm ρ w func callers remaining atTerm defined returned held
++        obtain ⟨first,second,yesBlock,noBlock,labels,firstTag,secondTag⟩ :=
++          spec.original_successor_labels run scope original tag block term metadata.1
++        have finished := spec.returning_original_parameter_at run scope dominated family refines driver stable
++          tag term metadata.1 metadata.2 labels firstTag secondTag successors callers remaining atTerm
++          (by simpa only [spec.atBlock] using defined) returned held
++        simpa only [conditional_nonentry_prelude spec nonentry] using finished
++      · obtain ⟨event,raw,preludeCode,events,atBlock,rawCode,noPrelude,placed⟩ :=
++          ConditionalValues.stock_lower_trap_block_code run tag block trap
++        refine ⟨event,events,atBlock,?_⟩
++        intro fuel s vals cm ρ w func callers remaining atTerm defined returned held
++        exact absurd returned (TrapBody.trap_source_noreturn (local_family family block) (j := 0)
++          (by simpa using remaining) (atTerm.trans trap))
++  exact composed _ label bi b rfl tag block nonentry
++
++/-- First traps compose through jump blocks and parameter branches; a trap leaf traps in its
++body or at its terminator. -/
++theorem nonentry_args_parameter_traps_of_leaf {f : Clif.Function} {result : Result} {rank : Nat → Nat}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : NonentryArgsParameterLeafTerms f)
++    (original : OriginalOrder result.order)
++    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
++    (env : Clif.Env) (cp : Clif.Program) {label bi : Nat} {b : Clif.Block}
++    (tag : result.order.nodes[label]? = some (.original bi))
++    (block : f.blocks[bi]? = some b) (nonentry : bi ≠ 0) :
++    ∃ event,event ∈ result.blockScans.toList ∧ event.block = bi ∧
++      TrapsAt f result label bi b event isem MR env cp := by
++  have nonempty : f.blocks.length ≠ 0 := fun h => scope.nonempty (List.length_eq_zero_iff.mp h)
++  obtain ⟨source,computed,size,bounded⟩ := stock_blockOrder_sourceTable (stock_lower_order run)
++  have composed : ∀ n label bi b,result.order.nodes.size-label = n →
++      result.order.nodes[label]? = some (.original bi) → f.blocks[bi]? = some b → bi ≠ 0 →
++      ∃ event,event ∈ result.blockScans.toList ∧ event.block = bi ∧
++        TrapsAt f result label bi b event isem MR env cp := by
++    intro n
++    induction n using Nat.strongRecOn with
++    | ind n ih =>
++      intro label bi b count tag block nonentry
++      rcases terms bi b block nonentry with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,yes,no,term,parameter⟩ | ⟨leafCode,trap⟩
++      · obtain ⟨spec⟩ := Control.stock_lower_jump_body_spec run scope dominated family tag block jump refines driver stable env cp
++        obtain ⟨tl,targetLabel,targetIndex,targetNonentry,successors,targetTag⟩ :=
++          CriticalOwners.jump_successor run scope tag block jump
++        have sameTarget : spec.target = targetLabel := by
++          have row : result.order.successors[label]! = #[targetLabel] := by
++            simp only [getElem!_def,successors,Option.getD_some]
++          have targets := spec.targets
++          rw [row] at targets
++          exact (List.cons.inj targets).1.symm
++        have sourceRow := jump_source_row computed block jump targetIndex
++        have edge : tl ∈ source[bi]!.toList := by rw [sourceRow]; simp
++        have later := successor_labels (stock_lower_order run) nonempty ranked computed tag targetTag edge
++        have targetBound := (Array.getElem?_eq_some_iff.mp targetTag).1
++        have smaller : result.order.nodes.size-targetLabel < n := by omega
++        obtain ⟨targetBlock,targetFound,targetSource⟩ := block?_of_idx targetIndex
++        obtain ⟨next,nextEvent,nextBlock,nextTraps⟩ := ih _ smaller targetLabel tl targetBlock rfl targetTag targetSource targetNonentry
++        have demand := successor_demand run scope ranked computed
++          (by simpa only [spec.atBlock] using tag)
++          (by simpa only [nextBlock] using targetTag)
++          (by simpa only [spec.atBlock,nextBlock] using edge) spec.events nextEvent spec.split
++        refine ⟨spec.core.scan,spec.events,spec.atBlock,?_⟩
++        intro fuel s code ρ w func callers remaining atTerm defined returned held
++        have continuation : ∀ (fuel : Nat) (s : Clif.State) (ρ : Nat → CV) (w : Arm.ArmState),
++            s.frame.func = f → s.callers = [] → s.frame.body = targetBlock.body → s.frame.term = targetBlock.term →
++            SourceDefinedAt f result.ctx tl 0 s.frame → Clif.runLoop env cp fuel s = .trapped code →
++            GuardedScanRel f result next.ctx next.block MR next.output.state (0,s.frame,s.mem) ρ w →
++            RunOkABIAt f result.code result.edgeArgs isem MR s.frame.slots ⟨spec.target,0,ρ,w⟩ (.trapped code) := by
++          intro fuel s ρ w func callers remaining atTerm defined returned held
++          simpa only [sameTarget] using nextTraps fuel s code ρ w func callers remaining atTerm defined returned held
++        have finished := Control.jump_body_traps_at run scope dominated family refines driver stable spec tag jump
++          (by simpa only [sameTarget] using targetTag) targetIndex targetFound nextEvent nextBlock demand continuation
++          callers remaining atTerm (by simpa only [spec.atBlock] using defined) returned held
++        simpa only [jump_nonentry_prelude spec nonentry] using finished
++      · obtain ⟨spec⟩ := CfgReturn.stock_lower_return_block_spec run scope dominated abi family tag block ret refines driver stable env cp
++        refine ⟨spec.core.scan,spec.events,spec.atBlock,?_⟩
++        intro fuel s code ρ w func callers remaining atTerm defined returned held
++        have finished := CfgReturnAt.return_block_traps_at run scope dominated family ret refines driver stable spec
++          callers remaining atTerm returned held
++        simpa only [spec.noPrelude nonentry] using finished
++      · obtain ⟨spec⟩ := stock_lower_conditional_body_spec run scope dominated family tag block term refines driver stable env cp
++        have metadata := parameter_metadata parameter dominated.ssa spec.build
++        refine ⟨spec.core.scan,spec.events,spec.atBlock,?_⟩
++        intro fuel s code ρ w func callers remaining atTerm defined returned held
++        have successors : ∀ (index : Nat) (bc : Clif.BlockCall),(dests b.term)[index]? = some bc →
++            Nonempty (SuccessorTrap f result label bc isem MR env cp code) := by
++          intro index bc selected
++          obtain ⟨tl,targetLabel,targetBlock,lookup,found,source,targetTag,targetNonentry,forward⟩ :=
++            selected_ranked_target run scope ranked tag block selected
++          have targetBound := (Array.getElem?_eq_some_iff.mp targetTag).1
++          have smaller : result.order.nodes.size-targetLabel < n := by omega
++          obtain ⟨next,member,atBlock,nextTraps⟩ :=
++            ih _ smaller targetLabel tl targetBlock rfl targetTag source targetNonentry
++          refine ⟨{
++            index := tl
++            targetLabel := targetLabel
++            block := targetBlock
++            event := next
++            lookup := lookup
++            found := found
++            tag := targetTag
++            member := member
++            atBlock := atBlock
++            forward := forward
++            traps := ?_ }⟩
++          intro fuel s ρ w func callers remaining atTerm defined returned held
++          exact nextTraps fuel s code ρ w func callers remaining atTerm defined returned held
++        obtain ⟨first,second,yesBlock,noBlock,labels,firstTag,secondTag⟩ :=
++          spec.original_successor_labels run scope original tag block term metadata.1
++        have finished := spec.trapping_original_parameter_at run scope dominated family refines driver stable
++          tag term metadata.1 metadata.2 labels firstTag secondTag successors callers remaining atTerm
++          (by simpa only [spec.atBlock] using defined) returned held
++        simpa only [conditional_nonentry_prelude spec nonentry] using finished
++      · obtain ⟨event,raw,preludeCode,events,atBlock,rawCode,noPrelude,placed⟩ :=
++          ConditionalValues.stock_lower_trap_block_code run tag block trap
++        refine ⟨event,events,atBlock,?_⟩
++        intro fuel s code ρ w func callers remaining atTerm defined trapped held
++        have finished := ConditionalValues.trap_block_traps_at run scope dominated family block trap
++          refines driver stable events atBlock rawCode placed remaining atTerm trapped held
++        simpa only [noPrelude nonentry] using finished
++  exact composed _ label bi b rfl tag block nonentry
++
++/-- A conditional successor can continue through arbitrarily many ranked jump/return blocks. -/
++theorem args_parameter_return_successor_of_leaf {f : Clif.Function} {result : Result} {rank : Nat → Nat}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : NonentryArgsParameterLeafTerms f)
++    (original : OriginalOrder result.order)
++    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
++    {env : Clif.Env} {cp : Clif.Program} {vals : List Clif.Val} {cm : Clif.Mem}
++    {label : Nat} {bc : Clif.BlockCall} {tl targetLabel : Nat} {b : Clif.Block}
++    (lookup : blockIdx? f bc.block = some tl) (found : f.block? bc.block = some b)
++    (source : f.blocks[tl]? = some b)
++    (tag : result.order.nodes[targetLabel]? = some (.original tl))
++    (nonentry : tl ≠ 0) (forward : label < targetLabel) :
++    Nonempty (SuccessorReturn f result label bc isem MR env cp vals cm) := by
++  obtain ⟨event,member,atBlock,returns⟩ := nonentry_args_parameter_returns_of_leaf run scope dominated abi ranked terms original family
++    refines driver stable env cp tag source nonentry
++  refine ⟨{
++    index := tl
++    targetLabel := targetLabel
++    block := b
++    event := event
++    lookup := lookup
++    found := found
++    tag := tag
++    member := member
++    atBlock := atBlock
++    forward := forward
++    returns := ?_ }⟩
++  intro fuel s ρ w func callers remaining atTerm defined terminal held
++  exact returns fuel s vals cm ρ w func callers remaining atTerm defined terminal held
++
++/-- A conditional successor can continue through arbitrarily many ranked jump/return blocks. -/
++theorem args_parameter_trap_successor_of_leaf {f : Clif.Function} {result : Result} {rank : Nat → Nat}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : NonentryArgsParameterLeafTerms f)
++    (original : OriginalOrder result.order)
++    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
++    {env : Clif.Env} {cp : Clif.Program} {trapCode : Clif.TrapCode}
++    {label : Nat} {bc : Clif.BlockCall} {tl targetLabel : Nat} {b : Clif.Block}
++    (lookup : blockIdx? f bc.block = some tl) (found : f.block? bc.block = some b)
++    (source : f.blocks[tl]? = some b)
++    (tag : result.order.nodes[targetLabel]? = some (.original tl))
++    (nonentry : tl ≠ 0) (forward : label < targetLabel) :
++    Nonempty (SuccessorTrap f result label bc isem MR env cp trapCode) := by
++  obtain ⟨event,member,atBlock,traps⟩ := nonentry_args_parameter_traps_of_leaf run scope dominated abi ranked terms original family
++    refines driver stable env cp tag source nonentry
++  refine ⟨{
++    index := tl
++    targetLabel := targetLabel
++    block := b
++    event := event
++    lookup := lookup
++    found := found
++    tag := tag
++    member := member
++    atBlock := atBlock
++    forward := forward
++    traps := ?_ }⟩
++  intro fuel s ρ w func callers remaining atTerm defined terminal held
++  exact traps fuel s trapCode ρ w func callers remaining atTerm defined terminal held
++
++/-- Instruction-zero ABI return simulation for any ranked scalar jump/return
++source graph whose entry jumps onward. All blocks may have ordinary bodies and
++inherited source values; no fixed chain length or forwarding premise is used. -/
++theorem args_parameter_jump_return_frame_of_leaf {f : Clif.Function} {result : Result} {rank : Nat → Nat}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : NonentryArgsParameterLeafTerms f)
++    (original : OriginalOrder result.order)
++    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
++    {entry : Clif.Block} {bc : Clif.BlockCall} (source : f.blocks[0]? = some entry)
++    (jump : entry.term = .jump bc)
++    {env : Clif.Env} {cp : Clif.Program} {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
++    (entered : SourceEntry f args fr) {fuel : Nat} {vals : List Clif.Val} {outMem : Clif.Mem}
++    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals outMem)
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    (driver : DriverSem isem) {sb : Nat} {syms : String → Option Nat}
++    (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
++    {w0 : Arm.ArmState} (memory : MR fr.slots cm w0) (arguments : ArgsAtEntry F f.sig args w0) :
++    ∃ ρ0,RunOkABIAt f result.code result.edgeArgs isem MR fr.slots ⟨0,0,ρ0,w0⟩ (.returned vals outMem) := by
++  have tag := stock_blockOrder_entry (stock_lower_order run) scope.nonempty
++  obtain ⟨spec⟩ := Control.stock_lower_jump_body_spec run scope dominated family tag source jump refines driver stable env cp
++  obtain ⟨tl,targetLabel,targetIndex,targetNonentry,successors,targetTag⟩ :=
++    CriticalOwners.jump_successor run scope tag source jump
++  have sameTarget : spec.target = targetLabel := by
++    have row : result.order.successors[0]! = #[targetLabel] := by simp only [getElem!_def,successors,Option.getD_some]
++    have targets := spec.targets
++    rw [row] at targets
++    exact (List.cons.inj targets).1.symm
++  obtain ⟨targetBlock,targetFound,targetSource⟩ := block?_of_idx targetIndex
++  obtain ⟨next,nextEvent,nextBlock,nextReturns⟩ := nonentry_args_parameter_returns_of_leaf run scope dominated abi ranked terms original family refines driver stable
++    env cp targetTag targetSource targetNonentry
++  obtain ⟨table,computed,size,bounded⟩ := stock_blockOrder_sourceTable (stock_lower_order run)
++  have edge : tl ∈ table[0]!.toList := by rw [jump_source_row computed source jump targetIndex]; simp
++  have demand := successor_demand run scope ranked computed
++    (by simpa only [spec.atBlock] using tag)
++    (by simpa only [nextBlock] using targetTag)
++    (by simpa only [spec.atBlock,nextBlock] using edge) spec.events nextEvent spec.split
++  have remaining : fr.body = entry.body := by
++    obtain ⟨b,regs,found,types,paramTypes,set,frame⟩ := entered
++    have found' : f.blocks[0]? = some b := by simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using found
++    cases Option.some.inj (found'.symm.trans source)
++    exact congrArg Clif.Frame.body frame
++  have atTerm : fr.term = entry.term := by
++    obtain ⟨b,regs,found,types,paramTypes,set,frame⟩ := entered
++    have found' : f.blocks[0]? = some b := by simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using found
++    cases Option.some.inj (found'.symm.trans source)
++    exact congrArg Clif.Frame.term frame
++  obtain ⟨ρentry,wentry,path,guarded,allValues,sameWorld⟩ := Control.jump_entry_prelude run scope dominated spec
++    entered driver memorySem stable memory arguments
++  have continuation : ∀ (fuel : Nat) (s : Clif.State) (ρ : Nat → CV) (w : Arm.ArmState),
++      s.frame.func = f → s.callers = [] → s.frame.body = targetBlock.body → s.frame.term = targetBlock.term →
++      SourceDefinedAt f result.ctx tl 0 s.frame → Clif.runLoop env cp fuel s = .returned vals outMem →
++      GuardedScanRel f result next.ctx next.block MR next.output.state (0,s.frame,s.mem) ρ w →
++      RunOkABIAt f result.code result.edgeArgs isem MR s.frame.slots ⟨spec.target,0,ρ,w⟩ (.returned vals outMem) := by
++    intro fuel s ρ w func callers remaining atTerm defined returned held
++    simpa only [sameTarget] using nextReturns fuel s vals outMem ρ w func callers remaining atTerm defined returned held
++  have finished := Control.jump_body_returns_at run scope dominated family refines driver stable spec tag jump
++    (by simpa only [sameTarget] using targetTag) targetIndex targetFound nextEvent nextBlock demand continuation
++    rfl remaining atTerm
++    (by simpa only [spec.atBlock] using Control.source_defined_entry_frame dominated result.ctx entered)
++    returned guarded
++  exact ⟨entrySeed spec.core.scan.ctx fr,RunOkABIAt.prefix path finished⟩
++
++/-- Instruction-zero ABI first-trap simulation for any ranked scalar jump/return
++source graph whose entry jumps onward. All blocks may have ordinary bodies and
++inherited source values; no fixed chain length or forwarding premise is used. -/
++theorem args_parameter_jump_trap_frame_of_leaf {f : Clif.Function} {result : Result} {rank : Nat → Nat}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
++    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : NonentryArgsParameterLeafTerms f)
++    (original : OriginalOrder result.order)
++    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
++    {entry : Clif.Block} {bc : Clif.BlockCall} (source : f.blocks[0]? = some entry)
++    (jump : entry.term = .jump bc)
++    {env : Clif.Env} {cp : Clif.Program} {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
++    (entered : SourceEntry f args fr) {fuel : Nat} {code : Clif.TrapCode}
++    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .trapped code)
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    (driver : DriverSem isem) {sb : Nat} {syms : String → Option Nat}
++    (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
++    {w0 : Arm.ArmState} (memory : MR fr.slots cm w0) (arguments : ArgsAtEntry F f.sig args w0) :
++    ∃ ρ0,RunOkABIAt f result.code result.edgeArgs isem MR fr.slots ⟨0,0,ρ0,w0⟩ (.trapped code) := by
++  have tag := stock_blockOrder_entry (stock_lower_order run) scope.nonempty
++  obtain ⟨spec⟩ := Control.stock_lower_jump_body_spec run scope dominated family tag source jump refines driver stable env cp
++  obtain ⟨tl,targetLabel,targetIndex,targetNonentry,successors,targetTag⟩ :=
++    CriticalOwners.jump_successor run scope tag source jump
++  have sameTarget : spec.target = targetLabel := by
++    have row : result.order.successors[0]! = #[targetLabel] := by simp only [getElem!_def,successors,Option.getD_some]
++    have targets := spec.targets
++    rw [row] at targets
++    exact (List.cons.inj targets).1.symm
++  obtain ⟨targetBlock,targetFound,targetSource⟩ := block?_of_idx targetIndex
++  obtain ⟨next,nextEvent,nextBlock,nextTraps⟩ := nonentry_args_parameter_traps_of_leaf run scope dominated abi ranked terms original family refines driver stable
++    env cp targetTag targetSource targetNonentry
++  obtain ⟨table,computed,size,bounded⟩ := stock_blockOrder_sourceTable (stock_lower_order run)
++  have edge : tl ∈ table[0]!.toList := by rw [jump_source_row computed source jump targetIndex]; simp
++  have demand := successor_demand run scope ranked computed
++    (by simpa only [spec.atBlock] using tag)
++    (by simpa only [nextBlock] using targetTag)
++    (by simpa only [spec.atBlock,nextBlock] using edge) spec.events nextEvent spec.split
++  have remaining : fr.body = entry.body := by
++    obtain ⟨b,regs,found,types,paramTypes,set,frame⟩ := entered
++    have found' : f.blocks[0]? = some b := by simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using found
++    cases Option.some.inj (found'.symm.trans source)
++    exact congrArg Clif.Frame.body frame
++  have atTerm : fr.term = entry.term := by
++    obtain ⟨b,regs,found,types,paramTypes,set,frame⟩ := entered
++    have found' : f.blocks[0]? = some b := by simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using found
++    cases Option.some.inj (found'.symm.trans source)
++    exact congrArg Clif.Frame.term frame
++  obtain ⟨ρentry,wentry,path,guarded,allValues,sameWorld⟩ := Control.jump_entry_prelude run scope dominated spec
++    entered driver memorySem stable memory arguments
++  have continuation : ∀ (fuel : Nat) (s : Clif.State) (ρ : Nat → CV) (w : Arm.ArmState),
++      s.frame.func = f → s.callers = [] → s.frame.body = targetBlock.body → s.frame.term = targetBlock.term →
++      SourceDefinedAt f result.ctx tl 0 s.frame → Clif.runLoop env cp fuel s = .trapped code →
++      GuardedScanRel f result next.ctx next.block MR next.output.state (0,s.frame,s.mem) ρ w →
++      RunOkABIAt f result.code result.edgeArgs isem MR s.frame.slots ⟨spec.target,0,ρ,w⟩ (.trapped code) := by
++    intro fuel s ρ w func callers remaining atTerm defined returned held
++    simpa only [sameTarget] using nextTraps fuel s code ρ w func callers remaining atTerm defined returned held
++  have finished := Control.jump_body_traps_at run scope dominated family refines driver stable spec tag jump
++    (by simpa only [sameTarget] using targetTag) targetIndex targetFound nextEvent nextBlock demand continuation
++    rfl remaining atTerm
++    (by simpa only [spec.atBlock] using Control.source_defined_entry_frame dominated result.ctx entered)
++    returned guarded
++  exact ⟨entrySeed spec.core.scan.ctx fr,RunOkABIAt.prefix path finished⟩
++
++end Backend.Stock.Proof.ParameterCfg
+diff --git a/FV/Backend/Proof/StockParameterArgsWitness.lean b/FV/Backend/Proof/StockParameterArgsWitness.lean
+new file mode 100644
+index 000000000..f55594921
+--- /dev/null
++++ b/FV/Backend/Proof/StockParameterArgsWitness.lean
+@@ -0,0 +1,75 @@
++import FV.Backend.Proof.StockParameterArgsCheck
++
++/-! Non-vacuity of the parameter class with block arguments: a real function whose entry jumps to
++a block that branches on its parameter and passes different block arguments to a return leaf and
++to a trap leaf. It is outside the existing parameter class, meets the new selector and the input
++checks, its source runs return and trap, its lowering is not legacy-compatible, and its actual
++split code passes the check. -/
++
++namespace Backend.Stock.ParameterArgsCfg.Fixture
++open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
++set_option autoImplicit false
++
++/-- The entry doubles its parameter and jumps; block 1 branches on the value it receives and
++passes it to a squaring return leaf, or passes the entry parameter to a trap leaf. -/
++def function : Clif.Function := {
++  name := "parameter_args_leaf"
++  sig := { params := [⟨.i64,.none,.normal⟩], returns := [⟨.i64,.none,.normal⟩] }
++  blocks := [
++    { id := 0, params := [(0,.i64)], body := [⟨[1],.binary .iadd .i64 0 0⟩], term := .jump ⟨1,[1]⟩ },
++    { id := 1, params := [(2,.i64)], body := [], term := .brif 2 ⟨2,[2]⟩ ⟨3,[0]⟩ },
++    { id := 2, params := [(3,.i64)], body := [⟨[4],.binary .imul .i64 3 3⟩], term := .ret [4] },
++    { id := 3, params := [(5,.i64)], body := [], term := .trap (.user 4) }] }
++
++/-- The source outcome from the entry, for one argument word. -/
++def sourceOutcome (word : BitVec 64) : Option Clif.Outcome :=
++  match Clif.enterFunc function [⟨.i64,word⟩] Clif.Mem.empty with
++  | .ok (fr,cm) => some (Clif.runLoop Clif.Env.empty {funcs := []} 12 ⟨fr,[],cm⟩)
++  | _ => none
++
++private def returns (word : BitVec 64) : Bool :=
++  match sourceOutcome word with
++  | some (.returned _ _) => true
++  | _ => false
++
++private def traps (word : BitVec 64) : Bool :=
++  match sourceOutcome word with
++  | some (.trapped (.user 4)) => true
++  | _ => false
++
++private def checks : Bool :=
++  sourceOk function && !ParameterCfg.sourceOk function &&
++  returns 1 && traps 0 &&
++  match Stock.lower function with
++  | .error _ => false
++  | .ok result =>
++    !edgeLegacyCompatibleB result.code result.edgeArgs &&
++    match splitEdgesChecked result.code result.edgeArgs with
++    | .ok split => check function split.code
++    | .error _ => false
++
++-- witness: native_decide (the fixed function's selectors, input checks, source runs, lowering and split only)
++private theorem checks_true : checks = true := by native_decide
++
++theorem parameter_args_witness : Scalar.DomainAt function ∧ ParameterCfg.sourceOk function = false ∧
++    ∃ result split,Stock.lower function = .ok result ∧
++      edgeLegacyCompatibleB result.code result.edgeArgs = false ∧
++      splitEdgesChecked result.code result.edgeArgs = .ok split ∧
++      Scalar.CodeDomain function split.code := by
++  have h := checks_true
++  unfold checks at h
++  simp only [Bool.and_eq_true] at h
++  obtain ⟨⟨⟨⟨source,notOld⟩,_⟩,_⟩,lowered⟩ := h
++  refine ⟨sourceOk_sound source,by simpa using notOld,?_⟩
++  cases run : Stock.lower function with
++  | error message => rw [run] at lowered; cases lowered
++  | ok result =>
++    rw [run,Bool.and_eq_true] at lowered
++    obtain ⟨incompatible,rest⟩ := lowered
++    cases splitRun : splitEdgesChecked result.code result.edgeArgs with
++    | error message => rw [splitRun] at rest; cases rest
++    | ok split =>
++      rw [splitRun] at rest
++      exact ⟨result,split,rfl,by simpa using incompatible,splitRun,check_sound rest⟩
++
++end Backend.Stock.ParameterArgsCfg.Fixture
+diff --git a/scripts/audit/parameter-args.lean b/scripts/audit/parameter-args.lean
+new file mode 100644
+index 000000000..85f29096b
+--- /dev/null
++++ b/scripts/audit/parameter-args.lean
+@@ -0,0 +1,16 @@
++import FV.Backend.Proof.StockParameterArgsWitness
++
++#print axioms Backend.Stock.Proof.ConditionalValues.original_selected_successor
++#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.original_successor_labels
++#print axioms Backend.Stock.Proof.ParameterCfg.nonentry_args_parameter_returns_of_leaf
++#print axioms Backend.Stock.Proof.ParameterCfg.nonentry_args_parameter_traps_of_leaf
++#print axioms Backend.Stock.Proof.ParameterCfg.args_parameter_return_successor_of_leaf
++#print axioms Backend.Stock.Proof.ParameterCfg.args_parameter_trap_successor_of_leaf
++#print axioms Backend.Stock.Proof.ParameterCfg.args_parameter_jump_return_frame_of_leaf
++#print axioms Backend.Stock.Proof.ParameterCfg.args_parameter_jump_trap_frame_of_leaf
++#print axioms Backend.Stock.Proof.ParameterCfg.domainAt_of_args_parameter_leaf_cfg
++#print axioms Backend.Stock.ParameterArgsCfg.source_leaf_eligible_facts
++#print axioms Backend.Stock.ParameterArgsCfg.domainAt_of_source_leaf_eligible
++#print axioms Backend.Stock.ParameterArgsCfg.sourceOk_sound
++#print axioms Backend.Stock.ParameterArgsCfg.check_sound
++#print axioms Backend.Stock.ParameterArgsCfg.Fixture.parameter_args_witness -- witness: native_decide

@@ -1,0 +1,8 @@
+{
+  "reviewer": "worker-A",
+  "publication_source": "6b31a2ed060236c465342ee2746cece07ee37838",
+  "verdict": "no blocking defect",
+  "mode": "ONE QUICK, DIRTY, CHEAP direct review; no build and no review agents",
+  "evidence": "Relayed directly by the coordinating parent from worker-A: additions retain old variants, StockVoidCallEntry import PairDriverF to PairDriver covered by importer, native_decide only fixed witnesses, route21 retained on MemorySretCopy.",
+  "utc": "2026-11-02T05:27:36.059339+00:00"
+}

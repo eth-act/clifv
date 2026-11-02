@@ -1,0 +1,12 @@
+{
+  "pr": 865,
+  "packet": "void-call-file-packet-v1",
+  "validation": "865-independent-isolated-state-v1.json",
+  "parent": "return-pin-call-consumer-landed-v1.json",
+  "branch": "agent/stock-void-call-file-20261101",
+  "prepared": "865-independent-delivery-prepared-v1.json",
+  "commit_message": "Reconcile the ABI-aware file adapter onto its landed dependency",
+  "prospective_parent": "860-independent-delivery-prepared-v1.json",
+  "review": "865-independent-peer-review-v1.json",
+  "landed": "void-call-file-landed-v1.json"
+}

@@ -17,6 +17,12 @@ branch = 'agent/stock-shared-image-extension-20261101'
 def run(*args):
     return subprocess.check_output(args, cwd=r, env=env, text=True).strip()
 
+from runpy import run_path
+_helper = run_path(str(e / 'independent-delivery-handoff-v1.py'))
+_helper['wait_for_independent_delivery'](866, '866-independent-delivery-prepared-v1.json', 'link-image-extension-landed-v1.json')
+if _helper['recognize_landed'](866, 'link-image-extension-landed-v1.json', env=env):
+    raise SystemExit(0)
+
 parent = json.loads((e / 'void-call-file-landed-v1.json').read_text())
 assert parent['status'] == 'landed' and parent['tree_equal']
 assert run('git', 'status', '--porcelain') == ''

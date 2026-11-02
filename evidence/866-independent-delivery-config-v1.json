@@ -1,0 +1,12 @@
+{
+  "pr": 866,
+  "packet": "link-image-extension-packet-v1",
+  "validation": "866-independent-isolated-state-v1.json",
+  "parent": "void-call-file-landed-v1.json",
+  "prospective_parent": "865-independent-delivery-prepared-v1.json",
+  "branch": "agent/stock-shared-image-extension-20261101",
+  "prepared": "866-independent-delivery-prepared-v1.json",
+  "commit_message": "Reconcile the shared image extension onto the delivered consumer chain",
+  "review": "866-independent-peer-review-v1.json",
+  "landed": "link-image-extension-landed-v1.json"
+}
