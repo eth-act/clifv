@@ -1,0 +1,6 @@
+import FV.Backend.Proof.StockConditionalArgumentDemandWitness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.stock_collect_conditional_marks
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.arguments_demanded
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.argument_values
+#print axioms Backend.Stock.Proof.ConditionalValues.ArgumentDemandWitness.argument_values_witness
