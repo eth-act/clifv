@@ -1,0 +1,32 @@
+{
+  "utc": "2026-10-22T23:27:26.547708+00:00",
+  "head": "b32f10a8c0d9e1fdde36532b33eff39bdad6d1e1",
+  "state": "passed",
+  "scope": "Isolated unchanged two-lemma stable provider and complete LowerSim copy. Elaborated types/required axioms exactly compared. No tracked shared-file edits yet.",
+  "unchanged_helper_body_sha256": {
+    "dfgCons_congr": "5aca6ac7016055bf4dacfb009a058ec97462f6ae001ad818aec637c25f2357d8",
+    "loadVal_congr": "f1bd0a5c617aa6cc95c4717a0c5e1e3a04cb02206f83ca30ebda17e3eb7426e7"
+  },
+  "records": [
+    {
+      "source": "/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerValueRelations.lean",
+      "returncode": 0,
+      "log": "/tmp/stock-outcome-value-interface-check/LowerValueRelations.log"
+    },
+    {
+      "source": "/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean",
+      "returncode": 0,
+      "log": "/tmp/stock-outcome-value-interface-check/LowerSim.log"
+    },
+    {
+      "source": "/tmp/stock-outcome-value-interface-check/old-types.lean",
+      "returncode": 0,
+      "log": "/tmp/stock-outcome-value-interface-check/old-types.log"
+    },
+    {
+      "source": "/tmp/stock-outcome-value-interface-check/new-types.lean",
+      "returncode": 0,
+      "log": "/tmp/stock-outcome-value-interface-check/new-types.log"
+    }
+  ]
+}

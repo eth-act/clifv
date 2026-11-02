@@ -120,3 +120,46 @@
 01:48:05 done FV.Backend.Proof.StockTerminalSinkWitness rc=0 40s maxrss=7.4G cgpeak=6.1G built -> ok
 01:48:05 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
 01:48:05 start FV.Backend.Proof.StockCmpZero16ConstantDriverRuns cap=12G running=1 avail=206.9G
+01:49:59 done FV.Backend.Proof.StockCmpZero16ConstantDriverRuns rc=0 114s maxrss=9.0G cgpeak=7.6G built -> ok
+01:49:59 start FV.Backend.Proof.StockCmpZero32ConstantDriverRuns cap=12G running=1 avail=206.5G
+01:51:45 done FV.Backend.Proof.StockCmpZero32ConstantDriverRuns rc=0 106s maxrss=9.0G cgpeak=7.7G built -> ok
+01:51:46 start FV.Backend.Proof.StockCmpZero8ConstantDriverRuns cap=12G running=1 avail=202.7G
+01:53:32 done FV.Backend.Proof.StockCmpZero8ConstantDriverRuns rc=0 106s maxrss=9.0G cgpeak=7.6G built -> ok
+01:53:32 start FV.Backend.Proof.StockCmpZero64ConstantDriverRuns cap=12G running=1 avail=208.6G
+01:55:23 done FV.Backend.Proof.StockCmpZero64ConstantDriverRuns rc=0 111s maxrss=9.0G cgpeak=7.7G built -> ok
+01:55:23 start FV.E2E.StockNotWitness cap=5G running=1 avail=202.9G
+01:55:27 done FV.E2E.StockNotWitness rc=0 4s maxrss=2.6G cgpeak=0.3G built -> ok
+01:55:28 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+01:55:28 start FV.Backend.Proof.StockMemoryCapturedCopyWitness cap=6G running=1 avail=201.1G
+01:55:30 done FV.Backend.Proof.StockMemoryCapturedCopyWitness rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+01:55:30 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+01:55:30 start FV.Backend.Proof.StockMemoryCapturedSource cap=6G running=1 avail=203.7G
+01:55:32 done FV.Backend.Proof.StockMemoryCapturedSource rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+01:55:32 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+01:55:32 start FV.Backend.Proof.StockMemoryRecordFrame cap=6G running=1 avail=204.3G
+01:55:33 done FV.Backend.Proof.StockMemoryRecordFrame rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+01:55:34 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+01:55:34 start FV.Backend.Proof.StockMemoryStoreSource cap=6G running=1 avail=203.7G
+01:55:35 done FV.Backend.Proof.StockMemoryStoreSource rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+01:55:35 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+01:55:35 start FV.Backend.Proof.StockReturnFullValues cap=6G running=1 avail=203.2G
+01:55:37 done FV.Backend.Proof.StockReturnFullValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+01:55:37 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+01:55:37 start FV.Backend.Proof.StockTrapProgress cap=6G running=1 avail=202.3G
+01:55:53 done FV.Backend.Proof.StockTrapProgress rc=0 16s maxrss=6.3G cgpeak=4.4G built -> ok
+01:55:54 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+01:55:54 start FV.E2E.StockMulWitness cap=5G running=1 avail=205.2G
+01:55:59 done FV.E2E.StockMulWitness rc=0 5s maxrss=2.6G cgpeak=0.3G built -> ok
+01:55:59 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+01:55:59 start FV.Backend.Proof.IselCallsOne cap=10G running=1 avail=209.1G
+01:57:22 done FV.Backend.Proof.IselCallsOne rc=0 83s maxrss=7.1G cgpeak=5.8G built -> ok
+01:57:22 start FV.E2E.StockShiftWitness cap=5G running=1 avail=203.1G
+01:57:28 done FV.E2E.StockShiftWitness rc=0 6s maxrss=2.6G cgpeak=0.4G built -> ok
+01:57:29 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+01:57:29 start FV.E2E.StockCastWitness cap=5G running=1 avail=200.4G
+01:57:36 done FV.E2E.StockCastWitness rc=0 7s maxrss=2.6G cgpeak=0.4G built -> ok
+01:57:36 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+01:57:36 start FV.E2E.StockBitWitness cap=5G running=1 avail=200.7G
+01:57:45 done FV.E2E.StockBitWitness rc=0 9s maxrss=2.6G cgpeak=0.4G built -> ok
+01:57:45 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+01:57:46 start FV.Backend.Proof.StockScopeRootsWitness cap=10G running=1 avail=205.7G

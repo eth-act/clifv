@@ -1,0 +1,11 @@
+{
+  "state": "remote_verified",
+  "source_head": "5aae55c32030e3e9f15ab6515a2cccf268751646",
+  "backup_commit": "460a26b88d2c23bec27b64c083ddb5fecef87047",
+  "branch": "agent/stock-outcome-recovery-20261023T002037Z",
+  "archive": "/tmp/stock-outcome-recovery-20261023T002037Z/recovery.tar.gz",
+  "archive_sha256": "269cddee3cf0a61196f9eecb97188804f88714a6b0cc102ec808c062c16e595e",
+  "bytes": 4150660,
+  "files": 1184,
+  "scope": "partial evidence; normal build running, not a completed validation claim"
+}

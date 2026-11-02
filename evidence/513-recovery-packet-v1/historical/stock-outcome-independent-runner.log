@@ -1,0 +1,65 @@
+2743 modules (2 heavy, 835 without a record); critical path 2.42 h, serial 36.06 h (recorded)
+18:53:43 want 2743 modules (1696 assumed built) budget=10G max_jobs=1 heavy>12G
+18:53:43 check (all) 1047 modules in 0.5s: 100 up-to-date, 246 out of date, 701 wait for those
+18:53:44 check (ready) 9 modules in 0.2s: 0 up-to-date, 0 out of date, 9 wait for those
+18:53:44 start FV.Concurrency.SegFoot cap=6G running=1 avail=136.8G
+18:54:25 done FV.Concurrency.SegFoot rc=0 41s maxrss=2.2G cgpeak=0.0G built -> ok
+18:54:25 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:54:25 start FV.E2E.Final cap=3G running=1 avail=136.6G
+18:54:27 done FV.E2E.Final rc=0 2s maxrss=2.0G cgpeak=0.0G built -> ok
+18:54:27 check (ready) 6 modules in 0.2s: 0 up-to-date, 6 out of date, 0 wait for those
+18:54:27 start FV.E2E.GotFlow cap=3G running=1 avail=136.7G
+18:54:29 done FV.E2E.GotFlow rc=0 2s maxrss=2.0G cgpeak=0.0G built -> ok
+18:54:29 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+18:54:29 start FV.E2E.DeadCleanupPipeline cap=3G running=1 avail=136.6G
+18:54:30 done FV.E2E.DeadCleanupPipeline rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:54:31 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:54:31 start FV.E2E.LinkWorld cap=3G running=1 avail=136.8G
+18:54:33 done FV.E2E.LinkWorld rc=0 2s maxrss=2.0G cgpeak=0.0G built -> ok
+18:54:33 check (ready) 2 modules in 0.2s: 0 up-to-date, 1 out of date, 1 wait for those
+18:54:33 start FV.E2E.DeadCleanupFinal cap=3G running=1 avail=136.6G
+18:54:35 done FV.E2E.DeadCleanupFinal rc=0 2s maxrss=2.0G cgpeak=0.0G built -> ok
+18:54:35 start FV.E2E.DeadCleanupGot cap=3G running=1 avail=136.7G
+18:54:36 done FV.E2E.DeadCleanupGot rc=0 1s maxrss=2.0G cgpeak=0.0G built -> ok
+18:54:36 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:54:36 start FV.E2E.PairDriver cap=4G running=1 avail=136.5G
+18:54:38 done FV.E2E.PairDriver rc=0 2s maxrss=2.1G cgpeak=0.0G built -> ok
+18:54:38 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:54:38 start FV.E2E.DeadCleanupWorld cap=3G running=1 avail=136.6G
+18:54:40 done FV.E2E.DeadCleanupWorld rc=0 2s maxrss=2.0G cgpeak=0.0G built -> ok
+18:54:40 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:54:40 start FV.E2E.DeadCleanupPair cap=4G running=1 avail=136.6G
+18:54:42 done FV.E2E.DeadCleanupPair rc=0 2s maxrss=2.1G cgpeak=0.0G built -> ok
+18:54:42 start FV.E2E.LinkWorldX cap=3G running=1 avail=136.7G
+18:54:43 done FV.E2E.LinkWorldX rc=0 1s maxrss=2.0G cgpeak=0.0G built -> ok
+18:54:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:54:43 start FV.Concurrency.ArmAllocSeg cap=6G running=1 avail=136.6G
+18:54:45 done FV.Concurrency.ArmAllocSeg rc=0 2s maxrss=1.9G cgpeak=0.0G built -> ok
+18:54:46 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:54:46 start FV.Concurrency.CEvsInv cap=6G running=1 avail=136.5G
+18:54:58 done FV.Concurrency.CEvsInv rc=0 12s maxrss=2.3G cgpeak=0.0G built -> ok
+18:54:58 check (ready) 1 modules in 0.2s: 0 up-to-date, 0 out of date, 1 wait for those
+18:54:58 start FV.Concurrency.IselMem cap=6G running=1 avail=136.6G
+18:55:00 done FV.Concurrency.IselMem rc=0 2s maxrss=1.9G cgpeak=0.0G built -> ok
+18:55:00 start FV.Concurrency.IselMemAux cap=6G running=1 avail=136.7G
+18:55:06 done FV.Concurrency.IselMemAux rc=0 6s maxrss=2.3G cgpeak=0.0G built -> ok
+18:55:06 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:55:06 start FV.E2E.DeadCleanupWorldX cap=3G running=1 avail=136.5G
+18:55:08 done FV.E2E.DeadCleanupWorldX rc=0 2s maxrss=2.0G cgpeak=0.0G built -> ok
+18:55:08 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:55:08 start FV.E2E.CompiledEither cap=3G running=1 avail=136.5G
+18:55:10 done FV.E2E.CompiledEither rc=0 2s maxrss=2.0G cgpeak=0.0G built -> ok
+18:55:10 start FV.E2E.Link cap=3G running=1 avail=136.7G
+18:55:11 done FV.E2E.Link rc=0 1s maxrss=2.0G cgpeak=0.0G built -> ok
+18:55:11 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:55:12 start FV.E2E.LinkArm cap=4G running=1 avail=136.6G
+18:55:18 done FV.E2E.LinkArm rc=0 6s maxrss=2.4G cgpeak=0.0G built -> ok
+18:55:18 check (ready) 3 modules in 0.2s: 0 up-to-date, 2 out of date, 1 wait for those
+18:55:18 start FV.E2E.FinalDirect cap=4G running=1 avail=136.6G
+18:55:20 done FV.E2E.FinalDirect rc=0 2s maxrss=2.1G cgpeak=0.0G built -> ok
+18:55:20 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:55:20 start FV.E2E.SpillLocalWitness cap=3G running=1 avail=136.6G
+18:55:21 done FV.E2E.SpillLocalWitness rc=0 1s maxrss=2.1G cgpeak=0.0G built -> ok
+18:55:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:55:21 start FV.E2E.LinkCheck cap=4G running=1 avail=136.6G
+18:55:32 stopping 1 running builds: FV.E2E.LinkCheck

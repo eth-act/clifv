@@ -1,0 +1,70 @@
+{
+  "status": "passed",
+  "source_hashes": {
+    "FV/Link/ReturnPinExeSourceWith.lean": "f50726d0a226bed154a8d0e074155c889aa0f5e5880bba21e8409a172d6f95c3",
+    "scripts/audit/return-pin-executable-source.lean": "7aca44eb06cb788d55ff1dc1069317d89f6653a4f5d70ff9f502e247ccb958b2",
+    "FV/Link/ReturnPinExeSourceWitness.lean": "7f1924fd91afd53804f61899c68a81429edcfd0acea1e4368d7ea12e9ee5f4e1",
+    "scripts/audit/return-pin-executable-source-witness.lean": "58df6f216ec539cd06e352b32def2b301518cd885e1e3818e5eb0f88dacef886"
+  },
+  "isolated_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-source-adapter-packet-v1/validation-package-v1",
+  "logs": [
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-source-adapter-packet-v1/kernel-v1",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-source-adapter-packet-v1/witness-kernel-v1",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-source-adapter-packet-v1/witness-kernel-v2"
+  ],
+  "generic_module_count": 22,
+  "incremental_module_count": 6,
+  "generic_roots": 2,
+  "fixed_roots": 2,
+  "old_source_headers_exact": 2,
+  "measured_memory": {
+    "witness-kernel-v1/ProductionExecGot.mem": {
+      "peak": 320024576,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/ProductionExecProven.mem": {
+      "peak": 246595584,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/ProductionExe.mem": {
+      "peak": 271781888,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/ProductionBoundaryWitness.mem": {
+      "peak": 345149440,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/ReturnPinBinaryWitness.mem": {
+      "peak": 305946624,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v1/ReturnPinExeSourceWitness.mem": {
+      "peak": 314826752,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v2/ReturnPinExeSourceWitness.mem": {
+      "peak": 334843904,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v2/audits.mem": {
+      "peak": 290770944,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  },
+  "generic_peak_recorded": false,
+  "memory_cap": "3GiB",
+  "maximum_recorded_peak_bytes": 345149440,
+  "failed_source_preserved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-source-adapter-packet-v1/failed-source/ReturnPinExeSourceWitness-v1.lean",
+  "isolated_outputs_removed": true,
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T06:21:40.128715+00:00"
+}

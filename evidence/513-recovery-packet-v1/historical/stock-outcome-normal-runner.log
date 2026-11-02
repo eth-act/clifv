@@ -1,0 +1,202 @@
+2913 modules (2 heavy, 955 without a record); critical path 2.47 h, serial 38.45 h (recorded)
+18:16:13 want 2913 modules (1710 assumed built) budget=16G max_jobs=2 heavy>12G
+18:16:13 start FV.Backend.Proof.LowerOutcomes cap=6G running=1 avail=133.8G
+18:16:14 done FV.Backend.Proof.LowerOutcomes rc=0 1s maxrss=1.6G built -> ok
+18:16:14 start FV.E2E.Statement cap=3G running=1 avail=134.7G
+18:16:14 start FV.Backend.Proof.PrepareSound cap=3G running=2 avail=134.7G
+18:16:16 done FV.E2E.Statement rc=0 2s maxrss=1.7G built -> ok
+18:16:16 done FV.Backend.Proof.PrepareSound rc=0 2s maxrss=1.7G built -> ok
+18:16:16 start FV.E2E.RegLevelMachine cap=3G running=1 avail=133.6G
+18:16:16 start FV.E2E.Compose cap=3G running=2 avail=133.6G
+18:16:17 done FV.E2E.Compose rc=0 1s maxrss=1.6G built -> ok
+18:16:17 start FV.E2E.Main cap=3G running=2 avail=133.7G
+18:16:18 done FV.E2E.Main rc=1 1s maxrss=1.7G up-to-date -> fail
+18:16:18 start FV.Backend.Proof.DeadCleanupCorrect cap=3G running=2 avail=133.4G
+18:16:19 done FV.E2E.RegLevelMachine rc=0 3s maxrss=1.7G built -> ok
+18:16:19 done FV.Backend.Proof.DeadCleanupCorrect rc=0 1s maxrss=1.7G built -> ok
+18:16:19 start FV.E2E.RegLevelSim cap=3G running=1 avail=133.6G
+18:16:19 start FV.Backend.Proof.DeadCleanupPrepare cap=3G running=2 avail=133.6G
+18:16:20 done FV.Backend.Proof.DeadCleanupPrepare rc=0 1s maxrss=1.6G built -> ok
+18:16:20 start FV.Backend.Proof.PrepareDirect cap=3G running=2 avail=133.4G
+18:16:21 done FV.E2E.RegLevelSim rc=0 2s maxrss=1.7G built -> ok
+18:16:21 done FV.Backend.Proof.PrepareDirect rc=0 1s maxrss=1.6G built -> ok
+18:16:21 start FV.E2E.RegLevelMove cap=3G running=1 avail=133.7G
+18:16:21 start FV.E2E.PrepDirect cap=3G running=2 avail=133.7G
+18:16:22 done FV.E2E.PrepDirect rc=0 1s maxrss=1.6G built -> ok
+18:16:22 start FV.E2E.LowerDirect cap=3G running=2 avail=133.4G
+18:16:24 done FV.E2E.RegLevelMove rc=0 3s maxrss=1.9G built -> ok
+18:16:24 done FV.E2E.LowerDirect rc=0 2s maxrss=1.8G built -> ok
+18:16:24 start FV.E2E.MoveReads cap=3G running=1 avail=133.7G
+18:16:24 start FV.Backend.Proof.LowerSim cap=3G running=2 avail=133.7G
+18:16:26 done FV.E2E.MoveReads rc=0 2s maxrss=1.7G built -> ok
+18:16:26 start FV.E2E.RegLevelGoodX cap=3G running=2 avail=133.2G
+18:16:29 done FV.E2E.RegLevelGoodX rc=0 3s maxrss=1.9G built -> ok
+18:16:29 start FV.E2E.RegLevelOp cap=3G running=2 avail=133.1G
+18:16:30 done FV.Backend.Proof.LowerSim rc=0 6s maxrss=1.9G built -> ok
+18:16:30 start FV.Concurrency.ClifCStepTerm cap=6G running=2 avail=133.4G
+18:16:31 done FV.E2E.RegLevelOp rc=0 2s maxrss=1.8G built -> ok
+18:16:31 start FV.Backend.Proof.RegallocCover cap=4G running=2 avail=133.4G
+18:16:41 done FV.Concurrency.ClifCStepTerm rc=0 11s maxrss=1.8G built -> ok
+18:16:41 start FV.E2E.RegLevelArgs cap=3G running=2 avail=133.1G
+18:16:43 done FV.E2E.RegLevelArgs rc=0 2s maxrss=1.8G built -> ok
+18:16:43 start FV.E2E.RegLevelBranch cap=3G running=2 avail=133.0G
+18:16:45 done FV.E2E.RegLevelBranch rc=0 2s maxrss=1.8G built -> ok
+18:16:45 start FV.E2E.RegLevelGoto cap=3G running=2 avail=132.9G
+18:16:48 done FV.E2E.RegLevelGoto rc=0 3s maxrss=1.9G built -> ok
+18:16:48 start FV.E2E.RegLevelNext cap=3G running=2 avail=132.9G
+18:16:50 done FV.E2E.RegLevelNext rc=0 2s maxrss=1.8G built -> ok
+18:16:50 start FV.E2E.RegLevelCall cap=3G running=2 avail=132.9G
+18:16:52 done FV.E2E.RegLevelCall rc=0 2s maxrss=1.8G built -> ok
+18:16:52 start FV.E2E.RegLevelJT cap=3G running=2 avail=132.8G
+18:16:55 done FV.E2E.RegLevelJT rc=0 3s maxrss=1.8G built -> ok
+18:16:55 start FV.E2E.RegLevelAtomic cap=3G running=2 avail=132.8G
+18:17:07 done FV.E2E.RegLevelAtomic rc=0 12s maxrss=2.0G built -> ok
+18:17:07 start FV.E2E.RegLevelTrap cap=3G running=2 avail=132.6G
+18:17:09 done FV.E2E.RegLevelTrap rc=0 2s maxrss=1.8G built -> ok
+18:17:09 start FV.E2E.RegLevelFrame cap=3G running=2 avail=133.3G
+18:17:12 done FV.E2E.RegLevelFrame rc=0 3s maxrss=1.9G built -> ok
+18:17:12 start FV.E2E.RegLevelTls cap=3G running=2 avail=132.7G
+18:17:14 done FV.E2E.RegLevelTls rc=0 2s maxrss=1.8G built -> ok
+18:17:14 start FV.E2E.RegLevelTry cap=3G running=2 avail=133.3G
+18:17:16 done FV.E2E.RegLevelTry rc=0 2s maxrss=1.8G built -> ok
+18:17:16 start FV.Backend.Proof.StockReturnArity cap=3G running=2 avail=133.3G
+18:17:18 done FV.Backend.Proof.StockReturnArity rc=0 2s maxrss=2.1G built -> ok
+18:17:18 start FV.Backend.Proof.StockSourceDefined cap=3G running=2 avail=132.4G
+18:17:20 done FV.Backend.Proof.StockSourceDefined rc=0 2s maxrss=2.1G built -> ok
+18:17:20 start FV.Backend.Proof.StockSourceEdges cap=3G running=2 avail=133.2G
+18:17:22 done FV.Backend.Proof.StockSourceEdges rc=0 2s maxrss=2.1G built -> ok
+18:17:22 start FV.Backend.Proof.StockEdgeValues cap=3G running=2 avail=133.2G
+18:17:24 done FV.Backend.Proof.StockEdgeValues rc=0 2s maxrss=2.1G built -> ok
+18:17:24 start FV.Backend.Proof.StockBranchArgumentCode cap=3G running=2 avail=133.0G
+18:17:27 done FV.Backend.Proof.StockBranchArgumentCode rc=0 3s maxrss=2.1G built -> ok
+18:17:27 start FV.Backend.Proof.StockEdgeCode cap=8G running=2 avail=133.6G
+18:17:43 done FV.Backend.Proof.StockEdgeCode rc=0 16s maxrss=6.1G built -> ok
+18:17:43 start FV.Backend.Proof.PerEdgeVCodeSem cap=3G running=2 avail=133.4G
+18:17:44 done FV.Backend.Proof.PerEdgeVCodeSem rc=0 1s maxrss=1.6G built -> ok
+18:17:44 start FV.Backend.Proof.PerEdgePrepareSound cap=3G running=2 avail=133.1G
+18:17:46 done FV.Backend.Proof.PerEdgePrepareSound rc=0 2s maxrss=1.7G built -> ok
+18:17:46 start FV.Backend.Proof.StockOrderGraph cap=3G running=2 avail=132.4G
+18:17:48 done FV.Backend.Proof.StockOrderGraph rc=0 2s maxrss=2.1G built -> ok
+18:17:48 start FV.Backend.Proof.StockPrepareComplete cap=4G running=2 avail=133.3G
+18:17:50 done FV.Backend.Proof.StockPrepareComplete rc=0 2s maxrss=2.1G built -> ok
+18:17:50 start FV.Backend.Proof.StockPrepareInputs cap=6G running=2 avail=133.3G
+18:18:06 done FV.Backend.Proof.StockPrepareInputs rc=0 16s maxrss=6.1G built -> ok
+18:18:06 start FV.Backend.Proof.StockEntryCode cap=4G running=2 avail=132.3G
+18:18:09 done FV.Backend.Proof.StockEntryCode rc=0 3s maxrss=2.1G built -> ok
+18:18:09 start FV.Backend.Proof.StockEntryGraph cap=3G running=2 avail=132.6G
+18:18:11 done FV.Backend.Proof.StockEntryGraph rc=0 2s maxrss=2.1G built -> ok
+18:18:11 start FV.Backend.Proof.StockPrepareTotal cap=3G running=2 avail=132.9G
+18:18:13 done FV.Backend.Proof.StockPrepareTotal rc=0 2s maxrss=2.1G built -> ok
+18:18:13 start FV.Backend.Proof.StockBranchCfg cap=8G running=2 avail=133.0G
+18:18:43 done FV.Backend.Proof.StockBranchCfg rc=0 30s maxrss=6.1G built -> ok
+18:18:43 start FV.Backend.Proof.LowerSimT cap=6G running=2 avail=132.0G
+18:18:50 done FV.Backend.Proof.LowerSimT rc=0 6s maxrss=2.1G built -> ok
+18:18:50 start FV.Backend.Proof.StockCriticalCode cap=4G running=2 avail=132.0G
+18:18:53 done FV.Backend.Proof.StockCriticalCode rc=0 3s maxrss=2.1G built -> ok
+18:18:53 start FV.Backend.Proof.StockEmittedGraph cap=4G running=2 avail=131.3G
+18:18:56 done FV.Backend.Proof.RegallocCover rc=0 144s maxrss=2.9G built -> ok
+18:18:56 done FV.Backend.Proof.StockEmittedGraph rc=0 3s maxrss=2.1G built -> ok
+18:18:56 start FV.Backend.Proof.SpillLocalForms cap=4G running=1 avail=133.8G
+18:18:56 start FV.Backend.Proof.LowerCover cap=3G running=2 avail=133.8G
+18:18:58 done FV.Backend.Proof.LowerCover rc=0 2s maxrss=1.9G built -> ok
+18:18:58 start FV.Backend.Proof.FormsCoverComplete cap=3G running=2 avail=132.8G
+18:18:59 done FV.Backend.Proof.FormsCoverComplete rc=0 1s maxrss=1.9G built -> ok
+18:18:59 start FV.Backend.Proof.MemRefines cap=3G running=2 avail=132.5G
+18:19:03 done FV.Backend.Proof.MemRefines rc=0 4s maxrss=1.9G built -> ok
+18:19:03 start FV.E2E.RegLevelOpReads cap=4G running=2 avail=133.0G
+18:19:08 done FV.Backend.Proof.SpillLocalForms rc=0 12s maxrss=2.1G built -> ok
+18:19:08 start FV.Backend.Proof.SpillLocalPipe cap=3G running=2 avail=132.3G
+18:19:10 done FV.Backend.Proof.SpillLocalPipe rc=0 2s maxrss=1.9G built -> ok
+18:19:10 start FV.Backend.Proof.SpillCtlForms cap=3G running=2 avail=132.5G
+18:19:12 done FV.Backend.Proof.SpillCtlForms rc=0 2s maxrss=2.0G built -> ok
+18:19:12 start FV.Backend.Proof.SpillCtlPipe cap=3G running=2 avail=133.3G
+18:19:14 done FV.Backend.Proof.SpillCtlPipe rc=0 2s maxrss=1.9G built -> ok
+18:19:14 start FV.Backend.Proof.IselShpBase cap=3G running=2 avail=133.2G
+18:19:16 done FV.Backend.Proof.IselShpBase rc=0 2s maxrss=1.9G built -> ok
+18:19:16 start FV.Backend.Proof.IselShpOracle cap=4G running=2 avail=132.1G
+18:19:18 done FV.E2E.RegLevelOpReads rc=0 15s maxrss=2.1G built -> ok
+18:19:18 start FV.Backend.Proof.KillBase cap=3G running=2 avail=132.5G
+18:19:20 done FV.Backend.Proof.KillBase rc=0 2s maxrss=1.9G built -> ok
+18:19:20 start FV.Backend.Proof.KillGen cap=3G running=2 avail=132.3G
+18:19:23 done FV.Backend.Proof.KillGen rc=0 3s maxrss=2.0G built -> ok
+18:19:23 start FV.Backend.Proof.TermSetRoots cap=3G running=2 avail=132.0G
+18:19:24 done FV.Backend.Proof.TermSetRoots rc=0 1s maxrss=1.9G built -> ok
+18:19:24 start FV.Backend.Proof.IselShpTry cap=4G running=2 avail=132.1G
+18:19:30 done FV.Backend.Proof.IselShpOracle rc=0 14s maxrss=2.2G built -> ok
+18:19:30 start FV.Backend.Proof.KillTab cap=4G running=2 avail=134.3G
+18:29:00 done FV.Backend.Proof.IselShpTry rc=0 577s maxrss=2.1G built -> ok
+18:29:00 start FV.Backend.Proof.IselShpTotal cap=10G running=2 avail=135.5G
+18:30:25 done FV.Backend.Proof.KillTab rc=0 655s maxrss=2.9G built -> ok
+18:30:25 start FV.Backend.Proof.IselShpBrTable cap=4G running=2 avail=132.0G
+18:30:46 done FV.Backend.Proof.IselShpBrTable rc=0 21s maxrss=2.1G built -> ok
+18:30:46 start FV.Backend.Proof.KillOfV cap=4G running=2 avail=131.8G
+18:30:52 done FV.Backend.Proof.KillOfV rc=0 6s maxrss=2.2G built -> ok
+18:30:52 start FV.Backend.Proof.KillOracle cap=5G running=2 avail=130.9G
+18:31:40 done FV.Backend.Proof.KillOracle rc=0 48s maxrss=3.1G built -> ok
+18:31:40 start FV.Backend.Proof.KillCtor cap=4G running=2 avail=131.1G
+18:31:49 done FV.Backend.Proof.KillCtor rc=0 9s maxrss=2.1G built -> ok
+18:31:49 start FV.Backend.Proof.IselShpCall cap=4G running=2 avail=131.0G
+18:34:31 done FV.Backend.Proof.IselShpTotal rc=0 331s maxrss=7.6G built -> ok
+18:34:31 start FV.Backend.Proof.KillDriver cap=8G running=2 avail=135.1G
+18:34:43 done FV.Backend.Proof.IselShpCall rc=0 174s maxrss=2.1G built -> ok
+18:34:43 start FV.E2E.Lockstep cap=4G running=2 avail=135.4G
+18:35:07 done FV.E2E.Lockstep rc=0 24s maxrss=2.5G built -> ok
+18:35:07 start FV.E2E.RegLevelCorrect cap=4G running=2 avail=135.1G
+18:35:19 done FV.E2E.RegLevelCorrect rc=0 12s maxrss=2.3G built -> ok
+18:35:19 start FV.Backend.Proof.DeadCleanupAdapter cap=3G running=2 avail=134.6G
+18:35:21 done FV.Backend.Proof.DeadCleanupAdapter rc=0 2s maxrss=1.8G built -> ok
+18:35:21 start FV.E2E.DeadCleanupRealizes cap=3G running=2 avail=134.5G
+18:35:23 done FV.E2E.DeadCleanupRealizes rc=0 2s maxrss=1.8G built -> ok
+18:35:23 start FV.E2E.Guarded cap=3G running=2 avail=134.3G
+18:35:25 done FV.E2E.Guarded rc=0 2s maxrss=1.9G built -> ok
+18:35:25 start FV.E2E.DeadCleanupContracts cap=3G running=2 avail=134.1G
+18:35:27 done FV.E2E.DeadCleanupContracts rc=0 2s maxrss=1.8G built -> ok
+18:35:27 start FV.E2E.DeadCleanupRegLevel cap=3G running=2 avail=134.0G
+18:35:29 done FV.E2E.DeadCleanupRegLevel rc=0 2s maxrss=1.9G built -> ok
+18:35:29 start FV.E2E.Pair cap=3G running=2 avail=134.0G
+18:35:31 done FV.E2E.Pair rc=0 2s maxrss=1.8G built -> ok
+18:35:31 start FV.E2E.DeadCleanupGuarded cap=3G running=2 avail=134.0G
+18:35:33 done FV.E2E.DeadCleanupGuarded rc=0 2s maxrss=1.9G built -> ok
+18:35:33 start FV.E2E.RegLevelCorrectX cap=3G running=2 avail=134.1G
+18:35:34 done FV.E2E.RegLevelCorrectX rc=0 1s maxrss=1.8G built -> ok
+18:35:34 start FV.Backend.Proof.IselShpCtor cap=4G running=2 avail=134.0G
+18:35:37 done FV.Backend.Proof.IselShpCtor rc=0 3s maxrss=2.1G built -> ok
+18:35:37 start FV.E2E.DeadCleanupRegLevelX cap=3G running=2 avail=134.1G
+18:35:38 done FV.E2E.DeadCleanupRegLevelX rc=0 1s maxrss=1.8G built -> ok
+18:35:38 start FV.Backend.Proof.IselShpDriver cap=6G running=2 avail=134.0G
+18:35:47 done FV.Backend.Proof.IselShpDriver rc=0 9s maxrss=4.1G built -> ok
+18:35:47 start FV.Concurrency.PrepThread cap=6G running=2 avail=134.1G
+18:35:52 done FV.Concurrency.PrepThread rc=0 5s maxrss=1.9G built -> ok
+18:35:52 start FV.Backend.Proof.KillAssemble cap=3G running=2 avail=134.5G
+18:35:55 done FV.Backend.Proof.KillAssemble rc=0 3s maxrss=2.0G built -> ok
+18:35:55 start FV.Backend.Proof.DefGenDom cap=3G running=2 avail=134.2G
+18:35:57 done FV.Backend.Proof.DefGenDom rc=0 2s maxrss=2.0G built -> ok
+18:35:57 start FV.Backend.Proof.DefRuns cap=3G running=2 avail=133.9G
+18:35:58 done FV.Backend.Proof.DefRuns rc=0 1s maxrss=1.9G built -> ok
+18:35:58 start FV.Backend.Proof.DefGenOfV cap=4G running=2 avail=133.7G
+18:36:12 done FV.Backend.Proof.DefGenOfV rc=0 14s maxrss=2.3G built -> ok
+18:36:12 start FV.Backend.Proof.DefGenSem cap=4G running=2 avail=132.7G
+18:36:15 done FV.Backend.Proof.DefGenSem rc=0 3s maxrss=2.1G built -> ok
+18:36:15 start FV.Backend.Proof.DefGenPat cap=3G running=2 avail=132.7G
+18:36:17 done FV.Backend.Proof.DefGenPat rc=0 2s maxrss=2.0G built -> ok
+18:36:17 start FV.Backend.Proof.DefGenSound cap=3G running=2 avail=132.6G
+18:36:19 done FV.Backend.Proof.DefGenSound rc=0 2s maxrss=2.0G built -> ok
+18:36:19 start FV.Backend.Proof.DefGenWrap cap=7G running=2 avail=132.6G
+18:38:21 done FV.Backend.Proof.KillDriver rc=0 230s maxrss=6.0G built -> ok
+18:38:21 start FV.Concurrency.SegRun cap=6G running=2 avail=136.7G
+18:38:25 done FV.Concurrency.SegRun rc=0 4s maxrss=1.9G built -> ok
+18:38:25 start FV.Concurrency.IselStep cap=6G running=2 avail=136.8G
+18:38:28 done FV.Concurrency.IselStep rc=0 3s maxrss=2.0G built -> ok
+18:38:28 start FV.Backend.Proof.KillTryDefs cap=4G running=2 avail=136.7G
+18:48:05 done FV.Backend.Proof.DefGenWrap rc=0 706s maxrss=5.2G built -> ok
+18:48:05 start FV.Concurrency.AllocThread cap=6G running=2 avail=137.2G
+18:48:06 done FV.Concurrency.AllocThread rc=0 1s maxrss=1.9G built -> ok
+18:48:06 start FV.Concurrency.CorrRefine cap=6G running=2 avail=137.2G
+18:48:08 done FV.Concurrency.CorrRefine rc=0 2s maxrss=1.9G built -> ok
+18:48:08 start FV.Concurrency.IselSeg cap=6G running=2 avail=137.2G
+18:48:10 done FV.Concurrency.IselSeg rc=0 2s maxrss=1.9G built -> ok
+18:48:10 start FV.Backend.Proof.DefGenTab cap=5G running=2 avail=137.2G
+18:48:12 done FV.Backend.Proof.KillTryDefs rc=0 584s maxrss=2.2G built -> ok
+18:48:12 start FV.Concurrency.ArmAllocThread cap=6G running=2 avail=137.2G
+18:48:15 done FV.Concurrency.ArmAllocThread rc=0 3s maxrss=1.9G built -> ok
+18:48:15 start FV.Concurrency.IselThread cap=6G running=2 avail=137.2G

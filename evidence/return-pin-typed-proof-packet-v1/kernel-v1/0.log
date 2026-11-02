@@ -1,0 +1,9 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v2/FV/E2E/TypedProductionChecks.lean:36:10: error(lean.unknownIdentifier): Unknown identifier `frameWG`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v2/FV/E2E/TypedProductionChecks.lean:38:22: error(lean.unknownIdentifier): Unknown identifier `StackBelow`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v2/FV/E2E/TypedProductionChecks.lean:54:8: warning: declaration uses `sorry`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v2/FV/E2E/TypedProductionChecks.lean:57:16: warning: Variable name `f` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _f
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`

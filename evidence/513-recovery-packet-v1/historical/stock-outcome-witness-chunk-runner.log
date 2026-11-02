@@ -1,0 +1,19 @@
+1203 modules (5 heavy, 64 without a record); critical path 1.66 h, serial 9.89 h (recorded)
+20:02:51 want 1203 modules (0 assumed built) budget=13G max_jobs=1 heavy>12G
+20:02:51 check (all) 1203 modules in 0.3s: 1006 up-to-date, 196 out of date, 1 wait for those
+20:02:51 start FV.Backend.Proof.StockAddSubExtensionWitness cap=12G running=1 avail=132.8G
+20:18:44 done FV.Backend.Proof.StockAddSubExtensionWitness rc=0 953s maxrss=9.2G cgpeak=8.4G built -> ok
+20:18:44 start FV.Backend.Proof.StockShiftWitnessInputs cap=13G running=1 avail=132.2G
+20:30:23 done FV.Backend.Proof.StockShiftWitnessInputs rc=0 699s maxrss=10.0G cgpeak=8.4G built -> ok
+20:30:23 start FV.Backend.Proof.StockCastWitness cap=13G running=1 avail=131.8G
+20:36:24 done FV.Backend.Proof.StockCastWitness rc=0 361s maxrss=9.7G cgpeak=8.1G built -> ok
+20:36:25 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+20:36:25 start FV.Backend.Proof.StockReduceWitness cap=12G running=1 avail=133.4G
+20:41:41 done FV.Backend.Proof.StockReduceWitness rc=0 316s maxrss=9.1G cgpeak=7.5G built -> ok
+20:41:41 start FV.Backend.Proof.StockLogicalNotRecordWitness cap=12G running=1 avail=132.0G
+20:47:01 done FV.Backend.Proof.StockLogicalNotRecordWitness rc=0 320s maxrss=8.9G cgpeak=7.4G built -> ok
+20:47:01 start FV.Backend.Proof.StockAddSubShiftEdgeWitness cap=13G running=1 avail=131.1G
+20:52:22 done FV.Backend.Proof.StockAddSubShiftEdgeWitness rc=0 320s maxrss=10.0G cgpeak=8.9G built -> ok
+20:52:22 start FV.Backend.Proof.StockAddSubShiftWitness cap=13G running=1 avail=129.8G
+20:58:01 done FV.Backend.Proof.StockAddSubShiftWitness rc=0 339s maxrss=10.0G cgpeak=8.8G built -> ok
+20:58:01 start FV.Backend.Proof.StockAddSubImmediateWitness cap=12G running=1 avail=127.7G

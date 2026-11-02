@@ -1,0 +1,110 @@
+{
+  "base": "34e39ec6b12abc4fb0dd509cc9cf56281f2c4c42",
+  "tree": "bd41bb462f03e0f13233b97a6768cb3381c63da4",
+  "moved_declarations": [
+    {
+      "name": "Backend.Proof.Driver.VTrapFrom",
+      "sha256": "e7e6d54da3d4cd80c509c2bad7e6fbec60f80025c312a815c062c9d5b3b75597",
+      "bytes": 360,
+      "old_current_candidate_exact": true
+    },
+    {
+      "name": "Backend.Proof.Driver.VRetFrom",
+      "sha256": "2e363f182648b7a82b3e35c9a60beb838556ea76a8331841edefd6f715b49133",
+      "bytes": 416,
+      "old_current_candidate_exact": true
+    },
+    {
+      "name": "Backend.Proof.Driver.VTrapFrom.prefix",
+      "sha256": "8c2435fc5d0948e57eb82c391596ec760ff51305e92704cbc912c61181c8901d",
+      "bytes": 351,
+      "old_current_candidate_exact": true
+    },
+    {
+      "name": "Backend.Proof.Driver.VRetFrom.prefix",
+      "sha256": "0c13bc79dd36c84b656a62ac656627eb42ebeaeed85b77bacf3c324d7d6413cb",
+      "bytes": 390,
+      "old_current_candidate_exact": true
+    },
+    {
+      "name": "Backend.Proof.Driver.ArgsAtEntry",
+      "sha256": "04361b142b997b02b7639b6f9423a119e4274d0f11e78988997254f628fbe6c8",
+      "bytes": 469,
+      "old_current_candidate_exact": true
+    },
+    {
+      "name": "Backend.Proof.Driver.Reach",
+      "sha256": "f6c0764fb9060961ed6196fc9204f99ccee29b83c27f1b3b1d0d5420a98caf7c",
+      "bytes": 247,
+      "old_current_candidate_exact": true
+    },
+    {
+      "name": "Backend.Proof.Driver.dfgCons_congr",
+      "sha256": "d74319f9c98030ab15dc27d073fd2609d02f989dd16043ce1bf0fe4ce74873a9",
+      "bytes": 458,
+      "old_current_candidate_exact": true
+    },
+    {
+      "name": "Backend.Proof.Driver.loadVal_congr",
+      "sha256": "f1bd0a5c617aa6cc95c4717a0c5e1e3a04cb02206f83ca30ebda17e3eb7426e7",
+      "bytes": 380,
+      "old_current_candidate_exact": true
+    }
+  ],
+  "historical_type_and_axiom_outputs_exact": true,
+  "historical_outputs": [
+    {
+      "path": "historical/stock-outcome-interface-audits/lower-outcome-interface.log",
+      "sha256": "73fd86befce5588e064368ad0b0ff6068455c18b9c950ef24fefd2f2b16697e7"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/LowerSim.log",
+      "sha256": "f6f38f2a7dd26cc4ca5940d94635d6c7ba562f05eefcf9b39eab99c262725c5a"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/LowerValueRelations.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean",
+      "sha256": "518c5020376f057d1659c29b4805850785f8b912aacae722c25baef746fcbafb"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerValueRelations.lean",
+      "sha256": "d1bb6b5034a03c46dfc4bd16d2f62ae9d2ec247f4e51b02ef05e75bd67e3c579"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/failed-doc-move/LowerSim.lean",
+      "sha256": "3667b3378f401492aa9c43ea9864b899f6b7ba10a75f6dc59a0a1ec789c20124"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/failed-doc-move/LowerSim.log",
+      "sha256": "0d8a17945dda0f83bba24a491ac2889f8a541b8212d545029e36972ff5e70972"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/failed-doc-move/LowerValueRelations.lean",
+      "sha256": "a5cd971670e3e8ae14dd02137a79546a7239e7b86e15cd5b763182b44cd913e2"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/failed-doc-move/LowerValueRelations.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/new-types.lean",
+      "sha256": "48cf2ac46419ebb4b62fd8feadf6ab01479683ca9b46de28d524d50969222b72"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/new-types.log",
+      "sha256": "a61cda34320e6d16bdc09e12973928241aa1a9898e5ab30cec891fe278e8a353"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/old-types.lean",
+      "sha256": "42b0ec4f33d976b5f68c4fb69d5e763608096707e6788e59913ff819b1d3ec31"
+    },
+    {
+      "path": "historical/stock-outcome-value-interface-check/old-types.log",
+      "sha256": "a61cda34320e6d16bdc09e12973928241aa1a9898e5ab30cec891fe278e8a353"
+    }
+  ],
+  "current_kernel_type_axiom_gates": "PENDING; textual identity and old output are not current elaboration evidence"
+}

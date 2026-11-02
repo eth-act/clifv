@@ -1,0 +1,100 @@
+467 modules (0 heavy, 89 without a record); critical path 0.83 h, serial 3.11 h (recorded)
+18:55:58 want 467 modules (410 assumed built) budget=10G max_jobs=1 heavy>12G
+18:55:58 check (all) 57 modules in 0.2s: 18 up-to-date, 15 out of date, 24 wait for those
+18:55:58 check (ready) 1 modules in 0.2s: 0 up-to-date, 0 out of date, 1 wait for those
+18:55:58 start FV.E2E.UnwindStatement cap=6G running=1 avail=134.9G
+18:56:00 done FV.E2E.UnwindStatement rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:00 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+18:56:00 start FV.Backend.Proof.PerEdgeRegallocLemmas cap=6G running=1 avail=134.7G
+18:56:02 done FV.Backend.Proof.PerEdgeRegallocLemmas rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:02 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:56:02 start FV.E2E.TrapCallClif cap=6G running=1 avail=134.7G
+18:56:04 done FV.E2E.TrapCallClif rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:05 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:56:05 start FV.Backend.Proof.LowerSimURaise cap=6G running=1 avail=134.7G
+18:56:07 done FV.Backend.Proof.LowerSimURaise rc=0 2s maxrss=2.0G cgpeak=0.0G built -> ok
+18:56:07 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:56:07 start FV.Backend.Proof.PerEdgePrepareWitness cap=6G running=1 avail=134.8G
+18:56:09 done FV.Backend.Proof.PerEdgePrepareWitness rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:09 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:56:09 start FV.Backend.Proof.PerEdgeRegallocSound cap=6G running=1 avail=134.8G
+18:56:11 done FV.Backend.Proof.PerEdgeRegallocSound rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:11 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:56:11 start FV.E2E.TrapCallClifRun cap=6G running=1 avail=134.7G
+18:56:13 done FV.E2E.TrapCallClifRun rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:13 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:56:13 start FV.Backend.Proof.LowerSimU cap=6G running=1 avail=134.7G
+18:56:16 done FV.Backend.Proof.LowerSimU rc=0 3s maxrss=2.0G cgpeak=0.0G built -> ok
+18:56:17 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:56:17 start FV.Backend.Proof.PerEdgeAllocDriverSound cap=6G running=1 avail=134.6G
+18:56:18 done FV.Backend.Proof.PerEdgeAllocDriverSound rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:18 start FV.Backend.Proof.PerEdgePrepareLoopWitness cap=6G running=1 avail=134.5G
+18:56:20 done FV.Backend.Proof.PerEdgePrepareLoopWitness rc=0 2s maxrss=1.6G cgpeak=0.0G built -> ok
+18:56:20 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:56:20 start FV.Backend.Proof.PerEdgeRegallocFwd cap=6G running=1 avail=133.9G
+18:56:21 done FV.Backend.Proof.PerEdgeRegallocFwd rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:56:21 start FV.E2E.ComposeT cap=6G running=1 avail=133.8G
+18:56:22 done FV.E2E.ComposeT rc=0 1s maxrss=1.8G cgpeak=0.0G built -> ok
+18:56:22 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:56:22 start FV.E2E.TrapCallTry cap=6G running=1 avail=136.6G
+18:56:23 done FV.E2E.TrapCallTry rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:23 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:56:24 start FV.Backend.Proof.LowerSimUW cap=6G running=1 avail=136.5G
+18:56:27 done FV.Backend.Proof.LowerSimUW rc=0 3s maxrss=2.0G cgpeak=0.0G built -> ok
+18:56:27 start FV.Backend.Proof.PerEdgePrepSplitWitness cap=6G running=1 avail=136.6G
+18:56:28 done FV.Backend.Proof.PerEdgePrepSplitWitness rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:28 start FV.Backend.Proof.PerEdgePrepareJump cap=6G running=1 avail=136.5G
+18:56:29 done FV.Backend.Proof.PerEdgePrepareJump rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:29 start FV.Backend.Proof.PerEdgePrepareOuterWitness cap=6G running=1 avail=136.5G
+18:56:31 done FV.Backend.Proof.PerEdgePrepareOuterWitness rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:31 start FV.Backend.Proof.PerEdgePreparedDriverSound cap=6G running=1 avail=136.5G
+18:56:32 done FV.Backend.Proof.PerEdgePreparedDriverSound rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:32 start FV.Backend.Proof.SretStable cap=6G running=1 avail=136.5G
+18:56:34 done FV.Backend.Proof.SretStable rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:34 start FV.Concurrency.ClifLift cap=6G running=1 avail=136.2G
+18:56:36 done FV.Concurrency.ClifLift rc=0 2s maxrss=1.8G cgpeak=0.0G built -> ok
+18:56:36 start FV.E2E.MainT cap=6G running=1 avail=136.4G
+18:56:37 done FV.E2E.MainT rc=0 1s maxrss=1.8G cgpeak=0.0G built -> ok
+18:56:37 start FV.E2E.MemTrapStatement cap=6G running=1 avail=136.5G
+18:56:39 done FV.E2E.MemTrapStatement rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:39 start FV.E2E.TailLoopSim cap=6G running=1 avail=136.5G
+18:56:41 done FV.E2E.TailLoopSim rc=0 2s maxrss=1.8G cgpeak=0.0G built -> ok
+18:56:41 start FV.E2E.TrapCallTryStop cap=6G running=1 avail=136.4G
+18:56:43 done FV.E2E.TrapCallTryStop rc=0 2s maxrss=1.9G cgpeak=0.0G built -> ok
+18:56:43 start FV.E2E.UnwindPrepare cap=6G running=1 avail=136.5G
+18:56:44 done FV.E2E.UnwindPrepare rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:44 start FV.Unw.Model cap=3G running=1 avail=136.4G
+18:56:46 done FV.Unw.Model rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:46 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:56:46 start FV.Backend.Proof.KillPrep cap=3G running=1 avail=136.2G
+18:56:49 done FV.Backend.Proof.KillPrep rc=0 3s maxrss=1.9G cgpeak=0.0G built -> ok
+18:56:49 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:56:49 start FV.Unw.EhFrame cap=3G running=1 avail=136.4G
+18:56:50 done FV.Unw.EhFrame rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:50 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:56:50 start FV.Backend.Proof.EhFrameDecode cap=3G running=1 avail=136.4G
+18:56:53 done FV.Backend.Proof.EhFrameDecode rc=0 3s maxrss=1.8G cgpeak=0.0G built -> ok
+18:56:53 start FV.Backend.Proof.DeadCleanupKill cap=3G running=1 avail=136.5G
+18:56:54 done FV.Backend.Proof.DeadCleanupKill rc=0 1s maxrss=1.8G cgpeak=0.0G built -> ok
+18:56:54 start FV.Backend.Proof.DeadCleanupWitness cap=3G running=1 avail=136.5G
+18:56:55 done FV.Backend.Proof.DeadCleanupWitness rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:55 start FV.Backend.Proof.SpillDefinedPrep cap=3G running=1 avail=136.6G
+18:56:57 done FV.Backend.Proof.SpillDefinedPrep rc=0 2s maxrss=1.9G cgpeak=0.0G built -> ok
+18:56:58 start FV.Backend.Proof.StockTermContract cap=3G running=1 avail=136.6G
+18:56:59 done FV.Backend.Proof.StockTermContract rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:56:59 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:56:59 start FV.E2E.RegLevelUnwind cap=3G running=1 avail=136.6G
+18:57:01 done FV.E2E.RegLevelUnwind rc=0 2s maxrss=1.7G cgpeak=0.0G built -> ok
+18:57:01 start FV.Unw.EhFrameHdr cap=3G running=1 avail=136.6G
+18:57:02 done FV.Unw.EhFrameHdr rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:57:02 start FV.Backend.Proof.DeadCleanupEdgesOk cap=3G running=1 avail=136.5G
+18:57:03 done FV.Backend.Proof.DeadCleanupEdgesOk rc=0 1s maxrss=1.8G cgpeak=0.0G built -> ok
+18:57:03 start FV.Backend.Proof.StockPreparedSemantics cap=3G running=1 avail=136.5G
+18:57:04 done FV.Backend.Proof.StockPreparedSemantics rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:57:04 start FV.E2E.DeadCleanupDirect cap=3G running=1 avail=136.5G
+18:57:05 done FV.E2E.DeadCleanupDirect rc=0 1s maxrss=1.8G cgpeak=0.0G built -> ok
+18:57:05 start FV.E2E.ValidatedLowering cap=3G running=1 avail=136.5G
+18:57:06 done FV.E2E.ValidatedLowering rc=0 1s maxrss=1.7G cgpeak=0.0G built -> ok
+18:57:06 19 batch checks, 3s; 0 modules restored after another worktree built them
+18:57:06 END 467/467 ok, 39 built, wall 1.1 min

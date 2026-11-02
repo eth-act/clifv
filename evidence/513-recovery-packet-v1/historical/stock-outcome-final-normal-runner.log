@@ -1,0 +1,72 @@
+3169 modules (2 heavy, 1040 without a record); critical path 2.47 h, serial 40.22 h (recorded)
+19:07:52 want 3169 modules (0 assumed built) budget=16G max_jobs=2 heavy>12G
+19:07:52 check (all) 3169 modules in 0.6s: 1975 up-to-date, 322 out of date, 872 wait for those
+19:07:52 start FV.Opt.Proof.RuleShifts3P1 cap=13G running=1 avail=136.9G
+19:07:52 start FV.Opt.Proof.RuleInfraConst cap=3G running=2 avail=136.9G
+19:07:54 done FV.Opt.Proof.RuleInfraConst rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+19:07:54 check (ready) 13 modules in 0.2s: 0 up-to-date, 13 out of date, 0 wait for those
+19:07:54 start FV.E2E.RegLevelCallSite cap=3G running=2 avail=136.6G
+19:07:58 done FV.E2E.RegLevelCallSite rc=0 4s maxrss=2.0G cgpeak=0.5G built -> ok
+19:07:58 start FV.E2E.RegLevelU cap=3G running=2 avail=136.6G
+19:08:00 done FV.E2E.RegLevelU rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+19:08:01 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+19:08:01 start FV.E2E.RegLevelFrameSaved cap=3G running=2 avail=136.6G
+19:08:03 done FV.E2E.RegLevelFrameSaved rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+19:08:03 start FV.E2E.RegLevelUTry cap=3G running=2 avail=136.6G
+19:08:05 done FV.E2E.RegLevelUTry rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+19:08:05 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+19:08:05 start FV.Opt.Proof.RuleInfraPow2 cap=3G running=2 avail=136.5G
+19:08:09 done FV.Opt.Proof.RuleInfraPow2 rc=0 4s maxrss=1.7G cgpeak=0.4G built -> ok
+19:08:09 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+19:08:09 start FV.Backend.Proof.SpillClasses cap=3G running=2 avail=136.4G
+19:08:11 done FV.Backend.Proof.SpillClasses rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+19:08:11 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+19:08:11 start FV.Backend.Proof.SpillStep4 cap=3G running=2 avail=136.4G
+19:08:13 done FV.Backend.Proof.SpillStep4 rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+19:08:13 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+19:08:13 start FV.E2E.SpillLower cap=3G running=2 avail=136.4G
+19:08:16 done FV.E2E.SpillLower rc=0 3s maxrss=2.0G cgpeak=0.3G built -> ok
+19:08:17 start FV.Opt.Proof.RuleSpaceshipInfra cap=3G running=2 avail=136.3G
+19:10:32 done FV.Opt.Proof.RuleSpaceshipInfra rc=0 135s maxrss=1.9G cgpeak=0.7G built -> ok
+19:10:32 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+19:10:32 start FV.Opt.Proof.RuleShiftsConstSem cap=3G running=2 avail=133.9G
+19:10:33 done FV.Opt.Proof.RuleShiftsConstSem rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+19:10:33 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+19:10:33 start FV.Opt.Proof.RuleInfraI128 cap=3G running=2 avail=133.9G
+19:10:35 done FV.Opt.Proof.RuleInfraI128 rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+19:10:35 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+19:10:35 start FV.E2E.ValidatedFinal cap=3G running=2 avail=133.8G
+19:10:37 done FV.E2E.ValidatedFinal rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+19:10:38 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+19:10:38 start FV.E2E.ValidatedWorld cap=3G running=2 avail=133.5G
+19:10:40 done FV.E2E.ValidatedWorld rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+19:10:40 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+19:10:40 start FV.E2E.ValidatedNoninterference cap=3G running=2 avail=133.2G
+19:10:42 done FV.E2E.ValidatedNoninterference rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+19:10:42 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+19:10:42 start FV.Opt.Proof.RuleArithMulHiSem cap=3G running=2 avail=133.1G
+19:10:43 done FV.Opt.Proof.RuleArithMulHiSem rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+19:10:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+19:10:43 start FV.E2E.LoweringProvenance cap=3G running=2 avail=133.1G
+19:10:45 done FV.E2E.LoweringProvenance rc=0 2s maxrss=2.1G cgpeak=0.2G built -> ok
+19:10:45 start FV.E2E.CodeMap cap=3G running=2 avail=133.1G
+19:10:46 done FV.E2E.CodeMap rc=0 1s maxrss=2.1G cgpeak=0.3G built -> ok
+19:10:46 start FV.Backend.Proof.StockReturnSourceRuns cap=3G running=2 avail=133.1G
+19:10:48 done FV.Backend.Proof.StockReturnSourceRuns rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+19:10:48 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+19:10:48 start FV.Opt.Proof.RuleInfraAbs cap=3G running=2 avail=133.1G
+19:10:51 done FV.Opt.Proof.RuleInfraAbs rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+19:10:52 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+19:10:52 start FV.Opt.Proof.RuleCprop4 cap=3G running=2 avail=133.1G
+19:11:13 done FV.Opt.Proof.RuleCprop4 rc=0 21s maxrss=2.0G cgpeak=0.7G built -> ok
+19:11:13 start FV.Opt.Proof.RuleBitops9 cap=3G running=2 avail=133.1G
+19:11:38 done FV.Opt.Proof.RuleBitops9 rc=0 25s maxrss=1.8G cgpeak=0.5G built -> ok
+19:11:38 start FV.Backend.Proof.IselEmitDefs cap=3G running=2 avail=133.0G
+19:11:39 done FV.Backend.Proof.IselEmitDefs rc=0 1s maxrss=1.9G cgpeak=0.2G built -> ok
+19:11:39 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+19:11:39 start FV.Opt.Proof.RuleArith6 cap=3G running=2 avail=133.0G
+19:11:55 done FV.Opt.Proof.RuleArith6 rc=0 16s maxrss=1.9G cgpeak=0.7G built -> ok
+19:11:55 start FV.Opt.Proof.RuleArith8 cap=3G running=2 avail=133.0G
+19:12:10 done FV.Opt.Proof.RuleArith8 rc=0 15s maxrss=1.8G cgpeak=0.5G built -> ok
+19:12:10 start FV.Opt.Proof.RuleShiftsDistribution cap=3G running=2 avail=132.9G
+19:50:25 stopping 2 running builds: FV.Opt.Proof.RuleShifts3P1 FV.Opt.Proof.RuleShiftsDistribution

@@ -1,0 +1,13 @@
+{
+  "controller_pid": 1017001,
+  "children": [
+    1018906
+  ],
+  "active_modules": [
+    "FV.E2E.LinkCheck"
+  ],
+  "reason": "Drain dispatch only, keep healthy active kernel jobs. Defer modules with recorded margin/cap above10GiB until original5GiB worker finishes; never squeeze known heavy witnesses to a10GiB cap. Partial prior normal successes remain evidence, not a completed-pass claim.",
+  "utc": "2026-10-22T22:55:22.168481+00:00",
+  "state": "controller terminated only after all child workers exited successfully",
+  "finished_utc": "2026-10-22T22:55:32.597286+00:00"
+}

@@ -1,0 +1,40 @@
+[{"module": "WorkerOActualPreviousRaw",
+  "input":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousRaw/input.clif",
+  "exe":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousRaw/program.elf",
+  "entries": ["production_boundary"],
+  "dir":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousRaw",
+  "cleanup": false,
+  "captured": false},
+ {"module": "WorkerOActualCapturedRaw",
+  "input":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedRaw/input.clif",
+  "exe":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedRaw/program.elf",
+  "entries": ["_RNxC7fv_demo11HawPMC3YC2b", "sret_caller"],
+  "dir":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedRaw",
+  "cleanup": false,
+  "captured": true},
+ {"module": "WorkerOActualPreviousCleanup",
+  "input":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/input.clif",
+  "exe":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup/program.elf",
+  "entries": ["production_boundary"],
+  "dir":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualPreviousCleanup",
+  "cleanup": true,
+  "captured": false},
+ {"module": "WorkerOActualCapturedCleanup",
+  "input":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/input.clif",
+  "exe":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedCleanup/program.elf",
+  "entries": ["_RNxC7fv_demo11HawPMC3YC2b", "sret_caller"],
+  "dir":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/actual-bundle-v6/bundles/WorkerOActualCapturedCleanup",
+  "cleanup": true,
+  "captured": true}]

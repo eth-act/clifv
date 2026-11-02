@@ -1,0 +1,5 @@
+from pathlib import Path
+import datetime,json,os,subprocess
+B=Path('/home/lee/clifv');E=B/'.git/agent-evidence/stock-memory-20261029';V=B/'.worktrees/stock-extending-production-20261031';P=E/'return-pin-production-activation-packet-v1';R=P/'validation-package-v2';logs=P/'actual-bundle-diagnose-v1';logs.mkdir()
+env=dict(os.environ);env.update(json.loads((E/'author-env-v1.json').read_text()));env.pop('FV_LAKE_CACHE',None);env.update(FV_ROOT=str(V),FV_MEMCAP='3G',FV_MEMCAP_STATS=str(logs/'backend.mem'),FV_MEMCAP_UNIT='worker-o-production-entry-smoke-v1',LEAN_NUM_THREADS='2',OMP_NUM_THREADS='2',OMP_THREAD_LIMIT='2',LAKE_ARTIFACT_CACHE='false',LAKE_RESTORE_ARTIFACTS='false');env['LEAN_PATH']=subprocess.check_output(['lake','env','printenv','LEAN_PATH'],cwd=V,env=env,text=True).strip()
+with (logs/'diagnose.log').open('w') as out:subprocess.run(['nice','-n','10',str(V/'scripts/memcap.sh'),'lake','env','lean','--run',str(P/'DiagnoseActualBundleV1.lean'),str(P/'actual-bundle-v6/bundles/WorkerOActualCapturedRaw')],cwd=R,env=env,stdout=out,stderr=subprocess.STDOUT,check=True)

@@ -1,0 +1,2696 @@
+{
+  "owner": "worker-O / stock_driver_delivery / investigate_513",
+  "purpose": "Focused current-main outcome-interface kernel gates; not a warm cache",
+  "package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-recovery-packet-v1/focused-package-v1",
+  "read_only_import_policy": "Never write, chmod, or replace shared hardlink inodes. Unlink any owned destination before output writes.",
+  "hardlinked_imports": [
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Attr.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Attr.olean",
+      "sha256": "38bb18f7586f1b541e47ba865434648aed8c2a359b0b5fbada65c84a343f515c",
+      "inode": 2091420453
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Attr.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Attr.ilean",
+      "sha256": "cab547efb1788b1f3ca5936c67a5a398d38eeb4147763b1fd61e54ffb7a2d384",
+      "inode": 2091420458
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/BitVec.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/BitVec.olean",
+      "sha256": "a744881ac5acff8d59c39ada3f61026cdcba18a3fb77a8d66b9969cb2b0eacb3",
+      "inode": 2091420461
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/BitVec.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/BitVec.ilean",
+      "sha256": "9f50b33ac37ac48da332fefde3a6734134d2ef9045c0be9ee595ad6d2eaf45bb",
+      "inode": 2091420466
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode.olean",
+      "sha256": "4895a37fcfa4202d70e0f6377e6296f22361e50fd2294215f7863cf198091ee4",
+      "inode": 2091477903
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode.ilean",
+      "sha256": "efa3955c49a640a2261dd02de37353b54accdf0035179106c1af211b361c14ef",
+      "inode": 2091477904
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/BR.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/BR.olean",
+      "sha256": "12943b2a028f594459166d6caae9720622ccf8eaa082754781cc69aca5e34328",
+      "inode": 2177009763
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/BR.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/BR.ilean",
+      "sha256": "810132a290e50072771cd0389b79fc39bb425132003444ac09d26edf0360f645",
+      "inode": 2177009768
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/DPI.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/DPI.olean",
+      "sha256": "0b59fbb0ec4500930caf2afaa96c99593666c00d327096d0697c140307b1a08f",
+      "inode": 2176020676
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/DPI.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/DPI.ilean",
+      "sha256": "da2ab230ba7204870cfa1588076f68fc508cd724fa7c2ff93ee20a7e450a003a",
+      "inode": 2176020677
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/DPR.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/DPR.olean",
+      "sha256": "2d28bd68d3b1387dafc92fbaa6c32adad7be80501b79019cb41edeca0da71e5c",
+      "inode": 2177009775
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/DPR.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/DPR.ilean",
+      "sha256": "d99fc957ad86050e3626265131db109a0027dfc0acf546ca6f1672546be5d4bb",
+      "inode": 2177009776
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/DPSFP.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/DPSFP.olean",
+      "sha256": "7ca8ffb62edf71a0ee21afa281508a47d8d0d1907bcc6b59da8745dbd7968291",
+      "inode": 2176020674
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/DPSFP.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/DPSFP.ilean",
+      "sha256": "71fd241a8bfd0278a01c37d83413a2c1c2423920cd873e83e1f408bb7e454a35",
+      "inode": 2176020675
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/LDST.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/LDST.olean",
+      "sha256": "97b31bbd7553bc13ca23e36adeeb492fba29d55d097db459fbe0e10c9d7f1891",
+      "inode": 2177009754
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/LDST.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/LDST.ilean",
+      "sha256": "0a2197c00c5d6def76920e18a25070c0490618e827e18339cb988ea2dd28b03e",
+      "inode": 2177009761
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/Reserved.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/Reserved.olean",
+      "sha256": "2cd7b7978c1fd36f430b583c795b6676b0147aa0d2a5d8b96a9bea2e2feaa9a7",
+      "inode": 2176020680
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Decode/Reserved.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Decode/Reserved.ilean",
+      "sha256": "26df30cf376af5bae8803cda9085d7174063e5c826dc0f8dde1d27fd59d657d2",
+      "inode": 2176020681
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Exec.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Exec.olean",
+      "sha256": "78e7db97eaa89ca547bff8d5e6ff194d42048611acd54898502c0d46231de6e2",
+      "inode": 2091477927
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Exec.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Exec.ilean",
+      "sha256": "2fb927b90a03a3ddec2fba1d959b4e34f0c875e7d057be86f4a7846123f44db0",
+      "inode": 2091477932
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/FromMathlib.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/FromMathlib.olean",
+      "sha256": "875781452e7fc82522f53ae26167167a6c10c224ea45304e9dc22aef30d55e5b",
+      "inode": 2091477933
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/FromMathlib.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/FromMathlib.ilean",
+      "sha256": "0b7fcd055503fd89513e5499c0db72c73bb37e8d29a4b7e269e985a69ec635c4",
+      "inode": 2091477934
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts.olean",
+      "sha256": "0c555c60950829457f170cbbf45ca130f0d588b9eaf9426c7f670b11aef89431",
+      "inode": 2091477921
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts.ilean",
+      "sha256": "34cf56d8dbe11bb30f2f964e5defa54eacfd913c1e3a5eb85b52218f7287232f",
+      "inode": 2091477926
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Barrier.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Barrier.olean",
+      "sha256": "8beb272914996ade4704999bb87a1f28f13538093c251cc2ac6f7d1402c19390",
+      "inode": 1301365854
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Barrier.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Barrier.ilean",
+      "sha256": "b89c5ba84e99fd05b1b04650457016c660ad13abd59eeec5dcc92902bf34f3c7",
+      "inode": 1301365855
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Compare_branch.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Compare_branch.olean",
+      "sha256": "e5720a742aa167aeddc610e3eb1f49387d7c9ef725ff67d9ee8400154c368b28",
+      "inode": 1301365859
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Compare_branch.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Compare_branch.ilean",
+      "sha256": "a52fe1cc462a4c1fe9d1dc1c2d99ed1bec9372ad991d3b628c859599130b3b09",
+      "inode": 1301365860
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Cond_branch_imm.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Cond_branch_imm.olean",
+      "sha256": "a15d64d156bf1fac028aaf05beb9c3a6a0e811a6f794697781acbecc9b9dd350",
+      "inode": 1301365864
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Cond_branch_imm.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Cond_branch_imm.ilean",
+      "sha256": "7d5db12fbb00b4b363a0d01ad6b249b78355aba58aeabcc9d65e831a07c17990",
+      "inode": 1301365865
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Hints.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Hints.olean",
+      "sha256": "bc5b22fc9a6c1454d3aedb24191acc7a74f1f1772d6fbff990da0c28c43cc753",
+      "inode": 1301365869
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Hints.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Hints.ilean",
+      "sha256": "bcef074f5a68298af4055d3d3a7f6f13cd04d1379a2d844157132a9a00d05c89",
+      "inode": 1301365870
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Insts.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Insts.olean",
+      "sha256": "0e524dd320a51b4edbe260e65d426123d3a07555ef74114aeb00c3e96a2dd9d4",
+      "inode": 773632961
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Insts.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Insts.ilean",
+      "sha256": "afed6ce67fa07dc0d6d9931566bfba0a29f1bbd9b661b81118559f96d4877016",
+      "inode": 773632966
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Mrs.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Mrs.olean",
+      "sha256": "752d3a2aeb38a10d17b4d0a6570164d18432fd3646b88c88badbef010397989f",
+      "inode": 1301365874
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Mrs.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Mrs.ilean",
+      "sha256": "8a7d7e67e0f41618096d18cb41470f3b7f977dc70d799de33ed0cde79cf875ec",
+      "inode": 1301365875
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Test_branch.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Test_branch.olean",
+      "sha256": "ab137c75277ea24a3b0f5d49f51c67d9392538c81e229bc84465a895b1578741",
+      "inode": 1301365879
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Test_branch.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Test_branch.ilean",
+      "sha256": "3e84160eafba70c938732b8952ce669aee60ff7c2757f813d08685da9734e007",
+      "inode": 1301365880
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Uncond_branch_imm.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Uncond_branch_imm.olean",
+      "sha256": "4380c45cb18d7d4818944d8dd7e76bb8f35e4e76e227cdfd10fa1911711f70c6",
+      "inode": 1301365884
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Uncond_branch_imm.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Uncond_branch_imm.ilean",
+      "sha256": "df86770c1a9b016d6f59055ca68276a764aa16933d3e91e2f34f4c1df04a2c0e",
+      "inode": 1301365885
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Uncond_branch_reg.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Uncond_branch_reg.olean",
+      "sha256": "1673dcfede55bf1c9d2a5644b9d2f6dafd786e932268227abb261dbe492cd26a",
+      "inode": 1301366081
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/BR/Uncond_branch_reg.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/BR/Uncond_branch_reg.ilean",
+      "sha256": "c46bc718a573ed2533972a02bd7f00bbc3366f990b9d02abfbdfefae164da362",
+      "inode": 1301366082
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/Common.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/Common.olean",
+      "sha256": "600d066529c3797931569fd9d82982eb15cd7d28b41fbfa417d0a640e81554a8",
+      "inode": 674448409
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/Common.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/Common.ilean",
+      "sha256": "6d6d744f87c0a963ccc8ea7720326ae194356d49400b4c3199649d412ccec6ac",
+      "inode": 692008875
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Add_sub_imm.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Add_sub_imm.olean",
+      "sha256": "984014e8a87820b52b3a5f63762f2acfea1f445aeb7719e46513faf784435959",
+      "inode": 1412746332
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Add_sub_imm.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Add_sub_imm.ilean",
+      "sha256": "c55d727769c921fbd5150d48c54ea84306900c2de45b754d58065de9532cf7fd",
+      "inode": 1412746333
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Bitfield.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Bitfield.olean",
+      "sha256": "6069a620aeeeeb3b139edeed865334c250c36c23639d523a5e4ed9521154082e",
+      "inode": 1412746337
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Bitfield.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Bitfield.ilean",
+      "sha256": "446a225d349454466fe20bac1aef15f1c348991d5daafcd3362fcd7ff31790b6",
+      "inode": 1412746338
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Extract.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Extract.olean",
+      "sha256": "c2b043fe0211eb647dc2014fa4ea5b625bec0c753b8f7b5bc5504a1daf6f8c54",
+      "inode": 1412746342
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Extract.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Extract.ilean",
+      "sha256": "45398469c62b4fff662066ae52f78aa20c4a55f8602c2596be0af1f11f2fdd58",
+      "inode": 1412746343
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Insts.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Insts.olean",
+      "sha256": "8f1c331f2e02a34a746ae4431e6f4207b96ced6c7d5160cd39940f1e00cf31d3",
+      "inode": 808489636
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Insts.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Insts.ilean",
+      "sha256": "74932964763c26386a5cc20174f40e5b5dc72232dc1da490075260259e3e397c",
+      "inode": 808489456
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Logical_imm.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Logical_imm.olean",
+      "sha256": "a523e186b4ef396205f3898e4135a7ee3d17bd497a10bcabb40e892f55b48f3f",
+      "inode": 1412746347
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Logical_imm.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Logical_imm.ilean",
+      "sha256": "c701de7d0c31a2e3cdb2ccbf734465a96eed217c28f384d7e5fc26a01923b6cf",
+      "inode": 1412746348
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Move_wide_imm.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Move_wide_imm.olean",
+      "sha256": "f9697718341be9372893d2e9d1f9dd6af4eade7d5fccd9974b1843456dd8d231",
+      "inode": 1412746352
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/Move_wide_imm.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/Move_wide_imm.ilean",
+      "sha256": "5f070f9e2a419927fe236d7dae173c4396a6e49f321b9508089e815901e06100",
+      "inode": 1412746353
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/PC_rel_addressing.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/PC_rel_addressing.olean",
+      "sha256": "27282da06e0a9178c9d63da3fbfdd1e4b9700c44d362f0d9b1fb62c01ca1d0ef",
+      "inode": 1412746357
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPI/PC_rel_addressing.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPI/PC_rel_addressing.ilean",
+      "sha256": "cb0fe962acf8e4ef5937170d0a4bedbfe8e5aa7ee7dc6a57193232e9e2f1bda6",
+      "inode": 1412746358
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_carry.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_carry.olean",
+      "sha256": "713be8f0ec92875f9438b96f0f5060ed1099dc5e8958cc388421f8e2a1b89bd1",
+      "inode": 1545699327
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_carry.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_carry.ilean",
+      "sha256": "17e17259c2b06a7325460abd5fedb770678c7d9fff0c8af6db46b97e95d67dea",
+      "inode": 1545701504
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_ext_reg.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_ext_reg.olean",
+      "sha256": "f216cc2bd62222311f7b8e4902b930dd3f7c856db53b04920cb3c47524f9c1c9",
+      "inode": 1545701508
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_ext_reg.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_ext_reg.ilean",
+      "sha256": "c3b3095d3a047fbd575faabba2279bde2783f325cdc49187e406b685e8c42bea",
+      "inode": 1545701509
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_shifted_reg.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_shifted_reg.olean",
+      "sha256": "89ffd6b1d9c9d5debe00e890354d53388df21409b774bde818bb2b55afb221fa",
+      "inode": 1545701513
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_shifted_reg.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Add_sub_shifted_reg.ilean",
+      "sha256": "3fcf7c796591c29352baa091a14f6ff375bfa260d92296c8165004a8bb516603",
+      "inode": 1545701514
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Conditional_compare.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Conditional_compare.olean",
+      "sha256": "83112613a5da2ae55f9da1b07b30d3b0836aca8fb7e83adc54aa250d7722bb69",
+      "inode": 1545701518
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Conditional_compare.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Conditional_compare.ilean",
+      "sha256": "b001ecf8c7a7388ad4733708197ed74a047903a3764d216dc987a346f6562e38",
+      "inode": 1545701519
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Conditional_select.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Conditional_select.olean",
+      "sha256": "0bd41b7fc0ab01058c1d1c58c7c579321828f10b4ca80d0aa3cbc9633b84b9d6",
+      "inode": 1545701523
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Conditional_select.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Conditional_select.ilean",
+      "sha256": "d4c15c9d28fa17090680c39e572916577ab9bc1e1ce60105f3b74574e30193dc",
+      "inode": 1545701524
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_one_source.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_one_source.olean",
+      "sha256": "6d1fc3decdf3c102222469fb15e62007d9067d249419e200edc394deaed7d029",
+      "inode": 1545701528
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_one_source.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_one_source.ilean",
+      "sha256": "472398233674e8b24d0f0435752faa98f1f3e9d55d998b4dc78a6d07f8f11a0d",
+      "inode": 1545701529
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_three_source.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_three_source.olean",
+      "sha256": "24f13111a447a198e338b233fdb636abda0fb67c869a9c07e6ba42f6bc72bfa7",
+      "inode": 1545701533
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_three_source.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_three_source.ilean",
+      "sha256": "47e4f7268ec4f18c1d6cb5637f6de6a2b4e44298eb3c0c8a90a2a71a9a0447af",
+      "inode": 1545701534
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_two_source.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_two_source.olean",
+      "sha256": "3e4fd02dc0d06f8a5841ddf22825e369e5536b74237f9ecb115023ea43fb1c92",
+      "inode": 1545701538
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_two_source.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Data_processing_two_source.ilean",
+      "sha256": "9b945c5de9e0e786dc33d6e6bbd0204b04ae55d607d6556160ecd84eeee1bd32",
+      "inode": 1545701539
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Insts.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Insts.olean",
+      "sha256": "8b2e3b62e215c5a839bfe6aa7fe967052c187c92b97e6e297a3e12fdad44efce",
+      "inode": 900198217
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Insts.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Insts.ilean",
+      "sha256": "b3a32de95aa5cfc3d31f67a5871608b18a2978206dc2e3bfdaacd1b0af606406",
+      "inode": 900198218
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Logical_shifted_reg.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Logical_shifted_reg.olean",
+      "sha256": "e2ed8f55a3edaaee2e71f7344190a9942fd14b89e4d51433ef23ec33f96ef455",
+      "inode": 1545701543
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPR/Logical_shifted_reg.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPR/Logical_shifted_reg.ilean",
+      "sha256": "8c26b5fde4b9b538aef31a22a3d919a590acad713169f55fa968b5ea09de9da2",
+      "inode": 1545701544
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_across_lanes.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_across_lanes.olean",
+      "sha256": "e9bc93e21d9dffc99f920db9d22ad0d37539896c5af55058d951d0f6fde9d3c8",
+      "inode": 1009794156
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_across_lanes.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_across_lanes.ilean",
+      "sha256": "50ea5f63588c56689492756e48f40532a08f72f7f4de5723cdb7ccb48d0227b4",
+      "inode": 1009794157
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_copy.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_copy.olean",
+      "sha256": "68d04111866145a2faac3568480eccb96fd459aacd5e84f4a37a0f48eecf44ec",
+      "inode": 1009794161
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_copy.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_copy.ilean",
+      "sha256": "564c160e2f5ce6b35a5c9fc24f5f358ab11822305c2543b005c1bfa50fcdc588",
+      "inode": 1009794162
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_modified_immediate.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_modified_immediate.olean",
+      "sha256": "8f5fb315594b66103657c3f5443fe9f18afd5a6ebb9b1b35115a5ebff1c94868",
+      "inode": 1009794126
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_modified_immediate.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_modified_immediate.ilean",
+      "sha256": "f54a1a5dfd431a8d41387c7299e47e357e99fab3efd6ab7df88fa04db0dbf7ab",
+      "inode": 1009794127
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_three_same.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_three_same.olean",
+      "sha256": "e2bc2c88b8752c867b4a84881493ec5d223cd3ad3ab4e24b5691a8f94dd9bb17",
+      "inode": 1009794166
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_three_same.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_three_same.ilean",
+      "sha256": "8a20988fcfc681f2fb177cd938720e6b5b853026f8de51452364b58df844d1ee",
+      "inode": 1009794167
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_two_reg_misc.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_two_reg_misc.olean",
+      "sha256": "58479e863713b6abfc27d3e3be52c71023291ce74b181c1d13bb5d111bb9552a",
+      "inode": 1009794171
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_two_reg_misc.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Advanced_simd_two_reg_misc.ilean",
+      "sha256": "0cd24823c711c0db12bf5ed3dd0d4fd1a8064512496a241bc5f220041c2490be",
+      "inode": 1009794172
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Conversion_between_FP_and_Int.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Conversion_between_FP_and_Int.olean",
+      "sha256": "0fb6da3eb221e2a43f7f3e94f747da8c581b1d0be2409a8243b1cf20d3bcdd12",
+      "inode": 1009796416
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Conversion_between_FP_and_Int.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Conversion_between_FP_and_Int.ilean",
+      "sha256": "52170c866747e3c6eddb5f394ce9ff78f7b1af04b9ba8b4bb17f339679090dc7",
+      "inode": 1009796417
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_compare.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_compare.olean",
+      "sha256": "877d6541733f2381dd555fcb9804a3c5265f01afd795b1fe5fd48a06abcf06d0",
+      "inode": 1009794131
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_compare.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_compare.ilean",
+      "sha256": "cec4afdaa00428d20f659c90fa735ba38489a18d1400cc77d86865eb8a0f338d",
+      "inode": 1009794132
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_conditional_select.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_conditional_select.olean",
+      "sha256": "7353f2a64db8ac6229c941dad8a1518efbd78698408ee940dde155c1368716a2",
+      "inode": 1009794136
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_conditional_select.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_conditional_select.ilean",
+      "sha256": "8a18ddffa7b52a7368c1b8df95d7ef9b2a235ac528479e5bb5f2c5e94dd7abe5",
+      "inode": 1009794137
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_one_source.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_one_source.olean",
+      "sha256": "3ff4339bd93fa11fa09a514d90f9483b1453db70ab4b6a3d49360805cf5b69b9",
+      "inode": 1009794121
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_one_source.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_one_source.ilean",
+      "sha256": "a653b563415eb2cdf943703a431a479707c77b587386b34226ac36fa6319f55f",
+      "inode": 1009794122
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_three_source.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_three_source.olean",
+      "sha256": "2a451693e6c42d478881a0de17f9ce97c6bddcccfaf0332899153bb04f05d588",
+      "inode": 1009794141
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_three_source.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_three_source.ilean",
+      "sha256": "4e55751942c90a8158454c8e4e37e537c8e8a6519160c17a6bcf3ee00bed3335",
+      "inode": 1009794142
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_two_source.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_two_source.olean",
+      "sha256": "c832135ddbb86096b292fb23bf5aec18c573428b5dbc3c74a91f56631810badf",
+      "inode": 1009794146
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_two_source.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_data_processing_two_source.ilean",
+      "sha256": "45c9c961e909f7290f72da71c5f6f0cf5909978c93ed60105d654a3479736f6d",
+      "inode": 1009794147
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_immediate.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_immediate.olean",
+      "sha256": "15240c2754fbba8632bd0e0f9be95e789d3ecb755c2bb3402f5fc64bf95dbc33",
+      "inode": 1009794151
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_immediate.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/FP_immediate.ilean",
+      "sha256": "23e40c9196b16c60186c9b7a944fd97a8c2629754899f9ff2b6876a46ae18dd4",
+      "inode": 1009794152
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Insts.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Insts.olean",
+      "sha256": "1780c737a68fe55510ce7f1ebb4f7c1cf31af9944b07512c609b81aeb5f2bf80",
+      "inode": 1242347437
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/DPSFP/Insts.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/DPSFP/Insts.ilean",
+      "sha256": "5aebb93e442aa97c4b91489f2c9bc67a792f91af3c18037ade040f13ceb2396d",
+      "inode": 1242347440
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/LDST/Insts.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/LDST/Insts.olean",
+      "sha256": "0e97aa0c0b7395deba3ce504ee6bf08f3c779e8b0fea4746bb467448c4f70942",
+      "inode": 1242347919
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/LDST/Insts.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/LDST/Insts.ilean",
+      "sha256": "5059175011d0622cd713684b1a311652e21bb2ca091bd69f2c78b08bfd24d4f5",
+      "inode": 1242347920
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_imm.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_imm.olean",
+      "sha256": "8024502aa33d56ff5f20c7919e0b21dd049bafcfb03fd3a2c416e8e7735c8bf8",
+      "inode": 1148175176
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_imm.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_imm.ilean",
+      "sha256": "96bf0481c9e1bf796a1bfd2ac758ec5a90f78095139691b31071bd3afb7db103",
+      "inode": 1148175177
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_literal.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_literal.olean",
+      "sha256": "c3fdd62c459c362cf1a8c5fa18164691734f77f1e2fde997a9dd78aff30829f4",
+      "inode": 1148175171
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_literal.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_literal.ilean",
+      "sha256": "f39e58f2d74437d7fcbe6a53fb72c6c62e03a65bc95a12728e156853ce408335",
+      "inode": 1148175172
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_pair.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_pair.olean",
+      "sha256": "93893235f72d0a9a2026d745cc89a2678cdf29dc814be7b5629ac39fd7ebcdbf",
+      "inode": 1148175181
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_pair.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_pair.ilean",
+      "sha256": "23f3b25a71284e2d50d2086903a78d2763163101a76bed8b4c9d307091d9fc20",
+      "inode": 1148175182
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_unscaled_imm.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_unscaled_imm.olean",
+      "sha256": "71800ee8e6d151cff3219c7f2c811e3a8a5acc379b7c3bc660035e10c5ee13b7",
+      "inode": 1148175186
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_unscaled_imm.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/LDST/Reg_unscaled_imm.ilean",
+      "sha256": "b3b1aefc55086ca91f5d8aff3c81d3b8c516e65119fb72947acf6a3a0f4c1a11",
+      "inode": 1148175187
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/Reserved/Udf.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/Reserved/Udf.olean",
+      "sha256": "b75f2e1d1ca97a6f7746a3d0646d41d2d93751c25c7ad8b4ef8ab82d2faab0fc",
+      "inode": 1682246109
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Insts/Reserved/Udf.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Insts/Reserved/Udf.ilean",
+      "sha256": "eae29777c30dfc7988a557921f94145f904a2a018209a6ada42488534fd60b36",
+      "inode": 1682246110
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Map.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Map.olean",
+      "sha256": "6de724a1a548fd178ba0bda08d46471b2524e4b2c52d272214ee80f040cb5fde",
+      "inode": 2091477908
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Map.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Map.ilean",
+      "sha256": "2af98d78b9cafbc3d2805ba4f8bf91b188e2b7f29b45236eb41b585c6f15b728",
+      "inode": 2091477909
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Memory/MemoryProofs.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Memory/MemoryProofs.olean",
+      "sha256": "07a26bb5d7dbcc8536cf73913123693ff7c9e4759bfc0c2e14cac16546328524",
+      "inode": 2483510573
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Memory/MemoryProofs.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Memory/MemoryProofs.ilean",
+      "sha256": "3a416d07b7dc163408677eb7c5a03c897ada91261fe975baf9d5cd3fc85124da",
+      "inode": 1304937657
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Memory/Separate.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Memory/Separate.olean",
+      "sha256": "8e3320d20807bb637008761a0b7c303a56441685d2b26e5a9367fe1bf0076c5c",
+      "inode": 2483510563
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Memory/Separate.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Memory/Separate.ilean",
+      "sha256": "c0893e40a1233e3afdbb6af949623c4735bde89acd0d22fdaae62804c2c67113",
+      "inode": 1304937671
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Memory/SeparateProofs.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Memory/SeparateProofs.olean",
+      "sha256": "d7bf48f5dd1eb6afb60f3bcb1cc16bd9521248bdd2ebdc07c02a83edf29d5a6e",
+      "inode": 2483510568
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Memory/SeparateProofs.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Memory/SeparateProofs.ilean",
+      "sha256": "16cc0cd76518e9811e73890d4bb76eba0c3f084cd96ace0fa5f314dccad954d5",
+      "inode": 1304937645
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/MinTheory.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/MinTheory.olean",
+      "sha256": "6af21ef9ddf8f3c0cfb4d8214438b5b88affc83824366ea9bc1335493f9a9181",
+      "inode": 2091477912
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/MinTheory.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/MinTheory.ilean",
+      "sha256": "82d018bf8f6c0f87014f00b92ecac292c92adf8032f3c805d0d478d8070ccbe7",
+      "inode": 2091477913
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/State.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/State.olean",
+      "sha256": "ace0a6010e5f632df5ce6314a333d247d4e4747321169acac4b028588bb2345a",
+      "inode": 2082898630
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/State.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/State.ilean",
+      "sha256": "c9b8a8ac74c7b751219bd5f8d5efa2ae7172d351b2bfec4c52c01dc23c85b1e8",
+      "inode": 2082898631
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Tactics/Attr.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Tactics/Attr.olean",
+      "sha256": "b2a4b5bf083741e5bb7c1932cd2b1d8ccd4a7dee0e44f842979dfccfc053fd4d",
+      "inode": 1242347921
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Tactics/Attr.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Tactics/Attr.ilean",
+      "sha256": "ee046871ccb84061dbbb158459a5cc55dd5db2fc5be47eaeff2f46f489d73b7e",
+      "inode": 1242347925
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Tactics/BvOmegaBench.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Tactics/BvOmegaBench.olean",
+      "sha256": "0a2704292b1b6971b40e2ce37b460bbbc41b8ca2ed314ae23acdeee2cb9905b5",
+      "inode": 1242347931
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Tactics/BvOmegaBench.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Tactics/BvOmegaBench.ilean",
+      "sha256": "58e52246956112b8c979bca17ac00103a670afa4f581acff5fd876f1abb5dc97",
+      "inode": 1242347933
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Tactics/Simp.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Tactics/Simp.olean",
+      "sha256": "1b7d3c2e978799a4c080ec5380abd9f603c99025b69e3f0b5f44dbc05d7d41c4",
+      "inode": 67661004
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Arm/Tactics/Simp.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Arm/Tactics/Simp.ilean",
+      "sha256": "cf44fb04c98d22c5ea9d83b1e55bbdbaa988e275badb2d296cd39f13526d91d2",
+      "inode": 67661005
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/ABIReadOnly.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/ABIReadOnly.olean",
+      "sha256": "428b2e91b56654b66a90b6ddcf329207536374ac71a57a72162c914eea761fa5",
+      "inode": 3021934914
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/ABIReadOnly.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/ABIReadOnly.ilean",
+      "sha256": "635fb2afdfe0d2ded0966d008bdf5cf29912fccc0550c454abdaff7988536c93",
+      "inode": 3021934962
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Asm.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Asm.olean",
+      "sha256": "4b252cd0e9820d6323c8804e08e14ccf54d658090dcacf363910663704974df6",
+      "inode": 3021934974
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Asm.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Asm.ilean",
+      "sha256": "e55d60adeabd7e0f9b0d99baa4e89c034fb5481b007736a993c60e39a784f699",
+      "inode": 3030620321
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/DeadCleanup.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/DeadCleanup.olean",
+      "sha256": "a00f7c636e8a788c4bb42f74c5c5e88951c863d9e482c520febb5a810ce7a0a6",
+      "inode": 3054567460
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/DeadCleanup.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/DeadCleanup.ilean",
+      "sha256": "336852973ad38159cb197d170e48a06a3268f4e01d34b1bf184b96f6130da97f",
+      "inode": 3054567461
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Encode.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Encode.olean",
+      "sha256": "557c3afcf9dfacdcdee2c066d9bd9b3d41754ff0844bae11988c9f867db9e65e",
+      "inode": 2373552080
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Encode.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Encode.ilean",
+      "sha256": "28f98cc870cafad0ca21dc3795feaf803920559d9ba9665326cd85132f144d3d",
+      "inode": 2377675005
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/InputScope.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/InputScope.olean",
+      "sha256": "e5a45d2dd46d3886771d508527ec2fe2079c24366275028146c0935f23226e4b",
+      "inode": 3157274571
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/InputScope.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/InputScope.ilean",
+      "sha256": "dc1d7323205e84edfcb3b074a3d117839b80aa0777c3012bfa62581201351489",
+      "inode": 3157274572
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Isel.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Isel.olean",
+      "sha256": "eff33b60e8174516bfdfd6195e4bdc647c002232c9beccbe45b807239ccad407",
+      "inode": 3030620306
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Isel.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Isel.ilean",
+      "sha256": "d8afd2370afddd7650a87e005bf77d5be921cd302bdbb7b6869ab10a749c816e",
+      "inode": 3030620307
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/MInst.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/MInst.olean",
+      "sha256": "4454fa6b252ec0d01680ef0221289ba3c71abaa9680e1df83964c23aaadbad4c",
+      "inode": 2373575810
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/MInst.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/MInst.ilean",
+      "sha256": "d46f37611c044e69b1be1e60dcc78cfee0857e64daa6fcf9b502f5cf504342df",
+      "inode": 2373575811
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/AbiClass.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/AbiClass.olean",
+      "sha256": "3db239eee18c3a4b7295762314f0b206a8a7d6cbe1afd8a12ff430efc4b4b6ba",
+      "inode": 3156601552
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/AbiClass.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/AbiClass.ilean",
+      "sha256": "4c8b0deccb9e012bf4924f59ebe352bc65ca6a80b4a341a8edec64e66341a275",
+      "inode": 2420917705
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/CSemRename.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/CSemRename.olean",
+      "sha256": "2b1bbc0069d565d4bc5bf2e76aaa97d24fbbbc6f05abf38bc8fcdccf462628be",
+      "inode": 814977227
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/CSemRename.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/CSemRename.ilean",
+      "sha256": "3d3f9134d003652fc942c5b6093aa6cd0b9a7957e591436bf56db48929268cdb",
+      "inode": 817324200
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DeadCleanupAdapter.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupAdapter.olean",
+      "sha256": "d3fbe09e066db2699e7336ad22ac3b6705a31195514fd6c45a5894c918b9fc1d",
+      "inode": 1548205263
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DeadCleanupAdapter.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupAdapter.ilean",
+      "sha256": "97d06c25e10470c8f97f233656d48b565cbbb159663996048d0371348c9a5725",
+      "inode": 3178788782
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DeadCleanupLive.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupLive.olean",
+      "sha256": "8b684ed5a0b012fb9be7bf390151a7fe1e792b9bd0e87c3a107b1638c93f95f8",
+      "inode": 3156601286
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DeadCleanupLive.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupLive.ilean",
+      "sha256": "8d0e24e50e8cafdc035b00820e9267a22c484b8fab6d4102cb359e7a1ec7b5eb",
+      "inode": 3176536763
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DeadCleanupSem.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupSem.olean",
+      "sha256": "c5400c5c6a5ccc74b8ceb95a83209a5602854763dac40473c58fd15ef1a6c5fb",
+      "inode": 1543864635
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DeadCleanupSem.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupSem.ilean",
+      "sha256": "5f175ff0160d8eb3f31889bf9b0eaffb64697139f98664375643d59c67857314",
+      "inode": 1543864636
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DeadCleanupStructure.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupStructure.olean",
+      "sha256": "e9b445981fce409e2b095bcfb4f54d84ef4cbb85fa982fff12d89790a44d7013",
+      "inode": 3176536758
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DeadCleanupStructure.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupStructure.ilean",
+      "sha256": "e65d2e654b4c8c309fa3d693bff0e30cda466497f0143215d4f3c8a1e9409893",
+      "inode": 3176536759
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DriverCheck.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DriverCheck.olean",
+      "sha256": "f17c23dcbb216f4f863896bd62f5dd7c5033e8685ae06e6b066b560640cab387",
+      "inode": 2420917622
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DriverCheck.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DriverCheck.ilean",
+      "sha256": "476ba8e5ba2ca45b28aa9c35753bfb2d6dcc87d882b9e4c2cf67b349182f606c",
+      "inode": 2420917624
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DriverCheckSound.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DriverCheckSound.olean",
+      "sha256": "cd6191500cb759ab855b3b2f43c3d31e04ee6b9480120bc027065700c90a27cf",
+      "inode": 812033956
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/DriverCheckSound.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/DriverCheckSound.ilean",
+      "sha256": "27153d1a237f1dc12740aa17b52bdb8b0db5771b0f5d88166f44a55234c0546f",
+      "inode": 814662726
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/Encode.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/Encode.olean",
+      "sha256": "e4ed010cb81220f1fbc640de05401d271ef232c54bd8bc59a809ad928278066a",
+      "inode": 2417727944
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/Encode.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/Encode.ilean",
+      "sha256": "ee036a9574797fda61d4ed5caaba2bb4d107dd167b6bbb114e97f67e47032873",
+      "inode": 2417727945
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeBR.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeBR.olean",
+      "sha256": "e022ae2e2945b0107b64a13d0727113fab5b73c088538ce29a57c95726ee7669",
+      "inode": 2420917703
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeBR.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeBR.ilean",
+      "sha256": "b2354e8d2c69fefcd751cc46571f1f397bf3fefb0e24bf0a7b0f9860f13a8717",
+      "inode": 2417727940
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeBase.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeBase.olean",
+      "sha256": "43cfde28464158474f72e7b7a395abfa424f04f8225771ba1568c0dcbceb530a",
+      "inode": 2420917586
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeBase.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeBase.ilean",
+      "sha256": "6c1149855d49cd715687cfdade0b60c4f1e55daebe2130c8d46f82f4ff5cbe6b",
+      "inode": 2417727938
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeBranch.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeBranch.olean",
+      "sha256": "7e6595f7ae9e8624c69b1986d1c87f2ad57a5800f9bd3210ec613886eec20b4c",
+      "inode": 2420917784
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeBranch.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeBranch.ilean",
+      "sha256": "0e7711f624378845a714f3ebedcc3cf2d29c0c6f0d69fc6fe5ff44d1611c7081",
+      "inode": 2417837602
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeDPI.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeDPI.olean",
+      "sha256": "e767bbc0dd907fe6d19eae65fd14caacbcaa0df06b073f9685e65f58113dc213",
+      "inode": 2420917675
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeDPI.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeDPI.ilean",
+      "sha256": "466fc4356fdc2c367d0e1dcb605d4baf2778314f590b3f405971e4e36cf02425",
+      "inode": 2420917690
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeDPR.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeDPR.olean",
+      "sha256": "e3c899146ea2478816f091617d814d5f4993d08200c7740d66524e4c09088bef",
+      "inode": 2420917778
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeDPR.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeDPR.ilean",
+      "sha256": "1dea69d5199cd370b3b8c87da99cdefec051de57d7639bd8ae93804257109bb5",
+      "inode": 2420917780
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeDPSFP.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeDPSFP.olean",
+      "sha256": "4421aea845bc5e82186e18fa0a8b7f442dc0ef994bd9b1012252370708e74412",
+      "inode": 2420917715
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeDPSFP.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeDPSFP.ilean",
+      "sha256": "583961fe0e8aef21db2a387edf444c7391dcb879b9d0c9a3b5e5e9ef1fd947c1",
+      "inode": 2420917749
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeLDST.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeLDST.olean",
+      "sha256": "f40b255eee5881576b7e4847cb6d517df23195e21f9efa5940e533e0e753385c",
+      "inode": 2420917673
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeLDST.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeLDST.ilean",
+      "sha256": "512c1f7eb969366ede927409c2de15c26df4b7ef22de9e789fc6ebfa73c67866",
+      "inode": 2420917707
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeLayout.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeLayout.olean",
+      "sha256": "d3075bf7959d0626d4df44d2b3f3e443206f50d4233681aa783603ff9890d934",
+      "inode": 2417906858
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeLayout.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeLayout.ilean",
+      "sha256": "ab36a6a4c806143d04b1f0df5b0d651518955845dbde865f3bc445ca4270539a",
+      "inode": 2417727947
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeRES.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeRES.olean",
+      "sha256": "6bb78696766e3873ab75676af9e7ab264bbef02f1230729552175faf11bf098a",
+      "inode": 2417837596
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeRES.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeRES.ilean",
+      "sha256": "24df179893de772495d88f0432af6ca3834a71e966d88f63428dab6cbb864e4d",
+      "inode": 2417727943
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeStep.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeStep.olean",
+      "sha256": "43a5bb144005ea95396e35c6b1e482c179f5c06f8545a9f558687aed275dbc4a",
+      "inode": 2418200230
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/EncodeStep.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/EncodeStep.ilean",
+      "sha256": "4f48ec7ae982383fff6538034562159e3270db02552fbc1ed858a1f0b9a42118",
+      "inode": 2418200231
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/FastSubst.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/FastSubst.olean",
+      "sha256": "afd5a63a1e87d411d56cef0f0d20353712b7e61ded50d547637f45540c876a97",
+      "inode": 3156607300
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/FastSubst.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/FastSubst.ilean",
+      "sha256": "d9f9eaf4e91cf12469e9c0ef55d0c38a4c0ecedf403b9fa4f34dbac3ff4b446e",
+      "inode": 3156607301
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselAttr.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselAttr.olean",
+      "sha256": "5bf96f42db8bc8387e1a0592ccf88f9978890d2b958f87539ee6877eeb682efe",
+      "inode": 2420917612
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselAttr.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselAttr.ilean",
+      "sha256": "3ea968be67a2a7a8b47729a8595253cb03d0af4f4a1f92fb8916671864f56b93",
+      "inode": 2420917619
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCmpBase.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCmpBase.olean",
+      "sha256": "553bf88c9f60c1279aec70f48307be92889a10da43352ced78df6967c129f702",
+      "inode": 811957991
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCmpBase.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCmpBase.ilean",
+      "sha256": "01202b289efbd44a1bf9c8ddd0798b0e7ce195261c82a8d7324bfd29f7748fc6",
+      "inode": 811957992
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCmpInv.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCmpInv.olean",
+      "sha256": "6c857fd9add684a35e0aa6f1b7726947751c6e557ee81504d53f4550ee9dab0f",
+      "inode": 2420917746
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCmpInv.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCmpInv.ilean",
+      "sha256": "e88fe62dc60cfe19ef8e4014ba9c1a1ce2887cd67040b4bfa902a096716b6fc6",
+      "inode": 2420917750
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCmpRun.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCmpRun.olean",
+      "sha256": "5fb73e99a0a6dac70738789d36de38f2b038097bda1af9708f9ee6794b105cce",
+      "inode": 811958015
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCmpRun.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCmpRun.ilean",
+      "sha256": "cb9b0db9468d82c092f600abd5a82fec94766ed68373a182a62356fe3b6c9ded",
+      "inode": 810213568
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCmpTerms.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCmpTerms.olean",
+      "sha256": "a7afc0f7b065d38a1ff7683feffe167d1aa0af0631b3c155ab39fb4f074cf997",
+      "inode": 811958005
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCmpTerms.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCmpTerms.ilean",
+      "sha256": "0a5df0fe328f43d4d79b4e43d3c03da16132434c16f4d53ba2932fc6150e032c",
+      "inode": 811958006
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselContract.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselContract.olean",
+      "sha256": "3387a4fc734c26efb3f030c839078a4ae3813d54013d70598564a6a5eefc1172",
+      "inode": 812033921
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselContract.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselContract.ilean",
+      "sha256": "63ab94edc81fcbf08407233426d3757c37cf963a96e4bebf6ca4fb1f2e468a50",
+      "inode": 812033922
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCtlBase.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCtlBase.olean",
+      "sha256": "9c09fbf547d378cefa05170ce30591b0073b10e88b0937ee1e9364e3c1468e4d",
+      "inode": 811958010
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCtlBase.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCtlBase.ilean",
+      "sha256": "027c93df861f0e17878a3e375574c2e7a71dceacb406165bd7d10855f513458d",
+      "inode": 816249559
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCtlCall.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCtlCall.olean",
+      "sha256": "23679eef95e3ffd7a79752ecf03510e7e25bd6f07b577c392bcdd9891729e4c3",
+      "inode": 814662172
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCtlCall.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCtlCall.ilean",
+      "sha256": "867f622c690e4c23a93e9c8b720df0058b5f698f6946fd3b8d9c6aa5ee438e3e",
+      "inode": 814662173
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCtlTerm.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCtlTerm.olean",
+      "sha256": "27f09d19d12b31d36b406e2a7cb1838441204350ce01a00d8a8e65ff80363ce2",
+      "inode": 810213572
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselCtlTerm.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselCtlTerm.ilean",
+      "sha256": "f0d4fdd0798a87dd7edc237e23b9401349e5830a890d718c618a55dad07fd007",
+      "inode": 810213573
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselData.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselData.olean",
+      "sha256": "1e18ec2ae0a7546dabeb4349b6365a8f78b7421e3c5a5d929349eee83436c9ba",
+      "inode": 832511651
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselData.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselData.ilean",
+      "sha256": "b1705d9a98f395b72de49f40f0b0cb16f404e7718bb9e3571154179152a1e393",
+      "inode": 832511652
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselExtern.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselExtern.olean",
+      "sha256": "ba760d3c38538d218e85699487d7e693e27d94f5c756a66ea9b242305bb5a579",
+      "inode": 2420917785
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselExtern.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselExtern.ilean",
+      "sha256": "af2e7623d8b3a484e4b319098cff7aef3448d278a62d6b3b162f88fc70283298",
+      "inode": 2420917787
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselFamily.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselFamily.olean",
+      "sha256": "79a976a71036abc65dfd5b73129af96e2c11e371b1a1671afb61e5d67ff50d0c",
+      "inode": 811958000
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselFamily.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselFamily.ilean",
+      "sha256": "4b272c9fc29735b5af1ae142f55113fdcd699a3c87f5c57574448852c5c27fa9",
+      "inode": 3155118510
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselGeneric.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselGeneric.olean",
+      "sha256": "32171a0a8469a666c16ef2de6ef6fd041ce3d2d6bba913f610600be148ed66c5",
+      "inode": 2420917605
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselGeneric.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselGeneric.ilean",
+      "sha256": "4e134c09b1300b2b5d00ea5483fc4d90409f4fce1001b9d48ab7a249f0056b9f",
+      "inode": 2420917607
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselInterp.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselInterp.olean",
+      "sha256": "11eafcfebd93d7c2b5a9d47ad3e67e787fa36e6acc1cdeed371233824edef422",
+      "inode": 2420917753
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselInterp.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselInterp.ilean",
+      "sha256": "136527153f27d50e14ca67f248aecb0a4924d4a25c7eb2214516c4cc864abd15",
+      "inode": 2420917761
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselMemArm.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselMemArm.olean",
+      "sha256": "bb42e9823555374aa26d5f7e3d71f2ad6263ca3cac4bd78d739d2a695cef6fd8",
+      "inode": 1544102826
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselMemArm.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselMemArm.ilean",
+      "sha256": "1497c05bc95e370e441f3c8cdf86ae6f255628089aacc291209ad7e9e60cb51c",
+      "inode": 1544102827
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselRules.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselRules.olean",
+      "sha256": "248dbfece4be9c99fa5d1ce73c0da52a6d118780b2aa962a8ab98761bb3d341b",
+      "inode": 812460465
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselRules.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselRules.ilean",
+      "sha256": "12064cc333ba7a24042181670ddf9efa1af7f0bab4970c04c5fd779104efd06e",
+      "inode": 2420917831
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselSemCmp.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselSemCmp.olean",
+      "sha256": "bb03e0040898d31fc302de06b7aa0b5f8819b303dc656d13aab5b78f0caeb843",
+      "inode": 816231378
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselSemCmp.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselSemCmp.ilean",
+      "sha256": "66d818b027c13164694e88ee2da911772ff9cbb14ed2db7cc37714fb7a847ecf",
+      "inode": 816231379
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselTerms.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselTerms.olean",
+      "sha256": "84febcfddfec26e406dbbe18b59a17833b05c105403be9cd403cd14085c2a82a",
+      "inode": 812460461
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/IselTerms.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/IselTerms.ilean",
+      "sha256": "c94ba0a658a9559b3d1b2e4d589b45bb69132377c9b9d5f0c9d49126aa873c14",
+      "inode": 2420917797
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LoopRun.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LoopRun.olean",
+      "sha256": "223153bce0f3d69e93c3cd5d371f5ec2471ede32077067b55835ff7048099db6",
+      "inode": 814664536
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LoopRun.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LoopRun.ilean",
+      "sha256": "352e560245f3c923bf3dadd60d8ceeef355b95eaf53b487af4ad7abec02f84d2",
+      "inode": 814664537
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerContract.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerContract.olean",
+      "sha256": "8d54a46ae0517451c8e7ab2c01f2d2e1352ae886f88c28ae13c81ba727ab2c68",
+      "inode": 3156601478
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerContract.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerContract.ilean",
+      "sha256": "83fba191f708c7d4b942e89c116d7b24a94e32df26f0c8cca121306f8c8b9d7e",
+      "inode": 814662156
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerFrame.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerFrame.olean",
+      "sha256": "cfea4bab238c25079639290cf8d53d465e149e41bc9fc00b34fa5a630326c822",
+      "inode": 816249564
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerFrame.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerFrame.ilean",
+      "sha256": "5596534add3f257bf59e2765dadf0219236352adf87f11e89efd587d453c04fe",
+      "inode": 816249565
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerLemmas.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerLemmas.olean",
+      "sha256": "c57d92da87e2f568d3c7f6ef198c14cfb2b285fb06d831b823bb7ba069d0a15b",
+      "inode": 811895800
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerLemmas.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerLemmas.ilean",
+      "sha256": "f62e9915ffbb1fd349745c43f804ed70ae21db85dd83c7b2058947a1e2e7a1fa",
+      "inode": 816249575
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerRename.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerRename.olean",
+      "sha256": "bc74fd010ae60b8b45249478be8bf0b1edb3c56de02a6efa10b8adef052e5361",
+      "inode": 3158916716
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerRename.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerRename.ilean",
+      "sha256": "76ea4e54d03814b6392c8385225664f35b92633096a8dccd278d35b0673e0321",
+      "inode": 816249555
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerSeq.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerSeq.olean",
+      "sha256": "fefbf176c45187876274f731409c178ade61a503553591aff454c4f4eeb2d009",
+      "inode": 812033926
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerSeq.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerSeq.ilean",
+      "sha256": "ae6ac1800b504cad6c85dfa48ea7de4e85a4f9f8413c360124ba3cbab23f2f4e",
+      "inode": 3161672888
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerShape.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerShape.olean",
+      "sha256": "fb9f25bd510686102106a7ed6022d863fe95440f492671edfb356bab26367dea",
+      "inode": 812033951
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/LowerShape.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/LowerShape.ilean",
+      "sha256": "c4a2bcb8a12b819aac730e0a7feb1c4f8f8b0f5a10c76ba2567dbb451d51503b",
+      "inode": 816249569
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/MemRefines.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/MemRefines.olean",
+      "sha256": "ec32d894e78aae96c2f9022d9eb08c9e73076ea250432c8f31865b50fab31745",
+      "inode": 1548205258
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/MemRefines.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/MemRefines.ilean",
+      "sha256": "a36746652c5e103a76cafa123c5eb0247d284ac20be1e1cd85de4b681cd53290",
+      "inode": 1548205259
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/PrepareCheck.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/PrepareCheck.olean",
+      "sha256": "9af71fe9ff6831075057762a30685aa6ebdcec6c9e8e4d4ee2e794f9425cec67",
+      "inode": 2420918727
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/PrepareCheck.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/PrepareCheck.ilean",
+      "sha256": "76e2bf12d44912f90519a8fd0185b72c0a1ecce414f0a1c1a0987008581e076a",
+      "inode": 2420917725
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RefinesCSem.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RefinesCSem.olean",
+      "sha256": "67aa2c9f59c8d4292edbc0d075df142eb5fbd3a7f5cdd01ebf801db059ad0fb1",
+      "inode": 1548205248
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RefinesCSem.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RefinesCSem.ilean",
+      "sha256": "cfb666b8446aa481ff64bfba34b49b8fd78093e9cf9eaa2d6ace7fab01bb2230",
+      "inode": 813037722
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RefinesInsts.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RefinesInsts.olean",
+      "sha256": "6ee4b5f90ac7c8b53b8f9ed50349ab7e7bb1ae853dcd958164619c4c0170028b",
+      "inode": 1556735079
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RefinesInsts.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RefinesInsts.ilean",
+      "sha256": "74b24e6072892f28f11d1ab142663ff418d4e62e1b00b030b34a7110f11f5c74",
+      "inode": 1556735082
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RefinesInsts2.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RefinesInsts2.olean",
+      "sha256": "faf355243368ec7b38933fead9c1631db7ca00bacfabfbc862fc8ffbd04d76ab",
+      "inode": 1549878390
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RefinesInsts2.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RefinesInsts2.ilean",
+      "sha256": "1ce8a1d08b59277c81f5a26b79d1d97689e07a222653f46a7656630bd2428a52",
+      "inode": 1549878391
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocAtomic.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocAtomic.olean",
+      "sha256": "de9b8d6ed833d56f03ebce830b26e22a8f2d460e9c56e39297ffdbd9e5135a8e",
+      "inode": 835975226
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocAtomic.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocAtomic.ilean",
+      "sha256": "7e9ae7474f593963b97b3aa37db01f939d99674e7878efb2e002fe4dea04e18b",
+      "inode": 835975227
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocCSem.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocCSem.olean",
+      "sha256": "0b97f0d8613442482ad9c48eba2f6f958abf2c1d3ba9e91920dcf75ad85b94ee",
+      "inode": 812054266
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocCSem.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocCSem.ilean",
+      "sha256": "b3420612d8f84d2a2b548823eba1b73c86be3451cded885ebec2efc5a709f218",
+      "inode": 3155200341
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocCover.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocCover.olean",
+      "sha256": "42ecab4285260a29e6f2d210a78c01f094565821309248a7652652a27c3dbaad",
+      "inode": 1548255139
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocCover.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocCover.ilean",
+      "sha256": "7f38425e9186bf8a32c5a4b5e51f136883f4ae54e47930fa4a40c05b85545142",
+      "inode": 809966363
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocFrame.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocFrame.olean",
+      "sha256": "6c3642f2b02c1597865ec88aa23bc5a7e25252d594f59671f3b4ee92e2753919",
+      "inode": 812181334
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocFrame.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocFrame.ilean",
+      "sha256": "ab8669cfd33d24e96f307360889ef44ad3c80335599e01e812efee6af75c7166",
+      "inode": 812181335
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocFwd.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocFwd.olean",
+      "sha256": "7fcddb24854a91bbbc32ddbd68ad6cf395cac380a4ca5c1b07782c5066d9047f",
+      "inode": 814662542
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocFwd.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocFwd.ilean",
+      "sha256": "b8d73abff9c14bf09e208e57bfb16ca950f974b527c427456ecfcbddc1e93c17",
+      "inode": 814662543
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocInstsFP.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocInstsFP.olean",
+      "sha256": "b0cd7a02b9d180e89363f32782493994e9884895b6f3ec6f41e1886e82084380",
+      "inode": 3156599191
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocInstsFP.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocInstsFP.ilean",
+      "sha256": "a0a55540e4a9bc856de9c8ea1fad75f594a032d109936c3d455f38fdb81ded11",
+      "inode": 812138798
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocInstsInt.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocInstsInt.olean",
+      "sha256": "b64ab948a37a852c63e58ce27a177e946fb55e836836bd039a9b01735c9d08bf",
+      "inode": 812180996
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocInstsInt.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocInstsInt.ilean",
+      "sha256": "000149212b62d660a0a59dbb70b83700ba61eafb6dd6e51af4a2e17940a0095e",
+      "inode": 812180997
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocInstsZR.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocInstsZR.olean",
+      "sha256": "fb8450d6301723c814fd2c3ef76aa81c19f74d4d6cb5b7a7f4701b15c4588d82",
+      "inode": 810213607
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocInstsZR.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocInstsZR.ilean",
+      "sha256": "88c8f7827a6224dbc383a2674b8cfea24f7fa364a2ebe5d4fd3096c9fb365e50",
+      "inode": 810213608
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocLayout.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocLayout.olean",
+      "sha256": "b71b239ee53a4940178a05be6b1c9d7188d420d872b78e01d09fb3e9a5a45bb0",
+      "inode": 810213582
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocLayout.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocLayout.ilean",
+      "sha256": "80d738250b097ebf71c61a67089b0b14f3680ae1789189f906c1e96a59fbb333",
+      "inode": 3156601625
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocLemmas.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocLemmas.olean",
+      "sha256": "2ac0bd53c2bb4e3c10b0de0b9dca0a5664e9abffff4666999c59428f913643d0",
+      "inode": 3156599752
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocLemmas.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocLemmas.ilean",
+      "sha256": "de26644707e5383ce1cf71b9eaff5f0b7eae6d619dcb9fcd9b78c14a4649cb0e",
+      "inode": 814660955
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMem.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMem.olean",
+      "sha256": "3fddff65c4121674a102b26bfd0b0fa1398478af3970a5ed3a8d011be2474401",
+      "inode": 3158563944
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMem.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMem.ilean",
+      "sha256": "1ced5f086e178b3b45d48b8c618bce00c573cccff7bc9a71e0938c1b6da73052",
+      "inode": 3160218372
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMemAddr.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMemAddr.olean",
+      "sha256": "dd130abddf3bf552d58072022698e472f934057b495df39e578e90106804654f",
+      "inode": 810213617
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMemAddr.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMemAddr.ilean",
+      "sha256": "a5ebab86ee71c721bd000ae3aa40573e512aa9056678c68bf0ee048516e61232",
+      "inode": 810213618
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMemCorr.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMemCorr.olean",
+      "sha256": "189b111dc513d12170a21652c60e9a536c8ea2242ed863f4c0b070ba297ece93",
+      "inode": 3156599667
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMemCorr.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMemCorr.ilean",
+      "sha256": "12111b9df7cc294f613d51e6038247e720d01daff7efb0db3e1be9b503b17a1c",
+      "inode": 3158916717
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMemFP.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMemFP.olean",
+      "sha256": "b8caf6b3468aaa08757336564c1179ad7bd0f55e504654068933b11d3ee8933a",
+      "inode": 1547958696
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMemFP.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMemFP.ilean",
+      "sha256": "44e5bcf962be79712e164b2dae693fc4dd29ebec043a090ef30e23d69e628389",
+      "inode": 3156599223
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMemOS.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMemOS.olean",
+      "sha256": "84317e0b1414f673db26f414c679167977bc2f94a82609de87a4e6d63fb25f1b",
+      "inode": 2417263767
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMemOS.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMemOS.ilean",
+      "sha256": "1a41386718c0a9793fd0c0e3b106634dbee80af87741a92b920cc4347abb15d4",
+      "inode": 2417263768
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMoves.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMoves.olean",
+      "sha256": "e984b0606527d6171264ed8b2f32c5079ea78246d32a4717147b1106cd97405b",
+      "inode": 810213627
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocMoves.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocMoves.ilean",
+      "sha256": "07807ef4a09a55ab76d7a2d21e0533fdabb0b2f21149654d3b2276a13ea4c5b7",
+      "inode": 810213628
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocOS.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocOS.olean",
+      "sha256": "a59ec9422d99cb30caca06aea443926c37998d0051d793b2af3916e44d68563b",
+      "inode": 814662611
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocOS.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocOS.ilean",
+      "sha256": "abfd3f672d6e9751c7dbfe3d85cb4e7f77d065d10540b7523dd4c25a94c316bd",
+      "inode": 812093617
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocOperands.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocOperands.olean",
+      "sha256": "4da421ca4b28d5c51bdbfec78354d7177d84042592aaa3d91fbd199302ab2bca",
+      "inode": 832511676
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocOperands.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocOperands.ilean",
+      "sha256": "f8702cd93028afade073e735d5d544985e995cb9b7c49a88489a2044c894413c",
+      "inode": 832511677
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocSlots.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocSlots.olean",
+      "sha256": "07b325173fdf7e4af4db48a35704c090dab94e36c78cac10af0dae20bab77ded",
+      "inode": 811957957
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocSlots.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocSlots.ilean",
+      "sha256": "c2ab6637f42e04f9f9308c524dd72bf87949b893161fdacccb39abc0eb657be8",
+      "inode": 811957960
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocSlotsFar.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocSlotsFar.olean",
+      "sha256": "795c5ebace331bcd1ce73ee4d793b379085c9d40de637e7f8459535ccfae5d00",
+      "inode": 810213622
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocSlotsFar.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocSlotsFar.ilean",
+      "sha256": "bc4303bb21d037d50e68f4d8aaf86c2c0cb2f3f5673b15d3531b7076fd9383f4",
+      "inode": 814662549
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocSound.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocSound.olean",
+      "sha256": "a90bed05cdf32c2e801b05ab62a9d5ef8ca0e67dbac35622542ddc08a8e48444",
+      "inode": 814660957
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocSound.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocSound.ilean",
+      "sha256": "f9f480aa31cac0de49753aa12597bcd1bf0948baefa36af8c5fd10bf4ad70e80",
+      "inode": 814660958
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocState.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocState.olean",
+      "sha256": "f4f4ed5383cc42b0be730db1713057a4b0a7bb2bea5ce056d0080a766e801c42",
+      "inode": 814660949
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocState.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocState.ilean",
+      "sha256": "4bafe8958493a856f331e2cd5f60a70d3d52901c1d4cdad5bb20a627ae7c54b3",
+      "inode": 814685856
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocTac.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocTac.olean",
+      "sha256": "0d32b60b94cab31fe5a88044802ba99084c7df4cfa095d08e710cd28c6daceaf",
+      "inode": 3156599271
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/RegallocTac.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/RegallocTac.ilean",
+      "sha256": "90d1f20f522ce6bed289dc1f7cae209f216da0df0545d73a4713985e635141a6",
+      "inode": 814662418
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/TryRegs.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/TryRegs.olean",
+      "sha256": "f416054dcdeff1b3be8ce1475900acdd30ecfa3ef2d4d36a2cb634c06c2122f3",
+      "inode": 837948983
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/TryRegs.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/TryRegs.ilean",
+      "sha256": "c58d2eb3ac0bd479346e147af6f2a7eecdf14d250849fce86b24b38fd44e295f",
+      "inode": 2420918262
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/VCodeSem.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/VCodeSem.olean",
+      "sha256": "68ed53738e58001b4b1eb607b49b5c80bac3bfcd5ae173640f43ffd8e5075c88",
+      "inode": 814685857
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/VCodeSem.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/VCodeSem.ilean",
+      "sha256": "8f83077bc608922a0f839acfb534dbf8af8791103698fd75bfc69ec17e7aaf54",
+      "inode": 816220159
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/VCodeSemI.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/VCodeSemI.olean",
+      "sha256": "0f4f84494b0f931520973dac4106bdcf19a89125fed87d694315668bdea8471b",
+      "inode": 1547958716
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/VCodeSemI.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/VCodeSemI.ilean",
+      "sha256": "55e331b9e67a012dbe7f4e5f9cc47afc796cd52d86d93a9ab61727e44d023ba3",
+      "inode": 835709025
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/VCodeSemISeq.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/VCodeSemISeq.olean",
+      "sha256": "ca0e0977fdf1eac47f092afaf34deb8f11bec5103c487f96d77e1cad7a120973",
+      "inode": 835555500
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Proof/VCodeSemISeq.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Proof/VCodeSemISeq.ilean",
+      "sha256": "8bc028fd8b2bb3fb6b60a218dd4d17417e7996b63affd8efd5c7a19d258e32b9",
+      "inode": 835555501
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Regalloc.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Regalloc.olean",
+      "sha256": "45e44f7882b0215b9d1b9d475aba4f3aa14acf005a45494060aa345a81478b0c",
+      "inode": 761812088
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/Regalloc.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/Regalloc.ilean",
+      "sha256": "88d9bcfc5c06a120988f3b3f5e7199239b813ecd9d83469d3e502d4bdad57353",
+      "inode": 761812089
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/RegallocCheck.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/RegallocCheck.olean",
+      "sha256": "ff24dab606599df36affd094fe02002f89b9aaf34867ff3bbb79c86047f257c6",
+      "inode": 3157273986
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/RegallocCheck.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/RegallocCheck.ilean",
+      "sha256": "919ebf7f54895c2fda31171740cc9072b0835017068fae210cdfa6288d16c0d8",
+      "inode": 3157273987
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/RegallocOps.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/RegallocOps.olean",
+      "sha256": "ebf5f92ba69eaa8d10aa8ff8954a4a6b6fcb5291e7ed9da798c4edc0e0273562",
+      "inode": 761728666
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/RegallocOps.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/RegallocOps.ilean",
+      "sha256": "ff93f7339c3a349dfb885e8786667a65aeb410b960e525af35f9898ab67f4f1a",
+      "inode": 761728667
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/SpillAlloc.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/SpillAlloc.olean",
+      "sha256": "26c2a771b3009b3358ea9720187f0a1e504ab4412b5653c5af8e2606a77967b9",
+      "inode": 2389866111
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/SpillAlloc.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/SpillAlloc.ilean",
+      "sha256": "a3b21b5949538aecfb1bc728bdf69bc94ea7a41404a819c976c12b3ec19aa677",
+      "inode": 3157273984
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/StackAlloc.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/StackAlloc.olean",
+      "sha256": "8af11bd79521d34d327f9bb0a0f5150b8ddb588eda756c2f0b0e1383abab0a70",
+      "inode": 3021934955
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Backend/StackAlloc.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Backend/StackAlloc.ilean",
+      "sha256": "1c23d598ed7bb920ee6bfef5a4582ba02b0d12eabca97a66f6efb4b1f0da1448",
+      "inode": 3021934956
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif.olean",
+      "sha256": "3689abee68da0c51857c0f84eeb6a3be8e7e8e173b6d65310e10edb22da0bcb3",
+      "inode": 1682071245
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif.ilean",
+      "sha256": "271d0c112de77ae9c3c93eefab10c37813c6653475e19ca922e0645feacbd9fd",
+      "inode": 1682071248
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/FSem.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/FSem.olean",
+      "sha256": "2244f4a5c64aaa589c5d5a0bdeb5ef2cd0ccc4d6ca9f19bcddd81510beeaa514",
+      "inode": 1756382534
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/FSem.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/FSem.ilean",
+      "sha256": "d61c9d4a99850a8fa81f8cf3d025d6d77b1e57148515865b2c5427358d5c19b2",
+      "inode": 1756382537
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/FloatFacts.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/FloatFacts.olean",
+      "sha256": "f61f08e974dd7f6f13e471a281241d0d6aa92b9ce733197fe303b8a79da1c4d8",
+      "inode": 2484141407
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/FloatFacts.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/FloatFacts.ilean",
+      "sha256": "66e69c30678c0423cfd275ac8e52a41fda58c621836b22ed7717065548cb31a6",
+      "inode": 1765478615
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/FloatLit.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/FloatLit.olean",
+      "sha256": "fdfbf458005332ff806b663d805c763ed0a955ae539942509ce4af067ab35a41",
+      "inode": 1756382529
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/FloatLit.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/FloatLit.ilean",
+      "sha256": "d21c13bbf6bf992833aa385901a1fd30ce4ed488dc93c663b77559a6222457c9",
+      "inode": 1756382533
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Mem.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Mem.olean",
+      "sha256": "127875cb0277490684b097ba90031ac74762aeb833855051cbf90e992b431e64",
+      "inode": 2483236431
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Mem.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Mem.ilean",
+      "sha256": "f74ba7c69debd36339ecba0de3dcd6ec19b8cfa76b28b5e63b01e89324007222",
+      "inode": 2483236432
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Parse.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Parse.olean",
+      "sha256": "3ad328159dfb7a9d8b84bb7527367c580d714155877438e8589bb61183413d42",
+      "inode": 1756382577
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Parse.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Parse.ilean",
+      "sha256": "55a5e6ac7227764f9b0b7282c77d8b2be9c46ad033cb23f40f8e1a53fb0c2e62",
+      "inode": 1762140936
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Print.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Print.olean",
+      "sha256": "448e57d963ed192d6bd684879fee184f74bda52fed4d48bb784683b640aab828",
+      "inode": 1756382571
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Print.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Print.ilean",
+      "sha256": "3543eacfbd2d810c427b6cafe46cbda12b4fd5620ceb8b1c8775d0624e99be40",
+      "inode": 1756382574
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Run.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Run.olean",
+      "sha256": "e85297ca1b19165095b860edda4278b50081869f210ff365d636e0c4849ec89e",
+      "inode": 2484141408
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Run.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Run.ilean",
+      "sha256": "6a991167ad5d6003b62c697dd72fd51db98b475aa69a288d09653d7d6ff9e068",
+      "inode": 2483236430
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Rust.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Rust.olean",
+      "sha256": "08fa137fd6f6d5775fac0eb9410cd25e4aa0ada11d6fade31f89f3bb032276eb",
+      "inode": 1763503719
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Rust.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Rust.ilean",
+      "sha256": "bae1e7e378ddaf76a433fa68fd57ef40e320dc49a17be4dbf80d3f736b6332e2",
+      "inode": 1763503897
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Sem.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Sem.olean",
+      "sha256": "b8facb3ef5f39229e960208a232568158e14314491de42a89ce82b6318484a9e",
+      "inode": 1756382542
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Sem.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Sem.ilean",
+      "sha256": "762341e878262496173feb810bb52e748969cd67cfe4c58aba2a4fc59b9a1ac0",
+      "inode": 1756382544
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Syntax.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Syntax.olean",
+      "sha256": "b9d806433095a8dbe1fdb0df9bb596ba9c426e337870936450aa0c19e9390b13",
+      "inode": 1756381883
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Clif/Syntax.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Clif/Syntax.ilean",
+      "sha256": "2714e52fda56ce08b8528cd1908f4a2a036a43466a9d39eba6f635ec9e9538aa",
+      "inode": 1756381885
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Compile/StoreTyped.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Compile/StoreTyped.olean",
+      "sha256": "20e8b27494dd98dee978ef9c7af0c119135751427301be430cf38da887225b55",
+      "inode": 2310941705
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Compile/StoreTyped.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Compile/StoreTyped.ilean",
+      "sha256": "24847ce6c4efbd202fb0128202afcbbb31391a82b7ced62395f954674a2d1030",
+      "inode": 2310941706
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Compile/Subset.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Compile/Subset.olean",
+      "sha256": "a39c59aa91174b49a3b525915e6da38e3512dc109ed157055dbf952f560bec33",
+      "inode": 2310941698
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Compile/Subset.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Compile/Subset.ilean",
+      "sha256": "94e04b5cd3d6e863a098bd1fd55d472134223cdc185ee999c15fda648bfbed87",
+      "inode": 2310941699
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Compile/SubsetT.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Compile/SubsetT.olean",
+      "sha256": "8a03b53051a51f1b1d1068759da2d3799ee797d3189c4d6adee281c18080e748",
+      "inode": 2283672357
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Compile/SubsetT.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Compile/SubsetT.ilean",
+      "sha256": "c130f5a75b682e7d1cf0efd5136968f5d7191b491fabe9c1e5a5eee1d77b35b0",
+      "inode": 2283672361
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/ABIReadOnlyCheck.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ABIReadOnlyCheck.olean",
+      "sha256": "acce61ad69b35ed6135dfc081e4742bedb0fdf2c8c811cc1e2b43e61827b855e",
+      "inode": 1949025402
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/ABIReadOnlyCheck.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ABIReadOnlyCheck.ilean",
+      "sha256": "034bbb777e240d9af58d18e5827a13ff709f0c9cbc251290e97f440632d62752",
+      "inode": 1949025403
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/ABIReadOnlySem.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ABIReadOnlySem.olean",
+      "sha256": "34358fee06dcb09c77a0b7b4cce5204a2d926755fad6c897add4237a1bbd2aa8",
+      "inode": 1949025407
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/ABIReadOnlySem.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ABIReadOnlySem.ilean",
+      "sha256": "9ea964fd44ed7597d94b982c619565d64ca9b90116f820d9be6df75a0448b036",
+      "inode": 1948988430
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/ABIReadOnlyTransport.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ABIReadOnlyTransport.olean",
+      "sha256": "3fbd904d387a856506e2d15cb3141bea93c350cbf2087d2469f61d829267d659",
+      "inode": 1948988450
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/ABIReadOnlyTransport.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ABIReadOnlyTransport.ilean",
+      "sha256": "0404e802c9be5086f70442924aa72a5c4b6832f2a7937be85a392cf93e3f36a4",
+      "inode": 1948988451
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/Compose.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/Compose.olean",
+      "sha256": "5fa89fbc08096937419da63d29d29dbbcaa446aac618da2837fbbc642c2d7c3d",
+      "inode": 3429870646
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/Compose.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/Compose.ilean",
+      "sha256": "2c5985c38e4115ffb14ad70234dc826304a86bff1a52a40fadb3b027a88a061d",
+      "inode": 943877933
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/DeadCleanupContracts.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/DeadCleanupContracts.olean",
+      "sha256": "5257521e5acd83072bc75b1b9383f9ee1bd042e7060c0da34e0c2932bcb9057f",
+      "inode": 1949025391
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/DeadCleanupContracts.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/DeadCleanupContracts.ilean",
+      "sha256": "b7468ed51ee847282d43e9f951878eba9c12b5df6f570b92e87a9592e2a49850",
+      "inode": 3446734788
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/ExecFrame.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ExecFrame.olean",
+      "sha256": "be5e1b43bc08123b4c4549d3e2d644bf18bc4fcc641b1a32ca4fa5f1f2e526d5",
+      "inode": 606344814
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/ExecFrame.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ExecFrame.ilean",
+      "sha256": "e285bf15f273bc3fb466b085d1a6dc485fae60aa937186f10ce68010344e09d7",
+      "inode": 640965152
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/ExecReads.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ExecReads.olean",
+      "sha256": "f39db939ccd3140ea4097980add875bf8b7983b03e3d4224f3882348d31dc740",
+      "inode": 1223234480
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/ExecReads.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ExecReads.ilean",
+      "sha256": "a511d5de1e4d9debe63b31630eb972f7d5117ced68b203a73e02e02ed41fec20",
+      "inode": 1223234481
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/Lockstep.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/Lockstep.olean",
+      "sha256": "e08bb1e3b12f197be22fe61eb0f7c9bdb45074b00c78decf0b077a5bd27094b6",
+      "inode": 1948988444
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/Lockstep.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/Lockstep.ilean",
+      "sha256": "7c36c087a7fac1d88bdec6a1764d6d507d0cfcdee37be33343c30c4ba6d01c84",
+      "inode": 943877914
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/MoveReads.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/MoveReads.olean",
+      "sha256": "8dc66a0b9d3044b35f8512ca60116000499fa4e9c7539084e1cdc6ebecdf3cbb",
+      "inode": 1255518668
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/MoveReads.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/MoveReads.ilean",
+      "sha256": "03f4fce6a0a6536a9c8f90b04ddbc20f8c304a6a4333025f740a8370a52e2a79",
+      "inode": 3424226922
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/Pair.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/Pair.olean",
+      "sha256": "8121bbcb0ed4bd758844c3e60e33f3220ccfa0465fe47a0bf1c036a78e24da13",
+      "inode": 1948988434
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/Pair.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/Pair.ilean",
+      "sha256": "575c5b73c07185fbe6d3a6011168f0054324820e34664c9871413653f03d414a",
+      "inode": 1948988435
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelDriverSem.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelDriverSem.olean",
+      "sha256": "d063e992b5ef7ba09c4f247e0932da15f62dd940a1493eb1e6a756739d3491f6",
+      "inode": 3441584198
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelDriverSem.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelDriverSem.ilean",
+      "sha256": "2f0db88d6a2d3c6eb0136b4bcccbd598eb671e0ed2d793baf92731755adca6d5",
+      "inode": 641828330
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelEmit.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelEmit.olean",
+      "sha256": "1e5e2a92725a45bfa4c29221eb103d323eb56cb03fd70c7fbba55774cdb32942",
+      "inode": 3428776555
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelEmit.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelEmit.ilean",
+      "sha256": "3a188435af4d1be14bf593eaf8d6e0202f9ec8e832c9dd54f1a4472fa9337b9f",
+      "inode": 3428776556
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelGoodX.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelGoodX.olean",
+      "sha256": "01134263db12315f4a887b6216e686f007aee26516a936c11b5fc1a5ec6f472c",
+      "inode": 1255518673
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelGoodX.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelGoodX.ilean",
+      "sha256": "f2c12a6d0fce13dc6e8b1bc8a8c79114251637bf985189a0912738754acea3e0",
+      "inode": 1255518674
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelMachine.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelMachine.olean",
+      "sha256": "a98fa61abee5c38074b34c219516d948c5c97b46fc1015ed4bc52e9fd6b19f37",
+      "inode": 1223234441
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelMachine.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelMachine.ilean",
+      "sha256": "a5f7bda1f33b36bbd2fce1ec10c0572b0d3c5d3659729dbca62a88d4fcdcfe1b",
+      "inode": 1223234442
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelMove.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelMove.olean",
+      "sha256": "0568c86d989005e94d2f50906c73c2019320549bc930c5a2214514cf47887dbb",
+      "inode": 1255518663
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelMove.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelMove.ilean",
+      "sha256": "a89e566cd0d98a55da8e4b96dfce17cc8fa2da9f67e5d61aaf755a9fa3c2df8a",
+      "inode": 3424226919
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelOp.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelOp.olean",
+      "sha256": "5c80bbf7325890fc68730480a1f6f90b47e528ba8303951d4e405f56e03603d6",
+      "inode": 1255518678
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelOp.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelOp.ilean",
+      "sha256": "e7cc52ffcce5e4a582269bfe187058713dc8c3a9c000c3c492234e3cee6540d2",
+      "inode": 3429954952
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelPush.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelPush.olean",
+      "sha256": "ce6146fc97584fa16084caf5286fdec380b4c31d1874557d6a1b65801bebb14c",
+      "inode": 1255518658
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelPush.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelPush.ilean",
+      "sha256": "e01b887ac9102013feb0d57de8b8900e1ebd58be9c6abfe0b67acc1b3c7a7b1f",
+      "inode": 1255518659
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelRelax.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelRelax.olean",
+      "sha256": "3c776ac543555a5dade5507fa6aef421925e6bc4b15c3b05a189557eae7bd583",
+      "inode": 943903309
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelRelax.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelRelax.ilean",
+      "sha256": "ffd2f7a1891d12932cbb4900bdbd057b8774214692e72a505f1dac32f9aac9fe",
+      "inode": 943925441
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelSim.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelSim.olean",
+      "sha256": "08de4102fe14587fad80e7edd32b63731eb9f2a7066ee6959813b4120047ad91",
+      "inode": 1254647470
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/E2E/RegLevelSim.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/RegLevelSim.ilean",
+      "sha256": "8ea3e9e25ad468093cfe762774aa60c11d79919efb61e670bb6fc46f37f57e09",
+      "inode": 1254647471
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Float.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Float.olean",
+      "sha256": "61910e0d80899297b31b2193b95e200e2216e3eb7f0d26659c33e3e376c4f8fd",
+      "inode": 1682071233
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Float.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Float.ilean",
+      "sha256": "8d1d5829ad180e28d75f064e72c96d22f40c5ac2a3b967b203d92d816f13f13a",
+      "inode": 1682071238
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Float/Arith.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Float/Arith.olean",
+      "sha256": "063f3737e26ceed95253d634dc30cfcb9b2ffbcaffdceb0d48ae674ddd939227",
+      "inode": 2835378604
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Float/Arith.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Float/Arith.ilean",
+      "sha256": "4a478cb3bbc9316a5fca835eb271bb2d9d66ad0754e8961df19f85e6eafe8d68",
+      "inode": 2835378609
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Float/Basic.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Float/Basic.olean",
+      "sha256": "f0d1c5df8a87ee8f8abfc61a24875eaa142d878b0f172a99341f4585efcc4ca7",
+      "inode": 2832739959
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Float/Basic.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Float/Basic.ilean",
+      "sha256": "c63508a53153e33b0efd1ed868a7bd109048bf17987cb96b5943e04549f54301",
+      "inode": 2832740580
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Float/Convert.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Float/Convert.olean",
+      "sha256": "1e7b81a713c22c4fc34c6fad9de3c06f7e03ef7749798437053614a23e6032e4",
+      "inode": 4238552590
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Float/Convert.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Float/Convert.ilean",
+      "sha256": "95e6d31e0e0381c690611d86f1a19debbf81cc25a82692daa5f9a467956016f4",
+      "inode": 4238552591
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Float/Round.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Float/Round.olean",
+      "sha256": "3c1617b552bfadcdaf34ea746225e73234dcd494f1a94b5cdc4a42b580da326c",
+      "inode": 2834345787
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Float/Round.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Float/Round.ilean",
+      "sha256": "470a46430731083427902e0e32619750d6bc7fd14f43576ebd3c6874b1ab8b53",
+      "inode": 2835366506
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle.olean",
+      "sha256": "950c8c7c83d1249811ba65b57b4e847cce7b67930d703f90dafa9f8afe83b6c8",
+      "inode": 1682071292
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle.ilean",
+      "sha256": "0d3a66f4cf02db6bea98b74d674e91c6901cd100688dd714b80099eea7628a02",
+      "inode": 1682069824
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Closure.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Closure.olean",
+      "sha256": "b708dd3e7a667d3465753d96f65fdc556409d4ec214d6a8429d4fb67ba3e6715",
+      "inode": 2752244517
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Closure.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Closure.ilean",
+      "sha256": "da45b67cecfdd39c839e4537475200b122521a1df3e21175d210f81710fefc68",
+      "inode": 2752244518
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Ids.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Ids.olean",
+      "sha256": "a983879fce5edb4a6c56b68cbe891dc91137256755a8d21c530c3dfc77349530",
+      "inode": 1906637846
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Ids.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Ids.ilean",
+      "sha256": "959774a11d2d17b5e2a2703afb3a0544e7f9bdfda9c1f7253869145ed977dc91",
+      "inode": 1906637849
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Manifest.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Manifest.olean",
+      "sha256": "95191e3deadec0a423c426531097eeb1d23c1a788751d933088e4a2ac8461c7b",
+      "inode": 478242465
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Manifest.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Manifest.ilean",
+      "sha256": "2a92eef5df6abf36f1d3f079cf2c38fbb4fb9a95450ebf29b99cf711821bc238",
+      "inode": 478242466
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Program.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Program.olean",
+      "sha256": "7ab84aba4e17a5e53c6c713d3282cf0631372f43d1f457458db0420fd9270043",
+      "inode": 1906654088
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Program.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Program.ilean",
+      "sha256": "499639efa9de1ee450fa1a7067556d188b087fb0c9495bb943c6011237dab676",
+      "inode": 1906654089
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/RuleArray.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/RuleArray.olean",
+      "sha256": "cc75f2ad19c8a0471ea81dbc1c1f5505453c4e4cf35d2e1bc77a448c271f271c",
+      "inode": 1906645225
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/RuleArray.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/RuleArray.ilean",
+      "sha256": "e56444d4099e617dd0fd6eb9b9a0eb81fe4f795ecd0a733dc799a0ece3b0d2c0",
+      "inode": 1906645228
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/RuleLists00.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/RuleLists00.olean",
+      "sha256": "0da47bba3c656ca605975cad6dbe58199b6733be141bf78c879a778ce2b429d5",
+      "inode": 1906645217
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/RuleLists00.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/RuleLists00.ilean",
+      "sha256": "eb690197024d01f664309f1643649928a678701eadd52db20b9a54bf74c3ddea",
+      "inode": 1906645219
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/RuleTable.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/RuleTable.olean",
+      "sha256": "5911f50e43328a0c9d74c89b1bd8f0b390ff86fb76a11e531881bc6d123ea67f",
+      "inode": 1906645234
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/RuleTable.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/RuleTable.ilean",
+      "sha256": "0d9ac3ee894a62d23cca5c2991c5dfd06d65f97c66bab0abd90e2a72d5f9aa94",
+      "inode": 1906645237
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Rules00.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Rules00.olean",
+      "sha256": "02e0116a6cfc03c8dfe8ad141ba3741fffaa8211dce450d4a3a5e6c4b2e8eb58",
+      "inode": 1906637886
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Rules00.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Rules00.ilean",
+      "sha256": "21366284e6465c61ca8b426adc00458f620284bfeafbef3dc3c17c5bafd22737",
+      "inode": 1906637887
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Rules01.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Rules01.olean",
+      "sha256": "2acdb8f1e885ab05a924072e5f2a9cd9d97b99939a4c19fe4255a8a73a3b1147",
+      "inode": 1906642415
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Rules01.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Rules01.ilean",
+      "sha256": "1ec345272936581f53b71f73e7a8aa4003063ca88c3528904139f1f7d9a2c6f4",
+      "inode": 1906642417
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Rules02.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Rules02.olean",
+      "sha256": "83d702a3e5b3371205bf1048869578c97bc3769da846ebc7411eb3a597fa09dd",
+      "inode": 1906642423
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Rules02.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Rules02.ilean",
+      "sha256": "84f1bb44cc0b4fd4a38468fa2c5e07e825c115d10e19071d26366760ceba04a2",
+      "inode": 1906642426
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Rules03.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Rules03.olean",
+      "sha256": "8e35a287dd6acb653be20608499328eab7407b2b46e13907ada5c4f15cc19eb4",
+      "inode": 1906642429
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Rules03.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Rules03.ilean",
+      "sha256": "e05a20c3d9fa8765c98b34b6410665d247f7b6a43e294e392967e56393e3e17f",
+      "inode": 1906642431
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs00.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs00.olean",
+      "sha256": "12b647c2d456f5f642a8593cbdea0a9b5a936f4d77cde8c11fe191b67b4ad2d3",
+      "inode": 1906645187
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs00.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs00.ilean",
+      "sha256": "e2cfe65ca05fcd9f8eabe60fc92437ffbd00a36352feaad8df44adfe30b17b8b",
+      "inode": 1906645194
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs01.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs01.olean",
+      "sha256": "374dd6b032ef095bba010493fee73923b3d5ebb69ed93de3fa4284c0454b4e9b",
+      "inode": 1906645205
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs01.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs01.ilean",
+      "sha256": "271a7d732bb465e169558dc9707e125367d055828eb4fb3d4480944ee9cb9d69",
+      "inode": 1906645210
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs02.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs02.olean",
+      "sha256": "016502bb26df0e59ffbec2c135af235d006af86502eeeddc7e98221966aa8e60",
+      "inode": 1906645230
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs02.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs02.ilean",
+      "sha256": "984568dad4256f24377609efedf2afc1651e9078c23c9fc40d93faf9be335d23",
+      "inode": 1906645233
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs03.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs03.olean",
+      "sha256": "b2cbecc1bc84b01673a065eb228b2526c035851d6605227a746314face9f689b",
+      "inode": 1906645238
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs03.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs03.ilean",
+      "sha256": "0f61498e9ad74a9aa5d93f3485e219bb398ac95335fc187031947351e3960756",
+      "inode": 1906645241
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs04.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs04.olean",
+      "sha256": "692748af7640b9184a50dd288ed726e7bd14d856ff151267a4bde59bd6bad9b1",
+      "inode": 1906645242
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs04.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs04.ilean",
+      "sha256": "8463654507bf4ee65be42d19a1ac293782db7239f8f64449f61731bffd41ba2f",
+      "inode": 1906645247
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs05.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs05.olean",
+      "sha256": "2c49df503debdf4c3b850e416e4bc418ad2a7982e57fd382f20eef2b59edf912",
+      "inode": 1906650813
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs05.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs05.ilean",
+      "sha256": "95a6759885b9e4cdef1827afebfb6b6c977bf2bc2c97db441bdd0805864d3fae",
+      "inode": 1906654080
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs06.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs06.olean",
+      "sha256": "7011edd6c28dc64a88b9867828c711578e71d2a5d76bc22252545b8a458b3280",
+      "inode": 1906650626
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Specs06.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Specs06.ilean",
+      "sha256": "d424c5371fdecffe4c94b08d557add45b03f433f3c143039e25e96bfa6328ad8",
+      "inode": 1906650799
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/TermTable.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/TermTable.olean",
+      "sha256": "4effc68b9e5c899e66e1f7a07310a1e096e3165ce67643383bff42b54f6661c2",
+      "inode": 1906642420
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/TermTable.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/TermTable.ilean",
+      "sha256": "a3dc168902c991301907962792320822504f5dd1830c0de9f1c887f25db59a0a",
+      "inode": 1906642421
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Terms00.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Terms00.olean",
+      "sha256": "82f86188fa1dd30f0add1711a004194251d7cfa000f7fa390bb12dfbfcc32c10",
+      "inode": 1906637865
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Terms00.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Terms00.ilean",
+      "sha256": "80d48e13c453c1bfad3182b93dc85f28e2750844ba2a2d7b50a146f70ebc985f",
+      "inode": 1906637867
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Terms01.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Terms01.olean",
+      "sha256": "6932f786c14a622491f725d63b7cea15c9111f450ce0189c9bad3199266a7cc5",
+      "inode": 1906637870
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Terms01.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Terms01.ilean",
+      "sha256": "8276b38577d7e147b1d858a01185ec8973cd95724cb5ec3941b5b0afaf966ef0",
+      "inode": 1906637874
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Terms02.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Terms02.olean",
+      "sha256": "47fa79c1134827d3b8946dbb8b2477fc76b94a4a262dc7a7e0ec6b9ce8553aca",
+      "inode": 1906637878
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Terms02.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Terms02.ilean",
+      "sha256": "4bac807e1538d3f7ccedfd22a6104fac852099f4fdba78320d394d97830810dd",
+      "inode": 1906637879
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/TypeArray.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/TypeArray.olean",
+      "sha256": "4b19fbd64f4be77a7ab54ab59a83061d15da7ffd69839092c6817d0f28ebcc73",
+      "inode": 1906637856
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/TypeArray.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/TypeArray.ilean",
+      "sha256": "410d61b87f138aa880ad4f347fd66c5aeab2e32712a6fa3cc1671e0bef152af7",
+      "inode": 1906637861
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Types00.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Types00.olean",
+      "sha256": "47af36380869388e8cfd96d27d45f8f6ed8906ef39e3e10edd155a5b2ae519f9",
+      "inode": 1906637851
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Generated/Types00.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Generated/Types00.ilean",
+      "sha256": "ae0397e03c12c08c135330a479d6f507da551221f346d0bbf6f96b028290ec9a",
+      "inode": 1906637854
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Interp.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Interp.olean",
+      "sha256": "cebace9f2e93fd7f3852165df0429dfc7d31aab4d291dbcc631d504cfd7c350c",
+      "inode": 1906538870
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Interp.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Interp.ilean",
+      "sha256": "e2ccad7e6c22e2fa1c6b25f3b62eea68d2cf631cb0e55e6a2506ac9d6ea6be69",
+      "inode": 1906538872
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Pretty.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Pretty.olean",
+      "sha256": "8df6f502e5c6fb5324718cfdd13b8820c4ac0ebed57f759e6c68a209e4603fdc",
+      "inode": 1906538874
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Pretty.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Pretty.ilean",
+      "sha256": "cd105664523d7cc5e63eb3b796f2f2b97eae1dd757bba09e091f10117384a75c",
+      "inode": 1906538878
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Syntax.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Syntax.olean",
+      "sha256": "734bc89740879e9639d08023e231a1c9b7a7f9ded976316a0b36853911701e06",
+      "inode": 1906538862
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Isle/Syntax.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Isle/Syntax.ilean",
+      "sha256": "f91bc067c4efc63b08319643da7bdef18cf360a5af32a402156aec4be1bdc8d1",
+      "inode": 1906538867
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Opt/Proof/SemSim.olean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Opt/Proof/SemSim.olean",
+      "sha256": "72b47a313829a0ef6adbeccc027be9ef2a8d34f7b027ca7babb10037571c353c",
+      "inode": 3971968871
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Opt/Proof/SemSim.ilean",
+      "source": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Opt/Proof/SemSim.ilean",
+      "sha256": "04cde6998cc6036a026da41c9de319fdf42456ee418e8d8755f476f1992f767f",
+      "inode": 3971973278
+    }
+  ],
+  "owned_output_modules": [
+    "FV/Backend/Proof/LowerOutcomes.lean",
+    "FV/Backend/Proof/LowerValueRelations.lean",
+    "FV/Backend/Proof/PrepareSound.lean",
+    "FV/E2E/Statement.lean",
+    "FV/Backend/Proof/LowerSim.lean",
+    "FV/E2E/ABIReadOnlyRealize.lean",
+    "FV/E2E/Main.lean"
+  ],
+  "cleanup": "Remove focused-package-v1/.lake/build after retaining all sources, logs, output hashes and receipts. Never delete shared source outputs.",
+  "allocation": "No build allocation reserved. Parent must grant the existing 3GiB proof slot before execution.",
+  "builds_started": false
+}

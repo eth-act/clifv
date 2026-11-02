@@ -1,0 +1,21 @@
+{
+  "pr": 890,
+  "packet": "return-pin-consumer-integration-packet-v1",
+  "validation": "consumer-integration-reviewed-state-v1.json",
+  "source_overlays": [
+    "link-image-extension-packet-v1",
+    "return-pin-linker-runtime-packet-v5",
+    "return-pin-binary-packet-v1",
+    "return-pin-executable-packet-v4",
+    "return-pin-source-adapter-packet-v1"
+  ],
+  "apply_packet": true,
+  "new_branch": true,
+  "parent": "return-pin-source-landed-v1.json",
+  "prospective_parent": "source-independent-delivery-prepared-v1.json",
+  "branch": "agent/stock-return-pin-consumers-20261102",
+  "prepared": "consumer-integration-independent-prepared-v1.json",
+  "commit_message": "Integrate complete-file routes and generated ABI-aware proof consumers",
+  "review": "consumer-integration-peer-review-v1.json",
+  "landed": "return-pin-consumer-integration-landed-v1.json"
+}

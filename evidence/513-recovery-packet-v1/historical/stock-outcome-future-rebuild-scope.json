@@ -1,0 +1,8 @@
+{
+  "scope": "Static futureLowerSim reverse footprint, not measured wall-clock speedup",
+  "base": "ef499acae962dbd60cd00e46c43f04c449265944",
+  "candidate": "5aae55c32030e3e9f15ab6515a2cccf268751646",
+  "before": 1202,
+  "after": 804,
+  "removed": 398
+}

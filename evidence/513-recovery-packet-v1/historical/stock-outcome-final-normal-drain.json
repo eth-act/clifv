@@ -1,0 +1,18 @@
+{
+  "controller_pid": 1030749,
+  "children": [
+    1030760,
+    1033778
+  ],
+  "active_modules": [
+    "FV.Opt.Proof.RuleShifts3P1",
+    "FV.Opt.Proof.RuleShiftsDistribution"
+  ],
+  "reason": "Drain dispatch only, keep healthy active kernel jobs. Drain overbroad full baseline replay after healthy optimizer workers finish. No optimizer sources changed in513; resume author verification on affected modules and keep full baseline observation separate. Partial prior normal successes remain evidence, not a completed-pass claim.",
+  "utc": "2026-10-22T23:12:14.623155+00:00",
+  "state": "controller terminated after every healthy worker finished successfully; overbroad full replay remains partial",
+  "started_source_head": "b32f10a8c0d9e1fdde36532b33eff39bdad6d1e1",
+  "finished_head": "5aae55c32030e3e9f15ab6515a2cccf268751646",
+  "optimizer_tree_unchanged": true,
+  "finished_utc": "2026-10-22T23:50:25.763442+00:00"
+}

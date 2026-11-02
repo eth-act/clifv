@@ -1,0 +1,22 @@
+{
+  "pr": 891,
+  "packet": "sret-complete-execution-packet-v1",
+  "validation": "sret-complete-execution-reviewed-state-v1.json",
+  "source_overlays": [
+    "link-image-extension-packet-v1",
+    "return-pin-linker-runtime-packet-v5",
+    "return-pin-binary-packet-v1",
+    "return-pin-executable-packet-v4",
+    "return-pin-source-adapter-packet-v1",
+    "return-pin-consumer-integration-packet-v1"
+  ],
+  "apply_packet": true,
+  "new_branch": true,
+  "parent": "return-pin-consumer-integration-landed-v1.json",
+  "prospective_parent": "consumer-integration-independent-prepared-v1.json",
+  "branch": "agent/stock-sret-complete-execution-20261102",
+  "prepared": "sret-complete-execution-independent-prepared-v1.json",
+  "commit_message": "Prove captured linked copy execution for arbitrary source bytes",
+  "review": "sret-complete-execution-peer-review-v1.json",
+  "landed": "sret-complete-execution-landed-v1.json"
+}

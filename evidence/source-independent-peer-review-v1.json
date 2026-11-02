@@ -1,0 +1,8 @@
+{
+  "published_source": "c78dd629c5fedd516b645813fab416e370bed7c0",
+  "verdict": "no blocking defect",
+  "reviewer": "worker-A",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review. No builds or review agents.",
+  "notes": "Four new files. Both generic source roots remain unmarked. Only the two fixed ReturnPinExeSourceWitness roots use marked native facts.",
+  "utc": "2026-11-02T06:50:19.599740+00:00"
+}

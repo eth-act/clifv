@@ -1,0 +1,13 @@
+{
+  "controller_pid": 1023396,
+  "children": [
+    1023700
+  ],
+  "active_modules": [
+    "FV.E2E.LinkOwnCallsRun"
+  ],
+  "reason": "Drain dispatch only, keep healthy active kernel jobs. Original5GiB worker finished; drain this remaining healthy linker proof before reconciling516 and the full16GiB/max2 final pass. Partial prior normal successes remain evidence, not a completed-pass claim.",
+  "utc": "2026-10-22T23:03:49.998929+00:00",
+  "state": "controller terminated after child completed successfully; final current-head normal pass remains required",
+  "finished_utc": "2026-10-22T23:06:54.750691+00:00"
+}

@@ -8,6 +8,10 @@ import subprocess
 b = Path('/home/lee/clifv')
 r = b / '.worktrees/stock-extending-production-20261031'
 e = b / '.git/agent-evidence/stock-memory-20261029'
+import runpy
+_handoff = runpy.run_path(str(e / 'independent-delivery-handoff-v1.py'))
+if _handoff['recognize_landed'](869, 'sret-entry-value-landed-v1.json') is not None:
+    raise SystemExit(0)
 source = e / 'sret-entry-value-packet-v4'
 output = r / '.lake/build/lib/lean'
 logs = e / 'sret-entry-value-packet-kernel-v3'

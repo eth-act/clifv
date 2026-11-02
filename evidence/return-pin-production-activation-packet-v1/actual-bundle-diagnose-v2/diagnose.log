@@ -1,0 +1,4 @@
+scope true; mode true; attempt false
+_RNxC7fv_demo11HawPMC3YC2b: [] pins=true
+sret_caller: [] pins=true
+rust-lld's output fails the checks: static headers, data objects, symbols (outsideOkB)

@@ -1,0 +1,7 @@
+✖ [593/615] Building FV.Backend.Proof.StockMixedBodyWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [615/615] Building FV.Backend.Proof.StockRotateRightRegisterWitness
+error: target is out-of-date and needs to be rebuilt
+Some required targets logged failures:
+- FV.Backend.Proof.StockMixedBodyWitness
+- FV.Backend.Proof.StockRotateRightRegisterWitness

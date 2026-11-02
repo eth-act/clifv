@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-22T22:48:16.399494+00:00",
+  "controller_pid": 941064,
+  "controller_argv_sha256": "15036cb294c85564593019c685cf0e93941133377fad7b04fde069fec038a4e8",
+  "state": "controller terminated only after every active child worker completed successfully; normal pass partial, fresh final-key batch remains required",
+  "children": [
+    {
+      "pid": 1011605,
+      "stat": "1011605 (python3) S 941064 941057 941057 0 -1 4194304 1781 0 0 0 1 0 0 0 20 0 1 0 240861256 21512192 3422 18446744073709551615 94298199310336 94298199310649 140737478179264 0 0 0 0 16781312 2 1 0 0 17 25 0 0 0 0 0 94298199322040 94298199322640 94298777788416 140737478182150 140737478182410 140737478182410 140737478189031 0\n",
+      "command": "/usr/bin/python3 /home/lee/clifv/.worktrees/stock-div-release-20261022/scripts/lake-time.py /tmp/stock-outcome-normal/FV.Backend.Proof.DefGenTab.time /home/lee/clifv/.worktrees/stock-div-release-20261022/scripts/memcap.sh lake build FV.Backend.Proof.DefGenTab "
+    },
+    {
+      "pid": 1011712,
+      "stat": "1011712 (python3) S 941064 941057 941057 0 -1 4194304 1782 0 0 0 1 0 0 0 20 0 1 0 240861757 21512192 3534 18446744073709551615 94645482315776 94645482316089 140727235927040 0 0 0 0 16781312 2 1 0 0 17 52 0 0 0 0 0 94645482327480 94645482328080 94645487951872 140727235929352 140727235929610 140727235929610 140727235936231 0\n",
+      "command": "/usr/bin/python3 /home/lee/clifv/.worktrees/stock-div-release-20261022/scripts/lake-time.py /tmp/stock-outcome-normal/FV.Concurrency.IselThread.time /home/lee/clifv/.worktrees/stock-div-release-20261022/scripts/memcap.sh lake build FV.Concurrency.IselThread "
+    }
+  ],
+  "active_modules": [
+    "FV.Backend.Proof.DefGenTab",
+    "FV.Concurrency.IselThread"
+  ],
+  "finished_utc": "2026-10-22T23:03:16.896587+00:00"
+}

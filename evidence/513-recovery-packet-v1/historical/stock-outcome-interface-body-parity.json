@@ -1,0 +1,19 @@
+{
+  "base": "6a80a5953703446c3032c64ef8d9a33e69d989e6",
+  "unchanged_extracted_bodies": [
+    {
+      "sha256": "4dfa3eae3784e494295422c5d21a8dfcb81275f72a1b412c30032c89200d9c40",
+      "bytes": 1632
+    },
+    {
+      "sha256": "92a371460199dc4ff0014f7f2f50259f70eeff7cf95c902cf7c60e6c2548c6fc",
+      "bytes": 775
+    },
+    {
+      "sha256": "90268c799eeb7248751e74d29dc5c657956761a908058eee9a87380c000a3fc8",
+      "bytes": 304
+    }
+  ],
+  "all_other_lower_sim_source_unchanged": true,
+  "semantic_changes": false
+}

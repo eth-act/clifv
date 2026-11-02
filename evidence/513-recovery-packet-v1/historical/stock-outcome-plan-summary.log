@@ -1,0 +1,2 @@
+Affected 1204 audits 55
+{'FV.Backend.Proof.IselShpTotal': {'module_imports': 293, 'does_not_import_lower_sim': True}, 'FV.Backend.Proof.DefGenWrap': {'module_imports': 322, 'does_not_import_lower_sim': True}, 'FV.Backend.Proof.IselPrgTryLast': {'module_imports': 301, 'does_not_import_lower_sim': True}}

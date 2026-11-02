@@ -1,0 +1,21 @@
+{
+  "utc": "2026-10-22T23:07:04.298196+00:00",
+  "pre_rebase_source_head": "9f16daa5bdf34bab7a129b102e9f890cb3cf050e",
+  "current_source_head": "b32f10a8c0d9e1fdde36532b33eff39bdad6d1e1",
+  "base_main": "ef499acae962dbd60cd00e46c43f04c449265944",
+  "implementation_tree_identities": {
+    "FV": true,
+    "FVTest": true,
+    "rust": true,
+    "lakefile.toml": true,
+    "lean-toolchain": true
+  },
+  "delta": [
+    "LEARNINGS.md",
+    "docs/TO-PROVE.md",
+    "docs/USAGE.md",
+    "scripts/lake-serial-build.py",
+    "scripts/memcap.sh"
+  ],
+  "scope": "516 tooling/docs reconciliation only; prior partial normal/interface/root/component records retain actual9f16 head. Fresh final normal/trust/consumer gates use current new head and upstream tools. No healthy workers running during rebase."
+}

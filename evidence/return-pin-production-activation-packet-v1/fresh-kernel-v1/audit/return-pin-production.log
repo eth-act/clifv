@@ -1,0 +1,3 @@
+'Backend.compileFileReturnPinWhen_retry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.compileFileReturnPinWhen_admitted' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.compileFileReturnPinWhen_disabled' depends on axioms: [propext, Classical.choice, Quot.sound]

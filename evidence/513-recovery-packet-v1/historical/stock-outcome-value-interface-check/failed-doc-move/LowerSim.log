@@ -1,0 +1,216 @@
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:577:81: error: unexpected token '/-!'; expected '#guard_msgs', 'abbrev', 'add_decl_doc', 'axiom', 'binder_predicate', 'builtin_cbv_simproc', 'builtin_cbv_simproc_decl', 'builtin_dsimproc', 'builtin_dsimproc_decl', 'builtin_grind_propagator', 'builtin_initialize', 'builtin_simproc', 'builtin_simproc_decl', 'cbv_simproc', 'cbv_simproc_decl', 'class', 'coinductive', 'declare_command_config_elab', 'declare_command_config_elab_legacy', 'declare_config_elab', 'declare_config_elab_legacy', 'declare_core_config_elab', 'declare_simp_like_tactic', 'declare_syntax_cat', 'declare_term_config_elab', 'def', 'def_eval_config_item', 'dsimproc', 'dsimproc_decl', 'elab', 'elab_rules', 'example', 'grind_propagator', 'inductive', 'infix', 'infixl', 'infixr', 'initialize', 'instance', 'macro', 'macro_rules', 'notation', 'opaque', 'postfix', 'prefix', 'recommended_spelling', 'register_builtin_option', 'register_error_explanation', 'register_grind_attr', 'register_label_attr', 'register_linter_set', 'register_option', 'register_simp_attr', 'register_sym_simp_attr', 'register_tactic_tag', 'register_try?_tactic', 'simproc', 'simproc_decl', 'structure', 'syntax', 'tactic_extension', 'theorem' or 'unif_hint'
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1148:26: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1151:28: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [hsd]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1151:32: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [hx]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1156:21: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, hck, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, Bool.false_eq_true, ite_false,
+    Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1156:25: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hck, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, Bool.false_eq_true, ite_false,
+    Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1162:23: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.trap_bind, Clif.StepResult.ofRes_trap]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1162:27: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.trap_bind, Clif.StepResult.ofRes_trap]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1162:37: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hsd, hck, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.trap_bind, Clif.StepResult.ofRes_trap]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1167:23: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1167:27: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1167:37: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hsd, hck, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1171:23: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.pure_eq, Clif.StepResult.ofRes_ok]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1171:27: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true, Clif.Res.pure_eq,
+    Clif.StepResult.ofRes_ok]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1171:37: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hsd, hck, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true, Clif.Res.pure_eq,
+    Clif.StepResult.ofRes_ok]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1188:41: warning: This simp argument is unused:
+  hset
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1191:27: warning: This simp argument is unused:
+  hset
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1223:26: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1228:19: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [htn, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.trap_bind, Clif.StepResult.ofRes_trap]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1228:24: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.trap_bind, Clif.StepResult.ofRes_trap]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1233:19: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [htn, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1233:24: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1237:19: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [htn, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.pure_eq, Clif.StepResult.ofRes_ok]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1237:24: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.pure_eq, Clif.StepResult.ofRes_ok]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1255:37: warning: This simp argument is unused:
+  hset
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1258:23: warning: This simp argument is unused:
+  hset
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1580:22: warning: This simp argument is unused:
+  List.getElem?_map
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [hii]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1672:22: warning: This simp argument is unused:
+  List.toList_toArray
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [vdefUpd, hdef, hearly, hlate]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1809:46: warning: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:1912:22: warning: This simp argument is unused:
+  List.toList_toArray
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [vuses, List.map_eq_nil_iff, List.filter_eq_nil_iff]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-outcome-value-interface-check/ValueInterfaceScratch/LowerSim.lean:2117:22: warning: This simp argument is unused:
+  List.toList_toArray
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [vuses, List.map_eq_nil_iff, List.filter_eq_nil_iff]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

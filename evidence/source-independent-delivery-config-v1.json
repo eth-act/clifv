@@ -1,0 +1,20 @@
+{
+  "pr": 889,
+  "packet": "return-pin-source-adapter-packet-v1",
+  "validation": "source-independent-reviewed-state-v1.json",
+  "source_overlays": [
+    "link-image-extension-packet-v1",
+    "return-pin-linker-runtime-packet-v5",
+    "return-pin-binary-packet-v1",
+    "return-pin-executable-packet-v4"
+  ],
+  "apply_packet": true,
+  "new_branch": true,
+  "parent": "return-pin-executable-landed-v1.json",
+  "prospective_parent": "executable-independent-delivery-prepared-v1.json",
+  "branch": "agent/stock-return-pin-source-20261102",
+  "prepared": "source-independent-delivery-prepared-v1.json",
+  "commit_message": "Preserve original-source and peak guarantees for ABI-aware linked programs",
+  "review": "source-independent-peer-review-v1.json",
+  "landed": "return-pin-source-landed-v1.json"
+}

@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "source_hashes": {
+    "scripts/audit/sret-copy-heap-boundary.lean": "dc542df047fbba5e1507287ea395993b2f61093311a97a4681fc4d06e88eb46b",
+    "FV/E2E/SretCopyHeapBoundary.lean": "9cb86124f3c7d4d745783cbe7161a9fa70d86266e0a6a681d2c5e7629b7a961d",
+    "FV/E2E/SretCopyHeapBoundaryWitness.lean": "daa3daadc6035f51772fa9eb19d0bae3e029cbda98aac3896c325a17e4954ef8",
+    "scripts/audit/sret-copy-exec-entry.lean": "f91dbb63d22c7098bf3ea5e1a8b2ac12c75014bdced999769b71eed8ac576623",
+    "FV/E2E/SretCopyExecEntry.lean": "9717c7126b9862f89db8b3e284e0299518ff8c735a4bec6d24994fe91a1204b5",
+    "FV/E2E/SretCopyExecBoundary.lean": "eaada2550a544a63d78b6651a7c47d7875abe82cf654fd4a1b183450a789919e",
+    "scripts/audit/sret-copy-exec-boundary.lean": "9b8180651f3bf7c4ba2a446601db469a69660d3e11dc3742a32866cdc69080c6",
+    "scripts/audit/sret-copy-result-bytes.lean": "48fa712f69ef3d9427da3957f97bf6e5f674cf5b84e408d073eff21407313f6f",
+    "FV/E2E/SretCopyResultBytes.lean": "00e15ab46e657cf881e0005d305e34b4a17d8f96c950886edc279fae0582ffba",
+    "FV/E2E/SretCopyResultBytesWitness.lean": "5dbbee3536ffc6c7e46a2fa4929907c732c4d2ce804d16357dbbd235133ab52f",
+    "FV/E2E/SretCopyExecResultBytes.lean": "0af058f1499b9831a866aab58d558363a0f80b78642cda72ffea191f1e93006e",
+    "scripts/audit/sret-copy-exec-result-bytes.lean": "e0a8dac7453567f0258f05e0a027a815b105f8226a212f6d934f86461a3d1dcb",
+    "scripts/audit/sret-captured-exec.lean": "12951a3cd7d3989879165dcbeb8c8ea11a46d93886adaa64be0c0ea5c8fb8416",
+    "FV/E2E/SretCopyCapturedExec.lean": "a45f488f9218414acd50ff3837c9cecf383d26d35acb4b5c55483739c5371d2a"
+  },
+  "contexts": [
+    "sret-captured-exec-isolated-state-v4.json",
+    "sret-captured-exec-canonical-isolated-state-v1.json"
+  ],
+  "audit_roots": 62,
+  "marked_fixed_roots": 4,
+  "original_program": true,
+  "symbolic_source_bytes": 16,
+  "source_and_destination_bytes_preserved": true,
+  "both_cleanup_modes": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T06:55:24.304257+00:00"
+}

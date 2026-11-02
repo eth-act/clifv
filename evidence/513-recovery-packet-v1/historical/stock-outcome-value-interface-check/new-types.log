@@ -1,0 +1,14 @@
+@Backend.Proof.Driver.dfgCons_congr : ∀ {ctx : Backend.Ctx} {fr fr' : Clif.Frame},
+  @Eq.{1} Clif.Function fr'.func fr.func →
+    @Eq.{1} (List.{0} (Prod.{0, 0} Clif.SlotId Nat)) fr'.slots fr.slots →
+      @Eq.{1} Clif.Regs fr'.regs fr.regs → Backend.Proof.DFGCons ctx fr → Backend.Proof.DFGCons ctx fr'
+@Backend.Proof.Driver.loadVal_congr : ∀
+  {F : BitVec (@OfNat.ofNat.{0} Nat (nat_lit 64) (instOfNatNat (nat_lit 64))) → Prop} {s t : Arm.ArmState}
+  (op : Backend.LoadOp) {a : BitVec (@OfNat.ofNat.{0} Nat (nat_lit 64) (instOfNatNat (nat_lit 64)))},
+  (∀ (x : BitVec (@OfNat.ofNat.{0} Nat (nat_lit 64) (instOfNatNat (nat_lit 64)))),
+      Not (F x) → @Eq.{1} (BitVec (@OfNat.ofNat.{0} Nat (nat_lit 8) (instOfNatNat (nat_lit 8)))) (s.mem x) (t.mem x)) →
+    Backend.Proof.Avoids F op.bytes a →
+      @Eq.{1} (BitVec (@OfNat.ofNat.{0} Nat (nat_lit 64) (instOfNatNat (nat_lit 64)))) (Backend.Proof.loadVal op a s)
+        (Backend.Proof.loadVal op a t)
+'Backend.Proof.Driver.dfgCons_congr' depends on axioms: [propext, Quot.sound.{u}]
+'Backend.Proof.Driver.loadVal_congr' depends on axioms: [propext, Quot.sound.{u}]

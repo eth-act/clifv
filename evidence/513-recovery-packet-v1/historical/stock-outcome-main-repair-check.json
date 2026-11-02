@@ -1,0 +1,8 @@
+{
+  "head": "9f16daa5bdf34bab7a129b102e9f890cb3cf050e",
+  "exit": 0,
+  "scheduler_source": "origin/main ef499aca scripts/lake-serial-build.py (unmodified copy)",
+  "scheduler_sha256": "6e4b0b9121d760445c280dbe89f6e3b9977b48599ebe13d377e47891da10ab5f",
+  "memcap_source": "actual tracked wrapper at9f16daa5",
+  "scope": "Fresh normal E2E.Main import repair; independent155module closure excludes active DefGenTab. Combined budgets15GiB/max2workers."
+}

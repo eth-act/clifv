@@ -1,0 +1,14 @@
+{
+  "files": {
+    "scripts/audit/return-pin-routed-compile.lean": "a6f70da54239a3cbd7738fd0ce98fe598ba2eaa88c1eae40960cba46b8c99863",
+    "FV/Link/ReturnPinCompileRoutes.lean": "fdbf61949a66f434993eeeea2eab4ddc826af5e99674a21047e2528c0000c65a",
+    "FV/Link/ReturnPinCompileRoutesWitness.lean": "a49712ddeab2996671b9833e51a04823e86af08c0eaaec4b19f1b0e7506a5bd6",
+    "FV/E2E/ReturnPinChecksWith.lean": "481db95e28b00aa600fe628e3ef186decdbcbd99e78d07d80a17ae11f0ff607a",
+    "FV/E2E/ReturnPinChecksWithWitness.lean": "320ccf55ed8c1e0e47c642ee5b4b921ca3c1a2f115ee39083d0782ad4a61294e",
+    "scripts/audit/return-pin-checks-with.lean": "bc56353c0064af117cdf039ad2d94ab1b6cae51456f3adacc82405c48f4b85f1",
+    "scripts/audit/return-pin-generated-stack.lean": "9f7c279e59f59133f130272f6af73165640bc3be5b79e268834fd0a36f2ea232",
+    "FVTest/E2E/ReturnPinLinkProofWith.lean": "b77d9303b903cd3d7cc42b1d03bd91dca3ccc30f74e64932dc9ba2bfeb24f5e3",
+    "FV/E2E/ReturnPinGeneratedStack.lean": "7e811f158e5cd8af14b9073ec1399051f2331bee24d9942bbcede5a63e29bae8"
+  },
+  "full_goal_complete": false
+}

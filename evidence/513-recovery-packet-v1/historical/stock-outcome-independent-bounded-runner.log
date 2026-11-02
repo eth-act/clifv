@@ -1,0 +1,21 @@
+2363 modules (40 heavy, 805 without a record); critical path 2.42 h, serial 31.06 h (recorded)
+18:57:36 want 2363 modules (1504 assumed built) budget=10G max_jobs=1 heavy>12G
+18:57:37 check (all) 859 modules in 0.5s: 161 up-to-date, 71 out of date, 627 wait for those
+18:57:37 check (ready) 7 modules in 0.2s: 0 up-to-date, 0 out of date, 7 wait for those
+18:57:37 start FV.E2E.SpillCtlWitness cap=4G running=1 avail=136.5G
+18:57:39 done FV.E2E.SpillCtlWitness rc=0 2s maxrss=2.1G cgpeak=0.0G built -> ok
+18:57:39 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:57:39 start FV.E2E.SpillCtlCheck cap=4G running=1 avail=136.8G
+18:57:42 done FV.E2E.SpillCtlCheck rc=0 3s maxrss=2.1G cgpeak=0.0G built -> ok
+18:57:42 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:57:42 start FV.E2E.LinkOwnCallsDefs cap=3G running=1 avail=136.4G
+18:57:43 done FV.E2E.LinkOwnCallsDefs rc=0 1s maxrss=2.0G cgpeak=0.0G built -> ok
+18:57:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:57:43 start FV.E2E.LinkOwnCalls cap=4G running=1 avail=136.4G
+18:57:45 done FV.E2E.LinkOwnCalls rc=0 2s maxrss=2.2G cgpeak=0.0G built -> ok
+18:57:46 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+18:57:46 start FV.E2E.LinkOwnCallsShape cap=4G running=1 avail=136.6G
+18:57:48 done FV.E2E.LinkOwnCallsShape rc=0 2s maxrss=2.2G cgpeak=0.0G built -> ok
+18:57:48 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+18:57:48 start FV.E2E.LinkOwnCallsRun cap=7G running=1 avail=136.6G
+19:06:54 stopping 1 running builds: FV.E2E.LinkOwnCallsRun

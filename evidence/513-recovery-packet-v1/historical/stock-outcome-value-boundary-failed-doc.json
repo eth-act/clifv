@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-22T23:26:25.556248+00:00",
+  "head": "b32f10a8c0d9e1fdde36532b33eff39bdad6d1e1",
+  "state": "failed",
+  "scope": "Isolated unchanged two-lemma stable provider and complete LowerSim copy. Elaborated types/required axioms exactly compared. No tracked shared-file edits yet.",
+  "unchanged_helper_body_sha256": {
+    "dfgCons_congr": "d74319f9c98030ab15dc27d073fd2609d02f989dd16043ce1bf0fe4ce74873a9",
+    "loadVal_congr": "f1bd0a5c617aa6cc95c4717a0c5e1e3a04cb02206f83ca30ebda17e3eb7426e7"
+  },
+  "records": [
+    {
+      "source": "/tmp/stock-outcome-value-interface-check/failed-doc-move/LowerValueRelations.lean",
+      "returncode": 0,
+      "log": "/tmp/stock-outcome-value-interface-check/failed-doc-move/LowerValueRelations.log"
+    },
+    {
+      "source": "/tmp/stock-outcome-value-interface-check/failed-doc-move/LowerSim.lean",
+      "returncode": 1,
+      "log": "/tmp/stock-outcome-value-interface-check/failed-doc-move/LowerSim.log"
+    }
+  ],
+  "diagnosis": "First isolated extraction left the moved lemma doc comment before a section comment. No tracked source changed; move documentation together with the lemma."
+}
