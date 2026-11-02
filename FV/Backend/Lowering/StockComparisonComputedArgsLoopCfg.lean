@@ -10,14 +10,20 @@ successors take no arguments. `ComparisonArgsLoopCfg` (T7b-9) admits block argum
 `icmp eq v14, (iconst 0)`, and passes block arguments on both edges.
 
 Here a `brif` condition is a wide parameter, a same-block `icmp` in one of the forms of
-`ComparisonComputedLoopCfg.conditionEligible`, or a same-block `icmp eq|ne x, y` where `y` is a
-result of `iconst 0` and `x` is a computed wide value: a parameter, or a result of a statement
-that is not an `iconst` and, for `eq`, not a `band`. The aarch64 lowering then selects the zero
-rule of `emit_icmp` (5170 for `eq`, 5172 for `ne`) and `is_nonzero x`, which is one
-`cbz`/`cbnz` on `x`. A `band` result is excluded for `eq` because of the `tbz` rule of
-`lower_branch`. The successors may take block arguments through original or critical-edge
-successors. Every edge enters an existing nonentry block, so back edges and self loops are
-selected.
+`ComparisonComputedLoopCfg.conditionEligible`, or a same-block `icmp` whose first operand `x` is a
+computed wide value (a parameter, or a result of a statement that is not an `iconst`) in one of
+two more forms:
+
+* `icmp eq|ne x, y` where `y` is a result of `iconst 0` and `x` is not a `band` result for `eq`.
+  The aarch64 lowering selects the zero rule of `emit_icmp` (5170 for `eq`, 5172 for `ne`) and
+  `is_nonzero x`, which is one `cbz`/`cbnz` on `x`. A `band` result is excluded for `eq` because
+  of the `tbz` rule of `lower_branch`.
+* `icmp cc x, y` where `y` is a result of an encodable 12-bit `iconst k`, `k ≠ 0` for `eq`/`ne`.
+  The lowering selects the immediate rule 5165, `subs xzr, x, #k` and `b.cond`. The `tbz` rule
+  needs `eq` with `iconst 0`, so the nonzero constant excludes it for any `x`.
+
+The successors may take block arguments through original or critical-edge successors. Every edge
+enters an existing nonentry block, so back edges and self loops are selected.
 
 The checker publishes the edge split of the actual Stock lowering, as
 `ComparisonArgsLoopCfg.check`. -/
@@ -48,10 +54,21 @@ def zeroEligible (f : Clif.Function) (condition : Nat) (stm : Clif.Stmt) : Bool 
       ComparisonLoopCfg.statementOf f (ComparisonZeroCfg.constantEligible y)
     | _ => false
 
+/-- `stm` defines `condition` by an `icmp cc x, y` where `x` is a computed value of one wide type
+(`ComparisonComputedLoopCfg.computedOf`) and `y` is a result of an encodable 12-bit `iconst`,
+nonzero for `eq`/`ne`. -/
+def immEligible (f : Clif.Function) (condition : Nat) (stm : Clif.Stmt) : Bool :=
+  stm.results.contains condition && match stm.inst with
+    | .icmp cc _ x y =>
+      (ComparisonComputedLoopCfg.computedOf f x .i32 || ComparisonComputedLoopCfg.computedOf f x .i64) &&
+      ComparisonLoopCfg.statementOf f (ComparisonImmCfg.constantEligible cc y)
+    | _ => false
+
 /-- A `brif` condition of block `b`: a condition of `ComparisonComputedLoopCfg`, or a result of a
-zero comparison of a computed value in the body of `b`. -/
+zero or 12-bit immediate comparison of a computed value in the body of `b`. -/
 def conditionEligible (f : Clif.Function) (b : Clif.Block) (c : Nat) : Bool :=
-  ComparisonComputedLoopCfg.conditionEligible f b c || b.body.any (zeroEligible f c)
+  ComparisonComputedLoopCfg.conditionEligible f b c || b.body.any (zeroEligible f c) ||
+    b.body.any (immEligible f c)
 
 /-- `ComparisonArgsLoopCfg.controlEligible` with `conditionEligible` for the `brif` condition of
 block `b`: jumps with any arguments, returns, and branches with any arguments, each target an

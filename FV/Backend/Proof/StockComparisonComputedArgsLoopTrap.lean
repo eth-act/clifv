@@ -4,7 +4,7 @@ import FV.Backend.Proof.StockComparisonComputedArgsLoopReturn
 /-! First-trap composition of the loop class with computed comparisons and block arguments (#140,
 CB-9): `StockComparisonComputedArgsLoopReturn` for traps. A branch dispatches on its condition
 metadata: a parameter branch composes by `trapping_selected_parameter_carry_below`, a comparison
-branch by `trapping_selected_computed_zero_carry_below`. Jump blocks and branch successor families
+branch by `trapping_selected_computed_args_carry_below`. Jump blocks and branch successor families
 are those of the loop parameter class (`jump_carry_traps`, `conditional_carry_trap_successors`). -/
 
 namespace Backend.Stock.Proof.ComparisonComputedArgsLoopCfg
@@ -46,7 +46,7 @@ theorem branch_args_carry_traps {f : Clif.Function} {result : Result}
       (fun x kept => by rw [spec.atBlock]; exact defCarry_available x kept)
       (conditional_carry_trap_successors run scope dominated spec tag continued)
       callers remaining atTerm (by simpa only [spec.atBlock] using defined) trapped held
-  · exact spec.trapping_selected_computed_zero_carry_below run scope dominated family refines driver stable
+  · exact spec.trapping_selected_computed_args_carry_below run scope dominated family refines driver stable
       tag term comparison
       (fun x kept => by rw [spec.atBlock]; exact defCarry_available x kept)
       (conditional_carry_trap_successors run scope dominated spec tag continued)

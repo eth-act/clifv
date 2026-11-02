@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockComparisonComputedArgsLoopWitness
 import FV.Backend.Proof.StockComparisonComputedArgsFibonacci
+import FV.Backend.Proof.StockComparisonImmComputedLoopWitness
 
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.computed_branch_calls
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_selected_computed_carry_below
@@ -11,6 +12,13 @@ import FV.Backend.Proof.StockComparisonComputedArgsFibonacci
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_computed_zero_any_carry_core
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_selected_computed_zero_carry_below
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_selected_computed_zero_carry_below
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_comparison_imm_computed_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_comparison_imm_computed_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.computed_args_branch_calls
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_computed_args_any_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_computed_args_any_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_selected_computed_args_carry_below
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_selected_computed_args_carry_below
 #print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.ZeroResult.metadata
 #print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.ZeroOperand.metadata
 #print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.ComputedArgsCondition.metadata
@@ -24,6 +32,7 @@ import FV.Backend.Proof.StockComparisonComputedArgsFibonacci
 #print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_traps_below
 #print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_traps
 #print axioms Backend.Stock.Proof.ConditionalValues.comparison_zero_computed_entry_prelude
+#print axioms Backend.Stock.Proof.ConditionalValues.comparison_imm_computed_entry_prelude
 #print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.branch_entry_prelude
 #print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_jump_entry_returns
 #print axioms Backend.Stock.Proof.ComparisonComputedArgsLoopCfg.computed_args_loop_jump_entry_traps
@@ -35,3 +44,4 @@ import FV.Backend.Proof.StockComparisonComputedArgsFibonacci
 #print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.check_sound
 #print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.Fixture.count_to_witness -- witness: native_decide
 #print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.Fibonacci.fibonacci_witness -- witness: native_decide
+#print axioms Backend.Stock.ComparisonComputedArgsLoopCfg.ImmFixture.count_below_witness -- witness: native_decide

@@ -9,8 +9,8 @@ source fuel over all nonentry original blocks (`computed_args_loop_returns_below
 and the successor family of a branch are those of the loop parameter class (`jump_carry_returns`,
 `conditional_carry_successors`). A branch dispatches on its condition metadata
 (`condition_metadata`): a parameter branch composes by `returning_selected_parameter_carry_below`,
-a comparison branch by `returning_selected_computed_zero_carry_below`, for a comparison in any form
-of `ComputedZeroMetadata`. In both, the selected successor may take block arguments at an original
+a comparison branch by `returning_selected_computed_args_carry_below`, for a comparison in any form
+of `ComputedArgsMetadata`. In both, the selected successor may take block arguments at an original
 or a critical-edge successor. -/
 
 namespace Backend.Stock.Proof.ComparisonComputedArgsLoopCfg
@@ -52,7 +52,7 @@ theorem branch_args_carry_returns {f : Clif.Function} {result : Result}
       (fun x kept => by rw [spec.atBlock]; exact defCarry_available x kept)
       (conditional_carry_successors run scope dominated spec tag continued)
       callers remaining atTerm (by simpa only [spec.atBlock] using defined) returned held
-  · exact spec.returning_selected_computed_zero_carry_below run scope dominated family refines driver stable
+  · exact spec.returning_selected_computed_args_carry_below run scope dominated family refines driver stable
       tag term comparison
       (fun x kept => by rw [spec.atBlock]; exact defCarry_available x kept)
       (conditional_carry_successors run scope dominated spec tag continued)

@@ -1,5 +1,5 @@
 import FV.Backend.Lowering.StockComparisonComputedArgsLoopCfg
-import FV.Backend.Proof.StockComparisonComputedArgsCarry
+import FV.Backend.Proof.StockComparisonImmComputedCarry
 import FV.Backend.Proof.StockComparisonComputedLoopClass
 
 /-! Source facts of the loop class with computed comparisons and block arguments (#140, CB-9).
@@ -7,10 +7,10 @@ import FV.Backend.Proof.StockComparisonComputedLoopClass
 `ZeroOperand` states in source syntax that the first operand of a zero comparison is a computed
 wide value: a parameter, or a typed result of a statement that is not an `iconst` and, unless the
 comparison is `ne`, not a `band` (`ZeroResult`). `ComputedArgsCondition` states that a `brif`
-condition is a result of an `icmp` whose operands are in a form of `ComputedOperands` (CB-8), or
-in the zero form `eq|ne x, (iconst 0)` with a `ZeroOperand` `x` (`ZeroOperands`).
-`ComputedArgsCondition.metadata` derives the context metadata `ComputedZeroMetadata` from the
-syntax, SSA and the built context. `ComputedArgsTerms` are the terminators of the class: a `brif`
+condition is a result of an `icmp` whose operands are in the zero form `eq|ne x, (iconst 0)` with
+a `ZeroOperand` `x` (`ZeroOperands`), in the 12-bit immediate form with a computed first operand
+(`ImmOperands`), or in a form of `ComputedOperands` (CB-8). `ComputedArgsCondition.metadata`
+derives the context metadata `ComputedArgsMetadata` from the syntax, SSA and the built context. `ComputedArgsTerms` are the terminators of the class: a `brif`
 may pass any block arguments. The selector `ComparisonComputedArgsLoopCfg.sourceLeafEligible`
 derives `ComputedArgsTerms`, the entry kind, the body families and the ABI
 (`source_leaf_eligible_facts`). -/
@@ -42,10 +42,17 @@ def ZeroOperands (f : Clif.Function) (cc : Clif.IntCC) (x y : Nat) : Prop :=
   (cc = .eq ∨ cc = .ne) ∧ (∃ wide,ZeroOperand f cc x wide) ∧
     ∃ (ty' : Clif.Ty) (k : BitVec ty'.width),ConstantResult f y ty' k ∧ k = 0
 
-/-- The operands of `icmp cc _ x y`: the zero form with a computed first operand, or a form of
-`ComputedOperands`. -/
+/-- The operands of `icmp cc _ x y` in the 12-bit immediate form: `x` is a computed wide value
+(`ComputedValue`), and `y` is a result of an encodable 12-bit `iconst k`, `k ≠ 0` for
+`eq`/`ne`. -/
+def ImmOperands (f : Clif.Function) (cc : Clif.IntCC) (x y : Nat) : Prop :=
+  ∃ (wide : Bool) (ty' : Clif.Ty) (k : BitVec ty'.width) (imm : Imm12),ComputedValue f x wide ∧
+    ConstantResult f y ty' k ∧ Imm12.ofNat? k.toNat = some imm ∧ (cc = .eq ∨ cc = .ne → k ≠ 0)
+
+/-- The operands of `icmp cc _ x y`: the zero or 12-bit immediate form with a computed first
+operand, or a form of `ComputedOperands`. -/
 def ComputedArgsOperands (f : Clif.Function) (cc : Clif.IntCC) (x y : Nat) : Prop :=
-  ZeroOperands f cc x y ∨ ComputedOperands f cc x y
+  ZeroOperands f cc x y ∨ ImmOperands f cc x y ∨ ComputedOperands f cc x y
 
 /-- `c` is a result of an `icmp` statement of some block, with operands in
 `ComputedArgsOperands`. -/
@@ -98,34 +105,39 @@ theorem ZeroOperand.metadata {f : Clif.Function} {cc : Clif.IntCC} {x : Nat} {wi
   · exact result.metadata scope dominated build
 
 /-- **Per-block condition metadata.** The source syntax of a computed comparison condition and
-SSA derive the built context's metadata `ComputedZeroMetadata`. -/
+SSA derive the built context's metadata `ComputedArgsMetadata`. -/
 theorem ComputedArgsCondition.metadata {f : Clif.Function} {c : Nat}
     (condition : ComputedArgsCondition f c) (scope : LowerScope f) (dominated : Dominated f)
     {ctx : Ctx} {ranges : Array (Nat × Nat)} {initial : State}
-    (build : Stock.buildCtx f = .ok (ctx,ranges,initial)) : ComputedZeroMetadata ctx c := by
+    (build : Stock.buildCtx f = .ok (ctx,ranges,initial)) : ComputedArgsMetadata ctx c := by
   obtain ⟨bi,j,b,stm,cc,ty,x,y,block,lookup,result,inst,operands⟩ := condition
-  rcases operands with ⟨equality,⟨wide,operandX⟩,ty',k,constY,zero⟩ | operands
-  · have origin : ctx.defClif? c = some (.icmp cc ty x y) := by
-      rw [← inst]
-      exact ComparisonLoopCfg.statement_metadata dominated block lookup result build
-    obtain ⟨ibi,i,ib,constant,constantBlock,constantLookup,constantResult,constantInst⟩ := constY
-    have constant : ctx.defClif? y = some (.iconst ty' k) := by
-      rw [← constantInst]
-      exact ComparisonLoopCfg.statement_metadata dominated constantBlock constantLookup constantResult build
-    obtain ⟨typeX,constantX,bandX⟩ := operandX.metadata scope dominated build
-    exact Or.inl ⟨cc,ty,x,y,wide,ty',k,origin,typeX,constantX,bandX,constant,equality,zero⟩
-  · exact Or.inr (ComputedCondition.metadata ⟨bi,j,b,stm,cc,ty,x,y,block,lookup,result,inst,operands⟩
-      scope dominated build)
+  have origin : ctx.defClif? c = some (.icmp cc ty x y) := by
+    rw [← inst]
+    exact ComparisonLoopCfg.statement_metadata dominated block lookup result build
+  have constant : ∀ {ty' : Clif.Ty} {k : BitVec ty'.width},ConstantResult f y ty' k →
+      ctx.defClif? y = some (.iconst ty' k) := by
+    intro ty' k defined
+    obtain ⟨ibi,i,ib,constant,constantBlock,constantLookup,constantResult,constantInst⟩ := defined
+    rw [← constantInst]
+    exact ComparisonLoopCfg.statement_metadata dominated constantBlock constantLookup constantResult build
+  rcases operands with ⟨equality,⟨wide,operandX⟩,ty',k,constY,zero⟩ |
+    ⟨wide,ty',k,imm,computedX,constY,fits,nonzero⟩ | operands
+  · obtain ⟨typeX,constantX,bandX⟩ := operandX.metadata scope dominated build
+    exact Or.inr (Or.inl ⟨cc,ty,x,y,wide,ty',k,origin,typeX,constantX,bandX,constant constY,equality,zero⟩)
+  · obtain ⟨typeX,constantX⟩ := computedX.metadata scope dominated build
+    exact Or.inl ⟨cc,ty,x,y,wide,ty',k,imm,origin,typeX,constantX,constant constY,fits,nonzero⟩
+  · exact Or.inr (Or.inr (ComputedCondition.metadata ⟨bi,j,b,stm,cc,ty,x,y,block,lookup,result,inst,operands⟩
+      scope dominated build))
 
 /-- **Per-block condition metadata.** A branch condition of the class has, in the built context,
-the metadata of a wide parameter or `ComputedZeroMetadata`. -/
+the metadata of a wide parameter or `ComputedArgsMetadata`. -/
 theorem condition_metadata {f : Clif.Function} {c : Nat}
     (condition : ParameterCondition f c ∨ ComputedArgsCondition f c) (scope : LowerScope f)
     (dominated : Dominated f)
     {ctx : Ctx} {ranges : Array (Nat × Nat)} {initial : State}
     (build : Stock.buildCtx f = .ok (ctx,ranges,initial)) :
     (ctx.defInst? c = none ∧ (ctx.valueType? c = some (.int 32) ∨ ctx.valueType? c = some (.int 64))) ∨
-      ComputedZeroMetadata ctx c := by
+      ComputedArgsMetadata ctx c := by
   rcases condition with parameter | comparison
   · exact Or.inl (parameter_metadata parameter dominated.ssa build)
   · exact Or.inr (comparison.metadata scope dominated build)
@@ -166,6 +178,69 @@ private theorem zero_constant_sound {f : Clif.Function} {y : Nat}
   cases inst : stm.inst <;> simp only [inst] at value
   case iconst ty' k => exact ⟨ty',k,⟨ibi,i,ib,stm,block,lookup,result,inst⟩,beq_iff_eq.mp value⟩
   all_goals cases value
+
+/-- The executable immediate check derives the source `iconst` fact. -/
+private theorem imm_constant_sound {f : Clif.Function} {cc : Clif.IntCC} {y : Nat}
+    (checked : ComparisonLoopCfg.statementOf f (ComparisonImmCfg.constantEligible cc y) = true) :
+    ∃ (ty' : Clif.Ty) (k : BitVec ty'.width) (imm : Imm12),Proof.ComparisonLoopCfg.ConstantResult f y ty' k ∧
+      Imm12.ofNat? k.toNat = some imm ∧ (cc = .eq ∨ cc = .ne → k ≠ 0) := by
+  obtain ⟨ibi,i,ib,stm,block,lookup,good⟩ := statement_of_sound checked
+  simp only [ComparisonImmCfg.constantEligible,Bool.and_eq_true,List.contains_iff_mem] at good
+  obtain ⟨result,value⟩ := good
+  cases inst : stm.inst <;> simp only [inst] at value
+  case iconst ty' k =>
+    simp only [Bool.and_eq_true] at value
+    obtain ⟨fits,nonzero⟩ := value
+    obtain ⟨imm,fits⟩ := Option.isSome_iff_exists.mp fits
+    refine ⟨ty',k,imm,⟨ibi,i,ib,stm,block,lookup,result,inst⟩,fits,?_⟩
+    intro equality
+    rcases equality with rfl | rfl <;> simpa using nonzero
+  all_goals cases value
+
+/-- The executable computed-result check derives the source result fact. -/
+private theorem computed_result_sound {f : Clif.Function} {x : Nat} {wide : Bool}
+    (checked : ComparisonLoopCfg.statementOf f
+      (ComparisonComputedLoopCfg.computedResult f x (if wide then .i64 else .i32)) = true) :
+    ComputedResult f x wide := by
+  obtain ⟨ibi,i,ib,stm,block,lookup,good⟩ := statement_of_sound checked
+  simp only [ComparisonComputedLoopCfg.computedResult,Bool.and_eq_true,List.contains_iff_mem] at good
+  obtain ⟨notConstant,member⟩ := good
+  obtain ⟨m,pair⟩ := List.mem_iff_getElem?.mp member
+  obtain ⟨resultAt,typeAt⟩ := List.getElem?_zip_eq_some.mp pair
+  cases types : stm.inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
+  | none => simp [ComparisonComputedLoopCfg.resultTypesOf,types] at typeAt
+  | some tys =>
+    simp only [ComparisonComputedLoopCfg.resultTypesOf,types,Option.getD_some] at typeAt
+    refine ⟨ibi,i,m,ib,stm,tys,block,lookup,resultAt,types,typeAt,?_⟩
+    intro ty k constant
+    rw [constant] at notConstant
+    cases notConstant
+
+private theorem computed_of_sound {f : Clif.Function} {x : Nat} {wide : Bool}
+    (checked : ComparisonComputedLoopCfg.computedOf f x (if wide then .i64 else .i32) = true) :
+    ComputedValue f x wide := by
+  simp only [ComparisonComputedLoopCfg.computedOf,Bool.or_eq_true] at checked
+  rcases checked with parameter | result
+  · exact Or.inl (parameter_of_sound parameter)
+  · exact Or.inr (computed_result_sound result)
+
+/-- The executable immediate comparison check derives the source immediate comparison fact. -/
+private theorem imm_sound {f : Clif.Function} {c : Nat} {stm : Clif.Stmt}
+    (checked : immEligible f c stm = true) :
+    ∃ (cc : Clif.IntCC) (ty : Clif.Ty) (x y : Nat),c ∈ stm.results ∧ stm.inst = .icmp cc ty x y ∧
+      ImmOperands f cc x y := by
+  simp only [immEligible,Bool.and_eq_true,List.contains_iff_mem] at checked
+  obtain ⟨result,operands⟩ := checked
+  cases inst : stm.inst <;> simp only [inst] at operands
+  case icmp cc ty x y =>
+    refine ⟨cc,ty,x,y,result,rfl,?_⟩
+    simp only [Bool.or_eq_true,Bool.and_eq_true] at operands
+    obtain ⟨first,immediate⟩ := operands
+    obtain ⟨ty',k,imm,constY,fits,nonzero⟩ := imm_constant_sound immediate
+    rcases first with narrowX | wideX
+    · exact ⟨false,ty',k,imm,computed_of_sound narrowX,constY,fits,nonzero⟩
+    · exact ⟨true,ty',k,imm,computed_of_sound wideX,constY,fits,nonzero⟩
+  all_goals cases operands
 
 /-- The executable result check derives the source result fact. -/
 private theorem zero_result_sound {f : Clif.Function} {cc : Clif.IntCC} {x : Nat} {wide : Bool}
@@ -222,15 +297,19 @@ theorem condition_sound {f : Clif.Function} {bi : Nat} {b : Clif.Block} {c : Nat
     (block : f.blocks[bi]? = some b) (checked : conditionEligible f b c = true) :
     Proof.ParameterCfg.ParameterCondition f c ∨ ComputedArgsCondition f c := by
   simp only [conditionEligible,Bool.or_eq_true] at checked
-  rcases checked with computed | zero
+  rcases checked with (computed | zero) | immediate
   · rcases ComparisonComputedLoopCfg.condition_sound block computed with parameter | comparison
     · exact Or.inl parameter
     · obtain ⟨bi,j,b,stm,cc,ty,x,y,block,lookup,result,inst,operands⟩ := comparison
-      exact Or.inr ⟨bi,j,b,stm,cc,ty,x,y,block,lookup,result,inst,Or.inr operands⟩
+      exact Or.inr ⟨bi,j,b,stm,cc,ty,x,y,block,lookup,result,inst,Or.inr (Or.inr operands)⟩
   · obtain ⟨stm,member,good⟩ := List.any_eq_true.mp zero
     obtain ⟨j,lookup⟩ := List.mem_iff_getElem?.mp member
     obtain ⟨cc,ty,x,y,result,inst,operands⟩ := zero_sound good
     exact Or.inr ⟨bi,j,b,stm,cc,ty,x,y,block,lookup,result,inst,Or.inl operands⟩
+  · obtain ⟨stm,member,good⟩ := List.any_eq_true.mp immediate
+    obtain ⟨j,lookup⟩ := List.mem_iff_getElem?.mp member
+    obtain ⟨cc,ty,x,y,result,inst,operands⟩ := imm_sound good
+    exact Or.inr ⟨bi,j,b,stm,cc,ty,x,y,block,lookup,result,inst,Or.inr (Or.inl operands)⟩
 
 private theorem control_leaf_facts {f : Clif.Function} {bi : Nat} {b : Clif.Block}
     (block : f.blocks[bi]? = some b) (checked : controlLeafEligible f bi b b.term = true) :
