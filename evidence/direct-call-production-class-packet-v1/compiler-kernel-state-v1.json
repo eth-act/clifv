@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "one_writer_factory": true,
+  "generic_compiler_and_source_roots": 10,
+  "result_call_wrapper_roots": 12,
+  "standard_only": true,
+  "old_public_headers_exact": 11,
+  "old_axiom_sets_exact": 11,
+  "old_scope_diagnostics_and_writer": "one syntactically extracted factory; old checker remains exact",
+  "source_hashes": {
+    "FV/Link/ReturnPinAttemptKernel.lean": "68345dac505e409d3226327c466f2c25db6fa97e94dff9188c7badb845ace057",
+    "FV/Link/ReturnPinCompileDefs.lean": "e4b5e992bbde7ae26c33b68132be39d6eea0b33fc160ef99038456bc4791afe6",
+    "FV/Link/ReturnPinCompilerKernel.lean": "450c5cd3932fec42fadac4e7d1e75f697958349597d5195b462e2e3198f3093a",
+    "FV/Link/ReturnPinExeWith.lean": "248ab61ddcc81d3f07f4267f2d1bb179dcb27cb0936cbde793180281559aaef7",
+    "FV/Link/ReturnPinCompilerSourceKernel.lean": "1f0828c75753ce45abe523eea4785218d3ec95ac8ce9d28601b2dd295dd2506e",
+    "FV/Link/ReturnPinExeSourceWith.lean": "0071129364620624e2d177e491a348dbe3a4aabd2be6210f22beeb2410ad200f",
+    "FV/Link/ResultCallExeWith.lean": "d729ea1cb70160438498a738051d7ad04d0500dc685944d9abc47f014bda577d"
+  },
+  "immutable_source_checkpoint": "reviewed-compiler-kernel-v1/manifest.json",
+  "kernel_receipt": "compiler-source-kernel-v1/result.json",
+  "audit_receipt": "compiler-source-kernel-audit-v1/receipt.json",
+  "peak_bytes": 374562816,
+  "all_oom_zero": true,
+  "current_main_validation": false,
+  "actual_execution": false,
+  "next": "Actual default provider and all three CLI/generated-proof tests plus inhabited ARM execution, integer and retained float variant, both cleanup modes",
+  "utc": "2026-11-02T11:57:12.003394+00:00"
+}

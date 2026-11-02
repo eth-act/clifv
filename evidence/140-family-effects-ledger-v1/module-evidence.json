@@ -1,0 +1,2612 @@
+{
+  "FV/Backend/Proof/StockScopePartition.lean": {
+    "sha256": "c4e9df2a2ec516ff3059ff956c2148498babf23d455674522a53512b40124941",
+    "declarations": [
+      {
+        "line": 9,
+        "text": "def sourceClosureRoots : List Rule := (program.rulesOf TId.lower).filter closureRoot"
+      },
+      {
+        "line": 10,
+        "text": "def excludedSourceRoots : List Rule := (program.rulesOf TId.lower).filter (fun r => !closureRoot r)"
+      },
+      {
+        "line": 13,
+        "text": "theorem stock_source_root_partition_counts : (program.rulesOf TId.lower).length = 517 \u2227"
+      },
+      {
+        "line": 19,
+        "text": "theorem stock_selected_source_root_partition {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      },
+      {
+        "line": 31,
+        "text": "theorem stock_source_root_partition_witness : rule_lower_53 \u2208 sourceClosureRoots \u2227"
+      },
+      {
+        "line": 39,
+        "text": "theorem stock_selected_source_partition_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockScopeRoots.lean": {
+    "sha256": "18cd95dedc2402de46b01edbe108648c72a7b9bb6813295c4d3906fee4a0c1b2",
+    "declarations": [
+      {
+        "line": 13,
+        "text": "theorem stock_excluded_root_args {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      },
+      {
+        "line": 33,
+        "text": "theorem stock_excluded_root_match {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      },
+      {
+        "line": 47,
+        "text": "theorem stock_selected_source_root_closure {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      },
+      {
+        "line": 58,
+        "text": "theorem stock_lower_source_record_closure {f : Clif.Function} {result : Result}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockNonEOpsRoots.lean": {
+    "sha256": "905691fd3a9c41c0d1c65934c7e461b2afa8a1003f669935f7a83bdd95044bc4",
+    "declarations": [
+      {
+        "line": 13,
+        "text": "def nonEOpsRootIds : List RuleId :="
+      },
+      {
+        "line": 19,
+        "text": "theorem stock_nonEOps_root_opcodes :"
+      },
+      {
+        "line": 29,
+        "text": "theorem stock_selected_source_eOps {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      },
+      {
+        "line": 41,
+        "text": "theorem stock_selected_source_not_nonEOps {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockFloatMemoryRoots.lean": {
+    "sha256": "5b2269291f8f5b3f4785a5e7f1fba628eb684a19e6f1c85e99a1b125ab479101",
+    "declarations": [
+      {
+        "line": 11,
+        "text": "def floatMemoryRootIds : List RuleId := [1047,1048,1073,1074]"
+      },
+      {
+        "line": 15,
+        "text": "theorem stock_float_memory_root_shapes :"
+      },
+      {
+        "line": 25,
+        "text": "theorem stock_float_memory_root_args {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      },
+      {
+        "line": 43,
+        "text": "theorem stock_float_memory_root_match {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      },
+      {
+        "line": 58,
+        "text": "theorem stock_selected_source_not_float_memory {f : Clif.Function} {ctx : Ctx}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockFloatCheckDomain.lean": {
+    "sha256": "11a33e4f7abca3b54acdfdac6580a38f727abd63a73ce055eceb7b8218c3e959",
+    "declarations": [
+      {
+        "line": 23,
+        "text": "theorem buildCtx_int_domain {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat \u00d7 Nat)}"
+      },
+      {
+        "line": 47,
+        "text": "theorem buildCtx_functionE_domain {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat \u00d7 Nat)}"
+      },
+      {
+        "line": 56,
+        "text": "private def domainFixture : Clif.Function := {"
+      },
+      {
+        "line": 63,
+        "text": "private def domainOld : Ctx \u00d7 Array (Nat \u00d7 Nat) \u00d7 LState :="
+      },
+      {
+        "line": 69,
+        "text": "theorem buildCtx_int_domain_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockProjection.lean": {
+    "sha256": "ca6df05098e43cdb765415c2cd9c208a3dfe59d1f40a39c2ddd4ad8fea15e23b",
+    "declarations": [
+      {
+        "line": 18,
+        "text": "def revisedCtors : List Nat := [TId.put_in_reg, TId.put_in_regs, TId.mark_value_used,"
+      },
+      {
+        "line": 22,
+        "text": "theorem stock_ctor_unchanged (ctx : Ctx) (t : Term) (args : List V) (st : State)"
+      },
+      {
+        "line": 34,
+        "text": "theorem stock_ctor_baseOnly (ctx : Ctx) (t : Term) (args : List V) (st : State)"
+      },
+      {
+        "line": 47,
+        "text": "theorem stock_matchPat (p : Program) (ctx : Ctx) (st : State) (pat : Pattern)"
+      },
+      {
+        "line": 54,
+        "text": "theorem stock_matchAll (p : Program) (ctx : Ctx) (st : State) (ps : List Pattern)"
+      },
+      {
+        "line": 61,
+        "text": "theorem stock_matchArgs (p : Program) (ctx : Ctx) (st : State) (ps : List Pattern)"
+      },
+      {
+        "line": 71,
+        "text": "def projectionProgram : Program := { (default : Program) with terms := #[T.def_inst] }"
+      },
+      {
+        "line": 73,
+        "text": "def projectionPat : Pattern := .term 0 0 [.bind 0 0 (.wildcard 0)]"
+      },
+      {
+        "line": 75,
+        "text": "theorem stock_ctor_unchanged_witness :"
+      },
+      {
+        "line": 85,
+        "text": "theorem stock_ctor_baseOnly_witness :"
+      },
+      {
+        "line": 92,
+        "text": "theorem stock_matchPat_witness :"
+      },
+      {
+        "line": 100,
+        "text": "theorem stock_matchAll_witness :"
+      },
+      {
+        "line": 108,
+        "text": "theorem stock_matchArgs_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockPatternSink.lean": {
+    "sha256": "e07fc9bdcefcecb0a10d557d7281a68906be0c48ccae6ba2b664fe9193ce416b",
+    "declarations": [
+      {
+        "line": 12,
+        "text": "private theorem installed_extract_inv {ctx : Ctx} {ii : Nat} {st : LState} {fs : List V}"
+      },
+      {
+        "line": 23,
+        "text": "private theorem installed_format {ctx : Ctx} {st : State} {ii b ft fmt : Nat}"
+      },
+      {
+        "line": 42,
+        "text": "theorem stock_loadSink_pattern {ctx : Ctx} {st matched : State}"
+      },
+      {
+        "line": 63,
+        "text": "private theorem noIflet_match {ctx : Ctx} {st matched : State}"
+      },
+      {
+        "line": 83,
+        "text": "theorem stock_loadSink_binding {ctx : Ctx} {st matched : State}"
+      },
+      {
+        "line": 115,
+        "text": "private theorem rhs_sink_receipt {ctx : Ctx} {st next : State} {tr tr' : Array RuleId}"
+      },
+      {
+        "line": 135,
+        "text": "private theorem sink_call_receipt {ctx : Ctx} {st next : State} {tr tr' : Array RuleId}"
+      },
+      {
+        "line": 161,
+        "text": "theorem stock_loadSink_call {ctx : Ctx} {st matched next : State}"
+      },
+      {
+        "line": 194,
+        "text": "private def patternCtx (atomic : Bool) : Ctx := { sinkCtx with insts := #["
+      },
+      {
+        "line": 199,
+        "text": "private def patternMatchOk (atomic : Bool) : Bool :="
+      },
+      {
+        "line": 206,
+        "text": "private theorem patternMatchOk_true (atomic : Bool) : patternMatchOk atomic = true := by"
+      },
+      {
+        "line": 211,
+        "text": "theorem stock_loadSink_trap_nomatch {ctx : Ctx} {st matched : State}"
+      },
+      {
+        "line": 229,
+        "text": "theorem stock_loadSink_pattern_witness (atomic : Bool) :"
+      },
+      {
+        "line": 248,
+        "text": "theorem stock_loadSink_binding_witness (atomic : Bool) :"
+      },
+      {
+        "line": 261,
+        "text": "private def patternFullOk (atomic : Bool) : Bool :="
+      },
+      {
+        "line": 272,
+        "text": "private theorem patternFullOk_true (atomic : Bool) : patternFullOk atomic = true := by"
+      },
+      {
+        "line": 277,
+        "text": "theorem stock_loadSink_call_witness (atomic : Bool) :"
+      },
+      {
+        "line": 301,
+        "text": "theorem stock_loadSink_trap_nomatch_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockMemoryHelperProjection.lean": {
+    "sha256": "cda8093709f9653ac5947de4c64a2123a67fb27a11d8934bfbedb61ab0e318f8",
+    "declarations": [
+      {
+        "line": 14,
+        "text": "def helperIds : List Nat :="
+      },
+      {
+        "line": 18,
+        "text": "private def ruleCalls (r : Rule) : List Nat :="
+      },
+      {
+        "line": 21,
+        "text": "private def checkTerm (ids : List Nat) (id : Nat) : Bool :="
+      },
+      {
+        "line": 29,
+        "text": "private theorem checked : helperIds.all (checkTerm helperIds) = true := by decide +kernel"
+      },
+      {
+        "line": 32,
+        "text": "private theorem valid {t : Nat} (member : t \u2208 helperIds) {term : Term}"
+      },
+      {
+        "line": 42,
+        "text": "private theorem scope (ctx : Ctx) (original : State) :"
+      },
+      {
+        "line": 76,
+        "text": "theorem integer_helpers_project_and_preserve (ctx : Ctx) (cfg : Config)"
+      },
+      {
+        "line": 90,
+        "text": "theorem integer_helper_success (ctx : Ctx) {cfg : Config}"
+      },
+      {
+        "line": 106,
+        "text": "theorem integer_helper_replay (ctx : Ctx) {cfg : Config}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockMemorySourceExecution.lean": {
+    "sha256": "e83020ff6b457f077b3bc7169e22745f01255384f038ed6e561e15073033c153",
+    "declarations": [
+      {
+        "line": 14,
+        "text": "def OrdinaryInst (inst : Clif.Inst) : Prop :="
+      },
+      {
+        "line": 18,
+        "text": "private theorem step_of_family {env : Clif.Env} {cp : Clif.Program}"
+      },
+      {
+        "line": 25,
+        "text": "private theorem outcome_of_family {env : Clif.Env} {cp : Clif.Program}"
+      },
+      {
+        "line": 34,
+        "text": "theorem actual_ordinary_source_step {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 66,
+        "text": "private theorem SourceFrameEq.trans {s t u : Clif.State}"
+      },
+      {
+        "line": 71,
+        "text": "private theorem ordinary_next_of_returned_frame {env : Clif.Env} {cp : Clif.Program}"
+      },
+      {
+        "line": 100,
+        "text": "theorem actual_ordinary_source_execution_frame {f : Clif.Function} {result : Result}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockScanSemantics.lean": {
+    "sha256": "f4f4145983cc1ebc695a1e3c58aa14d78d25d7f8eaa84ba3b1645dbc0b799c63",
+    "declarations": [
+      {
+        "line": 23,
+        "text": "private theorem sourceSteps_append {S : Type} {step : Nat \u2192 S \u2192 S \u2192 Prop}"
+      },
+      {
+        "line": 45,
+        "text": "def ScanFallRefines {S W : Type} (source : Nat \u2192 S \u2192 S \u2192 Prop)"
+      },
+      {
+        "line": 57,
+        "text": "theorem ScansSpec.fall_refines {S W : Type} {exec : Nat \u2192 State \u2192 Except String Scan}"
+      },
+      {
+        "line": 92,
+        "text": "theorem stock_scanBlock_fall_refines {S W : Type} {ctx : Ctx} {block ti : Nat}"
+      },
+      {
+        "line": 107,
+        "text": "def SourceInstResult (env : Clif.Env) (p : Clif.Program) (ctx : Ctx) (i : Nat)"
+      },
+      {
+        "line": 117,
+        "text": "theorem stock_omitted_fall_refines {W : Type} {ctx : Ctx} {block i ti : Nat}"
+      },
+      {
+        "line": 140,
+        "text": "private theorem quiet_source_step {env : Clif.Env} {p : Clif.Program}"
+      },
+      {
+        "line": 157,
+        "text": "theorem stock_omitted_source_step {ctx : Ctx} {block i ti : Nat} {isBranch : Bool}"
+      },
+      {
+        "line": 177,
+        "text": "private theorem scans_executions {exec : Nat \u2192 State \u2192 Except String Scan}"
+      },
+      {
+        "line": 192,
+        "text": "theorem stock_omittedBlock_fall_refines {W : Type} {ctx : Ctx} {block ti : Nat}"
+      },
+      {
+        "line": 220,
+        "text": "private def scanAliases : Array (Option Nat) := aliasStep #[] (193, 195)"
+      },
+      {
+        "line": 223,
+        "text": "private theorem scan_alias_facts :"
+      },
+      {
+        "line": 227,
+        "text": "private def producerCode : MInst :="
+      },
+      {
+        "line": 230,
+        "text": "private def consumerCode : MInst :="
+      },
+      {
+        "line": 233,
+        "text": "private theorem producer_resolved :"
+      },
+      {
+        "line": 245,
+        "text": "private theorem consumer_resolved :"
+      },
+      {
+        "line": 256,
+        "text": "private def scanEnd : State := { sinkState with current := some 1 }"
+      },
+      {
+        "line": 257,
+        "text": "private def scanMiddle : State := { sinkState with current := some 0 }"
+      },
+      {
+        "line": 258,
+        "text": "private def scanStart : State := { sinkState with current := none }"
+      },
+      {
+        "line": 260,
+        "text": "private def consumerScan : Scan := \u27e8scanMiddle, none, #[consumerCode]\u27e9"
+      },
+      {
+        "line": 261,
+        "text": "private def producerScan : Scan := \u27e8scanStart, none, #[producerCode]\u27e9"
+      },
+      {
+        "line": 263,
+        "text": "private def exampleExec (i : Nat) (_ : State) : Except String Scan :="
+      },
+      {
+        "line": 266,
+        "text": "private def exampleBlock : BlockScan :="
+      },
+      {
+        "line": 270,
+        "text": "private theorem example_spec : ScansSpec exampleExec [1, 0] scanEnd exampleBlock := by"
+      },
+      {
+        "line": 275,
+        "text": "private def addOne (x : CV) : CV :="
+      },
+      {
+        "line": 278,
+        "text": "private theorem add_one_run (d a : Nat) (\u03c1 : Nat \u2192 CV) (w : Arm.ArmState) :"
+      },
+      {
+        "line": 282,
+        "text": "private def exampleSource (_ : Nat) (s t : CV) : Prop := t = addOne s"
+      },
+      {
+        "line": 284,
+        "text": "private def exampleRel (st : State) (s : CV) (\u03c1 : Nat \u2192 CV) (_ : Arm.ArmState) : Prop :="
+      },
+      {
+        "line": 288,
+        "text": "private theorem example_local :"
+      },
+      {
+        "line": 315,
+        "text": "private def exampleRF (n : Nat) : CV := if n = 192 then 11 else 0"
+      },
+      {
+        "line": 317,
+        "text": "private theorem example_source_steps : SourceSteps exampleSource [0, 1] 11 13 :="
+      },
+      {
+        "line": 320,
+        "text": "theorem ScansSpec.fall_refines_witness :"
+      },
+      {
+        "line": 335,
+        "text": "private def loadInput : State := { unusedInput with demand := #[0, 1] }"
+      },
+      {
+        "line": 336,
+        "text": "private def loadOutput : Scan :="
+      },
+      {
+        "line": 339,
+        "text": "private def loadStep : Step := loadOutput.step.getD default"
+      },
+      {
+        "line": 341,
+        "text": "private theorem load_scan : scanInstruction unusedCtx 0 0 1 false loadInput = .ok loadOutput := rfl"
+      },
+      {
+        "line": 343,
+        "text": "private def loadFrame : Clif.Frame := {"
+      },
+      {
+        "line": 347,
+        "text": "private def loadMem : Clif.Mem := {"
+      },
+      {
+        "line": 350,
+        "text": "private def loadedFrame : Clif.Frame :="
+      },
+      {
+        "line": 352,
+        "text": "private def loadRF (n : Nat) : CV := if n = 193 then 100 else 0"
+      },
+      {
+        "line": 354,
+        "text": "private def loadRel (st : State) (s : Clif.Frame \u00d7 Clif.Mem) (\u03c1 : Nat \u2192 CV) (_ : Unit) : Prop :="
+      },
+      {
+        "line": 357,
+        "text": "private theorem load_source :"
+      },
+      {
+        "line": 363,
+        "text": "private theorem load_start_held : loadRel loadOutput.state (loadFrame, loadMem) loadRF () := by"
+      },
+      {
+        "line": 373,
+        "text": "private theorem load_local {sem : ISem CV Unit} :"
+      },
+      {
+        "line": 379,
+        "text": "theorem stock_omitted_fall_refines_witness :"
+      },
+      {
+        "line": 397,
+        "text": "private def loadBlock : BlockScan :="
+      },
+      {
+        "line": 400,
+        "text": "private theorem load_block_scan : scanBlock unusedCtx 0 1 false [0] loadInput = .ok loadBlock := by"
+      },
+      {
+        "line": 406,
+        "text": "theorem stock_scanBlock_fall_refines_witness :"
+      },
+      {
+        "line": 427,
+        "text": "theorem stock_omitted_source_step_witness :"
+      },
+      {
+        "line": 438,
+        "text": "theorem stock_omittedBlock_fall_refines_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockScanTrapSemantics.lean": {
+    "sha256": "078e76ad82d90b07f5c1c712dfd428f0f0fe8df9ef8032d0e913860e1d5a5b88",
+    "declarations": [
+      {
+        "line": 23,
+        "text": "private theorem sourceTrapSteps_append {S : Type} {step : Nat \u2192 S \u2192 S \u2192 Prop}"
+      },
+      {
+        "line": 52,
+        "text": "theorem trapRun_seq_prefix {isem : Backend.Proof.Sem} {first rest : List MInst}"
+      },
+      {
+        "line": 60,
+        "text": "def LocalScanTrapRefines {S : Type} (sourceTrap : Nat \u2192 S \u2192 Clif.TrapCode \u2192 Prop)"
+      },
+      {
+        "line": 71,
+        "text": "theorem ScansSpec.local_trap_refines {S : Type} {exec : Nat \u2192 State \u2192 Except String Scan}"
+      },
+      {
+        "line": 111,
+        "text": "theorem ScansSpec.record_inst_mem {exec : Nat \u2192 State \u2192 Except String Scan}"
+      },
+      {
+        "line": 121,
+        "text": "theorem ScansSpec.record_unique {exec : Nat \u2192 State \u2192 Except String Scan}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/IselAtomic.lean": {
+    "sha256": "3b26843f2a6878e26a6ad95e07ec5854fbc2926067b3f9e0a03e3ae064ded54b",
+    "declarations": [
+      {
+        "line": 36,
+        "text": "theorem load_acquire_ok {n : Nat} (hn : 40 \u2264 n) {t flv a : V} {s s' : LState \u00d7 Array RuleId}"
+      },
+      {
+        "line": 47,
+        "text": "theorem store_release_ok {n : Nat} (hn : 40 \u2264 n) {t flv x a : V} {s s' : LState \u00d7 Array RuleId}"
+      },
+      {
+        "line": 56,
+        "text": "theorem fence_helper_ok {n : Nat} (hn : 40 \u2264 n) {s s' : LState \u00d7 Array RuleId}"
+      },
+      {
+        "line": 66,
+        "text": "theorem atomic_rmw_loop_ok {n : Nat} (hn : 40 \u2264 n) {o a x t flv : V}"
+      },
+      {
+        "line": 82,
+        "text": "theorem atomic_cas_loop_ok {n : Nat} (hn : 40 \u2264 n) {a e x t flv : V}"
+      },
+      {
+        "line": 95,
+        "text": "theorem csetm_ok {n : Nat} (hn : 40 \u2264 n) {c : V} {s s' : LState \u00d7 Array RuleId} {v : V}"
+      },
+      {
+        "line": 103,
+        "text": "theorem ofV_csetm (rd : Reg) (c : V) :"
+      },
+      {
+        "line": 111,
+        "text": "theorem with_flags_reg_ok {n : Nat} (hn : 50 \u2264 n) {mi ci : V} {r : Reg}"
+      },
+      {
+        "line": 127,
+        "text": "theorem lower_bmask_3264_ok {n : Nat} (hn : 100 \u2264 n) {wo wi : Nat} {r : Reg}"
+      },
+      {
+        "line": 151,
+        "text": "theorem ctor_ty_mask_iff (st : LState) (w : Nat) (v : V) (st' : LState) :"
+      },
+      {
+        "line": 156,
+        "text": "theorem ctor_imm_logic_255_iff (st : LState) (v : V) (st' : LState) :"
+      },
+      {
+        "line": 163,
+        "text": "theorem ctor_imm_logic_65535_iff (st : LState) (v : V) (st' : LState) :"
+      },
+      {
+        "line": 173,
+        "text": "theorem lower_bmask_816_ok {n : Nat} (hn : 200 \u2264 n) {wo wi : Nat} {r : Reg}"
+      },
+      {
+        "line": 207,
+        "text": "theorem atom_vn_LoadNoOffset : (variantNames 152)[17]? = some \"LoadNoOffset\" := rfl"
+      },
+      {
+        "line": 208,
+        "text": "theorem atom_vn_StoreNoOffset : (variantNames 152)[23]? = some \"StoreNoOffset\" := rfl"
+      },
+      {
+        "line": 209,
+        "text": "theorem atom_vn_AtomicRmwF : (variantNames 152)[1]? = some \"AtomicRmw\" := rfl"
+      },
+      {
+        "line": 210,
+        "text": "theorem atom_vn_AtomicCasF : (variantNames 152)[0]? = some \"AtomicCas\" := rfl"
+      },
+      {
+        "line": 211,
+        "text": "theorem atom_vn_Unary : (variantNames 152)[29]? = some \"Unary\" := rfl"
+      },
+      {
+        "line": 212,
+        "text": "theorem atom_vn_NullAry : (variantNames 152)[19]? = some \"NullAry\" := rfl"
+      },
+      {
+        "line": 213,
+        "text": "theorem atom_vn_AtomicLoad : (variantNames 151)[158]? = some \"AtomicLoad\" := rfl"
+      },
+      {
+        "line": 214,
+        "text": "theorem atom_vn_AtomicStore : (variantNames 151)[159]? = some \"AtomicStore\" := rfl"
+      },
+      {
+        "line": 215,
+        "text": "theorem atom_vn_AtomicRmw : (variantNames 151)[156]? = some \"AtomicRmw\" := rfl"
+      },
+      {
+        "line": 216,
+        "text": "theorem atom_vn_AtomicCas : (variantNames 151)[157]? = some \"AtomicCas\" := rfl"
+      },
+      {
+        "line": 217,
+        "text": "theorem atom_vn_Bmask : (variantNames 151)[130]? = some \"Bmask\" := rfl"
+      },
+      {
+        "line": 218,
+        "text": "theorem atom_vn_Fence : (variantNames 151)[160]? = some \"Fence\" := rfl"
+      },
+      {
+        "line": 222,
+        "text": "theorem evalInst_atomicLoad_inv {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty}"
+      },
+      {
+        "line": 238,
+        "text": "theorem evalInst_atomicStore_inv {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty}"
+      },
+      {
+        "line": 257,
+        "text": "theorem evalInst_atomicRmw_inv {fr : Clif.Frame} {cm cm' : Clif.Mem} {op : Clif.AtomicRmwOp}"
+      },
+      {
+        "line": 283,
+        "text": "theorem evalInst_atomicCas_inv {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty}"
+      },
+      {
+        "line": 320,
+        "text": "theorem eTy_cases {ty : Clif.Ty} (h : eTy ty = true) :"
+      },
+      {
+        "line": 324,
+        "text": "theorem atomTy_ofClif {ty : Clif.Ty} (h : eTy ty = true) : AtomTy (CTy.ofClif ty) := by"
+      },
+      {
+        "line": 328,
+        "text": "theorem atom_read_eq {ty : Clif.Ty} (hety : eTy ty = true) {cm : Clif.Mem} {A : Nat}"
+      },
+      {
+        "line": 342,
+        "text": "theorem atom_holds {ty : Clif.Ty} (hety : eTy ty = true) {raw : BitVec ty.width} {n : Nat}"
+      },
+      {
+        "line": 355,
+        "text": "theorem effAddr_zero (pv : Clif.Val) : BitVec.ofNat 64 (Clif.effAddr pv 0) = BitVec.ofNat 64 pv.toNat := by"
+      },
+      {
+        "line": 360,
+        "text": "theorem ofClif_bytes {ty : Clif.Ty} (h : eTy ty = true) : (CTy.ofClif ty).bytes = ty.bytes := by"
+      },
+      {
+        "line": 363,
+        "text": "theorem ofClif_bytes_width {ty : Clif.Ty} (h : eTy ty = true) : (CTy.ofClif ty).bytes * 8 = ty.width := by"
+      },
+      {
+        "line": 366,
+        "text": "theorem operands_loadAcquire (t : CTy) (d a : Nat) (fl : Clif.MemFlags) :"
+      },
+      {
+        "line": 370,
+        "text": "theorem operands_storeRelease (t : CTy) (x a : Nat) (fl : Clif.MemFlags) :"
+      },
+      {
+        "line": 376,
+        "text": "theorem atom_addr {F : BitVec 64 \u2192 Prop} {sb : Nat} {syms : String \u2192 Option Nat} {f : Clif.Function}"
+      },
+      {
+        "line": 393,
+        "text": "theorem atom_rd {Rd : BitVec 64 \u2192 Prop} {ty : Clif.Ty} (hety : eTy ty = true) {cm : Clif.Mem}"
+      },
+      {
+        "line": 408,
+        "text": "theorem atomicLoad_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)"
+      },
+      {
+        "line": 457,
+        "text": "theorem atom_store_eq {ty : Clif.Ty} (hety : eTy ty = true) {cm : Clif.Mem} {A : Nat}"
+      },
+      {
+        "line": 467,
+        "text": "theorem atomicStore_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)"
+      },
+      {
+        "line": 506,
+        "text": "theorem operands_rmwLoop (t : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (p x d d1 d2 : Nat) :"
+      },
+      {
+        "line": 513,
+        "text": "theorem operands_casLoop (t : CTy) (fl : Clif.MemFlags) (p e x d d1 : Nat) :"
+      },
+      {
+        "line": 520,
+        "text": "theorem frag_fresh3 (st : LState) (m : MInst)"
+      },
+      {
+        "line": 532,
+        "text": "theorem frag_fresh2 (st : LState) (m : MInst) (hd : vdefs m = [st.nextVreg, st.nextVreg + 1]) :"
+      },
+      {
+        "line": 543,
+        "text": "theorem writeBits_bits_congr {cm : Clif.Mem} {A n : Nat} {w1 w2 : Nat} (x : BitVec w1)"
+      },
+      {
+        "line": 560,
+        "text": "theorem bits_congr_atomicRmw {w1 w2 : Nat} (h : w1 = w2) (op : Clif.AtomicRmwOp)"
+      },
+      {
+        "line": 571,
+        "text": "theorem bits_setWidth_holds {ty : Clif.Ty} (hety : eTy ty = true) {a : BitVec ty.width} {u : CV}"
+      },
+      {
+        "line": 585,
+        "text": "theorem holds_of_setWidth {ty : Clif.Ty} (hety : eTy ty = true) {raw : BitVec ty.width} {o : CV}"
+      },
+      {
+        "line": 598,
+        "text": "theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)"
+      },
+      {
+        "line": 674,
+        "text": "theorem bits_eq_iff {w1 w2 : Nat} (h : w1 = w2) {a b : BitVec w1} {c d : BitVec w2}"
+      },
+      {
+        "line": 684,
+        "text": "theorem atomicCas_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)"
+      },
+      {
+        "line": 759,
+        "text": "theorem instNames_bmask {c : Clif.Inst} (h : instNames c = (\"Unary\", \"Bmask\")) :"
+      },
+      {
+        "line": 768,
+        "text": "theorem instData_bmask {f : Clif.Function} {ty : Clif.Ty} {x ko : Nat} {fs : List V}"
+      },
+      {
+        "line": 780,
+        "text": "theorem evalInst_bmask_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty} {x : Nat}"
+      },
+      {
+        "line": 795,
+        "text": "theorem ispec_csetm_ne (d : Nat) (w : Arm.ArmState) :"
+      },
+      {
+        "line": 800,
+        "text": "theorem ispec_and_imm32 (t x : Nat) (m : Nat) (hm : ImmLogic.ofNat? m .size32 = some \u27e8m, .size32\u27e9)"
+      },
+      {
+        "line": 807,
+        "text": "theorem runs_bmask (hR : Refines F isem) (sz : OperandSize) (x d : Nat) (\u03c1 : Nat \u2192 CV)"
+      },
+      {
+        "line": 823,
+        "text": "theorem runs_bmask_masked (hR : Refines F isem) (m : Nat)"
+      },
+      {
+        "line": 842,
+        "text": "theorem vholds_bmask {ty : Clif.Ty} (hety : eTy ty = true) {v : Nat} (b : BitVec v) :"
+      },
+      {
+        "line": 861,
+        "text": "theorem opnd_eq_setWidth (sz : OperandSize) (u : CV) : opnd sz u = u.setWidth sz.bits := by"
+      },
+      {
+        "line": 864,
+        "text": "theorem and_mask8 (u : BitVec 128) : u.setWidth 32 &&& 255#32 = 0 \u2194 u.setWidth 8 = 0 := by"
+      },
+      {
+        "line": 871,
+        "text": "theorem and_mask16 (u : BitVec 128) : u.setWidth 32 &&& 65535#32 = 0 \u2194 u.setWidth 16 = 0 := by"
+      },
+      {
+        "line": 878,
+        "text": "theorem bmask_cond_3264 {wi : Nat} (hwi : wi = 32 \u2228 wi = 64) {a : Clif.Val}"
+      },
+      {
+        "line": 886,
+        "text": "theorem bmask_cond_816 {wi : Nat} (hwi : wi = 8 \u2228 wi = 16) {a : Clif.Val}"
+      },
+      {
+        "line": 901,
+        "text": "theorem vdefs_cmpImm0' (sz : OperandSize) (x : Nat) (i : Imm12) :"
+      },
+      {
+        "line": 903,
+        "text": "theorem vuseNums_cmpImm0' (sz : OperandSize) (x : Nat) (i : Imm12) :"
+      },
+      {
+        "line": 905,
+        "text": "theorem vdefs_csetm (d : Nat) (c : Cond) : vdefs (.csetm (.vreg d .int) c) = [d] := rfl"
+      },
+      {
+        "line": 906,
+        "text": "theorem vuseNums_csetm (d : Nat) (c : Cond) : vuseNums (.csetm (.vreg d .int) c) = [] := rfl"
+      },
+      {
+        "line": 912,
+        "text": "theorem bmask_lower_3264 (hR : Refines F isem) (hMR : MRStable F MR) {st : LState} {ty : Clif.Ty}"
+      },
+      {
+        "line": 953,
+        "text": "theorem bmask_lower_816 (hR : Refines F isem) (hMR : MRStable F MR) {st : LState} {ty : Clif.Ty}"
+      },
+      {
+        "line": 1015,
+        "text": "theorem bmask_ok (F : BitVec 64 \u2192 Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)"
+      },
+      {
+        "line": 1078,
+        "text": "theorem instNames_fence {c : Clif.Inst} (h : instNames c = (\"NullAry\", \"Fence\")) : c = .fence := by"
+      },
+      {
+        "line": 1095,
+        "text": "theorem fence_ok (F : BitVec 64 \u2192 Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)"
+      },
+      {
+        "line": 1142,
+        "text": "theorem ext_valid_atomic_transaction_iff (ctx : Ctx) (st : LState) (ty : CTy) (fs : List V) :"
+      },
+      {
+        "line": 1155,
+        "text": "theorem ofV_loadAcquire (t : CTy) (rd rn : Reg) (fl : Clif.MemFlags) :"
+      },
+      {
+        "line": 1159,
+        "text": "theorem ofV_storeRelease (t : CTy) (rt rn : Reg) (fl : Clif.MemFlags) :"
+      },
+      {
+        "line": 1163,
+        "text": "theorem inv_atomicStore_root {f : Clif.Function} {cl : Clif.Inst} {w1 w2 : V}"
+      },
+      {
+        "line": 1184,
+        "text": "theorem inv_atomicLoad_root {f : Clif.Function} {cl : Clif.Inst} {w1 w2 : V}"
+      },
+      {
+        "line": 1205,
+        "text": "theorem inv_atomicRmw_root {f : Clif.Function} {cl : Clif.Inst} {w1 w2 : V} {k : Nat}"
+      },
+      {
+        "line": 1233,
+        "text": "theorem inv_atomicCas_root {f : Clif.Function} {cl : Clif.Inst} {w1 w2 : V}"
+      },
+      {
+        "line": 1263,
+        "text": "theorem atomic_load_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1300,
+        "text": "theorem atomic_store_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1331,
+        "text": "theorem uextend_atomic_load_ok : MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_1272 := by"
+      },
+      {
+        "line": 1340,
+        "text": "theorem matchPat_and_single {p : Program} {ctx : Ctx} {st : LState} {ty : TypeId} {q : Pattern}"
+      },
+      {
+        "line": 1348,
+        "text": "theorem ext_value_array_3_iff (ctx : Ctx) (st : LState) (a b c : Nat) (fs : List V) :"
+      },
+      {
+        "line": 1355,
+        "text": "theorem ofV_casLoop (t : CTy) (fl : Clif.MemFlags) (a e x d d1 : Reg) :"
+      },
+      {
+        "line": 1406,
+        "text": "theorem atomic_rmw_add_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1413,
+        "text": "theorem atomic_rmw_sub_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1420,
+        "text": "theorem atomic_rmw_and_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1427,
+        "text": "theorem atomic_rmw_nand_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1434,
+        "text": "theorem atomic_rmw_or_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1441,
+        "text": "theorem atomic_rmw_xor_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1448,
+        "text": "theorem atomic_rmw_smin_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1455,
+        "text": "theorem atomic_rmw_smax_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1462,
+        "text": "theorem atomic_rmw_umin_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1469,
+        "text": "theorem atomic_rmw_umax_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1476,
+        "text": "theorem atomic_rmw_xchg_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1483,
+        "text": "theorem atomic_cas_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 1525,
+        "text": "theorem lower_memRoot_filter : (program.rulesOf TId.lower).filter memRootRule ="
+      },
+      {
+        "line": 1535,
+        "text": "theorem memRulesCorrectR_program : MemRulesCorrectR program := by"
+      },
+      {
+        "line": 1587,
+        "text": "theorem memRulesCorrect_program : MemRulesCorrect program :="
+      }
+    ]
+  },
+  "FV/Backend/Proof/MemRefines.lean": {
+    "sha256": "35de1fd72f98c488730664169e2ee3f86254c93e5c7687efacaa6cb0cde29b22",
+    "declarations": [
+      {
+        "line": 24,
+        "text": "theorem ldX_loadVal (op : LoadOp) (hop : op \u2260 .fpuLoad128) (a : BitVec 64) (w : Arm.ArmState) :"
+      },
+      {
+        "line": 29,
+        "text": "theorem straightSem_of {F : BitVec 64 \u2192 Prop} {ctx : FnCtx} {i : MInst} {uses : List CV}"
+      },
+      {
+        "line": 39,
+        "text": "theorem ss_load {F : BitVec 64 \u2192 Prop} {ctx : FnCtx} {op : LoadOp} (hop : op \u2260 .fpuLoad128)"
+      },
+      {
+        "line": 77,
+        "text": "theorem ss_store {F : BitVec 64 \u2192 Prop} {ctx : FnCtx} {op : StoreOp} (hop : op \u2260 .fpuStore128)"
+      },
+      {
+        "line": 111,
+        "text": "theorem ext_uxtw (x : BitVec 64) {k : Nat} (hk : k \u2264 32) :"
+      },
+      {
+        "line": 118,
+        "text": "theorem ext_sxtw (x : BitVec 64) {k : Nat} (hk : k \u2264 32) :"
+      },
+      {
+        "line": 125,
+        "text": "theorem log2_le_of_bytes {b : Nat} (hb : b = 1 \u2228 b = 2 \u2228 b = 4 \u2228 b = 8) : log2 b \u2264 32 := by"
+      },
+      {
+        "line": 128,
+        "text": "theorem loadOp_bytes (op : LoadOp) (hop : op \u2260 .fpuLoad128) :"
+      },
+      {
+        "line": 132,
+        "text": "theorem storeOp_bytes (op : StoreOp) (hop : op \u2260 .fpuStore128) :"
+      },
+      {
+        "line": 136,
+        "text": "theorem div_lt_of_bytes {b off : Nat} (hb : b = 1 \u2228 b = 2 \u2228 b = 4 \u2228 b = 8) (h : off \u2264 4095 * b) :"
+      },
+      {
+        "line": 161,
+        "text": "theorem straight_load (op : LoadOp) (hop : op \u2260 .fpuLoad128) (d : Nat) (am : AMode)"
+      },
+      {
+        "line": 222,
+        "text": "theorem straight_store (op : StoreOp) (hop : op \u2260 .fpuStore128) (d : Nat) (am : AMode)"
+      },
+      {
+        "line": 282,
+        "text": "theorem straight_loadAddr (d : Nat) (off : Int) (w : Arm.ArmState)"
+      },
+      {
+        "line": 311,
+        "text": "theorem exec_ldar_canon {ty : CTy} (hty : AtomTy ty) (fl : Clif.MemFlags) (t : Arm.ArmState) :"
+      },
+      {
+        "line": 317,
+        "text": "theorem exec_stlr_canon {ty : CTy} (hty : AtomTy ty) (fl : Clif.MemFlags) (t : Arm.ArmState) :"
+      },
+      {
+        "line": 325,
+        "text": "theorem straight_loadAcquire (ty : CTy) (hty : AtomTy ty) (d r : Nat) (fl : Clif.MemFlags)"
+      },
+      {
+        "line": 355,
+        "text": "theorem straight_storeRelease (ty : CTy) (hty : AtomTy ty) (x r : Nat) (fl : Clif.MemFlags)"
+      },
+      {
+        "line": 388,
+        "text": "theorem atomTy_bytes {ty : CTy} (hty : AtomTy ty) : ty.bytes * 8 \u2264 64 := by"
+      },
+      {
+        "line": 391,
+        "text": "theorem ofX_setWidth {k : Nat} (hk : k \u2264 64) (y : BitVec 64) : (ofX y).setWidth k = y.setWidth k := by"
+      },
+      {
+        "line": 394,
+        "text": "theorem ofX_setWidth_setWidth {k : Nat} (hk : k \u2264 64) (y : BitVec k) :"
+      },
+      {
+        "line": 399,
+        "text": "theorem sameNF_of_frame {F : BitVec 64 \u2192 Prop} {t0 t' w : Arm.ArmState} (rs us : List (BitVec 5))"
+      },
+      {
+        "line": 410,
+        "text": "theorem csem_rmwLoop (X : ExtSem) (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags)"
+      },
+      {
+        "line": 455,
+        "text": "theorem loopSem_eq {ty : CTy} {a : CV} {body : List Line} {regs : List Reg} {uses : List CV}"
+      },
+      {
+        "line": 468,
+        "text": "theorem csem_casLoop (X : ExtSem) (ty : CTy) (fl : Clif.MemFlags) (ra re rx rd r1 : Nat)"
+      },
+      {
+        "line": 540,
+        "text": "theorem memRefines_csem (X : ExtSem) {sb : Nat} {syms : String \u2192 Option Nat}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/IselCtlCall.lean": {
+    "sha256": "f0ab20c82c5610099a9c6b668e6344b6a7bbda8b54e7424ab01d78b08e7105cb",
+    "declarations": [
+      {
+        "line": 26,
+        "text": "theorem ext_func_ref_data_iff (st : LState) (fn : Nat) (fs : List V) :"
+      },
+      {
+        "line": 45,
+        "text": "theorem ctor_abi_sig_iff (st : LState) (s : V) (v : V) (st' : LState) :"
+      },
+      {
+        "line": 56,
+        "text": "def freshN : LState \u2192 Nat \u2192 LState"
+      },
+      {
+        "line": 61,
+        "text": "def outRegs (st : LState) (n : Nat) : List (List Reg) :="
+      },
+      {
+        "line": 64,
+        "text": "theorem freshN_nextVreg : \u2200 (st : LState) (n : Nat), (freshN st n).nextVreg = st.nextVreg + n"
+      },
+      {
+        "line": 69,
+        "text": "theorem freshN_emitted : \u2200 (st : LState) (n : Nat), (freshN st n).emitted = st.emitted"
+      },
+      {
+        "line": 73,
+        "text": "theorem foldl_fresh {\u03b1 : Type} (L : List \u03b1) : \u2200 (acc : Array (List Reg)) (st : LState),"
+      },
+      {
+        "line": 87,
+        "text": "def freshC : LState \u2192 List RegClass \u2192 LState"
+      },
+      {
+        "line": 93,
+        "text": "def outRegsC (st : LState) (cs : List RegClass) : List (List Reg) :="
+      },
+      {
+        "line": 96,
+        "text": "theorem freshC_nextVreg : \u2200 (st : LState) (cs : List RegClass),"
+      },
+      {
+        "line": 102,
+        "text": "theorem freshC_emitted : \u2200 (st : LState) (cs : List RegClass), (freshC st cs).emitted = st.emitted"
+      },
+      {
+        "line": 106,
+        "text": "theorem outRegsC_length (st : LState) (cs : List RegClass) : (outRegsC st cs).length = cs.length := by"
+      },
+      {
+        "line": 109,
+        "text": "theorem zipIdx_succ_map {\u03b2 : Type} (cs : List \u03b2) (k : Nat) :"
+      },
+      {
+        "line": 116,
+        "text": "theorem outRegsC_cons (st : LState) (c : RegClass) (cs : List RegClass) :"
+      },
+      {
+        "line": 126,
+        "text": "theorem foldl_freshC (g : Clif.AbiParam \u2192 RegClass) (L : List Clif.AbiParam) :"
+      },
+      {
+        "line": 139,
+        "text": "theorem outRegsC_replicate (st : LState) (n : Nat) :"
+      },
+      {
+        "line": 152,
+        "text": "theorem freshC_replicate (st : LState) (n : Nat) :"
+      },
+      {
+        "line": 159,
+        "text": "theorem argLocs_small : \u2200 (bytes : List Nat) (acc : Array ArgLoc) (nx st : Nat), nx + bytes.length \u2264 8 \u2192"
+      },
+      {
+        "line": 176,
+        "text": "theorem argLocs_eq {bytes : List Nat} (h : bytes.length \u2264 8) :"
+      },
+      {
+        "line": 188,
+        "text": "def argLocReg : ArgLoc \u2192 Reg"
+      },
+      {
+        "line": 193,
+        "text": "def argStep (p : Array (Reg \u00d7 Reg) \u00d7 LState) (q : (ArgLoc \u00d7 Reg) \u00d7 Nat) :"
+      },
+      {
+        "line": 199,
+        "text": "theorem foldl_argStep : \u2200 (L : List ((ArgLoc \u00d7 Reg) \u00d7 Nat)), (\u2200 q \u2208 L, \u2203 pr, q.1.1 = .reg pr) \u2192"
+      },
+      {
+        "line": 210,
+        "text": "theorem mapM_except_length {\u03b1 \u03b2 \u03b5 : Type} (g : \u03b1 \u2192 Except \u03b5 \u03b2) :"
+      },
+      {
+        "line": 227,
+        "text": "theorem sigParamBytes_length {s : Clif.Signature} {bytes : List Nat}"
+      },
+      {
+        "line": 232,
+        "text": "theorem normal_length : \u2200 (ps : List Clif.AbiParam) (bs : List Nat), bs.length = ps.length \u2192"
+      },
+      {
+        "line": 246,
+        "text": "theorem foldl_sretLocStep : \u2200 (ps : List Clif.AbiParam) (acc : Array ArgLoc) (k : Nat),"
+      },
+      {
+        "line": 272,
+        "text": "theorem sigArgLocs_regs {s : Clif.Signature} {bytes : List Nat}"
+      },
+      {
+        "line": 296,
+        "text": "theorem sigRets_cases (s : Clif.Signature) :"
+      },
+      {
+        "line": 308,
+        "text": "theorem ctor_gen_call_output_typed (st : LState) (s : Clif.Signature) (v : V) (st' : LState) :"
+      },
+      {
+        "line": 320,
+        "text": "theorem ctor_gen_call_output_iff (st : LState) (s : Clif.Signature)"
+      },
+      {
+        "line": 328,
+        "text": "theorem zip_regLocs : \u2200 (locs : List ArgLoc) (rs : List Reg) (bytes : List Nat),"
+      },
+      {
+        "line": 340,
+        "text": "theorem zip_regLocs_all {locs : List ArgLoc} (hr : \u2200 l \u2208 locs, \u2203 r, l = .reg r)"
+      },
+      {
+        "line": 348,
+        "text": "theorem ctor_gen_call_args_small (st : LState) (s : Clif.Signature) (rss : List (List Reg))"
+      },
+      {
+        "line": 376,
+        "text": "theorem ctor_gen_call_args_iff (st : LState) (s : Clif.Signature) (rss : List (List Reg))"
+      },
+      {
+        "line": 387,
+        "text": "theorem ctor_gen_call_rets_iff (st : LState) (s : Clif.Signature) (rss : List (List Reg)) (v : V)"
+      },
+      {
+        "line": 407,
+        "text": "theorem retRegsC_outRegs (st : LState) (n : Nat) :"
+      },
+      {
+        "line": 414,
+        "text": "theorem retRegs_le {n : Nat} {ps : List Reg} (h : retRegs n = some ps) : n \u2264 8 := by"
+      },
+      {
+        "line": 420,
+        "text": "theorem ctor_try_call_none_iff (st : LState) (v : V) (st' : LState) :"
+      },
+      {
+        "line": 425,
+        "text": "theorem ctor_output_vec_iff (st : LState) (rss : List (List Reg)) (v : V) (st' : LState) :"
+      },
+      {
+        "line": 430,
+        "text": "theorem ctor_box_external_name_iff (st : LState) (n : V) (v : V) (st' : LState) :"
+      },
+      {
+        "line": 437,
+        "text": "theorem sigArgLocs_small_ok {s : Clif.Signature} {bytes : List Nat}"
+      },
+      {
+        "line": 444,
+        "text": "theorem ctor_gen_call_info_iff (st : LState) (s : Clif.Signature) (n : String)"
+      },
+      {
+        "line": 458,
+        "text": "theorem ctor_gen_call_ind_info_iff (st : LState) (s : Clif.Signature) (r : Reg)"
+      },
+      {
+        "line": 472,
+        "text": "theorem ctor_is_pic_iff (st : LState) (v : V) (st' : LState) :"
+      },
+      {
+        "line": 483,
+        "text": "def argRegPairs (L : List ((ArgLoc \u00d7 Reg) \u00d7 Nat)) : List (Reg \u00d7 Reg) :="
+      },
+      {
+        "line": 489,
+        "text": "def argStores (L : List ((ArgLoc \u00d7 Reg) \u00d7 Nat)) : List MInst :="
+      },
+      {
+        "line": 494,
+        "text": "theorem foldl_argStep_gen : \u2200 (L : List ((ArgLoc \u00d7 Reg) \u00d7 Nat)) (acc : Array (Reg \u00d7 Reg))"
+      },
+      {
+        "line": 512,
+        "text": "def regPairsOf (T : List ((ArgLoc \u00d7 Nat) \u00d7 Nat)) : List (Nat \u00d7 Reg) :="
+      },
+      {
+        "line": 518,
+        "text": "def stackEnts (T : List ((ArgLoc \u00d7 Nat) \u00d7 Nat)) : List (Nat \u00d7 Nat \u00d7 Nat) :="
+      },
+      {
+        "line": 524,
+        "text": "def argStore (e : Nat \u00d7 Nat \u00d7 Nat) : MInst :="
+      },
+      {
+        "line": 527,
+        "text": "theorem zip3_map (g : Nat \u2192 Reg) : \u2200 (locs : List ArgLoc) (args bytes : List Nat),"
+      },
+      {
+        "line": 534,
+        "text": "theorem argRegPairs_map : \u2200 (T : List ((ArgLoc \u00d7 Nat) \u00d7 Nat)),"
+      },
+      {
+        "line": 546,
+        "text": "theorem argStores_map : \u2200 (T : List ((ArgLoc \u00d7 Nat) \u00d7 Nat)),"
+      },
+      {
+        "line": 560,
+        "text": "theorem ctor_gen_call_args_gen (st : LState) (s : Clif.Signature) (args : List Nat)"
+      },
+      {
+        "line": 582,
+        "text": "theorem ctor_gen_call_info_gen (st : LState) (s : Clif.Signature) (n : String)"
+      },
+      {
+        "line": 595,
+        "text": "theorem ctor_gen_call_ind_info_gen (st : LState) (s : Clif.Signature) (r : Reg)"
+      },
+      {
+        "line": 611,
+        "text": "theorem locsOf_small {s : Clif.Signature} {bytes : List Nat}"
+      },
+      {
+        "line": 618,
+        "text": "theorem locsOf_of_regs {s : Clif.Signature} {bytes : List Nat}"
+      },
+      {
+        "line": 624,
+        "text": "theorem regArgVals_of_regs {s : Clif.Signature} {bytes : List Nat}"
+      },
+      {
+        "line": 645,
+        "text": "theorem stackArgsAt_of_regs {s : Clif.Signature} {bytes : List Nat}"
+      },
+      {
+        "line": 654,
+        "text": "theorem argsAt_iff_of_regs {s : Clif.Signature} {bytes : List Nat}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/IselCtlCallRules.lean": {
+    "sha256": "9d76098ed77966a74b32aae6b60e7825726299b3aa35637779ea9b658e2a2542",
+    "declarations": [
+      {
+        "line": 20,
+        "text": "theorem ofV_loadExtNameGot_ctl (r : Reg) (nm : String) :"
+      },
+      {
+        "line": 24,
+        "text": "theorem variantNames_Call_fmt : (variantNames 152)[6]? = some \"Call\" := rfl"
+      },
+      {
+        "line": 26,
+        "text": "theorem variantNames_Call_op : (variantNames 151)[8]? = some \"Call\" := rfl"
+      },
+      {
+        "line": 29,
+        "text": "theorem instData_call_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}"
+      },
+      {
+        "line": 53,
+        "text": "theorem ctor_gen_call_args_bytes {ctx : Ctx} {st : LState} {s : Clif.Signature}"
+      },
+      {
+        "line": 76,
+        "text": "theorem ctor_gen_call_args_locs {ctx : Ctx} {st : LState} {s : Clif.Signature}"
+      },
+      {
+        "line": 93,
+        "text": "theorem outRegs_single (st : LState) (n : Nat) :"
+      },
+      {
+        "line": 100,
+        "text": "theorem outRegs_length (st : LState) (n : Nat) : (outRegs st n).length = n := by"
+      },
+      {
+        "line": 106,
+        "text": "def callDefs (D : List (Reg \u00d7 Nat)) : List (Reg \u00d7 Reg) := D.map fun q => (q.1, Reg.vreg q.2 .int)"
+      },
+      {
+        "line": 109,
+        "text": "def callDefOps (D : List (Reg \u00d7 Nat)) : List Operand :="
+      },
+      {
+        "line": 113,
+        "text": "theorem mapM_callDefs (D : List (Reg \u00d7 Nat)) : \u2200 (s : Array Operand),"
+      },
+      {
+        "line": 129,
+        "text": "theorem operands_call_sym (nm : String) (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat)) :"
+      },
+      {
+        "line": 137,
+        "text": "theorem instOutcome_call_ok {env : Clif.Env} {cp : Clif.Program} {fr : Clif.Frame}"
+      },
+      {
+        "line": 172,
+        "text": "theorem writeV_notMem_ctl {V : Type} : \u2200 (dv : List (Operand \u00d7 V)) (\u03c1 : Nat \u2192 V) (y : Nat),"
+      },
+      {
+        "line": 180,
+        "text": "theorem writeV_nodup_ctl {V : Type} : \u2200 (dv : List (Operand \u00d7 V)) (\u03c1 : Nat \u2192 V) (j : Nat) (o : Operand)"
+      },
+      {
+        "line": 195,
+        "text": "theorem filter_isUse_callDefOps (D : List (Reg \u00d7 Nat)) : (callDefOps D).filter Operand.isUse = [] := by"
+      },
+      {
+        "line": 200,
+        "text": "theorem filter_isDef_callDefOps (D : List (Reg \u00d7 Nat)) :"
+      },
+      {
+        "line": 206,
+        "text": "theorem filter_isDef_retOps' (L : List (Nat \u00d7 Reg)) : (retOps L).filter Operand.isDef = [] := by"
+      },
+      {
+        "line": 211,
+        "text": "theorem vuses_call {V : Type} (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat)) (\u03c1 : Nat \u2192 V) :"
+      },
+      {
+        "line": 217,
+        "text": "theorem defs_call (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat)) :"
+      },
+      {
+        "line": 222,
+        "text": "theorem zip_callDefOps_early {V : Type} : \u2200 (D : List (Reg \u00d7 Nat)) (outs : List V),"
+      },
+      {
+        "line": 233,
+        "text": "theorem vdefUpd_call {V : Type} (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat)) (outs : List V)"
+      },
+      {
+        "line": 240,
+        "text": "theorem vuseNums_call_sym (nm : String) (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat)) :"
+      },
+      {
+        "line": 246,
+        "text": "theorem vdefs_call_sym (nm : String) (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat)) :"
+      },
+      {
+        "line": 251,
+        "text": "theorem seqRun_call_sym {isem : Sem} {nm : String} {L : List (Nat \u00d7 Reg)} {D : List (Reg \u00d7 Nat)}"
+      },
+      {
+        "line": 262,
+        "text": "theorem zip_self_ctl {\u03b1 : Type} : \u2200 (l : List \u03b1), l.zip l = l.map fun a => (a, a)"
+      },
+      {
+        "line": 267,
+        "text": "def outRegs' (b n : Nat) : List (List Reg) := (List.range n).map fun j => [Reg.vreg (b + j) .int]"
+      },
+      {
+        "line": 270,
+        "text": "def outDefs (b n : Nat) : List (Reg \u00d7 Nat) := (List.range n).map fun j => (Reg.x j, b + j)"
+      },
+      {
+        "line": 272,
+        "text": "theorem callDefs_outDefs (b n : Nat) :"
+      },
+      {
+        "line": 278,
+        "text": "theorem uses_retPairs (args : List Nat) (L : List Reg) :"
+      },
+      {
+        "line": 282,
+        "text": "theorem allHold_args {fr : Clif.Frame} {\u03c1 : Nat \u2192 CV} (hvh : ValsHeld fr \u03c1) {args : List Nat}"
+      },
+      {
+        "line": 291,
+        "text": "theorem usesOk_args {fr : Clif.Frame} {args : List Nat} {vals : List Clif.Val}"
+      },
+      {
+        "line": 301,
+        "text": "theorem resultsHeld_call {fr : Clif.Frame} {\u03c1 : Nat \u2192 CV} {b : Nat} {rvals : List Clif.Val}"
+      },
+      {
+        "line": 331,
+        "text": "theorem outRegs_eq (st : LState) (n : Nat) : outRegs st n = outRegs' st.nextVreg n := rfl"
+      },
+      {
+        "line": 336,
+        "text": "theorem results_call {fr : Clif.Frame} {\u03c1 : Nat \u2192 CV} {b : Nat} {rvals : List Clif.Val}"
+      },
+      {
+        "line": 351,
+        "text": "theorem call_results_length {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat}"
+      },
+      {
+        "line": 360,
+        "text": "theorem call_ok_facts {env : Clif.Env} {cp : Clif.Program} {f : Clif.Function} {ctx : Ctx}"
+      },
+      {
+        "line": 377,
+        "text": "theorem storeOpOfBytes_facts {b : Nat} (hb : b = 1 \u2228 b = 2 \u2228 b = 4 \u2228 b = 8) :"
+      },
+      {
+        "line": 381,
+        "text": "theorem operands_argStore (e : Nat \u00d7 Nat \u00d7 Nat) :"
+      },
+      {
+        "line": 384,
+        "text": "theorem vdefs_argStore (e : Nat \u00d7 Nat \u00d7 Nat) : vdefs (argStore e) = [] := rfl"
+      },
+      {
+        "line": 386,
+        "text": "theorem vuseNums_argStore (e : Nat \u00d7 Nat \u00d7 Nat) : vuseNums (argStore e) = [e.2.1] := rfl"
+      },
+      {
+        "line": 388,
+        "text": "theorem seqRun_argStore_cons {isem : Sem} {e : Nat \u00d7 Nat \u00d7 Nat} {\u03c1 : Nat \u2192 CV}"
+      },
+      {
+        "line": 397,
+        "text": "theorem add_ofNat_add (a : BitVec 64) (off k : Nat) :"
+      },
+      {
+        "line": 402,
+        "text": "theorem add_ofNat_ne {a : BitVec 64} {k k' : Nat} (hk : k < 2 ^ 64) (hk' : k' < 2 ^ 64)"
+      },
+      {
+        "line": 410,
+        "text": "theorem argStore_step {Rd F : BitVec 64 \u2192 Prop} {isem : Sem} {sb : Nat}"
+      },
+      {
+        "line": 426,
+        "text": "theorem argStores_run {Rd F : BitVec 64 \u2192 Prop} {isem : Sem} {MR : MemRelT} {sb : Nat}"
+      },
+      {
+        "line": 481,
+        "text": "theorem stackEnts_proj : \u2200 (locs : List ArgLoc) (args bytes : List Nat), args.length = bytes.length \u2192"
+      },
+      {
+        "line": 494,
+        "text": "theorem slotsOk_mono : \u2200 (L : List (Nat \u00d7 Nat)) (lo S S' : Nat), S \u2264 S' \u2192"
+      },
+      {
+        "line": 502,
+        "text": "theorem mem_stackEnts {locs : List ArgLoc} {args bytes : List Nat} {i off x b : Nat}"
+      },
+      {
+        "line": 510,
+        "text": "theorem allHold_regPairs {\u03c1 : Nat \u2192 CV} : \u2200 (locs : List ArgLoc) (vals : List Clif.Val)"
+      },
+      {
+        "line": 541,
+        "text": "theorem sigStack_facts {s : Clif.Signature} {outB : Nat} (hso : SigStackOk s outB)"
+      },
+      {
+        "line": 551,
+        "text": "theorem slotsOk_bound : \u2200 (L : List (Nat \u00d7 Nat)) (lo S : Nat), slotsOk L lo S = true \u2192"
+      },
+      {
+        "line": 561,
+        "text": "theorem mem_args_of_stackEnts : \u2200 {T : List ((ArgLoc \u00d7 Nat) \u00d7 Nat)} {e : Nat \u00d7 Nat \u00d7 Nat},"
+      },
+      {
+        "line": 573,
+        "text": "theorem mem_args_of_regPairs : \u2200 {T : List ((ArgLoc \u00d7 Nat) \u00d7 Nat)} {u : Nat},"
+      },
+      {
+        "line": 585,
+        "text": "theorem map_zip_args {locs : List ArgLoc} {args bytes : List Nat} {u : Nat}"
+      },
+      {
+        "line": 594,
+        "text": "theorem argsAt_after_stores {Rd F : BitVec 64 \u2192 Prop} {isem : Sem} {MR : MemRelT} {sb : Nat}"
+      },
+      {
+        "line": 663,
+        "text": "theorem call_sym_lowerInstOk {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 730,
+        "text": "theorem ofV_call (ci : CallInfo) : MInst.ofV (.data 58 109 [.op (.callInfo ci)]) = some (.call ci) :="
+      },
+      {
+        "line": 733,
+        "text": "theorem ofV_callInd (ci : CallInfo) :"
+      },
+      {
+        "line": 736,
+        "text": "theorem ctor_is_pic_eq {ctx : Ctx} (st : LState) :"
+      },
+      {
+        "line": 743,
+        "text": "theorem call_impl_ok {n : Nat} (hn : 30 \u2264 n) {i : V} {s s' : LState \u00d7 Array RuleId} {v : V}"
+      },
+      {
+        "line": 750,
+        "text": "theorem call_ind_impl_ok {n : Nat} (hn : 30 \u2264 n) {i : V} {s s' : LState \u00d7 Array RuleId} {v : V}"
+      },
+      {
+        "line": 757,
+        "text": "theorem load_ext_name_got_ok_ctl {n : Nat} (hn : 30 \u2264 n) {nm : String} {s s' : LState \u00d7 Array RuleId}"
+      },
+      {
+        "line": 770,
+        "text": "theorem load_ext_name_ok_ctl {n : Nat} (hn : 40 \u2264 n) {nm : String} {d : V} {s s' : LState \u00d7 Array RuleId}"
+      },
+      {
+        "line": 796,
+        "text": "def tgtOp (t : Nat) : Operand := \u27e8t, .int, .use, .early, .reg\u27e9"
+      },
+      {
+        "line": 799,
+        "text": "def gotOp (t : Nat) : Operand := \u27e8t, .int, .def, .late, .reg\u27e9"
+      },
+      {
+        "line": 801,
+        "text": "theorem operands_loadExtNameGot_ctl (t : Nat) (nm : String) :"
+      },
+      {
+        "line": 805,
+        "text": "theorem operands_call_reg (t : Nat) (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat)) :"
+      },
+      {
+        "line": 815,
+        "text": "theorem vuses_call_reg {V : Type} (t : Nat) (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat))"
+      },
+      {
+        "line": 824,
+        "text": "theorem vdefUpd_call_reg {V : Type} (t : Nat) (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat))"
+      },
+      {
+        "line": 832,
+        "text": "theorem seqRun_call_reg {isem : Sem} {t : Nat} {L : List (Nat \u00d7 Reg)} {D : List (Reg \u00d7 Nat)}"
+      },
+      {
+        "line": 845,
+        "text": "theorem seqRun_got {F : BitVec 64 \u2192 Prop} {isem : Sem} {t : Nat} {nm : String} {\u03c1 : Nat \u2192 CV}"
+      },
+      {
+        "line": 854,
+        "text": "theorem vuseNums_call_reg (t : Nat) (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat)) :"
+      },
+      {
+        "line": 860,
+        "text": "theorem vdefs_call_reg (t : Nat) (L : List (Nat \u00d7 Reg)) (D : List (Reg \u00d7 Nat)) :"
+      },
+      {
+        "line": 866,
+        "text": "theorem vdefs_got_ctl (t : Nat) (nm : String) : vdefs (.loadExtNameGot (.vreg t .int) nm) = [t] := rfl"
+      },
+      {
+        "line": 868,
+        "text": "theorem vuseNums_got_ctl (t : Nat) (nm : String) :"
+      },
+      {
+        "line": 871,
+        "text": "theorem call_got_lowerInstOk {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 966,
+        "text": "theorem call_bl_ruleOk {p : Program} (hp : Data p) {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 1037,
+        "text": "theorem mapM_valueReg_below {ctx : Ctx} {st : LState} (hvb : ValsBelow ctx st) :"
+      },
+      {
+        "line": 1051,
+        "text": "theorem lower_2508_before_2518 {p : Program} (hp : Data p) :"
+      },
+      {
+        "line": 1070,
+        "text": "theorem match_2508_colocated {ii : Nat} {info : IInfo} {fn : Nat} {args : List Nat}"
+      },
+      {
+        "line": 1089,
+        "text": "theorem call_got_not_colocated {ii : Nat} {info : IInfo} (hi : ctx.insts[ii]? = some info)"
+      },
+      {
+        "line": 1107,
+        "text": "theorem call_got_ruleOk {p : Program} (hp : Data p) {Rd F : BitVec 64 \u2192 Prop}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/IselCtlCallInd.lean": {
+    "sha256": "6b30d673888d96ddbe3e2c58f2b6a310e528faa2003e7d2e755137cd62c5d612",
+    "declarations": [
+      {
+        "line": 24,
+        "text": "structure IndData (p : Program) : Prop where"
+      },
+      {
+        "line": 29,
+        "text": "theorem indData_program : IndData program := \u27e8rfl, rfl, rfl\u27e9"
+      },
+      {
+        "line": 32,
+        "text": "theorem variantNames_CallIndirect_fmt : (variantNames 152)[7]? = some \"CallIndirect\" := rfl"
+      },
+      {
+        "line": 34,
+        "text": "theorem variantNames_CallIndirect_op : (variantNames 151)[9]? = some \"CallIndirect\" := rfl"
+      },
+      {
+        "line": 37,
+        "text": "theorem instData_callIndirect_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}"
+      },
+      {
+        "line": 61,
+        "text": "theorem ext_value_slice_unwrap_iff {ctx : Ctx} (st : LState) (x : Nat) (xs : List Nat)"
+      },
+      {
+        "line": 74,
+        "text": "theorem callIndirect_results_length {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)"
+      },
+      {
+        "line": 83,
+        "text": "theorem frame_get_regs {fr : Clif.Frame} {x : Nat} {v : Clif.Val} (h : fr.get x = .ok v) :"
+      },
+      {
+        "line": 90,
+        "text": "theorem lo64_of_vholds {x : BitVec 64} {c : CV} (h : VHolds \u27e8.i64, x\u27e9 c) : lo64 c = x := h"
+      },
+      {
+        "line": 92,
+        "text": "theorem call_ind_lowerInstOk {Rd : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 158,
+        "text": "theorem call_ind_ruleOk {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : BitVec 64 \u2192 Prop}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/IselCtlCallF.lean": {
+    "sha256": "9b2a3eb5f86aff2b8d3f0b20a935ce01978afef226e32f868f708391eb7aca7c",
+    "declarations": [
+      {
+        "line": 51,
+        "text": "structure CallCtxT (f : Clif.Function) (ctx : Ctx) : Prop where"
+      },
+      {
+        "line": 62,
+        "text": "theorem CtxInvT.toCallCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInvT f ctx) : CallCtxT f ctx :="
+      },
+      {
+        "line": 67,
+        "text": "def CallRuleOkTFP (Rd : BitVec 64 \u2192 Prop)"
+      },
+      {
+        "line": 87,
+        "text": "def CallRulesCorrectTFP (p : Program) : Prop :="
+      },
+      {
+        "line": 99,
+        "text": "theorem mapM_valueRegC {f : Clif.Function} {ctx : Ctx} (hctx : CallCtxT f ctx) :"
+      },
+      {
+        "line": 111,
+        "text": "theorem call_results_lengthC {f : Clif.Function} {ctx : Ctx} (hctx : CallCtxT f ctx) {ii : Nat}"
+      },
+      {
+        "line": 119,
+        "text": "theorem valClass_ofClif_float {t : Clif.Ty} (h : (CTy.ofClif t).valClass = .float) :"
+      },
+      {
+        "line": 124,
+        "text": "theorem float_of_valClassOf {ctx : Ctx} {fr : Clif.Frame} (hft : FrameTyped ctx fr) {x : Nat}"
+      },
+      {
+        "line": 139,
+        "text": "def liftC (cls : Nat \u2192 RegClass) (L : List (Nat \u00d7 Reg)) : List (Nat \u00d7 RegClass \u00d7 Reg) :="
+      },
+      {
+        "line": 142,
+        "text": "theorem liftC_fst (cls : Nat \u2192 RegClass) (L : List (Nat \u00d7 Reg)) :"
+      },
+      {
+        "line": 147,
+        "text": "def callDefsC (D : List (Reg \u00d7 Nat \u00d7 RegClass)) : List (Reg \u00d7 Reg) :="
+      },
+      {
+        "line": 151,
+        "text": "def callDefOpsC (D : List (Reg \u00d7 Nat \u00d7 RegClass)) : List Operand :="
+      },
+      {
+        "line": 155,
+        "text": "theorem mapM_callDefsC (D : List (Reg \u00d7 Nat \u00d7 RegClass)) : \u2200 (s : Array Operand),"
+      },
+      {
+        "line": 171,
+        "text": "theorem operands_call_symC (nm : String) (L : List (Nat \u00d7 RegClass \u00d7 Reg))"
+      },
+      {
+        "line": 180,
+        "text": "theorem filter_isUse_callDefOpsC (D : List (Reg \u00d7 Nat \u00d7 RegClass)) :"
+      },
+      {
+        "line": 188,
+        "text": "theorem filter_isDef_callDefOpsC (D : List (Reg \u00d7 Nat \u00d7 RegClass)) :"
+      },
+      {
+        "line": 196,
+        "text": "theorem vuses_callC {V : Type} (L : List (Nat \u00d7 RegClass \u00d7 Reg)) (D : List (Reg \u00d7 Nat \u00d7 RegClass))"
+      },
+      {
+        "line": 202,
+        "text": "theorem defs_callC (L : List (Nat \u00d7 RegClass \u00d7 Reg)) (D : List (Reg \u00d7 Nat \u00d7 RegClass)) :"
+      },
+      {
+        "line": 206,
+        "text": "theorem zip_callDefOpsC_early {V : Type} : \u2200 (D : List (Reg \u00d7 Nat \u00d7 RegClass)) (outs : List V),"
+      },
+      {
+        "line": 218,
+        "text": "theorem vdefUpd_callC {V : Type} (L : List (Nat \u00d7 RegClass \u00d7 Reg)) (D : List (Reg \u00d7 Nat \u00d7 RegClass))"
+      },
+      {
+        "line": 225,
+        "text": "theorem vuseNums_call_symC (nm : String) (L : List (Nat \u00d7 RegClass \u00d7 Reg))"
+      },
+      {
+        "line": 232,
+        "text": "theorem vdefs_call_symC (nm : String) (L : List (Nat \u00d7 RegClass \u00d7 Reg))"
+      },
+      {
+        "line": 238,
+        "text": "theorem seqRun_call_symC {isem : Sem} {nm : String} {L : List (Nat \u00d7 RegClass \u00d7 Reg)}"
+      },
+      {
+        "line": 250,
+        "text": "theorem operands_call_regC (t : Nat) (L : List (Nat \u00d7 RegClass \u00d7 Reg))"
+      },
+      {
+        "line": 261,
+        "text": "theorem vuses_call_regC {V : Type} (t : Nat) (L : List (Nat \u00d7 RegClass \u00d7 Reg))"
+      },
+      {
+        "line": 270,
+        "text": "theorem vdefUpd_call_regC {V : Type} (t : Nat) (L : List (Nat \u00d7 RegClass \u00d7 Reg))"
+      },
+      {
+        "line": 278,
+        "text": "theorem seqRun_call_regC {isem : Sem} {t : Nat} {L : List (Nat \u00d7 RegClass \u00d7 Reg)}"
+      },
+      {
+        "line": 291,
+        "text": "theorem vuseNums_call_regC (t : Nat) (L : List (Nat \u00d7 RegClass \u00d7 Reg))"
+      },
+      {
+        "line": 298,
+        "text": "theorem vdefs_call_regC (t : Nat) (L : List (Nat \u00d7 RegClass \u00d7 Reg))"
+      },
+      {
+        "line": 309,
+        "text": "def outDefsC (b : Nat) (ps : List Reg) (cs : List RegClass) : List (Reg \u00d7 Nat \u00d7 RegClass) :="
+      },
+      {
+        "line": 312,
+        "text": "theorem map_fst_zipIdx {\u03b2 : Type} : \u2200 (cs : List \u03b2) (k : Nat), (cs.zipIdx k).map Prod.fst = cs"
+      },
+      {
+        "line": 316,
+        "text": "theorem callDefsC_outDefsC (b : Nat) (ps : List Reg) (cs : List RegClass) :"
+      },
+      {
+        "line": 320,
+        "text": "theorem regsClasses_outRegsC (st : LState) (cs : List RegClass) :"
+      },
+      {
+        "line": 326,
+        "text": "theorem retRegsC_lengthC : \u2200 (cs : List RegClass) (nx nv : Nat) {ps : List Reg},"
+      },
+      {
+        "line": 342,
+        "text": "theorem outDefsC_length (b : Nat) {ps : List Reg} {cs : List RegClass}"
+      },
+      {
+        "line": 346,
+        "text": "theorem outDefsC_vregs (b : Nat) {ps : List Reg} {cs : List RegClass}"
+      },
+      {
+        "line": 353,
+        "text": "theorem resultsHeld_callC {fr : Clif.Frame} {\u03c1 : Nat \u2192 CV} {st : LState} {rvals : List Clif.Val}"
+      },
+      {
+        "line": 391,
+        "text": "theorem results_callC {fr : Clif.Frame} {\u03c1 : Nat \u2192 CV} {st : LState} {rvals : List Clif.Val}"
+      },
+      {
+        "line": 410,
+        "text": "def argStoreC (cls : Nat \u2192 RegClass) (e : Nat \u00d7 Nat \u00d7 Nat) : MInst :="
+      },
+      {
+        "line": 413,
+        "text": "theorem argRegPairs_mapC (cls : Nat \u2192 RegClass) : \u2200 (T : List ((ArgLoc \u00d7 Nat) \u00d7 Nat)),"
+      },
+      {
+        "line": 427,
+        "text": "theorem argStores_mapC (cls : Nat \u2192 RegClass) : \u2200 (T : List ((ArgLoc \u00d7 Nat) \u00d7 Nat)),"
+      },
+      {
+        "line": 442,
+        "text": "theorem ctor_gen_call_args_genC {ctx : Ctx} (st : LState) (s : Clif.Signature) (args : List Nat)"
+      },
+      {
+        "line": 467,
+        "text": "theorem operands_argStoreC (cls : Nat \u2192 RegClass) (e : Nat \u00d7 Nat \u00d7 Nat) :"
+      },
+      {
+        "line": 473,
+        "text": "theorem vdefs_argStoreC (cls : Nat \u2192 RegClass) (e : Nat \u00d7 Nat \u00d7 Nat) :"
+      },
+      {
+        "line": 477,
+        "text": "theorem vuseNums_argStoreC (cls : Nat \u2192 RegClass) (e : Nat \u00d7 Nat \u00d7 Nat) :"
+      },
+      {
+        "line": 481,
+        "text": "theorem seqRun_argStoreC_cons {isem : Sem} {cls : Nat \u2192 RegClass} {e : Nat \u00d7 Nat \u00d7 Nat}"
+      },
+      {
+        "line": 491,
+        "text": "theorem argStoreC_step {Rd F : BitVec 64 \u2192 Prop} {isem : Sem} {sb : Nat}"
+      },
+      {
+        "line": 526,
+        "text": "theorem argStoresC_run {Rd F : BitVec 64 \u2192 Prop} {isem : Sem} {MR : MemRelT} {sb : Nat}"
+      },
+      {
+        "line": 583,
+        "text": "theorem stackEnts_mem_inv : \u2200 {locs : List ArgLoc} {args bytes : List Nat} {e : Nat \u00d7 Nat \u00d7 Nat},"
+      },
+      {
+        "line": 602,
+        "text": "theorem argsAt_after_storesC {Rd F : BitVec 64 \u2192 Prop} {isem : Sem} {MR : MemRelT} {sb : Nat}"
+      },
+      {
+        "line": 688,
+        "text": "theorem argClasses_of_frame {ctx : Ctx} {fr : Clif.Frame} (hdfg : DFGCons ctx fr) {args : List Nat}"
+      },
+      {
+        "line": 697,
+        "text": "theorem liftC_vals (cls : Nat \u2192 RegClass) (L : List (Nat \u00d7 Reg)) (\u03c1 : Nat \u2192 CV) :"
+      },
+      {
+        "line": 701,
+        "text": "theorem call_sym_lowerInstOkTF {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 771,
+        "text": "theorem call_got_lowerInstOkTF {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 872,
+        "text": "theorem call_bl_ruleOkTF {p : Program} (hp : Data p) {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 944,
+        "text": "theorem call_got_ruleOkTF {p : Program} (hp : Data p) {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 1040,
+        "text": "theorem callRulesCorrectTFP_program : CallRulesCorrectTFP program := by"
+      },
+      {
+        "line": 1051,
+        "text": "theorem callRuleOkTP_of_TFP {Rd : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 1064,
+        "text": "def callCtxOkB (f : Clif.Function) (ctx : Ctx) : Bool :="
+      },
+      {
+        "line": 1077,
+        "text": "theorem callCtxOkB_sound {f : Clif.Function} {ctx : Ctx} (h : callCtxOkB f ctx = true) :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/IselCtlCallTI.lean": {
+    "sha256": "ad076bc1ebd5d3ffe4811aa65e689793e2181968ac2f97a3b34215f62c319a17",
+    "declarations": [
+      {
+        "line": 38,
+        "text": "theorem mapM_valueRegTI {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) :"
+      },
+      {
+        "line": 52,
+        "text": "theorem call_results_lengthT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {ii : Nat}"
+      },
+      {
+        "line": 62,
+        "text": "theorem callIndirect_results_lengthT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)"
+      },
+      {
+        "line": 72,
+        "text": "theorem CtxT.call_retClasses {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {ii : Nat}"
+      },
+      {
+        "line": 88,
+        "text": "theorem call_sym_lowerInstOkT {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 154,
+        "text": "theorem call_got_lowerInstOkT {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 251,
+        "text": "theorem call_bl_ruleOkT {p : Program} (hp : Data p) {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 326,
+        "text": "theorem call_got_ruleOkT {p : Program} (hp : Data p) {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 421,
+        "text": "theorem call_ind_lowerInstOkT {Rd : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 488,
+        "text": "theorem call_ind_ruleOkT {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : BitVec 64 \u2192 Prop}"
+      },
+      {
+        "line": 568,
+        "text": "theorem callRulesCorrectTP_program : CallRulesCorrectTP program := by"
+      },
+      {
+        "line": 578,
+        "text": "theorem callRulesCorrectT_program : CallRulesCorrectT program :="
+      },
+      {
+        "line": 583,
+        "text": "theorem indRulesCorrectTP_program : IndRulesCorrectTP program := by"
+      },
+      {
+        "line": 590,
+        "text": "theorem indRulesCorrectT_program : IndRulesCorrectT program :="
+      }
+    ]
+  },
+  "FV/Backend/StockVoidCallCheck.lean": {
+    "sha256": "74ecf35d3da2209ab0a3efdb7933a8e18f5aeb2168b249479eac08dc5e89e6e6",
+    "declarations": [
+      {
+        "line": 11,
+        "text": "def sourceKey (ctx : Ctx) (x : Nat) : Nat :="
+      },
+      {
+        "line": 25,
+        "text": "structure SourceData where"
+      },
+      {
+        "line": 32,
+        "text": "def sourceData? (f : Clif.Function) : Option SourceData :="
+      },
+      {
+        "line": 43,
+        "text": "def sourceB (f : Clif.Function) (data : SourceData) : Bool :="
+      },
+      {
+        "line": 50,
+        "text": "def callUses (uses : List (Reg \u00d7 Reg)) : List (Nat \u00d7 Reg) :="
+      },
+      {
+        "line": 54,
+        "text": "def scanB (data : SourceData) (event : Stock.BlockScanEvent) : Bool :="
+      },
+      {
+        "line": 64,
+        "text": "def codeB (data : SourceData) (result : Stock.Result) : Bool := result.blockScans.toList.all (scanB data)"
+      },
+      {
+        "line": 68,
+        "text": "def check (f : Clif.Function) (vc : VCode) : Bool :="
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockSourceCallWitness.lean": {
+    "sha256": "3ca1213d433a147d15a3ccfcf6d91212437c5cde461213d17c39cb7fb58af377",
+    "declarations": [
+      {
+        "line": 9,
+        "text": "private def signature : Clif.Signature := {"
+      },
+      {
+        "line": 11,
+        "text": "private def statement : Clif.Stmt := \u27e8[31],.call 0 [7]\u27e9"
+      },
+      {
+        "line": 12,
+        "text": "private def caller : Clif.Function := {"
+      },
+      {
+        "line": 16,
+        "text": "private def callee : Clif.Function := {"
+      },
+      {
+        "line": 19,
+        "text": "private def value (word : BitVec 64) : Clif.Val := \u27e8.i64,word\u27e9"
+      },
+      {
+        "line": 20,
+        "text": "private def before (word : BitVec 64) : Clif.Frame := {"
+      },
+      {
+        "line": 22,
+        "text": "private def saved (word : BitVec 64) : Clif.Frame := {before word with body := []}"
+      },
+      {
+        "line": 23,
+        "text": "private def after (word : BitVec 64) : Clif.Frame := {saved word with regs := (saved word).regs.set 31 (value word)}"
+      },
+      {
+        "line": 24,
+        "text": "private def active (word : BitVec 64) : Clif.State := {"
+      },
+      {
+        "line": 27,
+        "text": "private def program : Clif.Program := {funcs := [callee]}"
+      },
+      {
+        "line": 28,
+        "text": "private def environment : Clif.Env := {extern := fun name =>"
+      },
+      {
+        "line": 30,
+        "text": "private def lowerBoth : Except String (Result \u00d7 Result) := do"
+      },
+      {
+        "line": 34,
+        "text": "private def Observed : Prop := lowerBoth.toOption.map (fun q =>"
+      },
+      {
+        "line": 40,
+        "text": "private theorem observed : Observed := by unfold Observed; decide +kernel"
+      },
+      {
+        "line": 43,
+        "text": "private theorem callerDominated : Dominated caller := by"
+      },
+      {
+        "line": 76,
+        "text": "theorem stock_source_call_result_witness (word : BitVec 64) : \u2203 c d : Result,"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockEntryLoads.lean": {
+    "sha256": "7921a69059c0f831c8d68b2dfb6abe84ed529ceda16c062a424384debf398111",
+    "declarations": [
+      {
+        "line": 11,
+        "text": "theorem entry_loads_preserve_values {ctx : Ctx} {fr : Clif.Frame}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockEntryLoadsWitness.lean": {
+    "sha256": "cd647e07ad0b9e1bb8d416ebc48072be93f3c65dd7813290b571a0d71d8d1c9c",
+    "declarations": [
+      {
+        "line": 16,
+        "text": "private def function : Clif.Function :="
+      },
+      {
+        "line": 22,
+        "text": "private theorem finite :"
+      },
+      {
+        "line": 26,
+        "text": "private theorem domain : Dominated function \u2227 LowerScope function := by"
+      },
+      {
+        "line": 59,
+        "text": "theorem success : (Stock.lower function).isOk = true := by native_decide"
+      },
+      {
+        "line": 60,
+        "text": "private theorem some_result : (Stock.lower function).toOption.isSome := by"
+      },
+      {
+        "line": 65,
+        "text": "private def result : Result := (Stock.lower function).toOption.get some_result"
+      },
+      {
+        "line": 66,
+        "text": "private theorem run : Stock.lower function = .ok result := by"
+      },
+      {
+        "line": 70,
+        "text": "theorem event_bound : 0 < result.blockScans.size := by native_decide"
+      },
+      {
+        "line": 71,
+        "text": "private def event : BlockScanEvent := result.blockScans[0]'event_bound"
+      },
+      {
+        "line": 72,
+        "text": "private theorem events : event \u2208 result.blockScans.toList := Array.getElem_mem_toList event_bound"
+      },
+      {
+        "line": 76,
+        "text": "theorem stack_parameter_trace :"
+      },
+      {
+        "line": 83,
+        "text": "private def address (w : Arm.ArmState) : BitVec 64 :="
+      },
+      {
+        "line": 85,
+        "text": "private def word (w : Arm.ArmState) : BitVec 64 := (Arm.read_mem_bytes 8 (address w) w).setWidth 64"
+      },
+      {
+        "line": 86,
+        "text": "private def stackValue (w : Arm.ArmState) : Clif.Val := \u27e8.i64,word w\u27e9"
+      },
+      {
+        "line": 87,
+        "text": "private def arguments (w : Arm.ArmState) : List Clif.Val :="
+      },
+      {
+        "line": 89,
+        "text": "private def frame (w : Arm.ArmState) : Clif.Frame := {"
+      },
+      {
+        "line": 95,
+        "text": "theorem stack_arguments_at_entry (w : Arm.ArmState) :"
+      },
+      {
+        "line": 109,
+        "text": "theorem stack_parameter_load_witness (X : ExtSem) (w : Arm.ArmState) :"
+      },
+      {
+        "line": 164,
+        "text": "private def assembled := assembleOriginalBlock event.ctx function function.blocks[0]! 0 0 #[] #[]"
+      },
+      {
+        "line": 169,
+        "text": "theorem stack_assembly_trace :"
+      },
+      {
+        "line": 176,
+        "text": "theorem stack_assembly_rows_witness :"
+      },
+      {
+        "line": 207,
+        "text": "theorem stack_whole_entry_prelude_witness (X : ExtSem) (w : Arm.ArmState) :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/IselMemFuncAddr.lean": {
+    "sha256": "829e8389e443d9d3d8cdc30b69b986bc816f52bb7a1f604a4335b0d7bffde099",
+    "declarations": [
+      {
+        "line": 22,
+        "text": "structure FAData (p : Program) : Prop where"
+      },
+      {
+        "line": 26,
+        "text": "theorem faData_program : FAData program := \u27e8rfl, rfl\u27e9"
+      },
+      {
+        "line": 28,
+        "text": "theorem mem_variantNames_FuncAddr : (variantNames 152)[12]? = some \"FuncAddr\" := rfl"
+      },
+      {
+        "line": 29,
+        "text": "theorem mem_variantNames_FuncAddrOp : (variantNames 151)[12]? = some \"FuncAddr\" := rfl"
+      },
+      {
+        "line": 31,
+        "text": "theorem inv_funcAddr_root {f : Clif.Function} {cl : Clif.Inst} {w : V}"
+      },
+      {
+        "line": 53,
+        "text": "theorem instOutcome_funcAddr (fr : Clif.Frame) (cm : Clif.Mem) (ty : Clif.Ty) (fn : Nat) :"
+      },
+      {
+        "line": 56,
+        "text": "theorem evalInst_funcAddr_inv {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty} {fn : Nat}"
+      },
+      {
+        "line": 67,
+        "text": "theorem funcAddr_lower_ok (hMR : MRStable F MR) (hMRo : MemRelOk F sb syms f MR)"
+      },
+      {
+        "line": 105,
+        "text": "theorem func_addr_ok {p : Program} (hp : Data p) (hpF : FAData p) (hR : Refines F isem) (hMR : MRStable F MR)"
+      }
+    ]
+  },
+  "FV/Backend/Proof/IselTls.lean": {
+    "sha256": "e4922ce5754fd772917e223f33603ed0fbfb37f490504dbe978058098ceba196",
+    "declarations": [
+      {
+        "line": 28,
+        "text": "theorem ext_tls_model_iff (t : CTy) (fs : List V) :"
+      },
+      {
+        "line": 35,
+        "text": "theorem ext_symbol_value_data_tls_iff (gv : Nat) (fs : List V) :"
+      },
+      {
+        "line": 64,
+        "text": "theorem mem_variantNames_TlsValue : (variantNames 151)[50]? = some \"TlsValue\" := rfl"
+      },
+      {
+        "line": 66,
+        "text": "theorem inv_tlsValue_root {f : Clif.Function} {cl : Clif.Inst} {w : V}"
+      },
+      {
+        "line": 86,
+        "text": "theorem ofV_elfTlsGetAddr (nm : String) (rd t : Reg) :"
+      },
+      {
+        "line": 95,
+        "text": "theorem elf_tls_get_addr_ok {n : Nat} (hn : 40 \u2264 n) {nm : String}"
+      },
+      {
+        "line": 113,
+        "text": "theorem operands_elfTlsGetAddr (nm : String) (d t : Nat) :"
+      },
+      {
+        "line": 117,
+        "text": "theorem vdefs_elfTlsGetAddr (nm : String) (d t : Nat) :"
+      },
+      {
+        "line": 120,
+        "text": "theorem vuseNums_elfTlsGetAddr (nm : String) (d t : Nat) :"
+      },
+      {
+        "line": 123,
+        "text": "theorem evalInst_tlsValue_inv {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty} {gv : Nat}"
+      },
+      {
+        "line": 140,
+        "text": "theorem instOutcome_tlsValue (fr : Clif.Frame) (cm : Clif.Mem) (ty : Clif.Ty) (gv : Nat) :"
+      },
+      {
+        "line": 144,
+        "text": "theorem tls_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem)"
+      },
+      {
+        "line": 207,
+        "text": "theorem tls_value_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms isem) :"
+      },
+      {
+        "line": 239,
+        "text": "theorem tls_value_macho_ok : MemRuleOkR Rd F sb syms isem MR env cp p rule_lower_3220 := by"
+      }
+    ]
+  },
+  "FV/Compile/Subset.lean": {
+    "sha256": "2b2073672f303a13ef73d7ed773a00f8d0d9e039e4d5dd058d67fa68a0285109",
+    "declarations": [
+      {
+        "line": 16,
+        "text": "def tyE (t : Ty) : Bool := t.isInt && t != .i128"
+      },
+      {
+        "line": 18,
+        "text": "def unaryE : UnaryOp \u2192 Bool"
+      },
+      {
+        "line": 23,
+        "text": "def unaryTyE : UnaryOp \u2192 Ty \u2192 Bool"
+      },
+      {
+        "line": 27,
+        "text": "def binaryE : BinaryOp \u2192 Bool"
+      },
+      {
+        "line": 33,
+        "text": "def flagsE (f : MemFlags) : Bool :="
+      },
+      {
+        "line": 37,
+        "text": "def instE : Inst \u2192 Bool"
+      },
+      {
+        "line": 70,
+        "text": "def globalE : GlobalValue \u2192 Bool"
+      },
+      {
+        "line": 75,
+        "text": "def termE : Terminator \u2192 Bool"
+      },
+      {
+        "line": 83,
+        "text": "def sigE (s : Signature) : Bool :="
+      },
+      {
+        "line": 86,
+        "text": "def functionE (f : Function) : Bool :="
+      },
+      {
+        "line": 92,
+        "text": "def onlySubsetE (p : Program) : Bool := p.funcs.all functionE"
+      },
+      {
+        "line": 95,
+        "text": "theorem instE_of_functionE {f : Function} (hE : functionE f = true) {b : Block} (hb : b \u2208 f.blocks)"
+      }
+    ]
+  },
+  "FV/Backend/Lowering/Stock.lean": {
+    "sha256": "b81f1973800ac6ac42d127968d1f5448da8722dd8c22a135fb6d8c9451f22e3e",
+    "declarations": [
+      {
+        "line": 15,
+        "text": "def instArgs : Clif.Inst \u2192 List Nat"
+      },
+      {
+        "line": 29,
+        "text": "def termArgs : Clif.Terminator \u2192 List Nat"
+      },
+      {
+        "line": 41,
+        "text": "def mustLower : Clif.Inst \u2192 Bool"
+      },
+      {
+        "line": 50,
+        "text": "def colored (i : Clif.Inst) : Bool :="
+      },
+      {
+        "line": 57,
+        "text": "def UseState.inc : UseState \u2192 UseState"
+      },
+      {
+        "line": 63,
+        "text": "def useStates (ctx : Ctx) (args : Array (List Nat)) : Array UseState := Id.run do"
+      },
+      {
+        "line": 92,
+        "text": "structure Opportunistic where"
+      },
+      {
+        "line": 100,
+        "text": "structure State where"
+      },
+      {
+        "line": 115,
+        "text": "def State.mark (st : State) (v : Nat) : State :="
+      },
+      {
+        "line": 118,
+        "text": "def State.setAlias (st : State) (dst src : Reg) : Except String State := do"
+      },
+      {
+        "line": 128,
+        "text": "def source (ctx : Ctx) (st : State) (v : Nat) : Option (Nat \u00d7 Bool) := do"
+      },
+      {
+        "line": 137,
+        "text": "def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : State) :"
+      },
+      {
+        "line": 209,
+        "text": "def sem (ctx : Ctx) : Isle.Sem V State where"
+      },
+      {
+        "line": 219,
+        "text": "def runTerm (ctx : Ctx) (term : String) (args : List V) (st : State) :"
+      },
+      {
+        "line": 225,
+        "text": "structure SourceMetadata where"
+      },
+      {
+        "line": 231,
+        "text": "def sourceMetadata (ctx : Ctx) (ranges : Array (Nat \u00d7 Nat)) : SourceMetadata := Id.run do"
+      },
+      {
+        "line": 256,
+        "text": "def finishCtx (ctx : Ctx) (ranges : Array (Nat \u00d7 Nat)) (allocation : Allocation) :"
+      },
+      {
+        "line": 275,
+        "text": "def buildCtx (f : Clif.Function) : Except String (Ctx \u00d7 Array (Nat \u00d7 Nat) \u00d7 State) := do"
+      },
+      {
+        "line": 287,
+        "text": "def destinations : Clif.Terminator \u2192 List (Nat \u00d7 List Clif.TryArg)"
+      },
+      {
+        "line": 294,
+        "text": "structure Order where"
+      },
+      {
+        "line": 302,
+        "text": "def blockOrder (f : Clif.Function) : Except String Order := do"
+      },
+      {
+        "line": 335,
+        "text": "structure Step where"
+      },
+      {
+        "line": 350,
+        "text": "structure Scan where"
+      },
+      {
+        "line": 359,
+        "text": "structure ScanEvent where"
+      },
+      {
+        "line": 368,
+        "text": "structure ScanRecord where"
+      },
+      {
+        "line": 376,
+        "text": "structure BlockScan where"
+      },
+      {
+        "line": 382,
+        "text": "structure BlockScanEvent where"
+      },
+      {
+        "line": 391,
+        "text": "structure Result where"
+      },
+      {
+        "line": 403,
+        "text": "def commitOpportunisticValues (ctx : Ctx) (values : List Nat) (st : State) :"
+      },
+      {
+        "line": 413,
+        "text": "def commitOpportunistic (ctx : Ctx) (block inst : Nat) (st : State) :"
+      },
+      {
+        "line": 421,
+        "text": "def branchArgs (ctx : Ctx) (st : State) (block index : Nat) :"
+      },
+      {
+        "line": 452,
+        "text": "def scanState (st : State) (i : Nat) : State :="
+      },
+      {
+        "line": 457,
+        "text": "structure Emission where"
+      },
+      {
+        "line": 465,
+        "text": "def bindResults (ctx : Ctx) (pairs : List (Nat \u00d7 List Reg)) (next : State) :"
+      },
+      {
+        "line": 474,
+        "text": "def emitInstruction (ctx : Ctx) (i : Nat) (before : State) : Except String Emission := do"
+      },
+      {
+        "line": 483,
+        "text": "def Emission.scan (emission : Emission) (block i : Nat) (before : State) : Scan :="
+      },
+      {
+        "line": 491,
+        "text": "def scanInstruction (ctx : Ctx) (block i ti : Nat) (isBranch : Bool) (input : State) :"
+      },
+      {
+        "line": 508,
+        "text": "def runScansRef (exec : Nat \u2192 State \u2192 Except String Scan) :"
+      },
+      {
+        "line": 517,
+        "text": "def runScansAux (exec : Nat \u2192 State \u2192 Except String Scan) :"
+      },
+      {
+        "line": 524,
+        "text": "def runScans (exec : Nat \u2192 State \u2192 Except String Scan) (indices : List Nat) (input : State) :"
+      },
+      {
+        "line": 527,
+        "text": "def scanBlock (ctx : Ctx) (block ti : Nat) (isBranch : Bool) (indices : List Nat)"
+      },
+      {
+        "line": 533,
+        "text": "def outgoingStep (ctx : Ctx) (order : Order) (bi : Nat)"
+      },
+      {
+        "line": 542,
+        "text": "def collectOutgoing (ctx : Ctx) (order : Order) (bi : Nat) (targets : Array Nat)"
+      },
+      {
+        "line": 546,
+        "text": "structure BranchEmission where"
+      },
+      {
+        "line": 553,
+        "text": "def branchCode (f : Clif.Function) (t : Clif.Terminator) (targets : Array Nat)"
+      },
+      {
+        "line": 566,
+        "text": "def emitBranch (ctx : Ctx) (f : Clif.Function) (t : Clif.Terminator)"
+      },
+      {
+        "line": 574,
+        "text": "structure LoweredBlockCore where"
+      },
+      {
+        "line": 584,
+        "text": "def lowerBlockCore (ctx : Ctx) (order : Order) (f : Clif.Function)"
+      },
+      {
+        "line": 603,
+        "text": "structure DriverState where"
+      },
+      {
+        "line": 613,
+        "text": "def assembleOriginalBlock (ctx : Ctx) (f : Clif.Function) (b : Clif.Block)"
+      },
+      {
+        "line": 639,
+        "text": "def recordCore (input : DriverState) (lowered : LoweredBlockCore) (bi stop : Nat) :"
+      },
+      {
+        "line": 661,
+        "text": "def lowerNode (ctx : Ctx) (ranges : Array (Nat \u00d7 Nat)) (order : Order)"
+      },
+      {
+        "line": 687,
+        "text": "def lower (f : Clif.Function) : Except String Result := do"
+      }
+    ]
+  }
+}

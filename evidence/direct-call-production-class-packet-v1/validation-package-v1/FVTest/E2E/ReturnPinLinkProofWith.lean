@@ -8,7 +8,23 @@ set_option autoImplicit false
 namespace FVTest.E2E.ReturnPinLinkProofWith
 open _root_.E2E _root_.E2E.LinkCheck _root_.E2E.BinCheck Backend Lean
 
-def leanFilesReturnPinWith (lowerName : String) (I : LinkInput) (names : List String) (entries : List String) (out module exe : String)
+structure ProofApi where
+  checksModule : String
+  checksName : String
+  stackModule : String
+  stackName : String
+  binaryName : String
+  programCheck : String
+
+def ProofApi.previous : ProofApi :=
+  ⟨"FV.E2E.ReturnPinChecksWith", "ReturnPinChecksWith", "FV.E2E.ReturnPinGeneratedStack",
+    "ReturnPinGeneratedStack", "ReturnPinBinary", "okRReturnPinCalls"⟩
+
+def ProofApi.resultCalls : ProofApi :=
+  ⟨"FV.E2E.ResultCallChecks", "ResultCallChecks", "FV.E2E.ResultCallGeneratedStack",
+    "ResultCallGeneratedStack", "ResultCallBinary", "okRReturnPinResultCalls"⟩
+
+def leanFilesReturnPinFor (api : ProofApi) (lowerName : String) (I : LinkInput) (names : List String) (entries : List String) (out module exe : String)
     (cleanup : Bool)
     (noTls : Bool) (stack : Option Nat) (stackEntries : List String) (bg : BinGen)
     (lowerImport : String := "FV.Backend.Lowering.StockVoidCallNI")
@@ -26,8 +42,8 @@ def leanFilesReturnPinWith (lowerName : String) (I : LinkInput) (names : List St
   let header (imports : String) := s!"import {lowerImport}
 import FV.E2E.SemanticChecksWith
 import FV.E2E.SemanticStackBound
-import FV.E2E.ReturnPinChecksWith
-import FV.E2E.ReturnPinGeneratedStack
+import {api.checksModule}
+import {api.stackModule}
 {imports}
 
 namespace {ns}
@@ -86,7 +102,7 @@ def symCert : List (String × Nat × Nat) :=
 
 "
   let sliceThm (k : Nat) := s!"/-- The checks of the functions of slice {k} (`staticChks`, the validators, and `linkChks`). -/
-theorem slice{k}_ok : ReturnPinChecksWith.fnsBProduction actualLower input {if cleanup then "true" else "false"} slice{k} = true := by native_decide
+theorem slice{k}_ok : {api.checksName}.fnsBProduction actualLower input {if cleanup then "true" else "false"} slice{k} = true := by native_decide
 
 /-- The executable's bytes of the code of slice {k} (and of the GOT slots it loads). -/
 def ex{k} : Elf.Excerpt := {exLean (bg.slices.getD k [])}
@@ -144,16 +160,16 @@ excerpts (`hdr_bin`, `sliceK_bin`, `data_bin`, `syms_bin`).
 theorem globalB_input : SemanticChecksWith.globalBProduction actualLower input {if cleanup then "true" else "false"} = true := by native_decide
 
 /-- Every premise of `LinkSys.Ok` about the program and its layout. -/
-theorem okB_input : okRReturnPinCalls actualStage input actualResults = true :=
-  ReturnPinChecksWith.okRProduction_of_checks globalB_input {if sl.length == 1 then "slice0_ok" else s!"(by
-    show ReturnPinChecksWith.fnsBProduction actualLower input {if cleanup then "true" else "false"} ({funcs}) = true
-    simp only [ReturnPinChecksWith.fnsBProduction_append, {", ".intercalate (sl.map (s!"slice{·}_ok"))}, Bool.and_self])"}
+theorem okB_input : {api.programCheck} actualStage input actualResults = true :=
+  {api.checksName}.okRProduction_of_checks globalB_input {if sl.length == 1 then "slice0_ok" else s!"(by
+    show {api.checksName}.fnsBProduction actualLower input {if cleanup then "true" else "false"} ({funcs}) = true
+    simp only [{api.checksName}.fnsBProduction_append, {", ".intercalate (sl.map (s!"slice{·}_ok"))}, Bool.and_self])"}
 
 /-- **`LinkSys.Ok` of the crate's linked system**, for every base environment satisfying the base
 premises and every `F` containing the code. -/
 theorem link_ok (B : BaseEnv) (F : BitVec 64 → Prop) (hB : BaseOk (ofRes input actualResults B F))
     (hF : ∀ a, (ofRes input actualResults B F).Img a → F a) : (ofRes input actualResults B F).OkSemanticReturnPins :=
-  ReturnPinBinary.okB_sound (I := compilerInput) okB_input hB hF
+  {api.binaryName}.okB_sound (I := compilerInput) okB_input hB hF
 
 {if noTls then closedText else ""}/-- The entries (`--entries`, default: every function). -/
 def entryNames : List String :=
@@ -204,7 +220,7 @@ theorem bin_ok (file : ByteArray) (h : Elf.Agrees file exAll) : BinOkWithResults
 
 "
   for (e, i) in entries.zipIdx do
-    main := main ++ s!"/-- **`backend_correct_program` for `{e}`** -/\ntheorem correct_{i} : ReturnPinChecksWith.CrateStmtProduction actualLower input {if cleanup then "true" else "false"} {leanStr e} :=\n  ReturnPinChecksWith.crate_correct_production (lower := actualLower) input {if cleanup then "true" else "false"} okB_input _\n\n"
+    main := main ++ s!"/-- **`backend_correct_program` for `{e}`** -/\ntheorem correct_{i} : {api.checksName}.CrateStmtProduction actualLower input {if cleanup then "true" else "false"} {leanStr e} :=\n  {api.checksName}.crate_correct_production (lower := actualLower) input {if cleanup then "true" else "false"} okB_input _\n\n"
   if let some S := stack then
     main := main ++ s!"/-- **The stack bound** (`FV/E2E/SemanticStackBound.lean`): the program's call graph has no cycle, and an
 activation of any of its functions uses at most {S} bytes of stack with its callees
@@ -213,7 +229,7 @@ theorem stack_ok : SemanticStackBound.stackB compilerInput = some {S} := by nati
 
 "
     for (e, i) in entries.zipIdx do
-      main := main ++ s!"/-- **`backend_correct_program_stack` for `{e}`**: at every fuel, with the stack bound. -/\ntheorem correct_stack_{i} : SemanticStackBound.StackStmt compilerInput {leanStr e} :=\n  ReturnPinGeneratedStack.crate_correct_stack okB_input stack_ok _\n\n"
+      main := main ++ s!"/-- **`backend_correct_program_stack` for `{e}`**: at every fuel, with the stack bound. -/\ntheorem correct_stack_{i} : SemanticStackBound.StackStmt compilerInput {leanStr e} :=\n  {api.stackName}.crate_correct_stack okB_input stack_ok _\n\n"
   else if !stackEntries.isEmpty then
     -- in chunks of `sliceSize` (the generated proofs index them by `decide`)
     let nCh := (stackEntries.length + sliceSize - 1) / sliceSize
@@ -229,7 +245,7 @@ theorem stack_entries{c} : SemanticStackBound.goodAll compilerInput stackEntries
 "
     for (e, i) in entries.zipIdx do
       if let some k := stackEntries.idxOf? e then
-        main := main ++ s!"/-- **`backend_correct_program_stack` for `{e}`**: at every fuel, with its stack bound. -/\ntheorem correct_stack_{i} : SemanticStackBound.StackStmt compilerInput {leanStr e} :=\n  ReturnPinGeneratedStack.crate_correct_stackN okB_input\n    (SemanticStackBound.goodN_of_idx stack_entries{k / sliceSize} {k % sliceSize} (by decide))\n\n"
+        main := main ++ s!"/-- **`backend_correct_program_stack` for `{e}`**: at every fuel, with its stack bound. -/\ntheorem correct_stack_{i} : SemanticStackBound.StackStmt compilerInput {leanStr e} :=\n  {api.stackName}.crate_correct_stackN okB_input\n    (SemanticStackBound.goodN_of_idx stack_entries{k / sliceSize} {k % sliceSize} (by decide))\n\n"
   let footer := s!"end {ns}\n"
   if !split then
     return [(out, header ("import FV.E2E.SemanticChecksWith\nimport FV.E2E.StackBound\n\n" ++ doc.trimAsciiEnd.toString) ++ inp ++ sliceThm 0 ++ main ++ footer)]
@@ -241,5 +257,14 @@ theorem stack_entries{c} : SemanticStackBound.goodAll compilerInput stackEntries
       header s!"import {ns}.Input\n\n/-! Slice {k} of `{ns}`'s checks (generated; see there). -/" ++ sliceThm k ++ footer)]
   let imports := "\n".intercalate (sl.map (s!"import {ns}.Slice{·}")) ++ "\nimport FV.E2E.StackBound"
   return files ++ [(out, header (imports ++ "\n\n" ++ doc.trimAsciiEnd.toString) ++ main ++ footer)]
+
+
+def leanFilesReturnPinWith (lowerName : String) (I : LinkInput) (names : List String) (entries : List String) (out module exe : String)
+    (cleanup : Bool)
+    (noTls : Bool) (stack : Option Nat) (stackEntries : List String) (bg : BinGen)
+    (lowerImport : String := "FV.Backend.Lowering.StockVoidCallNI")
+    (sliceLimit : Nat := sliceSize) :
+    List (String × String) :=
+  leanFilesReturnPinFor .previous lowerName I names entries out module exe cleanup noTls stack stackEntries bg lowerImport sliceLimit
 
 end FVTest.E2E.ReturnPinLinkProofWith

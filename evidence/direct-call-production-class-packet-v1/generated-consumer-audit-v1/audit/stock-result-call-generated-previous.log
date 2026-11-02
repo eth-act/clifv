@@ -1,0 +1,7 @@
+'E2E.ReturnPinChecksWith.fnsBProduction_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.checks_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.okRProduction_of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.crate_correct_production' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.accepts_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinGeneratedStack.crate_correct_stack' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinGeneratedStack.crate_correct_stackN' depends on axioms: [propext, Classical.choice, Quot.sound]

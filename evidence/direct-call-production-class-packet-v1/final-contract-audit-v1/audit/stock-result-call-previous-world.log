@@ -1,0 +1,7 @@
+'E2E.CompiledProgramReturnPins.entryRegs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.hasTls_of_vcode_return_pins' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.stackArgsAvoid_frameW_return_pins' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_return_pins' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_ni_return_pins' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.no_explicit_returns_of_sret' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.armRefines_of_actRet_return_pins' depends on axioms: [propext, Classical.choice, Quot.sound]

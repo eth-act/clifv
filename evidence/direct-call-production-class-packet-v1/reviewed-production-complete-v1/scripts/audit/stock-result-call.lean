@@ -1,0 +1,25 @@
+import FV.E2E.StockResultCallProvider
+#print axioms Backend.Stock.ResultCall.source_return_call
+#print axioms Backend.Stock.ResultCall.Layout.source_fields
+#print axioms Backend.Stock.ResultCall.Layout.scan_fields
+#print axioms Backend.Stock.ResultCall.check_sound
+#print axioms Backend.Stock.ResultCall.Layout.source_result
+#print axioms E2E.result_call_pair
+#print axioms Backend.Stock.ResultCall.Layout.source_run
+#print axioms Backend.Stock.ResultCall.seqRun_call_result
+#print axioms Backend.Stock.ResultCall.SourceRun.virtual_return
+#print axioms Backend.Stock.ResultCall.SourceRun.execute
+#print axioms Backend.Stock.ResultCall.SourceRun.execute_other
+#print axioms Backend.Stock.ResultCall.source_call_notrap
+#print axioms Backend.Stock.ResultCall.Layout.return_function
+#print axioms Backend.Stock.ResultCall.check_domain
+#print axioms E2E.stock_result_call_machine_return
+#print axioms E2E.backend_correct_world_niX_stock_result_call
+#print axioms E2E.backend_correct_worldX_stock_result_call
+#print axioms Backend.Stock.ResultCall.lowerWithPrevious_retry
+#print axioms Backend.Stock.ResultCall.lowerWithPrevious_preserves
+#print axioms Backend.Stock.ResultCall.lowerWithPrevious_accepts
+#print axioms Backend.Stock.ResultCall.candidate_domain
+#print axioms Backend.Stock.ResultCall.lowerWithPrevious_origin
+#print axioms Backend.Stock.ResultCall.lowerWithPrevious_selects
+#print axioms Backend.Stock.ResultCall.candidate_stock

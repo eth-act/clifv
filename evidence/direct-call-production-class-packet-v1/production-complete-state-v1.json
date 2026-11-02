@@ -1,0 +1,249 @@
+{
+  "status": "passed_preserved_inner_loop",
+  "immutable_production": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+  "old_contract_baseline": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "current_main_validation": false,
+  "full_goal_complete": false,
+  "files": {
+    "FV/Backend/StockResultCallCheck.lean": {
+      "kind": "new",
+      "sha256": "0e3c6533013e18cdb9e3d8e96f57379675baa0c0a68c972954c86e06ab35d7f9"
+    },
+    "FV/Backend/SemanticABICheck.lean": {
+      "kind": "changed",
+      "sha256": "2eaa6c12b6618144896fae16bee22d0fe661dce6a2ee78a3833431534af56017"
+    },
+    "FV/Backend/ResultCallProduction.lean": {
+      "kind": "new",
+      "sha256": "2520c6eaa42ea571cf5399440c76a2cd7fb182f548fdd31a654ca1d53b464329"
+    },
+    "FV/E2E/StockResultCallSource.lean": {
+      "kind": "new",
+      "sha256": "d1bc05819777f72578b0739dc11dfd9da1780e5d082560dc7da3665ddd104fcc"
+    },
+    "FV/E2E/StockResultCallLayout.lean": {
+      "kind": "new",
+      "sha256": "71dd131e176ba18d80249f7c14d12af2b035068648160f4e996ed584788c0807"
+    },
+    "FV/E2E/StockResultCallPair.lean": {
+      "kind": "new",
+      "sha256": "e2c19b796e9386b5051be942f668e8094f4934e08e315d3de4b0e91607bf621b"
+    },
+    "FV/E2E/StockResultCallRun.lean": {
+      "kind": "new",
+      "sha256": "6e200eb797d954c40b3ab628ea53691861b0023502e869d7f13ae4bf9a15ac28"
+    },
+    "FV/E2E/StockResultCallDomain.lean": {
+      "kind": "new",
+      "sha256": "f795571754f362279420cb18344bc7df3b813a8f9153fc622eb2620cbf616c2f"
+    },
+    "FV/E2E/StockResultCallMachine.lean": {
+      "kind": "new",
+      "sha256": "bdb19a43946259701f79d5bd83ee2cb78478f0a319667333c1b6a9b8970036db"
+    },
+    "FV/E2E/StockResultCallNI.lean": {
+      "kind": "new",
+      "sha256": "10f8a4427ec678c07272617817b414959dc2e4e2596e03940987fbcbf12ec61a"
+    },
+    "FV/E2E/StockResultCallProvider.lean": {
+      "kind": "new",
+      "sha256": "ff693c75a5dc786f8f18c792ff896fb8146883775f1000cf29caeceb2807a258"
+    },
+    "FV/E2E/StockResultCallWitness.lean": {
+      "kind": "new",
+      "sha256": "72eb67baef61153a1adddff0704182cf76bbe1fc2e4d402395ffd45b65780dec"
+    },
+    "FV/E2E/CompiledSemanticABI.lean": {
+      "kind": "changed",
+      "sha256": "f3768b5ee01ae86dd340afba030639293694c25f064b4b86d9f1fede370193fa"
+    },
+    "FV/E2E/CompiledSemanticReturnPins.lean": {
+      "kind": "changed",
+      "sha256": "ec9199eca3adcd25305ba9917506d3476f99aa94b5a4225383fdc7aa7c4c9fa6"
+    },
+    "FV/E2E/CompiledProgramReturnPins.lean": {
+      "kind": "changed",
+      "sha256": "758b48fca8caa8e93128ccb155d143b6871b3b8a8a6f60dea2c5a8149b5c3fe8"
+    },
+    "FV/E2E/SemanticABIBoundary.lean": {
+      "kind": "changed",
+      "sha256": "9bbd92e75efb4867d1691f32ff99093797e3c3ebed45f62eb86d7983ad91cba5"
+    },
+    "FV/E2E/WorldReturnPinBoundary.lean": {
+      "kind": "changed",
+      "sha256": "30aef10a85f7bc575ade8731b73fcd6197781a26f8b077883df68d9970a2da79"
+    },
+    "FV/E2E/LinkReturnPinWorldX.lean": {
+      "kind": "changed",
+      "sha256": "5bdc5d9e5bdfe63dfda5c99044db9694349d11360f9825eee0ca0dd40e63b8dc"
+    },
+    "FV/E2E/ReturnPinChecksWith.lean": {
+      "kind": "changed",
+      "sha256": "da4f574e94a28abc34c5e385b830d83feb402151dcb609821b319427df774b57"
+    },
+    "FV/E2E/ReturnPinAdmission.lean": {
+      "kind": "new",
+      "sha256": "947ce095baee89074a27674af28f851afbfe89ef5a1b54f2b21eea0a8443d6d3"
+    },
+    "FV/E2E/ReturnPinBinaryKernel.lean": {
+      "kind": "new",
+      "sha256": "eefcb24df59e008e601da68a45f29ea1d16da05f1f5c1071371cfa739b77cd87"
+    },
+    "FV/E2E/ReturnPinBinary.lean": {
+      "kind": "changed",
+      "sha256": "ac30184be932c39b82623b5dfacf5263db173a86a7d52b0a84e75a98ff4d0697"
+    },
+    "FV/E2E/ResultCallBinary.lean": {
+      "kind": "new",
+      "sha256": "1a0a80c0d7e681d489db27d2d9e17105b62ba6c703b52d67305023e36695bf27"
+    },
+    "FV/E2E/ReturnPinExecStatic.lean": {
+      "kind": "changed",
+      "sha256": "03a8b39c7b7b98079fa6ff2f43fb5ebabf946e130b676c1fb626c5999080161b"
+    },
+    "FV/E2E/ReturnPinExecGot.lean": {
+      "kind": "changed",
+      "sha256": "3c9cdf96d19ceafb623633687b7f2c6a0a18b63225ec2dc13b59796588342887"
+    },
+    "FV/E2E/ReturnPinExecProven.lean": {
+      "kind": "changed",
+      "sha256": "5206081573f2d4d82ba20e1eba17c47be8b36d567319a4a3805a5de12847ca38"
+    },
+    "FV/E2E/ReturnPinExecutableKernel.lean": {
+      "kind": "new",
+      "sha256": "e668d7fab0ef588933de144b1717e5838e9b74db3060db27ce1baed1f4453acb"
+    },
+    "FV/E2E/ResultCallExec.lean": {
+      "kind": "new",
+      "sha256": "dbae276d65f7aadd18caef24c95615db807b95a9b524dd5e9a0ad5811faf121b"
+    },
+    "FV/E2E/ReturnPinChecksKernel.lean": {
+      "kind": "new",
+      "sha256": "1f5a711a27508d950437ab336a98951383b7a3c9bb76f7ad8643abbb4ed9ca2e"
+    },
+    "FV/E2E/ReturnPinGeneratedStackKernel.lean": {
+      "kind": "new",
+      "sha256": "b8ebe65f2baa6f7894ef1dd233f292dfacd8a6cad8b0a1b771764bc251a1ea9a"
+    },
+    "FV/E2E/ReturnPinGeneratedStack.lean": {
+      "kind": "changed",
+      "sha256": "d74872083371ecd7c394f93f5e24048441013221ff6d98e6608c6067c6e3e326"
+    },
+    "FV/E2E/ResultCallChecks.lean": {
+      "kind": "new",
+      "sha256": "759592f485659e0dc1f21fb9d67d34c09dece1326a649f4ef1501db405e35204"
+    },
+    "FV/E2E/ResultCallGeneratedStack.lean": {
+      "kind": "new",
+      "sha256": "6ef78eddbf9c2da162e7a3ac94aa7c30252ef00a9161f55b4d3bfad24d9f5505"
+    },
+    "FV/E2E/ResultCallProductionExec.lean": {
+      "kind": "new",
+      "sha256": "f697e4c34adee43007fcd8992de8c236770d6e0193956d2f4cbfceb1471c6e6f"
+    },
+    "FV/E2E/ResultCallProductionSelection.lean": {
+      "kind": "new",
+      "sha256": "f0ec418e9777276a699df28b50ebbe088d7e6e58402d33eefa179e1a55d20c28"
+    },
+    "FV/Link/ReturnPinAttemptKernel.lean": {
+      "kind": "new",
+      "sha256": "68345dac505e409d3226327c466f2c25db6fa97e94dff9188c7badb845ace057"
+    },
+    "FV/Link/ReturnPinCompileDefs.lean": {
+      "kind": "changed",
+      "sha256": "e4b5e992bbde7ae26c33b68132be39d6eea0b33fc160ef99038456bc4791afe6"
+    },
+    "FV/Link/ReturnPinCompilerKernel.lean": {
+      "kind": "new",
+      "sha256": "450c5cd3932fec42fadac4e7d1e75f697958349597d5195b462e2e3198f3093a"
+    },
+    "FV/Link/ReturnPinExeWith.lean": {
+      "kind": "changed",
+      "sha256": "248ab61ddcc81d3f07f4267f2d1bb179dcb27cb0936cbde793180281559aaef7"
+    },
+    "FV/Link/ReturnPinCompilerSourceKernel.lean": {
+      "kind": "new",
+      "sha256": "1f0828c75753ce45abe523eea4785218d3ec95ac8ce9d28601b2dd295dd2506e"
+    },
+    "FV/Link/ReturnPinExeSourceWith.lean": {
+      "kind": "changed",
+      "sha256": "0071129364620624e2d177e491a348dbe3a4aabd2be6210f22beeb2410ad200f"
+    },
+    "FV/Link/ResultCallExeWith.lean": {
+      "kind": "new",
+      "sha256": "d729ea1cb70160438498a738051d7ad04d0500dc685944d9abc47f014bda577d"
+    },
+    "FV/Backend/Lowering/StockResultCallWith.lean": {
+      "kind": "new",
+      "sha256": "b12de0fffe280f074076b4000a4ddab9c9b7f842063d8f9ce76f568b1c150cf3"
+    },
+    "FV/Backend/Lowering/StockResultCallRoutes.lean": {
+      "kind": "new",
+      "sha256": "153383b76e83235ef96677ce250a8a5e26a18f972c2b36584d41e3c3fd46222d"
+    },
+    "FVTest/Backend/Main.lean": {
+      "kind": "changed",
+      "sha256": "6f565054fefc330ee2ab0e125f0192c9c08d9e83eb8f18d25270a1e5e020e32c"
+    },
+    "FVTest/Link/LeanLinkMain.lean": {
+      "kind": "changed",
+      "sha256": "44c53b4ec65a8966356b46bd726a297d3674fb321224c586fa8d18c156be79f9"
+    },
+    "FVTest/E2E/LinkCheckMain.lean": {
+      "kind": "changed",
+      "sha256": "ab02536b72bfb963e83871195b7d2317d014cd3250e1a1fd4936b2077fb1c097"
+    },
+    "FVTest/E2E/ReturnPinLinkProofWith.lean": {
+      "kind": "changed",
+      "sha256": "104023dfd7adf90081e422a0a903878ee44288a49fb6626057d2c97fd4913afd"
+    },
+    "FVTest/E2E/ResultCallLinkProofWith.lean": {
+      "kind": "new",
+      "sha256": "555fab1efc6596b55e3b96cdf88334cd830da29039508452c1589ec09fdc7b6a"
+    }
+  },
+  "accepted_binding_manifest": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1.json",
+  "source_snapshot": "reviewed-production-complete-v1/manifest.json",
+  "inputs": "actual-original-inputs-v1.json",
+  "actual_matrix": "actual-result-call-matrix-v7/result.json",
+  "executed_dependency_keys": "actual-result-call-matrix-v7/executed-context.json",
+  "actual_three_clis": true,
+  "complete_original_integer_pair": true,
+  "distinct_original_float_bytes": true,
+  "cleanup_modes": [
+    false,
+    true
+  ],
+  "generated_roots": 36,
+  "actual_default_selection": true,
+  "symbolic_armret_and_x0_word": true,
+  "symbolic_kernel": "actual-symbolic-exec-kernel-v3/result.json",
+  "generic_original_callback_retry": true,
+  "callback_kernel": "mixed-callback-kernel-v1/result.json",
+  "one_parameterized_consumer_stack": true,
+  "old_checkCalls_and_previous_exact_calls_byte_identical": true,
+  "old_prepared_checker_file_byte_identical": true,
+  "old_axiom_sets_exact": 108,
+  "old_axiom_comparison": "final-old-axiom-comparison-v1.json",
+  "old_typed_header_comparison": "final-old-header-comparison-v2.json",
+  "final_audit": "final-contract-audit-v1/receipt.json",
+  "old_emitter_exact_configurations": 72,
+  "old_emitter_regression": "old-emitter-regression-v2/old-emitter-regression.log",
+  "all_old_raw_indices_preserved": true,
+  "no_new_raw_index": true,
+  "peak_bytes": 1079595008,
+  "all_oom_zero": true,
+  "cleanup": {
+    "status": "removed_owned_build_outputs",
+    "owned_artifact_files": 306,
+    "owned_artifact_bytes": 77952576,
+    "preserved": "All source, configuration, logs, generated Lean, input/object/ELF/allocator artifacts, receipts, and failed diagnostics"
+  },
+  "remaining": [
+    "Current-main reconciliation and required publication gates",
+    "Call results consumed by arithmetic or memory",
+    "Live values, multiple calls, and original stack arguments",
+    "Every remaining original140 obligation"
+  ],
+  "utc": "2026-11-02T12:27:32.055365+00:00"
+}

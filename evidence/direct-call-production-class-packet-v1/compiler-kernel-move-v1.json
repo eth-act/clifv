@@ -1,0 +1,34 @@
+{
+  "old_roots": [
+    "Link.ReturnPinCompilerWith.attempt_spec",
+    "Link.ReturnPinCompilerWith.codeMap_leanLink",
+    "Link.ReturnPinCompilerWith.leanLink_gotSlot",
+    "Link.ReturnPinCompilerWith.gotOk_leanLink",
+    "Link.ReturnPinCompilerWith.outsideAvoids_leanLink",
+    "Link.ReturnPinCompilerWith.attempt_correct",
+    "Link.ReturnPinCompilerWith.attempt_correct_depth",
+    "Link.ReturnPinCompilerWith.attempt_correct_peak",
+    "Link.ReturnPinCompilerWith.accepts_previous"
+  ],
+  "old_headers": {
+    "Link.ReturnPinCompilerWith.attempt_spec": "theorem attempt_spec {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}\n    (h : attempt lower S file0 cleanup = .ok file) :\n    ReturnPinBinary.okB (input lower S cleanup) = true \u2227\n    leanLinkProductionWith lower S file0 cleanup = .ok file ",
+    "Link.ReturnPinCompilerWith.codeMap_leanLink": "theorem codeMap_leanLink {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}\n    (h : leanLinkProductionWith lower S file0 cleanup = .ok file) :\n    codeMapB (input lower S cleanup) (tabOf (input lower S cleanup).results) = true ",
+    "Link.ReturnPinCompilerWith.leanLink_gotSlot": "theorem leanLink_gotSlot {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}\n    (h : leanLinkProductionWith lower S file0 cleanup = .ok file) (a : BitVec 64) : \u00ac GotSlot (input lower S cleanup) file a ",
+    "Link.ReturnPinCompilerWith.gotOk_leanLink": "theorem gotOk_leanLink {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}\n    (h : leanLinkProductionWith lower S file0 cleanup = .ok file) : GotOk (input lower S cleanup) file ",
+    "Link.ReturnPinCompilerWith.outsideAvoids_leanLink": "theorem outsideAvoids_leanLink {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}\n    (h : leanLinkProductionWith lower S file0 cleanup = .ok file) (f : Clif.Function) (N : Nat) (r : Arm.ArmState)\n    (args : List Clif.Val) (cm : Clif.Mem) : OutsideAvoids (GotSlot (input lower S cleanup) file) f N r args cm",
+    "Link.ReturnPinCompilerWith.attempt_correct": "theorem attempt_correct {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}\n    (h : attempt lower S file0 cleanup = .ok file) (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B))\n    (hH : HooksSim (input lower S cleanup) B) {n : String} {f : Clif.Function} (hf : (prog (input lower S cleanup)).func? n = some f)\n    (hc : \u00ac SemanticStackBound.CycleFrom (SemanticStackBound.Calls (input lower S cleanup) (input lower S cleanup).results) f) (M : Nat)\n    {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)\n    (ho : OutsideCall (input lower S cleanup) (BinCheck.roByte (input lower S cleanup) S.data) f (SemanticStackBound.stackFn (input lower S cleanup) f) r\n      args cs.mem)\n    (hr : ClifRun (input lower S cleanup) B f r args cs)\n    (htr : TrapsExplicit (Clif.linkEnvN (prog (input lower S cleanup)) B.env M) (prog (input lower S cleanup)).bare cs) :\n    ExecRefines (art (input lower S cleanup) f).fb (art (input lower S cleanup) f).base (xreg 30 r) (step (input lower S cleanup) B file) r\n      (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results) (Clif.runLoop B.env (prog (input lower S cleanup)) (M + 1) cs) ",
+    "Link.ReturnPinCompilerWith.attempt_correct_depth": "theorem attempt_correct_depth {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}\n    (h : attempt lower S file0 cleanup = .ok file) (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B))\n    (hH : HooksSim (input lower S cleanup) B) {n : String} {f : Clif.Function} (hf : (prog (input lower S cleanup)).func? n = some f)\n    (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}\n    (hX : (imageOf file).Intact r)\n    (ho : OutsideCall (input lower S cleanup) (BinCheck.roByte (input lower S cleanup) S.data) f\n      (frameDrop (art (input lower S cleanup) f).af + (input lower S cleanup).D * M) r args cs.mem)\n    (hr : ClifRun (input lower S cleanup) B f r args cs)\n    (htr : TrapsExplicit (Clif.linkEnvN (prog (input lower S cleanup)) B.env M) (prog (input lower S cleanup)).bare cs) :\n    ExecRefines (art (input lower S cleanup) f).fb (art (input lower S cleanup) f).base (xreg 30 r) (step (input lower S cleanup) B file) r\n      (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results) (Clif.runLoop B.env (prog (input lower S cleanup)) (M + 1) cs) ",
+    "Link.ReturnPinCompilerWith.attempt_correct_peak": "theorem attempt_correct_peak {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}\n    (h : attempt lower S file0 cleanup = .ok file) (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B))\n    (hH : HooksSim (input lower S cleanup) B) {n : String} {f : Clif.Function} (hf : (prog (input lower S cleanup)).func? n = some f)\n    (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}\n    (hX : (imageOf file).Intact r)\n    (ho : OutsideCall (input lower S cleanup) (BinCheck.roByte (input lower S cleanup) S.data) f\n      (frameDrop (art (input lower S cleanup) f).af + (input lower S cleanup).D * d) r args cs.mem)\n    (hr : ClifRun (input lower S cleanup) B f r args cs)\n    (hd : Clif.DepthLe B.env (prog (input lower S cleanup)) d cs)\n    (htr : TrapsExplicit (Clif.linkEnvD (prog (input lower S cleanup)) B.env F d) (prog (input lower S cleanup)).bare cs) :\n    ExecRefines (art (input lower S cleanup) f).fb (art (input lower S cleanup) f).base (xreg 30 r) (step (input lower S cleanup) B file) r\n      (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results) (Clif.runLoop B.env (prog (input lower S cleanup)) (F + 1) cs) ",
+    "Link.ReturnPinCompilerWith.accepts_previous": "theorem accepts_previous {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}\n    (previous : SemanticCompilerWith.attempt lower S file0 cleanup = .ok file) :\n    attempt lower S file0 cleanup = .ok file "
+  },
+  "generic_roots": [
+    "Link.ReturnPinCompilerFor.attempt_spec",
+    "Link.ReturnPinCompilerFor.codeMap_leanLink",
+    "Link.ReturnPinCompilerFor.leanLink_gotSlot",
+    "Link.ReturnPinCompilerFor.gotOk_leanLink",
+    "Link.ReturnPinCompilerFor.outsideAvoids_leanLink",
+    "Link.ReturnPinCompilerFor.attempt_correct",
+    "Link.ReturnPinCompilerFor.attempt_correct_depth",
+    "Link.ReturnPinCompilerFor.attempt_correct_peak"
+  ]
+}

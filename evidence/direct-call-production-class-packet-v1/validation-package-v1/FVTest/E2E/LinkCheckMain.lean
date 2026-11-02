@@ -1,8 +1,8 @@
 import FV.E2E.ProductionPipelineWith
 import FV.Backend.Lowering.StockVoidCallNI
 import FV.Backend.Lowering.StockResultCallRoutes
-import FV.E2E.ReturnPinChecksWith
-import FVTest.E2E.ReturnPinLinkProofWith
+import FV.E2E.ResultCallChecks
+import FVTest.E2E.ResultCallLinkProofWith
 import FVTest.E2E.TypedLinkProofWith
 import FV.Front.Read
 import FVTest.E2E.LinkProof
@@ -31,6 +31,12 @@ def main (args : List String) : IO UInt32 := do
   -- names whose address is in a data object the program reaches (vtable methods)
   let dataSyms : List String := A.data.flatMap (·.refs)
   let I0 : LinkInput := { funcs := fis.toList, addrs, syms := [], raStar := 8, D := 0 }
+  -- Reproduce complete mode admission before choosing a new per-function default.
+  -- A typed whole-file retry can have identical bytes but needs its original typed artifacts.
+  let resultMode := I0.funcs.all fun fi => match Stock.ResultCall.lowerValidated fi.func with
+    | .error _ => false
+    | .ok raw => SemanticABI.checkResultCalls fi.func raw
+
   -- Other supported compiler modes and whole-file retries can retain earlier
   -- artifacts. Recover their routing from actual bytes, then validate every
   -- selected artifact normally. These are data choices, not source assumptions.
@@ -41,20 +47,20 @@ def main (args : List String) : IO UInt32 := do
       let rd := fileRd file
       let route (fi : FnInput) : Option (String × Nat) :=
         let f := fi.func
-        let matches (lower : Clif.Function → Except String VCode) : Bool :=
+        let routeMatches (lower : Clif.Function → Except String VCode) : Bool :=
           match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
           | .error _ => false
           | .ok a => (checkAlloc a.vcp a.rf).toBool &&
               Backend.Proof.Driver.prepCheck (productionStage o.deadCleanup f a.vc) a.vcp &&
               (SemanticABI.checkResultCalls f a.vc || lowerOkTSB f a.vc) && artB I0 rd phs a
-        if matches Stock.ResultCall.lowerValidated then none
+        if resultMode && routeMatches Stock.ResultCall.lowerValidated then none
         else
           let routes := Stock.VoidCall.NI.lowerRoutes.zipIdx
           let probes := if Stock.MemorySretCopy.eligible f || (Stock.VoidCall.sourceData? f).isSome then
               routes.drop 21 ++ routes.take 21
             else routes
           -- An explicit route0 is necessary when legacy bytes differ from the new default.
-          (probes.find? fun (lower,_) => matches lower).map fun (_,index) => (f.name,index)
+          (probes.find? fun (lower,_) => routeMatches lower).map fun (_,index) => (f.name,index)
       (Link.parMap route I0.funcs).filterMap id
   let actualLower := Stock.ResultCall.lowerWithRoutes choices
   let lowerName := "(Backend.Stock.ResultCall.lowerWithRoutes [" ++
@@ -407,7 +413,7 @@ def main (args : List String) : IO UInt32 := do
     let proofFiles := if typed then
         FVTest.E2E.TypedLinkProofWith.leanFilesTypedWith
           (if typedS then lowerName else "Backend.lowerFunction") I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockResultCallRoutes")
-      else FVTest.E2E.ReturnPinLinkProofWith.leanFilesReturnPinWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockResultCallRoutes")
+      else FVTest.E2E.ResultCallLinkProofWith.leanFilesResultCallWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockResultCallRoutes")
     for (p, t) in proofFiles do
       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd
       IO.FS.writeFile p t

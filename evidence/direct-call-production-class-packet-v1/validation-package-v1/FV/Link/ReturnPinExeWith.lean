@@ -1,3 +1,4 @@
+import FV.Link.ReturnPinCompilerKernel
 import FV.Link.Exe
 import FV.Link.ReturnPinCompileDefs
 import FV.Link.ProductionImageWithProof
@@ -14,61 +15,39 @@ theorem attempt_spec {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) :
     ReturnPinBinary.okB (input lower S cleanup) = true ∧
     leanLinkProductionWith lower S file0 cleanup = .ok file := by
-  cases cleanup <;> simp [attempt] at h
-  all_goals
-    split at h
-    · cases h
-    · split at h
-      · rename_i checked
-        exact ⟨checked,h⟩
-      · cases h
-
+  exact Link.ReturnPinCompilerFor.attempt_spec
+    (admission := E2E.LinkCheck.ReturnPinAdmission.previous) (S := S) (cleanup := cleanup)
+    (file0 := file0) (file := file) (h := h)
 
 theorem codeMap_leanLink {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : leanLinkProductionWith lower S file0 cleanup = .ok file) :
     codeMapB (input lower S cleanup) (tabOf (input lower S cleanup).results) = true := by
-  obtain ⟨_,_,_,_,_,_,_,hc,_⟩ := ProductionImageWithProof.spec h
-  exact hc
+  exact Link.ReturnPinCompilerFor.codeMap_leanLink
+    (S := S) (cleanup := cleanup) (file0 := file0)
+    (file := file) (h := h)
 
 theorem leanLink_gotSlot {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : leanLinkProductionWith lower S file0 cleanup = .ok file) (a : BitVec 64) : ¬ GotSlot (input lower S cleanup) file a := by
-  rintro ⟨e, he, rl, hrl, ht, rd, G, hrd, -, -, -, h1, -⟩
-  change e ∈ tabOf (ProductionImageWithProof.resultsFor lower S cleanup) at he
-  obtain ⟨tp, -, hw⟩ := ProductionImageWithProof.words h
-  obtain ⟨hv, -, himg⟩ := hw e he
-  simp only [relocsOkB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true] at hv
-  obtain ⟨hnd, hall⟩ := hv
-  have hok := hall rl hrl
-  have hra := relocAt?_of_mem hnd hrl rfl
-  obtain ⟨o, ty, sym, add⟩ := rl
-  simp only at ht h1 hra
-  subst ht
-  simp only [relocOkB, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hok
-  obtain ⟨⟨ho4, hon⟩, hok⟩ := hok
-  simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, List.any_eq_true] at hok
-  obtain ⟨⟨⟨⟨⟨-, h1'⟩, -⟩, -⟩, ⟨r', hr', ⟨⟨ho', ht'⟩, -⟩, -⟩⟩, -⟩ := hok
-  have hra' := relocAt?_of_mem hnd hr' ho'
-  have hx1 := himg (o / 4 + 1) h1'
-  rw [show 4 * (o / 4 + 1) = o + 4 by omega] at hx1
-  simp only [resolveWord, show 4 * (o / 4 + 1) = o + 4 by omega, hra', ht', loOf,
-    Nat.add_sub_cancel, hra] at hx1
-  simp only [fileWord] at h1
-  rw [hx1, Option.some.injEq] at h1
-  exact addW_ne_ldrW (Nat.mod_lt _ (by decide)) (Nat.mod_lt _ (by decide))
-    (Nat.mod_lt _ (by decide)) (by omega) (by omega) (by omega) h1
+  exact Link.ReturnPinCompilerFor.leanLink_gotSlot
+    (S := S) (cleanup := cleanup) (file0 := file0)
+    (file := file) (h := h) (a := a)
 
 /-- **`GotOk` of `leanLink`'s output** (no GOT slot). -/
 theorem gotOk_leanLink {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
-    (h : leanLinkProductionWith lower S file0 cleanup = .ok file) : GotOk (input lower S cleanup) file :=
-  fun a ha => (leanLink_gotSlot h a ha).elim
+    (h : leanLinkProductionWith lower S file0 cleanup = .ok file) : GotOk (input lower S cleanup) file := by
+  exact Link.ReturnPinCompilerFor.gotOk_leanLink
+    (S := S) (cleanup := cleanup) (file0 := file0)
+    (file := file) (h := h)
 
 /-- The outside caller avoids `leanLink`'s GOT slots (there is none). -/
 theorem outsideAvoids_leanLink {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : leanLinkProductionWith lower S file0 cleanup = .ok file) (f : Clif.Function) (N : Nat) (r : Arm.ArmState)
-    (args : List Clif.Val) (cm : Clif.Mem) : OutsideAvoids (GotSlot (input lower S cleanup) file) f N r args cm where
-  stack a ha := (leanLink_gotSlot h a ha).elim
-  args _ _ _ k _ hs := leanLink_gotSlot h _ hs
-  valid _ _ _ _ _ hs := leanLink_gotSlot h _ hs
+    (args : List Clif.Val) (cm : Clif.Mem) : OutsideAvoids (GotSlot (input lower S cleanup) file) f N r args cm:= by
+  exact Link.ReturnPinCompilerFor.outsideAvoids_leanLink
+    (S := S) (cleanup := cleanup) (file0 := file0)
+    (file := file) (h := h) (f := f)
+    (N := N) (r := r) (args := args)
+    (cm := cm)
 
 theorem attempt_correct {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B))
@@ -81,10 +60,14 @@ theorem attempt_correct {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (htr : TrapsExplicit (Clif.linkEnvN (prog (input lower S cleanup)) B.env M) (prog (input lower S cleanup)).bare cs) :
     ExecRefines (art (input lower S cleanup) f).fb (art (input lower S cleanup) f).base (xreg 30 r) (step (input lower S cleanup) B file) r
       (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results) (Clif.runLoop B.env (prog (input lower S cleanup)) (M + 1) cs) := by
-  obtain ⟨hin, hl⟩ := attempt_spec h
-  exact E2E.ReturnPinExecBytes.binary_correct_exec_proven hin
-    (codeMap_leanLink hl) (ProductionImageWithProof.bin_ok hl) (gotOk_leanLink hl) B hB hH hf hc M hX ho
-    (outsideAvoids_leanLink hl _ _ _ _ _) hr htr
+  exact Link.ReturnPinCompilerFor.attempt_correct
+    (admission := E2E.LinkCheck.ReturnPinAdmission.previous) (S := S) (cleanup := cleanup)
+    (file0 := file0) (file := file) (h := h)
+    (B := B) (hB := hB) (hH := hH)
+    (n := n) (f := f) (hf := hf)
+    (hc := hc) (M := M) (r := r)
+    (args := args) (cs := cs) (hX := hX)
+    (ho := ho) (hr := hr) (htr := htr)
 
 /-- **The executable compiler is correct for recursive programs** (L1d): `attempt_correct`
 without the call-graph premise `¬ CycleFrom`. The outside caller of `f` provides
@@ -104,10 +87,14 @@ theorem attempt_correct_depth {S : LinkSpec} {cleanup : Bool} {file0 file : Byte
     (htr : TrapsExplicit (Clif.linkEnvN (prog (input lower S cleanup)) B.env M) (prog (input lower S cleanup)).bare cs) :
     ExecRefines (art (input lower S cleanup) f).fb (art (input lower S cleanup) f).base (xreg 30 r) (step (input lower S cleanup) B file) r
       (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results) (Clif.runLoop B.env (prog (input lower S cleanup)) (M + 1) cs) := by
-  obtain ⟨hin, hl⟩ := attempt_spec h
-  exact E2E.ReturnPinExecBytes.binary_correct_exec_depth_proven hin
-    (codeMap_leanLink hl) (ProductionImageWithProof.bin_ok hl) (gotOk_leanLink hl) B hB hH hf M hX ho
-    (outsideAvoids_leanLink hl _ _ _ _ _) hr htr
+  exact Link.ReturnPinCompilerFor.attempt_correct_depth
+    (admission := E2E.LinkCheck.ReturnPinAdmission.previous) (S := S) (cleanup := cleanup)
+    (file0 := file0) (file := file) (h := h)
+    (B := B) (hB := hB) (hH := hH)
+    (n := n) (f := f) (hf := hf)
+    (M := M) (r := r) (args := args)
+    (cs := cs) (hX := hX) (ho := ho)
+    (hr := hr) (htr := htr)
 
 /-- **The executable compiler is correct for recursive programs, with the stack of the run's peak
 call depth** (L1d): `attempt_correct_depth` with `frameDrop (art (input lower S cleanup) f).af + (input lower S cleanup).D * d`
@@ -130,12 +117,15 @@ theorem attempt_correct_peak {S : LinkSpec} {cleanup : Bool} {file0 file : ByteA
     (htr : TrapsExplicit (Clif.linkEnvD (prog (input lower S cleanup)) B.env F d) (prog (input lower S cleanup)).bare cs) :
     ExecRefines (art (input lower S cleanup) f).fb (art (input lower S cleanup) f).base (xreg 30 r) (step (input lower S cleanup) B file) r
       (RelocAtWithResults (input lower S cleanup) (input lower S cleanup).results) (Clif.runLoop B.env (prog (input lower S cleanup)) (F + 1) cs) := by
-  obtain ⟨hin, hl⟩ := attempt_spec h
-  exact E2E.ReturnPinExecBytes.binary_correct_exec_peak_proven hin
-    (codeMap_leanLink hl) (ProductionImageWithProof.bin_ok hl) (gotOk_leanLink hl) B hB hH hf F d hX ho
-    (outsideAvoids_leanLink hl _ _ _ _ _) hr hd htr
-
-
+  exact Link.ReturnPinCompilerFor.attempt_correct_peak
+    (admission := E2E.LinkCheck.ReturnPinAdmission.previous) (S := S) (cleanup := cleanup)
+    (file0 := file0) (file := file) (h := h)
+    (B := B) (hB := hB) (hH := hH)
+    (n := n) (f := f) (hf := hf)
+    (F := F) (d := d) (r := r)
+    (args := args) (cs := cs) (hX := hX)
+    (ho := ho) (hr := hr) (hd := hd)
+    (htr := htr)
 
 end Link.ReturnPinCompilerWith
 
@@ -155,7 +145,7 @@ theorem accepts_previous {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray
         ((S.inputProductionWith lower cleanup).resultsProductionWith lower cleanup) = true := by
     intro cleanup checked
     exact ReturnPinBinary.okB_previous (I := input lower S cleanup) checked
-  cases cleanup <;> simp [attempt,SemanticCompilerWith.attempt] at previous ⊢
+  cases cleanup <;> simp [attempt,ReturnPinAttemptKernel.attemptWith,SemanticCompilerWith.attempt] at previous ⊢
   all_goals
     split at previous
     · cases previous

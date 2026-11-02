@@ -102,4 +102,17 @@ theorem okRReturnPinResultCalls_previous {stage : Clif.Function → VCode → VC
     simpa only [ReturnPinAdmission.resultCalls,returnPinResultCallsExtra,← Bool.or_assoc,accepted,Bool.true_or]
   · simpa only [named,↓reduceIte] using accepted
 
+/-- Every profile derives the unchanged whole-program statement from actual checks. -/
+theorem preparedReturnPinFor_correct (admission : ReturnPinAdmission)
+    (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res}
+    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (prepared : PreparedResults stage I R) (checked : okRReturnPinFor admission stage I R = true)
+    (name : String) : CrateStmtReturnPins I R name := by
+  intro B F base world f found M ra s w₀ args cs entry room frame free image body arguments source
+    avoids relation placement traps
+  exact backend_correct_program_return_pins _
+    (semanticPreparedReturnPinFor_sound admission stage hstage prepared checked base world)
+    (Clif.Program.func?_some found).1 M entry room frame free image body arguments source
+    avoids relation placement traps
+
 end E2E.LinkCheck

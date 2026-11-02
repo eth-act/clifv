@@ -1,0 +1,81 @@
+'E2E.ResultCallProductionExec.compiler_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionExec.compiler_success._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.compiler_success._native.native_decide.ax_2]
+'E2E.ResultCallProductionExec.concrete_facts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_2]
+'E2E.ResultCallProductionExec.outside_call' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_2]
+'E2E.ResultCallProductionExec.intact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ResultCallProductionExec.program_find' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_2]
+'E2E.ResultCallProductionExec.source_entry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_2]
+'E2E.ResultCallProductionExec.clif_run' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_2]
+'E2E.ResultCallProductionExec.base_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_2]
+'E2E.ResultCallProductionExec.source_returns' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_2]
+'E2E.ResultCallProductionExec.executable_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionExec.compiler_success._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.compiler_success._native.native_decide.ax_2,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_2]
+'E2E.ResultCallProductionExec.returned_word' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionExec.compiler_success._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.compiler_success._native.native_decide.ax_2,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_1,
+ E2E.ResultCallProductionExec.concrete_facts._native.native_decide.ax_2]
+'E2E.ResultCallProductionSelection.selected' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionSelection.selected._native.native_decide.ax_1,
+ E2E.ResultCallProductionSelection.selected._native.native_decide.ax_2]
+'E2E.ResultCallProductionSelection.actual_entrypoint' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionSelection.selected._native.native_decide.ax_1,
+ E2E.ResultCallProductionSelection.selected._native.native_decide.ax_2]
+'E2E.ResultCallProductionSelection.actual_provider' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallWitness.candidates_ok._native.native_decide.ax_1✝,
+ E2E.ResultCallWitness.previousSuccess_true._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.DirectCallResultFixture.actual_checked._native.native_decide.ax_1✝]
+'E2E.ResultCallProductionSelection.mixed_rejected' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionSelection.mixed_rejected._native.native_decide.ax_1,
+ E2E.ResultCallProductionSelection.mixed_rejected._native.native_decide.ax_2]
+'E2E.ResultCallProductionSelection.mixed_complete_retry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallProductionSelection.mixed_rejected._native.native_decide.ax_1,
+ E2E.ResultCallProductionSelection.mixed_rejected._native.native_decide.ax_2]

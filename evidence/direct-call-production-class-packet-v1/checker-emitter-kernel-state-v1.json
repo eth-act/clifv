@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "one_parameterized_checker_kernel": true,
+  "one_parameterized_stack_kernel": true,
+  "one_parameterized_emitter": true,
+  "old_public_headers_exact": 7,
+  "old_axiom_sets_exact": 7,
+  "generic_roots": 7,
+  "result_wrapper_roots": 7,
+  "all_standard_only": true,
+  "all_three_cli_kernels_passed": true,
+  "kernel_receipt": "generated-consumer-kernel-v2/result.json",
+  "cli_receipt": "cli-consumer-kernel-v2/result.json",
+  "audit_receipt": "generated-consumer-audit-v1/receipt.json",
+  "immutable_sources": "reviewed-checker-emitter-kernel-v1/manifest.json",
+  "current_main_validation": false,
+  "actual_execution": false,
+  "next": "Actual four-case CLI/generated matrix and symbolic linked ARM return in both modes",
+  "utc": "2026-11-02T12:09:23.291250+00:00"
+}

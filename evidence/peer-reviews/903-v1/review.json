@@ -1,0 +1,10 @@
+{
+  "pr": 903,
+  "head": "376f59ca7fff37562cd70cbaa0089f319894617c",
+  "verdict": "no blocking defect",
+  "review": "ONE QUICK, DIRTY, CHEAP direct review",
+  "builds": false,
+  "review_agents": false,
+  "scope": "Fourteen new unwired files; explicit eq/ne zero emission cbz/cbnz; existing Scalar.Domain; native facts only marked fixed core/class witnesses; real return/trap and lower/check.",
+  "utc": "2026-11-02T12:01:35.899654+00:00"
+}

@@ -1,0 +1,57 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ResultCallProductionExec.lean:165:25: error: Tactic `subst` failed: invalid equality proof, it is not of the form (x = t) or (t = x)
+  h = callee ∨ h ∈ []
+
+case inr
+cleanup : Bool
+word : BitVec 64
+g : Clif.Function
+hg : g ∈ (sys (input cleanup) closedBase).P.funcs
+h : Clif.Function
+hc : (sys (input cleanup) closedBase).Callee g h
+hslots : h.slots ≠ []
+h✝ : h = callee ∨ h ∈ []
+⊢ (sys (input cleanup) closedBase).PlaceAt (cs cleanup word).mem
+    (spBody (art (input cleanup) f).af (machine cleanup word))
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ResultCallProductionExec.lean:164:29: warning: This simp argument is unused:
+  List.mem_singleton
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [List.mem_cons] at hh
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ResultCallProductionExec.lean:173:23: error: Tactic `subst` failed: invalid equality proof, it is not of the form (x = t) or (t = x)
+  g = callee ∨ g ∈ []
+
+case inr
+cleanup : Bool
+g : Clif.Function
+h✝ : g = callee ∨ g ∈ []
+⊢ hasTls g = false
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ResultCallProductionExec.lean:172:27: warning: This simp argument is unused:
+  List.mem_singleton
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [List.mem_cons] at hg
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ResultCallProductionExec.lean:179:40: error: Insufficient number of fields for `⟨...⟩` constructor: Constructor `Clif.Program.mk` has 3 explicit field, but only 1 was provided
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ResultCallProductionExec.lean:179:42: error: Application type mismatch: The argument
+  caller
+has type
+  Clif.Function
+but is expected to have type
+  String
+in the application
+  List.cons caller
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ResultCallProductionExec.lean:179:49: error: Application type mismatch: The argument
+  callee
+has type
+  Clif.Function
+but is expected to have type
+  String
+in the application
+  List.cons callee
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ResultCallProductionExec.lean:220:41: error: Expected type must not contain free variables
+  (argument word).ty.width ≤ 64
+
+Hint: Use the `+revert` option to automatically clean up and revert free variables

@@ -11,3 +11,1611 @@
 06:28:25 done FV.Backend.Proof.StockSelectionReceipts rc=0 53s maxrss=5.7G cgpeak=4.3G built -> ok
 06:28:25 check (ready) 7 modules in 0.2s: 0 up-to-date, 7 out of date, 0 wait for those
 06:28:25 start FV.Backend.Proof.StockSourceSinkTable cap=12G running=1 avail=195.4G
+06:30:14 done FV.Backend.Proof.StockSourceSinkTable rc=0 108s maxrss=9.0G cgpeak=7.8G built -> ok
+06:30:14 start FV.Backend.Proof.StockDemand cap=12G running=1 avail=207.9G
+06:30:16 done FV.Backend.Proof.StockDemand rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+06:30:16 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:30:16 start FV.Backend.Proof.StockAluOperandCoverage cap=12G running=1 avail=207.5G
+06:31:41 done FV.Backend.Proof.StockAluOperandCoverage rc=0 85s maxrss=10.2G cgpeak=8.8G built -> ok
+06:31:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:31:41 start FV.Backend.Proof.StockMemoryIntegerLoadSelection cap=12G running=1 avail=209.4G
+06:31:51 done FV.Backend.Proof.StockMemoryIntegerLoadSelection rc=0 10s maxrss=1.7G cgpeak=0.4G built -> ok
+06:31:51 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:31:51 start FV.Backend.Proof.StockMemoryLoadedPointerAddress cap=12G running=1 avail=214.9G
+06:32:31 done FV.Backend.Proof.StockMemoryLoadedPointerAddress rc=0 39s maxrss=1.8G cgpeak=0.6G built -> ok
+06:32:31 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:32:31 start FV.Backend.Proof.StockMemoryStoreMatch cap=12G running=1 avail=215.2G
+06:32:50 done FV.Backend.Proof.StockMemoryStoreMatch rc=0 19s maxrss=1.8G cgpeak=0.4G built -> ok
+06:32:50 start FV.Backend.Proof.StockLogicalSelected cap=12G running=1 avail=215.5G
+06:34:15 done FV.Backend.Proof.StockLogicalSelected rc=0 85s maxrss=8.8G cgpeak=7.4G built -> ok
+06:34:15 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:34:15 start FV.Backend.Proof.StockAddSubMatch cap=12G running=1 avail=215.9G
+06:34:50 done FV.Backend.Proof.StockAddSubMatch rc=0 35s maxrss=2.1G cgpeak=0.8G built -> ok
+06:34:50 check (ready) 1 modules in 0.1s: 0 up-to-date, 1 out of date, 0 wait for those
+06:34:51 start FV.Backend.Proof.StockScopeRoots cap=12G running=1 avail=216.3G
+06:34:52 done FV.Backend.Proof.StockScopeRoots rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+06:34:52 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:34:52 start FV.Backend.Proof.StockAluSelectedValues cap=12G running=1 avail=216.0G
+06:36:09 done FV.Backend.Proof.StockAluSelectedValues rc=0 77s maxrss=10.2G cgpeak=8.8G built -> ok
+06:36:09 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:36:09 start FV.Backend.Proof.StockRootOpcodeMatch cap=12G running=1 avail=215.0G
+06:36:11 done FV.Backend.Proof.StockRootOpcodeMatch rc=0 2s maxrss=1.8G cgpeak=0.4G built -> ok
+06:36:11 check (ready) 12 modules in 0.2s: 0 up-to-date, 12 out of date, 0 wait for those
+06:36:11 start FV.Backend.Proof.StockMemoryIntegerSelected cap=12G running=1 avail=214.9G
+06:36:21 done FV.Backend.Proof.StockMemoryIntegerSelected rc=0 10s maxrss=1.8G cgpeak=0.3G built -> ok
+06:36:22 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:36:22 start FV.Backend.Proof.StockMemoryLoadedPointerStoreSelection cap=12G running=1 avail=213.4G
+06:36:41 done FV.Backend.Proof.StockMemoryLoadedPointerStoreSelection rc=0 19s maxrss=1.7G cgpeak=0.4G built -> ok
+06:36:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:36:41 start FV.Backend.Proof.StockMemoryOffsetEightAddress cap=12G running=1 avail=211.2G
+06:37:43 done FV.Backend.Proof.StockMemoryOffsetEightAddress rc=0 62s maxrss=1.8G cgpeak=0.5G built -> ok
+06:37:43 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:37:43 start FV.Backend.Proof.StockMemoryStoreDispatch cap=12G running=1 avail=208.2G
+06:39:01 done FV.Backend.Proof.StockMemoryStoreDispatch rc=0 78s maxrss=6.7G cgpeak=5.3G built -> ok
+06:39:02 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:39:02 start FV.Backend.Proof.StockCmpNarrowExtendRequest cap=12G running=1 avail=212.9G
+06:39:09 done FV.Backend.Proof.StockCmpNarrowExtendRequest rc=0 7s maxrss=1.7G cgpeak=0.3G built -> ok
+06:39:09 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:39:09 start FV.Backend.Proof.StockLogicalExtrMatch cap=12G running=1 avail=211.2G
+06:39:11 done FV.Backend.Proof.StockLogicalExtrMatch rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+06:39:11 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:39:11 start FV.Backend.Proof.StockCmpNarrowRhs cap=12G running=1 avail=210.1G
+06:39:19 done FV.Backend.Proof.StockCmpNarrowRhs rc=0 8s maxrss=1.7G cgpeak=0.4G built -> ok
+06:39:19 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:39:19 start FV.Backend.Proof.StockLogicalExtrMatchReceipt cap=12G running=1 avail=207.6G
+06:40:55 done FV.Backend.Proof.StockLogicalExtrMatchReceipt rc=0 95s maxrss=2.8G cgpeak=1.5G built -> ok
+06:40:55 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:40:55 start FV.Backend.Proof.StockCmpMatchedZero cap=12G running=1 avail=211.1G
+06:41:15 done FV.Backend.Proof.StockCmpMatchedZero rc=0 20s maxrss=2.0G cgpeak=0.6G built -> ok
+06:41:15 start FV.Backend.Proof.StockCmpNarrowRhsObserved cap=12G running=1 avail=210.2G
+06:41:20 done FV.Backend.Proof.StockCmpNarrowRhsObserved rc=0 5s maxrss=1.7G cgpeak=0.3G built -> ok
+06:41:20 start FV.Backend.Proof.StockCmpRegisterEmission cap=12G running=1 avail=208.3G
+06:41:33 done FV.Backend.Proof.StockCmpRegisterEmission rc=0 13s maxrss=1.8G cgpeak=0.4G built -> ok
+06:41:33 start FV.Backend.Proof.StockCmpNarrowImmediateRhs cap=12G running=1 avail=210.5G
+06:41:36 done FV.Backend.Proof.StockCmpNarrowImmediateRhs rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+06:41:36 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:41:36 start FV.Backend.Proof.StockCmpNonzero8Emission cap=12G running=1 avail=209.3G
+06:41:42 done FV.Backend.Proof.StockCmpNonzero8Emission rc=0 6s maxrss=1.7G cgpeak=0.3G built -> ok
+06:41:42 start FV.Backend.Proof.StockCoverageInvariant cap=12G running=1 avail=207.8G
+06:41:44 done FV.Backend.Proof.StockCoverageInvariant rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+06:41:44 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:41:44 start FV.Backend.Proof.StockBnotRhs cap=12G running=1 avail=207.8G
+06:41:54 done FV.Backend.Proof.StockBnotRhs rc=0 10s maxrss=1.8G cgpeak=0.4G built -> ok
+06:41:55 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:41:55 start FV.Backend.Proof.StockSourceSinkModel cap=12G running=1 avail=209.3G
+06:41:58 done FV.Backend.Proof.StockSourceSinkModel rc=0 3s maxrss=1.7G cgpeak=0.4G built -> ok
+06:41:58 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:41:58 start FV.Backend.Proof.StockCmpConditionValues cap=12G running=1 avail=208.1G
+06:42:00 done FV.Backend.Proof.StockCmpConditionValues rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+06:42:00 check (ready) 8 modules in 0.2s: 0 up-to-date, 8 out of date, 0 wait for those
+06:42:00 start FV.Backend.Proof.StockCmpMatchedImmediate cap=12G running=1 avail=207.6G
+06:42:04 done FV.Backend.Proof.StockCmpMatchedImmediate rc=0 4s maxrss=1.7G cgpeak=0.3G built -> ok
+06:42:04 start FV.Backend.Proof.StockCmpNarrowImmediateObserved cap=12G running=1 avail=207.6G
+06:42:07 done FV.Backend.Proof.StockCmpNarrowImmediateObserved rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+06:42:07 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:42:07 start FV.Backend.Proof.StockTerminalRoots cap=12G running=1 avail=211.5G
+06:42:09 done FV.Backend.Proof.StockTerminalRoots rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+06:42:09 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:42:09 start FV.Backend.Proof.StockCmpEqualZero16Values cap=12G running=1 avail=210.9G
+06:42:11 done FV.Backend.Proof.StockCmpEqualZero16Values rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:42:11 start FV.Backend.Proof.StockCmpEqualZero8Values cap=12G running=1 avail=210.1G
+06:42:13 done FV.Backend.Proof.StockCmpEqualZero8Values rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:42:13 start FV.Backend.Proof.StockCmpNonzero16Values cap=12G running=1 avail=209.3G
+06:42:15 done FV.Backend.Proof.StockCmpNonzero16Values rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:42:16 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:42:16 start FV.Backend.Proof.StockCmpNonzero8Values cap=12G running=1 avail=208.5G
+06:42:18 done FV.Backend.Proof.StockCmpNonzero8Values rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:42:18 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:42:18 start FV.Backend.Proof.StockLogicalDispatch cap=12G running=1 avail=207.8G
+06:43:11 done FV.Backend.Proof.StockLogicalDispatch rc=0 53s maxrss=6.7G cgpeak=5.3G built -> ok
+06:43:11 start FV.Backend.Proof.StockTerminalScans cap=12G running=1 avail=212.2G
+06:43:38 done FV.Backend.Proof.StockTerminalScans rc=0 27s maxrss=5.7G cgpeak=4.3G built -> ok
+06:43:38 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:43:38 start FV.Backend.Proof.StockCmpImmediateEmission cap=12G running=1 avail=211.7G
+06:43:47 done FV.Backend.Proof.StockCmpImmediateEmission rc=0 9s maxrss=1.7G cgpeak=0.3G built -> ok
+06:43:48 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:43:48 start FV.Backend.Proof.StockCmpNarrowImmediateSourceValues cap=12G running=1 avail=211.6G
+06:43:50 done FV.Backend.Proof.StockCmpNarrowImmediateSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:43:50 start FV.Backend.Proof.StockCmpNarrowSourceValues cap=12G running=1 avail=211.6G
+06:43:52 done FV.Backend.Proof.StockCmpNarrowSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:43:52 start FV.Backend.Proof.StockCmpZero16OriginalRhsValues cap=12G running=1 avail=211.6G
+06:43:54 done FV.Backend.Proof.StockCmpZero16OriginalRhsValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+06:43:54 start FV.Backend.Proof.StockCmpZero8OriginalRhsValues cap=12G running=1 avail=211.6G
+06:43:56 done FV.Backend.Proof.StockCmpZero8OriginalRhsValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:43:56 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:43:56 start FV.Backend.Proof.StockShiftDispatch cap=12G running=1 avail=211.5G
+06:44:50 done FV.Backend.Proof.StockShiftDispatch rc=0 54s maxrss=6.7G cgpeak=5.3G built -> ok
+06:44:50 start FV.Backend.Proof.StockCmpNarrowMatchedValues cap=12G running=1 avail=211.0G
+06:45:03 done FV.Backend.Proof.StockCmpNarrowMatchedValues rc=0 13s maxrss=2.2G cgpeak=0.7G built -> ok
+06:45:03 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:45:03 start FV.Backend.Proof.StockBnotMatch cap=12G running=1 avail=211.0G
+06:45:15 done FV.Backend.Proof.StockBnotMatch rc=0 12s maxrss=1.8G cgpeak=0.4G built -> ok
+06:45:15 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:45:15 start FV.Backend.Proof.StockCmpPredecessorSignedEmission cap=12G running=1 avail=211.1G
+06:45:23 done FV.Backend.Proof.StockCmpPredecessorSignedEmission rc=0 8s maxrss=1.7G cgpeak=0.3G built -> ok
+06:45:24 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:45:24 start FV.Backend.Proof.StockAddSubDispatch cap=12G running=1 avail=211.0G
+06:46:01 done FV.Backend.Proof.StockAddSubDispatch rc=0 37s maxrss=6.7G cgpeak=5.3G built -> ok
+06:46:01 start FV.Backend.Proof.StockCmpPredecessorUnsignedEmission cap=12G running=1 avail=211.6G
+06:46:09 done FV.Backend.Proof.StockCmpPredecessorUnsignedEmission rc=0 8s maxrss=1.7G cgpeak=0.3G built -> ok
+06:46:09 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:46:09 start FV.Backend.Proof.StockMulRhs cap=12G running=1 avail=212.0G
+06:46:16 done FV.Backend.Proof.StockMulRhs rc=0 7s maxrss=1.7G cgpeak=0.3G built -> ok
+06:46:16 start FV.Backend.Proof.StockSelectRequests cap=12G running=1 avail=209.3G
+06:46:24 done FV.Backend.Proof.StockSelectRequests rc=0 8s maxrss=1.8G cgpeak=0.4G built -> ok
+06:46:24 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:46:24 start FV.Backend.Proof.StockMulSemantics cap=12G running=1 avail=212.3G
+06:46:25 done FV.Backend.Proof.StockMulSemantics rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+06:46:26 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:46:26 start FV.Backend.Proof.StockCmpMatchedPredecessor cap=12G running=1 avail=212.3G
+06:46:29 done FV.Backend.Proof.StockCmpMatchedPredecessor rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+06:46:29 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:46:29 start FV.Backend.Proof.StockCmpNonzero32RhsValues cap=12G running=1 avail=212.3G
+06:46:31 done FV.Backend.Proof.StockCmpNonzero32RhsValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:46:31 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:46:31 start FV.Backend.Proof.StockMulValues cap=12G running=1 avail=212.3G
+06:46:34 done FV.Backend.Proof.StockMulValues rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+06:46:34 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+06:46:34 start FV.Backend.Proof.StockCmpNonzero32OriginalValues cap=12G running=1 avail=212.4G
+06:46:36 done FV.Backend.Proof.StockCmpNonzero32OriginalValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:46:36 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:46:36 start FV.Backend.Proof.StockCmpNonzero64OriginalValues cap=12G running=1 avail=212.4G
+06:46:38 done FV.Backend.Proof.StockCmpNonzero64OriginalValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:46:39 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:46:39 start FV.Backend.Proof.StockSelectNonzeroWideShape cap=12G running=1 avail=212.4G
+06:46:40 done FV.Backend.Proof.StockSelectNonzeroWideShape rc=0 1s maxrss=1.8G cgpeak=0.2G built -> ok
+06:46:40 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:46:40 start FV.Backend.Proof.StockCmpImmediateSourceValues cap=12G running=1 avail=212.3G
+06:46:42 done FV.Backend.Proof.StockCmpImmediateSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:46:42 start FV.Backend.Proof.StockCmpPredecessorSignedSourceValues cap=12G running=1 avail=212.4G
+06:46:44 done FV.Backend.Proof.StockCmpPredecessorSignedSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:46:44 start FV.Backend.Proof.StockCmpPredecessorUnsignedSourceValues cap=12G running=1 avail=212.4G
+06:46:46 done FV.Backend.Proof.StockCmpPredecessorUnsignedSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:46:46 start FV.Backend.Proof.StockCmpRegisterTraceValues cap=12G running=1 avail=212.4G
+06:46:48 done FV.Backend.Proof.StockCmpRegisterTraceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:46:48 start FV.Backend.Proof.StockCmpZero32OriginalRhsValues cap=12G running=1 avail=211.2G
+06:46:50 done FV.Backend.Proof.StockCmpZero32OriginalRhsValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+06:46:50 start FV.Backend.Proof.StockCmpZero64OriginalRhsValues cap=12G running=1 avail=211.3G
+06:46:52 done FV.Backend.Proof.StockCmpZero64OriginalRhsValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+06:46:52 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:46:52 start FV.Backend.Proof.StockSelectDecodeFlags cap=12G running=1 avail=211.5G
+06:47:08 done FV.Backend.Proof.StockSelectDecodeFlags rc=0 16s maxrss=1.8G cgpeak=0.4G built -> ok
+06:47:08 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:47:08 start FV.Backend.Proof.StockSelectNonzeroConditionShape cap=12G running=1 avail=212.3G
+06:47:09 done FV.Backend.Proof.StockSelectNonzeroConditionShape rc=0 1s maxrss=1.8G cgpeak=0.2G built -> ok
+06:47:10 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:47:10 start FV.Backend.Proof.StockCmpWideActualValues cap=12G running=1 avail=212.3G
+06:47:30 done FV.Backend.Proof.StockCmpWideActualValues rc=0 20s maxrss=2.1G cgpeak=0.5G built -> ok
+06:47:30 start FV.Backend.Proof.StockSelectZeroConditionShape cap=12G running=1 avail=212.9G
+06:47:32 done FV.Backend.Proof.StockSelectZeroConditionShape rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:47:32 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:47:32 start FV.Backend.Proof.StockSelectOriginalSourceMatch cap=12G running=1 avail=212.6G
+06:47:50 done FV.Backend.Proof.StockSelectOriginalSourceMatch rc=0 18s maxrss=6.8G cgpeak=5.3G built -> ok
+06:47:50 start FV.Backend.Proof.StockSelectWideComparisonShape cap=12G running=1 avail=211.5G
+06:48:11 done FV.Backend.Proof.StockSelectWideComparisonShape rc=0 21s maxrss=2.0G cgpeak=0.5G built -> ok
+06:48:11 start FV.Backend.Proof.StockConstantRecordValues cap=12G running=1 avail=210.8G
+06:48:50 done FV.Backend.Proof.StockConstantRecordValues rc=0 39s maxrss=7.3G cgpeak=5.9G built -> ok
+06:48:50 start FV.Backend.Proof.StockMulFusedMatch cap=12G running=1 avail=212.4G
+06:49:02 done FV.Backend.Proof.StockMulFusedMatch rc=0 12s maxrss=1.9G cgpeak=0.4G built -> ok
+06:49:02 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:49:02 start FV.Backend.Proof.StockSelectObserved cap=12G running=1 avail=210.7G
+06:49:08 done FV.Backend.Proof.StockSelectObserved rc=0 6s maxrss=1.8G cgpeak=0.4G built -> ok
+06:49:09 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:49:09 start FV.Backend.Proof.StockSelectNarrowComparisonShape cap=12G running=1 avail=211.1G
+06:49:23 done FV.Backend.Proof.StockSelectNarrowComparisonShape rc=0 14s maxrss=2.2G cgpeak=0.7G built -> ok
+06:49:23 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:49:23 start FV.Backend.Proof.StockAddSubNegativeMatch cap=12G running=1 avail=209.3G
+06:49:39 done FV.Backend.Proof.StockAddSubNegativeMatch rc=0 16s maxrss=1.9G cgpeak=0.5G built -> ok
+06:49:39 start FV.Backend.Proof.StockSelectConditionCalls cap=12G running=1 avail=212.8G
+06:49:46 done FV.Backend.Proof.StockSelectConditionCalls rc=0 7s maxrss=1.9G cgpeak=0.5G built -> ok
+06:49:46 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:49:46 start FV.Backend.Proof.StockAddSubImmediateMatch cap=12G running=1 avail=212.9G
+06:49:59 done FV.Backend.Proof.StockAddSubImmediateMatch rc=0 13s maxrss=1.8G cgpeak=0.4G built -> ok
+06:49:59 start FV.Backend.Proof.StockSelectZeroObserved cap=12G running=1 avail=212.9G
+06:50:06 done FV.Backend.Proof.StockSelectZeroObserved rc=0 7s maxrss=1.8G cgpeak=0.4G built -> ok
+06:50:06 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:50:06 start FV.Backend.Proof.StockRotateMatch cap=12G running=1 avail=212.7G
+06:50:22 done FV.Backend.Proof.StockRotateMatch rc=0 16s maxrss=1.8G cgpeak=0.5G built -> ok
+06:50:23 check (ready) 4 modules in 0.1s: 0 up-to-date, 4 out of date, 0 wait for those
+06:50:23 start FV.Backend.Proof.StockSelectDecodedRequests cap=12G running=1 avail=209.9G
+06:50:26 done FV.Backend.Proof.StockSelectDecodedRequests rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+06:50:26 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:50:26 start FV.Backend.Proof.StockBodyScanOrigin cap=12G running=1 avail=208.4G
+06:50:28 done FV.Backend.Proof.StockBodyScanOrigin rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+06:50:28 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+06:50:28 start FV.Backend.Proof.StockLogicalNotRootValues cap=12G running=1 avail=207.4G
+06:50:34 done FV.Backend.Proof.StockLogicalNotRootValues rc=0 6s maxrss=1.8G cgpeak=0.3G built -> ok
+06:50:34 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:50:34 start FV.Backend.Proof.StockSelectDecodedObserved cap=12G running=1 avail=210.9G
+06:50:40 done FV.Backend.Proof.StockSelectDecodedObserved rc=0 6s maxrss=1.8G cgpeak=0.4G built -> ok
+06:50:40 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:50:40 start FV.Backend.Proof.StockMemoryExtLoadSelection cap=12G running=1 avail=208.3G
+06:50:53 done FV.Backend.Proof.StockMemoryExtLoadSelection rc=0 13s maxrss=1.7G cgpeak=0.4G built -> ok
+06:50:54 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:50:54 start FV.Backend.Proof.StockMemoryIntegerDispatch cap=12G running=1 avail=211.1G
+06:51:13 done FV.Backend.Proof.StockMemoryIntegerDispatch rc=0 19s maxrss=6.7G cgpeak=5.2G built -> ok
+06:51:13 start FV.Backend.Proof.StockMemoryLoadedPointerStoreEvaluation cap=12G running=1 avail=210.3G
+06:51:39 done FV.Backend.Proof.StockMemoryLoadedPointerStoreEvaluation rc=0 26s maxrss=1.8G cgpeak=0.5G built -> ok
+06:51:39 start FV.Backend.Proof.StockMemoryOffsetEightLoad cap=12G running=1 avail=212.8G
+06:51:49 done FV.Backend.Proof.StockMemoryOffsetEightLoad rc=0 10s maxrss=1.7G cgpeak=0.4G built -> ok
+06:51:49 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:51:49 start FV.Backend.Proof.StockMemoryStoreEvaluation cap=12G running=1 avail=212.6G
+06:52:05 done FV.Backend.Proof.StockMemoryStoreEvaluation rc=0 16s maxrss=1.7G cgpeak=0.4G built -> ok
+06:52:05 start FV.Backend.Proof.StockMemoryStoreSelected cap=12G running=1 avail=212.3G
+06:52:07 done FV.Backend.Proof.StockMemoryStoreSelected rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+06:52:07 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:52:07 start FV.Backend.Proof.StockPureRecordCoverage cap=12G running=1 avail=212.6G
+06:52:21 done FV.Backend.Proof.StockPureRecordCoverage rc=0 14s maxrss=5.8G cgpeak=4.3G built -> ok
+06:52:21 start FV.Backend.Proof.StockSelectValues cap=12G running=1 avail=212.7G
+06:52:22 done FV.Backend.Proof.StockSelectValues rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+06:52:23 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:52:23 start FV.Backend.Proof.StockSelectComparisonConditionShape cap=12G running=1 avail=212.6G
+06:52:24 done FV.Backend.Proof.StockSelectComparisonConditionShape rc=0 1s maxrss=1.8G cgpeak=0.2G built -> ok
+06:52:24 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:52:24 start FV.Backend.Proof.StockSelectSourceValues cap=12G running=1 avail=212.6G
+06:52:26 done FV.Backend.Proof.StockSelectSourceValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+06:52:26 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:52:26 start FV.Backend.Proof.StockSelectZeroSourceValues cap=12G running=1 avail=212.9G
+06:52:28 done FV.Backend.Proof.StockSelectZeroSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:52:28 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:52:28 start FV.Backend.Proof.StockTerminalBlocks cap=12G running=1 avail=212.4G
+06:52:55 done FV.Backend.Proof.StockTerminalBlocks rc=0 27s maxrss=5.7G cgpeak=4.3G built -> ok
+06:52:55 check (ready) 1 modules in 0.1s: 0 up-to-date, 1 out of date, 0 wait for those
+06:52:55 start FV.Backend.Proof.StockSelectComparisonCompanionValues cap=12G running=1 avail=212.4G
+06:52:57 done FV.Backend.Proof.StockSelectComparisonCompanionValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:52:57 start FV.Backend.Proof.StockSelectConditionObserved cap=12G running=1 avail=212.5G
+06:52:58 done FV.Backend.Proof.StockSelectConditionObserved rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+06:52:58 start FV.Backend.Proof.StockSelectConditionReplacement cap=12G running=1 avail=212.8G
+06:53:00 done FV.Backend.Proof.StockSelectConditionReplacement rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+06:53:01 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:01 start FV.Backend.Proof.StockSelectNonzero16Values cap=12G running=1 avail=212.6G
+06:53:03 done FV.Backend.Proof.StockSelectNonzero16Values rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:53:03 start FV.Backend.Proof.StockSelectNonzero8Values cap=12G running=1 avail=212.6G
+06:53:05 done FV.Backend.Proof.StockSelectNonzero8Values rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:53:05 start FV.Backend.Proof.StockSelectNonzeroWideValues cap=12G running=1 avail=212.6G
+06:53:07 done FV.Backend.Proof.StockSelectNonzeroWideValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:53:07 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:07 start FV.Backend.Proof.StockAddSubSemantics cap=12G running=1 avail=212.6G
+06:53:09 done FV.Backend.Proof.StockAddSubSemantics rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+06:53:09 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+06:53:09 start FV.Backend.Proof.StockLogicalNotMatch cap=12G running=1 avail=212.9G
+06:53:32 done FV.Backend.Proof.StockLogicalNotMatch rc=0 23s maxrss=2.0G cgpeak=0.5G built -> ok
+06:53:32 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:32 start FV.Backend.Proof.StockSelectComparisonValues cap=12G running=1 avail=212.8G
+06:53:34 done FV.Backend.Proof.StockSelectComparisonValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:53:34 start FV.Backend.Proof.StockSelectConditionOriginValues cap=12G running=1 avail=212.9G
+06:53:35 done FV.Backend.Proof.StockSelectConditionOriginValues rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+06:53:36 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:36 start FV.Backend.Proof.StockSelectNonzeroActualValues cap=12G running=1 avail=212.5G
+06:53:38 done FV.Backend.Proof.StockSelectNonzeroActualValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:53:38 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:38 start FV.Backend.Proof.StockAddSubImmediateValues cap=12G running=1 avail=212.4G
+06:53:40 done FV.Backend.Proof.StockAddSubImmediateValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:53:40 start FV.Backend.Proof.StockAddSubNegativeValues cap=12G running=1 avail=212.3G
+06:53:42 done FV.Backend.Proof.StockAddSubNegativeValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:53:42 start FV.Backend.Proof.StockSelectOriginalConditionValues cap=12G running=1 avail=212.3G
+06:53:44 done FV.Backend.Proof.StockSelectOriginalConditionValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:53:44 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:44 start FV.Backend.Proof.StockShiftPrepValues cap=12G running=1 avail=212.5G
+06:53:46 done FV.Backend.Proof.StockShiftPrepValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:53:46 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:46 start FV.Backend.Proof.StockAddSubValues cap=12G running=1 avail=212.6G
+06:53:48 done FV.Backend.Proof.StockAddSubValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:53:49 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:49 start FV.Backend.Proof.StockAvailableTypes cap=12G running=1 avail=212.6G
+06:53:50 done FV.Backend.Proof.StockAvailableTypes rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+06:53:50 start FV.Backend.Proof.StockSelectOriginalRootValues cap=12G running=1 avail=212.3G
+06:53:52 done FV.Backend.Proof.StockSelectOriginalRootValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:53:52 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:52 start FV.Backend.Proof.StockShiftRootValues cap=12G running=1 avail=212.8G
+06:53:55 done FV.Backend.Proof.StockShiftRootValues rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+06:53:55 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:53:55 start FV.Backend.Proof.StockAddSubUnifiedValues cap=12G running=1 avail=212.8G
+06:53:57 done FV.Backend.Proof.StockAddSubUnifiedValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:53:57 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:57 start FV.Backend.Proof.StockSelectOriginalRecordValues cap=12G running=1 avail=212.7G
+06:53:59 done FV.Backend.Proof.StockSelectOriginalRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:53:59 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:59 start FV.Backend.Proof.StockMulFusedValues cap=12G running=1 avail=212.7G
+06:54:01 done FV.Backend.Proof.StockMulFusedValues rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+06:54:02 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:54:02 start FV.Backend.Proof.StockSelectOriginalSourceValues cap=12G running=1 avail=212.8G
+06:54:04 done FV.Backend.Proof.StockSelectOriginalSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:54:04 start FV.Backend.Proof.StockShiftBitfieldMatch cap=12G running=1 avail=212.8G
+06:54:19 done FV.Backend.Proof.StockShiftBitfieldMatch rc=0 15s maxrss=2.0G cgpeak=0.5G built -> ok
+06:54:19 check (ready) 1 modules in 0.1s: 0 up-to-date, 1 out of date, 0 wait for those
+06:54:19 start FV.Backend.Proof.StockSourceDFG cap=12G running=1 avail=212.9G
+06:54:21 done FV.Backend.Proof.StockSourceDFG rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+06:54:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:54:21 start FV.Backend.Proof.StockAddSubRecordValues cap=12G running=1 avail=212.7G
+06:54:23 done FV.Backend.Proof.StockAddSubRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:54:23 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:54:23 start FV.Backend.Proof.StockConstantDispatch cap=12G running=1 avail=212.7G
+06:54:41 done FV.Backend.Proof.StockConstantDispatch rc=0 18s maxrss=6.6G cgpeak=5.2G built -> ok
+06:54:42 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:54:42 start FV.Backend.Proof.StockCountSelected cap=12G running=1 avail=212.9G
+06:55:19 done FV.Backend.Proof.StockCountSelected rc=0 37s maxrss=6.8G cgpeak=5.3G built -> ok
+06:55:19 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:55:19 start FV.Backend.Proof.StockMulFusedRecordValues cap=12G running=1 avail=212.6G
+06:55:21 done FV.Backend.Proof.StockMulFusedRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:55:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:55:21 start FV.Backend.Proof.StockSelectScanRefines cap=12G running=1 avail=212.7G
+06:55:23 done FV.Backend.Proof.StockSelectScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:55:23 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:55:23 start FV.Backend.Proof.StockAddSubAllValues cap=12G running=1 avail=212.7G
+06:55:25 done FV.Backend.Proof.StockAddSubAllValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:55:25 start FV.Backend.Proof.StockAddSubSourceValues cap=12G running=1 avail=212.7G
+06:55:27 done FV.Backend.Proof.StockAddSubSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:55:28 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:55:28 start FV.Backend.Proof.StockBnotDispatch cap=12G running=1 avail=212.7G
+06:55:45 done FV.Backend.Proof.StockBnotDispatch rc=0 17s maxrss=6.7G cgpeak=5.2G built -> ok
+06:55:45 start FV.Backend.Proof.StockGuardedOmission cap=12G running=1 avail=212.6G
+06:55:47 done FV.Backend.Proof.StockGuardedOmission rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:55:47 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:55:47 start FV.Backend.Proof.StockAddSubAllSourceValues cap=12G running=1 avail=212.5G
+06:55:49 done FV.Backend.Proof.StockAddSubAllSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:55:49 start FV.Backend.Proof.StockBodyScanRefines cap=12G running=1 avail=212.5G
+06:55:51 done FV.Backend.Proof.StockBodyScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:55:51 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:55:51 start FV.Backend.Proof.StockRotateDispatch cap=12G running=1 avail=212.8G
+06:56:29 done FV.Backend.Proof.StockRotateDispatch rc=0 38s maxrss=6.7G cgpeak=5.4G built -> ok
+06:56:29 start FV.Backend.Proof.StockAddSubScanRefines cap=12G running=1 avail=211.1G
+06:56:31 done FV.Backend.Proof.StockAddSubScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:56:31 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:56:31 start FV.Backend.Proof.StockRotateImmediateMatch cap=12G running=1 avail=210.1G
+06:57:03 done FV.Backend.Proof.StockRotateImmediateMatch rc=0 32s maxrss=2.1G cgpeak=0.7G built -> ok
+06:57:04 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:04 start FV.Backend.Proof.StockArithmeticBodyRefines cap=12G running=1 avail=211.9G
+06:57:19 done FV.Backend.Proof.StockArithmeticBodyRefines rc=0 15s maxrss=5.9G cgpeak=4.3G built -> ok
+06:57:19 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+06:57:19 start FV.Backend.Proof.StockMulDispatch cap=12G running=1 avail=211.0G
+06:57:37 done FV.Backend.Proof.StockMulDispatch rc=0 18s maxrss=6.7G cgpeak=5.2G built -> ok
+06:57:37 start FV.Backend.Proof.StockShiftRootMatch cap=12G running=1 avail=211.3G
+06:57:52 done FV.Backend.Proof.StockShiftRootMatch rc=0 15s maxrss=2.0G cgpeak=0.5G built -> ok
+06:57:52 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:52 start FV.Backend.Proof.StockLogicalHelper cap=12G running=1 avail=211.1G
+06:57:56 done FV.Backend.Proof.StockLogicalHelper rc=0 4s maxrss=1.8G cgpeak=0.3G built -> ok
+06:57:56 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:56 start FV.Backend.Proof.LowerOutcomes cap=12G running=1 avail=211.1G
+06:57:57 done FV.Backend.Proof.LowerOutcomes rc=0 1s maxrss=1.5G cgpeak=0.2G built -> ok
+06:57:58 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+06:57:58 start FV.Backend.Proof.StockCastBaseValues cap=12G running=1 avail=211.0G
+06:58:10 done FV.Backend.Proof.StockCastBaseValues rc=0 12s maxrss=1.9G cgpeak=0.5G built -> ok
+06:58:10 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:10 start FV.Backend.Proof.StockShiftBitfieldRhs cap=12G running=1 avail=211.2G
+06:58:22 done FV.Backend.Proof.StockShiftBitfieldRhs rc=0 12s maxrss=2.0G cgpeak=0.5G built -> ok
+06:58:22 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:22 start FV.Backend.Proof.StockLogicalExtrMatchedValues cap=12G running=1 avail=211.4G
+06:58:24 done FV.Backend.Proof.StockLogicalExtrMatchedValues rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+06:58:24 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:24 start FV.Backend.Proof.StockLogicalRootValues cap=12G running=1 avail=210.9G
+06:58:27 done FV.Backend.Proof.StockLogicalRootValues rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+06:58:27 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:28 start FV.Backend.Proof.StockLogicalExtrSelectedValues cap=12G running=1 avail=211.2G
+06:58:30 done FV.Backend.Proof.StockLogicalExtrSelectedValues rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+06:58:30 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:30 start FV.Backend.Proof.StockLogicalNotXor cap=12G running=1 avail=211.2G
+06:58:35 done FV.Backend.Proof.StockLogicalNotXor rc=0 5s maxrss=1.8G cgpeak=0.3G built -> ok
+06:58:35 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:35 start FV.Backend.Proof.StockLogicalExtrRecord cap=12G running=1 avail=211.2G
+06:58:37 done FV.Backend.Proof.StockLogicalExtrRecord rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:58:37 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:37 start FV.Backend.Proof.StockLogicalNotRecord cap=12G running=1 avail=211.0G
+06:58:39 done FV.Backend.Proof.StockLogicalNotRecord rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:58:39 start FV.Backend.Proof.StockLogicalRecordValues cap=12G running=1 avail=211.1G
+06:58:41 done FV.Backend.Proof.StockLogicalRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:58:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:41 start FV.Backend.Proof.StockBnotSemantics cap=12G running=1 avail=211.2G
+06:58:42 done FV.Backend.Proof.StockBnotSemantics rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+06:58:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:43 start FV.Backend.Proof.StockLogicalExtrSourceTransfer cap=12G running=1 avail=211.5G
+06:58:45 done FV.Backend.Proof.StockLogicalExtrSourceTransfer rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:58:45 start FV.Backend.Proof.StockLogicalSourceTransfer cap=12G running=1 avail=211.2G
+06:58:47 done FV.Backend.Proof.StockLogicalSourceTransfer rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:58:47 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:47 start FV.Backend.Proof.StockBnotValues cap=12G running=1 avail=211.2G
+06:58:49 done FV.Backend.Proof.StockBnotValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:58:49 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:49 start FV.Backend.Proof.StockLogicalCompleteValues cap=12G running=1 avail=211.4G
+06:58:51 done FV.Backend.Proof.StockLogicalCompleteValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:58:51 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:51 start FV.Backend.Proof.StockBnotRecordValues cap=12G running=1 avail=211.0G
+06:58:53 done FV.Backend.Proof.StockBnotRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:58:53 start FV.Backend.Proof.StockBswapRhs cap=12G running=1 avail=211.0G
+06:59:07 done FV.Backend.Proof.StockBswapRhs rc=0 14s maxrss=1.8G cgpeak=0.4G built -> ok
+06:59:08 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:08 start FV.Backend.Proof.StockConstantCompleteValues cap=12G running=1 avail=211.3G
+06:59:10 done FV.Backend.Proof.StockConstantCompleteValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:10 start FV.Backend.Proof.StockLogicalNotXorRecord cap=12G running=1 avail=211.4G
+06:59:12 done FV.Backend.Proof.StockLogicalNotXorRecord rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:12 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:12 start FV.Backend.Proof.StockLogicalScanRefines cap=12G running=1 avail=211.5G
+06:59:14 done FV.Backend.Proof.StockLogicalScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:59:14 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:14 start FV.Backend.Proof.StockPureBodyFamilies cap=12G running=1 avail=211.4G
+06:59:16 done FV.Backend.Proof.StockPureBodyFamilies rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:59:16 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:16 start FV.Backend.Proof.StockShiftBitfieldSemantics cap=12G running=1 avail=211.3G
+06:59:18 done FV.Backend.Proof.StockShiftBitfieldSemantics rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:18 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:18 start FV.Backend.Proof.StockBnotSourceTransfer cap=12G running=1 avail=211.4G
+06:59:20 done FV.Backend.Proof.StockBnotSourceTransfer rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:20 start FV.Backend.Proof.StockConstantScanRefines cap=12G running=1 avail=211.1G
+06:59:22 done FV.Backend.Proof.StockConstantScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:59:23 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:23 start FV.Backend.Proof.StockLogicalBodyRefines cap=12G running=1 avail=211.2G
+06:59:25 done FV.Backend.Proof.StockLogicalBodyRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:59:25 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+06:59:25 start FV.Backend.Proof.StockMulRecordValues cap=12G running=1 avail=211.0G
+06:59:27 done FV.Backend.Proof.StockMulRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:27 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:27 start FV.Backend.Proof.StockShiftBitfieldValues cap=12G running=1 avail=211.1G
+06:59:28 done FV.Backend.Proof.StockShiftBitfieldValues rc=0 1s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:28 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:28 start FV.Backend.Proof.StockShiftRecordValues cap=12G running=1 avail=211.1G
+06:59:30 done FV.Backend.Proof.StockShiftRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:31 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:31 start FV.Backend.Proof.StockBnotScanRefines cap=12G running=1 avail=211.0G
+06:59:33 done FV.Backend.Proof.StockBnotScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:59:33 start FV.Backend.Proof.StockConstantBodyRefines cap=12G running=1 avail=211.0G
+06:59:35 done FV.Backend.Proof.StockConstantBodyRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:59:35 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:35 start FV.Backend.Proof.StockMulSourceTransfer cap=12G running=1 avail=211.3G
+06:59:37 done FV.Backend.Proof.StockMulSourceTransfer rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:37 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:37 start FV.Backend.Proof.StockShiftBitfieldRecordValues cap=12G running=1 avail=211.1G
+06:59:39 done FV.Backend.Proof.StockShiftBitfieldRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:39 start FV.Backend.Proof.StockShiftSourceTransfer cap=12G running=1 avail=211.1G
+06:59:41 done FV.Backend.Proof.StockShiftSourceTransfer rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:41 start FV.Backend.Proof.StockBnotBodyRefines cap=12G running=1 avail=211.2G
+06:59:43 done FV.Backend.Proof.StockBnotBodyRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:59:43 start FV.Backend.Proof.StockMulScanRefines cap=12G running=1 avail=211.2G
+06:59:45 done FV.Backend.Proof.StockMulScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+06:59:45 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:46 start FV.Backend.Proof.StockShiftCompleteSourceTransfer cap=12G running=1 avail=211.2G
+06:59:48 done FV.Backend.Proof.StockShiftCompleteSourceTransfer rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+06:59:48 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:59:48 start FV.Backend.Proof.StockBitrevRhs cap=12G running=1 avail=211.2G
+07:00:02 done FV.Backend.Proof.StockBitrevRhs rc=0 14s maxrss=1.8G cgpeak=0.5G built -> ok
+07:00:02 start FV.Backend.Proof.StockMulBodyRefines cap=12G running=1 avail=210.8G
+07:00:04 done FV.Backend.Proof.StockMulBodyRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:00:04 start FV.Backend.Proof.StockShiftScanRefines cap=12G running=1 avail=210.9G
+07:00:06 done FV.Backend.Proof.StockShiftScanRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:00:06 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:00:06 start FV.Backend.Proof.StockTerminalDriver cap=12G running=1 avail=210.9G
+07:00:08 done FV.Backend.Proof.StockTerminalDriver rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:00:08 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:00:08 start FV.Backend.Proof.StockShiftBodyRefines cap=12G running=1 avail=211.0G
+07:00:10 done FV.Backend.Proof.StockShiftBodyRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:00:10 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:00:10 start FV.Backend.Proof.StockCastFamily cap=12G running=1 avail=210.7G
+07:00:12 done FV.Backend.Proof.StockCastFamily rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:00:12 start FV.Backend.Proof.StockSourceStatementFamily cap=12G running=1 avail=211.1G
+07:00:14 done FV.Backend.Proof.StockSourceStatementFamily rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:00:15 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:00:15 start FV.Backend.Proof.StockTerminalEmission cap=12G running=1 avail=210.9G
+07:00:43 done FV.Backend.Proof.StockTerminalEmission rc=0 28s maxrss=5.8G cgpeak=4.3G built -> ok
+07:00:43 start FV.Backend.Proof.StockCastDispatch cap=12G running=1 avail=211.0G
+07:01:03 done FV.Backend.Proof.StockCastDispatch rc=0 20s maxrss=6.9G cgpeak=5.2G built -> ok
+07:01:03 start FV.Backend.Proof.StockNegRhs cap=12G running=1 avail=210.9G
+07:01:10 done FV.Backend.Proof.StockNegRhs rc=0 7s maxrss=1.7G cgpeak=0.3G built -> ok
+07:01:10 start FV.Backend.Proof.StockBswapSemantics cap=12G running=1 avail=210.2G
+07:01:12 done FV.Backend.Proof.StockBswapSemantics rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:01:12 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:12 start FV.Backend.Proof.StockBitrevSemantics cap=12G running=1 avail=210.5G
+07:01:14 done FV.Backend.Proof.StockBitrevSemantics rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:01:14 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:14 start FV.Backend.Proof.StockBitrevSelected cap=12G running=1 avail=209.9G
+07:01:16 done FV.Backend.Proof.StockBitrevSelected rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:17 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:17 start FV.Backend.Proof.StockBswapSelected cap=12G running=1 avail=211.0G
+07:01:19 done FV.Backend.Proof.StockBswapSelected rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:19 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:19 start FV.Backend.Proof.StockNegSemantics cap=12G running=1 avail=210.9G
+07:01:20 done FV.Backend.Proof.StockNegSemantics rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+07:01:20 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:20 start FV.Backend.Proof.StockNegSelected cap=12G running=1 avail=210.9G
+07:01:22 done FV.Backend.Proof.StockNegSelected rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:22 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:22 start FV.Backend.Proof.StockRotateSelectedValues cap=12G running=1 avail=211.0G
+07:01:26 done FV.Backend.Proof.StockRotateSelectedValues rc=0 4s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:26 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:01:26 start FV.Backend.Proof.StockBitrevRecordValues cap=12G running=1 avail=211.0G
+07:01:28 done FV.Backend.Proof.StockBitrevRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:29 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:29 start FV.Backend.Proof.StockBswapRecordValues cap=12G running=1 avail=211.1G
+07:01:31 done FV.Backend.Proof.StockBswapRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:31 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:31 start FV.Backend.Proof.StockLogicalNotrap cap=12G running=1 avail=211.3G
+07:01:33 done FV.Backend.Proof.StockLogicalNotrap rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:01:33 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:33 start FV.Backend.Proof.StockNegRecordValues cap=12G running=1 avail=211.0G
+07:01:35 done FV.Backend.Proof.StockNegRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:35 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:35 start FV.Backend.Proof.StockBitrevSourceValues cap=12G running=1 avail=211.0G
+07:01:37 done FV.Backend.Proof.StockBitrevSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:37 start FV.Backend.Proof.StockBnotNotrap cap=12G running=1 avail=210.9G
+07:01:39 done FV.Backend.Proof.StockBnotNotrap rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:01:39 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:39 start FV.Backend.Proof.StockBswapSourceValues cap=12G running=1 avail=210.9G
+07:01:41 done FV.Backend.Proof.StockBswapSourceValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:01:42 start FV.Backend.Proof.StockNegSourceValues cap=12G running=1 avail=210.8G
+07:01:44 done FV.Backend.Proof.StockNegSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:44 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:44 start FV.Backend.Proof.StockRotateNarrowRegisterValues cap=12G running=1 avail=211.2G
+07:01:46 done FV.Backend.Proof.StockRotateNarrowRegisterValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:46 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:46 start FV.Backend.Proof.StockRotateNarrowValues cap=12G running=1 avail=211.3G
+07:01:48 done FV.Backend.Proof.StockRotateNarrowValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:48 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:48 start FV.Backend.Proof.StockRotateRegisterValues cap=12G running=1 avail=210.8G
+07:01:50 done FV.Backend.Proof.StockRotateRegisterValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:50 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:50 start FV.Backend.Proof.StockMulNotrap cap=12G running=1 avail=211.1G
+07:01:52 done FV.Backend.Proof.StockMulNotrap rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:01:53 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:53 start FV.Backend.Proof.StockRotateNarrowImmRecordValues cap=12G running=1 avail=210.9G
+07:01:55 done FV.Backend.Proof.StockRotateNarrowImmRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:55 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:55 start FV.Backend.Proof.StockRotateNarrowRecordValues cap=12G running=1 avail=211.1G
+07:01:57 done FV.Backend.Proof.StockRotateNarrowRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:57 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:57 start FV.Backend.Proof.StockRotateWideImmRecordValues cap=12G running=1 avail=211.2G
+07:01:59 done FV.Backend.Proof.StockRotateWideImmRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:01:59 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:01:59 start FV.Backend.Proof.StockRotateWideRecordValues cap=12G running=1 avail=211.0G
+07:02:01 done FV.Backend.Proof.StockRotateWideRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:02:01 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:01 start FV.Backend.Proof.StockUnarySourceValues cap=12G running=1 avail=211.0G
+07:02:03 done FV.Backend.Proof.StockUnarySourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:02:04 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:04 start FV.Backend.Proof.StockCountRecordValues cap=12G running=1 avail=211.3G
+07:02:06 done FV.Backend.Proof.StockCountRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:02:06 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:06 start FV.Backend.Proof.StockRotateNarrowImmSourceValues cap=12G running=1 avail=211.1G
+07:02:08 done FV.Backend.Proof.StockRotateNarrowImmSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:02:08 start FV.Backend.Proof.StockRotateNarrowSourceValues cap=12G running=1 avail=211.2G
+07:02:10 done FV.Backend.Proof.StockRotateNarrowSourceValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:02:10 start FV.Backend.Proof.StockRotateWideImmSourceValues cap=12G running=1 avail=211.0G
+07:02:12 done FV.Backend.Proof.StockRotateWideImmSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:02:12 start FV.Backend.Proof.StockRotateWideSourceValues cap=12G running=1 avail=211.0G
+07:02:14 done FV.Backend.Proof.StockRotateWideSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:02:14 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:14 start FV.Backend.Proof.StockShiftNotrap cap=12G running=1 avail=211.1G
+07:02:16 done FV.Backend.Proof.StockShiftNotrap rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:02:16 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:16 start FV.Backend.Proof.StockUnaryDispatch cap=12G running=1 avail=211.1G
+07:02:19 done FV.Backend.Proof.StockUnaryDispatch rc=0 3s maxrss=1.9G cgpeak=0.4G built -> ok
+07:02:19 start FV.Backend.Proof.StockCastNotrap cap=12G running=1 avail=211.1G
+07:02:21 done FV.Backend.Proof.StockCastNotrap rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:02:21 start FV.Backend.Proof.StockCountSourceValues cap=12G running=1 avail=211.1G
+07:02:23 done FV.Backend.Proof.StockCountSourceValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:02:23 start FV.Backend.Proof.StockRotateSourceValues cap=12G running=1 avail=211.1G
+07:02:25 done FV.Backend.Proof.StockRotateSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:02:26 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:26 start FV.Backend.Proof.StockBitFamily cap=12G running=1 avail=211.1G
+07:02:28 done FV.Backend.Proof.StockBitFamily rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:02:28 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:28 start FV.Backend.Proof.StockPopcountFamily cap=12G running=1 avail=211.1G
+07:02:30 done FV.Backend.Proof.StockPopcountFamily rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:02:30 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:30 start FV.Backend.Proof.StockMinMaxFamily cap=12G running=1 avail=211.1G
+07:02:32 done FV.Backend.Proof.StockMinMaxFamily rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:02:32 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:33 start FV.Backend.Proof.StockCmpFamily cap=12G running=1 avail=211.0G
+07:02:35 done FV.Backend.Proof.StockCmpFamily rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:02:35 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:35 start FV.Backend.Proof.StockHighMulFamily cap=12G running=1 avail=211.0G
+07:02:37 done FV.Backend.Proof.StockHighMulFamily rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:02:37 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:37 start FV.Backend.Proof.StockNoLoadSource cap=12G running=1 avail=211.0G
+07:02:40 done FV.Backend.Proof.StockNoLoadSource rc=0 3s maxrss=2.1G cgpeak=0.3G built -> ok
+07:02:40 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:02:40 start FV.Backend.Proof.StockNoLoadDriver cap=12G running=1 avail=211.2G
+07:02:44 done FV.Backend.Proof.StockNoLoadDriver rc=0 4s maxrss=2.1G cgpeak=0.3G built -> ok
+07:02:45 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:45 start FV.Backend.Proof.StockMemoryLoad cap=12G running=1 avail=211.1G
+07:02:47 done FV.Backend.Proof.StockMemoryLoad rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:02:47 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:02:47 start FV.Backend.Proof.StockMemoryExtLoadMatch cap=12G running=1 avail=211.1G
+07:02:59 done FV.Backend.Proof.StockMemoryExtLoadMatch rc=0 12s maxrss=1.7G cgpeak=0.4G built -> ok
+07:02:59 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:02:59 start FV.Backend.Proof.StockMemoryIntegerRecordValues cap=12G running=1 avail=211.3G
+07:03:01 done FV.Backend.Proof.StockMemoryIntegerRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:03:01 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:03:01 start FV.Backend.Proof.StockMemoryLoadedPointerStoreRecord cap=12G running=1 avail=211.0G
+07:03:03 done FV.Backend.Proof.StockMemoryLoadedPointerStoreRecord rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:03:03 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:03:03 start FV.Backend.Proof.StockMemoryOffsetEightLoadRecord cap=12G running=1 avail=211.2G
+07:03:05 done FV.Backend.Proof.StockMemoryOffsetEightLoadRecord rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:03:06 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:03:06 start FV.Backend.Proof.StockMemoryStoreRecordValues cap=12G running=1 avail=211.1G
+07:03:08 done FV.Backend.Proof.StockMemoryStoreRecordValues rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+07:03:08 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:03:08 start FV.Backend.Proof.StockProtectedSinkSource cap=12G running=1 avail=211.1G
+07:03:10 done FV.Backend.Proof.StockProtectedSinkSource rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:03:10 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:03:10 start FV.Backend.Proof.StockStoreRetention cap=12G running=1 avail=211.1G
+07:03:12 done FV.Backend.Proof.StockStoreRetention rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:03:12 start FV.Backend.Proof.StockDivMatch cap=12G running=1 avail=211.3G
+07:04:31 done FV.Backend.Proof.StockDivMatch rc=0 79s maxrss=6.7G cgpeak=5.3G built -> ok
+07:04:32 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:04:32 start FV.Backend.Proof.StockMemoryOffsetEightStore cap=12G running=1 avail=211.0G
+07:05:32 done FV.Backend.Proof.StockMemoryOffsetEightStore rc=0 60s maxrss=1.9G cgpeak=0.6G built -> ok
+07:05:32 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:05:32 start FV.Backend.Proof.StockMinMaxSourceMatch cap=12G running=1 avail=211.4G
+07:06:54 done FV.Backend.Proof.StockMinMaxSourceMatch rc=0 82s maxrss=6.8G cgpeak=6.3G built -> ok
+07:06:54 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:06:54 start FV.E2E.Statement cap=12G running=1 avail=203.0G
+07:06:56 done FV.E2E.Statement rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+07:06:57 check (ready) 5 modules in 0.2s: 0 up-to-date, 5 out of date, 0 wait for those
+07:06:57 start FV.E2E.RegLevelSim cap=12G running=1 avail=203.6G
+07:06:59 done FV.E2E.RegLevelSim rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+07:06:59 start FV.E2E.RegLevelPush cap=12G running=1 avail=203.4G
+07:07:04 done FV.E2E.RegLevelPush rc=0 5s maxrss=1.8G cgpeak=0.5G built -> ok
+07:07:04 check (ready) 7 modules in 0.2s: 0 up-to-date, 7 out of date, 0 wait for those
+07:07:04 start FV.Backend.Proof.StockDemandedUnsunk cap=12G running=1 avail=210.1G
+07:07:12 done FV.Backend.Proof.StockDemandedUnsunk rc=0 8s maxrss=2.8G cgpeak=1.4G built -> ok
+07:07:12 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:07:12 start FV.E2E.RegLevelMove cap=12G running=1 avail=206.6G
+07:07:16 done FV.E2E.RegLevelMove rc=0 4s maxrss=1.8G cgpeak=0.4G built -> ok
+07:07:16 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:07:16 start FV.E2E.MoveReads cap=12G running=1 avail=205.1G
+07:07:18 done FV.E2E.MoveReads rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+07:07:18 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:07:18 start FV.E2E.RegLevelGoodX cap=12G running=1 avail=204.4G
+07:07:22 done FV.E2E.RegLevelGoodX rc=0 4s maxrss=1.8G cgpeak=0.4G built -> ok
+07:07:23 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:07:23 start FV.Backend.Proof.StockDemandedScan cap=12G running=1 avail=203.0G
+07:07:51 done FV.Backend.Proof.StockDemandedScan rc=0 28s maxrss=5.7G cgpeak=4.3G built -> ok
+07:07:51 start FV.E2E.RegLevelOp cap=12G running=1 avail=211.1G
+07:07:53 done FV.E2E.RegLevelOp rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:07:53 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:07:53 start FV.Backend.Proof.RegallocCover cap=12G running=1 avail=211.3G
+07:10:43 done FV.Backend.Proof.RegallocCover rc=0 170s maxrss=2.7G cgpeak=1.6G built -> ok
+07:10:44 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:10:44 start FV.Backend.Proof.StockReturnHelpers cap=12G running=1 avail=209.7G
+07:10:48 done FV.Backend.Proof.StockReturnHelpers rc=0 4s maxrss=1.6G cgpeak=0.3G built -> ok
+07:10:48 start FV.Backend.Proof.StockReturnRootCalls cap=12G running=1 avail=209.6G
+07:10:52 done FV.Backend.Proof.StockReturnRootCalls rc=0 4s maxrss=1.8G cgpeak=0.3G built -> ok
+07:10:52 start FV.Backend.Proof.StockTermDataOrigin cap=12G running=1 avail=209.5G
+07:10:55 done FV.Backend.Proof.StockTermDataOrigin rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+07:10:55 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:10:55 start FV.Backend.Proof.LowerValueRelations cap=12G running=1 avail=209.4G
+07:10:56 done FV.Backend.Proof.LowerValueRelations rc=0 1s maxrss=1.5G cgpeak=0.2G built -> ok
+07:10:56 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:10:56 start FV.Backend.Proof.StockReturnRecordCalls cap=12G running=1 avail=209.2G
+07:10:58 done FV.Backend.Proof.StockReturnRecordCalls rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:10:58 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:10:58 start FV.Backend.Proof.StockDivReturnDemand cap=12G running=1 avail=209.4G
+07:11:13 done FV.Backend.Proof.StockDivReturnDemand rc=0 15s maxrss=5.9G cgpeak=4.3G built -> ok
+07:11:14 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:11:14 start FV.Backend.Proof.StockHighMulRhs cap=12G running=1 avail=208.7G
+07:11:25 done FV.Backend.Proof.StockHighMulRhs rc=0 11s maxrss=1.7G cgpeak=0.4G built -> ok
+07:11:25 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:11:25 start FV.Backend.Proof.StockHighMulNarrowRhs cap=12G running=1 avail=208.6G
+07:11:37 done FV.Backend.Proof.StockHighMulNarrowRhs rc=0 12s maxrss=1.8G cgpeak=0.4G built -> ok
+07:11:37 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:11:37 start FV.Backend.Proof.StockReturnedDefinitionRetention cap=12G running=1 avail=208.4G
+07:11:39 done FV.Backend.Proof.StockReturnedDefinitionRetention rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:11:39 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:11:39 start FV.Backend.Proof.StockReturnedSourceRetention cap=12G running=1 avail=208.3G
+07:11:41 done FV.Backend.Proof.StockReturnedSourceRetention rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:11:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:11:41 start FV.Backend.Proof.StockMemoryReturnSpec cap=12G running=1 avail=208.2G
+07:11:43 done FV.Backend.Proof.StockMemoryReturnSpec rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:11:44 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+07:11:44 start FV.Backend.Proof.StockMemoryExtLoadSource cap=12G running=1 avail=208.1G
+07:13:41 done FV.Backend.Proof.StockMemoryExtLoadSource rc=0 117s maxrss=6.7G cgpeak=5.2G built -> ok
+07:13:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:13:41 start FV.Backend.Proof.StockMemoryIntegerSelectedValues cap=12G running=1 avail=206.1G
+07:13:42 done FV.Backend.Proof.StockMemoryIntegerSelectedValues rc=0 1s maxrss=1.8G cgpeak=0.2G built -> ok
+07:13:42 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:13:42 start FV.Backend.Proof.StockMemoryLoadedPointerStoreCoverage cap=12G running=1 avail=205.8G
+07:13:44 done FV.Backend.Proof.StockMemoryLoadedPointerStoreCoverage rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:13:45 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:13:45 start FV.Backend.Proof.StockMemoryLoadedPointerStoreExec cap=12G running=1 avail=205.3G
+07:13:47 done FV.Backend.Proof.StockMemoryLoadedPointerStoreExec rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:13:47 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:13:47 start FV.Backend.Proof.StockMemoryOffsetEightValues cap=12G running=1 avail=204.0G
+07:13:49 done FV.Backend.Proof.StockMemoryOffsetEightValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:13:49 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:13:49 start FV.Backend.Proof.StockMemoryStoreCoverage cap=12G running=1 avail=203.2G
+07:13:51 done FV.Backend.Proof.StockMemoryStoreCoverage rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:13:51 start FV.Backend.Proof.StockMemoryStoreRecordExec cap=12G running=1 avail=202.3G
+07:13:53 done FV.Backend.Proof.StockMemoryStoreRecordExec rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:13:53 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:13:53 start FV.Backend.Proof.StockMemoryStoreReturnSpec cap=12G running=1 avail=202.6G
+07:13:55 done FV.Backend.Proof.StockMemoryStoreReturnSpec rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:13:55 start FV.Backend.Proof.StockProtectedSinkDriver cap=12G running=1 avail=201.6G
+07:13:58 done FV.Backend.Proof.StockProtectedSinkDriver rc=0 3s maxrss=2.0G cgpeak=0.3G built -> ok
+07:13:59 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:13:59 start FV.Backend.Proof.StockCmpNonconstantSelection cap=12G running=1 avail=200.1G
+07:14:48 done FV.Backend.Proof.StockCmpNonconstantSelection rc=0 49s maxrss=2.0G cgpeak=0.6G built -> ok
+07:14:48 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:14:48 start FV.Backend.Proof.StockHighMulMatch cap=12G running=1 avail=209.0G
+07:14:54 done FV.Backend.Proof.StockHighMulMatch rc=0 6s maxrss=1.7G cgpeak=0.3G built -> ok
+07:14:54 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:14:54 start FV.Backend.Proof.StockMemoryOffsetEightStoreRecord cap=12G running=1 avail=208.9G
+07:14:56 done FV.Backend.Proof.StockMemoryOffsetEightStoreRecord rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:14:56 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:14:56 start FV.Backend.Proof.StockHighMulDispatch cap=12G running=1 avail=208.8G
+07:15:36 done FV.Backend.Proof.StockHighMulDispatch rc=0 39s maxrss=6.7G cgpeak=5.3G built -> ok
+07:15:36 start FV.Backend.Proof.StockBmaskNarrow cap=12G running=1 avail=208.8G
+07:15:58 done FV.Backend.Proof.StockBmaskNarrow rc=0 22s maxrss=1.8G cgpeak=0.5G built -> ok
+07:15:58 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:15:58 start FV.Backend.Proof.StockCmpSourceMatch cap=12G running=1 avail=207.7G
+07:16:17 done FV.Backend.Proof.StockCmpSourceMatch rc=0 19s maxrss=6.7G cgpeak=5.2G built -> ok
+07:16:17 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:16:17 start FV.Backend.Proof.StockDivRootMatch cap=12G running=1 avail=206.3G
+07:16:27 done FV.Backend.Proof.StockDivRootMatch rc=0 10s maxrss=1.9G cgpeak=0.4G built -> ok
+07:16:27 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:16:27 start FV.Backend.Proof.StockPopcountSelected cap=12G running=1 avail=202.7G
+07:16:53 done FV.Backend.Proof.StockPopcountSelected rc=0 26s maxrss=6.8G cgpeak=5.3G built -> ok
+07:16:54 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:16:54 start FV.Backend.Proof.StockDivRhs cap=12G running=1 avail=206.7G
+07:17:15 done FV.Backend.Proof.StockDivRhs rc=0 21s maxrss=2.1G cgpeak=0.6G built -> ok
+07:17:15 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:17:15 start FV.Backend.Proof.StockMinMaxWideShape cap=12G running=1 avail=207.7G
+07:17:36 done FV.Backend.Proof.StockMinMaxWideShape rc=0 21s maxrss=1.9G cgpeak=0.5G built -> ok
+07:17:36 start FV.Backend.Proof.StockBmaskRhs cap=12G running=1 avail=208.4G
+07:17:42 done FV.Backend.Proof.StockBmaskRhs rc=0 6s maxrss=1.8G cgpeak=0.4G built -> ok
+07:17:42 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:17:42 start FV.Backend.Proof.StockDivRequests cap=12G running=1 avail=208.5G
+07:18:03 done FV.Backend.Proof.StockDivRequests rc=0 21s maxrss=2.1G cgpeak=0.6G built -> ok
+07:18:03 start FV.Backend.Proof.StockMinMaxNarrowShape cap=12G running=1 avail=208.1G
+07:18:17 done FV.Backend.Proof.StockMinMaxNarrowShape rc=0 14s maxrss=2.1G cgpeak=0.7G built -> ok
+07:18:17 start FV.Backend.Proof.StockMinMaxSelectedCalls cap=12G running=1 avail=208.2G
+07:18:24 done FV.Backend.Proof.StockMinMaxSelectedCalls rc=0 7s maxrss=1.8G cgpeak=0.3G built -> ok
+07:18:24 start FV.Backend.Proof.StockBmaskMatch cap=12G running=1 avail=207.1G
+07:18:47 done FV.Backend.Proof.StockBmaskMatch rc=0 23s maxrss=6.7G cgpeak=5.3G built -> ok
+07:18:47 start FV.Backend.Proof.StockCmpNarrowActualAllocation cap=12G running=1 avail=206.9G
+07:19:01 done FV.Backend.Proof.StockCmpNarrowActualAllocation rc=0 14s maxrss=2.2G cgpeak=0.7G built -> ok
+07:19:02 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:19:02 start FV.Backend.Proof.StockMinMaxWideCalls cap=12G running=1 avail=205.5G
+07:19:09 done FV.Backend.Proof.StockMinMaxWideCalls rc=0 7s maxrss=1.8G cgpeak=0.3G built -> ok
+07:19:09 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:09 start FV.Backend.Proof.StockReduceReceipts cap=12G running=1 avail=205.2G
+07:19:14 done FV.Backend.Proof.StockReduceReceipts rc=0 5s maxrss=1.7G cgpeak=0.3G built -> ok
+07:19:14 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:14 start FV.Backend.Proof.StockDivImmFrame cap=12G running=1 avail=207.5G
+07:19:15 done FV.Backend.Proof.StockDivImmFrame rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+07:19:15 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:15 start FV.Backend.Proof.StockDivImmValues cap=12G running=1 avail=206.8G
+07:19:17 done FV.Backend.Proof.StockDivImmValues rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:19:17 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:19:18 start FV.Backend.Proof.LowerSim cap=12G running=1 avail=205.8G
+07:19:25 done FV.Backend.Proof.LowerSim rc=0 7s maxrss=1.8G cgpeak=0.6G built -> ok
+07:19:25 check (ready) 12 modules in 0.2s: 0 up-to-date, 12 out of date, 0 wait for those
+07:19:25 start FV.Backend.Proof.StockDivObservations cap=12G running=1 avail=203.7G
+07:19:33 done FV.Backend.Proof.StockDivObservations rc=0 8s maxrss=2.0G cgpeak=0.4G built -> ok
+07:19:33 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:33 start FV.Backend.Proof.StockReduceSelected cap=12G running=1 avail=204.2G
+07:19:35 done FV.Backend.Proof.StockReduceSelected rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:19:35 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:35 start FV.Backend.Proof.StockDivAliasSem cap=12G running=1 avail=203.2G
+07:19:36 done FV.Backend.Proof.StockDivAliasSem rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+07:19:36 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:36 start FV.Backend.Proof.StockMinMaxRegisterTraceValues cap=12G running=1 avail=203.1G
+07:19:38 done FV.Backend.Proof.StockMinMaxRegisterTraceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:19:39 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:39 start FV.Backend.Proof.StockCastRecordValues cap=12G running=1 avail=203.1G
+07:19:41 done FV.Backend.Proof.StockCastRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:19:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:41 start FV.Backend.Proof.StockDivDispatch cap=12G running=1 avail=206.3G
+07:19:43 done FV.Backend.Proof.StockDivDispatch rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:19:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:43 start FV.Backend.Proof.StockDivImmResolved cap=12G running=1 avail=205.4G
+07:19:45 done FV.Backend.Proof.StockDivImmResolved rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:19:45 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:45 start FV.Backend.Proof.StockHighMulRequests cap=12G running=1 avail=204.1G
+07:19:52 done FV.Backend.Proof.StockHighMulRequests rc=0 7s maxrss=1.9G cgpeak=0.4G built -> ok
+07:19:52 start FV.Backend.Proof.StockMinMaxNonconstantValues cap=12G running=1 avail=202.8G
+07:19:54 done FV.Backend.Proof.StockMinMaxNonconstantValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:19:55 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:55 start FV.Backend.Proof.StockReduceRecord cap=12G running=1 avail=205.9G
+07:19:57 done FV.Backend.Proof.StockReduceRecord rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:19:57 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:19:57 start FV.Backend.Proof.StockSelectBooleanCompanion cap=12G running=1 avail=204.8G
+07:19:58 done FV.Backend.Proof.StockSelectBooleanCompanion rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+07:19:58 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:19:58 start FV.Backend.Proof.StockCastSourceValues cap=12G running=1 avail=204.2G
+07:20:00 done FV.Backend.Proof.StockCastSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:20:00 start FV.Backend.Proof.StockCmpSelectedCalls cap=12G running=1 avail=203.0G
+07:20:03 done FV.Backend.Proof.StockCmpSelectedCalls rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+07:20:03 start FV.Backend.Proof.StockDivImmOperandValues cap=12G running=1 avail=201.5G
+07:20:04 done FV.Backend.Proof.StockDivImmOperandValues rc=0 1s maxrss=1.8G cgpeak=0.2G built -> ok
+07:20:04 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:04 start FV.Backend.Proof.StockMinMaxNarrowValues cap=12G running=1 avail=201.8G
+07:20:06 done FV.Backend.Proof.StockMinMaxNarrowValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:20:06 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:06 start FV.Backend.Proof.StockMinMaxRegisterRootValues cap=12G running=1 avail=202.0G
+07:20:08 done FV.Backend.Proof.StockMinMaxRegisterRootValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:20:09 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:09 start FV.Backend.Proof.StockMinMaxWideValues cap=12G running=1 avail=205.0G
+07:20:11 done FV.Backend.Proof.StockMinMaxWideValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:20:11 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:11 start FV.Backend.Proof.StockReduceSourceValues cap=12G running=1 avail=204.3G
+07:20:13 done FV.Backend.Proof.StockReduceSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:20:13 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:13 start FV.Backend.Proof.StockCastCompleteSourceTransfer cap=12G running=1 avail=203.0G
+07:20:15 done FV.Backend.Proof.StockCastCompleteSourceTransfer rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:20:15 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:15 start FV.Backend.Proof.StockCmpNonconstantValues cap=12G running=1 avail=202.3G
+07:20:17 done FV.Backend.Proof.StockCmpNonconstantValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:20:18 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:18 start FV.Backend.Proof.StockDivDivisorValues cap=12G running=1 avail=201.5G
+07:20:20 done FV.Backend.Proof.StockDivDivisorValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:20:20 start FV.Backend.Proof.StockDivSelected cap=12G running=1 avail=201.8G
+07:20:22 done FV.Backend.Proof.StockDivSelected rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:20:22 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:22 start FV.Backend.Proof.StockDivSignedObservations cap=12G running=1 avail=205.5G
+07:20:26 done FV.Backend.Proof.StockDivSignedObservations rc=0 4s maxrss=1.9G cgpeak=0.3G built -> ok
+07:20:26 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:26 start FV.Backend.Proof.StockMinMaxNarrowAllocation cap=12G running=1 avail=204.8G
+07:20:28 done FV.Backend.Proof.StockMinMaxNarrowAllocation rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:20:28 start FV.Backend.Proof.StockMinMaxNarrowRootValues cap=12G running=1 avail=205.2G
+07:20:30 done FV.Backend.Proof.StockMinMaxNarrowRootValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:20:30 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:30 start FV.Backend.Proof.StockMinMaxRegisterRecordValues cap=12G running=1 avail=204.5G
+07:20:32 done FV.Backend.Proof.StockMinMaxRegisterRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:20:32 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:33 start FV.Backend.Proof.StockMinMaxWideRootValues cap=12G running=1 avail=204.8G
+07:20:35 done FV.Backend.Proof.StockMinMaxWideRootValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:20:35 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:35 start FV.Backend.Proof.StockCastCmpRhsValues cap=12G running=1 avail=204.3G
+07:20:38 done FV.Backend.Proof.StockCastCmpRhsValues rc=0 3s maxrss=1.9G cgpeak=0.3G built -> ok
+07:20:38 start FV.Backend.Proof.StockCastScanRefines cap=12G running=1 avail=204.6G
+07:20:40 done FV.Backend.Proof.StockCastScanRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:20:40 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:20:40 start FV.Backend.Proof.StockCmpNarrowActualRootValues cap=12G running=1 avail=204.4G
+07:20:43 done FV.Backend.Proof.StockCmpNarrowActualRootValues rc=0 3s maxrss=1.9G cgpeak=0.3G built -> ok
+07:20:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:43 start FV.Backend.Proof.StockCmpNonconstantRootValues cap=12G running=1 avail=205.6G
+07:20:45 done FV.Backend.Proof.StockCmpNonconstantRootValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:20:45 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:45 start FV.Backend.Proof.StockCmpWideActualRootValues cap=12G running=1 avail=205.2G
+07:20:48 done FV.Backend.Proof.StockCmpWideActualRootValues rc=0 3s maxrss=1.9G cgpeak=0.3G built -> ok
+07:20:49 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:20:49 start FV.Backend.Proof.StockDivDividendValues cap=12G running=1 avail=203.9G
+07:20:51 done FV.Backend.Proof.StockDivDividendValues rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+07:20:51 start FV.Backend.Proof.StockDivSafeMatchObserved cap=12G running=1 avail=202.3G
+07:20:56 done FV.Backend.Proof.StockDivSafeMatchObserved rc=0 5s maxrss=1.9G cgpeak=0.3G built -> ok
+07:20:56 start FV.Backend.Proof.StockDivUdivWideValues cap=12G running=1 avail=201.3G
+07:20:58 done FV.Backend.Proof.StockDivUdivWideValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:20:58 start FV.Backend.Proof.StockDivValueTransfer cap=12G running=1 avail=201.2G
+07:20:59 done FV.Backend.Proof.StockDivValueTransfer rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+07:20:59 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+07:20:59 start FV.Backend.Proof.StockHighMulNarrowSemantics cap=12G running=1 avail=204.8G
+07:21:01 done FV.Backend.Proof.StockHighMulNarrowSemantics rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+07:21:01 start FV.Backend.Proof.StockHighMulSemantics cap=12G running=1 avail=203.5G
+07:21:02 done FV.Backend.Proof.StockHighMulSemantics rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+07:21:02 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:02 start FV.Backend.Proof.StockMinMaxNarrowRecordValues cap=12G running=1 avail=203.0G
+07:21:04 done FV.Backend.Proof.StockMinMaxNarrowRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:04 start FV.Backend.Proof.StockMinMaxRegisterOriginalSourceValues cap=12G running=1 avail=202.0G
+07:21:06 done FV.Backend.Proof.StockMinMaxRegisterOriginalSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:21:06 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:06 start FV.Backend.Proof.StockMinMaxWideRecordValues cap=12G running=1 avail=201.0G
+07:21:08 done FV.Backend.Proof.StockMinMaxWideRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:09 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:09 start FV.Backend.Proof.StockPopcountRecordValues cap=12G running=1 avail=200.7G
+07:21:11 done FV.Backend.Proof.StockPopcountRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:21:11 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:11 start FV.Backend.Proof.StockSourceDefined cap=12G running=1 avail=201.0G
+07:21:13 done FV.Backend.Proof.StockSourceDefined rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:21:13 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:21:13 start FV.Backend.Proof.StockBitScanRefines cap=12G running=1 avail=203.6G
+07:21:15 done FV.Backend.Proof.StockBitScanRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:21:15 start FV.Backend.Proof.StockCastCmpSelection cap=12G running=1 avail=202.7G
+07:21:17 done FV.Backend.Proof.StockCastCmpSelection rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:21:17 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:17 start FV.Backend.Proof.StockCmpNonconstantRecordValues cap=12G running=1 avail=201.5G
+07:21:19 done FV.Backend.Proof.StockCmpNonconstantRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:21:20 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:20 start FV.Backend.Proof.StockDivRemNarrowValues cap=12G running=1 avail=200.7G
+07:21:22 done FV.Backend.Proof.StockDivRemNarrowValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:22 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:22 start FV.Backend.Proof.StockDivRemWideValues cap=12G running=1 avail=199.9G
+07:21:24 done FV.Backend.Proof.StockDivRemWideValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:24 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:24 start FV.Backend.Proof.StockDivSafeObservations cap=12G running=1 avail=198.8G
+07:21:27 done FV.Backend.Proof.StockDivSafeObservations rc=0 3s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:27 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:21:27 start FV.Backend.Proof.StockDivUdivNarrowValues cap=12G running=1 avail=202.4G
+07:21:29 done FV.Backend.Proof.StockDivUdivNarrowValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:30 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:30 start FV.Backend.Proof.StockEntryArgs cap=12G running=1 avail=202.0G
+07:21:31 done FV.Backend.Proof.StockEntryArgs rc=0 1s maxrss=1.5G cgpeak=0.2G built -> ok
+07:21:31 start FV.Backend.Proof.StockEntryLoads cap=12G running=1 avail=202.0G
+07:21:32 done FV.Backend.Proof.StockEntryLoads rc=0 1s maxrss=1.5G cgpeak=0.2G built -> ok
+07:21:32 start FV.Backend.Proof.StockHighMulSelected cap=12G running=1 avail=201.8G
+07:21:34 done FV.Backend.Proof.StockHighMulSelected rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:21:34 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+07:21:34 start FV.Backend.Proof.StockMinMaxNarrowOriginalSourceValues cap=12G running=1 avail=201.5G
+07:21:36 done FV.Backend.Proof.StockMinMaxNarrowOriginalSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:36 start FV.Backend.Proof.StockMinMaxWideOriginalSourceValues cap=12G running=1 avail=201.3G
+07:21:38 done FV.Backend.Proof.StockMinMaxWideOriginalSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:38 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:38 start FV.Backend.Proof.StockPopcountSourceValues cap=12G running=1 avail=201.2G
+07:21:40 done FV.Backend.Proof.StockPopcountSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:21:40 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:40 start FV.Backend.Proof.StockSourceEntry cap=12G running=1 avail=201.5G
+07:21:42 done FV.Backend.Proof.StockSourceEntry rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+07:21:42 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:43 start FV.Backend.Proof.StockCastBodyRefines cap=12G running=1 avail=201.1G
+07:21:45 done FV.Backend.Proof.StockCastBodyRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:21:45 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:45 start FV.Backend.Proof.StockCastCmpSourceValues cap=12G running=1 avail=200.9G
+07:21:47 done FV.Backend.Proof.StockCastCmpSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:47 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:47 start FV.Backend.Proof.StockCmpNarrowActualRecordValues cap=12G running=1 avail=202.0G
+07:21:49 done FV.Backend.Proof.StockCmpNarrowActualRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:49 start FV.Backend.Proof.StockCmpNonconstantSourceValues cap=12G running=1 avail=202.0G
+07:21:51 done FV.Backend.Proof.StockCmpNonconstantSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:21:51 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:51 start FV.Backend.Proof.StockCmpWideActualRecordValues cap=12G running=1 avail=202.0G
+07:21:53 done FV.Backend.Proof.StockCmpWideActualRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:53 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:53 start FV.Backend.Proof.StockDivMinimumResolved cap=12G running=1 avail=202.0G
+07:21:55 done FV.Backend.Proof.StockDivMinimumResolved rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:56 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:56 start FV.Backend.Proof.StockDivRemNarrowRecordValues cap=12G running=1 avail=201.7G
+07:21:58 done FV.Backend.Proof.StockDivRemNarrowRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:21:58 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:21:58 start FV.Backend.Proof.StockDivRemWideRecordValues cap=12G running=1 avail=201.6G
+07:22:00 done FV.Backend.Proof.StockDivRemWideRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:00 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:00 start FV.Backend.Proof.StockDivUdivNarrowRecordValues cap=12G running=1 avail=201.1G
+07:22:02 done FV.Backend.Proof.StockDivUdivNarrowRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:02 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:02 start FV.Backend.Proof.StockDivUdivWideRecordValues cap=12G running=1 avail=201.0G
+07:22:04 done FV.Backend.Proof.StockDivUdivWideRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:05 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:05 start FV.Backend.Proof.StockEntryABI cap=12G running=1 avail=200.9G
+07:22:10 done FV.Backend.Proof.StockEntryABI rc=0 5s maxrss=1.7G cgpeak=0.3G built -> ok
+07:22:10 start FV.Backend.Proof.StockHighMulNarrowSelected cap=12G running=1 avail=199.6G
+07:22:12 done FV.Backend.Proof.StockHighMulNarrowSelected rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:22:12 start FV.Backend.Proof.StockHighMulRecordIntervals cap=12G running=1 avail=199.5G
+07:22:14 done FV.Backend.Proof.StockHighMulRecordIntervals rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:22:14 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:14 start FV.Backend.Proof.StockMinMaxActualDispatch cap=12G running=1 avail=199.2G
+07:22:16 done FV.Backend.Proof.StockMinMaxActualDispatch rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:16 start FV.Backend.Proof.StockPopcountScanRefines cap=12G running=1 avail=198.8G
+07:22:18 done FV.Backend.Proof.StockPopcountScanRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:22:18 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:18 start FV.Backend.Proof.StockBitBodyRefines cap=12G running=1 avail=198.8G
+07:22:20 done FV.Backend.Proof.StockBitBodyRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:22:20 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:20 start FV.Backend.Proof.StockCastCmpCompleteSourceTransfer cap=12G running=1 avail=198.5G
+07:22:22 done FV.Backend.Proof.StockCastCmpCompleteSourceTransfer rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:22:22 start FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues cap=12G running=1 avail=198.1G
+07:22:24 done FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:24 start FV.Backend.Proof.StockCmpWideActualOriginalSourceValues cap=12G running=1 avail=197.3G
+07:22:26 done FV.Backend.Proof.StockCmpWideActualOriginalSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:27 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:27 start FV.Backend.Proof.StockDivGeneralValues cap=12G running=1 avail=197.8G
+07:22:29 done FV.Backend.Proof.StockDivGeneralValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:29 start FV.Backend.Proof.StockDivRemNarrowSourceValues cap=12G running=1 avail=198.7G
+07:22:31 done FV.Backend.Proof.StockDivRemNarrowSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:31 start FV.Backend.Proof.StockDivRemWideSourceValues cap=12G running=1 avail=198.7G
+07:22:33 done FV.Backend.Proof.StockDivRemWideSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:33 check (ready) 1 modules in 0.1s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:33 start FV.Backend.Proof.StockDivSafeValues cap=12G running=1 avail=198.4G
+07:22:35 done FV.Backend.Proof.StockDivSafeValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:35 start FV.Backend.Proof.StockDivSignedSelected cap=12G running=1 avail=197.8G
+07:22:37 done FV.Backend.Proof.StockDivSignedSelected rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:37 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:37 start FV.Backend.Proof.StockDivUdivNarrowSourceValues cap=12G running=1 avail=197.1G
+07:22:39 done FV.Backend.Proof.StockDivUdivNarrowSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:39 start FV.Backend.Proof.StockDivUdivWideSourceValues cap=12G running=1 avail=196.9G
+07:22:41 done FV.Backend.Proof.StockDivUdivWideSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:41 start FV.Backend.Proof.StockHighMulNarrowRecordValues cap=12G running=1 avail=197.1G
+07:22:43 done FV.Backend.Proof.StockHighMulNarrowRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:22:43 start FV.Backend.Proof.StockHighMulWideRecordValues cap=12G running=1 avail=197.1G
+07:22:45 done FV.Backend.Proof.StockHighMulWideRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:22:46 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:46 start FV.Backend.Proof.StockMinMaxScanRefines cap=12G running=1 avail=196.9G
+07:22:48 done FV.Backend.Proof.StockMinMaxScanRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:22:48 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:48 start FV.Backend.Proof.StockCastCmpScanRefines cap=12G running=1 avail=197.7G
+07:22:50 done FV.Backend.Proof.StockCastCmpScanRefines rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:22:50 start FV.Backend.Proof.StockCmpActualDispatch cap=12G running=1 avail=197.3G
+07:22:52 done FV.Backend.Proof.StockCmpActualDispatch rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:52 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:52 start FV.Backend.Proof.StockDivRemValues cap=12G running=1 avail=196.7G
+07:22:54 done FV.Backend.Proof.StockDivRemValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:54 start FV.Backend.Proof.StockDivSignedValues cap=12G running=1 avail=197.7G
+07:22:56 done FV.Backend.Proof.StockDivSignedValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:56 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:57 start FV.Backend.Proof.StockDivUdivValues cap=12G running=1 avail=204.1G
+07:22:59 done FV.Backend.Proof.StockDivUdivValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:22:59 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:22:59 start FV.Backend.Proof.StockHighMulRecordValues cap=12G running=1 avail=203.9G
+07:23:01 done FV.Backend.Proof.StockHighMulRecordValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:23:01 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:01 start FV.Backend.Proof.StockPopcountBodyRefines cap=12G running=1 avail=203.0G
+07:23:03 done FV.Backend.Proof.StockPopcountBodyRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:23:03 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:03 start FV.Backend.Proof.StockReturnSourceRuns cap=12G running=1 avail=202.9G
+07:23:05 done FV.Backend.Proof.StockReturnSourceRuns rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:23:05 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:05 start FV.Backend.Proof.StockArithmeticSourceRefines cap=12G running=1 avail=203.5G
+07:23:07 done FV.Backend.Proof.StockArithmeticSourceRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:08 check (ready) 2 modules in 0.1s: 0 up-to-date, 2 out of date, 0 wait for those
+07:23:08 start FV.Backend.Proof.StockCmpScanRefines cap=12G running=1 avail=203.5G
+07:23:10 done FV.Backend.Proof.StockCmpScanRefines rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:23:10 start FV.Backend.Proof.StockDivSignedRecordValues cap=12G running=1 avail=203.3G
+07:23:12 done FV.Backend.Proof.StockDivSignedRecordValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:12 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:12 start FV.Backend.Proof.StockDivSourceTrap cap=12G running=1 avail=202.6G
+07:23:14 done FV.Backend.Proof.StockDivSourceTrap rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:14 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:14 start FV.Backend.Proof.StockEntryAliases cap=12G running=1 avail=202.5G
+07:23:16 done FV.Backend.Proof.StockEntryAliases rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:23:16 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:23:16 start FV.Backend.Proof.StockHighMulSourceValues cap=12G running=1 avail=203.3G
+07:23:18 done FV.Backend.Proof.StockHighMulSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:23:18 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:18 start FV.Backend.Proof.StockMinMaxBodyRefines cap=12G running=1 avail=202.4G
+07:23:20 done FV.Backend.Proof.StockMinMaxBodyRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:23:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:21 start FV.Backend.Proof.StockPureSourceExecution cap=12G running=1 avail=203.5G
+07:23:23 done FV.Backend.Proof.StockPureSourceExecution rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:23 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:23:23 start FV.Backend.Proof.StockReturnRecordSource cap=12G running=1 avail=203.5G
+07:23:25 done FV.Backend.Proof.StockReturnRecordSource rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:23:25 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:25 start FV.Backend.Proof.StockArithmeticSourceExecution cap=12G running=1 avail=204.3G
+07:23:27 done FV.Backend.Proof.StockArithmeticSourceExecution rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:27 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:27 start FV.Backend.Proof.StockCmpBodyRefines cap=12G running=1 avail=203.9G
+07:23:29 done FV.Backend.Proof.StockCmpBodyRefines rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:23:29 start FV.Backend.Proof.StockDivSignedSourceTrap cap=12G running=1 avail=203.7G
+07:23:31 done FV.Backend.Proof.StockDivSignedSourceTrap rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:31 start FV.Backend.Proof.StockDivSignedSourceValues cap=12G running=1 avail=203.7G
+07:23:33 done FV.Backend.Proof.StockDivSignedSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:34 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:34 start FV.Backend.Proof.StockEntrySeed cap=12G running=1 avail=203.4G
+07:23:36 done FV.Backend.Proof.StockEntrySeed rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:36 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:36 start FV.Backend.Proof.StockHighMulScanRefines cap=12G running=1 avail=204.2G
+07:23:38 done FV.Backend.Proof.StockHighMulScanRefines rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:23:38 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:38 start FV.Backend.Proof.StockLocalSourceExecution cap=12G running=1 avail=204.4G
+07:23:40 done FV.Backend.Proof.StockLocalSourceExecution rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:40 start FV.Backend.Proof.StockReturnAutomaticSource cap=12G running=1 avail=204.3G
+07:23:42 done FV.Backend.Proof.StockReturnAutomaticSource rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:23:42 start FV.Backend.Proof.StockScanTrapSemantics cap=12G running=1 avail=205.1G
+07:23:44 done FV.Backend.Proof.StockScanTrapSemantics rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:23:45 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:45 start FV.Backend.Proof.StockTermContract cap=12G running=1 avail=204.7G
+07:23:47 done FV.Backend.Proof.StockTermContract rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:23:47 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:23:47 start FV.Backend.Proof.StockArithmeticTerminalDefined cap=12G running=1 avail=203.2G
+07:23:49 done FV.Backend.Proof.StockArithmeticTerminalDefined rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:49 start FV.Backend.Proof.StockBmaskSemantics cap=12G running=1 avail=203.4G
+07:23:51 done FV.Backend.Proof.StockBmaskSemantics rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:23:51 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:51 start FV.Backend.Proof.StockDivSourceValues cap=12G running=1 avail=203.1G
+07:23:53 done FV.Backend.Proof.StockDivSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:53 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:54 start FV.Backend.Proof.StockEntryPrelude cap=12G running=1 avail=202.9G
+07:23:56 done FV.Backend.Proof.StockEntryPrelude rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:23:56 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:56 start FV.Backend.Proof.StockHighMulBodyRefines cap=12G running=1 avail=202.9G
+07:23:58 done FV.Backend.Proof.StockHighMulBodyRefines rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:23:58 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:23:58 start FV.Backend.Proof.StockLocalSourceTrap cap=12G running=1 avail=202.7G
+07:24:00 done FV.Backend.Proof.StockLocalSourceTrap rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:24:00 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:24:00 start FV.Backend.Proof.StockReturnContract cap=12G running=1 avail=202.7G
+07:24:02 done FV.Backend.Proof.StockReturnContract rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:24:02 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+07:24:02 start FV.Backend.Proof.StockSingleDivSourceTrap cap=12G running=1 avail=203.8G
+07:24:04 done FV.Backend.Proof.StockSingleDivSourceTrap rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:24:05 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:24:05 start FV.Backend.Proof.StockBmaskRecord cap=12G running=1 avail=204.2G
+07:24:07 done FV.Backend.Proof.StockBmaskRecord rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:24:07 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:24:07 start FV.Backend.Proof.StockDivScanRefines cap=12G running=1 avail=204.3G
+07:24:09 done FV.Backend.Proof.StockDivScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:24:09 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:24:09 start FV.Backend.Proof.StockLastDivReturnDemand cap=12G running=1 avail=204.2G
+07:24:11 done FV.Backend.Proof.StockLastDivReturnDemand rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:24:11 start FV.Backend.Proof.StockLocalTrapRefines cap=12G running=1 avail=204.4G
+07:24:13 done FV.Backend.Proof.StockLocalTrapRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:24:13 start FV.Backend.Proof.StockPureReturnRefines cap=12G running=1 avail=204.1G
+07:24:15 done FV.Backend.Proof.StockPureReturnRefines rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:24:15 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:24:15 start FV.Backend.Proof.StockQuietSourceRecords cap=12G running=1 avail=203.5G
+07:24:18 done FV.Backend.Proof.StockQuietSourceRecords rc=0 3s maxrss=2.1G cgpeak=0.3G built -> ok
+07:24:19 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:24:19 start FV.Backend.Proof.StockBmaskSourceValues cap=12G running=1 avail=203.1G
+07:24:21 done FV.Backend.Proof.StockBmaskSourceValues rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:24:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:24:21 start FV.Backend.Proof.StockMixedDivBodyRefines cap=12G running=1 avail=202.6G
+07:24:23 done FV.Backend.Proof.StockMixedDivBodyRefines rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:24:23 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:24:23 start FV.Backend.Proof.StockBmaskScanRefines cap=12G running=1 avail=202.6G
+07:24:25 done FV.Backend.Proof.StockBmaskScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:24:25 start FV.Backend.Proof.StockQuietBlockSourceRecords cap=12G running=1 avail=202.0G
+07:24:28 done FV.Backend.Proof.StockQuietBlockSourceRecords rc=0 3s maxrss=2.1G cgpeak=0.3G built -> ok
+07:24:28 start FV.Backend.Proof.StockScalarDivBodyRecords cap=12G running=1 avail=201.6G
+07:24:30 done FV.Backend.Proof.StockScalarDivBodyRecords rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:24:31 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:24:31 start FV.Backend.Proof.StockMaskBodyRecords cap=12G running=1 avail=201.3G
+07:24:33 done FV.Backend.Proof.StockMaskBodyRecords rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:24:33 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:24:33 start FV.Backend.Proof.StockMaskBlockRecords cap=12G running=1 avail=200.8G
+07:24:35 done FV.Backend.Proof.StockMaskBlockRecords rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:24:35 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+07:24:35 start FV.Backend.Proof.StockMemoryExtLoadRecordValues cap=12G running=1 avail=200.4G
+07:24:37 done FV.Backend.Proof.StockMemoryExtLoadRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:24:37 start FV.Backend.Proof.StockMemoryExtLoadSelected cap=12G running=1 avail=199.8G
+07:24:39 done FV.Backend.Proof.StockMemoryExtLoadSelected rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+07:24:40 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:24:40 start FV.Backend.Proof.StockMemoryIntegerSourceValues cap=12G running=1 avail=199.3G
+07:24:42 done FV.Backend.Proof.StockMemoryIntegerSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:24:42 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:24:42 start FV.Backend.Proof.StockMemoryLoadedPointerSourceValues cap=12G running=1 avail=199.3G
+07:24:44 done FV.Backend.Proof.StockMemoryLoadedPointerSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:24:44 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:24:44 start FV.Backend.Proof.StockMemoryOffsetEightSourceValues cap=12G running=1 avail=199.0G
+07:24:46 done FV.Backend.Proof.StockMemoryOffsetEightSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:24:46 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:24:46 start FV.Backend.Proof.StockMemoryRetainedStoreReturnSpec cap=12G running=1 avail=198.1G
+07:24:48 done FV.Backend.Proof.StockMemoryRetainedStoreReturnSpec rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:24:49 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:24:49 start FV.Backend.Proof.StockMemoryStoreSourceValues cap=12G running=1 avail=197.8G
+07:24:51 done FV.Backend.Proof.StockMemoryStoreSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:24:51 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:24:51 start FV.Backend.Proof.StockStoreMixedRetention cap=12G running=1 avail=197.2G
+07:24:53 done FV.Backend.Proof.StockStoreMixedRetention rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:24:53 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:24:53 start FV.Backend.Proof.StockMemoryIntegerPairedRecord cap=12G running=1 avail=196.8G
+07:24:55 done FV.Backend.Proof.StockMemoryIntegerPairedRecord rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:24:55 start FV.Backend.Proof.StockMemoryOffsetEightPairedRecord cap=12G running=1 avail=197.7G
+07:24:57 done FV.Backend.Proof.StockMemoryOffsetEightPairedRecord rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:24:57 start FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage cap=12G running=1 avail=198.5G
+07:24:58 done FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage rc=0 1s maxrss=1.8G cgpeak=0.2G built -> ok
+07:24:58 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:24:58 start FV.Backend.Proof.StockMemoryOffsetEightStoreExec cap=12G running=1 avail=198.4G
+07:25:00 done FV.Backend.Proof.StockMemoryOffsetEightStoreExec rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:25:01 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:25:01 start FV.Backend.Proof.StockControlShape cap=12G running=1 avail=198.2G
+07:25:10 done FV.Backend.Proof.StockControlShape rc=0 9s maxrss=1.9G cgpeak=0.5G built -> ok
+07:25:10 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:25:10 start FV.Backend.Proof.StockJumpCode cap=12G running=1 avail=198.1G
+07:25:39 done FV.Backend.Proof.StockJumpCode rc=0 29s maxrss=5.7G cgpeak=4.3G built -> ok
+07:25:39 start FV.E2E.RegLevelArgs cap=12G running=1 avail=205.0G
+07:25:41 done FV.E2E.RegLevelArgs rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:25:41 start FV.E2E.RegLevelBranch cap=12G running=1 avail=205.2G
+07:25:43 done FV.E2E.RegLevelBranch rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:25:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:25:43 start FV.E2E.RegLevelGoto cap=12G running=1 avail=203.1G
+07:25:47 done FV.E2E.RegLevelGoto rc=0 4s maxrss=1.7G cgpeak=0.3G built -> ok
+07:25:47 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:25:47 start FV.E2E.RegLevelOpReads cap=12G running=1 avail=204.1G
+07:26:03 done FV.E2E.RegLevelOpReads rc=0 16s maxrss=2.1G cgpeak=0.8G built -> ok
+07:26:03 start FV.E2E.RegLevelNext cap=12G running=1 avail=204.0G
+07:26:06 done FV.E2E.RegLevelNext rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+07:26:07 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+07:26:07 start FV.E2E.RegLevelJT cap=12G running=1 avail=205.4G
+07:26:10 done FV.E2E.RegLevelJT rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+07:26:10 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:26:10 start FV.E2E.Lockstep cap=12G running=1 avail=205.9G
+07:26:41 done FV.E2E.Lockstep rc=0 31s maxrss=2.3G cgpeak=1.2G built -> ok
+07:26:41 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:26:41 start FV.E2E.RegLevelAtomic cap=12G running=1 avail=207.0G
+07:26:57 done FV.E2E.RegLevelAtomic rc=0 16s maxrss=1.9G cgpeak=0.5G built -> ok
+07:26:57 start FV.E2E.RegLevelFrame cap=12G running=1 avail=207.0G
+07:27:04 done FV.E2E.RegLevelFrame rc=0 7s maxrss=1.8G cgpeak=0.4G built -> ok
+07:27:04 start FV.E2E.RegLevelCall cap=12G running=1 avail=206.2G
+07:27:10 done FV.E2E.RegLevelCall rc=0 6s maxrss=1.7G cgpeak=0.3G built -> ok
+07:27:11 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+07:27:11 start FV.E2E.RegLevelTls cap=12G running=1 avail=208.4G
+07:27:17 done FV.E2E.RegLevelTls rc=0 6s maxrss=1.7G cgpeak=0.2G built -> ok
+07:27:17 start FV.E2E.RegLevelTrap cap=12G running=1 avail=206.9G
+07:27:20 done FV.E2E.RegLevelTrap rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+07:27:20 start FV.E2E.RegLevelTry cap=12G running=1 avail=210.7G
+07:27:22 done FV.E2E.RegLevelTry rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:27:22 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:27:22 start FV.E2E.RegLevelCorrect cap=12G running=1 avail=210.7G
+07:27:35 done FV.E2E.RegLevelCorrect rc=0 13s maxrss=2.1G cgpeak=0.8G built -> ok
+07:27:35 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+07:27:35 start FV.Backend.Proof.StockConstantFreshDefs cap=12G running=1 avail=209.9G
+07:27:37 done FV.Backend.Proof.StockConstantFreshDefs rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:27:37 start FV.Backend.Proof.StockInheritedValues cap=12G running=1 avail=209.7G
+07:27:39 done FV.Backend.Proof.StockInheritedValues rc=0 2s maxrss=1.9G cgpeak=0.5G built -> ok
+07:27:39 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:27:39 start FV.Backend.Proof.StockInheritedBody cap=12G running=1 avail=209.6G
+07:27:41 done FV.Backend.Proof.StockInheritedBody rc=0 2s maxrss=2.1G cgpeak=0.5G built -> ok
+07:27:41 start FV.Backend.Proof.StockInheritedFrame cap=12G running=1 avail=209.6G
+07:27:43 done FV.Backend.Proof.StockInheritedFrame rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:27:44 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:27:44 start FV.Backend.Proof.StockInheritedDivision cap=12G running=1 avail=210.3G
+07:27:46 done FV.Backend.Proof.StockInheritedDivision rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:27:46 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:27:46 start FV.Backend.Proof.StockInheritedScalar cap=12G running=1 avail=209.5G
+07:27:50 done FV.Backend.Proof.StockInheritedScalar rc=0 4s maxrss=2.2G cgpeak=0.4G built -> ok
+07:27:50 start FV.Backend.Proof.StockLocalSourceContinuation cap=12G running=1 avail=208.8G
+07:27:52 done FV.Backend.Proof.StockLocalSourceContinuation rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:27:52 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:27:52 start FV.Backend.Proof.StockOriginalBlockOrigin cap=12G running=1 avail=210.0G
+07:27:56 done FV.Backend.Proof.StockOriginalBlockOrigin rc=0 4s maxrss=1.7G cgpeak=0.3G built -> ok
+07:27:56 start FV.Backend.Proof.StockEdgeValues cap=12G running=1 avail=210.0G
+07:27:58 done FV.Backend.Proof.StockEdgeValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:27:59 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:27:59 start FV.Backend.Proof.StockMaskBlockRefines cap=12G running=1 avail=209.9G
+07:28:01 done FV.Backend.Proof.StockMaskBlockRefines rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:28:01 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:28:01 start FV.Backend.Proof.StockBranchArgumentCode cap=12G running=1 avail=209.9G
+07:28:04 done FV.Backend.Proof.StockBranchArgumentCode rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+07:28:04 check (ready) 1 modules in 0.1s: 0 up-to-date, 1 out of date, 0 wait for those
+07:28:04 start FV.Backend.Proof.StockInheritedMixedDivision cap=12G running=1 avail=210.3G
+07:28:06 done FV.Backend.Proof.StockInheritedMixedDivision rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:28:06 start FV.Backend.Proof.StockJumpBodyRefines cap=12G running=1 avail=210.2G
+07:28:08 done FV.Backend.Proof.StockJumpBodyRefines rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:28:08 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:28:09 start FV.Backend.Proof.StockEdgeCode cap=12G running=1 avail=210.2G
+07:28:35 done FV.Backend.Proof.StockEdgeCode rc=0 26s maxrss=5.8G cgpeak=4.3G built -> ok
+07:28:35 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+07:28:35 start FV.Backend.Proof.StockInheritedJumpDefined cap=12G running=1 avail=209.2G
+07:28:37 done FV.Backend.Proof.StockInheritedJumpDefined rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:28:37 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:28:37 start FV.Backend.Proof.StockMemoryCfgJumpDefined cap=12G running=1 avail=209.0G
+07:28:39 done FV.Backend.Proof.StockMemoryCfgJumpDefined rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:28:39 start FV.Backend.Proof.StockMemoryComputedStoreRecordSpec cap=12G running=1 avail=208.7G
+07:28:41 done FV.Backend.Proof.StockMemoryComputedStoreRecordSpec rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:28:41 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:28:41 start FV.Backend.Proof.StockMemoryExtLoadSelectedValues cap=12G running=1 avail=208.5G
+07:28:43 done FV.Backend.Proof.StockMemoryExtLoadSelectedValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:28:44 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:28:44 start FV.Backend.Proof.StockMemoryIntegerScanRefines cap=12G running=1 avail=208.8G
+07:28:46 done FV.Backend.Proof.StockMemoryIntegerScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:28:46 start FV.Backend.Proof.StockMemoryLoadedPointerScanRefines cap=12G running=1 avail=209.3G
+07:28:48 done FV.Backend.Proof.StockMemoryLoadedPointerScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:28:48 start FV.Backend.Proof.StockMemoryLoadedPointerStoreRetention cap=12G running=1 avail=209.1G
+07:28:50 done FV.Backend.Proof.StockMemoryLoadedPointerStoreRetention rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:28:50 start FV.Backend.Proof.StockMemoryNopBody cap=12G running=1 avail=208.8G
+07:28:52 done FV.Backend.Proof.StockMemoryNopBody rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:28:52 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:28:52 start FV.Backend.Proof.StockMemoryOffsetEightScanRefines cap=12G running=1 avail=208.8G
+07:28:54 done FV.Backend.Proof.StockMemoryOffsetEightScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:28:54 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:28:54 start FV.Backend.Proof.StockMemoryStoreScanRefines cap=12G running=1 avail=209.0G
+07:28:56 done FV.Backend.Proof.StockMemoryStoreScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:28:57 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:28:57 start FV.E2E.Compose cap=12G running=1 avail=209.0G
+07:28:58 done FV.E2E.Compose rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+07:28:58 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:28:58 start FV.Backend.Proof.DeadCleanupCorrect cap=12G running=1 avail=208.9G
+07:29:00 done FV.Backend.Proof.DeadCleanupCorrect rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:29:00 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:29:00 start FV.Backend.Proof.PrepareSound cap=12G running=1 avail=208.9G
+07:29:02 done FV.Backend.Proof.PrepareSound rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+07:29:02 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+07:29:02 start FV.E2E.UnwindStatement cap=12G running=1 avail=208.9G
+07:29:04 done FV.E2E.UnwindStatement rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:29:05 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:29:05 start FV.Backend.Proof.DeadCleanupPrepare cap=12G running=1 avail=209.5G
+07:29:07 done FV.Backend.Proof.DeadCleanupPrepare rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:29:07 start FV.Backend.Proof.LowerSimURaise cap=12G running=1 avail=209.4G
+07:29:09 done FV.Backend.Proof.LowerSimURaise rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:29:09 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:29:09 start FV.E2E.DeadCleanupRealizes cap=12G running=1 avail=209.0G
+07:29:11 done FV.E2E.DeadCleanupRealizes rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:29:11 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:29:11 start FV.E2E.Guarded cap=12G running=1 avail=209.0G
+07:29:14 done FV.E2E.Guarded rc=0 3s maxrss=1.8G cgpeak=0.4G built -> ok
+07:29:14 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:29:14 start FV.E2E.Main cap=12G running=1 avail=209.3G
+07:29:16 done FV.E2E.Main rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+07:29:16 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+07:29:16 start FV.Unw.Model cap=12G running=1 avail=209.4G
+07:29:18 done FV.Unw.Model rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+07:29:19 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+07:29:19 start FV.Backend.Proof.LowerSimU cap=12G running=1 avail=209.3G
+07:29:22 done FV.Backend.Proof.LowerSimU rc=0 3s maxrss=1.9G cgpeak=0.4G built -> ok
+07:29:22 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:29:22 start FV.E2E.DeadCleanupPipeline cap=12G running=1 avail=209.5G
+07:29:24 done FV.E2E.DeadCleanupPipeline rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:29:24 start FV.E2E.DeadCleanupRegLevel cap=12G running=1 avail=209.4G
+07:29:26 done FV.E2E.DeadCleanupRegLevel rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:29:26 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:29:26 start FV.E2E.Final cap=12G running=1 avail=208.9G
+07:29:28 done FV.E2E.Final rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:29:28 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+07:29:28 start FV.E2E.GotFlow cap=12G running=1 avail=209.2G
+07:29:30 done FV.E2E.GotFlow rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:29:30 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+07:29:30 start FV.E2E.RegLevelU cap=12G running=1 avail=209.2G
+07:29:33 done FV.E2E.RegLevelU rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+07:29:34 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:29:34 start FV.E2E.DeadCleanupFinal cap=12G running=1 avail=208.9G
+07:29:36 done FV.E2E.DeadCleanupFinal rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:29:36 start FV.E2E.DeadCleanupGot cap=12G running=1 avail=208.9G
+07:29:38 done FV.E2E.DeadCleanupGot rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+07:29:38 start FV.E2E.DeadCleanupGuarded cap=12G running=1 avail=208.8G
+07:29:42 done FV.E2E.DeadCleanupGuarded rc=0 4s maxrss=1.8G cgpeak=0.3G built -> ok
+07:29:42 start FV.E2E.LinkWorld cap=12G running=1 avail=208.7G
+07:29:44 done FV.E2E.LinkWorld rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:29:44 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:29:44 start FV.E2E.Pair cap=12G running=1 avail=209.0G
+07:29:46 done FV.E2E.Pair rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:29:46 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:29:46 start FV.Backend.Proof.LowerSimUW cap=12G running=1 avail=210.1G
+07:29:49 done FV.Backend.Proof.LowerSimUW rc=0 3s maxrss=1.9G cgpeak=0.3G built -> ok
+07:29:49 start FV.E2E.DeadCleanupWorld cap=12G running=1 avail=209.3G
+07:29:51 done FV.E2E.DeadCleanupWorld rc=0 2s maxrss=1.9G cgpeak=0.2G built -> ok
+07:29:51 start FV.E2E.PairDriver cap=12G running=1 avail=209.7G
+07:29:54 done FV.E2E.PairDriver rc=0 3s maxrss=2.0G cgpeak=0.3G built -> ok
+07:29:54 check (ready) 3 modules in 0.1s: 0 up-to-date, 3 out of date, 0 wait for those
+07:29:54 start FV.E2E.UnwindValueSem cap=12G running=1 avail=211.1G
+07:29:56 done FV.E2E.UnwindValueSem rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:29:57 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:29:57 start FV.E2E.DeadCleanupPair cap=12G running=1 avail=210.8G
+07:29:59 done FV.E2E.DeadCleanupPair rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:29:59 start FV.E2E.DeadCleanupUnwindIsel cap=12G running=1 avail=210.9G
+07:30:00 done FV.E2E.DeadCleanupUnwindIsel rc=0 1s maxrss=1.9G cgpeak=0.2G built -> ok
+07:30:00 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:30:00 start FV.E2E.IselSimU cap=12G running=1 avail=211.4G
+07:30:02 done FV.E2E.IselSimU rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:30:02 start FV.E2E.PairRaise cap=12G running=1 avail=211.0G
+07:30:04 done FV.E2E.PairRaise rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:30:04 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:30:04 start FV.Backend.Proof.StockMemorySourceExecution cap=12G running=1 avail=211.1G
+07:30:06 done FV.Backend.Proof.StockMemorySourceExecution rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:30:06 check (ready) 4 modules in 0.3s: 0 up-to-date, 4 out of date, 0 wait for those
+07:30:06 start FV.E2E.PairDriverU cap=12G running=1 avail=211.5G
+07:30:08 done FV.E2E.PairDriverU rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+07:30:09 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+07:30:09 start FV.Backend.Proof.StockMemoryOffsetEightStoreRetention cap=12G running=1 avail=211.1G
+07:30:11 done FV.Backend.Proof.StockMemoryOffsetEightStoreRetention rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:30:11 start FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues cap=12G running=1 avail=211.0G
+07:30:13 done FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:30:13 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:30:13 start FV.Backend.Proof.StockMemoryOrdinarySourceTrap cap=12G running=1 avail=210.7G
+07:30:15 done FV.Backend.Proof.StockMemoryOrdinarySourceTrap rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:30:15 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:30:15 start FV.Backend.Proof.StockMemoryStoreDemandTransport cap=12G running=1 avail=210.9G
+07:30:18 done FV.Backend.Proof.StockMemoryStoreDemandTransport rc=0 3s maxrss=2.1G cgpeak=0.3G built -> ok
+07:30:18 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:30:18 start FV.E2E.StockMemoryIntegerPairedSource cap=12G running=1 avail=210.8G
+07:30:20 done FV.E2E.StockMemoryIntegerPairedSource rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:30:20 start FV.E2E.StockMemoryOffsetEightPairedSource cap=12G running=1 avail=210.7G
+07:30:22 done FV.E2E.StockMemoryOffsetEightPairedSource rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:30:22 start FV.Backend.Proof.StockOrderGraph cap=12G running=1 avail=210.4G
+07:30:24 done FV.Backend.Proof.StockOrderGraph rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:30:25 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+07:30:25 start FV.Backend.Proof.StockPrepareInputs cap=12G running=1 avail=209.9G
+07:30:43 done FV.Backend.Proof.StockPrepareInputs rc=0 18s maxrss=5.8G cgpeak=4.3G built -> ok
+07:30:43 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:30:43 start FV.Backend.Proof.StockMemoryAddressSelection cap=12G running=1 avail=208.8G
+07:31:18 done FV.Backend.Proof.StockMemoryAddressSelection rc=0 35s maxrss=3.9G cgpeak=2.6G built -> ok
+07:31:18 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:31:18 start FV.Backend.Proof.PerEdgePrepareSound cap=12G running=1 avail=209.6G
+07:31:20 done FV.Backend.Proof.PerEdgePrepareSound rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+07:31:20 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:31:20 start FV.Backend.Proof.StockCriticalCode cap=12G running=1 avail=209.4G
+07:31:23 done FV.Backend.Proof.StockCriticalCode rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+07:31:24 start FV.Backend.Proof.StockPrepareComplete cap=12G running=1 avail=209.3G
+07:31:26 done FV.Backend.Proof.StockPrepareComplete rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+07:31:26 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:31:26 start FV.Backend.Proof.StockEmittedGraph cap=12G running=1 avail=209.9G
+07:31:29 done FV.Backend.Proof.StockEmittedGraph rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+07:31:29 start FV.Backend.Proof.StockGraphBounds cap=12G running=1 avail=210.2G
+07:31:31 done FV.Backend.Proof.StockGraphBounds rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:31:31 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:31:31 start FV.Backend.Proof.StockNamedBranchTargets cap=12G running=1 avail=210.6G
+07:31:33 done FV.Backend.Proof.StockNamedBranchTargets rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+07:31:33 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:31:33 start FV.Backend.Proof.StockOrdinaryCfg cap=12G running=1 avail=210.7G
+07:32:10 done FV.Backend.Proof.StockOrdinaryCfg rc=0 37s maxrss=5.9G cgpeak=4.4G built -> ok
+07:32:10 start FV.Backend.Proof.StockMemoryDispatch cap=12G running=1 avail=205.9G
+07:32:41 done FV.Backend.Proof.StockMemoryDispatch rc=0 31s maxrss=6.7G cgpeak=5.2G built -> ok
+07:32:41 start FV.Backend.Proof.StockJumpDemand cap=12G running=1 avail=203.0G
+07:33:04 done FV.Backend.Proof.StockJumpDemand rc=0 23s maxrss=6.1G cgpeak=4.3G built -> ok
+07:33:05 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:33:05 start FV.Backend.Proof.StockSelectedArguments cap=12G running=1 avail=201.0G
+07:33:08 done FV.Backend.Proof.StockSelectedArguments rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+07:33:08 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:33:08 start FV.Backend.Proof.StockOutgoingVectors cap=12G running=1 avail=200.6G
+07:33:23 done FV.Backend.Proof.StockOutgoingVectors rc=0 15s maxrss=5.8G cgpeak=4.3G built -> ok
+07:33:23 start FV.Backend.Proof.IselTermFactsTy cap=12G running=1 avail=212.2G
+07:36:07 done FV.Backend.Proof.IselTermFactsTy rc=0 164s maxrss=4.4G cgpeak=3.0G built -> ok
+07:36:08 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:36:08 start FV.Backend.Proof.StockMemoryLoadSelection cap=12G running=1 avail=211.0G
+07:36:13 done FV.Backend.Proof.StockMemoryLoadSelection rc=0 5s maxrss=1.6G cgpeak=0.3G built -> ok
+07:36:13 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:36:13 start FV.Backend.Proof.StockMemorySelected cap=12G running=1 avail=211.1G
+07:36:17 done FV.Backend.Proof.StockMemorySelected rc=0 4s maxrss=1.7G cgpeak=0.3G built -> ok
+07:36:17 start FV.Backend.Proof.StockMemoryRecordValues cap=12G running=1 avail=211.4G
+07:36:19 done FV.Backend.Proof.StockMemoryRecordValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:36:19 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:36:19 start FV.Backend.Proof.StockMemorySelectedValues cap=12G running=1 avail=211.4G
+07:36:21 done FV.Backend.Proof.StockMemorySelectedValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:36:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:36:21 start FV.Backend.Proof.IselTermFacts cap=12G running=1 avail=211.2G
+07:36:23 done FV.Backend.Proof.IselTermFacts rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:36:24 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:36:24 start FV.Backend.Proof.StockMemorySourceValues cap=12G running=1 avail=211.1G
+07:36:26 done FV.Backend.Proof.StockMemorySourceValues rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:36:26 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:36:26 start FV.Backend.Proof.StockReturnScanShape cap=12G running=1 avail=211.1G
+07:36:28 done FV.Backend.Proof.StockReturnScanShape rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:36:28 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:36:28 start FV.Backend.Proof.LowerLoopPrep cap=12G running=1 avail=211.0G
+07:36:30 done FV.Backend.Proof.LowerLoopPrep rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:36:30 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:36:30 start FV.Backend.Proof.StockCfgJumpDemand cap=12G running=1 avail=210.9G
+07:36:59 done FV.Backend.Proof.StockCfgJumpDemand rc=0 29s maxrss=6.1G cgpeak=4.3G built -> ok
+07:37:00 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:37:00 start FV.Backend.Proof.StockMemoryScanRefines cap=12G running=1 avail=210.3G
+07:37:02 done FV.Backend.Proof.StockMemoryScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:37:02 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:37:02 start FV.Backend.Proof.StockTerminalCfg cap=12G running=1 avail=209.3G
+07:37:04 done FV.Backend.Proof.StockTerminalCfg rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:37:04 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:37:04 start FV.Backend.Proof.LowerLoop cap=12G running=1 avail=209.6G
+07:37:06 done FV.Backend.Proof.LowerLoop rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+07:37:06 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+07:37:06 start FV.Backend.Proof.StockEntryGraph cap=12G running=1 avail=209.7G
+07:37:08 done FV.Backend.Proof.StockEntryGraph rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:37:08 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:37:08 start FV.Backend.Proof.StockMemoryAutoScan cap=12G running=1 avail=209.1G
+07:37:10 done FV.Backend.Proof.StockMemoryAutoScan rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:37:11 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:37:11 start FV.Backend.Proof.StockMemoryPairedRecord cap=12G running=1 avail=209.2G
+07:37:13 done FV.Backend.Proof.StockMemoryPairedRecord rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:37:13 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:37:13 start FV.Backend.Proof.StockNodeCoverage cap=12G running=1 avail=209.3G
+07:37:16 done FV.Backend.Proof.StockNodeCoverage rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+07:37:16 start FV.Backend.Proof.StockTryCfg cap=12G running=1 avail=210.1G
+07:37:19 done FV.Backend.Proof.StockTryCfg rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+07:37:19 start FV.Backend.Proof.LowerCert cap=12G running=1 avail=212.0G
+07:37:21 done FV.Backend.Proof.LowerCert rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+07:37:21 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+07:37:21 start FV.Backend.Proof.StockPrepareTotal cap=12G running=1 avail=212.3G
+07:37:23 done FV.Backend.Proof.StockPrepareTotal rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:37:23 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:37:23 start FV.E2E.StockMemoryPairedSource cap=12G running=1 avail=212.0G
+07:37:25 done FV.E2E.StockMemoryPairedSource rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:37:26 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:37:26 start FV.Backend.Proof.StockCfgDemandValues cap=12G running=1 avail=212.0G
+07:37:28 done FV.Backend.Proof.StockCfgDemandValues rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:37:28 start FV.Backend.Proof.StockCfgTotal cap=12G running=1 avail=212.1G
+07:37:30 done FV.Backend.Proof.StockCfgTotal rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:37:30 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:37:30 start FV.Backend.Proof.StockPerEdgeReturnContract cap=12G running=1 avail=212.3G
+07:37:32 done FV.Backend.Proof.StockPerEdgeReturnContract rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:37:32 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+07:37:32 start FV.Backend.Proof.StockPerEdgeValues cap=12G running=1 avail=212.5G
+07:37:34 done FV.Backend.Proof.StockPerEdgeValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:37:34 start FV.Backend.Proof.StockSourceEdgeDFG cap=12G running=1 avail=212.1G
+07:37:36 done FV.Backend.Proof.StockSourceEdgeDFG rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+07:37:36 start FV.Backend.Proof.StockSourceEdges cap=12G running=1 avail=212.1G
+07:37:38 done FV.Backend.Proof.StockSourceEdges rc=0 2s maxrss=1.8G cgpeak=0.2G built -> ok
+07:37:38 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:37:38 start FV.E2E.StockMemoryPairedScan cap=12G running=1 avail=212.3G
+07:37:40 done FV.E2E.StockMemoryPairedScan rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:37:41 check (ready) 7 modules in 0.3s: 0 up-to-date, 7 out of date, 0 wait for those
+07:37:41 start FV.Backend.Proof.StockCfgSuccessorDemand cap=12G running=1 avail=211.9G
+07:37:43 done FV.Backend.Proof.StockCfgSuccessorDemand rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:37:43 start FV.Backend.Proof.StockComputedCfg cap=12G running=1 avail=212.0G
+07:37:45 done FV.Backend.Proof.StockComputedCfg rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:37:45 check (ready) 4 modules in 0.3s: 0 up-to-date, 4 out of date, 0 wait for those
+07:37:45 start FV.Backend.Proof.StockMemoryRetainedReturnSpec cap=12G running=1 avail=212.2G
+07:37:47 done FV.Backend.Proof.StockMemoryRetainedReturnSpec rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:37:47 start FV.E2E.StockMemoryOmittedPairedScan cap=12G running=1 avail=211.8G
+07:37:49 done FV.E2E.StockMemoryOmittedPairedScan rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:37:49 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:37:49 start FV.E2E.StockMemoryPairedReturnEdge cap=12G running=1 avail=211.7G
+07:37:51 done FV.E2E.StockMemoryPairedReturnEdge rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:37:52 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:37:52 start FV.Backend.Proof.StockMemoryCapturedCopyBody cap=12G running=1 avail=211.6G
+07:37:54 done FV.Backend.Proof.StockMemoryCapturedCopyBody rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:37:54 start FV.Backend.Proof.StockMemoryCfgJumpReturnAt cap=12G running=1 avail=211.4G
+07:37:56 done FV.Backend.Proof.StockMemoryCfgJumpReturnAt rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:37:56 start FV.Backend.Proof.StockMemoryCfgReturnRefinesAt cap=12G running=1 avail=211.5G
+07:37:58 done FV.Backend.Proof.StockMemoryCfgReturnRefinesAt rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:37:58 start FV.Backend.Proof.StockMemoryExtLoadPairedRecord cap=12G running=1 avail=211.5G
+07:38:00 done FV.Backend.Proof.StockMemoryExtLoadPairedRecord rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:38:00 start FV.Backend.Proof.StockMemoryExtLoadSourceValues cap=12G running=1 avail=211.9G
+07:38:02 done FV.Backend.Proof.StockMemoryExtLoadSourceValues rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:38:02 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+07:38:02 start FV.Backend.Proof.StockMemoryIntegerRetainedReturnSpec cap=12G running=1 avail=211.7G
+07:38:04 done FV.Backend.Proof.StockMemoryIntegerRetainedReturnSpec rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:38:04 start FV.Backend.Proof.StockMemoryMixedStoreRecordSpec cap=12G running=1 avail=211.7G
+07:38:06 done FV.Backend.Proof.StockMemoryMixedStoreRecordSpec rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:38:06 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:38:06 start FV.Backend.Proof.StockMemoryNopBodySource cap=12G running=1 avail=212.0G
+07:38:08 done FV.Backend.Proof.StockMemoryNopBodySource rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:38:08 start FV.Backend.Proof.StockMemoryNopTrapBody cap=12G running=1 avail=211.3G
+07:38:10 done FV.Backend.Proof.StockMemoryNopTrapBody rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:38:11 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:38:11 start FV.Backend.Proof.StockMemoryStoreNopReturnBody cap=12G running=1 avail=211.5G
+07:38:13 done FV.Backend.Proof.StockMemoryStoreNopReturnBody rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:38:13 start FV.Backend.Proof.StockMemoryBodyNotrap cap=12G running=1 avail=211.6G
+07:38:15 done FV.Backend.Proof.StockMemoryBodyNotrap rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:38:15 start FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines cap=12G running=1 avail=211.5G
+07:38:17 done FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:38:17 start FV.Backend.Proof.StockMemoryOrdinarySourceContinuation cap=12G running=1 avail=211.7G
+07:38:19 done FV.Backend.Proof.StockMemoryOrdinarySourceContinuation rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:38:19 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:38:19 start FV.Backend.Proof.StockMemorySretCopyBodySpec cap=12G running=1 avail=211.4G
+07:38:21 done FV.Backend.Proof.StockMemorySretCopyBodySpec rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:38:21 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:38:21 start FV.E2E.StockMemoryIntegerPairedScan cap=12G running=1 avail=211.4G
+07:38:23 done FV.E2E.StockMemoryIntegerPairedScan rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:38:23 start FV.E2E.StockMemoryOffsetEightPairedScan cap=12G running=1 avail=211.9G
+07:38:25 done FV.E2E.StockMemoryOffsetEightPairedScan rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:38:25 start FV.E2E.StockMemoryOffsetEightStorePairedScan cap=12G running=1 avail=211.4G
+07:38:27 done FV.E2E.StockMemoryOffsetEightStorePairedScan rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:38:27 start FV.E2E.StockMemoryStorePairedScan cap=12G running=1 avail=211.4G
+07:38:29 done FV.E2E.StockMemoryStorePairedScan rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:38:30 check (ready) 3 modules in 0.3s: 0 up-to-date, 3 out of date, 0 wait for those
+07:38:30 start FV.Backend.Proof.StockCfgTraversalScans cap=12G running=1 avail=211.3G
+07:38:32 done FV.Backend.Proof.StockCfgTraversalScans rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+07:38:32 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:38:32 start FV.Backend.Proof.StockCfgTraversalDemand cap=12G running=1 avail=209.9G
+07:39:17 done FV.Backend.Proof.StockCfgTraversalDemand rc=0 45s maxrss=6.2G cgpeak=4.3G built -> ok
+07:39:17 check (ready) 3 modules in 0.3s: 0 up-to-date, 3 out of date, 0 wait for those
+07:39:17 start FV.Backend.Proof.StockCfgReturnRefines cap=12G running=1 avail=210.5G
+07:39:19 done FV.Backend.Proof.StockCfgReturnRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:39:20 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:39:20 start FV.Backend.Proof.StockCfgReturnBlock cap=12G running=1 avail=210.0G
+07:39:22 done FV.Backend.Proof.StockCfgReturnBlock rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:39:22 check (ready) 4 modules in 0.3s: 0 up-to-date, 4 out of date, 0 wait for those
+07:39:22 start FV.E2E.StockMemoryNopPairedBody cap=12G running=1 avail=209.8G
+07:39:24 done FV.E2E.StockMemoryNopPairedBody rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+07:39:24 start FV.E2E.StockMemoryNopPairedPrelude cap=12G running=1 avail=209.7G
+07:39:26 done FV.E2E.StockMemoryNopPairedPrelude rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+07:39:26 start FV.E2E.StockMemoryPairedJump cap=12G running=1 avail=209.1G
+07:39:28 done FV.E2E.StockMemoryPairedJump rc=0 2s maxrss=2.4G cgpeak=0.3G built -> ok
+07:39:28 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:39:28 start FV.E2E.StockMemoryPairedReturnEdgeBody cap=12G running=1 avail=209.4G
+07:39:30 done FV.E2E.StockMemoryPairedReturnEdgeBody rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:39:31 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:39:31 start FV.Backend.Proof.StockMemoryCapturedCopyNonentry cap=12G running=1 avail=210.1G
+07:39:33 done FV.Backend.Proof.StockMemoryCapturedCopyNonentry rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:39:33 start FV.Backend.Proof.StockMemoryExtLoadReturnSpec cap=12G running=1 avail=210.3G
+07:39:35 done FV.Backend.Proof.StockMemoryExtLoadReturnSpec rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:39:35 start FV.Backend.Proof.StockMemoryExtLoadScanRefines cap=12G running=1 avail=210.6G
+07:39:37 done FV.Backend.Proof.StockMemoryExtLoadScanRefines rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:39:37 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+07:39:37 start FV.Backend.Proof.StockMemoryIntegerReturnSpec cap=12G running=1 avail=210.1G
+07:39:39 done FV.Backend.Proof.StockMemoryIntegerReturnSpec rc=0 2s maxrss=1.9G cgpeak=0.3G built -> ok
+07:39:39 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:39:39 start FV.Backend.Proof.StockMemoryLoadStoreReturnSpec cap=12G running=1 avail=210.2G
+07:39:41 done FV.Backend.Proof.StockMemoryLoadStoreReturnSpec rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:39:42 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:39:42 start FV.Backend.Proof.StockMemoryNopJumpSource cap=12G running=1 avail=210.7G
+07:39:44 done FV.Backend.Proof.StockMemoryNopJumpSource rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:39:44 start FV.Backend.Proof.StockMemoryNopJumpSpec cap=12G running=1 avail=210.1G
+07:39:46 done FV.Backend.Proof.StockMemoryNopJumpSpec rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:39:46 start FV.Backend.Proof.StockMemoryStoreNopNonentryReturn cap=12G running=1 avail=210.4G
+07:39:48 done FV.Backend.Proof.StockMemoryStoreNopNonentryReturn rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:39:48 start FV.E2E.StockMemoryExtLoadPairedSource cap=12G running=1 avail=210.1G
+07:39:50 done FV.E2E.StockMemoryExtLoadPairedSource rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:39:50 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:39:50 start FV.E2E.StockMemoryLoadedPointerPairedScan cap=12G running=1 avail=210.2G
+07:39:52 done FV.E2E.StockMemoryLoadedPointerPairedScan rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+07:39:52 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:39:52 start FV.Backend.Proof.StockBodySplitUnique cap=12G running=1 avail=210.7G
+07:39:53 done FV.Backend.Proof.StockBodySplitUnique rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+07:39:53 start FV.Backend.Proof.StockMemoryOrdinaryJumpDefined cap=12G running=1 avail=210.4G
+07:39:55 done FV.Backend.Proof.StockMemoryOrdinaryJumpDefined rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:39:56 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:39:56 start FV.Backend.Proof.StockMemoryOrdinaryJumpSpec cap=12G running=1 avail=210.1G
+07:39:58 done FV.Backend.Proof.StockMemoryOrdinaryJumpSpec rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:39:58 start FV.Backend.Proof.StockMemorySretCopyBody cap=12G running=1 avail=210.1G
+07:40:00 done FV.Backend.Proof.StockMemorySretCopyBody rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+07:40:00 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+07:40:00 start FV.E2E.StockMemorySretCopyPairedBody cap=12G running=1 avail=210.5G
+07:40:02 done FV.E2E.StockMemorySretCopyPairedBody rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+07:40:02 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+07:40:02 start FV.Backend.Proof.IselSzTab cap=12G running=1 avail=210.1G

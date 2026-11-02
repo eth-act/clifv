@@ -1,0 +1,5 @@
+ok   stock-result-call-previous-compiler.lean: theorems 9/9 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-previous-source.lean: theorems 2/2 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-compiler-source-kernel.lean: theorems 10/10 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-compiler-results.lean: theorems 12/12 rc=0 errors=0 other_axioms=[]
+axiom audit: 4/4 files ok

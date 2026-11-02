@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "units": [
+    {
+      "tag": "WorkerOResultCallPairCleanup",
+      "names": {},
+      "locals": [],
+      "local_addrs": [],
+      "functions": [
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v7/bundles/WorkerOResultCallPairCleanup/fn0.ra.json",
+          "name": "stock_source_call_result",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v7/bundles/WorkerOResultCallPairCleanup/fn0.clif"
+        },
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v7/bundles/WorkerOResultCallPairCleanup/fn1.ra.json",
+          "name": "stock_source_identity",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v7/bundles/WorkerOResultCallPairCleanup/fn1.clif"
+        }
+      ],
+      "data": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v7/bundles/WorkerOResultCallPairCleanup/data.txt"
+    }
+  ],
+  "symbols": [
+    [
+      "stock_source_call_result",
+      2097504
+    ],
+    [
+      "stock_source_identity",
+      2097528
+    ]
+  ],
+  "skipped": [],
+  "markers": [
+    [
+      "stock_source_call_result",
+      2097504
+    ],
+    [
+      "stock_source_identity",
+      2097528
+    ]
+  ],
+  "format": "clifv-frontend-bundle",
+  "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v7/bundles/WorkerOResultCallPairCleanup/program.elf"
+}

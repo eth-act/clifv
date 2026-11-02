@@ -1,0 +1,43 @@
+'Crates.WorkerOResultCallPairRaw.okB_input' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOResultCallPairRaw.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.slice0_ok._native.native_decide.ax_1]
+'Crates.WorkerOResultCallPairRaw.link_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOResultCallPairRaw.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.slice0_ok._native.native_decide.ax_1]
+'Crates.WorkerOResultCallPairRaw.base_closed' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOResultCallPairRaw.noTls._native.native_decide.ax_1]
+'Crates.WorkerOResultCallPairRaw.bin_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOResultCallPairRaw.data_bin._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.hdr_bin._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.slice0_bin._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.syms_bin._native.native_decide.ax_1]
+'Crates.WorkerOResultCallPairRaw.correct_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOResultCallPairRaw.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.slice0_ok._native.native_decide.ax_1]
+'Crates.WorkerOResultCallPairRaw.correct_1' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOResultCallPairRaw.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.slice0_ok._native.native_decide.ax_1]
+'Crates.WorkerOResultCallPairRaw.correct_stack_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOResultCallPairRaw.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.slice0_ok._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.stack_ok._native.native_decide.ax_1]
+'Crates.WorkerOResultCallPairRaw.correct_stack_1' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOResultCallPairRaw.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.slice0_ok._native.native_decide.ax_1,
+ Crates.WorkerOResultCallPairRaw.stack_ok._native.native_decide.ax_1]

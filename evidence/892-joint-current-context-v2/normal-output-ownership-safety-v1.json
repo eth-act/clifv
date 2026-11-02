@@ -1,0 +1,63 @@
+{
+  "status": "safe_unlink_before_compile_verified",
+  "pinned_Lake_source_sha256": {
+    "Module.lean": "4a84a2896dedea36679a15515043860e28b95e596b28552f56bad1ff1eade27e",
+    "Common.lean": "03c6017c49303720287e76e7c31decea54f1fddec5d0d7fd358e036e3b48575c",
+    "Actions.lean": "9c7d7101f89eb1d0618d8a76b86c30d628932ed2d2088db29792fdf88fb1e870"
+  },
+  "control_flow": [
+    "Module.buildLean:988 calls clearOutputArtifacts before compileLeanModule:989",
+    "clearOutputArtifacts:672-684 removes olean,server,private,ilean,ir.sig,ir,c,bc,ltar paths using removeFileIfExists",
+    "Common.saveArtifact:480-493 publishes complete binary artifacts by hardlink and makes them read-only after compiler completion"
+  ],
+  "actual_current_Lean_commands": [
+    {
+      "pid": 387994,
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "-Dlinter.unusedSimpArgs=false",
+        "-Dlinter.unusedVariables=false",
+        "-Dlinter.unnecessarySimpa=false",
+        "-Dlinter.unusedSectionVars=false",
+        "-Dlinter.defProp=false",
+        "-Dlinter.constructorNameAsVariable=false",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemoryLoadedPointerAddress.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerAddress.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerAddress.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerAddress.c",
+        "--setup",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerAddress.setup.json",
+        "--json"
+      ],
+      "outputs": {
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerAddress.olean": {
+          "exists": false,
+          "nlink": null,
+          "inode": null
+        },
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerAddress.ilean": {
+          "exists": false,
+          "nlink": null,
+          "inode": null
+        },
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerAddress.c": {
+          "exists": false,
+          "nlink": null,
+          "inode": null
+        }
+      }
+    }
+  ],
+  "materialized_shared_outputs_before_current_owner": 699,
+  "old_StockDemandExtent_artifact_sha256": "85e47ed61594e6f206d9be2cb508055f21e4aae65162bb34dbf03b60136f4b45",
+  "old_cache_provenance_still_exact": [
+    ".git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/artifacts/ef6a6d8f77ae0a2b.olean"
+  ],
+  "no_signal_or_unlink_during_inspection": true,
+  "global_cache_unchanged": true,
+  "utc": "2026-11-02T11:31:59.446211+00:00"
+}

@@ -1,0 +1,82 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinExecStatic.lean:40:108: error: Tactic `assumption` failed
+
+case hj
+I : SemanticStackBound.CompilerInput
+file : ByteArray
+hI : ReturnPinStackBound.okB I = true
+hc : codeMapB I.toLinkInput (tabOf (ProductionStackBound.CompilerInput.results I)) = true
+hF : ∀ (g : Clif.Function), g ∈ (prog I).funcs → FnOk I file g
+g h : Clif.Function
+hg : g ∈ (prog I).funcs
+hh : h ∈ (prog I).funcs
+j j' : Nat
+l l' : Line
+hj : (art I g).fa.lines.toList[j]? = some l
+hj' : (art I h).fa.lines.toList[j']? = some l'
+hl : l.isLabel = false
+hl' : l'.isLabel = false
+k k' : Nat
+hk : k < 4
+hk' : k' < 4
+he :
+  (art I g).base.toNat + lineOffset (art I g).fa.lines.toList j + k =
+    (art I h).base.toNat + lineOffset (art I h).fa.lines.toList j' + k'
+⊢ (art I h).fa.lines.toList[?j]? = some l
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinExecStatic.lean:40:108: error: Tactic `assumption` failed
+
+case he
+I : SemanticStackBound.CompilerInput
+file : ByteArray
+hI : ReturnPinStackBound.okB I = true
+hc : codeMapB I.toLinkInput (tabOf (ProductionStackBound.CompilerInput.results I)) = true
+hF : ∀ (g : Clif.Function), g ∈ (prog I).funcs → FnOk I file g
+g h : Clif.Function
+hg : g ∈ (prog I).funcs
+hh : h ∈ (prog I).funcs
+j j' : Nat
+l l' : Line
+hj : (art I g).fa.lines.toList[j]? = some l
+hj' : (art I h).fa.lines.toList[j']? = some l'
+hl : l.isLabel = false
+hl' : l'.isLabel = false
+k k' : Nat
+hk : k < 4
+hk' : k' < 4
+he :
+  (art I g).base.toNat + lineOffset (art I g).fa.lines.toList j + k =
+    (art I h).base.toNat + lineOffset (art I h).fa.lines.toList j' + k'
+⊢ (art I h).base.toNat + lineOffset (art I h).fa.lines.toList ?j + k' =
+    (art I h).base.toNat + lineOffset (art I h).fa.lines.toList j' + k'
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinExecStatic.lean:66:112: error: Tactic `assumption` failed
+
+case hs
+I : SemanticStackBound.CompilerInput
+B : BaseEnv
+hI : ReturnPinStackBound.okB I = true
+hc : codeMapB I.toLinkInput (tabOf (ProductionStackBound.CompilerInput.results I)) = true
+g h : Clif.Function
+hg : g ∈ (prog I).funcs
+hh : h ∈ (prog I).funcs
+info : CallInfo
+t : Nat
+hs : (art I g).vcp.CallSite info
+hd : info.dest = CallDest.reg (Reg.vreg t RegClass.int)
+hb : (sys I B).BlrTo g t h
+⊢ (art I h).vcp.CallSite ?info
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinExecStatic.lean:66:112: error: Tactic `assumption` failed
+
+case hb
+I : SemanticStackBound.CompilerInput
+B : BaseEnv
+hI : ReturnPinStackBound.okB I = true
+hc : codeMapB I.toLinkInput (tabOf (ProductionStackBound.CompilerInput.results I)) = true
+g h : Clif.Function
+hg : g ∈ (prog I).funcs
+hh : h ∈ (prog I).funcs
+info : CallInfo
+t : Nat
+hs : (art I g).vcp.CallSite info
+hd : info.dest = CallDest.reg (Reg.vreg t RegClass.int)
+hb : (sys I B).BlrTo g t h
+⊢ (sys I ?m.17).BlrTo h t h
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinExecStatic.lean:87:102: error: unexpected token '<;>'; expected structInstFieldDecl

@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "exit_code": 0,
+  "context": "preserved frozen source, fast inner loop only",
+  "stats": "peak 262758400\noom 0\noom_kill 0\n",
+  "source_hashes": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-executable.lean": "e249e279275df4757cb5b06c9c6eb01c757eaa1d9674cc37d84938de08ecfc42",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-executable-kernel.lean": "ff83334f27d811c323cdc855755265e4b75d47a40e10f333a4f85525b4d81818",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-executable-results.lean": "cae5d9c93e9df250030a16bf32fa0d1bfe2642d9359cbdfd676fe7ad0a429f36"
+  },
+  "utc": "2026-11-02T11:38:22.990149+00:00"
+}

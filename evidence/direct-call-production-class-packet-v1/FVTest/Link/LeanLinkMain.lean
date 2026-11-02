@@ -1,6 +1,6 @@
 import FV.Backend.Lowering.StockResultCallRoutes
 import FV.Link.TypedCompileSourceModes
-import FV.Link.ReturnPinExeSourceWith
+import FV.Link.ResultCallExeWith
 import FV.Backend.Lowering.StockMemoryCapturedCopyNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
@@ -545,18 +545,18 @@ def main (args0 : List String) : IO UInt32 := do
   if returnPinEnabled then
     let lower := Backend.Stock.ResultCall.lowerValidated
     let SP := SC0.placedProductionWith lower deadCleanup
-    match Link.ReturnPinCompilerWith.attempt lower SP file0 deadCleanup with
+    match Link.ResultCallCompilerWith.attempt lower SP file0 deadCleanup with
     | .ok file =>
       IO.FS.writeBinFile exe file
-      IO.println s!"lean-link: {exe}: {summary} written by Link.ReturnPinCompilerWith.attempt (Link.ReturnPinCompilerWith.attempt_correct, Link.ReturnPinCompilerWith.attempt_correct_depth)"
+      IO.println s!"lean-link: {exe}: {summary} written by Link.ResultCallCompilerWith.attempt (Link.ResultCallCompilerWith.attempt_correct, Link.ResultCallCompilerWith.attempt_correct_depth)"
       if let some f := ldFile then
         match ← ldCheck SP file0 f with
         | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
         | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
       let src := if srcOk then
-          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.ReturnPinCompilerWith.attempt_correct_source, Link.ReturnPinCompilerWith.attempt_correct_source_peak"
+          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.ResultCallCompilerWith.attempt_correct_source, Link.ResultCallCompilerWith.attempt_correct_source_peak"
         else "; outside SrcScopeB: about the legalised program only"
-      IO.println s!"lean-link: {exe}: coverage: Link.ReturnPinCompilerWith.attempt_correct, Link.ReturnPinCompilerWith.attempt_correct_depth{src}"
+      IO.println s!"lean-link: {exe}: coverage: Link.ResultCallCompilerWith.attempt_correct, Link.ResultCallCompilerWith.attempt_correct_depth{src}"
       return 0
     | .error _ => pure ()
   let compiled := if stockEnabled then SemanticCompilerWith.compileWithRoutes routes SC0 file0 deadCleanup

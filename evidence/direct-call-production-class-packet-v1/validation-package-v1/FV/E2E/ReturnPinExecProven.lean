@@ -1,3 +1,4 @@
+import FV.E2E.ReturnPinExecutableKernel
 import FV.E2E.ReturnPinExecGot
 
 namespace E2E.ReturnPinExecBytes
@@ -17,28 +18,15 @@ theorem exec_of_runGood {I : SemanticStackBound.CompilerInput} {D : List Clif.Da
       (sys I B).RunGoodL M f (modelOf I f r) ∧
         (sysS I B f K r (GotSlot I file)).RunGoodL M f (modelOf I f r)) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAtWithResults I I.results) o := by
-  by_cases hout : (∃ vals cm, o = .returned vals cm) ∨ (∃ c, o = .trapped c)
-  · obtain ⟨hG, hgS⟩ := hgood hout
-    have hL' := ReturnPinBinary.okB_sound hI (baseOk_F (F' := img I) hB) fun _ h => h
-    have hF : ∀ g ∈ (prog I).funcs, FnOk I file g := fun g hg => fnOk hI hbin hL' hg
-    have hra : ∀ k < (art I f).fb.words.size,
-        xreg 30 (modelOf I f r) ≠ (art I f).base + BitVec.ofNat 64 (4 * k) := by
-      simp only [xreg, r_modelOf]; exact hent.raOutside
-    refine exec_of_modelN hF hfm (by rw [← r_modelOf I f r]; exact hent.pc) hent.raOutside hd
-      (runOkSN_of_n hI hcm hF hH hfm (runOkN_of_good hI hcm hF (fun g hg => destsInt_of_ok hL' hg)
-        hfm hra hG fun M' g t hR he => ?_)) hA
-    obtain ⟨c', hRL, -⟩ := reachL_of_reachN hI hcm hF hR hfm hG (raNotSecond_top (hF f hfm) hra)
-    have hg := reachN_mem hR hfm
-    have hRL' : (sysS I B f K r (GotSlot I file)).ReachL M f (modelOf I f r) M' g c' t :=
-      LinkSys.reachL_extImg_semantic (SemanticBinary.reachL_F (F' := fun _ => False) hRL)
-    exact ⟨insn_of_good hI hcm hF hg (hG _ _ _ _ hRL he), got_of_good hI hbin hgot hX hg (hF g hg)
-      (hgS _ _ _ _ hRL' (by rw [mach_sysS]; exact he))⟩
-  · cases o with
-    | returned vals cm => exact absurd (.inl ⟨vals, cm, rfl⟩) hout
-    | trapped c => exact absurd (.inr ⟨c, rfl⟩) hout
-    | stuck _ => trivial
-    | outOfFuel => trivial
-
+  exact E2E.ReturnPinExecBytesFor.exec_of_runGood
+    (admission := E2E.LinkCheck.ReturnPinAdmission.previous) (I := I) (D := D)
+    (file := file) (hI := hI) (hcm := hcm)
+    (hbin := hbin) (hgot := hgot) (B := B)
+    (hB := hB) (hH := hH) (f := f)
+    (hfm := hfm) (M := M) (K := K)
+    (r := r) (hX := hX) (hent := hent)
+    (hd := hd) (o := o) (hA := hA)
+    (hgood := hgood)
 
 theorem binary_correct_exec_proven {I : SemanticStackBound.CompilerInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : ReturnPinStackBound.okB I = true) (hcm : codeMapB I (tabOf I.results) = true)
@@ -52,18 +40,15 @@ theorem binary_correct_exec_proven {I : SemanticStackBound.CompilerInput} {D : L
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAtWithResults I I.results)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
-  have hn := (ReturnPinStackBound.goodN_iff hI).2 ⟨f, hf, hc⟩
-  obtain ⟨hA, hd, hG⟩ := ReturnPinBinary.binary_correctX (ReturnPinBinary.binFacts_of_checks hI hbin) B hB hn hf M hX ho hr htr
-  have hfm := (Clif.Program.func?_some hf).1
-  have hL := ReturnPinBinary.okB_sound hI (baseOk_F (F' := worldF I f (SemanticStackBound.bud I f) r) hB)
-    fun _ h => .inr h
-  have hfacts := ReturnPinBinary.binFacts_of_checks hI hbin
-  have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
-    hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
-  obtain ⟨hent, -⟩ := BinaryBoundaryFacts.premises (BinaryBoundaryFacts.of_returnPins hL) hfm hro ho hr
-  exact exec_of_runGood hI hcm hbin hgot hB hH hfm hX hent hd hA fun hout =>
-    ⟨hG hout, runGood_sysS hI hbin hB hn hf M hX ho hav hr htr hout⟩
-
+  exact E2E.ReturnPinExecBytesFor.binary_correct_exec_proven
+    (admission := E2E.LinkCheck.ReturnPinAdmission.previous) (I := I) (D := D)
+    (file := file) (hI := hI) (hcm := hcm)
+    (hbin := hbin) (hgot := hgot) (B := B)
+    (hB := hB) (hH := hH) (n := n)
+    (f := f) (hf := hf) (hc := hc)
+    (M := M) (r := r) (args := args)
+    (cs := cs) (hX := hX) (ho := ho)
+    (hav := hav) (hr := hr) (htr := htr)
 
 theorem binary_correct_exec_depth_proven {I : SemanticStackBound.CompilerInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : ReturnPinStackBound.okB I = true) (hcm : codeMapB I (tabOf I.results) = true)
@@ -77,16 +62,15 @@ theorem binary_correct_exec_depth_proven {I : SemanticStackBound.CompilerInput} 
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAtWithResults I I.results)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
-  have hfacts := ReturnPinBinary.binFacts_of_checks hI hbin
-  obtain ⟨hA, hd, hG⟩ := ReturnPinBinary.binary_correct_depthX hfacts B hB hf M hX ho hr htr
-  have hfm := (Clif.Program.func?_some hf).1
-  have hL := ReturnPinBinary.okB_sound hI (baseOk_F (F' := worldF I f (I.D * M) r) hB) fun _ h => .inr h
-  have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
-    hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
-  obtain ⟨hent, -⟩ := BinaryBoundaryFacts.premises (BinaryBoundaryFacts.of_returnPins hL) hfm hro ho hr
-  exact exec_of_runGood hI hcm hbin hgot hB hH hfm hX hent hd hA fun hout =>
-    ⟨hG hout, runGood_sysS_depth hI hbin hB hfm M hX ho hav hr htr hout⟩
-
+  exact E2E.ReturnPinExecBytesFor.binary_correct_exec_depth_proven
+    (admission := E2E.LinkCheck.ReturnPinAdmission.previous) (I := I) (D := D)
+    (file := file) (hI := hI) (hcm := hcm)
+    (hbin := hbin) (hgot := hgot) (B := B)
+    (hB := hB) (hH := hH) (n := n)
+    (f := f) (hf := hf) (M := M)
+    (r := r) (args := args) (cs := cs)
+    (hX := hX) (ho := ho) (hav := hav)
+    (hr := hr) (htr := htr)
 
 theorem binary_correct_exec_peak_proven {I : SemanticStackBound.CompilerInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : ReturnPinStackBound.okB I = true) (hcm : codeMapB I (tabOf I.results) = true)
@@ -100,15 +84,15 @@ theorem binary_correct_exec_peak_proven {I : SemanticStackBound.CompilerInput} {
     (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAtWithResults I I.results)
       (Clif.runLoop B.env (prog I) (F + 1) cs) := by
-  have hfacts := ReturnPinBinary.binFacts_of_checks hI hbin
-  obtain ⟨hA, hdiff, hG⟩ := ReturnPinBinary.binary_correct_peakX hfacts B hB hf F d hX ho hr hd htr
-  have hfm := (Clif.Program.func?_some hf).1
-  have hL := ReturnPinBinary.okB_sound hI (baseOk_F (F' := worldF I f (I.D * d) r) hB) fun _ h => .inr h
-  have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
-    hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
-  obtain ⟨hent, -⟩ := BinaryBoundaryFacts.premises (BinaryBoundaryFacts.of_returnPins hL) hfm hro ho hr
-  exact exec_of_runGood hI hcm hbin hgot hB hH hfm hX hent hdiff hA fun hout =>
-    ⟨hG hout, runGood_sysS_peak hI hbin hB hfm F d hX ho hav hr hd htr hout⟩
-
+  exact E2E.ReturnPinExecBytesFor.binary_correct_exec_peak_proven
+    (admission := E2E.LinkCheck.ReturnPinAdmission.previous) (I := I) (D := D)
+    (file := file) (hI := hI) (hcm := hcm)
+    (hbin := hbin) (hgot := hgot) (B := B)
+    (hB := hB) (hH := hH) (n := n)
+    (f := f) (hf := hf) (F := F)
+    (d := d) (r := r) (args := args)
+    (cs := cs) (hX := hX) (ho := ho)
+    (hav := hav) (hr := hr) (hd := hd)
+    (htr := htr)
 
 end E2E.ReturnPinExecBytes

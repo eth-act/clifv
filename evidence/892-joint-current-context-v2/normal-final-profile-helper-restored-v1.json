@@ -1,0 +1,6 @@
+{
+  "source": "published892tree5b924d76:scripts/peaks-update.py",
+  "sha256": "300865917b3786ebccbb3c00c85287ade4473e52d468c882a9f5a26c12f12c6d",
+  "reason": "The scheduler loads this exact helper only after all jobs finish; avoid a missing-file bookkeeping failure",
+  "active_compiler_untouched": true
+}

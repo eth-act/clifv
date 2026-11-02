@@ -1,0 +1,7 @@
+import FV.E2E.ResultCallBinary
+import FV.E2E.ReturnPinGeneratedStackKernel
+namespace E2E.ResultCallGeneratedStack
+open LinkCheck
+abbrev crate_correct_stackN := @ReturnPinGeneratedStackFor.crate_correct_stackN ReturnPinAdmission.resultCalls
+abbrev crate_correct_stack := @ReturnPinGeneratedStackFor.crate_correct_stack ReturnPinAdmission.resultCalls
+end E2E.ResultCallGeneratedStack

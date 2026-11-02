@@ -1,0 +1,22 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/ReflowResultCallBundleV2.lean:7:26: error(lean.unknownIdentifier): Unknown identifier `Link.Ld.Plan`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/ReflowResultCallBundleV2.lean:8:22: error(lean.invalidField): Invalid field notation: Field projection operates on types of the form `C ...` where C is a constant. The expression
+  S
+has type `LinkSpec` which does not have the necessary form.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/ReflowResultCallBundleV2.lean:26:19: error(lean.unknownIdentifier): Unknown identifier `Link.Ld.assemble`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/ReflowResultCallBundleV2.lean:26:6: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.ok` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Except.ok`
+  [apply] `Clif.Res.ok`
+  [apply] `EST.Out.ok`
+  [apply] `EStateM.Result.ok`
+  [apply] `Isle.ExtResult.ok`
+  [apply] `Binary.BinFacts.ok`
+  [apply] `LegalProgram.ProgCtx.ok`
+  [apply] `ReturnPinBinary.BinFacts.ok`
+  [apply] `ReturnPinBinaryFor.BinFacts.ok`
+  [apply] `SemanticBinary.BinFacts.ok`
+  [apply] `Meta.DefEqArgsFirstPassResult.ok`
+  [apply] `Std.Http.Response.ok`
+  [apply] `Std.Http.Status.ok`
+  [apply] `Meta.Grind.CheckCoverageResult.ok`

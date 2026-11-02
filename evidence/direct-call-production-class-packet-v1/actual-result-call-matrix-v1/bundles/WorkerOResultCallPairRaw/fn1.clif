@@ -1,0 +1,8 @@
+function u0:1(i64) -> i64 system_v {
+block0(v101: i64):
+    return v101
+}
+; clifv-extnames 1
+; decl u0:0 func Export "stock_source_call_result"
+; decl u0:1 func Export "stock_source_identity"
+; end clifv-extnames

@@ -1,0 +1,11 @@
+from pathlib import Path
+import datetime,hashlib,json,os,subprocess
+B=Path('/home/lee/clifv');E=B/'.git/agent-evidence/stock-memory-20261029';V=B/'.worktrees/stock-extending-production-20261031';P=E/'direct-call-production-class-packet-v1';R=P/'validation-package-v1';logs=P/'old-emitter-regression-v2';logs.mkdir()
+env=dict(os.environ);env.update(json.loads((E/'author-env-v1.json').read_text()));env.pop('FV_LAKE_CACHE',None);env.update(FV_ROOT=str(V),FV_MEMCAP='2G',FV_MEMCAP_STATS=str(logs/'audit.mem'),FV_MEMCAP_UNIT='worker-o-result-call-compiler-source-audit-v1',LEAN_NUM_THREADS='2',OMP_NUM_THREADS='2',OMP_THREAD_LIMIT='2',LAKE_ARTIFACT_CACHE='false',LAKE_RESTORE_ARTIFACTS='false');env['LEAN_PATH']=str(R/'.lake/build/lib/lean')+':'+subprocess.check_output(['lake','env','printenv','LEAN_PATH'],cwd=V,env=env,text=True).strip()
+with (logs/'old-emitter-regression.log').open('w') as out:
+ regression=subprocess.run(['nice','-n','10',str(V/'scripts/memcap.sh'),'lake','env','lean','-j1','-DElab.async=false','--run',str(P/'ComparePreviousEmitterV2.lean')],cwd=R,env=env,stdout=out,stderr=subprocess.STDOUT)
+assert regression.returncode==0,(logs/'old-emitter-regression.log').read_text()
+text=(logs/'old-emitter-regression.log').read_text()
+assert 'PANIC' not in text,text
+assert 'Old emitter output exact: 72 configurations.' in text,text
+print(text)

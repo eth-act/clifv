@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "exit_code": 0,
+  "context": "preserved frozen source, fast inner loop only",
+  "stats": "peak 276574208\noom 0\noom_kill 0\n",
+  "source_hashes": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-generated-kernel.lean": "3214bec58454b8da585796d191e68f18be42ab1308d9ccbb2457dcc147969d51",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-generated-results.lean": "8127772d78718e337b0bd6751feebfd2029d8bb4d23b0f3794733071586622f5",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-generated-previous.lean": "7dd1e179d3ec955a60f0acc46674e13a05d6e875a99290fe15c17c0e1cb9b710",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-compiler.lean": "7dbb9dc23e15afc49225660393adcfa6e258a8a9faca641a61ed776f30c764e2",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-source.lean": "ae3fe76f08f1e7e12ca47b4b9c5dd57fad315e588001acac7f678606b3ec7b36",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-compiler-source-kernel.lean": "8c1eceee3f18754f865e4db75a90b48eb169f498d18f210d1aef6b8e6219ea82",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-compiler-results.lean": "215ddb1631a79dcb288ce37880acf0ff047f19118dc351c5c3be5b01feec69f3",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-production-execution.lean": "4206b7ad2655308807b5682225e8c699c5ebd0f2778c995ac843d170fe86c871"
+  },
+  "utc": "2026-11-02T12:18:59.822323+00:00"
+}

@@ -1,0 +1,1 @@
+{"functions":[{"name":"stock_source_call_result","ok":true,"num_spillslots":0,"allocs":[["x0"],["x0","x0"],["x0"]],"edits":[],"checker":"ok"},{"name":"stock_source_identity","ok":true,"num_spillslots":0,"allocs":[["x0"],["x0"]],"edits":[],"checker":"ok"},{"name":"float_leaf","ok":true,"num_spillslots":0,"allocs":[["v0"],["v0"]],"edits":[],"checker":"ok"}]}

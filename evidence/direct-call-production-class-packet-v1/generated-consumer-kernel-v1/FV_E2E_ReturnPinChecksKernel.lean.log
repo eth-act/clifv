@@ -1,0 +1,54 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinChecksKernel.lean:25:13: error: Invalid simp theorem: Expected a proposition, but found
+  ProductionLowering → LinkInput → Bool → List FnInput → Bool
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinChecksKernel.lean:25:2: error: `simp` made no progress
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinChecksKernel.lean:33:46: error: Invalid simp theorem: Expected a proposition, but found
+  ProductionLowering → LinkInput → Bool → List FnInput → Bool
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinChecksKernel.lean:31:55: error: unsolved goals
+admission : ReturnPinAdmission
+lower : ProductionLowering
+I : LinkInput
+cleanup : Bool
+⊢ ((∀ (x : String × Bool),
+        x ∈
+            globalChks I { funcs := List.map (fun x => x.func) I.funcs }
+              (tabOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs)) →
+          x.snd = true) ∧
+      (∀ (x : FnInput),
+          x ∈ I.funcs →
+            ∀ (x_1 : String × Bool),
+              x_1 ∈
+                  chksSemanticFor admission.extra (productionStage cleanup) I
+                    { funcs := List.map (fun x => x.func) I.funcs }
+                    (tabOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs)) x.func
+                    (I.pipeProductionWith lower cleanup x) →
+                x_1.snd = true) ∧
+        ∀ (x : FnInput),
+          x ∈ I.funcs →
+            (ofRes I (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs) closedBase fun x =>
+                    False).returnPinsB
+                x.func =
+              true) ↔
+    (∀ (x : String × Bool),
+        x ∈
+            globalChks I { funcs := List.map (fun x => x.func) I.funcs }
+              (tabOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs)) →
+          x.snd = true) ∧
+      fnsBProduction lower I cleanup I.funcs = true
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinChecksKernel.lean:33:62: warning: This simp argument is unused:
+  returnPinsWith_of
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [okRReturnPinFor, okRSemanticFor, E2E.SemanticChecksWith.globalBProduction, fnsBProduction,
+    returnPinChecks, progOf, LinkInput.resultsProductionWith, List.map_map, List.all_map, Function.comp_def,
+    Bool.and_eq_true, List.all_eq_true, forall_and, and_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinChecksKernel.lean:36:4: warning: This simp argument is unused:
+  forall_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [okRReturnPinFor, okRSemanticFor, E2E.SemanticChecksWith.globalBProduction, fnsBProduction,
+    returnPinsWith_of, returnPinChecks, progOf, LinkInput.resultsProductionWith, List.map_map, List.all_map,
+    Function.comp_def, Bool.and_eq_true, List.all_eq_true, and_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

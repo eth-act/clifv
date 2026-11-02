@@ -1,0 +1,4 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ResultCallProductionExec.lean:179:70: error: unsolved goals
+cleanup : Bool
+word : BitVec 64
+⊢ { funcs := [f, callee] } = { funcs := [caller, callee] }

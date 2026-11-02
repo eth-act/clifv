@@ -1,0 +1,22 @@
+[{"typed": true,
+  "module": "WorkerOResultCallTypedRaw",
+  "input":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw/input.clif",
+  "exe":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw/program.elf",
+  "entries":
+  ["stock_source_call_result", "stock_source_identity", "float_leaf"],
+  "dir":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw",
+  "cleanup": false},
+ {"typed": true,
+  "module": "WorkerOResultCallTypedCleanup",
+  "input":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup/input.clif",
+  "exe":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup/program.elf",
+  "entries":
+  ["stock_source_call_result", "stock_source_identity", "float_leaf"],
+  "dir":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup",
+  "cleanup": true}]

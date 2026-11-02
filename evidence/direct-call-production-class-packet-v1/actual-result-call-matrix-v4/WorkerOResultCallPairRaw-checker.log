@@ -1,0 +1,21 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/FVTest/E2E/LinkCheckMain.lean:402:37: warning: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+link-check: /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v1/bundles/WorkerOResultCallPairRaw/program.elf
+  checker: integer
+  static checks (the validators): 0 function(s) fail
+  static checks done in 653 ms
+  2 functions, 2 link-map addresses, 0 CLIF image symbols, D = 16; checked in 824 ms
+  okB: true
+  relocations: 1 bl, address pairs 0 nop+adr, 0 adrp+add, 0 adrp+ldr (GOT), 0 TLSDESC sequences
+  binary checks done in 1 ms
+  binary: ok (2 functions, 9 words, 0 data objects, 2 symbols)
+  code map: ok
+  stack: 32 bytes at most (no call cycle)
+  stack: 1 entries (no caller in the program):
+      32  stock_source_call_result
+  wrote /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v1/bundles/Crates/WorkerOResultCallPairRaw.lean
+  2 functions, 2 entries

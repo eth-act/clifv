@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "exit_code": 0,
+  "context": "preserved frozen source, fast inner loop only",
+  "stats": "peak 274083840\noom 0\noom_kill 0\n",
+  "source_hashes": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-binary-kernel.lean": "16c918a90b05f6d0fbec9e5b50993bc422e3ad9880c89fbcdf42d5c0ba64dd60",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-binary-results.lean": "73ba236717b73bd58053c96629562698f3dab760eb831a1f6e69784b586f109a",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-compiler-kernel.lean": "7d81ec2aebdb422b7516e26d632352307477827b770ab04505fad6bb62e40a32",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-compiler-results.lean": "215ddb1631a79dcb288ce37880acf0ff047f19118dc351c5c3be5b01feec69f3",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-compiler-source-kernel.lean": "8c1eceee3f18754f865e4db75a90b48eb169f498d18f210d1aef6b8e6219ea82",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-contract-additions.lean": "a72dbc615f5fdbd7482ee91e0301dafea4d527cce69e9d97505a1485ac388972",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-executable-kernel.lean": "ff83334f27d811c323cdc855755265e4b75d47a40e10f333a4f85525b4d81818",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-executable-results.lean": "cae5d9c93e9df250030a16bf32fa0d1bfe2642d9359cbdfd676fe7ad0a429f36",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-generated-kernel.lean": "3214bec58454b8da585796d191e68f18be42ab1308d9ccbb2457dcc147969d51",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-generated-previous.lean": "7dd1e179d3ec955a60f0acc46674e13a05d6e875a99290fe15c17c0e1cb9b710",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-generated-results.lean": "8127772d78718e337b0bd6751feebfd2029d8bb4d23b0f3794733071586622f5",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-binary.lean": "ba0896a9cdb4c5af1da277bc68998c32c8b18024f01d438276f09fd926b91263",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-boundary.lean": "97f68933121f1acb847ff5df1de3d02df9ac2f9201beb6a7372bc3af5ef73c69",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-checks.lean": "272c7359677a8b40dcbbf718165e6e8414b60c8fa88947b1df3edd0f1cd77290",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-compiler.lean": "7dbb9dc23e15afc49225660393adcfa6e258a8a9faca641a61ed776f30c764e2",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-contracts.lean": "ba6c3d79f1d3210c7e5beb4c8aab119b08ee1dcc3a54eeb7b28f205a18a58cef",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-executable.lean": "e249e279275df4757cb5b06c9c6eb01c757eaa1d9674cc37d84938de08ecfc42",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-source.lean": "ae3fe76f08f1e7e12ca47b4b9c5dd57fad315e588001acac7f678606b3ec7b36",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-world.lean": "cee98ed0cc9b5b2249c218c377164fc61ea17e04979800cb7cee931c3783af00",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-worldx.lean": "44eb801766aaa9926b040c918558c130f81af8530ccedd6408a3d05ca8a20e91",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-production-complete.lean": "0d26405c2ec5e5fdd3f4e6cda73ec606febba539384c3849b5e4a8a8b29a340d",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-production-execution.lean": "4206b7ad2655308807b5682225e8c699c5ebd0f2778c995ac843d170fe86c871",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-witness.lean": "9000cb5c05a30a230f0c849503ad3608238afdcd15ae83e3610c25118abbf4dd",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call.lean": "e43ae2667244fc0e97cd2f9fdce1bbffd65ee5ace33633184160b6a373b9ff3d"
+  },
+  "utc": "2026-11-02T12:22:45.373303+00:00"
+}

@@ -1,0 +1,10 @@
+{
+  "pr": 902,
+  "head": "718c8c96a0bfdf86d7678933e8220e1f187e24c3",
+  "verdict": "no blocking defect",
+  "review": "ONE QUICK, DIRTY, CHEAP direct review",
+  "builds": false,
+  "review_agents": false,
+  "scope": "Seven new unwired files; imm12 encoding and eq/ne nonzero guard; existing Scalar.Domain; fixed marked source return/trap and actual lower/check witness.",
+  "utc": "2026-11-02T11:47:54.466436+00:00"
+}

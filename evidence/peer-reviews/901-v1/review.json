@@ -1,0 +1,10 @@
+{
+  "pr": 901,
+  "head": "df085b49bbcfd58e1ebc0949c60b076f5bb3a70e",
+  "verdict": "no blocking defect",
+  "review": "ONE QUICK, DIRTY, CHEAP direct review",
+  "builds": false,
+  "review_agents": false,
+  "scope": "Seven new files; actual immediate rule5165 and encoding/zero guard; actual lowered facts witness; complete entered source-core witness; fixed Dominated native fact only, root marked.",
+  "utc": "2026-11-02T11:37:39.415510+00:00"
+}

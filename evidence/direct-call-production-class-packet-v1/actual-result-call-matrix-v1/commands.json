@@ -1,0 +1,51 @@
+{
+  "prepare": {
+    "exit_code": 0,
+    "command": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/PrepareResultCallBundlesV1.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v1/bundles"
+    ],
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "WorkerOResultCallPairRaw-backend": {
+    "exit_code": 0,
+    "command": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/FVTest/Backend/Main.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v1/bundles/WorkerOResultCallPairRaw/input.clif",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v1/bundles/WorkerOResultCallPairRaw/actual.o",
+      "--regalloc",
+      "lean",
+      "--dump",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v1/bundles/WorkerOResultCallPairRaw/actual-dump",
+      "--no-dead-cleanup"
+    ],
+    "log_sha256": "f95179d562b6fca75de7111cf2f14e00ca476ffd07ec8bbbfc202a48e1d8be7f"
+  },
+  "WorkerOResultCallPairRaw-reflow": {
+    "exit_code": 1,
+    "command": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/ReflowResultCallBundleV1.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v1/bundles/WorkerOResultCallPairRaw",
+      "false"
+    ],
+    "log_sha256": "24f8dcd2ebac9f52f53f17cfc5d3b8076c77a08678f8f5a26378ebfa2ddc52cc"
+  }
+}

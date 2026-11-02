@@ -1,0 +1,547 @@
+{
+  "compared": 108,
+  "missing": [],
+  "different": {},
+  "roots": {
+    "E2E.ReturnPinBinary.okB_previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.okB_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.binary_correct_depth": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.BinFacts.previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.BinFacts.modelOf_ne": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.binary_correct_depthX": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.binary_correct_peakX": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.binFacts_of_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.okB_names": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.facts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.edgeB_of_callee": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.goodN_iff": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.budget_of": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.backend_correct_program_stackX": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.crate_correct_stackNX": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.binary_correctX": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.trapsExplicit_of_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.trapsExplicit_of_runD": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticABI.entryRegs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.hasTls_of_vcode_semantic_abi": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.stackArgsAvoid_frameW_semantic_abi": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinChecksWith.fnsBProduction_append": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinChecksWith.checks_iff": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinChecksWith.okRProduction_of_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinChecksWith.crate_correct_production": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinChecksWith.accepts_previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_spec": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.codeMap_leanLink": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.leanLink_gotSlot": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.gotOk_leanLink": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.outsideAvoids_leanLink": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_correct": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_correct_depth": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_correct_peak": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.accepts_previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.SemanticABI.previous_check": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.SemanticABI.previous_exact": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.SemanticABI.previous_check_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.SemanticABI.previous_exact_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticABI.of_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticABI.of_checks_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticABI.check": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticABI.alloc": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticABI.emit": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticABI.layout": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_world_niX_semantic_abi": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticReturnPins.erase": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticReturnPins.of_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticReturnPins.of_checks_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_world_niX_semantic_return_pins": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkSys.returnPinsB_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledProgramReturnPins.of_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledProgramReturnPins.of_checks_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledProgramReturnPins.check": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledProgramReturnPins.alloc": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledProgramReturnPins.emit": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledProgramReturnPins.layout": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.okRReturnPinCalls_eq_fast": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.okRReturnPinCalls_previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.semanticPreparedReturnPinCallsResults_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.preparedReturnPinCalls_correct": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_accept": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_retry": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_prepared": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_checked": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_correct": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.fnOk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.codeMap_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.relocAt_inv": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.line_overlap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.relocAt_img": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.word_static": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.insn_of_good": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.symAddr_of_blrTo": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.siteAt_static": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.plain_static": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.stepOk_of_d": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runOkSN_of_n": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.pairsClosed_art": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.raNotSecond_enter": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.reachL_of_reachN": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.destsInt_of_ok": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.stepOkD_of_good": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runOkN_of_good": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.image_checked": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkSys.OkReturnPins.extImgProduction": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.sysS_entry": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runGood_sysS_of": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runGood_sysS": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runGood_sysS_depth": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runGood_sysS_peak": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.got_of_good": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.exec_of_runGood": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.binary_correct_exec_proven": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.binary_correct_exec_depth_proven": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.binary_correct_exec_peak_proven": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_correct_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_correct_source_peak": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledProgramReturnPins.entryRegs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.hasTls_of_vcode_return_pins": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.stackArgsAvoid_frameW_return_pins": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_world_return_pins": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_world_ni_return_pins": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.no_explicit_returns_of_sret": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.armRefines_of_actRet_return_pins": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_worldX_return_pins": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  }
+}

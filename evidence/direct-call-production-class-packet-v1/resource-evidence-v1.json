@@ -1,0 +1,1790 @@
+[
+  {
+    "file": "reachability-probe-v1/backend.mem",
+    "peak": 230404096,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v1/FV_Backend_Proof_StockDirectCallResult.lean.mem",
+    "peak": 228106240,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v1/FV_Backend_StockResultCallCheck.lean.mem",
+    "peak": 200257536,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v2/FV_Backend_Proof_StockDirectCallResultFixture.lean.mem",
+    "peak": 248283136,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v2/FV_Backend_StockResultCallCheck.lean.mem",
+    "peak": 216535040,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v2/FV_Backend_Lowering_StockResultCallWith.lean.mem",
+    "peak": 197050368,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v3/FV_Backend_Lowering_StockResultCallWith.lean.mem",
+    "peak": 208986112,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v3/FV_Backend_Proof_StockDirectCallResultWitness.lean.mem",
+    "peak": 223993856,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v3/FV_E2E_StockResultCallSource.lean.mem",
+    "peak": 234016768,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v3/FV_E2E_StockResultCallLayout.lean.mem",
+    "peak": 229867520,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v4/FV_E2E_StockResultCallLayout.lean.mem",
+    "peak": 230199296,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v5/FV_E2E_StockResultCallLayout.lean.mem",
+    "peak": 241098752,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v5/FV_E2E_StockResultCallPair.lean.mem",
+    "peak": 244596736,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v5/FV_E2E_StockResultCallRun.lean.mem",
+    "peak": 246067200,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v6/FV_E2E_StockResultCallRun.lean.mem",
+    "peak": 251658240,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v7/FV_E2E_StockResultCallRun.lean.mem",
+    "peak": 276213760,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v7/FV_E2E_StockResultCallDomain.lean.mem",
+    "peak": 273661952,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v7/FV_E2E_StockResultCallMachine.lean.mem",
+    "peak": 242089984,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v7/FV_E2E_StockResultCallNI.lean.mem",
+    "peak": 252256256,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v7/FV_E2E_StockResultCallProvider.lean.mem",
+    "peak": 236208128,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-kernel-v7/FV_E2E_StockResultCallWitness.lean.mem",
+    "peak": 279457792,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "focused-audit-v1/audit.mem",
+    "peak": 237215744,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_Backend_Proof_StockDirectCallResult.lean.mem",
+    "peak": 228765696,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_Backend_StockResultCallCheck.lean.mem",
+    "peak": 216309760,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_Backend_Lowering_StockResultCallWith.lean.mem",
+    "peak": 206266368,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_Backend_Proof_StockDirectCallResultFixture.lean.mem",
+    "peak": 249905152,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_E2E_StockResultCallSource.lean.mem",
+    "peak": 233873408,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_Backend_Proof_StockDirectCallResultWitness.lean.mem",
+    "peak": 223346688,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_E2E_StockResultCallLayout.lean.mem",
+    "peak": 240361472,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_E2E_StockResultCallPair.lean.mem",
+    "peak": 243425280,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_E2E_StockResultCallRun.lean.mem",
+    "peak": 278802432,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_E2E_StockResultCallDomain.lean.mem",
+    "peak": 272875520,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_E2E_StockResultCallMachine.lean.mem",
+    "peak": 242388992,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_E2E_StockResultCallNI.lean.mem",
+    "peak": 252112896,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_E2E_StockResultCallProvider.lean.mem",
+    "peak": 235581440,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-kernel-v2/FV_E2E_StockResultCallWitness.lean.mem",
+    "peak": 275177472,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-baseline-audit-v1/audit.mem",
+    "peak": 258342912,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v1/FV_Backend_SemanticABICheck.lean.mem",
+    "peak": 208179200,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v1/FV_E2E_CompiledSemanticABI.lean.mem",
+    "peak": 271908864,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v1/FV_E2E_CompiledSemanticReturnPins.lean.mem",
+    "peak": 266780672,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v1/FV_E2E_SemanticABIBoundary.lean.mem",
+    "peak": 278503424,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-boundary-baseline-audit-v1/audit.mem",
+    "peak": 248512512,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v2/FV_E2E_LinkReturnPins.lean.mem",
+    "peak": 268394496,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v2/FV_E2E_SemanticABIBoundary.lean.mem",
+    "peak": 285806592,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v2/FV_E2E_LinkProgramReturnPinsModel.lean.mem",
+    "peak": 259772416,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v2/FV_E2E_ReturnPinCheckSound.lean.mem",
+    "peak": 254300160,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v2/FV_E2E_CompiledProgramReturnPins.lean.mem",
+    "peak": 256454656,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v2/FV_E2E_LinkReturnPinContract.lean.mem",
+    "peak": 264241152,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v2/FV_E2E_ReturnPinCheckFast.lean.mem",
+    "peak": 270106624,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v2/FV_E2E_WorldReturnPinBoundary.lean.mem",
+    "peak": 250269696,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-world-baseline-audit-v1/audit.mem",
+    "peak": 253984768,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v3/FV_E2E_SemanticPreparedMetadata.lean.mem",
+    "peak": 282357760,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v3/FV_E2E_WorldReturnPinBoundary.lean.mem",
+    "peak": 264990720,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v3/FV_E2E_LinkReturnPinCall.lean.mem",
+    "peak": 339849216,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v3/FV_E2E_PreparedReturnPinPipeline.lean.mem",
+    "peak": 260050944,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v3/FV_E2E_LinkReturnPinCallbacks.lean.mem",
+    "peak": 321036288,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v3/FV_E2E_LinkReturnPinProgram.lean.mem",
+    "peak": 269508608,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v3/FV_E2E_LinkReturnPinWorldX.lean.mem",
+    "peak": 241922048,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-worldx-baseline-audit-v1/audit.mem",
+    "peak": 253890560,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v4/FV_E2E_LinkReturnPinWorldX.lean.mem",
+    "peak": 262918144,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v4/FV_E2E_LinkSemanticNI.lean.mem",
+    "peak": 284995584,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v4/FV_E2E_LinkReturnPinGood.lean.mem",
+    "peak": 371314688,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v4/FV_E2E_SemanticPreparedPipeline.lean.mem",
+    "peak": 261124096,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v4/FV_E2E_PreparedReturnPinProgram.lean.mem",
+    "peak": 256004096,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v4/FV_E2E_ReturnPinPipelineRetry.lean.mem",
+    "peak": 271613952,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-kernel-v4/FV_E2E_PreparedReturnPinCalls.lean.mem",
+    "peak": 268480512,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-candidate-audit-v1/audit.mem",
+    "peak": 263860224,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v2/FV_Backend_Lowering_StockResultCallRoutes.lean.mem",
+    "peak": 198905856,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v2/FV_Backend_VoidCallABIProduction.lean.mem",
+    "peak": 200052736,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v2/FV_E2E_SemanticChecksWith.lean.mem",
+    "peak": 239607808,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v2/FV_E2E_SemanticLinkGood.lean.mem",
+    "peak": 244617216,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v2/FV_E2E_SemanticStackBound.lean.mem",
+    "peak": 242155520,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v2/FV_Link_ReturnPinCompileDefs.lean.mem",
+    "peak": 247480320,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v2/FV_Backend_ReturnPinProduction.lean.mem",
+    "peak": 188600320,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v2/FV_E2E_BinaryBoundaryDefs.lean.mem",
+    "peak": 248328192,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v2/FV_E2E_ReturnPinChecksWith.lean.mem",
+    "peak": 254332928,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "contract-checks-baseline-audit-v1/audit.mem",
+    "peak": 261918720,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FV_Backend_ResultCallProduction.lean.mem",
+    "peak": 213536768,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FV_E2E_BinaryBoundaryFacts.lean.mem",
+    "peak": 289783808,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FV_E2E_ReturnPinChecksWith.lean.mem",
+    "peak": 264167424,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FV_E2E_SemanticStackBoundTS.lean.mem",
+    "peak": 270684160,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FVTest_E2E_SemanticLinkProofWith.lean.mem",
+    "peak": 243982336,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FV_E2E_SemanticBinary.lean.mem",
+    "peak": 269942784,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FV_E2E_TypedProductionChecks.lean.mem",
+    "peak": 264953856,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FVTest_Backend_Main.lean.mem",
+    "peak": 253222912,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FV_E2E_SemanticBinaryGood.lean.mem",
+    "peak": 245039104,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FV_E2E_SemanticBinaryTS.lean.mem",
+    "peak": 280207360,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FV_E2E_SemanticExecBytes.lean.mem",
+    "peak": 405475328,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FVTest_E2E_TypedLinkProofWith.lean.mem",
+    "peak": 274567168,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-adapter-kernel-v3/FV_E2E_ReturnPinBinary.lean.mem",
+    "peak": 275308544,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "admission-kernel-v1/FV_E2E_PreparedReturnPinCalls.lean.mem",
+    "peak": 242987008,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "admission-kernel-v1/FV_E2E_ReturnPinAdmission.lean.mem",
+    "peak": 244432896,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "admission-kernel-v2/FV_E2E_SemanticChecksWith.lean.mem",
+    "peak": 261394432,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "admission-kernel-v2/FV_E2E_ReturnPinChecksWith.lean.mem",
+    "peak": 265871360,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "admission-audit-v1/audit.mem",
+    "peak": 262676480,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v1/FV_E2E_PreparedReturnPinCalls.lean.mem",
+    "peak": 268980224,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v1/FV_E2E_ReturnPinAdmission.lean.mem",
+    "peak": 268124160,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v1/FV_E2E_ReturnPinBinaryKernel.lean.mem",
+    "peak": 272982016,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v2/FV_E2E_ReturnPinBinaryKernel.lean.mem",
+    "peak": 287244288,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v2/FV_E2E_ReturnPinBinary.lean.mem",
+    "peak": 257040384,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v3/FV_E2E_ReturnPinBinary.lean.mem",
+    "peak": 269971456,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-audit-v1/audit.mem",
+    "peak": 262774784,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v4/FV_E2E_ResultCallBinary.lean.mem",
+    "peak": 265048064,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-audit-v2/audit.mem",
+    "peak": 262660096,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v5/FV_E2E_ReturnPinAdmission.lean.mem",
+    "peak": 269479936,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v5/FV_E2E_ReturnPinBinaryKernel.lean.mem",
+    "peak": 270995456,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v5/FV_E2E_ResultCallBinary.lean.mem",
+    "peak": 236261376,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-v5/FV_E2E_ReturnPinBinary.lean.mem",
+    "peak": 245776384,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "binary-kernel-audit-v3/audit.mem",
+    "peak": 263696384,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v1/FV_E2E_SemanticExecBytes.lean.mem",
+    "peak": 1079595008,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v1/FV_E2E_SemanticExecFrameSim.lean.mem",
+    "peak": 257585152,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v1/FV_E2E_SemanticExecStatic.lean.mem",
+    "peak": 759824384,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v1/FV_E2E_SemanticExecRunN.lean.mem",
+    "peak": 281460736,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v1/FV_E2E_SemanticExecGoodRun.lean.mem",
+    "peak": 304496640,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v1/FV_E2E_SemanticExecGoodReads.lean.mem",
+    "peak": 283361280,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v1/FV_E2E_SemanticExecGot.lean.mem",
+    "peak": 337813504,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v1/FV_E2E_ReturnPinExecutableKernel.lean.mem",
+    "peak": 347975680,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v1/FV_E2E_ReturnPinExecStatic.lean.mem",
+    "peak": 258211840,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v2/FV_E2E_ReturnPinExecStatic.lean.mem",
+    "peak": 268402688,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v2/FV_E2E_ReturnPinExecGot.lean.mem",
+    "peak": 269189120,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v2/FV_E2E_ReturnPinExecProven.lean.mem",
+    "peak": 266276864,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-audit-v1/audit.mem",
+    "peak": 263024640,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-v3/FV_E2E_ResultCallExec.lean.mem",
+    "peak": 264445952,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "executable-kernel-audit-v2/audit.mem",
+    "peak": 262758400,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-kernel-v1/FV_Link_ReturnPinAttemptKernel.lean.mem",
+    "peak": 374562816,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-kernel-v1/FV_Link_ReturnPinCompileDefs.lean.mem",
+    "peak": 271552512,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-kernel-v1/FV_Link_ReturnPinCompilerKernel.lean.mem",
+    "peak": 282152960,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-kernel-v2/FV_Link_ReturnPinCompilerKernel.lean.mem",
+    "peak": 294191104,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-kernel-v2/FV_Link_ReturnPinExeWith.lean.mem",
+    "peak": 279965696,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-kernel-audit-v1/audit.mem",
+    "peak": 271020032,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-source-kernel-v1/FV_E2E_SemanticExecProven.lean.mem",
+    "peak": 268931072,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-source-kernel-v1/FV_Link_SemanticExeWith.lean.mem",
+    "peak": 286298112,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-source-kernel-v1/FV_Link_SemanticExeSourceWith.lean.mem",
+    "peak": 337330176,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-source-kernel-v1/FV_Link_ReturnPinCompilerSourceKernel.lean.mem",
+    "peak": 286236672,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-source-kernel-v1/FV_Link_ReturnPinExeSourceWith.lean.mem",
+    "peak": 275185664,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-source-kernel-v1/FV_Link_ResultCallExeWith.lean.mem",
+    "peak": 275972096,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "compiler-source-kernel-audit-v1/audit.mem",
+    "peak": 275177472,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v1/FV_E2E_ReturnPinAdmission.lean.mem",
+    "peak": 268926976,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v1/FV_E2E_SemanticChecksWith.lean.mem",
+    "peak": 259723264,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v1/FV_E2E_ReturnPinBinaryKernel.lean.mem",
+    "peak": 288407552,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v1/FV_E2E_ReturnPinChecksKernel.lean.mem",
+    "peak": 255635456,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v2/FV_E2E_ReturnPinBinary.lean.mem",
+    "peak": 269193216,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v2/FV_E2E_ReturnPinChecksKernel.lean.mem",
+    "peak": 267206656,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v2/FV_E2E_ReturnPinGeneratedStackKernel.lean.mem",
+    "peak": 262877184,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v2/FV_E2E_ResultCallGeneratedStack.lean.mem",
+    "peak": 260624384,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v2/FV_E2E_ReturnPinChecksWith.lean.mem",
+    "peak": 262578176,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v2/FV_E2E_ReturnPinGeneratedStack.lean.mem",
+    "peak": 261914624,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-kernel-v2/FV_E2E_ResultCallChecks.lean.mem",
+    "peak": 262066176,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FV_Backend_Lowering_StockResultCallWith.lean.mem",
+    "peak": 208564224,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FV_Backend_VoidCallABIProduction.lean.mem",
+    "peak": 225890304,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FV_E2E_SemanticStackBoundTS.lean.mem",
+    "peak": 305774592,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FVTest_E2E_ReturnPinLinkProofWith.lean.mem",
+    "peak": 281153536,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FVTest_E2E_SemanticLinkProofWith.lean.mem",
+    "peak": 253194240,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FV_Backend_Lowering_StockResultCallRoutes.lean.mem",
+    "peak": 209145856,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FV_Backend_ReturnPinProduction.lean.mem",
+    "peak": 212172800,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FV_E2E_SemanticBinaryTS.lean.mem",
+    "peak": 299479040,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FV_E2E_TypedProductionChecks.lean.mem",
+    "peak": 266686464,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FVTest_E2E_ResultCallLinkProofWith.lean.mem",
+    "peak": 261181440,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FV_Backend_ResultCallProduction.lean.mem",
+    "peak": 213975040,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FV_E2E_SemanticBinaryGoodTS.lean.mem",
+    "peak": 272003072,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FVTest_E2E_TypedLinkProofWith.lean.mem",
+    "peak": 273756160,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FV_E2E_SemanticExecTS.lean.mem",
+    "peak": 346980352,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FVTest_Backend_Main.lean.mem",
+    "peak": 286175232,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v1/FVTest_E2E_LinkCheckMain.lean.mem",
+    "peak": 260620288,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v2/FV_Link_SemanticCompileT.lean.mem",
+    "peak": 281124864,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v2/FVTest_E2E_LinkCheckMain.lean.mem",
+    "peak": 349028352,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v2/FV_Link_SemanticExeSourceT.lean.mem",
+    "peak": 292773888,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v2/FV_Link_TypedCompileModes.lean.mem",
+    "peak": 281202688,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v2/FV_Link_TypedCompileSourceModes.lean.mem",
+    "peak": 287944704,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "cli-consumer-kernel-v2/FVTest_Link_LeanLinkMain.lean.mem",
+    "peak": 448217088,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-consumer-audit-v1/audit.mem",
+    "peak": 263417856,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-support-kernel-v1/FV_Backend_Proof_StockDirectCallResultFixture.lean.mem",
+    "peak": 250593280,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Backend_Lowering_StockResultCallWith.lean.mem",
+    "peak": 208445440,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Backend_Proof_StockDirectCallResultFixture.lean.mem",
+    "peak": 248676352,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Backend_VoidCallABIProduction.lean.mem",
+    "peak": 220246016,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinAdmission.lean.mem",
+    "peak": 269529088,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_SemanticChecksWith.lean.mem",
+    "peak": 259756032,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_SemanticStackBoundTS.lean.mem",
+    "peak": 268992512,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Backend_Lowering_StockResultCallRoutes.lean.mem",
+    "peak": 210534400,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Backend_ReturnPinProduction.lean.mem",
+    "peak": 213065728,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinBinaryKernel.lean.mem",
+    "peak": 292335616,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinChecksKernel.lean.mem",
+    "peak": 267677696,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_SemanticBinaryTS.lean.mem",
+    "peak": 298409984,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_TypedProductionChecks.lean.mem",
+    "peak": 264994816,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_ReturnPinAttemptKernel.lean.mem",
+    "peak": 272379904,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FVTest_E2E_SemanticLinkProofWith.lean.mem",
+    "peak": 243879936,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Backend_ResultCallProduction.lean.mem",
+    "peak": 213721088,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinBinary.lean.mem",
+    "peak": 269185024,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinChecksWith.lean.mem",
+    "peak": 261894144,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinExecutableKernel.lean.mem",
+    "peak": 346828800,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinGeneratedStackKernel.lean.mem",
+    "peak": 261672960,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_SemanticBinaryGoodTS.lean.mem",
+    "peak": 272687104,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_ReturnPinCompileDefs.lean.mem",
+    "peak": 272662528,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FVTest_E2E_TypedLinkProofWith.lean.mem",
+    "peak": 274743296,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ResultCallChecks.lean.mem",
+    "peak": 261566464,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ResultCallGeneratedStack.lean.mem",
+    "peak": 259592192,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinExecStatic.lean.mem",
+    "peak": 269152256,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinGeneratedStack.lean.mem",
+    "peak": 262193152,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_SemanticExecTS.lean.mem",
+    "peak": 349736960,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_ReturnPinCompilerKernel.lean.mem",
+    "peak": 287490048,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FVTest_Backend_Main.lean.mem",
+    "peak": 260485120,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinExecGot.lean.mem",
+    "peak": 267288576,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_ReturnPinCompilerSourceKernel.lean.mem",
+    "peak": 286711808,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_SemanticCompileT.lean.mem",
+    "peak": 279658496,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FVTest_E2E_ReturnPinLinkProofWith.lean.mem",
+    "peak": 279883776,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_E2E_ReturnPinExecProven.lean.mem",
+    "peak": 266493952,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_SemanticExeSourceT.lean.mem",
+    "peak": 292745216,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_TypedCompileModes.lean.mem",
+    "peak": 280948736,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FVTest_E2E_ResultCallLinkProofWith.lean.mem",
+    "peak": 262119424,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_ReturnPinExeWith.lean.mem",
+    "peak": 280571904,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_TypedCompileSourceModes.lean.mem",
+    "peak": 288292864,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FVTest_E2E_LinkCheckMain.lean.mem",
+    "peak": 347238400,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_ReturnPinExeSourceWith.lean.mem",
+    "peak": 275189760,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FV_Link_ResultCallExeWith.lean.mem",
+    "peak": 276226048,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "coherent-consumer-kernel-v1/FVTest_Link_LeanLinkMain.lean.mem",
+    "peak": 349085696,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v1/prepare.mem",
+    "peak": 296366080,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v1/WorkerOResultCallPairRaw-backend.mem",
+    "peak": 265125888,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v1/WorkerOResultCallPairRaw-reflow.mem",
+    "peak": 183103488,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v2/WorkerOResultCallPairRaw-reflow.mem",
+    "peak": 265474048,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v3/WorkerOResultCallPairRaw-reflow.mem",
+    "peak": 265273344,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v4/WorkerOResultCallPairRaw-reflow.mem",
+    "peak": 286953472,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v4/WorkerOResultCallPairRaw-linker.mem",
+    "peak": 365494272,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v4/WorkerOResultCallPairRaw-checker.mem",
+    "peak": 348164096,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v4/WorkerOResultCallPairRaw-generated.mem",
+    "peak": 280457216,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-import-kernel-v1/FV_E2E_ResultCallBinary.lean.mem",
+    "peak": 264990720,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-import-kernel-v1/FV_E2E_ResultCallGeneratedStack.lean.mem",
+    "peak": 259866624,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-import-kernel-v1/FVTest_E2E_ResultCallLinkProofWith.lean.mem",
+    "peak": 261808128,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "generated-import-kernel-v1/FVTest_E2E_LinkCheckMain.lean.mem",
+    "peak": 345858048,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallPairRaw-generated.mem",
+    "peak": 288137216,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallPairRaw-audit.mem",
+    "peak": 260227072,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedRaw-backend.mem",
+    "peak": 264609792,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedRaw-reflow.mem",
+    "peak": 287678464,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedRaw-linker.mem",
+    "peak": 364638208,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedRaw-checker.mem",
+    "peak": 349773824,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedRaw-generated.mem",
+    "peak": 289890304,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedRaw-audit.mem",
+    "peak": 264355840,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallPairCleanup-backend.mem",
+    "peak": 264372224,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallPairCleanup-reflow.mem",
+    "peak": 289865728,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallPairCleanup-linker.mem",
+    "peak": 363888640,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallPairCleanup-checker.mem",
+    "peak": 347729920,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallPairCleanup-generated.mem",
+    "peak": 288108544,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallPairCleanup-audit.mem",
+    "peak": 259903488,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedCleanup-backend.mem",
+    "peak": 262467584,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedCleanup-reflow.mem",
+    "peak": 288927744,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedCleanup-linker.mem",
+    "peak": 369782784,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedCleanup-checker.mem",
+    "peak": 349065216,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedCleanup-generated.mem",
+    "peak": 293306368,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v5/WorkerOResultCallTypedCleanup-audit.mem",
+    "peak": 264187904,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-symbolic-exec-kernel-v1/FV_Backend_Proof_StockDirectCallResultFixture.lean.mem",
+    "peak": 249528320,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-symbolic-exec-kernel-v1/FV_E2E_StockResultCallProvider.lean.mem",
+    "peak": 236584960,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-symbolic-exec-kernel-v1/FV_Backend_Proof_StockDirectCallResultWitness.lean.mem",
+    "peak": 224100352,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-symbolic-exec-kernel-v1/FV_E2E_ResultCallProductionExec.lean.mem",
+    "peak": 329347072,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-symbolic-exec-kernel-v2/FV_E2E_ResultCallProductionExec.lean.mem",
+    "peak": 323383296,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-symbolic-exec-kernel-v3/FV_E2E_ResultCallProductionExec.lean.mem",
+    "peak": 329297920,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-symbolic-exec-kernel-v3/FV_E2E_StockResultCallWitness.lean.mem",
+    "peak": 271994880,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-symbolic-exec-kernel-v3/FV_E2E_ResultCallProductionSelection.lean.mem",
+    "peak": 295735296,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "production-complete-audit-v1/audit.mem",
+    "peak": 276574208,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "old-emitter-regression-v2/audit.mem",
+    "peak": 265551872,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/prepare.mem",
+    "peak": 290803712,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedRaw-backend.mem",
+    "peak": 262938624,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedRaw-reflow.mem",
+    "peak": 289734656,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedRaw-linker.mem",
+    "peak": 359817216,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedRaw-checker.mem",
+    "peak": 347598848,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedRaw-generated.mem",
+    "peak": 290037760,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedRaw-audit.mem",
+    "peak": 263860224,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedCleanup-backend.mem",
+    "peak": 263266304,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedCleanup-reflow.mem",
+    "peak": 288161792,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedCleanup-linker.mem",
+    "peak": 365129728,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedCleanup-checker.mem",
+    "peak": 346284032,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedCleanup-generated.mem",
+    "peak": 295587840,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v6/WorkerOResultCallTypedCleanup-audit.mem",
+    "peak": 264286208,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "mixed-callback-kernel-v1/FV_E2E_ResultCallProductionSelection.lean.mem",
+    "peak": 294252544,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "final-contract-audit-v1/audit.mem",
+    "peak": 274083840,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/prepare.mem",
+    "peak": 290324480,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairRaw-backend.mem",
+    "peak": 263327744,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairRaw-reflow.mem",
+    "peak": 287141888,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairRaw-linker.mem",
+    "peak": 367587328,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairRaw-checker.mem",
+    "peak": 346198016,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairRaw-generated.mem",
+    "peak": 285634560,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairRaw-audit.mem",
+    "peak": 260087808,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedRaw-backend.mem",
+    "peak": 263360512,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedRaw-reflow.mem",
+    "peak": 286781440,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedRaw-linker.mem",
+    "peak": 365330432,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedRaw-checker.mem",
+    "peak": 351543296,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedRaw-generated.mem",
+    "peak": 291983360,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedRaw-audit.mem",
+    "peak": 263380992,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairCleanup-backend.mem",
+    "peak": 263938048,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairCleanup-reflow.mem",
+    "peak": 288030720,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairCleanup-linker.mem",
+    "peak": 364658688,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairCleanup-checker.mem",
+    "peak": 348864512,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairCleanup-generated.mem",
+    "peak": 288206848,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallPairCleanup-audit.mem",
+    "peak": 260673536,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedCleanup-backend.mem",
+    "peak": 263626752,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedCleanup-reflow.mem",
+    "peak": 288456704,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedCleanup-linker.mem",
+    "peak": 366583808,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedCleanup-checker.mem",
+    "peak": 348897280,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedCleanup-generated.mem",
+    "peak": 291553280,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  {
+    "file": "actual-result-call-matrix-v7/WorkerOResultCallTypedCleanup-audit.mem",
+    "peak": 263815168,
+    "oom": 0,
+    "oom_kill": 0
+  }
+]

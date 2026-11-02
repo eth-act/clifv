@@ -1,0 +1,42 @@
+{
+  "status": "prepared_requires_coordinator_review",
+  "files": {
+    "snapshot-plan.json": "f1e640beefcdee8dd5a59d71ae30f89b7519674243c518902bab3dfb63c7aba3",
+    "accepted-identity-references.json": "2a9eb183ff06f8c89d8bc21adc05ed279cc3d5f2666b22db3d57064eb9df386d",
+    "required-axiom-references.json": "08612f50a47b68886d8eece85f99e13611c1efec967b845116b33fe96453acf6",
+    "known-not-runnable-and-rejections.json": "cff4b7bbfe90b66add3180a4efd457203a3df0dcce4b6d1b588b6d1ca852a66f",
+    "original-rejection-capture-availability.json": "cd9270160f2562a4b5ec5ff31eba5ba505ae5307b378656c81861203fcb0f7d2",
+    "preservation-and-reuse.json": "ca00984916c0cf0d624fc81a57c889e8e26eec4dc8a47fbf04a67d6e6c6075b5",
+    "fresh-full-gates.json": "28d84a465783a966bd8a3975d19b47ba0b503f2d7f5fa65221e4c85068175e34",
+    "next-direct-call-delivery-phase.json": "254aeda16834fb354dd8804234b0c7485bf722e69f11ca4fe9ca4b3a39a6eaf7",
+    "preflight.py": "70ca739e1bb714f35c42a5a000b9c2d892d6e0f30c302e8ca7f3765b01fa8dcf",
+    "materialize-missing.py": "e79e328b0217994cabc872fd8933444fc17718ce8308597ecabcb5377cb9ec98",
+    "run-phase.py": "12c80209a665b738450a004c8e13348f407ff9d802340d30d27adbed9ae91794",
+    "verify-identities.py": "9d24f6bb6712d454b4896b09cd15f13d2a7d0ffd9b834338301b47465f484fc9",
+    "verify-required-axioms.py": "e0359cb9c7d726d29174e09decb57c99c59df44698b925fad75bbf2a70878bda",
+    "preserve-originals.py": "2e16e4f51df47b05579c43eb4b61e99134aa79890dd1893e9ec0a2d577ad5551",
+    "run-binding-packet.py": "26f57f7fe19a995b4291f4b2e85c57157c1bb7d528da509b052bc9ee7bf5a99c",
+    "README.md": "00c67c58b83867af6c546aab704ef5377009ac3ff85552e5ecb45ebe15e31186",
+    "release-template.json": "fa5165fdfeb6348187568b160ee2f0e8fafbf6460a5871c42a720a66c9e82532",
+    "identity_checks.py": "e73083e1a3127f873c1786c53ee6946e7a82872d8851219fd35451f49e440766",
+    "check-compiled-preservation-harness.py": "06dc7898588e855645c22487c79dc4b3df96c57c301060bed40ce7359ceb64a4",
+    "compiled-preservation-harness-receipt.json": "b7e2a50f247fa678e49e31a592530287600bcb2f049eb87c7e6ef6acd508b960",
+    "stream_comparison.py": "6bb62fd9bd2d4bca02d64d6d034a3060c0a13960d868dbf442453a265f687cd8",
+    "compiled-preservation-harness-v2.mem": "5d5183ff6edae010a1ede90b1a85dd56f4cccc7a5a3665f918dee7009cc89c13",
+    "helpers/lake-serial-build-stopfirst.py": "b7eb9e4dc8070fc71356df7960bbeaf1b3731518ad16d662fb2982dae5e4b9a3",
+    "helpers/axiom-audit-j2.py": "4d88e178b5c286db4ef22b418119e753328cc8c46ec71b539c5d86ede75017ad",
+    "diagnostics/verify-identities-before-compiled-preservation-v4.py": "45af4ef61d3c9543e287f7f6c04031641209f6ff9585ba5a7c7237c30796219a",
+    "diagnostics/compiled-preservation-harness-before-streaming-v1.json": "d6c6f2f49e6923ca085ea7a239e41f02f20b8b7879119bb3bfe3016fdd67a71d",
+    "diagnostics/owner-guards-before-observer-handoff/preflight.py": "cdb9f6fc57b6d52768e005846ed1e3fa370ac5b6fbb6ce7c89b1b38c083aee80",
+    "diagnostics/owner-guards-before-observer-handoff/snapshot-plan.json": "0d6f4d39b89b1dfb537ff0e8d77068b1e2839bbe0fde0a78ea3d64ad032747a4",
+    "diagnostics/owner-guards-before-observer-handoff/release-template.json": "82c8a819f37c665eb26b5fc617ee9e7618e4e4f8429eb7e4f493f2c32f93bcb0"
+  },
+  "current_release_owners": [
+    456502,
+    326832
+  ],
+  "linked_real_normal_and_actual_consumer_receipts_required": true,
+  "compiled_preservation_harness": "passed1997 unchanged; rejects different\u2192unsupported withtuple preserved",
+  "no_Lean_builds_or_materialization": true,
+  "full_goal_complete": false
+}

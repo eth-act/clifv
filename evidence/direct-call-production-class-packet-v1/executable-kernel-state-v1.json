@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "one_parameterized_executable_implementation": true,
+  "generic_proof_roots": 30,
+  "result_call_wrapper_roots": 30,
+  "standard_only": true,
+  "old_public_headers_exact": 30,
+  "old_axiom_sets_exact": 30,
+  "old_axiom_baseline": "return-pin-consumer-isolated-kernel-v3/return-pin-executable-audit/return-pin-executable.log",
+  "source_hashes": {
+    "FV/E2E/ReturnPinExecutableKernel.lean": "e668d7fab0ef588933de144b1717e5838e9b74db3060db27ce1baed1f4453acb",
+    "FV/E2E/ReturnPinExecStatic.lean": "03a8b39c7b7b98079fa6ff2f43fb5ebabf946e130b676c1fb626c5999080161b",
+    "FV/E2E/ReturnPinExecGot.lean": "3c9cdf96d19ceafb623633687b7f2c6a0a18b63225ec2dc13b59796588342887",
+    "FV/E2E/ReturnPinExecProven.lean": "5206081573f2d4d82ba20e1eba17c47be8b36d567319a4a3805a5de12847ca38",
+    "FV/E2E/ResultCallExec.lean": "dbae276d65f7aadd18caef24c95615db807b95a9b524dd5e9a0ad5811faf121b"
+  },
+  "immutable_source_checkpoint": "reviewed-executable-kernel-v1/manifest.json",
+  "kernel_receipt": "executable-kernel-v3/result.json",
+  "audit_receipt": "executable-kernel-audit-v2/receipt.json",
+  "peak_bytes": 1079595008,
+  "all_oom_zero": true,
+  "current_main_validation": false,
+  "production_actual_execution": false,
+  "next": "Parameterized compiler/source wrappers, then actual default-selection and complete linked execution matrix in both modes",
+  "utc": "2026-11-02T11:40:02.513068+00:00"
+}

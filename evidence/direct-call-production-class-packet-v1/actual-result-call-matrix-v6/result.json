@@ -1,0 +1,253 @@
+{
+  "status": "passed",
+  "cases": [
+    {
+      "typed": true,
+      "module": "WorkerOResultCallTypedRaw",
+      "input": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw/input.clif",
+      "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw/program.elf",
+      "entries": [
+        "stock_source_call_result",
+        "stock_source_identity",
+        "float_leaf"
+      ],
+      "dir": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw",
+      "cleanup": false
+    },
+    {
+      "typed": true,
+      "module": "WorkerOResultCallTypedCleanup",
+      "input": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup/input.clif",
+      "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup/program.elf",
+      "entries": [
+        "stock_source_call_result",
+        "stock_source_identity",
+        "float_leaf"
+      ],
+      "dir": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup",
+      "cleanup": true
+    }
+  ],
+  "current_main_validation": false,
+  "full_goal_complete": false,
+  "all_three_clis": true,
+  "commands": {
+    "prepare": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/PrepareResultCallBundlesV2.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles"
+      ],
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "WorkerOResultCallTypedRaw-backend": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/FVTest/Backend/Main.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw/input.clif",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw/actual.o",
+        "--regalloc",
+        "lean",
+        "--dump",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw/actual-dump",
+        "--no-dead-cleanup"
+      ],
+      "log_sha256": "f95179d562b6fca75de7111cf2f14e00ca476ffd07ec8bbbfc202a48e1d8be7f"
+    },
+    "WorkerOResultCallTypedRaw-reflow": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/ReflowResultCallBundleV4.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw",
+        "false"
+      ],
+      "log_sha256": "7ce8eefe1dfed7460b2907769eed22546c666875d9c088548eaf52ec557889af"
+    },
+    "WorkerOResultCallTypedRaw-linker": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/FVTest/Link/LeanLinkMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw",
+        "--no-dead-cleanup"
+      ],
+      "log_sha256": "7f89045349ffd1d7fe06b0ffa8e0fc002592b2f634b2535e48c919b42647f64e"
+    },
+    "WorkerOResultCallTypedRaw-checker": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/FVTest/E2E/LinkCheckMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedRaw",
+        "--no-dead-cleanup",
+        "--lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/Crates/WorkerOResultCallTypedRaw.lean",
+        "--module",
+        "WorkerOResultCallTypedRaw"
+      ],
+      "log_sha256": "df1fa000a307c2cd7214a2c7e56adacbe59433255070585ff660462f6c23b88d"
+    },
+    "WorkerOResultCallTypedRaw-generated": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/Crates/WorkerOResultCallTypedRaw.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOResultCallTypedRaw.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOResultCallTypedRaw.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOResultCallTypedRaw.c"
+      ],
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "WorkerOResultCallTypedRaw-audit": {
+      "exit_code": 0,
+      "command": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/axiom-audit-j1.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/WorkerOResultCallTypedRaw-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/WorkerOResultCallTypedRaw-audit.lean"
+      ],
+      "log_sha256": "55dd2076fa8817bbca42563f48ec7d3e1f4471b41068646a86d6c96bb18626ae"
+    },
+    "WorkerOResultCallTypedCleanup-backend": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/FVTest/Backend/Main.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup/input.clif",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup/actual.o",
+        "--regalloc",
+        "lean",
+        "--dump",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup/actual-dump",
+        "--dead-cleanup"
+      ],
+      "log_sha256": "f95179d562b6fca75de7111cf2f14e00ca476ffd07ec8bbbfc202a48e1d8be7f"
+    },
+    "WorkerOResultCallTypedCleanup-reflow": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/ReflowResultCallBundleV4.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup",
+        "true"
+      ],
+      "log_sha256": "7ce8eefe1dfed7460b2907769eed22546c666875d9c088548eaf52ec557889af"
+    },
+    "WorkerOResultCallTypedCleanup-linker": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/FVTest/Link/LeanLinkMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup",
+        "--dead-cleanup"
+      ],
+      "log_sha256": "a0d831b2a7295d28d48ff21e5874be82a6487552906048213dc303c529934033"
+    },
+    "WorkerOResultCallTypedCleanup-checker": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/FVTest/E2E/LinkCheckMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/WorkerOResultCallTypedCleanup",
+        "--dead-cleanup",
+        "--lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/Crates/WorkerOResultCallTypedCleanup.lean",
+        "--module",
+        "WorkerOResultCallTypedCleanup"
+      ],
+      "log_sha256": "e46334220662872df1f2a306c06bb5975f483a28e08ee0e2a83df1279acf7ad4"
+    },
+    "WorkerOResultCallTypedCleanup-generated": {
+      "exit_code": 0,
+      "command": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/bundles/Crates/WorkerOResultCallTypedCleanup.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOResultCallTypedCleanup.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOResultCallTypedCleanup.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOResultCallTypedCleanup.c"
+      ],
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "WorkerOResultCallTypedCleanup-audit": {
+      "exit_code": 0,
+      "command": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/axiom-audit-j1.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/WorkerOResultCallTypedCleanup-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/actual-result-call-matrix-v6/WorkerOResultCallTypedCleanup-audit.lean"
+      ],
+      "log_sha256": "dc74a2a8c100d49a5cc4b7905e62649799b8edd85fd3adb0267ae2ddbb621df8"
+    }
+  },
+  "utc": "2026-11-02T12:20:35.710648+00:00"
+}

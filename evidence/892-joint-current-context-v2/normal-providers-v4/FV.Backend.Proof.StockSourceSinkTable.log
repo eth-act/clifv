@@ -203,3 +203,5 @@ warning: FV/Backend/Proof/RegallocOperands.lean:438:74: `if_false` has been depr
 warning: FV/Backend/Proof/RegallocOperands.lean:440:23: `if_true` has been deprecated: Use `ite_true` instead
 warning: FV/Backend/Proof/RegallocOperands.lean:457:27: `if_true` has been deprecated: Use `ite_true` instead
 warning: FV/Backend/Proof/RegallocOperands.lean:458:27: `if_false` has been deprecated: Use `ite_false` instead
+✔ [137/137] Built FV.Backend.Proof.StockSourceSinkTable (107s)
+Build completed successfully (137 jobs).

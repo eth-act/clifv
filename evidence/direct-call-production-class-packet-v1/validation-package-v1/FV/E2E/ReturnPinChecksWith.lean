@@ -1,3 +1,4 @@
+import FV.E2E.ReturnPinChecksKernel
 import FV.E2E.PreparedReturnPinCalls
 import FV.E2E.SemanticChecksWith
 
@@ -19,33 +20,28 @@ theorem fnsBProduction_append (lower : ProductionLowering) (I : LinkInput) (clea
     (a b : List FnInput) :
     fnsBProduction lower I cleanup (a ++ b) =
       (fnsBProduction lower I cleanup a && fnsBProduction lower I cleanup b) := by
-  simp only [fnsBProduction,List.all_append]
+  apply E2E.ReturnPinChecksFor.fnsBProduction_append (admission := E2E.LinkCheck.ReturnPinAdmission.previous) <;> assumption
 
 /-- Sliced checks and the whole-program ABI checker have exactly the same success condition. -/
 theorem checks_iff (lower : ProductionLowering) (I : LinkInput) (cleanup : Bool) :
     okRReturnPinCalls (productionStage cleanup) I (I.resultsProductionWith lower cleanup) = true ↔
       E2E.SemanticChecksWith.globalBProduction lower I cleanup = true ∧
       fnsBProduction lower I cleanup I.funcs = true := by
-  simp only [okRReturnPinCalls, okRSemanticFor,
-    E2E.SemanticChecksWith.globalBProduction, fnsBProduction, returnPinsWith_of,
-    returnPinChecks, progOf, LinkInput.resultsProductionWith, List.map_map,
-    List.all_map, Function.comp_def, Bool.and_eq_true, List.all_eq_true,
-    forall_and, and_assoc]
+  apply E2E.ReturnPinChecksFor.checks_iff (admission := E2E.LinkCheck.ReturnPinAdmission.previous) <;> assumption
 
 theorem okRProduction_of_checks {lower : ProductionLowering} {I : LinkInput} {cleanup : Bool}
     (global : E2E.SemanticChecksWith.globalBProduction lower I cleanup = true)
     (functions : fnsBProduction lower I cleanup I.funcs = true) :
-    okRReturnPinCalls (productionStage cleanup) I (I.resultsProductionWith lower cleanup) = true :=
-  (checks_iff lower I cleanup).mpr ⟨global,functions⟩
+    okRReturnPinCalls (productionStage cleanup) I (I.resultsProductionWith lower cleanup) = true := by
+  apply E2E.ReturnPinChecksFor.okRProduction_of_checks (admission := E2E.LinkCheck.ReturnPinAdmission.previous) <;> assumption
 
 def CrateStmtProduction (lower : ProductionLowering) (I : LinkInput) (cleanup : Bool)
     (name : String) : Prop := CrateStmtReturnPins I (I.resultsProductionWith lower cleanup) name
 
 theorem crate_correct_production (lower : ProductionLowering) (I : LinkInput) (cleanup : Bool)
     (checked : okRReturnPinCalls (productionStage cleanup) I (I.resultsProductionWith lower cleanup) = true)
-    (name : String) : CrateStmtProduction lower I cleanup name :=
-  preparedReturnPinCalls_correct (productionStage cleanup) (productionStage_cases cleanup)
-    (I.resultsProductionWith_prepared lower cleanup) checked name
+    (name : String) : CrateStmtProduction lower I cleanup name := by
+  apply E2E.ReturnPinChecksFor.crate_correct_production (admission := E2E.LinkCheck.ReturnPinAdmission.previous) <;> assumption
 
 /-- The new generated checker accepts every complete program accepted by its predecessor. -/
 theorem accepts_previous (lower : ProductionLowering) (I : LinkInput) (cleanup : Bool)
