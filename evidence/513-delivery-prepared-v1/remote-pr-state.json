@@ -1,0 +1,12 @@
+{
+  "513": {
+    "headRefName": "agent/stock-outcome-interface-20261022",
+    "headRefOid": "5aae55c32030e3e9f15ab6515a2cccf268751646",
+    "state": "OPEN"
+  },
+  "892": {
+    "headRefOid": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+    "mergeCommit": null,
+    "state": "OPEN"
+  }
+}

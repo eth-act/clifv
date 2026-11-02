@@ -1,0 +1,144 @@
+{
+  "boundary": "currentmain3a6719b4 plus prospective892head90c51c88",
+  "items": [
+    {
+      "obligation": "Final aliases, reserved values, fresh-register noninterference",
+      "reuse": [
+        "FV/Backend/Proof/StockSourceAliasRecords.lean:stock_lower_final_source_chain_noCycle",
+        "FV/Backend/Proof/StockRecordFinalAlias.lean:stock_lower_record_finalAliasEntry",
+        "FV/Backend/Proof/StockFreshRecordValues.lean:stock_lower_record_fresh_result",
+        "FV/Backend/Proof/StockAliasSemantics.lean:ValuesHeld.resolvedResult_frame",
+        "FV/Backend/Proof/StockPayloadAliasOrigins.lean:stock_lower_payload_value",
+        "FV/Backend/Proof/StockCoverageDriver.lean:lower_noOpportunity",
+        "FV/Backend/Proof/StockCoverageDriver.lean:lower_records_noOpportunity"
+      ],
+      "established": "Actual final source paths decrease a rank; retained source aliases and single fresh results have construction proofs. Frame/value transport lemmas exist. Whole-driver empty remembered state and record-endpoint emptiness already follow from LowerScope; do not rebuild this proof.",
+      "remaining": "Derive value production and the needed-register write exclusions through every actual selected effect/call/terminator record. Already-held value transport and alias termination alone do not establish execution values.",
+      "status": "partial; retain existing proofs"
+    },
+    {
+      "obligation": "All original selected families and excluded roots",
+      "reuse": [
+        "FV/Backend/Proof/StockScopeRoots.lean:stock_excluded_root_match",
+        "FV/Backend/Proof/StockScopeRoots.lean:stock_selected_source_root_closure",
+        "FV/Backend/Proof/StockFloatCheckDomain.lean:buildCtx_functionE_domain",
+        "FV/Backend/Proof/StockAddSubAllValues.lean:stock_lower_addsub_available_values",
+        "FV/Backend/Proof/StockLogicalCompleteValues.lean:record_source_from_step"
+      ],
+      "established": "Current mapped integer-scope exclusions and many scalar dispatch/value/body/source domains already exist. Landed767 supplies production selection witnesses.",
+      "remaining": "Audit every ledger row against actual selection, effects, source transfer, composition, witnesses and Stock-only completeness. Result-bearing calls, indirect/GOT/TLS, atomics and general addressing require actual class/whole-driver coverage, not root inventory credit.",
+      "status": "partial; no full517-row completion claim"
+    },
+    {
+      "obligation": "Memory effects, sinking, omissions, first trap",
+      "reuse": [
+        "FV/Backend/Proof/StockScanSemantics.lean:ScansSpec.fall_refines",
+        "FV/Backend/Proof/StockScanTrapSemantics.lean:ScansSpec.local_trap_refines",
+        "FV/Backend/Proof/StockBodyScanRefines.lean:stock_lower_select_omitted_body_fall_refines",
+        "FV/Backend/Proof/StockProtectedSinkScan.lean:scan_block_protected_slot",
+        "FV/Backend/Proof/IselAtomic.lean:atomic_rmw_loop_ok",
+        "FV/Backend/Proof/IselAtomic.lean:atomic_cas_loop_ok"
+      ],
+      "established": "Generic fall-through and first-trap composition exists. Concrete load/store classes and protected sink facts exist. Kev already proves baseline atomic helpers.",
+      "remaining": "Discharge local normal/trap obligations and deferred-effect invariants for arbitrary source mixtures. Preserve writes before the first trap and suppress later effects. Lift atomic/TLS/address helpers through actual Stock state and retained records.",
+      "status": "partial; generic local obligations remain internal proof work"
+    },
+    {
+      "obligation": "Source/block/node/whole-driver simulation",
+      "reuse": [
+        "FV/Backend/Proof/StockScalarContract.lean:Domain",
+        "FV/Backend/Proof/StockScalarDomainAt.lean:DomainAt",
+        "FV/Backend/Proof/StockScalarCodeDomain.lean:CodeDomain",
+        "FV/Backend/Proof/StockScalarCodeDomain.lean:DomainAt.code",
+        "FV/Backend/Proof/LowerSim.lean:driver_correct",
+        "FV/Backend/Proof/LowerSimUAbi.lean:driver_correctU_abi"
+      ],
+      "established": "Universal source contracts exist as composition interfaces. Several scalar/memory/CFG source classes derive them. Legacy DriverHyp and unwind simulation exist.",
+      "remaining": "Derive those contracts from the original input conditions for every Stock source, including all block/node transitions. Domain fields cannot be treated as an extra accepted-input premise. No universal Stock whole-driver theorem was established by this inspection.",
+      "status": "class-wise established; full original domain remains open"
+    },
+    {
+      "obligation": "Control flow, successor arguments, critical edges, tables and loops",
+      "reuse": [
+        "FV/Backend/Proof/StockParameterArgsDomain.lean:domainAt_of_args_parameter_leaf_cfg",
+        "FV/Backend/Proof/StockConditionalArgsDomain.lean",
+        "FV/Backend/Proof/PerEdgePrepareSound.lean:prep_sound",
+        "FV/Backend/Proof/LowerLoopSim.lean:blockStep",
+        "FV/Backend/Lowering/StockParameterArgsCfgNI.lean:lowerRoutes"
+      ],
+      "established": "Ranked parameter CFG and per-successor contracts exist. Raw route22 exists. Original-order and family premises delimit existing classes.",
+      "remaining": "A owns pending884/885/886 critical-edge extensions, CodeDomain consumers and later loops. Route22 is not in892 default provider chain. General loop/table induction and complete argument-carrying joins still require Stock source semantics and completeness.",
+      "status": "partial; coordinate with A; do not duplicate"
+    },
+    {
+      "obligation": "Calls, all original ABIs, stack arguments, exceptions and unwind",
+      "reuse": [
+        "FV/Backend/StockVoidCallCheck.lean:sourceData?",
+        "FV/Backend/StockVoidCallCheck.lean:sourceB",
+        "FV/E2E/StockVoidCallDomain.lean:source_return_call",
+        "FV/Backend/Proof/StockMemorySretCopyDomain.lean:CfgClass.domainABI",
+        "FV/E2E/SretCopyCapturedExec.lean:captured_exec_bytes",
+        "FV/Backend/Proof/IselCtlCallInd.lean",
+        "FV/Backend/Proof/LowerSimUAbi.lean:driver_correctU_abi"
+      ],
+      "established": "A complete symbolic sret caller/callee execution exists in both stages. The checked ordinary call class is one direct call with empty source result lists, empty returns and at most eight argument entries. Generic program/binary call composition already exists.",
+      "remaining": "Close nonempty call-result binding and consumption, mixed live values/effects across calls, broader caller CFGs, stack-passed arguments, indirect/GOT calls, exception payloads and unwinding through actual Stock records. Preserve normal and exceptional old variants.",
+      "status": "specific call/sret classes established; general call completeness open"
+    },
+    {
+      "obligation": "Stock-only lowering and admission completeness",
+      "reuse": [
+        "FV/Backend/Proof/IselPrgDriver.lean:lowerFunction_ok_input",
+        "FV/Backend/Proof/StockPrgContext.lean:stock_pinv",
+        "FV/Backend/Proof/StockPrgContext.lean:stock_stmtProg",
+        "FV/Backend/Proof/StockScalarLowerOk.lean:stock_lower_scalar_ok",
+        "FV/Backend/Proof/StockTrapProgress.lean:stock_lower_trap_ok"
+      ],
+      "established": "Baseline input-only totality exists. Stock progress and full lowering success exist for the scalar classifier; trap progress also exists.",
+      "remaining": "Generalize from classifier/quiet scans to every original in-scope Stock source and prove all required ABI/admission/preparation/allocation/emission checks complete. ScalarLowerOk explicitly leaves ABI read checking separate. Fallback acceptance is not Stock-only completeness.",
+      "status": "scalar lowering totality exists; general completeness and admission remain open"
+    },
+    {
+      "obligation": "Compiler/checker/linker/generated-proof production cutover and totality",
+      "reuse": [
+        "FV/Backend/ReturnPinProduction.lean:returnPinModeB (892)",
+        "FV/Backend/ReturnPinProduction.lean:compileFileReturnPinWhen (892)",
+        "FV/Link/ReturnPinCompileDefs.lean:compileWithFallback",
+        "FV/Link/ReturnPinExeWith.lean:attempt_correct_depth",
+        "FV/Link/TypedCompileModes.lean:attempt_correct (892)",
+        "FV/Link/TypedCompileModes.lean:attempt_correct_peak (892)",
+        "FV/Link/TypedCompileSourceModes.lean (892)",
+        "FV/E2E/TypedLegacyBinding.lean:LinkInput.production_legacy_binding (892)"
+      ],
+      "established": "Landed887\u2013891 provide binary/executable/source/generated adapters. Published892 provides default admission/fallback and typed raw/cleanup correctness for successful attempts, with actual fixed witnesses and CLI/generated cases.",
+      "remaining": "892 is prospective at inspection. Prove input-only success/completeness of actual Stock attempts and their derived checks, then expand all remaining classes through all consumers. Maintain opt,pipelineT,typed,unverified,stock-config,tail-call and unwind behavior.",
+      "status": "scoped prospective activation; successful-attempt correctness is not totality"
+    },
+    {
+      "obligation": "Full validation, agreement and preserved inputs/guarantees",
+      "reuse": [
+        "E/513-shared-gate-queue-v2/fresh-full-gates.json",
+        "E/513-shared-gate-queue-v2/accepted-identity-references.json",
+        "E/513-shared-gate-queue-v2/required-axiom-references.json",
+        "E/current-agreement-888-ci-v1.json"
+      ],
+      "established": "Some per-PR/focused/isolated gates pass. The protected broader snapshot is older than currentmain and892. Prior filetest agreement is1633/4455; prior E2E identities are1159per mode.",
+      "remaining": "Execute the shared current-head normal/tool/crate/audit suite, retained runtime matrices, original filetests/encoder/unwind, actual final CLI/generated proofs, both cleanup E2E identity/stage parity, full production/raw Stock filetest measurements and real crate byte parity. Preserve all old exact AX sets,1302file hashes,4501stage identities and all accepted tuples.",
+      "status": "mandatory; green comparisonCI/build counts are not full execution"
+    }
+  ],
+  "unknowns": [
+    "No exhaustive517-root theorem-by-theorem current ledger audit occurred.",
+    "No source-scope completeness proof exists in this evidence for the full Stock driver. This inspection does not prove global theorem absence.",
+    "The #843 ready source-aware-stage migration remains pending and can change exact import keys and consumers.",
+    "The exact remaining captured-function denominator must come from the original preserved input inventory, not current admitted fixture count."
+  ],
+  "no_builds": true,
+  "no_source_changes": true,
+  "no_pr_review_or_publication": true,
+  "utc": "2026-11-02T08:11:26.167771+00:00",
+  "scope_boundary": {
+    "integer_scope": "Compile.functionE/LowerScope restricts to i8\u2013i64 and excludes floats/i128, vector roots and return_call. Existing StockFloatCheckDomain and StockScopeRoots justify current exclusions. Do not invent outside-scope implementation obligations or weaken existing typed/tail/unwind guarantees.",
+    "existing_extended_variants": "Preserve the already accepted typed/opt/tail/unwind variants under their actual original scopes; ordinary integer-only scope exclusions do not discharge those variant guarantees."
+  }
+}

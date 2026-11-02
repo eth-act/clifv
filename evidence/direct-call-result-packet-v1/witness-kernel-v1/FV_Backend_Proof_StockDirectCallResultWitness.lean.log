@@ -1,0 +1,22 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/validation-package-v1/FV/Backend/Proof/StockDirectCallResultWitness.lean:36:4: error(lean.synthInstanceFailed): failed to synthesize instance of type class
+  Decidable (?m.37 ∈ block.insts.toList)
+
+Hint: Type class instance resolution failures can be inspected with the `set_option trace.Meta.synthInstance true` command.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/validation-package-v1/FV/Backend/Proof/StockDirectCallResultWitness.lean:40:93: error: Tactic `native_decide` failed: Could not evaluate decidable instance. Error: cannot evaluate code because 'Backend.Stock.Proof.DirectCallResultWitness.checked' uses 'sorry' and/or contains errors
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/validation-package-v1/FV/Backend/Proof/StockDirectCallResultWitness.lean:51:12: error: `simp` made no progress
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/validation-package-v1/FV/Backend/Proof/StockDirectCallResultWitness.lean:53:4: error: `simp` made no progress
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/validation-package-v1/FV/Backend/Proof/StockDirectCallResultWitness.lean:48:21: warning: This simp argument is unused:
+  Bool.and_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [checked, decide_eq_true_eq] at good
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/validation-package-v1/FV/Backend/Proof/StockDirectCallResultWitness.lean:48:38: warning: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [checked, Bool.and_eq_true] at good
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/validation-package-v1/FV/Backend/Proof/StockDirectCallResultWitness.lean:48:13: warning: declaration uses `sorry`

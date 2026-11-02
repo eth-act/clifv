@@ -46,6 +46,7 @@ overlap={p:{'prior':activation_files[p],'replacement':typed_files[p]} for p in s
 assert set(overlap)=={'FVTest/E2E/LinkCheckMain.lean'},('Unreviewed packet overlap',set(overlap))
 combined_files=activation_files|typed_files
 extension=None
+final_manifest=None
 if cli.extension_binding:
     extension=json.loads(cli.extension_binding.read_text())
     assert extension['status']=='final-source-binding'
@@ -56,6 +57,17 @@ if cli.extension_binding:
         if name in combined_files:
             assert extension['overrides'][name]['prior_sha256']==combined_files[name]['sha256']
         combined_files[name]=item
+    # The final delivery inventory is authoritative. Never retain draft sources in the executable queue.
+    final_path=E/'return-pin-production-delivery-packet-v1.json'
+    final_manifest=json.loads(final_path.read_text())
+    assert set(final_manifest['files'])==set(combined_files)
+    final_sources={}
+    for name,digest in final_manifest['files'].items():
+        assert combined_files[name]['sha256']==digest
+        source=E/'return-pin-production-delivery-packet-v1'/name
+        assert hashlib.sha256(source.read_bytes()).hexdigest()==digest
+        final_sources[name]={'owner':'final production PR892','path':str(source),'sha256':digest}
+    combined_files=final_sources
 
 def overlay(tree,files):
     fd,index=tempfile.mkstemp(prefix='owned-index-',dir=OUT)
@@ -112,7 +124,8 @@ focused=json.loads((RECOVERY/'focused-context-v1.json').read_text())
 focused_paths={p:d for v in focused['focused_targets'].values() for p,d in v['sources'].items()}
 focused_reusable=all(fullblobs.get(p)==d['candidate_blob'] for p,d in focused_paths.items())
 assert focused_reusable,'Previously passed focused context changed'
-snapshot={'owner':'worker-O execution coordinator','base':BASE,'pr513_tree':TREE513,'activation_without513_tree':ACT_TREE,'combined_tree':TREE,'frozen_source':FROZEN,'activation_sources':activation_files,'typed_sources':typed_files,'extension_sources':extension['source_files'] if extension else {},'required_extension':{'packet':'typed-compiler-modes-packet-v1','status':'bound' if extension else 'pending final manifest; no draft source hashes selected','binding':extension},'intentional_overlaps':overlap,'all_source_blobs':fullblobs,'all_modules':all_modules,'all_audits':audits,'all_crate_sources':crates,'executables':exes,'affected513':sorted(affected513),'affected_activation':sorted(affected_activation),'shared_affected':sorted(affected513&affected_activation),'frozen_source_closure_equal_modules':sorted(module_closure_equal),'focused_pass_reusable_by_exact_source_context':True,'focused_receipt':str(RECOVERY/'focused-current-main-state-v1.json'),'focused_paths':focused_paths,'resource_cap':'12GiB sequential gates; LEAN/OMP/CARGO threads2; aggregate O cap16GiB','no_builds':True,'materialized_snapshot':False,'full_goal_complete':False}
+production_changed=git('diff','--name-only',BASE,ACT_TREE).decode().splitlines()
+snapshot={'owner':'worker-O execution coordinator','base':BASE,'pr513_tree':TREE513,'activation_without513_tree':ACT_TREE,'combined_tree':TREE,'frozen_source':FROZEN,'activation_sources':combined_files if extension else activation_files,'typed_sources':{} if extension else typed_files,'extension_sources':{},'final_production_manifest':str(E/'return-pin-production-delivery-packet-v1.json') if extension else None,'final_production_manifest_sha256':hashlib.sha256((E/'return-pin-production-delivery-packet-v1.json').read_bytes()).hexdigest() if extension else None,'production_already_on_base':not production_changed,'production_changed_paths':production_changed,'required_extension':{'packet':'typed-compiler-modes-packet-v1','status':'bound' if extension else 'pending final manifest; no draft source hashes selected','binding':extension},'intentional_overlaps':overlap,'all_source_blobs':fullblobs,'all_modules':all_modules,'all_audits':audits,'all_crate_sources':crates,'executables':exes,'affected513':sorted(affected513),'affected_activation':sorted(affected_activation),'shared_affected':sorted(affected513&affected_activation),'frozen_source_closure_equal_modules':sorted(module_closure_equal),'focused_pass_reusable_by_exact_source_context':True,'focused_receipt':str(RECOVERY/'focused-current-main-state-v1.json'),'focused_paths':focused_paths,'resource_cap':'12GiB sequential gates; LEAN/OMP/CARGO threads2; aggregate O cap16GiB','no_builds':True,'materialized_snapshot':False,'full_goal_complete':False}
 save('snapshot-plan.json',snapshot)
 accept=json.loads((SCRIPT_DIR/'source-overlap-acceptance-v1.json').read_text())
 assert accept['prior_sha256']==overlap['FVTest/E2E/LinkCheckMain.lean']['prior']['sha256']
@@ -125,4 +138,5 @@ save('fresh-full-gates.json',{'normal_libraries':['FV','FVTest','Corpus'],'all_m
 if OUT!=SCRIPT_DIR:
     for name in ['preflight.py','run-phase.py','compare-axioms.py']:
         shutil.copyfile(SCRIPT_DIR/name,OUT/name)
+save('per-pr-bindings.json',{'513':{'original_head':'5aae55c32030e3e9f15ab6515a2cccf268751646','planned_tree':TREE513,'status':'unpublished reconciled source; separate direct review/CI/tree receipts required'},'892':{'published_head_prefix':'90c51c88','planned_tree_without513':ACT_TREE,'already_on_current_main':not production_changed,'production_changed_paths':production_changed,'source_manifest':str(E/'return-pin-production-delivery-packet-v1.json') if extension else None},'integration':{'combined_tree':TREE,'status':'queued full-goal integration evidence, not a per-PR tested-tree receipt'},'required_per_pr':['exact import-source context','direct peer review OR all per-PR tests','exact-head CI','tested/merged tree equality'],'independent_eligible_delivery_must_not_wait_for_union_build':True})
 print(json.dumps({'base':BASE,'combined_tree':TREE,'project_modules':len(all_modules),'audits':len(audits),'crate_sources':len(crates),'executables':len(exes),'affected513':len(affected513),'affected_activation':len(affected_activation),'shared_affected':len(affected513&affected_activation),'frozen_source_equal_closures':len(module_closure_equal),'focused_receipt_reusable':focused_reusable,'no_builds':True}))

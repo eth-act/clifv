@@ -1,0 +1,16 @@
+{
+  "status": "ready_for_coordinator_review",
+  "manifest": "direct-call-result-packet-v1.json",
+  "body": "direct-call-result-packet-v1/PR-body-v1.md",
+  "new_files": [
+    "FV/Backend/Proof/StockDirectCallResult.lean",
+    "FV/Backend/Proof/StockDirectCallResultWitness.lean",
+    "FV/Backend/Proof/StockDirectCallResultFixture.lean",
+    "scripts/audit/stock-direct-call-result.lean",
+    "scripts/audit/stock-direct-call-result-witness.lean"
+  ],
+  "shared_files": [],
+  "current_main_validation_required": true,
+  "publish_authority": "coordinator only",
+  "full_goal_complete": false
+}

@@ -1,0 +1,13 @@
+{
+  "module": "FV.Backend.Proof.StockProtectedSinkScanWitness",
+  "unit": "fvb-1849857-121-FV.Backend.Proof.StockProtectedSinkScanWitness",
+  "cap_bytes": 6442450944,
+  "returncode": 1,
+  "seconds": 15.039180755615234,
+  "module_source_sha256": "eecb18b1b34d78bae010429daf85599728960076bdd0043f41f98de0790ffa69",
+  "artifacts": {
+    "FV.Backend.Proof.StockProtectedSinkScanWitness.log": "35b5036912df627c1b1b4bb6ee1fdc7ee0632f8a433d7e8b4b8fd417b179a37c",
+    "FV.Backend.Proof.StockProtectedSinkScanWitness.mem": "7cfb33758ba7429ef5c329bbbbcb8e5e3695f0a47bd76196c67fb727a6e0f788",
+    "FV.Backend.Proof.StockProtectedSinkScanWitness.time": "b57f05c2960a156cca6d4a85c8f2dad358f03c86fe871dd01803e0b1aa74a2a5"
+  }
+}

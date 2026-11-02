@@ -167,3 +167,5 @@ warning: FV/Backend/Proof/StockCoverageCtor.lean:284:6: `if_neg` has been deprec
 warning: FV/Backend/Proof/StockCoverageCtor.lean:284:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
 warning: FV/Backend/Proof/StockCoverageCtor.lean:513:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
 warning: FV/Backend/Proof/StockCoverageCtor.lean:516:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [434/434] Built FV.Backend.Proof.StockMemoryExtLoadGuardedWitness (931ms)
+Build completed successfully (434 jobs).

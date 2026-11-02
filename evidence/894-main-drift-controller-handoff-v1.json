@@ -1,0 +1,30 @@
+{
+  "reason": "Main changed294 import sources; old publication preconditions are stale. Stop only waiting publication controllers before source reconciliation. Healthy compiler/proof owners remain untouched.",
+  "stopped": [
+    {
+      "pid": 2979547,
+      "label": "merge-independent-packet-delivery-v1.py",
+      "owner": {
+        "pid": 2979547,
+        "label": "merge-independent-packet-delivery-v1.py",
+        "pr": 892,
+        "head": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+        "utc": "2026-11-02T07:33:45.086571+00:00"
+      }
+    },
+    {
+      "pid": 3052423,
+      "label": "reconcile-513-after-production-v1.py",
+      "owner": {
+        "pid": 3052423,
+        "head": "e5a094f42d35ff086390edea7fe300734397c78b",
+        "branch": "agent/stock-outcome-interface-20261022",
+        "exclusive": true
+      }
+    }
+  ],
+  "old_production_source": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+  "old_513_source": "e5a094f42d35ff086390edea7fe300734397c78b",
+  "full_goal_complete": false,
+  "utc": "2026-11-02T08:08:55.397356+00:00"
+}

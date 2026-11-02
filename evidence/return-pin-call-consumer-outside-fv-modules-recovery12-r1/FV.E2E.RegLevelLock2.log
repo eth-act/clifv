@@ -1,0 +1,6 @@
+⚠ [417/417] Built FV.E2E.RegLevelLock2 (860ms)
+warning: FV/E2E/RegLevelLock2.lean:131:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelLock2.lean:131:19: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelLock2.lean:132:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelLock2.lean:132:19: `if_neg` has been deprecated: Use `ite_eq_right` instead
+Build completed successfully (417 jobs).

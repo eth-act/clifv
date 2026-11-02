@@ -1,0 +1,25 @@
+{
+  "approved_by": "worker-O execution coordinator",
+  "source": "Explicit parent final-production checkpoint instruction; no new correctness review",
+  "finalized": true,
+  "final_cli_sources": true,
+  "actual_attempt_and_nonvacuity": "passed",
+  "manifest_sha256": "5e1ca408abfd1c2595c689fd0fbb3fb2b280849b7459f6d88ddc81121b352123",
+  "allowed_overrides": {
+    "FVTest/Link/LeanLinkMain.lean": {
+      "prior_sha256": "85786cfec5468f284845bb2206172a5c4467fae0ea6cb15fd9eca11712d54873",
+      "replacement_sha256": "cbe614dd4078ccc337e7b5c87a2b4d6982d4176c4be78d5cf1410e58c23a5840"
+    }
+  },
+  "required_receipts": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v3.json": "a0604271932aee732fedf6e7c791f96c173b4e506d82398162776cdc4060a468",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-delivery-packet-v1.json": "02507ca9c7e5191a08a7d2c337b0018a65cac2bd9bb0e8e58cd58e3774cabd0b",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/reviewed-state-v1.json": "c7b7d019ef840bac11e879e6b3d0fb74598874dec8eb5f20792246e13c757aa9"
+  },
+  "published_pr": 892,
+  "published_head_prefix": "90c51c88",
+  "earlier_fallback_actions_preserved": true,
+  "actual_source_and_peak_selection_passed": true,
+  "scope": "Exact final18-file production checkpoint. Per-PR direct review and CI remain independent of the later shared full gate.",
+  "utc": "2026-11-02T07:36:15.624360+00:00"
+}

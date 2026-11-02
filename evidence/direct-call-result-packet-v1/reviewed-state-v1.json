@@ -1,0 +1,107 @@
+{
+  "status": "reviewed_passed",
+  "source_hashes": {
+    "FV/Backend/Proof/StockDirectCallResult.lean": "1808f16d7be8f2a99ad69b7cb08d138c26c44ecf65758757f0b34578774f854b",
+    "FV/Backend/Proof/StockDirectCallResultWitness.lean": "a6f8660e7a86fc647ccab55c5780dc341b08512c8a9e32a485df541ec18370d1",
+    "FV/Backend/Proof/StockDirectCallResultFixture.lean": "3323b3bcef117f3a45c3a9d5525ca29ee032249ee83176636e6c821ecf21d785",
+    "scripts/audit/stock-direct-call-result.lean": "60be430d6f005d67bb4f9b8870809952dcddb421e08327b5e78339480daf8a0d",
+    "scripts/audit/stock-direct-call-result-witness.lean": "9b32110f947b80966e06e74ddc234e08c4f33f9995ee1b443304f724f45467bc"
+  },
+  "standard_roots": 11,
+  "fixed_roots": 2,
+  "generic_adapter_roots": 9,
+  "actual_mapping": {
+    "source_result": 31,
+    "mapped": 193,
+    "virtual_destination": 194,
+    "call_definition_physical": "x0",
+    "return_use_physical": "x0"
+  },
+  "witness": "The complete original-style caller and identity callee run with arbitrary i64 words. Both external continuation and internal callee return preserve the source result. A separate theorem retains arbitrary returned memory and inherited source values.",
+  "original_input_conditions": "No no-calls/no-heap guard, execution certificate, or new caller premise. The adapter reuses the original CallPost, static allocation checks, and operand postcondition.",
+  "old_sources_unchanged": {
+    "FV/Backend/Proof/StockSourceCallWitness.lean": "3ca1213d433a147d15a3ccfcf6d91212437c5cde461213d17c39cb7fb58af377",
+    "FV/Backend/Proof/StockSourceResults.lean": "081f158d20fd4810fbfa6599f175ec612cbe8e51f94f63d723580f895e56db10",
+    "FV/Backend/Proof/StockResults.lean": "038d1e249af8b1d9abc1f1ff8c59c25009940f5b913ee3820fda0cdff48df4ca",
+    "FV/E2E/ExtSemGuard.lean": "4e1ad1350fbbabcaffb1d88ee7859764a67db4f16d8097becf119024c24d3d37",
+    "FV/Backend/MInst.lean": "ac6306be6341384dfd458277290a3d4764e5aa93fcc5fc30105d8b3aba1566e1"
+  },
+  "kernel_receipt": "witness-state-v8.json",
+  "audit_receipt": "final-audit-state-v1.json",
+  "final_memory": {
+    "witness-kernel-v8/FV_Backend_Proof_StockDirectCallResult.lean.mem": {
+      "peak": 233865216,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v8/FV_Backend_Proof_StockDirectCallResultFixture.lean.mem": {
+      "peak": 256344064,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "witness-kernel-v8/FV_Backend_Proof_StockDirectCallResultWitness.lean.mem": {
+      "peak": 235143168,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "final-audit-v1/audit.mem": {
+      "peak": 237813760,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  },
+  "failed_cap_diagnostics": {
+    "witness-kernel-v2/FV_Backend_Proof_StockDirectCallResultWitness.lean.mem": {
+      "peak": 3221225472,
+      "oom": 1,
+      "oom_kill": 1
+    },
+    "witness-kernel-v3/FV_Backend_Proof_StockDirectCallResultWitness.lean.mem": {
+      "peak": 3221225472,
+      "oom": 1,
+      "oom_kill": 1
+    },
+    "witness-kernel-v4/FV_Backend_Proof_StockDirectCallResultFixture.lean.mem": {
+      "peak": 3221225472,
+      "oom": 1,
+      "oom_kill": 1
+    },
+    "witness-kernel-v5/FV_Backend_Proof_StockDirectCallResultFixture.lean.mem": {
+      "peak": 3221225472,
+      "oom": 1,
+      "oom_kill": 1
+    },
+    "witness-kernel-v6/FV_Backend_Proof_StockDirectCallResultFixture.lean.mem": {
+      "peak": 3221225472,
+      "oom": 1,
+      "oom_kill": 1
+    },
+    "extract-probe-v2/backend.mem": {
+      "peak": 3221225472,
+      "oom": 1,
+      "oom_kill": 1
+    },
+    "extract-probe-v3/backend.mem": {
+      "peak": 3221225472,
+      "oom": 1,
+      "oom_kill": 1
+    },
+    "witness-kernel-v7/FV_Backend_Proof_StockDirectCallResultFixture.lean.mem": {
+      "peak": 3221225472,
+      "oom": 1,
+      "oom_kill": 1
+    }
+  },
+  "diagnostic_solution": "Declaration, VM-evaluation, Boolean-proof, and abstract-extraction probes localized concrete-output elimination. An opaque Bool plus abstract Except extraction derives the same complete facts. Result injectivity connects the original source witness without eliminating concrete Stock output.",
+  "passing_peak_bytes": 256344064,
+  "requires_current_main_gates": true,
+  "production_activation": false,
+  "full_goal_complete": false,
+  "next": [
+    "Derive the non-void call function Domain using the new binder and original callee contract",
+    "Integrate the class through the complete retained production routes and consumers",
+    "Current-main gates and all original #140 obligations"
+  ],
+  "utc": "2026-11-02T08:29:26.397978+00:00",
+  "cleanup": "Removed validation-package-v1/.lake after owned artifact hashes. Preserved source, configuration, all failed attempts, command probes, marker files and final audit evidence."
+}

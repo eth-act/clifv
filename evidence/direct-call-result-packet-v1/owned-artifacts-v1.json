@@ -1,0 +1,50 @@
+{
+  ".lake/build/lib/lean/FV/Backend/Proof/StockForwardWitness.ilean": {
+    "sha256": "69523ea838137c39785988496490c44a80bd6384afc33b0d83bcee9750c1c0f4",
+    "bytes": 36232
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockForwardWitness.olean": {
+    "sha256": "116053e5c4e02bdd31f5c82fb80207c9420f63331aaadcd2581d677717d83dd3",
+    "bytes": 234496
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNarrow16SignedAllValuesWitness.olean": {
+    "sha256": "3958203eddb302c696649d2436fe2c624f1d04915c2efca84d8f5731b4ae35cc",
+    "bytes": 655024
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResult.olean": {
+    "sha256": "cb1c711193ca23115b3000ef78b1ffb72c6051a9e5de7998bc0c696e2e83e21f",
+    "bytes": 240984
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResult.ilean": {
+    "sha256": "6cf8055aed3824f6cadfe4c881fde5194b0b9c4fdbded73d70d4d744b11d97fe",
+    "bytes": 37384
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResult.c": {
+    "sha256": "f47cb34e590ab7ceb18e984f86d49b41e64f5e17aec48490387a0f5c0e1bf6b8",
+    "bytes": 5919
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultFixture.olean": {
+    "sha256": "ccfdd8d0f6015e5b53c3db9b3be38bf4a307792098222fe917bf2b97ca070793",
+    "bytes": 350760
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultFixture.ilean": {
+    "sha256": "dcb936119281372414d60eaf44260b074bf3183158f844026bbc314a179de9e8",
+    "bytes": 39319
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultFixture.c": {
+    "sha256": "f8bb4724bc919ff7114bde2bcc0db1fbf2b6b1af9383b3d2010c816c88e2de1b",
+    "bytes": 62882
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultWitness.olean": {
+    "sha256": "30da3de31751a8fe886afe9a3403b5237e783a7ef808458c76025a195f322388",
+    "bytes": 170352
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultWitness.ilean": {
+    "sha256": "1f5b2fe83cefba476f6b9f7842a4a4121326d5a8effbde53e0bf848dbddcf1d4",
+    "bytes": 16777
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDirectCallResultWitness.c": {
+    "sha256": "febd436b8c4d4780f6482b00ba4cc1a098d8f82c851b1da2afae8c9d5f77ad6f",
+    "bytes": 1742
+  }
+}

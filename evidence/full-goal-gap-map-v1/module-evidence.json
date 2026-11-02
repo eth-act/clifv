@@ -1,0 +1,1569 @@
+{
+  "FV/Backend/Proof/StockScalarCodeDomain.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "8917fbe7523e3e1b53aae7314fff49c927ce8df1",
+    "sha256": "e03a36c401d9056bcee16982e8dca4b4ac6ff5cb238b32e21948d5fb114038c0",
+    "declarations": [
+      {
+        "line": 12,
+        "declaration": "structure CodeDomain (f : Clif.Function) (vc : VCode) : Prop where"
+      },
+      {
+        "line": 39,
+        "declaration": "theorem Domain.code {f : Clif.Function} (domain : Domain f) {result : Stock.Result}"
+      },
+      {
+        "line": 48,
+        "declaration": "theorem DomainAt.code {f : Clif.Function} (domain : DomainAt f) {result : Stock.Result}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockScalarContract.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "cb7dbb4afe95f0acb397bd37d091ea52de791652",
+    "sha256": "e8bd012a2b0b8d5a879c86a623e3fe986e70b43d8c1258d6a5af58aa5e9839a7",
+    "declarations": [
+      {
+        "line": 15,
+        "declaration": "structure Domain (f : Clif.Function) : Prop where"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockPrgContext.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "431f76404edad542bf49bdb89d042465def4b35a",
+    "sha256": "ba7234c2e4febdb1bd7bd44713d7b6f327b884655c4765d17489d2aad88904ef",
+    "declarations": [
+      {
+        "line": 18,
+        "declaration": "theorem MappedCtxInv.weak {f : Clif.Function} {ctx : Ctx} (h : MappedCtxInv f ctx) : CtxInvW f ctx :="
+      },
+      {
+        "line": 22,
+        "declaration": "theorem stock_pinv {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat \u00d7 Nat)} {st : State}"
+      },
+      {
+        "line": 34,
+        "declaration": "theorem stock_pinv_termCtx {f : Clif.Function} {ctx : Ctx} (hP : PInv f ctx) {ti : Nat}"
+      },
+      {
+        "line": 42,
+        "declaration": "theorem stock_stmtProg {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat \u00d7 Nat)} {st : State}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockScanSemantics.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "726e0cb871c30529dd085671fa42495dc5e7b9fa",
+    "sha256": "f4f4145983cc1ebc695a1e3c58aa14d78d25d7f8eaa84ba3b1645dbc0b799c63",
+    "declarations": [
+      {
+        "line": 17,
+        "declaration": "inductive SourceSteps {S : Type} (step : Nat \u2192 S \u2192 S \u2192 Prop) : List Nat \u2192 S \u2192 S \u2192 Prop where"
+      },
+      {
+        "line": 23,
+        "declaration": "private theorem sourceSteps_append {S : Type} {step : Nat \u2192 S \u2192 S \u2192 Prop}"
+      },
+      {
+        "line": 45,
+        "declaration": "def ScanFallRefines {S W : Type} (source : Nat \u2192 S \u2192 S \u2192 Prop)"
+      },
+      {
+        "line": 57,
+        "declaration": "theorem ScansSpec.fall_refines {S W : Type} {exec : Nat \u2192 State \u2192 Except String Scan}"
+      },
+      {
+        "line": 92,
+        "declaration": "theorem stock_scanBlock_fall_refines {S W : Type} {ctx : Ctx} {block ti : Nat}"
+      },
+      {
+        "line": 107,
+        "declaration": "def SourceInstResult (env : Clif.Env) (p : Clif.Program) (ctx : Ctx) (i : Nat)"
+      },
+      {
+        "line": 117,
+        "declaration": "theorem stock_omitted_fall_refines {W : Type} {ctx : Ctx} {block i ti : Nat}"
+      },
+      {
+        "line": 140,
+        "declaration": "private theorem quiet_source_step {env : Clif.Env} {p : Clif.Program}"
+      },
+      {
+        "line": 157,
+        "declaration": "theorem stock_omitted_source_step {ctx : Ctx} {block i ti : Nat} {isBranch : Bool}"
+      },
+      {
+        "line": 177,
+        "declaration": "private theorem scans_executions {exec : Nat \u2192 State \u2192 Except String Scan}"
+      },
+      {
+        "line": 192,
+        "declaration": "theorem stock_omittedBlock_fall_refines {W : Type} {ctx : Ctx} {block ti : Nat}"
+      },
+      {
+        "line": 220,
+        "declaration": "private def scanAliases : Array (Option Nat) := aliasStep #[] (193, 195)"
+      },
+      {
+        "line": 223,
+        "declaration": "private theorem scan_alias_facts :"
+      },
+      {
+        "line": 227,
+        "declaration": "private def producerCode : MInst :="
+      },
+      {
+        "line": 230,
+        "declaration": "private def consumerCode : MInst :="
+      },
+      {
+        "line": 233,
+        "declaration": "private theorem producer_resolved :"
+      },
+      {
+        "line": 245,
+        "declaration": "private theorem consumer_resolved :"
+      },
+      {
+        "line": 256,
+        "declaration": "private def scanEnd : State := { sinkState with current := some 1 }"
+      },
+      {
+        "line": 257,
+        "declaration": "private def scanMiddle : State := { sinkState with current := some 0 }"
+      },
+      {
+        "line": 258,
+        "declaration": "private def scanStart : State := { sinkState with current := none }"
+      },
+      {
+        "line": 260,
+        "declaration": "private def consumerScan : Scan := \u27e8scanMiddle, none, #[consumerCode]\u27e9"
+      },
+      {
+        "line": 261,
+        "declaration": "private def producerScan : Scan := \u27e8scanStart, none, #[producerCode]\u27e9"
+      },
+      {
+        "line": 263,
+        "declaration": "private def exampleExec (i : Nat) (_ : State) : Except String Scan :="
+      },
+      {
+        "line": 266,
+        "declaration": "private def exampleBlock : BlockScan :="
+      },
+      {
+        "line": 270,
+        "declaration": "private theorem example_spec : ScansSpec exampleExec [1, 0] scanEnd exampleBlock := by"
+      },
+      {
+        "line": 275,
+        "declaration": "private def addOne (x : CV) : CV :="
+      },
+      {
+        "line": 278,
+        "declaration": "private theorem add_one_run (d a : Nat) (\u03c1 : Nat \u2192 CV) (w : Arm.ArmState) :"
+      },
+      {
+        "line": 282,
+        "declaration": "private def exampleSource (_ : Nat) (s t : CV) : Prop := t = addOne s"
+      },
+      {
+        "line": 284,
+        "declaration": "private def exampleRel (st : State) (s : CV) (\u03c1 : Nat \u2192 CV) (_ : Arm.ArmState) : Prop :="
+      },
+      {
+        "line": 288,
+        "declaration": "private theorem example_local :"
+      },
+      {
+        "line": 315,
+        "declaration": "private def exampleRF (n : Nat) : CV := if n = 192 then 11 else 0"
+      },
+      {
+        "line": 317,
+        "declaration": "private theorem example_source_steps : SourceSteps exampleSource [0, 1] 11 13 :="
+      },
+      {
+        "line": 320,
+        "declaration": "theorem ScansSpec.fall_refines_witness :"
+      },
+      {
+        "line": 335,
+        "declaration": "private def loadInput : State := { unusedInput with demand := #[0, 1] }"
+      },
+      {
+        "line": 336,
+        "declaration": "private def loadOutput : Scan :="
+      },
+      {
+        "line": 339,
+        "declaration": "private def loadStep : Step := loadOutput.step.getD default"
+      },
+      {
+        "line": 341,
+        "declaration": "private theorem load_scan : scanInstruction unusedCtx 0 0 1 false loadInput = .ok loadOutput := rfl"
+      },
+      {
+        "line": 343,
+        "declaration": "private def loadFrame : Clif.Frame := {"
+      },
+      {
+        "line": 347,
+        "declaration": "private def loadMem : Clif.Mem := {"
+      },
+      {
+        "line": 350,
+        "declaration": "private def loadedFrame : Clif.Frame :="
+      },
+      {
+        "line": 352,
+        "declaration": "private def loadRF (n : Nat) : CV := if n = 193 then 100 else 0"
+      },
+      {
+        "line": 354,
+        "declaration": "private def loadRel (st : State) (s : Clif.Frame \u00d7 Clif.Mem) (\u03c1 : Nat \u2192 CV) (_ : Unit) : Prop :="
+      },
+      {
+        "line": 357,
+        "declaration": "private theorem load_source :"
+      },
+      {
+        "line": 363,
+        "declaration": "private theorem load_start_held : loadRel loadOutput.state (loadFrame, loadMem) loadRF () := by"
+      },
+      {
+        "line": 373,
+        "declaration": "private theorem load_local {sem : ISem CV Unit} :"
+      },
+      {
+        "line": 379,
+        "declaration": "theorem stock_omitted_fall_refines_witness :"
+      },
+      {
+        "line": 397,
+        "declaration": "private def loadBlock : BlockScan :="
+      },
+      {
+        "line": 400,
+        "declaration": "private theorem load_block_scan : scanBlock unusedCtx 0 1 false [0] loadInput = .ok loadBlock := by"
+      },
+      {
+        "line": 406,
+        "declaration": "theorem stock_scanBlock_fall_refines_witness :"
+      },
+      {
+        "line": 427,
+        "declaration": "theorem stock_omitted_source_step_witness :"
+      },
+      {
+        "line": 438,
+        "declaration": "theorem stock_omittedBlock_fall_refines_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockScanTrapSemantics.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "0e83827e4ea63cf605ba79e0dd603b6bf01956a9",
+    "sha256": "078e76ad82d90b07f5c1c712dfd428f0f0fe8df9ef8032d0e913860e1d5a5b88",
+    "declarations": [
+      {
+        "line": 15,
+        "declaration": "inductive SourceTrapSteps {S : Type} (step : Nat \u2192 S \u2192 S \u2192 Prop)"
+      },
+      {
+        "line": 23,
+        "declaration": "private theorem sourceTrapSteps_append {S : Type} {step : Nat \u2192 S \u2192 S \u2192 Prop}"
+      },
+      {
+        "line": 52,
+        "declaration": "theorem trapRun_seq_prefix {isem : Backend.Proof.Sem} {first rest : List MInst}"
+      },
+      {
+        "line": 60,
+        "declaration": "def LocalScanTrapRefines {S : Type} (sourceTrap : Nat \u2192 S \u2192 Clif.TrapCode \u2192 Prop)"
+      },
+      {
+        "line": 71,
+        "declaration": "theorem ScansSpec.local_trap_refines {S : Type} {exec : Nat \u2192 State \u2192 Except String Scan}"
+      },
+      {
+        "line": 111,
+        "declaration": "theorem ScansSpec.record_inst_mem {exec : Nat \u2192 State \u2192 Except String Scan}"
+      },
+      {
+        "line": 121,
+        "declaration": "theorem ScansSpec.record_unique {exec : Nat \u2192 State \u2192 Except String Scan}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockBodyScanRefines.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "b599ee94a71d3092cc5dabf0315730be0d0a5d56",
+    "sha256": "e3f28b91372e42c8428bb53b4a90b8b8e245106dc4a2b9f16fc14090df9e90c3",
+    "declarations": [
+      {
+        "line": 14,
+        "declaration": "def SelectOrOmittedRecord (f : Clif.Function) (ctx : Ctx) (bi : Nat) (r : ScanRecord) : Prop :="
+      },
+      {
+        "line": 25,
+        "declaration": "theorem stock_lower_select_omitted_body_fall_refines {f : Clif.Function} {result : Result}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockSourceAliasRecords.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "73df46b10fe1a15a57dc29d58ae2af27839ab752",
+    "sha256": "ead2c8ba624cd3ae7187ea99a5ce44ecaef3945a2a3e3f2785651d74d12090e4",
+    "declarations": [
+      {
+        "line": 11,
+        "declaration": "private theorem normalized_alias (st : State) (i : Nat) :"
+      },
+      {
+        "line": 17,
+        "declaration": "private theorem scan_none_alias {ctx : Ctx} {block i ti : Nat} {branch : Bool}"
+      },
+      {
+        "line": 48,
+        "declaration": "private theorem scan_key_origin {f : Clif.Function} {source ctx : Ctx}"
+      },
+      {
+        "line": 68,
+        "declaration": "private theorem block_key_origin {f : Clif.Function} {source ctx : Ctx}"
+      },
+      {
+        "line": 93,
+        "declaration": "private theorem selected_results_source {f : Clif.Function} {ctx : Ctx}"
+      },
+      {
+        "line": 124,
+        "declaration": "def SourceAliasRecord (ctx : Ctx) (event : BlockScanEvent) (x key target : Nat) : Prop :="
+      },
+      {
+        "line": 130,
+        "declaration": "private theorem core_key_origin {f : Clif.Function} {ctx : Ctx}"
+      },
+      {
+        "line": 152,
+        "declaration": "private def DriverSourceRecords (ctx : Ctx) (d : DriverState) : Prop :="
+      },
+      {
+        "line": 157,
+        "declaration": "private theorem node_records {f : Clif.Function} {ctx : Ctx}"
+      },
+      {
+        "line": 231,
+        "declaration": "private theorem traversal_records {f : Clif.Function} {ctx : Ctx}"
+      },
+      {
+        "line": 254,
+        "declaration": "theorem stock_lower_source_alias_record {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 282,
+        "declaration": "private theorem scans_execute {exec : Nat \u2192 State \u2192 Except String Scan}"
+      },
+      {
+        "line": 294,
+        "declaration": "private theorem record_execute {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 309,
+        "declaration": "private theorem scan_sunk_state {ctx : Ctx} {block i ti : Nat} {branch : Bool}"
+      },
+      {
+        "line": 342,
+        "declaration": "theorem stock_lower_source_alias_emitted_record {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 372,
+        "declaration": "def FinalSourceAlias (result : Result) (x y : Nat) : Prop :="
+      },
+      {
+        "line": 378,
+        "declaration": "theorem stock_lower_final_source_alias_recorded {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 388,
+        "declaration": "inductive FinalSourcePath (result : Result) : Nat \u2192 Nat \u2192 Prop where"
+      },
+      {
+        "line": 395,
+        "declaration": "theorem stock_lower_final_source_chain_rank {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 406,
+        "declaration": "theorem stock_lower_final_source_chain_noCycle {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 415,
+        "declaration": "theorem stock_lower_final_source_chain_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockAliasSemantics.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "56edb5ab178ca06fb292670a0213dd73df794074",
+    "sha256": "0288c06057cc6dfa61c7ce2fd3ff935c4254d71744930f5517a4bceb5953ae9f",
+    "declarations": [
+      {
+        "line": 18,
+        "declaration": "theorem ValuesHeld.resolvedResult_frame {needed : Nat \u2192 Prop} {ctx : Ctx}"
+      },
+      {
+        "line": 42,
+        "declaration": "theorem ValuesHeld.resolvedResult_interval {needed : Nat \u2192 Prop} {ctx : Ctx}"
+      },
+      {
+        "line": 60,
+        "declaration": "def aliasNum (a : Array (Option Nat)) (n : Nat) : Nat :="
+      },
+      {
+        "line": 63,
+        "declaration": "private theorem alias_renaming (a : Array (Option Nat)) :"
+      },
+      {
+        "line": 71,
+        "declaration": "private theorem alias_fresh {a : Array (Option Nat)} {lo n : Nat}"
+      },
+      {
+        "line": 77,
+        "declaration": "private theorem renamed_defs (a : Array (Option Nat)) (m : MInst) :"
+      },
+      {
+        "line": 93,
+        "declaration": "theorem stock_alias_interval_prun {a : Array (Option Nat)} {lo hi : Nat}"
+      },
+      {
+        "line": 141,
+        "declaration": "theorem stock_alias_fresh_prun {a : Array (Option Nat)} {lo : Nat}"
+      },
+      {
+        "line": 181,
+        "declaration": "theorem stock_iconst_resolved {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}"
+      },
+      {
+        "line": 244,
+        "declaration": "private def witnessAliases : Array (Option Nat) :="
+      },
+      {
+        "line": 248,
+        "declaration": "private theorem witness_alias_facts :"
+      },
+      {
+        "line": 252,
+        "declaration": "private def witnessFrame : Clif.Frame := {"
+      },
+      {
+        "line": 257,
+        "declaration": "private def witnessRF (n : Nat) : CV := if n = 200 then 11 else 0"
+      },
+      {
+        "line": 259,
+        "declaration": "private def witnessNeeded (x : Nat) : Prop := x = 0 \u2228 x = 1"
+      },
+      {
+        "line": 261,
+        "declaration": "private theorem witness_held :"
+      },
+      {
+        "line": 276,
+        "declaration": "private theorem witness_outside :"
+      },
+      {
+        "line": 289,
+        "declaration": "private theorem witness_selfRefines : Refines (fun _ => True) ispec :="
+      },
+      {
+        "line": 292,
+        "declaration": "private theorem witness_materialization (\u03c1 : Nat \u2192 CV) :"
+      },
+      {
+        "line": 320,
+        "declaration": "theorem ValuesHeld.resolvedResult_frame_witness :"
+      },
+      {
+        "line": 338,
+        "declaration": "theorem ValuesHeld.resolvedResult_interval_witness :"
+      },
+      {
+        "line": 348,
+        "declaration": "theorem stock_alias_fresh_prun_witness :"
+      },
+      {
+        "line": 376,
+        "declaration": "theorem stock_alias_interval_prun_witness :"
+      },
+      {
+        "line": 437,
+        "declaration": "private def rootAliases : Array (Option Nat) := aliasStep #[] (193, 194)"
+      },
+      {
+        "line": 440,
+        "declaration": "private theorem root_alias_facts :"
+      },
+      {
+        "line": 445,
+        "declaration": "theorem stock_iconst_resolved_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockFreshRecordValues.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "b1649c51d1f75ba01073eea2a2f52b3957f0ec5c",
+    "sha256": "87ac5c5a9bd34aea9c809f7d47b63384c5bef44522dfcccd05defad9b86fc2c0",
+    "declarations": [
+      {
+        "line": 11,
+        "declaration": "private theorem scans_execute {exec : Nat \u2192 State \u2192 Except String Scan}"
+      },
+      {
+        "line": 23,
+        "declaration": "private theorem record_execute {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 39,
+        "declaration": "private theorem emission_alias {ctx : Ctx} {i : Nat} {info : IInfo} {z a d : Nat}"
+      },
+      {
+        "line": 75,
+        "declaration": "theorem stock_lower_record_fresh_result {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 103,
+        "declaration": "private def exampleFunction : Clif.Function := {"
+      },
+      {
+        "line": 107,
+        "declaration": "private theorem exampleScope : LowerScope exampleFunction := lowerScope_of (by decide +kernel)"
+      },
+      {
+        "line": 108,
+        "declaration": "private def exampleCode : MInst := .aluRRR .add .size64 (.vreg 195 .int) (.vreg 192 .int) (.vreg 193 .int)"
+      },
+      {
+        "line": 109,
+        "declaration": "private theorem observed : (Stock.lower exampleFunction).toOption.map (fun result =>"
+      },
+      {
+        "line": 121,
+        "declaration": "theorem stock_lower_record_fresh_result_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockPayloadAliasOrigins.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "7a8942dfc0c1e76716637a0e871b4acb42480c60",
+    "sha256": "6b40e9f1af66288c8efafe8cc0c0f7cd0da6c527fd4f5f7ae34e516540958bcd",
+    "declarations": [
+      {
+        "line": 14,
+        "declaration": "def EntryAllowed (allowed : Nat \u2192 Prop) (key : Nat) (st : State) : Prop :="
+      },
+      {
+        "line": 17,
+        "declaration": "private theorem setAlias_allowed {allowed : Nat \u2192 Prop} {key : Nat} {st next : State}"
+      },
+      {
+        "line": 39,
+        "declaration": "private def tryAliasStep (ps rets : List Reg) (acc : Except String (State \u00d7 List Reg))"
+      },
+      {
+        "line": 48,
+        "declaration": "private theorem try_fold_error (ps rets : List Reg) (pairs : List (Reg \u00d7 Reg)) (e : String) :"
+      },
+      {
+        "line": 54,
+        "declaration": "private theorem try_fold_allowed {allowed : Nat \u2192 Prop} {key : Nat}"
+      },
+      {
+        "line": 90,
+        "declaration": "private theorem delegate_entry {ctx : Ctx} {t : Term} {args : List V}"
+      },
+      {
+        "line": 102,
+        "declaration": "private theorem marks_alias (st : State) (vs : List Nat) :"
+      },
+      {
+        "line": 110,
+        "declaration": "theorem stock_ctor_aliasTargetsAllowed {ctx : Ctx} {t : Term} {args : List V}"
+      },
+      {
+        "line": 135,
+        "declaration": "theorem stock_apply_aliasTargetsAllowed {p : Program} {ctx : Ctx} {cfg : Config}"
+      },
+      {
+        "line": 149,
+        "declaration": "private theorem named_allowed {ctx : Ctx} {term : String} {args : List V}"
+      },
+      {
+        "line": 176,
+        "declaration": "private theorem emitted_allowed {ctx : Ctx} {i : Nat} {st : State}"
+      },
+      {
+        "line": 210,
+        "declaration": "private theorem setAlias_entry {st next : State} {dst src : Reg} {key : Nat}"
+      },
+      {
+        "line": 230,
+        "declaration": "private theorem fold_entry {\u03b1 \u03b2 \u03b3 : Type} (field : \u03b1 \u2192 \u03b3)"
+      },
+      {
+        "line": 247,
+        "declaration": "private theorem opportunity_values_entry {ctx : Ctx} {values : List Nat}"
+      },
+      {
+        "line": 270,
+        "declaration": "private theorem opportunity_entry {ctx : Ctx} {block i : Nat}"
+      },
+      {
+        "line": 287,
+        "declaration": "private theorem scan_state_entry (st : State) (i key : Nat) :"
+      },
+      {
+        "line": 293,
+        "declaration": "private theorem scan_allowed {ctx : Ctx} {block i ti : Nat} {branch : Bool}"
+      },
+      {
+        "line": 337,
+        "declaration": "private theorem scanBlock_allowed {ctx : Ctx} {block ti : Nat} {branch : Bool}"
+      },
+      {
+        "line": 354,
+        "declaration": "def ReservedReturn (initial : State) (target : Nat) : Prop :="
+      },
+      {
+        "line": 360,
+        "declaration": "private theorem returns_allowed {f : Clif.Function} {source ctx : Ctx}"
+      },
+      {
+        "line": 374,
+        "declaration": "private theorem payload_source_apart {f : Clif.Function} {source ctx : Ctx}"
+      },
+      {
+        "line": 388,
+        "declaration": "private theorem branch_allowed {ctx : Ctx} {f : Clif.Function} {t : Clif.Terminator}"
+      },
+      {
+        "line": 417,
+        "declaration": "private theorem core_allowed {f : Clif.Function} {ctx : Ctx}"
+      },
+      {
+        "line": 486,
+        "declaration": "private theorem node_allowed {f : Clif.Function} {ctx : Ctx}"
+      },
+      {
+        "line": 550,
+        "declaration": "private theorem traversal_allowed {f : Clif.Function} {ctx : Ctx}"
+      },
+      {
+        "line": 575,
+        "declaration": "theorem stock_lower_payload_aliasOrigin {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 603,
+        "declaration": "theorem stock_lower_payload_resolves {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 613,
+        "declaration": "theorem stock_lower_payload_terminal {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 629,
+        "declaration": "theorem stock_lower_payload_value {f : Clif.Function} {result : Result}"
+      },
+      {
+        "line": 638,
+        "declaration": "private def targetCtx : Ctx :="
+      },
+      {
+        "line": 640,
+        "declaration": "private def targetInput : State :="
+      },
+      {
+        "line": 642,
+        "declaration": "private def targetNext : State :="
+      },
+      {
+        "line": 644,
+        "declaration": "private def targetSig : Clif.Signature := { returns := [\u27e8.i64, .none, .normal\u27e9] }"
+      },
+      {
+        "line": 645,
+        "declaration": "private def targetResult : V :="
+      },
+      {
+        "line": 647,
+        "declaration": "private def targetAllowed (n : Nat) : Prop := n = 193 \u2228 n = 197"
+      },
+      {
+        "line": 648,
+        "declaration": "private theorem targetOld : EntryAllowed targetAllowed 194 targetInput := by"
+      },
+      {
+        "line": 654,
+        "declaration": "private theorem targetReturns :"
+      },
+      {
+        "line": 660,
+        "declaration": "private theorem targetRun :"
+      },
+      {
+        "line": 666,
+        "declaration": "theorem stock_ctor_aliasTargetsAllowed_witness :"
+      },
+      {
+        "line": 677,
+        "declaration": "private theorem tryTerm : termOf program 300 = .ok T.gen_try_call_rets := by"
+      },
+      {
+        "line": 682,
+        "declaration": "theorem stock_apply_aliasTargetsAllowed_witness :"
+      },
+      {
+        "line": 702,
+        "declaration": "theorem stock_lower_payload_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockParameterArgsDomain.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "c4d9914eaab5e9ffc37023302d36ab85185f702e",
+    "sha256": "ff4aea1f28e85791b22848c14a47fd0d107a1d89843686afa4760a99bc209235",
+    "declarations": [
+      {
+        "line": 16,
+        "declaration": "def ArgsParameterLeafTerms (f : Clif.Function) : Prop :="
+      },
+      {
+        "line": 20,
+        "declaration": "theorem args_parameter_leaf_terms_nonentry {f : Clif.Function} (terms : ArgsParameterLeafTerms f) :"
+      },
+      {
+        "line": 24,
+        "declaration": "theorem domainAt_of_args_parameter_leaf_cfg {f : Clif.Function} {rank : Nat \u2192 Nat}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockMemorySretCopyDomain.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "39442870e7dea1ed08082c3f6aae5d4fa89da028",
+    "sha256": "e2bc05ed1e709713fe4aaeeb1514a9216d7260ebb83147f3d4c78c341179f473",
+    "declarations": [
+      {
+        "line": 13,
+        "declaration": "theorem CfgClass.domainABI {f : Clif.Function} (source : CfgClass f) : DomainABI f := by"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockFloatCheckDomain.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "7d008ea01481fb082cea2683805f42f2a6cf742d",
+    "sha256": "11a33e4f7abca3b54acdfdac6580a38f727abd63a73ce055eceb7b8218c3e959",
+    "declarations": [
+      {
+        "line": 23,
+        "declaration": "theorem buildCtx_int_domain {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat \u00d7 Nat)}"
+      },
+      {
+        "line": 47,
+        "declaration": "theorem buildCtx_functionE_domain {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat \u00d7 Nat)}"
+      },
+      {
+        "line": 56,
+        "declaration": "private def domainFixture : Clif.Function := {"
+      },
+      {
+        "line": 63,
+        "declaration": "private def domainOld : Ctx \u00d7 Array (Nat \u00d7 Nat) \u00d7 LState :="
+      },
+      {
+        "line": 69,
+        "declaration": "theorem buildCtx_int_domain_witness :"
+      }
+    ]
+  },
+  "FV/Backend/Proof/StockScopeRoots.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "1858a368ceb999466851d3a3b0d7559556562591",
+    "sha256": "18cd95dedc2402de46b01edbe108648c72a7b9bb6813295c4d3906fee4a0c1b2",
+    "declarations": [
+      {
+        "line": 13,
+        "declaration": "theorem stock_excluded_root_args {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      },
+      {
+        "line": 33,
+        "declaration": "theorem stock_excluded_root_match {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      },
+      {
+        "line": 47,
+        "declaration": "theorem stock_selected_source_root_closure {f : Clif.Function} {ctx : Ctx} (mapped : MappedCtxInv f ctx)"
+      },
+      {
+        "line": 58,
+        "declaration": "theorem stock_lower_source_record_closure {f : Clif.Function} {result : Result}"
+      }
+    ]
+  },
+  "FV/Backend/StockVoidCallCheck.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "5be75791c3ac8a693518fbf79261fc4437f21701",
+    "sha256": "74ecf35d3da2209ab0a3efdb7933a8e18f5aeb2168b249479eac08dc5e89e6e6",
+    "declarations": [
+      {
+        "line": 11,
+        "declaration": "def sourceKey (ctx : Ctx) (x : Nat) : Nat :="
+      },
+      {
+        "line": 25,
+        "declaration": "structure SourceData where"
+      },
+      {
+        "line": 32,
+        "declaration": "def sourceData? (f : Clif.Function) : Option SourceData :="
+      },
+      {
+        "line": 43,
+        "declaration": "def sourceB (f : Clif.Function) (data : SourceData) : Bool :="
+      },
+      {
+        "line": 50,
+        "declaration": "def callUses (uses : List (Reg \u00d7 Reg)) : List (Nat \u00d7 Reg) :="
+      },
+      {
+        "line": 54,
+        "declaration": "def scanB (data : SourceData) (event : Stock.BlockScanEvent) : Bool :="
+      },
+      {
+        "line": 64,
+        "declaration": "def codeB (data : SourceData) (result : Stock.Result) : Bool := result.blockScans.toList.all (scanB data)"
+      },
+      {
+        "line": 68,
+        "declaration": "def check (f : Clif.Function) (vc : VCode) : Bool :="
+      }
+    ]
+  },
+  "FV/Backend/SemanticABICheck.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "220f625f4b09ce0f3db506da8d6f2e321b64e4ca",
+    "sha256": "82ea22a6a7594723b1f2ef818dd9c098af48c145d1c72638ec96b4b1dca60dde",
+    "declarations": [
+      {
+        "line": 9,
+        "declaration": "def check (f : Clif.Function) (vc : VCode) : Bool :="
+      },
+      {
+        "line": 13,
+        "declaration": "theorem previous_check {f : Clif.Function} {vc : VCode} (accepted : SemanticNI.check f vc = true) :"
+      },
+      {
+        "line": 17,
+        "declaration": "theorem previous_exact {f : Clif.Function} {vc : VCode} (absent : Stock.MemorySretCopy.check f vc = false) :"
+      },
+      {
+        "line": 21,
+        "declaration": "def checkCalls (f : Clif.Function) (vc : VCode) : Bool :="
+      },
+      {
+        "line": 24,
+        "declaration": "theorem previous_check_calls {f : Clif.Function} {vc : VCode} (accepted : check f vc = true) :"
+      },
+      {
+        "line": 27,
+        "declaration": "theorem previous_exact_calls {f : Clif.Function} {vc : VCode}"
+      }
+    ]
+  },
+  "FV/Backend/Proof/IselPrgDriver.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "3be365e9f933d47e95cc2e21f4d680c216abd192",
+    "sha256": "042dbdb8bdaafee723b3d37d31323e23eb220488e607268ccee4656a957f87c4",
+    "declarations": [
+      {
+        "line": 32,
+        "declaration": "theorem model_of (hP : PInv f ctx) : Model f ctx aext actor aidata :="
+      },
+      {
+        "line": 38,
+        "declaration": "theorem stmtOut_regsVec (F : PA) : \u2203 n, stmtOut F = .regsVec n := by"
+      },
+      {
+        "line": 43,
+        "declaration": "theorem termRoot_entry {q : TermId \u00d7 List PA} (hq : q \u2208 termRoots) :"
+      },
+      {
+        "line": 54,
+        "declaration": "theorem stmtProg (hP : PInv f ctx) : StmtProg ctx := by"
+      },
+      {
+        "line": 77,
+        "declaration": "theorem termProg (hP : PInv f ctx) (hb : buildCtx f = .ok (ctx, ranges, st0))"
+      },
+      {
+        "line": 90,
+        "declaration": "theorem tryProg (hP : PInv f ctx) (hctx : CtxInv f ctx) (hb : buildCtx f = .ok (ctx, ranges, st0))"
+      },
+      {
+        "line": 103,
+        "declaration": "theorem iselProg_of_input (hdom : dominatedB f = true) (hs : lowerScopeB f = true)"
+      },
+      {
+        "line": 111,
+        "declaration": "theorem lowerFunction_ok_input (hE : Compile.functionE f = true) (hsig : sigAbiOk f.sig = true)"
+      }
+    ]
+  },
+  "FV/Backend/Proof/LowerSimUAbi.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "001b2b9b053a274483feadd4e4a8d70c40c39e6d",
+    "sha256": "e8814799ded7d369e33cec60338ad212d2a2b0c55117646c778907df30ed87d6",
+    "declarations": [
+      {
+        "line": 25,
+        "declaration": "def RunOkUAbi (vc : VCode) (sem : Sem) (XR : XRaise) (MR : MemRelT)"
+      },
+      {
+        "line": 36,
+        "declaration": "theorem RunOkUAbi.prefix {Q : List Clif.Val \u2192 Prop} {vs vs' : VState CV Arm.ArmState}"
+      },
+      {
+        "line": 50,
+        "declaration": "theorem RunOkUAbi.runOkU {Q : List Clif.Val \u2192 Prop} {vs : VState CV Arm.ArmState}"
+      },
+      {
+        "line": 64,
+        "declaration": "theorem sim_runX_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)"
+      },
+      {
+        "line": 238,
+        "declaration": "theorem driver_correctU_abi (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)"
+      }
+    ]
+  },
+  "FV/Backend/Proof/IselAtomicTI.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "af285e5598923a1c9f55163b3a714ad8d5cf9b3b",
+    "sha256": "13bedddc6e22a97538c59ae8f966a5b76ba124de4176b6d5738c901a7cfa717f",
+    "declarations": [
+      {
+        "line": 33,
+        "declaration": "theorem bmask_okTI (F : BitVec 64 \u2192 Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)"
+      },
+      {
+        "line": 101,
+        "declaration": "theorem fence_okTI (F : BitVec 64 \u2192 Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)"
+      }
+    ]
+  },
+  "FV/Backend/Proof/LowerLoopSim.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "a4df90f0fe1ba65dfa36bf060c2fc070b5922e70",
+    "sha256": "170feb2e1ecddeee94b01f2c1ec4109f4ce87990877e0b1be9ed8afee80a830c",
+    "declarations": [
+      {
+        "line": 18,
+        "declaration": "theorem entryLoop {ctx : Ctx} (hreg : \u2200 x r, ctx.valueReg? x = some r \u2192 r = .vreg x .int) (R : Reg \u2192 Reg)"
+      },
+      {
+        "line": 58,
+        "declaration": "theorem segs_eq {\u03b1 \u03b2 \u03b3 : Type} (g : \u03b1 \u00d7 \u03b2 \u2192 List \u03b3) :"
+      },
+      {
+        "line": 73,
+        "declaration": "theorem zip_snoc {\u03b1 \u03b2 : Type} {l : List \u03b1} {m : List \u03b2} {x : \u03b2} {a : \u03b1} (hm : l[m.length]? = some a) :"
+      },
+      {
+        "line": 89,
+        "declaration": "theorem bodyPart_ok {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat \u00d7 Nat)} {st0 : LState}"
+      },
+      {
+        "line": 130,
+        "declaration": "structure PF (f : Clif.Function) (ctx : Ctx) (st0 : LState) (k : Nat) (blk : List BLow) : Prop where"
+      },
+      {
+        "line": 147,
+        "declaration": "structure LI (f : Clif.Function) (ctx : Ctx) (st0 : LState) (k : Nat) (d : DState) (blk : List BLow) :"
+      },
+      {
+        "line": 158,
+        "declaration": "theorem rawBlock_snoc {f : Clif.Function} {blk : List BLow} {L : BLow} {i : Nat} (hi : i < blk.length)"
+      },
+      {
+        "line": 164,
+        "declaration": "theorem rawBlock_last {f : Clif.Function} {bl : List BLow} {k : Nat} {B : Clif.Block} {L : BLow}"
+      },
+      {
+        "line": 180,
+        "declaration": "theorem aliasArr_append (a b : List (Nat \u00d7 Nat)) : aliasArr (a ++ b) = b.foldl aliasStep (aliasArr a) := by"
+      },
+      {
+        "line": 183,
+        "declaration": "theorem bsl_take (Bs : List Clif.Block) (k : Nat) (hk : k \u2264 Bs.length) :"
+      },
+      {
+        "line": 187,
+        "declaration": "theorem blockStep {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat \u00d7 Nat)} {st0 : LState}"
+      },
+      {
+        "line": 320,
+        "declaration": "def IsYield {\u03b2 : Type} : ForInStep \u03b2 \u2192 Prop"
+      },
+      {
+        "line": 324,
+        "declaration": "theorem paramsPart_yield {ctx : Ctx} {b : Clif.Block} {bi : Nat} {code : Array MInst} {d : DState}"
+      },
+      {
+        "line": 335,
+        "declaration": "theorem finishBlock_yield {ctx : Ctx} {b : Clif.Block} {bi ti : Nat} {code : Array MInst} {d : DState}"
+      },
+      {
+        "line": 357,
+        "declaration": "theorem tryTerm_yield {f : Clif.Function} {ctx : Ctx} {b : Clif.Block} {bi ti : Nat} {code : Array MInst}"
+      },
+      {
+        "line": 380,
+        "declaration": "theorem termPart_yield {f : Clif.Function} {ctx : Ctx} {b : Clif.Block} {bi stop : Nat}"
+      },
+      {
+        "line": 404,
+        "declaration": "theorem blockBody_yield {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat \u00d7 Nat)}"
+      },
+      {
+        "line": 431,
+        "declaration": "theorem lowB_out (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) (ycall : TryCallF) :"
+      },
+      {
+        "line": 461,
+        "declaration": "theorem lowerFunction_finish {f : Clif.Function} {vc : VCode} (h : lowerFunction f = .ok vc) :"
+      },
+      {
+        "line": 489,
+        "declaration": "theorem loop_run {f : Clif.Function} {vc : VCode} (hE : Compile.functionE f = true)"
+      }
+    ]
+  },
+  "FV/Backend/Proof/PerEdgePrepareSound.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "25debbc763df099a997eb0cfa0ec54453fda2fcc",
+    "sha256": "09fa0d326d4412057a46c3bbd3fe9cafaae6a364d7abbe31de934f2c5d603b16",
+    "declarations": [
+      {
+        "line": 12,
+        "declaration": "structure KeptAt (vc vcp : VCode) (edges edges' : Array (Array (Array Reg)))"
+      },
+      {
+        "line": 24,
+        "declaration": "theorem edgeBlockOkAt_sound {vc : VCode} {ss : Array (Array Nat)} {t s : Nat}"
+      },
+      {
+        "line": 39,
+        "declaration": "theorem keptOkAt_sound {vc vcp : VCode} {ss ss' : Array (Array Nat)} {edges edges' : Array (Array (Array Reg))} {b b' : Nat}"
+      },
+      {
+        "line": 92,
+        "declaration": "private theorem sameInstG_facts {W : Type} {sem : ISem CV W} (hds : DriverSemG sem)"
+      },
+      {
+        "line": 101,
+        "declaration": "private def copyWithParams {V : Type} (params : Array Reg) (row : Option (Array Reg))"
+      },
+      {
+        "line": 110,
+        "declaration": "private theorem edgeEnvAt_formula {V : Type} {vc : VCode} {edges : Array (Array (Array Reg))}"
+      },
+      {
+        "line": 117,
+        "declaration": "private theorem edgeEnvAt_empty {V : Type} {vc : VCode} {edges : Array (Array (Array Reg))}"
+      },
+      {
+        "line": 126,
+        "declaration": "theorem prep_step (hds : DriverSemG sem) {ss ps ss' ps' : Array (Array Nat)}"
+      },
+      {
+        "line": 186,
+        "declaration": "theorem prep_star (hds : DriverSemG sem) {ss ps ss' ps' : Array (Array Nat)}"
+      },
+      {
+        "line": 214,
+        "declaration": "def VTrapFromAt {W : Type} (vc : VCode) (edges : Array (Array (Array Reg))) (sem : ISem CV W) (vs : VState CV W) (c : Clif.TrapCode) :"
+      },
+      {
+        "line": 221,
+        "declaration": "def VRetFromAt {W : Type} (vc : VCode) (edges : Array (Array (Array Reg))) (sem : ISem CV W) (vs : VState CV W) (us : List (Reg \u00d7 Reg))"
+      },
+      {
+        "line": 228,
+        "declaration": "private theorem checked_facts {vc vcp : VCode} {edges edges' : Array (Array (Array Reg))}"
+      },
+      {
+        "line": 273,
+        "declaration": "theorem prep_entry_step {W : Type} {vc vcp : VCode} {edges edges' : Array (Array (Array Reg))}"
+      },
+      {
+        "line": 283,
+        "declaration": "private theorem star_last {\u03b1 : Type} {r : \u03b1 \u2192 \u03b1 \u2192 Prop} {a c : \u03b1}"
+      },
+      {
+        "line": 294,
+        "declaration": "private def IsTerminal {V W : Type} : VConf V W \u2192 Prop"
+      },
+      {
+        "line": 298,
+        "declaration": "private theorem terminal_step {W : Type} {vc vcp : VCode} {edges edges' : Array (Array (Array Reg))}"
+      },
+      {
+        "line": 327,
+        "declaration": "private theorem terminal_star {W : Type} {vc vcp : VCode} {edges edges' : Array (Array (Array Reg))}"
+      },
+      {
+        "line": 349,
+        "declaration": "theorem prep_ret {W : Type} {vc vcp : VCode} {edges edges' : Array (Array (Array Reg))}"
+      },
+      {
+        "line": 357,
+        "declaration": "theorem prep_halt {W : Type} {vc vcp : VCode} {edges edges' : Array (Array (Array Reg))}"
+      },
+      {
+        "line": 364,
+        "declaration": "theorem prep_sound {W : Type} {vc vcp : VCode} {edges edges' : Array (Array (Array Reg))}"
+      }
+    ]
+  },
+  "FV/Compile/Subset.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "7a5ed09f8dcfa6356403a3b4336356b87228db12",
+    "sha256": "2b2073672f303a13ef73d7ed773a00f8d0d9e039e4d5dd058d67fa68a0285109",
+    "declarations": [
+      {
+        "line": 16,
+        "declaration": "def tyE (t : Ty) : Bool := t.isInt && t != .i128"
+      },
+      {
+        "line": 18,
+        "declaration": "def unaryE : UnaryOp \u2192 Bool"
+      },
+      {
+        "line": 23,
+        "declaration": "def unaryTyE : UnaryOp \u2192 Ty \u2192 Bool"
+      },
+      {
+        "line": 27,
+        "declaration": "def binaryE : BinaryOp \u2192 Bool"
+      },
+      {
+        "line": 33,
+        "declaration": "def flagsE (f : MemFlags) : Bool :="
+      },
+      {
+        "line": 37,
+        "declaration": "def instE : Inst \u2192 Bool"
+      },
+      {
+        "line": 70,
+        "declaration": "def globalE : GlobalValue \u2192 Bool"
+      },
+      {
+        "line": 75,
+        "declaration": "def termE : Terminator \u2192 Bool"
+      },
+      {
+        "line": 83,
+        "declaration": "def sigE (s : Signature) : Bool :="
+      },
+      {
+        "line": 86,
+        "declaration": "def functionE (f : Function) : Bool :="
+      },
+      {
+        "line": 92,
+        "declaration": "def onlySubsetE (p : Program) : Bool := p.funcs.all functionE"
+      },
+      {
+        "line": 95,
+        "declaration": "theorem instE_of_functionE {f : Function} (hE : functionE f = true) {b : Block} (hb : b \u2208 f.blocks)"
+      }
+    ]
+  },
+  "FV/Backend/Lowering/Stock.lean": {
+    "ref": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+    "blob": "379c017dbee827a4c3ed74ad8189b61648a2cb83",
+    "sha256": "b81f1973800ac6ac42d127968d1f5448da8722dd8c22a135fb6d8c9451f22e3e",
+    "declarations": [
+      {
+        "line": 15,
+        "declaration": "def instArgs : Clif.Inst \u2192 List Nat"
+      },
+      {
+        "line": 29,
+        "declaration": "def termArgs : Clif.Terminator \u2192 List Nat"
+      },
+      {
+        "line": 41,
+        "declaration": "def mustLower : Clif.Inst \u2192 Bool"
+      },
+      {
+        "line": 50,
+        "declaration": "def colored (i : Clif.Inst) : Bool :="
+      },
+      {
+        "line": 53,
+        "declaration": "inductive UseState where"
+      },
+      {
+        "line": 57,
+        "declaration": "def UseState.inc : UseState \u2192 UseState"
+      },
+      {
+        "line": 63,
+        "declaration": "def useStates (ctx : Ctx) (args : Array (List Nat)) : Array UseState := Id.run do"
+      },
+      {
+        "line": 92,
+        "declaration": "structure Opportunistic where"
+      },
+      {
+        "line": 100,
+        "declaration": "structure State where"
+      },
+      {
+        "line": 115,
+        "declaration": "def State.mark (st : State) (v : Nat) : State :="
+      },
+      {
+        "line": 118,
+        "declaration": "def State.setAlias (st : State) (dst src : Reg) : Except String State := do"
+      },
+      {
+        "line": 128,
+        "declaration": "def source (ctx : Ctx) (st : State) (v : Nat) : Option (Nat \u00d7 Bool) := do"
+      },
+      {
+        "line": 137,
+        "declaration": "def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : State) :"
+      },
+      {
+        "line": 209,
+        "declaration": "def sem (ctx : Ctx) : Isle.Sem V State where"
+      },
+      {
+        "line": 219,
+        "declaration": "def runTerm (ctx : Ctx) (term : String) (args : List V) (st : State) :"
+      },
+      {
+        "line": 225,
+        "declaration": "structure SourceMetadata where"
+      },
+      {
+        "line": 231,
+        "declaration": "def sourceMetadata (ctx : Ctx) (ranges : Array (Nat \u00d7 Nat)) : SourceMetadata := Id.run do"
+      },
+      {
+        "line": 256,
+        "declaration": "def finishCtx (ctx : Ctx) (ranges : Array (Nat \u00d7 Nat)) (allocation : Allocation) :"
+      },
+      {
+        "line": 275,
+        "declaration": "def buildCtx (f : Clif.Function) : Except String (Ctx \u00d7 Array (Nat \u00d7 Nat) \u00d7 State) := do"
+      },
+      {
+        "line": 282,
+        "declaration": "inductive Node where"
+      },
+      {
+        "line": 287,
+        "declaration": "def destinations : Clif.Terminator \u2192 List (Nat \u00d7 List Clif.TryArg)"
+      },
+      {
+        "line": 294,
+        "declaration": "structure Order where"
+      },
+      {
+        "line": 302,
+        "declaration": "def blockOrder (f : Clif.Function) : Except String Order := do"
+      },
+      {
+        "line": 329,
+        "declaration": "inductive Decision where"
+      },
+      {
+        "line": 335,
+        "declaration": "structure Step where"
+      },
+      {
+        "line": 350,
+        "declaration": "structure Scan where"
+      },
+      {
+        "line": 359,
+        "declaration": "structure ScanEvent where"
+      },
+      {
+        "line": 368,
+        "declaration": "structure ScanRecord where"
+      },
+      {
+        "line": 376,
+        "declaration": "structure BlockScan where"
+      },
+      {
+        "line": 382,
+        "declaration": "structure BlockScanEvent where"
+      },
+      {
+        "line": 391,
+        "declaration": "structure Result where"
+      },
+      {
+        "line": 403,
+        "declaration": "def commitOpportunisticValues (ctx : Ctx) (values : List Nat) (st : State) :"
+      },
+      {
+        "line": 413,
+        "declaration": "def commitOpportunistic (ctx : Ctx) (block inst : Nat) (st : State) :"
+      },
+      {
+        "line": 421,
+        "declaration": "def branchArgs (ctx : Ctx) (st : State) (block index : Nat) :"
+      },
+      {
+        "line": 452,
+        "declaration": "def scanState (st : State) (i : Nat) : State :="
+      },
+      {
+        "line": 457,
+        "declaration": "structure Emission where"
+      },
+      {
+        "line": 465,
+        "declaration": "def bindResults (ctx : Ctx) (pairs : List (Nat \u00d7 List Reg)) (next : State) :"
+      },
+      {
+        "line": 474,
+        "declaration": "def emitInstruction (ctx : Ctx) (i : Nat) (before : State) : Except String Emission := do"
+      },
+      {
+        "line": 483,
+        "declaration": "def Emission.scan (emission : Emission) (block i : Nat) (before : State) : Scan :="
+      },
+      {
+        "line": 491,
+        "declaration": "def scanInstruction (ctx : Ctx) (block i ti : Nat) (isBranch : Bool) (input : State) :"
+      },
+      {
+        "line": 508,
+        "declaration": "def runScansRef (exec : Nat \u2192 State \u2192 Except String Scan) :"
+      },
+      {
+        "line": 517,
+        "declaration": "def runScansAux (exec : Nat \u2192 State \u2192 Except String Scan) :"
+      },
+      {
+        "line": 524,
+        "declaration": "def runScans (exec : Nat \u2192 State \u2192 Except String Scan) (indices : List Nat) (input : State) :"
+      },
+      {
+        "line": 527,
+        "declaration": "def scanBlock (ctx : Ctx) (block ti : Nat) (isBranch : Bool) (indices : List Nat)"
+      },
+      {
+        "line": 533,
+        "declaration": "def outgoingStep (ctx : Ctx) (order : Order) (bi : Nat)"
+      },
+      {
+        "line": 542,
+        "declaration": "def collectOutgoing (ctx : Ctx) (order : Order) (bi : Nat) (targets : Array Nat)"
+      },
+      {
+        "line": 546,
+        "declaration": "structure BranchEmission where"
+      },
+      {
+        "line": 553,
+        "declaration": "def branchCode (f : Clif.Function) (t : Clif.Terminator) (targets : Array Nat)"
+      },
+      {
+        "line": 566,
+        "declaration": "def emitBranch (ctx : Ctx) (f : Clif.Function) (t : Clif.Terminator)"
+      },
+      {
+        "line": 574,
+        "declaration": "structure LoweredBlockCore where"
+      },
+      {
+        "line": 584,
+        "declaration": "def lowerBlockCore (ctx : Ctx) (order : Order) (f : Clif.Function)"
+      },
+      {
+        "line": 603,
+        "declaration": "structure DriverState where"
+      },
+      {
+        "line": 613,
+        "declaration": "def assembleOriginalBlock (ctx : Ctx) (f : Clif.Function) (b : Clif.Block)"
+      },
+      {
+        "line": 639,
+        "declaration": "def recordCore (input : DriverState) (lowered : LoweredBlockCore) (bi stop : Nat) :"
+      },
+      {
+        "line": 661,
+        "declaration": "def lowerNode (ctx : Ctx) (ranges : Array (Nat \u00d7 Nat)) (order : Order)"
+      },
+      {
+        "line": 687,
+        "declaration": "def lower (f : Clif.Function) : Except String Result := do"
+      }
+    ]
+  },
+  "FV/Backend/ReturnPinProduction.lean": {
+    "ref": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+    "sha256": "070955a00765b28cb3a810152cb00b20e1a1da179ecc5a74d0d627d2f43e29f8",
+    "declarations": [
+      {
+        "line": 7,
+        "declaration": "def returnPinModeB (pf : Clif.ParsedFile) (pre : List (String \u00d7 String)) (cleanup : Bool) : Bool :="
+      },
+      {
+        "line": 14,
+        "declaration": "def compileFileReturnPinWhen {m : Type \u2192 Type} [Monad m] (enabled : Bool)"
+      },
+      {
+        "line": 21,
+        "declaration": "theorem compileFileReturnPinWhen_retry {m : Type \u2192 Type} [Monad m]"
+      },
+      {
+        "line": 29,
+        "declaration": "theorem compileFileReturnPinWhen_admitted {m : Type \u2192 Type} [Monad m]"
+      },
+      {
+        "line": 37,
+        "declaration": "theorem compileFileReturnPinWhen_disabled {m : Type \u2192 Type} [Monad m]"
+      }
+    ]
+  },
+  "FV/Link/TypedCompileModes.lean": {
+    "ref": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+    "sha256": "5bfd4466930426b0e6eed235d5ee7c97af04b2d2dbd8fa595bb892f1b2075cee",
+    "declarations": [
+      {
+        "line": 12,
+        "declaration": "def outOkTSMsg : String :="
+      },
+      {
+        "line": 16,
+        "declaration": "def attempt (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) (cleanup : Bool) :"
+      },
+      {
+        "line": 23,
+        "declaration": "theorem attempt_spec {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}"
+      },
+      {
+        "line": 37,
+        "declaration": "theorem attempt_correct {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}"
+      },
+      {
+        "line": 62,
+        "declaration": "theorem attempt_correct_depth {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}"
+      },
+      {
+        "line": 87,
+        "declaration": "theorem attempt_correct_peak {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}"
+      },
+      {
+        "line": 110,
+        "declaration": "theorem attempt_cleanup_eq (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) :"
+      }
+    ]
+  },
+  "FV/Link/TypedCompileSourceModes.lean": {
+    "ref": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+    "sha256": "fedba072a7316f7a11a15786ad378bdc775677c8ebfdc624e7ee3a6e9fdc6e3f",
+    "declarations": [
+      {
+        "line": 14,
+        "declaration": "theorem attempt_correct_source {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}"
+      },
+      {
+        "line": 118,
+        "declaration": "theorem attempt_correct_source_peak {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}"
+      }
+    ]
+  },
+  "FV/E2E/TypedLegacyBinding.lean": {
+    "ref": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+    "sha256": "d772c0474fe528a6872d3e2c42056b9b2cd3d6946b28530e1a17bcf3cbbd6838",
+    "declarations": [
+      {
+        "line": 9,
+        "declaration": "theorem LinkInput.production_legacy_binding (I : LinkInput) (cleanup : Bool) (fi : FnInput) :"
+      },
+      {
+        "line": 18,
+        "declaration": "theorem LinkInput.production_cleanup_binding (I : LinkInput) (fi : FnInput) :"
+      },
+      {
+        "line": 26,
+        "declaration": "theorem LinkInput.results_cleanup_binding (I : LinkInput) :"
+      }
+    ]
+  },
+  "FVTest/Link/LeanLinkMain.lean": {
+    "ref": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+    "sha256": "cbe614dd4078ccc337e7b5c87a2b4d6982d4176c4be78d5cf1410e58c23a5840",
+    "declarations": [
+      {
+        "line": 138,
+        "declaration": "def hex (n : Nat) : String := \"0x\" ++ String.ofList (Nat.toDigits 16 n)"
+      },
+      {
+        "line": 144,
+        "declaration": "def scopeFails (F : String \u2192 Option Clif.Function) (P : Clif.Program) (S : String \u2192 Option Nat)"
+      },
+      {
+        "line": 182,
+        "declaration": "def srcFails (F : String \u2192 Option Clif.Function) (g : Clif.Function) : List String :="
+      },
+      {
+        "line": 201,
+        "declaration": "def exclusions (S SC : LinkSpec) (typed : Bool) (extra : List String := []) (only : Bool := false) :"
+      },
+      {
+        "line": 229,
+        "declaration": "def typedFails (SC : LinkSpec) (tc : Bool) : List (String \u00d7 List String) :="
+      },
+      {
+        "line": 263,
+        "declaration": "def stockDiffersB (lower : Clif.Function \u2192 Except String Backend.VCode) (g : Clif.Function) : Bool :="
+      },
+      {
+        "line": 276,
+        "declaration": "def typedStockFails (lower : Clif.Function \u2192 Except String Backend.VCode) (SP : LinkSpec) :"
+      },
+      {
+        "line": 289,
+        "declaration": "def printExclusions (exe : String) (S SC : LinkSpec) (typed : Bool) (extra : List String := [])"
+      },
+      {
+        "line": 296,
+        "declaration": "def takeOpt (key : String) : List String \u2192 Option String \u00d7 List String"
+      },
+      {
+        "line": 305,
+        "declaration": "def ldCheck (P : LinkSpec) (file0 : ByteArray) (f : String) : IO (Except String Unit) := do"
+      },
+      {
+        "line": 333,
+        "declaration": "def ldInCheck (S0 SC : LinkSpec) (f : String) : IO (Except String String) := do"
+      },
+      {
+        "line": 366,
+        "declaration": "def main (args0 : List String) : IO UInt32 := do"
+      }
+    ]
+  }
+}

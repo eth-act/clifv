@@ -1,0 +1,23 @@
+{
+  "status": "kernel_and_complete_witness_passed",
+  "files": {
+    "FV/Backend/Proof/StockDirectCallResult.lean": "1808f16d7be8f2a99ad69b7cb08d138c26c44ecf65758757f0b34578774f854b",
+    "FV/Backend/Proof/StockDirectCallResultWitness.lean": "a6f8660e7a86fc647ccab55c5780dc341b08512c8a9e32a485df541ec18370d1",
+    "FV/Backend/Proof/StockDirectCallResultFixture.lean": "3323b3bcef117f3a45c3a9d5525ca29ee032249ee83176636e6c821ecf21d785",
+    "scripts/audit/stock-direct-call-result.lean": "60be430d6f005d67bb4f9b8870809952dcddb421e08327b5e78339480daf8a0d",
+    "scripts/audit/stock-direct-call-result-witness.lean": "9b32110f947b80966e06e74ddc234e08c4f33f9995ee1b443304f724f45467bc"
+  },
+  "standard_roots": 11,
+  "fixed_roots": 2,
+  "reviewed_receipt": "direct-call-result-packet-v1/reviewed-state-v1.json",
+  "passing_peak_bytes": 256344064,
+  "cleanup_done": true,
+  "requires_current_main_gates": true,
+  "production_activation": false,
+  "full_goal_complete": false,
+  "next": [
+    "Derive the non-void call function Domain using the new binder and original callee contract",
+    "Integrate the class through the complete retained production routes and consumers",
+    "Current-main gates and all original #140 obligations"
+  ]
+}

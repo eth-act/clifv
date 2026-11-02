@@ -1,0 +1,10 @@
+{
+  "published_source": "e5a094f42d35ff086390edea7fe300734397c78b",
+  "verdict": "no blocking defect",
+  "reviewer": "worker-A",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents.",
+  "notes": "Every removed non-import line appears verbatim in additions. No sorry/admit/axiom added. Import-only consumers and exact moved interfaces reviewed.",
+  "historical_head": true,
+  "requires_current_main_reconciliation": true,
+  "utc": "2026-11-02T08:18:30.515704+00:00"
+}

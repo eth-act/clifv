@@ -1,0 +1,24 @@
+{
+  "pr": 892,
+  "packet": "return-pin-production-delivery-packet-v1",
+  "validation": "892-current-main-context-v1/reviewed-state-v1.json",
+  "source_overlays": [
+    "link-image-extension-packet-v1",
+    "return-pin-linker-runtime-packet-v5",
+    "return-pin-binary-packet-v1",
+    "return-pin-executable-packet-v4",
+    "return-pin-source-adapter-packet-v1",
+    "return-pin-consumer-integration-packet-v1",
+    "sret-complete-execution-packet-v1",
+    "void-call-file-packet-v1"
+  ],
+  "apply_packet": true,
+  "new_branch": true,
+  "parent": "sret-complete-execution-landed-v1.json",
+  "branch": "agent/stock-return-pin-production-20261102",
+  "prepared": "production-independent-delivery-prepared-v2.json",
+  "commit_message": "Activate ABI-aware production with complete retry and typed compiler proofs",
+  "review": "production-independent-peer-review-v2.json",
+  "landed": "return-pin-production-landed-v1.json",
+  "requires_validation_receipt": true
+}

@@ -1,0 +1,11 @@
+{
+  "actual_main": "77088aba2b9c528264aead43ab563d7ee17a102e",
+  "prepared_base": "77088aba2b9c528264aead43ab563d7ee17a102e",
+  "current": true,
+  "required_if_main_changes": "Prepare a new version against actual main; prove source-context equality before any evidence reuse. Keep every old receipt.",
+  "final_mode_binding": "pending; draft hashes excluded",
+  "materialization": false,
+  "builds_started": false,
+  "temporary_index_files": [],
+  "utc": "2026-11-02T07:34:34.961879+00:00"
+}

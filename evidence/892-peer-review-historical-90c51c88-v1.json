@@ -1,0 +1,10 @@
+{
+  "published_source": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+  "verdict": "no blocking defect",
+  "reviewer": "worker-A",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents.",
+  "notes": "Three CLI choices, complete old flow, route indices and admission-before-artB pass direct review. Raw typed mode is intentional and covered.",
+  "historical_head": true,
+  "requires_current_main_reconciliation": true,
+  "utc": "2026-11-02T08:18:30.515585+00:00"
+}

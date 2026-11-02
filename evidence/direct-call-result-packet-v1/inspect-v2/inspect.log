@@ -1,0 +1,12 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/InspectDirectCallV2.lean:12:171: error(lean.invalidField): Invalid field notation: Type of
+  b
+is not known; cannot resolve field `insts`
+
+Hint: Consider replacing the field projection with a call to one of the following:
+  • `Ctx.insts`
+  • `VBlock.insts`
+  • `CtxFacts.insts`
+  • `CtxSpec.insts`
+  • `DriverHyp.insts`
+  • `Flow.CtorOk.insts`
+  • `Stock.Proof.DFGViewEq.insts`

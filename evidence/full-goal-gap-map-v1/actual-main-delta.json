@@ -1,0 +1,1485 @@
+{
+  "base": "77088aba2b9c528264aead43ab563d7ee17a102e",
+  "actual_main": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+  "ahead_by": 1,
+  "commits": [
+    {
+      "sha": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+      "subject": "Remove unused imports that crept back since #769 (scripts/shake, 294 files) (#894)"
+    }
+  ],
+  "file_count": 294,
+  "files": [
+    {
+      "path": "FV/Arm/Tactics/BvOmegaBench.lean",
+      "sha": "ea4526db2e6245b5aae67be4d5e25c734c09f5cf",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Isel.lean",
+      "sha": "7e99645197d2d4c33a80fcf96d578f7eb4c4fbe7",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/MInst.lean",
+      "sha": "2bc532a4ba96c6a0de0866c1b32af68c9eb40cb3",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/FormsCoverCompleteT.lean",
+      "sha": "361c5dc88092fc041923e2450fd59dea4ba4213a",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselAtomic.lean",
+      "sha": "ee8f1823fff8fda67fdf1316f388505b9eeb5c25",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselContract.lean",
+      "sha": "9e820bb28805a8481c7a69d42c8d9e82fdc1cf99",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselCovClean.lean",
+      "sha": "7286d0a218e2ff7aaa2152ce11b6aa8eb9e1f36d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselCovData.lean",
+      "sha": "fef6115713e5b798d249346fd5e342df82115413",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselCovExt.lean",
+      "sha": "b518143be7a198cc1855954c2cae6ba4b7b87f12",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselCtlBranchTI.lean",
+      "sha": "6f7d004c3b613c55fc8550c450d7e5884d54a188",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselEmitCtor.lean",
+      "sha": "e8c6f8901b9ade3741d2e0dd4ec51b50685402cf",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselEmitDefs.lean",
+      "sha": "60960b813b858c164c1eac7fdae76bb14df4a32e",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselEmitDriver.lean",
+      "sha": "e0d80e40cac807e6ac4e3e7d83dd2cf8e25a83ff",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselEmitHand.lean",
+      "sha": "8a3329b80bddd80bfc7365a09ef9775dc736fd57",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselEmitLast.lean",
+      "sha": "43b97dad49f6fc62c3a0d905cf449b77055cac63",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselEmitModel.lean",
+      "sha": "132ddb7f9c074e24bdb441568f0c674563349a89",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselFamALUATI.lean",
+      "sha": "c119fe601e44234f626ddd8e9eb1a512d01e085f",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselPrgCtx.lean",
+      "sha": "13246c3b6ffa7037bf141e36f9951254f9751ff2",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselPrgCtxT.lean",
+      "sha": "04bcf7849490e7e6efd23bfac45127f6cccf4ec8",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselPrgHand.lean",
+      "sha": "430c932730a84f836f9294ec4a39a91e73949ab6",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselPrgInv.lean",
+      "sha": "06d8161c2dbefee09c58f8a4b06162d2b618398d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselPrgTryLast.lean",
+      "sha": "692c43cc12f0d99b73bb6b28ad9a9630141ee19e",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselShpCtor.lean",
+      "sha": "0f7d2ea31dd475b70f3c985a6fdf0879c1c5b021",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselSzDriver.lean",
+      "sha": "32d3770e67c29b1a6f76de02d110067f9c7d86e0",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselSzTDriver.lean",
+      "sha": "7826c30cf854c9307c2391dedc10b0fd8b42dca9",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/IselTermFactsTy.lean",
+      "sha": "e4017a50d6a174293ac39c4250be4b745967672f",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/KillCtor.lean",
+      "sha": "569234f17d155be62ae2eeb47aba170f88328fd1",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/LowerLoopCode.lean",
+      "sha": "7d59bcda8b694b2995dec575e125520f01df1f63",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/MemRefines.lean",
+      "sha": "2edee6079d859678202af715bd3719ff7df62241",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/RegallocAtomic.lean",
+      "sha": "ec6811c306774d4b83d53210db9271d87d328308",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/SpillClasses.lean",
+      "sha": "9dee59ae1eb51c8914f9bde4a8d3a0c9193fdab1",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/SpillClsChain.lean",
+      "sha": "d78c919a68a357c1c531b83e177149ebb8245115",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/SpillClsModel.lean",
+      "sha": "788f44250beb1ee5e7ec1345826569bd4b64edb5",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/SpillClsRun.lean",
+      "sha": "9098f0f3a24c8b25f86b552920d60ed392f22872",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/SpillCtlForms.lean",
+      "sha": "1b1cb5db8eda7cc434bc80020b3ccf40bad64001",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/SpillEdgesIsel.lean",
+      "sha": "25b5bba7db0d3b556f48432d62fc561fdcfd9ded",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAluSelectedValues.lean",
+      "sha": "1f0b9c4f39b950aa378c079cef5b685f98da848e",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockArithmeticReturnRefines.lean",
+      "sha": "4d2a1ee9a34b48411d193855f989a860e06fe4d7",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAvailableTypes.lean",
+      "sha": "5da868349629999057296e0e1ba9248d05a731f9",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockBnotNotrap.lean",
+      "sha": "6af9f43a20c328a3d81234cba3023e5aea9b5384",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCfgReturnRefines.lean",
+      "sha": "a836d8a6cf826fef6eb3ef5320a384e1dfeb310e",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCfgReturnRefinesAt.lean",
+      "sha": "9798cea27381f598590f8a4c1ed884e44bca2b69",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpMatchedImmediate.lean",
+      "sha": "963f2a8e199730a2e0ea6f846d040e3ab228b9df",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpMatchedPredecessor.lean",
+      "sha": "9710ff96f254525e27e9a3a18667d75f0690bd18",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpMatchedWitness.lean",
+      "sha": "f40f0f54968c742f2b4f456af2160a261f70fe3c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpMatchedZero.lean",
+      "sha": "9fd8ab01ce740412ac6dcd8463e54769585344c6",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpNarrowImmediateSourceValues.lean",
+      "sha": "865fe983f874ee42eda177fcf455fde8cdf8c992",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpNonconstantSelection.lean",
+      "sha": "333845f2045f8ebec53591495375019a6f6b1de6",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpNonzero16PrefixWitness.lean",
+      "sha": "0ad67ff96f4a266bd789eaa513e855a08abeb977",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpNonzero32OriginalValues.lean",
+      "sha": "497a4181308c79ad08991bb6ad63dc140ded4f17",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpNonzero32RhsValues.lean",
+      "sha": "425211129b8f85e60de2b3d5c50403b70a66b278",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpNonzero32Selection.lean",
+      "sha": "2c56612bef28bf0e4ce74482d6663dea15c5f47c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpNonzero32Values.lean",
+      "sha": "1f182dfbc17470bad3139a380c22791fb6212910",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpNonzeroNarrowCalls.lean",
+      "sha": "5c48c8aed482e37723a158ce3a0dcfe4ce4a7c1f",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpRegisterTraceValues.lean",
+      "sha": "becd26b86a52fa20e63f582cdc8954e23da81835",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpSourceMatch.lean",
+      "sha": "eb94d5c4cb2b1d9f854b68a3a012564bade49230",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpZero32RhsValues.lean",
+      "sha": "f4ff18777817ae5b5fa2dac35128ed814bb3d498",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpZero32RuleCalls.lean",
+      "sha": "31f2ee4120a35f246843ebd16a7101c9b9c4b664",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpZeroLeftEmitterSelection.lean",
+      "sha": "9b29b7b39ee4b1612fbacecd2f5ee03cfcd8bb2f",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpZeroLeftEmitterValues.lean",
+      "sha": "bc883244f509b77da704e7e68d76795c111eb1af",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpZeroLeftMatch.lean",
+      "sha": "3068cf0e2556740b03617112a8078c13b05fbc27",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonPrefixNarrow.lean",
+      "sha": "ac5a8bc3902c058837cb3ca9a5b85a74139a2482",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockConditionalBranchValues.lean",
+      "sha": "9014fbe0a5dda112ca2de4e639772a6b72768c87",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockConditionalEmptyTrapSource.lean",
+      "sha": "992f064ab3fcdb3c91ee898752048f7854281d09",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockConditionalTrapLeaf.lean",
+      "sha": "e4191bf4dbcf1622a8bbcbebf4875cb021755a00",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockConstantCompleteValues.lean",
+      "sha": "489193bc2b96fd7b2f021a708f41d23976ec7716",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockConstantDispatch.lean",
+      "sha": "6c01f1217305e8e34c7083a0f640041dde8e9ffd",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockControlShape.lean",
+      "sha": "29a26a54da2f4f4745100d302d498651cfa1bd23",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCoverageInvariant.lean",
+      "sha": "89fedf341ef452febee844f4402caac96542ce78",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCoverageSound.lean",
+      "sha": "c33b78a596f0cb316835ce0a3bd3f7efd2ff542f",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockD0Code.lean",
+      "sha": "e6bcd8974608e8488abbd60b283a8b027bf74def",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivObservations.lean",
+      "sha": "f843ea1f2aac9a92c23164946801abaa63fe78fa",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivRemNarrowValues.lean",
+      "sha": "eb85abf197f46694a5b9e4dd0a22802dc8a729ec",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivRemWideValues.lean",
+      "sha": "a4a12c2d54de76c2ef441bb09113f8475f1789a2",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivSafeObservations.lean",
+      "sha": "964b9e5bd9f2f0f056730f1724e05081918b7911",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivSignedSourceTrap.lean",
+      "sha": "b5c43015231898e2e47ba31abbbe3714349144b9",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivSourceValues.lean",
+      "sha": "049187f4042465ff8f2ea7edc6923c9936ead985",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivUdivNarrowValues.lean",
+      "sha": "96a91e042f83777ec662333208e74f723ce054e0",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockEligibilitySinkTarget.lean",
+      "sha": "f6f3323ed8a1c1b179b15af8db3ba1a4a327a435",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockEntryABI.lean",
+      "sha": "a01a332e50828c2f9e7e036f9a838863e8d9aa60",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFloatMemoryRoots.lean",
+      "sha": "ab365dae70c2bb2e8143f25a0083a9ff69fc4c80",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockLogicalNotrap.lean",
+      "sha": "933c83e2756cb3c2fea77fa5e0ddcd9eefcb3f4b",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockLogicalReturnRefines.lean",
+      "sha": "e7f5e094a4cb2e5d70226873d5c28896bb062313",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockLogicalSelected.lean",
+      "sha": "44d258f39a1c067265f8553d628d013874b31b22",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockLowerProjection.lean",
+      "sha": "15d84906ff388912bfd4e54e548984e120cfc45c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAddressSelection.lean",
+      "sha": "210bf42735e7674ab766b472b945ce5841626dc1",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryCapturedCopyDomain.lean",
+      "sha": "ddc9411ae6966f5dbbf794b2c96fc10f9d17309d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryCapturedFixture.lean",
+      "sha": "c8898f32a5acc9b271e760ecd3e96cb4eee0c3da",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryCfgClass.lean",
+      "sha": "7f6cc678ff1bfffb57640dd0a7d0a9a3c39a5a7d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryCfgJumpReturnAt.lean",
+      "sha": "32cf2d1c61b5c72ba32e82623a364c3c8fad902f",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryCfgNotrap.lean",
+      "sha": "4a00f046b676aa5142419b88a6de887f69798fed",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryCfgReturnRefinesAt.lean",
+      "sha": "da22b8e32ba2c97be476aa9790ab5d2542598fa3",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryComputedStoreRecordSpec.lean",
+      "sha": "c9bb203773e29d2dcee0717fdc4c8d083f69c2fd",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryDispatch.lean",
+      "sha": "d0d42c7358d07fd75a4d4d3feddd8babb04f5b41",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryExtLoadRecordValues.lean",
+      "sha": "a23d5c031e32df3b4deaf44440d56e5577c6b1ca",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryExtLoadReturnSpec.lean",
+      "sha": "212f45329eefa3b0d1f9aa75f64b137d05ec6cc7",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryExtLoadSelection.lean",
+      "sha": "5be9dc90e7d495878a3ecc35f4f8d3274a9a3907",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryIntegerAddress.lean",
+      "sha": "e6585b3e742ecc71a9b0625113266d60d74ebd0e",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryIntegerLoadSelection.lean",
+      "sha": "5566973c927a96935dd8cbe66be9b410e7f7397c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryIntegerRetainedReturnSpec.lean",
+      "sha": "e868cdc44a6ff3ad41082fcec89b130cbbf9727c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryIntegerReturnSpec.lean",
+      "sha": "16f80a2d0998e9fb58e882ddf6a2cd3deb966a4d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryLoad.lean",
+      "sha": "3d1d85ffd579d983e42e7de4e115701b47cf70fd",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryLoadSelection.lean",
+      "sha": "2b9e8187f67e51c9b2d6607fe8a2b89d59fc727b",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryLoadStoreCheckWitness.lean",
+      "sha": "b795cbdc3a0e5637d0802301c3315c92e26cb23a",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryLoadedPointerFixture.lean",
+      "sha": "2e080b5c59c9d99b3d584dbbf348df995904dd65",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryLoadedPointerStoreExec.lean",
+      "sha": "839de53effbe08715e5fd9ddc38020223a339fe2",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryLoadedPointerStoreRetention.lean",
+      "sha": "3c200ba66e7021ef292f872f41345888cdf4d945",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryLoadedPointerStoreWitness.lean",
+      "sha": "3975df89be68db5cf14b495b3e8313e814f838dd",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetEightLoadRecord.lean",
+      "sha": "d1238e3f18c3fc0ebe99cd47af5ac19e08bdd281",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetEightPairedRecord.lean",
+      "sha": "df7c3cbb1cfaafdbbaa87b1b470141cfe2fa99ea",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetEightSourceValues.lean",
+      "sha": "51eba62dc87469a782b0714fd715ce87942487a2",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetEightStoreExec.lean",
+      "sha": "8c91ef919336333d56966ab956f0284ff4bbbeaa",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.lean",
+      "sha": "cd052c444e7e4108f4799ab55397ed06884ce044",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetEightValues.lean",
+      "sha": "650b165e9498a4dc8a0709bbb73263ad5e57b9f0",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOrdinaryCfgJumpReturnAt.lean",
+      "sha": "6c8d55c186d2b34f81306003655aa53dadf59656",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryPairedRecord.lean",
+      "sha": "9e470edacb730766c75a4dd55babc74a39063089",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryReadTransport.lean",
+      "sha": "17016651841dd95b39fda1af3fad1e568b5dc2b8",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryReadWitness.lean",
+      "sha": "a1227761597fedff3e3a84c4ef8ce1c2163a83cb",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryRecordFrame.lean",
+      "sha": "07c445e883e9e7aeafa67cf4cf51a317a29a93ff",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryRecordKernel.lean",
+      "sha": "0c22adc9034c6324cd26b861e36012f66e457042",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryRecordWitness.lean",
+      "sha": "dafd49e6435ded2bfd7561a902d34a0e1615b3e9",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryRetainedStoreReturnSpec.lean",
+      "sha": "e66d7fc32a8e747024eba0e7ee91900acee68fe9",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryReturnRefines.lean",
+      "sha": "42c968af905aaad69c02b8f375a422bc6dea3cd6",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryReturnSpec.lean",
+      "sha": "5c0764ecd92a9f85aeb1a9e034cf2f000818c6c1",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryReturnWitness.lean",
+      "sha": "e2f74ec799e85eb04b86c9b07c3d81920369975f",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemorySelected.lean",
+      "sha": "d111bb2e9a3b441cb89227d708f978bac31e844b",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemorySelection.lean",
+      "sha": "28f86bef36884533e9b21e1c014b6025fcc1918d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemorySourceExecution.lean",
+      "sha": "fc35b28d3345ad3537229adf530fe1a68dcd8ded",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemorySretCopyBodySpec.lean",
+      "sha": "e580df4006e1443f87d293ee60ce552c1954f0e8",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemorySretCopyClass.lean",
+      "sha": "819850e194c19be89a4e78b5fdfe4f6b0f2d593d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemorySretCopyDomain.lean",
+      "sha": "39442870e7dea1ed08082c3f6aae5d4fa89da028",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreCfgClassWitness.lean",
+      "sha": "b6b8ec67ce7d0dbe57b4be5e92a7d98406babadc",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreContract.lean",
+      "sha": "29e45a86ca0ae6a7485d8224b8cfaa05e704b358",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreDemandTransport.lean",
+      "sha": "5c547dc9b7cfcd261294e73279f63af7723dd24a",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreGuardedWitness.lean",
+      "sha": "1bda8570eafa5ac3f3cb857d3807caef5c14e6f1",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreNopTwoBlockDomain.lean",
+      "sha": "08190472dfc0771710f09a356e3219243aefb810",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStorePaired.lean",
+      "sha": "106a4bad64960e524caca98a00cddbee1f780a82",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreRecordExec.lean",
+      "sha": "be2fe4932d4359e435de01b756233b8ef08a61b9",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreRecordFixture.lean",
+      "sha": "8436f6d3d87619a21f51231b602959089d0fe648",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreReturnSpec.lean",
+      "sha": "ed3639923df4274ceb47a31b22382314774ebe3d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreSelection.lean",
+      "sha": "a59eb35a09e7cf7301d9927964e6ec829de81381",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreSource.lean",
+      "sha": "5ec1009efd390f605f660334e0f6b29c6e3136a6",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreTwoBlockDomain.lean",
+      "sha": "91a6b3634b19a2d24cb357ce0ececb4e3bbf7820",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreWitness.lean",
+      "sha": "cc75930df0b6c79e606d94259c581d9c3ef8eb99",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMinMaxActualDispatch.lean",
+      "sha": "e265e560c15998a7f859c0705fad3325d6ec5eec",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMinMaxFamily.lean",
+      "sha": "1e6d037d785019fd5c84be9faf51e4378e685564",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMinMaxRegisterTraceValues.lean",
+      "sha": "d8bf570ea6f7f24b634efd1146b6176bc498c478",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMinMaxRegisterWitness.lean",
+      "sha": "e89c29239affe766440fd95dd67f6010914f3329",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMinMaxRules.lean",
+      "sha": "ca8d864bd80b81c32c094322d10e0a527b221bfd",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMinMaxScanRefines.lean",
+      "sha": "6d2125f6a862cfbe5926205f271759a64d70cfcd",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMinMaxWideShape.lean",
+      "sha": "6c4dbb5a034485491f17a385065ca62dab3dcce0",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockParameterLeaf.lean",
+      "sha": "fab89f84c704a57d4d0af31a6c16ae72bf10b975",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockProtectedSinkDriver.lean",
+      "sha": "9584bd09914dd777d8c232f4f8f23636e6a2f5b0",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockProtectedSinkFrame.lean",
+      "sha": "300e9eb879907222f49902ae9e6a9b2e6ab738e9",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockProtectedSinkSource.lean",
+      "sha": "0064f02034e6719a3c96f6962b121b025d07f817",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockProtectedSinkWitness.lean",
+      "sha": "385bca6a4f9a7a457e6aedd8e7330635c71d3fc6",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockPureReturnRefines.lean",
+      "sha": "bbf2b98c2b51a3e329fa8554e500cc3c219604a3",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockReturnRootCalls.lean",
+      "sha": "7431c2911274d8fd0fadcc3dc86b856de16b1953",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockScalarCheck.lean",
+      "sha": "323142cdbe5947b2f93fc005767294d9ab97d015",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockScalarCompleteBlock.lean",
+      "sha": "eb1216e5032f36435cf4dd99ba0a412dbb4f8c06",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockScalarCompletePre.lean",
+      "sha": "8a83e65ec8b1612e3a9a91cc6d47a21eee92e405",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectComparisonConditionShape.lean",
+      "sha": "ff47dded275cd5c26412068eea964addaa78306c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectNarrowComparisonShape.lean",
+      "sha": "e732d9e933b1b843fe89d63f162cb37d113ceb23",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectNonzeroConditionShape.lean",
+      "sha": "c43823b1c6bfab7480d84807605124eb4556982e",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectNonzeroWideShape.lean",
+      "sha": "4ba5afd7aaa93fd098da5fd2858171d1eb55e0b8",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectObserved.lean",
+      "sha": "97dc3d581ea8251be43f34949da4a5cb9a7ef8c1",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectOriginalConditionValues.lean",
+      "sha": "75752059b882bd363c6ed098c2b4a457bbc4a04b",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectOriginalRecordValues.lean",
+      "sha": "747a7c68344c02779cad74f9c7ae610caf89e8bb",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectOriginalSourceValues.lean",
+      "sha": "2f05f7d30b13c175b62965bd5a605b07ed6a1007",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectParameterDerivedSourceValues.lean",
+      "sha": "6d0a903631b5551dc9120df2556e8aad7eb59c96",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectScanRefines.lean",
+      "sha": "fb69d59faef5a770180f62635208f781c34a6a3c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectSourceWitness.lean",
+      "sha": "aae9b1edbf75ba383d0704727089db9b49d68e33",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectZeroObserved.lean",
+      "sha": "e5c2fba7da646b757bb6facc25b9658c00ea01aa",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSelectZeroSourceWitness.lean",
+      "sha": "0841342bf509b34d548e509917342dc1a9b22336",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockShiftPrepValues.lean",
+      "sha": "465d5985ea8ba4e11ab0c07c804f00e2e150c04b",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockShiftRootValues.lean",
+      "sha": "2996a78348ad0753e5f2b66e2b40db8b5d737485",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSinkRuleSyntax.lean",
+      "sha": "33f352463690cd39af4d526f2c6678047001ea82",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSourceAliasRank.lean",
+      "sha": "9106d7d504c1dc9bd9c9b18de33016e65b3b3c36",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockSourceAliasRecords.lean",
+      "sha": "73df46b10fe1a15a57dc29d58ae2af27839ab752",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockStoreMixedRetention.lean",
+      "sha": "7dac83454ee8fa1738f9f5d4d146d2398ccae7c0",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockStoreRetention.lean",
+      "sha": "b6e218030264f1a5b92231214b7a28a5fbe51d98",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTrapRefines.lean",
+      "sha": "057040502193cd410d057bc91a682c7e5e9627cb",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Concurrency/ArmAllocBranch.lean",
+      "sha": "5487cd5ef4ade7b779d505d96eedb72e7656772e",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Concurrency/ArmAllocLS.lean",
+      "sha": "ce885976c7bcbc31c7105c76a8c3da5802615c47",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Concurrency/CallRetPremises.lean",
+      "sha": "45d761565d272e714ea8f8378ddb8c12d01f7126",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Concurrency/CallRetsN.lean",
+      "sha": "5db99670c6753f6e1c622c9953020bb983f909bd",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/DeadCleanupExecGoodReadsT.lean",
+      "sha": "98195f7ae88229dcdc17a2a0ad1e936446a94142",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/DeadCleanupExecProvenT.lean",
+      "sha": "4273dfb62dc1be9f1b7301c5833619540f6046ca",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/EmitCondsLower.lean",
+      "sha": "cc6995ed720087213aa85d626b2088b32a83a14d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/EmitLabels.lean",
+      "sha": "f76934b116ea845cf285298e627eae396e8ec147",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/EmitTotal.lean",
+      "sha": "3fa52d3799fccc32ffd12855f26ed2f4c0ec30d2",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkOwnCallsShapeOf.lean",
+      "sha": "b5481ff0594f46bd454fc031ed2b1d3f18ec3198",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkOwnCallsStmt.lean",
+      "sha": "cdb8d5e7e54a9732a4cff231d5896e1746f761c3",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkOwnCallsTry.lean",
+      "sha": "812e4508635480b59ef10a45c843e00aa1bda264",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkOwnCallsTryHyp.lean",
+      "sha": "fd40d69ae5eda8a5dcc3904cc3b021838478f16e",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkOwnGotLocal.lean",
+      "sha": "e91156ef64eb8fc125eedc15a6fee885cc3c4456",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkOwnRetsIsel.lean",
+      "sha": "fa402cef45f6cbd667855a1988f53c0d1fa8318b",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkReturnPinCall.lean",
+      "sha": "369504c14c2179bc4f426b250934ad98ed4ca565",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkReturnPinContract.lean",
+      "sha": "fc368e8637cd6ed9241437e2851b6b855f6febed",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkReturnPinProgram.lean",
+      "sha": "e656557a00d8e5e890a0b212d4a6a824453fab06",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkReturnPinsWitness.lean",
+      "sha": "831bb5131f7954f22aaeceb196c96f9cebfc670d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkScope.lean",
+      "sha": "83dfbf3867e813192aa93e044f816ee76502108f",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkSemanticNIContract.lean",
+      "sha": "dcc2954f155e3327cfa72178440b1d0808a68a87",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/NonVacuityLink.lean",
+      "sha": "0aab57691d781361969c10f3976ebfa0633ee6df",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/PreparedReturnPinProgram.lean",
+      "sha": "5491db2a057db4a4e393f2a406262ed4aca390c1",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/PreparedReturnPinSretWitness.lean",
+      "sha": "1a539a4ade604f1e5ca6536995bbfa9974f333cc",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/SemanticExecTlsProven.lean",
+      "sha": "151543052cd150a9c5aa797c8540cfc4477f9f70",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/SemanticLogicalCompilerWitness.lean",
+      "sha": "0d1bacfc8708cd76ce9f64abfddc9b3070085baf",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/SpillCtlWitness.lean",
+      "sha": "a340ce6e94a9f579549cd45d3568ef2b588cfd7c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockArithmeticNI.lean",
+      "sha": "78c2accfea53454e74b7744088009076bc90f757",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockArithmeticWorldX.lean",
+      "sha": "3e092266677006db3a009fddac5bbe9105c2b1a1",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockBitWitness.lean",
+      "sha": "a9e6b506d53aaad5561d1ae5e6b771299d287d54",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockCastWitness.lean",
+      "sha": "a12f802b4588c949cb8ce1daf5f82fb01543fcc8",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockCfgNI.lean",
+      "sha": "ed89173d910959ef6c2eac2632feda4f9844b78f",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockCmpWitness.lean",
+      "sha": "cdba33261c2d886c173d3317d26b891bd60726c2",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockDivNI.lean",
+      "sha": "6d3d978a48a3dd3e4a6d834883804b03690fb222",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockLogicalNI.lean",
+      "sha": "0a2faebeaa92564971ab9f3b2060588258774043",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockLogicalWorldX.lean",
+      "sha": "3326ace10b42e019a6d4e71b47c69e018fa617a6",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryABIWorldX.lean",
+      "sha": "33f523b5a93fd9f5200e899fbe15095cc07b8077",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryActivationWitness.lean",
+      "sha": "55afa197474c139177313284923d22ca5a526a4a",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryCapturedCopyNI.lean",
+      "sha": "caeaaefc354a0b48abf18810113fe501e071f85c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryCfgMachine.lean",
+      "sha": "fc835e4764f6df39750285eb5630e10a787c7558",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryCfgNI.lean",
+      "sha": "60b1d77bd4843bf273b92de324a5bd5899b2a0f8",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryCfgTls.lean",
+      "sha": "5f61b1800733555350b72ad2c477273ecdfa015e",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryCfgValue.lean",
+      "sha": "6bfa03c44d4cb884c9d78e0a5b095c307522e1f1",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryCfgWorldX.lean",
+      "sha": "491ca962cbefc08dba18de6ca00a142c4ad0d91a",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryEffectKernel.lean",
+      "sha": "bded0669443e6230ee6c506b9be5f6e73ba850ab",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryExtLoadNI.lean",
+      "sha": "3948243a77b39b1ecc47881d25e9dceb7dd588b3",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryExtLoadPairedSource.lean",
+      "sha": "865e5944a40ebcf353b2cb60b9b85bdebb4712b7",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryIntegerNI.lean",
+      "sha": "9a81b7e968d4ea59a426e55e007c598366abcea0",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryIntegerPairedSource.lean",
+      "sha": "2c3c5adfd72fc857938b0fc923db979c571328fc",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryLoadStoreNI.lean",
+      "sha": "fefb7f9fd8f28d364aa474465429ff768d1fed64",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryMachine.lean",
+      "sha": "e889f4bbd795eda3d9fcea108e98c1e41afb1385",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryNI.lean",
+      "sha": "0d23bc369828eb3d18cbec4a4b986fe7dd4b9ef7",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryOffsetEightPairedSource.lean",
+      "sha": "5d2aff35bb9dcad522f4219f34a96f3df0a0f2ab",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryOrdinaryPairedJump.lean",
+      "sha": "17e0b60b00a243edfeb7c1354cd8ee0eeb50e5db",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryOriginalEntryPaired.lean",
+      "sha": "a35508507684e07523161230cf134cc7aa152451",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryPairedEntry.lean",
+      "sha": "f5fd39a5c90c0ced75cd6db591adbb018728a333",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryPairedEntryReturn.lean",
+      "sha": "5dbb11d8c6c92fd2700e6f2aadd8291b84163aa4",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryPairedFunction.lean",
+      "sha": "44bbd5a04bd838f4a1e8588fb405b657e07f205e",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryPairedFunctionWitness.lean",
+      "sha": "c5bdf2c82e7a8eda7771ae64fdc4046b008e5615",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryPairedJump.lean",
+      "sha": "5ba0bbf3798ab0da3db0567d6d848053d2aee4e0",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryPairedReturn.lean",
+      "sha": "197f9f61a3caf04ec39dceece95f2f10a19e44f5",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryPairedReturnAt.lean",
+      "sha": "32e3ba2a0329f2859f4f9a88c13e614ed6185200",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryPairedReturnEdge.lean",
+      "sha": "d84f2d3f9c742c40345e09af118ccc77230a5759",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryPairedReturnEdgeBody.lean",
+      "sha": "ba3be27c71bf4bd7d09a750e682ef936eb169e5c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryReadWitness.lean",
+      "sha": "55cbc502fd3a3f396a910f1db1f0ba159a668886",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryRegisterPrelude.lean",
+      "sha": "7e52639ccecfdb9902d5634203c365e87130efe6",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemorySretCopyNI.lean",
+      "sha": "3308e00b3816183b7acb9a85a83a996b54f7a2fd",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemorySretCopyPairedCanonical.lean",
+      "sha": "6fc4e1356df13215d5ac32ea90257f70cfc56e2d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemorySretCopyPairedFunction.lean",
+      "sha": "d17a74d89b418b74a6ad4fb0e6037461115ef27a",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryStoreCfgMachine.lean",
+      "sha": "c4fd31adecbf30da0722805bb2a236cfd4c5dfbb",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryStoreCfgNI.lean",
+      "sha": "b779542dfd56ee099df62105cffa9d1ece4a2b55",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryStoreCfgValue.lean",
+      "sha": "182a6a768090cf297ec2d28a3072de667451ab03",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryStoreMachine.lean",
+      "sha": "48bf3bba56e9aadbfcf2c4e7e4ce54cc1e896353",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryStoreNI.lean",
+      "sha": "269497f359311a7316e04fe95e42897941b39b43",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryStoreValue.lean",
+      "sha": "a46cd20ea873629e5e30230063ac19ba5f686bd4",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryValue.lean",
+      "sha": "525bcba2f84efbfeff89dea49b6509beaa89e666",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMemoryWorldX.lean",
+      "sha": "941bee5d1453ba417fbcce9a39e59e279618e45f",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMinMaxWitness.lean",
+      "sha": "7231602e6d925b38cb80c9523a6c7ead893bf011",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMixedNI.lean",
+      "sha": "4ad846bcf91715f1d98d3250c5ebb77536aefd32",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMixedWorldX.lean",
+      "sha": "25cc2c77555a36db5d0a56282aecbf2ce9745d5a",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockMulWitness.lean",
+      "sha": "fb2d8969c6d5a6a2e6de5605958157b9c42ba7c2",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockNarrowRootsWitness.lean",
+      "sha": "f354063f32ad05e87955b3b37f73fceee845c2c3",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockNotWitness.lean",
+      "sha": "a3baeb832ca9e9ffe838aaf822cbb94b62f47dd8",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockPopcountWitness.lean",
+      "sha": "60eff2a1e465c55b7f0ea611ea8f5ecd57f93a7a",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockScalarNI.lean",
+      "sha": "6cf60db9665e681f594b6806ad9f260e4bb83be9",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockScalarWitness.lean",
+      "sha": "62aa3ca7912c5b0387e72d5e57562804d9a23cc8",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockScalarWorldX.lean",
+      "sha": "68663116844ea19a58615efb62d3db3f5a0d1b0a",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/StockShiftWitness.lean",
+      "sha": "a51f5d0068dffe385337c93d9b29481d71d378ac",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Front/Bundle.lean",
+      "sha": "9eaee27c36544059a484e19bd3c386cdd8c4d376",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Front/BundleProof.lean",
+      "sha": "49ae7a78dd13d32c33e3108ccc714cafe86c5f45",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Front/ExeT.lean",
+      "sha": "3317286280b61a8614a1f4fa5ed0ee501d45d74d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Front/RawExeNB.lean",
+      "sha": "8301f623049b754220f8e53b1d85e36d97af38a6",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Front/RawExeUnwind.lean",
+      "sha": "5c8cf5eff804610e235d03d8265295379c74f61c",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Front/RawExeUnwindRen.lean",
+      "sha": "ea1e485f7ae0742ac86a71b3b1795cb43be57645",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/DeadCleanupExeSourceT.lean",
+      "sha": "19c88d6c753364c536ca7218c21ad5043d35f7ad",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/DeadCleanupRelocShapeProof.lean",
+      "sha": "1469ee473db41b310e65fbeb8752530cded41746",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/Image.lean",
+      "sha": "b286b074290a9304067bc847f372c6ffe6f9f15d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/ImageProof.lean",
+      "sha": "b4b1e6d7a9f48926b98bcdab8710ee95b9861758",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/Ld/Syms.lean",
+      "sha": "b0041ea20dde4bfc66b38101b4dbece617f912b7",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/Reloc.lean",
+      "sha": "93b5dd86ad98b6d6a72bf6feb0d18cb3c557c3c2",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/TailExe.lean",
+      "sha": "41cca8dfc574f103eea21df0744a59582e028b5d",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Opt/Proof/PipelineX.lean",
+      "sha": "1fc5550c4afc8e9a8d63d5718263b886fdb2c4a5",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Opt/Proof/RuleIcmpCompose.lean",
+      "sha": "81f62fcce4a75067cd0930fc6972b29fb5df8a83",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Opt/Proof/RuleTactic.lean",
+      "sha": "a2b5b31544a4f3daf4a43396d34d122592a8dc65",
+      "status": "modified"
+    },
+    {
+      "path": "FVTest/Backend/FloatCmpCtxT.lean",
+      "sha": "e0003647f2c9311d6690ed8cead06a152c033e21",
+      "status": "modified"
+    },
+    {
+      "path": "FVTest/Backend/Lowering/StockMemoryCapturedCopyProductionLinked.lean",
+      "sha": "baf1eb98ef1c59eee05c9b12cd6fed6f50a75f9e",
+      "status": "modified"
+    },
+    {
+      "path": "FVTest/Backend/Lowering/StockMemoryLoadStoreProductionLinked.lean",
+      "sha": "71ee5c5c160481ea7a460c10294045eea8388906",
+      "status": "modified"
+    },
+    {
+      "path": "FVTest/Backend/Lowering/StockMemoryProductionLinked.lean",
+      "sha": "f9e1181615a29f44f3519bbdf57acd5b7b90dec6",
+      "status": "modified"
+    },
+    {
+      "path": "FVTest/Backend/Lowering/StockMemoryRetainedRuntime.lean",
+      "sha": "db7fb8946f9c58496b453b24e53c9288c6583ff6",
+      "status": "modified"
+    },
+    {
+      "path": "FVTest/Backend/Lowering/StockMemoryStoreCfgProductionLinked.lean",
+      "sha": "70771cdfa17ca8d566087b9abff242e15a5bf7b9",
+      "status": "modified"
+    },
+    {
+      "path": "FVTest/Backend/Lowering/StockMemoryStoreProductionLinked.lean",
+      "sha": "b8fe2d5c3feadfbc3ca4660a895cd0170835b106",
+      "status": "modified"
+    },
+    {
+      "path": "FVTest/Backend/Proof/Probe/GenData.lean",
+      "sha": "bbfbe916f8a92c779dbbfe423a35427324dbe649",
+      "status": "modified"
+    }
+  ],
+  "non_import_changed_lines": []
+}

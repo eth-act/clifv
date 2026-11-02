@@ -1,0 +1,8 @@
+'Backend.Stock.Proof.DirectCallResult.source_result' depends on axioms: [propext]
+'Backend.Stock.Proof.DirectCallResult.call_post_result' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.DirectCallResult.virtual_result' depends on axioms: [propext]
+'Backend.Stock.Proof.DirectCallResult.physical_result' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.DirectCallResult.Binding.of_fresh' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.DirectCallResult.Binding.bind_result' depends on axioms: [propext]
+'Backend.Stock.Proof.DirectCallResult.physical_bits' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.DirectCallResult.resolved_source_result' depends on axioms: [propext]

@@ -1,0 +1,14 @@
+{
+  "published_source": "36dd36a6c1746acb1741dd5c984b0ead1b8a2d18",
+  "verdict": "no blocking defect",
+  "reviewer": "worker-A",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents.",
+  "notes": "Three CLI choices, complete old flow, route indices and admission-before-artB pass direct review. Raw typed mode is intentional and covered.",
+  "historical_head": false,
+  "requires_current_main_reconciliation": true,
+  "utc": "2026-11-02T08:18:30.515585+00:00",
+  "reviewed_source": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+  "implementation_files_unchanged": true,
+  "base_delta_import_only": true,
+  "carry_policy": "Root confirmed existing single direct review carries over unchanged18-file implementation and verified import-only base delta. Actual current-context and exact-head CI/tree gates remain mandatory."
+}

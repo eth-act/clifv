@@ -1,0 +1,21 @@
+{
+  "status": "prepared final source only",
+  "base": "77088aba2b9c528264aead43ab563d7ee17a102e",
+  "combined_tree": "3d80a5e33d9245049a865507140317eccdb75304",
+  "source_manifest": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-delivery-packet-v1.json",
+  "source_manifest_sha256": "02507ca9c7e5191a08a7d2c337b0018a65cac2bd9bb0e8e58cd58e3774cabd0b",
+  "production_sources": 18,
+  "superseded_leanlink_source": "85786cfec5468f284845bb2206172a5c4467fae0ea6cb15fd9eca11712d54873",
+  "final_leanlink_source": "cbe614dd4078ccc337e7b5c87a2b4d6982d4176c4be78d5cf1410e58c23a5840",
+  "approval": "Explicit parent final-production checkpoint instruction",
+  "published_pr": 892,
+  "published_head_prefix": "90c51c88",
+  "old_queue_preserved": ".git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v1",
+  "focused_7kernels_8types_axioms_reusable_by_exact_230_source_context": true,
+  "materialization": false,
+  "builds_started": false,
+  "proof_slot": "not held",
+  "temporary_index_files": [],
+  "full_gate_executions": "PENDING; all inventory counts are not execution counts",
+  "utc": "2026-11-02T07:37:56.912013+00:00"
+}

@@ -1,0 +1,109 @@
+{
+  "status": "accepted exact typed CLI replacement",
+  "intentional_typed_cli_replacement": {
+    "FVTest/E2E/LinkCheckMain.lean": {
+      "prior": {
+        "owner": "production activation",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/FVTest/E2E/LinkCheckMain.lean",
+        "sha256": "225821bf40ad7634f607f22902905c9c4b5c08205bcbbff7b3ee86be94bda732"
+      },
+      "replacement": {
+        "owner": "typed production",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-typed-proof-packet-v1/FVTest/E2E/LinkCheckMain.lean",
+        "sha256": "3e234b481a1dff1620abd230b5e3bc64494c14285bd64b5a56016fd0d05d7f16"
+      }
+    }
+  },
+  "acceptance": {
+    "status": "accepted",
+    "accepted_by": "worker-O execution coordinator",
+    "source": "Explicit parent instruction; this is not a new correctness review",
+    "path": "FVTest/E2E/LinkCheckMain.lean",
+    "prior_sha256": "225821bf40ad7634f607f22902905c9c4b5c08205bcbbff7b3ee86be94bda732",
+    "replacement_sha256": "3e234b481a1dff1620abd230b5e3bc64494c14285bd64b5a56016fd0d05d7f16",
+    "canonical_manifest": "return-pin-production-activation-packet-v2.json",
+    "canonical_manifest_sha256": "892932766cfdccde1d4d041566830a8bfb8388a6e05a04cff73277c8505bf90c",
+    "canonical_source_matches": true,
+    "verified_actual_bundle_cases": 6,
+    "verified_fixed_generated_roots": 48,
+    "reviewed_receipt_sha256": {
+      "return-pin-production-activation-packet-v1/actual-bundle-reviewed-v1.json": "5b3ae87ed8705e444bfaa4860bb0fc485d286317adc0f1746a0e3b0c6cce52e1",
+      "return-pin-typed-proof-packet-v1/reviewed-state-v1.json": "940203df8ff6bc95abac3632dcbb35575c114aae3474a670d3dad9f7b2573f90",
+      "return-pin-production-activation-packet-v2.json": "892932766cfdccde1d4d041566830a8bfb8388a6e05a04cff73277c8505bf90c"
+    },
+    "conditions_preserved": [
+      "actual allocation/preparation/semantic route selection",
+      "actual typed versus integer emitter choice"
+    ],
+    "scope": "This exact typed replacement only. Final typed compiler modes and CLI hashes remain pending.",
+    "utc": "2026-11-02T07:26:32.246079+00:00"
+  },
+  "mode_extension_binding": {
+    "status": "final-source-binding",
+    "source_manifest": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1.json",
+    "source_manifest_sha256": "5e1ca408abfd1c2595c689fd0fbb3fb2b280849b7459f6d88ddc81121b352123",
+    "approval_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v1/final-mode-source-approval-v1.json",
+    "approval_receipt_sha256": "f95364bfa84ed8515c5a125218caf300ef70b2cb3aecfcd538ff535c607e16b7",
+    "source_files": {
+      "FV/Link/TypedCompileModes.lean": {
+        "owner": "final typed compiler modes",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/FV/Link/TypedCompileModes.lean",
+        "sha256": "5bfd4466930426b0e6eed235d5ee7c97af04b2d2dbd8fa595bb892f1b2075cee"
+      },
+      "FV/Link/TypedCompileSourceModes.lean": {
+        "owner": "final typed compiler modes",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/FV/Link/TypedCompileSourceModes.lean",
+        "sha256": "fedba072a7316f7a11a15786ad378bdc775677c8ebfdc624e7ee3a6e9fdc6e3f"
+      },
+      "FV/Link/TypedCompileSourceModesWitness.lean": {
+        "owner": "final typed compiler modes",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/FV/Link/TypedCompileSourceModesWitness.lean",
+        "sha256": "b75b9d502be1c73a030a989e67641d423f7dbdb48d4d3a4716dedd35ca572f5b"
+      },
+      "FV/Link/TypedCompileModesWitness.lean": {
+        "owner": "final typed compiler modes",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/FV/Link/TypedCompileModesWitness.lean",
+        "sha256": "a9eb4d946d92df2cfc9f40773378c21e43c87be721351081b501a606157bd6d5"
+      },
+      "FV/E2E/TypedLegacyBinding.lean": {
+        "owner": "final typed compiler modes",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/FV/E2E/TypedLegacyBinding.lean",
+        "sha256": "d772c0474fe528a6872d3e2c42056b9b2cd3d6946b28530e1a17bcf3cbbd6838"
+      },
+      "FVTest/Link/LeanLinkMain.lean": {
+        "owner": "final typed compiler modes",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/FVTest/Link/LeanLinkMain.lean",
+        "sha256": "cbe614dd4078ccc337e7b5c87a2b4d6982d4176c4be78d5cf1410e58c23a5840"
+      },
+      "scripts/audit/typed-compiler-modes.lean": {
+        "owner": "final typed compiler modes",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/scripts/audit/typed-compiler-modes.lean",
+        "sha256": "eb28cbc7a4029663c45d7f9e133ed58c0d0eab425581a9c1c52446bf066a6c8a"
+      },
+      "scripts/audit/typed-compiler-modes-witness.lean": {
+        "owner": "final typed compiler modes",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/scripts/audit/typed-compiler-modes-witness.lean",
+        "sha256": "e84c62eb23dd2ed479849de3ff2ca6e5de33428b615dd192be1532644e6aa535"
+      },
+      "scripts/audit/typed-compiler-old-variants.lean": {
+        "owner": "final typed compiler modes",
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/scripts/audit/typed-compiler-old-variants.lean",
+        "sha256": "e92f9e38daf15e3e2ab2bdd2a0860d2ad3fce51995128d7c5a984a7f79249c9c"
+      }
+    },
+    "overrides": {
+      "FVTest/Link/LeanLinkMain.lean": {
+        "prior_sha256": "85786cfec5468f284845bb2206172a5c4467fae0ea6cb15fd9eca11712d54873",
+        "replacement_sha256": "cbe614dd4078ccc337e7b5c87a2b4d6982d4176c4be78d5cf1410e58c23a5840"
+      }
+    },
+    "required_receipts": {
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v3.json": "a0604271932aee732fedf6e7c791f96c173b4e506d82398162776cdc4060a468",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-delivery-packet-v1.json": "02507ca9c7e5191a08a7d2c337b0018a65cac2bd9bb0e8e58cd58e3774cabd0b",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/typed-compiler-modes-packet-v1/reviewed-state-v1.json": "c7b7d019ef840bac11e879e6b3d0fb74598874dec8eb5f20792246e13c757aa9"
+    },
+    "no_builds": true,
+    "no_materialization": true
+  },
+  "no_other_packet_conflicts": true
+}

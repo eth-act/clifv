@@ -1,0 +1,44 @@
+{
+  "513": {
+    "original_head": "5aae55c32030e3e9f15ab6515a2cccf268751646",
+    "planned_tree": "e0dd63039d419577544c7b3f95be14c7364a874e",
+    "status": "unpublished reconciled source; separate direct review/CI/tree receipts required"
+  },
+  "892": {
+    "published_head_prefix": "90c51c88",
+    "planned_tree_without513": "d1e91003efe06277af30e2e06cc34bfbaf41f1ab",
+    "already_on_current_main": false,
+    "production_changed_paths": [
+      "FV/Backend/ReturnPinProduction.lean",
+      "FV/E2E/ReturnPinProductionWitness.lean",
+      "FV/E2E/TypedLegacyBinding.lean",
+      "FV/E2E/TypedProductionChecks.lean",
+      "FV/Link/TypedCompileModes.lean",
+      "FV/Link/TypedCompileModesWitness.lean",
+      "FV/Link/TypedCompileSourceModes.lean",
+      "FV/Link/TypedCompileSourceModesWitness.lean",
+      "FVTest/Backend/Main.lean",
+      "FVTest/E2E/LinkCheckMain.lean",
+      "FVTest/E2E/TypedLinkProofWith.lean",
+      "FVTest/Link/LeanLinkMain.lean",
+      "scripts/audit/return-pin-production-witness.lean",
+      "scripts/audit/return-pin-production.lean",
+      "scripts/audit/typed-compiler-modes-witness.lean",
+      "scripts/audit/typed-compiler-modes.lean",
+      "scripts/audit/typed-compiler-old-variants.lean",
+      "scripts/audit/typed-production.lean"
+    ],
+    "source_manifest": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-delivery-packet-v1.json"
+  },
+  "integration": {
+    "combined_tree": "3d80a5e33d9245049a865507140317eccdb75304",
+    "status": "queued full-goal integration evidence, not a per-PR tested-tree receipt"
+  },
+  "required_per_pr": [
+    "exact import-source context",
+    "direct peer review OR all per-PR tests",
+    "exact-head CI",
+    "tested/merged tree equality"
+  ],
+  "independent_eligible_delivery_must_not_wait_for_union_build": true
+}

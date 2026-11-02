@@ -1,0 +1,14 @@
+{
+  "published_source": "328541fa3402deac8d4df8ff7f790e95196c37a3",
+  "verdict": "no blocking defect",
+  "reviewer": "worker-A",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents.",
+  "notes": "Every removed non-import line appears verbatim in additions. No sorry/admit/axiom added. Import-only consumers and exact moved interfaces reviewed.",
+  "historical_head": false,
+  "requires_current_main_reconciliation": false,
+  "utc": "2026-11-02T08:18:30.515704+00:00",
+  "reviewed_source": "e5a094f42d35ff086390edea7fe300734397c78b",
+  "source_patch_identical": true,
+  "patch_sha256": "758f5838f9b9ad375f22868189b384e8f91c7b8d8c2eef69d8d5c813014fc700",
+  "requires_current_context": true
+}

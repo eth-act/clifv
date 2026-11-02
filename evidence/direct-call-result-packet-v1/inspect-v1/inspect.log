@@ -1,0 +1,12 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/InspectDirectCallV1.lean:11:58: error(lean.unknownIdentifier): Unknown identifier `SemanticNI.check`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/InspectDirectCallV1.lean:11:92: error(lean.synthInstanceFailed): failed to synthesize instance of type class
+  Repr VCode
+
+Hint: Adding the command `deriving instance Repr for Backend.VCode` may allow Lean to derive the missing instance.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/InspectDirectCallV1.lean:11:113: error: Function expected at
+  repr fun f => List.map f r.scans.toList
+but this term has type
+  Std.Format
+
+Note: Expected a function because this term is being applied to the argument
+  (fun e => (e.inst, e.output.emitted))

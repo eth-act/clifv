@@ -1,0 +1,11 @@
+{
+  "actual_main": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+  "published_892": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+  "892_status": "OPEN, prospective production checkpoint; no actual landed receipt at inspection",
+  "local_semantic_base": "77088aba2b9c528264aead43ab563d7ee17a102e",
+  "delta": "#894 changed294files; every supplied changed line is an import line. Actual declaration metadata above comes from the current-main API.",
+  "original_objective_sha256": "1cf584e2a61817327bf53e057582799f5e676149cd9b0f70498c37e6a06425ea",
+  "active_plan_sha256": "0936dd5406f00909a5811b2d2f1bab7df603d1b94b83baa0b5f7c75d01373443",
+  "scope": "Read-only gap map, not a build, proof audit, PR review, publication, or completion claim",
+  "utc": "2026-11-02T08:08:06.271937+00:00"
+}

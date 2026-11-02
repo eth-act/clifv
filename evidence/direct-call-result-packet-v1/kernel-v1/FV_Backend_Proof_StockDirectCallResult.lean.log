@@ -1,0 +1,24 @@
+info: returnpinsourcegate: no previous manifest, creating one from scratch
+info: toolchain not updated; already up-to-date
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/validation-package-v1/FV/Backend/Proof/StockDirectCallResult.lean:63:25: error(lean.unknownIdentifier): Unknown constant `List.mem_of_mem_zip_left`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/validation-package-v1/FV/Backend/Proof/StockDirectCallResult.lean:61:36: error: unsolved goals
+c : CheckCtx
+wh : String
+ops : Array Operand
+regs : Array Reg
+clobbers : List Reg
+checked : c.checkStatic wh ops (Array.map Loc.reg regs) clobbers = Except.ok ()
+outs : List CV
+world : Arm.ArmState
+pair : Operand × Reg
+output : CV
+present : (pair, output) ∈ defRegs ops regs outs
+fixed : pair.fst.con = Constraint.fixed (Reg.x 0)
+held : ∀ (p : (Operand × Reg) × CV), p ∈ defRegs ops regs outs → regVal world p.fst.snd = p.snd
+⊢ regVal world (Reg.x 0) = output
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/validation-package-v1/FV/Backend/Proof/StockDirectCallResult.lean:106:2: error: Type mismatch: After simplification, term
+  held
+ has type
+  @Eq (BitVec Clif.Ty.i64.width) (BitVec.setWidth Clif.Ty.i64.width (Arm.r (Arm.StateField.GPR 0#5) world)) word
+but is expected to have type
+  @Eq (Arm.state_value (Arm.StateField.GPR 0#5)) (Arm.r (Arm.StateField.GPR 0#5) world) word
