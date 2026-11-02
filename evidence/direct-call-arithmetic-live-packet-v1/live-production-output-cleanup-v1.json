@@ -1,0 +1,10 @@
+{
+  "status": "cleaned_completed_staged_outputs_after_verified_backup",
+  "backup": "051427059520ea6e3711fba7bd78f7ba3ae4594d",
+  "prototype_not_publication_context": true,
+  "sources_logs_inputs_and_outputs_manifest_preserved": true,
+  "hashed_output_files": 19359,
+  "output_bytes": 6209736952,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T15:13:27.047738+00:00"
+}

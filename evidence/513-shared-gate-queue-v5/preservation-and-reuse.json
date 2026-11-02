@@ -1,0 +1,25 @@
+{
+  "status": "prepared_current_main_successor_not_executed",
+  "current_source_context_tree": "405776adaffb7cf5a7b47a35b2da797fe4863c91",
+  "publication_tree": "0908f49979c18eb96e125c0bec36f0278543e8f3",
+  "publication_doc_only_bridge": [
+    "LEARNINGS.md"
+  ],
+  "reuse_authority": "Actual current Lake inputkeys and saved trace/output hashes, using existing owned cache. Never source equality alone.",
+  "historical_sources_and_receipts": "Oldv2preservation-and-reuse.json remains historical. Its old770/a4context equalities do not establish current context.",
+  "preserve": [
+    "Original input conditions and theorem variants",
+    "All accepted filetest/E2E identities and successful stages",
+    "4849oldAXrootsets and48captured exactsets",
+    "Exact old binary25,expanded86928,runtime16 andtypedvariant AX sets",
+    "No scope reduction or original140completion after this queue"
+  ],
+  "full_goal_complete": false,
+  "historical_observer": 326819,
+  "actual_observer": 456502,
+  "actual_kernel_scheduler": 326832,
+  "actual_observer_released": 456502,
+  "actual_kernel_scheduler_released": 326832,
+  "source_projection_bridge": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v5/source-projection-bridge.json",
+  "old_executions_relabelled": false
+}

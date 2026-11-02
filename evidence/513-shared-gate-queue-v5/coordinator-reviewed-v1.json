@@ -1,0 +1,16 @@
+{
+  "status": "approved_for_guarded_materialization_and_full_validation",
+  "queue_manifest_sha256": "32a1a288a9868967e98de3ea096e9d2c9bf0aa3b08dd5f4b55eb4cd00d172932",
+  "target_commit": "45a70ee6e405d0a5e590603c320ec28799595f45",
+  "target_tree": "0908f49979c18eb96e125c0bec36f0278543e8f3",
+  "same_snapshot_and_native_cache": true,
+  "original_identity_axiom_rejection_obligations_preserved": true,
+  "only_typed_provenance_description_changed": true,
+  "all26_actual_class_executions_required": true,
+  "old85_execution_provenance_and10690_bridge_explicit": true,
+  "zero_axiom_prime_wrapped_and_native_policy_tests_pass": true,
+  "source_mutation_and_manifest_mismatch_fail_before_recording": true,
+  "old_owner_guards_and2895_outputs_verified": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T15:29:02.884314+00:00"
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "relative_path": "third_party/wasmtime",
+    "existing_source": "/home/lee/clifv/.worktrees/stock-memory-reference-production-20261031",
+    "commit": "46c23a87dac1465986a8ad53ba6a7ae49372857b",
+    "instrumentation_patch_sha256": "bec180305db17949c30d00d2cdd83ee506eb2bbaadf59fdefb41fdb51090cf8c",
+    "instrumentation_reverse_check_passed": true
+  },
+  {
+    "relative_path": "third_party/lnsym-upstream",
+    "existing_source": "/home/lee/clifv/third_party/lnsym-upstream",
+    "commit": "5c05220ff970e3bdd7813ad0c9ef3741522c8b92"
+  }
+]

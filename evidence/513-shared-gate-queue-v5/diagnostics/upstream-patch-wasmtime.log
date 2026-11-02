@@ -1,0 +1,4 @@
+error: patch failed: cranelift/filetests/src/artifact_export.rs:1
+error: cranelift/filetests/src/artifact_export.rs: patch does not apply
+error: patch failed: cranelift/filetests/src/test_compile.rs:17
+error: cranelift/filetests/src/test_compile.rs: patch does not apply

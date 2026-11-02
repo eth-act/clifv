@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "command": [
+        "/usr/bin/python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v5/test_axiom_records.py"
+      ],
+      "exit": 0,
+      "log_sha256": "888a0c0ed615e57d32cf72be501b0c355f33b8613c81dfdaa99db33d7959487e"
+    },
+    {
+      "command": [
+        "/usr/bin/python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v5/test_snapshot_guard.py"
+      ],
+      "exit": 0,
+      "log_sha256": "dec5673ee7ead0e86a249ea046dba60aab31a8206a43fedeb035ab8449b4e26d"
+    }
+  ],
+  "axiom_cases": 5,
+  "snapshot_guard_cases": 2,
+  "no_Lean_build": true,
+  "no_snapshot_materialization": true,
+  "no_compiler_source_exception": true,
+  "full_snapshot_check_pending_materialization": true,
+  "utc": "2026-11-02T15:21:56.196543+00:00"
+}

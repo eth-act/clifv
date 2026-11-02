@@ -1,0 +1,27 @@
+{
+  "not_runnable_as_native_fixture": [
+    "mixed",
+    "logical",
+    "scalar",
+    "not",
+    "mul",
+    "shift",
+    "cast",
+    "bit"
+  ],
+  "required_execution_for_those": "Use the original interpreted mode, never silently omit a class. The current script rejects native mode for these eight classes.",
+  "original_settings_rejections": {
+    "cases": 8,
+    "required_exit": 3,
+    "must_not_count_as_compiler_acceptance": true,
+    "availability_manifest": "original-rejection-capture-availability.json"
+  },
+  "official_suite_categories": {
+    "non_binary_test": 180,
+    "foreign_or_no_lean_target": 630,
+    "stock_parser_warning_skip": 8,
+    "rule": "Report original categories and hashes. Never count them as matching compiled functions."
+  },
+  "typed_compiler_modes": "Original85b validated consumer receipt retains6objectcomparisons,6bundles,2extra typed modes and68generated roots. The10690/current45a source bridge is explicit. Queuev5 adds no not-runnable exclusion.",
+  "comparison_exit10": "Completed measurement with gaps only. It is never suite equivalence."
+}

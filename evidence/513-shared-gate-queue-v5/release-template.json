@@ -1,0 +1,53 @@
+{
+  "release_file_template_only": true,
+  "owner": "worker-O execution coordinator",
+  "candidate_tree": "0908f49979c18eb96e125c0bec36f0278543e8f3",
+  "view": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+  "allow_shared_full_gate": false,
+  "allow_materialize_existing_snapshot": false,
+  "allow_binding_packet_prefix": false,
+  "resource_budget": "12G/max1; O aggregate16G",
+  "reviewed_queue_manifest_sha256": "COORDINATOR MUST BIND AFTER REVIEW",
+  "remote_backup_verified": false,
+  "backup_receipt": "COORDINATOR MUST BIND",
+  "backup_receipt_sha256": "COORDINATOR MUST BIND",
+  "operational_lakefile_sha256": "e2e5235e7fbec9f185941be9d46808defd6245ef6e7377130d1377e356493a3a",
+  "operational_scheduler_sha256": "b7eb9e4dc8070fc71356df7960bbeaf1b3731518ad16d662fb2982dae5e4b9a3",
+  "external_source_links": [
+    {
+      "relative_path": "third_party/wasmtime",
+      "existing_source": "/home/lee/clifv/.worktrees/stock-memory-reference-production-20261031",
+      "commit": "46c23a87dac1465986a8ad53ba6a7ae49372857b",
+      "instrumentation_patch_sha256": "bec180305db17949c30d00d2cdd83ee506eb2bbaadf59fdefb41fdb51090cf8c",
+      "instrumentation_reverse_check_passed": true
+    },
+    {
+      "relative_path": "third_party/lnsym-upstream",
+      "existing_source": "/home/lee/clifv/third_party/lnsym-upstream",
+      "commit": "5c05220ff970e3bdd7813ad0c9ef3741522c8b92"
+    }
+  ],
+  "released_owners": [
+    {
+      "role": "current observational and consumer owner",
+      "pid": 456502,
+      "create_time": 1793620307.84
+    },
+    {
+      "role": "actual normal kernel scheduler",
+      "pid": 326832,
+      "create_time": 1793618715.44
+    }
+  ],
+  "normal_provider_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/normal-providers-state-v1.json",
+  "normal_provider_receipt_sha256": "4df3aa7106bb548e4b5827cc3eda148413ca31793dee0e451c30f92ca5126053",
+  "provider_wrapper_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/providers-state-v1.json",
+  "provider_wrapper_receipt_sha256": "f1bb97646ffa058447bbeb14d21a86512bb3cd5c40e32466c4ba473d1bb44087",
+  "actual_consumer_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/receipt.json",
+  "actual_consumer_receipt_sha256": "d2b33336781b903117ca781046afe964e2e1dcbc77452f96cc940fe667b22baa",
+  "source_projection_bridge_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-shared-gate-queue-v5/source-projection-bridge.json",
+  "source_snapshot_manifest_sha256": "d4d9da81380f697311b3249df9813ab61a2dfcd702564907b4b0c43798fca0e1",
+  "actual_owner_release_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/reviewed-owner-release-v1.json",
+  "source_projection_bridge_receipt_sha256": "ba68e1726fa6ddf005300a944efd039bef3d5e38c41cca828fb4e353f3220e3c",
+  "actual_owner_release_receipt_sha256": "62dfdc0c62dbddb61f657ee520b6913055899c7f7050545d7e53c5ff4302d4d5"
+}

@@ -1,0 +1,22 @@
+{
+  "release_file_template_only": true,
+  "owner": "worker-O execution coordinator",
+  "candidate_tree": "5b924d76f99cd81bede204d7906e16dd72889b32",
+  "view": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+  "allow_shared_full_gate": false,
+  "allow_materialize_existing_snapshot": false,
+  "allow_binding_packet_prefix": false,
+  "resource_budget": "12G/max1; O aggregate16G",
+  "released_provider_owner": {
+    "pid": 326819,
+    "create_time": 1793618714.2
+  },
+  "normal_and_consumer_receipts_reviewed": false,
+  "reviewed_queue_manifest_sha256": "COORDINATOR MUST BIND AFTER REVIEW",
+  "remote_backup_verified": false,
+  "backup_receipt": "COORDINATOR MUST BIND",
+  "backup_receipt_sha256": "COORDINATOR MUST BIND",
+  "operational_lakefile_sha256": "e2e5235e7fbec9f185941be9d46808defd6245ef6e7377130d1377e356493a3a",
+  "operational_scheduler_sha256": "b7eb9e4dc8070fc71356df7960bbeaf1b3731518ad16d662fb2982dae5e4b9a3",
+  "external_source_links": "COORDINATOR MUST BIND EXISTING SOURCES AND EXACT COMMITS"
+}

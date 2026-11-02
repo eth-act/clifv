@@ -1,0 +1,23 @@
+{
+  "status": "observed_CI_measurement",
+  "pr": 892,
+  "head": "10690d238b9c84a5e2e388fc0a929eb36f2c597a",
+  "run_id": 41466067431,
+  "url": "https://github.com/eth-act/clifv/actions/runs/41466067431/attempts/1",
+  "input_files": 1302,
+  "output_total": 4455,
+  "exact": 1633,
+  "compiled_nonmatching": 364,
+  "compiled_total": 1997,
+  "matching_files": 92,
+  "aarch64_files": 484,
+  "compared_files": 202,
+  "setting_rejections": 563,
+  "unsupported_rejections": 1895,
+  "gains": 0,
+  "losses": 0,
+  "measuring_code_changed": true,
+  "compiled_test_functions_executed": false,
+  "complete_compiler_metadata_agreement_established": false,
+  "utc": "2026-11-02T15:22:20.397602+00:00"
+}

@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "unchanged_reference": {
+    "prior_compiled_identities": 1997,
+    "compiled_retained": 1997,
+    "compiled_stage_losses": []
+  },
+  "prior_different_outputs": 364,
+  "mutation_identity": [
+    "isa/aarch64/amode-shared-base.clif",
+    0,
+    "compile",
+    0,
+    "%shared_base_uext"
+  ],
+  "mutated_status": "lean_unsupported",
+  "stage_tuple_identity_preserved": true,
+  "mutation_rejected": true,
+  "diagnostic": "('Previously compiled production identities regressed', [('isa/aarch64/amode-shared-base.clif', 0, 'compile', 0, '%shared_base_uext')])",
+  "reference_sha256": "04da6f6b31015bc61df255a2e1342f8cd34b5578eba54ad1b5c0d3062cc8a6e4",
+  "max_rss_kib": 64512,
+  "no_Lean_build": true,
+  "utc": "2026-11-02T11:48:10.408863+00:00",
+  "aggregate_1GiB_memstats": "peak 56860672\noom 0\noom_kill 0\n",
+  "streaming_parser": "jq --stream; no full comparison JSON materialization"
+}
