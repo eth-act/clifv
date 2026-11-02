@@ -1,0 +1,11 @@
+2895 modules (0 heavy, 280 without a record); critical path 1.12 h, serial 22.69 h (recorded)
+05:48:14 want 2895 modules (0 assumed built) budget=12G max_jobs=1 heavy>16G
+05:48:15 check (all) 2895 modules in 0.8s: 1295 up-to-date, 236 out of date, 1364 wait for those
+05:48:15 start FV.Backend.Proof.StockNoOpportunityTable cap=12G running=1 avail=188.9G
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/lake-serial-build.py", line 938, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/lake-serial-build.py", line 733, in main
+    raise RuntimeError(f"Stop at first failed normal-key module: {m} rc={rc}")
+RuntimeError: Stop at first failed normal-key module: FV.Backend.Proof.StockNoOpportunityTable rc=2

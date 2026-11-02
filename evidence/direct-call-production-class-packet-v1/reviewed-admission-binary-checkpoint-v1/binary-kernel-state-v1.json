@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "single_parameterized_binary_implementation": true,
+  "generic_proof_roots": 16,
+  "result_call_wrapper_roots": 16,
+  "standard_only": true,
+  "old_binary_public_headers_exact": 18,
+  "old_binary_axiom_sets_exact": 18,
+  "old_BinFacts_and_old_checker_semantics": "unchanged",
+  "old_axiom_baseline": "return-pin-consumer-isolated-kernel-v3/return-pin-binary-audit/return-pin-binary.log",
+  "kernel_receipts": [
+    "binary-kernel-v2/result.json",
+    "binary-kernel-v3/result.json",
+    "binary-kernel-v4/result.json"
+  ],
+  "audit_receipt": "binary-kernel-audit-v2/receipt.json",
+  "source_hashes": {
+    "FV/E2E/ReturnPinAdmission.lean": "b63d1e1e5b6f6504f3a36ad41350c6144f3148d9751ff0f93909ce265be1a48b",
+    "FV/E2E/ReturnPinBinaryKernel.lean": "eefcb24df59e008e601da68a45f29ea1d16da05f1f5c1071371cfa739b77cd87",
+    "FV/E2E/ReturnPinBinary.lean": "ac30184be932c39b82623b5dfacf5263db173a86a7d52b0a84e75a98ff4d0697",
+    "FV/E2E/ResultCallBinary.lean": "1a0a80c0d7e681d489db27d2d9e17105b62ba6c703b52d67305023e36695bf27"
+  },
+  "peak_bytes": 287244288,
+  "oom_zero": true,
+  "current_main_validation": false,
+  "context": "immutable90c production predecessor plus declared owned changes",
+  "next": "One parameterized executable/compiler consumer; then actual default selection and linked ARM/typed matrix, both modes",
+  "utc": "2026-11-02T11:19:44.125192+00:00"
+}

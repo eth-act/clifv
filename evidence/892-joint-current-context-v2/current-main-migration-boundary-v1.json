@@ -1,0 +1,214 @@
+{
+  "status": "materialized_current_main_and_canonical_production",
+  "old_watcher": 141228,
+  "old_outer_controller": 141300,
+  "old_scheduler": 141302,
+  "active_command": 304489,
+  "active_command_argv": [
+    "/usr/bin/python3",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/lake-time.py",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/normal-providers-v3/FV.Backend.Proof.StockDemandExtent.time",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/memcap.sh",
+    "lake",
+    "build",
+    "FV.Backend.Proof.StockDemandExtent"
+  ],
+  "active_command_start": 1793618186.92,
+  "actual_main": "2e4c9d1c24ae025617c4aa9360b38d495460a7cd",
+  "merged_A_prs": [
+    884,
+    885,
+    886,
+    898,
+    899
+  ],
+  "old_joint_tree": "80a222ea656b8b2dadba8ca8567031ee06a81103",
+  "signals": "SIGSTOP only normal scheduler; no Lake/Lean signals",
+  "utc": "2026-11-02T11:23:41.368247+00:00",
+  "last_module": "FV.Backend.Proof.StockDemandExtent",
+  "last_module_exit": 0,
+  "last_outputs": {
+    ".trace": "14ac83d0f22a16e821da37e83349105020add4ca51cfc262c1bf70435dcfab20",
+    ".olean": "85e47ed61594e6f206d9be2cb508055f21e4aae65162bb34dbf03b60136f4b45",
+    ".ilean": "f5a280058daf6df91d23778a28c92dba9cac9e47e5af9f02e33f6b72ed9c0b8d"
+  },
+  "last_memory_stats": "peak 4742742016\noom 0\noom_kill 0\n",
+  "controller_exit": "Planned SIGTERM after active normalcommandexit0; no compiler signals",
+  "new_joint_tree": "405776adaffb7cf5a7b47a35b2da797fe4863c91",
+  "configs": {
+    "lakefile.toml": {
+      "old_operational_sha256": "e2e5235e7fbec9f185941be9d46808defd6245ef6e7377130d1377e356493a3a",
+      "new_canonical_sha256": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+      "new_operational_sha256": "e2e5235e7fbec9f185941be9d46808defd6245ef6e7377130d1377e356493a3a"
+    },
+    "lake-manifest.json": {
+      "old_operational_sha256": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab",
+      "new_canonical_sha256": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab",
+      "new_operational_sha256": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+    },
+    "lean-toolchain": {
+      "old_operational_sha256": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+      "new_canonical_sha256": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+      "new_operational_sha256": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b"
+    }
+  },
+  "changed_sources": [
+    {
+      "status": "A",
+      "path": "FV/Backend/Lowering/StockComparisonCfg.lean",
+      "old_sha256": null,
+      "new_sha256": "21e3634c47fe30c967f6d1df1efc0554eadf5e48b7c280be86c6b16aeea27719"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Lowering/StockParameterAnyArgsCfg.lean",
+      "old_sha256": null,
+      "new_sha256": "7beb66ac7ae813316f0e7666bd52fb24b10ce999f15f48f19797e1ea32b15681"
+    },
+    {
+      "status": "M",
+      "path": "FV/Backend/Lowering/StockParameterArgsCfgNI.lean",
+      "old_sha256": null,
+      "new_sha256": "432a85b6de26d45648b4a0d7ce1f014630dda8c14449629f071988840c648871"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockComparisonAt.lean",
+      "old_sha256": null,
+      "new_sha256": "e83ea00d571e9e30eadb5293cb9f4119de8a85f84aadf0a10ef9066cd9b69a92"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockComparisonBranchValues.lean",
+      "old_sha256": null,
+      "new_sha256": "c5265f11664f135b86a26c6110536741c37ce665ea3f4f0118a91671f047e02e"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockComparisonClass.lean",
+      "old_sha256": null,
+      "new_sha256": "ef1d1672937c8ed3c44c00ca9b88dd85d3c488b245b27067c778ff693a5e0f61"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockComparisonCompatibility.lean",
+      "old_sha256": null,
+      "new_sha256": "530719f96a1f413b906726c3180a85066ceaaf0d006582195f287dfeb7b87919"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockComparisonDomain.lean",
+      "old_sha256": null,
+      "new_sha256": "f1d4889b4b7f8971707d38acd516784e8fbfb92fb83024bfc2931e6d1d4c993a"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockComparisonSourceCores.lean",
+      "old_sha256": null,
+      "new_sha256": "e3f19d22aa55ed6f5cfccb9d0547f4dcf1110342fc65ef4f9181c63041a9225f"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockComparisonSourceCoresWitness.lean",
+      "old_sha256": null,
+      "new_sha256": "679ee8fe0ee502c95b370b6ee4d8863a217fc7ec0b8060eabc366eb9afe3d0ce"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockComparisonWitness.lean",
+      "old_sha256": null,
+      "new_sha256": "870212e4075a54174fa2c3a7433b78002cf3a712ec6a7fc852dea131b7ceb8f2"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockConditionalSelectedAt.lean",
+      "old_sha256": null,
+      "new_sha256": "c169e4f101e3c108770560a1fbdc0c66c9c739a40a9f703fced01fb9d18ad62c"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockConditionalSelectedDemand.lean",
+      "old_sha256": null,
+      "new_sha256": "e1d09aac24e7063e80357c111c489a65319601aca0159a47f0c56308fd20f6e5"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockConditionalSelectedWitness.lean",
+      "old_sha256": null,
+      "new_sha256": "7dd44882d2fdb8dda2f95f403b8d57a874c2afa85e5de654d90f6608383812e7"
+    },
+    {
+      "status": "M",
+      "path": "FV/Backend/Proof/StockDemandExtent.lean",
+      "old_sha256": "d7e659321411a83a028359cf077f51cb226e75ca9374456a3981f2ba2db6cb92",
+      "new_sha256": "aa097fff86048900e4b38c9e608cc2437870c14972d8f2da0fbe5de52fa90723"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockEdgeOrder.lean",
+      "old_sha256": null,
+      "new_sha256": "daa51194fb78958e466df829a9978ef05c0aa51ef91b7df50ca8db5f6f20bc00"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockParameterAnyArgsCheck.lean",
+      "old_sha256": null,
+      "new_sha256": "7bb36b0a227e08599841cd427b5f8be3f6b442b7f312c3e319b616ad4957d064"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockParameterAnyArgsDomain.lean",
+      "old_sha256": null,
+      "new_sha256": "dfa5c964023828c1bd56e9bafccabb520d170c44ea6e2f4455d290f442a2f284"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockParameterAnyArgsLeaf.lean",
+      "old_sha256": null,
+      "new_sha256": "ff08bb7a6884e0ec96d78f9dce693f7c754fdf11d39b03b0808150696424390d"
+    },
+    {
+      "status": "A",
+      "path": "FV/Backend/Proof/StockParameterAnyArgsWitness.lean",
+      "old_sha256": null,
+      "new_sha256": "992e075578c50b301a83b37b685880d24c08d10e1cff19fa1957b4c7668ee17b"
+    },
+    {
+      "status": "M",
+      "path": "FV/Backend/Proof/StockParameterArgsRouteWitness.lean",
+      "old_sha256": null,
+      "new_sha256": "65c1682f65a2142884888617dafcb3747e6799964856ef0ec8361f91d5211c42"
+    },
+    {
+      "status": "A",
+      "path": "scripts/audit/comparison-branch-core.lean",
+      "old_sha256": null,
+      "new_sha256": "481599def69d516ac9b9b536e008eea1829c46eb98caaf510e9b12f0cdb66535"
+    },
+    {
+      "status": "A",
+      "path": "scripts/audit/comparison-class.lean",
+      "old_sha256": null,
+      "new_sha256": "0bd5dbe5c1f25d158f65c20aad84ad5be3acebb8272e440ed04957a9983fd5a3"
+    },
+    {
+      "status": "A",
+      "path": "scripts/audit/conditional-selected.lean",
+      "old_sha256": null,
+      "new_sha256": "d63992837d6ac71f11ffd28f311d131c2ad9a0aeb06dd6335d57a457b069b814"
+    },
+    {
+      "status": "A",
+      "path": "scripts/audit/parameter-any-args.lean",
+      "old_sha256": null,
+      "new_sha256": "44a5ab222779ff328c10b26a6dccace983b734f6bb7ac64a691077a0b53a6518"
+    },
+    {
+      "status": "M",
+      "path": "scripts/audit/parameter-args-route.lean",
+      "old_sha256": null,
+      "new_sha256": "2d6bc4e73f59d1334e6d5ebaf92f338181daee36b232e482c1c4f62abc527b5b"
+    }
+  ],
+  "preserved_normal_artifacts": 3113
+}

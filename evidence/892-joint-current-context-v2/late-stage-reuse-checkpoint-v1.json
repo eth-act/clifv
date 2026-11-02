@@ -1,0 +1,18 @@
+{
+  "status": "real_normal_successor_active",
+  "owner": 141228,
+  "joint_tree": "80a222ea656b8b2dadba8ca8567031ee06a81103",
+  "up_to_date_before_late_stages": 1295,
+  "up_to_date_after_exclusive_unstage": 1514,
+  "direct_stale_after": 79,
+  "blocked_after": 1302,
+  "completed_normal_commands_before_handoff": 12,
+  "reuse_gain_combines_completed_normal_work_and_new_CI": 219,
+  "last_module_exit0": "StockRecordFinalAlias",
+  "native_unstage_entries": 3,
+  "all_unstage_exit0": true,
+  "no_compiler_signals": true,
+  "cache": "existing owned CI staging cache only",
+  "full_goal_complete": false,
+  "utc": "2026-11-02T11:02:38.040464+00:00"
+}

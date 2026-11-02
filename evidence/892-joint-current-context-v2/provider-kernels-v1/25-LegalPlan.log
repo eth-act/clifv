@@ -1,0 +1,36 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalPlan.lean:156:4: warning: This simp argument is unused:
+  Bool.false_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [beq_self_eq_true, reduceCtorEq, beq_iff_eq, ite_true, ite_false]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalPlan.lean:313:10: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalPlan.lean:313:10: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalPlan.lean:374:10: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalPlan.lean:374:10: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalPlan.lean:644:8: warning: `dif_pos` has been deprecated: Use `dite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalPlan.lean:699:61: warning: This simp argument is unused:
+  exists_and_left
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [evalInst, Opt.Res.bind_eq_trap, getAs_ne_trap, get_ne_trap, ofOption_ne_trap, check_ne_trap,
+    pure_ne_trap, false_or, and_false, exists_false, or_false, false_and, exists_const] at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalPlan.lean:700:28: warning: This simp argument is unused:
+  false_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [evalInst, Opt.Res.bind_eq_trap, getAs_ne_trap, get_ne_trap, ofOption_ne_trap, check_ne_trap,
+    pure_ne_trap, false_or, exists_and_left, and_false, exists_false, or_false, exists_const] at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalPlan.lean:700:39: warning: This simp argument is unused:
+  exists_const
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [evalInst, Opt.Res.bind_eq_trap, getAs_ne_trap, get_ne_trap, ofOption_ne_trap, check_ne_trap,
+    pure_ne_trap, false_or, exists_and_left, and_false, exists_false, or_false, false_and] at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

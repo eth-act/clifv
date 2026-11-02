@@ -1,0 +1,17 @@
+{
+  "status": "running",
+  "watcher": 92004,
+  "joint_tree": "80a222ea656b8b2dadba8ca8567031ee06a81103",
+  "normal_key_preflight": {
+    "up_to_date": 1295,
+    "direct_stale": 236,
+    "blocked_by_stale": 1364
+  },
+  "raw_handoff_completed": 47,
+  "avoided_future_raw_then_normal_pairs": 1542,
+  "resource": "same12GiB onejob explicit-j2",
+  "late_stage_io_watcher": 127807,
+  "late_stage_io_resource": "1GiB preservation only, no live mapping/library mutation",
+  "full_goal_complete": false,
+  "utc": "2026-11-02T10:52:59.762790+00:00"
+}

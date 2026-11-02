@@ -706,4 +706,12 @@ theorem demand_extent_witness :
   have bounds := lower_mapped_demand_bounds run scope events records mapped
   exact ⟨ctor, helper, named, ctorSize, _, result, event, record, run, scope, events, records, a, b, bounds⟩
 
+
+/-- Every actual traversal node keeps the size of the demand array. -/
+theorem lowerNode_demand_size {ctx : Ctx} {ranges : Array (Nat × Nat)} {order : Order}
+    {f : Clif.Function} {params : List Nat} {label : Nat} {input output : DriverState}
+    (run : lowerNode ctx ranges order f params label input = .ok output) :
+    output.state.demand.size = input.state.demand.size :=
+  (node_size (cap := input.state.demand.size) rfl run).1
+
 end Backend.Stock.Proof.Extent

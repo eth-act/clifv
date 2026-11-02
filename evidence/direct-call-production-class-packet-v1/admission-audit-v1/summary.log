@@ -1,0 +1,11 @@
+ok   stock-result-call.lean: theorems 24/24 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-witness.lean: theorems 4/4 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-previous-contracts.lean: theorems 34/34 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-previous-boundary.lean: theorems 3/3 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-previous-world.lean: theorems 7/7 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-previous-worldx.lean: theorems 1/1 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-contract-additions.lean: theorems 8/8 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-previous-checks.lean: theorems 5/5 rc=0 errors=0 other_axioms=[]
+ok   stock-direct-call-result.lean: theorems 10/10 rc=0 errors=0 other_axioms=[]
+ok   stock-direct-call-result-witness.lean: theorems 3/3 rc=0 errors=0 other_axioms=[]
+axiom audit: 10/10 files ok

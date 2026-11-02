@@ -1,0 +1,7 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/DeadCleanupAvailability.lean:97:27: warning: This simp argument is unused:
+  ↓reduceIte
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [scan, hd] at ha ⊢
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

@@ -1,0 +1,4 @@
+ok   stock-result-call-previous-binary.lean: theorems 18/18 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-binary-kernel.lean: theorems 16/16 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-binary-results.lean: theorems 16/16 rc=0 errors=0 other_axioms=[]
+axiom audit: 3/3 files ok

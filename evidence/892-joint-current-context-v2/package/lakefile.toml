@@ -5,7 +5,7 @@ defaultTargets = ["FV"]
 # 4.34), so a module with warnings gets different .olean bytes in every worktree and all its
 # dependents then miss the shared Lake cache. The editor still shows these warnings
 # (LEARNINGS.md, "Some .oleans are not deterministic").
-weakLeanArgs = ["-Dlinter.unusedSimpArgs=false", "-Dlinter.unusedVariables=false",
+weakLeanArgs = ["-j2","-Dlinter.unusedSimpArgs=false", "-Dlinter.unusedVariables=false",
   "-Dlinter.unnecessarySimpa=false", "-Dlinter.unusedSectionVars=false", "-Dlinter.defProp=false",
   "-Dlinter.constructorNameAsVariable=false"]
 

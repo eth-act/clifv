@@ -1,0 +1,22 @@
+{
+  "status": "measured",
+  "pr": 892,
+  "head": "a455465225905aba9f3247e5a565ac90dbdb1a6a",
+  "run": 41430299959,
+  "comment_url": "https://github.com/eth-act/clifv/pull/892#issuecomment-6575150248",
+  "comment_body": "<!-- clifv-stock-comparison:v1 run=41430299959 attempt=1 -->\n### Stock Cranelift / Lean comparison\n\nCommit: `a45546522590`. [Run and artifacts](https://github.com/eth-act/clifv/actions/runs/41430299959/attempts/1).\n\n| Check | Result |\n| --- | --- |\n| Official CLIF test inventory | 1,302 / 1,302 (100.0%) files |\n| AArch64 files with outputs compared | 202 / 484 (41.7%) |\n| Exact function outputs | 1,633 / 4,455 (36.7%) |\n| Files with every AArch64 output matching | 92 / 484 (19.0%) |\n| Different function outputs | 364 |\n| Rejected for a setting | 563 |\n| Rejected for an unsupported operation | 1,895 |\n| Complete compiler metadata agreement | Not established |\n| Compiled test functions executed | No |\n\nExact matches require identical bytes, relocations, alignment, and trap records.\nRejected outputs do not pass. Expected stock failures without code are excluded from the output total.\n\nCompared with `main` at `3b586e45bb65` ([run](https://github.com/eth-act/clifv/actions/runs/41416360000/attempts/1)): **+0 / \u22120** exact outputs (1,633 \u2192 1,633).\n\nThe measuring code changed since then: `FVTest/Backend/Main.lean`. Changed numbers may come from the measurement, not the compiler.\n\nPipeline time: **180.4 seconds** (build, validation, artifact generation, and comparison).\nPeak runner memory used: **2.65 GiB**, sampled every 0.1 seconds, including the OS.\nThis job uses two comparison workers. Rust toolchain setup is included in the pipeline time.\nLean installation and cache transfers are outside the pipeline time.\n\nA successful measurement job means the measurement completed, not that both compilers fully agree.\nThe \"Check lost matches\" job fails when an output that matched on that `main` commit no longer matches.\nThe label `stock-comparison-accept-losses` accepts intended losses on a pull request.\n",
+  "official_input_files": 1302,
+  "official_inventory": 1302,
+  "exact_functions": 1633,
+  "function_outputs": 4455,
+  "matching_files": 92,
+  "aarch64_files": 484,
+  "compared_files": 202,
+  "gains": 0,
+  "losses": 0,
+  "measurement_cli_changed": true,
+  "execution_proved": false,
+  "full_metadata_agreement": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T10:47:08.701179+00:00"
+}

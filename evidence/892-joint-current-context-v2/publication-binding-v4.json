@@ -1,0 +1,24 @@
+{
+  "status": "exact_tree_bound",
+  "actual_head892": "85b0aa1f2cf1cf0ff4d442d65d688ffa306eea87",
+  "actual_base": "aa7faec76474eb768ec67009eb484334778d73e3",
+  "candidate_tree": "5b924d76f99cd81bede204d7906e16dd72889b32",
+  "source_context_tree": "405776adaffb7cf5a7b47a35b2da797fe4863c91",
+  "source_context_base": "2e4c9d1c24ae025617c4aa9360b38d495460a7cd",
+  "publication_bridge": {
+    "changed_files": [
+      "LEARNINGS.md"
+    ],
+    "diff_sha256": "262496dc79172bf4060df44bcd86d6fdb280aa1302426ead6c5423d197196040",
+    "code_and_configs_exact": true
+  },
+  "canonical_config_hashes": {
+    "lakefile.toml": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b"
+  },
+  "normal_gate_passed": false,
+  "axiom_matrix_gate_passed": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T11:27:38.671117+00:00"
+}

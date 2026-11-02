@@ -1,0 +1,36 @@
+{
+  "status": "active_module_preserved_controller_released",
+  "controller": 4163563,
+  "watcher": 4163534,
+  "active_lean": 19901,
+  "active_lean_command": [
+    "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+    "-j2",
+    "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemoryIntegerAddress.lean",
+    "-o",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerAddress.olean",
+    "-i",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerAddress.ilean",
+    "-c",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerAddress.c"
+  ],
+  "active_scope_shell": 19892,
+  "scope_create_time": 1793616172.87,
+  "lean_create_time": 1793616172.92,
+  "scope_env": {
+    "FV_MEMCAP_STATS": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/provider-kernels-v1/46-StockMemoryIntegerAddress.mem",
+    "FV_MEMCAP": "12G",
+    "FV_MEMCAP_UNIT": "worker-o-892-joint-v2-46"
+  },
+  "consumer_controller_stopped": 19152,
+  "signals": "SIGSTOP only controller; SIGTERM only idle consumer controller; no compiler signal",
+  "next": "Wait scope shell zombie exit0; preserve module outputs; SIGTERM+SIGCONT only paused Python controller; launch normal-key scheduler",
+  "joint_tree": "80a222ea656b8b2dadba8ca8567031ee06a81103",
+  "utc": "2026-11-02T10:48:07.168637+00:00",
+  "last_raw_module": "FV/Backend/Proof/StockMemoryIntegerAddress.lean",
+  "last_raw_index": 46,
+  "completed_raw_kernels": 47,
+  "compiler_exit": 0,
+  "controller_exit": "Planned SIGTERM+SIGCONT after compiler exit; not a compiler failure"
+}

@@ -749,6 +749,1137 @@
           "bytes": 90501
         }
       }
+    },
+    {
+      "index": 19,
+      "source": "FV/Opt/Proof/LegalShift.lean",
+      "source_sha256": "0c04beef41f72709ed6d40f2c6d29c911784e60bd7b7b3fb502e6043322c4a66",
+      "direct_import_output_sha256": {
+        "FV/Opt/Proof/LegalArith.lean": "c5ba6c5ce4c7aae0aedcdd51e4134f18fe04a4baf332defb3d6dc570ce636f0f"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalShift.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 32.68357857398223,
+      "max_os_threads": 7,
+      "memstats": "peak 573259776\noom 0\noom_kill 0\n",
+      "log_sha256": "69e6bc34763503e5ab977a455b2c75f50da40590ad33bc12c464c7565fdd6dea",
+      "outputs": {
+        ".olean": {
+          "sha256": "dc13e9f94db7d9a41a01a5dc1081bc114d711af3261de351bad872456d1304cd",
+          "bytes": 7232176
+        },
+        ".ilean": {
+          "sha256": "727bd5dc05f3c8d94bb80c62ecb150a3ed1107305522c84cd9751c0a94642b2c",
+          "bytes": 29189
+        },
+        ".c": {
+          "sha256": "1d6942a33f9fa807000a722afd8e97cd757691a73576c93056cd1e9c6bc06ded",
+          "bytes": 916683
+        }
+      }
+    },
+    {
+      "index": 20,
+      "source": "FV/Opt/Proof/LegalShift16.lean",
+      "source_sha256": "65880f0aaac7f1cd0b6231453383666678ff4d6755a27f93f76acb1ab08f83be",
+      "direct_import_output_sha256": {
+        "FV/Opt/Proof/LegalShift.lean": "dc13e9f94db7d9a41a01a5dc1081bc114d711af3261de351bad872456d1304cd"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalShift16.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift16.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift16.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift16.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 2.0442206769948825,
+      "max_os_threads": 2,
+      "memstats": "peak 200540160\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "ae7c307dce56cdd6d2c143354f29793fdceea30c350183b8e4377e55e079cc5c",
+          "bytes": 323592
+        },
+        ".ilean": {
+          "sha256": "649f411f42211ba29dad6d4b2256578c229b95564fd5364182d65ace3baafda8",
+          "bytes": 4605
+        },
+        ".c": {
+          "sha256": "9fd3055d462f7a467c8b2a4fb37b9bbb7d243b2b86ba923f2888261941937bbf",
+          "bytes": 7534
+        }
+      }
+    },
+    {
+      "index": 21,
+      "source": "FV/Opt/Proof/LegalShift32.lean",
+      "source_sha256": "c26ffcb21d4174abd6649265c5ff14f5b73d3b2fa9d0c2effa0d7aace516267a",
+      "direct_import_output_sha256": {
+        "FV/Opt/Proof/LegalShift.lean": "dc13e9f94db7d9a41a01a5dc1081bc114d711af3261de351bad872456d1304cd"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalShift32.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift32.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift32.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift32.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 2.045139943016693,
+      "max_os_threads": 2,
+      "memstats": "peak 199426048\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "46870b3cbc8dac4ab0bbd0671861df7cd3adaada421b9df699a03ebb684ace04",
+          "bytes": 323592
+        },
+        ".ilean": {
+          "sha256": "c40ad4e6ab1d1d86734a6315e338cfd8e9ffe082230285c2414bb8018a34339d",
+          "bytes": 4605
+        },
+        ".c": {
+          "sha256": "83dbcbc34237c45105d5e2be6e0f58392ffd31f40834337f12d3bc3100a3d824",
+          "bytes": 7534
+        }
+      }
+    },
+    {
+      "index": 22,
+      "source": "FV/Opt/Proof/LegalShift64.lean",
+      "source_sha256": "751c00d1d527190a09fb8289a548ba515d1407b57b63e32b06669cdee4987733",
+      "direct_import_output_sha256": {
+        "FV/Opt/Proof/LegalShift.lean": "dc13e9f94db7d9a41a01a5dc1081bc114d711af3261de351bad872456d1304cd"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalShift64.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift64.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift64.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift64.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.0238752730074339,
+      "max_os_threads": 0,
+      "memstats": "peak 195518464\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "0f3355573cc1c67af3940633ac25c3ae7c7a4311857b18019d836b842c4a6a38",
+          "bytes": 299936
+        },
+        ".ilean": {
+          "sha256": "6ca3980bcbf6d76870d220bda7a8ed1b977e1b7facdbc01ff474d11145a23f92",
+          "bytes": 4513
+        },
+        ".c": {
+          "sha256": "fce784224add53846d1dedd195aead78f4dfbda0b707925fb209ccf800164e89",
+          "bytes": 7547
+        }
+      }
+    },
+    {
+      "index": 23,
+      "source": "FV/Opt/Proof/LegalShift8.lean",
+      "source_sha256": "39c1160a673f7b1a18e021050df7de708dab058f7115bf64cebaa3ff6427115f",
+      "direct_import_output_sha256": {
+        "FV/Opt/Proof/LegalShift.lean": "dc13e9f94db7d9a41a01a5dc1081bc114d711af3261de351bad872456d1304cd"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalShift8.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift8.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift8.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalShift8.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.0249837439623661,
+      "max_os_threads": 0,
+      "memstats": "peak 198754304\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "5bbae43f8a3683843dfa3a6827514992e74ac0827c574778da40f87fd8f76f3c",
+          "bytes": 323280
+        },
+        ".ilean": {
+          "sha256": "24349403f1f024a527c16cd8caa3cc2f8ffbd946da29a58441795bab51eec080",
+          "bytes": 4565
+        },
+        ".c": {
+          "sha256": "b6c96f58b6ee543d16f76298163f931dfdc8360cd97a0e5648fdf08ba726efe1",
+          "bytes": 7520
+        }
+      }
+    },
+    {
+      "index": 24,
+      "source": "FV/Backend/Proof/RelocProvSound.lean",
+      "source_sha256": "bbb713049f9288eba4919a57a16f9c9556a695cf135a43418ed3000c5b72e9fd",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/RelocProvCheck.lean": "49b253bd4ac6f47c01ef9700272959f7a2c4e7257fb8f56667171b57b5adeec4"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/RelocProvSound.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/RelocProvSound.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/RelocProvSound.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/RelocProvSound.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 2.0412424889509566,
+      "max_os_threads": 6,
+      "memstats": "peak 286482432\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "280b6502b49da350f27a63e988a304b100e279896023dee6da3a6256308e2a10",
+          "bytes": 3854448
+        },
+        ".ilean": {
+          "sha256": "d687e9f83d73974cefec877b4b18894432572bea00fa62634a9ec7f644df6e57",
+          "bytes": 63433
+        },
+        ".c": {
+          "sha256": "af4303ba82c384c2072863180bb27325fa4e56de3143e16d93d0acd55d317b42",
+          "bytes": 68312
+        }
+      }
+    },
+    {
+      "index": 25,
+      "source": "FV/Opt/Proof/LegalPlan.lean",
+      "source_sha256": "0d350fefdd24cbd6439dadbe836a4a70163237466e232c2fbcf846e9907767d9",
+      "direct_import_output_sha256": {
+        "FV/Opt/Proof/LegalBase.lean": "ad66e5a6a5dd9d2ae6f3a82c48ae806592ef34cf2a85c2686ada250576cffa31",
+        "FV/Opt/Proof/LegalExt.lean": "e3c42f8d6a371a1f24a44d38ef15f437d8041b78fee0b55d45cf763ed7f051ab",
+        "FV/Opt/Proof/LegalShift16.lean": "ae7c307dce56cdd6d2c143354f29793fdceea30c350183b8e4377e55e079cc5c",
+        "FV/Opt/Proof/LegalShift32.lean": "46870b3cbc8dac4ab0bbd0671861df7cd3adaada421b9df699a03ebb684ace04",
+        "FV/Opt/Proof/LegalShift64.lean": "0f3355573cc1c67af3940633ac25c3ae7c7a4311857b18019d836b842c4a6a38",
+        "FV/Opt/Proof/LegalShift8.lean": "5bbae43f8a3683843dfa3a6827514992e74ac0827c574778da40f87fd8f76f3c"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalPlan.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalPlan.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalPlan.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalPlan.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 6.131583496986423,
+      "max_os_threads": 7,
+      "memstats": "peak 402952192\noom 0\noom_kill 0\n",
+      "log_sha256": "5f8877e43135966ed9e02ae6948e71b3f5055ce3cff87e83acc3714a870154e4",
+      "outputs": {
+        ".olean": {
+          "sha256": "a1cb6d26460d9612652b3186e4ca6768379b5fdb119dee54ca09f5c03dc5ecf2",
+          "bytes": 9560048
+        },
+        ".ilean": {
+          "sha256": "da1abdeeef4fcf170d5f6e7d0d27151e20fe8c81f780f586c4307617a738b826",
+          "bytes": 66419
+        },
+        ".c": {
+          "sha256": "b8f46a7d9d4da4775c534ee6cf6db6c293cd196391a4d5f5a08274af8c3ee67a",
+          "bytes": 191335
+        }
+      }
+    },
+    {
+      "index": 26,
+      "source": "FV/Opt/Proof/LegalSim.lean",
+      "source_sha256": "19c7cee2a747e78630d6bbc6cc42ff001e3c005b25f6467fa4c78d0367bcfa9a",
+      "direct_import_output_sha256": {
+        "FV/Opt/Proof/LegalPlan.lean": "a1cb6d26460d9612652b3186e4ca6768379b5fdb119dee54ca09f5c03dc5ecf2",
+        "FV/Opt/Proof/LegalStep.lean": "113e1a99668e2ff3f81cc001891fa93b99b02b75bf88250e9d53be19c4dd09ba"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalSim.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalSim.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalSim.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalSim.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 23.485253078048117,
+      "max_os_threads": 9,
+      "memstats": "peak 912285696\noom 0\noom_kill 0\n",
+      "log_sha256": "485daa1b35ba18d8e0368c80da281526db3feab288ed1515737e23019716b21e",
+      "outputs": {
+        ".olean": {
+          "sha256": "8b64dcc616fa9b0ab4ab5fed3d7481bcae31c776fa90afa4da1e722b197c1a73",
+          "bytes": 29611088
+        },
+        ".ilean": {
+          "sha256": "2312fc9ef9f5f8cf7b7913d99d6f7168db0a412bad789fe5ff96fab0bca2aa2a",
+          "bytes": 386122
+        },
+        ".c": {
+          "sha256": "392656e4b173c504858ca79825405c932f0a0ff6a16e011d16cc1806b8245b6b",
+          "bytes": 635380
+        }
+      }
+    },
+    {
+      "index": 27,
+      "source": "FV/Backend/Proof/StockMemorySelection.lean",
+      "source_sha256": "5644fd9e6b840fc013380ce8764a5e0e792a8eb39bb45f6a22d2e1e0ff5aa752",
+      "direct_import_output_sha256": {
+        "FV/Arm/MinTheory.lean": "6af21ef9ddf8f3c0cfb4d8214438b5b88affc83824366ea9bc1335493f9a9181",
+        "FV/Backend/Proof/DriverCheck.lean": "f17c23dcbb216f4f863896bd62f5dd7c5033e8685ae06e6b066b560640cab387",
+        "FV/Backend/Proof/IselExtern.lean": "ba760d3c38538d218e85699487d7e693e27d94f5c756a66ea9b242305bb5a579",
+        "FV/Backend/Proof/StockProjection.lean": "9664151681d5091eebd13333b526a026417fb841bc2076fc12bca1b3ecc7a327"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemorySelection.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySelection.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySelection.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySelection.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 5.10544963699067,
+      "max_os_threads": 6,
+      "memstats": "peak 243617792\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "fbfdb49ce9badffce2654fe44f2c6b49bf9f3042c878bb015739d1a5c85f4ad2",
+          "bytes": 1459776
+        },
+        ".ilean": {
+          "sha256": "b21ae0a61904925c28398ba3175eb8fb65662f3c9f9c4f75b88d9ef05838d5a9",
+          "bytes": 15619
+        },
+        ".c": {
+          "sha256": "7cfaf70b438fc8c55c8cae8a9d7da87f74b208b40136169dfbe33c495c7057b2",
+          "bytes": 21151
+        }
+      }
+    },
+    {
+      "index": 28,
+      "source": "FV/Opt/Proof/LegalDirect.lean",
+      "source_sha256": "9925c0763f22b6dbda46c58f0782dbdb79a0c2f6a52ed9939655af65e6bde0f7",
+      "direct_import_output_sha256": {
+        "FV/Opt/Proof/LegalComplete.lean": "06b00b2a52950c935a87b4514698238f019763cbe05e55b09fd210659cb4cdfe",
+        "FV/Opt/Proof/LegalSim.lean": "8b64dcc616fa9b0ab4ab5fed3d7481bcae31c776fa90afa4da1e722b197c1a73"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalDirect.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalDirect.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalDirect.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Opt/Proof/LegalDirect.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.0447759910020977,
+      "max_os_threads": 0,
+      "memstats": "peak 183967744\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "abe0d8f47dd92ecaf83ea14336b2dcbaa934a12c4a4a1f85495e5e7bfc59b3a2",
+          "bytes": 41216
+        },
+        ".ilean": {
+          "sha256": "7edcf81544894f1e422b11db9709dfd924e4fad434fc5223bb9f5f168ee8f128",
+          "bytes": 10749
+        },
+        ".c": {
+          "sha256": "1f8b4bb8878ef6e149e1fd1324fd690035a14b4e4481a77e33d11ee10d4c22f3",
+          "bytes": 1583
+        }
+      }
+    },
+    {
+      "index": 29,
+      "source": "FV/Backend/Proof/StockCmpOutput.lean",
+      "source_sha256": "8f1b2064f8fbd132f5ec1c44d58fa5e04ced645dcaf557ea50d835ad0b0029a4",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/IselCmpInv.lean": "6c857fd9add684a35e0aa6f1b7726947751c6e557ee81504d53f4550ee9dab0f",
+        "FV/Backend/Proof/IselTerms.lean": "84febcfddfec26e406dbbe18b59a17833b05c105403be9cd403cd14085c2a82a",
+        "FV/Backend/Proof/StockCmpPure.lean": "fb1ccb11d7a5310743fa83438951e99a7054db729581d3989f815d8940beadde"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockCmpOutput.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockCmpOutput.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockCmpOutput.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockCmpOutput.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.0258413199917413,
+      "max_os_threads": 0,
+      "memstats": "peak 192053248\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "133dda1ce98bfec608ed8be8e8e816097ed28ded0e7ec04c52068541698385eb",
+          "bytes": 68184
+        },
+        ".ilean": {
+          "sha256": "5f5c03dca01dba125865015253ba3289516c53a1f4f63eb6f0345d15d3f50c0e",
+          "bytes": 8968
+        },
+        ".c": {
+          "sha256": "60308d621f8a7c4a772053a273dd235d824cade5bc4cae7e69f8cd1a996cc4dc",
+          "bytes": 1871
+        }
+      }
+    },
+    {
+      "index": 30,
+      "source": "FV/Backend/Proof/StockLinearCfgTrace.lean",
+      "source_sha256": "bd7df78d1f5d20abe7fbac6db0b4bbad77f8466c09e409a3d4e34e09af0147ed",
+      "direct_import_output_sha256": {
+        "FV/Arm/MinTheory.lean": "6af21ef9ddf8f3c0cfb4d8214438b5b88affc83824366ea9bc1335493f9a9181",
+        "FV/Backend/Lowering/Stock.lean": "4dd323496249b9c9e44ac42f4b3992b180c2bef1c031bd9ddfbfe7818c3621d7",
+        "FV/Backend/Proof/IselInterp.lean": "11eafcfebd93d7c2b5a9d47ad3e67e787fa36e6acc1cdeed371233824edef422",
+        "FV/Backend/Proof/PrepareCheck.lean": "9af71fe9ff6831075057762a30685aa6ebdcec6c9e8e4d4ee2e794f9425cec67",
+        "FV/Backend/Proof/RegallocLemmas.lean": "2ac0bd53c2bb4e3c10b0de0b9dca0a5664e9abffff4666999c59428f913643d0"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockLinearCfgTrace.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockLinearCfgTrace.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockLinearCfgTrace.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockLinearCfgTrace.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 2.0414259689860046,
+      "max_os_threads": 6,
+      "memstats": "peak 205463552\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "87d789268da657a3ba915557879857232173606e85b16e3c1560673604617f8f",
+          "bytes": 797208
+        },
+        ".ilean": {
+          "sha256": "d6b6a6db0eba99c543e5fe5b5840f051ca1370808b86e11617c38fd32a28adbe",
+          "bytes": 17773
+        },
+        ".c": {
+          "sha256": "5d8e060d87731e254608239bb01b77cdb30acf19ac8cc945572d75c2db2d4a2a",
+          "bytes": 8856
+        }
+      }
+    },
+    {
+      "index": 31,
+      "source": "FV/E2E/LegalProgram.lean",
+      "source_sha256": "39d47ae9fa0edff73bb948b4c632a0f4d7e79d5737d4e228525fe538808ee109",
+      "direct_import_output_sha256": {
+        "FV/E2E/LinkClifRev.lean": "d2d4befe7e1165cfa70f1852cb4e44fa20ae8ad9338cd44f02c95bd38eb9c0d4",
+        "FV/Opt/Proof/LegalDirect.lean": "abe0d8f47dd92ecaf83ea14336b2dcbaa934a12c4a4a1f85495e5e7bfc59b3a2",
+        "FV/Opt/Proof/LegalPre.lean": "5040bb8648ec69b734a8dc18cf0297d3e883d4f2fa4a9387d2b0b7619daa5836"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/E2E/LegalProgram.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LegalProgram.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LegalProgram.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LegalProgram.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 2.043392435996793,
+      "max_os_threads": 7,
+      "memstats": "peak 270671872\noom 0\noom_kill 0\n",
+      "log_sha256": "ab80d73fcd5b1ec9f94f29362528d5f889a9669578fea2d23e7ad7e70b45f6ba",
+      "outputs": {
+        ".olean": {
+          "sha256": "860690e5e69a99ca828636f1f9eb6278268d4d4d76238b91f9b2c9ff8cbd3b04",
+          "bytes": 2473160
+        },
+        ".ilean": {
+          "sha256": "091274f895ddba265acd04aad237abcfa8777288fe31f52bfb4baedb9c8fae16",
+          "bytes": 165823
+        },
+        ".c": {
+          "sha256": "6bb61551ecef141454094c2ae9f0db729eee954565c95681956b222289ac0e00",
+          "bytes": 19647
+        }
+      }
+    },
+    {
+      "index": 32,
+      "source": "FV/Backend/Proof/DeadCleanupEdges.lean",
+      "source_sha256": "8944cc2ec0cc182043dd821fe5a6c678da35b7f3a65b726eba17a9cfd8bef243",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/DeadCleanupCFG.lean": "d7e614a9ea49e55aa64cb24bb056cf44ce5c370ef8124a5231a53537b0bb45f5"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/DeadCleanupEdges.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupEdges.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupEdges.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupEdges.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.0203540460206568,
+      "max_os_threads": 0,
+      "memstats": "peak 100917248\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "5276e0a24d504f593a8191141df9a2ac01ca2d40428bb603bc45f37928fcd5b2",
+          "bytes": 270048
+        },
+        ".ilean": {
+          "sha256": "5f4fd68fddb25a3bbb5ef797c781b6b9f8736370f907ad989c15f83ec3b2f7af",
+          "bytes": 14924
+        },
+        ".c": {
+          "sha256": "8de0231b96cf77adf690bbccdbb192cf86e28282a525ce926854e52185c92c51",
+          "bytes": 14855
+        }
+      }
+    },
+    {
+      "index": 33,
+      "source": "FV/Backend/Proof/IselEmitTDefs.lean",
+      "source_sha256": "22365742a74ec99695fe5b64b2ccdf2d6361447260fbe289419bf3b54cca123f",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/IselEmitDefs.lean": "418ff64d99fd0f039effe451f1c5ee646973183ddad844d0e9d8d62125006323"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/IselEmitTDefs.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselEmitTDefs.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselEmitTDefs.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselEmitTDefs.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.0198533110087737,
+      "max_os_threads": 0,
+      "memstats": "peak 193556480\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "da3d37fa15a085c031770a70ab0d39188b7bea5f5b071c1781097903eea970a7",
+          "bytes": 231304
+        },
+        ".ilean": {
+          "sha256": "f04cd5989446539b9c2536797d60c5f7a084b0b3cd24fd5c53d307d465f0b14c",
+          "bytes": 10104
+        },
+        ".c": {
+          "sha256": "ae753264496b24f4f2e08bdbc0800b233de5bfa2937f698f64b063f1d68e9181",
+          "bytes": 11712
+        }
+      }
+    },
+    {
+      "index": 34,
+      "source": "FV/E2E/LegalDepth.lean",
+      "source_sha256": "476aa306a7d6adbff3d307700823c1c68de04bf675a9a1588e36b073d702515a",
+      "direct_import_output_sha256": {
+        "FV/E2E/LegalProgram.lean": "860690e5e69a99ca828636f1f9eb6278268d4d4d76238b91f9b2c9ff8cbd3b04"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/E2E/LegalDepth.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LegalDepth.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LegalDepth.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LegalDepth.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 2.0414558720076457,
+      "max_os_threads": 8,
+      "memstats": "peak 245071872\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "6f1a59dd2570ff1764282688be3fe4c891c1e276b152ba830545a661c8aced71",
+          "bytes": 1452232
+        },
+        ".ilean": {
+          "sha256": "e64a267af78359d0180cd947ff5f9e56fe33a4cfe19729da1c8938ef31ff6912",
+          "bytes": 94999
+        },
+        ".c": {
+          "sha256": "a342841681cffc8165448056466d591a91c9afa2528620ab191972ebcf4d1321",
+          "bytes": 6336
+        }
+      }
+    },
+    {
+      "index": 35,
+      "source": "FV/E2E/PairLines.lean",
+      "source_sha256": "a0bcb6fe612da794736b8b8aada6e6c85e1be747a3d9a6e23767fff2da3cd687",
+      "direct_import_output_sha256": {
+        "FV/E2E/RegLevelRelax.lean": "3c776ac543555a5dade5507fa6aef421925e6bc4b15c3b05a189557eae7bd583"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/E2E/PairLines.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/PairLines.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/PairLines.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/PairLines.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 2.0411355470423587,
+      "max_os_threads": 7,
+      "memstats": "peak 211480576\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "a654b05eec3f4ca4e58b87b576023c907c8cdda715368fdfa081ca0fbaed07a4",
+          "bytes": 4892568
+        },
+        ".ilean": {
+          "sha256": "6a447f35f94967094618f517cf4ef47ec71389ca605a57719e1bbf378a943289",
+          "bytes": 47237
+        },
+        ".c": {
+          "sha256": "3c099fe4e45b04fe9d7e124dc051ffeca3beeb09251833c71756f66e840f84c3",
+          "bytes": 345430
+        }
+      }
+    },
+    {
+      "index": 36,
+      "source": "FV/Backend/Proof/DeadCleanupAvailability.lean",
+      "source_sha256": "4bcce27899f27ec9f55d0a3d7cec1e2f6ac6c2f3285aed739414130ed2597978",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/DeadCleanupLive.lean": "8b684ed5a0b012fb9be7bf390151a7fe1e792b9bd0e87c3a107b1638c93f95f8",
+        "FV/Backend/Proof/SpillInvariant.lean": "b48dd59ca792c86013d66a44c75aa344527d173c13a62f5c73378df9342c60fa"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/DeadCleanupAvailability.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupAvailability.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupAvailability.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupAvailability.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.0205776040093042,
+      "max_os_threads": 0,
+      "memstats": "peak 112164864\noom 0\noom_kill 0\n",
+      "log_sha256": "8b36d4c3a197f42a33577c0186793ff93f02ac3f3b85b99e427841563d920065",
+      "outputs": {
+        ".olean": {
+          "sha256": "f6f0a3b2b96ce4280ee89064face7b5a23cc5ea1c5be972561856bc72ee7274e",
+          "bytes": 215368
+        },
+        ".ilean": {
+          "sha256": "ae9342a19e25f458a45f12863b2def21f7d969b8c9091be8d7a8b391361b6bd3",
+          "bytes": 25913
+        },
+        ".c": {
+          "sha256": "484e4132bf61714291c6a9277e13afffe1011e7f52e6a9e0d0ab93ae31a8bfb8",
+          "bytes": 3597
+        }
+      }
+    },
+    {
+      "index": 37,
+      "source": "FV/Backend/Proof/DeadCleanupSimulation.lean",
+      "source_sha256": "4f5d2f846f868539d6edd44ac09d324e180b0a0f94e6a15993a7129a0328c1ad",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/DeadCleanupEdges.lean": "5276e0a24d504f593a8191141df9a2ac01ca2d40428bb603bc45f37928fcd5b2",
+        "FV/Backend/Proof/IselContract.lean": "b7b858ba07d160446bcdb7817537d355b2f1c86644e4c6e44d6b911edfc4ff1e",
+        "FV/Backend/Proof/PrepareComplete.lean": "55340f5547daa1afc3ec26bc61857b12e0ef5cb4a59bce0b641906f1be39acd1"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/DeadCleanupSimulation.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupSimulation.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupSimulation.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DeadCleanupSimulation.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 2.0471691919956356,
+      "max_os_threads": 7,
+      "memstats": "peak 245211136\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "88102d78d29be146bc787420a116504b4619f0093657c001968ee732fb099f7c",
+          "bytes": 1567296
+        },
+        ".ilean": {
+          "sha256": "9dd14fe42e3d67b0a47e63242f1c63eb22cd3a5835f389ef6c13cf75d4d23db6",
+          "bytes": 52850
+        },
+        ".c": {
+          "sha256": "a73fb03fdf2e6363b69533b9ae921d0db66852feca30db4f98899165010d1e45",
+          "bytes": 9651
+        }
+      }
+    },
+    {
+      "index": 38,
+      "source": "FV/Backend/Proof/SpillDefined.lean",
+      "source_sha256": "c075fdb4935600875258936d51aae083c019231df393c5b0053844374074d071",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/SpillInvariant.lean": "b48dd59ca792c86013d66a44c75aa344527d173c13a62f5c73378df9342c60fa"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/SpillDefined.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/SpillDefined.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/SpillDefined.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/SpillDefined.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.0193798750406131,
+      "max_os_threads": 0,
+      "memstats": "peak 107708416\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "97a6cddb1c7f0645b1539423e29676ecddbb28a63456afa7d4315469f872c1cb",
+          "bytes": 176240
+        },
+        ".ilean": {
+          "sha256": "62da867f19f78661d9f80f7cfb135db6d619e4e6ac5d9a5d7d1b46ed7446674e",
+          "bytes": 15336
+        },
+        ".c": {
+          "sha256": "785b49d3aa94c14baf9389806dcfa7dc8c9c9838fda1ee82707998232aaff8fa",
+          "bytes": 12693
+        }
+      }
+    },
+    {
+      "index": 39,
+      "source": "FV/Backend/Proof/StockTerminalPlacement.lean",
+      "source_sha256": "5c62142d45e4d95d56c6c67aa15eca712db5bcdae9770507abb551621d6dbe98",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/IselContract.lean": "b7b858ba07d160446bcdb7817537d355b2f1c86644e4c6e44d6b911edfc4ff1e",
+        "FV/Backend/Proof/IselExtern.lean": "ba760d3c38538d218e85699487d7e693e27d94f5c756a66ea9b242305bb5a579",
+        "FV/Backend/Proof/StockBackwardSuffixSplit.lean": "73077f149721dbdb263b4dd70b108961f4eccaabba92c8fb5f7c0b4ef25731da"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockTerminalPlacement.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockTerminalPlacement.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockTerminalPlacement.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockTerminalPlacement.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 15.296402656007558,
+      "max_os_threads": 6,
+      "memstats": "peak 4587786240\noom 0\noom_kill 0\n",
+      "log_sha256": "d6cc6972434d77452201afa8b13fb78ff9831fe0bec3f3567910ce80fd8ede1a",
+      "outputs": {
+        ".olean": {
+          "sha256": "c81d699d15fe14d98b28fb24e5b40daeccddc7fd4fc28f538d23ca6058ea3af8",
+          "bytes": 1781672
+        },
+        ".ilean": {
+          "sha256": "22f3c08c25cde15fb4d6e98d1d5c4ab62ca472f02fa5690907fc6c68906aadef",
+          "bytes": 72578
+        },
+        ".c": {
+          "sha256": "5415128fe8ac92e6af512113306c680bc0e617a55fe6dc3fad340f2937a8c6c3",
+          "bytes": 29002
+        }
+      }
+    },
+    {
+      "index": 40,
+      "source": "FV/Backend/Proof/SpillDefinedPaths.lean",
+      "source_sha256": "a766d46e575f3ec0c80e4bdec112df5c114fc9b20b97c14be55259cf2abc8d31",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/SpillDefined.lean": "97a6cddb1c7f0645b1539423e29676ecddbb28a63456afa7d4315469f872c1cb"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/SpillDefinedPaths.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/SpillDefinedPaths.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/SpillDefinedPaths.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/SpillDefinedPaths.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.021057253004983,
+      "max_os_threads": 0,
+      "memstats": "peak 113860608\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "9dd3c95b6517cb05beb3cf1adc125af55967b429838818a72bd0419bcf250dab",
+          "bytes": 202440
+        },
+        ".ilean": {
+          "sha256": "bb2de0fa573c2f75388d8446eea2dd1f5938a500bdc3e032d49a19fb3b7174c8",
+          "bytes": 18703
+        },
+        ".c": {
+          "sha256": "12adce1b9d0b58fdd716e690312823791fce0fa9cfb0ec616e0bf955d1ed5fa8",
+          "bytes": 4695
+        }
+      }
+    },
+    {
+      "index": 41,
+      "source": "FV/Backend/Proof/StockConditionalCoreOrigin.lean",
+      "source_sha256": "78cdc2d1be6dd63c0b5e6d269c118030c923a926833ee10fdc977711f7e205a0",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/DriverCheck.lean": "f17c23dcbb216f4f863896bd62f5dd7c5033e8685ae06e6b066b560640cab387",
+        "FV/Backend/Proof/IselExtern.lean": "ba760d3c38538d218e85699487d7e693e27d94f5c756a66ea9b242305bb5a579",
+        "FV/Backend/Proof/RegallocCSem.lean": "0b97f0d8613442482ad9c48eba2f6f958abf2c1d3ba9e91920dcf75ad85b94ee",
+        "FV/Backend/Proof/StockBranchSelection.lean": "a8dfdff7d3f76b0938ef121d784419abcf7554fd9f75f9bf9a1dbaddf50f7ad5"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockConditionalCoreOrigin.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockConditionalCoreOrigin.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockConditionalCoreOrigin.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockConditionalCoreOrigin.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 29.57855835801456,
+      "max_os_threads": 6,
+      "memstats": "peak 4545187840\noom 0\noom_kill 0\n",
+      "log_sha256": "09c6b5996438d6c899f1ecd37a0470ef455f448fa79cd241e2f6cda1426a58d7",
+      "outputs": {
+        ".olean": {
+          "sha256": "7c0a14ff598d84c33c9d622d195729b7f0c6b630c3ce5c3615e8a7538d299e2a",
+          "bytes": 621448
+        },
+        ".ilean": {
+          "sha256": "c71f61f644c1f0fbfc3ca620221b57e2f17aabdde0219d1db02e648a37d95433",
+          "bytes": 30688
+        },
+        ".c": {
+          "sha256": "c8eef6d8fa9019dfd5fb1bf26179275f7cace548991e957fb95e027421f08f0a",
+          "bytes": 7145
+        }
+      }
+    },
+    {
+      "index": 42,
+      "source": "FV/E2E/StockArithmeticStageContract.lean",
+      "source_sha256": "1f804ac289e2042320aeec117ff78a34bebe3c1b6445e1a61a83ebe5f2218712",
+      "direct_import_output_sha256": {
+        "FV/Backend/Asm.lean": "4b252cd0e9820d6323c8804e08e14ccf54d658090dcacf363910663704974df6",
+        "FV/Backend/Encode.lean": "557c3afcf9dfacdcdee2c066d9bd9b3d41754ff0844bae11988c9f867db9e65e",
+        "FV/Backend/Lowering/StockArithmetic.lean": "c9b009e33e380c93574d6f42907c91a07e0d7395293fd1eef745cca3c08082f3",
+        "FV/Backend/Regalloc.lean": "45e44f7882b0215b9d1b9d475aba4f3aa14acf005a45494060aa345a81478b0c"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/E2E/StockArithmeticStageContract.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/StockArithmeticStageContract.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/StockArithmeticStageContract.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/StockArithmeticStageContract.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1.0267692600027658,
+      "max_os_threads": 0,
+      "memstats": "peak 189046784\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "782b8c4d4de445fabceb40e4558dd5a8f2f7f177277d0ed08779d0ecd73a9283",
+          "bytes": 42288
+        },
+        ".ilean": {
+          "sha256": "8a00bb631b04a06adb093230af0c6a667ee1a358b75a0864f2672b26b92f7143",
+          "bytes": 5119
+        },
+        ".c": {
+          "sha256": "75a9dc95b3b6ca16029622ed70d8c1bda459f08dab138ac149b9c6398c42d60d",
+          "bytes": 2045
+        }
+      }
+    },
+    {
+      "index": 43,
+      "source": "FV/Backend/Proof/IselFamAluBBitrev.lean",
+      "source_sha256": "2a29af558d38b7968feaa3ac5556119cddeaeab9dca0f43f93272a1c0a419f0b",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/IselFamAluBBase.lean": "763f5db1fe514217cf9a95a5aa200ffb4db6b267d93b092476992fa7f3f0e1aa",
+        "FV/Backend/Proof/IselRulesALU.lean": "d0c2a2dc4622df7dd874ed4c923c5375ae84586f6857cf6b281085465d104779",
+        "FV/Backend/Proof/IselTermsAluB.lean": "bb0fd850867eb6ea9350c4cbcbf722cca117495f2a4acad17d7816c0675e1be9"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/IselFamAluBBitrev.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselFamAluBBitrev.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselFamAluBBitrev.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselFamAluBBitrev.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 18.35378737404244,
+      "max_os_threads": 9,
+      "memstats": "peak 564850688\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "a321d457b0f1441bce92304440224fa0bb0844172cc9b01636d7f2116cc8f3d5",
+          "bytes": 6700888
+        },
+        ".ilean": {
+          "sha256": "d906f726ad351fa95e0f811d1ea9171ceff63e93dc1bdb2571578af9a265e9fb",
+          "bytes": 44719
+        },
+        ".c": {
+          "sha256": "994b19b7be9063f76abcdfb6adaca85f8be58c55c9c1daff87cff4abfdf05001",
+          "bytes": 86707
+        }
+      }
+    },
+    {
+      "index": 44,
+      "source": "FV/Backend/Proof/IselFamAluBExtend.lean",
+      "source_sha256": "5687c7a2e355b33224757533ced5dc080ba5e377cf1f54c40d70360b96c92369",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/IselFamAluBBase.lean": "763f5db1fe514217cf9a95a5aa200ffb4db6b267d93b092476992fa7f3f0e1aa",
+        "FV/Backend/Proof/IselRulesALU.lean": "d0c2a2dc4622df7dd874ed4c923c5375ae84586f6857cf6b281085465d104779",
+        "FV/Backend/Proof/IselTermsAluB.lean": "bb0fd850867eb6ea9350c4cbcbf722cca117495f2a4acad17d7816c0675e1be9"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/IselFamAluBExtend.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselFamAluBExtend.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselFamAluBExtend.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselFamAluBExtend.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 13.264489290013444,
+      "max_os_threads": 6,
+      "memstats": "peak 573194240\noom 0\noom_kill 0\n",
+      "log_sha256": "294e250afb9ed97d0292e6ea948ecfa099fd09904c436c1c04522349d6537165",
+      "outputs": {
+        ".olean": {
+          "sha256": "7e95754f001cb7c9406d81d7a31f0308b029b7078f8631e7e09634ada7861a6a",
+          "bytes": 7517296
+        },
+        ".ilean": {
+          "sha256": "2ea627810939d1eeee19c7ff2ac3a5ad0def33740adb5a0ad6fdad84bd9f7bd5",
+          "bytes": 38842
+        },
+        ".c": {
+          "sha256": "fe52f04bedc4c38f2459446751bdaa494f11cf6007cc653adfddd4a9b4023a89",
+          "bytes": 44606
+        }
+      }
+    },
+    {
+      "index": 45,
+      "source": "FV/Backend/Proof/StockMemoryAddressSelection.lean",
+      "source_sha256": "7d55b70ab490e7aa6306eb0fd8fd7bb335dba3d6f4afc0abd00df489d4a9625c",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/IselExtern.lean": "ba760d3c38538d218e85699487d7e693e27d94f5c756a66ea9b242305bb5a579",
+        "FV/Backend/Proof/StockProjection.lean": "9664151681d5091eebd13333b526a026417fb841bc2076fc12bca1b3ecc7a327",
+        "FV/Backend/Proof/StockValues.lean": "059347af137356b79f24c0a818b8905520b173deed9b15a3fe17833e0c86ac2d"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemoryAddressSelection.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAddressSelection.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAddressSelection.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAddressSelection.c"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 35.70740186597686,
+      "max_os_threads": 6,
+      "memstats": "peak 2736406528\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "27d425c42cf9a4bcbc7a96085b5cf11ddb776f809e8f4bab1b72dc743c7d6963",
+          "bytes": 3018064
+        },
+        ".ilean": {
+          "sha256": "4ca20c250ba89ea6f1f72b2221d9a69b60b2eaa9c5eeca33e076082c98f7798b",
+          "bytes": 22234
+        },
+        ".c": {
+          "sha256": "0e195dedd7d76391439bb43305c7d45dce83035e7ef3b3c636396dbd1a2eed9b",
+          "bytes": 30712
+        }
+      }
+    },
+    {
+      "index": 46,
+      "source": "FV/Backend/Proof/StockMemoryIntegerAddress.lean",
+      "source_sha256": "8a9f0ff0b2de813e49d1ee9dece737730c856db5735c77b172c72ce53a049ba6",
+      "direct_import_output_sha256": {
+        "FV/Backend/Proof/IselExtern.lean": "ba760d3c38538d218e85699487d7e693e27d94f5c756a66ea9b242305bb5a579",
+        "FV/Backend/Proof/StockProjection.lean": "9664151681d5091eebd13333b526a026417fb841bc2076fc12bca1b3ecc7a327",
+        "FV/Backend/Proof/StockValues.lean": "059347af137356b79f24c0a818b8905520b173deed9b15a3fe17833e0c86ac2d"
+      },
+      "command": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockMemoryIntegerAddress.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerAddress.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerAddress.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerAddress.c"
+      ],
+      "exit": 0,
+      "raw_proc_exit_code": 0,
+      "elapsed_seconds": 314.1478428840637,
+      "max_os_threads": 0,
+      "memstats": "peak 10339627008\noom 0\noom_kill 0\n",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outputs": {
+        ".olean": {
+          "sha256": "0124733ae06b12a4d526b704bc9292670283d1fbdfeeda7527c0daf680e6769d",
+          "bytes": 6804536
+        },
+        ".ilean": {
+          "sha256": "67feb8afdca4037fdf17a5bb256cecb25052903e577fabeb631f5195f2b1babc",
+          "bytes": 30645
+        },
+        ".c": {
+          "sha256": "c36d34c1ba7760d319daee5aab7a6b54dd0facf5dbe51a4dfcba2dba87ed7575",
+          "bytes": 45571
+        }
+      },
+      "collected_at_approved_controller_handoff": true
     }
   ]
 }

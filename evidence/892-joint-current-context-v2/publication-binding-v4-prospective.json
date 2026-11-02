@@ -1,0 +1,7 @@
+{
+  "status": "awaiting_coordinator_exact_head",
+  "actual_base": "2e4c9d1c24ae025617c4aa9360b38d495460a7cd",
+  "candidate_tree": "405776adaffb7cf5a7b47a35b2da797fe4863c91",
+  "canonical18_unchanged": true,
+  "full_goal_complete": false
+}

@@ -1,0 +1,44 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinChecksWith.lean:28:55: error: unsolved goals
+lower : ProductionLowering
+I : LinkInput
+cleanup : Bool
+⊢ ((∀ (x : String × Bool),
+        x ∈
+            globalChks I { funcs := List.map (fun x => x.func) I.funcs }
+              (tabOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs)) →
+          x.snd = true) ∧
+      (∀ (x : FnInput),
+          x ∈ I.funcs →
+            ∀ (x_1 : String × Bool),
+              x_1 ∈
+                  chksSemanticFor returnPinResultCallsExtra (productionStage cleanup) I
+                    { funcs := List.map (fun x => x.func) I.funcs }
+                    (tabOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs)) x.func
+                    (I.pipeProductionWith lower cleanup x) →
+                x_1.snd = true) ∧
+        ∀ (x : FnInput),
+          x ∈ I.funcs →
+            (ofRes I (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs) closedBase fun x =>
+                    False).returnPinsB
+                x.func =
+              true) ↔
+    (∀ (x : String × Bool),
+        x ∈
+            globalChks I { funcs := List.map (fun x => x.func) I.funcs }
+              (tabOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs)) →
+          x.snd = true) ∧
+      (∀ (x : FnInput),
+          x ∈ I.funcs →
+            ∀ (x_2 : String × Bool),
+              x_2 ∈
+                  chksSemanticFor returnPinCallsExtra (productionStage cleanup) I
+                    { funcs := List.map (fun x => x.func) I.funcs }
+                    (tabOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs)) x.func
+                    (I.pipeProductionWith lower cleanup x) →
+                x_2.snd = true) ∧
+        ∀ (x : FnInput),
+          x ∈ I.funcs →
+            (ofRes I (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs) closedBase fun x =>
+                    False).returnPinsB
+                x.func =
+              true

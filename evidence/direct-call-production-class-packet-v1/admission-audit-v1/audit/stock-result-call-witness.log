@@ -1,0 +1,17 @@
+'E2E.ResultCallWitness.original_source_execution' depends on axioms: [propext, Quot.sound]
+'E2E.ResultCallWitness.compiled_caller' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallWitness.candidates_ok._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.DirectCallResultFixture.actual_checked._native.native_decide.ax_1✝]
+'E2E.ResultCallWitness.complete_source_and_compiler' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallWitness.candidates_ok._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.DirectCallResultFixture.actual_checked._native.native_decide.ax_1✝]
+'E2E.ResultCallWitness.actual_predecessor_selection' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ResultCallWitness.candidates_ok._native.native_decide.ax_1✝,
+ E2E.ResultCallWitness.previousSuccess_true._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.DirectCallResultFixture.actual_checked._native.native_decide.ax_1✝]

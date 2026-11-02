@@ -1,0 +1,7 @@
+{
+  "status": "approved_handoff_to_normal_keys",
+  "completed_raw_kernels": 47,
+  "last_module": "FV/Backend/Proof/StockMemoryIntegerAddress.lean",
+  "no_compiler_killed": true,
+  "full_goal_complete": false
+}

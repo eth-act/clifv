@@ -1,0 +1,22 @@
+{
+  "status": "reviewed_additive_shared_dependency",
+  "merged884": "6f662af280b7f1983d67a9175519bac89ee85f2e",
+  "source": "FV/Backend/Proof/StockDemandExtent.lean",
+  "old_source_sha256": "d7e659321411a83a028359cf077f51cb226e75ca9374456a3981f2ba2db6cb92",
+  "new_source_sha256": "aa097fff86048900e4b38c9e608cc2437870c14972d8f2da0fbe5de52fa90723",
+  "all_existing_source_exact": true,
+  "added_text": "\n/-- Every actual traversal node keeps the size of the demand array. -/\ntheorem lowerNode_demand_size {ctx : Ctx} {ranges : Array (Nat \u00d7 Nat)} {order : Order}\n    {f : Clif.Function} {params : List Nat} {label : Nat} {input output : DriverState}\n    (run : lowerNode ctx ranges order f params label input = .ok output) :\n    output.state.demand.size = input.state.demand.size :=\n  (node_size (cap := input.state.demand.size) rfl run).1\n\n",
+  "affected_project_modules": 593,
+  "affected_892_targets": [
+    "FV/E2E/TypedProductionChecks.lean",
+    "FV/Link/TypedCompileModes.lean",
+    "FV/E2E/ReturnPinProductionWitness.lean",
+    "FV/Link/TypedCompileSourceModes.lean",
+    "FVTest/E2E/TypedLinkProofWith.lean",
+    "FV/Link/TypedCompileModesWitness.lean",
+    "FV/Link/TypedCompileSourceModesWitness.lean",
+    "FVTest/E2E/LinkCheckMain.lean",
+    "FVTest/Link/LeanLinkMain.lean"
+  ],
+  "full_goal_complete": false
+}

@@ -1,0 +1,12 @@
+06:25:16 want 2895 modules (0 assumed built) budget=12G max_jobs=1 heavy>16G
+06:25:16 check (all) 2895 modules in 0.5s: 1539 up-to-date, 89 out of date, 1267 wait for those
+06:25:16 start FV.Backend.Proof.StockDemandExtent cap=12G running=1 avail=203.6G
+06:26:47 done FV.Backend.Proof.StockDemandExtent rc=0 91s maxrss=5.9G cgpeak=4.4G built -> ok
+06:26:48 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:26:48 start FV.Backend.Proof.StockMemoryStoreSelection cap=12G running=1 avail=200.4G
+06:27:32 done FV.Backend.Proof.StockMemoryStoreSelection rc=0 44s maxrss=1.9G cgpeak=0.5G built -> ok
+06:27:32 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:27:32 start FV.Backend.Proof.StockSelectionReceipts cap=12G running=1 avail=199.8G
+06:28:25 done FV.Backend.Proof.StockSelectionReceipts rc=0 53s maxrss=5.7G cgpeak=4.3G built -> ok
+06:28:25 check (ready) 7 modules in 0.2s: 0 up-to-date, 7 out of date, 0 wait for those
+06:28:25 start FV.Backend.Proof.StockSourceSinkTable cap=12G running=1 avail=195.4G

@@ -1,0 +1,67 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinaryKernel.lean:50:50: error: don't know how to synthesize implicit argument `admission`
+  @BinFacts ?m.10 admission I X R roB
+context:
+admission : ReturnPinAdmission
+I : SemanticStackBound.CompilerInput
+X : Image
+R : BitVec 64 → Prop
+roB : BitVec 64 → Option (BitVec 8)
+⊢ ReturnPinAdmission
+
+Note: All parameter types and holes (e.g., `_`) in the header of a theorem are resolved before the proof is processed; information from the proof cannot be used to infer what these values should be
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinaryKernel.lean:61:50: error: don't know how to synthesize implicit argument `admission`
+  @BinFacts ?m.52 admission I X R roB
+context:
+admission : ReturnPinAdmission
+I : SemanticStackBound.CompilerInput
+X : Image
+R : BitVec 64 → Prop
+roB : BitVec 64 → Option (BitVec 8)
+⊢ ReturnPinAdmission
+
+Note: All parameter types and holes (e.g., `_`) in the header of a theorem are resolved before the proof is processed; information from the proof cannot be used to infer what these values should be
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinaryKernel.lean:83:19: error(lean.invalidField): Invalid field `modelOf_ne`: The environment does not contain `E2E.ReturnPinBinaryFor.BinFacts.modelOf_ne`, so it is not possible to project the field `modelOf_ne` from an expression
+  hbin
+of type `BinFacts admission I X R roB`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinaryKernel.lean:88:50: error: don't know how to synthesize implicit argument `admission`
+  @BinFacts ?m.52 admission I X R roB
+context:
+admission : ReturnPinAdmission
+I : SemanticStackBound.CompilerInput
+X : Image
+R : BitVec 64 → Prop
+roB : BitVec 64 → Option (BitVec 8)
+⊢ ReturnPinAdmission
+
+Note: All parameter types and holes (e.g., `_`) in the header of a theorem are resolved before the proof is processed; information from the proof cannot be used to infer what these values should be
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinaryKernel.lean:111:19: error(lean.invalidField): Invalid field `modelOf_ne`: The environment does not contain `E2E.ReturnPinBinaryFor.BinFacts.modelOf_ne`, so it is not possible to project the field `modelOf_ne` from an expression
+  hbin
+of type `BinFacts admission I X R roB`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinaryKernel.lean:117:4: error: don't know how to synthesize implicit argument `admission`
+  @BinFacts (?m.3 hI hB) admission I (imageOf file)
+    (BinCheck.RelocAtWithResults I.toLinkInput (ProductionStackBound.CompilerInput.results I))
+    (BinCheck.roByte I.toLinkInput D)
+context:
+admission : ReturnPinAdmission
+I : SemanticStackBound.CompilerInput
+D : List Clif.DataObject
+file : ByteArray
+hI : okB I = true
+hB : BinCheck.BinOkWithResults I.toLinkInput (ProductionStackBound.CompilerInput.results I) D file
+⊢ ReturnPinAdmission
+
+Note: All parameter types and holes (e.g., `_`) in the header of a theorem are resolved before the proof is processed; information from the proof cannot be used to infer what these values should be
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinaryKernel.lean:264:50: error: don't know how to synthesize implicit argument `admission`
+  @BinFacts ?m.45 admission I X R roB
+context:
+admission : ReturnPinAdmission
+I : CompilerInput
+X : Image
+R : BitVec 64 → Prop
+roB : BitVec 64 → Option (BitVec 8)
+⊢ ReturnPinAdmission
+
+Note: All parameter types and holes (e.g., `_`) in the header of a theorem are resolved before the proof is processed; information from the proof cannot be used to infer what these values should be
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinaryKernel.lean:288:19: error(lean.invalidField): Invalid field `modelOf_ne`: The environment does not contain `E2E.ReturnPinBinaryFor.BinFacts.modelOf_ne`, so it is not possible to project the field `modelOf_ne` from an expression
+  hbin
+of type `BinFacts admission I X R roB`

@@ -1,0 +1,47 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinary.lean:127:56: error: Application type mismatch: The argument
+  (Bool.and_eq_true_iff.mp hI).left
+has type
+  okRSemanticFor returnPinResultCallsExtra (ProductionStackBound.CompilerInput.stage I) I.toLinkInput
+      (ProductionStackBound.CompilerInput.results I) =
+    true
+but is expected to have type
+  okRSemanticFor returnPinCallsExtra (ProductionStackBound.CompilerInput.stage I) ?m.9 ?m.10 = true
+in the application
+  okRSemanticFor_global returnPinCallsExtra (ProductionStackBound.CompilerInput.stage I)
+    (Bool.and_eq_true_iff.mp hI).left
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinary.lean:128:9: error: unsolved goals
+I : SemanticStackBound.CompilerInput
+D : List Clif.DataObject
+file : ByteArray
+hI : okB I = true
+hB : BinCheck.BinOkWithResults I.toLinkInput (ProductionStackBound.CompilerInput.results I) D file
+x✝ : BitVec 64
+ha : img I x✝
+⊢ imgB (tabOf (ProductionStackBound.CompilerInput.results I)) = imgB (tabOf (?m.35 x✝ ha))
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinary.lean:148:51: error: Application type mismatch: The argument
+  (Bool.and_eq_true_iff.mp checked).left
+has type
+  okRSemanticFor returnPinResultCallsExtra (ProductionStackBound.CompilerInput.stage I) I.toLinkInput
+      (ProductionStackBound.CompilerInput.results I) =
+    true
+but is expected to have type
+  okRSemanticFor returnPinCallsExtra (ProductionStackBound.CompilerInput.stage I) ?m.9
+      (ProductionStackBound.CompilerInput.results I) =
+    true
+in the application
+  okRSemanticFor_names returnPinCallsExtra (ProductionStackBound.CompilerInput.stage I)
+    (Bool.and_eq_true_iff.mp checked).left
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinary.lean:154:69: error: Application type mismatch: The argument
+  (Bool.and_eq_true_iff.mp checked).left
+has type
+  okRSemanticFor returnPinResultCallsExtra (ProductionStackBound.CompilerInput.stage I) I.toLinkInput
+      (ProductionStackBound.CompilerInput.results I) =
+    true
+but is expected to have type
+  okRSemanticFor returnPinCallsExtra (ProductionStackBound.CompilerInput.stage I) I.toLinkInput
+      (I.resultsProductionWith I.lower I.cleanup) =
+    true
+in the application
+  @semanticPreparedFactsFor returnPinCallsExtra (ProductionStackBound.CompilerInput.stage I) I.toLinkInput
+    (I.resultsProductionWith I.lower I.cleanup)
+    (LinkInput.resultsProductionWith_prepared I.toLinkInput I.lower I.cleanup) (Bool.and_eq_true_iff.mp checked).left

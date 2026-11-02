@@ -1,0 +1,368 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:56:17: warning: This simp argument is unused:
+  LinkSys.XMode_ordinary
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:56:67: warning: This simp argument is unused:
+  LinkSys.modeReturnPins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:57:4: warning: This simp argument is unused:
+  LinkSys.actRLMode
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:57:22: warning: This simp argument is unused:
+  LinkSys.actRL
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:57:36: warning: This simp argument is unused:
+  LinkSys.ThmXReturnPins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:57:59: warning: This simp argument is unused:
+  LinkSys.ThmX
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:58:4: warning: This simp argument is unused:
+  ReturnPinMode.pins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:58:23: warning: This simp argument is unused:
+  ReturnPinMode.Valid
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:72:40: warning: This simp argument is unused:
+  LinkSys.progXMode_ordinary
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:72:67: warning: This simp argument is unused:
+  LinkSys.modeReturnPins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:73:22: warning: This simp argument is unused:
+  LinkSys.actRL
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:73:36: warning: This simp argument is unused:
+  LinkSys.ThmXReturnPins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:73:59: warning: This simp argument is unused:
+  LinkSys.ThmX
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:74:4: warning: This simp argument is unused:
+  ReturnPinMode.pins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:74:23: warning: This simp argument is unused:
+  ReturnPinMode.Valid
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:88:40: warning: This simp argument is unused:
+  LinkSys.progXMode_ordinary
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:88:67: warning: This simp argument is unused:
+  LinkSys.modeReturnPins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:89:22: warning: This simp argument is unused:
+  LinkSys.actRL
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:89:36: warning: This simp argument is unused:
+  LinkSys.ThmXReturnPins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:89:59: warning: This simp argument is unused:
+  LinkSys.ThmX
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:90:4: warning: This simp argument is unused:
+  ReturnPinMode.pins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:90:23: warning: This simp argument is unused:
+  ReturnPinMode.Valid
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:108:40: warning: This simp argument is unused:
+  LinkSys.progXMode_ordinary
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:108:67: warning: This simp argument is unused:
+  LinkSys.modeReturnPins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:109:4: warning: This simp argument is unused:
+  LinkSys.actRLMode
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:109:22: warning: This simp argument is unused:
+  LinkSys.actRL
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:109:36: warning: This simp argument is unused:
+  LinkSys.ThmXReturnPins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:109:59: warning: This simp argument is unused:
+  LinkSys.ThmX
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:110:4: warning: This simp argument is unused:
+  ReturnPinMode.pins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:110:23: warning: This simp argument is unused:
+  ReturnPinMode.Valid
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:141:17: warning: This simp argument is unused:
+  LinkSys.XMode_ordinary
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:141:40: warning: This simp argument is unused:
+  LinkSys.progXMode_ordinary
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:141:67: warning: This simp argument is unused:
+  LinkSys.modeReturnPins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:142:4: warning: This simp argument is unused:
+  LinkSys.actRLMode
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:142:22: warning: This simp argument is unused:
+  LinkSys.actRL
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:142:59: warning: This simp argument is unused:
+  LinkSys.ThmX
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:143:4: warning: This simp argument is unused:
+  ReturnPinMode.pins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:143:23: warning: This simp argument is unused:
+  ReturnPinMode.Valid
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:148:17: warning: This simp argument is unused:
+  LinkSys.XMode_ordinary
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:148:40: warning: This simp argument is unused:
+  LinkSys.progXMode_ordinary
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:148:67: warning: This simp argument is unused:
+  LinkSys.modeReturnPins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.actRLMode, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:149:4: warning: This simp argument is unused:
+  LinkSys.actRLMode
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRL,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:149:22: warning: This simp argument is unused:
+  LinkSys.actRL
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:149:59: warning: This simp argument is unused:
+  LinkSys.ThmX
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, ReturnPinMode.pins, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:150:4: warning: This simp argument is unused:
+  ReturnPinMode.pins
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.Valid] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/SemanticLinkGood.lean:150:23: warning: This simp argument is unused:
+  ReturnPinMode.Valid
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LinkSys.XMode_ordinary, LinkSys.progXMode_ordinary, LinkSys.modeReturnPins, LinkSys.actRLMode,
+    LinkSys.actRL, LinkSys.ThmXReturnPins, LinkSys.ThmX, ReturnPinMode.pins] at shared
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

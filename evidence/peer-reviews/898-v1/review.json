@@ -1,0 +1,10 @@
+{
+  "pr": 898,
+  "head": "7e526440528ec8abfedd82ea560a8dc3b3c48c7a",
+  "verdict": "no blocking defect",
+  "review": "ONE QUICK, DIRTY, CHEAP direct review",
+  "builds": false,
+  "review_agents": false,
+  "scope": "Four new files; wide icmp branch source cores; native fixed Dominated fact only, dependent root marked; actual entered/returned source witness.",
+  "utc": "2026-11-02T11:05:54.805711+00:00"
+}

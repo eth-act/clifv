@@ -1,0 +1,11 @@
+{
+  "module": "FV.Backend.Proof.StockNoOpportunityTable",
+  "unit": "fvb-76076-1-FV.Backend.Proof.StockNoOpportunityTable",
+  "cap_bytes": 12884901888,
+  "returncode": 2,
+  "seconds": 1.0004785060882568,
+  "module_source_sha256": "64785463ef6e9232de7d3d79ebaefc7dcdf283bee9e75a049834db5788291819",
+  "artifacts": {
+    "FV.Backend.Proof.StockNoOpportunityTable.log": "c6370a8712dd3230c936528c202c0a0e137c6515349fee5cffb80879c5afa83f"
+  }
+}

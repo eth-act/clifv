@@ -1,0 +1,6 @@
+{
+  "status": "stopped_at_first_failure",
+  "exit": 143,
+  "log_sha256": "cbc0bd22e7700db9d12ca619bcd15fc801f1a744765de3162b19b080683913cd",
+  "full_goal_complete": false
+}

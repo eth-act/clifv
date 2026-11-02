@@ -60,7 +60,8 @@ def kernel(label,source,library,root=PKG):
     run(label,[lean,'--root='+str(root),root/source,'-o',str(target)+'.olean','-i',str(target)+'.ilean','-c',str(target)+'.c'],root=root,extra={'LEAN_PATH':str(library)+':'+leanpath})
 
 source_guard()
-assert all(p in {r['source'] for r in providers['records']} for p in targets['queue892'])
+normal_providers=json.loads((OUT/'normal-providers-state-v1.json').read_text());assert normal_providers['status']=='passed'
+assert all(p[:-5].replace('/','.') in normal_providers['outputs'] for p in targets['queue892'])
 run('892-audits',['python3',OUT/'helpers/axiom-audit.py','--cwd',PKG,'--log-dir',logs/'892-audit',*[PKG/p for p in targets['892_audits']]])
 axioms={}
 for path in (logs/'892-audit').glob('*.log'):

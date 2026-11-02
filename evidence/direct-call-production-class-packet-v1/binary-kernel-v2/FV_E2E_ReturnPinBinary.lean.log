@@ -1,0 +1,28 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinary.lean:49:2: error: Tactic `apply` failed: could not unify the conclusion of `ReturnPinBinaryFor.BinFacts.modelOf_ne`
+  ?m.12 ?a
+with the goal
+  ∀ (a : BitVec 64), (modelOf I f r).mem a ≠ r.mem a → R a
+
+Note: The full type of `ReturnPinBinaryFor.BinFacts.modelOf_ne` is
+  ReturnPinBinaryFor.BinFacts ReturnPinAdmission.previous ?m.10 ?m.11 ?m.12 ?m.13 →
+    ∀ {f : Clif.Function} {r : Arm.ArmState},
+      Image.Intact ?m.11 r → ∀ (a : BitVec 64), (modelOf ?m.10 f r).mem a ≠ r.mem a → ?m.12 a
+
+I : SemanticStackBound.CompilerInput
+X : Image
+R : BitVec 64 → Prop
+roB : BitVec 64 → Option (BitVec 8)
+hbin : BinFacts I X R roB
+f : Clif.Function
+r : Arm.ArmState
+hX : X.Intact r
+⊢ ∀ (a : BitVec 64), (modelOf I f r).mem a ≠ r.mem a → R a
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinary.lean:83:94: error: Fields missing: `code`, `data`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinary.lean:84:8: error: unsolved goals
+I : SemanticStackBound.CompilerInput
+D : List Clif.DataObject
+file : ByteArray
+hI : okB I = true
+hB : BinCheck.BinOkWithResults I.toLinkInput (ProductionStackBound.CompilerInput.results I) D file
+⊢ okB I = true
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/ReturnPinBinary.lean:85:2: error: unexpected token 'have'; expected command

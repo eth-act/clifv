@@ -1,0 +1,85 @@
+{
+  "status": "native_unstage_passed_old_normal_owner_released",
+  "old_watcher": 92004,
+  "old_outer_controller": 92013,
+  "scheduler": 92416,
+  "active_command": 137131,
+  "active_command_argv": [
+    "/usr/bin/python3",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/lake-time.py",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/normal-providers-v2/FV.Backend.Proof.StockRecordFinalAlias.time",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/memcap.sh",
+    "lake",
+    "build",
+    "FV.Backend.Proof.StockRecordFinalAlias"
+  ],
+  "active_command_start": 1793616949.13,
+  "signals": "SIGSTOP only scheduler; no Lake or Lean signals",
+  "next": "Wait actual activecommandexit0; release oldcontroller; exclusive nativeunstage; restartnormalkeys",
+  "joint_tree": "80a222ea656b8b2dadba8ca8567031ee06a81103",
+  "utc": "2026-11-02T10:57:19.103355+00:00",
+  "last_module": "FV.Backend.Proof.StockRecordFinalAlias",
+  "last_module_exit": 0,
+  "last_trace_sha256": "2e97fb67a5d2db4f9e3511021cd1a5d1e616b456da842417a5c0477c04c64ae8",
+  "last_outputs": {
+    ".olean": "8e2b91be12899e45099587ebcd528462ebf911e562bef5f090f16887939eb585",
+    ".ilean": "38d5412f11428199224e0a1fe05f30879b27c927cd40b78fc698824d47b1d893"
+  },
+  "last_log": {
+    "sha256": "3ab645bfbba8f8ad6b73a4916b909f128994dd3756579493250f43e400de3fc1",
+    "text": null
+  },
+  "last_mem": {
+    "sha256": "8e652e3ac4a22b98b0d07f11a2e29d812017a0f1c15e54dda5d953865032fc84",
+    "text": "peak 6217392128\noom 0\noom_kill 0\n"
+  },
+  "last_time": {
+    "sha256": "f7a19f4e5d04d9c63ac3e39bed266962b423dedd5a7a5576d0ba2ae7c85ac87f",
+    "text": null
+  },
+  "unstage": [
+    {
+      "stage": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-stages/stage-w1-2",
+      "exit": 0,
+      "overwrite": false,
+      "mapping_hashes": {
+        "outputs.jsonl": "0830e76bfa00c308faad53fb5c6bf60a34d2501fe2dc7fc045573ab104323d8c"
+      },
+      "producer": 125167972493,
+      "artifact": 13134695192,
+      "archive_sha256": "32ae504c52c0f67571f5a41cc1c14beb7f99443450e75936aab8689b28c9a612",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "memstats": "peak 58191872\noom 0\noom_kill 0\n"
+    },
+    {
+      "stage": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-stages/stage-w1-3",
+      "exit": 0,
+      "overwrite": false,
+      "mapping_hashes": {
+        "outputs.jsonl": "90ff2a70751966a4ed71a653e1165c59465ded2e39e2a0a4fb0fd3a518f68cfe"
+      },
+      "producer": 125167972231,
+      "artifact": 13133368095,
+      "archive_sha256": "22e014eab65ea5db2bbeb7b680917728f27aee49c11e611c4298289d0afd3a13",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "memstats": "peak 51023872\noom 0\noom_kill 0\n"
+    },
+    {
+      "stage": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-stages/stage-w1-4",
+      "exit": 0,
+      "overwrite": false,
+      "mapping_hashes": {
+        "outputs.jsonl": "95ae2d63c7fd55686405443836639165c1f1bec62e2541c903a2306112da96fb"
+      },
+      "producer": 125167972253,
+      "artifact": 13133934295,
+      "archive_sha256": "127a49a3ea9d0fdc20de7f0b0fc352c536ef00f7e6432dc1fe7887ba1540d556",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "memstats": "peak 57372672\noom 0\noom_kill 0\n"
+    }
+  ],
+  "cache_scope": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache",
+  "no_global_cache_writes": true,
+  "no_live_import_library_writes": true,
+  "old_scheduler_exit": "Planned SIGTERM after current Lake command exit0; not a compiler failure"
+}

@@ -1,7 +1,10 @@
-import FV.E2E.PreparedReturnPinCalls
+import FV.E2E.ReturnPinAdmission
 #print axioms Backend.SemanticABI.previous_check_result_calls
 #print axioms Backend.SemanticABI.previous_exact_result_calls
 #print axioms E2E.CompiledSemanticABI.of_checks_result_calls
 #print axioms E2E.CompiledSemanticReturnPins.of_checks_result_calls
 #print axioms E2E.CompiledProgramReturnPins.of_checks_result_calls
-#print axioms E2E.LinkCheck.okRReturnPinCalls_preserves
+#print axioms E2E.LinkCheck.okRReturnPinFor_previous
+#print axioms E2E.LinkCheck.semanticPreparedReturnPinFor_sound
+#print axioms E2E.LinkCheck.okRReturnPinResultCalls_previous
+#print axioms E2E.LinkCheck.okRReturnPinFor_eq_fast

@@ -12,16 +12,12 @@ set_option Elab.async false
 def returnPinCallsExtra (f : Clif.Function) (vc : VCode) : Bool :=
   Stock.MemorySretCopy.check f vc || Stock.VoidCall.NI.check f vc
 
-/-- Keep the previous class predicate and append the explicit-result caller. -/
-def returnPinResultCallsExtra (f : Clif.Function) (vc : VCode) : Bool :=
-  returnPinCallsExtra f vc || Stock.ResultCall.check f vc
-
 def okRReturnPinCalls (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
-  okRSemanticFor returnPinResultCallsExtra stage I R && (progOf R).funcs.all (returnPinChecks I R)
+  okRSemanticFor returnPinCallsExtra stage I R && (progOf R).funcs.all (returnPinChecks I R)
 
 /-- Reuse the proved physical return cache once for the complete program. -/
 def okRReturnPinCallsFast (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
-  okRSemanticFor returnPinResultCallsExtra stage I R &&
+  okRSemanticFor returnPinCallsExtra stage I R &&
     let C := ReturnPinCtx.of I R
     (progOf R).funcs.all (returnPinsWith C)
 
@@ -31,30 +27,6 @@ def okRReturnPinCallsFast (stage : Clif.Function → VCode → VCode) (I : LinkI
   dsimp only
   rw [show returnPinsWith (ReturnPinCtx.of I R) = returnPinChecks I R from
     funext (returnPinsWith_of I R)]
-
-/-- The exact prior program checker remains available for acceptance preservation. -/
-def priorReturnPinCallsB (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
-  okRSemanticFor returnPinCallsExtra stage I R && (progOf R).funcs.all (returnPinChecks I R)
-
-/-- Every complete program accepted by the prior checker remains accepted. -/
-theorem okRReturnPinCalls_preserves {stage : Clif.Function → VCode → VCode} {I : LinkInput} {R : Res}
-    (previous : priorReturnPinCallsB stage I R = true) : okRReturnPinCalls stage I R = true := by
-  simp only [priorReturnPinCallsB,Bool.and_eq_true] at previous
-  simp only [okRReturnPinCalls,Bool.and_eq_true]
-  refine ⟨?_,previous.2⟩
-  simp only [okRSemanticFor,chksSemanticFor,List.all_append,Bool.and_eq_true,List.all_eq_true] at previous ⊢
-  refine ⟨previous.1.1,?_⟩
-  intro e member
-  have old := previous.1.2 e member
-  refine ⟨?_,old.2⟩
-  simp only [staticChksSemanticFor,List.all_map,List.all_eq_true,Function.comp_def] at old ⊢
-  intro check present
-  obtain ⟨raw,rawMember,rfl⟩ := List.mem_map.mp present
-  have accepted := old.1 _ (List.mem_map.mpr ⟨raw,rawMember,rfl⟩)
-  by_cases named : raw.1 = "compiled: lowerCheck"
-  · simp only [named,↓reduceIte] at accepted ⊢
-    simpa only [returnPinResultCallsExtra,← Bool.or_assoc,accepted,Bool.true_or]
-  · simpa only [named,↓reduceIte] using accepted
 
 /-- Every complete program accepted by the previous ABI checker remains accepted. -/
 theorem okRReturnPinCalls_previous {stage : Clif.Function → VCode → VCode} {I : LinkInput} {R : Res}
@@ -73,7 +45,7 @@ theorem okRReturnPinCalls_previous {stage : Clif.Function → VCode → VCode} {
   have accepted := old.1 _ (List.mem_map.mpr ⟨raw,rawMember,rfl⟩)
   by_cases named : raw.1 = "compiled: lowerCheck"
   · simp only [named,↓reduceIte] at accepted ⊢
-    simpa only [returnPinResultCallsExtra,returnPinCallsExtra,← Bool.or_assoc,accepted,Bool.true_or]
+    simpa only [returnPinCallsExtra,← Bool.or_assoc,accepted,Bool.true_or]
   · simpa only [named,↓reduceIte] using accepted
 
 /-- Actual checks derive the complete existing program contract, including the new caller. -/
@@ -84,19 +56,19 @@ theorem semanticPreparedReturnPinCallsResults_sound (stage : Clif.Function → V
     {B : BaseEnv} {F : BitVec 64 → Prop} (base : BaseOk (ofRes I R B F))
     (world : ∀ a,(ofRes I R B F).Img a → F a) : (ofRes I R B F).OkSemanticReturnPins := by
   simp only [okRReturnPinCalls,Bool.and_eq_true,List.all_eq_true] at checked
-  have metadata := semanticPreparedMetadata_sound returnPinResultCallsExtra stage prepared checked.1 base world
+  have metadata := semanticPreparedMetadata_sound returnPinCallsExtra stage prepared checked.1 base world
   refine metadata.toReturnPins fun g member => ?_
-  have facts := semanticPreparedFactsFor returnPinResultCallsExtra stage prepared checked.1 member
-  have lower : SemanticABI.checkResultCalls g (artOf R g).vc = true := by
-    simpa only [SemanticABI.checkResultCalls,SemanticABI.checkCalls,SemanticABI.check,returnPinResultCallsExtra,returnPinCallsExtra,Bool.or_assoc] using facts.lowerOk
+  have facts := semanticPreparedFactsFor returnPinCallsExtra stage prepared checked.1 member
+  have lower : SemanticABI.checkCalls g (artOf R g).vc = true := by
+    simpa only [SemanticABI.checkCalls,SemanticABI.check,returnPinCallsExtra,Bool.or_assoc] using facts.lowerOk
   have pins : (ofRes I R B F).returnPinsB g = true := by
     rw [← returnPinChecks_eq]
     exact checked.2 g member
   obtain ⟨prepare,alloc,emit,layout,_⟩ := facts.pipe
   rcases hstage with rfl | rfl
-  · exact CompiledProgramReturnPins.of_checks_result_calls (cleanup := false) lower prepare facts.prepOk
+  · exact CompiledProgramReturnPins.of_checks_calls (cleanup := false) lower prepare facts.prepOk
       facts.check alloc emit layout pins
-  · exact CompiledProgramReturnPins.of_checks_result_calls (cleanup := true) lower prepare facts.prepOk
+  · exact CompiledProgramReturnPins.of_checks_calls (cleanup := true) lower prepare facts.prepOk
       facts.check alloc emit layout pins
 
 /-- The original program statement uses the original base and world conditions. -/

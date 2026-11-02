@@ -1,0 +1,3 @@
+05:48:14 want 2895 modules (0 assumed built) budget=12G max_jobs=1 heavy>16G
+05:48:15 check (all) 2895 modules in 0.8s: 1295 up-to-date, 236 out of date, 1364 wait for those
+05:48:15 start FV.Backend.Proof.StockNoOpportunityTable cap=12G running=1 avail=188.9G
