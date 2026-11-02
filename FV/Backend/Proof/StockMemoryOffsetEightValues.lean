@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockMemoryIntegerRecordValues
+import FV.Backend.Proof.StockMemoryLoad
+import FV.Backend.Proof.StockGuardedRecordValues
 import FV.Backend.Proof.StockMemoryOffsetEightLoadRecord
 
 namespace Backend.Stock.Memory.IntegerRoots

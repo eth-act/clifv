@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockSelectionReceipts
-import FV.Backend.Proof.StockCoverageTerms
+import FV.Backend.Proof.IselCovExt
+import FV.Backend.Proof.IselCtlRuleIds
 
 /-! Derive the actual selected return root and its helper execution from the
 original term-data slot. No root or helper certificate is supplied by callers. -/

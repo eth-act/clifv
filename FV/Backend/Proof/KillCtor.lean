@@ -1,5 +1,4 @@
 import FV.Backend.Proof.KillOfV
-import FV.Backend.Proof.IselCovClean
 import FV.Backend.Proof.LowerLoopCtx
 
 /-!

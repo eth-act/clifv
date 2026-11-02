@@ -1,4 +1,4 @@
-import FV.Isle.Generated.Program
+import FV.Isle.Generated.Rules02
 
 /-! The `smin`/`smax`/`umin`/`umax` rules of `lower` and their opcodes, for the min/max source
 match (`StockMinMaxSourceMatch`) and the min/max driver runs. Their own module, so that the latter

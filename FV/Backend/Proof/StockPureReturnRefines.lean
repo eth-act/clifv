@@ -1,5 +1,7 @@
 import FV.Backend.Proof.StockLocalSourceExecution
-import FV.Backend.Proof.StockArithmeticEntryRefines
+import FV.Backend.Proof.StockEntryPrelude
+import FV.Backend.Proof.StockArithmeticTerminalDefined
+import FV.Backend.Proof.StockReturnContract
 
 /-! Shared source-to-return composition used by the shipped logical class and constants.
 Family-specific code supplies body refinement; entry, placement and return proofs are shared. -/

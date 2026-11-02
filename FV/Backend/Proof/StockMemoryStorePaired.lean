@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockMemoryStoreSource
+import FV.Backend.Proof.IselMemSem
+import FV.Backend.Lowering.Stock
 
 namespace Backend.Stock.Memory
 open Backend.Proof Backend.Proof.Driver Backend Isle Isle.Interp Isle.Aarch64

@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockMinMaxRegisterValues
+import FV.Backend.Proof.IselCmpDivRoot
+import FV.Backend.Proof.StockCmpRegisterEmission
 import FV.Backend.Proof.StockSelectSourceValues
 import FV.Backend.Proof.StockDemandMono
 namespace Backend.Stock.Proof.ScalarSelect

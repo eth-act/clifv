@@ -1,4 +1,4 @@
-import FV.E2E.StockMemoryValue
+import FV.Backend.StockMemoryCheck
 import FV.Backend.Proof.StockMemorySingleFixture
 
 namespace E2E.StockMemoryEffectKernel

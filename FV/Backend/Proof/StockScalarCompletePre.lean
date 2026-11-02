@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockFloatCheckDomain
 import FV.Backend.Proof.LowerTotal
-import FV.Backend.Lowering.StockScalarNI
+import FV.Backend.Lowering.StockScalar
 
 /-!
 # Completeness of the scalar route, phase 1: prechecks and context

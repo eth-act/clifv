@@ -1,5 +1,5 @@
-import FV.E2E.LinkOwnCallsRun
 import FV.E2E.LinkArm
+import FV.E2E.LinkOwnCalls
 
 /-!
 # The operands and the code of a lowered call

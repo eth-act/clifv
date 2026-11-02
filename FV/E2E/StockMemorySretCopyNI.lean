@@ -1,4 +1,5 @@
 import FV.E2E.StockArithmeticStageContract
+import FV.E2E.StockArithmeticSemantics
 import FV.E2E.StockMemoryStoreCfgMachine
 import FV.Backend.Proof.StockMemorySretCopyClass
 import FV.E2E.StockMemorySretCopyPairedCanonical

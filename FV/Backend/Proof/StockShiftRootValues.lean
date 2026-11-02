@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockShiftValues
+import FV.Backend.Proof.IselFamAluBShift
 import FV.Backend.Proof.StockShiftPrepValues
 namespace Backend.Stock.Proof.ScalarShift
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

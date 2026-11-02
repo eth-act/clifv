@@ -1,6 +1,6 @@
 import FV.Backend.Proof.IselTermIntPos
 import FV.Compile.SubsetT
-import FV.Backend.Proof.IselTermFacts
+import FV.Backend.Proof.IselTermFactsRules
 import FV.Backend.Proof.SpillEdgesIsel
 import FV.Backend.Proof.IselFlow
 

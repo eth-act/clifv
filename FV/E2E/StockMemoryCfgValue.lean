@@ -1,4 +1,5 @@
-import FV.E2E.StockMemoryValue
+import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.DeadCleanupAdapter
 import FV.Backend.StockMemoryCfgCheck
 
 namespace E2E.StockMemoryCfg

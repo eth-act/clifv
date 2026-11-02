@@ -1,5 +1,5 @@
-import FV.Backend.Proof.StockMemoryComputedStoreRecordSpec
 import FV.Backend.Proof.StockDemandedScan
+import FV.Backend.Proof.StockMemoryRetainedStoreReturnSpec
 import FV.Backend.Proof.StockMemoryStoreCoverage
 
 namespace Backend.Stock.Memory.StoreRoots

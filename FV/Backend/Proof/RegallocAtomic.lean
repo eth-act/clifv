@@ -1,4 +1,5 @@
-import FV.Backend.Proof.RegallocMemOS
+import FV.Backend.Proof.RegallocMemCorr
+import FV.Backend.Proof.RegallocOS
 
 /-!
 # `OperandsSound` for `csetm`, `dmb ish`, `ldar` and `stlr` (M6 proof)

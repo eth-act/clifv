@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockMemoryIntegerDispatch
+import FV.Backend.Proof.StockMemoryIntegerSelected
 import FV.Backend.Proof.StockMemoryReturnSpec
 import FV.Backend.Proof.StockReturnedSourceRetention
 

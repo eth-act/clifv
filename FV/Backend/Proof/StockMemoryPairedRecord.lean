@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockMemoryReadTransport
+import FV.Backend.Proof.StockMemorySelected
 import FV.Backend.Proof.StockMemoryDispatch
 import FV.Backend.Proof.StockMemoryRecordValues
 

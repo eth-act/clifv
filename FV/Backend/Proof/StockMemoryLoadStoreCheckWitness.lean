@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockMemoryLoadStoreFixture
-import FV.Backend.Proof.StockMemoryLoadStoreCheck
 
 namespace Backend.Stock.Memory.LoadStore.Fixture
 open Backend.Stock.Proof

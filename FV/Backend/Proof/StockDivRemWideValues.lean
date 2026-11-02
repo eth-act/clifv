@@ -1,3 +1,4 @@
+import FV.Isle.Generated.Manifest
 import FV.Backend.Proof.StockDivValueTransfer
 import FV.Backend.Proof.StockDivUdivWideValues
 import FV.Backend.Proof.StockDivDividendValues

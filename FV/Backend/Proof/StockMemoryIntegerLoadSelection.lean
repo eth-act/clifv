@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMemoryHelperForward
 import FV.Backend.Proof.StockMemoryIntegerAddress
 
 namespace Backend.Stock.Memory.IntegerRoots

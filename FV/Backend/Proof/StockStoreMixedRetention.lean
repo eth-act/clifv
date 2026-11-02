@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockStoreRetention
 import FV.Backend.Proof.StockProtectedSinkDriver
 
 namespace Backend.Stock.Proof

@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockMemoryStoreRecordValues
+import FV.Backend.Proof.StockMemoryLoad
 import FV.Backend.Proof.StockMemoryStoreContract
 import FV.Backend.Proof.IselMemRoots
 

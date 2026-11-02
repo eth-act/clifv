@@ -1,5 +1,6 @@
-import FV.Backend.Proof.StockMemoryStoreCfgCheck
-import FV.Backend.Proof.StockMemoryStoreNopCfgDomainWitness
+import FV.Backend.StockMemoryStoreCfgCheck
+import FV.Backend.Proof.StockMemoryStoreCfgClass
+import FV.Backend.Proof.StockMemoryStoreNopCfgFixture
 
 namespace Backend.Stock.Memory.StoreNopCfgFixture
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Memory.StoreRoots
