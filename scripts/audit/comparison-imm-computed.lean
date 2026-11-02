@@ -1,0 +1,15 @@
+import FV.Backend.Proof.StockComparisonImmComputedCores
+
+#print axioms Backend.Stock.Proof.ComparisonBranch.comparison_selected_imm_computed
+#print axioms Backend.Stock.Proof.ComparisonBranch.comparison_named_calls_imm_computed
+#print axioms Backend.Stock.Proof.ComparisonBranch.Calls.comparison_imm_computed_emission
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.comparison_imm_computed_bounds
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.comparison_imm_computed_emitted_size
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.comparison_imm_computed_no_defs
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_imm_computed_calls
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_imm_computed_branch_values_last
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_imm_computed_branch_values
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_imm_computed_emission_size
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_imm_computed_branch_no_defs
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_comparison_imm_computed_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_comparison_imm_computed_core

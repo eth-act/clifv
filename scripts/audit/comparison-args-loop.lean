@@ -1,0 +1,26 @@
+import FV.Backend.Proof.StockComparisonArgsLoopWitness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_branch_calls
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.selected_arguments_demanded_of_calls
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.selected_argument_values_of_calls
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_selected_carry_below_of_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_selected_carry_below_of_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_selected_comparison_carry_below
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_selected_comparison_carry_below
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.condition_metadata
+#print axioms Backend.Stock.ComparisonArgsLoopCfg.source_leaf_eligible_facts
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.branch_args_carry_returns
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.comparison_args_loop_returns_below
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.comparison_args_loop_returns
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.branch_args_carry_traps
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.comparison_args_loop_traps_below
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.comparison_args_loop_traps
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.comparison_args_loop_jump_entry_returns
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.comparison_args_loop_jump_entry_traps
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.comparison_args_loop_branch_entry_returns
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.comparison_args_loop_branch_entry_traps
+#print axioms Backend.Stock.Proof.ComparisonArgsLoopCfg.domainAt_of_comparison_args_loop_cfg
+#print axioms Backend.Stock.ComparisonArgsLoopCfg.domainAt_of_source_leaf_eligible
+#print axioms Backend.Stock.ComparisonArgsLoopCfg.source_ok_sound
+#print axioms Backend.Stock.ComparisonArgsLoopCfg.check_sound
+#print axioms Backend.Stock.ComparisonArgsLoopCfg.Fixture.licm_witness -- witness: native_decide
