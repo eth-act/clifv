@@ -161,33 +161,33 @@ theorem condition_of_entry_body {f : Clif.Function} {entry : Clif.Block} {c : Na
 
 /-! ### Selector structure -/
 
-/-- `sourceOk` from the control check of every block, the bodies, the ABI and the driver
-checks. -/
-theorem source_ok_of_blocks {f : Clif.Function}
+/-- `sourceLeafEligible` from the control check of every block, the bodies and the ABI. -/
+theorem source_leaf_eligible_of_blocks {f : Clif.Function}
     (controls : ∀ (bi : Nat) (b : Clif.Block),f.blocks[bi]? = some b → controlLeafEligible f bi b b.term = true)
     (bodies : f.blocks.all (fun b => b.body.all Scalar.maskMixedBodyEligible) = true)
     (params : f.sig.params.all Scalar.narrowAbiEligible = true)
-    (returns : f.sig.returns.all Scalar.narrowAbiEligible = true)
-    (scope : lowerScopeB f = true) (dominated : dominatedB f = true) (abi : sigAbiOk f.sig = true) :
-    sourceOk f = true := by
-  simp only [sourceOk,sourceLeafEligible,Bool.and_eq_true]
-  refine ⟨⟨⟨⟨⟨⟨?_,bodies⟩,params⟩,returns⟩,scope⟩,dominated⟩,abi⟩
+    (returns : f.sig.returns.all Scalar.narrowAbiEligible = true) : sourceLeafEligible f = true := by
+  simp only [sourceLeafEligible,Bool.and_eq_true]
+  refine ⟨⟨⟨?_,bodies⟩,params⟩,returns⟩
   apply List.all_eq_true.mpr
   rintro ⟨b,bi⟩ member
   exact controls bi b (List.mk_mem_zipIdx_iff_getElem?.mp member)
 
-/-- `sourceOk` of a function whose entry block is `entry`, from the control checks of `entry` and
-of the other blocks. -/
-theorem source_ok_of_entry {f : Clif.Function} {entry : Clif.Block} {rest : List Clif.Block}
+/-- `sourceOk` from `sourceLeafEligible` and the driver checks. -/
+theorem source_ok_of_leaf {f : Clif.Function} (leaf : sourceLeafEligible f = true) (scope : lowerScopeB f = true)
+    (dominated : dominatedB f = true) (abi : sigAbiOk f.sig = true) : sourceOk f = true := by
+  simp only [sourceOk,leaf,scope,dominated,abi,Bool.and_self]
+
+/-- `sourceLeafEligible` of a function whose entry block is `entry`, from the control checks of
+`entry` and of the other blocks. -/
+theorem source_leaf_eligible_of_entry {f : Clif.Function} {entry : Clif.Block} {rest : List Clif.Block}
     (blocks : f.blocks = entry :: rest)
     (entryOk : controlLeafEligible f 0 entry entry.term = true)
     (restOk : ∀ (bi : Nat) (b : Clif.Block),rest[bi]? = some b → controlLeafEligible f (bi+1) b b.term = true)
     (bodies : f.blocks.all (fun b => b.body.all Scalar.maskMixedBodyEligible) = true)
     (params : f.sig.params.all Scalar.narrowAbiEligible = true)
-    (returns : f.sig.returns.all Scalar.narrowAbiEligible = true)
-    (scope : lowerScopeB f = true) (dominated : dominatedB f = true) (abi : sigAbiOk f.sig = true) :
-    sourceOk f = true := by
-  refine source_ok_of_blocks ?_ bodies params returns scope dominated abi
+    (returns : f.sig.returns.all Scalar.narrowAbiEligible = true) : sourceLeafEligible f = true := by
+  refine source_leaf_eligible_of_blocks ?_ bodies params returns
   intro bi b found
   rw [blocks] at found
   cases bi with
@@ -231,11 +231,9 @@ theorem rest_of_leaves {f : Clif.Function} {rest : List Clif.Block}
 
 /-! ### Legacy subsumption -/
 
-/-- **`ComparisonCfg` (CB-4) is in the class.** -/
-theorem source_ok_of_comparison {f : Clif.Function} (checked : ComparisonCfg.sourceOk f = true) :
-    sourceOk f = true := by
-  simp only [ComparisonCfg.sourceOk,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+/-- **`ComparisonCfg` (CB-4) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_comparison {f : Clif.Function}
+    (leaf : ComparisonCfg.leafEligible f = true) : sourceLeafEligible f = true := by
   unfold ComparisonCfg.leafEligible at leaf
   cases blocks : f.blocks with
   | nil => rw [blocks] at leaf; cases leaf
@@ -248,16 +246,21 @@ theorem source_ok_of_comparison {f : Clif.Function} (checked : ComparisonCfg.sou
       obtain ⟨⟨⟨⟨⟨⟨condition,yesOk⟩,noOk⟩,leaves⟩,bodies⟩,params⟩,returns⟩ := leaf
       rw [← blocks] at bodies
       have member : entry ∈ f.blocks := by rw [blocks]; exact List.mem_cons_self
-      exact source_ok_of_entry blocks
+      exact source_leaf_eligible_of_entry blocks
         (control_of_entry_branch term (condition_of_entry_body (fun _ => comparison_of_entry member) condition)
           yesOk noOk)
-        (rest_of_leaves leaves) bodies params returns scope dominated abi
+        (rest_of_leaves leaves) bodies params returns
 
-/-- **`ComparisonImmCfg` (CB-7) is in the class.** -/
-theorem source_ok_of_comparison_imm {f : Clif.Function} (checked : ComparisonImmCfg.sourceOk f = true) :
+/-- **`ComparisonCfg` (CB-4) is in the class.** -/
+theorem source_ok_of_comparison {f : Clif.Function} (checked : ComparisonCfg.sourceOk f = true) :
     sourceOk f = true := by
-  simp only [ComparisonImmCfg.sourceOk,Bool.and_eq_true] at checked
+  simp only [ComparisonCfg.sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_comparison leaf) scope dominated abi
+
+/-- **`ComparisonImmCfg` (CB-7) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_comparison_imm {f : Clif.Function}
+    (leaf : ComparisonImmCfg.leafEligible f = true) : sourceLeafEligible f = true := by
   unfold ComparisonImmCfg.leafEligible at leaf
   cases blocks : f.blocks with
   | nil => rw [blocks] at leaf; cases leaf
@@ -270,16 +273,21 @@ theorem source_ok_of_comparison_imm {f : Clif.Function} (checked : ComparisonImm
       obtain ⟨⟨⟨⟨⟨⟨condition,yesOk⟩,noOk⟩,leaves⟩,bodies⟩,params⟩,returns⟩ := leaf
       rw [← blocks] at bodies
       have member : entry ∈ f.blocks := by rw [blocks]; exact List.mem_cons_self
-      exact source_ok_of_entry blocks
+      exact source_leaf_eligible_of_entry blocks
         (control_of_entry_branch term (condition_of_entry_body (fun _ => comparison_of_entry_imm member) condition)
           yesOk noOk)
-        (rest_of_leaves leaves) bodies params returns scope dominated abi
+        (rest_of_leaves leaves) bodies params returns
 
-/-- **`ComparisonZeroCfg` (CB-7d) is in the class.** -/
-theorem source_ok_of_comparison_zero {f : Clif.Function} (checked : ComparisonZeroCfg.sourceOk f = true) :
+/-- **`ComparisonImmCfg` (CB-7) is in the class.** -/
+theorem source_ok_of_comparison_imm {f : Clif.Function} (checked : ComparisonImmCfg.sourceOk f = true) :
     sourceOk f = true := by
-  simp only [ComparisonZeroCfg.sourceOk,Bool.and_eq_true] at checked
+  simp only [ComparisonImmCfg.sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_comparison_imm leaf) scope dominated abi
+
+/-- **`ComparisonZeroCfg` (CB-7d) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_comparison_zero {f : Clif.Function}
+    (leaf : ComparisonZeroCfg.leafEligible f = true) : sourceLeafEligible f = true := by
   unfold ComparisonZeroCfg.leafEligible at leaf
   cases blocks : f.blocks with
   | nil => rw [blocks] at leaf; cases leaf
@@ -292,17 +300,22 @@ theorem source_ok_of_comparison_zero {f : Clif.Function} (checked : ComparisonZe
       obtain ⟨⟨⟨⟨⟨⟨condition,yesOk⟩,noOk⟩,leaves⟩,bodies⟩,params⟩,returns⟩ := leaf
       rw [← blocks] at bodies
       have member : entry ∈ f.blocks := by rw [blocks]; exact List.mem_cons_self
-      exact source_ok_of_entry blocks
+      exact source_leaf_eligible_of_entry blocks
         (control_of_entry_branch term (condition_of_entry_body (fun _ => comparison_of_entry_zero member) condition)
           yesOk noOk)
-        (rest_of_leaves leaves) bodies params returns scope dominated abi
+        (rest_of_leaves leaves) bodies params returns
+
+/-- **`ComparisonZeroCfg` (CB-7d) is in the class.** -/
+theorem source_ok_of_comparison_zero {f : Clif.Function} (checked : ComparisonZeroCfg.sourceOk f = true) :
+    sourceOk f = true := by
+  simp only [ComparisonZeroCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_comparison_zero leaf) scope dominated abi
 
 /-- **`ConditionalCfg` (wide entry-parameter branches into return or trap blocks) is in the
 class.** -/
-theorem source_ok_of_conditional {f : Clif.Function} (checked : ConditionalCfg.sourceOk f = true) :
-    sourceOk f = true := by
-  simp only [ConditionalCfg.sourceOk,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+theorem source_leaf_eligible_of_conditional {f : Clif.Function}
+    (leaf : ConditionalCfg.leafEligible f = true) : sourceLeafEligible f = true := by
   unfold ConditionalCfg.leafEligible at leaf
   cases blocks : f.blocks with
   | nil => rw [blocks] at leaf; cases leaf
@@ -315,9 +328,17 @@ theorem source_ok_of_conditional {f : Clif.Function} (checked : ConditionalCfg.s
       obtain ⟨⟨⟨⟨⟨⟨condition,yesOk⟩,noOk⟩,leaves⟩,bodies⟩,params⟩,returns⟩ := leaf
       rw [← blocks] at bodies
       have member : entry ∈ f.blocks := by rw [blocks]; exact List.mem_cons_self
-      exact source_ok_of_entry blocks
+      exact source_leaf_eligible_of_entry blocks
         (control_of_entry_branch term (condition_of_parameter (parameter_of_entry member condition)) yesOk noOk)
-        (rest_of_leaves leaves) bodies params returns scope dominated abi
+        (rest_of_leaves leaves) bodies params returns
+
+/-- **`ConditionalCfg` (wide entry-parameter branches into return or trap blocks) is in the
+class.** -/
+theorem source_ok_of_conditional {f : Clif.Function} (checked : ConditionalCfg.sourceOk f = true) :
+    sourceOk f = true := by
+  simp only [ConditionalCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_conditional leaf) scope dominated abi
 
 /-- A `ForwardCfg` control check of a block that does not end in `trap` at the entry index is a
 control check of the class. -/
@@ -335,11 +356,9 @@ theorem control_of_forward {f : Clif.Function} {bi : Nat} {b : Clif.Block}
   all_goals simp only [ForwardCfg.controlLeafEligible,ForwardCfg.controlEligible] at forward; cases forward
 
 /-- **`ConditionalCfg.rankedSourceOk` (ranked forward tails after a wide entry-parameter
-branch) is in the class.** -/
-theorem source_ok_of_conditional_ranked {f : Clif.Function} (checked : ConditionalCfg.rankedSourceOk f = true) :
-    sourceOk f = true := by
-  simp only [ConditionalCfg.rankedSourceOk,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+branch) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_conditional_ranked {f : Clif.Function}
+    (leaf : ConditionalCfg.rankedLeafEligible f = true) : sourceLeafEligible f = true := by
   unfold ConditionalCfg.rankedLeafEligible at leaf
   cases blocks : f.blocks with
   | nil => rw [blocks] at leaf; cases leaf
@@ -352,18 +371,24 @@ theorem source_ok_of_conditional_ranked {f : Clif.Function} (checked : Condition
       obtain ⟨⟨⟨⟨⟨⟨condition,yesOk⟩,noOk⟩,tails⟩,bodies⟩,params⟩,returns⟩ := leaf
       rw [← blocks] at bodies
       have member : entry ∈ f.blocks := by rw [blocks]; exact List.mem_cons_self
-      refine source_ok_of_entry blocks
+      refine source_leaf_eligible_of_entry blocks
         (control_of_entry_branch term (condition_of_parameter (parameter_of_entry member condition)) yesOk noOk)
-        ?_ bodies params returns scope dominated abi
+        ?_ bodies params returns
       intro bi b found
       have forward := List.all_eq_true.mp tails (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
       exact control_of_forward forward (fun zero => absurd zero (Nat.add_one_ne_zero bi))
 
-/-- **`ForwardCfg` (ranked jump/return/trap graphs with a jumping entry) is in the class.** -/
-theorem source_ok_of_forward {f : Clif.Function} (checked : ForwardCfg.sourceOk f = true) :
+/-- **`ConditionalCfg.rankedSourceOk` (ranked forward tails after a wide entry-parameter
+branch) is in the class.** -/
+theorem source_ok_of_conditional_ranked {f : Clif.Function} (checked : ConditionalCfg.rankedSourceOk f = true) :
     sourceOk f = true := by
-  simp only [ForwardCfg.sourceOk,Bool.and_eq_true] at checked
+  simp only [ConditionalCfg.rankedSourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_conditional_ranked leaf) scope dominated abi
+
+/-- **`ForwardCfg` (ranked jump/return/trap graphs with a jumping entry) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_forward {f : Clif.Function}
+    (leaf : ForwardCfg.leafEligible f = true) : sourceLeafEligible f = true := by
   unfold ForwardCfg.leafEligible at leaf
   cases blocks : f.blocks with
   | nil => rw [blocks] at leaf; cases leaf
@@ -375,7 +400,7 @@ theorem source_ok_of_forward {f : Clif.Function} (checked : ForwardCfg.sourceOk 
       simp only [Bool.and_eq_true] at leaf
       obtain ⟨⟨⟨controls,bodies⟩,params⟩,returns⟩ := leaf
       rw [← blocks] at controls bodies
-      refine source_ok_of_blocks ?_ bodies params returns scope dominated abi
+      refine source_leaf_eligible_of_blocks ?_ bodies params returns
       intro bi b found
       have forward := List.all_eq_true.mp controls (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
       refine control_of_forward forward ?_
@@ -387,12 +412,19 @@ theorem source_ok_of_forward {f : Clif.Function} (checked : ForwardCfg.sourceOk 
       rw [term] at trap
       cases trap
 
-/-- **`ParameterCfg` (ranked forward graphs with wide-parameter branches) is in the class.** -/
-theorem source_ok_of_parameter {f : Clif.Function} (checked : ParameterCfg.sourceOk f = true) :
+/-- **`ForwardCfg` (ranked jump/return/trap graphs with a jumping entry) is in the class.** -/
+theorem source_ok_of_forward {f : Clif.Function} (checked : ForwardCfg.sourceOk f = true) :
     sourceOk f = true := by
-  simp only [ParameterCfg.sourceOk,ParameterCfg.sourceLeafEligible,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,scope⟩,dominated⟩,abi⟩ := checked
-  refine source_ok_of_blocks ?_ bodies params returns scope dominated abi
+  simp only [ForwardCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_forward leaf) scope dominated abi
+
+/-- **`ParameterCfg` (ranked forward graphs with wide-parameter branches) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_parameter {f : Clif.Function}
+    (checked : ParameterCfg.sourceLeafEligible f = true) : sourceLeafEligible f = true := by
+  simp only [ParameterCfg.sourceLeafEligible,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨controls,bodies⟩,params⟩,returns⟩ := checked
+  refine source_leaf_eligible_of_blocks ?_ bodies params returns
   intro bi b found
   have old := List.all_eq_true.mp controls (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
   cases term : b.term <;> rw [term] at old
@@ -406,12 +438,19 @@ theorem source_ok_of_parameter {f : Clif.Function} (checked : ParameterCfg.sourc
       nonentry_of_after yesAfter,nonentry_of_after noAfter,Bool.and_self]
   all_goals simp only [ParameterCfg.controlLeafEligible,ParameterCfg.controlEligible] at old; cases old
 
-/-- **`ParameterLoopCfg` (T7b-5) is in the class.** -/
-theorem source_ok_of_parameter_loop {f : Clif.Function} (checked : ParameterLoopCfg.sourceOk f = true) :
+/-- **`ParameterCfg` (ranked forward graphs with wide-parameter branches) is in the class.** -/
+theorem source_ok_of_parameter {f : Clif.Function} (checked : ParameterCfg.sourceOk f = true) :
     sourceOk f = true := by
-  simp only [ParameterLoopCfg.sourceOk,ParameterLoopCfg.sourceLeafEligible,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,scope⟩,dominated⟩,abi⟩ := checked
-  refine source_ok_of_blocks ?_ bodies params returns scope dominated abi
+  simp only [ParameterCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_parameter leaf) scope dominated abi
+
+/-- **`ParameterLoopCfg` (T7b-5) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_parameter_loop {f : Clif.Function}
+    (checked : ParameterLoopCfg.sourceLeafEligible f = true) : sourceLeafEligible f = true := by
+  simp only [ParameterLoopCfg.sourceLeafEligible,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨controls,bodies⟩,params⟩,returns⟩ := checked
+  refine source_leaf_eligible_of_blocks ?_ bodies params returns
   intro bi b found
   have old := List.all_eq_true.mp controls (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
   cases term : b.term <;> rw [term] at old
@@ -425,12 +464,19 @@ theorem source_ok_of_parameter_loop {f : Clif.Function} (checked : ParameterLoop
       yesNonentry,noNonentry,Bool.and_self]
   all_goals simp only [ParameterLoopCfg.controlLeafEligible,ParameterLoopCfg.controlEligible] at old; cases old
 
-/-- **`ComparisonLoopCfg` (T7b-7) is in the class.** -/
-theorem source_ok_of_comparison_loop {f : Clif.Function} (checked : ComparisonLoopCfg.sourceOk f = true) :
+/-- **`ParameterLoopCfg` (T7b-5) is in the class.** -/
+theorem source_ok_of_parameter_loop {f : Clif.Function} (checked : ParameterLoopCfg.sourceOk f = true) :
     sourceOk f = true := by
-  simp only [ComparisonLoopCfg.sourceOk,ComparisonLoopCfg.sourceLeafEligible,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,scope⟩,dominated⟩,abi⟩ := checked
-  refine source_ok_of_blocks ?_ bodies params returns scope dominated abi
+  simp only [ParameterLoopCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_parameter_loop leaf) scope dominated abi
+
+/-- **`ComparisonLoopCfg` (T7b-7) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_comparison_loop {f : Clif.Function}
+    (checked : ComparisonLoopCfg.sourceLeafEligible f = true) : sourceLeafEligible f = true := by
+  simp only [ComparisonLoopCfg.sourceLeafEligible,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨controls,bodies⟩,params⟩,returns⟩ := checked
+  refine source_leaf_eligible_of_blocks ?_ bodies params returns
   intro bi b found
   have old := List.all_eq_true.mp controls (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
   cases term : b.term <;> rw [term] at old
@@ -444,13 +490,19 @@ theorem source_ok_of_comparison_loop {f : Clif.Function} (checked : ComparisonLo
       yesNonentry,noNonentry,Bool.and_self]
   all_goals simp only [ComparisonLoopCfg.controlLeafEligible,ComparisonLoopCfg.controlEligible] at old; cases old
 
-/-- **`ComparisonComputedLoopCfg` (CB-8) is in the class.** -/
-theorem source_ok_of_comparison_computed_loop {f : Clif.Function}
-    (checked : ComparisonComputedLoopCfg.sourceOk f = true) : sourceOk f = true := by
-  simp only [ComparisonComputedLoopCfg.sourceOk,ComparisonComputedLoopCfg.sourceLeafEligible,
-    Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,scope⟩,dominated⟩,abi⟩ := checked
-  refine source_ok_of_blocks ?_ bodies params returns scope dominated abi
+/-- **`ComparisonLoopCfg` (T7b-7) is in the class.** -/
+theorem source_ok_of_comparison_loop {f : Clif.Function} (checked : ComparisonLoopCfg.sourceOk f = true) :
+    sourceOk f = true := by
+  simp only [ComparisonLoopCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_comparison_loop leaf) scope dominated abi
+
+/-- **`ComparisonComputedLoopCfg` (CB-8) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_comparison_computed_loop {f : Clif.Function}
+    (checked : ComparisonComputedLoopCfg.sourceLeafEligible f = true) : sourceLeafEligible f = true := by
+  simp only [ComparisonComputedLoopCfg.sourceLeafEligible,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨controls,bodies⟩,params⟩,returns⟩ := checked
+  refine source_leaf_eligible_of_blocks ?_ bodies params returns
   intro bi b found
   have old := List.all_eq_true.mp controls (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
   cases term : b.term <;> rw [term] at old
@@ -467,6 +519,13 @@ theorem source_ok_of_comparison_computed_loop {f : Clif.Function}
     simp only [ComparisonComputedLoopCfg.controlLeafEligible,ComparisonComputedLoopCfg.controlEligible] at old
     cases old
 
+/-- **`ComparisonComputedLoopCfg` (CB-8) is in the class.** -/
+theorem source_ok_of_comparison_computed_loop {f : Clif.Function} (checked : ComparisonComputedLoopCfg.sourceOk f = true) :
+    sourceOk f = true := by
+  simp only [ComparisonComputedLoopCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_comparison_computed_loop leaf) scope dominated abi
+
 /-- The first index of a block id in a list whose head has another id is a nonzero index. -/
 private theorem nonentry_of_tail {f : Clif.Function} {entry : Clif.Block} {rest : List Clif.Block}
     (blocks : f.blocks = entry :: rest) {bc : Clif.BlockCall} (other : entry.id ≠ bc.block)
@@ -478,11 +537,9 @@ private theorem nonentry_of_tail {f : Clif.Function} {entry : Clif.Block} {rest 
   simp only [decide_eq_true_eq]
   omega
 
-/-- **`LinearCfg` (three-block jump chains) is in the class.** -/
-theorem source_ok_of_linear {f : Clif.Function} (checked : LinearCfg.sourceOk f = true) :
-    sourceOk f = true := by
-  simp only [LinearCfg.sourceOk,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
+/-- **`LinearCfg` (three-block jump chains) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_linear {f : Clif.Function}
+    (eligible : LinearCfg.eligible f = true) : sourceLeafEligible f = true := by
   unfold LinearCfg.eligible at eligible
   match blocks : f.blocks,eligible with
   | [entry,middle,target],eligible =>
@@ -496,7 +553,7 @@ theorem source_ok_of_linear {f : Clif.Function} (checked : LinearCfg.sourceOk f 
     simp only [Bool.and_eq_true,beq_iff_eq,bne_iff_ne,ne_eq] at eligible
     obtain ⟨⟨⟨⟨⟨⟨⟨firstTarget,secondTarget⟩,entryMiddle⟩,entryTarget⟩,middleTarget⟩,bodies⟩,params⟩,returns⟩ :=
       eligible
-    refine source_ok_of_entry blocks ?_ ?_ (by rw [blocks]; exact bodies) params returns scope dominated abi
+    refine source_leaf_eligible_of_entry blocks ?_ ?_ (by rw [blocks]; exact bodies) params returns
     · simp only [entryTerm,controlLeafEligible,controlEligible]
       exact nonentry_of_tail blocks (by rw [firstTarget]; exact entryMiddle)
         (by simp [List.findIdx?_cons,firstTarget])
@@ -514,11 +571,16 @@ theorem source_ok_of_linear {f : Clif.Function} (checked : LinearCfg.sourceOk f 
         simp only [targetTerm,controlLeafEligible,controlEligible]
       | _+2,found => simp at found
 
-/-- **`TwoBlock` (an entry jump into a returning block) is in the class.** -/
-theorem source_ok_of_two_block {f : Clif.Function} (checked : TwoBlock.sourceOk f = true) :
+/-- **`LinearCfg` (three-block jump chains) is in the class.** -/
+theorem source_ok_of_linear {f : Clif.Function} (checked : LinearCfg.sourceOk f = true) :
     sourceOk f = true := by
-  simp only [TwoBlock.sourceOk,Bool.and_eq_true] at checked
+  simp only [LinearCfg.sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_linear eligible) scope dominated abi
+
+/-- **`TwoBlock` (an entry jump into a returning block) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_two_block {f : Clif.Function}
+    (eligible : TwoBlock.eligible f = true) : sourceLeafEligible f = true := by
   unfold TwoBlock.eligible at eligible
   match blocks : f.blocks,eligible with
   | [entry,target],eligible =>
@@ -536,7 +598,43 @@ theorem source_ok_of_two_block {f : Clif.Function} (checked : TwoBlock.sourceOk 
       have good := List.all_eq_true.mp entryBody stm member
       simp only [TwoBlock.entryEligible,Bool.and_eq_true] at good
       exact good.1
-    refine source_ok_of_entry blocks ?_ ?_ bodies params returns scope dominated abi
+    refine source_leaf_eligible_of_entry blocks ?_ ?_ bodies params returns
+    · simp only [entryTerm,controlLeafEligible,controlEligible]
+      exact nonentry_of_tail blocks (by rw [jumpTarget]; exact distinct) (by simp [List.findIdx?_cons,jumpTarget])
+    · intro bi b found
+      match bi,found with
+      | 0,found =>
+        simp only [List.getElem?_cons_zero,Option.some.injEq] at found
+        subst found
+        simp only [targetTerm,controlLeafEligible,controlEligible]
+      | _+1,found => simp at found
+
+/-- **`TwoBlock` (an entry jump into a returning block) is in the class.** -/
+theorem source_ok_of_two_block {f : Clif.Function} (checked : TwoBlock.sourceOk f = true) :
+    sourceOk f = true := by
+  simp only [TwoBlock.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_two_block eligible) scope dominated abi
+
+/-- **`TwoBlock.Entry` (an entry jump with any scalar entry body into a returning block) is in
+the class at the selector level.** -/
+theorem source_leaf_eligible_of_two_block_entry {f : Clif.Function}
+    (eligible : TwoBlock.Entry.eligible f = true) : sourceLeafEligible f = true := by
+  unfold TwoBlock.Entry.eligible at eligible
+  match blocks : f.blocks,eligible with
+  | [entry,target],eligible =>
+    dsimp only at eligible
+    cases entryTerm : entry.term <;> rw [entryTerm] at eligible <;> try cases eligible
+    case jump bc =>
+    cases targetTerm : target.term <;> rw [targetTerm] at eligible <;> try cases eligible
+    case ret xs =>
+    simp only [Bool.and_eq_true,beq_iff_eq,bne_iff_ne,ne_eq] at eligible
+    obtain ⟨⟨⟨⟨⟨⟨jumpTarget,distinct⟩,entryBody⟩,targetBody⟩,_⟩,params⟩,returns⟩ := eligible
+    have bodies : f.blocks.all (fun b => b.body.all Scalar.maskMixedBodyEligible) = true := by
+      rw [blocks]
+      simp only [List.all_cons,List.all_nil,Bool.and_true,Bool.and_eq_true]
+      exact ⟨entryBody,targetBody⟩
+    refine source_leaf_eligible_of_entry blocks ?_ ?_ bodies params returns
     · simp only [entryTerm,controlLeafEligible,controlEligible]
       exact nonentry_of_tail blocks (by rw [jumpTarget]; exact distinct) (by simp [List.findIdx?_cons,jumpTarget])
     · intro bi b found
@@ -553,30 +651,7 @@ theorem source_ok_of_two_block_entry {f : Clif.Function} (checked : TwoBlock.Ent
     sourceOk f = true := by
   simp only [TwoBlock.Entry.sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
-  unfold TwoBlock.Entry.eligible at eligible
-  match blocks : f.blocks,eligible with
-  | [entry,target],eligible =>
-    dsimp only at eligible
-    cases entryTerm : entry.term <;> rw [entryTerm] at eligible <;> try cases eligible
-    case jump bc =>
-    cases targetTerm : target.term <;> rw [targetTerm] at eligible <;> try cases eligible
-    case ret xs =>
-    simp only [Bool.and_eq_true,beq_iff_eq,bne_iff_ne,ne_eq] at eligible
-    obtain ⟨⟨⟨⟨⟨⟨jumpTarget,distinct⟩,entryBody⟩,targetBody⟩,_⟩,params⟩,returns⟩ := eligible
-    have bodies : f.blocks.all (fun b => b.body.all Scalar.maskMixedBodyEligible) = true := by
-      rw [blocks]
-      simp only [List.all_cons,List.all_nil,Bool.and_true,Bool.and_eq_true]
-      exact ⟨entryBody,targetBody⟩
-    refine source_ok_of_entry blocks ?_ ?_ bodies params returns scope dominated abi
-    · simp only [entryTerm,controlLeafEligible,controlEligible]
-      exact nonentry_of_tail blocks (by rw [jumpTarget]; exact distinct) (by simp [List.findIdx?_cons,jumpTarget])
-    · intro bi b found
-      match bi,found with
-      | 0,found =>
-        simp only [List.getElem?_cons_zero,Option.some.injEq] at found
-        subst found
-        simp only [targetTerm,controlLeafEligible,controlEligible]
-      | _+1,found => simp at found
+  exact source_ok_of_leaf (source_leaf_eligible_of_two_block_entry eligible) scope dominated abi
 
 /-! ### Legacy checkers
 
@@ -662,27 +737,29 @@ set_option autoImplicit false
 
 /-! ### Split subsumption -/
 
-/-- `sourceOk` from the control check of every block, the bodies, the ABI and the driver
-checks. -/
-theorem source_ok_of_blocks {f : Clif.Function}
+/-- `sourceLeafEligible` from the control check of every block, the bodies and the ABI. -/
+theorem source_leaf_eligible_of_blocks {f : Clif.Function}
     (controls : ∀ (bi : Nat) (b : Clif.Block),f.blocks[bi]? = some b → controlLeafEligible f bi b b.term = true)
     (bodies : f.blocks.all (fun b => b.body.all Scalar.maskMixedBodyEligible) = true)
     (params : f.sig.params.all Scalar.narrowAbiEligible = true)
-    (returns : f.sig.returns.all Scalar.narrowAbiEligible = true)
-    (scope : lowerScopeB f = true) (dominated : dominatedB f = true) (abi : sigAbiOk f.sig = true) :
-    sourceOk f = true := by
-  simp only [sourceOk,sourceLeafEligible,Bool.and_eq_true]
-  refine ⟨⟨⟨⟨⟨⟨?_,bodies⟩,params⟩,returns⟩,scope⟩,dominated⟩,abi⟩
+    (returns : f.sig.returns.all Scalar.narrowAbiEligible = true) : sourceLeafEligible f = true := by
+  simp only [sourceLeafEligible,Bool.and_eq_true]
+  refine ⟨⟨⟨?_,bodies⟩,params⟩,returns⟩
   apply List.all_eq_true.mpr
   rintro ⟨b,bi⟩ member
   exact controls bi b (List.mk_mem_zipIdx_iff_getElem?.mp member)
 
-/-- **`ParameterArgsLoopCfg` (T7b-8) is in the class.** -/
-theorem source_ok_of_parameter_args_loop {f : Clif.Function} (checked : ParameterArgsLoopCfg.sourceOk f = true) :
-    sourceOk f = true := by
-  simp only [ParameterArgsLoopCfg.sourceOk,ParameterArgsLoopCfg.sourceLeafEligible,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,scope⟩,dominated⟩,abi⟩ := checked
-  refine source_ok_of_blocks ?_ bodies params returns scope dominated abi
+/-- `sourceOk` from `sourceLeafEligible` and the driver checks. -/
+theorem source_ok_of_leaf {f : Clif.Function} (leaf : sourceLeafEligible f = true) (scope : lowerScopeB f = true)
+    (dominated : dominatedB f = true) (abi : sigAbiOk f.sig = true) : sourceOk f = true := by
+  simp only [sourceOk,leaf,scope,dominated,abi,Bool.and_self]
+
+/-- **`ParameterArgsLoopCfg` (T7b-8) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_parameter_args_loop {f : Clif.Function}
+    (checked : ParameterArgsLoopCfg.sourceLeafEligible f = true) : sourceLeafEligible f = true := by
+  simp only [ParameterArgsLoopCfg.sourceLeafEligible,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨controls,bodies⟩,params⟩,returns⟩ := checked
+  refine source_leaf_eligible_of_blocks ?_ bodies params returns
   intro bi b found
   have old := List.all_eq_true.mp controls (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
   cases term : b.term <;> rw [term] at old
@@ -699,12 +776,19 @@ theorem source_ok_of_parameter_args_loop {f : Clif.Function} (checked : Paramete
     simp only [ParameterArgsLoopCfg.controlLeafEligible,ParameterArgsLoopCfg.controlEligible] at old
     cases old
 
-/-- **`ComparisonArgsLoopCfg` (T7b-9) is in the class.** -/
-theorem source_ok_of_comparison_args_loop {f : Clif.Function}
-    (checked : ComparisonArgsLoopCfg.sourceOk f = true) : sourceOk f = true := by
-  simp only [ComparisonArgsLoopCfg.sourceOk,ComparisonArgsLoopCfg.sourceLeafEligible,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,scope⟩,dominated⟩,abi⟩ := checked
-  refine source_ok_of_blocks ?_ bodies params returns scope dominated abi
+/-- **`ParameterArgsLoopCfg` (T7b-8) is in the class.** -/
+theorem source_ok_of_parameter_args_loop {f : Clif.Function} (checked : ParameterArgsLoopCfg.sourceOk f = true) :
+    sourceOk f = true := by
+  simp only [ParameterArgsLoopCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_parameter_args_loop leaf) scope dominated abi
+
+/-- **`ComparisonArgsLoopCfg` (T7b-9) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_comparison_args_loop {f : Clif.Function}
+    (checked : ComparisonArgsLoopCfg.sourceLeafEligible f = true) : sourceLeafEligible f = true := by
+  simp only [ComparisonArgsLoopCfg.sourceLeafEligible,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨controls,bodies⟩,params⟩,returns⟩ := checked
+  refine source_leaf_eligible_of_blocks ?_ bodies params returns
   intro bi b found
   have old := List.all_eq_true.mp controls (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
   cases term : b.term <;> rw [term] at old
@@ -721,13 +805,20 @@ theorem source_ok_of_comparison_args_loop {f : Clif.Function}
     simp only [ComparisonArgsLoopCfg.controlLeafEligible,ComparisonArgsLoopCfg.controlEligible] at old
     cases old
 
-/-- **`ParameterArgsCfg.anySourceOk` (ranked forward graphs whose parameter branches pass block
-arguments to original or critical-edge successors) is in the class.** -/
-theorem source_ok_of_parameter_any_args {f : Clif.Function} (checked : ParameterArgsCfg.anySourceOk f = true) :
+/-- **`ComparisonArgsLoopCfg` (T7b-9) is in the class.** -/
+theorem source_ok_of_comparison_args_loop {f : Clif.Function} (checked : ComparisonArgsLoopCfg.sourceOk f = true) :
     sourceOk f = true := by
-  simp only [ParameterArgsCfg.anySourceOk,ParameterArgsCfg.anySourceLeafEligible,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,scope⟩,dominated⟩,abi⟩ := checked
-  refine source_ok_of_blocks ?_ bodies params returns scope dominated abi
+  simp only [ComparisonArgsLoopCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_comparison_args_loop leaf) scope dominated abi
+
+/-- **`ParameterArgsCfg.anySourceOk` (ranked forward graphs whose parameter branches pass block
+arguments to original or critical-edge successors) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_parameter_any_args {f : Clif.Function}
+    (checked : ParameterArgsCfg.anySourceLeafEligible f = true) : sourceLeafEligible f = true := by
+  simp only [ParameterArgsCfg.anySourceLeafEligible,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨controls,bodies⟩,params⟩,returns⟩ := checked
+  refine source_leaf_eligible_of_blocks ?_ bodies params returns
   intro bi b found
   have old := List.all_eq_true.mp controls (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
   cases term : b.term <;> rw [term] at old
@@ -743,24 +834,38 @@ theorem source_ok_of_parameter_any_args {f : Clif.Function} (checked : Parameter
     simp only [ParameterArgsCfg.controlLeafEligible,ParameterArgsCfg.controlEligible] at old
     cases old
 
+/-- **`ParameterArgsCfg.anySourceOk` (ranked forward graphs whose parameter branches pass block
+arguments to original or critical-edge successors) is in the class.** -/
+theorem source_ok_of_parameter_any_args {f : Clif.Function} (checked : ParameterArgsCfg.anySourceOk f = true) :
+    sourceOk f = true := by
+  simp only [ParameterArgsCfg.anySourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_parameter_any_args leaf) scope dominated abi
+
+/-- **`ParameterArgsCfg.sourceLeafEligible` (the same graphs in a lowered order without
+critical-edge nodes) is in the class at the selector level.** -/
+theorem source_leaf_eligible_of_parameter_args {f : Clif.Function}
+    (checked : ParameterArgsCfg.sourceLeafEligible f = true) : sourceLeafEligible f = true := by
+  simp only [ParameterArgsCfg.sourceLeafEligible,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,_⟩ := checked
+  apply source_leaf_eligible_of_parameter_any_args
+  simp only [ParameterArgsCfg.anySourceLeafEligible,controls,bodies,params,returns,Bool.and_self]
+
 /-- **`ParameterArgsCfg.sourceOk` (the same graphs in a lowered order without critical-edge
 nodes) is in the class.** -/
 theorem source_ok_of_parameter_args {f : Clif.Function} (checked : ParameterArgsCfg.sourceOk f = true) :
     sourceOk f = true := by
-  simp only [ParameterArgsCfg.sourceOk,ParameterArgsCfg.sourceLeafEligible,Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,_⟩,scope⟩,dominated⟩,abi⟩ := checked
-  apply source_ok_of_parameter_any_args
-  simp only [ParameterArgsCfg.anySourceOk,ParameterArgsCfg.anySourceLeafEligible,controls,bodies,params,returns,
-    scope,dominated,abi,Bool.and_self]
+  simp only [ParameterArgsCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_parameter_args leaf) scope dominated abi
 
 /-- **The legacy class `ComparisonGeneralLoopCfg` (CB-10) is in the class**: it is this class
 with empty `brif` arguments. -/
-theorem source_ok_of_general_loop {f : Clif.Function} (checked : ComparisonGeneralLoopCfg.sourceOk f = true) :
-    sourceOk f = true := by
-  simp only [ComparisonGeneralLoopCfg.sourceOk,ComparisonGeneralLoopCfg.sourceLeafEligible,
-    Bool.and_eq_true] at checked
-  obtain ⟨⟨⟨⟨⟨⟨controls,bodies⟩,params⟩,returns⟩,scope⟩,dominated⟩,abi⟩ := checked
-  refine source_ok_of_blocks ?_ bodies params returns scope dominated abi
+theorem source_leaf_eligible_of_general_loop {f : Clif.Function}
+    (checked : ComparisonGeneralLoopCfg.sourceLeafEligible f = true) : sourceLeafEligible f = true := by
+  simp only [ComparisonGeneralLoopCfg.sourceLeafEligible,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨controls,bodies⟩,params⟩,returns⟩ := checked
+  refine source_leaf_eligible_of_blocks ?_ bodies params returns
   intro bi b found
   have old := List.all_eq_true.mp controls (b,bi) (List.mk_mem_zipIdx_iff_getElem?.mpr found)
   cases term : b.term <;> rw [term] at old
@@ -775,6 +880,14 @@ theorem source_ok_of_general_loop {f : Clif.Function} (checked : ComparisonGener
   all_goals
     simp only [ComparisonGeneralLoopCfg.controlLeafEligible,ComparisonGeneralLoopCfg.controlEligible] at old
     cases old
+
+/-- **The legacy class `ComparisonGeneralLoopCfg` (CB-10) is in the class**: it is this class
+with empty `brif` arguments. -/
+theorem source_ok_of_general_loop {f : Clif.Function} (checked : ComparisonGeneralLoopCfg.sourceOk f = true) :
+    sourceOk f = true := by
+  simp only [ComparisonGeneralLoopCfg.sourceOk,Bool.and_eq_true] at checked
+  obtain ⟨⟨⟨leaf,scope⟩,dominated⟩,abi⟩ := checked
+  exact source_ok_of_leaf (source_leaf_eligible_of_general_loop leaf) scope dominated abi
 
 /-! ### Split checkers
 
