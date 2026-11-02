@@ -1,0 +1,12 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceOriginal.lean:10:75: error: Tactic `decide` failed for proposition
+  Opt.Legalize128.mentions128 function = false
+because its `Decidable` instance
+  instDecidableEqBool (Opt.Legalize128.mentions128 function) false
+did not reduce to `isTrue` or `isFalse`.
+
+After unfolding the instances `instDecidableEqBool`, `instDecidableEqNat`, `Bool.decEq`, `Clif.instDecidableEqTy`, and `Nat.decEq`, reduction got stuck at the `Decidable` instance
+  match Opt.Legalize128.mentions128 function, false with
+  | false, false => isTrue ⋯
+  | false, true => isFalse ⋯
+  | true, false => isFalse ⋯
+  | true, true => isTrue ⋯

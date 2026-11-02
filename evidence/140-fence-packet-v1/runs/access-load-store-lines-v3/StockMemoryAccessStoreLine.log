@@ -1,0 +1,7 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessStoreLine.lean:86:23: error(lean.unknownIdentifier): Unknown identifier `heldValue`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessStoreLine.lean:86:2: error: Type mismatch: After simplification, term
+  held
+ has type
+  values (Loc.reg (Reg.x base)) = regVal s (Reg.x base)
+but is expected to have type
+  values (Loc.reg (Reg.x valueReg)) = regVal s (Reg.x valueReg) ∧ values (Loc.reg (Reg.x base)) = regVal s (Reg.x base)

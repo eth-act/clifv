@@ -193,3 +193,27 @@ No ARM provider compiler ran.
 Next: derive actual allocated operands, reached instruction lines and trap-table entries.
 Then transport the new access outcome through preparation, raw/cleanup, linker and generated consumers.
 Keep source/peak variants, atomic embedding and all original full-goal gates open.
+
+
+## Reviewed machine candidate v6
+
+The candidate passes 45 kernels and 88 public roots.
+The audit permits 77 standard roots and 11 marked fixed roots.
+All previous 77 axiom sets remain exact.
+The canonical manifest is `mixed-machine-state-v6.json`.
+The frozen source directory is `mixed-machine-canonical-source-v6/`.
+The context contains 959 proper normal-key providers.
+The source hashes and native recovery evidence remain preserved.
+
+The complete seven-statement function keeps both cleanup modes.
+The theorem derives access shapes and allocator entry invariants internally.
+It preserves complete returns and explicit division traps.
+It also reaches the actual load/store fault sites under original MapFaults.
+The source arguments, memory and divisor remain unrestricted.
+Both checked pipelines compile to actual machine code with existing spill allocation.
+
+The actual executable prefix still needs its no-earlier-fault proof.
+Original-source legalization and peak consumers remain open.
+The linker, generated proofs and production activation remain open.
+The heavy atomic embedding remains separate.
+The full fence closure and original #140 remain incomplete.

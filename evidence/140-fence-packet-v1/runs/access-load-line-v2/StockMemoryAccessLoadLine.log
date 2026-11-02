@@ -1,0 +1,37 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessLoadLine.lean:75:4: error: Type mismatch: After simplification, term
+  zero
+ has type
+  R.L[j]? =
+    ((match
+          match
+            Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+              flags.trapCode with
+          | Line.ins c => Option.map (fun x => (c, x)) c.relaxTarget?
+          | x => none with
+        | some (c, t) =>
+          if R.far t = true then [Line.ins (Insn.invertTo Lbl.skip c), Line.ins (Insn.b t)]
+          else
+            [Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+                flags.trapCode]
+        | none =>
+          [Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+              flags.trapCode]) ++
+        (List.flatMap (relaxLine R.far) (ftList (ls2 ++ nxtOf R.af b)) ++ T))[0]?
+but is expected to have type
+  R.L[j]? =
+    some
+      (Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+        flags.trapCode)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessLoadLine.lean:82:2: error: Type mismatch: After simplification, term
+  held
+ has type
+  values (Loc.reg (Reg.x base)) = regVal s (Reg.x base)
+but is expected to have type
+  ∃ a b,
+    List.filter (fun x => x.fst.isUse)
+          [({ vreg := d, cls := RegClass.int, kind := OpKind.def, pos := OpPos.late, con := Constraint.reg },
+              Loc.reg (Reg.x destination)),
+            ({ vreg := pointer, cls := RegClass.int, kind := OpKind.use, pos := OpPos.early, con := Constraint.reg },
+              Loc.reg (Reg.x base))] =
+        [(a, b)] ∧
+      values b = regVal s (Reg.x base)

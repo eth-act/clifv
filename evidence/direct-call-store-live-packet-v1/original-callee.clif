@@ -1,0 +1,6 @@
+function %stock_store_clobber(i64) -> i64 system_v {
+block0(v101: i64):
+    v109 = iconst.i64 13
+    v121 = iadd v101, v109
+    return v121
+}

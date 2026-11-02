@@ -1,0 +1,32 @@
+{
+  "status": "running",
+  "records": [
+    {
+      "label": "proper-normal-providers",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Lowering.StockArithmetic",
+        "FV.Backend.LinearScan",
+        "FV.Clif.Parse"
+      ],
+      "exit": 0,
+      "stats": "peak 43343872\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "original-call-store",
+      "argv": [
+        "lake",
+        "env",
+        "lean",
+        "-j1",
+        "-DElab.async=false",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/InspectCallStoreV1.lean"
+      ],
+      "exit": 0,
+      "stats": "peak 220872704\noom 0\noom_kill 0\n"
+    }
+  ]
+}

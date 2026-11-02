@@ -1,0 +1,186 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:33:38: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:34:35: error: Application type mismatch: The argument
+  actualAddress
+has type
+  (if offset % 8 = 0 ∧ offset ≤ 4095 * 8 then some (lo64 (regVal s (Reg.x base)) + BitVec.ofNat 64 offset) else none) =
+    some address
+but is expected to have type
+  some ?m.253 = some ?m.254
+in the application
+  Option.some.inj actualAddress
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:42:29: error: Type mismatch: After simplification, term
+  unmapped
+ has type
+  ∃ k, k < LoadOp.uload64.bytes ∧ mp (address + BitVec.ofNat 64 k) = ArmFault.Perm.none
+but is expected to have type
+  ∃ k,
+    k < 8 ∧
+      ?m.324 (Arm.read_gpr 64 (BitVec.ofNat 5 base) ?m.325 + BitVec.ofNat 64 offset + BitVec.ofNat 64 k) =
+        ArmFault.Perm.none
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:24:105: error: unsolved goals
+R : RL
+wellFormed : R.Wf
+s : Arm.ArmState
+b k d pointer offset sb : Nat
+allocs : Array Loc
+items : List RItem
+values : Loc → CV
+world : Arm.ArmState
+block : VBlock
+flags : Clif.MemFlags
+related : Q R s (MConf.run { b := b, its := RItem.op k allocs :: items, m := values, w := world })
+found : R.vc.blocks[b]? = some block
+located :
+  block.insts[k]? =
+    some
+      (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+        flags)
+sourceOffset : offset = 0 ∨ offset = 16
+operands : Array Operand
+valid :
+  (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+        flags).operands =
+    Except.ok operands
+code : Clif.TrapCode
+address : BitVec 64
+bytes : Nat
+mp : ArmFault.MemMap
+access :
+  AccessAt sb
+    (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+      flags)
+    (List.map (fun x => values x.snd) (List.filter (fun x => x.fst.isUse) (operands.zip allocs).toList)) world code
+    address bytes
+unmapped : ∃ k, k < LoadOp.uload64.bytes ∧ mp (address + BitVec.ofNat 64 k) = ArmFault.Perm.none
+size : bytes = LoadOp.uload64.bytes
+flag : flags.trapCode = some code
+j destination base : Nat
+actualAddress :
+  amodeAddr sb (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset) LoadOp.uload64.bytes
+      [regVal s (Reg.x base)] world =
+    some address
+destinationBound : destination < 29
+baseBound : base < 29
+line :
+  R.L[j]? =
+    some
+      (Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+        flags.trapCode)
+pc : Arm.r Arm.StateField.PC s = R.pcOf j
+clean : Arm.r Arm.StateField.ERR s = Arm.StateError.None
+program : s.program = FnBin.program R.base R.fb
+uses :
+  ∀ (operands : Array Operand),
+    (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+            flags).operands =
+        Except.ok operands →
+      List.map (fun x => values x.snd) (List.filter (fun x => x.fst.isUse) (operands.zip allocs).toList) =
+        [regVal s (Reg.x base)]
+range : offset % 8 = 0 ∧ offset ≤ 4095 * 8
+addressEq : Arm.read_gpr 64 (BitVec.ofNat 5 base) s + BitVec.ofNat 64 offset = address
+marked :
+  R.L[j]? =
+    some
+      (Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset)) (some code))
+trap : TrapAt R.fb R.base code s
+inst : Arm.ArmInst
+encoded :
+  Insn.toArmInst { pc := lineOffset R.fa.lines.toList j, lbl := fun x => R.lm[x]? }
+      (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset)) =
+    Except.ok inst
+decoded : Concurrency.ArmFoot.decodeAt s = some inst
+⊢ TrapAtF mp R.fb R.base code s
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:33:38: warning: This simp argument is unused:
+  if_pos range
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [amodeAddr, LoadOp.bytes] at actualAddress
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:75:16: error: Type mismatch: After simplification, term
+  unmapped
+ has type
+  ∃ k, k < StoreOp.store64.bytes ∧ mp (address + BitVec.ofNat 64 k) = ArmFault.Perm.none
+but is expected to have type
+  ∃ k, k < 8 ∧ ?m.333 (Arm.read_gpr 64 (BitVec.ofNat 5 base) ?m.334 + 8#64 + BitVec.ofNat 64 k) = ArmFault.Perm.none
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:57:105: error: unsolved goals
+R : RL
+wellFormed : R.Wf
+s : Arm.ArmState
+b k stored pointer sb : Nat
+allocs : Array Loc
+items : List RItem
+values : Loc → CV
+world : Arm.ArmState
+block : VBlock
+flags : Clif.MemFlags
+related : Q R s (MConf.run { b := b, its := RItem.op k allocs :: items, m := values, w := world })
+found : R.vc.blocks[b]? = some block
+located :
+  block.insts[k]? =
+    some
+      (MInst.store StoreOp.store64 (Reg.vreg stored RegClass.int)
+        (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) 8) flags)
+operands : Array Operand
+valid :
+  (MInst.store StoreOp.store64 (Reg.vreg stored RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) 8)
+        flags).operands =
+    Except.ok operands
+code : Clif.TrapCode
+address : BitVec 64
+bytes : Nat
+mp : ArmFault.MemMap
+access :
+  AccessAt sb
+    (MInst.store StoreOp.store64 (Reg.vreg stored RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) 8)
+      flags)
+    (List.map (fun x => values x.snd) (List.filter (fun x => x.fst.isUse) (operands.zip allocs).toList)) world code
+    address bytes
+unmapped : ∃ k, k < StoreOp.store64.bytes ∧ mp (address + BitVec.ofNat 64 k) = ArmFault.Perm.none
+value : CV
+addressUses : List CV
+sourceUses :
+  List.map (fun x => values x.snd) (List.filter (fun x => x.fst.isUse) (operands.zip allocs).toList) =
+    value :: addressUses
+size : bytes = StoreOp.store64.bytes
+flag : flags.trapCode = some code
+j valueReg base : Nat
+actualAddress :
+  amodeAddr sb (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) 8) StoreOp.store64.bytes [regVal s (Reg.x base)]
+      world =
+    some address
+valueBound : valueReg < 29
+baseBound : base < 29
+line :
+  R.L[j]? =
+    some (Line.ins (Insn.store StoreOp.store64 (Reg.x valueReg) (AMode.unsignedOffset (Reg.x base) 8)) flags.trapCode)
+pc : Arm.r Arm.StateField.PC s = R.pcOf j
+clean : Arm.r Arm.StateField.ERR s = Arm.StateError.None
+program : s.program = FnBin.program R.base R.fb
+uses :
+  ∀ (operands : Array Operand),
+    (MInst.store StoreOp.store64 (Reg.vreg stored RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) 8)
+            flags).operands =
+        Except.ok operands →
+      List.map (fun x => values x.snd) (List.filter (fun x => x.fst.isUse) (operands.zip allocs).toList) =
+        [regVal s (Reg.x valueReg), regVal s (Reg.x base)]
+tail : addressUses = [regVal s (Reg.x base)]
+addressEq : Arm.read_gpr 64 (BitVec.ofNat 5 base) s + 8#64 = address
+marked :
+  R.L[j]? =
+    some (Line.ins (Insn.store StoreOp.store64 (Reg.x valueReg) (AMode.unsignedOffset (Reg.x base) 8)) (some code))
+trap : TrapAt R.fb R.base code s
+inst : Arm.ArmInst
+encoded :
+  Insn.toArmInst { pc := lineOffset R.fa.lines.toList j, lbl := fun x => R.lm[x]? }
+      (Insn.store StoreOp.store64 (Reg.x valueReg) (AMode.unsignedOffset (Reg.x base) 8)) =
+    Except.ok inst
+decoded : Concurrency.ArmFoot.decodeAt s = some inst
+⊢ TrapAtF mp R.fb R.base code s
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:66:82: warning: This simp argument is unused:
+  ite_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [amodeAddr, StoreOp.bytes, show 8 % 8 = 0 ∧ 8 ≤ 4095 * 8 from by decide] at actualAddress
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

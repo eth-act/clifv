@@ -1,0 +1,22 @@
+{
+  "status": "source_fixture_frozen_before_probe",
+  "caller_sha256": "dd3a48bed0088809a32af0e148db48046ca403b990b702ec753f0083e54cca83",
+  "callee_sha256": "97277383ff351de032d121fdcde17db75d67ccf2faccddb9ff8a88ea67bbb33a",
+  "caller_params": [
+    "pointer v7",
+    "word v11"
+  ],
+  "call_result": "v31",
+  "store_offset": 8,
+  "store_flags": "default trapping flags; no notrap modifier",
+  "returned": "word+13 after storing at pointer+8",
+  "callee_effects": "generic theorem must retain arbitrary callee memory effects",
+  "fault_interface": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-integration-prep-v1/mixed-machine-state-v6.json",
+  "fault_interface_sha256": "20e0e16ebc9b34f74a264c3aa2b20f4d3b748f6f05cc913c44a97e85b14fbc9e",
+  "fault_sources": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-integration-prep-v1/mixed-machine-canonical-source-v6",
+  "fault_owner": "/root/stock_driver_delivery/investigate_513",
+  "resource": "sole2GiB-j1 share; broad parent owner12GiB; fence1GiB; O total16GiB",
+  "no_shared_edits": true,
+  "no_build_yet": true,
+  "utc": "2026-11-02T15:39:45.417380+00:00"
+}

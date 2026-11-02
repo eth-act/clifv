@@ -1,0 +1,39 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "label": "StockMemoryAccessLoadLine",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessLoadLine.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAccessLoadLine.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAccessLoadLine.ilean"
+      ],
+      "exit": 0,
+      "seconds": 1.5611178874969482,
+      "memstats": "peak 209690624\noom 0\noom_kill 0\n",
+      "source_sha256": "455200eb93dc571fe90f9d80e6838a6539eabf1a116c520d4c44fab4f98c7eb5",
+      "olean_sha256": "548ec8d2940badc2ded82041d7aece22e188ae3932798d055e6acc3602c5627a"
+    },
+    {
+      "label": "StockMemoryAccessStoreLine",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessStoreLine.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAccessStoreLine.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAccessStoreLine.ilean"
+      ],
+      "exit": 1,
+      "seconds": 1.440887212753296,
+      "memstats": "peak 196399104\noom 0\noom_kill 0\n"
+    }
+  ]
+}

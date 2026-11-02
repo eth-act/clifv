@@ -1,0 +1,84 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:34:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:34:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  if offset % 8 = 0 ∧ offset ≤ 4095 * 8 then ?m.254 else ?m.255
+in the target expression
+  (if offset % 8 = 0 ∧ offset ≤ 4095 * 8 then some (lo64 (regVal s (Reg.x base)) + BitVec.ofNat 64 offset) else none) =
+    some address
+
+R : RL
+wellFormed : R.Wf
+s : Arm.ArmState
+b k d pointer offset sb : Nat
+allocs : Array Loc
+items : List RItem
+values : Loc → CV
+world : Arm.ArmState
+block : VBlock
+flags : Clif.MemFlags
+related : Q R s (MConf.run { b := b, its := RItem.op k allocs :: items, m := values, w := world })
+found : R.vc.blocks[b]? = some block
+located :
+  block.insts[k]? =
+    some
+      (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+        flags)
+sourceOffset : offset = 0 ∨ offset = 16
+operands : Array Operand
+valid :
+  (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+        flags).operands =
+    Except.ok operands
+code : Clif.TrapCode
+address : BitVec 64
+bytes : Nat
+mp : ArmFault.MemMap
+access :
+  AccessAt sb
+    (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+      flags)
+    (List.map (fun x => values x.snd) (List.filter (fun x => x.fst.isUse) (operands.zip allocs).toList)) world code
+    address bytes
+unmapped : ∃ k, k < LoadOp.uload64.bytes ∧ mp (address + BitVec.ofNat 64 k) = ArmFault.Perm.none
+size : bytes = LoadOp.uload64.bytes
+flag : flags.trapCode = some code
+j destination base : Nat
+actualAddress :
+  (if offset % 8 = 0 ∧ offset ≤ 4095 * 8 then some (lo64 (regVal s (Reg.x base)) + BitVec.ofNat 64 offset) else none) =
+    some address
+destinationBound : destination < 29
+baseBound : base < 29
+line :
+  R.L[j]? =
+    some
+      (Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+        flags.trapCode)
+pc : Arm.r Arm.StateField.PC s = R.pcOf j
+clean : Arm.r Arm.StateField.ERR s = Arm.StateError.None
+program : s.program = FnBin.program R.base R.fb
+uses :
+  ∀ (operands : Array Operand),
+    (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+            flags).operands =
+        Except.ok operands →
+      List.map (fun x => values x.snd) (List.filter (fun x => x.fst.isUse) (operands.zip allocs).toList) =
+        [regVal s (Reg.x base)]
+range : offset % 8 = 0 ∧ offset ≤ 4095 * 8
+⊢ Arm.read_gpr 64 (BitVec.ofNat 5 base) s + BitVec.ofNat 64 offset = address
+
+Note: The target expression is not type-correct under the `implicit` transparency level, which may have triggered the failure. This is usually caused by unfolding of semireducible definitions in prior tactic steps. Use `set_option linter.tacticCheckInstances true` to investigate the source of the issue.
+Full error:
+  Application type mismatch: The argument
+    instDecidableAnd
+  has type
+    Decidable (offset % LoadOp.uload64.bytes = 0 ∧ offset ≤ 4095 * LoadOp.uload64.bytes)
+  but is expected to have type
+    Decidable (offset % 8 = 0 ∧ offset ≤ 4095 * 8)
+  in the application
+    @ite (Option (BitVec 64)) (offset % 8 = 0 ∧ offset ≤ 4095 * 8) instDecidableAnd
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessFaultSite.lean:67:82: warning: This simp argument is unused:
+  ite_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [amodeAddr, StoreOp.bytes, show 8 % 8 = 0 ∧ 8 ≤ 4095 * 8 from by decide] at actualAddress
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

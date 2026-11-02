@@ -1,0 +1,209 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessShapeCheck.lean:32:20: error: Application type mismatch: The argument
+  d
+has type
+  AMode
+but is expected to have type
+  Nat
+in the application
+  Exists.intro d
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessShapeCheck.lean:28:19: error: unsolved goals
+case h_3
+sb : Nat
+uses : List CV
+world : Arm.ArmState
+code : Clif.TrapCode
+address : BitVec 64
+op✝¹ : LoadOp
+d✝ : Reg
+am✝ : AMode
+fl✝ : Clif.MemFlags
+flag : fl✝.trapCode = some code
+addr : amodeAddr sb am✝ op✝¹.bytes uses world = some address
+inst✝ : MInst
+ty✝ : CTy
+op✝ : AtomicRmwLoopOp
+flags✝ : Clif.MemFlags
+addr✝ operand✝ oldval✝ scratch1✝ scratch2✝ : Reg
+heq✝ : MInst.load op✝¹ d✝ am✝ fl✝ = MInst.atomicRmwLoop ty✝ op✝ flags✝ addr✝ operand✝ oldval✝ scratch1✝ scratch2✝
+checked : false = true
+⊢ OrdinaryAccessShape (MInst.load op✝¹ d✝ am✝ fl✝)
+
+case h_4
+sb : Nat
+uses : List CV
+world : Arm.ArmState
+code : Clif.TrapCode
+address : BitVec 64
+op✝ : LoadOp
+d✝ : Reg
+am✝ : AMode
+fl✝ : Clif.MemFlags
+flag : fl✝.trapCode = some code
+addr : amodeAddr sb am✝ op✝.bytes uses world = some address
+inst✝ : MInst
+ty✝ : CTy
+flags✝ : Clif.MemFlags
+addr✝ expect✝ replace✝ oldval✝ scratch✝ : Reg
+heq✝ : MInst.load op✝ d✝ am✝ fl✝ = MInst.atomicCasLoop ty✝ flags✝ addr✝ expect✝ replace✝ oldval✝ scratch✝
+checked : false = true
+⊢ OrdinaryAccessShape (MInst.load op✝ d✝ am✝ fl✝)
+
+case h_5
+sb : Nat
+uses : List CV
+world : Arm.ArmState
+code : Clif.TrapCode
+address : BitVec 64
+op✝ : LoadOp
+d✝ : Reg
+am✝ : AMode
+fl✝ : Clif.MemFlags
+flag : fl✝.trapCode = some code
+addr : amodeAddr sb am✝ op✝.bytes uses world = some address
+inst✝ : MInst
+x✝³ :
+  ∀ (op : LoadOp) (d : Reg) (am : AMode) (flags : Clif.MemFlags),
+    MInst.load op✝ d✝ am✝ fl✝ = MInst.load op d am flags → False
+x✝² :
+  ∀ (op : StoreOp) (v : Reg) (am : AMode) (flags : Clif.MemFlags),
+    MInst.load op✝ d✝ am✝ fl✝ = MInst.store op v am flags → False
+x✝¹ :
+  ∀ (ty : CTy) (op : AtomicRmwLoopOp) (flags : Clif.MemFlags) (addr operand oldval scratch1 scratch2 : Reg),
+    MInst.load op✝ d✝ am✝ fl✝ = MInst.atomicRmwLoop ty op flags addr operand oldval scratch1 scratch2 → False
+x✝ :
+  ∀ (ty : CTy) (flags : Clif.MemFlags) (addr expect replace oldval scratch : Reg),
+    MInst.load op✝ d✝ am✝ fl✝ = MInst.atomicCasLoop ty flags addr expect replace oldval scratch → False
+checked :
+  (match op✝, d✝, am✝ with
+    | LoadOp.uload64, Reg.vreg n RegClass.int, AMode.unsignedOffset (Reg.vreg n_1 RegClass.int) off =>
+      decide (off = 0 ∨ off = 16)
+    | x, x_1, x_2 => false) =
+    true
+⊢ OrdinaryAccessShape (MInst.load op✝ d✝ am✝ fl✝)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessShapeCheck.lean:38:47: error: Application type mismatch: The argument
+  checked
+has type
+  (match op✝, d✝, stored with
+    | LoadOp.uload64, Reg.vreg n RegClass.int, AMode.unsignedOffset (Reg.vreg n_1 RegClass.int) off =>
+      decide (off = 0 ∨ off = 16)
+    | x, x_1, x_2 => false) =
+    true
+but is expected to have type
+  decide (off = ?m.390) = true
+in the application
+  of_decide_eq_true checked
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessShapeCheck.lean:38:29: error(lean.synthInstanceFailed): failed to synthesize instance of type class
+  Decidable (off = ?m.390)
+
+Hint: Type class instance resolution failures can be inspected with the `set_option trace.Meta.synthInstance true` command.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessShapeCheck.lean:38:24: error: Type mismatch
+  8
+has type
+  Nat
+of sort `Type` but is expected to have type
+  MInst.store op✝¹ valueReg✝ am✝ fl✝ = MInst.load op✝ d✝ stored pointer
+of sort `Prop`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessShapeCheck.lean:41:6: error: Tactic `contradiction` failed
+
+case h_2
+sb : Nat
+world : Arm.ArmState
+code : Clif.TrapCode
+address : BitVec 64
+op✝¹ : StoreOp
+valueReg✝ : Reg
+am✝¹ : AMode
+fl✝ : Clif.MemFlags
+value✝ : CV
+uses✝ : List CV
+flag : fl✝.trapCode = some code
+addr : amodeAddr sb am✝¹ op✝¹.bytes uses✝ world = some address
+inst✝ : MInst
+op✝ : StoreOp
+v✝ : Reg
+am✝ : AMode
+flags✝ : Clif.MemFlags
+heq✝ : MInst.store op✝¹ valueReg✝ am✝¹ fl✝ = MInst.store op✝ v✝ am✝ flags✝
+checked :
+  (match op✝, v✝, am✝ with
+    | StoreOp.store64, Reg.vreg n RegClass.int, AMode.unsignedOffset (Reg.vreg n_1 RegClass.int) off => decide (off = 8)
+    | x, x_1, x_2 => false) =
+    true
+⊢ OrdinaryAccessShape (MInst.store op✝¹ valueReg✝ am✝¹ fl✝)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessShapeCheck.lean:34:20: error: unsolved goals
+case h_3
+sb : Nat
+world : Arm.ArmState
+code : Clif.TrapCode
+address : BitVec 64
+op✝¹ : StoreOp
+valueReg✝ : Reg
+am✝ : AMode
+fl✝ : Clif.MemFlags
+value✝ : CV
+uses✝ : List CV
+flag : fl✝.trapCode = some code
+addr : amodeAddr sb am✝ op✝¹.bytes uses✝ world = some address
+inst✝ : MInst
+ty✝ : CTy
+op✝ : AtomicRmwLoopOp
+flags✝ : Clif.MemFlags
+addr✝ operand✝ oldval✝ scratch1✝ scratch2✝ : Reg
+heq✝ :
+  MInst.store op✝¹ valueReg✝ am✝ fl✝ = MInst.atomicRmwLoop ty✝ op✝ flags✝ addr✝ operand✝ oldval✝ scratch1✝ scratch2✝
+checked : false = true
+⊢ OrdinaryAccessShape (MInst.store op✝¹ valueReg✝ am✝ fl✝)
+
+case h_4
+sb : Nat
+world : Arm.ArmState
+code : Clif.TrapCode
+address : BitVec 64
+op✝ : StoreOp
+valueReg✝ : Reg
+am✝ : AMode
+fl✝ : Clif.MemFlags
+value✝ : CV
+uses✝ : List CV
+flag : fl✝.trapCode = some code
+addr : amodeAddr sb am✝ op✝.bytes uses✝ world = some address
+inst✝ : MInst
+ty✝ : CTy
+flags✝ : Clif.MemFlags
+addr✝ expect✝ replace✝ oldval✝ scratch✝ : Reg
+heq✝ : MInst.store op✝ valueReg✝ am✝ fl✝ = MInst.atomicCasLoop ty✝ flags✝ addr✝ expect✝ replace✝ oldval✝ scratch✝
+checked : false = true
+⊢ OrdinaryAccessShape (MInst.store op✝ valueReg✝ am✝ fl✝)
+
+case h_5
+sb : Nat
+world : Arm.ArmState
+code : Clif.TrapCode
+address : BitVec 64
+op✝ : StoreOp
+valueReg✝ : Reg
+am✝ : AMode
+fl✝ : Clif.MemFlags
+value✝ : CV
+uses✝ : List CV
+flag : fl✝.trapCode = some code
+addr : amodeAddr sb am✝ op✝.bytes uses✝ world = some address
+inst✝ : MInst
+x✝³ :
+  ∀ (op : LoadOp) (d : Reg) (am : AMode) (flags : Clif.MemFlags),
+    MInst.store op✝ valueReg✝ am✝ fl✝ = MInst.load op d am flags → False
+x✝² :
+  ∀ (op : StoreOp) (v : Reg) (am : AMode) (flags : Clif.MemFlags),
+    MInst.store op✝ valueReg✝ am✝ fl✝ = MInst.store op v am flags → False
+x✝¹ :
+  ∀ (ty : CTy) (op : AtomicRmwLoopOp) (flags : Clif.MemFlags) (addr operand oldval scratch1 scratch2 : Reg),
+    MInst.store op✝ valueReg✝ am✝ fl✝ = MInst.atomicRmwLoop ty op flags addr operand oldval scratch1 scratch2 → False
+x✝ :
+  ∀ (ty : CTy) (flags : Clif.MemFlags) (addr expect replace oldval scratch : Reg),
+    MInst.store op✝ valueReg✝ am✝ fl✝ = MInst.atomicCasLoop ty flags addr expect replace oldval scratch → False
+checked :
+  (match op✝, valueReg✝, am✝ with
+    | StoreOp.store64, Reg.vreg n RegClass.int, AMode.unsignedOffset (Reg.vreg n_1 RegClass.int) off => decide (off = 8)
+    | x, x_1, x_2 => false) =
+    true
+⊢ OrdinaryAccessShape (MInst.store op✝ valueReg✝ am✝ fl✝)

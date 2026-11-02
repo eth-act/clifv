@@ -1,0 +1,26 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceCompiledWitness.lean:58:9: error: Tactic `cases` failed with a nested error:
+Dependent elimination failed: Failed to solve equation
+  some artifact =
+    match (lower function).toOption, fun result => do
+      let prepared ← (prepare (Arithmetic.stage cleanup result.code)).toOption
+      let physical ← (lowerRFunc prepared (spillAlloc prepared)).toOption
+      let assembly ← (emitFunc 0 physical).toOption
+      let binary ← assembly.layout.toOption
+      if
+            (prepCheck (Arithmetic.stage cleanup result.code) prepared &&
+                (checkAlloc prepared (spillAlloc prepared)).isOk) =
+              true then
+          some
+            { result := result, prepared := prepared, allocated := spillAlloc prepared, physical := physical,
+              assembly := assembly, binary := binary }
+        else none with
+    | none, x => none
+    | some a, f => f a
+at case `Eq.refl`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceCompiledWitness.lean:57:13: warning: This simp argument is unused:
+  Option.bind_eq_some_iff
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only at run
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

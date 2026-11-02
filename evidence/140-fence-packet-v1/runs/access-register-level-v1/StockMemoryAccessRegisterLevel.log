@@ -1,0 +1,18 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessRegisterLevel.lean:27:62: error(lean.invalidField): Invalid field notation: Type of
+  block
+is not known; cannot resolve field `insts`
+
+Hint: Consider replacing the field projection with a call to one of the following:
+  • `Ctx.insts`
+  • `VBlock.insts`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessRegisterLevel.lean:37:37: error: Application type mismatch: The argument
+  located
+has type
+  getElem?.{0, 0, 0} block.insts k = some inst
+but is expected to have type
+  getElem?.{u_3, u_4, 0}
+      (?m.79 wellFormed checked realizes initialValues initialRegs world bindings entry fault ?m.222 ?m.223 ?m.224 inst)
+      ?m.224 =
+    some inst
+in the application
+  shapes ?m.222 ?m.223 ?m.224 inst ?m.225 located

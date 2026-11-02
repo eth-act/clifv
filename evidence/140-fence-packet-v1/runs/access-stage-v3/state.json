@@ -1,0 +1,39 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "label": "StockMemoryAccessStage",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessStage.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAccessStage.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAccessStage.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.8588931560516357,
+      "memstats": "peak 208904192\noom 0\noom_kill 0\n",
+      "source_sha256": "439eb00e16ed51fbd71c69185dc8ef6a3fe8ec509be17da78ef0307eba9281b4",
+      "olean_sha256": "eac736e2ef95ad5bd4f7dcd98935b9beaa4315a83760d2fd69b132997da8c4fd"
+    },
+    {
+      "label": "StockFenceMachine",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMachine.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockFenceMachine.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockFenceMachine.ilean"
+      ],
+      "exit": 1,
+      "seconds": 1.030400037765503,
+      "memstats": "peak 226570240\noom 0\noom_kill 0\n"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessStage.lean:62:15: error(lean.invalidField): Invalid field `prepared`: The environment does not contain `Backend.Stock.Proof.RunOkABI.match_1.prepared`, so it is not possible to project the field `prepared` from an expression
+  staged
+of type
+  match outcome with
+  | Clif.Outcome.returned vals cm =>
+    ∃ us outs w cm0,
+      VRetFrom (Arithmetic.stage cleanup vc) (valueSem F ctx X) { b := 0, k := 0, ρ := regs, w := world } us outs w ∧
+        ReturnABI f us ∧
+          us.length = outs.length ∧
+            PrefixHold vals outs ∧ MR slots cm0 w ∧ cm = (cm0.free (List.map (fun x => x.snd) slots)).leave
+  | Clif.Outcome.trapped c =>
+    VTrapFrom (Arithmetic.stage cleanup vc) (valueSem F ctx X) { b := 0, k := 0, ρ := regs, w := world } c
+  | Clif.Outcome.stuck msg => True
+  | Clif.Outcome.outOfFuel => True

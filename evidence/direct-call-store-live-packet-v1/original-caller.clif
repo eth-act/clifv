@@ -1,0 +1,7 @@
+function %stock_call_store_live(i64, i64) -> i64 system_v {
+    fn0 = colocated %stock_store_clobber(i64) -> i64 system_v
+block0(v7: i64, v11: i64):
+    v31 = call fn0(v11)
+    store v31, v7+8
+    return v31
+}

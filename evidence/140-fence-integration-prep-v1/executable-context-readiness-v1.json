@@ -1,0 +1,507 @@
+{
+  "status": "read_only_inventory_not_normal_key_claim",
+  "root": "FV.E2E.DeadCleanupExecMemFault",
+  "sources": 466,
+  "new_beyond_963": 92,
+  "project_outputs_absent": [
+    "FV.E2E.DeadCleanupExecMemFault",
+    "FV.E2E.DeadCleanupExecMemTrap",
+    "FV.E2E.LinkMemTrap",
+    "FV.E2E.WorldMemTrap",
+    "FV.E2E.RegLevelMemTrap",
+    "FV.Backend.Proof.PrepareMemTrap",
+    "FV.Backend.Proof.LowerSimMemTrap",
+    "FV.E2E.DeadCleanupExecPeak",
+    "FV.E2E.ExecFaults",
+    "FV.E2E.DeadCleanupExecFault",
+    "FV.E2E.LinkMemTrapW",
+    "FV.E2E.LinkGoodW",
+    "FV.E2E.CompiledEitherW",
+    "FV.E2E.LinkWorldXW",
+    "FV.E2E.RegLevelCorrectXW",
+    "FV.E2E.RegLevelCorrectW",
+    "FV.E2E.RegLevelOpWrites",
+    "FV.E2E.RegLevelOpW",
+    "FV.E2E.RegLevelWrites",
+    "FV.E2E.MoveWrites",
+    "FV.E2E.RegLevelAtomicW",
+    "FV.E2E.RegLevelCallW",
+    "FV.E2E.RegLevelGotoW",
+    "FV.E2E.RegLevelBranchW",
+    "FV.E2E.RegLevelNextW",
+    "FV.E2E.RegLevelJTW",
+    "FV.E2E.RegLevelTryW",
+    "FV.E2E.RegLevelTlsW",
+    "FV.E2E.RegLevelFrameW",
+    "FV.E2E.RegLevelPushW",
+    "FV.E2E.DeadCleanupWorldXW",
+    "FV.E2E.DeadCleanupRegLevelW",
+    "FV.E2E.DeadCleanupRealizesW",
+    "FV.E2E.WorldMemTrapW",
+    "FV.E2E.RegLevelMemTrapWorldW",
+    "FV.E2E.RegLevelMemTrapW"
+  ],
+  "new": {
+    "FV.E2E.DeadCleanupExecMemFault": {
+      "source": "FV/E2E/DeadCleanupExecMemFault.lean",
+      "hash": "c389450a16cef0cf17cd9b99824cc1f8ebafaba8019b0451dcbc0003229a20e7",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupExecMemTrap": {
+      "source": "FV/E2E/DeadCleanupExecMemTrap.lean",
+      "hash": "c9e5a87249be90c5ec0d2530b2d6cc4229e00b4a57709b7d2a71f56a8deea1a8",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkMemTrap": {
+      "source": "FV/E2E/LinkMemTrap.lean",
+      "hash": "f7493f85df34dfddd4e97b1f55050904a927ad2dbb86f867358cefc50ad0062e",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.WorldMemTrap": {
+      "source": "FV/E2E/WorldMemTrap.lean",
+      "hash": "d51843769ee56d4a819b1513962520059c9795e619e2f55525d6ed779e684882",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelMemTrap": {
+      "source": "FV/E2E/RegLevelMemTrap.lean",
+      "hash": "132e2fb398008505aa29ae43235cd8b788413d45e54e269b7f6d14015646c212",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.Backend.Proof.PrepareMemTrap": {
+      "source": "FV/Backend/Proof/PrepareMemTrap.lean",
+      "hash": "75c4834777f9ba0129e66b2f0aa898e16357a24c0387669cf8daa38c5a2e6884",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.Backend.Proof.LowerSimMemTrap": {
+      "source": "FV/Backend/Proof/LowerSimMemTrap.lean",
+      "hash": "2e4a02112e770d8aa181c57bd1386e682146e8b10da14a5ea402ea1febf18710",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.Backend.Proof.IselMemTrap": {
+      "source": "FV/Backend/Proof/IselMemTrap.lean",
+      "hash": "28fd1c805dbc22cdd158e3d6ac1ca5e87a25ea8e0e10bfc6f2a2ef56de67e878",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupFinal": {
+      "source": "FV/E2E/DeadCleanupFinal.lean",
+      "hash": "e70eb176d6f6eda21819d54bf710a27bcf1f14b3caf9678239139cfcd0e0595f",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupPipeline": {
+      "source": "FV/E2E/DeadCleanupPipeline.lean",
+      "hash": "c9fffae09c3ba1c578f848ba25bc8faa00c7130e858f197e22878ae88e3351d6",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkGood": {
+      "source": "FV/E2E/LinkGood.lean",
+      "hash": "ec6dcc3ad3622c439e1234ce997f972470ded1d8666d6c4941051bb093b4e6f5",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkArm": {
+      "source": "FV/E2E/LinkArm.lean",
+      "hash": "a428bcf397ee0141ee42ab7ccf5b5f997907172578d734bda0acfe4c89bc628d",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.CompiledEither": {
+      "source": "FV/E2E/CompiledEither.lean",
+      "hash": "69bed92675c620a3fe1a7bccfbff820cbeae1a0ec093535d5964a03cb138bd06",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkWorldX": {
+      "source": "FV/E2E/LinkWorldX.lean",
+      "hash": "383220a1e2b576b1c28856034c151e9ad803aa18f33ce8bc79dbad72ed0f28e8",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.PairDriver": {
+      "source": "FV/E2E/PairDriver.lean",
+      "hash": "20cde2442e61ccc218250d604e5ad8ae3d3409fa1c42bb1a73ce97aa1cdf84a4",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.Guarded": {
+      "source": "FV/E2E/Guarded.lean",
+      "hash": "b5a423c70cebe2a3a334d69f2820a3550c50ac52cde65c1dd11cc1364c8c5d09",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.Lockstep": {
+      "source": "FV/E2E/Lockstep.lean",
+      "hash": "3c9d21ea23ad7b8a0e946aca1d386855cc49ae5a1d29df267bd1cf8c637a05e5",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.Pair": {
+      "source": "FV/E2E/Pair.lean",
+      "hash": "d67324d46169ae1a0f581e6fec9597865af33bb5c59b4b1e0654e4ba121a1ae8",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.Backend.Proof.VCodeSemISeq": {
+      "source": "FV/Backend/Proof/VCodeSemISeq.lean",
+      "hash": "32b73b447c7581edafc974f98f5f222ad7746c05620ca663718b3c170f6d4708",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.Backend.Proof.VCodeSemI": {
+      "source": "FV/Backend/Proof/VCodeSemI.lean",
+      "hash": "5a11cb36c060baed87da6b50160e9bf2615121eed37e53459c20eb4ff13c66bf",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelCorrectX": {
+      "source": "FV/E2E/RegLevelCorrectX.lean",
+      "hash": "c0923fb204eaf35de6017f74daeb3d83412701610a63e0a789ab849852afe372",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupWorldX": {
+      "source": "FV/E2E/DeadCleanupWorldX.lean",
+      "hash": "392c68d31a0f7e90e4d9e680f34d6ec8d7907608b59ee94960a45726fa3901b5",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupPair": {
+      "source": "FV/E2E/DeadCleanupPair.lean",
+      "hash": "183d1ca0cb7687386a0bbd57c90c1bcc0dcdf0c0d8e19749099d404ac8f79d30",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupWorld": {
+      "source": "FV/E2E/DeadCleanupWorld.lean",
+      "hash": "8194a0d3d20aa94a9982e36bf391ad4fc358f03983a26fc7ed08d0085ba18322",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupGuarded": {
+      "source": "FV/E2E/DeadCleanupGuarded.lean",
+      "hash": "2c9c13363087869ceb1c3e2f6cf6d1b983848bb149a3085d18a2820b8eb19112",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkClifN": {
+      "source": "FV/E2E/LinkClifN.lean",
+      "hash": "1e2efb07839ec401bbb5509dbbff998c7bc1966328ad04b798eedcdc9b9c79ac",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkClif": {
+      "source": "FV/E2E/LinkClif.lean",
+      "hash": "78a5c92ac0aaceebc472571abd43504a86b556fc93c531b925af9299a9ecd862",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.Link": {
+      "source": "FV/E2E/Link.lean",
+      "hash": "79e5bfcf75b0c8a0e62de1f80018aba9cb9451cea7b5cccdc14b6b63706b1a46",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkPlace": {
+      "source": "FV/E2E/LinkPlace.lean",
+      "hash": "e9be297f0981fca6148dd554faa2648519150c78b173f2526672099eccb1e74a",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupExecPeak": {
+      "source": "FV/E2E/DeadCleanupExecPeak.lean",
+      "hash": "a5da7a8076ee920d90fd46ee8cd381e3718c41db0d33a61af5e1caa18661be7c",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupExecGot": {
+      "source": "FV/E2E/DeadCleanupExecGot.lean",
+      "hash": "05d9e48ead6b2cfbac67578229c15ba47d8a516096b5caf77453de3bece687c8",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupExecGoodRun": {
+      "source": "FV/E2E/DeadCleanupExecGoodRun.lean",
+      "hash": "05fa50cc3c908bb7b7ba2270cf26b5c077947c7f03750633eb55c60c019838ba",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupBinaryGood": {
+      "source": "FV/E2E/DeadCleanupBinaryGood.lean",
+      "hash": "76a898e948fa2cae318fe04600ca71108e8ccf1f9f066787cf9d42c281592f4d",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.BinaryGood": {
+      "source": "FV/E2E/BinaryGood.lean",
+      "hash": "02d15b834e15aa7f91af81dec2239d5f080d8db2caf27c76cd53a231ff1ac3df",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.Binary": {
+      "source": "FV/E2E/Binary.lean",
+      "hash": "c5f8b731b9fa35158b4b13997651937dbaf2ce529dcfbac15d48ba6086a8a844",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.StackBound": {
+      "source": "FV/E2E/StackBound.lean",
+      "hash": "f23bfac3c4eb90eb8bf2b4f86d32b55b3b83c24dc988a5aec013186ef24c43e0",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkCheck": {
+      "source": "FV/E2E/LinkCheck.lean",
+      "hash": "2d7dad93c41a36219160336a8453b1e02a45e286de2504a8b93dfdf641d715ea",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.Backend.Proof.StockD0Dispatch": {
+      "source": "FV/Backend/Proof/StockD0Dispatch.lean",
+      "hash": "48ac9f589a6ec38ec31f668caa1e002fad959b9c6fa4c4ee9c57a416d6198073",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.Backend.Proof.StockD0Code": {
+      "source": "FV/Backend/Proof/StockD0Code.lean",
+      "hash": "81c0e491e21f58e07ec6548d57f623d6f41796ff109f80a144b5085b7b033812",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.Backend.AllocReady": {
+      "source": "FV/Backend/AllocReady.lean",
+      "hash": "ba30aaea8699b5945d9911ea2ce4d2c129423724bcf8b26fb91253308a41ba87",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.Backend.Proof.RelaxReady": {
+      "source": "FV/Backend/Proof/RelaxReady.lean",
+      "hash": "16e1cd74c8ec4ffd858a2f05a1c115c809e3d9da29c1f47f4f30cc6803372c01",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.Backend.Proof.RelaxLayout": {
+      "source": "FV/Backend/Proof/RelaxLayout.lean",
+      "hash": "346d60075f26c8ca1e60f4991c8954092c961f9394173efafdc2d9e51b892e45",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.BinCheck": {
+      "source": "FV/E2E/BinCheck.lean",
+      "hash": "ad38c433944b82a0e3a51a7991dcdcb475ee0e512f9c81f68c33d7a81e1d2f7a",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.Elf": {
+      "source": "FV/E2E/Elf.lean",
+      "hash": "3c644ac235647d0505e61020051bda2856ba57c8254342011699b28a705cd87b",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupBinary": {
+      "source": "FV/E2E/DeadCleanupBinary.lean",
+      "hash": "f918fe35ecb1b9881eff3defc6b11f8ba5b6854c23e3649116ddbfdaf162c21f",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupStackBound": {
+      "source": "FV/E2E/DeadCleanupStackBound.lean",
+      "hash": "bfb6e8b4c7accfeb65a79eaa498e447a7fa20e3333cae2b7a0a1ccbe6210b493",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupLinkCheck": {
+      "source": "FV/E2E/DeadCleanupLinkCheck.lean",
+      "hash": "8918fcd97658b00563302e5cdae13d97b6db16328d492f8959c49253961d5608",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.PipelineCheck": {
+      "source": "FV/E2E/PipelineCheck.lean",
+      "hash": "8eebfe1985474a3b70eb74f5e9397570436329d491cae055c5f78721725fa087",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupBinCheck": {
+      "source": "FV/E2E/DeadCleanupBinCheck.lean",
+      "hash": "4b334ad48baf01a95399b093c4aac41a89b0dbdbb038fde3004826159c46d1e9",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupExecRunN": {
+      "source": "FV/E2E/DeadCleanupExecRunN.lean",
+      "hash": "2c902180f01c4c9bb3b1b0b4aad4a6ed57c23244f09d7fee852520681e707c71",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupExecStatic": {
+      "source": "FV/E2E/DeadCleanupExecStatic.lean",
+      "hash": "c6bd7e6218cdcdd4e26f9ce29aa98d29cb3abd948bdb0e3603c83e28d6e6d09e",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupExecBytes": {
+      "source": "FV/E2E/DeadCleanupExecBytes.lean",
+      "hash": "fe8143050686cda2307133147a70006cf142c8c3de6bb93e451da17bc8db94e3",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.ExecWords": {
+      "source": "FV/E2E/ExecWords.lean",
+      "hash": "e42fcc48e89ab468d8441a7d377aebb702f162e715dc46384d77f134b08cea75",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.CodeMap": {
+      "source": "FV/E2E/CodeMap.lean",
+      "hash": "32854f7a587fce3fa411e4f7fe09e8f5ffd0b01254fc8a3af50cdd893b52841f",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.PairLines": {
+      "source": "FV/E2E/PairLines.lean",
+      "hash": "a0bcb6fe612da794736b8b8aada6e6c85e1be747a3d9a6e23767fff2da3cd687",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.ExecGot": {
+      "source": "FV/E2E/ExecGot.lean",
+      "hash": "4d8ef832a1a90448c757f2d674be3826519a99ecc5574adeab8f12345284e098",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.ExecGoodRun": {
+      "source": "FV/E2E/ExecGoodRun.lean",
+      "hash": "d190bae59b8665d2f0084833f9429283315c0799af88373eb148609f037f15a4",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.ExecRunN": {
+      "source": "FV/E2E/ExecRunN.lean",
+      "hash": "351b0a597ee45b63b189fcf40d59bafb0fe60b3f2823be2e3ecd57c8b785e839",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.ExecStatic": {
+      "source": "FV/E2E/ExecStatic.lean",
+      "hash": "5575c1ee8f68bde960ffff10b929175714e5f5f527a680c2be7ece4c7d2ec9c8",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.ExecBytes": {
+      "source": "FV/E2E/ExecBytes.lean",
+      "hash": "594bb08f45354ee1c225043b89b5dbe929602fac26745b26bdf1f06868e362b8",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupExecGoodReads": {
+      "source": "FV/E2E/DeadCleanupExecGoodReads.lean",
+      "hash": "d62143682f8c362ec05780659c5a7d5c979601ebfa11037e535bc74d16d76d55",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupExecFrameSim": {
+      "source": "FV/E2E/DeadCleanupExecFrameSim.lean",
+      "hash": "a6e5a2b25ba3f4f81667f4849617ab32196e4b83fc8bb20c4a943a6de7a44194",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.ExecFaults": {
+      "source": "FV/E2E/ExecFaults.lean",
+      "hash": "13bba14c87035ec410c7cd79da386c6498463f3c9f36e0485c5843673af88939",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupExecFault": {
+      "source": "FV/E2E/DeadCleanupExecFault.lean",
+      "hash": "e1bbb48614d911b73aade7bd0e68526becefa455d3f85404d25d91c2642b04f5",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkMemTrapW": {
+      "source": "FV/E2E/LinkMemTrapW.lean",
+      "hash": "b1a1c9cceae018a6a3e923abf73bce6bf111687d7de6eb1e0fa3ea8664ec7951",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkGoodW": {
+      "source": "FV/E2E/LinkGoodW.lean",
+      "hash": "c63d033efd5e38e27d6416e4fe020193d2dfdfaf75a4c17c27339d61014b435e",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.CompiledEitherW": {
+      "source": "FV/E2E/CompiledEitherW.lean",
+      "hash": "a0c4418a9c6738b0ab3ab5e3f5b9789ed443b486b2082bb811b6599e980753c9",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.LinkWorldXW": {
+      "source": "FV/E2E/LinkWorldXW.lean",
+      "hash": "0a7f5868460e7bfd0eeca1c01e374e39bfcbe4dc09a48d209f76ad70507fddcf",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelCorrectXW": {
+      "source": "FV/E2E/RegLevelCorrectXW.lean",
+      "hash": "90b00b97c9bb61df134bb1369f8d525fdf8d9f95e279e6ad7e99905c7510fbdb",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelCorrectW": {
+      "source": "FV/E2E/RegLevelCorrectW.lean",
+      "hash": "1cd84f5f70cf7eb59e52b17f9039b370ed9426510ece46c8816d80b3d79f72e8",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelOpWrites": {
+      "source": "FV/E2E/RegLevelOpWrites.lean",
+      "hash": "fa5c0efc8d284ba3da819e7beb30e3ebef022c18feff1c4cb593e2c56c88fd85",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.ExecWrites": {
+      "source": "FV/E2E/ExecWrites.lean",
+      "hash": "7b7d70816a84e707c2cd71e39a166f4d5d1cea9644158e5334dda65c9c05c56e",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelOpW": {
+      "source": "FV/E2E/RegLevelOpW.lean",
+      "hash": "3a1d6e8dde1a2ef8b379410eca76b40b37ef483c09c7e6724551dd008c6ee2a0",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelWrites": {
+      "source": "FV/E2E/RegLevelWrites.lean",
+      "hash": "02c6ff7a89dc404339ddd9fafcf31db93f19b027225ced544008272af7254962",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.MoveWrites": {
+      "source": "FV/E2E/MoveWrites.lean",
+      "hash": "3aaf0c7b5110fa16e6ab494437520859b3e231f93aa389d55482df6c043b6933",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelAtomicW": {
+      "source": "FV/E2E/RegLevelAtomicW.lean",
+      "hash": "fb9af39ef129d3a77c1c203c4f247e16b678c5d89d08436e2df0b66ea9a827b6",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelCallW": {
+      "source": "FV/E2E/RegLevelCallW.lean",
+      "hash": "f95ed28183f9b48035f3f52cd2028abcb06663124b4b00ec50510a55f633e676",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelGotoW": {
+      "source": "FV/E2E/RegLevelGotoW.lean",
+      "hash": "e6962e53db7323050c751cffa14246e3706c99412dcd0bf4b32d51fc8118accb",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelBranchW": {
+      "source": "FV/E2E/RegLevelBranchW.lean",
+      "hash": "c67f7cadce6d8bfeec41092465042ce422008f19fa2085f4e1b20693f685a868",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelNextW": {
+      "source": "FV/E2E/RegLevelNextW.lean",
+      "hash": "62942c6b7bbb1519446a478747f9ef06a442b84ba9a7255a117e1aabc1eb77c5",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelJTW": {
+      "source": "FV/E2E/RegLevelJTW.lean",
+      "hash": "99f935c07288aa75e3c47dfa77fdae7acd0f8c228f271fb4bd12fc7e4f219bb8",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelTryW": {
+      "source": "FV/E2E/RegLevelTryW.lean",
+      "hash": "5a74fd1745c46c13f41c73142908ecfc2fa35fa253c801798efc70eafcf56610",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelTlsW": {
+      "source": "FV/E2E/RegLevelTlsW.lean",
+      "hash": "0fdf323bfff3356a71a9e85aba9e0e831effbc8b5297f9ad714e9b30028d2569",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelFrameW": {
+      "source": "FV/E2E/RegLevelFrameW.lean",
+      "hash": "be56bbc72d959a735b79e984b19436f1fe7d5449605af8c50f8d4a7aa371f721",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelPushW": {
+      "source": "FV/E2E/RegLevelPushW.lean",
+      "hash": "938cf4e0682f2dcec9e837acc345abec48dda21cecdddc80b5883872dda3c743",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.ExecWritesFrame": {
+      "source": "FV/E2E/ExecWritesFrame.lean",
+      "hash": "bb90390397a706e292a4a5bcb6f1efcde29df88e59995e945d66be7abbdcdcb6",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupWorldXW": {
+      "source": "FV/E2E/DeadCleanupWorldXW.lean",
+      "hash": "38067af9e2b6f058572db6f189ecf57fd4aa8cc9cb4d8823571e65f995010f5f",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupRegLevelW": {
+      "source": "FV/E2E/DeadCleanupRegLevelW.lean",
+      "hash": "051417de0047aff3300983187deece3dce890210f15ec7d4f4b9a306dd740b8b",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.DeadCleanupRealizesW": {
+      "source": "FV/E2E/DeadCleanupRealizesW.lean",
+      "hash": "9a3c5b34fd970b050869aebea76823f8bb3ec84c99ac3b69fd0d4b4b13161ccb",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.WorldMemTrapW": {
+      "source": "FV/E2E/WorldMemTrapW.lean",
+      "hash": "113d5a581021f69304b36a84f5e5452a27c5bb730c1303f60482bee3c85022fd",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelMemTrapWorldW": {
+      "source": "FV/E2E/RegLevelMemTrapWorldW.lean",
+      "hash": "ce204360cf9fd54a497123dd15d71bf54154df6d4252e63cefde96dff64f72cc",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    },
+    "FV.E2E.RegLevelMemTrapW": {
+      "source": "FV/E2E/RegLevelMemTrapW.lean",
+      "hash": "20f00d63563835c37cc93ca8e729841dca91181f4564d5f4e1f743948aee9dde",
+      "owner": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package"
+    }
+  },
+  "warning": "Raw artifact presence is not normal validity; no materialization or build ran."
+}

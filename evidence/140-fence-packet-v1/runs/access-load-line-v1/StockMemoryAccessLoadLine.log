@@ -1,0 +1,178 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessLoadLine.lean:69:6: error: Dependent elimination failed: Failed to solve equation
+  none = flags.1
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessLoadLine.lean:71:6: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  ftList
+    ([Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+          flags.trapCode] ++
+      (ls2 ++ nxtOf R.af b))
+in the target expression
+  List.drop j R.L =
+    relaxLines R.far
+        (ftList
+          ([] ++
+              [Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+                  flags.trapCode] ++
+            (ls2 ++ nxtOf R.af b))) ++
+      T
+
+case refl.refl
+R : RL
+s : Arm.ArmState
+b k d pointer offset sb : Nat
+items : List RItem
+values : Loc → CV
+world : Arm.ArmState
+block : VBlock
+flags : Clif.MemFlags
+found : R.vc.blocks[b]? = some block
+located :
+  block.insts[k]? =
+    some
+      (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+        flags)
+j : Nat
+actualItems : Array RItem
+pre : List RItem
+c1 c2 : List AInst
+ls2 : List Line
+ps1 ps2 : PState
+T : List Line
+cc : CheckCtx
+wh : String
+atItems : R.rf.blocks[b]? = some actualItems
+checked : ItemsChecked R block items
+tail : itemsCode R.fr block items = Except.ok c2
+traps : ps2.traps.toList <+: R.psF.traps.toList
+pc : Arm.r Arm.StateField.PC s = R.pcOf j
+state : StRel R s values world
+actualOps :
+  (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+        flags).operands =
+    Except.ok
+      #[{ vreg := d, cls := RegClass.int, kind := OpKind.def, pos := OpPos.late, con := Constraint.reg },
+        { vreg := pointer, cls := RegClass.int, kind := OpKind.use, pos := OpPos.early, con := Constraint.reg }]
+destination : Nat
+destinationLoc : cc.locOk (Loc.reg (Reg.x destination)) RegClass.int = true
+destinationBound : destination < 29
+d16 : destination ≠ 16
+d17 : destination ≠ 17
+d18 : destination ≠ 18
+base : Nat
+baseLoc : cc.locOk (Loc.reg (Reg.x base)) RegClass.int = true
+related :
+  Q R s
+    (MConf.run
+      { b := b, its := RItem.op k (Array.map Loc.reg #[Reg.x destination, Reg.x base]) :: items, m := values,
+        w := world })
+split : actualItems.toList = pre ++ RItem.op k (Array.map Loc.reg #[Reg.x destination, Reg.x base]) :: items
+static :
+  cc.checkStatic wh
+      #[{ vreg := d, cls := RegClass.int, kind := OpKind.def, pos := OpPos.late, con := Constraint.reg },
+        { vreg := pointer, cls := RegClass.int, kind := OpKind.use, pos := OpPos.early, con := Constraint.reg }]
+      (Array.map Loc.reg #[Reg.x destination, Reg.x base])
+      (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+          flags).clobbers =
+    Except.ok ()
+size :
+  #[{ vreg := d, cls := RegClass.int, kind := OpKind.def, pos := OpPos.late, con := Constraint.reg },
+        { vreg := pointer, cls := RegClass.int, kind := OpKind.use, pos := OpPos.early, con := Constraint.reg }].size =
+    (Array.map Loc.reg #[Reg.x destination, Reg.x base]).size
+locations :
+  ∀ (p : Operand × Loc),
+    p ∈
+        (#[{ vreg := d, cls := RegClass.int, kind := OpKind.def, pos := OpPos.late, con := Constraint.reg },
+                { vreg := pointer, cls := RegClass.int, kind := OpKind.use, pos := OpPos.early,
+                  con := Constraint.reg }].zip
+            (Array.map Loc.reg #[Reg.x destination, Reg.x base])).toList →
+      cc.locOk p.snd p.fst.cls = true ∧ ∀ (r : Reg), p.fst.con = Constraint.fixed r → p.snd = Loc.reg r
+unique :
+  (List.map (fun x => x.snd)
+      (List.filter (fun x => x.fst.kind == OpKind.def)
+        (#[{ vreg := d, cls := RegClass.int, kind := OpKind.def, pos := OpPos.late, con := Constraint.reg },
+                { vreg := pointer, cls := RegClass.int, kind := OpKind.use, pos := OpPos.early,
+                  con := Constraint.reg }].zip
+            (Array.map Loc.reg #[Reg.x destination, Reg.x base])).toList)).Nodup
+clobbers :
+  ∀ (p : Operand × Loc),
+    p ∈
+        (#[{ vreg := d, cls := RegClass.int, kind := OpKind.def, pos := OpPos.late, con := Constraint.reg },
+                { vreg := pointer, cls := RegClass.int, kind := OpKind.use, pos := OpPos.early,
+                  con := Constraint.reg }].zip
+            (Array.map Loc.reg #[Reg.x destination, Reg.x base])).toList →
+      p.fst.kind = OpKind.def →
+        ∀ (r : Reg),
+          r ∈
+              (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int)
+                  (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset) flags).clobbers →
+            p.snd ≠ Loc.reg r
+baseBound : base < 29
+b16 : base ≠ 16
+b17 : base ≠ 17
+b18 : base ≠ 18
+baseAlloc : (Reg.x base).allocatable = true
+assign :
+  (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int) (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset)
+          flags).assign
+      #[Reg.x destination, Reg.x base] =
+    Except.ok (MInst.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset) flags)
+first :
+  (c1 = [AInst.inst (MInst.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset) flags)] ∧
+      (∀ (ds : List (Reg × Reg)),
+          MInst.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset) flags ≠
+            MInst.args ds) ∧
+        ∀ (us : List (Reg × Reg)),
+          MInst.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset) flags ≠
+            MInst.rets us) ∨
+    (∃ ds,
+        MInst.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset) flags = MInst.args ds ∧
+          c1 = []) ∨
+      ∃ us,
+        MInst.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset) flags = MInst.rets us ∧
+          c1 = [AInst.epilogueRet]
+code :
+  c1 = [AInst.inst (MInst.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset) flags)]
+dropped :
+  List.drop j R.L =
+    relaxLines R.far
+        (ftList
+          ([] ++
+              [Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+                  flags.trapCode] ++
+            (ls2 ++ nxtOf R.af b))) ++
+      T
+lines2 : codeLinesE R.ctx R.af c2 ps1 = Except.ok (ls2, ps2)
+lines1 :
+  codeLinesE R.ctx R.af
+      [AInst.inst (MInst.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset) flags)]
+      ps1 =
+    Except.ok
+      ([] ++
+          [Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+              flags.trapCode],
+        ps1)
+kept :
+  ftList
+      ([Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+            flags.trapCode] ++
+        (ls2 ++ nxtOf R.af b)) =
+    [Line.ins (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset))
+          flags.trapCode] ++
+      ftList (ls2 ++ nxtOf R.af b)
+⊢ ∃ j destination_1 base_1,
+    destination_1 < 29 ∧
+      base_1 < 29 ∧
+        R.L[j]? =
+            some
+              (Line.ins (Insn.load LoadOp.uload64 (Reg.x destination_1) (AMode.unsignedOffset (Reg.x base_1) offset))
+                flags.trapCode) ∧
+          Arm.r Arm.StateField.PC s = R.pcOf j ∧
+            Arm.r Arm.StateField.ERR s = Arm.StateError.None ∧
+              s.program = FnBin.program R.base R.fb ∧
+                ∀ (operands : Array Operand),
+                  (MInst.load LoadOp.uload64 (Reg.vreg d RegClass.int)
+                          (AMode.unsignedOffset (Reg.vreg pointer RegClass.int) offset) flags).operands =
+                      Except.ok operands →
+                    List.map (fun x => values x.snd)
+                        (List.filter (fun x => x.fst.isUse)
+                          (operands.zip (Array.map Loc.reg #[Reg.x destination, Reg.x base])).toList) =
+                      [regVal s (Reg.x base_1)]

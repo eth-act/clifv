@@ -1,0 +1,175 @@
+'Backend.Stock.Proof.MemoryFaults.stock_body_fences_access_first_trap' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.FenceFixture.fault_source_entry' depends on axioms: [propext]
+'Backend.Stock.Proof.FenceFixture.unallocated_first_access_traps' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.FenceFixture.unallocated_first_access_event' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.FenceFixture.mixed_actual_body_facts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.allFacts_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.FenceFixture.mixed_emitted_result_mapped' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.FenceFixture.mixed_record_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.allFacts_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.FenceFixture.mixed_record_access_trap' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.allFacts_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.FenceFixture.mixed_domain_with_access_traps' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.allFacts_true._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.FenceFixture.observed_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.FenceFixture.mixed_complete_return' depends on axioms: [propext,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.return_observed._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.FenceFixture.mixed_complete_division_trap' depends on axioms: [propext,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.division_observed._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.FenceFixture.mixed_complete_domain_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.allFacts_true._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.FenceFixture.division_observed._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.FenceFixture.return_observed._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.FenceFixture.observed_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.FenceFixture.mixed_body_all_emitted' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.retained_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.MemoryFaults.access_allocated_boundary' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.sourceAddrPred_unmapped' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.instFaults_unsigned_load64' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.instFaults_unsigned_store64' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.load64_unsigned_encoding' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.store64_eight_encoding' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.encoded_load64_access_fault' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.encoded_store64_eight_access_fault' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.encoded_load64_fault_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.encoded_store64_eight_fault_step' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.actual_ordinary_entry_access_trap_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.load_unsigned_fault_site' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.store_eight_fault_site' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.star_haltAccess' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.accessTrap_halt' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.access_trapAt_ins' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.access_decodeAt_line' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.load_unsigned_line' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.accessTrapRun_at' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.trapOrAccessRun_at' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.trapOrAccessRun_inbounds' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.accessTraps_clean' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.accessTraps_prune' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.accessTraps_prepare' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.ordinary_result_next' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.ordinary_trap_step' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.guarded_with_reach' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.indexed_load_memtrap_at' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.indexed_load_property' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.indexed_store_memtrap_at' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.indexed_store_property' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.realizes_haltAccess' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.access_register_level_boundary' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.AccessTrapRun.append' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.AccessTrapRun.prefix' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.TrapOrAccessRun.append' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.TrapOrAccessRun.prefix' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.scans_access_trap_refines' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.AccessAt.load_inv' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.AccessAt.store_inv' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.actual_ordinary_source_trap_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.source_load_trap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.source_store_trap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.indexed_source_load_trap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.indexed_source_store_trap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.stock_lower_store_emission' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.store_unsigned_line' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.VAccessTrapFrom.prefix' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.stock_udiv_memory_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.stock_udiv_access_first_trap' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.domainWithAccessTraps_of_domain' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.AccessTrapRun.load' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.stock_load_sixteen_access_trap' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.stock_load_zero_access_trap' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.stock_parameter_amode_sixteen_width' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.stock_parameter_load_address_sixteen_width' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.stock_parameter_integer_load_sixteen_rhs' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_sixteen_record' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_sixteen_scan_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_sixteen_operand_coverage' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_sixteen_source_step' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_sixteen_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.AccessTrapRun.store' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.stock_store_eight_i64_access_trap' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.regLevel_access_fault_world_value' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.regLevel_access_fault_worldX_value' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.ordinaryAccessShape_of_check' depends on axioms: [propext]
+'Backend.Stock.Proof.MemoryFaults.ordinaryAccessShapes_of_check' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.FenceFixture.mixed_prepared_access_shapes' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.shapes_observed_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.MemoryFaults.accessTrap_stage' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.accessTrap_gotV_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.returns_stage' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MemoryFaults.runOk_stage' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_worldX_stock_fence' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.allFacts_true._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.FenceFixture.shapes_observed_true._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.FenceFixture.observed_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.FenceFixture.mixed_complete_compilation' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.compile_observed._native.native_decide.ax_1✝]

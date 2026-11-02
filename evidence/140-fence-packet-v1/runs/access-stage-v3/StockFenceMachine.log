@@ -1,0 +1,19 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMachine.lean:57:53: error(lean.invalidField): Invalid field `stockSourceEntry`: The environment does not contain `E2E.ClifEntry.stockSourceEntry`, so it is not possible to project the field `stockSourceEntry` from an expression
+  hcs
+of type
+  ClifEntry FenceFixture.function args cs
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMachine.lean:82:51: error(lean.invalidField): Invalid field `stockSourceEntry`: The environment does not contain `E2E.ClifEntry.stockSourceEntry`, so it is not possible to project the field `stockSourceEntry` from an expression
+  hcs
+of type
+  ClifEntry FenceFixture.function args cs
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMachine.lean:101:48: error: Application type mismatch: The argument
+  access
+has type
+  VAccessTrapFrom slotOff result.code (valueSem F { k := fa.k, slotBase := af.slotBase } X)
+    { b := 0, k := 0, ρ := ρ, w := w₀ } code
+    (sourceAddrPred fun a n => ∃ j, j < n ∧ mp (BitVec.ofNat 64 (a + j)) = ArmFault.Perm.none)
+but is expected to have type
+  VAccessTrapFrom (FnCtx.slotBase ?m.1070) result.code (valueSem ?m.1069 ?m.1070 ?m.1071)
+    { b := 0, k := 0, ρ := ?m.1081, w := ?m.1082 } ?m.1083 ?m.1084
+in the application
+  accessTrap_stage hc.prepOk access

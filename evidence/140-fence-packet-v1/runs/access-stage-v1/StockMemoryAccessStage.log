@@ -1,0 +1,20 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessStage.lean:22:12: error: Type mismatch
+  accessTraps_prune
+has type
+  (∀ (i : MInst) (uses : List CV) (world : Arm.ArmState) (outs : List CV) (next : Arm.ArmState) (ctl : Ctl),
+      pureForm i = true → ?m.59 i uses world = some (outs, next, ctl) → next = world ∧ ctl = Ctl.next) →
+    CmpOverwrite ?m.59 →
+      ∀ {ρ : Nat → CV} {world : Arm.ArmState} {code : Clif.TrapCode} {property : BitVec 64 → Nat → Prop},
+        VAccessTrapFrom ?m.57 ?m.58 ?m.59 { b := 0, k := 0, ρ := ρ, w := world } code property →
+          VAccessTrapFrom ?m.57 (prune ?m.58) ?m.59 { b := 0, k := 0, ρ := ρ, w := world } code property
+but is expected to have type
+  VAccessTrapFrom ctx.slotBase (Arithmetic.stage true vc) (valueSem F ctx X) { b := 0, k := 0, ρ := regs, w := world }
+    code property
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessStage.lean:23:6: error: unexpected token '('; expected command
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessStage.lean:43:14: error(lean.unknownIdentifier): Unknown identifier `RunOkABI`
+
+Note: It is not possible to treat `RunOkABI` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessStage.lean:44:4: error(lean.unknownIdentifier): Unknown identifier `RunOkABI`
+
+Note: It is not possible to treat `RunOkABI` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessStage.lean:45:16: error(lean.unknownIdentifier): Unknown identifier `RunOkABI`
