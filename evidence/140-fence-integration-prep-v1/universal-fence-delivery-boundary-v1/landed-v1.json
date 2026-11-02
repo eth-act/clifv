@@ -1,0 +1,91 @@
+{
+  "status": "landed",
+  "pr": 916,
+  "source": "5c49f562aea68bca30784b8dd2bbf88cb87d984d",
+  "base": "42498ba839c275024623f80661e84c4f18aaefb8",
+  "merged": "de229a7e07f5ca737d9b27287f1cc64f5ae6a64e",
+  "tested_tree": "73cc58e64b58e0bb61898b7a39586b79b29fad3c",
+  "tree_equal": true,
+  "import_source_count": 707,
+  "current_gate_sha256": "4451ec4d22b0ad19a7bfee14be556822a7f55781070292b234b5ebb037d91fbe",
+  "source_hashes": {
+    "FV/Backend/Proof/StockFenceSource.lean": "3f658395391f0f63787e13250482d34dc4d923754fa3a0e86043f1f5da315881",
+    "FV/Backend/Proof/StockFenceUnsunk.lean": "0af3a817215ca9597ca235e6e2de98e9884667158eaeb6d6ef7e2e244f80a7ba",
+    "FV/Backend/Proof/StockFenceHelpers.lean": "443fc9b669d64e2abcb31c917580a02e88d0824c140eb2d5d1b2dbf15fc071dc",
+    "FV/Backend/Proof/StockFenceRoot.lean": "534cc472c2a1fc1387bc5c5a6a441b35a58e0a933b9aed71ac08667fa765e74a",
+    "FV/Backend/Proof/StockFenceRecordOrigin.lean": "1d73a75dbf03f1b12c6e4648a48b7115fee92461112d0bd29f91ca5c6ed70f40",
+    "FV/Backend/Proof/StockFenceScan.lean": "f1320960e699b9e30bd67aa246b97a77203d0367ee1ef173ae2337be16d6ab77",
+    "FV/Backend/Proof/StockFenceRecord.lean": "55e40e946517deb069044563bfece9d1637d8fb9ef2791711e3b18cad89e7d10",
+    "FV/Backend/Proof/StockFenceInventory.lean": "d9ce2073c7bfaccced74773ac94e790bd35ec28f66cbee994072895629128180",
+    "FV/Backend/Proof/StockFenceSelected.lean": "49b6c4eeeaa940cdf32c2f7b33a9a0706f61620960197a6131be7902a9e0396f",
+    "FV/Backend/Proof/StockFenceRecordExact.lean": "58b8510c9fd50e2aecddadd65b78a88b46046db074c811ed8d2d455bc2fa2dcc",
+    "FV/Backend/Proof/StockFenceSemantics.lean": "278d57aa12f67aa2045e3b9f8953cf0847c81b7a307c095221ce3f15ed9fe5b0",
+    "FV/Backend/Proof/StockFenceTrapOrder.lean": "ef1d0560cfe948e9ed8b9d56a1ac180e7b0b3618c23963e61151a253dd4ba591",
+    "FV/Backend/Proof/StockFenceMetadataModel.lean": "92927e520337a1e2eafe3e950fe36cffbea7e122817d579f8c00df3ec6c0fb7a",
+    "FV/Backend/Proof/StockFenceMetadataPositive.lean": "213f5fef0013f0d011189a949097fc1dee63aa45f90d38c27a53a167845e5c23",
+    "FV/Backend/Proof/StockFenceBarrier.lean": "81d1fd2409eda03ef11c66915d22244d2ebee5100f5695a1476d69de3f830be5",
+    "FV/Backend/Proof/StockFenceConsumer.lean": "2cefb5568d03564fd1690adab1c1d3eff426b007df9bbbe66154ef6affaa2953",
+    "FV/Backend/Proof/StockFenceSourceRefines.lean": "c571c6e58f8d2714347e6a8c21413b87a2fc1178a5fda20b26b73087cb2f004b",
+    "FV/Backend/Proof/StockFenceSourceTrap.lean": "b0006d53f84f7152a3438c02a2ec733ed82a37db17c56a2550991a495aa4d56c",
+    "FV/Backend/Proof/StockFenceSourceContract.lean": "1f7106513b88827be0a4b5e14e6a6c2827bba7d604e8cff41a848694008b2efa",
+    "FV/Backend/Proof/StockFenceBodyRefines.lean": "af9d84334706eedeb3035b5a1d314b714da2eb9e3ed0b2e8bcc94f5abbe36a2c",
+    "FV/Backend/Proof/StockFenceWitness.lean": "0a40611f220855ea52d450612500d01fcf843d0854095d1ca2928410a8b10eff",
+    "scripts/audit/stock-fence.lean": "b0dead404c25a2916533cbdb4541b9d48478eea725c580f2f4f10275301a6f5c"
+  },
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T15:47:37Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41474993607/job/125378082369",
+      "name": "Quick checks",
+      "startedAt": "2026-11-02T15:47:15Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T15:52:24Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41474993417/job/125378082817",
+      "name": "Build and compare",
+      "startedAt": "2026-11-02T15:47:10Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T15:52:37Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41474993417/job/125381089924",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-02T15:52:27Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-02T15:52:36Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41474993417/job/125381090069",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-02T15:52:27Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "direct_review": {
+    "head": "5c49f562aea68bca30784b8dd2bbf88cb87d984d",
+    "verdict": "no blocking defect",
+    "method": "ONE QUICK, DIRTY, CHEAP direct peer review; no builds or review agents",
+    "reviewer": "worker-A",
+    "source": "Root relayed the actual direct review in this thread.",
+    "notes": "Only mixed_records and mixed_source_contracts are marked among 35 roots. The missing native witness source comment is nonblocking.",
+    "utc": "2026-11-02T15:48:46.369381+00:00"
+  },
+  "old_source_files_unchanged": true,
+  "production_activation": false,
+  "full_fence_closure": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T15:52:54.967382+00:00"
+}

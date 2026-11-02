@@ -1,0 +1,2 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceCompiledCoverage.lean:61:35: error(lean.unknownIdentifier): Unknown constant `Option.any_eq_true.mp`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceCompiledCoverage.lean:61:9: error: Tactic `rcases` failed: `x✝ : ?m.50` is not an inductive datatype

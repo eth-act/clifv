@@ -1,0 +1,13 @@
+{
+  "status": "approved_for_publication",
+  "manifest_sha256": "20977e4fabdf70cda6bae73c348a99edf0da360433cda7c92c1d1e18c4898045",
+  "gate_sha256": "f8ca225bf6f16d4150ece3660b9019e3506469a804f41f0dbc2acd09c7e2fc5b",
+  "current_main": "de229a7e07f5ca737d9b27287f1cc64f5ae6a64e",
+  "files": 48,
+  "kernels": 47,
+  "roots": 94,
+  "source_context_exact": true,
+  "full_fence_closure": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T15:56:31.727716+00:00"
+}

@@ -1,0 +1,58 @@
+{
+  "status": "read_only_query_complete",
+  "records": [
+    {
+      "module": "FV.E2E.DeadCleanupRealizesW",
+      "argv": [
+        "/usr/bin/bwrap",
+        "--ro-bind",
+        "/",
+        "/",
+        "--proc",
+        "/proc",
+        "--dev",
+        "/dev",
+        "--chdir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--",
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+        "query",
+        "--json",
+        "--no-build",
+        "+FV.E2E.DeadCleanupRealizesW:depHash"
+      ],
+      "exit": 1,
+      "seconds": 0.19289612770080566,
+      "memstats": "peak 47087616\noom 0\noom_kill 0\n",
+      "filesystem_read_only": true,
+      "no_build": true
+    },
+    {
+      "module": "FV.E2E.DeadCleanupRegLevelW",
+      "argv": [
+        "/usr/bin/bwrap",
+        "--ro-bind",
+        "/",
+        "/",
+        "--proc",
+        "/proc",
+        "--dev",
+        "/dev",
+        "--chdir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--",
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+        "query",
+        "--json",
+        "--no-build",
+        "+FV.E2E.DeadCleanupRegLevelW:depHash"
+      ],
+      "exit": 1,
+      "seconds": 0.21104693412780762,
+      "memstats": "peak 46620672\noom 0\noom_kill 0\n",
+      "filesystem_read_only": true,
+      "no_build": true
+    }
+  ],
+  "utc": "2026-11-02T15:59:03.316929+00:00"
+}

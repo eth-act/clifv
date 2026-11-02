@@ -1,0 +1,32 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:14:6: warning: Try `simp at old` instead of `simpa using old`
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:13:12: warning: This simp argument is unused:
+  getElem!_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds, inside, positive]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:13:53: warning: This simp argument is unused:
+  Array.getElem?_setIfInBounds
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [getElem!_def, Array.set!_eq_setIfInBounds, inside, positive]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:46:31: warning: This simp argument is unused:
+  getElem!_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [bodyNext, barrier, Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds, inside,
+    Nat.ne_of_gt positive]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:47:10: warning: This simp argument is unused:
+  Array.getElem?_setIfInBounds
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [bodyNext, barrier, getElem!_def, Array.set!_eq_setIfInBounds, inside, Nat.ne_of_gt positive]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

@@ -1,0 +1,7 @@
+'Backend.Stock.Proof.FenceFixture.mixed_compile_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.FenceFixture.mixed_complete_covered_compilation' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.covered_observed._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.MemoryFaults.ordinary_run_environment' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.FenceFixture.mixed_source_environment' depends on axioms: [propext, Quot.sound]

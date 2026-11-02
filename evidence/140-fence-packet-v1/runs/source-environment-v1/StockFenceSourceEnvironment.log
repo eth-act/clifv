@@ -1,0 +1,43 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSourceEnvironment.lean:26:18: error: unsolved goals
+case succ.nil.ok
+env env' : Clif.Env
+cp cp' : Clif.Program
+returns : List Nat
+fuel : Nat
+ih :
+  ∀ (state : Clif.State),
+    (∀ (stm : Clif.Stmt), stm ∈ state.frame.body → OrdinaryBody.OrdinaryInst stm.inst) →
+      state.callers = [] →
+        state.frame.term = Clif.Terminator.ret returns →
+          Clif.runLoop env cp fuel state = Clif.runLoop env' cp' fuel state
+state : Clif.State
+ordinary : ∀ (stm : Clif.Stmt), stm ∈ state.frame.body → OrdinaryBody.OrdinaryInst stm.inst
+callers : state.callers = []
+terminal : state.frame.term = Clif.Terminator.ret returns
+body : state.frame.body = []
+values : List Clif.Val
+evaluated : state.frame.getMany returns = Clif.Res.ok values
+⊢ (match
+      match
+        Clif.checkTys (toString "return values of %" ++ toString state.frame.func.name) values
+          (Clif.AbiParam.tys state.frame.func.sig.returns) with
+      | Clif.Res.ok a =>
+        Clif.StepResult.done values (state.mem.free (List.map (fun x => x.snd) state.frame.slots)).leave
+      | Clif.Res.trap c => Clif.StepResult.trapped c
+      | Clif.Res.stuck m => Clif.StepResult.stuck m with
+    | Clif.StepResult.next s' => Clif.runLoop env cp fuel s'
+    | Clif.StepResult.done vals mem => Clif.Outcome.returned vals mem
+    | Clif.StepResult.trapped c => Clif.Outcome.trapped c
+    | Clif.StepResult.stuck m => Clif.Outcome.stuck m) =
+    match
+      match
+        Clif.checkTys (toString "return values of %" ++ toString state.frame.func.name) values
+          (Clif.AbiParam.tys state.frame.func.sig.returns) with
+      | Clif.Res.ok a =>
+        Clif.StepResult.done values (state.mem.free (List.map (fun x => x.snd) state.frame.slots)).leave
+      | Clif.Res.trap c => Clif.StepResult.trapped c
+      | Clif.Res.stuck m => Clif.StepResult.stuck m with
+    | Clif.StepResult.next s' => Clif.runLoop env' cp' fuel s'
+    | Clif.StepResult.done vals mem => Clif.Outcome.returned vals mem
+    | Clif.StepResult.trapped c => Clif.Outcome.trapped c
+    | Clif.StepResult.stuck m => Clif.Outcome.stuck m

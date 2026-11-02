@@ -1,0 +1,50 @@
+{
+  "status": "passed",
+  "source_hashes": {
+    "StockFenceCompiledCoverage.lean": "84bb571a3fa5a7c72047aff9265cab8f191780cc27402abc546252cd734544ab",
+    "StockFenceSourceEnvironment.lean": "dd1b9ad1f32207ec471aeb23ac74a7dbf9c1ce717d6f52b73af17ea9471147a9",
+    "StockFenceConsumerAddendumAudit.lean": "6b1f68b51066e7209f00c61dd03f1e402d24b1c250e4deda2de171981911a8b1"
+  },
+  "axioms": {
+    "Backend.Stock.Proof.FenceFixture.mixed_compile_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.FenceFixture.mixed_complete_covered_compilation": [
+      "Backend.Stock.Proof.FenceFixture.covered_observed._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.MemoryFaults.ordinary_run_environment": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.FenceFixture.mixed_source_environment": [
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "roots": 4,
+  "standard_roots": 3,
+  "marked_fixed_roots": [
+    "Backend.Stock.Proof.FenceFixture.mixed_complete_covered_compilation"
+  ],
+  "kernel_runs": [
+    "compiled-coverage-v2",
+    "source-environment-v2"
+  ],
+  "audit_run": "consumer-addendum-audit-v1",
+  "import_snapshot_sha256": "6e7feaf2cd9d1e4db2f4f5e230e232801b65456a093fac0ccd75f1bb74d650cb",
+  "normal_receipt_sha256": "f07674371e2a6ddd11e88647feb99183aace6d8e7845dfc4d0795f859b5c112a",
+  "existing_v7_delivery_unchanged": true,
+  "claims": [
+    "actual checked pipeline derives FormsCovered internally in raw and cleanup modes",
+    "ordinary source run preserves every outcome across arbitrary program/environment views",
+    "mixed source environment independence follows internally from original ClifEntry"
+  ],
+  "full_fence_closure": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T15:53:14.413543+00:00"
+}

@@ -1,0 +1,13 @@
+{
+  "status": "reviewed",
+  "receipt_sha256": "43f022d096d51151143cd38d22ef6ec42d8a92427bae11cb21ca1cb7974accaf",
+  "canonical_source_hashes_exact": 48,
+  "roots": 94,
+  "standard_roots": 80,
+  "fixed_roots": 14,
+  "old_88_axioms_exact": true,
+  "remote_backup": "b7a6aed306c301e9311c134fe7510abed761e7d9",
+  "proof_share_1GiB_returned": true,
+  "full_fence_closure": false,
+  "utc": "2026-11-02T15:44:20.367509+00:00"
+}

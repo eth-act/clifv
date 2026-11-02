@@ -1,0 +1,7 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceHelpers.lean:119:47: warning: This simp argument is unused:
+  bindCalls
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [rule_lower_2476, exprCalls, argCalls] at member
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

@@ -1,0 +1,36 @@
+{
+  "status": "prepared_source_only_not_kernel_verified",
+  "files": {
+    "FV/Backend/Proof/StockMemoryAccessMachineW.lean": "4857ff8511de1cfc6b17658dab99f6cc1c17b36da6eb8ea27fd89177ff3e0190",
+    "FV/Backend/Proof/StockMemoryAccessMachineCheckW.lean": "2b7aee75ef19dad1bc7b594f6ba55e49b80ac27118d2f168003fe5b9093586fe",
+    "FV/Backend/Proof/StockFenceMachineW.lean": "226455702aca58c1760e6e9f4fec8e4c5ed922856c8e2030f3b7624535b853c3",
+    "FV/Backend/Proof/StockFenceOriginalW.lean": "b7cbc8435ee2483e24caf3ef7b3b975e744a454bc757ca3a99241119db2ff411"
+  },
+  "required_public_providers": [
+    "FV.E2E.DeadCleanupRealizesW",
+    "FV.E2E.DeadCleanupRegLevelW"
+  ],
+  "provider_owner": "shared broad FV normal queue; never duplicate build",
+  "actual_primitive_reuse": [
+    "q_initW",
+    "realizes_value_allW",
+    "regLevelCorrect_worldX_valueW",
+    "StockMemoryAccessTrace.access_register_level_boundary_trace"
+  ],
+  "preserved": [
+    "all old GoodX and memory/source/peak variants",
+    "original unrestricted arguments,memory and divisor",
+    "original ClifEntry,RelW,ActEntry and MapFaults",
+    "all old source NoMemTrap theorems"
+  ],
+  "next_steps": [
+    "snapshot only coherent completed W providers from the broad package after normal-key checks",
+    "verify four prepared W modules under1GiB/-j1 without baseline rebuilds",
+    "derive no-earlier-fault executable trace from GoodXW and originalMapRelRW",
+    "reuse WithResults/Semantic byte consumers for the actual Stock result; do not coerce it to legacy resultsCleanup",
+    "complete actual original-source/peak linker/compiler/generated and production consumers"
+  ],
+  "full_fence_closure": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T15:56:32.801461+00:00"
+}
