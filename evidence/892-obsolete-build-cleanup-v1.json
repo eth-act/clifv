@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "removed_only": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/build",
+  "hashes": 9366,
+  "logical_bytes": 3376211223,
+  "preservation_sha256": "d3066e4478d1dc9b851d8ceeee966412d03b4eeb33120c1467276f763ff71ef9",
+  "source_and_logs_preserved": true,
+  "native_cache_untouched": true,
+  "active_proof_and_broad_prefixes_untouched": true,
+  "utc": "2026-11-02T16:54:26.589987+00:00"
+}

@@ -1,0 +1,16 @@
+{
+  "status": "copied-exact-coherent-provider",
+  "coherence_sha256": "73ea53d6ec2006918585e9e7cbb39c78892973a068d73d219c8a92130be86da3",
+  "native_key": "5b30ca4d3e5e979f",
+  "outputs": {
+    ".lake/build/lib/lean/FV/E2E/MemTrapStatement.olean": "e84e0e36e5348017eab1196d5397aa05a561163feb8433dd23a7c8ca871fd468",
+    ".lake/build/lib/lean/FV/E2E/MemTrapStatement.ilean": "f6a2f3aef912c30f06dffc1ad5d84b08bc43e2bf3748bfc1a4581869c4297be6",
+    ".lake/build/lib/lean/FV/E2E/MemTrapStatement.olean.hash": "815ea5f56dbec4116d181bf7efec013658f06310cd41629b6115d6998eaab823",
+    ".lake/build/lib/lean/FV/E2E/MemTrapStatement.ilean.hash": "926ebd1e0369893ddc915cf1be716b02129ddb6abf48059437fd3fd63c4bb633",
+    ".lake/build/lib/lean/FV/E2E/MemTrapStatement.trace": "f65eac3db954ced63d978a2e670d1990bb194a9b72b58f26393fd017d33ae2f4",
+    ".lake/build/ir/FV/E2E/MemTrapStatement.setup.json": "215db18db2fa6c9a9281b5933e600e96309cc959aeceacebb868e52d5fbff8ec",
+    ".lake/build/ir/FV/E2E/MemTrapStatement.c": "a1490e16a6df60a61e9daca4cd92463df746d7dc847012546b9fa3dd0bead220",
+    ".lake/build/ir/FV/E2E/MemTrapStatement.c.hash": "341cdb1cdc1f9e1a9653b0f1aa0f3fcd127f03f377a18297361ac20d51777347"
+  },
+  "no_provider_build": true
+}

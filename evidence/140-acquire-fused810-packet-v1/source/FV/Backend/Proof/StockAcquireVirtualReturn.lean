@@ -33,8 +33,8 @@ theorem lowered_byte_return {result : Stock.Result} (lowered : Stock.lower funct
     simp [Clif.evalInst,Clif.Frame.get,Clif.Res.ofOption,Clif.Res.check,bind,Clif.Res.bind,
       Nat.mod_one,Clif.Ty.width,Clif.Ty.bytes,entry,read]
   obtain ⟨loaded,regs2,world1,small,sameMemory,extended,bodyRun,value195,frame,memory1⟩ :=
-    acquire_byte_pair_run stable memorySem memoryOk (by decide) (p := 1) (z := 0) (d := 195) (nr := 192)
-      (by rfl) rfl (by rw [value192]; exact argument) atomic related
+    acquire_byte_pair_run stable memorySem memoryOk (by decide) (p := 1) (z := 0) (d := 195) (nr := 192) (regs := regs1)
+      (by rfl) rfl (by simpa only [value192] using argument) atomic related
   have same : raw = loaded := by
     apply BitVec.eq_of_toNat_eq
     exact congrArg Clif.Val.toNat small
@@ -43,10 +43,10 @@ theorem lowered_byte_return {result : Stock.Result} (lowered : Stock.lower funct
   have segment : SegAt block 0 [.args [(.vreg 192 .int,.x 0)],acquireInstruction] := by
     intro j bounded
     cases j with
-    | zero => simpa only [code,completeCode] using (show completeCode[0]? = some (.args [(.vreg 192 .int,.x 0)]) from rfl)
+    | zero => rw [code]; rfl
     | succ j =>
       cases j with
-      | zero => simpa only [code,completeCode] using (show completeCode[1]? = some acquireInstruction from rfl)
+      | zero => rw [code]; rfl
       | succ j => simp at bounded; omega
   have path := seqRun_fall_star (vc := result.code) (sem := isem) found segment
     (by rw [code]; decide) prefixRun

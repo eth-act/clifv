@@ -38,14 +38,16 @@ theorem FaultReady.execute {f : Clif.Function} {result : Stock.Result} {env : Cl
   | cons output tail =>
     have empty : tail = [] := by simpa using arity
     subst tail
-    apply access_tail source.placed source.separate source.code preRun
-      (output := output) (after := after) ?_ source.flag
-      (CallStoreResult.pointer_address source.pointerHeld source.pointerType after)
-    · change (X.call (some source.ext.name) [source.values source.argument] before).map
+    have callStep : valueSem Γ.F fc X
+        (.call ⟨.sym source.ext.name,retPairs [(source.argument,.x 0)],callDefs [(.x 0,source.called)]⟩)
+        ([(source.argument,Reg.x 0)].map (source.values ·.1)) before = some ([output],after,.next) := by
+      change (X.call (some source.ext.name) [source.values source.argument] before).map
         (fun pair => (pair.1,pair.2,Ctl.next)) = _
       rw [called]
       rfl
-    · exact ⟨Clif.effAddr source.pointerValue 8,rfl,
+    exact access_tail source.placed source.separate source.code preRun callStep source.flag
+      (CallStoreResult.pointer_address source.pointerHeld source.pointerType after)
+      ⟨Clif.effAddr source.pointerValue 8,rfl,
         faults source.sourceState trap (Clif.effAddr source.pointerValue 8) 8 source.sourceReached source.sourceTrap⟩
 
 end Backend.Stock.CallStore

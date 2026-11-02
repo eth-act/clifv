@@ -1,0 +1,8 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireEncodingFault.lean:14:64: warning: This simp argument is unused:
+  Arm.ArmInst.norm
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, Insn.armFields, Insn.armFields.exclFields, Reg.encSP, Reg.encZR, baseReg,
+    destinationReg]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

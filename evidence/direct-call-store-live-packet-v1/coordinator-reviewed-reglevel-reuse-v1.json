@@ -1,0 +1,11 @@
+{
+  "status": "approved_read_only_provider_reuse",
+  "coherence_receipt_sha256": "983f5032ee293d143eac2f7c4cc53615ef18a66e26646beebaef52555afe94d5",
+  "source_hashes_rechecked": 229,
+  "dependency_evidence_records": 228,
+  "provider_key": "4d76d5ddad93a177",
+  "config_delta_rechecked": "weak-j1 versus weak-j2 only",
+  "no_provider_build_authorized": true,
+  "no_shared_prefix_or_cache_write_authorized": true,
+  "utc": "2026-11-02T16:53:18.131200+00:00"
+}

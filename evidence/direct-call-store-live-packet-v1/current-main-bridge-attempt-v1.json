@@ -1,0 +1,6 @@
+{
+  "status": "harness-expectation-failed-before-kernel",
+  "reason": "Published config contains no thread argument. The owned prefix adds weak -j1. The failed guard expected weak -j2 in the published file.",
+  "exact_diff": "--- \n+++ \n@@ -5,7 +5,7 @@\n # 4.34), so a module with warnings gets different .olean bytes in every worktree and all its\n # dependents then miss the shared Lake cache. The editor still shows these warnings\n # (LEARNINGS.md, \"Some .oleans are not deterministic\").\n-weakLeanArgs = [\"-Dlinter.unusedSimpArgs=false\", \"-Dlinter.unusedVariables=false\",\n+weakLeanArgs = [\"-j1\",\"-Dlinter.unusedSimpArgs=false\", \"-Dlinter.unusedVariables=false\",\n   \"-Dlinter.unnecessarySimpa=false\", \"-Dlinter.unusedSectionVars=false\", \"-Dlinter.defProp=false\",\n   \"-Dlinter.constructorNameAsVariable=false\"]\n \n",
+  "no_kernel_ran": true
+}

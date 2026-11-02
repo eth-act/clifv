@@ -1,0 +1,236 @@
+{
+  "status": "passed",
+  "roots": 45,
+  "standard_roots": 39,
+  "fixed_roots": 6,
+  "axiom_sets": {
+    "Backend.Stock.Proof.CallStoreResult.call_then_store_of_source": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_pointer": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_store_returns": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_store_faults": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_call_fault_or_continues": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.call_then_store_access": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_fault_decomposition": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreSourceWitness.default_store_fault": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreSourceWitness.store_reached": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreSourceWitness.store_fault_at": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreSourceWitness.default_store_return": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreFixture.original_source_exact": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound",
+      "E2E.CallStoreFixture.original_source_exact._native.native_decide.ax_1"
+    ],
+    "E2E.CallStoreFixture.actual_retained_and_saved": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound",
+      "E2E.CallStoreFixture.observed_true._native.native_decide.ax_1\u271d",
+      "E2E.CallStoreFixture.observed_true._native.native_decide.ax_2\u271d"
+    ],
+    "Backend.Stock.CallStore.Layout.source_fields": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Layout.scan_fields": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.check_sound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.prelude_read_checks": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Layout.pointer_type": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Layout.source_result": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.pointer_address": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.execute_tail": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Layout.return_function_for": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Layout.return_function": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.no_trap_under_original_condition": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.check_return_store_domain": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Layout.ready": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Ready.virtual_return": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Ready.execute": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Ready.execute_other": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_world_niX_stock_call_store_return": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreCompiledWitness.complete_caller": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound",
+      "E2E.CallStoreCompiledWitness.compiled_ok._native.native_decide.ax_1\u271d",
+      "E2E.CallStoreFixture.observed_true._native.native_decide.ax_1\u271d",
+      "E2E.CallStoreFixture.observed_true._native.native_decide.ax_2\u271d"
+    ],
+    "Backend.Stock.CallStore.access_tail": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Layout.source_fault": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.Layout.fault_ready": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.FaultReady.execute": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_store_fault_or_callee_stock_call_store": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.lowerWithPrevious_retry": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.lowerWithPrevious_selects": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.candidate_stock": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.lowerWithPrevious_preserves": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.CallStore.lowerWithPrevious_accepts": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.CallStoreResult.source_callee_trap": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.CallStoreCompiledWitness.checked_caller": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound",
+      "E2E.CallStoreCompiledWitness.compiled_ok._native.native_decide.ax_1\u271d"
+    ],
+    "E2E.CallStoreProviderWitness.actual_provider": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound",
+      "E2E.CallStoreCompiledWitness.compiled_ok._native.native_decide.ax_1\u271d",
+      "E2E.CallStoreProviderWitness.observed_true._native.native_decide.ax_1\u271d"
+    ],
+    "E2E.CallStoreCompiledWitness.prepared_access_shapes": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound",
+      "E2E.CallStoreCompiledWitness.shapesObserved_true._native.native_decide.ax_1\u271d",
+      "E2E.CallStoreCompiledWitness.shapesObserved_true._native.native_decide.ax_2\u271d"
+    ]
+  },
+  "source_audit_sha256": "fb28df723513cbd6f275963dba14e55acf51cd43933224ab88f4be9a4e20ca55",
+  "context_receipts": {
+    "fault-v3/receipt.json": "4b325c4402d95d848f9cfd1a3060362605916283ca611e93577b4d8ee20b9914",
+    "source-witness-v1/receipt.json": "02cd5d2b7625c70f998507121d6cd28c0ae4f0dd052e7852c0f698cc17da8ac8",
+    "published-917-origin-bridge-v1.json": "da9b21a6e78f42d6c59933d86404cca3b476c7db359157067a11494e0d20007b"
+  },
+  "stats": "peak 227151872\noom 0\noom_kill 0\n",
+  "no_class_or_production_completion_claim": true,
+  "utc": "2026-11-02T16:59:48.719593+00:00"
+}

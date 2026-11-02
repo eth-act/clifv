@@ -33,7 +33,7 @@ theorem backend_store_fault_or_callee_stock_call_store
     (hcs : ClifEntry f args cs)
     (hrel : RelW ⟨F,syms,slotOff,(RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
     (hargs : ArgsAtEntry F f.sig args w₀)
-    (shapes : ∀ b block j inst,vcp.blocks[b]? = some block → block.insts[j]? = some inst →
+    (shapes : ∀ (b : Nat) (block : VBlock) (j : Nat) (inst : MInst),vcp.blocks[b]? = some block → block.insts[j]? = some inst →
       ∀ sb uses world code address bytes,AccessAt sb inst uses world code address bytes → OrdinaryAccessShape inst)
     (mp : ArmFault.MemMap) (faults : MapFaults mp env p cs) {fuel : Nat} {code : Clif.TrapCode}
     (trapped : Clif.runLoop env p fuel cs = .trapped code) :
@@ -52,7 +52,7 @@ theorem backend_store_fault_or_callee_stock_call_store
     cases callers
     rfl
   rcases layout.fault_ready (fc := ⟨fa.k,af.slotBase⟩) hc.lower scope dominated
-      hsub hcs.stockSourceEntry (by rwa [state]) hslot hsym hrel hargs with callee | ⟨path⟩
+      hsub hcs.stockSourceEntry (by rwa [state]) hslot hsym hrel hargs with callee | ready
   · apply Or.inl
     obtain ⟨blocks,parameters,body,term,rest⟩ := layout.source_fields
     obtain ⟨b,regs,entry,types,paramTypes,set,frame⟩ := hcs.stockSourceEntry
@@ -62,8 +62,8 @@ theorem backend_store_fault_or_callee_stock_call_store
       [⟨[],.store .store .i64 layout.data.flags layout.data.called layout.data.pointer 8⟩],
       (congrArg Clif.Frame.body frame).trans body,callee⟩
   · apply Or.inr
+    obtain ⟨path⟩ := ready
     have access := path.execute hcs.sig hargs hrel hX mp (by rwa [state])
-    rw [← hslot] at access
     have staged := accessTrap_stage hc.prepOk access
     have actual := accessTrap_gotV_value staged
     intro H G base ra s entry

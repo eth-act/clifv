@@ -1,0 +1,16 @@
+{
+  "status": "copied-exact-coherent-provider",
+  "coherence_sha256": "983f5032ee293d143eac2f7c4cc53615ef18a66e26646beebaef52555afe94d5",
+  "native_key": "4d76d5ddad93a177",
+  "outputs": {
+    ".lake/build/lib/lean/FV/E2E/RegLevelCorrectU.olean": "abacdd048faa89a20f8e7fb0d0409f76ca21f4d24649692ae6478bb957edf2be",
+    ".lake/build/lib/lean/FV/E2E/RegLevelCorrectU.ilean": "cfd9025fafb0065faf1afde16bcbfb48d2ef9a7050f17cee00cd4f8b5b0689eb",
+    ".lake/build/lib/lean/FV/E2E/RegLevelCorrectU.olean.hash": "90dba5cfb0d82e501ed0cba8bd62b83e9a3b4c955be5415247759e0b71b19741",
+    ".lake/build/lib/lean/FV/E2E/RegLevelCorrectU.ilean.hash": "26d268fd22be360fddf1d78270328191897aec9f3ead981ffc8ecf87fdb659fe",
+    ".lake/build/lib/lean/FV/E2E/RegLevelCorrectU.trace": "8626dc7b4f1287eee8f14f42263a05715e7c5c9e6e34eebc6437ac8eba13419a",
+    ".lake/build/ir/FV/E2E/RegLevelCorrectU.setup.json": "c62c4c0234a2610c2f29357b40a25643c10ee67ad2c3ed058a0577419f87c5b8",
+    ".lake/build/ir/FV/E2E/RegLevelCorrectU.c": "92d1f2d701fc49ad93470430e2f413583464251587b87617a04df47632a520e3",
+    ".lake/build/ir/FV/E2E/RegLevelCorrectU.c.hash": "14dc4f95096a2614e5aedf83b0653e347c83c1d14732bfbb6104f59d3c9587fb"
+  },
+  "no_provider_build": true
+}

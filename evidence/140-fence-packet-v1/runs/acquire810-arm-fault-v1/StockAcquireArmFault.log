@@ -1,0 +1,6 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireArmFault.lean:14:83: error: Expected type must not contain free variables
+  0 <
+    { k := Concurrency.AKind.acqR, addr := Arm.read_gpr 64 base s, n := 1,
+        val := Concurrency.ArmFoot.readM 1 (Arm.read_gpr 64 base s) s.mem }.n
+
+Hint: Use the `+revert` option to automatically clean up and revert free variables

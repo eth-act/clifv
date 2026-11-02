@@ -1,0 +1,2 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireEncodingFault.lean:13:77: error: unexpected identifier; expected '}'
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireEncodingFault.lean:20:8: warning: declaration uses `sorry`

@@ -99,4 +99,16 @@ theorem complete_caller (cleanup : Bool) :
     ⟨data.lowered,data.prepareRun,data.prepareOk,data.checkRun,data.physicalRun,data.assemblyRun,data.layoutRun⟩,
     data.saved,data.covered,pointer,argument,called,pointerAlias,calledAlias⟩
 
+/-- The actual artifact satisfies the class checker in both cleanup modes. -/
+-- witness: native_decide (the same fixed complete pipelines)
+theorem checked_caller (cleanup : Bool) :
+    ∃ result,Stock.lower caller = .ok result ∧ Stock.CallStore.check caller result.code = true := by
+  have positive : (compiled cleanup).isOk = true := by
+    have both := Bool.and_eq_true_iff.mp compiled_ok
+    cases cleanup with
+    | false => exact both.1
+    | true => exact both.2
+  obtain ⟨data,found⟩ := available positive
+  exact ⟨data.result,data.lowered,data.admitted⟩
+
 end E2E.CallStoreCompiledWitness

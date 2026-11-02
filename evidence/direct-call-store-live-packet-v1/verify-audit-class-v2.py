@@ -1,0 +1,17 @@
+from pathlib import Path
+import datetime,hashlib,json,os,re,subprocess
+B=Path('/home/lee/clifv');E=B/'.git/agent-evidence/stock-memory-20261029';Q=Path(__file__).resolve().parent;R=Q/'validation-package-v1';J=E/'892-joint-current-context-v2/package';L=Q/'audit-class-v2';L.mkdir();context_paths=['fault-witness-v1/receipt.json', 'provider-witness-v1/receipt.json', 'prepared-shapes-v2/receipt.json', 'callee-trap-source-v3/receipt.json', 'source-witness-v1/receipt.json', 'return-machine-v1/receipt.json'];contexts=[json.loads((Q/p).read_text()) for p in context_paths]
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+for C in contexts:
+ assert C['status']=='passed'
+ for n,h in C['source_hashes'].items():assert sha(R/n)==h,n
+A=Q/'scripts/audit/stock-call-store-class-final.lean';env=dict(os.environ)
+for k in ['FV_LAKE_CACHE','FV_MEMCAP_OFF','LEAN_PATH','LEAN_SRC_PATH','LEAN_SYSROOT']:env.pop(k,None)
+env.update(PATH='/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin:'+env['PATH'],FV_ROOT=str(R),FV_MEMCAP='2G',FV_MEMCAP_STATS=str(L/'audit.mem'),FV_MEMCAP_UNIT='worker-o-call-store-audit',LEAN_NUM_THREADS='1',OMP_NUM_THREADS='1',OMP_THREAD_LIMIT='1',LAKE_ARTIFACT_CACHE='false',LAKE_RESTORE_ARTIFACTS='false',LEAN_PATH=str(R/'.lake/build/lib/lean')+':/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/lib/lean')
+with (L/'summary.log').open('w') as stream:rc=subprocess.call([str(J/'scripts/memcap.sh'),'python3',str(Q/'axiom-audit-j1.py'),'--cwd',str(R),'--log-dir',str(L/'audit'),str(A)],cwd=R,env=env,stdout=stream,stderr=subprocess.STDOUT)
+print('audit exit',rc,flush=True)
+if rc:raise SystemExit(rc)
+from axiom_records import parse_records
+records=parse_records((L/'audit/stock-call-store-class-final.log').read_text());axes=dict(records);std={'propext','Classical.choice','Quot.sound'};fixed=sum(any(a not in std for a in xs) for xs in axes.values());assert len(axes)==46 and fixed==7,(len(axes),fixed)
+old=json.loads((Q/'audit-class-v1/receipt.json').read_text())['axiom_sets'];assert all(axes[n]==xs for n,xs in old.items()),'Old45AX changed'
+state=dict(status='passed',roots=46,standard_roots=39,fixed_roots=7,axiom_sets=axes,source_audit_sha256=sha(A),context_receipts={p:sha(Q/p) for p in context_paths+['published-917-origin-bridge-v1.json','memtrap-provider-reused-v1.json','reglevel-correct-u-provider-reused-v1.json']},stats=(L/'audit.mem').read_text(),no_class_or_production_completion_claim=True,utc=datetime.datetime.now(datetime.timezone.utc).isoformat());(L/'receipt.json').write_text(json.dumps(state,indent=2)+'\n');print(json.dumps(state),flush=True)

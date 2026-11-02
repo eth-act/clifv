@@ -1,0 +1,124 @@
+{
+  "status": "exact-import-boundary",
+  "new_modules": [
+    "FV/Backend/Lowering/StockCallStoreWith.lean",
+    "FV/Backend/Proof/StockCallStoreAddress.lean",
+    "FV/Backend/Proof/StockCallStoreCalleeTrap.lean",
+    "FV/Backend/Proof/StockCallStoreFault.lean",
+    "FV/Backend/Proof/StockCallStoreResult.lean",
+    "FV/Backend/Proof/StockCallStoreSource.lean",
+    "FV/Backend/StockCallStoreCheck.lean",
+    "FV/E2E/StockCallStoreAccessTail.lean",
+    "FV/E2E/StockCallStoreCompiledWitness.lean",
+    "FV/E2E/StockCallStoreDomain.lean",
+    "FV/E2E/StockCallStoreFaultMachine.lean",
+    "FV/E2E/StockCallStoreFaultReady.lean",
+    "FV/E2E/StockCallStoreFaultRun.lean",
+    "FV/E2E/StockCallStoreFaultWitness.lean",
+    "FV/E2E/StockCallStoreFixture.lean",
+    "FV/E2E/StockCallStoreFunction.lean",
+    "FV/E2E/StockCallStoreLayout.lean",
+    "FV/E2E/StockCallStoreNI.lean",
+    "FV/E2E/StockCallStoreNoTrap.lean",
+    "FV/E2E/StockCallStorePreparedShapes.lean",
+    "FV/E2E/StockCallStoreProviderWitness.lean",
+    "FV/E2E/StockCallStoreReady.lean",
+    "FV/E2E/StockCallStoreRun.lean",
+    "FV/E2E/StockCallStoreSourceFault.lean",
+    "FV/E2E/StockCallStoreSourceResult.lean",
+    "FV/E2E/StockCallStoreSourceWitness.lean",
+    "FV/E2E/StockCallStoreTail.lean"
+  ],
+  "direct_published_imports": {
+    "FV/Backend/Lowering/StockCallStoreWith.lean": [
+      "FV/Backend/Lowering/StockCheckedWith.lean"
+    ],
+    "FV/Backend/Proof/StockCallStoreAddress.lean": [
+      "FV/Backend/Proof/StockMemoryLoad.lean"
+    ],
+    "FV/Backend/Proof/StockCallStoreCalleeTrap.lean": [],
+    "FV/Backend/Proof/StockCallStoreFault.lean": [
+      "FV/Backend/Proof/StockMemoryStoreAccessTrap.lean"
+    ],
+    "FV/Backend/Proof/StockCallStoreResult.lean": [
+      "FV/Backend/Proof/StockLiveCallArithmetic.lean",
+      "FV/Backend/Proof/StockMemoryStoreContract.lean"
+    ],
+    "FV/Backend/Proof/StockCallStoreSource.lean": [
+      "FV/Backend/Proof/StockLiveCallSource.lean"
+    ],
+    "FV/Backend/StockCallStoreCheck.lean": [
+      "FV/Backend/StockLiveCallCheck.lean"
+    ],
+    "FV/E2E/StockCallStoreAccessTail.lean": [
+      "FV/Backend/Proof/StockMemoryAccessPlacement.lean"
+    ],
+    "FV/E2E/StockCallStoreCompiledWitness.lean": [
+      "FV/E2E/StockArithmeticStageContract.lean",
+      "FV/Backend/Lowering/StockArithmetic.lean"
+    ],
+    "FV/E2E/StockCallStoreDomain.lean": [],
+    "FV/E2E/StockCallStoreFaultMachine.lean": [
+      "FV/Backend/Proof/StockMemoryAccessMachineCheck.lean",
+      "FV/Backend/Proof/StockMemoryAccessStage.lean",
+      "FV/E2E/DeadCleanupRegLevelX.lean",
+      "FV/E2E/StockArithmeticStageContract.lean"
+    ],
+    "FV/E2E/StockCallStoreFaultReady.lean": [
+      "FV/E2E/StockLiveCallPrelude.lean",
+      "FV/E2E/ABIReadOnlyMachine.lean"
+    ],
+    "FV/E2E/StockCallStoreFaultRun.lean": [
+      "FV/ArmFault/Step.lean"
+    ],
+    "FV/E2E/StockCallStoreFaultWitness.lean": [],
+    "FV/E2E/StockCallStoreFixture.lean": [
+      "FV/Backend/Lowering/StockArithmetic.lean",
+      "FV/Backend/LinearScan.lean",
+      "FV/Clif/Parse.lean"
+    ],
+    "FV/E2E/StockCallStoreFunction.lean": [
+      "FV/Backend/Proof/RefinesCSem.lean"
+    ],
+    "FV/E2E/StockCallStoreLayout.lean": [
+      "FV/Backend/Proof/StockSourceEntry.lean",
+      "FV/E2E/StockLiveCallPrelude.lean"
+    ],
+    "FV/E2E/StockCallStoreNI.lean": [
+      "FV/E2E/StockResultCallMachine.lean"
+    ],
+    "FV/E2E/StockCallStoreNoTrap.lean": [
+      "FV/E2E/Statement.lean"
+    ],
+    "FV/E2E/StockCallStorePreparedShapes.lean": [
+      "FV/Backend/Proof/StockMemoryAccessShapeCheck.lean"
+    ],
+    "FV/E2E/StockCallStoreProviderWitness.lean": [
+      "FV/Backend/Lowering/StockLiveCallWith.lean",
+      "FV/Backend/Lowering/StockResultCallRoutes.lean"
+    ],
+    "FV/E2E/StockCallStoreReady.lean": [
+      "FV/E2E/StockLiveCallPrelude.lean",
+      "FV/E2E/ABIReadOnlyMachine.lean"
+    ],
+    "FV/E2E/StockCallStoreRun.lean": [
+      "FV/E2E/StockResultCallPair.lean",
+      "FV/Backend/Proof/DeadCleanupAdapter.lean"
+    ],
+    "FV/E2E/StockCallStoreSourceFault.lean": [
+      "FV/E2E/Statement.lean"
+    ],
+    "FV/E2E/StockCallStoreSourceResult.lean": [
+      "FV/E2E/Statement.lean"
+    ],
+    "FV/E2E/StockCallStoreSourceWitness.lean": [
+      "FV/Clif/MemTrap.lean"
+    ],
+    "FV/E2E/StockCallStoreTail.lean": [
+      "FV/E2E/Statement.lean"
+    ]
+  },
+  "full_bridge_sha256": "8e3e3e7ff7ff183d6241ec354fb906eebf9411cdd2f41db6b92298e7f1c82a11",
+  "main": "a685df2b967d1a7796b612aca81f9378c09f2241",
+  "shared_constructor_edits": []
+}

@@ -1,0 +1,56 @@
+{
+  "status": "running",
+  "records": [
+    {
+      "label": "all-normal-keys",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Lowering.StockCallStoreWith",
+        "FV.Backend.Proof.StockCallStoreAddress",
+        "FV.Backend.Proof.StockCallStoreCalleeTrap",
+        "FV.Backend.Proof.StockCallStoreFault",
+        "FV.Backend.Proof.StockCallStoreResult",
+        "FV.Backend.Proof.StockCallStoreSource",
+        "FV.Backend.StockCallStoreCheck",
+        "FV.E2E.StockCallStoreAccessTail",
+        "FV.E2E.StockCallStoreCompiledWitness",
+        "FV.E2E.StockCallStoreDomain",
+        "FV.E2E.StockCallStoreFaultMachine",
+        "FV.E2E.StockCallStoreFaultReady",
+        "FV.E2E.StockCallStoreFaultRun",
+        "FV.E2E.StockCallStoreFaultWitness",
+        "FV.E2E.StockCallStoreFixture",
+        "FV.E2E.StockCallStoreFunction",
+        "FV.E2E.StockCallStoreLayout",
+        "FV.E2E.StockCallStoreNI",
+        "FV.E2E.StockCallStoreNoTrap",
+        "FV.E2E.StockCallStorePreparedShapes",
+        "FV.E2E.StockCallStoreProviderWitness",
+        "FV.E2E.StockCallStoreReady",
+        "FV.E2E.StockCallStoreRun",
+        "FV.E2E.StockCallStoreSourceFault",
+        "FV.E2E.StockCallStoreSourceResult",
+        "FV.E2E.StockCallStoreSourceWitness",
+        "FV.E2E.StockCallStoreTail"
+      ],
+      "exit": 0,
+      "stats": "peak 65396736\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "axiom-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/axiom-audit-j1.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/current-main-class-v1/audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/scripts/audit/stock-call-store-class-final.lean"
+      ],
+      "exit": 0,
+      "stats": "peak 225099776\noom 0\noom_kill 0\n"
+    }
+  ]
+}

@@ -1,3 +1,9 @@
+import FV.Backend.Proof.StockAcquireRecordWitness
+import FV.Backend.Proof.StockAcquireVirtualReturn
+import FV.Backend.Proof.StockAcquireEntryNormal
+import FV.Backend.Proof.StockAcquireTrapBoundary
+import FV.Backend.Proof.StockAcquireSourceReturn
+import FV.Backend.Proof.StockAcquireSourceDomain
 import FV.Backend.Proof.StockAcquire810Witness
 import FV.Backend.Proof.StockAcquireHelpers
 import FV.Backend.Proof.StockAcquireValue
@@ -19,3 +25,13 @@ import FV.Backend.Proof.StockAcquireEntry
 #print axioms Backend.Stock.Proof.Acquire810.source_first_trap
 #print axioms Backend.Stock.Proof.Acquire810.original_source_entry
 #print axioms Backend.Stock.Proof.Acquire810.first_source_memory_trap
+
+#print axioms Backend.Stock.Proof.Acquire810.actual_record_binding
+#print axioms Backend.Stock.Proof.Acquire810.lowered_byte_return
+#print axioms Backend.Stock.Proof.Acquire810.original_entry_normal_form
+#print axioms Backend.Stock.Proof.Acquire810.lowered_args_prefix
+#print axioms Backend.Stock.Proof.Acquire810.lowered_byte_access_fault
+#print axioms Backend.Stock.Proof.Acquire810.source_returned_read
+#print axioms Backend.Stock.Proof.Acquire810.entry_returned_read
+#print axioms Backend.Stock.Proof.Acquire810.original_returns
+#print axioms Backend.Stock.Proof.Acquire810.original_traps

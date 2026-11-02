@@ -1,0 +1,5 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceDomain.lean:22:13: error: Expected type must not contain free variables
+  [{ ty := Clif.Ty.i64, bits := BitVec.setWidth 64 raw }].length ≤ [ofX (BitVec.setWidth 64 raw)].length
+
+Hint: Use the `+revert` option to automatically clean up and revert free variables
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireSourceDomain.lean:30:16: error(lean.unknownIdentifier): Unknown identifier `ofX_setWidth`

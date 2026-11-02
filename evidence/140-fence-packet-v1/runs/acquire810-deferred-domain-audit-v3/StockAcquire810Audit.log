@@ -1,0 +1,45 @@
+'Backend.Stock.Proof.Acquire810.original_scope_selects810' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.Acquire810.selected_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.AcquireHelpers.acquire_helpers_project_and_preserve' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_helper_success' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.stock_acquire_call' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_byte_widened_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_forward' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_result_binding' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_byte_pair_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_three_steps' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_more_steps' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_first_trap' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.original_source_entry' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.first_source_memory_trap' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.actual_record_binding' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.Acquire810.lowered_byte_return' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.Acquire810.original_entry_normal_form' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.lowered_args_prefix' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.Acquire810.lowered_byte_access_fault' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.Acquire810.source_returned_read' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.entry_returned_read' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.original_returns' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.Acquire810.original_traps' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.Acquire810.observed_true._native.native_decide.ax_1✝]
