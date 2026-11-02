@@ -1,0 +1,4 @@
+{
+  "purpose": "Compile the one staged heap module without altering tracked source or adding a worktree/cache. Only new module artifacts enter the existing build view; normal Lake traces remain absent until publication.",
+  "output": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean"
+}

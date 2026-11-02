@@ -1,0 +1,23 @@
+{
+  "artifacts": {
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyCheckWitness.olean": "9f3531f0f7b0f9b12b53744c3b5cffbf6c80fb2c1ec37f44b96eb393b8d2940a",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyCheckWitness.ilean": "53512fc63032e75d51479d68efdd1e8996ce225b3d9ad937a22e38c045c0f94d",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyCheckWitness.c": "52501b1f2707a5734f201db9309728c0bb3097b9e2bb973b444b8086973ffce9",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockReturnFullValues.olean": "f3864839b7d48b01b8b5d44b07a89a5fc097e5072715d7da13108c03e3b52106",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockReturnFullValues.ilean": "1210671134de3ba85393bb03d423cda96c2b3b178e5079a830907da25426a8cf",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockReturnFullValues.c": "a9a7ffdf07080a9ef6b11219326b5c3b2bf85f91e839dfacac8c98347308deb7",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockReturnFullBody.olean": "e3974ab8fbc381fa1e817b2fbe6a35530abda6e2a36f71616d480c3304c6cc98",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockReturnFullBody.ilean": "453020c6caf4362f7db73788e50bd7c6f861c9a1e2ea82e281576e1456a9ccf3",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockReturnFullBody.c": "2800cebc7acd472d73908299ae2795d9739e48a6fdb9f9252b07ccdd589b2352",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFullReturn.olean": "a22d787fe3cc8eaaa3f672129886112a70008859189edbaa5dc6cbc121c02da8",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFullReturn.ilean": "d540221cf364bfe734d321ca1d6f06b3dbf8e7886296592949a1b66b2815b89f",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFullReturn.c": "2c9e79d3b5b1ea1fb8bbcfe98fe33ef050537da064f18369c6da591e69810196",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockReturnFullBodyWitness.olean": "1078218097d7fd6169d1363d2fc55f9d870e6d04d1560bd1faba93bd9cdd7fa8",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockReturnFullBodyWitness.ilean": "71e484720f3122734567e0b73c5449fe46b075277d5ef55db148807f2efd57ef",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockReturnFullBodyWitness.c": "c23f33c5f72af674d12edff16b411d343bdec9d217ab68a3a19aedb4a2d5d709",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFullReturnWitness.olean": "c122692a653d5332ae8846e8b8913962191c041d298caee90587603c45fe1c5e",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFullReturnWitness.ilean": "18707f7848b219adc4c144fe33895cda61e2c95ac152fc577e44643dd7b4b4c5",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFullReturnWitness.c": "2fe3079c442b155e3f0c6eb48afe524ebe96b67ab17eed383df55a8fcf4b9609"
+  },
+  "cleanup": "Only this isolated package build directory. Shared cache and source views remain."
+}

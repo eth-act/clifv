@@ -1,0 +1,9 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-868-independent-package-v1/FV/Backend/Proof/StockReturnFullBodyWitness.lean:69:54: warning: This simp argument is unused:
+  Clif.Regs.empty
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Clif.stepTerm, Clif.StepResult.ofRes, Clif.returnValues, Clif.checkTys, Clif.AbiParam.tys,
+    Clif.Frame.getMany, Clif.Frame.get, Clif.Regs.set, function, frame, explicitXs, values, flag, Clif.Res.ofOption,
+    Clif.Res.check]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

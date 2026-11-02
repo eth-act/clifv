@@ -1,0 +1,42 @@
+FAIL WorkerOReturnPinChecksWithDraftV1.lean: theorems 5/5 rc=1 errors=3 other_axioms=[E2E.ReturnPinChecksWith.checks_iff: sorryAx, E2E.ReturnPinChecksWith.okRProduction_of_checks: sorryAx]
+    /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinChecksWithDraftV1.lean:37:11: error: Application type mismatch: The argument
+      List.all_eq_true.mp checked.left.right (fi.func, I.pipeProductionWith lower cleanup fi) resultMember
+    has type
+      ((chksSemanticFor returnPinCallsExtra (productionStage cleanup) I (progOf (I.resultsProductionWith lower cleanup))
+              (tabOf (I.resultsProductionWith lower cleanup)) (fi.func, I.pipeProductionWith lower cleanup fi).fst
+              (fi.func, I.pipeProductionWith lower cleanup fi).snd).all
+          fun x => x.snd) =
+        true
+    but is expected to have type
+      ∀ (x : String × Bool),
+        x ∈
+            chksSemanticFor returnPinCallsExtra (productionStage cleanup) I (progOf (I.resultsProductionWith lower cleanup))
+              (tabOf (I.resultsProductionWith lower cleanup)) fi.func (I.pipeProductionWith lower cleanup fi) →
+          x.snd = true
+    in the application
+      And.intro (List.all_eq_true.mp checked.left.right (fi.func, I.pipeProductionWith lower cleanup fi) resultMember)
+    /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinChecksWithDraftV1.lean:43:6: error: Type mismatch: After simplification, term
+      fun fi member => (functions fi member).left
+     has type
+      ∀ (fi : FnInput),
+        fi ∈ I.funcs →
+          ∀ (x : String × Bool),
+            x ∈
+                chksSemanticFor returnPinCallsExtra (productionStage cleanup) I
+                  (progOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs))
+                  (tabOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs)) fi.func
+                  (I.pipeProductionWith lower cleanup fi) →
+              x.snd = true
+    but is expected to have type
+      (I.funcs.all fun x =>
+          (chksSemanticFor returnPinCallsExtra (productionStage cleanup) I
+                (progOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs))
+                (tabOf (List.map (fun fi => (fi.func, I.pipeProductionWith lower cleanup fi)) I.funcs)) x.func
+                (I.pipeProductionWith lower cleanup x)).all
+            fun x => x.snd) =
+        true
+    /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinChecksWithDraftV1.lean:45:6: error: Type mismatch: After simplification, term
+      fun fi member => (functions fi member).right
+     has type
+      ∀ (fi : FnInput),
+axiom audit: 0/1 files ok

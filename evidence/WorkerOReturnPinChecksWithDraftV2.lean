@@ -1,0 +1,87 @@
+import FV.E2E.PreparedReturnPinCalls
+import FV.E2E.SemanticChecksWith
+
+namespace E2E.ReturnPinChecksWith
+open Backend E2E.LinkCheck
+set_option autoImplicit false
+set_option Elab.async false
+
+/-- Each slice checks against the complete program and its shared return-pin context. -/
+def fnsBProduction (lower : ProductionLowering) (I : LinkInput) (cleanup : Bool)
+    (fs : List FnInput) : Bool :=
+  let R := I.resultsProductionWith lower cleanup
+  let C := ReturnPinCtx.of I R
+  fs.all fun fi =>
+    (chksSemanticFor returnPinCallsExtra (productionStage cleanup) I (progOf R) (tabOf R)
+      fi.func (I.pipeProductionWith lower cleanup fi)).all (·.2) && returnPinsWith C fi.func
+
+theorem fnsBProduction_append (lower : ProductionLowering) (I : LinkInput) (cleanup : Bool)
+    (a b : List FnInput) :
+    fnsBProduction lower I cleanup (a ++ b) =
+      (fnsBProduction lower I cleanup a && fnsBProduction lower I cleanup b) := by
+  simp only [fnsBProduction,List.all_append]
+
+/-- Sliced checks and the whole-program ABI checker have exactly the same success condition. -/
+theorem checks_iff (lower : ProductionLowering) (I : LinkInput) (cleanup : Bool) :
+    okRReturnPinCalls (productionStage cleanup) I (I.resultsProductionWith lower cleanup) = true ↔
+      E2E.SemanticChecksWith.globalBProduction lower I cleanup = true ∧
+      fnsBProduction lower I cleanup I.funcs = true := by
+  constructor
+  · intro checked
+    rcases Bool.and_eq_true.mp checked with ⟨semantic,pins⟩
+    rcases Bool.and_eq_true.mp semantic with ⟨global,functions⟩
+    refine ⟨global,?_⟩
+    unfold fnsBProduction
+    apply List.all_eq_true.mpr
+    intro fi member
+    rw [Bool.and_eq_true,returnPinsWith_of]
+    have resultMember : (fi.func,I.pipeProductionWith lower cleanup fi) ∈
+        I.resultsProductionWith lower cleanup := List.mem_map.mpr ⟨fi,member,rfl⟩
+    exact ⟨List.all_eq_true.mp functions _ resultMember,
+      List.all_eq_true.mp pins _ (List.mem_map.mpr ⟨_,resultMember,rfl⟩)⟩
+  · rintro ⟨global,functions⟩
+    unfold fnsBProduction at functions
+    apply Bool.and_eq_true.mpr
+    refine ⟨?_,?_⟩
+    · apply Bool.and_eq_true.mpr
+      refine ⟨global,?_⟩
+      apply List.all_eq_true.mpr
+      intro entry member
+      obtain ⟨fi,present,rfl⟩ := List.mem_map.mp member
+      exact (Bool.and_eq_true.mp (List.all_eq_true.mp functions fi present)).1
+    · apply List.all_eq_true.mpr
+      intro f member
+      obtain ⟨entry,present,rfl⟩ := List.mem_map.mp member
+      obtain ⟨fi,present,rfl⟩ := List.mem_map.mp present
+      have pins := (Bool.and_eq_true.mp (List.all_eq_true.mp functions fi present)).2
+      simpa only [returnPinsWith_of,returnPinChecks] using pins
+
+theorem okRProduction_of_checks {lower : ProductionLowering} {I : LinkInput} {cleanup : Bool}
+    (global : E2E.SemanticChecksWith.globalBProduction lower I cleanup = true)
+    (functions : fnsBProduction lower I cleanup I.funcs = true) :
+    okRReturnPinCalls (productionStage cleanup) I (I.resultsProductionWith lower cleanup) = true :=
+  (checks_iff lower I cleanup).mpr ⟨global,functions⟩
+
+def CrateStmtProduction (lower : ProductionLowering) (I : LinkInput) (cleanup : Bool)
+    (name : String) : Prop := CrateStmtReturnPins I (I.resultsProductionWith lower cleanup) name
+
+theorem crate_correct_production (lower : ProductionLowering) (I : LinkInput) (cleanup : Bool)
+    (checked : okRReturnPinCalls (productionStage cleanup) I (I.resultsProductionWith lower cleanup) = true)
+    (name : String) : CrateStmtProduction lower I cleanup name :=
+  preparedReturnPinCalls_correct (productionStage cleanup) (productionStage_cases cleanup)
+    (I.resultsProductionWith_prepared lower cleanup) checked name
+
+/-- The new generated checker accepts every complete program accepted by its predecessor. -/
+theorem accepts_previous (lower : ProductionLowering) (I : LinkInput) (cleanup : Bool)
+    (previous : okRSemanticNI (productionStage cleanup) I (I.resultsProductionWith lower cleanup) = true) :
+    okRReturnPinCalls (productionStage cleanup) I (I.resultsProductionWith lower cleanup) = true :=
+  okRReturnPinCalls_previous (okRReturnPins_of_previous (productionStage cleanup)
+    (I.resultsProductionWith_prepared lower cleanup) previous)
+
+end E2E.ReturnPinChecksWith
+
+#print axioms E2E.ReturnPinChecksWith.fnsBProduction_append
+#print axioms E2E.ReturnPinChecksWith.checks_iff
+#print axioms E2E.ReturnPinChecksWith.okRProduction_of_checks
+#print axioms E2E.ReturnPinChecksWith.crate_correct_production
+#print axioms E2E.ReturnPinChecksWith.accepts_previous

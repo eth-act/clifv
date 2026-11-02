@@ -18,6 +18,17 @@ branch = 'agent/stock-sret-copy-full-values-20261101'
 def run(*args):
     return subprocess.check_output(args, cwd=r, env=env, text=True).strip()
 
+landed_path = e / 'sret-full-cfg-landed-v1.json'
+if landed_path.exists():
+    independent = json.loads(landed_path.read_text())
+    assert independent['status'] == 'landed' and independent['tree_equal']
+    actual = json.loads(run('gh', 'pr', 'view', '868', '--repo', 'eth-act/clifv', '--json', 'state,mergeCommit'))
+    assert actual['state'] == 'MERGED' and actual['mergeCommit']['oid'] == independent['merged']
+    run('git', 'merge-base', '--is-ancestor', independent['merged'], 'HEAD')
+    assert run('git', 'status', '--porcelain') == ''
+    print('868 already landed independently. Keep the current runtime source view.', flush=True)
+    raise SystemExit(0)
+
 parent = json.loads((e / 'return-pin-runtime-landed-v1.json').read_text())
 assert parent['status'] == 'landed' and parent['tree_equal']
 assert run('git', 'status', '--porcelain') == ''

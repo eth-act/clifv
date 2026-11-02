@@ -1,0 +1,39 @@
+{
+  "status": "inspect_failures",
+  "results": [
+    {
+      "script": "verify-sret-symbolic-heap-packet-v4-core.py",
+      "returncode": 0
+    },
+    {
+      "script": "verify-sret-exec-boundary-v2.py",
+      "returncode": 0
+    },
+    {
+      "script": "verify-sret-exec-boundary-packet-v1.py",
+      "returncode": 0
+    },
+    {
+      "script": "verify-sret-captured-entry-v2.py",
+      "returncode": 0
+    },
+    {
+      "script": "verify-return-pin-routed-packet-v1.py",
+      "returncode": 1
+    },
+    {
+      "script": "verify-sret-exec-result-bytes-v1.py",
+      "returncode": 0
+    },
+    {
+      "script": "verify-sret-exec-result-bytes-packet-v1.py",
+      "returncode": 0
+    },
+    {
+      "script": "verify-return-pin-checks-with-v1.py",
+      "returncode": 1
+    }
+  ],
+  "full_goal_complete": false,
+  "utc": "2026-11-02T04:29:55.324817+00:00"
+}

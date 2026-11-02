@@ -1,0 +1,19 @@
+{
+  "status": "published_pending_ci",
+  "pr": 868,
+  "source": "dc0132f8898aa35926db88a72f99b0ff6d67fa08",
+  "base": "41a5d9dfede34ce462a654bb8a0c536eeaea862f",
+  "tree": "077899c599bdee46a88707da3ec226f1b58d480e",
+  "branch": "agent/stock-sret-copy-full-values-20261101",
+  "source_hashes": {
+    "FV/Backend/Proof/StockReturnFullBody.lean": "b25c24c2ba72539315c2e87e54ca86b8c5334fdadcc064b1868693a0354c8653",
+    "FV/Backend/Proof/StockMemorySretCopyFullReturn.lean": "cf0b0ae2049c447948c290e236ebe001d28500bf7b4c69733c97f2e55227e702",
+    "FV/Backend/Proof/StockReturnFullBodyWitness.lean": "0aa2994c89a5857d9892e1bdb81de4ba16aebe6a72b377024e35c8810a0ca4ad",
+    "FV/Backend/Proof/StockMemorySretCopyFullReturnWitness.lean": "43e0d01d9d9477f25fd7b1c61f0f477b79f0492867177525cd89574aed3c0254",
+    "scripts/audit/stock-sret-full-values.lean": "52f90763968edacb39ba726d7f81f9e772d6566d3eca1cf1c906b4189c557e3e"
+  },
+  "proof_validation": "sret-868-independent-validation-v4.json",
+  "source_context_identical": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T04:37:25.010261+00:00"
+}

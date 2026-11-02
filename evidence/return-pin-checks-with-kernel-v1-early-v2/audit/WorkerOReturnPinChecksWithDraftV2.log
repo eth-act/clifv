@@ -1,0 +1,9 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinChecksWithDraftV2.lean:31:11: error(lean.unknownIdentifier): Unknown constant `Bool.and_eq_true.mp`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinChecksWithDraftV2.lean:31:44: error: Tactic `rcases` failed: `x✝ : ?m.11` is not an inductive datatype
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinChecksWithDraftV2.lean:44:10: error(lean.unknownIdentifier): Unknown constant `Bool.and_eq_true.mpr`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinChecksWithDraftV2.lean:45:4: error: No goals to be solved
+'E2E.ReturnPinChecksWith.fnsBProduction_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.checks_iff' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.okRProduction_of_checks' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.crate_correct_production' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.accepts_previous' depends on axioms: [propext, Classical.choice, Quot.sound]

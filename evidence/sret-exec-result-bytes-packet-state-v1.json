@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "FV/E2E/SretCopyExecResultBytes.lean": "0af058f1499b9831a866aab58d558363a0f80b78642cda72ffea191f1e93006e",
+    "scripts/audit/sret-copy-exec-result-bytes.lean": "e0a8dac7453567f0258f05e0a027a815b105f8226a212f6d934f86461a3d1dcb"
+  },
+  "modules": 1,
+  "generic_roots": 2,
+  "fixed_witness_roots": 0,
+  "full_goal_complete": false,
+  "scope": "The actual executable result yields every symbolic destination and source byte outside its compact code relocations. This is an output adapter,not an accepted-input execution certificate. Actual linked instantiation,default activation,and full140 remain open",
+  "utc": "2026-11-02T04:29:46.612278+00:00"
+}

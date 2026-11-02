@@ -1,0 +1,18 @@
+{
+  "status": "ready",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "roots": [
+    "FV.E2E.SemanticBinary",
+    "FV.E2E.PreparedReturnPinCallsWitness",
+    "FV.E2E.SemanticExecBytes",
+    "FV.E2E.SemanticChecksWith",
+    "FV.Backend.Proof.StockMemorySretCopyBodyWitness",
+    "FV.E2E.SemanticCompilerWitness"
+  ],
+  "exit_code": 0,
+  "cache_restore_enabled": false,
+  "builds_started": false,
+  "required_modules": [],
+  "full_goal_complete": false,
+  "utc": "2026-11-02T04:09:26.187248+00:00"
+}

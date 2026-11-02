@@ -8,13 +8,13 @@ import subprocess
 b = Path('/home/lee/clifv')
 r = b / '.worktrees/stock-extending-production-20261031'
 e = b / '.git/agent-evidence/stock-memory-20261029'
-source = e / 'return-pin-checks-packet-v1'
+source = e / 'return-pin-checks-packet-v3'
 output = r / '.lake/build/lib/lean'
 logs = e / 'return-pin-checks-packet-kernel-v1'
 logs.mkdir(exist_ok=True)
 output.mkdir(exist_ok=True)
 (e / 'return-pin-checks-packet-owned-outputs-v1.json').write_text(json.dumps(dict(purpose='Compile the one staged heap module without altering tracked source or adding a worktree/cache. Only new module artifacts enter the existing build view; normal Lake traces remain absent until publication.',output=str(output)),indent=2)+'\n')
-manifest = json.loads((e / 'return-pin-checks-packet-v1.json').read_text())
+manifest = json.loads((e / 'return-pin-checks-packet-v3.json').read_text())
 hashes = manifest['files']
 head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=r, text=True).strip()
 env = dict(os.environ)

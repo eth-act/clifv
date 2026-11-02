@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "source_sha256": "2cffe5ae229480e2cba758c8a023f599957b11ed557dcee11c8cb1d0ef19bf9a",
+  "generic_roots": 2,
+  "fixed_roots": 0,
+  "full_goal_complete": false,
+  "scope": "The existing executable result yields all symbolic source and destination bytes because compact code relocation bytes exclude both live heap regions. This is an output adapter only. Actual linked instantiation,default activation,and full140 remain open",
+  "utc": "2026-11-02T04:10:29.683339+00:00"
+}
