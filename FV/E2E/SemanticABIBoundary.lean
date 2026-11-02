@@ -22,8 +22,32 @@ theorem entryRegs (hc : CompiledSemanticABI f k vc vcp rf af fa fb) :
       List.mem_filterMap.mpr ⟨loc,member,by rw [located]⟩
     obtain ⟨n,bound,pin⟩ := regs r found
     exact ⟨n,pin,bound⟩
+  | voidCall source equal h =>
+    obtain ⟨_,_,_,scope,_,abi,_,_⟩ := Stock.VoidCall.check_sound (Bool.and_eq_true_iff.mp source).1
+    intro loc member r located
+    have regs := (Spill.locsOf_regs (functionE_sig_int scope.subsetE).1
+      (Spill.sret_le_of_sigAbiOk abi)).2
+    have found : r ∈ Spill.locRegs (locsOf f.sig) :=
+      List.mem_filterMap.mpr ⟨loc,member,by rw [located]⟩
+    obtain ⟨n,bound,pin⟩ := regs r found
+    exact ⟨n,pin,bound⟩
 
 end CompiledSemanticABI
+
+private theorem void_call_noTls {sig : Clif.Signature} {vc : VCode}
+    (checked : Stock.VoidCall.NI.codeCheck sig vc = true) : vc.hasTls = false := by
+  apply Bool.eq_false_iff.mpr
+  intro present
+  simp only [VCode.hasTls,Array.any_eq_true] at present
+  obtain ⟨b,hb,k,hk,flag⟩ := present
+  generalize atInst : vc.blocks[b].insts[k] = i at flag
+  cases i <;> try cases flag
+  rename_i name rd temp
+  have found := Stock.VoidCall.NI.checked_instruction checked
+    (Array.getElem?_eq_some_iff.mpr ⟨hb,rfl⟩)
+    (Array.getElem?_eq_some_iff.mpr ⟨hk,atInst⟩)
+  change false = true at found
+  cases found
 
 /-- TLS provenance retains the previous source boundary. The new memory whitelist has no TLS. -/
 theorem hasTls_of_vcode_semantic_abi {f : Clif.Function} {k : Nat} {vc vcp : VCode}
@@ -35,6 +59,15 @@ theorem hasTls_of_vcode_semantic_abi {f : Clif.Function} {k : Nat} {vc vcp : VCo
     have raw := Stock.MemoryStoreCfg.effectsOnly_noTls effects
     have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
       rw [equal]
+      cases cleanup with
+      | false => exact raw
+      | true => exact Backend.DeadCleanup.prune_noTls raw
+    have prepared := noTls_of_prepCheck h.prepOk staged
+    rw [prepared] at tls
+    cases tls
+  | @voidCall cleanup result source equal h =>
+    have raw := void_call_noTls (Bool.and_eq_true_iff.mp source).2
+    have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
       cases cleanup with
       | false => exact raw
       | true => exact Backend.DeadCleanup.prune_noTls raw

@@ -46,5 +46,20 @@ theorem backend_correct_worldX_return_pins {p : Clif.Program} {f : Clif.Function
   | memorySretCopy family equal effects stage =>
     subst vc
     exact backend_correct_worldX_stock_memory_abi family.domainABI stage hcov hsym hslot hcs hrel hargs fuel
+  | voidCall source equal stage =>
+    subst vc
+    refine ⟨fun vals cm returned => ?_,fun code trapped H G base ra s entry => ?_⟩
+    · obtain ⟨us,outs,w,pins,arity,values,memory,site,run,_⟩ :=
+        backend_correct_world_niX_stock_void_call hsub source stage hcov hX hXI hsym hslot hcs hrel hargs htr
+          fuel vals cm returned
+      exact ⟨us,outs,w,pins,arity,values,memory,site,run⟩
+    · have state : (⟨cs.frame,[],cs.mem⟩ : Clif.State) = cs := by
+        have callers := hcs.callers
+        cases cs
+        cases callers
+        rfl
+      have noTrap := (Stock.VoidCall.check_domain (Bool.and_eq_true_iff.mp source).1).notrap
+        hsub hcs.stockSourceEntry (by rwa [state]) fuel code
+      exact False.elim (noTrap (by rwa [state]))
 
 end E2E
