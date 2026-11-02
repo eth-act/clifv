@@ -1,14 +1,5 @@
 import FV.Backend.StockScalarCheck
 import FV.Backend.Proof.StockLogicalCheck
-import FV.Backend.Proof.StockScalarConstantDomain
-import FV.Backend.Proof.StockScalarBnotDomain
-import FV.Backend.Proof.StockScalarMulDomain
-import FV.Backend.Proof.StockScalarShiftDomain
-import FV.Backend.Proof.StockScalarCastDomain
-import FV.Backend.Proof.StockScalarBitDomain
-import FV.Backend.Proof.StockScalarPopcountDomain
-import FV.Backend.Proof.StockScalarMinMaxDomain
-import FV.Backend.Proof.StockScalarCmpDomain
 import FV.Backend.Proof.StockScalarHighMulDomain
 import FV.Backend.Proof.StockScalarDivDomain
 import FV.Backend.Proof.StockScalarMixedDivDomain

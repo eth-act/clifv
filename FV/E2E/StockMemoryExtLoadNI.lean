@@ -1,4 +1,5 @@
 import FV.E2E.StockArithmeticStageContract
+import FV.E2E.StockArithmeticSemantics
 import FV.E2E.StockMemoryMachine
 import FV.Backend.Proof.StockMemoryExtLoadClass
 import FV.E2E.StockMemoryExtLoadPairedFunction

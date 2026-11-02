@@ -1,5 +1,5 @@
 import FV.E2E.PreparedReturnPinPipeline
-import FV.E2E.LinkReturnPinGood
+import FV.E2E.LinkReturnPinProgram
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver

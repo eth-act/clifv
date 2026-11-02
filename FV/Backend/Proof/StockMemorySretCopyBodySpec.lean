@@ -1,7 +1,8 @@
+import FV.Backend.Proof.StockMemoryComputedStoreRecordSpec
+import FV.Backend.Proof.StockMemoryStoreDemandTransport
 import FV.Backend.Proof.StockMemoryOffsetEightStoreRetention
-import FV.Backend.Proof.StockMemoryStoredLoadSpec
-import FV.Backend.Proof.StockMemoryOffsetEightLoadRecord
 import FV.Backend.Proof.StockGuardedOmission
+import FV.Backend.Proof.StockMemoryIntegerSelected
 
 namespace Backend.Stock.Memory.SretCopy
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64

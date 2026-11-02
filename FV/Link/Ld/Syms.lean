@@ -1,4 +1,5 @@
 import FV.Link.Ld.WriteProof
+import FV.Backend.Proof.IselCovForm
 import FV.Link.Image
 
 /-! # The symbol check on the Lean linker's output (L2b stage 3b)

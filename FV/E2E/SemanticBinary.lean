@@ -1,6 +1,4 @@
-import FV.E2E.SemanticStackBound
-import FV.E2E.ProductionCheck
-import FV.E2E.ProductionChecksWith
+import FV.E2E.BinaryBoundaryFacts
 
 /-! # The binary-level theorem (M9, docs/contracts/e2e.md, "Binary level (M9)")
 
@@ -43,165 +41,11 @@ namespace E2E.SemanticBinary
 
 open Backend Backend.Proof E2E.LinkCheck
 
-/-! ## The compiled program of an input -/
-
-/-- The program of the input (`SemanticStackBound.ofInput`'s `P`). -/
-abbrev prog (I : SemanticStackBound.CompilerInput) : Clif.Program := progOf I.results
-
-/-- The compiled image of `f` (`SemanticStackBound.ofInput`'s `A f`). -/
-abbrev art (I : SemanticStackBound.CompilerInput) (f : Clif.Function) : Art := artOf I.results f
-
-/-- The program's code addresses (`SemanticStackBound.ofInput`'s `Img`). -/
-abbrev img (I : SemanticStackBound.CompilerInput) : BitVec 64 → Prop := ImgT (tabOf I.results)
-
-/-- The program's compiled code bytes (`SemanticStackBound.ofInput`'s `imgMem`). -/
-abbrev imgMem (I : SemanticStackBound.CompilerInput) : Arm.Memory := memT (tabOf I.results)
-
-/-- The linked system with no addresses outside the world (`F` only enters premises; `mach`,
-`NeedSlots`, `PlaceAt`, `base`, `P` do not depend on it). -/
-abbrev sys (I : SemanticStackBound.CompilerInput) (B : BaseEnv) : LinkSys := SemanticStackBound.ofInput I B fun _ => False
-
-/-- The body's stack pointer of an activation of a function with frame `af` entered in `r`. -/
-def spBody (af : AFunc) (r : Arm.ArmState) : BitVec 64 := spv r - BitVec.ofNat 64 (frameDrop af)
-
-/-- `a` is in the CLIF stack-slot region of the frame of `af` entered in `r`
-(`[sp_body + slotBase, sp_body + frameSize − clobberBytes)`: the slots lie below Cranelift's
-clobber area, #479). -/
-def SlotArea (af : AFunc) (r : Arm.ArmState) (a : BitVec 64) : Prop :=
-  af.slotBase ≤ (a - spBody af r).toNat ∧
-    (a - spBody af r).toNat < af.frameSize - clobberBytes af.saves
-
-/-- The arguments `args` of a call with signature `sig` where AAPCS64 puts them in `r`: a
-register parameter in its register, a stack parameter in the caller's outgoing area at
-`sp + off` (inside the address space, outside the code `G`, holding its bits). -/
-def ArgsOut (G : BitVec 64 → Prop) (sig : Clif.Signature) (args : List Clif.Val)
-    (r : Arm.ArmState) : Prop :=
-  ∀ loc v, (loc, v) ∈ (locsOf sig).zip args → match loc with
-    | .reg x => VHolds v (regVal r x)
-    | .stack off => (spv r).toNat + off + v.ty.bytes ≤ 2 ^ 64 ∧
-        Avoids G v.ty.bytes (spv r + BitVec.ofNat 64 off) ∧
-        (Arm.read_mem_bytes v.ty.bytes (spv r + BitVec.ofNat 64 off) r).setWidth v.ty.width = v.bits
-
-/-- **The boundary contract**: what code outside the program guarantees when it calls the
-function `f` of the program in the machine state `r`, with arguments `args`, its CLIF-visible
-memory being `cm`, and `N` bytes of stack. `roB a = some b`: the executable holds the byte `b` of
-the CLIF image's read-only data at `a` (`fun _ => none`: no data facts, every live CLIF byte is
-required of the caller). -/
-structure OutsideCall (I : SemanticStackBound.CompilerInput) (roB : BitVec 64 → Option (BitVec 8)) (f : Clif.Function)
-    (N : Nat) (r : Arm.ArmState)
-    (args : List Clif.Val) (cm : Clif.Mem) : Prop where
-  /-- the pc is `f`'s address (its link-map address) -/
-  pc : Arm.r .PC r = (art I f).base
-  /-- no model error -/
-  err : Arm.r .ERR r = .None
-  /-- the return address (x30) is outside the program's code: the caller is outside code -/
-  ra : ¬ img I (xreg 30 r)
-  /-- AAPCS64: `sp` is 16-aligned -/
-  spAligned : (spv r).toNat % 16 = 0
-  /-- `N` bytes below `sp` without wrapping -/
-  stack : N ≤ (spv r).toNat
-  /-- none of them is code -/
-  stackFree : ∀ a, img I a → ¬ StackBelow N (spv r) a
-  /-- the arguments where AAPCS64 puts them (stack arguments outside the code) -/
-  args : ArgsOut (img I) f.sig args r
-  /-- the live CLIF bytes outside the executable's read-only CLIF data (`roB`) are the
-  machine's -/
-  bytes : ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → roB (BitVec.ofNat 64 a) = none →
-    Arm.read_mem (BitVec.ofNat 64 a) r = b
-  /-- the live CLIF bytes at the read-only CLIF data are the CLIF image's (a CLIF-level fact: a
-  store into read-only data is stuck) -/
-  image : ∀ a b b', cm.valid a 1 = true → cm.bytes a = some b → roB (BitVec.ofNat 64 a) = some b' →
-    b = b'
-  /-- the live CLIF allocations fit the address space, hold no code, and lie in the free stack
-  only in `f`'s CLIF slot region -/
-  valid : ∀ a n, cm.valid a n = true → a + n ≤ 2 ^ 64 ∧ ∀ k < n,
-    ¬ img I (BitVec.ofNat 64 (a + k)) ∧
-    (StackBelow N (spv r) (BitVec.ofNat 64 (a + k)) → SlotArea (art I f).af r (BitVec.ofNat 64 (a + k)))
-  /-- the CLIF symbol table is the CLIF image's -/
-  symbols : cm.symbols = fun n => I.syms.lookup n
-
-/-- **The reference CLIF run** of an outside call of `f` in `r` (a choice, not an obligation of
-the outside code): an entry state of `f` on `args` whose stack slots are where the compiled frame
-puts them, and whose slot-placement oracle (needed only with slotted program callees) is at the
-body's `sp` with the program's compiled frames. -/
-structure ClifRun (I : SemanticStackBound.CompilerInput) (B : BaseEnv) (f : Clif.Function) (r : Arm.ArmState)
-    (args : List Clif.Val) (cs : Clif.State) : Prop where
-  entry : ClifEntry f args cs
-  slots : SlotRel f ((spBody (art I f).af r).toNat + (art I f).af.slotBase) cs.frame.slots
-  place : (sys I B).NeedSlots → (sys I B).PlaceAt cs.mem (spBody (art I f).af r)
-
-open Classical in
-/-- **The model state** of the machine state `r` entering `f`: `r` with the machine's program
-`f`'s compiled words and the compiled code bytes at the program's code addresses. -/
-noncomputable def modelOf (I : SemanticStackBound.CompilerInput) (f : Clif.Function) (r : Arm.ArmState) : Arm.ArmState :=
-  Arm.set_program (setMem r fun a => if img I a then imgMem I a else r.mem a)
-    ((art I f).fb.program (art I f).base)
-
-theorem r_modelOf (I : SemanticStackBound.CompilerInput) (f : Clif.Function) (r : Arm.ArmState) (fld : Arm.StateField) :
-    Arm.r fld (modelOf I f r) = Arm.r fld r := by
-  simp only [modelOf]
-  rw [r_set_program, r_setMem]
-
-theorem spv_modelOf (I : SemanticStackBound.CompilerInput) (f : Clif.Function) (r : Arm.ArmState) :
-    spv (modelOf I f r) = spv r := r_modelOf I f r _
-
-theorem regVal_modelOf (I : SemanticStackBound.CompilerInput) (f : Clif.Function) (r : Arm.ArmState) (x : Reg) :
-    regVal (modelOf I f r) x = regVal r x := by
-  cases x <;> simp only [regVal, r_modelOf]
-
-open Classical in
-theorem mem_modelOf (I : SemanticStackBound.CompilerInput) (f : Clif.Function) (r : Arm.ArmState) (a : BitVec 64) :
-    (modelOf I f r).mem a = if img I a then imgMem I a else r.mem a := by
-  simp only [modelOf, mem_set_program, mem_setMem]
-
-theorem mem_modelOf_img {I : SemanticStackBound.CompilerInput} {f : Clif.Function} {r : Arm.ArmState} {a : BitVec 64}
-    (h : img I a) : (modelOf I f r).mem a = imgMem I a := by
-  rw [mem_modelOf]; simp [h]
-
-theorem mem_modelOf_not {I : SemanticStackBound.CompilerInput} {f : Clif.Function} {r : Arm.ArmState} {a : BitVec 64}
-    (h : ¬ img I a) : (modelOf I f r).mem a = r.mem a := by
-  rw [mem_modelOf]; simp [h]
-
-@[simp] theorem program_modelOf (I : SemanticStackBound.CompilerInput) (f : Clif.Function) (r : Arm.ArmState) :
-    (modelOf I f r).program = (art I f).fb.program (art I f).base := by
-  simp only [modelOf, program_set_program]
-
-/-- The body-entry world `bodyOf af s` is a body entry of `s`. -/
-theorem bodyEntry_bodyOf (af : AFunc) (s : Arm.ArmState) : BodyEntry af s (bodyOf af s) where
-  sp := spv_bodyOf af s
-  fp := x29_bodyOf af s
-  args := fun i hi => r_bodyOf af s
-    (fun e => by
-      have := congrArg (fun f => match f with | Arm.StateField.GPR j => j.toNat | _ => 0) e
-      simp at this; omega)
-    (fun e => by
-      have := congrArg (fun f => match f with | Arm.StateField.GPR j => j.toNat | _ => 0) e
-      simp at this; omega)
-  argsV := fun i _ => r_bodyOf af s (by simp) (by simp)
-  other := fun _ _ h29 h31 => r_bodyOf af s h29 h31
-  mem := mem_bodyOf af s
-  program := program_bodyOf af s
-
-/-- `BaseOk` does not depend on the addresses `F` outside the world. -/
-theorem baseOk_F {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {F F' : BitVec 64 → Prop}
-    (h : BaseOk (SemanticStackBound.ofInput I B F)) : BaseOk (SemanticStackBound.ofInput I B F') :=
-  ⟨h.baseNoAlloc, h.keepSyms, h.aliasSyms, h.baseOs, h.basePc, h.baseExt, h.baseX, h.baseXI,
-    h.baseTls, h.baseTry, h.baseNI, h.baseTlsNI, h.baseKeepsPlace, h.baseKeepsAllocs⟩
-
-/-- **The addresses outside the entry activation's world** with callees' budget `K`
-(`backend_correct_program`'s `hF`): the frame-private addresses, the callees' dead stack and the
-program's code. -/
-def worldF (I : SemanticStackBound.CompilerInput) (f : Clif.Function) (K : Nat) (r : Arm.ArmState) : BitVec 64 → Prop :=
-  frameWG K (RAFrame.compute (art I f).vcp (art I f).rf).intBase
-    (RAFrame.compute (art I f).vcp (art I f).rf).size (art I f).af (img I) (modelOf I f r)
-
 /-- The model state's code addresses are the program's. -/
 theorem img_of_codeAddr {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {F : BitVec 64 → Prop}
     (hL : (SemanticStackBound.ofInput I B F).OkSemanticNI) {f : Clif.Function} (hf : f ∈ (prog I).funcs)
     {r : Arm.ArmState} {a : BitVec 64} (h : CodeAddr (modelOf I f r) a) : img I a := by
-  obtain ⟨p, hp, hpa⟩ := h
-  rw [program_modelOf] at hp
-  exact hL.imgAddr f hf a ⟨p, hp, hpa⟩
+  exact BinaryBoundaryFacts.img_of_codeAddr (BinaryBoundaryFacts.of_semantic hL) hf h
 
 /-- The frame facts of a compiled function. -/
 theorem frame_facts {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {F : BitVec 64 → Prop}
@@ -212,10 +56,7 @@ theorem frame_facts {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {F : Bi
       (RAFrame.compute (art I f).vcp (art I f).rf).size ∧
     (RAFrame.compute (art I f).vcp (art I f).rf).size ≤
       (art I f).af.frameSize - clobberBytes (art I f).af.saves := by
-  have hc := hL.compiled f hf
-  have hfr : (art I f).af.frame = true := lowerRFunc_frame hc.alloc
-  exact ⟨by simp [frameDrop, hfr], (lowerRFunc_ok hc.alloc).1.2.1, intBase_le_size _ _,
-    size_le_frameBody hc.alloc⟩
+  exact BinaryBoundaryFacts.frame_facts (BinaryBoundaryFacts.of_semantic hL) hf
 
 /-- A byte of the free stack outside the slot region, or of the code, is outside the world; a
 byte that is neither is not. -/
@@ -225,26 +66,7 @@ theorem not_worldF {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {F : Bit
     {x : BitVec 64} (hx : ¬ img I x)
     (hs : StackBelow (frameDrop (art I f).af + K) (spv r) x → SlotArea (art I f).af r x) :
     ¬ worldF I f K r x := by
-  obtain ⟨hd, hsb, hib, hsz⟩ := frame_facts hL hf
-  have hsp := (spv r).isLt
-  have hxl := x.isLt
-  have hoff := off_toNat x (spv r) (frameDrop (art I f).af) (by omega)
-  simp only [worldF, frameWG, frameW, frameF, spv_modelOf]
-  rintro (((⟨h1, h2⟩ | ⟨h1, h2⟩ | hc) | ⟨h1, h2⟩) | hi)
-  · obtain ⟨hs1, -⟩ := hs ⟨(hoff.1.1 (by omega)).1, by have := (hoff.1.1 (by omega)).2; omega⟩
-    simp only [spBody] at hs1
-    omega
-  · have := hoff.1.1 (by omega)
-    obtain ⟨-, hs2⟩ := hs ⟨this.1, by omega⟩
-    simp only [spBody] at hs2
-    omega
-  · exact hx (img_of_codeAddr hL hf hc)
-  · rw [hoff.2.2] at h1 h2
-    obtain ⟨-, hs2⟩ := hs ⟨by omega, by omega⟩
-    simp only [spBody, BitVec.toNat_sub, hoff.2.2] at hs2
-    rw [Nat.mod_eq_of_lt (by omega)] at hs2
-    omega
-  · exact hx hi
+  exact BinaryBoundaryFacts.not_worldF (BinaryBoundaryFacts.of_semantic hL) hf hN hx hs
 
 /-- A byte of the outgoing-argument area `[sp_body, sp_body + intBase)` that is not code is in
 the world. -/
@@ -254,28 +76,7 @@ theorem not_worldF_out {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {F :
     {j : Nat} (hj : j < (RAFrame.compute (art I f).vcp (art I f).rf).intBase)
     (hx : ¬ img I (spBody (art I f).af r + BitVec.ofNat 64 j)) :
     ¬ worldF I f K r (spBody (art I f).af r + BitVec.ofNat 64 j) := by
-  obtain ⟨hd, hsb, hib, hsz⟩ := frame_facts hL hf
-  have hsp := (spv r).isLt
-  have hspbN : (spBody (art I f).af r).toNat = (spv r).toNat - frameDrop (art I f).af :=
-    (off_toNat 0 (spv r) _ (by omega)).2.2
-  have hxN : (spBody (art I f).af r + BitVec.ofNat 64 j).toNat = (spBody (art I f).af r).toNat + j := by
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-    rw [Nat.mod_eq_of_lt (by omega : j < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
-  have ho : (spBody (art I f).af r + BitVec.ofNat 64 j - (spv (modelOf I f r) -
-      BitVec.ofNat 64 (frameDrop (art I f).af))).toNat = j := by
-    rw [spv_modelOf, show spv r - BitVec.ofNat 64 (frameDrop (art I f).af) = spBody (art I f).af r from rfl,
-      BitVec.add_comm, BitVec.add_sub_cancel]
-    simp; omega
-  simp only [worldF, frameWG, frameW, frameF]
-  rw [ho]
-  rintro (((⟨h1, h2⟩ | ⟨h1, h2⟩ | hc) | ⟨h1, h2⟩) | hi)
-  · omega
-  · omega
-  · exact hx (img_of_codeAddr hL hf hc)
-  · rw [spv_modelOf, show spv r - BitVec.ofNat 64 (frameDrop (art I f).af) = spBody (art I f).af r
-      from rfl, hxN] at h1
-    omega
-  · exact hx hi
+  exact BinaryBoundaryFacts.not_worldF_out (BinaryBoundaryFacts.of_semantic hL) hf hN hj hx
 
 /-- **The per-run premises of `backend_correct_program` from the boundary contract**, for the
 model state `s = modelOf I f r`, the body-entry world `bodyOf af s`, the callees' budget `K` and
@@ -296,86 +97,7 @@ theorem premises {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {f : Clif.
       (RAFrame.compute (art I f).vcp (art I f).rf).intBase⟩ f cs.frame.slots cs.mem
       (bodyOf (art I f).af (modelOf I f r)) ∧
     ((sys I B).NeedSlots → (sys I B).PlaceAt cs.mem (spv (bodyOf (art I f).af (modelOf I f r)))) := by
-  obtain ⟨hd, hsb, hib, hsz⟩ := frame_facts hL hf
-  have hsp := (spv r).isLt
-  have hN := ho.stack
-  have himg : ∀ a, img I a → (modelOf I f r).mem a = imgMem I a := fun a h => mem_modelOf_img h
-  have hspb : spv (bodyOf (art I f).af (modelOf I f r)) = spBody (art I f).af r := by
-    rw [spv_bodyOf, spv_modelOf]; rfl
-  have hspbN : (spBody (art I f).af r).toNat = (spv r).toNat - frameDrop (art I f).af :=
-    (off_toNat 0 (spv r) _ (by omega)).2.2
-  -- a byte at `sp_body + j` with `j` below the frame drop is in the free stack
-  have hbelow : ∀ j < frameDrop (art I f).af,
-      StackBelow (frameDrop (art I f).af + K) (spv r) (spBody (art I f).af r + BitVec.ofNat 64 j) ∧
-      (spBody (art I f).af r + BitVec.ofNat 64 j - spBody (art I f).af r).toNat = j := by
-    intro j hj
-    refine ⟨?_, by rw [BitVec.add_comm, BitVec.add_sub_cancel]; simp; omega⟩
-    simp only [StackBelow, BitVec.toNat_add, BitVec.toNat_ofNat, hspbN]
-    rw [Nat.mod_eq_of_lt (by omega : j < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
-    omega
-  refine ⟨⟨by simp, hL.imgCode f hf _ himg, by rw [r_modelOf]; exact ho.pc,
-    by rw [r_modelOf]; exact ho.err, by simp only [xreg]; rw [r_modelOf], fun k hk e => ?_,
-    by rw [spv_modelOf]; exact ho.spAligned, hL.fits f hf⟩, ?_, ?_, himg,
-    bodyEntry_bodyOf _ _, ?_, ?_, ⟨⟨fun a b hv hb => ?_, fun a n hv => ?_, ho.symbols⟩, ?_, ?_⟩, ?_⟩
-  · -- the return address is outside `f`'s code
-    obtain ⟨w, hw⟩ : ∃ w, (art I f).fb.words[k]? = some w := ⟨_, Array.getElem?_eq_getElem hk⟩
-    apply ho.ra
-    rw [e]
-    have := codeAddr_word (s := modelOf I f r) (base := (art I f).base) (by simp) hw (i := 0) (by omega)
-    rw [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] at this
-    exact img_of_codeAddr hL hf this
-  · -- the stack
-    refine stackRoom_of (by rw [spv_modelOf, ← hd]; exact hN) fun a hc hb => ?_
-    rw [spv_modelOf, ← hd] at hb
-    exact ho.stackFree a (img_of_codeAddr hL hf hc) hb
-  · intro a ha
-    rw [spv_modelOf]
-    exact ho.stackFree a ha
-  · -- the arguments
-    intro loc v hm
-    have h := ho.args loc v hm
-    cases loc with
-    | reg x => simp only at h ⊢; rw [regVal_modelOf]; exact h
-    | stack off =>
-      obtain ⟨hfit, hav, hby⟩ := h
-      have hbytes : ∀ k < v.ty.bytes, (modelOf I f r).mem (spv r + BitVec.ofNat 64 off + BitVec.ofNat 64 k) =
-          r.mem (spv r + BitVec.ofNat 64 off + BitVec.ofNat 64 k) := fun k hk => mem_modelOf_not (hav k hk)
-      refine ⟨by rw [spv_modelOf]; exact hfit, fun k hk hc => hav k hk ?_, ?_⟩
-      · have := img_of_codeAddr hL hf hc
-        rwa [spv_modelOf, BitVec.ofNat_add, ← BitVec.add_assoc] at this
-      · rw [spv_modelOf, read_mem_bytes_congr _ _ hbytes]; exact hby
-  · intro off v hm
-    obtain ⟨-, hav, -⟩ := ho.args (.stack off) v hm
-    rw [spv_modelOf]; exact hav
-  · -- the live CLIF bytes
-    have hni := ((ho.valid a 1 hv).2 0 (by omega)).1
-    simp only [Nat.add_zero] at hni
-    simp only [Arm.read_mem, mem_bodyOf]
-    rw [show Arm.read_store (BitVec.ofNat 64 a) (modelOf I f r).mem = (modelOf I f r).mem (BitVec.ofNat 64 a)
-      from rfl, mem_modelOf_not hni]
-    cases hroa : roB (BitVec.ofNat 64 a) with
-    | none => exact ho.bytes a b hv hb hroa
-    | some b' => rw [hro _ _ hroa, ho.image a b b' hv hb hroa]
-  · obtain ⟨hfit, hk⟩ := ho.valid a n hv
-    exact ⟨hfit, fun k hkn => not_worldF hL hf hN (hk k hkn).1 (hk k hkn).2⟩
-  · -- the slots
-    rw [Rel.slotReg, hspb]; exact hr.slots
-  · -- the outgoing area: free stack below the slot region
-    refine ⟨show (RAFrame.compute (art I f).vcp (art I f).rf).intBase ≤ 2 ^ 64 by omega,
-      fun j hj => ?_, fun a n hv k hk j hj e => ?_⟩
-    · change j < (RAFrame.compute (art I f).vcp (art I f).rf).intBase at hj
-      rw [hspb]
-      obtain ⟨hb, -⟩ := hbelow j (by omega)
-      exact not_worldF_out hL hf hN hj (fun hi => ho.stackFree _ hi hb)
-    · change j < (RAFrame.compute (art I f).vcp (art I f).rf).intBase at hj
-      rw [hspb] at e
-      obtain ⟨hb, ho'⟩ := hbelow j (by omega)
-      have := ((ho.valid a n hv).2 k hk).2 (by rw [e]; exact hb)
-      rw [e] at this
-      unfold SlotArea at this
-      omega
-  · intro hN'; rw [hspb]; exact hr.place hN'
-
+  exact BinaryBoundaryFacts.premises (BinaryBoundaryFacts.of_semantic hL) hf hro ho hr
 /-- The linked machine does not depend on the addresses `F` outside the world. -/
 theorem hooks_F (I : SemanticStackBound.CompilerInput) (B : BaseEnv) (F F' : BitVec 64 → Prop) :
     ∀ M, (SemanticStackBound.ofInput I B F).hooks M = (SemanticStackBound.ofInput I B F').hooks M

@@ -1,4 +1,3 @@
-import FV.Backend.Proof.StockMemoryDispatch
 import FV.Backend.Proof.StockReturnedSourceRetention
 
 namespace Backend.Stock.Memory

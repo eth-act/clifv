@@ -1,3 +1,5 @@
+import FV.Backend.Proof.RegallocOperands
+import FV.E2E.RegLevelPush
 import FV.Backend.Proof.IselSzSound
 import FV.Backend.Proof.IselSzExt
 import FV.Backend.Proof.IselSzTab

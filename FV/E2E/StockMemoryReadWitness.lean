@@ -1,3 +1,4 @@
+import FV.E2E.StockMemoryPairedBody
 import FV.E2E.StockMemoryPairedReturnAt
 import FV.Backend.Proof.StockBlockCode
 import FV.Backend.Proof.StockMemoryBodyFixture

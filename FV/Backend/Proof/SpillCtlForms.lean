@@ -1,6 +1,5 @@
 import FV.Backend.Proof.SpillLocalForms
-import FV.Backend.Proof.IselCtlTry
-import FV.Backend.Proof.IselCtlBrTable
+import FV.Backend.Proof.IselCtlCallRules
 
 /-!
 # The spill allocator's facts on the control forms (V4 (a), step 3: `CtlSpillHyp`)

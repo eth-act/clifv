@@ -1,6 +1,4 @@
-import FV.Backend.Proof.StockMemoryStoreCfgCompatibility
-import FV.Backend.Proof.StockMemoryStoreCompatibility
-import FV.Backend.Proof.StockMemoryExtLoadCompatibility
+import FV.Backend.MemoryStoreCfgNIProduction
 import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
 import FV.Backend.Proof.StockMemoryCompatibility
 

@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockMemoryStoreSelection
-import FV.Backend.Proof.LowerDecide
 
 namespace Backend.Stock.Memory.StoreRoots
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64

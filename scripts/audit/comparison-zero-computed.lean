@@ -1,0 +1,17 @@
+import FV.Backend.Proof.StockComparisonZeroComputedCores
+
+#print axioms Backend.Stock.Proof.ComparisonBranch.nonband_of_parameter
+#print axioms Backend.Stock.Proof.ComparisonBranch.comparison_selected_zero_computed
+#print axioms Backend.Stock.Proof.ComparisonBranch.comparison_named_calls_zero_computed
+#print axioms Backend.Stock.Proof.ComparisonBranch.Calls.comparison_zero_computed_emission
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.comparison_zero_computed_bounds
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.comparison_zero_computed_emitted_size
+#print axioms Backend.Stock.Proof.ConditionalCalls.Calls.comparison_zero_computed_no_defs
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.nonband_here
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_zero_computed_calls
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_zero_computed_branch_values_last
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_zero_computed_branch_values
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_zero_computed_emission_size
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_zero_computed_branch_no_defs
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_comparison_zero_computed_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_comparison_zero_computed_core

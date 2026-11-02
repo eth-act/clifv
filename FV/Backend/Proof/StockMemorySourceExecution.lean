@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockLocalSourceExecution
+import FV.Backend.Proof.StockPureSourceExecution
 
 /-! Additive source execution for ordinary instructions, including memory effects.
 Only call-free step shape is used; memory and trap behavior remain unrestricted. -/

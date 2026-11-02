@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockEntrySeed
+import FV.Backend.Proof.StockEntryCode
 import FV.E2E.StockMemoryRegisterPrelude
 
 namespace E2E.StockMemory

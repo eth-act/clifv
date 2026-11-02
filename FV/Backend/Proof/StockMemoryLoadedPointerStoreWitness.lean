@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMemoryComputedStoreRecordSpec
 import FV.Backend.Proof.StockMemoryLoadedPointerStoreRetention
 import FV.Backend.Proof.StockMemoryLoadedPointerFixture
 import FV.Backend.Proof.StockMemoryIntegerSelected

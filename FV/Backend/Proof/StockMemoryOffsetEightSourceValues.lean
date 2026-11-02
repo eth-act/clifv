@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockMemoryOffsetEightValues
-import FV.Backend.Proof.StockMemoryIntegerSelectedValues
+import FV.Backend.Proof.StockAluOperandCoverage
 
 namespace Backend.Stock.Memory.IntegerRoots
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64

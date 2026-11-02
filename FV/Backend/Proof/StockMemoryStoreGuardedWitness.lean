@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMemoryStoreSourceValues
 import FV.Backend.Proof.StockMemoryStoreRecordFixture
 import FV.E2E.Main
 import FV.E2E.Guarded

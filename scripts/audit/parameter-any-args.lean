@@ -1,0 +1,14 @@
+import FV.Backend.Proof.StockParameterAnyArgsWitness
+
+#print axioms Backend.Stock.Proof.ParameterCfg.any_nonentry_args_parameter_returns_of_leaf
+#print axioms Backend.Stock.Proof.ParameterCfg.any_nonentry_args_parameter_traps_of_leaf
+#print axioms Backend.Stock.Proof.ParameterCfg.any_args_parameter_return_successor_of_leaf
+#print axioms Backend.Stock.Proof.ParameterCfg.any_args_parameter_trap_successor_of_leaf
+#print axioms Backend.Stock.Proof.ParameterCfg.any_args_parameter_jump_return_frame_of_leaf
+#print axioms Backend.Stock.Proof.ParameterCfg.any_args_parameter_jump_trap_frame_of_leaf
+#print axioms Backend.Stock.Proof.ParameterCfg.domainAt_of_any_args_parameter_leaf_cfg
+#print axioms Backend.Stock.ParameterArgsCfg.any_source_leaf_eligible_facts
+#print axioms Backend.Stock.ParameterArgsCfg.domainAt_of_any_source_leaf_eligible
+#print axioms Backend.Stock.ParameterArgsCfg.anySourceOk_sound
+#print axioms Backend.Stock.ParameterArgsCfg.anyCheck_sound
+#print axioms Backend.Stock.ParameterArgsCfg.AnyFixture.parameter_any_args_witness -- witness: native_decide

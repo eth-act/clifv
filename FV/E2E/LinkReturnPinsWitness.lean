@@ -1,4 +1,5 @@
 import FV.E2E.LinkReturnPins
+import FV.Backend.Proof.StockMemorySretCopyBodyWitness
 import FV.E2E.CompiledSemanticReturnPinsWitness
 import FV.E2E.LinkSemanticNI
 import FV.E2E.NonVacuityLink

@@ -1,4 +1,6 @@
-import FV.Backend.Proof.StockProtectedSinkRules
+import FV.Backend.Proof.StockSinkProvenance
+import FV.Backend.Proof.StockSinkRuleRhs
+import FV.Backend.Proof.StockSinkRuleSyntax
 import FV.Backend.Proof.StockCtorFlow
 import FV.Backend.Proof.StockDFG
 

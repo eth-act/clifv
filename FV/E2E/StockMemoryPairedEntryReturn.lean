@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockEntryPrelude
+import FV.E2E.StockMemoryPairedReturnAt
 import FV.E2E.StockMemoryPairedEntry
 
 namespace E2E.StockMemory

@@ -1,4 +1,4 @@
-import FV.E2E.StockMemorySretCopyPairedFunctionObservation
+import FV.E2E.StockMemorySretCopyPairedFunction
 import FV.Backend.Proof.StockLinearCfgCompatibility
 
 namespace E2E.StockMemory.SretCopy

@@ -1,6 +1,7 @@
 import FV.Backend.StockMemoryCfgCheck
 import FV.Backend.Proof.LowerDecide
-import FV.Backend.Proof.StockMemoryClass
+import FV.Backend.Proof.StockPolicy
+import FV.Backend.Proof.LowerLoopCode
 
 namespace Backend.Stock.MemoryCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
