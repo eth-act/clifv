@@ -1,0 +1,42 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerWorld.lean:89:50: warning: Variable name `k` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _k
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerWorld.lean:94:5: warning: Variable name `hcov` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hcov
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerWorld.lean:95:5: warning: Variable name `hsym` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hsym
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerWorld.lean:96:5: warning: Variable name `hslot` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hslot
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerWorld.lean:98:5: warning: Variable name `hcs` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hcs
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerWorld.lean:99:5: warning: Variable name `hrel` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hrel
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerWorld.lean:100:5: warning: Variable name `hargs` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hargs
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`

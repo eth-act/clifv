@@ -8,7 +8,7 @@ import subprocess
 b = Path('/home/lee/clifv')
 r = b / '.worktrees/stock-extending-production-20261031'
 e = b / '.git/agent-evidence/stock-memory-20261029'
-source = e / 'WorkerOReturnPinChecksWithDraftV3.lean'
+source = e / 'WorkerOReturnPinChecksWithDraftV5.lean'
 assert source.is_file()
 digest = hashlib.sha256(source.read_bytes()).hexdigest()
 env = dict(os.environ)

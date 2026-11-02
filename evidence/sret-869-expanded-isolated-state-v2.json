@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "view": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "dependency_base": "7d999a8317e5da6ac435f628f9d3fbc8d9bdd1fa",
+  "source_hashes": {
+    "FV/Backend/Proof/StockMemorySretCopyEntryValue.lean": "9b3cda5e877c7dc478b653137419373ad91c10498e3afb1937203cb35d2ecc69",
+    "FV/Backend/Proof/StockMemorySretCopyEntryValueWitness.lean": "7ae8f21dab8796e82464637f21f03b333f2ae627b504fb7b00c08041f1337440",
+    "FV/Backend/Proof/StockReachableJump.lean": "b1c6c17cb40979572f7de4b2a0daae1ba9dea58ea2547711a1dfe4d244a4d319",
+    "FV/Backend/Proof/StockReachableReturn.lean": "e7f24b99005c56bfc2d8be936c8a8c21314551fd860b696b7eb10019b3c88dd1",
+    "FV/Backend/Proof/StockSourceReachability.lean": "42af066e95acf56c8425eda112f9d47141bff37e6a64ddac71c2bb689adf1dda",
+    "FV/Backend/Proof/StockSretSourceStability.lean": "e64494aabefc91dbdb7f88668ee5e967cb4507ddb03f41ac4bfafdd6e3c82d84",
+    "FV/E2E/StockSretPointerPaired.lean": "6f37e6965deaf7e8f484782db15325cd4b1cb4b68f1480f6e078538f68a9ff36",
+    "FV/E2E/StockSretPointerPairedWitness.lean": "02f1810183d2b80477a9bb6569eca673c629715309c43a7c2cc29ae5ab8b01b9",
+    "FV/E2E/StockSretPointerWorld.lean": "17a8099c0985e1d60c0f5fea8c4f9d12f76122598e870155cf4e5523b8750edc",
+    "FV/E2E/StockSretPointerWorldWitness.lean": "46587a0c59419816a63dc6d2e218315efe3e8b3a9a34f74b762cc5b4b4762b44",
+    "scripts/audit/stock-sret-entry-value.lean": "fc2b97eb0f05c80c7c8462094ca65c5647b7075b2af21b59673d06746f7c28fd"
+  },
+  "support_source_hashes": {},
+  "reused_kernel_logs": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-isolated-kernel-v1",
+  "original_source_files_exact": 6,
+  "original_axiom_sets_exact": 28,
+  "generic_roots": 30,
+  "fixed_roots": 4,
+  "modules": [
+    "FV/E2E/StockSretPointerPaired.lean",
+    "FV/E2E/StockSretPointerWorldWitness.lean",
+    "FV/E2E/StockSretPointerPairedWitness.lean"
+  ],
+  "isolated_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1",
+  "requires_main_dependencies": [
+    "FV/Backend/SemanticABICheck.lean",
+    "FV/E2E/CompiledSemanticABI.lean",
+    "FV/E2E/StockVoidCallEntry.lean"
+  ],
+  "full_goal_complete": false,
+  "utc": "2026-11-02T05:01:31.291431+00:00"
+}

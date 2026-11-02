@@ -1,0 +1,13 @@
+{
+  "status": "reviewed",
+  "paired_receipt": "sret-869-expanded-isolated-state-v2.json",
+  "checker_receipt": "return-pin-checks-packet-state-v1-early-v6.json",
+  "paired_roots": 34,
+  "checker_roots": 7,
+  "old_source_files_exact": 6,
+  "old_axiom_sets_exact": 28,
+  "isolated_build_outputs_removed": true,
+  "requires_main_reconciliation": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T05:03:04.809513+00:00"
+}

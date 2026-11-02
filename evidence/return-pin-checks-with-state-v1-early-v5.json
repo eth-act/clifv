@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "source_sha256": "0b179ee14bc3c7dcc3ace40f27a450f18e9ca737528c3e927bbfd0d4e12f0599",
+  "generic_roots": 5,
+  "fixed_roots": 0,
+  "full_goal_complete": false,
+  "scope": "Generated proofs can compose ABI-aware slices against the complete program and one cached return-pin context. Exact whole-check equivalence retains the original global checks and all previous successful programs. Concrete capture witnesses and consumer activation remain pending; full140 remains incomplete",
+  "utc": "2026-11-02T05:01:53.817121+00:00"
+}

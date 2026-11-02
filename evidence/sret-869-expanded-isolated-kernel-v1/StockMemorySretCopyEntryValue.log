@@ -1,0 +1,224 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:191:75: warning: This simp argument is unused:
+  Ne.symm entryMiddle
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [blockIdx?, blocks, firstDestination, List.findIdx?_cons, entryMiddle]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:193:76: warning: This simp argument is unused:
+  Ne.symm entryTarget
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [blockIdx?, blocks, secondDestination, List.findIdx?_cons, entryTarget, middleTarget,
+    Ne.symm middleTarget]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:193:109: warning: This simp argument is unused:
+  Ne.symm middleTarget
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [blockIdx?, blocks, secondDestination, List.findIdx?_cons, entryTarget, Ne.symm entryTarget,
+    middleTarget]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:195:67: warning: This simp argument is unused:
+  Ne.symm entryMiddle
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Clif.Function.block?, blocks, firstDestination, entryMiddle]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:197:68: warning: This simp argument is unused:
+  Ne.symm entryTarget
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Clif.Function.block?, blocks, secondDestination, entryTarget, middleTarget, Ne.symm middleTarget]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:197:101: warning: This simp argument is unused:
+  Ne.symm middleTarget
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Clif.Function.block?, blocks, secondDestination, entryTarget, Ne.symm entryTarget, middleTarget]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:329:27: warning: Variable name `run` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _run
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:331:5: warning: Variable name `entered` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _entered
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:333:5: warning: Variable name `returned` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _returned
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:334:55: warning: Variable name `refines` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _refines
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:335:5: warning: Variable name `driver` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _driver
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:336:5: warning: Variable name `memorySem` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _memorySem
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:336:60: warning: Variable name `stable` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _stable
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:337:5: warning: Variable name `memoryOk` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _memoryOk
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:338:24: warning: Variable name `memory` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _memory
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:339:5: warning: Variable name `arguments` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _arguments
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:357:27: warning: Variable name `run` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _run
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:359:5: warning: Variable name `entered` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _entered
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:361:5: warning: Variable name `returned` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _returned
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:362:55: warning: Variable name `refines` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _refines
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:363:5: warning: Variable name `driver` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _driver
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:364:5: warning: Variable name `memorySem` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _memorySem
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:364:60: warning: Variable name `stable` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _stable
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:365:5: warning: Variable name `memoryOk` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _memoryOk
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:366:24: warning: Variable name `memory` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _memory
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:367:5: warning: Variable name `arguments` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _arguments
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:430:27: warning: Variable name `run` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _run
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:432:5: warning: Variable name `entered` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _entered
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:434:5: warning: Variable name `returned` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _returned
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:435:55: warning: Variable name `refines` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _refines
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:436:5: warning: Variable name `driver` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _driver
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:437:5: warning: Variable name `memorySem` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _memorySem
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:437:60: warning: Variable name `stable` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _stable
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:438:5: warning: Variable name `memoryOk` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _memoryOk
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:439:24: warning: Variable name `memory` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _memory
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockMemorySretCopyEntryValue.lean:440:5: warning: Variable name `arguments` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _arguments
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`

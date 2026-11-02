@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "FV/E2E/ReturnPinChecksWith.lean": "481db95e28b00aa600fe628e3ef186decdbcbd99e78d07d80a17ae11f0ff607a",
+    "FV/E2E/ReturnPinChecksWithWitness.lean": "320ccf55ed8c1e0e47c642ee5b4b921ca3c1a2f115ee39083d0782ad4a61294e",
+    "scripts/audit/return-pin-checks-with.lean": "bc56353c0064af117cdf039ad2d94ab1b6cae51456f3adacc82405c48f4b85f1"
+  },
+  "modules": 1,
+  "generic_roots": 5,
+  "fixed_witness_roots": 2,
+  "full_goal_complete": false,
+  "scope": "The generated checker composes slices against the complete actual program and one return-pin context. Its complete original mixed-program witness and prior identity witness retain both cleanup modes. No old API changes. Proof emitter/default activation and full140 remain open",
+  "utc": "2026-11-02T05:02:26.086039+00:00"
+}

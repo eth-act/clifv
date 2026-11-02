@@ -1,0 +1,21 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockSretSourceStability.lean:90:20: warning: This simp argument is unused:
+  head
+
+Hint: Omit it from the simp argument list.
+  [apply] simp
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockSretSourceStability.lean:98:22: warning: This simp argument is unused:
+  found
+
+Hint: Omit it from the simp argument list.
+  [apply] simp
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockSretSourceStability.lean:106:18: warning: This simp argument is unused:
+  found
+
+Hint: Omit it from the simp argument list.
+  [apply] simp
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

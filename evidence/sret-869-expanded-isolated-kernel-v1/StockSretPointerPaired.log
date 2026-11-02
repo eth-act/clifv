@@ -1,0 +1,216 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerPaired.lean:33:41: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.x` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Reg.x`
+  [apply] `Lean.IR.Param.x`
+  [apply] `Std.Time.Modifier.x`
+  [apply] `Lean.Grind.CommRing.Power.x`
+  [apply] `Lean.Elab.Term.Do.ToCodeBlock.Catch.x`
+  [apply] `Lean.Meta.Tactic.BVDecide.Normalize.SharedCoefficients.x`
+  [apply] `Std.Tactic.BVDecide.BVExpr.bitblast.ExtractAndExtendBitTarget.x`
+  [apply] `Std.Tactic.BVDecide.BVExpr.bitblast.blastCpopTreeTarget.x`
+  [apply] `Std.Tactic.BVDecide.BVExpr.bitblast.blastExtractAndExtendTarget.x`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerPaired.lean:88:73: error: Application type mismatch: The argument
+  legacy
+has type
+  VRetFrom result.code (valueSem F { k := fa.k, slotBase := af.slotBase } X)
+    { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := w₀ } [(reg, Reg.x 8)] [value] world
+but is expected to have type
+  VRetFrom result.code
+    (csem { F := F, syms := syms, slotOff := slotOff, out := (RAFrame.compute vcp rf).intBase }.F
+      { k := fa.k, slotBase := af.slotBase } X)
+    { b := { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := (w₀, w₀) }.b,
+      k := { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := (w₀, w₀) }.k,
+      ρ := { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := (w₀, w₀) }.ρ,
+      w := { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := (w₀, w₀) }.w.fst }
+    ?m.892 ?m.894 ?m.896
+in the application
+  vRetFrom_det first legacy
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerPaired.lean:89:2: error: Tactic `subst` failed: did not find equation for eliminating 'us'
+
+p : Clif.Program
+f : Clif.Function
+k : Nat
+result : Stock.Result
+vcp : VCode
+rf : RFunc
+af : AFunc
+fa : FnAsm
+fb : FnBin
+family : Stock.Memory.SretCopy.CfgClass f
+sret : ((sigRets f.sig).any fun x => x.purpose == Clif.ArgPurpose.sret) = true
+cleanup : Bool
+readOnly : StockMemoryStoreCfg.effectsOnly result.code = true
+hc : CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb
+X : ExtSem
+syms : String → Option Nat
+slotOff : Nat
+env : Clif.Env
+K : Nat
+F : BitVec 64 → Prop
+c : BitVec 64
+hcov : FormsCovered { k := fa.k, slotBase := af.slotBase } vcp
+hsym : ∀ (n : String) (b : Nat), syms n = some b → X.sym n 0 = BitVec.ofNat 64 b
+hslot : af.slotBase = slotOff
+hTls : XTls F X
+w₀ : Arm.ArmState
+args : List Clif.Val
+cs : Clif.State
+hcs : ClifEntry f args cs
+hrel :
+  RelW { F := F, syms := syms, slotOff := slotOff, out := (RAFrame.compute vcp rf).intBase } f c cs.frame.slots cs.mem
+    w₀
+hargs : ArgsAtEntry F f.sig args w₀
+fuel : Nat
+vals : List Clif.Val
+cm : Clif.Mem
+returned : Clif.runLoop env p fuel cs = Clif.Outcome.returned vals cm
+state : { frame := cs.frame, callers := [], mem := cs.mem } = cs
+entry middle target : Clif.Block
+i0 i8 j0 j8 base destination low high : Nat
+lf0 lf8 sf0 sf8 : Clif.MemFlags
+blocks : f.blocks = [entry, middle, target]
+jump0 : entry.term = Clif.Terminator.jump { block := middle.id }
+jump1 : middle.term = Clif.Terminator.jump { block := target.id }
+ret : target.term = Clif.Terminator.ret []
+entryMiddle : entry.id ≠ middle.id
+entryTarget : entry.id ≠ target.id
+middleTarget : middle.id ≠ target.id
+entryNops : ∀ (stm : Clif.Stmt), stm ∈ entry.body → stm.inst = Clif.Inst.nop
+targetNops : ∀ (stm : Clif.Stmt), stm ∈ target.body → stm.inst = Clif.Inst.nop
+loadLow : middle.body[i0]? = some { results := [low], inst := Clif.Inst.load Clif.LoadOp.load Clif.Ty.i64 lf0 base 0 }
+loadHigh : middle.body[i8]? = some { results := [high], inst := Clif.Inst.load Clif.LoadOp.load Clif.Ty.i64 lf8 base 8 }
+storeLow : middle.body[j0]? = some { inst := Clif.Inst.store Clif.StoreOp.store Clif.Ty.i64 sf0 low destination 0 }
+storeHigh : middle.body[j8]? = some { inst := Clif.Inst.store Clif.StoreOp.store Clif.Ty.i64 sf8 high destination 8 }
+lowEarlier : i0 < j0
+highEarlier : i8 < j8
+shape :
+  ∀ (j : Nat) (stm : Clif.Stmt),
+    middle.body[j]? = some stm → j = i0 ∨ j = i8 ∨ j = j0 ∨ j = j8 ∨ stm.inst = Clif.Inst.nop
+baseParameter : base ∈ List.map (fun x => x.fst) entry.params
+destinationParameter : destination ∈ List.map (fun x => x.fst) entry.params
+ln0 : lf0.trapCode = none
+ln8 : lf8.trapCode = none
+sn0 : sf0.trapCode = none
+sn8 : sf8.trapCode = none
+sourceReturn :
+  Clif.runLoop env p fuel { frame := cs.frame, callers := [], mem := cs.mem } = Clif.Outcome.returned vals cm
+us : List (Reg × Reg)
+outs : List CV
+q : W2
+cm0 : Clif.Mem
+reached :
+  VRetFrom result.code
+    (pairSem
+      (csem { F := F, syms := syms, slotOff := slotOff, out := (RAFrame.compute vcp rf).intBase }.F
+        { k := fa.k, slotBase := af.slotBase } X))
+    { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := (w₀, w₀) } us outs q
+pins : ReturnABI f us
+arity : us.length = outs.length
+values : PrefixHold vals outs
+memory :
+  MRP { F := F, syms := syms, slotOff := slotOff, out := (RAFrame.compute vcp rf).intBase } f c (fun x => False)
+    cs.frame.slots cm0 q
+freed : cm = (cm0.free (List.map (fun x => x.snd) cs.frame.slots)).leave
+first :
+  VRetFrom result.code
+    (csem { F := F, syms := syms, slotOff := slotOff, out := (RAFrame.compute vcp rf).intBase }.F
+      { k := fa.k, slotBase := af.slotBase } X)
+    { b := { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := (w₀, w₀) }.b,
+      k := { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := (w₀, w₀) }.k,
+      ρ := { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := (w₀, w₀) }.ρ,
+      w := { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := (w₀, w₀) }.w.fst }
+    us outs q.fst
+compatible : EdgeLegacyCompatible result.code result.edgeArgs
+pointer : Clif.Val
+reg : Reg
+value : CV
+world : Arm.ArmState
+cmOriginal : Clif.Mem
+original : sretArg f args = [pointer]
+reachedOriginal :
+  PerEdgePrep.VRetFromAt result.code result.edgeArgs (valueSem F { k := fa.k, slotBase := af.slotBase } X)
+    { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := w₀ } [(reg, Reg.x 8)] [value] world
+held : VHolds pointer value
+memoryOriginal :
+  RelW { F := F, syms := syms, slotOff := slotOff, out := (RAFrame.compute vcp rf).intBase } f c cs.frame.slots
+    cmOriginal world
+freedOriginal : cm = (cmOriginal.free (List.map (fun x => x.snd) cs.frame.slots)).leave
+legacy :
+  VRetFrom result.code (valueSem F { k := fa.k, slotBase := af.slotBase } X)
+    { b := 0, k := 0, ρ := entrySeed result.ctx cs.frame, w := w₀ } [(reg, Reg.x 8)] [value] world
+selectedPins : us = ?m.892
+selectedOuts : outs = ?m.894
+selectedWorld : q.fst = ?m.896
+⊢ ∃ pointer reg value w,
+    sretArg f args = [pointer] ∧
+      VHolds pointer value ∧
+        ReturnABI f [(reg, Reg.x 8)] ∧
+          [(reg, ?m.44)].length = [value].length ∧
+            PrefixHold vals [value] ∧
+              MemRel F syms cm w ∧
+                result.code.RetsSite [(reg, Reg.x 8)] ∧
+                  (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
+                      ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
+                        ∃ n,
+                          ActRet ra F G [(reg, Reg.x 8)] [value] w s (runX (ArmStepX X H fa) n s) ∧
+                            VHolds pointer (regVal (runX (ArmStepX X H fa) n s) (Reg.x 8)) ∧
+                              PostTrace fa af base (ArmStepX X H fa) s n ∧
+                                ∀ (i : Nat),
+                                  i < n →
+                                    actGoodX vcp rf af fa fb base s X H K G (GotV vcp) (runX (ArmStepX X H fa) i s)) ∧
+                    ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
+                      RelW { F := F, syms := syms, slotOff := slotOff, out := (RAFrame.compute vcp rf).intBase } f c
+                          cs.frame.slots cs.mem w₀' →
+                        SameWorld (fun b => F b ∨ D b) w₀ w₀' →
+                          (∀ (r : Reg) (v : Clif.Val),
+                              (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r) →
+                            (∀ (off : Nat) (v : Clif.Val),
+                                (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args →
+                                  ∀ (k : Nat),
+                                    k < v.ty.bytes →
+                                      w₀'.mem
+                                          (Arm.r (Arm.StateField.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + ↑off) +
+                                            BitVec.ofNat 64 k) =
+                                        w₀.mem
+                                          (Arm.r (Arm.StateField.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + ↑off) +
+                                            BitVec.ofNat 64 k)) →
+                              ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
+                                ActEntry vcp rf af fa fb K F G X H base ra s w₀' →
+                                  ∃ n,
+                                    ActRet ra (fun a => F a ∨ D a) G [(reg, Reg.x 8)] [value] w s
+                                        (runX (ArmStepX X H fa) n s) ∧
+                                      VHolds pointer (regVal (runX (ArmStepX X H fa) n s) (Reg.x 8)) ∧
+                                        PostTrace fa af base (ArmStepX X H fa) s n ∧
+                                          ∀ (i : Nat),
+                                            i < n →
+                                              actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
+                                                (runX (ArmStepX X H fa) i s)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerPaired.lean:152:41: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.x` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Reg.x`
+  [apply] `Lean.IR.Param.x`
+  [apply] `Std.Time.Modifier.x`
+  [apply] `Lean.Grind.CommRing.Power.x`
+  [apply] `Lean.Elab.Term.Do.ToCodeBlock.Catch.x`
+  [apply] `Lean.Meta.Tactic.BVDecide.Normalize.SharedCoefficients.x`
+  [apply] `Std.Tactic.BVDecide.BVExpr.bitblast.ExtractAndExtendBitTarget.x`
+  [apply] `Std.Tactic.BVDecide.BVExpr.bitblast.blastCpopTreeTarget.x`
+  [apply] `Std.Tactic.BVDecide.BVExpr.bitblast.blastExtractAndExtendTarget.x`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/E2E/StockSretPointerPaired.lean:184:8: error: Tactic `introN` failed: There are no additional binders or `let` bindings in the goal to introduce
+
+f : Clif.Function
+k : Nat
+result : Stock.Result
+vcp : VCode
+rf : RFunc
+af : AFunc
+fa : FnAsm
+fb : FnBin
+family : Stock.Memory.SretCopy.CfgClass f
+sret : ((sigRets f.sig).any fun x => x.purpose == Clif.ArgPurpose.sret) = true
+cleanup : Bool
+effects : StockMemoryStoreCfg.effectsOnly result.code = true
+stage : CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb
+⊢ SretOriginalPointerPaired f k result vcp rf af fa fb

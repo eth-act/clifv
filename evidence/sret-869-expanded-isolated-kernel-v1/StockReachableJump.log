@@ -1,0 +1,33 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockReachableJump.lean:35:55: warning: Variable name `refines` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _refines
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockReachableJump.lean:36:46: warning: Variable name `stable` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _stable
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockReachableJump.lean:197:36: warning: This simp argument is unused:
+  Option.getD_none
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getElem!_def, row] at successor
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockReachableJump.lean:255:42: warning: This simp argument is unused:
+  Option.getD_some
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getElem!_def, targetTag, nextBlock]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-869-expanded-package-v1/FV/Backend/Proof/StockReachableJump.lean:256:36: warning: This simp argument is unused:
+  Option.getD_some
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getElem!_def, tag, spec.atBlock]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

@@ -1,0 +1,10 @@
+{
+  "files": {
+    "FV/E2E/ReturnPinChecksWith.lean": "481db95e28b00aa600fe628e3ef186decdbcbd99e78d07d80a17ae11f0ff607a",
+    "FV/E2E/ReturnPinChecksWithWitness.lean": "4ed3fe5e89550398d76506a551f63ea45c3d691953265a9992fd1af47c5d62b8",
+    "scripts/audit/return-pin-checks-with.lean": "bc56353c0064af117cdf039ad2d94ab1b6cae51456f3adacc82405c48f4b85f1"
+  },
+  "generic_roots": 5,
+  "fixed_roots": 2,
+  "full_goal_complete": false
+}

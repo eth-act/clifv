@@ -1,0 +1,1 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-checks-packet-v5/FV/E2E/ReturnPinChecksWithWitness.lean:40:10: error(lean.unknownIdentifier): Unknown constant `Bool.and_eq_true.mpr`
