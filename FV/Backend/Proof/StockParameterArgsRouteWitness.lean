@@ -1,9 +1,11 @@
 import FV.Backend.Lowering.StockParameterArgsCfgNI
 import FV.Backend.Proof.StockParameterArgsWitness
+import FV.Backend.Proof.StockParameterAnyArgsWitness
 
-/-! Non-vacuity of the argument-passing route: on the fixed parameter CFG with block arguments,
-the new provider publishes the actual split code, route 22 selects it, every published route
-before it is retained, and the previous provider publishes different code. -/
+/-! Non-vacuity of the argument-passing route: on fixed parameter CFGs with block arguments (one with
+original successors, one with a critical edge), the new provider publishes the actual split code,
+route 22 selects it, every published route before it is retained, and the previous provider
+publishes different code. -/
 
 namespace Backend.Stock.ParameterArgsCfg.NI.RouteFixture
 open Backend
@@ -59,6 +61,53 @@ theorem argument_route_witness : lowerRoutes.length = 23 ∧ VoidCall.NI.lowerRo
         | error message => rw [out] at published; cases published
         | ok vc => rw [out] at published; simpa using published
       · cases out : lowerWithRoutes [(function.name,22)] function with
+        | error message => rw [out] at routed; cases routed
+        | ok vc => rw [out] at routed; simpa using routed
+      · intro same
+        rw [same] at differs
+        simp at differs
+
+private abbrev critical := ParameterArgsCfg.AnyFixture.function
+
+private def criticalChecks : Bool :=
+  match Stock.lower critical with
+  | .error _ => false
+  | .ok result => match splitEdgesChecked result.code result.edgeArgs with
+    | .error _ => false
+    | .ok split =>
+      (match lowerWithRoutes [(critical.name,22)] critical with
+        | .ok vc => decide (vc = split.code)
+        | .error _ => false) &&
+      (match VoidCall.NI.lowerValidated critical with
+        | .ok vc => !decide (vc = split.code)
+        | .error _ => true)
+
+-- witness: native_decide (the fixed critical-edge function's routes, lowering and split only)
+private theorem criticalChecks_true : criticalChecks = true := by native_decide
+
+/-- Route 22 also publishes the split code of a function with a critical edge that carries block
+arguments; the previous provider publishes different code. -/
+theorem critical_edge_route_witness :
+    ∃ result split,Stock.lower critical = .ok result ∧
+      splitEdgesChecked result.code result.edgeArgs = .ok split ∧
+      lowerWithRoutes [(critical.name,22)] critical = .ok split.code ∧
+      VoidCall.NI.lowerValidated critical ≠ .ok split.code := by
+  have h := criticalChecks_true
+  unfold criticalChecks at h
+  cases run : Stock.lower critical with
+  | error message => rw [run] at h; cases h
+  | ok result =>
+    rw [run] at h
+    dsimp only at h
+    cases splitRun : splitEdgesChecked result.code result.edgeArgs with
+    | error message => rw [splitRun] at h; cases h
+    | ok split =>
+      rw [splitRun] at h
+      dsimp only at h
+      simp only [Bool.and_eq_true] at h
+      obtain ⟨routed,differs⟩ := h
+      refine ⟨result,split,rfl,splitRun,?_,?_⟩
+      · cases out : lowerWithRoutes [(critical.name,22)] critical with
         | error message => rw [out] at routed; cases routed
         | ok vc => rw [out] at routed; simpa using routed
       · intro same
