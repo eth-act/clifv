@@ -1,0 +1,54 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:14:6: warning: Try `simp at old` instead of `simpa using old`
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:13:12: warning: This simp argument is unused:
+  getElem!_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds, inside, positive]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:13:53: warning: This simp argument is unused:
+  Array.getElem?_setIfInBounds
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [getElem!_def, Array.set!_eq_setIfInBounds, inside, positive]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:22:11: error: typeclass instance problem is stuck
+  GetElem? (Array Nat) ?m.24 Nat (?m.50 q)
+
+Note: Lean will not try to resolve this typeclass instance problem because the second type argument to `GetElem?` is a metavariable. This argument must be fully determined before Lean will try to resolve the typeclass.
+
+Hint: Adding type annotations and supplying implicit arguments to functions can give Lean more information for typeclass resolution. For example, if you have a variable `x` that you intend to be a `Nat`, but Lean reports it as having an unresolved type like `?m`, replacing `x` with `(x : Nat)` can get typeclass resolution un-stuck.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:49:13: error(lean.unknownIdentifier): Unknown identifier `body_facts`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:50:18: error(lean.unknownIdentifier): Unknown identifier `body_facts`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:46:31: warning: This simp argument is unused:
+  getElem!_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [bodyNext, barrier, Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds, inside,
+    Nat.ne_of_gt positive]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:47:10: warning: This simp argument is unused:
+  Array.getElem?_setIfInBounds
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [bodyNext, barrier, getElem!_def, Array.set!_eq_setIfInBounds, inside, Nat.ne_of_gt positive]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:57:10: error: typeclass instance problem is stuck
+  GetElem? (Array Nat) ?m.8 Nat (?m.32 q)
+
+Note: Lean will not try to resolve this typeclass instance problem because the second type argument to `GetElem?` is a metavariable. This argument must be fully determined before Lean will try to resolve the typeclass.
+
+Hint: Adding type annotations and supplying implicit arguments to functions can give Lean more information for typeclass resolution. For example, if you have a variable `x` that you intend to be a `Nat`, but Lean reports it as having an unresolved type like `?m`, replacing `x` with `(x : Nat)` can get typeclass resolution un-stuck.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:66:10: error: typeclass instance problem is stuck
+  GetElem? (Array Nat) ?m.10 Nat (?m.36 q)
+
+Note: Lean will not try to resolve this typeclass instance problem because the second type argument to `GetElem?` is a metavariable. This argument must be fully determined before Lean will try to resolve the typeclass.
+
+Hint: Adding type annotations and supplying implicit arguments to functions can give Lean more information for typeclass resolution. For example, if you have a variable `x` that you intend to be a `Nat`, but Lean reports it as having an unresolved type like `?m`, replacing `x` with `(x : Nat)` can get typeclass resolution un-stuck.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:86:20: error(lean.unknownIdentifier): Unknown identifier `body_facts`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataPositive.lean:90:20: error(lean.unknownIdentifier): Unknown identifier `block_facts`

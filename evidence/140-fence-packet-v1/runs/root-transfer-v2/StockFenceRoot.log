@@ -1,0 +1,79 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRoot.lean:26:13: error: Tactic `assumption` failed
+
+ctx : Ctx
+cfg : Config
+overlap : cfg.checkOverlap = false
+n : Nat
+enough : 1000 ≤ n
+env : Interp.Env V
+st next : State
+tr trace : Array RuleId
+out : V
+run :
+  StateT.run (evalExpr program (sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st, tr) =
+    Except.ok (some out, next, trace)
+frame :
+  next =
+    { base := next.base, demand := st.demand, uses := st.uses, instBlock := st.instBlock, entryColor := st.entryColor,
+      endColor := st.endColor, tryRegs := st.tryRegs, current := st.current, color := st.color, sunk := st.sunk,
+      opportunistic := st.opportunistic, alias := st.alias }
+legacy :
+  Except.ok (some out, next.base, trace) =
+    StateT.run (evalExpr program (Backend.sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st.base, tr)
+original :
+  StateT.run (evalExpr program (Backend.sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st.base, tr) =
+    Except.ok (some out, next.base, trace)
+left✝ :
+  projectResult State.base
+      (StateT.run (evalExpr program (sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st, tr)) =
+    StateT.run (evalExpr program (Backend.sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st.base, tr)
+right✝ :
+  ∀ (out : Option V) (next : State) (after : Array RuleId),
+    StateT.run (evalExpr program (sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st, tr) =
+        Except.ok (out, next, after) →
+      next =
+        { base := next.base, demand := st.demand, uses := st.uses, instBlock := st.instBlock,
+          entryColor := st.entryColor, endColor := st.endColor, tryRegs := st.tryRegs, current := st.current,
+          color := st.color, sunk := st.sunk, opportunistic := st.opportunistic, alias := st.alias }
+⊢ ApplyInternal ?m.74 ?m.75 ?m.76 ?m.77 46 466 ?m.82 ?m.83 ?m.84 ?m.85
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRoot.lean:18:72: error: unsolved goals
+ctx : Ctx
+cfg : Config
+overlap : cfg.checkOverlap = false
+n : Nat
+enough : 1000 ≤ n
+env : Interp.Env V
+st next : State
+tr trace : Array RuleId
+out : V
+run :
+  StateT.run (evalExpr program (sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st, tr) =
+    Except.ok (some out, next, trace)
+frame :
+  next =
+    { base := next.base, demand := st.demand, uses := st.uses, instBlock := st.instBlock, entryColor := st.entryColor,
+      endColor := st.endColor, tryRegs := st.tryRegs, current := st.current, color := st.color, sunk := st.sunk,
+      opportunistic := st.opportunistic, alias := st.alias }
+legacy :
+  Except.ok (some out, next.base, trace) =
+    StateT.run (evalExpr program (Backend.sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st.base, tr)
+original :
+  StateT.run (evalExpr program (Backend.sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st.base, tr) =
+    Except.ok (some out, next.base, trace)
+left✝ :
+  projectResult State.base
+      (StateT.run (evalExpr program (sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st, tr)) =
+    StateT.run (evalExpr program (Backend.sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st.base, tr)
+right✝ :
+  ∀ (out : Option V) (next : State) (after : Array RuleId),
+    StateT.run (evalExpr program (sem ctx) cfg n (Expr.term 25 243 [Expr.term 46 466 []]) env) (st, tr) =
+        Except.ok (out, next, after) →
+      next =
+        { base := next.base, demand := st.demand, uses := st.uses, instBlock := st.instBlock,
+          entryColor := st.entryColor, endColor := st.endColor, tryRegs := st.tryRegs, current := st.current,
+          color := st.color, sunk := st.sunk, opportunistic := st.opportunistic, alias := st.alias }
+⊢ out = V.regsVec [] ∧
+    next =
+      { base := st.base.emit MInst.fence, demand := st.demand, uses := st.uses, instBlock := st.instBlock,
+        entryColor := st.entryColor, endColor := st.endColor, tryRegs := st.tryRegs, current := st.current,
+        color := st.color, sunk := st.sunk, opportunistic := st.opportunistic, alias := st.alias }

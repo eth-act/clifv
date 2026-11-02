@@ -1,0 +1,29 @@
+{
+  "status": "readiness_only_not_validation",
+  "source_differences": [
+    "FV/Backend/Proof/StockSourceCallWitness.lean",
+    "FV/Backend/Proof/StockSourceResults.lean",
+    "FV/E2E/ExtSemGuard.lean"
+  ],
+  "missing_oleans": [
+    "FV/Backend/Lowering/StockMemoryCapturedCopyNI.lean",
+    "FV/Backend/Lowering/StockMemoryLoadStoreNI.lean",
+    "FV/Backend/Lowering/StockMemorySretCopyNI.lean",
+    "FV/Backend/Lowering/StockMemoryStoreCfgNI.lean",
+    "FV/Backend/Lowering/StockVoidCallNI.lean",
+    "FV/Backend/Proof/StockSourceCallWitness.lean",
+    "FV/Backend/Proof/StockSourceResults.lean",
+    "FV/E2E/ExtSemGuard.lean"
+  ],
+  "missing_normal_traces": [
+    "FV/Backend/Lowering/StockMemoryCapturedCopyNI.lean",
+    "FV/Backend/Lowering/StockMemoryLoadStoreNI.lean",
+    "FV/Backend/Lowering/StockMemorySretCopyNI.lean",
+    "FV/Backend/Lowering/StockMemoryStoreCfgNI.lean",
+    "FV/Backend/Lowering/StockVoidCallNI.lean",
+    "FV/Backend/Proof/StockSourceCallWitness.lean",
+    "FV/Backend/Proof/StockSourceResults.lean",
+    "FV/E2E/ExtSemGuard.lean"
+  ],
+  "external_source_count": 780
+}

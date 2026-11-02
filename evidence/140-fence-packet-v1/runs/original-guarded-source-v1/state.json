@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockFenceSourceRefines",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSourceRefines.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockFenceSourceRefines.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockFenceSourceRefines.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.9398853778839111,
+      "memstats": "peak 217243648\noom 0\noom_kill 0\n",
+      "source_sha256": "c571c6e58f8d2714347e6a8c21413b87a2fc1178a5fda20b26b73087cb2f004b",
+      "olean_sha256": "bd2b8de8018e91029dcc8b6e9c094fd8ef7d1ccb07133dafd878c289d85af8b6"
+    }
+  ]
+}

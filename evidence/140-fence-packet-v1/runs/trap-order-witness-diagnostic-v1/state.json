@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockFenceTrapOrder",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceTrapOrder.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockFenceTrapOrder.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockFenceTrapOrder.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.926311731338501,
+      "memstats": "peak 218734592\noom 0\noom_kill 0\n",
+      "source_sha256": "ef1d0560cfe948e9ed8b9d56a1ac180e7b0b3618c23963e61151a253dd4ba591",
+      "olean_sha256": "5b13e78f63e20b576e455f40756dd89837f327e7cc012f4689eb69ca2dd84524"
+    },
+    {
+      "label": "StockFenceWitnessDiagnostic",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceWitnessDiagnostic.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockFenceWitnessDiagnostic.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockFenceWitnessDiagnostic.ilean"
+      ],
+      "exit": 0,
+      "seconds": 1.1748864650726318,
+      "memstats": "peak 236670976\noom 0\noom_kill 0\n",
+      "source_sha256": "cbb1a3547fcbe1ae055e13a6def6871a1643282b2cc7b051ee9781aa3ce901b6",
+      "olean_sha256": "fe2897fc0f892c72349470a250ded805a9831f6ea011b8444f47ea95eef9d793"
+    }
+  ]
+}

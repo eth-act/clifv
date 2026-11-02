@@ -1,0 +1,179 @@
+{
+  "status": "passed",
+  "roots": 35,
+  "standard_only": 33,
+  "marked_fixed": 2,
+  "old22_axiom_sets_exact": true,
+  "actual_axioms": {
+    "Backend.Stock.Proof.SinkRules.fence_no_load_at": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.SinkRules.fence_results_empty": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.SinkRules.stock_lower_fence_unsunk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.FenceHelpers.fence_helpers_project_and_preserve": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.FenceHelpers.fence_helper_success": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.FenceHelpers.fence_rhs_transfer": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.FenceHelpers.fence_match_transfer": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_fence_rhs_exact": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_fence_record_execute": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_fence_source_not_term": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_mandatory_scan_emission": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_emission": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_all_formats": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_nullary_inventory": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_nullary_opcode_facts": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_fence_selected": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_fence_selected_exact": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_record_exact": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_fall_refines": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_execute": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_first_trap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.FenceColors.sourceMetadata_projection": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.FenceColors.sourceMetadata_colored_positive": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.buildCtx_colored_positive": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_barrier": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_effect_color": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_contract": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_guarded_refines": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_source_trap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fence_source_contract": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_body_fence_records": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_body_with_fences_first_trap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_body_with_fences_fall_refines": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.FenceFixture.mixed_records": [
+      "Backend.Stock.Proof.FenceFixture.observed_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.FenceFixture.mixed_source_contracts": [
+      "Backend.Stock.Proof.FenceFixture.observed_true._native.native_decide.ax_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "audit_sha256": "b0dead404c25a2916533cbdb4541b9d48478eea725c580f2f4f10275301a6f5c"
+}

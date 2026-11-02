@@ -1,0 +1,7 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/StockLiveCallCheck.lean:57:58: error(lean.unknownIdentifier): Unknown identifier `callDefs`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/StockLiveCallCheck.lean:60:10: error(lean.unknownIdentifier): Unknown identifier `aliasNum`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/StockLiveCallCheck.lean:60:56: error(lean.unknownIdentifier): Unknown identifier `aliasNum`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/StockLiveCallCheck.lean:61:10: error(lean.unknownIdentifier): Unknown identifier `aliasNum`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/StockLiveCallCheck.lean:61:53: error(lean.unknownIdentifier): Unknown identifier `aliasNum`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/StockLiveCallCheck.lean:62:10: error(lean.unknownIdentifier): Unknown identifier `aliasNum`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/StockLiveCallCheck.lean:62:50: error(lean.unknownIdentifier): Unknown identifier `aliasNum`

@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "generic_roots": 4,
+  "standard_only": true,
+  "source_sha256": "de0daf302172cf6aabf5026795d5391da5580e2acb7d228d24dc67ca1052aafe",
+  "kernel": "live-arithmetic-kernel-v3/result.json",
+  "audit": "live-arithmetic-audit-v1/receipt.json",
+  "actual_probe": "inspect-live-call-v3/result.json",
+  "actual_saved_physical_register": "x19",
+  "source_result_map": "31 -> root193 -> virtual196",
+  "live_parameter": "7 -> virtual192",
+  "arithmetic_output": "79 -> root194 -> virtual195",
+  "current_main_validation": false,
+  "complete_class": false,
+  "active_prefix": ".git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1",
+  "resource_cap": "2G"
+}

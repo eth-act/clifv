@@ -1,0 +1,57 @@
+{
+  "pr": 909,
+  "head": "d2d6baae034a040fbd7a9d59b3c7d3ccbb21dec2",
+  "verdict": "no blocking defect",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents",
+  "files": [
+    {
+      "path": "FV/Backend/Lowering/StockParameterArgsLoopCfg.lean",
+      "additions": 54,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockLoopArgsCarryBounded.lean",
+      "additions": 205,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockParameterArgsLoopCheck.lean",
+      "additions": 129,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockParameterArgsLoopDomain.lean",
+      "additions": 186,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockParameterArgsLoopReturn.lean",
+      "additions": 127,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockParameterArgsLoopTrap.lean",
+      "additions": 124,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockParameterArgsLoopWitness.lean",
+      "additions": 105,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "scripts/audit/parameter-args-loop.lean",
+      "additions": 20,
+      "deletions": 0,
+      "changeType": "ADDED"
+    }
+  ],
+  "utc": "2026-11-02T13:32:09.404947+00:00"
+}

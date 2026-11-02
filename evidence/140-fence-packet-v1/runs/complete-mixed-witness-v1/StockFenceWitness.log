@@ -1,0 +1,31 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceWitness.lean:15:63: error: unexpected identifier; expected '}'
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceWitness.lean:36:59: error: Tactic `native_decide` failed: Could not evaluate decidable instance. Error: cannot evaluate code because 'Backend.Stock.Proof.FenceFixture.function' uses 'sorry' and/or contains errors
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceWitness.lean:60:4: error: Type mismatch: After simplification, term
+  checked
+ has type
+  (lowerScopeB function = true ∧ dominatedB function = true) ∧
+    ∃ x,
+      x ∈ result.blockScans.toList ∧
+        ([1, 4].all fun i =>
+            x.output.records.any fun record =>
+              decide (record.inst = i) &&
+                Option.any
+                  (fun info =>
+                    decide (info.clif = some Clif.Inst.fence) && decide (record.output.emitted = #[MInst.fence]) &&
+                      decide (record.input.entryColor[i]! ≠ 0))
+                  x.ctx.insts[i]?) =
+          true
+but is expected to have type
+  lowerScopeB function = true ∧
+    dominatedB function = true ∧
+      ∃ event,
+        event ∈ result.blockScans.toList ∧
+          ([1, 4].all fun i =>
+              event.output.records.any fun record =>
+                decide (record.inst = i) &&
+                  Option.any
+                    (fun info =>
+                      decide (info.clif = some Clif.Inst.fence) && decide (record.output.emitted = #[MInst.fence]) &&
+                        decide (record.input.entryColor[i]! ≠ 0))
+                    event.ctx.insts[i]?) =
+            true

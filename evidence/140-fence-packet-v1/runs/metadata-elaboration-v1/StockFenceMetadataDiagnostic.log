@@ -1,0 +1,62 @@
+def Backend.Stock.sourceMetadata : Backend.Ctx → Array (Nat × Nat) → Backend.Stock.SourceMetadata :=
+fun ctx ranges =>
+  (have blocks := Array.replicate ctx.insts.size 0;
+    have colors := Array.replicate ctx.insts.size 0;
+    have ends := #[];
+    have args := Array.replicate ctx.insts.size [];
+    have color := 0;
+    do
+    let __s ←
+      forIn ctx.func.blocks.zipIdx (blocks, colors, ends, args, color) fun x __s =>
+          have blocks := __s.fst;
+          have __s := __s.snd;
+          have colors := __s.fst;
+          have __s := __s.snd;
+          have ends := __s.fst;
+          have __s := __s.snd;
+          have args := __s.fst;
+          have color := __s.snd;
+          match x with
+          | (b, bi) =>
+            have color := color + 1;
+            match ranges[bi]! with
+            | (start, stop) => do
+              let __s ←
+                forIn b.body.zipIdx (blocks, colors, args, color) fun x __s =>
+                    have blocks := __s.fst;
+                    have __s := __s.snd;
+                    have colors := __s.fst;
+                    have __s := __s.snd;
+                    have args := __s.fst;
+                    have color := __s.snd;
+                    match x with
+                    | (s, j) =>
+                      have i := start + j;
+                      have blocks := blocks.set! i bi;
+                      have args := args.set! i (Backend.Stock.instArgs s.inst);
+                      if Backend.Stock.colored s.inst = true then
+                        have colors := colors.set! i color;
+                        have color := color + 1;
+                        pure (ForInStep.yield (blocks, colors, args, color))
+                      else pure (ForInStep.yield (blocks, colors, args, color))
+              have blocks : Array Nat := __s.fst
+              have __s : Array Nat × Array (List Nat) × Nat := __s.snd
+              have colors : Array Nat := __s.fst
+              have __s : Array (List Nat) × Nat := __s.snd
+              have args : Array (List Nat) := __s.fst
+              have color : Nat := __s.snd
+              have ti : Nat := stop - 1
+              have blocks : Array Nat := blocks.set! ti bi
+              have args : Array (List Nat) := args.set! ti (Backend.Stock.termArgs b.term)
+              have colors : Array Nat := colors.set! ti color
+              have color : Nat := color + 1
+              have ends : Array Nat := ends.push color
+              pure (ForInStep.yield (blocks, colors, ends, args, color))
+    have blocks : Array Nat := __s.fst
+    have __s : Array Nat × Array Nat × Array (List Nat) × Nat := __s.snd
+    have colors : Array Nat := __s.fst
+    have __s : Array Nat × Array (List Nat) × Nat := __s.snd
+    have ends : Array Nat := __s.fst
+    have __s : Array (List Nat) × Nat := __s.snd
+    have args : Array (List Nat) := __s.fst
+    pure { instBlock := blocks, entryColor := colors, endColor := ends, args := args }).run

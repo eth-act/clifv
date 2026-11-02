@@ -1,0 +1,13 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSelected.lean:76:16: error: Invalid rewrite argument: Expected an equality or iff proof or definition name, but `h` is a proof of
+  selected.rule = rule_lower_3292 ∨ selected.rule ∈ []
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSelected.lean:74:27: warning: This simp argument is unused:
+  List.mem_singleton
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [List.mem_cons] at candidates
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSelected.lean:92:2: error: 'change' tactic failed, pattern
+  Except.ok (some e, st, tr) = Except.ok (some env, next, trace)
+is not definitionally equal to target
+  StateT.run (matchIfLets program (sem ctx) { } n rule_lower_2476.iflets e) (st, tr) = Except.ok (some env, next, trace)

@@ -1,0 +1,36 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallSourceResult.lean:64:83: error: unexpected identifier; expected '}'
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallSourceResult.lean:63:13: error: Tactic `rcases` failed: `x✝ : { func := fr.func,
+        regs := fr.regs.set layout.data.called { ty := Clif.Ty.i64, bits := returnedWord }, slots := fr.slots,
+        body := fr.body, term := fr.term }.body =
+    [{ results := [?m.688], inst := Clif.Inst.binary Clif.BinaryOp.iadd Clif.Ty.i64 ?m.686 ?m.687 }] →
+  { func := fr.func, regs := fr.regs.set layout.data.called { ty := Clif.Ty.i64, bits := returnedWord },
+          slots := fr.slots, body := fr.body, term := fr.term }.term =
+      Clif.Terminator.ret [?m.688] →
+    List.map (fun x => x.ty)
+          { func := fr.func, regs := fr.regs.set layout.data.called { ty := Clif.Ty.i64, bits := returnedWord },
+                  slots := fr.slots, body := fr.body, term := fr.term }.func.sig.returns =
+        [Clif.Ty.i64] →
+      { func := fr.func, regs := fr.regs.set layout.data.called { ty := Clif.Ty.i64, bits := returnedWord },
+                slots := fr.slots, body := fr.body, term := fr.term }.regs
+            ?m.686 =
+          some { ty := Clif.Ty.i64, bits := ?m.690 } →
+        { func := fr.func, regs := fr.regs.set layout.data.called { ty := Clif.Ty.i64, bits := returnedWord },
+                  slots := fr.slots, body := fr.body, term := fr.term }.regs
+              ?m.687 =
+            some { ty := Clif.Ty.i64, bits := ?m.691 } →
+          Clif.runLoop ?m.680 ?m.681 ?m.689
+                {
+                  frame :=
+                    { func := fr.func,
+                      regs := fr.regs.set layout.data.called { ty := Clif.Ty.i64, bits := returnedWord },
+                      slots := fr.slots, body := fr.body, term := fr.term },
+                  callers := [], mem := ?m.684 } =
+              Clif.Outcome.returned ?m.692 ?m.685 →
+            ?m.692 = [{ ty := Clif.Ty.i64, bits := ?m.690 + ?m.691 }] ∧
+              ?m.685 =
+                (Clif.Mem.free ?m.684
+                    (List.map (fun x => x.snd)
+                      { func := fr.func,
+                          regs := fr.regs.set layout.data.called { ty := Clif.Ty.i64, bits := returnedWord },
+                          slots := fr.slots, body := fr.body,
+                          term := fr.term }.slots)).leave` is not an inductive datatype

@@ -1,0 +1,141 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallTail.lean:25:33: error: unsolved goals
+F : BitVec 64 → Prop
+isem : Sem
+refines : Refines F isem
+retSem :
+  ∀ (us : List (Reg × Reg)) (uses : List CV) (world : Arm.ArmState),
+    isem (MInst.rets us) uses world = some ([], world, Ctl.ret)
+vc : VCode
+block : VBlock
+placed : vc.blocks[0]? = some block
+name : String
+live called sum : Nat
+separate : live ≠ called
+prelude suffix : List MInst
+code :
+  block.insts.toList =
+    prelude ++
+        [MInst.call
+            { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)], defs := callDefs [(Reg.x 0, called)] },
+          MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+            (Reg.vreg live RegClass.int),
+          MInst.rets (retPairs [(sum, Reg.x 0)])] ++
+      suffix
+seed values : Nat → CV
+initial before after : Arm.ArmState
+output : CV
+preRun : seqRun isem prelude seed initial = some (SeqEnd.fall values before)
+callRun :
+  isem
+      (MInst.call
+        { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)], defs := callDefs [(Reg.x 0, called)] })
+      (List.map (fun x => values x.fst) [(live, Reg.x 0)]) before =
+    some ([output], after, Ctl.next)
+final : Arm.ArmState
+callAdd :
+  seqRun isem
+      [MInst.call
+          { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)], defs := callDefs [(Reg.x 0, called)] },
+        MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+          (Reg.vreg live RegClass.int)]
+      values before =
+    some
+      (SeqEnd.fall
+        (upd (fun key => if key = called then output else values key) sum
+          (resX OperandSize.size64 (opnd OperandSize.size64 output + opnd OperandSize.size64 (values live))))
+        final)
+world : SameWorld F final after
+value : CV := resX OperandSize.size64 (opnd OperandSize.size64 output + opnd OperandSize.size64 (values live))
+updated : Nat → CV := upd (fun key => if key = called then output else values key) sum value
+returned :
+  seqRun isem [MInst.rets (retPairs [(sum, Reg.x 0)])] updated final =
+    some
+      (SeqEnd.stop 0 (MInst.rets (retPairs [(sum, Reg.x 0)])) (retOps [(sum, Reg.x 0)]).toArray updated final [] final
+        Ctl.ret)
+bodyRun :
+  seqRun isem
+      ([MInst.call
+            { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)], defs := callDefs [(Reg.x 0, called)] },
+          MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+            (Reg.vreg live RegClass.int)] ++
+        [MInst.rets (retPairs [(sum, Reg.x 0)])])
+      values before =
+    some
+      (SeqEnd.stop
+        (0 +
+          [MInst.call
+                { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)], defs := callDefs [(Reg.x 0, called)] },
+              MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+                (Reg.vreg live RegClass.int)].length)
+        (MInst.rets (retPairs [(sum, Reg.x 0)])) (retOps [(sum, Reg.x 0)]).toArray updated final [] final Ctl.ret)
+complete :
+  seqRun isem
+      (prelude ++
+        ([MInst.call
+              { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)], defs := callDefs [(Reg.x 0, called)] },
+            MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+              (Reg.vreg live RegClass.int)] ++
+          [MInst.rets (retPairs [(sum, Reg.x 0)])]))
+      seed initial =
+    some
+      (SeqEnd.stop
+        (0 +
+            [MInst.call
+                  { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)],
+                    defs := callDefs [(Reg.x 0, called)] },
+                MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+                  (Reg.vreg live RegClass.int)].length +
+          prelude.length)
+        (MInst.rets (retPairs [(sum, Reg.x 0)])) (retOps [(sum, Reg.x 0)]).toArray updated final [] final Ctl.ret)
+segment :
+  SegAt block 0
+    (prelude ++
+      [MInst.call
+          { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)], defs := callDefs [(Reg.x 0, called)] },
+        MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+          (Reg.vreg live RegClass.int),
+        MInst.rets (retPairs [(sum, Reg.x 0)])])
+path :
+  Star (VStep vc isem) (VConf.run { b := 0, k := 0, ρ := seed, w := initial })
+    (VConf.run
+      { b := 0,
+        k :=
+          0 +
+            (0 +
+                [MInst.call
+                      { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)],
+                        defs := callDefs [(Reg.x 0, called)] },
+                    MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+                      (Reg.vreg live RegClass.int)].length +
+              prelude.length),
+        ρ := updated, w := final })
+left✝¹ :
+  0 +
+        [MInst.call
+              { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)], defs := callDefs [(Reg.x 0, called)] },
+            MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+              (Reg.vreg live RegClass.int)].length +
+      prelude.length <
+    (prelude ++
+        [MInst.call
+            { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)], defs := callDefs [(Reg.x 0, called)] },
+          MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+            (Reg.vreg live RegClass.int),
+          MInst.rets (retPairs [(sum, Reg.x 0)])]).length
+instruction :
+  block.insts[0 +
+        (0 +
+            [MInst.call
+                  { dest := CallDest.sym name, uses := retPairs [(live, Reg.x 0)],
+                    defs := callDefs [(Reg.x 0, called)] },
+                MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg sum RegClass.int) (Reg.vreg called RegClass.int)
+                  (Reg.vreg live RegClass.int)].length +
+          prelude.length)]? =
+    some (MInst.rets (retPairs [(sum, Reg.x 0)]))
+operands : (MInst.rets (retPairs [(sum, Reg.x 0)])).operands = Except.ok (retOps [(sum, Reg.x 0)]).toArray
+ran :
+  isem (MInst.rets (retPairs [(sum, Reg.x 0)])) (vuses (retOps [(sum, Reg.x 0)]).toArray updated) final =
+    some ([], final, Ctl.ret)
+left✝ : [].length = (List.filter Operand.isDef (retOps [(sum, Reg.x 0)]).toArray.toList).length
+right✝ : Ctl.ret ≠ Ctl.next
+⊢ resX OperandSize.size64 (opnd OperandSize.size64 output + opnd OperandSize.size64 (values live)) = value

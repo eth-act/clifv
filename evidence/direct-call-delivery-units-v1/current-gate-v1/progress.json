@@ -1,0 +1,16 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "label": "normal-chain-0",
+      "argv": [
+        "lake",
+        "-j1",
+        "build",
+        "FV.Backend.Lowering.StockMemoryStoreCfgNI"
+      ],
+      "exit": 1,
+      "memstats": "peak 17391616\noom 0\noom_kill 0\n"
+    }
+  ]
+}

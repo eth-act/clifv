@@ -1,0 +1,2 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceWitness.lean:15:64: error: unexpected identifier; expected '}'
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceWitness.lean:36:59: error: Tactic `native_decide` failed: Could not evaluate decidable instance. Error: cannot evaluate code because 'Backend.Stock.Proof.FenceFixture.function' uses 'sorry' and/or contains errors

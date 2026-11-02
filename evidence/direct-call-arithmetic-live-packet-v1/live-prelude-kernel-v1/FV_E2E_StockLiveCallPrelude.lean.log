@@ -1,0 +1,23 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallPrelude.lean:44:7: error: unexpected token 'prefix'; expected '(', ':=', '|' or term
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallPrelude.lean:44:7: error: Missing cases:
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallPrelude.lean:40:101: error: unsolved goals
+sig : Clif.Signature
+vc : VCode
+checked : codeCheck sig vc = true
+block : VBlock
+placed : vc.blocks[0]? = some block
+prelude body : Array MInst
+pieces : block.insts = prelude ++ body
+noCalls : ∀ (inst : MInst), inst ∈ prelude.toList → ∀ (info : CallInfo), inst ≠ MInst.call info
+blockMember : (block, 0) ∈ vc.blocks.toList.zipIdx
+admitted :
+  (match (block, 0) with
+    | (block, b) =>
+      prefixReads sig b 0 block.insts.toList &&
+        block.insts.toList.zipIdx.all fun x =>
+          match x with
+          | (inst, pc) => instruction sig b pc inst) =
+    true
+⊢ ∀ (j : Nat) (inst : MInst), prelude.toList[j]? = some inst → ABIReadOnly.instruction sig 0 j inst = true
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallPrelude.lean:44:15: error: unexpected identifier; expected prec
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallPrelude.lean:47:62: error: unexpected identifier; expected ':'

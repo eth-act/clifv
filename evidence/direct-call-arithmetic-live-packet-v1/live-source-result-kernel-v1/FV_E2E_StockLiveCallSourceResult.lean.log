@@ -1,0 +1,12 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallSourceResult.lean:10:51: error(lean.unknownIdentifier): Unknown identifier `InSubset`
+
+Note: It is not possible to treat `InSubset` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallSourceResult.lean:64:8: error: Application type mismatch: The argument
+  resultRead
+has type
+  fr.regs.set layout.data.called { ty := Clif.Ty.i64, bits := returnedWord } layout.data.called =
+    some { ty := Clif.Ty.i64, bits := returnedWord }
+but is expected to have type
+  fr.regs ?m.659 = some { ty := Clif.Ty.i64, bits := ?m.663 }
+in the application
+  LiveCallArithmetic.source_add_returns ?m.668 term' ?m.669 resultRead

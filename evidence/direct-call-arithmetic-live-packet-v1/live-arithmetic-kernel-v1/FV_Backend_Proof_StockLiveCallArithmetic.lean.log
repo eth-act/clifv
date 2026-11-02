@@ -1,0 +1,48 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/Proof/StockLiveCallArithmetic.lean:49:5: error: unsolved goals
+F : BitVec 64 → Prop
+isem : Sem
+refines : Refines F isem
+name : String
+pairs : List (Nat × Reg)
+destination live sum : Nat
+separate : live ≠ destination
+values : Nat → CV
+output : CV
+before after : Arm.ArmState
+called :
+  isem (MInst.call { dest := CallDest.sym name, uses := retPairs pairs, defs := callDefs [(Reg.x 0, destination)] })
+      (List.map (fun x => values x.fst) pairs) before =
+    some ([output], after, Ctl.next)
+callRun :
+  seqRun isem
+      [MInst.call { dest := CallDest.sym name, uses := retPairs pairs, defs := callDefs [(Reg.x 0, destination)] }]
+      values before =
+    some (SeqEnd.fall (fun key => if key = destination then output else values key) after)
+update :
+  writeV values ((callDefOps [(Reg.x 0, destination)]).zip [output]) = fun key =>
+    if key = destination then output else values key
+⊢ (match ?m.105 with
+    | ALUOp.add => some (opnd OperandSize.size64 output + opnd OperandSize.size64 (values live))
+    | ALUOp.sub => some (opnd OperandSize.size64 output - opnd OperandSize.size64 (values live))
+    | ALUOp.and => some (opnd OperandSize.size64 output &&& opnd OperandSize.size64 (values live))
+    | ALUOp.orr => some (opnd OperandSize.size64 output ||| opnd OperandSize.size64 (values live))
+    | ALUOp.eor => some (opnd OperandSize.size64 output ^^^ opnd OperandSize.size64 (values live))
+    | ALUOp.andNot => some (opnd OperandSize.size64 output &&& ~~~opnd OperandSize.size64 (values live))
+    | ALUOp.orrNot => some (opnd OperandSize.size64 output ||| ~~~opnd OperandSize.size64 (values live))
+    | ALUOp.eorNot => some (opnd OperandSize.size64 output ^^^ ~~~opnd OperandSize.size64 (values live))
+    | x => none) =
+    some (opnd OperandSize.size64 output + opnd OperandSize.size64 (values live))
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/Proof/StockLiveCallArithmetic.lean:50:15: error(lean.unknownIdentifier): Unknown identifier `seqRun_append_fall_fa`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/Proof/StockLiveCallArithmetic.lean:49:19: warning: This simp argument is unused:
+  ite_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [separate, ↓reduceIte, aluVal]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/Proof/StockLiveCallArithmetic.lean:55:93: error: unsolved goals
+returned live : BitVec 64
+output saved : CV
+returnedHeld : VHolds { ty := Clif.Ty.i64, bits := returned } output
+liveHeld : VHolds { ty := Clif.Ty.i64, bits := live } saved
+⊢ BitVec.setWidth Clif.Ty.i64.width (BitVec.setWidth 64 (returned + live)) = returned + live

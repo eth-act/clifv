@@ -1,0 +1,105 @@
+FUNCTION stock_live_call_add
+CODE #[Backend.MInst.args [(Backend.Reg.vreg 192 (Backend.RegClass.int), Backend.Reg.x 0)],
+  Backend.MInst.call
+    { dest := Backend.CallDest.sym "stock_clobber_add",
+      uses := [(Backend.Reg.vreg 192 (Backend.RegClass.int), Backend.Reg.x 0)],
+      defs := [(Backend.Reg.x 0, Backend.Reg.vreg 196 (Backend.RegClass.int))] },
+  Backend.MInst.aluRRR
+    (Backend.ALUOp.add)
+    (Backend.OperandSize.size64)
+    (Backend.Reg.vreg 195 (Backend.RegClass.int))
+    (Backend.Reg.vreg 196 (Backend.RegClass.int))
+    (Backend.Reg.vreg 192 (Backend.RegClass.int)),
+  Backend.MInst.rets [(Backend.Reg.vreg 195 (Backend.RegClass.int), Backend.Reg.x 0)]]
+SCANNED #[Backend.MInst.call
+    { dest := Backend.CallDest.sym "stock_clobber_add",
+      uses := [(Backend.Reg.vreg 192 (Backend.RegClass.int), Backend.Reg.x 0)],
+      defs := [(Backend.Reg.x 0, Backend.Reg.vreg 196 (Backend.RegClass.int))] },
+  Backend.MInst.aluRRR
+    (Backend.ALUOp.add)
+    (Backend.OperandSize.size64)
+    (Backend.Reg.vreg 195 (Backend.RegClass.int))
+    (Backend.Reg.vreg 193 (Backend.RegClass.int))
+    (Backend.Reg.vreg 192 (Backend.RegClass.int)),
+  Backend.MInst.rets [(Backend.Reg.vreg 194 (Backend.RegClass.int), Backend.Reg.x 0)]]
+RECORD 2: #[Backend.MInst.rets [(Backend.Reg.vreg 194 (Backend.RegClass.int), Backend.Reg.x 0)]]
+RECORD 1: #[Backend.MInst.aluRRR
+    (Backend.ALUOp.add)
+    (Backend.OperandSize.size64)
+    (Backend.Reg.vreg 195 (Backend.RegClass.int))
+    (Backend.Reg.vreg 193 (Backend.RegClass.int))
+    (Backend.Reg.vreg 192 (Backend.RegClass.int))]
+RECORD 0: #[Backend.MInst.call
+    { dest := Backend.CallDest.sym "stock_clobber_add",
+      uses := [(Backend.Reg.vreg 192 (Backend.RegClass.int), Backend.Reg.x 0)],
+      defs := [(Backend.Reg.x 0, Backend.Reg.vreg 196 (Backend.RegClass.int))] }]
+VALUE 7: some (Backend.Reg.vreg 192 (Backend.RegClass.int))
+VALUE 31: some (Backend.Reg.vreg 193 (Backend.RegClass.int))
+VALUE 79: some (Backend.Reg.vreg 194 (Backend.RegClass.int))
+VALUE 101: none
+VALUE 121: none
+ALLOC false: { blocks := #[#[Backend.RItem.move (Backend.Loc.reg (Backend.Reg.x 19)) (Backend.Loc.save (Backend.Reg.x 19)),
+                Backend.RItem.op 0 #[Backend.Loc.reg (Backend.Reg.x 0)],
+                Backend.RItem.move (Backend.Loc.reg (Backend.Reg.x 0)) (Backend.Loc.reg (Backend.Reg.x 19)),
+                Backend.RItem.move (Backend.Loc.reg (Backend.Reg.x 19)) (Backend.Loc.reg (Backend.Reg.x 0)),
+                Backend.RItem.op 1 #[Backend.Loc.reg (Backend.Reg.x 0), Backend.Loc.reg (Backend.Reg.x 0)],
+                Backend.RItem.op
+                  2
+                  #[Backend.Loc.reg (Backend.Reg.x 0), Backend.Loc.reg (Backend.Reg.x 0),
+                    Backend.Loc.reg (Backend.Reg.x 19)],
+                Backend.RItem.move (Backend.Loc.save (Backend.Reg.x 19)) (Backend.Loc.reg (Backend.Reg.x 19)),
+                Backend.RItem.op 3 #[Backend.Loc.reg (Backend.Reg.x 0)]]],
+  spillSlots := 0,
+  saved := [Backend.Reg.x 19] }
+ALLOC true: { blocks := #[#[Backend.RItem.move (Backend.Loc.reg (Backend.Reg.x 19)) (Backend.Loc.save (Backend.Reg.x 19)),
+                Backend.RItem.op 0 #[Backend.Loc.reg (Backend.Reg.x 0)],
+                Backend.RItem.move (Backend.Loc.reg (Backend.Reg.x 0)) (Backend.Loc.reg (Backend.Reg.x 19)),
+                Backend.RItem.move (Backend.Loc.reg (Backend.Reg.x 19)) (Backend.Loc.reg (Backend.Reg.x 0)),
+                Backend.RItem.op 1 #[Backend.Loc.reg (Backend.Reg.x 0), Backend.Loc.reg (Backend.Reg.x 0)],
+                Backend.RItem.op
+                  2
+                  #[Backend.Loc.reg (Backend.Reg.x 0), Backend.Loc.reg (Backend.Reg.x 0),
+                    Backend.Loc.reg (Backend.Reg.x 19)],
+                Backend.RItem.move (Backend.Loc.save (Backend.Reg.x 19)) (Backend.Loc.reg (Backend.Reg.x 19)),
+                Backend.RItem.op 3 #[Backend.Loc.reg (Backend.Reg.x 0)]]],
+  spillSlots := 0,
+  saved := [Backend.Reg.x 19] }
+FUNCTION stock_clobber_add
+CODE #[Backend.MInst.args [(Backend.Reg.vreg 192 (Backend.RegClass.int), Backend.Reg.x 0)],
+  Backend.MInst.aluRRImm12
+    (Backend.ALUOp.add)
+    (Backend.OperandSize.size64)
+    (Backend.Reg.vreg 195 (Backend.RegClass.int))
+    (Backend.Reg.vreg 192 (Backend.RegClass.int))
+    { bits := 13, shift12 := false },
+  Backend.MInst.rets [(Backend.Reg.vreg 195 (Backend.RegClass.int), Backend.Reg.x 0)]]
+SCANNED #[Backend.MInst.aluRRImm12
+    (Backend.ALUOp.add)
+    (Backend.OperandSize.size64)
+    (Backend.Reg.vreg 195 (Backend.RegClass.int))
+    (Backend.Reg.vreg 192 (Backend.RegClass.int))
+    { bits := 13, shift12 := false },
+  Backend.MInst.rets [(Backend.Reg.vreg 194 (Backend.RegClass.int), Backend.Reg.x 0)]]
+RECORD 2: #[Backend.MInst.rets [(Backend.Reg.vreg 194 (Backend.RegClass.int), Backend.Reg.x 0)]]
+RECORD 1: #[Backend.MInst.aluRRImm12
+    (Backend.ALUOp.add)
+    (Backend.OperandSize.size64)
+    (Backend.Reg.vreg 195 (Backend.RegClass.int))
+    (Backend.Reg.vreg 192 (Backend.RegClass.int))
+    { bits := 13, shift12 := false }]
+RECORD 0: #[]
+VALUE 7: none
+VALUE 31: none
+VALUE 79: none
+VALUE 101: some (Backend.Reg.vreg 192 (Backend.RegClass.int))
+VALUE 121: some (Backend.Reg.vreg 194 (Backend.RegClass.int))
+ALLOC false: { blocks := #[#[Backend.RItem.op 0 #[Backend.Loc.reg (Backend.Reg.x 0)],
+                Backend.RItem.op 1 #[Backend.Loc.reg (Backend.Reg.x 0), Backend.Loc.reg (Backend.Reg.x 0)],
+                Backend.RItem.op 2 #[Backend.Loc.reg (Backend.Reg.x 0)]]],
+  spillSlots := 0,
+  saved := [] }
+ALLOC true: { blocks := #[#[Backend.RItem.op 0 #[Backend.Loc.reg (Backend.Reg.x 0)],
+                Backend.RItem.op 1 #[Backend.Loc.reg (Backend.Reg.x 0), Backend.Loc.reg (Backend.Reg.x 0)],
+                Backend.RItem.op 2 #[Backend.Loc.reg (Backend.Reg.x 0)]]],
+  spillSlots := 0,
+  saved := [] }

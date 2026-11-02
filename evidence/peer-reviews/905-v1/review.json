@@ -1,0 +1,10 @@
+{
+  "pr": 905,
+  "head": "cfaa093f28aece08615e0a320e11f7a0e88845d0",
+  "verdict": "no blocking defect",
+  "review": "ONE QUICK, DIRTY, CHEAP direct review",
+  "builds": false,
+  "review_agents": false,
+  "scope": "Five new files; explicit DefBefore premise retained; inherited-value carry across real edge copies; fixed marked while-loop witness; no universal loop Domain claim.",
+  "utc": "2026-11-02T12:48:14.070498+00:00"
+}

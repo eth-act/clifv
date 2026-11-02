@@ -1,0 +1,14 @@
+import FV.E2E.StockMemoryExtLoadNI
+
+#print axioms Backend.Stock.Memory.ExtendedRoots.stock_single_extending_load_return_spec
+#print axioms Backend.Stock.Memory.ExtendedRoots.stock_lower_extending_load_scan_fall_refines
+#print axioms Backend.Stock.Memory.ExtendedRoots.stock_single_extending_load_return_body
+#print axioms Backend.Stock.Memory.ExtendedRoots.domain_of_single_extending_load_return
+#print axioms Backend.Stock.Memory.ExtendedRoots.SingleClass.domain
+#print axioms E2E.StockMemory.ExtendedRoots.stock_lower_extending_load_paired_scan
+#print axioms E2E.StockMemory.ExtendedRoots.stock_lower_extending_load_paired_source_step
+#print axioms E2E.StockMemory.ExtendedRoots.stock_lower_extending_load_scan_pair
+#print axioms E2E.StockMemory.ExtendedRoots.stock_single_extending_load_return_paired_body
+#print axioms E2E.StockMemory.ExtendedRoots.single_extending_load_return_paired_function_seeded
+#print axioms E2E.StockMemory.ExtendedRoots.single_extending_load_return_paired_function
+#print axioms E2E.backend_correct_world_niX_stock_extending_memory

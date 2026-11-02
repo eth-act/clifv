@@ -1,0 +1,10 @@
+{
+  "pr": 906,
+  "head": "c1d7b705d5af7ed8122f7764ab1d6a9607861162",
+  "verdict": "no blocking defect",
+  "review": "ONE QUICK, DIRTY, CHEAP direct review",
+  "builds": false,
+  "review_agents": false,
+  "scope": "Three new files; actual lowering+SSA derives DefBefore via DFS parent induction; global carry wrapper removes extra premise; generic proof standard; fixed lowering/availability witness marked.",
+  "utc": "2026-11-02T12:59:10.815865+00:00"
+}

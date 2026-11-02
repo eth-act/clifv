@@ -1,0 +1,8 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceHelpers.lean:117:77: error: failed to synthesize
+  Decidable (ExprScoped (fun t => t ∈ helperIds) rule_lower_2476.rhs)
+
+Hint: Additional diagnostic information may be available using the `set_option diagnostics true` command.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceHelpers.lean:132:82: error: failed to synthesize
+  Decidable (IfLetsScoped (fun t => t ∈ helperIds) rule_lower_2476.iflets)
+
+Hint: Additional diagnostic information may be available using the `set_option diagnostics true` command.

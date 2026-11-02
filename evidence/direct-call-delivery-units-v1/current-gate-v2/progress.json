@@ -1,0 +1,65 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "label": "normal-chain-0",
+      "argv": [
+        "lake",
+        "build",
+        "FV.Backend.Lowering.StockMemoryStoreCfgNI"
+      ],
+      "exit": 0,
+      "memstats": "peak 228016128\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "normal-chain-1",
+      "argv": [
+        "lake",
+        "build",
+        "FV.Backend.Lowering.StockMemoryLoadStoreNI"
+      ],
+      "exit": 0,
+      "memstats": "peak 227266560\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "normal-chain-2",
+      "argv": [
+        "lake",
+        "build",
+        "FV.Backend.Lowering.StockMemoryCapturedCopyNI"
+      ],
+      "exit": 0,
+      "memstats": "peak 234446848\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "normal-chain-3",
+      "argv": [
+        "lake",
+        "build",
+        "FV.Backend.Lowering.StockMemorySretCopyNI"
+      ],
+      "exit": 0,
+      "memstats": "peak 227516416\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "normal-chain-4",
+      "argv": [
+        "lake",
+        "build",
+        "FV.Backend.Lowering.StockVoidCallNI"
+      ],
+      "exit": 0,
+      "memstats": "peak 235573248\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "outside-0",
+      "argv": [
+        "lake",
+        "build",
+        "FV.Backend.Proof.StockSourceCallWitness"
+      ],
+      "exit": 1,
+      "memstats": "peak 1073741824\noom 1\noom_kill 1\n"
+    }
+  ]
+}

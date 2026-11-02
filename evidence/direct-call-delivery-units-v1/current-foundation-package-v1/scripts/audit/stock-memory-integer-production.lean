@@ -1,0 +1,22 @@
+import FV.E2E.StockMemoryIntegerNI
+import FV.E2E.StockMemoryIntegerPairedFunctionWitness
+import FV.Backend.Proof.StockMemoryIntegerCheck
+import FV.Backend.MemoryIntegerNIProduction
+
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_scan_fall_refines
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_single_integer_load_return_spec
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_single_integer_load_return_body
+#print axioms Backend.Stock.Memory.IntegerRoots.domain_of_single_integer_load_return
+#print axioms Backend.Stock.Memory.IntegerRoots.SingleClass.domain
+#print axioms Backend.Stock.MemoryUnsigned.sourceOk_sound
+#print axioms Backend.Stock.MemoryUnsigned.check_sound
+#print axioms E2E.StockMemory.IntegerRoots.stock_lower_integer_load_paired_source_step
+#print axioms E2E.StockMemory.IntegerRoots.stock_lower_integer_load_scan_pair
+#print axioms E2E.StockMemory.IntegerRoots.stock_lower_integer_load_paired_scan
+#print axioms E2E.StockMemory.IntegerRoots.stock_single_integer_load_return_paired_body
+#print axioms E2E.StockMemory.IntegerRoots.single_integer_load_return_paired_function_seeded
+#print axioms E2E.StockMemory.IntegerRoots.single_integer_load_return_paired_function
+#print axioms E2E.backend_correct_world_niX_stock_integer_memory
+#print axioms E2E.StockMemoryIntegerFunctionWitness.source_class_witness
+#print axioms E2E.StockMemoryIntegerFunctionWitness.checked_source_class_witness
+#print axioms E2E.StockMemoryIntegerFunctionWitness.complete_paired_integer_load_function_witness

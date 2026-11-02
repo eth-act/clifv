@@ -1,0 +1,25 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataModel.lean:89:3: error: unknown tactic
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataModel.lean:86:6: error: No goals to be solved
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceMetadataModel.lean:68:98: error: unsolved goals
+ctx : Ctx
+ranges : Array (Nat × Nat)
+initial : FullState :=
+  (Array.replicate ctx.insts.size 0, Array.replicate ctx.insts.size 0, #[], Array.replicate ctx.insts.size [], 0)
+next : FullState → Clif.Block × Nat → FullState :=
+  fun s x =>
+    let after :=
+      (forIn x.fst.body.zipIdx (s.fst, s.snd.fst, s.snd.snd.snd.fst, s.snd.snd.snd.snd + 1)
+          (bodyFull ranges[x.snd]!.fst x.snd)).run;
+    (after.fst.set! (ranges[x.snd]!.snd - 1) x.snd, after.snd.fst.set! (ranges[x.snd]!.snd - 1) after.snd.snd.snd,
+      s.snd.snd.fst.push (after.snd.snd.snd + 1), after.snd.snd.fst.set! (ranges[x.snd]!.snd - 1) (termArgs x.fst.term),
+      after.snd.snd.snd + 1)
+projected :
+  ((forIn ctx.func.blocks.zipIdx initial (blockFull ranges)).run.snd.fst,
+      (forIn ctx.func.blocks.zipIdx initial (blockFull ranges)).run.snd.snd.snd.snd) =
+    List.foldl (blockNext ranges) (initial.snd.fst, initial.snd.snd.snd.snd) ctx.func.blocks.zipIdx
+arrays :
+  ((forIn ctx.func.blocks.zipIdx initial (blockFull ranges)).run.snd.fst,
+        (forIn ctx.func.blocks.zipIdx initial (blockFull ranges)).run.snd.snd.snd.snd).fst =
+    (List.foldl (blockNext ranges) (initial.snd.fst, initial.snd.snd.snd.snd) ctx.func.blocks.zipIdx).fst
+⊢ (sourceMetadata ctx ranges).entryColor =
+    (List.foldl (blockNext ranges) (Array.replicate ctx.insts.size 0, 0) ctx.func.blocks.zipIdx).fst

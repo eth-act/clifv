@@ -1,0 +1,10 @@
+{
+  "pr": 907,
+  "head": "85ed3ee113a9ade2495c7f8e450084d2e06bec65",
+  "verdict": "no blocking defect",
+  "review": "ONE QUICK, DIRTY, CHEAP direct review",
+  "builds": false,
+  "review_agents": false,
+  "scope": "Six new unwired files; strong source-fuel induction with derived carry; existing Scalar.Domain without rank; generic standard proofs; marked actual back-edge/lowering witness; no universal driver-completeness claim.",
+  "utc": "2026-11-02T13:10:51.492350+00:00"
+}

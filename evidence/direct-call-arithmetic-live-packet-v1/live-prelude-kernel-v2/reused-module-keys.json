@@ -1,0 +1,9 @@
+{
+  "FV/Backend/StockLiveCallCheck.lean": "0e49c1860e151adc87d8f59830ea33462c945b9c049ed11b95df6bcf30958b1b",
+  "FV/E2E/StockLiveCallLayout.lean": "161e59d2dcdea5e90258633f18bea33436a7281af4405bca25b9ae44bdf83846",
+  "FV/E2E/StockLiveCallFixture.lean": "f34d03a61e73c9b842511d584eeedcd133f3aa23d1f613feea14a1a187d811b8",
+  "FV/Backend/Proof/StockLiveCallSource.lean": "6b8a1a2ab3fef7307746d4c3b64f3868ecddf264bd6004caaca704621f5fa486",
+  "FV/Backend/StockResultCallCheck.lean": "24998a50c31698f328f28d604d581f6a1581a2f8766c02d9a843f06d7ffbe205",
+  "FV/Backend/Proof/StockLiveCallArithmetic.lean": "65c4a2d8e1eed252bfa5f53bcb7b28d9b32c6135208140944d720b0768927a44",
+  "FV/Backend/Proof/StockDirectCallResult.lean": "fd9c70d16c1c14085a5da7b5d47dd894f426e317005ca82a809c990d5f631f34"
+}

@@ -1,0 +1,133 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSelected.lean:78:4: error: Tactic `rfl` failed: The left-hand side
+  rule_lower_2481
+is not definitionally equal to the right-hand side
+  rule_lower_2476
+
+case inr.inr.inl
+f : Clif.Function
+ctx : Ctx
+mapped : MappedCtxInv f ctx
+i : Nat
+info : IInfo
+found : ctx.insts[i]? = some info
+source : info.clif = some Clif.Inst.fence
+st next : State
+out : V
+trace : List RuleId
+selected : LowerSelection ctx i st out next trace
+fmt : ruleFmt selected.rule = some 2466
+member : selected.rule ∈ R.lower
+opcode : sourceRuleOpcode program rule_lower_2481 = some 160
+h : selected.rule = rule_lower_2481
+⊢ rule_lower_2481 = rule_lower_2476
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSelected.lean:79:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  sourceRuleOpcode program rule_lower_2481
+in the target expression
+  sourceRuleOpcode program rule_lower_2496 = some 160
+
+case inr.inr.inr.inl
+f : Clif.Function
+ctx : Ctx
+mapped : MappedCtxInv f ctx
+i : Nat
+info : IInfo
+found : ctx.insts[i]? = some info
+source : info.clif = some Clif.Inst.fence
+st next : State
+out : V
+trace : List RuleId
+selected : LowerSelection ctx i st out next trace
+fmt : ruleFmt selected.rule = some 2466
+member : selected.rule ∈ R.lower
+opcode : sourceRuleOpcode program rule_lower_2496 = some 160
+h : selected.rule = rule_lower_2496
+⊢ rule_lower_2496 = rule_lower_2476
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSelected.lean:80:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  sourceRuleOpcode program rule_lower_2496
+in the target expression
+  sourceRuleOpcode program rule_lower_2499 = some 160
+
+case inr.inr.inr.inr.inl
+f : Clif.Function
+ctx : Ctx
+mapped : MappedCtxInv f ctx
+i : Nat
+info : IInfo
+found : ctx.insts[i]? = some info
+source : info.clif = some Clif.Inst.fence
+st next : State
+out : V
+trace : List RuleId
+selected : LowerSelection ctx i st out next trace
+fmt : ruleFmt selected.rule = some 2466
+member : selected.rule ∈ R.lower
+opcode : sourceRuleOpcode program rule_lower_2499 = some 160
+h : selected.rule = rule_lower_2499
+⊢ rule_lower_2499 = rule_lower_2476
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSelected.lean:81:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  sourceRuleOpcode program rule_lower_2499
+in the target expression
+  sourceRuleOpcode program rule_lower_2502 = some 160
+
+case inr.inr.inr.inr.inr.inl
+f : Clif.Function
+ctx : Ctx
+mapped : MappedCtxInv f ctx
+i : Nat
+info : IInfo
+found : ctx.insts[i]? = some info
+source : info.clif = some Clif.Inst.fence
+st next : State
+out : V
+trace : List RuleId
+selected : LowerSelection ctx i st out next trace
+fmt : ruleFmt selected.rule = some 2466
+member : selected.rule ∈ R.lower
+opcode : sourceRuleOpcode program rule_lower_2502 = some 160
+h : selected.rule = rule_lower_2502
+⊢ rule_lower_2502 = rule_lower_2476
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSelected.lean:82:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  sourceRuleOpcode program rule_lower_2502
+in the target expression
+  sourceRuleOpcode program rule_lower_2770 = some 160
+
+case inr.inr.inr.inr.inr.inr.inl
+f : Clif.Function
+ctx : Ctx
+mapped : MappedCtxInv f ctx
+i : Nat
+info : IInfo
+found : ctx.insts[i]? = some info
+source : info.clif = some Clif.Inst.fence
+st next : State
+out : V
+trace : List RuleId
+selected : LowerSelection ctx i st out next trace
+fmt : ruleFmt selected.rule = some 2466
+member : selected.rule ∈ R.lower
+opcode : sourceRuleOpcode program rule_lower_2770 = some 160
+h : selected.rule = rule_lower_2770
+⊢ rule_lower_2770 = rule_lower_2476
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSelected.lean:83:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  sourceRuleOpcode program rule_lower_2770
+in the target expression
+  sourceRuleOpcode program rule_lower_3292 = some 160
+
+case inr.inr.inr.inr.inr.inr.inr
+f : Clif.Function
+ctx : Ctx
+mapped : MappedCtxInv f ctx
+i : Nat
+info : IInfo
+found : ctx.insts[i]? = some info
+source : info.clif = some Clif.Inst.fence
+st next : State
+out : V
+trace : List RuleId
+selected : LowerSelection ctx i st out next trace
+fmt : ruleFmt selected.rule = some 2466
+member : selected.rule ∈ R.lower
+opcode : sourceRuleOpcode program rule_lower_3292 = some 160
+h : selected.rule = rule_lower_3292
+⊢ rule_lower_3292 = rule_lower_2476
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceSelected.lean:84:2: error: No goals to be solved

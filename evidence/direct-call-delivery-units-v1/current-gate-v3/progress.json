@@ -1,0 +1,30 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "label": "preserved-chain-normal-check",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Lowering.StockMemoryStoreCfgNI",
+        "FV.Backend.Lowering.StockMemoryLoadStoreNI",
+        "FV.Backend.Lowering.StockMemoryCapturedCopyNI",
+        "FV.Backend.Lowering.StockMemorySretCopyNI",
+        "FV.Backend.Lowering.StockVoidCallNI"
+      ],
+      "exit": 0,
+      "memstats": "peak 44711936\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "outside-0",
+      "argv": [
+        "lake",
+        "build",
+        "FV.Backend.Proof.StockSourceCallWitness"
+      ],
+      "exit": 1,
+      "memstats": "peak 3221225472\noom 1\noom_kill 1\n"
+    }
+  ]
+}

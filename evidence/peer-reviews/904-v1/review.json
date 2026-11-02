@@ -1,0 +1,10 @@
+{
+  "pr": 904,
+  "head": "877e0297c331794927cead85d2c04dd3d16ff7ce",
+  "verdict": "no blocking defect",
+  "review": "ONE QUICK, DIRTY, CHEAP direct review",
+  "builds": false,
+  "review_agents": false,
+  "scope": "Six new unwired files; strict source-fuel bounds; all-fuel conversion requires every bound; generic witnesses kernel-only; fixed selector marked; no loop Domain claim.",
+  "utc": "2026-11-02T12:48:14.070351+00:00"
+}

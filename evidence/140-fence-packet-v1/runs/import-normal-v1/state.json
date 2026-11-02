@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "normal-import-check",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Proof.StockProtectedSinkDriver",
+        "FV.Backend.Proof.StockMemoryHelperProjection",
+        "FV.Backend.Proof.IselAtomic",
+        "FV.Backend.Proof.StockSelectionReceipts",
+        "FV.Backend.Proof.StockMemorySourceExecution",
+        "FV.Backend.Proof.StockScanTrapSemantics"
+      ],
+      "exit": 0,
+      "seconds": 1.431429386138916,
+      "memstats": "peak 179781632\noom 0\noom_kill 0\n"
+    }
+  ]
+}

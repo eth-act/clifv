@@ -1,0 +1,8 @@
+# Generators whose output files scripts/shake/shake.py edits like hand-written files: each emits
+# the imports shake.py leaves (keep the generator and its files in step when either changes).
+FVTest/Backend/Proof/Probe/GenData.lean   # FV/Backend/Proof/IselData.lean
+rust/crates/isle2lean                     # FV/Isle/Generated/**
+# Generated files kept exactly as their generator writes them (`keep: PATH`): files importing only
+# `Program` use `Ids` through it, so isle2lean emits that import for every unit.
+keep: FV/Isle/Generated/Program.lean
+keep: FV/Isle/Generated/Opt/Program.lean

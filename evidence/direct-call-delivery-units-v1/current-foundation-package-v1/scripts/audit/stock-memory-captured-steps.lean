@@ -1,0 +1,15 @@
+import FV.Backend.Proof.StockMemoryOffsetEightValues
+import FV.Backend.Proof.StockMemoryOffsetEightSourceValues
+import FV.Backend.Proof.StockMemoryOffsetEightScanRefines
+import FV.Backend.Proof.StockMemoryLoadedPointerStoreExec
+import FV.Backend.Proof.StockMemoryLoadedPointerSourceValues
+import FV.Backend.Proof.StockMemoryLoadedPointerScanRefines
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_eight_values
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_eight_operand_coverage
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_eight_source_step
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_eight_scan_fall_refines
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_loaded_pointer_store_record_run_of_store
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_loaded_pointer_store_record_run
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_loaded_pointer_store_source_step_of_store
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_loaded_pointer_store_source_step
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_loaded_pointer_store_scan_fall_refines

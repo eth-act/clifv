@@ -1,0 +1,32 @@
+{
+  "packet": "stock-delivery-runner",
+  "base": "ba08bcaf2aca2aa6bd37511d7dca89582d14873d",
+  "candidate": "working-tree",
+  "historical_evidence": [
+    "docs/research/stock-mixed-production-activation.json"
+  ],
+  "baselines": {
+    "scope": "scripts only; Mixed evidence historical, not re-executed",
+    "next": "logical production extension"
+  },
+  "gates": [
+    {
+      "id": "runner-regressions",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_stock_delivery_gates.py"
+      ],
+      "complete_inputs": true,
+      "requires": [
+        "Ran 16 tests",
+        "(?m)^OK$"
+      ]
+    }
+  ]
+}

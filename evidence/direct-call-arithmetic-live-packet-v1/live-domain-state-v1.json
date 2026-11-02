@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "standard_roots": 18,
+  "fixed_roots": 1,
+  "source_snapshot": "reviewed-live-domain-v1/manifest.json",
+  "domain_kernel": "live-domain-kernel-v1/result.json",
+  "audit": "live-domain-audit-v1/receipt.json",
+  "arbitrary_callee_memory": true,
+  "no_initial_heap_guard": true,
+  "no_execution_certificate": true,
+  "reused_domain_type": "Backend.Stock.ResultCall.Domain",
+  "one_generic_semantic_function_proof": true,
+  "raw_cleanup_fixed_fixture": true,
+  "actual_parameter_save": "x19",
+  "peak_bytes": 365346816,
+  "all_oom_zero": true,
+  "complete_class": false,
+  "current_main_validation": false,
+  "remaining": [
+    "Paired/world NI with original XNI and source conditions",
+    "Runtime/provider and additive shared admission",
+    "Actual CLIs/generated proofs and symbolic linked ARM in both modes",
+    "Complete class review and cleanup"
+  ],
+  "active_prefix": ".git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1",
+  "utc": "2026-11-02T13:26:14.955838+00:00"
+}

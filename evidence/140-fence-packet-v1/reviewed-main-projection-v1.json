@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "base": "5980cdfddf37e0828345b60b525be6120ce41959",
+  "canonical": "canonical-state-v2.json",
+  "sources": 686,
+  "source_differences": [],
+  "normal_import_receipt": "import-normal-check-v2.json",
+  "scope": "source projection equality plus separately recorded normal keys; not production or full-goal validation",
+  "full_goal_complete": false,
+  "utc": "2026-11-02T13:38:43.357350+00:00"
+}

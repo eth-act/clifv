@@ -1,0 +1,8 @@
+{
+  "status": "not_ready",
+  "exit": 3,
+  "normal_provider_roots": 777,
+  "no_compiler_allowed": true,
+  "no_live_package_writes": true,
+  "utc": "2026-11-02T13:35:25.571378+00:00"
+}

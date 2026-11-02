@@ -1,0 +1,7 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/Proof/StockLiveCallArithmetic.lean:49:19: warning: This simp argument is unused:
+  ite_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [separate, ↓reduceIte, aluVal]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

@@ -1,0 +1,3 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceWitness.lean:38:59: error: Tactic `native_decide` evaluated that the proposition
+  observed = some true
+is false

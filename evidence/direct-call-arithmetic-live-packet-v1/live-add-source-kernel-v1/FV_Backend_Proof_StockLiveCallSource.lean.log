@@ -1,0 +1,62 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/Proof/StockLiveCallSource.lean:70:99: error: unsolved goals
+env : Clif.Env
+cp : Clif.Program
+fr : Clif.Frame
+cm outMem : Clif.Mem
+called live sum fuel : Nat
+u v : BitVec 64
+values : List Clif.Val
+body : fr.body = [{ results := [sum], inst := Clif.Inst.binary Clif.BinaryOp.iadd Clif.Ty.i64 called live }]
+term : fr.term = Clif.Terminator.ret [sum]
+returns : List.map (fun x => x.ty) fr.func.sig.returns = [Clif.Ty.i64]
+readCalled : fr.regs called = some { ty := Clif.Ty.i64, bits := u }
+readLive : fr.regs live = some { ty := Clif.Ty.i64, bits := v }
+returned : Clif.runLoop env cp fuel { frame := fr, callers := [], mem := cm } = Clif.Outcome.returned values outMem
+⊢ ∃ a,
+    Clif.Res.ok u = Clif.Res.ok a ∧
+      ∃ a_1,
+        Clif.Res.ok v = Clif.Res.ok a_1 ∧ { ty := Clif.Ty.i64, bits := a + a_1 } = { ty := Clif.Ty.i64, bits := u + v }
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/Backend/Proof/StockLiveCallSource.lean:88:10: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  Clif.runLoop ?env ?p (?fuel + 1) ?s
+in the target expression
+  (match Clif.StepResult.next { frame := next, callers := [], mem := cm } with
+    | Clif.StepResult.next s' => Clif.runLoop env cp (fuel + 1) s'
+    | Clif.StepResult.done vals mem => Clif.Outcome.returned vals mem
+    | Clif.StepResult.trapped c => Clif.Outcome.trapped c
+    | Clif.StepResult.stuck m => Clif.Outcome.stuck m) =
+    Clif.Outcome.returned values outMem
+
+case succ.succ
+env : Clif.Env
+cp : Clif.Program
+fr : Clif.Frame
+cm outMem : Clif.Mem
+called live sum : Nat
+u v : BitVec 64
+values : List Clif.Val
+body : fr.body = [{ results := [sum], inst := Clif.Inst.binary Clif.BinaryOp.iadd Clif.Ty.i64 called live }]
+term : fr.term = Clif.Terminator.ret [sum]
+returns : List.map (fun x => x.ty) fr.func.sig.returns = [Clif.Ty.i64]
+readCalled : fr.regs called = some { ty := Clif.Ty.i64, bits := u }
+readLive : fr.regs live = some { ty := Clif.Ty.i64, bits := v }
+evaluated :
+  Clif.evalInst fr cm (Clif.Inst.binary Clif.BinaryOp.iadd Clif.Ty.i64 called live) =
+    Clif.Res.ok ([{ ty := Clif.Ty.i64, bits := u + v }], cm)
+next : Clif.Frame :=
+  { func := fr.func, regs := fr.regs.set sum { ty := Clif.Ty.i64, bits := u + v }, slots := fr.slots, body := [],
+    term := fr.term }
+first :
+  Clif.step env cp { frame := fr, callers := [], mem := cm } =
+    Clif.StepResult.next { frame := next, callers := [], mem := cm }
+last :
+  Clif.step env cp { frame := next, callers := [], mem := cm } =
+    Clif.StepResult.done [{ ty := Clif.Ty.i64, bits := u + v }] (cm.free (List.map (fun x => x.snd) fr.slots)).leave
+fuel : Nat
+returned :
+  (match Clif.StepResult.next { frame := next, callers := [], mem := cm } with
+    | Clif.StepResult.next s' => Clif.runLoop env cp (fuel + 1) s'
+    | Clif.StepResult.done vals mem => Clif.Outcome.returned vals mem
+    | Clif.StepResult.trapped c => Clif.Outcome.trapped c
+    | Clif.StepResult.stuck m => Clif.Outcome.stuck m) =
+    Clif.Outcome.returned values outMem
+⊢ values = [{ ty := Clif.Ty.i64, bits := u + v }] ∧ outMem = (cm.free (List.map (fun x => x.snd) fr.slots)).leave

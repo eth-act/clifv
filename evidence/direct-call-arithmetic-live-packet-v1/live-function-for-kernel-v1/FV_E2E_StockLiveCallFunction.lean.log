@@ -1,0 +1,236 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:83:10: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  isem (MInst.call { dest := CallDest.sym ?name, uses := retPairs ?pairs, defs := callDefs ?defs }) ?uses ?world
+in the target expression
+  csem F ctx X
+      (MInst.call
+        { dest := CallDest.sym layout.data.ext.name, uses := retPairs [(liveKey, Reg.x 0)],
+          defs := callDefs [(Reg.x 0, callKey)] })
+      (List.map (fun x => ρ x.fst) [(liveKey, Reg.x 0)]) w1 =
+    some ([output], w2, Ctl.next)
+
+f : Clif.Function
+result : Result
+layout : Layout f result
+run : lower f = Except.ok result
+scope : LowerScope f
+dominated : Dominated f
+env : Clif.Env
+cp : Clif.Program
+subset : InSubset cp f
+args : List Clif.Val
+fr : Clif.Frame
+cm outMem : Clif.Mem
+entered : SourceEntry f args fr
+fuel : Nat
+F : BitVec 64 → Prop
+ctx : FnCtx
+X : ExtSem
+MR : MemRelT
+isem : Sem
+refines : Refines F isem
+driver : DriverSem isem
+callSem :
+  ∀ (name : String) (pairs : List (Nat × Reg)) (defs : List (Reg × Nat)) (uses : List CV) (world : Arm.ArmState),
+    isem (MInst.call { dest := CallDest.sym name, uses := retPairs pairs, defs := callDefs defs }) uses world =
+      Option.map (fun pair => (pair.fst, pair.snd, Ctl.next)) (X.call (some name) uses world)
+retSem :
+  ∀ (us : List (Reg × Reg)) (uses : List CV) (world : Arm.ArmState),
+    isem (MInst.rets us) uses world = some ([], world, Ctl.ret)
+calls : XCallsOk env (List.map (fun x => x.snd) f.externs) MR X
+stable : MRStable F MR
+sb : Nat
+syms : String → Option Nat
+memorySem : MemRefines F sb syms isem
+w : Arm.ArmState
+memory : MR fr.slots cm w
+arguments : ArgsAtEntry F f.sig args w
+blocks : f.blocks = [layout.data.block]
+parameters : layout.data.block.params = [(layout.data.live, Clif.Ty.i64)]
+body :
+  layout.data.block.body =
+    [{ results := [layout.data.called], inst := Clif.Inst.call layout.data.fn [layout.data.live] },
+      { results := [layout.data.sum],
+        inst := Clif.Inst.binary Clif.BinaryOp.iadd Clif.Ty.i64 layout.data.called layout.data.live }]
+term : layout.data.block.term = Clif.Terminator.ret [layout.data.sum]
+params : List.map (fun x => x.ty) f.sig.params = [Clif.Ty.i64]
+returns : List.map (fun x => x.ty) f.sig.returns = [Clif.Ty.i64]
+calleeParams : List.map (fun x => x.ty) layout.data.ext.sig.params = [Clif.Ty.i64]
+calleeReturns : layout.data.ext.sig.returns = [layout.data.returned]
+integer : layout.data.returned.ty = Clif.Ty.i64
+lookup : f.extern? layout.data.fn = some layout.data.ext
+pins : returnPins f 1 = some [Reg.x 0]
+sourceSeparate : layout.data.live ≠ layout.data.called
+sumCalled : layout.data.sum ≠ layout.data.called
+sumLive : layout.data.sum ≠ layout.data.live
+parameterBytes : (sigParamBytes layout.data.ext.sig).toOption = some [8]
+g : List Clif.Val → Clif.Mem → Clif.Outcome
+live returnedWord : BitVec 64
+after : Clif.Mem
+callee : env.extern layout.data.ext.name = some g
+read : fr.getMany [layout.data.live] = Clif.Res.ok [{ ty := Clif.Ty.i64, bits := live }]
+called :
+  g [{ ty := Clif.Ty.i64, bits := live }] cm = Clif.Outcome.returned [{ ty := Clif.Ty.i64, bits := returnedWord }] after
+freed : outMem = (after.free (List.map (fun x => x.snd) fr.slots)).leave
+returned :
+  Clif.runLoop env cp fuel { frame := fr, callers := [], mem := cm } =
+    Clif.Outcome.returned [{ ty := Clif.Ty.i64, bits := returnedWord + live }] outMem
+event : BlockScanEvent
+block : VBlock
+prelude tail : Array MInst
+ρ : Nat → CV
+w1 : Arm.ArmState
+events : event ∈ result.blockScans.toList
+entryBlock : event.block = 0
+placed : result.code.blocks[0]? = some block
+parts : block.insts = prelude ++ tail
+preRun : seqRun isem prelude.toList (entrySeed event.ctx fr) w = some (SeqEnd.fall ρ w1)
+mem1 : MR fr.slots cm w1
+values : ValuesHeld (fun x => True) event.ctx fr ρ
+same : SameWorld F w1 w
+suffix : Array MInst
+tailEq :
+  tail =
+    Array.map (fun x => MInst.mapRegs (lowerFunction.resolve result.final.alias (result.final.alias.size + 1)) x)
+        event.output.code ++
+      suffix
+scan : ScanData
+mappedLive : event.ctx.valueReg? layout.data.live = some (Reg.vreg scan.live RegClass.int)
+mappedCall : event.ctx.valueReg? layout.data.called = some (Reg.vreg scan.calledRoot RegClass.int)
+mappedSum : event.ctx.valueReg? layout.data.sum = some (Reg.vreg scan.sumRoot RegClass.int)
+code :
+  event.output.code =
+    #[MInst.call
+        { dest := CallDest.sym layout.data.ext.name, uses := retPairs [(scan.live, Reg.x 0)],
+          defs := callDefs [(Reg.x 0, scan.calledDestination)] },
+      MInst.aluRRR ALUOp.add OperandSize.size64 (Reg.vreg scan.sumDestination RegClass.int)
+        (Reg.vreg scan.calledRoot RegClass.int) (Reg.vreg scan.live RegClass.int),
+      MInst.rets (retPairs [(scan.sumRoot, Reg.x 0)])]
+callAlias : aliasNum result.final.alias scan.calledRoot = aliasNum result.final.alias scan.calledDestination
+sumAlias : aliasNum result.final.alias scan.sumRoot = aliasNum result.final.alias scan.sumDestination
+separate : aliasNum result.final.alias scan.live ≠ aliasNum result.final.alias scan.calledDestination
+held : ValuesHeld (fun x => True) event.ctx fr fun key => ρ (aliasNum result.final.alias key)
+liveKey : Nat := aliasNum result.final.alias scan.live
+callKey : Nat := aliasNum result.final.alias scan.calledDestination
+sumKey : Nat := aliasNum result.final.alias scan.sumDestination
+liveHeld : VHolds { ty := Clif.Ty.i64, bits := live } (ρ liveKey)
+sizes : sigParamBytes layout.data.ext.sig = Except.ok [8]
+arity : [{ ty := Clif.Ty.i64, bits := live }].length = layout.data.ext.sig.params.length
+argsAt : ArgsAt layout.data.ext.sig [{ ty := Clif.Ty.i64, bits := live }] [ρ liveKey] w1
+member : layout.data.ext ∈ List.map (fun x => x.snd) f.externs
+w2 : Arm.ArmState
+mem2 : MR fr.slots after w2
+abi : sigRets layout.data.ext.sig = [layout.data.returned]
+output : CV
+callRun : X.call (some layout.data.ext.name) [ρ liveKey] w1 = some ([output], w2)
+resultCount : [output].length = [layout.data.returned].length
+resultHeld : PrefixHold [{ ty := Clif.Ty.i64, bits := returnedWord }] [output]
+resultValue : VHolds { ty := Clif.Ty.i64, bits := returnedWord } output
+⊢ csem F ctx X
+      (MInst.call
+        { dest := CallDest.sym layout.data.ext.name, uses := retPairs [(liveKey, Reg.x 0)],
+          defs := callDefs [(Reg.x 0, callKey)] })
+      (List.map (fun x => ρ x.fst) [(liveKey, Reg.x 0)]) w1 =
+    some ([output], w2, Ctl.next)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:89:42: error: Application type mismatch: The argument
+  step
+has type
+  csem F ctx X
+      (MInst.call
+        { dest := CallDest.sym layout.data.ext.name, uses := retPairs [(liveKey, Reg.x 0)],
+          defs := callDefs [(Reg.x 0, callKey)] })
+      (List.map (fun x => ρ x.fst) [(liveKey, Reg.x 0)]) w1 =
+    some ([output], w2, Ctl.next)
+but is expected to have type
+  isem (MInst.call { dest := CallDest.sym ?m.1032, uses := retPairs ?m.1033, defs := callDefs [(Reg.x 0, ?m.1034)] })
+      (List.map (fun x => ?m.1037 x.fst) ?m.1033) ?m.1039 =
+    some ([?m.1038], ?m.1040, Ctl.next)
+in the application
+  LiveCallArithmetic.call_then_add refines ?m.1036 step
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:124:102: error: Application type mismatch: The argument
+  rfl
+has type
+  ?m.1468 = ?m.1468
+but is expected to have type
+  isem (MInst.rets (retPairs [(sumKey, Reg.x 0)])) [sumValue] w3 = some ([], w3, Ctl.ret)
+in the application
+  ⟨?m.1466, rfl⟩
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:116:37: warning: This simp argument is unused:
+  Array.toList_push
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_append, Array.toList_empty, List.append_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:116:55: warning: This simp argument is unused:
+  Array.toList_empty
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_append, Array.toList_push, List.append_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:146:8: error: don't know how to synthesize implicit argument `ctx`
+  @return_function_for f result layout run scope dominated env cp subset args fr cm outMem entered fuel vals returned F
+    ?m.41 X MR (csem F ctx X) (refines_csem F ctx X) (driverSem_csem F ctx X) (fun x x_1 x_2 x_3 x_4 => rfl)
+    (fun x x_1 x_2 => rfl) calls stable sb syms memorySem w memory arguments
+context:
+f : Clif.Function
+result : Result
+layout : Layout f result
+run : lower f = Except.ok result
+scope : LowerScope f
+dominated : Dominated f
+env : Clif.Env
+cp : Clif.Program
+subset : InSubset cp f
+args : List Clif.Val
+fr : Clif.Frame
+cm outMem : Clif.Mem
+entered : SourceEntry f args fr
+fuel : Nat
+vals : List Clif.Val
+returned : Clif.runLoop env cp fuel { frame := fr, callers := [], mem := cm } = Clif.Outcome.returned vals outMem
+F : BitVec 64 → Prop
+ctx : FnCtx
+X : ExtSem
+MR : MemRelT
+calls : XCallsOk env (List.map (fun x => x.snd) f.externs) MR X
+stable : MRStable F MR
+sb : Nat
+syms : String → Option Nat
+memorySem : MemRefines F sb syms (csem F ctx X)
+w : Arm.ArmState
+memory : MR fr.slots cm w
+arguments : ArgsAtEntry F f.sig args w
+⊢ FnCtx
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:145:95: error: unsolved goals
+f : Clif.Function
+result : Result
+layout : Layout f result
+run : lower f = Except.ok result
+scope : LowerScope f
+dominated : Dominated f
+env : Clif.Env
+cp : Clif.Program
+subset : InSubset cp f
+args : List Clif.Val
+fr : Clif.Frame
+cm outMem : Clif.Mem
+entered : SourceEntry f args fr
+fuel : Nat
+vals : List Clif.Val
+returned : Clif.runLoop env cp fuel { frame := fr, callers := [], mem := cm } = Clif.Outcome.returned vals outMem
+F : BitVec 64 → Prop
+ctx : FnCtx
+X : ExtSem
+MR : MemRelT
+calls : XCallsOk env (List.map (fun x => x.snd) f.externs) MR X
+stable : MRStable F MR
+sb : Nat
+syms : String → Option Nat
+memorySem : MemRefines F sb syms (csem F ctx X)
+w : Arm.ArmState
+memory : MR fr.slots cm w
+arguments : ArgsAtEntry F f.sig args w
+⊢ ∃ ρ,
+    RunOkABI f result.code (csem F ctx X) MR fr.slots { b := 0, k := 0, ρ := ρ, w := w }
+      (Clif.Outcome.returned vals outMem)

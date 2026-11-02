@@ -1,0 +1,36 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:87:24: error: Application type mismatch: The argument
+  Eq.symm actual
+has type
+  Except.ok record.output =
+    if ((scanState record.input record.inst).entryColor[record.inst]! == 0 && false) = true then
+      match commitOpportunistic event.ctx event.block record.inst (scanState record.input record.inst) with
+      | Except.error err => Except.error err
+      | Except.ok v =>
+        match v with
+        | some next =>
+          Except.ok
+            { state := next,
+              step :=
+                some
+                  { block := event.block, inst := record.inst, decision := Decision.opportunistic,
+                    before := scanState record.input record.inst, after := next } }
+        | x => Except.ok (emission.scan event.block record.inst (scanState record.input record.inst))
+    else Except.ok (emission.scan event.block record.inst (scanState record.input record.inst))
+but is expected to have type
+  record.output = emission.scan event.block record.inst (scanState record.input record.inst)
+in the application
+  ⟨rfl, Eq.symm actual⟩
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:78:89: warning: This simp argument is unused:
+  Option.getD_some
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getElem!_def, found]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:86:57: warning: This simp argument is unused:
+  Except.ok.injEq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [emitted, bind, Except.bind, pure, Except.pure] at actual
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

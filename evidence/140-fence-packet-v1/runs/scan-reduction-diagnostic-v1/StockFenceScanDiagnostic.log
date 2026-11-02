@@ -1,0 +1,53 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceScanDiagnostic.lean:4:5: error: unknown namespace `Backend.Proof.Driver`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceScanDiagnostic.lean:20:2: error: PREFIX: unfold and dsimp completed
+ctx : Ctx
+block i ti : Nat
+branch : Bool
+input : State
+output : Scan
+unsunk : input.sunk[i]! = false
+different : i ≠ ti
+mandatory : Option.any mustLower ctx.insts[i]!.clif = true
+actual :
+  (if input.sunk[i]! = true then
+      pure
+        { state := input,
+          step := some { block := block, inst := i, decision := Decision.sunk, before := input, after := input } }
+    else
+      if (i == ti && branch) = true then pure { state := scanState input i, step := none }
+      else
+        if
+            ((!if (i == ti) = true then true else Option.any mustLower ctx.insts[i]!.clif) &&
+                !ctx.insts[i]!.results.any fun v => (scanState input i).demand[v]! != 0) =
+              true then
+          pure
+            { state := scanState input i,
+              step :=
+                some
+                  { block := block, inst := i, decision := Decision.omitted, before := scanState input i,
+                    after := scanState input i } }
+        else
+          if
+              ((scanState input i).entryColor[i]! == 0 &&
+                  !if (i == ti) = true then true else Option.any mustLower ctx.insts[i]!.clif) =
+                true then
+            do
+            let __do_lift ← commitOpportunistic ctx block i (scanState input i)
+            match __do_lift with
+              | some next =>
+                pure
+                  { state := next,
+                    step :=
+                      some
+                        { block := block, inst := i, decision := Decision.opportunistic, before := scanState input i,
+                          after := next } }
+              | x => do
+                let emission ← emitInstruction ctx i (scanState input i)
+                pure (emission.scan block i (scanState input i))
+          else do
+            let emission ← emitInstruction ctx i (scanState input i)
+            pure (emission.scan block i (scanState input i))) =
+    Except.ok output
+notTerm : (i == ti) = false
+⊢ ∃ emission,
+    emitInstruction ctx i (scanState input i) = Except.ok emission ∧ output = emission.scan block i (scanState input i)

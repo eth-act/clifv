@@ -1,0 +1,22 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:124:102: error: Application type mismatch: The argument
+  rfl
+has type
+  ?m.1497 = ?m.1497
+but is expected to have type
+  isem (MInst.rets (retPairs [(sumKey, Reg.x 0)])) [sumValue] w3 = some ([], w3, Ctl.ret)
+in the application
+  ⟨?m.1495, rfl⟩
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:116:37: warning: This simp argument is unused:
+  Array.toList_push
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_append, Array.toList_empty, List.append_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:116:55: warning: This simp argument is unused:
+  Array.toList_empty
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_append, Array.toList_push, List.append_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

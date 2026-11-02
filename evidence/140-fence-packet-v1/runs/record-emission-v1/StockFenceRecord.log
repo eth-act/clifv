@@ -1,0 +1,77 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:80:54: error(lean.unknownIdentifier): Unknown constant `Nat.beq_eq_false.mpr`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:84:16: error: unsolved goals
+case error
+f : Clif.Function
+result : Result
+run : lower f = Except.ok result
+scope : LowerScope f
+event : BlockScanEvent
+record : ScanRecord
+events : event ∈ result.blockScans.toList
+records : record ∈ event.output.records
+info : IInfo
+found : event.ctx.insts[record.inst]? = some info
+source : info.clif = some Clif.Inst.fence
+original : result.ctx.insts[record.inst]? = some info
+unsunk : record.input.sunk[record.inst]! = false ∧ record.output.state.sunk[record.inst]! = false
+different : record.inst ≠ event.termInst
+lookup : event.ctx.insts[record.inst]! = info
+error : String
+emitted : emitInstruction event.ctx record.inst (scanState record.input record.inst) = Except.error error
+actual :
+  (if record.inst = event.termInst ∧ event.isBranch = true then
+      Except.ok { state := scanState record.input record.inst, step := none }
+    else Except.error error) =
+    Except.ok record.output
+⊢ ∃ emission,
+    Except.error error = Except.ok emission ∧
+      record.output = emission.scan event.block record.inst (scanState record.input record.inst)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:87:20: error: Application type mismatch: The argument
+  emitted
+has type
+  emitInstruction event.ctx record.inst (scanState record.input record.inst) = Except.ok emission
+but is expected to have type
+  Except.ok emission = Except.ok emission
+in the application
+  And.intro emitted
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:78:89: warning: This simp argument is unused:
+  Option.getD_some
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getElem!_def, found]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:81:4: warning: This simp argument is unused:
+  Bool.false_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [scanInstruction, unsunk.1, Bool.false_eq_true, ite_false,
+    show (record.inst == event.termInst) = false from Nat.beq_eq_false.mpr different, lookup, source, Option.any_some,
+    mustLower, Bool.not_true, Bool.false_and] at actual
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:81:59: warning: This simp argument is unused:
+  Bool.not_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [scanInstruction, unsunk.1, Bool.false_eq_true, ite_false,
+    show (record.inst == event.termInst) = false from Nat.beq_eq_false.mpr different, Bool.false_and, lookup, source,
+    Option.any_some, mustLower, Bool.false_and] at actual
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:82:4: warning: This simp argument is unused:
+  Bool.false_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [scanInstruction, unsunk.1, Bool.false_eq_true, ite_false,
+    show (record.inst == event.termInst) = false from Nat.beq_eq_false.mpr different, Bool.false_and, lookup, source,
+    Option.any_some, mustLower, Bool.not_true] at actual
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceRecord.lean:86:57: warning: This simp argument is unused:
+  Except.ok.injEq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [emitted, bind, Except.bind, pure, Except.pure] at actual
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

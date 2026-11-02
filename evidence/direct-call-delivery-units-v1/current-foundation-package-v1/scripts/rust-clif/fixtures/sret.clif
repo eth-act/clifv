@@ -1,0 +1,154 @@
+; data: %c_structs_enums_Ldata0 writable = %c_structs_enums_Ldata1 8500000000000000da00000001000000
+; data: %c_structs_enums_Ldata1 = 2f686f6d652f6b65762f2e7275737475702f746f6f6c636861696e732f6e696768746c792d323032362d30392d32362d7838365f36342d756e6b6e6f776e2d6c696e75782d676e752f6c69622f727573746c69622f7372632f727573742f6c6962726172792f636f72652f7372632f696e7472696e736963732f66616c6c6261636b2e727300
+; data: %c_structs_enums_Ldata2 writable = %c_structs_enums_Ldata4 8500000000000000da00000001000000
+; data: %c_structs_enums_Ldata3 writable = %c_structs_enums_Ldata4 8500000000000000da00000001000000
+; data: %c_structs_enums_Ldata4 = 2f686f6d652f6b65762f2e7275737475702f746f6f6c636861696e732f6e696768746c792d323032362d30392d32362d7838365f36342d756e6b6e6f776e2d6c696e75782d676e752f6c69622f727573746c69622f7372632f727573742f6c6962726172792f636f72652f7372632f696e7472696e736963732f66616c6c626163
+; data: %c_structs_enums_Ldata5 writable = %c_structs_enums_Ldata7 8500000000000000da00000001000000
+; data: %c_structs_enums_Ldata6 writable = %c_structs_enums_Ldata7 8500000000000000da00000001000000
+; data: %c_structs_enums_Ldata7 = 2f686f6d652f6b65762f2e7275737475702f746f6f6c636861696e732f6e696768746c792d323032362d30392d32362d7838365f36342d756e6b6e6f776e2d6c696e75782d676e752f6c69622f
+; data: %c_structs_enums_Ldata8 writable = %c_structs_enums_Ldata9 8500000000000000da00000001000000
+; data: %c_structs_enums_Ldata9 = 2f686f6d652f6b65762f2e7275737475702f746f6f6c636861696e732f6e696768746c792d323032362d30392d32362d7838365f36342d756e6b6e6f776e2d6c696e75782d676e752f6c69622f
+; data: %c_structs_enums_Ldataa writable = %c_structs_enums_Ldatab 8500000000000000da00000001000000
+; data: %c_structs_enums_Ldatab = 2f686f6d652f6b65762f2e7275737475702f746f6f6c636861696e732f6e696768746c792d323032362d30392d32362d7838365f36342d756e6b6e6f776e2d6c696e75782d676e752f6c69622f
+; data: %c_structs_enums_Ldatac writable = %c_structs_enums_Ldatad 8500000000000000da00000001000000
+; data: %c_structs_enums_Ldatad = 2f686f6d652f6b65762f2e7275737475702f746f6f6c636861696e732f6e696768746c792d323032362d30392d32362d7838365f36342d756e6b6e6f776e2d6c696e75782d676e752f6c69622f
+; data: %big_out writable = 00000000000000000000000000000000 00000000000000000000000000000000 00000000000000000000000000000000 00000000000000000000000000000000 00000000000000000000000000000000
+; data: %shape_out writable = 00000000000000000000000000000000
+
+function %demo_big() -> i64 system_v {
+    fn0 = %big_make(i64 sret, i64, i8) system_v
+    gv0 = symbol colocated %big_out
+
+block0:
+    v0 = symbol_value.i64 gv0
+    v1 = iconst.i64 4660
+    v2 = iconst.i8 7
+    call fn0(v0, v1, v2)
+    v3 = load.i64 notrap aligned v0
+    return v3
+}
+
+; run: %demo_big() == 4660
+
+function %demo_shape() -> i64 system_v {
+    fn0 = %make_shape(i64 sret, i8, i32) system_v
+    gv0 = symbol colocated %shape_out
+
+block0:
+    v0 = symbol_value.i64 gv0
+    v1 = iconst.i8 1
+    v2 = iconst.i32 41
+    call fn0(v0, v1, v2)
+    v3 = load.i64 notrap aligned v0
+    return v3
+}
+
+
+; run: %demo_shape() == 176093659137
+
+function %_RNvMs7_NtCsdWkcC71lE0a_4core3numy11rotate_left(i64, i32) -> i64 system_v {
+block0(v0: i64, v1: i32):
+    v2 -> v0
+    v3 -> v1
+    nop 
+    jump block1
+block1:
+    nop 
+    v4 = rotl.i64 v2, v3
+    v5 -> v4
+    jump block2
+block2:
+    nop 
+    return v5
+}
+
+function %big_make(i64 sret, i64, i8) system_v {
+    fn0 = colocated %_RNvMs7_NtCsdWkcC71lE0a_4core3numy11rotate_left(i64, i32) -> i64 system_v
+block0(v0: i64, v1: i64, v2: i8):
+    v3 -> v1
+    v8 -> v1
+    v12 -> v2
+    nop 
+    jump block1
+block1:
+    nop 
+    v4 = iconst.i64 1
+    v5 = bxor.i64 v3, v4  ; v4 = 1
+    v10 -> v5
+    v6 = iconst.i32 7
+    nop 
+    v7 = call fn0(v3, v6)  ; v6 = 7
+    v11 -> v7
+    jump block2
+block2:
+    nop 
+    v9 = ireduce.i32 v8
+    store.i64 notrap v8, v0
+    store.i64 notrap v10, v0+8
+    store.i64 notrap v11, v0+16
+    store notrap v9, v0+24
+    store.i8 notrap v12, v0+28
+    return
+}
+
+function %make_shape(i64 sret, i8, i32) system_v {
+    gv0 = symbol colocated %c_structs_enums_Ldataa
+    fn0 = %_RNvNtNtCsdWkcC71lE0a_4core9panicking11panic_const24panic_const_add_overflow(i64) system_v
+block0(v0: i64, v1: i8, v2: i32):
+    v3 -> v1
+    v6 -> v2
+    v11 -> v2
+    v16 -> v2
+    v19 -> v2
+    nop 
+    jump block1
+block1:
+    nop 
+    v4 = uextend.i32 v3
+    br_table v4, block2, [block5, block4, block3]
+block2:
+    nop 
+    v5 = iconst.i16 3
+    store notrap v5, v0  ; v5 = 3
+    return
+block3:
+    nop 
+    v7 = ireduce.i16 v6
+    store notrap v7, v0+2
+    v8 = iconst.i16 1
+    store notrap v8, v0+4  ; v8 = 1
+    v9 = iconst.i16 2
+    store notrap v9, v0+6  ; v9 = 2
+    v10 = iconst.i16 2
+    store notrap v10, v0  ; v10 = 2
+    return
+block4:
+    nop 
+    v12 = iconst.i32 1
+    v13 = iadd.i32 v11, v12  ; v12 = 1
+    v18 -> v13
+    v14 = icmp ult v13, v11
+    brif v14, block8, block6
+block8 cold:
+    nop 
+    v15 = symbol_value.i64 gv0
+    nop 
+    call fn0(v15)
+    trap user1
+block5:
+    nop 
+    store.i32 notrap v16, v0+4
+    v17 = iconst.i16 0
+    store notrap v17, v0  ; v17 = 0
+    return
+block6:
+    nop 
+    store.i32 notrap v19, v0+4
+    store.i32 notrap v18, v0+8
+    v20 = iconst.i16 1
+    store notrap v20, v0  ; v20 = 1
+    return
+block7:
+    nop 
+    return
+}

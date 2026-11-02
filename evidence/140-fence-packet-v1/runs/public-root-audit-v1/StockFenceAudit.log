@@ -1,0 +1,27 @@
+'Backend.Stock.Proof.SinkRules.fence_no_load_at' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.SinkRules.fence_results_empty' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.SinkRules.stock_lower_fence_unsunk' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.FenceHelpers.fence_helpers_project_and_preserve' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.FenceHelpers.fence_helper_success' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.FenceHelpers.fence_rhs_transfer' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.FenceHelpers.fence_match_transfer' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_fence_rhs_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_fence_record_execute' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_fence_source_not_term' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_mandatory_scan_emission' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_fence_emission' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_all_formats' depends on axioms: [propext]
+'Backend.Stock.Proof.stock_nullary_inventory' depends on axioms: [propext]
+'Backend.Stock.Proof.stock_nullary_opcode_facts' depends on axioms: [propext]
+'Backend.Stock.Proof.stock_fence_selected' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_fence_selected_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_fence_record_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_fence_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_fence_execute' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_fence_first_trap' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.FenceFixture.mixed_records' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.FenceFixture.observed_true._native.native_decide.ax_1✝]

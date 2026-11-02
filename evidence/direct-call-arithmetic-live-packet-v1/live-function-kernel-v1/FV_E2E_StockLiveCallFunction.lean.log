@@ -1,0 +1,18 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:49:6: error: Type mismatch
+  decoded
+has type
+  sigParamBytes layout.data.ext.sig = Except.ok [8]
+but is expected to have type
+  Except.ok [8] = Except.ok [8]
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/FV/E2E/StockLiveCallFunction.lean:77:19: error(lean.invalidDottedIdent): Invalid dotted identifier notation: The expected type of `.x` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Reg.x`
+  [apply] `Lean.IR.Param.x`
+  [apply] `Std.Time.Modifier.x`
+  [apply] `Lean.Grind.CommRing.Power.x`
+  [apply] `Lean.Elab.Term.Do.ToCodeBlock.Catch.x`
+  [apply] `Lean.Meta.Tactic.BVDecide.Normalize.SharedCoefficients.x`
+  [apply] `Std.Tactic.BVDecide.BVExpr.bitblast.ExtractAndExtendBitTarget.x`
+  [apply] `Std.Tactic.BVDecide.BVExpr.bitblast.blastCpopTreeTarget.x`
+  [apply] `Std.Tactic.BVDecide.BVExpr.bitblast.blastExtractAndExtendTarget.x`

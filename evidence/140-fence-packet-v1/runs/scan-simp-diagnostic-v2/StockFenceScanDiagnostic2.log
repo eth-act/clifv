@@ -1,0 +1,17 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockFenceScanDiagnostic2.lean:22:2: error: PREFIX: simplification completed
+ctx : Ctx
+block i ti : Nat
+branch : Bool
+input : State
+output : Scan
+unsunk : input.sunk[i]! = false
+different : i ≠ ti
+mandatory : Option.any mustLower ctx.insts[i]!.clif = true
+notTerm : (i == ti) = false
+actual :
+  (do
+      let emission ← emitInstruction ctx i (scanState input i)
+      pure (emission.scan block i (scanState input i))) =
+    Except.ok output
+⊢ ∃ emission,
+    emitInstruction ctx i (scanState input i) = Except.ok emission ∧ output = emission.scan block i (scanState input i)
