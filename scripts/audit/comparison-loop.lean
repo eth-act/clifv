@@ -1,0 +1,43 @@
+import FV.Backend.Proof.StockComparisonLoopWitness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.branch_carry_of_no_defs
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_branch_no_defs
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_imm_branch_no_defs
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.comparison_zero_branch_no_defs
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_comparison_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_comparison_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_comparison_imm_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_comparison_imm_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_comparison_zero_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_comparison_zero_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ComparisonMetadata.origin
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_comparison_any_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_comparison_any_carry_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_empty_carry_below_of_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_empty_carry_below_of_core
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_empty_comparison_carry_below
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_empty_comparison_carry_below
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.statement_metadata
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.WideParameter.metadata
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.ComparisonCondition.metadata
+#print axioms Backend.Stock.ComparisonLoopCfg.condition_sound
+#print axioms Backend.Stock.ComparisonLoopCfg.source_leaf_eligible_facts
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.comparison_carry_returns
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.branch_carry_returns
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.comparison_loop_returns_below
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.comparison_carry_traps
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.branch_carry_traps
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.comparison_loop_traps_below
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.branch_target_count
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.loop_legacy_compatible
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.branch_entry_prelude
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.comparison_loop_jump_entry_returns
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.comparison_loop_jump_entry_traps
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.comparison_loop_branch_entry_returns
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.comparison_loop_branch_entry_traps
+#print axioms Backend.Stock.Proof.ComparisonLoopCfg.domain_of_comparison_loop_cfg
+#print axioms Backend.Stock.ComparisonLoopCfg.domain_of_source_leaf_eligible
+#print axioms Backend.Stock.ComparisonLoopCfg.source_ok_sound
+#print axioms Backend.Stock.ComparisonLoopCfg.check_sound
+#print axioms Backend.Stock.ComparisonLoopCfg.Probe.parameter_loop_rejects_while_less
+#print axioms Backend.Stock.ComparisonLoopCfg.Probe.while_less_witness -- witness: native_decide
