@@ -1,0 +1,21 @@
+{
+  "status": "reviewed_pass",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "scripts/audit/sret-copy-heap-boundary.lean": "dc542df047fbba5e1507287ea395993b2f61093311a97a4681fc4d06e88eb46b",
+    "FV/E2E/SretCopyHeapBoundary.lean": "9cb86124f3c7d4d745783cbe7161a9fa70d86266e0a6a681d2c5e7629b7a961d",
+    "FV/E2E/SretCopyHeapBoundaryWitness.lean": "daa3daadc6035f51772fa9eb19d0bae3e029cbda98aac3896c325a17e4954ef8"
+  },
+  "generic_axiom_sets_exact": 28,
+  "fixed_witnesses": 2,
+  "artifact_hashes": {
+    ".lake/build/lib/lean/FV/E2E/SretCopyHeapBoundary.olean": "d283da7fe907d66ec534f0cfca13a3f1ea19bcd544f20ab4b548e8639f6c2987",
+    ".lake/build/lib/lean/FV/E2E/SretCopyHeapBoundary.ilean": "eddd59849bd9c9002f6d7451a70bb25c00fd8831bede6be3584317a1417a3867",
+    ".lake/build/lib/lean/FV/E2E/SretCopyHeapBoundary.c": "154408bdb6fee671e7b2ecc88083b478326ed13f75bb624b7cadbf1550a8e415",
+    ".lake/build/lib/lean/FV/E2E/SretCopyHeapBoundaryWitness.olean": "027c06ef13ee3c4be0cca5d48c95f0b7d2a9a9cb0a19a99624973648f70fa58c",
+    ".lake/build/lib/lean/FV/E2E/SretCopyHeapBoundaryWitness.ilean": "080563fd529aa2f48d0dc43fcac9ee93284f46494a7a84d6485738221e7484af",
+    ".lake/build/lib/lean/FV/E2E/SretCopyHeapBoundaryWitness.c": "9c16b669c3ba44e3e9069af85c1d655a0e1130248ff44ac47d2b5505336e3e44"
+  },
+  "full_goal_complete": false,
+  "utc": "2026-11-02T03:55:33.871189+00:00"
+}

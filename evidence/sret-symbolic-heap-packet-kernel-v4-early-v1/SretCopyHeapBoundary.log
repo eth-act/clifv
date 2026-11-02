@@ -1,0 +1,9 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-symbolic-heap-packet-v4/FV/E2E/SretCopyHeapBoundary.lean:39:10: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-symbolic-heap-packet-v4/FV/E2E/SretCopyHeapBoundary.lean:57:6: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-symbolic-heap-packet-v4/FV/E2E/SretCopyHeapBoundary.lean:68:6: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-symbolic-heap-packet-v4/FV/E2E/SretCopyHeapBoundary.lean:168:6: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-symbolic-heap-packet-v4/FV/E2E/SretCopyHeapBoundary.lean:231:6: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-symbolic-heap-packet-v4/FV/E2E/SretCopyHeapBoundary.lean:231:24: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-symbolic-heap-packet-v4/FV/E2E/SretCopyHeapBoundary.lean:238:8: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-symbolic-heap-packet-v4/FV/E2E/SretCopyHeapBoundary.lean:238:26: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/sret-symbolic-heap-packet-v4/FV/E2E/SretCopyHeapBoundary.lean:243:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead

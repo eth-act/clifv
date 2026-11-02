@@ -1,0 +1,13 @@
+DEPENDENCIES ["FV.E2E.PreparedReturnPinCalls", "FV.E2E.SrcScopeDefs"] rc=3
+DEPENDENCIES ["FV.E2E.SrcScopeDefs", "FV.E2E.PreparedReturnPinCallsWitness"] rc=3
+DEPENDENCIES ["FV.E2E.PreparedReturnPinCallsWitness", "FV.E2E.SrcScopeDefs"] rc=3
+DEPENDENCIES ["FV.E2E.SrcScopeDefs", "FV.E2E.PreparedReturnPinCallsWitness"] rc=3
+DEPENDENCIES ["FV.E2E.PreparedReturnPinCallsWitness", "FV.E2E.SrcScopeDefs"] rc=3
+DEPENDENCIES ["FV.E2E.SrcScopeDefs", "FV.E2E.PreparedReturnPinCallsWitness"] rc=3
+DEPENDENCIES ["FV.E2E.PreparedReturnPinCallsWitness", "FV.E2E.SrcScopeDefs"] rc=3
+DEPENDENCIES ["FV.E2E.SrcScopeDefs"] rc=3
+DEPENDENCIES [] rc=0
+Actual direct dependencies pass without a build or cache restore. Start the unchanged 3GiB packet gate.
+KERNEL FV/E2E/SretCopyHeapBoundary.lean passed
+KERNEL FV/E2E/SretCopyHeapBoundaryWitness.lean passed
+{"status": "passed", "head": "a4c0726d46c5908b4ac06cf797ee939af8644703", "source_hashes": {"scripts/audit/sret-copy-heap-boundary.lean": "dc542df047fbba5e1507287ea395993b2f61093311a97a4681fc4d06e88eb46b", "FV/E2E/SretCopyHeapBoundary.lean": "9cb86124f3c7d4d745783cbe7161a9fa70d86266e0a6a681d2c5e7629b7a961d", "FV/E2E/SretCopyHeapBoundaryWitness.lean": "daa3daadc6035f51772fa9eb19d0bae3e029cbda98aac3896c325a17e4954ef8"}, "modules": 2, "generic_roots": 28, "fixed_witness_roots": 2, "full_goal_complete": false, "scope": "The unchanged parsed callee and mixed caller jointly inhabit source entry, original ABI arguments, symbolic live heap and complete sixteen-byte copy outcomes for arbitrary source contents. Generic proofs use standard axioms; fixed source identities use only the fixture witness policy. Full ARM activation, linked executable entry, default activation and full140 remain open", "utc": "2026-11-02T03:54:08.059773+00:00"}
