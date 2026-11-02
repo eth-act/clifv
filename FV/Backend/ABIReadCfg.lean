@@ -3,11 +3,13 @@ import FV.Backend.ABIReadDiv
 namespace Backend.ABIReadCfg
 set_option autoImplicit false
 
-/-- Branches read their virtual condition, with no additional ABI/world read. -/
+/-- Branches read their virtual condition or the NZCV flags, with no additional
+ABI/world read. -/
 def additional : MInst → Bool
   | .jump _
   | .condBr _ _ (.zero (.vreg _ .int) _)
-  | .condBr _ _ (.notZero (.vreg _ .int) _) => true
+  | .condBr _ _ (.notZero (.vreg _ .int) _)
+  | .condBr _ _ (.cond _) => true
   | _ => false
 
 /-- Existing scalar/division/ABI reads and proved CFG branch forms. -/
