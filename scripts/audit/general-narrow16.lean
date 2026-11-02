@@ -4,6 +4,7 @@ import FV.Backend.Proof.StockGeneralLoopWitness4
 #print axioms Backend.Stock.Proof.stock_lower_available_alias_outside_branch
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.scan_input_frontier
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.branch_alias_outside
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.branch_temp_outside
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.branch_stop_frame
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.guarded_of_branch_frame
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.branch_carry_of_fresh_defs

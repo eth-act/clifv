@@ -111,6 +111,29 @@ private theorem resolved_defs_inside {f : Clif.Function} {result : Result}
   rw [identity]
   exact interval
 
+/-- **The branch temporaries are outside the resolved registers of the available values.** Every
+register that the resolved branch emission of `spec` defines differs from the resolved register
+of every value available at any source point, in particular at the terminator of the block and at
+the entries of its successors. -/
+theorem ConditionalBodySpec.branch_temp_outside {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {b : Clif.Block} {label bi c : Nat} {yes no : Clif.BlockCall}
+    {isem : Backend.Proof.Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+    (spec : ConditionalBodySpec f result b label bi c yes no isem MR env cp)
+    (termShape : b.term = .brif c yes no) (fixed : spec.FixedAllocation)
+    (freshDefs : ∀ m ∈ spec.origin.emission.code.toList,∀ d ∈ vdefs m,
+      spec.input.base.nextVreg ≤ d ∧ d < spec.origin.emission.state.base.nextVreg)
+    {m : MInst} (member : m ∈ spec.origin.emission.code.toList.map
+      (·.mapRegs (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))))
+    {d : Nat} (defined : d ∈ vdefs m)
+    {bi' j x key : Nat} (available : x ∈ availOf f (availIn f result.ctx) bi' j)
+    (mapped : result.ctx.valueReg? x = some (.vreg key .int)) :
+    d ≠ aliasNum result.final.alias key := by
+  obtain ⟨capped,outside⟩ := spec.branch_alias_outside run scope dominated termShape fixed
+  have interval := resolved_defs_inside run capped freshDefs m member d defined
+  have away := outside available mapped
+  omega
+
 /-- A stopped run of a branch emission whose definitions are in its branch interval keeps every
 register outside that interval. -/
 theorem ConditionalBodySpec.branch_stop_frame {f : Clif.Function} {result : Result}
