@@ -1,0 +1,28 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/DeadCleanupSem.lean:30:49: warning: This simp argument is unused:
+  cmpForm
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at hc
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/DeadCleanupSem.lean:35:49: warning: This simp argument is unused:
+  cmpForm
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at hc
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/DeadCleanupSem.lean:40:62: warning: This simp argument is unused:
+  cmpForm
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at hc
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/DeadCleanupSem.lean:45:49: warning: This simp argument is unused:
+  cmpForm
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at hc
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

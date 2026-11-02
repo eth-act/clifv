@@ -1,0 +1,135 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1289:56: warning: This simp argument is unused:
+  plain_congr A.cert
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [termOk, hb2, hb3, pair_congr A.cert, hnone, Ctx.plain]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1372:34: warning: This simp argument is unused:
+  Bool.not_eq_false'
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Bool.not_eq_true', Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at htys hent hfv0
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1372:54: warning: This simp argument is unused:
+  Bool.and_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Bool.not_eq_true', Bool.not_eq_false', beq_iff_eq, decide_eq_true_eq] at htys hent hfv0
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1373:6: warning: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.and_eq_true, beq_iff_eq] at htys hent hfv0
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1377:61: warning: This simp argument is unused:
+  List.all_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [termOk, List.isEmpty_nil, beq_self_eq_true, Bool.true_and, entryId_congr A, A.f, he, A.decls, hd',
+    hB, hs'2, groups, hgs, hrgs, Except.toOption, hgD, expandArgs_congr A.cert, hargs, expandTry_congr A.cert, hnargs,
+    hT0, hzD, htys]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1378:84: warning: This simp argument is unused:
+  Bool.true_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [bne_iff_ne, ne_eq, hent, not_false_eq_true, decide_eq_true_eq, hfv0, Bool.and_eq_true, true_and,
+    beq_iff_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1379:34: warning: This simp argument is unused:
+  beq_iff_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [bne_iff_ne, ne_eq, hent, not_false_eq_true, decide_eq_true_eq, hfv0, Bool.true_and,
+    Bool.and_eq_true, true_and]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1427:34: warning: This simp argument is unused:
+  Bool.not_eq_false'
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Bool.not_eq_true', Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hpc hent hfv0
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1427:54: warning: This simp argument is unused:
+  Bool.and_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Bool.not_eq_true', Bool.not_eq_false', beq_iff_eq, decide_eq_true_eq] at hpc hent hfv0
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1428:6: warning: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.and_eq_true, beq_iff_eq] at hpc hent hfv0
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1432:73: warning: This simp argument is unused:
+  List.all_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [termOk, List.isEmpty_nil, beq_self_eq_true, Bool.true_and, entryId_congr A, A.f, hd, hB, hd',
+    groups, hgs, hrgs, Except.toOption, hgD, expandArgs_congr A.cert, hargs, expandTry_congr A.cert, hnargs, hT0, hzD,
+    plain_congr A.cert, hpc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1433:84: warning: This simp argument is unused:
+  Bool.true_and
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [bne_iff_ne, ne_eq, hent, not_false_eq_true, decide_eq_true_eq, hfv0, Bool.and_eq_true, true_and,
+    beq_iff_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1434:34: warning: This simp argument is unused:
+  beq_iff_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [bne_iff_ne, ne_eq, hent, not_false_eq_true, decide_eq_true_eq, hfv0, Bool.true_and,
+    Bool.and_eq_true, true_and]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1483:31: warning: This simp argument is unused:
+  Except.ok.injEq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [StateT.run_get, Prod.mk.injEq] at h5
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1483:48: warning: This simp argument is unused:
+  Prod.mk.injEq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [StateT.run_get, Except.ok.injEq] at h5
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1490:90: warning: This simp argument is unused:
+  ok1
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [blockOk, beq_self_eq_true, Bool.true_and, nd1, decide_true, ite_true, A.f, hpg, o4, o3, o1,
+    List.nil_append, List.singleton_append, entryParamsOk_congr A.cert A.f, hzD]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1502:31: warning: This simp argument is unused:
+  Except.ok.injEq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [StateT.run_get, Prod.mk.injEq] at h5
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalComplete.lean:1502:48: warning: This simp argument is unused:
+  Prod.mk.injEq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [StateT.run_get, Except.ok.injEq] at h5
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

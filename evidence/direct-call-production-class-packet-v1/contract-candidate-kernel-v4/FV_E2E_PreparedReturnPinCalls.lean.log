@@ -1,0 +1,48 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/PreparedReturnPinCalls.lean:56:4: warning: try 'simp' instead of 'simpa'
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/PreparedReturnPinCalls.lean:50:35: warning: This simp argument is unused:
+  List.all_map
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [staticChksSemanticFor, List.all_eq_true, Function.comp_def] at old ⊢
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/PreparedReturnPinCalls.lean:50:48: warning: This simp argument is unused:
+  List.all_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [staticChksSemanticFor, List.all_map, Function.comp_def] at old ⊢
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/PreparedReturnPinCalls.lean:50:65: warning: This simp argument is unused:
+  Function.comp_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [staticChksSemanticFor, List.all_map, List.all_eq_true] at old ⊢
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/PreparedReturnPinCalls.lean:76:4: warning: try 'simp' instead of 'simpa'
+
+Note: This linter can be disabled with `set_option linter.unnecessarySimpa false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/PreparedReturnPinCalls.lean:70:35: warning: This simp argument is unused:
+  List.all_map
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [staticChksSemanticFor, List.all_eq_true, Function.comp_def] at old ⊢
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/PreparedReturnPinCalls.lean:70:48: warning: This simp argument is unused:
+  List.all_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [staticChksSemanticFor, List.all_map, Function.comp_def] at old ⊢
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/PreparedReturnPinCalls.lean:70:65: warning: This simp argument is unused:
+  Function.comp_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [staticChksSemanticFor, List.all_map, List.all_eq_true] at old ⊢
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

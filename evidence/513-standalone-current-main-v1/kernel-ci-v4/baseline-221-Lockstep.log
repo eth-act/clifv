@@ -1,0 +1,70 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:91:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:91:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:91:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:91:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:95:24: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:91:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:91:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:95:24: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:87:24: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:123:10: warning: This simp argument is unused:
+  BitVec.getLsbD_setWidth
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [hi, show i < 128 by omega]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:275:14: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:275:31: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:285:12: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:291:12: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:281:16: warning: This simp argument is unused:
+  defVals
+
+Hint: Omit it from the simp argument list.
+  [apply] simp
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:511:12: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:514:12: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:518:12: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:521:12: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:628:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:629:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:646:8: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:647:8: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:649:10: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:641:49: warning: This simp argument is unused:
+  Arm.r_of_w_different
+
+Hint: Omit it from the simp argument list.
+  [apply] simp
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:669:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:670:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:693:14: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:694:14: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:702:14: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:703:14: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:743:8: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:744:8: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:746:10: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Lockstep.lean:724:18: warning: This simp argument is unused:
+  Arm.r_of_w_different
+
+Hint: Omit it from the simp argument list.
+  [apply] simp
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

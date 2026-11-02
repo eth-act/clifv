@@ -1,0 +1,14 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/ABIReadOnlyTransport.lean:70:52: warning: This simp argument is unused:
+  Bool.false_or
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [sem, valueSem, specForm, pureForm, cmpForm, csem, same] at executed ⊢
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/ABIReadOnlyTransport.lean:86:52: warning: This simp argument is unused:
+  Bool.false_or
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [sem, valueSem, specForm, pureForm, cmpForm, csem] at executed ⊢
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

@@ -32,6 +32,30 @@ def okRReturnPinCallsFast (stage : Clif.Function → VCode → VCode) (I : LinkI
   rw [show returnPinsWith (ReturnPinCtx.of I R) = returnPinChecks I R from
     funext (returnPinsWith_of I R)]
 
+/-- The exact prior program checker remains available for acceptance preservation. -/
+def priorReturnPinCallsB (stage : Clif.Function → VCode → VCode) (I : LinkInput) (R : Res) : Bool :=
+  okRSemanticFor returnPinCallsExtra stage I R && (progOf R).funcs.all (returnPinChecks I R)
+
+/-- Every complete program accepted by the prior checker remains accepted. -/
+theorem okRReturnPinCalls_preserves {stage : Clif.Function → VCode → VCode} {I : LinkInput} {R : Res}
+    (previous : priorReturnPinCallsB stage I R = true) : okRReturnPinCalls stage I R = true := by
+  simp only [priorReturnPinCallsB,Bool.and_eq_true] at previous
+  simp only [okRReturnPinCalls,Bool.and_eq_true]
+  refine ⟨?_,previous.2⟩
+  simp only [okRSemanticFor,chksSemanticFor,List.all_append,Bool.and_eq_true,List.all_eq_true] at previous ⊢
+  refine ⟨previous.1.1,?_⟩
+  intro e member
+  have old := previous.1.2 e member
+  refine ⟨?_,old.2⟩
+  simp only [staticChksSemanticFor,List.all_map,List.all_eq_true,Function.comp_def] at old ⊢
+  intro check present
+  obtain ⟨raw,rawMember,rfl⟩ := List.mem_map.mp present
+  have accepted := old.1 _ (List.mem_map.mpr ⟨raw,rawMember,rfl⟩)
+  by_cases named : raw.1 = "compiled: lowerCheck"
+  · simp only [named,↓reduceIte] at accepted ⊢
+    simpa only [returnPinResultCallsExtra,← Bool.or_assoc,accepted,Bool.true_or]
+  · simpa only [named,↓reduceIte] using accepted
+
 /-- Every complete program accepted by the previous ABI checker remains accepted. -/
 theorem okRReturnPinCalls_previous {stage : Clif.Function → VCode → VCode} {I : LinkInput} {R : Res}
     (previous : okRReturnPins stage I R = true) : okRReturnPinCalls stage I R = true := by

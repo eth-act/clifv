@@ -1,0 +1,20 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalBase.lean:107:13: warning: This simp argument is unused:
+  Bool.and_eq_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [bne_iff_ne, ne_eq, decide_eq_true_eq] at this
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalBase.lean:107:50: warning: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at this
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalBase.lean:140:32: warning: Variable name `hG` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hG
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`

@@ -1,0 +1,4 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Pair.lean:151:16: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Pair.lean:151:16: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Pair.lean:151:16: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/E2E/Pair.lean:165:16: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead

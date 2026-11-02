@@ -1,0 +1,45 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:78:73: warning: This simp argument is unused:
+  Bool.false_or
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hj, hj3, decide_false, decide_true, Bool.and_false, Bool.not_false, Bool.and_true, e1, e2, hb,
+    Option.getD_some]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:84:60: warning: This simp argument is unused:
+  Bool.false_or
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hj, hj3, decide_false, Bool.and_false, Bool.not_false, Bool.and_true]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:116:37: warning: This simp argument is unused:
+  show j < 8 * 16 by omega
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [hj, show j < 128 by omega]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:122:42: warning: This simp argument is unused:
+  show 64 + j < 8 * 16 by omega
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [hj, show 64 + j < 128 by omega, e1, e2]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:145:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:145:19: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:146:52: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:148:8: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:150:10: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:150:21: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:151:54: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:152:10: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:152:21: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:161:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:166:12: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:167:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:168:6: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:169:24: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:169:24: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalMem.lean:172:8: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead

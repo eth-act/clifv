@@ -1,0 +1,54 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/RefinesCSem.lean:56:51: warning: This simp argument is unused:
+  get
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [MInst.operands, MInst.visitOperands, OpSpec.def_, OpSpec.use, OpSpec.reuseDef, StateT.run, modify,
+    modifyGet, MonadStateOf.modifyGet, StateT.modifyGet, bind, StateT.bind, Except.bind, pure, StateT.pure, Except.pure,
+    getThe, MonadStateOf.get, StateT.get, set, StateT.set, useCount, Operand.isUse, xzr_alloc] at hl
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/RefinesCSem.lean:56:56: warning: This simp argument is unused:
+  getThe
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [MInst.operands, MInst.visitOperands, OpSpec.def_, OpSpec.use, OpSpec.reuseDef, StateT.run, modify,
+    modifyGet, MonadStateOf.modifyGet, StateT.modifyGet, bind, StateT.bind, Except.bind, pure, StateT.pure, Except.pure,
+    get, MonadStateOf.get, StateT.get, set, StateT.set, useCount, Operand.isUse, xzr_alloc] at hl
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/RefinesCSem.lean:56:64: warning: This simp argument is unused:
+  MonadStateOf.get
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [MInst.operands, MInst.visitOperands, OpSpec.def_, OpSpec.use, OpSpec.reuseDef, StateT.run, modify,
+    modifyGet, MonadStateOf.modifyGet, StateT.modifyGet, bind, StateT.bind, Except.bind, pure, StateT.pure, Except.pure,
+    get, getThe, StateT.get, set, StateT.set, useCount, Operand.isUse, xzr_alloc] at hl
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/RefinesCSem.lean:56:82: warning: This simp argument is unused:
+  StateT.get
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [MInst.operands, MInst.visitOperands, OpSpec.def_, OpSpec.use, OpSpec.reuseDef, StateT.run, modify,
+    modifyGet, MonadStateOf.modifyGet, StateT.modifyGet, bind, StateT.bind, Except.bind, pure, StateT.pure, Except.pure,
+    get, getThe, MonadStateOf.get, set, StateT.set, useCount, Operand.isUse, xzr_alloc] at hl
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/RefinesCSem.lean:56:94: warning: This simp argument is unused:
+  set
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [MInst.operands, MInst.visitOperands, OpSpec.def_, OpSpec.use, OpSpec.reuseDef, StateT.run, modify,
+    modifyGet, MonadStateOf.modifyGet, StateT.modifyGet, bind, StateT.bind, Except.bind, pure, StateT.pure, Except.pure,
+    get, getThe, MonadStateOf.get, StateT.get, StateT.set, useCount, Operand.isUse, xzr_alloc] at hl
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/RefinesCSem.lean:57:6: warning: This simp argument is unused:
+  StateT.set
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [MInst.operands, MInst.visitOperands, OpSpec.def_, OpSpec.use, OpSpec.reuseDef, StateT.run, modify,
+    modifyGet, MonadStateOf.modifyGet, StateT.modifyGet, bind, StateT.bind, Except.bind, pure, StateT.pure, Except.pure,
+    get, getThe, MonadStateOf.get, StateT.get, set, useCount, Operand.isUse, xzr_alloc] at hl
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

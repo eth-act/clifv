@@ -1,0 +1,215 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1236:26: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1239:28: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [hsd]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1239:32: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [hx]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1244:21: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, hck, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, Bool.false_eq_true, ite_false,
+    Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1244:25: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hck, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, Bool.false_eq_true, ite_false,
+    Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1250:23: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.trap_bind, Clif.StepResult.ofRes_trap]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1250:27: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.trap_bind, Clif.StepResult.ofRes_trap]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1250:37: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hsd, hck, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.trap_bind, Clif.StepResult.ofRes_trap]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1255:23: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1255:27: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1255:37: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hsd, hck, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1259:23: warning: This simp argument is unused:
+  hx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true,
+    Clif.Res.pure_eq, Clif.StepResult.ofRes_ok]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1259:27: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hck, htn, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true, Clif.Res.pure_eq,
+    Clif.StepResult.ofRes_ok]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1259:37: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hx, hsd, hck, Clif.Res.check, Clif.Res.ofOption_some, Clif.Res.ok_bind, ite_true, Clif.Res.pure_eq,
+    Clif.StepResult.ofRes_ok]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1276:41: warning: This simp argument is unused:
+  hset
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1279:27: warning: This simp argument is unused:
+  hset
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1311:26: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1316:19: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [htn, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.trap_bind, Clif.StepResult.ofRes_trap]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1316:24: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.trap_bind, Clif.StepResult.ofRes_trap]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1321:19: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [htn, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1321:24: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.stuck_bind, Clif.StepResult.ofRes_stuck]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1325:19: warning: This simp argument is unused:
+  hsd
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [htn, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.pure_eq, Clif.StepResult.ofRes_ok]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1325:24: warning: This simp argument is unused:
+  htn
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hsd, Clif.Res.ofOption_some, Clif.Res.ok_bind, Clif.Res.pure_eq, Clif.StepResult.ofRes_ok]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1343:37: warning: This simp argument is unused:
+  hset
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1346:23: warning: This simp argument is unused:
+  hset
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1671:22: warning: This simp argument is unused:
+  List.getElem?_map
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [hii]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1785:22: warning: This simp argument is unused:
+  List.toList_toArray
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [vdefUpd, hdef, hearly, hlate]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:1922:46: warning: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:2027:22: warning: This simp argument is unused:
+  List.toList_toArray
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [vuses, List.map_eq_nil_iff, List.filter_eq_nil_iff]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/FV/Backend/Proof/LowerSim.lean:2254:22: warning: This simp argument is unused:
+  List.toList_toArray
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [vuses, List.map_eq_nil_iff, List.filter_eq_nil_iff]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

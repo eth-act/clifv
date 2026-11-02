@@ -1,0 +1,7 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinGood.lean:181:38: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinGood.lean:191:14: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinGood.lean:199:42: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinGood.lean:275:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinGood.lean:311:59: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinGood.lean:311:71: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinGood.lean:387:47: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead

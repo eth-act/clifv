@@ -1,0 +1,28 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalSem.lean:32:15: warning: This simp argument is unused:
+  List.mem_singleton
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [instOps, List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq] at hops
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalSem.lean:33:44: warning: This simp argument is unused:
+  Frame.getMany
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [evalInst, Frame.getAs, Frame.get, hops, hsl, hgl]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalSem.lean:101:22: warning: This simp argument is unused:
+  Res.pure_eq_ok
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Prod.mk.injEq, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.check_eq_ok, pure] at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Opt/Proof/LegalSem.lean:101:38: warning: This simp argument is unused:
+  Prod.mk.injEq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Res.pure_eq_ok, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.check_eq_ok, pure] at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

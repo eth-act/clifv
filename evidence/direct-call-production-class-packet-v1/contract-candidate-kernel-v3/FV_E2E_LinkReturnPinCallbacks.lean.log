@@ -1,0 +1,28 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:89:47: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:90:6: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:65:5: warning: Variable name `hK` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _hK
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:202:69: warning: This simp argument is unused:
+  beq_iff_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [List.any_map, Bool.not_eq_true', List.any_eq_false]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:212:14: warning: This simp argument is unused:
+  rnum_toNat (show m < 32 by omega)
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at this
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:622:47: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:630:38: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:761:26: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:820:26: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:885:36: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/validation-package-v1/FV/E2E/LinkReturnPinCallbacks.lean:1001:12: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead

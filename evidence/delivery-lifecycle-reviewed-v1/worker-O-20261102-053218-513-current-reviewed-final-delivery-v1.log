@@ -1,0 +1,9 @@
+From github.com:eth-act/clifv
+ * branch                main       -> FETCH_HEAD
+CI 513 {"Build and compare": ["IN_PROGRESS", ""], "Quick checks": ["COMPLETED", "SUCCESS"]}
+CI 513 {"Quick checks": ["COMPLETED", "SUCCESS"], "Build and compare": ["COMPLETED", "SUCCESS"], "Check lost matches": ["IN_PROGRESS", ""], "Publish PR result": ["COMPLETED", "SUCCESS"]}
+CI 513 {"Quick checks": ["COMPLETED", "SUCCESS"], "Build and compare": ["COMPLETED", "SUCCESS"], "Check lost matches": ["COMPLETED", "SUCCESS"], "Publish PR result": ["COMPLETED", "SUCCESS"]}
+From github.com:eth-act/clifv
+ * branch                main       -> FETCH_HEAD
+   7c979e184..3d8e0c5d2  main       -> origin/main
+{"status": "landed", "pr": 513, "source": "0d511cd99af1cde474739469737c33010fb68c74", "merged": "3d8e0c5d25e4f0849f76670b1fd492e8eb2cadae", "tested_tree": "ec8c66695fcafd41ffec4bfc3bc72dfac69ed6df", "tree_equal": true, "import_source_count": 226}

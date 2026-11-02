@@ -1,0 +1,22 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/MemRefines.lean:425:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/MemRefines.lean:451:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/MemRefines.lean:439:56: warning: This simp argument is unused:
+  List.map_cons
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hrun, herr', hprog', and_self, ite_true, List.map_nil]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/MemRefines.lean:439:71: warning: This simp argument is unused:
+  List.map_nil
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hrun, herr', hprog', and_self, ite_true, List.map_cons]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/MemRefines.lean:463:6: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/MemRefines.lean:479:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/MemRefines.lean:510:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/MemRefines.lean:510:19: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/MemRefines.lean:514:8: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/FV/Backend/Proof/MemRefines.lean:517:8: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead

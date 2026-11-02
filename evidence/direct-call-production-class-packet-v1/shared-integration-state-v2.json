@@ -1,0 +1,48 @@
+{
+  "status": "passed",
+  "context": "immutable a4 source/config-equivalent f32 artifact carrier plus owned result-call changes; not current-main validation",
+  "shared_modules": 8,
+  "old_headers_exact": 45,
+  "old_axiom_sets_exact": 45,
+  "new_standard_contract_roots": 6,
+  "checkCalls_previous_exact_calls": "byte-identical",
+  "kernel_receipt": "contract-candidate-kernel-v4/result.json",
+  "audit_receipt": "contract-candidate-audit-v1/receipt.json",
+  "source_hashes": {
+    "FV/Backend/SemanticABICheck.lean": {
+      "old_headers": 4,
+      "sha256": "2eaa6c12b6618144896fae16bee22d0fe661dce6a2ee78a3833431534af56017"
+    },
+    "FV/E2E/CompiledSemanticABI.lean": {
+      "old_headers": 7,
+      "sha256": "f3768b5ee01ae86dd340afba030639293694c25f064b4b86d9f1fede370193fa"
+    },
+    "FV/E2E/CompiledSemanticReturnPins.lean": {
+      "old_headers": 5,
+      "sha256": "ec9199eca3adcd25305ba9917506d3476f99aa94b5a4225383fdc7aa7c4c9fa6"
+    },
+    "FV/E2E/CompiledProgramReturnPins.lean": {
+      "old_headers": 7,
+      "sha256": "758b48fca8caa8e93128ccb155d143b6871b3b8a8a6f60dea2c5a8149b5c3fe8"
+    },
+    "FV/E2E/PreparedReturnPinCalls.lean": {
+      "old_headers": 11,
+      "sha256": "6ee6f1c826944d9dfd8b114445a38d61852bd295d405592d1f0ceba870a9ab9b"
+    },
+    "FV/E2E/SemanticABIBoundary.lean": {
+      "old_headers": 3,
+      "sha256": "9bbd92e75efb4867d1691f32ff99093797e3c3ebed45f62eb86d7983ad91cba5"
+    },
+    "FV/E2E/WorldReturnPinBoundary.lean": {
+      "old_headers": 7,
+      "sha256": "30aef10a85f7bc575ade8731b73fcd6197781a26f8b077883df68d9970a2da79"
+    },
+    "FV/E2E/LinkReturnPinWorldX.lean": {
+      "old_headers": 1,
+      "sha256": "5bdc5d9e5bdfe63dfda5c99044db9694349d11360f9825eee0ca0dd40e63b8dc"
+    }
+  },
+  "production_entrypoint": false,
+  "linked_arm_execution": false,
+  "utc": "2026-11-02T10:38:56.697801+00:00"
+}

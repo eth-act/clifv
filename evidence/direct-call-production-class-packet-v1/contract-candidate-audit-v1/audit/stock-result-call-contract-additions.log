@@ -1,0 +1,6 @@
+'Backend.SemanticABI.previous_check_result_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.SemanticABI.previous_exact_result_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticABI.of_checks_result_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticReturnPins.of_checks_result_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledProgramReturnPins.of_checks_result_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.okRReturnPinCalls_preserves' depends on axioms: [propext, Classical.choice, Quot.sound]

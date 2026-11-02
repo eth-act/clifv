@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "exit_code": 0,
+  "context": "preserved frozen source, fast inner loop only",
+  "stats": "peak 263860224\noom 0\noom_kill 0\n",
+  "source_hashes": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call.lean": "e43ae2667244fc0e97cd2f9fdce1bbffd65ee5ace33633184160b6a373b9ff3d",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-witness.lean": "9000cb5c05a30a230f0c849503ad3608238afdcd15ae83e3610c25118abbf4dd",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-contracts.lean": "ba6c3d79f1d3210c7e5beb4c8aab119b08ee1dcc3a54eeb7b28f205a18a58cef",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-boundary.lean": "97f68933121f1acb847ff5df1de3d02df9ac2f9201beb6a7372bc3af5ef73c69",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-world.lean": "cee98ed0cc9b5b2249c218c377164fc61ea17e04979800cb7cee931c3783af00",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-previous-worldx.lean": "44eb801766aaa9926b040c918558c130f81af8530ccedd6408a3d05ca8a20e91",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/scripts/audit/stock-result-call-contract-additions.lean": "9f7f3733ef3b1c89ad124ea0c9adcebece874edbce556e1cbb29d7ca4344be15",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/scripts/audit/stock-direct-call-result.lean": "60be430d6f005d67bb4f9b8870809952dcddb421e08327b5e78339480daf8a0d",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-result-packet-v1/scripts/audit/stock-direct-call-result-witness.lean": "9b32110f947b80966e06e74ddc234e08c4f33f9995ee1b443304f724f45467bc"
+  },
+  "utc": "2026-11-02T10:37:02.491745+00:00"
+}
