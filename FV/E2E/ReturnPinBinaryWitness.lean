@@ -154,6 +154,14 @@ theorem depth_budget (cleanup : Bool) :
       ((original cleanup).D*3 + pbMax (original cleanup)) ≤ 4096 := by
   cases cleanup <;> native_decide
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 10000000 in
+-- witness: native_decide (#581: the fixture's frames are below 4 KiB, so its program has no
+-- stack probes and the `pbMax` added to the budgets above is 0; the input of all three
+-- return-pin witnesses, `ReturnPinExecWitness` and `Link.ReturnPinExeSourceWitness` included)
+theorem pbMax_zero (cleanup : Bool) : pbMax (original cleanup) = 0 := by
+  cases cleanup <;> native_decide
+
 end E2E.ReturnPinBinaryWitness
 
 namespace E2E.ReturnPinBinaryWitness

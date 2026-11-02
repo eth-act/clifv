@@ -4829,6 +4829,19 @@ because the old statement became false with probes (names kept):
 * Linking: `LinkSys.Budget κ` also requires `probeBelow (L.A g).af ≤ κ M g` (`budget_K` gives
   it for `κ = K M`); the machine-side slot-byte tables read `probeMem`. Concurrency:
   `LinkOk(X).fn` bounds `frameSize + 16 + probeBelow ≤ Mx`.
+* Return pins (the generic `_return_pins` route, files `FV/E2E/LinkReturnPin*`,
+  `ReturnPin*`, `BinaryBoundary*`, `Sret*`, `FV/Link/ReturnPinExe*With`): the same changes as
+  their `_semantic` counterparts. `E2E.ReturnPinBinary.binary_correct_depth`/`_depthX`/`_peakX`,
+  `E2E.ReturnPinExecBytes.runGood_sysS_depth`/`_peak`, `binary_correct_exec_depth_proven`/
+  `_peak_proven` and `Link.ReturnPinCompilerWith.attempt_correct_depth`/`_peak`/`_source_peak`:
+  the stack is `frameDrop + (D * M + pbMax)` (was `frameDrop + D * M`).
+  `E2E.BinaryBoundaryFacts.premises` and `E2E.ReturnPinExecBytes.sysS_entry` conclude
+  `StackRoom (frameSize + 16 + K)` (was `StackAvail`). The generic lemmas
+  (`progCall_return_pins`, `progCallG_return_pins`, `progX_ni_return_pins`, `xni_return_pins`,
+  `progGoodCore_return_pins`, `callGood_return_pins`, `runGood_of_trace_return_pins`, …) gained
+  the premises `hpb`/`hκ` (the budget covers `probeBelow`), and `budget_K_return_pins` proves
+  both parts of `Budget`. The fixture of the three return-pin witnesses has no probes:
+  `E2E.ReturnPinBinaryWitness.pbMax_zero : pbMax (original cleanup) = 0`.
 
 Frames of 16 KiB and more (Cranelift's `StackProbeLoop`) still get no probes; that form is a
 separate change.
