@@ -1,0 +1,32 @@
+'Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.okB_input' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.link_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.base_closed' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.noTls._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.bin_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.data_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.hdr_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.slice0_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.syms_bin._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.correct_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.correct_stack_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.slice0_ok._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousRawSingleAll.stack_ok._native.native_decide.ax_1_1]

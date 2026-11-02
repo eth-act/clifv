@@ -1,0 +1,15 @@
+'E2E.ReturnPinChecksWith.fnsBProduction_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.checks_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.okRProduction_of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.crate_correct_production' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWith.accepts_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinChecksWithWitness.captured_program' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ReturnPinChecksWithWitness.checks_true._native.native_decide.ax_1✝,
+ E2E.ReturnPinChecksWithWitness.checks_true._native.native_decide.ax_2✝]
+'E2E.ReturnPinChecksWithWitness.previous_program' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ReturnPinChecksWithWitness.checks_true._native.native_decide.ax_1✝,
+ E2E.ReturnPinChecksWithWitness.checks_true._native.native_decide.ax_2✝]

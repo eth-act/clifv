@@ -1,0 +1,59 @@
+'E2E.SretCapturedEntry.captured_entry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_1,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_2]
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-consumer-isolated-package-v1/FV/E2E/SretCopyCapturedExec.lean:152:33: error: Ambiguous term
+  entryState
+Possible interpretations:
+  SretHeapBoundary.entryState : Clif.Function → Clif.Block → Clif.Mem → Clif.State
+  
+  Backend.entryState : Nat → AState
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-consumer-isolated-package-v1/FV/E2E/SretCopyCapturedExec.lean:152:8: error: Type mismatch: After simplification, term
+  outside
+ has type
+  OutsideCall
+    (Link.ReturnPinCompilerWith.input Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+      cleanup)
+    (BinCheck.roByte
+      ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup)
+      (Link.ReturnPinRetryWitness.spec cleanup).data)
+    Caller.function
+    (frameDrop
+        (art
+            (Link.ReturnPinCompilerWith.input Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+              cleanup)
+            Caller.function).af +
+      ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup).D * 15)
+    r arguments
+    (heap contents fun name =>
+      List.lookup name
+        ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup).syms)
+but is expected to have type
+  OutsideCall
+    (Link.ReturnPinCompilerWith.input Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+      cleanup)
+    (BinCheck.roByte
+      ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup)
+      (Link.ReturnPinRetryWitness.spec cleanup).data)
+    Caller.function
+    (frameDrop
+        (art
+            (Link.ReturnPinCompilerWith.input Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+              cleanup)
+            Caller.function).af +
+      ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup).D * 15)
+    r arguments
+    (SretHeapBoundary.entryState Caller.function Caller.first
+        (heap contents fun name =>
+          List.lookup name
+            ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower
+                cleanup).syms)).mem
+'E2E.SretCapturedEntry.captured_exec_bytes' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_1,
+ Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_2,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_1,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_2]

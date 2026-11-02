@@ -1,0 +1,2 @@
+ok   sret-copy-heap-boundary.lean: theorems 30/30 rc=0 errors=0 other_axioms=[]
+axiom audit: 1/1 files ok

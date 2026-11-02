@@ -1,0 +1,8 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-consumer-isolated-package-v1/FV/E2E/ReturnPinLinkerWitness.lean:60:42: error: Application type mismatch: The argument
+  base
+has type
+  BaseOk (SemanticStackBound.ofInput (input cleanup) closedBase (img (input cleanup)))
+but is expected to have type
+  BaseOk (SemanticStackBound.ofInput (ReturnPinCompilerWith.input lower (spec cleanup) cleanup) ?m.36 ?m.37)
+in the application
+  ReturnPinBinary.okB_sound checked base

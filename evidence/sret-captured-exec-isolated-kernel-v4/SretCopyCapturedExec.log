@@ -1,0 +1,12 @@
+'E2E.SretCapturedEntry.captured_entry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_1,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_2]
+'E2E.SretCapturedEntry.captured_exec_bytes' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_1,
+ Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_2,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_1,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_2]

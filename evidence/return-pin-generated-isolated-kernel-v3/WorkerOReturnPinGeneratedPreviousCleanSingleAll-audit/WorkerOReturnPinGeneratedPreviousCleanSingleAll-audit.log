@@ -1,0 +1,32 @@
+'Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.okB_input' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.link_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.base_closed' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.noTls._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.bin_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.data_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.hdr_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.slice0_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.syms_bin._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.correct_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.correct_stack_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.slice0_ok._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedPreviousCleanSingleAll.stack_ok._native.native_decide.ax_1_1]

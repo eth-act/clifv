@@ -8,7 +8,7 @@ import subprocess
 b = Path('/home/lee/clifv')
 r = b / '.worktrees/stock-extending-production-20261031'
 e = b / '.git/agent-evidence/stock-memory-20261029'
-source = e / 'WorkerOSretCapturedExecDraftV1.lean'
+source = e / 'WorkerOSretCapturedExecDraftV4.lean'
 assert source.is_file()
 head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=r,text=True).strip()
 for name in ['return-pin-binary-final-state-v1.json','return-pin-executable-final-state-v1.json','sret-exec-result-bytes-packet-state-v1.json']:

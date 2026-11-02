@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "scripts/audit/sret-captured-exec.lean": "12951a3cd7d3989879165dcbeb8c8ea11a46d93886adaa64be0c0ea5c8fb8416",
+    "FV/E2E/SretCopyCapturedExec.lean": "a45f488f9218414acd50ff3837c9cecf383d26d35acb4b5c55483739c5371d2a"
+  },
+  "generic_roots": 0,
+  "fixed_roots": 2,
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T05:14:18.784507+00:00"
+}

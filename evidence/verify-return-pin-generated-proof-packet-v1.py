@@ -8,10 +8,10 @@ import subprocess
 b = Path('/home/lee/clifv')
 r = b / '.worktrees/stock-extending-production-20261031'
 e = b / '.git/agent-evidence/stock-memory-20261029'
-packet = e / 'return-pin-generated-proof-packet-v1'
+packet = e / 'return-pin-generated-proof-packet-v3'
 logs = e / 'return-pin-generated-proof-kernel-v1'
 output = r / '.lake/build/lib/lean'
-manifest = json.loads((e / 'return-pin-generated-proof-packet-v1.json').read_text())
+manifest = json.loads((e / 'return-pin-generated-proof-packet-v3.json').read_text())
 hashes = manifest['files']
 driver = e / manifest['driver']
 assert hashlib.sha256(driver.read_bytes()).hexdigest() == manifest['driver_sha256']

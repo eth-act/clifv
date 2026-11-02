@@ -1,0 +1,32 @@
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.okB_input' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.link_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.base_closed' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.noTls._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.bin_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.data_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.hdr_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.slice0_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.syms_bin._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.correct_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.correct_stack_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.slice0_ok._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleEntry.stack_entries0._native.native_decide.ax_1_1]

@@ -1,0 +1,11 @@
+{
+  "files": {
+    "scripts/audit/sret-captured-exec.lean": "12951a3cd7d3989879165dcbeb8c8ea11a46d93886adaa64be0c0ea5c8fb8416",
+    "FV/E2E/SretCopyCapturedExec.lean": "a45f488f9218414acd50ff3837c9cecf383d26d35acb4b5c55483739c5371d2a"
+  },
+  "generic_roots": 0,
+  "fixed_roots": 2,
+  "full_goal_complete": false,
+  "status": "staged_for_canonical_gate",
+  "scope": "Actual original mixed linked program executes symbolic sixteen-byte source data in both cleanup modes. All destination bytes copy and all source bytes remain. No execution certificate or input restriction is added."
+}

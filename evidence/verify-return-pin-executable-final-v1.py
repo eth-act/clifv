@@ -9,7 +9,7 @@ import subprocess
 b = Path('/home/lee/clifv')
 r = b / '.worktrees/stock-extending-production-20261031'
 e = b / '.git/agent-evidence/stock-memory-20261029'
-manifest = json.loads((e / 'return-pin-executable-packet-v3.json').read_text())
+manifest = json.loads((e / 'return-pin-executable-packet-v4.json').read_text())
 runtime = json.loads((e / 'return-pin-linker-runtime-packet-v5.json').read_text())
 hashes = manifest['files']
 env = dict(os.environ)

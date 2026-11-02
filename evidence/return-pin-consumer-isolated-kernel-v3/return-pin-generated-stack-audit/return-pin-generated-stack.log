@@ -1,0 +1,2 @@
+'E2E.ReturnPinGeneratedStack.crate_correct_stackN' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinGeneratedStack.crate_correct_stack' depends on axioms: [propext, Classical.choice, Quot.sound]

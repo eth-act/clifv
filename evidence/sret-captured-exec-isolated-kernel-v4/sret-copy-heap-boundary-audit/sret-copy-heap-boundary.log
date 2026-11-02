@@ -1,0 +1,37 @@
+'E2E.SretHeapBoundary.valid_bounds' depends on axioms: [propext]
+'E2E.SretHeapBoundary.memory_relation' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.source_byte' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.protected_bytes' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.machine_memory_relation' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.entry_arguments' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.symbolic_entry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.source_entry' depends on axioms: [propext]
+'E2E.SretHeapBoundary.source_entry_heap' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.Source.entry' depends on axioms: [propext]
+'E2E.SretHeapBoundary.Source.returns' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.Source.returns_exact' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.loaded_byte' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.Source.low_loaded' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.Source.high_loaded' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.heap_source_byte' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.Source.copied_other' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.Source.copied_byte' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.Source.copied_source_byte' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.Source.returns_bytes' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.Caller.entry' depends on axioms: [propext]
+'E2E.SretHeapBoundary.Caller.returns_exact' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.Caller.returns_bytes' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.Caller.machine_memory_relation' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.Caller.entry_arguments' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.Caller.symbolic_entry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.Caller.returns_exact_with' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.Caller.symbolic_entry_with' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SretHeapBoundary.captured_symbolic_entry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.SretCopy.Fixture.captured_sret_source_shape_witness._native.native_decide.ax_1]
+'E2E.SretHeapBoundary.captured_mixed_symbolic_entry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SretHeapBoundary.original_caller._native.native_decide.ax_1✝,
+ E2E.SretHeapBoundary.original_program._native.native_decide.ax_1✝]

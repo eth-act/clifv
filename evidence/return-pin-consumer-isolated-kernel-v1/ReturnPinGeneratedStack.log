@@ -1,0 +1,23 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-consumer-isolated-package-v1/FV/E2E/ReturnPinGeneratedStack.lean:24:8: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  (SemanticStackBound.ofInput I B F).P.func? name
+in the target expression
+  (match (progOf (ProductionStackBound.CompilerInput.results I)).func? name with
+    | some f => (SemanticStackBound.budO I f).isSome
+    | none => false) =
+    true
+
+I : SemanticStackBound.CompilerInput
+checked : ReturnPinBinary.okB I = true
+S : Nat
+bound : SemanticStackBound.stackB I = some S
+name : String
+B : BaseEnv
+F : BitVec 64 → Prop
+base : LinkCheck.BaseOk (SemanticStackBound.ofInput I B F)
+world : ∀ (a : BitVec 64), (SemanticStackBound.ofInput I B F).Img a → F a
+f : Clif.Function
+found : (SemanticStackBound.ofInput I B F).P.func? name = some f
+⊢ (match (progOf (ProductionStackBound.CompilerInput.results I)).func? name with
+    | some f => (SemanticStackBound.budO I f).isSome
+    | none => false) =
+    true

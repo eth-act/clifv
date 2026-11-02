@@ -1,0 +1,72 @@
+'E2E.SretCapturedEntry.captured_entry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_1,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_2]
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-consumer-isolated-package-v1/FV/E2E/SretCopyCapturedExec.lean:98:6: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  prog (input cleanup)
+in the target expression
+  f ∈ (progOf (ProductionStackBound.CompilerInput.results (input cleanup))).funcs
+
+cleanup : Bool
+f : Clif.Function
+member : f ∈ (progOf (ProductionStackBound.CompilerInput.results (input cleanup))).funcs
+⊢ hasTls f = false
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-consumer-isolated-package-v1/FV/E2E/SretCopyCapturedExec.lean:114:2: error: Type mismatch: After simplification, term
+  Link.ProductionImageWithProof.bin_ok
+    (Link.ReturnPinCompilerWith.attempt_spec (Link.ReturnPinRetryWitness.compiler_success cleanup)).right
+ has type
+  BinCheck.BinOkWithResults
+    (Link.ProductionImageWithProof.inputFor Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+      cleanup)
+    (Link.ProductionImageWithProof.resultsFor Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+      cleanup)
+    (Link.ReturnPinRetryWitness.spec cleanup).data (Link.ReturnPinRetryWitness.file cleanup)
+but is expected to have type
+  BinCheck.BinOkWithResults
+    ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup)
+    (ProductionStackBound.CompilerInput.results
+      (Link.ReturnPinCompilerWith.input Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+        cleanup))
+    (Link.ReturnPinRetryWitness.spec cleanup).data (Link.ReturnPinRetryWitness.file cleanup)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-consumer-isolated-package-v1/FV/E2E/SretCopyCapturedExec.lean:147:8: error: Type mismatch: After simplification, term
+  outside
+ has type
+  OutsideCall
+    (Link.ReturnPinCompilerWith.input Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+      cleanup)
+    (BinCheck.roByte
+      ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup)
+      (Link.ReturnPinRetryWitness.spec cleanup).data)
+    Caller.function
+    (frameDrop
+        (art
+            (Link.ReturnPinCompilerWith.input Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+              cleanup)
+            Caller.function).af +
+      ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup).D * 15)
+    r arguments
+    (heap contents fun name =>
+      List.lookup name
+        ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup).syms)
+but is expected to have type
+  OutsideCall
+    (Link.ReturnPinCompilerWith.input Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+      cleanup)
+    (BinCheck.roByte
+      ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup)
+      (Link.ReturnPinRetryWitness.spec cleanup).data)
+    Caller.function
+    (frameDrop
+        (art
+            (Link.ReturnPinCompilerWith.input Link.ReturnPinRetryWitness.lower (Link.ReturnPinRetryWitness.spec cleanup)
+              cleanup)
+            Caller.function).af +
+      ((Link.ReturnPinRetryWitness.spec cleanup).inputProductionWith Link.ReturnPinRetryWitness.lower cleanup).D * 15)
+    r ?m.128 (Clif.State.mem ?m.129)
+'E2E.SretCapturedEntry.captured_exec_bytes' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_1,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_2]

@@ -1,0 +1,32 @@
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.okB_input' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.link_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.base_closed' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.noTls._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.bin_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.data_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.hdr_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.slice0_bin._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.syms_bin._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.correct_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.slice0_ok._native.native_decide.ax_1_1]
+'Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.correct_stack_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.globalB_input._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.slice0_ok._native.native_decide.ax_1_1,
+ Crates.WorkerOReturnPinGeneratedMixedCleanSingleAll.stack_ok._native.native_decide.ax_1_1]

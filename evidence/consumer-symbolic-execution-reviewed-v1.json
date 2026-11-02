@@ -1,0 +1,18 @@
+{
+  "status": "reviewed",
+  "consumer_receipt": "return-pin-consumer-isolated-state-v3.json",
+  "generated_receipt": "return-pin-generated-isolated-state-v3.json",
+  "symbolic_receipt": "sret-captured-exec-isolated-state-v4.json",
+  "canonical_receipt": "sret-captured-exec-canonical-isolated-state-v1.json",
+  "consumer_modules": 31,
+  "generated_cases": 12,
+  "fixed_generated_roots": 72,
+  "old_binary_headers_exact": 25,
+  "old_binary_axiom_sets_exact": 25,
+  "symbolic_source_contents": true,
+  "both_cleanup_modes": true,
+  "isolated_outputs_removed": true,
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T05:14:55.210886+00:00"
+}
