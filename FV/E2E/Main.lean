@@ -1,4 +1,5 @@
 import FV.E2E.Compose
+import FV.Backend.Proof.LowerSim
 import FV.Backend.Proof.DriverCheckSound
 import FV.Backend.Proof.PrepareSound
 import FV.Backend.Proof.IselMemArm
