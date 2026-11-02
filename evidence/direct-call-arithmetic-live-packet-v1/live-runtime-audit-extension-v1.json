@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "previous_matrix": "actual-live-call-matrix-v2/result.json",
+  "old_source_keys_exact": 2924,
+  "added_audit_only_roots": [
+    "FV/E2E/StockLiveCallProvider.lean",
+    "FV/E2E/ResultCallExec.lean",
+    "FV/E2E/LiveCallExec.lean"
+  ],
+  "no_old_import_edge_to_added_root": true,
+  "runtime_support_keys_retained": {
+    "PrepareLiveCallBundlesV1.lean": "ec272c9f0aa1689df3d9f015f48eff961b1e59438535a7ff6af840abbe688d3c",
+    "ReflowLiveCallBundleV1.lean": "77b8611e355f05fc1d83b423de015dd79f7a315dac1a15ec1ae43f8b9894b7cc"
+  }
+}

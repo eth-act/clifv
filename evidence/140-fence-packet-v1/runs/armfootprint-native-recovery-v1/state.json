@@ -1,0 +1,63 @@
+{
+  "status": "native_archive_restored_normal_check_pending",
+  "module": "FV.Concurrency.ArmFootprint",
+  "native_input_key": "ed1a7520f24ffb27",
+  "key_query": "runs/armfault-key-query-v1",
+  "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/outputs/fv/ed1a7520f24ffb27.json",
+  "mapping_sha256": "95df46fca4ea481e6f3178399939f55652e36bab2f2a58cd7d9da2803908b0b2",
+  "archive": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/artifacts/2b7538b43065f9b8.ltar",
+  "archive_sha256": "4cd7d005ba4d0da32c6dbcc4c77cc792e5320ee4ac18f3eea4650834a77eb862",
+  "native_tool_sha256": "06d613dffd2a6fd996b095bfd835c2bb720886f9eb7e13ed2adddd7df4507bf3",
+  "argv": [
+    "/usr/bin/bwrap",
+    "--ro-bind",
+    "/",
+    "/",
+    "--bind",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/armfootprint-native-recovery-v1/stage",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/armfootprint-native-recovery-v1/stage",
+    "--proc",
+    "/proc",
+    "--dev",
+    "/dev",
+    "--",
+    "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/leantar",
+    "--jobs",
+    "1",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/armfootprint-native-recovery-v1/stage/lib",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/armfootprint-native-recovery-v1/stage/ir",
+    "-x",
+    "-j",
+    "-"
+  ],
+  "seconds": 0.2638866901397705,
+  "stats": "peak 26533888\noom 0\noom_kill 0\n",
+  "outputs": [
+    {
+      "path": ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.trace",
+      "old_sha256": "d86bacbcb67ac3b352bfe95dd3522ddfd3bcff7a1c6e06d507bb65aeb5bbdfe2",
+      "new_sha256": "82c1105bd468c034c62f8ef5447cfb7514232ecc322d06590876443802ed5e3c"
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.olean",
+      "old_sha256": "3a3ecc65fc8259b42b6b24f82eaac5e48f2fda46a8c1f7306953771354bfe5e7",
+      "new_sha256": "3a3ecc65fc8259b42b6b24f82eaac5e48f2fda46a8c1f7306953771354bfe5e7"
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.ilean",
+      "old_sha256": "910a272a86807f34cfee2ee18004b0c2dd4f20943c80c9fb523e6fb1be3976ec",
+      "new_sha256": "910a272a86807f34cfee2ee18004b0c2dd4f20943c80c9fb523e6fb1be3976ec"
+    },
+    {
+      "path": ".lake/build/ir/FV/Concurrency/ArmFootprint.c",
+      "old_sha256": "b24871ee9e8e5c2a26811e8f155d637a7fe7b22858307fc3712b01b73430e53e",
+      "new_sha256": "b24871ee9e8e5c2a26811e8f155d637a7fe7b22858307fc3712b01b73430e53e"
+    }
+  ],
+  "sandbox": "read-only filesystem except owned staging directory",
+  "cache_modified": false,
+  "live_package_modified": false,
+  "kernel_ran": false
+}

@@ -1,0 +1,103 @@
+{
+  "status": "removed_expendable_staging_outputs",
+  "stages": [
+    {
+      "stage": ".git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/armfootprint-native-recovery-v1/stage",
+      "files": {
+        "lib/ArmFootprint.trace": {
+          "sha256": "82c1105bd468c034c62f8ef5447cfb7514232ecc322d06590876443802ed5e3c",
+          "bytes": 166
+        },
+        "lib/ArmFootprint.olean": {
+          "sha256": "3a3ecc65fc8259b42b6b24f82eaac5e48f2fda46a8c1f7306953771354bfe5e7",
+          "bytes": 10495896
+        },
+        "lib/ArmFootprint.ilean": {
+          "sha256": "910a272a86807f34cfee2ee18004b0c2dd4f20943c80c9fb523e6fb1be3976ec",
+          "bytes": 60020
+        },
+        "ir/ArmFootprint.c": {
+          "sha256": "b24871ee9e8e5c2a26811e8f155d637a7fe7b22858307fc3712b01b73430e53e",
+          "bytes": 604917
+        }
+      },
+      "copied_output_hashes_recorded": true,
+      "original_archive": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/artifacts/2b7538b43065f9b8.ltar",
+      "original_archive_sha256": "4cd7d005ba4d0da32c6dbcc4c77cc792e5320ee4ac18f3eea4650834a77eb862"
+    },
+    {
+      "stage": ".git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/armthread-native-recovery-v1/stage",
+      "files": {
+        "lib/ArmThread.trace": {
+          "sha256": "d8542ab6db52457bd83958e08ed6046aca3762407b41b7cfbd158b18f643b00d",
+          "bytes": 166
+        },
+        "lib/ArmThread.olean": {
+          "sha256": "6c3f9919504c399f303da7b62dc8bec6264f55b99bee7d75fcd04e9ce1d7f2f4",
+          "bytes": 1435304
+        },
+        "lib/ArmThread.ilean": {
+          "sha256": "857474f4c6afdfcc3595e3979e1ee76373c8fd6263e2542f64109fc31786555a",
+          "bytes": 62801
+        },
+        "ir/ArmThread.c": {
+          "sha256": "8db41550f787131959baa9f9336ec6e8d4f1ce76cf44cce27d82ba4988d84975",
+          "bytes": 82452
+        }
+      },
+      "copied_output_hashes_recorded": true,
+      "original_archive": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/artifacts/1902b4a7684ab878.ltar",
+      "original_archive_sha256": "99733525fc1b04555de4f387bca91a2df9009803284c16e106e68c7251474aad"
+    },
+    {
+      "stage": ".git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/arminstfoot-native-recovery-v1/stage",
+      "files": {
+        "lib/ArmInstFoot.trace": {
+          "sha256": "45a936fba2bf01fd0badc81ea5b1f78cc3dde2218a52c59eaed2285c20ebae35",
+          "bytes": 166
+        },
+        "lib/ArmInstFoot.olean": {
+          "sha256": "a8280ac64f7cd679342a141cb7656243ca5e352473f985a3d26f83d30bb52edd",
+          "bytes": 2803016
+        },
+        "lib/ArmInstFoot.ilean": {
+          "sha256": "bb17d07ef6192a213373fa1f632e359986b0ed8e82306c442568abfc08b6d5e3",
+          "bytes": 119408
+        },
+        "ir/ArmInstFoot.c": {
+          "sha256": "94b874e2906b373fdf21ca6b0a55010bb9ba7cf4b9dd902d4b42fc9799458499",
+          "bytes": 256323
+        }
+      },
+      "copied_output_hashes_recorded": true,
+      "original_archive": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/artifacts/2a12a666821bc924.ltar",
+      "original_archive_sha256": "6e30dfd7461433f41963ab6de7d25fa30629c9cfd172a5b508129c046e8e6eb4"
+    },
+    {
+      "stage": ".git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/step-native-recovery-v1/stage",
+      "files": {
+        "lib/Step.trace": {
+          "sha256": "0bd8020d6e3426f7c1015fa72ad8ea17868530551e63fcf99a8a99d6b45d57ff",
+          "bytes": 166
+        },
+        "lib/Step.olean": {
+          "sha256": "4f80b4174534a3280eeb464fb776d56cf6068a4e1a34bda4b04697fd2c38201a",
+          "bytes": 396272
+        },
+        "lib/Step.ilean": {
+          "sha256": "802045242735de3d15d677edd9f73eb5f672203a80042bbdc396fa4c5a58626b",
+          "bytes": 28647
+        },
+        "ir/Step.c": {
+          "sha256": "86900f08134509a7aacb2b5a7fb750ef4345c860eb53a3a4da2bf9f20a884ec4",
+          "bytes": 37735
+        }
+      },
+      "copied_output_hashes_recorded": true,
+      "original_archive": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/artifacts/4cceb4ff8ad532e9.ltar",
+      "original_archive_sha256": "5538c5182917876c14f9e3f2e31ef84232f6455da8823f87c201c9d772b8024c"
+    }
+  ],
+  "owned_prefix_imports_preserved": true,
+  "normal_check": "import-normal-check-v12.json"
+}

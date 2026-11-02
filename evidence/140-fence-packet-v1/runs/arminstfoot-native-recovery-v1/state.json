@@ -1,0 +1,63 @@
+{
+  "status": "native_archive_restored_normal_check_pending",
+  "module": "FV.Concurrency.ArmInstFoot",
+  "native_input_key": "8835e879273af216",
+  "key_query": "runs/arminstfoot-key-query-v1",
+  "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/outputs/fv/8835e879273af216.json",
+  "mapping_sha256": "8ecc1c9aa1a1904c2570b782061f6cabbda93463e89628d8190473c4f4955a4c",
+  "archive": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/artifacts/2a12a666821bc924.ltar",
+  "archive_sha256": "6e30dfd7461433f41963ab6de7d25fa30629c9cfd172a5b508129c046e8e6eb4",
+  "native_tool_sha256": "06d613dffd2a6fd996b095bfd835c2bb720886f9eb7e13ed2adddd7df4507bf3",
+  "argv": [
+    "/usr/bin/bwrap",
+    "--ro-bind",
+    "/",
+    "/",
+    "--bind",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/arminstfoot-native-recovery-v1/stage",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/arminstfoot-native-recovery-v1/stage",
+    "--proc",
+    "/proc",
+    "--dev",
+    "/dev",
+    "--",
+    "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/leantar",
+    "--jobs",
+    "1",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/arminstfoot-native-recovery-v1/stage/lib",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/arminstfoot-native-recovery-v1/stage/ir",
+    "-x",
+    "-j",
+    "-"
+  ],
+  "seconds": 0.09930181503295898,
+  "stats": "peak 10539008\noom 0\noom_kill 0\n",
+  "outputs": [
+    {
+      "path": ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.trace",
+      "old_sha256": "32d3ecc0281d8bf0c4bd459a9dcd9ef0959a69c8204ba544fc37bb4816dfa14b",
+      "new_sha256": "45a936fba2bf01fd0badc81ea5b1f78cc3dde2218a52c59eaed2285c20ebae35"
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.olean",
+      "old_sha256": "a8280ac64f7cd679342a141cb7656243ca5e352473f985a3d26f83d30bb52edd",
+      "new_sha256": "a8280ac64f7cd679342a141cb7656243ca5e352473f985a3d26f83d30bb52edd"
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.ilean",
+      "old_sha256": "bb17d07ef6192a213373fa1f632e359986b0ed8e82306c442568abfc08b6d5e3",
+      "new_sha256": "bb17d07ef6192a213373fa1f632e359986b0ed8e82306c442568abfc08b6d5e3"
+    },
+    {
+      "path": ".lake/build/ir/FV/Concurrency/ArmInstFoot.c",
+      "old_sha256": "94b874e2906b373fdf21ca6b0a55010bb9ba7cf4b9dd902d4b42fc9799458499",
+      "new_sha256": "94b874e2906b373fdf21ca6b0a55010bb9ba7cf4b9dd902d4b42fc9799458499"
+    }
+  ],
+  "sandbox": "read-only filesystem except owned staging directory",
+  "cache_modified": false,
+  "live_package_modified": false,
+  "kernel_ran": false
+}

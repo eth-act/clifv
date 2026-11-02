@@ -1,0 +1,8 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessArmFault.lean:48:60: warning: This simp argument is unused:
+  Concurrency.ArmInstFoot.shl_div
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Concurrency.ArmInstFoot.instEvs, Concurrency.ArmInstFoot.immEvs,
+    Arm.LDST.reg_imm_constrain_unpredictable, ordinaryBase, Arm.ldst_read, Arm.BitVec.lsb]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

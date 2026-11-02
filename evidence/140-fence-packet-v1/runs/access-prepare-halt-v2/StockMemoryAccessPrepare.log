@@ -1,0 +1,8 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessPrepare.lean:55:45: error: Application type mismatch: The argument
+  values
+has type
+  vuses ops regs = uses
+but is expected to have type
+  vuses ops regs' = ?m.318
+in the application
+  Eq.trans keptUses values

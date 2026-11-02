@@ -1,0 +1,63 @@
+{
+  "status": "native_archive_restored_normal_check_pending",
+  "module": "FV.Concurrency.ArmThread",
+  "native_input_key": "1121d56f54c613fd",
+  "key_query": "runs/armthread-key-query-v1",
+  "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/outputs/fv/1121d56f54c613fd.json",
+  "mapping_sha256": "91c483b89fade887a9e51bb0d12cfe53a163fcdc313108b22fdfc84c7bce7ce3",
+  "archive": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/artifacts/1902b4a7684ab878.ltar",
+  "archive_sha256": "99733525fc1b04555de4f387bca91a2df9009803284c16e106e68c7251474aad",
+  "native_tool_sha256": "06d613dffd2a6fd996b095bfd835c2bb720886f9eb7e13ed2adddd7df4507bf3",
+  "argv": [
+    "/usr/bin/bwrap",
+    "--ro-bind",
+    "/",
+    "/",
+    "--bind",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/armthread-native-recovery-v1/stage",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/armthread-native-recovery-v1/stage",
+    "--proc",
+    "/proc",
+    "--dev",
+    "/dev",
+    "--",
+    "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/leantar",
+    "--jobs",
+    "1",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/armthread-native-recovery-v1/stage/lib",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/armthread-native-recovery-v1/stage/ir",
+    "-x",
+    "-j",
+    "-"
+  ],
+  "seconds": 0.0721275806427002,
+  "stats": "peak 7860224\noom 0\noom_kill 0\n",
+  "outputs": [
+    {
+      "path": ".lake/build/lib/lean/FV/Concurrency/ArmThread.trace",
+      "old_sha256": "77f705f4c447d47da64ffb6812ae5ff33c4c33ed05559c42af7caf489da749d5",
+      "new_sha256": "d8542ab6db52457bd83958e08ed6046aca3762407b41b7cfbd158b18f643b00d"
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Concurrency/ArmThread.olean",
+      "old_sha256": "6c3f9919504c399f303da7b62dc8bec6264f55b99bee7d75fcd04e9ce1d7f2f4",
+      "new_sha256": "6c3f9919504c399f303da7b62dc8bec6264f55b99bee7d75fcd04e9ce1d7f2f4"
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/Concurrency/ArmThread.ilean",
+      "old_sha256": "857474f4c6afdfcc3595e3979e1ee76373c8fd6263e2542f64109fc31786555a",
+      "new_sha256": "857474f4c6afdfcc3595e3979e1ee76373c8fd6263e2542f64109fc31786555a"
+    },
+    {
+      "path": ".lake/build/ir/FV/Concurrency/ArmThread.c",
+      "old_sha256": "8db41550f787131959baa9f9336ec6e8d4f1ce76cf44cce27d82ba4988d84975",
+      "new_sha256": "8db41550f787131959baa9f9336ec6e8d4f1ce76cf44cce27d82ba4988d84975"
+    }
+  ],
+  "sandbox": "read-only filesystem except owned staging directory",
+  "cache_modified": false,
+  "live_package_modified": false,
+  "kernel_ran": false
+}

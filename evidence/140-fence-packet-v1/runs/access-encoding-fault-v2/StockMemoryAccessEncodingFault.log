@@ -1,0 +1,195 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:14:164: error: unsolved goals
+env : Env
+base destination offset : Nat
+baseReg : base ≤ 30
+destinationReg : destination ≤ 30
+aligned : offset % 8 = 0
+bounded : offset / 8 < 2 ^ 12
+⊢ Arm.ArmInst.norm <$>
+      Insn.armFields env (Insn.load LoadOp.uload64 (Reg.x destination) (AMode.unsignedOffset (Reg.x base) offset)) =
+    Except.ok
+      (Arm.ArmInst.LDST
+        (Arm.LDSTInst.Reg_unsigned_imm
+          { size := 3#2, V := 0#1, opc := 1#2, imm12 := BitVec.ofNat 12 (offset / 8), Rn := BitVec.ofNat 5 base,
+            Rt := BitVec.ofNat 5 destination }))
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:15:23: warning: This simp argument is unused:
+  LoadOp.fields
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, LoadOp.bytes, ldstFields, Reg.encSP, Reg.encZR, uField, baseReg, destinationReg,
+    aligned, bounded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:15:37: warning: This simp argument is unused:
+  LoadOp.bytes
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, LoadOp.fields, ldstFields, Reg.encSP, Reg.encZR, uField, baseReg, destinationReg,
+    aligned, bounded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:15:50: warning: This simp argument is unused:
+  ldstFields
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, LoadOp.fields, LoadOp.bytes, Reg.encSP, Reg.encZR, uField, baseReg, destinationReg,
+    aligned, bounded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:15:61: warning: This simp argument is unused:
+  Reg.encSP
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, LoadOp.fields, LoadOp.bytes, ldstFields, Reg.encZR, uField, baseReg, destinationReg,
+    aligned, bounded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:15:71: warning: This simp argument is unused:
+  Reg.encZR
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, LoadOp.fields, LoadOp.bytes, ldstFields, Reg.encSP, uField, baseReg, destinationReg,
+    aligned, bounded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:15:81: warning: This simp argument is unused:
+  uField
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, LoadOp.fields, LoadOp.bytes, ldstFields, Reg.encSP, Reg.encZR, baseReg, destinationReg,
+    aligned, bounded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:16:4: warning: This simp argument is unused:
+  baseReg
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, LoadOp.fields, LoadOp.bytes, ldstFields, Reg.encSP, Reg.encZR, uField, destinationReg,
+    aligned, bounded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:16:12: warning: This simp argument is unused:
+  destinationReg
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, LoadOp.fields, LoadOp.bytes, ldstFields, Reg.encSP, Reg.encZR, uField, baseReg, aligned,
+    bounded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:16:27: warning: This simp argument is unused:
+  aligned
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, LoadOp.fields, LoadOp.bytes, ldstFields, Reg.encSP, Reg.encZR, uField, baseReg,
+    destinationReg, bounded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:16:35: warning: This simp argument is unused:
+  bounded
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, LoadOp.fields, LoadOp.bytes, ldstFields, Reg.encSP, Reg.encZR, uField, baseReg,
+    destinationReg, aligned]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:22:133: error: unsolved goals
+env : Env
+base value : Nat
+baseReg : base ≤ 30
+valueReg : value ≤ 30
+⊢ Arm.ArmInst.norm <$>
+      Insn.armFields env (Insn.store StoreOp.store64 (Reg.x value) (AMode.unsignedOffset (Reg.x base) 8)) =
+    Except.ok
+      (Arm.ArmInst.LDST
+        (Arm.LDSTInst.Reg_unsigned_imm
+          { size := 3#2, V := 0#1, opc := 0#2, imm12 := 1#12, Rn := BitVec.ofNat 5 base, Rt := BitVec.ofNat 5 value }))
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:23:23: warning: This simp argument is unused:
+  StoreOp.fields
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, StoreOp.bytes, ldstFields, Reg.encSP, Reg.encZR, uField, baseReg, valueReg]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:23:38: warning: This simp argument is unused:
+  StoreOp.bytes
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, StoreOp.fields, ldstFields, Reg.encSP, Reg.encZR, uField, baseReg, valueReg]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:23:52: warning: This simp argument is unused:
+  ldstFields
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, StoreOp.fields, StoreOp.bytes, Reg.encSP, Reg.encZR, uField, baseReg, valueReg]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:23:63: warning: This simp argument is unused:
+  Reg.encSP
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, StoreOp.fields, StoreOp.bytes, ldstFields, Reg.encZR, uField, baseReg, valueReg]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:23:73: warning: This simp argument is unused:
+  Reg.encZR
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, StoreOp.fields, StoreOp.bytes, ldstFields, Reg.encSP, uField, baseReg, valueReg]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:23:83: warning: This simp argument is unused:
+  uField
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, StoreOp.fields, StoreOp.bytes, ldstFields, Reg.encSP, Reg.encZR, baseReg, valueReg]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:24:4: warning: This simp argument is unused:
+  baseReg
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, StoreOp.fields, StoreOp.bytes, ldstFields, Reg.encSP, Reg.encZR, uField, valueReg]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:24:12: warning: This simp argument is unused:
+  valueReg
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, StoreOp.fields, StoreOp.bytes, ldstFields, Reg.encSP, Reg.encZR, uField, baseReg]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:45:4: error: Type mismatch: After simplification, term
+  unmapped
+ has type
+  @Exists Nat fun k =>
+    k < 8 ∧ mp (Arm.read_gpr 64 (BitVec.ofNat 5 base) s + 0#64 + BitVec.ofNat 64 k) = ArmFault.Perm.none
+but is expected to have type
+  @Exists Nat fun k =>
+    k < 8 ∧
+      mp
+          (Arm.read_gpr 64 (BitVec.ofNat 5 base) s + BitVec.zeroExtend 64 (BitVec.ofNat 12 (0 / 8)) <<< 3 +
+            BitVec.ofNat 64 k) =
+        ArmFault.Perm.none
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:49:4: error: Type mismatch: After simplification, term
+  unmapped
+ has type
+  @Exists Nat fun k =>
+    k < 8 ∧ mp (Arm.read_gpr 64 (BitVec.ofNat 5 base) s + 16#64 + BitVec.ofNat 64 k) = ArmFault.Perm.none
+but is expected to have type
+  @Exists Nat fun k =>
+    k < 8 ∧
+      mp
+          (Arm.read_gpr 64 (BitVec.ofNat 5 base) s + BitVec.zeroExtend 64 (BitVec.ofNat 12 (16 / 8)) <<< 3 +
+            BitVec.ofNat 64 k) =
+        ArmFault.Perm.none
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:61:2: error: Type mismatch: After simplification, term
+  unmapped
+ has type
+  @Exists Nat fun k =>
+    k < 8 ∧ mp (Arm.read_gpr 64 (BitVec.ofNat 5 base) s + 8#64 + BitVec.ofNat 64 k) = ArmFault.Perm.none
+but is expected to have type
+  @Exists Nat fun k =>
+    k < 8 ∧
+      mp (Arm.read_gpr 64 (BitVec.ofNat 5 base) s + BitVec.zeroExtend 64 1 <<< 3 + BitVec.ofNat 64 k) =
+        ArmFault.Perm.none

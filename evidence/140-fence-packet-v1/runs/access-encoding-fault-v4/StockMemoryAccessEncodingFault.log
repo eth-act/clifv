@@ -1,0 +1,16 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:15:38: warning: This simp argument is unused:
+  Arm.ArmInst.norm
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, Insn.armFields, LoadOp.fields, LoadOp.bytes, ldstFields, Reg.encSP, Reg.encZR, uField,
+    baseReg, destinationReg, aligned, bounded]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessEncodingFault.lean:24:38: warning: This simp argument is unused:
+  Arm.ArmInst.norm
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Insn.toArmInst, Insn.armFields, StoreOp.fields, StoreOp.bytes, ldstFields, Reg.encSP, Reg.encZR, uField,
+    baseReg, valueReg]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

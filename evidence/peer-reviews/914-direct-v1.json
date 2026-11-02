@@ -1,0 +1,141 @@
+{
+  "pr": 914,
+  "head": "d0f945247c37422b1fa73ac12e4b82db212274ee",
+  "verdict": "no blocking defect",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents",
+  "files": [
+    {
+      "path": "FV/Backend/Lowering/StockComparisonComputedArgsLoopCfg.lean",
+      "additions": 106,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonComputedArgsCarry.lean",
+      "additions": 326,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonComputedArgsFibonacci.lean",
+      "additions": 249,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonComputedArgsLoopCheck.lean",
+      "additions": 64,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonComputedArgsLoopClass.lean",
+      "additions": 358,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonComputedArgsLoopDomain.lean",
+      "additions": 347,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonComputedArgsLoopReturn.lean",
+      "additions": 133,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonComputedArgsLoopTrap.lean",
+      "additions": 131,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonComputedArgsLoopWitness.lean",
+      "additions": 138,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonImmComputedCarry.lean",
+      "additions": 242,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonImmComputedCores.lean",
+      "additions": 272,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonImmComputedFacts.lean",
+      "additions": 441,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonImmComputedLoopWitness.lean",
+      "additions": 142,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonImmComputedSelection.lean",
+      "additions": 217,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonImmComputedValues.lean",
+      "additions": 277,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonZeroComputedCores.lean",
+      "additions": 272,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonZeroComputedFacts.lean",
+      "additions": 378,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonZeroComputedSelection.lean",
+      "additions": 195,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonZeroComputedValues.lean",
+      "additions": 295,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "scripts/audit/comparison-computed-args.lean",
+      "additions": 47,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "scripts/audit/comparison-imm-computed.lean",
+      "additions": 15,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "scripts/audit/comparison-zero-computed.lean",
+      "additions": 17,
+      "deletions": 0,
+      "changeType": "ADDED"
+    }
+  ],
+  "utc": "2026-11-02T14:42:44.687494+00:00"
+}

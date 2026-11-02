@@ -165,3 +165,31 @@ The full normal/audit/runtime/filetest/encoder and original identity gates remai
 No cache, worktree, compiler, or shared source changed during this preparation.
 The worker owns draft and prefix cleanup.
 The parent owns publication, coordination, plan updates, and the current foundation build allocation.
+
+## Reviewed checkpoint candidate: complete mixed source and ARM access shapes
+
+`mixed-arm-state-v4.json` records 28 kernels and 61 public roots.
+The audit contains 53 standard roots and eight marked fixed roots.
+All previous 52 axiom sets stay exact.
+`mixed-arm-canonical-source-v4/` preserves all 29 source files, including the audit.
+
+`FenceFixture.mixed_domain_with_access_traps` proves complete returns and first traps for the unchanged seven-statement function.
+It keeps arbitrary source arguments, memory and divisor.
+It derives actual records, result mappings, source reachability and both fence cases internally.
+The complete source witnesses return, trap on division after the store and both fences, and fault on the first load.
+
+The ARM proofs reuse `ArmFault.Step`.
+They prove actual unsigned i64 load/store footprints, Backend.Insn encoding and decoded memory-fault steps.
+They do not yet derive the reached allocated line from the complete compiler pipeline.
+The full fence goal remains open.
+
+The 825-module normal context passed after four native cache recoveries.
+Each recovery binds the actual native input key to an existing owned CI cache mapping.
+The extractor used a filesystem sandbox with only its staging directory writable.
+The cache and live package stayed read-only.
+The cleanup receipt records removal of 16383455 staging bytes.
+No ARM provider compiler ran.
+
+Next: derive actual allocated operands, reached instruction lines and trap-table entries.
+Then transport the new access outcome through preparation, raw/cleanup, linker and generated consumers.
+Keep source/peak variants, atomic embedding and all original full-goal gates open.

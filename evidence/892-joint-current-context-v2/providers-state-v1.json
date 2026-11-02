@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "joint_tree": "405776adaffb7cf5a7b47a35b2da797fe4863c91",
+  "provider_kind": "RealLake normalkeys plus authoritative final no-buildcheck",
+  "normal_provider_receipt_sha256": "4df3aa7106bb548e4b5827cc3eda148413ca31793dee0e451c30f92ca5126053",
+  "records": [],
+  "full_goal_complete": false
+}

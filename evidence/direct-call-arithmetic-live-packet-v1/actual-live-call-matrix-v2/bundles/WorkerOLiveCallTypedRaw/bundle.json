@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "units": [
+    {
+      "tag": "WorkerOLiveCallTypedRaw",
+      "names": {},
+      "locals": [],
+      "local_addrs": [],
+      "functions": [
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/fn0.ra.json",
+          "name": "stock_live_call_add",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/fn0.clif"
+        },
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/fn1.ra.json",
+          "name": "stock_clobber_add",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/fn1.clif"
+        },
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/fn2.ra.json",
+          "name": "float_leaf",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/fn2.clif"
+        }
+      ],
+      "data": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/data.txt"
+    }
+  ],
+  "symbols": [
+    [
+      "stock_live_call_add",
+      2097504
+    ],
+    [
+      "stock_clobber_add",
+      2097548
+    ],
+    [
+      "float_leaf",
+      2097572
+    ]
+  ],
+  "skipped": [],
+  "markers": [
+    [
+      "stock_live_call_add",
+      2097504
+    ],
+    [
+      "stock_clobber_add",
+      2097548
+    ],
+    [
+      "float_leaf",
+      2097572
+    ]
+  ],
+  "format": "clifv-frontend-bundle",
+  "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/program.elf"
+}

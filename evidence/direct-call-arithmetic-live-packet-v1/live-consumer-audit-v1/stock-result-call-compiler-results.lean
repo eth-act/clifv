@@ -1,0 +1,13 @@
+import FV.Link.ResultCallExeWith
+#print axioms Link.ResultCallCompilerWith.attempt_spec
+#print axioms Link.ResultCallCompilerWith.codeMap_leanLink
+#print axioms Link.ResultCallCompilerWith.leanLink_gotSlot
+#print axioms Link.ResultCallCompilerWith.gotOk_leanLink
+#print axioms Link.ResultCallCompilerWith.outsideAvoids_leanLink
+#print axioms Link.ResultCallCompilerWith.attempt_correct
+#print axioms Link.ResultCallCompilerWith.attempt_correct_depth
+#print axioms Link.ResultCallCompilerWith.attempt_correct_peak
+#print axioms Link.ResultCallCompilerWith.attempt_correct_source
+#print axioms Link.ResultCallCompilerWith.attempt_correct_source_peak
+#print axioms Link.ResultCallCompilerWith.accepts_previous
+#print axioms Link.ResultCallCompilerWith.accepts_previous_semantic

@@ -1,0 +1,149 @@
+{
+  "status": "passed_staged_integration_not_publication",
+  "base": "d4ba42c101ab318b7e49b7a048fe749d121a52bc",
+  "source_context": "actual main plus canonical892, immutable P49, and live candidate overlays; constructor boundary unresolved; NOT publication validation",
+  "full_goal_complete": false,
+  "production_cutover_landed": false,
+  "source_snapshot": "reviewed-live-production-v1/manifest.json",
+  "source_snapshot_sha256": "f826531b8548667b263a5999e33288eaeae225bd062fd14d5cd8aa830ae8bfb0",
+  "full_context_sha256": "765cfd0dbb7af81b5b3c18c9d709c3ac93bac0d5b095dec13558ba6fe2338151",
+  "production_sources": {
+    "FV/Backend/SemanticABICheck.lean": {
+      "kind": "changed",
+      "sha256": "1f7a629ef3866ccfabbee28d3a46b805b07811a587ef13e30f2c54c40e24f048"
+    },
+    "FV/Backend/LiveCallProduction.lean": {
+      "kind": "new",
+      "sha256": "40a85d015793699793e558ee38616fdf742ef0bf3d8b3547888fcfa8405267c3"
+    },
+    "FV/E2E/CompiledSemanticABI.lean": {
+      "kind": "changed",
+      "sha256": "160243eac3465a9d6ff4e8e93729378de59d775301f6378a75a2fb02e8cdb7f7"
+    },
+    "FV/E2E/CompiledSemanticReturnPins.lean": {
+      "kind": "changed",
+      "sha256": "7bd5daa2b36136e4f934762e9df9e728768507526d2d192bff533731f0f66d4b"
+    },
+    "FV/E2E/CompiledProgramReturnPins.lean": {
+      "kind": "changed",
+      "sha256": "67de661d6f265006c2ff06d98cb885d42e2ee480ad411818de307e6545fb3516"
+    },
+    "FV/E2E/SemanticABIBoundary.lean": {
+      "kind": "changed",
+      "sha256": "2cf4b5de026b0ccee48effd49d8d75446bc72ed02f489959df8072b6892205e0"
+    },
+    "FV/E2E/WorldReturnPinBoundary.lean": {
+      "kind": "changed",
+      "sha256": "0cc97f8e5483912cca81a422adf7843ebbaa792c58ebea0c060e0216cccbd06e"
+    },
+    "FV/E2E/LinkReturnPinWorldX.lean": {
+      "kind": "changed",
+      "sha256": "edc61ddf30a10bab458845a1e68fa31b3d545c6cc460ea51fb9c500244b3275f"
+    },
+    "FV/E2E/ReturnPinAdmission.lean": {
+      "kind": "changed",
+      "sha256": "9a47c3ae4253b636a90c7ea3896342638c8ba17262c624423673eb960585fd78"
+    },
+    "FV/E2E/LiveCallBinary.lean": {
+      "kind": "new",
+      "sha256": "44cd1dd102a18ecf7e51f910289d57fb29e9a0f182974ae21841926eb447ec2b"
+    },
+    "FV/E2E/LiveCallExec.lean": {
+      "kind": "new",
+      "sha256": "46d533b8b2e679e5ae23b451f35d1cd814aba325cd06f9618c0a68a2179736be"
+    },
+    "FV/E2E/LiveCallChecks.lean": {
+      "kind": "new",
+      "sha256": "e959f070995db2fe5481b12bf20d735e3af85a4be23a95648f83609ac3fbd4a6"
+    },
+    "FV/E2E/LiveCallGeneratedStack.lean": {
+      "kind": "new",
+      "sha256": "146e6583b6aa5d0e0a611308892f2163956b27a67a6c25a90e5ee9e5b3b933ef"
+    },
+    "FV/E2E/LiveCallProductionExec.lean": {
+      "kind": "new",
+      "sha256": "d746423f93bb4cfe9fb4aeb47b94067c2e73e7e24c8a9c615ce6320716c33fec"
+    },
+    "FV/E2E/LiveCallProductionSelection.lean": {
+      "kind": "new",
+      "sha256": "f8ac493f2c1e12ca2436bc910e8279478bf0fd4d12817e02a28b2e9fddb6b0a7"
+    },
+    "FV/Link/LiveCallExeWith.lean": {
+      "kind": "new",
+      "sha256": "283b43dd2417ff3b2b53a1ef29212321e1207358851cfa58fbc16cf052cc1a81"
+    },
+    "FVTest/E2E/LiveCallLinkProofWith.lean": {
+      "kind": "new",
+      "sha256": "bfdea36868a444cd4951a929ec6bae28ca2eb1abc692f0586ef78941baeadf09"
+    },
+    "FVTest/E2E/LinkCheckMain.lean": {
+      "kind": "changed",
+      "sha256": "a8701ad98f4eef6d74baf07ffdb2bf5634d250a1921a07877e3cbe3555a246f2"
+    },
+    "FVTest/Backend/Main.lean": {
+      "kind": "changed",
+      "sha256": "c6716182f44433580e526eca2e7455c0e9a51d7fb230fd007bb53bb0ed15fd1a"
+    },
+    "FVTest/Link/LeanLinkMain.lean": {
+      "kind": "changed",
+      "sha256": "8d87b5b3bad497c26fc2532519950f92d03d3bd355436186af58d439fc0f2ef1"
+    }
+  },
+  "normal_affected_kernels": 119,
+  "additional_normal_facades": 3,
+  "all_actual_runtime_dependency_keys_exact": true,
+  "actual_matrix": "actual-live-call-matrix-v2/result.json",
+  "cases": 4,
+  "generated_audited_roots": 36,
+  "actual_three_clis": true,
+  "cleanup_modes": [
+    false,
+    true
+  ],
+  "original_caller_callee_and_float_exact": true,
+  "actual_stock_selection": "FV/E2E/LiveCallProductionSelection.lean:selected and actual_entrypoint",
+  "actual_predecessor_selects_different_code": "FV/E2E/StockLiveCallWitness.lean:actual_provider",
+  "symbolic_armret": "FV/E2E/LiveCallProductionExec.lean:returned_word",
+  "returned_word": "(word + 13) + word",
+  "actual_saved_register": "x19",
+  "arbitrary_callee_memory": "StockLiveCallDomain/Function/SourceResult/Run/NI preserve original full source and memory premises",
+  "old_headers_exact": 381,
+  "old_axiom_sets_exact": 182,
+  "consumer_audit_standard_roots": 252,
+  "consumer_audit_fixed_roots": 15,
+  "additive_standard_roots": 5,
+  "all_generic_roots_standard_only": true,
+  "complete_previous_backend_action": true,
+  "complete_previous_linker_action_byte_exact": true,
+  "old_checker_body_byte_exact": true,
+  "old_shared_emitter_byte_exact": true,
+  "new_raw_route_index": null,
+  "frozen_constructor_hashes": {
+    "FV/E2E/CompiledSemanticABI.lean": "160243eac3465a9d6ff4e8e93729378de59d775301f6378a75a2fb02e8cdb7f7",
+    "FV/E2E/CompiledSemanticReturnPins.lean": "7bd5daa2b36136e4f934762e9df9e728768507526d2d192bff533731f0f66d4b",
+    "FV/E2E/CompiledProgramReturnPins.lean": "67de661d6f265006c2ff06d98cb885d42e2ee480ad411818de307e6545fb3516"
+  },
+  "max_cgroup_peak_bytes": 828391424,
+  "all_oom_zero": true,
+  "retained_failures": [
+    "ReturnPinAdmission projection simplification",
+    "matrix environment PATH exit127 before preparation",
+    "two missing optional executable facades in initial audit",
+    "aggregation regex crossed a no-axioms record"
+  ],
+  "outputs_manifest": "live-production-owned-outputs-v1.json",
+  "outputs_files": 19359,
+  "outputs_bytes": 6209736952,
+  "cleanup": {
+    "status": "awaiting verified remote backup",
+    "prefix": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1",
+    "preserve": "Source, configs, logs, generated Lean, objects, ELF files, allocation answers, input hashes and receipts"
+  },
+  "remaining": [
+    "Resolve frozen constructor stage/stageF boundary before publication",
+    "Current-main reconciliation and delivery gates",
+    "Call results consumed by memory, multiple calls and original stack arguments",
+    "Every remaining original140 obligation"
+  ],
+  "utc": "2026-11-02T14:56:09.572182+00:00"
+}

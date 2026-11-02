@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "units": [
+    {
+      "tag": "WorkerOActualTypedCapturedRaw",
+      "names": {},
+      "locals": [],
+      "local_addrs": [],
+      "functions": [
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/fn0.ra.json",
+          "name": "_RNxC7fv_demo11HawPMC3YC2b",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/fn0.clif"
+        },
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/fn1.ra.json",
+          "name": "sret_caller",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/fn1.clif"
+        },
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/fn2.ra.json",
+          "name": "float_leaf",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/fn2.clif"
+        }
+      ],
+      "data": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/data.txt"
+    }
+  ],
+  "symbols": [
+    [
+      "_RNxC7fv_demo11HawPMC3YC2b",
+      2097504
+    ],
+    [
+      "sret_caller",
+      2097544
+    ],
+    [
+      "float_leaf",
+      2097576
+    ]
+  ],
+  "skipped": [],
+  "markers": [
+    [
+      "_RNxC7fv_demo11HawPMC3YC2b",
+      2097504
+    ],
+    [
+      "sret_caller",
+      2097544
+    ],
+    [
+      "float_leaf",
+      2097576
+    ]
+  ],
+  "format": "clifv-frontend-bundle",
+  "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/program.elf"
+}

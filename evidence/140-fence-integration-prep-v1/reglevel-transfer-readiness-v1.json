@@ -1,0 +1,446 @@
+{
+  "status": "read_only_preparation",
+  "code_context_tree": "405776adaffb7cf5a7b47a35b2da797fe4863c91",
+  "roots": [
+    "FV.E2E.RegLevelCorrectU",
+    "FV.E2E.RegLevelNext"
+  ],
+  "closure_modules": 229,
+  "additional_modules": {
+    "FV.E2E.RegLevelCorrectU": {
+      "source": "FV/E2E/RegLevelCorrectU.lean",
+      "source_sha256": "cd5e53e5d110a5d757b522abbcfbff4d153a2ddf642a842344069227357a4b70",
+      "in_normal_853": false,
+      "live_source_equal": false,
+      "completed_live_olean": false
+    },
+    "FV.E2E.RegLevelCorrect": {
+      "source": "FV/E2E/RegLevelCorrect.lean",
+      "source_sha256": "2858142d95164dee4abf8dfea3909778d9bd6f733320162be86d496701a556e1",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelTls": {
+      "source": "FV/E2E/RegLevelTls.lean",
+      "source_sha256": "b2bb5418e25b62ea72e5efef329a48c808c1859bd8bc5b9731f4d13bcc3c3657",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelCall": {
+      "source": "FV/E2E/RegLevelCall.lean",
+      "source_sha256": "ed521fa34920d7f32b6a4428c1b579f450e1f445876c9ab5743e449520646cc6",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelNext": {
+      "source": "FV/E2E/RegLevelNext.lean",
+      "source_sha256": "e75e03252722cd051a67e27711a0e1bca427c6b520423ebd591ffdde8deb5c17",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelGoto": {
+      "source": "FV/E2E/RegLevelGoto.lean",
+      "source_sha256": "bb8326befa657c3aa5cad27e4a1439e372ab9c1fef1e9a5b269b128805152f00",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelArgs": {
+      "source": "FV/E2E/RegLevelArgs.lean",
+      "source_sha256": "c966f6cd5cd3cc02ca0efd5f7b4b65ffbee7dc3ce5cabe3a3ce6585816797880",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelOp": {
+      "source": "FV/E2E/RegLevelOp.lean",
+      "source_sha256": "8f4460be8df2bd7be93441242c83f25225aaf67542757faadb3a6dd148fc80c4",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelGoodX": {
+      "source": "FV/E2E/RegLevelGoodX.lean",
+      "source_sha256": "54f16c8854f0f032a741cf13c4edeb5670aac55ab174299d1b573509cff080ee",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelRelax": {
+      "source": "FV/E2E/RegLevelRelax.lean",
+      "source_sha256": "2bfdeeb8640fb36947c12560883e4d75b47f4856279177e03ee60f0111323a75",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelEmit": {
+      "source": "FV/E2E/RegLevelEmit.lean",
+      "source_sha256": "bfd5b29eaa58511b6d085a2a6bd689956127de4d591d153f7304494a79f39aa7",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelMove": {
+      "source": "FV/E2E/RegLevelMove.lean",
+      "source_sha256": "7956381cc4074e80243d10dc06646e45e9d13d1b3a7d02bf1738dd92fb765c23",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelSim": {
+      "source": "FV/E2E/RegLevelSim.lean",
+      "source_sha256": "b915702798c8ca050af63518a71e9f87068df6afb0cae4a0bf1364b1fb1bc4b2",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelMachine": {
+      "source": "FV/E2E/RegLevelMachine.lean",
+      "source_sha256": "c195644d2b2ff1f8d05bf8c09fec38b86afe81ac933a9bc23657ffd78810e686",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocFwd": {
+      "source": "FV/Backend/Proof/RegallocFwd.lean",
+      "source_sha256": "7bf134fc653bc0fb31b062615de450217b8be0aef8f80cba834ed81e72ee94d4",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocFrame": {
+      "source": "FV/Backend/Proof/RegallocFrame.lean",
+      "source_sha256": "7dfe80bd97a9ced6ad1d32eda73eb2dbf7c00f2cde8ca706f8c71c053e815664",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocMoves": {
+      "source": "FV/Backend/Proof/RegallocMoves.lean",
+      "source_sha256": "928bfa8dea0b8684de69dba1873944bd04fdf2c95be1afada467847a645aa30d",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocLayout": {
+      "source": "FV/Backend/Proof/RegallocLayout.lean",
+      "source_sha256": "80b62b41bdb03caac2a3369fd7d629149f4d3385bcd87a7b62ba4c7717713d7f",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocSlotsFar": {
+      "source": "FV/Backend/Proof/RegallocSlotsFar.lean",
+      "source_sha256": "4a7eb75f85fca7c6fb2a2d742d36d0354566aa8779b2a88957d2545b564fc4dc",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocSlots": {
+      "source": "FV/Backend/Proof/RegallocSlots.lean",
+      "source_sha256": "012b38499eb178d1dddf29d5a49ec02f5f04917a456adfc286ecd886e9530ce0",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocMemAddr": {
+      "source": "FV/Backend/Proof/RegallocMemAddr.lean",
+      "source_sha256": "b3e5964c16f54164e469eacaa66ac43f49200a3f8dc8636501a8ac6f79d09f23",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocMem": {
+      "source": "FV/Backend/Proof/RegallocMem.lean",
+      "source_sha256": "1f55e93372f3cbc6725aacfbe50f20a026b0dba2f9980604aa501e0cfa1d535f",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocOS": {
+      "source": "FV/Backend/Proof/RegallocOS.lean",
+      "source_sha256": "4048b6859c4bb2809b4909bb921403a2346098ea0bdc01ffe961a1a6f5f836e1",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocInstsInt": {
+      "source": "FV/Backend/Proof/RegallocInstsInt.lean",
+      "source_sha256": "9331b0975e39006677bfec1d5321ac6cae52cef21c8d3313a7a77c9f54e3fafc",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocTac": {
+      "source": "FV/Backend/Proof/RegallocTac.lean",
+      "source_sha256": "75c9d15aa7e23512b351bb02d5c71f9edeebb29dc25dba4d362b819feb9442f9",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocInstsZR": {
+      "source": "FV/Backend/Proof/RegallocInstsZR.lean",
+      "source_sha256": "5917604a9dd5f6df2ef39d97eb32389bd14e9225f4dfca8d27d05e81538672c1",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocInstsFP": {
+      "source": "FV/Backend/Proof/RegallocInstsFP.lean",
+      "source_sha256": "c8a251a64134ab16c1953abf4819d710406ea3d332bc3e0659da1a28e4401838",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelPush": {
+      "source": "FV/E2E/RegLevelPush.lean",
+      "source_sha256": "edd8e9cdd0543cf424fe6cea87deef42d232b5285471c35a82ad629018805781",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.ExecReads": {
+      "source": "FV/E2E/ExecReads.lean",
+      "source_sha256": "d03af2f2d810b523fe445e6778f4fb1b6e26b4df0422823d25f03f4839a32458",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.ExecFrame": {
+      "source": "FV/E2E/ExecFrame.lean",
+      "source_sha256": "29c0f3c7cb45817921e8c66dbb11f84c991951c7c5c62e0f634bea0d5a12b808",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.MoveReads": {
+      "source": "FV/E2E/MoveReads.lean",
+      "source_sha256": "fbb9b99a650f652971268810bced4f361c3753b4687b1271502288c087d1afa7",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.PairsC": {
+      "source": "FV/Backend/Proof/PairsC.lean",
+      "source_sha256": "aac9e18144db502f3c84e8bbaad2235e199d52871cd28e1f43ab4059c46e423b",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelBranch": {
+      "source": "FV/E2E/RegLevelBranch.lean",
+      "source_sha256": "03a56257ec3a55f8b1e34bfd4ab40a7ff4a8fd715d4c7a9c22b1b95f518613ef",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelTrap": {
+      "source": "FV/E2E/RegLevelTrap.lean",
+      "source_sha256": "80e5d1a9d6c8502aa6e096db5fdcf4bd4406d38c6e3b36cb6b0092639efa708c",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelFrame": {
+      "source": "FV/E2E/RegLevelFrame.lean",
+      "source_sha256": "bec869b68c2dd2d6079a08c5c346ad226d15d95809acef29e60dee895b6298fc",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelTry": {
+      "source": "FV/E2E/RegLevelTry.lean",
+      "source_sha256": "28643888126156d012898a7f9e2cee0ff98f580dc394db0d4bff7c96d7d8fc0c",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocCover": {
+      "source": "FV/Backend/Proof/RegallocCover.lean",
+      "source_sha256": "677d6de5a02cf417f33acaccafb6a984a01bf34ac583e278373a84529a1c13bb",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocAtomic": {
+      "source": "FV/Backend/Proof/RegallocAtomic.lean",
+      "source_sha256": "fc85c415c4802117dba26f03af3aee8088246c1ff5fd81d0305e3780c4730c78",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocMemCorr": {
+      "source": "FV/Backend/Proof/RegallocMemCorr.lean",
+      "source_sha256": "792fc77f56913d33512d826bc7512bef1c061c353d76d01f9154813f01376d99",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocMemFP": {
+      "source": "FV/Backend/Proof/RegallocMemFP.lean",
+      "source_sha256": "32e0cd93fe33b0f78ec9018618c2614f19e4f267f9a62a2350cff77db5207abb",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocMemOS": {
+      "source": "FV/Backend/Proof/RegallocMemOS.lean",
+      "source_sha256": "9c45a20abd1fc53cd275fee0e89873ff93e0b8cd23c3625e7aaf2d16227d3d6b",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocCSemWorld": {
+      "source": "FV/Backend/Proof/RegallocCSemWorld.lean",
+      "source_sha256": "8caa2881c1e1ffd8275c3a582b5e2424f4fd8fdae1e7113e889bef577f07d567",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelAtomic": {
+      "source": "FV/E2E/RegLevelAtomic.lean",
+      "source_sha256": "f14a42ad51da3d6b66a6fcb174819cd51f99192e47da30984ebcecb6ac59a1b2",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelJT": {
+      "source": "FV/E2E/RegLevelJT.lean",
+      "source_sha256": "3420cbbf07748709cc825e76936afa894270877a5db89d20ce74f258c2852453",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.LoopRun": {
+      "source": "FV/Backend/Proof/LoopRun.lean",
+      "source_sha256": "52cc96460e7751e9eaf67ac95986823dd88d39e87b1558b6f631507ef03250ac",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelOpReads": {
+      "source": "FV/E2E/RegLevelOpReads.lean",
+      "source_sha256": "006554b67f133576ad288362ef333f4e027b0c0952ff770327fbc71929ddc1ad",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelUTry": {
+      "source": "FV/E2E/RegLevelUTry.lean",
+      "source_sha256": "80f3b49a347fc1220839d0458f2afce062f70a3ef7e3df0ba558b99c68fb5535",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelU": {
+      "source": "FV/E2E/RegLevelU.lean",
+      "source_sha256": "be986e20e6dbdbbfbbcb7c97cd01d191423587d521e2ba670816a421e96aeee7",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.UnwindSem": {
+      "source": "FV/E2E/UnwindSem.lean",
+      "source_sha256": "27c29d1d009b6d528da86d1b2d3a3bdd6ca6862d55e69337c4cc381b8205b071",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelDriverSem": {
+      "source": "FV/E2E/RegLevelDriverSem.lean",
+      "source_sha256": "67de963d50aa454eb70bf7019c66dd57f5164cca69f774462c56e72a269a9a5d",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Unw.Model": {
+      "source": "FV/Unw/Model.lean",
+      "source_sha256": "93e0122b859109bef12248f071ae6e78bb7fd0dcc914482db0b8a87386d40b36",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Unw.Dwarf": {
+      "source": "FV/Unw/Dwarf.lean",
+      "source_sha256": "da1cfed621f3cd929804a5c0e11fe6a64ffe7d9ccc4c91a5659569042ad16f9e",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelCallSite": {
+      "source": "FV/E2E/RegLevelCallSite.lean",
+      "source_sha256": "4f33aa8f03cc4b07bfaf98428c541f6ab63a21d8cc36dc53e2f1a3494ddb05c3",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelUnwind": {
+      "source": "FV/E2E/RegLevelUnwind.lean",
+      "source_sha256": "b69a9d703517fe9d872d08b853defb0e8d601ab10c78bf9ae5c909d54f1fe883",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.UnwindTables": {
+      "source": "FV/Backend/Proof/UnwindTables.lean",
+      "source_sha256": "864f5a71705316c3769308fb659b5b96388923ab87671983ef19d3e96fce0220",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Obj": {
+      "source": "FV/Backend/Obj.lean",
+      "source_sha256": "4ae149bbc0eb33798f97b08989c1664c4e55e3b44b50d0250285bb9a70706292",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Unwind": {
+      "source": "FV/Backend/Unwind.lean",
+      "source_sha256": "28cacc0ed34ba02c112cff96763a12a1414d4b3a719691f20b160cf745f32b23",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.RegLevelFrameSaved": {
+      "source": "FV/E2E/RegLevelFrameSaved.lean",
+      "source_sha256": "e60da1281c935b342d26ab84124a29ba9a4e9c95b7d60de2088b49dc6d8c89a0",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.UnwindStatement": {
+      "source": "FV/E2E/UnwindStatement.lean",
+      "source_sha256": "258d4478b096e9fd67e9c5fbb6f3e7965a1e4e9b227cd3e7271d87a8158dd49c",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.Compose": {
+      "source": "FV/E2E/Compose.lean",
+      "source_sha256": "0031d6cbbd49b131b62c0682431523ad8b82240e3b7d5eac5f25cca1c07df1a9",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Clif.Unwind": {
+      "source": "FV/Clif/Unwind.lean",
+      "source_sha256": "1f94152ba2442d483d1ab57278bb64bab17067de8ee95e163613b463d1fbf040",
+      "in_normal_853": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    }
+  },
+  "missing_live_completed_outputs": [
+    "FV.E2E.RegLevelCorrectU"
+  ],
+  "different_or_missing_live_source": [
+    "FV.E2E.RegLevelCorrectU"
+  ],
+  "no_build": true,
+  "no_materialization": true
+}

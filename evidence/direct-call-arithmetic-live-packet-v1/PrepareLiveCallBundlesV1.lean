@@ -1,6 +1,6 @@
 import FV.Link.ReturnPinCompileDefs
 import FV.Front.Read
-import FV.E2E.ProductionBoundaryWitness
+import FV.E2E.LiveCallProductionExec
 import FV.Backend.Lowering.StockLiveCallRoutes
 import FV.E2E.StockLiveCallFixture
 
@@ -34,7 +34,7 @@ def main (args : List String) : IO Unit := do
         symNames := fis.map (fun fi => fi.func.name)
         R := 0x200160 }
       let S := initial.placedProductionWith Stock.LiveCall.lowerValidated cleanup
-      let image ← match Link.Ld.assemble (ProductionBoundaryWitness.plan S) with
+      let image ← match Link.Ld.assemble (LiveCallProductionExec.plan S) with
         | .ok image => pure image.write
         | .error msg => throw (IO.userError msg)
       let exe := dir / "program.elf"

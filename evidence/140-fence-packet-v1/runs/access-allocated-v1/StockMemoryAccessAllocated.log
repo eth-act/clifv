@@ -1,0 +1,3 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessAllocated.lean:51:6: error: Dependent elimination failed: Failed to solve equation
+  List.map (fun x => { b := b, k := k, ρ := regs, w := next }.ρ x.vreg) (List.filter Operand.isUse operands.toList) =
+    value✝ :: uses✝

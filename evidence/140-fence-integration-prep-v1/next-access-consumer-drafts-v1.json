@@ -1,0 +1,15 @@
+{
+  "status": "source_only_not_kernel_verified",
+  "files": {
+    "StockMemoryAccessPrepare.lean": "4678a650a7ce0e126cfb3daea62fde46a130226474b0074f662fe546a9db49ad",
+    "StockMemoryAccessHalt.lean": "bddf354f268ffd995b740a0078ac3a722f6cf27d06ccca4422043bcabc463990"
+  },
+  "share": "released_to_parent_for_backup",
+  "required_before_kernel": [
+    "parent restores 1GiB share",
+    "snapshot28 complete current normal providers for prepare transfer",
+    "normal-key check of entire expanded owned context"
+  ],
+  "full_fence_closure": false,
+  "full_goal_complete": false
+}

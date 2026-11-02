@@ -1,0 +1,17 @@
+function %stock_live_call_add(i64) -> i64 system_v {
+    fn0 = colocated %stock_clobber_add(i64) -> i64 system_v
+block0(v7: i64):
+    v31 = call fn0(v7)
+    v79 = iadd v31, v7
+    return v79
+}
+function %stock_clobber_add(i64) -> i64 system_v {
+block0(v101: i64):
+    v109 = iconst.i64 13
+    v121 = iadd v101, v109
+    return v121
+}
+function %float_leaf(f64) -> f64 {
+block0(v0: f64):
+ return v0
+}

@@ -1,0 +1,22 @@
+ok   stock-live-call-old-binary.lean: theorems 18/18 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-old-boundary.lean: theorems 3/3 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-old-checks.lean: theorems 5/5 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-old-compiler.lean: theorems 9/9 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-old-contracts.lean: theorems 34/34 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-old-executable.lean: theorems 30/30 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-old-source.lean: theorems 2/2 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-old-world.lean: theorems 7/7 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-old-worldx.lean: theorems 1/1 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-binary-results.lean: theorems 16/16 rc=0 errors=0 other_axioms=[]
+FAIL stock-result-call-executable-results.lean: theorems 0/30 rc=1 errors=1 other_axioms=[]
+    /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/live-consumer-audit-v1/stock-result-call-executable-results.lean:1:0: error: object file '/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/ResultCallExec.olean' of module FV.E2E.ResultCallExec does not exist
+ok   stock-result-call-compiler-results.lean: theorems 12/12 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-generated-results.lean: theorems 7/7 rc=0 errors=0 other_axioms=[]
+ok   stock-result-call-contract-additions.lean: theorems 9/9 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-binary-results.lean: theorems 16/16 rc=0 errors=0 other_axioms=[]
+FAIL stock-live-call-executable-results.lean: theorems 0/30 rc=1 errors=1 other_axioms=[]
+    /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/scripts/audit/stock-live-call-executable-results.lean:1:0: error: object file '/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/LiveCallExec.olean' of module FV.E2E.LiveCallExec does not exist
+ok   stock-live-call-compiler-results.lean: theorems 12/12 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-generated-results.lean: theorems 8/8 rc=0 errors=0 other_axioms=[]
+ok   stock-live-call-production-complete.lean: theorems 18/18 rc=0 errors=0 other_axioms=[]
+axiom audit: 17/19 files ok

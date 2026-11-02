@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "units": [
+    {
+      "tag": "WorkerOLiveCallPairCleanup",
+      "names": {},
+      "locals": [],
+      "local_addrs": [],
+      "functions": [
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup/fn0.ra.json",
+          "name": "stock_live_call_add",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup/fn0.clif"
+        },
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup/fn1.ra.json",
+          "name": "stock_clobber_add",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup/fn1.clif"
+        }
+      ],
+      "data": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup/data.txt"
+    }
+  ],
+  "symbols": [
+    [
+      "stock_live_call_add",
+      2097504
+    ],
+    [
+      "stock_clobber_add",
+      2097548
+    ]
+  ],
+  "skipped": [],
+  "markers": [
+    [
+      "stock_live_call_add",
+      2097504
+    ],
+    [
+      "stock_clobber_add",
+      2097548
+    ]
+  ],
+  "format": "clifv-frontend-bundle",
+  "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup/program.elf"
+}

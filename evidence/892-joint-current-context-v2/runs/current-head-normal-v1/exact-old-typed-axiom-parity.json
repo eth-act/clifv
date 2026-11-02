@@ -1,0 +1,228 @@
+{
+  "status": "passed",
+  "pairs": {
+    "attempt_spec": {
+      "old": "Link.SemanticCompilerWith.attemptT_spec",
+      "new": "Link.TypedCompilerWith.attempt_spec",
+      "header_sha256": "b10d29f3e5f96909c0859315e9a1dd0019884b31fc2c92e288110f5810201ccb",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "attempt_correct": {
+      "old": "Link.SemanticCompilerWith.attemptT_correct",
+      "new": "Link.TypedCompilerWith.attempt_correct",
+      "header_sha256": "c0080aba395a4cbba9b72ea4b3040f0af6749536cf44eff3f696acefd5c2eb4e",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "attempt_correct_depth": {
+      "old": "Link.SemanticCompilerWith.attemptT_correct_depth",
+      "new": "Link.TypedCompilerWith.attempt_correct_depth",
+      "header_sha256": "1f19fb5ea4ee4bf5be5a06646b248ae0976bf3b3a45accdc92cbb5946f76863c",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "attempt_correct_peak": {
+      "old": "Link.SemanticCompilerWith.attemptT_correct_peak",
+      "new": "Link.TypedCompilerWith.attempt_correct_peak",
+      "header_sha256": "b398ca2724d3c87ded40cf8a9d314023e563f92419a76848c36ab4f2f132fef9",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "attempt_correct_source": {
+      "old": "Link.SemanticCompilerWith.attemptT_correct_source",
+      "new": "Link.TypedCompilerWith.attempt_correct_source",
+      "header_sha256": "a8f2871ffe5285b17f5cc72c09d812de50c13bb402b715e6579e3bc2b166f4b3",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "attempt_correct_source_peak": {
+      "old": "Link.SemanticCompilerWith.attemptT_correct_source_peak",
+      "new": "Link.TypedCompilerWith.attempt_correct_source_peak",
+      "header_sha256": "01d1813f600fb1c254d495d0baaed903099673d790727b9a403a8780b6446abe",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    }
+  },
+  "actual_audit_roots": {
+    "E2E.ReturnPinProductionWitness.mixed_previous_action": [
+      "Classical.choice",
+      "E2E.ReturnPinProductionWitness.checks_true._native.native_decide.ax_1_1\u271d",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinProductionWitness.original_admitted": [
+      "Classical.choice",
+      "E2E.ReturnPinProductionWitness.checks_true._native.native_decide.ax_1_1\u271d",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.compileFileReturnPinWhen_retry": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.compileFileReturnPinWhen_admitted": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.compileFileReturnPinWhen_disabled": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedCompilerModesWitness.Raw.compiler_success": [
+      "Classical.choice",
+      "Link.TypedCompilerModesWitness.Raw.compiler_success._native.native_decide.ax_1_1",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedCompilerModesWitness.Cleanup.compiler_success": [
+      "Classical.choice",
+      "Link.TypedCompilerModesWitness.Cleanup.compiler_success._native.native_decide.ax_1_1",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedSourceModesWitness.original_source_witness": [
+      "Classical.choice",
+      "E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "E2E.ReturnPinBinaryWitness.old_checked._native.native_decide.ax_1",
+      "E2E.ReturnPinBinaryWitness.old_checked._native.native_decide.ax_2",
+      "Link.TypedSourceModesWitness.checks_true._native.native_decide.ax_1\u271d",
+      "Link.TypedSourceModesWitness.checks_true._native.native_decide.ax_2\u271d",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedSourceModesWitness.original_source_peak_witness": [
+      "Classical.choice",
+      "E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "E2E.ReturnPinBinaryWitness.depth_budget._native.native_decide.ax_1",
+      "E2E.ReturnPinBinaryWitness.depth_budget._native.native_decide.ax_2",
+      "Link.TypedSourceModesWitness.checks_true._native.native_decide.ax_1\u271d",
+      "Link.TypedSourceModesWitness.checks_true._native.native_decide.ax_2\u271d",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedCompilerWith.attempt_spec": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedCompilerWith.attempt_cleanup_eq": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedCompilerWith.attempt_correct": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedCompilerWith.attempt_correct_depth": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedCompilerWith.attempt_correct_peak": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedCompilerWith.attempt_correct_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.TypedCompilerWith.attempt_correct_source_peak": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.LinkInput.production_legacy_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.LinkInput.production_cleanup_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkCheck.LinkInput.results_cleanup_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.SemanticCompilerWith.attemptT_spec": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.SemanticCompilerWith.attemptT_correct": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.SemanticCompilerWith.attemptT_correct_depth": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.SemanticCompilerWith.attemptT_correct_peak": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.SemanticCompilerWith.attemptT_correct_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.SemanticCompilerWith.attemptT_correct_source_peak": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.TypedProductionChecks.fnsBProduction_append": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.TypedProductionChecks.okRProduction_of_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.TypedProductionChecks.crate_correct_production": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.TypedProductionChecks.crate_correct_stack": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  }
+}

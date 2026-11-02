@@ -1,0 +1,8 @@
+{
+  "status": "explicitly_released",
+  "merged": "45a70ee6e405d0a5e590603c320ec28799595f45",
+  "three_cli_diff_required_before_edits": true,
+  "three843_constructor_conflicts_remain_separate": true,
+  "broad_hold": false,
+  "utc": "2026-11-02T15:00:10.228177+00:00"
+}

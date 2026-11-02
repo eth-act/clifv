@@ -1,0 +1,63 @@
+{
+  "status": "native_archive_restored_normal_check_pending",
+  "module": "FV.ArmFault.Step",
+  "native_input_key": "6e6b2a21c4b20245",
+  "key_query": "runs/step-key-query-v1",
+  "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/outputs/fv/6e6b2a21c4b20245.json",
+  "mapping_sha256": "4e04bc38e9970a30845efc3c63d9e45cd58c9d98ffa29a06b097f0e6c321f829",
+  "archive": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/artifacts/4cceb4ff8ad532e9.ltar",
+  "archive_sha256": "5538c5182917876c14f9e3f2e31ef84232f6455da8823f87c201c9d772b8024c",
+  "native_tool_sha256": "06d613dffd2a6fd996b095bfd835c2bb720886f9eb7e13ed2adddd7df4507bf3",
+  "argv": [
+    "/usr/bin/bwrap",
+    "--ro-bind",
+    "/",
+    "/",
+    "--bind",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/step-native-recovery-v1/stage",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/step-native-recovery-v1/stage",
+    "--proc",
+    "/proc",
+    "--dev",
+    "/dev",
+    "--",
+    "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/leantar",
+    "--jobs",
+    "1",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/step-native-recovery-v1/stage/lib",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/runs/step-native-recovery-v1/stage/ir",
+    "-x",
+    "-j",
+    "-"
+  ],
+  "seconds": 0.07868456840515137,
+  "stats": "peak 3612672\noom 0\noom_kill 0\n",
+  "outputs": [
+    {
+      "path": ".lake/build/lib/lean/FV/ArmFault/Step.trace",
+      "old_sha256": "8b104ddfd031836d4e931179a0c0c17dc3453758f5926dc78561ce63bda37ced",
+      "new_sha256": "0bd8020d6e3426f7c1015fa72ad8ea17868530551e63fcf99a8a99d6b45d57ff"
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/ArmFault/Step.olean",
+      "old_sha256": "4f80b4174534a3280eeb464fb776d56cf6068a4e1a34bda4b04697fd2c38201a",
+      "new_sha256": "4f80b4174534a3280eeb464fb776d56cf6068a4e1a34bda4b04697fd2c38201a"
+    },
+    {
+      "path": ".lake/build/lib/lean/FV/ArmFault/Step.ilean",
+      "old_sha256": "802045242735de3d15d677edd9f73eb5f672203a80042bbdc396fa4c5a58626b",
+      "new_sha256": "802045242735de3d15d677edd9f73eb5f672203a80042bbdc396fa4c5a58626b"
+    },
+    {
+      "path": ".lake/build/ir/FV/ArmFault/Step.c",
+      "old_sha256": "86900f08134509a7aacb2b5a7fb750ef4345c860eb53a3a4da2bf9f20a884ec4",
+      "new_sha256": "86900f08134509a7aacb2b5a7fb750ef4345c860eb53a3a4da2bf9f20a884ec4"
+    }
+  ],
+  "sandbox": "read-only filesystem except owned staging directory",
+  "cache_modified": false,
+  "live_package_modified": false,
+  "kernel_ran": false
+}

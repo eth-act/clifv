@@ -1,0 +1,445 @@
+{
+  "prepare": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/PrepareLiveCallBundlesV1.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles"
+    ],
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stats": "peak 292237312\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairRaw-backend": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/Backend/Main.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairRaw/input.clif",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairRaw/actual.o",
+      "--regalloc",
+      "lean",
+      "--dump",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairRaw/actual-dump",
+      "--no-dead-cleanup"
+    ],
+    "log_sha256": "ed3fe3b74fb7dcf87bd187afd6eeebee75301993bea3e028ac42fd0ecbd20e62",
+    "stats": "peak 267550720\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairRaw-reflow": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/ReflowLiveCallBundleV1.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairRaw",
+      "false"
+    ],
+    "log_sha256": "8c8d06acc54743be5939346931275ca1278ac80e454d60a0736ca475423dbf71",
+    "stats": "peak 290902016\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairRaw-linker": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/Link/LeanLinkMain.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairRaw",
+      "--no-dead-cleanup"
+    ],
+    "log_sha256": "8f45ebcdb784baef6b61100a231f1545222dfdf8a5aeec8ed7fb328e6d4a8c42",
+    "stats": "peak 364404736\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairRaw-checker": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/E2E/LinkCheckMain.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairRaw",
+      "--no-dead-cleanup",
+      "--lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/Crates/WorkerOLiveCallPairRaw.lean",
+      "--module",
+      "WorkerOLiveCallPairRaw"
+    ],
+    "log_sha256": "add8641ebd20864bd9cb02da41e11023639e772f4a4d6c08c01e00681baf71ac",
+    "stats": "peak 348860416\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairRaw-generated": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/Crates/WorkerOLiveCallPairRaw.lean",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallPairRaw.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallPairRaw.ilean",
+      "-c",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallPairRaw.c"
+    ],
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stats": "peak 280346624\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairRaw-audit": {
+    "exit_code": 0,
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-delivery-units-v1/axiom-audit-j1.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/WorkerOLiveCallPairRaw-audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/WorkerOLiveCallPairRaw-audit.lean"
+    ],
+    "log_sha256": "2d03701b2b0cc780da3989993c0a1ecfa99796944cb4b524fbd4db887fc2ceae",
+    "stats": "peak 239968256\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedRaw-backend": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/Backend/Main.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/input.clif",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/actual.o",
+      "--regalloc",
+      "lean",
+      "--dump",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw/actual-dump",
+      "--no-dead-cleanup"
+    ],
+    "log_sha256": "ed3fe3b74fb7dcf87bd187afd6eeebee75301993bea3e028ac42fd0ecbd20e62",
+    "stats": "peak 268247040\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedRaw-reflow": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/ReflowLiveCallBundleV1.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw",
+      "false"
+    ],
+    "log_sha256": "3f91dd5e00ed0090a7b237fe653afe249ca2a772a53dd419ea078e2e7ab7f06c",
+    "stats": "peak 294432768\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedRaw-linker": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/Link/LeanLinkMain.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw",
+      "--no-dead-cleanup"
+    ],
+    "log_sha256": "7265214f22143ec5065f7cd8328a502b81f2671c41759cc2bb4e24a3e96c5f4b",
+    "stats": "peak 368222208\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedRaw-checker": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/E2E/LinkCheckMain.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedRaw",
+      "--no-dead-cleanup",
+      "--lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/Crates/WorkerOLiveCallTypedRaw.lean",
+      "--module",
+      "WorkerOLiveCallTypedRaw"
+    ],
+    "log_sha256": "2b2301b5472c4784b6efeb81367502b699abe1fc8ac385a7ec355c59b4fcff83",
+    "stats": "peak 350617600\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedRaw-generated": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/Crates/WorkerOLiveCallTypedRaw.lean",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallTypedRaw.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallTypedRaw.ilean",
+      "-c",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallTypedRaw.c"
+    ],
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stats": "peak 291680256\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedRaw-audit": {
+    "exit_code": 0,
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-delivery-units-v1/axiom-audit-j1.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/WorkerOLiveCallTypedRaw-audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/WorkerOLiveCallTypedRaw-audit.lean"
+    ],
+    "log_sha256": "46a6dd19b4dae7fb44a9f1abcc1c6ee198486cb6d50dd3bdd858238ae6ef278b",
+    "stats": "peak 245063680\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairCleanup-backend": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/Backend/Main.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup/input.clif",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup/actual.o",
+      "--regalloc",
+      "lean",
+      "--dump",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup/actual-dump",
+      "--dead-cleanup"
+    ],
+    "log_sha256": "ed3fe3b74fb7dcf87bd187afd6eeebee75301993bea3e028ac42fd0ecbd20e62",
+    "stats": "peak 268783616\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairCleanup-reflow": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/ReflowLiveCallBundleV1.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup",
+      "true"
+    ],
+    "log_sha256": "8c8d06acc54743be5939346931275ca1278ac80e454d60a0736ca475423dbf71",
+    "stats": "peak 294383616\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairCleanup-linker": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/Link/LeanLinkMain.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup",
+      "--dead-cleanup"
+    ],
+    "log_sha256": "c04df49265493e1250e2f4576db0d0da53561627cba937c13d57c075863eb302",
+    "stats": "peak 370302976\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairCleanup-checker": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/E2E/LinkCheckMain.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallPairCleanup",
+      "--dead-cleanup",
+      "--lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/Crates/WorkerOLiveCallPairCleanup.lean",
+      "--module",
+      "WorkerOLiveCallPairCleanup"
+    ],
+    "log_sha256": "046f678d334b2bc4d4fc6435ef1cdb30d5ca0047c71e251152160c8a66e35623",
+    "stats": "peak 351219712\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairCleanup-generated": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/Crates/WorkerOLiveCallPairCleanup.lean",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallPairCleanup.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallPairCleanup.ilean",
+      "-c",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallPairCleanup.c"
+    ],
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stats": "peak 282218496\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallPairCleanup-audit": {
+    "exit_code": 0,
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-delivery-units-v1/axiom-audit-j1.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/WorkerOLiveCallPairCleanup-audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/WorkerOLiveCallPairCleanup-audit.lean"
+    ],
+    "log_sha256": "226271cf70eda6f744fefa79e21f29f050939d22d664661a456e75569567117c",
+    "stats": "peak 238809088\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedCleanup-backend": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/Backend/Main.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedCleanup/input.clif",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedCleanup/actual.o",
+      "--regalloc",
+      "lean",
+      "--dump",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedCleanup/actual-dump",
+      "--dead-cleanup"
+    ],
+    "log_sha256": "ed3fe3b74fb7dcf87bd187afd6eeebee75301993bea3e028ac42fd0ecbd20e62",
+    "stats": "peak 267702272\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedCleanup-reflow": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/ReflowLiveCallBundleV1.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedCleanup",
+      "true"
+    ],
+    "log_sha256": "3f91dd5e00ed0090a7b237fe653afe249ca2a772a53dd419ea078e2e7ab7f06c",
+    "stats": "peak 292376576\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedCleanup-linker": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/Link/LeanLinkMain.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedCleanup",
+      "--dead-cleanup"
+    ],
+    "log_sha256": "c1dacf14c0f6778f9be8c445ab8f66218096668357130f3c56b825067d42bd4a",
+    "stats": "peak 369180672\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedCleanup-checker": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/FVTest/E2E/LinkCheckMain.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/WorkerOLiveCallTypedCleanup",
+      "--dead-cleanup",
+      "--lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/Crates/WorkerOLiveCallTypedCleanup.lean",
+      "--module",
+      "WorkerOLiveCallTypedCleanup"
+    ],
+    "log_sha256": "caf15e87efaffb4209600385a65125ff43d5b79b0181f5302507d083f7b497a4",
+    "stats": "peak 349016064\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedCleanup-generated": {
+    "exit_code": 0,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/bundles/Crates/WorkerOLiveCallTypedCleanup.lean",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallTypedCleanup.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallTypedCleanup.ilean",
+      "-c",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1/.lake/build/lib/lean/Crates/WorkerOLiveCallTypedCleanup.c"
+    ],
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stats": "peak 295256064\noom 0\noom_kill 0\n"
+  },
+  "WorkerOLiveCallTypedCleanup-audit": {
+    "exit_code": 0,
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-delivery-units-v1/axiom-audit-j1.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/validation-package-v1",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/WorkerOLiveCallTypedCleanup-audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v2/WorkerOLiveCallTypedCleanup-audit.lean"
+    ],
+    "log_sha256": "ffc87778cf439457c30610a05435b8c14134c6a32b7453ccce9f58cdc06195e6",
+    "stats": "peak 244682752\noom 0\noom_kill 0\n"
+  }
+}

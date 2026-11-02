@@ -1,0 +1,212 @@
+{
+  "status": "read_only_preparation",
+  "code_context_tree": "405776adaffb7cf5a7b47a35b2da797fe4863c91",
+  "roots": [
+    "FV.Backend.Proof.PrepareSound",
+    "FV.Backend.Proof.DeadCleanupPrepare"
+  ],
+  "closure_modules": 158,
+  "additional_modules": {
+    "FV.Backend.Proof.PrepareSound": {
+      "source": "FV/Backend/Proof/PrepareSound.lean",
+      "source_sha256": "a189311d8a057630fcf1113ccde926c8cf54266fca57954acc1a7617f2ed9be1",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.DeadCleanupPrepare": {
+      "source": "FV/Backend/Proof/DeadCleanupPrepare.lean",
+      "source_sha256": "62b42ddbceb9e403c277eda122d7cc2f6f8ec5aec1bb6193453ea3c589700969",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.DeadCleanupCorrect": {
+      "source": "FV/Backend/Proof/DeadCleanupCorrect.lean",
+      "source_sha256": "d1f8ca2280377ef4c520f0c6f0cad55492f6ea5a04df987201414beabedb638e",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.DeadCleanupSimulation": {
+      "source": "FV/Backend/Proof/DeadCleanupSimulation.lean",
+      "source_sha256": "4f5d2f846f868539d6edd44ac09d324e180b0a0f94e6a15993a7129a0328c1ad",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.DeadCleanupEdges": {
+      "source": "FV/Backend/Proof/DeadCleanupEdges.lean",
+      "source_sha256": "8944cc2ec0cc182043dd821fe5a6c678da35b7f3a65b726eba17a9cfd8bef243",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.DeadCleanupCFG": {
+      "source": "FV/Backend/Proof/DeadCleanupCFG.lean",
+      "source_sha256": "87e459d8dc63903720ddd67fb08be881f64457afe0371bfa22488f0100da6c07",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.DeadCleanupFlow": {
+      "source": "FV/Backend/Proof/DeadCleanupFlow.lean",
+      "source_sha256": "951ced74cb14e522c3249192cd80870d44c4a5bcf7b8a2db2c35b2eb4e7459a7",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.DeadCleanupLive": {
+      "source": "FV/Backend/Proof/DeadCleanupLive.lean",
+      "source_sha256": "27fec58fc6a1fc5b3d1b09abbc7e2da9d8c9936ecef487ed9cab19a831ce10d0",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.DeadCleanupStructure": {
+      "source": "FV/Backend/Proof/DeadCleanupStructure.lean",
+      "source_sha256": "30390e8442af9a2b573205ac4b9672c74eb20fb09cef6caccdd243617a1e5da3",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.DeadCleanup": {
+      "source": "FV/Backend/DeadCleanup.lean",
+      "source_sha256": "df732a2cf6ad36a990a36b570312e6d8ad23ba5dd8ee099e3643932db173ac89",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.E2E.Statement": {
+      "source": "FV/E2E/Statement.lean",
+      "source_sha256": "e29edf24fc8433378540881d2631d095f8f446bb595933c746f92392807d3b32",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.InputScope": {
+      "source": "FV/Backend/InputScope.lean",
+      "source_sha256": "c53434b25f78510302845174f337f8de579024446d45a2af63ef7469abf6a26f",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Compile.StoreTyped": {
+      "source": "FV/Compile/StoreTyped.lean",
+      "source_sha256": "750f082d83461d19f42cfa9a0bbf39da300269544fb61bcbe8922787afefac03",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Compile.SubsetT": {
+      "source": "FV/Compile/SubsetT.lean",
+      "source_sha256": "2e480d08986ee223f2ec9103294f3b89ad31e8d756e3c7b1d74636b8c89dc2a9",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Regalloc": {
+      "source": "FV/Backend/Regalloc.lean",
+      "source_sha256": "24523e4c73a241b223dcf87226bd4f0f47a15c654fb73617116d9e3fd87ca37b",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.SpillAlloc": {
+      "source": "FV/Backend/SpillAlloc.lean",
+      "source_sha256": "ff27eacab259ca30908d97e69ce0772fe2928ad2e9102514b85fe2af0584c5c8",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.RegallocSound": {
+      "source": "FV/Backend/Proof/RegallocSound.lean",
+      "source_sha256": "1607441a65ce042ecc8a78f20f4e4cba8d920dab448baae90cb7f1c907af1aac",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.EncodeStep": {
+      "source": "FV/Backend/Proof/EncodeStep.lean",
+      "source_sha256": "92b4159c30b0b522c73e0dcd8362aa7c287009ef44830f2ba0880163e45317ee",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.EncodeLayout": {
+      "source": "FV/Backend/Proof/EncodeLayout.lean",
+      "source_sha256": "cb26bbf19bab6fd0a11b058f23f79d74f967cc59e0a53c68e785abe1cb532c6a",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.EncodeBranch": {
+      "source": "FV/Backend/Proof/EncodeBranch.lean",
+      "source_sha256": "4b4fb978e701835064301d54c5eb60744c8c0b021350d373563ee3e9b32b8702",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.Encode": {
+      "source": "FV/Backend/Proof/Encode.lean",
+      "source_sha256": "bd2b71e27f94af73f81fbd481e641d86e5fecf8e923a0defd6df132937c9d6eb",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.EncodeDPI": {
+      "source": "FV/Backend/Proof/EncodeDPI.lean",
+      "source_sha256": "2129dc986dad3f901e8203e5620306b5e40f087a332067306b4f039c86c88379",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.EncodeBase": {
+      "source": "FV/Backend/Proof/EncodeBase.lean",
+      "source_sha256": "2ec9816eab481a6348bbefcc59d6c778502d25e3888c6d6d5a5795d8453ecfd1",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.EncodeBR": {
+      "source": "FV/Backend/Proof/EncodeBR.lean",
+      "source_sha256": "3329e7383418fa64588c8e8f3a10ad89b9bf6d1531a32ad5533b76bb9bccace5",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.EncodeDPR": {
+      "source": "FV/Backend/Proof/EncodeDPR.lean",
+      "source_sha256": "e9a46a2d1a97849accb4b5f392f746f8225e9ce6af827c849e8a3f74d53b155d",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.EncodeDPSFP": {
+      "source": "FV/Backend/Proof/EncodeDPSFP.lean",
+      "source_sha256": "a9e674815b14ae058b90f60d3fc8d44ddaa0147a1fad34e71feef1ac934a6e11",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.EncodeLDST": {
+      "source": "FV/Backend/Proof/EncodeLDST.lean",
+      "source_sha256": "efa256d6924aeacfc50eda967eca3de20221b292fce4ea0fc63878f3bc9b998b",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    },
+    "FV.Backend.Proof.EncodeRES": {
+      "source": "FV/Backend/Proof/EncodeRES.lean",
+      "source_sha256": "627ee4ba5eca5f1b04ecc0b4b8140b8efa50a5995e4e34708ffb263d994ee3a5",
+      "in_normal_825": false,
+      "live_source_equal": true,
+      "completed_live_olean": true
+    }
+  },
+  "missing_live_completed_outputs": [],
+  "different_or_missing_live_source": [],
+  "no_build": true,
+  "no_materialization": true,
+  "normal_key_verification_required_before_new_kernel": true
+}

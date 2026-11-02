@@ -1,0 +1,82 @@
+'E2E.LiveCallProductionExec.compiler_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionExec.compiler_success._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.compiler_success._native.native_decide.ax_1_2]
+'E2E.LiveCallProductionExec.concrete_facts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_2]
+'E2E.LiveCallProductionExec.outside_call' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_2]
+'E2E.LiveCallProductionExec.intact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LiveCallProductionExec.program_find' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_2]
+'E2E.LiveCallProductionExec.source_entry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_2]
+'E2E.LiveCallProductionExec.clif_run' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_2]
+'E2E.LiveCallProductionExec.base_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_2]
+'E2E.LiveCallProductionExec.source_returns' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_2]
+'E2E.LiveCallProductionExec.executable_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionExec.compiler_success._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.compiler_success._native.native_decide.ax_1_2,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_2]
+'E2E.LiveCallProductionExec.returned_word' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionExec.compiler_success._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.compiler_success._native.native_decide.ax_1_2,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_1,
+ E2E.LiveCallProductionExec.concrete_facts._native.native_decide.ax_1_2]
+'E2E.LiveCallProductionSelection.selected' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionSelection.selected._native.native_decide.ax_1,
+ E2E.LiveCallProductionSelection.selected._native.native_decide.ax_2]
+'E2E.LiveCallProductionSelection.actual_entrypoint' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionSelection.selected._native.native_decide.ax_1,
+ E2E.LiveCallProductionSelection.selected._native.native_decide.ax_2]
+'E2E.LiveCallProductionSelection.actual_provider' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallWitness.compiled_ok._native.native_decide.ax_1✝,
+ E2E.LiveCallWitness.previousObserved_true._native.native_decide.ax_1✝]
+'E2E.LiveCallProductionSelection.mixed_rejected' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionSelection.mixed_rejected._native.native_decide.ax_1,
+ E2E.LiveCallProductionSelection.mixed_rejected._native.native_decide.ax_2]
+'E2E.LiveCallProductionSelection.mixed_complete_retry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.LiveCallProductionSelection.mixed_rejected._native.native_decide.ax_1,
+ E2E.LiveCallProductionSelection.mixed_rejected._native.native_decide.ax_2]
+'Backend.compileFileLiveCallWhen_disabled' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.compileFileLiveCallWhen_retry' depends on axioms: [propext, Classical.choice, Quot.sound]

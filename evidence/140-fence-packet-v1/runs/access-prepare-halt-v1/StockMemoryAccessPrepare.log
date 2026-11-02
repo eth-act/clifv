@@ -1,0 +1,24 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessPrepare.lean:48:69: error: unexpected token 'at'; expected rcasesPat
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessPrepare.lean:114:71: error: unexpected token 'at'; expected rcasesPat
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessPrepare.lean:101:83: error: typeclass instance problem is stuck
+  GetElem? (Array Nat) (?m.370 b children) Nat (?m.371 b children j child)
+
+Note: Lean will not try to resolve this typeclass instance problem because the second type argument to `GetElem?` contains metavariables. This argument must be fully determined before Lean will try to resolve the typeclass.
+
+Hint: Adding type annotations and supplying implicit arguments to functions can give Lean more information for typeclass resolution. For example, if you have a variable `x` that you intend to be a `Nat`, but Lean reports it as having an unresolved type like `?m`, replacing `x` with `(x : Nat)` can get typeclass resolution un-stuck.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessPrepare.lean:75:68: error: unsolved goals
+case h_2
+sb : Nat
+vc prepared : VCode
+isem : Sem
+driver : DriverSem isem
+ρ : Nat → CV
+world : Arm.ArmState
+code : Clif.TrapCode
+property : BitVec 64 → Nat → Prop
+fault : VAccessTrapFrom sb vc isem { b := 0, k := 0, ρ := ρ, w := world } code property
+x✝² x✝¹ : Except String (Array (Array Nat) × Array (Array Nat))
+x✝ :
+  ∀ (ss snd ss' snd_1 : Array (Array Nat)), vc.cfg = Except.ok (ss, snd) → prepared.cfg = Except.ok (ss', snd_1) → False
+checked : false = true
+⊢ VAccessTrapFrom sb prepared isem { b := 0, k := 0, ρ := ρ, w := world } code property

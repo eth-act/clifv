@@ -1,0 +1,1 @@
+{"functions": [{"name": "stock_clobber_add", "ok": true, "num_spillslots": 0, "allocs": [["x0"], ["x0", "x0"], ["x0"]], "edits": [], "checker": "ok"}]}

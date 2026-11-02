@@ -1,0 +1,11 @@
+{
+  "status": "cleaned_owned_outputs_after_verified_remote_preservation",
+  "backup": "75ee0b2160ff34db95f1c2e3ededf7b9885ff97e",
+  "all20_owned_source_hashes_exact": true,
+  "sources_logs_and_production_drafts_preserved": true,
+  "hashed_outputs": 4890,
+  "sole_link_bytes_before_cleanup": 2842468805,
+  "current_production_context_handoff_now_allowed": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T14:38:31.591334+00:00"
+}

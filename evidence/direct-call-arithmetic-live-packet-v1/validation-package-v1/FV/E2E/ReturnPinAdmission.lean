@@ -131,4 +131,27 @@ def ReturnPinAdmission.liveCalls : ReturnPinAdmission where
 
 abbrev okRReturnPinLiveCalls := okRReturnPinFor ReturnPinAdmission.liveCalls
 
+/-- The live-result profile preserves every complete result-call program acceptance. -/
+theorem okRReturnPinLiveCalls_previous {stage : Clif.Function → VCode → VCode}
+    {I : LinkInput} {R : Res} (previous : okRReturnPinResultCalls stage I R = true) :
+    okRReturnPinLiveCalls stage I R = true := by
+  simp only [okRReturnPinResultCalls,okRReturnPinFor,Bool.and_eq_true] at previous
+  simp only [okRReturnPinLiveCalls,okRReturnPinFor,Bool.and_eq_true]
+  refine ⟨?_,previous.2⟩
+  simp only [okRSemanticFor,chksSemanticFor,List.all_append,Bool.and_eq_true,List.all_eq_true] at previous ⊢
+  refine ⟨previous.1.1,?_⟩
+  intro e member
+  have old := previous.1.2 e member
+  refine ⟨?_,old.2⟩
+  simp only [staticChksSemanticFor,List.all_map,List.all_eq_true,Function.comp_def] at old ⊢
+  intro check present
+  obtain ⟨raw,rawMember,rfl⟩ := List.mem_map.mp present
+  have accepted := old.1 _ (List.mem_map.mpr ⟨raw,rawMember,rfl⟩)
+  by_cases named : raw.1 = "compiled: lowerCheck"
+  · simp only [named,↓reduceIte] at accepted ⊢
+    simp only [ReturnPinAdmission.resultCalls] at accepted
+    simpa only [ReturnPinAdmission.liveCalls,returnPinLiveCallsExtra,
+      ← Bool.or_assoc,accepted,Bool.true_or]
+  · simpa only [named,↓reduceIte] using accepted
+
 end E2E.LinkCheck

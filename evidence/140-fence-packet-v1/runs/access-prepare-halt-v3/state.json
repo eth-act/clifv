@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockMemoryAccessPrepare",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessPrepare.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAccessPrepare.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAccessPrepare.ilean"
+      ],
+      "exit": 0,
+      "seconds": 1.031944751739502,
+      "memstats": "peak 214409216\noom 0\noom_kill 0\n",
+      "source_sha256": "7ddcc5a657c2867617aed231d5931ca9bb2d656ad373238ba1cb440e4b734274",
+      "olean_sha256": "b200c51dfb2ee5535bb07ddff2783d887bb7987322e897de6618edddfeb18eef"
+    },
+    {
+      "label": "StockMemoryAccessHalt",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessHalt.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAccessHalt.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryAccessHalt.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.8584976196289062,
+      "memstats": "peak 193953792\noom 0\noom_kill 0\n",
+      "source_sha256": "163d54277892e2052ea6cb77f13e3637c4f6ed67cbeb38bc3732336c3f28e812",
+      "olean_sha256": "69821e6d90327225e398511fb4ce8f10aa1983d6dfe29d4a67dde783461504ee"
+    }
+  ]
+}

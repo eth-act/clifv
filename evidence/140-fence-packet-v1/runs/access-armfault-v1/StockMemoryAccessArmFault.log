@@ -1,0 +1,44 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessArmFault.lean:31:2: error: unsolved goals
+case refine_1
+mp : ArmFault.MemMap
+s : Arm.ArmState
+base destination : BitVec 5
+offset : BitVec 12
+ordinaryBase : base ≠ 31#5
+k : Nat
+bound : k < 8
+missing :
+  mp (Arm.read_gpr 64 base s + (Arm.LDST.Reg_offset.uimm12 offset).value 3 s + BitVec.ofNat 64 k) = ArmFault.Perm.none
+⊢ { k := Concurrency.AKind.plainR, addr := Arm.read_gpr 64 base s + (Arm.LDST.Reg_offset.uimm12 offset).value 3 s,
+      n := 8,
+      val :=
+        Concurrency.ArmFoot.readM 8 (Arm.read_gpr 64 base s + (Arm.LDST.Reg_offset.uimm12 offset).value 3 s) s.mem } ∈
+    if (if Arm.BitVec.lsb (1#2) 1 = 1#1 then 1#1 else Arm.BitVec.lsb (1#2) 0) = 0#1 then
+      [{ k := Concurrency.AKind.plainW, addr := Arm.read_gpr 64 base s + (Arm.LDST.Reg_offset.uimm12 offset).value 3 s,
+          n := 8, val := BitVec.cast ⋯ (Arm.ldst_read false 64 destination s) }]
+    else
+      [{ k := Concurrency.AKind.plainR, addr := Arm.read_gpr 64 base s + (Arm.LDST.Reg_offset.uimm12 offset).value 3 s,
+          n := 8,
+          val :=
+            Concurrency.ArmFoot.readM 8 (Arm.read_gpr 64 base s + (Arm.LDST.Reg_offset.uimm12 offset).value 3 s)
+              s.mem }]
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessArmFault.lean:47:2: error: unsolved goals
+case refine_1
+mp : ArmFault.MemMap
+s : Arm.ArmState
+base value : BitVec 5
+offset : BitVec 12
+ordinaryBase : base ≠ 31#5
+k : Nat
+bound : k < 8
+missing :
+  mp (Arm.read_gpr 64 base s + (Arm.LDST.Reg_offset.uimm12 offset).value 3 s + BitVec.ofNat 64 k) = ArmFault.Perm.none
+⊢ Arm.read_gpr_zr 64 value s = BitVec.cast ⋯ (Arm.read_gpr_zr 64 value s)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockMemoryAccessArmFault.lean:48:60: warning: This simp argument is unused:
+  Concurrency.ArmInstFoot.shl_div
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Concurrency.ArmInstFoot.instEvs, Concurrency.ArmInstFoot.immEvs,
+    Arm.LDST.reg_imm_constrain_unpredictable, ordinaryBase, Arm.ldst_read]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

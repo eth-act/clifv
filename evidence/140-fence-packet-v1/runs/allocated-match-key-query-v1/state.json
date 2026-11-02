@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+    "query",
+    "--json",
+    "--no-build",
+    "+FV.E2E.RegLevelCorrectU:depHash"
+  ],
+  "exit": 0,
+  "seconds": 0.1875615119934082,
+  "no_build": true,
+  "stats": "peak 45301760\noom 0\noom_kill 0\n"
+}

@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "units": [
+    {
+      "tag": "WorkerOActualCapturedCleanup",
+      "names": {},
+      "locals": [],
+      "local_addrs": [],
+      "functions": [
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup/fn0.ra.json",
+          "name": "_RNxC7fv_demo11HawPMC3YC2b",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup/fn0.clif"
+        },
+        {
+          "ra": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup/fn1.ra.json",
+          "name": "sret_caller",
+          "dump": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup/fn1.clif"
+        }
+      ],
+      "data": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup/data.txt"
+    }
+  ],
+  "symbols": [
+    [
+      "_RNxC7fv_demo11HawPMC3YC2b",
+      2097504
+    ],
+    [
+      "sret_caller",
+      2097540
+    ]
+  ],
+  "skipped": [],
+  "markers": [
+    [
+      "_RNxC7fv_demo11HawPMC3YC2b",
+      2097504
+    ],
+    [
+      "sret_caller",
+      2097540
+    ]
+  ],
+  "format": "clifv-frontend-bundle",
+  "exe": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup/program.elf"
+}

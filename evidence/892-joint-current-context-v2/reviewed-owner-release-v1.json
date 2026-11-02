@@ -1,0 +1,13 @@
+{
+  "status": "released_after_actual_normal_and_consumer_success",
+  "scheduler": 326832,
+  "observer": 456502,
+  "normal_receipt_sha256": "4df3aa7106bb548e4b5827cc3eda148413ca31793dee0e451c30f92ca5126053",
+  "consumer_receipt_sha256": "d2b33336781b903117ca781046afe964e2e1dcbc77452f96cc940fe667b22baa",
+  "reconciled_head": "10690d238b9c84a5e2e388fc0a929eb36f2c597a",
+  "local_ref_restored_from_verified_remote": "85b0aa1f2cf1cf0ff4d442d65d688ffa306eea87",
+  "no_worktree_owned_that_ref": true,
+  "no_force_push": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T14:52:15.479445+00:00"
+}

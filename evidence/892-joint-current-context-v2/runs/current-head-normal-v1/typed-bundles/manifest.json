@@ -1,0 +1,20 @@
+[{"module": "WorkerOActualTypedCapturedRaw",
+  "input":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/input.clif",
+  "exe":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/program.elf",
+  "entries": ["_RNxC7fv_demo11HawPMC3YC2b", "sret_caller", "float_leaf"],
+  "dir":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw",
+  "cleanup": false,
+  "captured": true},
+ {"module": "WorkerOActualTypedCapturedCleanup",
+  "input":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedCleanup/input.clif",
+  "exe":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedCleanup/program.elf",
+  "entries": ["_RNxC7fv_demo11HawPMC3YC2b", "sret_caller", "float_leaf"],
+  "dir":
+  "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedCleanup",
+  "cleanup": true,
+  "captured": true}]

@@ -1,0 +1,8 @@
+{
+  "status": "released_to_parent_for_backup",
+  "share": "1GiB",
+  "no_active_fence_compiler": true,
+  "checkpoint": "mixed-arm-state-v4.json",
+  "future_kernel_requires_parent_restore": true,
+  "utc": "2026-11-02T14:47:47.227144+00:00"
+}

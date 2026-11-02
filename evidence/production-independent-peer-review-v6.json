@@ -1,0 +1,17 @@
+{
+  "published_source": "10690d238b9c84a5e2e388fc0a929eb36f2c597a",
+  "verdict": "no blocking defect",
+  "reviewer": "worker-A",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents.",
+  "notes": "Three CLI choices, complete old flow, route indices and admission-before-artB pass direct review. Raw typed mode is intentional and covered.",
+  "historical_head": false,
+  "requires_current_main_reconciliation": true,
+  "utc": "2026-11-02T08:18:30.515585+00:00",
+  "reviewed_source": "90c51c880b9d614f7c5f9730b8363a6321c840de",
+  "implementation_files_unchanged": true,
+  "base_delta_import_only": true,
+  "carry_policy": "All18reviewedimplementationfilesandtheirpatchremainexact;thecompletevalidatedsourceprojectionmatchescurrentmain.",
+  "reviewed_implementation_unchanged": true,
+  "actual_source_context_pending": false,
+  "reviewed_source_projection_equal": true
+}

@@ -149,8 +149,9 @@ theorem okRReturnPinLiveCalls_previous {stage : Clif.Function → VCode → VCod
   have accepted := old.1 _ (List.mem_map.mpr ⟨raw,rawMember,rfl⟩)
   by_cases named : raw.1 = "compiled: lowerCheck"
   · simp only [named,↓reduceIte] at accepted ⊢
-    simpa only [ReturnPinAdmission.liveCalls,ReturnPinAdmission.resultCalls,
-      returnPinLiveCallsExtra,← Bool.or_assoc,accepted,Bool.true_or]
+    simp only [ReturnPinAdmission.resultCalls] at accepted
+    simpa only [ReturnPinAdmission.liveCalls,returnPinLiveCallsExtra,
+      ← Bool.or_assoc,accepted,Bool.true_or]
   · simpa only [named,↓reduceIte] using accepted
 
 end E2E.LinkCheck

@@ -1,0 +1,10 @@
+function u0:1(i64) -> i64 system_v {
+block0(v101: i64):
+    v109 = iconst.i64 13
+    v121 = iadd v101, v109
+    return v121
+}
+; clifv-extnames 1
+; decl u0:0 func Export "stock_live_call_add"
+; decl u0:1 func Export "stock_clobber_add"
+; end clifv-extnames

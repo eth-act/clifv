@@ -1,0 +1,43 @@
+'Crates.WorkerOLiveCallPairCleanup.okB_input' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOLiveCallPairCleanup.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.slice0_ok._native.native_decide.ax_1]
+'Crates.WorkerOLiveCallPairCleanup.link_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOLiveCallPairCleanup.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.slice0_ok._native.native_decide.ax_1]
+'Crates.WorkerOLiveCallPairCleanup.base_closed' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOLiveCallPairCleanup.noTls._native.native_decide.ax_1]
+'Crates.WorkerOLiveCallPairCleanup.bin_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOLiveCallPairCleanup.data_bin._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.hdr_bin._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.slice0_bin._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.syms_bin._native.native_decide.ax_1]
+'Crates.WorkerOLiveCallPairCleanup.correct_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOLiveCallPairCleanup.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.slice0_ok._native.native_decide.ax_1]
+'Crates.WorkerOLiveCallPairCleanup.correct_1' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOLiveCallPairCleanup.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.slice0_ok._native.native_decide.ax_1]
+'Crates.WorkerOLiveCallPairCleanup.correct_stack_0' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOLiveCallPairCleanup.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.slice0_ok._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.stack_ok._native.native_decide.ax_1]
+'Crates.WorkerOLiveCallPairCleanup.correct_stack_1' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Crates.WorkerOLiveCallPairCleanup.globalB_input._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.slice0_ok._native.native_decide.ax_1,
+ Crates.WorkerOLiveCallPairCleanup.stack_ok._native.native_decide.ax_1]

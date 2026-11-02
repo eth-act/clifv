@@ -1,0 +1,21 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/E2E/LinkCheckMain.lean:399:37: warning: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+link-check: /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup/program.elf
+  checker: integer
+  static checks (the validators): 0 function(s) fail
+  static checks done in 496 ms
+  2 functions, 2 link-map addresses, 0 CLIF image symbols, D = 16; checked in 704 ms
+  okB: true
+  relocations: 1 bl, address pairs 0 nop+adr, 0 adrp+add, 0 adrp+ldr (GOT), 0 TLSDESC sequences
+  binary checks done in 2 ms
+  binary: ok (2 functions, 15 words, 0 data objects, 2 symbols)
+  code map: ok
+  stack: 32 bytes at most (no call cycle)
+  stack: 1 entries (no caller in the program):
+      32  sret_caller
+  wrote /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualCapturedCleanup.lean
+  2 functions, 2 entries

@@ -1,0 +1,731 @@
+{
+  "records": [
+    {
+      "label": "892-audits",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/helpers/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/892-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/audit/return-pin-production-witness.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/audit/return-pin-production.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/audit/typed-compiler-modes-witness.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/audit/typed-compiler-modes.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/audit/typed-compiler-old-variants.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/audit/typed-production.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "0750d726eacf6de1b3c7c6d5fe5ca6d42e99c9ddd1c646cc248f8f83a5ba6096"
+    },
+    {
+      "label": "892-backend-object-smoke",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/matrix/BackendEntrySmoke.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "a6b8ce2489a0f06dd3244ebad4984cf306c3578833c7db35ec1716d265e96d7e"
+    },
+    {
+      "label": "892-prepare-integer",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/matrix/PrepareActualBundles.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "892-prepare-typed",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/matrix/PrepareTypedBundles.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "WorkerOActualPreviousRaw-backend",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Backend/Main.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousRaw/input.clif",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousRaw/actual.o",
+        "--regalloc",
+        "lean",
+        "--dump",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousRaw/actual-dump",
+        "--no-dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "c0f2fd7bcf07c11b97f57a34a1192b337fba86b33079e7014d61360e710da768"
+    },
+    {
+      "label": "WorkerOActualPreviousRaw-reflow",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/matrix/ReflowActualBundle.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousRaw",
+        "false"
+      ],
+      "exit": 0,
+      "log_sha256": "48310c25a50c998d719b9b8d20a933250d7410cd8904a2dc137fe2702feafdca"
+    },
+    {
+      "label": "WorkerOActualPreviousRaw-linker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Link/LeanLinkMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousRaw",
+        "--no-dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "5057b4a6113c3710aa64715df6eb8c9019fe394e9f3ff8f2f9364eb043df4df7"
+    },
+    {
+      "label": "WorkerOActualPreviousRaw-checker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/E2E/LinkCheckMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousRaw",
+        "--no-dead-cleanup",
+        "--lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualPreviousRaw.lean",
+        "--module",
+        "WorkerOActualPreviousRaw"
+      ],
+      "exit": 0,
+      "log_sha256": "7c8bc65a1067edefcaedb898f5816b5011e6eba0b119da853025e30b769404b1"
+    },
+    {
+      "label": "WorkerOActualPreviousRaw-generated",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualPreviousRaw.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualPreviousRaw.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualPreviousRaw.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualPreviousRaw.c"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "WorkerOActualPreviousRaw-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/helpers/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualPreviousRaw-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualPreviousRaw-audit.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "533529d4dbb57678a962f47696367fa4c977374abbcd7c88ac10043150bc1d91"
+    },
+    {
+      "label": "WorkerOActualCapturedRaw-backend",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Backend/Main.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedRaw/input.clif",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedRaw/actual.o",
+        "--regalloc",
+        "lean",
+        "--dump",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedRaw/actual-dump",
+        "--no-dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "c0f2fd7bcf07c11b97f57a34a1192b337fba86b33079e7014d61360e710da768"
+    },
+    {
+      "label": "WorkerOActualCapturedRaw-reflow",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/matrix/ReflowActualBundle.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedRaw",
+        "false"
+      ],
+      "exit": 0,
+      "log_sha256": "e6e9f778c47ce06cc9a282906bee328dc7b2575d15b697c385d68e9e99c4ce56"
+    },
+    {
+      "label": "WorkerOActualCapturedRaw-linker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Link/LeanLinkMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedRaw",
+        "--no-dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "1f469a110604539e6cc1fd6c99a01ef32883e77be1210129c786de5318740e85"
+    },
+    {
+      "label": "WorkerOActualCapturedRaw-checker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/E2E/LinkCheckMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedRaw",
+        "--no-dead-cleanup",
+        "--lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualCapturedRaw.lean",
+        "--module",
+        "WorkerOActualCapturedRaw"
+      ],
+      "exit": 0,
+      "log_sha256": "8ab3c2371b8a69bbf76d44332c0849108a165864d4756e42ba4c0c0a9069f379"
+    },
+    {
+      "label": "WorkerOActualCapturedRaw-generated",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualCapturedRaw.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualCapturedRaw.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualCapturedRaw.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualCapturedRaw.c"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "WorkerOActualCapturedRaw-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/helpers/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualCapturedRaw-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualCapturedRaw-audit.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "61d2c6e5106bfabc13d0a95333cd756c0d6609ccda6aea743696307e85245d5d"
+    },
+    {
+      "label": "WorkerOActualPreviousCleanup-backend",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Backend/Main.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousCleanup/input.clif",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousCleanup/actual.o",
+        "--regalloc",
+        "lean",
+        "--dump",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousCleanup/actual-dump",
+        "--dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "c0f2fd7bcf07c11b97f57a34a1192b337fba86b33079e7014d61360e710da768"
+    },
+    {
+      "label": "WorkerOActualPreviousCleanup-reflow",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/matrix/ReflowActualBundle.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousCleanup",
+        "true"
+      ],
+      "exit": 0,
+      "log_sha256": "48310c25a50c998d719b9b8d20a933250d7410cd8904a2dc137fe2702feafdca"
+    },
+    {
+      "label": "WorkerOActualPreviousCleanup-linker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Link/LeanLinkMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousCleanup",
+        "--dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "563f6138d54c21a9dfd4c9d01beedccd74fa642973a56852dddd2df9e0a08df3"
+    },
+    {
+      "label": "WorkerOActualPreviousCleanup-checker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/E2E/LinkCheckMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualPreviousCleanup",
+        "--dead-cleanup",
+        "--lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualPreviousCleanup.lean",
+        "--module",
+        "WorkerOActualPreviousCleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "5ead0a449fd72ea894e0c0ab7250ecd8e17439b3cd6474dbad416fc336554573"
+    },
+    {
+      "label": "WorkerOActualPreviousCleanup-generated",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualPreviousCleanup.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualPreviousCleanup.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualPreviousCleanup.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualPreviousCleanup.c"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "WorkerOActualPreviousCleanup-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/helpers/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualPreviousCleanup-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualPreviousCleanup-audit.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "83bff0cc735a2db8c7bfb67009f7e1a81410b2d5040e75b40aead3329ac30752"
+    },
+    {
+      "label": "WorkerOActualCapturedCleanup-backend",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Backend/Main.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup/input.clif",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup/actual.o",
+        "--regalloc",
+        "lean",
+        "--dump",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup/actual-dump",
+        "--dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "c0f2fd7bcf07c11b97f57a34a1192b337fba86b33079e7014d61360e710da768"
+    },
+    {
+      "label": "WorkerOActualCapturedCleanup-reflow",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/matrix/ReflowActualBundle.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup",
+        "true"
+      ],
+      "exit": 0,
+      "log_sha256": "e6e9f778c47ce06cc9a282906bee328dc7b2575d15b697c385d68e9e99c4ce56"
+    },
+    {
+      "label": "WorkerOActualCapturedCleanup-linker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Link/LeanLinkMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup",
+        "--dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "b60aede5ad84d0c07d1300101b05f8ccef536bdf36dff2de61ed27a40ac8c8bb"
+    },
+    {
+      "label": "WorkerOActualCapturedCleanup-checker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/E2E/LinkCheckMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/integer-bundles/WorkerOActualCapturedCleanup",
+        "--dead-cleanup",
+        "--lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualCapturedCleanup.lean",
+        "--module",
+        "WorkerOActualCapturedCleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "6e2fc42c41918e4ef21ad9a1fd8e8c100856916fffad40b4ecf4cddb4fefd131"
+    },
+    {
+      "label": "WorkerOActualCapturedCleanup-generated",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualCapturedCleanup.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualCapturedCleanup.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualCapturedCleanup.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualCapturedCleanup.c"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "WorkerOActualCapturedCleanup-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/helpers/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualCapturedCleanup-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualCapturedCleanup-audit.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "859ce4f629f7dd536e0058e57cc0688b0439635dfa7c11473722a3a782222819"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedRaw-backend",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Backend/Main.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/input.clif",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/actual.o",
+        "--regalloc",
+        "lean",
+        "--dump",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw/actual-dump",
+        "--no-dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "c0f2fd7bcf07c11b97f57a34a1192b337fba86b33079e7014d61360e710da768"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedRaw-reflow",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/matrix/ReflowTypedBundle.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw",
+        "false"
+      ],
+      "exit": 0,
+      "log_sha256": "b5a2b101c0daadec75a2456335dcb8b4be7361b8c1c79432417c3707c8571d7c"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedRaw-linker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Link/LeanLinkMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw",
+        "--no-dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "ee97ecda538b540e492891b4c3fff8c7cfbd451c58af64875f51e9a17df932f1"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedRaw-checker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/E2E/LinkCheckMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedRaw",
+        "--no-dead-cleanup",
+        "--lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualTypedCapturedRaw.lean",
+        "--module",
+        "WorkerOActualTypedCapturedRaw"
+      ],
+      "exit": 0,
+      "log_sha256": "55b7b1ccd4aadb9803102c66b83aacea21dadd335418348b6eecf5afdd4acaf7"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedRaw-generated",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualTypedCapturedRaw.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualTypedCapturedRaw.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualTypedCapturedRaw.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualTypedCapturedRaw.c"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedRaw-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/helpers/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualTypedCapturedRaw-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualTypedCapturedRaw-audit.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "6b980d524510b39f37cc36652cff5ffa3e668b4fdcfaa7de3ae7066e43fa65d5"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedCleanup-backend",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Backend/Main.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedCleanup/input.clif",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedCleanup/actual.o",
+        "--regalloc",
+        "lean",
+        "--dump",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedCleanup/actual-dump",
+        "--dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "c0f2fd7bcf07c11b97f57a34a1192b337fba86b33079e7014d61360e710da768"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedCleanup-reflow",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/matrix/ReflowTypedBundle.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedCleanup",
+        "true"
+      ],
+      "exit": 0,
+      "log_sha256": "b5a2b101c0daadec75a2456335dcb8b4be7361b8c1c79432417c3707c8571d7c"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedCleanup-linker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Link/LeanLinkMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedCleanup",
+        "--dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "281ab5677acfc257ddfcfcf1d2d674897aab31cab98ee7842d45405e850613fc"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedCleanup-checker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/E2E/LinkCheckMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-bundles/WorkerOActualTypedCapturedCleanup",
+        "--dead-cleanup",
+        "--lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualTypedCapturedCleanup.lean",
+        "--module",
+        "WorkerOActualTypedCapturedCleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "5a6348433f23cd87381449ea774541b15daa2df01d7b1fdbcdf58b82d6884fa6"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedCleanup-generated",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOActualTypedCapturedCleanup.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualTypedCapturedCleanup.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualTypedCapturedCleanup.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOActualTypedCapturedCleanup.c"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "WorkerOActualTypedCapturedCleanup-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/helpers/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualTypedCapturedCleanup-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOActualTypedCapturedCleanup-audit.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "05636540de36965891fb0f20878fd323fef52e1f45eef08975507cd034e4cbe8"
+    },
+    {
+      "label": "WorkerOTypedCompilerRaw-linker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Link/LeanLinkMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-compiler-bundles/WorkerOTypedCompilerRaw",
+        "--no-dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "237ed4bf10b7fd9e84924888ece059192d25d11f67d9164260829242e5984bc3"
+    },
+    {
+      "label": "WorkerOTypedCompilerRaw-checker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/E2E/LinkCheckMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-compiler-bundles/WorkerOTypedCompilerRaw",
+        "--no-dead-cleanup",
+        "--lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOTypedCompilerRaw.lean",
+        "--module",
+        "WorkerOTypedCompilerRaw"
+      ],
+      "exit": 0,
+      "log_sha256": "6b7ad96d0bad5ea0d16571ca2ede64443b0faf08f8f445ad9a05a448882113e3"
+    },
+    {
+      "label": "WorkerOTypedCompilerRaw-generated",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOTypedCompilerRaw.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOTypedCompilerRaw.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOTypedCompilerRaw.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOTypedCompilerRaw.c"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "WorkerOTypedCompilerRaw-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/helpers/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOTypedCompilerRaw-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOTypedCompilerRaw-audit.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "2cc7193e1624da86b532701dc18ef742fb89fe49b9c9e3513cfbe4ef60b34677"
+    },
+    {
+      "label": "WorkerOTypedCompilerCleanup-linker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/Link/LeanLinkMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-compiler-bundles/WorkerOTypedCompilerCleanup",
+        "--dead-cleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "3fe96bfa6353f4dccedc9b1f3d27ce05b121c9e473f59756edcb08fb1251f74d"
+    },
+    {
+      "label": "WorkerOTypedCompilerCleanup-checker",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--run",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FVTest/E2E/LinkCheckMain.lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/typed-compiler-bundles/WorkerOTypedCompilerCleanup",
+        "--dead-cleanup",
+        "--lean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOTypedCompilerCleanup.lean",
+        "--module",
+        "WorkerOTypedCompilerCleanup"
+      ],
+      "exit": 0,
+      "log_sha256": "84b8148ee6027c150cf2c46048a4a60578330b123a9daba7943880f9ca499ea9"
+    },
+    {
+      "label": "WorkerOTypedCompilerCleanup-generated",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j2",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/generated/Crates/WorkerOTypedCompilerCleanup.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOTypedCompilerCleanup.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOTypedCompilerCleanup.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/Crates/WorkerOTypedCompilerCleanup.c"
+      ],
+      "exit": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "WorkerOTypedCompilerCleanup-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/helpers/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOTypedCompilerCleanup-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/runs/current-head-normal-v1/WorkerOTypedCompilerCleanup-audit.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "fe41a7e06a3506a373b74b84651717e915ee522a91e08a38c40a0097c9994a44"
+    }
+  ]
+}

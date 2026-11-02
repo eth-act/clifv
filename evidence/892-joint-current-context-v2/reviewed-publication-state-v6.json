@@ -1,0 +1,51 @@
+{
+  "status": "passed",
+  "candidate_source": "10690d238b9c84a5e2e388fc0a929eb36f2c597a",
+  "candidate_tree": "0908f49979c18eb96e125c0bec36f0278543e8f3",
+  "baseline_tree": "89d3b19e676edc61735d190aef9b51aaff16760a",
+  "source_hashes": {
+    "FV/Backend/ReturnPinProduction.lean": "070955a00765b28cb3a810152cb00b20e1a1da179ecc5a74d0d627d2f43e29f8",
+    "FV/E2E/ReturnPinProductionWitness.lean": "d909dd35bbce83cc8cf963afa8db74bd78277373afaf7a4f5f9a659249e00ff7",
+    "FVTest/Backend/Main.lean": "2a67d21b232a2774bb3e45ab7f17e8752a8e6b794402b5fb615d1a7e4b4051ba",
+    "FVTest/Link/LeanLinkMain.lean": "cbe614dd4078ccc337e7b5c87a2b4d6982d4176c4be78d5cf1410e58c23a5840",
+    "FVTest/E2E/LinkCheckMain.lean": "3e234b481a1dff1620abd230b5e3bc64494c14285bd64b5a56016fd0d05d7f16",
+    "scripts/audit/return-pin-production.lean": "e07167e17950941a053ae85474c3c5e5c738c3659ebef305527a7fe30b8f8264",
+    "scripts/audit/return-pin-production-witness.lean": "ee9cb4e3de277f11fba1f77676459e2bcac309337f64e0276d191a9d453c6c6e",
+    "FV/E2E/TypedProductionChecks.lean": "af3a692df8cfc1425104f6d77c6bafad0aa4c3a970b9790222cd1802b1297f72",
+    "FVTest/E2E/TypedLinkProofWith.lean": "15d00feee2f09d83cd3044fbd33e65d17e3baaee0e3797cd9cd06e20ca03e9d9",
+    "scripts/audit/typed-production.lean": "aade6a7361e57859f16453aeb7e1c8ef54691c40cfc8c984ef6bc67b5e2d7c6f",
+    "FV/Link/TypedCompileModes.lean": "5bfd4466930426b0e6eed235d5ee7c97af04b2d2dbd8fa595bb892f1b2075cee",
+    "FV/Link/TypedCompileSourceModes.lean": "fedba072a7316f7a11a15786ad378bdc775677c8ebfdc624e7ee3a6e9fdc6e3f",
+    "FV/Link/TypedCompileSourceModesWitness.lean": "b75b9d502be1c73a030a989e67641d423f7dbdb48d4d3a4716dedd35ca572f5b",
+    "FV/Link/TypedCompileModesWitness.lean": "a9eb4d946d92df2cfc9f40773378c21e43c87be721351081b501a606157bd6d5",
+    "FV/E2E/TypedLegacyBinding.lean": "d772c0474fe528a6872d3e2c42056b9b2cd3d6946b28530e1a17bcf3cbbd6838",
+    "scripts/audit/typed-compiler-modes.lean": "eb28cbc7a4029663c45d7f9e133ed58c0d0eab425581a9c1c52446bf066a6c8a",
+    "scripts/audit/typed-compiler-modes-witness.lean": "e84c62eb23dd2ed479849de3ff2ca6e5de33428b615dd192be1532644e6aa535",
+    "scripts/audit/typed-compiler-old-variants.lean": "e92f9e38daf15e3e2ab2bdd2a0860d2ad3fce51995128d7c5a984a7f79249c9c"
+  },
+  "old_headers_exact": true,
+  "old_axiom_sets_exact": true,
+  "exact_context": true,
+  "kernel_gate_passed": true,
+  "normal_gate_passed": true,
+  "normal_provider_receipt_sha256": "4df3aa7106bb548e4b5827cc3eda148413ca31793dee0e451c30f92ca5126053",
+  "actual_consumer_receipt_sha256": "d2b33336781b903117ca781046afe964e2e1dcbc77452f96cc940fe667b22baa",
+  "actual_consumer_receipt": "892-joint-current-context-v2/runs/current-head-normal-v1/receipt.json",
+  "actual_counts": {
+    "actual_backend_object_comparisons": 6,
+    "actual_complete_bundles": 6,
+    "actual_additional_typed_compiler_modes": 2,
+    "actual_generated_roots": 68
+  },
+  "old_typed_parity_sha256": "c905e42e9c857ee49673826277fcfff7115b517efa419a0b6a6b265e4bbfda8d",
+  "existing_modified_files_have_no_theorems": [
+    "FVTest/Backend/Main.lean",
+    "FVTest/Link/LeanLinkMain.lean",
+    "FVTest/E2E/LinkCheckMain.lean"
+  ],
+  "full_goal_complete": false,
+  "utc": "2026-11-02T14:49:56.568097+00:00",
+  "reconciled_from_validated_head": "85b0aa1f2cf1cf0ff4d442d65d688ffa306eea87",
+  "entire_validated_source_projection_equal": true,
+  "validated_project_source_count": 2926
+}

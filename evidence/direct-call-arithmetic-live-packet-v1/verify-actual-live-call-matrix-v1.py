@@ -2,7 +2,7 @@ from pathlib import Path
 import datetime,hashlib,json,os,re,subprocess
 B=Path('/home/lee/clifv');E=B/'.git/agent-evidence/stock-memory-20261029';Q=E/'direct-call-arithmetic-live-packet-v1';R=Q/'validation-package-v1';V=B/'.worktrees/stock-extending-production-20261031';D=E/'direct-call-delivery-units-v1'
 # This matrix cannot run from drafts. The producer binds the full executed source/config closure.
-context=json.loads((Q/'live-production-consumer-kernel-v1/receipt.json').read_text());assert context['status']=='passed'
+context=json.loads((Q/'live-runtime-context-v1/receipt.json').read_text());assert context['status']=='passed'
 assert context['proofslot_grant']=='live-production-2G'
 L=Q/'actual-live-call-matrix-v1';L.mkdir();casesroot=L/'bundles';casesroot.mkdir()
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()

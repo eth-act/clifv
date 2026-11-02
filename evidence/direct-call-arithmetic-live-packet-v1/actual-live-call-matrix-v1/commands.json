@@ -1,0 +1,17 @@
+{
+  "prepare": {
+    "exit_code": 127,
+    "argv": [
+      "lake",
+      "env",
+      "lean",
+      "-j1",
+      "-DElab.async=false",
+      "--run",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/PrepareLiveCallBundlesV1.lean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/actual-live-call-matrix-v1/bundles"
+    ],
+    "log_sha256": "e2586ab0bf6c0bf3d3a0c0a74fec26816e1a1c898ab582f83a813c74cf333caa",
+    "stats": "peak 1835008\noom 0\noom_kill 0\n"
+  }
+}

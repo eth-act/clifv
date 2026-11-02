@@ -1,0 +1,8 @@
+'E2E.LiveCallChecks.fnsBProduction_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LiveCallChecks.checks_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LiveCallChecks.okRProduction_of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LiveCallChecks.crate_correct_production' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LiveCallChecks.accepts_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LiveCallGeneratedStack.crate_correct_stack' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LiveCallGeneratedStack.crate_correct_stackN' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.okRReturnPinLiveCalls_previous' depends on axioms: [propext, Classical.choice, Quot.sound]

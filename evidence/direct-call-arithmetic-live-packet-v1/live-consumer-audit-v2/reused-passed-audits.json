@@ -1,0 +1,328 @@
+{
+  "stock-live-call-old-binary.lean": {
+    "source_hash": "ba0896a9cdb4c5af1da277bc68998c32c8b18024f01d438276f09fd926b91263",
+    "log_hash": "add385d92fc60410f7138afd5d08c3cc71fe85e7264e9ac3692bc5c917ad7f49",
+    "roots": [
+      "E2E.ReturnPinBinary.okB_previous",
+      "E2E.ReturnPinBinary.okB_sound",
+      "E2E.ReturnPinBinary.binary_correct_depth",
+      "E2E.ReturnPinBinary.BinFacts.previous",
+      "E2E.ReturnPinBinary.BinFacts.modelOf_ne",
+      "E2E.ReturnPinBinary.binary_correct_depthX",
+      "E2E.ReturnPinBinary.binary_correct_peakX",
+      "E2E.ReturnPinBinary.binFacts_of_checks",
+      "E2E.ReturnPinStackBound.okB_names",
+      "E2E.ReturnPinStackBound.facts",
+      "E2E.ReturnPinStackBound.edgeB_of_callee",
+      "E2E.ReturnPinStackBound.goodN_iff",
+      "E2E.ReturnPinStackBound.budget_of",
+      "E2E.ReturnPinStackBound.backend_correct_program_stackX",
+      "E2E.ReturnPinStackBound.crate_correct_stackNX",
+      "E2E.ReturnPinBinary.binary_correctX",
+      "E2E.ReturnPinBinary.trapsExplicit_of_run",
+      "E2E.ReturnPinBinary.trapsExplicit_of_runD"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-old-boundary.lean": {
+    "source_hash": "97f68933121f1acb847ff5df1de3d02df9ac2f9201beb6a7372bc3af5ef73c69",
+    "log_hash": "34f91856a5dd236cf93538f6fc0f647894ae9fbed6c376887f74cbd497c5031c",
+    "roots": [
+      "E2E.CompiledSemanticABI.entryRegs",
+      "E2E.hasTls_of_vcode_semantic_abi",
+      "E2E.stackArgsAvoid_frameW_semantic_abi"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-old-checks.lean": {
+    "source_hash": "272c7359677a8b40dcbbf718165e6e8414b60c8fa88947b1df3edd0f1cd77290",
+    "log_hash": "3a7c4e80047b66109e7e938c69199ef2deca3c1e655f9583aea74f379094ae1e",
+    "roots": [
+      "E2E.ReturnPinChecksWith.fnsBProduction_append",
+      "E2E.ReturnPinChecksWith.checks_iff",
+      "E2E.ReturnPinChecksWith.okRProduction_of_checks",
+      "E2E.ReturnPinChecksWith.crate_correct_production",
+      "E2E.ReturnPinChecksWith.accepts_previous"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-old-compiler.lean": {
+    "source_hash": "7dbb9dc23e15afc49225660393adcfa6e258a8a9faca641a61ed776f30c764e2",
+    "log_hash": "dc0693f866876d3d43fe0e7bab9582a7b2e4a2844202728dc35e4e556f72d28c",
+    "roots": [
+      "Link.ReturnPinCompilerWith.attempt_spec",
+      "Link.ReturnPinCompilerWith.codeMap_leanLink",
+      "Link.ReturnPinCompilerWith.leanLink_gotSlot",
+      "Link.ReturnPinCompilerWith.gotOk_leanLink",
+      "Link.ReturnPinCompilerWith.outsideAvoids_leanLink",
+      "Link.ReturnPinCompilerWith.attempt_correct",
+      "Link.ReturnPinCompilerWith.attempt_correct_depth",
+      "Link.ReturnPinCompilerWith.attempt_correct_peak",
+      "Link.ReturnPinCompilerWith.accepts_previous"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-old-contracts.lean": {
+    "source_hash": "ba6c3d79f1d3210c7e5beb4c8aab119b08ee1dcc3a54eeb7b28f205a18a58cef",
+    "log_hash": "0237aded401c490740308f9c4a234a745384ba3262e329a66fcd6a07920acabf",
+    "roots": [
+      "Backend.SemanticABI.previous_check",
+      "Backend.SemanticABI.previous_exact",
+      "Backend.SemanticABI.previous_check_calls",
+      "Backend.SemanticABI.previous_exact_calls",
+      "E2E.CompiledSemanticABI.of_checks",
+      "E2E.CompiledSemanticABI.of_checks_calls",
+      "E2E.CompiledSemanticABI.check",
+      "E2E.CompiledSemanticABI.alloc",
+      "E2E.CompiledSemanticABI.emit",
+      "E2E.CompiledSemanticABI.layout",
+      "E2E.backend_correct_world_niX_semantic_abi",
+      "E2E.ReturnPinMode.pins_of_valid",
+      "E2E.CompiledSemanticReturnPins.erase",
+      "E2E.CompiledSemanticReturnPins.of_checks",
+      "E2E.CompiledSemanticReturnPins.of_checks_calls",
+      "E2E.backend_correct_world_niX_semantic_return_pins",
+      "E2E.LinkSys.returnPinsB_sound",
+      "E2E.CompiledProgramReturnPins.of_checks",
+      "E2E.CompiledProgramReturnPins.of_checks_calls",
+      "E2E.CompiledProgramReturnPins.check",
+      "E2E.CompiledProgramReturnPins.alloc",
+      "E2E.CompiledProgramReturnPins.emit",
+      "E2E.CompiledProgramReturnPins.layout",
+      "E2E.LinkCheck.okRReturnPinCalls_eq_fast",
+      "E2E.LinkCheck.okRReturnPinCalls_previous",
+      "E2E.LinkCheck.semanticPreparedReturnPinCallsResults_sound",
+      "E2E.LinkCheck.preparedReturnPinCalls_correct",
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_accept",
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_retry",
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_prepared",
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_source",
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_checked",
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_sound",
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_correct"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-old-executable.lean": {
+    "source_hash": "e249e279275df4757cb5b06c9c6eb01c757eaa1d9674cc37d84938de08ecfc42",
+    "log_hash": "2b32ae6f05dbf506d6ec3f69e2c12a46aec072c085b674a5f3cf50d715ac423b",
+    "roots": [
+      "E2E.ReturnPinExecBytes.fnOk",
+      "E2E.ReturnPinExecBytes.codeMap_sound",
+      "E2E.ReturnPinExecBytes.relocAt_inv",
+      "E2E.ReturnPinExecBytes.line_overlap",
+      "E2E.ReturnPinExecBytes.relocAt_img",
+      "E2E.ReturnPinExecBytes.word_static",
+      "E2E.ReturnPinExecBytes.insn_of_good",
+      "E2E.ReturnPinExecBytes.symAddr_of_blrTo",
+      "E2E.ReturnPinExecBytes.siteAt_static",
+      "E2E.ReturnPinExecBytes.plain_static",
+      "E2E.ReturnPinExecBytes.stepOk_of_d",
+      "E2E.ReturnPinExecBytes.runOkSN_of_n",
+      "E2E.ReturnPinExecBytes.pairsClosed_art",
+      "E2E.ReturnPinExecBytes.raNotSecond_enter",
+      "E2E.ReturnPinExecBytes.reachL_of_reachN",
+      "E2E.ReturnPinExecBytes.destsInt_of_ok",
+      "E2E.ReturnPinExecBytes.stepOkD_of_good",
+      "E2E.ReturnPinExecBytes.runOkN_of_good",
+      "E2E.ReturnPinExecBytes.image_checked",
+      "E2E.LinkSys.OkReturnPins.extImgProduction",
+      "E2E.ReturnPinExecBytes.sysS_entry",
+      "E2E.ReturnPinExecBytes.runGood_sysS_of",
+      "E2E.ReturnPinExecBytes.runGood_sysS",
+      "E2E.ReturnPinExecBytes.runGood_sysS_depth",
+      "E2E.ReturnPinExecBytes.runGood_sysS_peak",
+      "E2E.ReturnPinExecBytes.got_of_good",
+      "E2E.ReturnPinExecBytes.exec_of_runGood",
+      "E2E.ReturnPinExecBytes.binary_correct_exec_proven",
+      "E2E.ReturnPinExecBytes.binary_correct_exec_depth_proven",
+      "E2E.ReturnPinExecBytes.binary_correct_exec_peak_proven"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-old-source.lean": {
+    "source_hash": "ae3fe76f08f1e7e12ca47b4b9c5dd57fad315e588001acac7f678606b3ec7b36",
+    "log_hash": "287bb777e6635a6729857a9eb87f232554d329b2b1dbe5533fcec8b27c514288",
+    "roots": [
+      "Link.ReturnPinCompilerWith.attempt_correct_source",
+      "Link.ReturnPinCompilerWith.attempt_correct_source_peak"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-old-world.lean": {
+    "source_hash": "cee98ed0cc9b5b2249c218c377164fc61ea17e04979800cb7cee931c3783af00",
+    "log_hash": "39a68c5e743ba573aa1562b274f03ce23dcc81dbc6b9e0093cf745d6fb805258",
+    "roots": [
+      "E2E.CompiledProgramReturnPins.entryRegs",
+      "E2E.hasTls_of_vcode_return_pins",
+      "E2E.stackArgsAvoid_frameW_return_pins",
+      "E2E.backend_correct_world_return_pins",
+      "E2E.backend_correct_world_ni_return_pins",
+      "E2E.no_explicit_returns_of_sret",
+      "E2E.armRefines_of_actRet_return_pins"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-old-worldx.lean": {
+    "source_hash": "44eb801766aaa9926b040c918558c130f81af8530ccedd6408a3d05ca8a20e91",
+    "log_hash": "782020965a49eeb06c9b93d0f3f882aa2eda6c1bdeca9b44e8a12f03c86bbd0d",
+    "roots": [
+      "E2E.backend_correct_worldX_return_pins"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-result-call-binary-results.lean": {
+    "source_hash": "73ba236717b73bd58053c96629562698f3dab760eb831a1f6e69784b586f109a",
+    "log_hash": "759e528acb7e86f6df5d3c838dfbe1429882d4c44dfbabc1ada7ffc06a00a369",
+    "roots": [
+      "E2E.ResultCallBinary.okB_sound",
+      "E2E.ResultCallBinary.binary_correct_depth",
+      "E2E.ResultCallBinary.BinFacts.modelOf_ne",
+      "E2E.ResultCallBinary.binary_correct_depthX",
+      "E2E.ResultCallBinary.binary_correct_peakX",
+      "E2E.ResultCallBinary.binFacts_of_checks",
+      "E2E.ResultCallStackBound.okB_names",
+      "E2E.ResultCallStackBound.facts",
+      "E2E.ResultCallStackBound.edgeB_of_callee",
+      "E2E.ResultCallStackBound.goodN_iff",
+      "E2E.ResultCallStackBound.budget_of",
+      "E2E.ResultCallStackBound.backend_correct_program_stackX",
+      "E2E.ResultCallStackBound.crate_correct_stackNX",
+      "E2E.ResultCallBinary.binary_correctX",
+      "E2E.ResultCallBinary.trapsExplicit_of_run",
+      "E2E.ResultCallBinary.trapsExplicit_of_runD"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-result-call-compiler-results.lean": {
+    "source_hash": "215ddb1631a79dcb288ce37880acf0ff047f19118dc351c5c3be5b01feec69f3",
+    "log_hash": "b5721bf9818b05c0e0144ac91fac538bde5a13a96e5823c4c29e87c9ef98f9ba",
+    "roots": [
+      "Link.ResultCallCompilerWith.attempt_spec",
+      "Link.ResultCallCompilerWith.codeMap_leanLink",
+      "Link.ResultCallCompilerWith.leanLink_gotSlot",
+      "Link.ResultCallCompilerWith.gotOk_leanLink",
+      "Link.ResultCallCompilerWith.outsideAvoids_leanLink",
+      "Link.ResultCallCompilerWith.attempt_correct",
+      "Link.ResultCallCompilerWith.attempt_correct_depth",
+      "Link.ResultCallCompilerWith.attempt_correct_peak",
+      "Link.ResultCallCompilerWith.attempt_correct_source",
+      "Link.ResultCallCompilerWith.attempt_correct_source_peak",
+      "Link.ResultCallCompilerWith.accepts_previous",
+      "Link.ResultCallCompilerWith.accepts_previous_semantic"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-result-call-generated-results.lean": {
+    "source_hash": "8127772d78718e337b0bd6751feebfd2029d8bb4d23b0f3794733071586622f5",
+    "log_hash": "eb82a2d06feb6b9c12094aac892c9cb77ac891e04e0478222322e61d38a7d60f",
+    "roots": [
+      "E2E.ResultCallChecks.fnsBProduction_append",
+      "E2E.ResultCallChecks.checks_iff",
+      "E2E.ResultCallChecks.okRProduction_of_checks",
+      "E2E.ResultCallChecks.crate_correct_production",
+      "E2E.ResultCallChecks.accepts_previous",
+      "E2E.ResultCallGeneratedStack.crate_correct_stack",
+      "E2E.ResultCallGeneratedStack.crate_correct_stackN"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-result-call-contract-additions.lean": {
+    "source_hash": "a72dbc615f5fdbd7482ee91e0301dafea4d527cce69e9d97505a1485ac388972",
+    "log_hash": "bb73f4c5aa134559ac2a7c620c664561564fdb552f80af8cc6727b874c7e30f7",
+    "roots": [
+      "Backend.SemanticABI.previous_check_result_calls",
+      "Backend.SemanticABI.previous_exact_result_calls",
+      "E2E.CompiledSemanticABI.of_checks_result_calls",
+      "E2E.CompiledSemanticReturnPins.of_checks_result_calls",
+      "E2E.CompiledProgramReturnPins.of_checks_result_calls",
+      "E2E.LinkCheck.okRReturnPinFor_previous",
+      "E2E.LinkCheck.semanticPreparedReturnPinFor_sound",
+      "E2E.LinkCheck.okRReturnPinResultCalls_previous",
+      "E2E.LinkCheck.okRReturnPinFor_eq_fast"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-binary-results.lean": {
+    "source_hash": "f886c1e2e3d94c44b428962368cf812adb584e791e2555ae3c0057d2fa99da95",
+    "log_hash": "6c83e8c8dc369af4f25919b0515bb80e5512cb0efad98b62354994c085fe58c6",
+    "roots": [
+      "E2E.LiveCallBinary.okB_sound",
+      "E2E.LiveCallBinary.binary_correct_depth",
+      "E2E.LiveCallBinary.BinFacts.modelOf_ne",
+      "E2E.LiveCallBinary.binary_correct_depthX",
+      "E2E.LiveCallBinary.binary_correct_peakX",
+      "E2E.LiveCallBinary.binFacts_of_checks",
+      "E2E.LiveCallStackBound.okB_names",
+      "E2E.LiveCallStackBound.facts",
+      "E2E.LiveCallStackBound.edgeB_of_callee",
+      "E2E.LiveCallStackBound.goodN_iff",
+      "E2E.LiveCallStackBound.budget_of",
+      "E2E.LiveCallStackBound.backend_correct_program_stackX",
+      "E2E.LiveCallStackBound.crate_correct_stackNX",
+      "E2E.LiveCallBinary.binary_correctX",
+      "E2E.LiveCallBinary.trapsExplicit_of_run",
+      "E2E.LiveCallBinary.trapsExplicit_of_runD"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-compiler-results.lean": {
+    "source_hash": "4092b523af018160bfc297a61b8e9ad2257775ddeec0bb3abb3c24916fbf0e5a",
+    "log_hash": "69e2fb7ca0b8a2612df404b6e14a3b2d5f287368229c1599e88ac928777899b7",
+    "roots": [
+      "Link.LiveCallCompilerWith.attempt_spec",
+      "Link.LiveCallCompilerWith.codeMap_leanLink",
+      "Link.LiveCallCompilerWith.leanLink_gotSlot",
+      "Link.LiveCallCompilerWith.gotOk_leanLink",
+      "Link.LiveCallCompilerWith.outsideAvoids_leanLink",
+      "Link.LiveCallCompilerWith.attempt_correct",
+      "Link.LiveCallCompilerWith.attempt_correct_depth",
+      "Link.LiveCallCompilerWith.attempt_correct_peak",
+      "Link.LiveCallCompilerWith.attempt_correct_source",
+      "Link.LiveCallCompilerWith.attempt_correct_source_peak",
+      "Link.LiveCallCompilerWith.accepts_previous",
+      "Link.LiveCallCompilerWith.accepts_previous_semantic"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-generated-results.lean": {
+    "source_hash": "5ce9196143df26c9754b11fed900f948917d07f59a05204389d447de28233ae7",
+    "log_hash": "554c90e38afa8febe6cbd392fd1578c6ceb2e2e6210f1f270e038afe0ff7ce21",
+    "roots": [
+      "E2E.LiveCallChecks.fnsBProduction_append",
+      "E2E.LiveCallChecks.checks_iff",
+      "E2E.LiveCallChecks.okRProduction_of_checks",
+      "E2E.LiveCallChecks.crate_correct_production",
+      "E2E.LiveCallChecks.accepts_previous",
+      "E2E.LiveCallGeneratedStack.crate_correct_stack",
+      "E2E.LiveCallGeneratedStack.crate_correct_stackN",
+      "E2E.LinkCheck.okRReturnPinLiveCalls_previous"
+    ],
+    "all_old_module_keys_exact": true
+  },
+  "stock-live-call-production-complete.lean": {
+    "source_hash": "c4f20c15e5a4c54172a052a1a6424d020f3ee6a4585165e850cbd90da7bc4a6b",
+    "log_hash": "19bed00dbdae48ad4acaa8f3b50a327b591376702384b48d9b1c666c3b85171c",
+    "roots": [
+      "E2E.LiveCallProductionExec.compiler_success",
+      "E2E.LiveCallProductionExec.concrete_facts",
+      "E2E.LiveCallProductionExec.outside_call",
+      "E2E.LiveCallProductionExec.intact",
+      "E2E.LiveCallProductionExec.program_find",
+      "E2E.LiveCallProductionExec.source_entry",
+      "E2E.LiveCallProductionExec.clif_run",
+      "E2E.LiveCallProductionExec.base_ok",
+      "E2E.LiveCallProductionExec.source_returns",
+      "E2E.LiveCallProductionExec.executable_witness",
+      "E2E.LiveCallProductionExec.returned_word",
+      "E2E.LiveCallProductionSelection.selected",
+      "E2E.LiveCallProductionSelection.actual_entrypoint",
+      "E2E.LiveCallProductionSelection.actual_provider",
+      "E2E.LiveCallProductionSelection.mixed_rejected",
+      "E2E.LiveCallProductionSelection.mixed_complete_retry",
+      "Backend.compileFileLiveCallWhen_disabled",
+      "Backend.compileFileLiveCallWhen_retry"
+    ],
+    "all_old_module_keys_exact": true
+  }
+}

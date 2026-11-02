@@ -1,0 +1,223 @@
+{
+  "status": "materialized_requires_normal_check",
+  "new_providers": {
+    "FV.E2E.RegLevelCorrect": {
+      "source": "FV/E2E/RegLevelCorrect.lean",
+      "sha256": "2858142d95164dee4abf8dfea3909778d9bd6f733320162be86d496701a556e1"
+    },
+    "FV.E2E.RegLevelTls": {
+      "source": "FV/E2E/RegLevelTls.lean",
+      "sha256": "b2bb5418e25b62ea72e5efef329a48c808c1859bd8bc5b9731f4d13bcc3c3657"
+    },
+    "FV.E2E.RegLevelCall": {
+      "source": "FV/E2E/RegLevelCall.lean",
+      "sha256": "ed521fa34920d7f32b6a4428c1b579f450e1f445876c9ab5743e449520646cc6"
+    },
+    "FV.E2E.RegLevelNext": {
+      "source": "FV/E2E/RegLevelNext.lean",
+      "sha256": "e75e03252722cd051a67e27711a0e1bca427c6b520423ebd591ffdde8deb5c17"
+    },
+    "FV.E2E.RegLevelGoto": {
+      "source": "FV/E2E/RegLevelGoto.lean",
+      "sha256": "bb8326befa657c3aa5cad27e4a1439e372ab9c1fef1e9a5b269b128805152f00"
+    },
+    "FV.E2E.RegLevelArgs": {
+      "source": "FV/E2E/RegLevelArgs.lean",
+      "sha256": "c966f6cd5cd3cc02ca0efd5f7b4b65ffbee7dc3ce5cabe3a3ce6585816797880"
+    },
+    "FV.E2E.RegLevelOp": {
+      "source": "FV/E2E/RegLevelOp.lean",
+      "sha256": "8f4460be8df2bd7be93441242c83f25225aaf67542757faadb3a6dd148fc80c4"
+    },
+    "FV.E2E.RegLevelGoodX": {
+      "source": "FV/E2E/RegLevelGoodX.lean",
+      "sha256": "54f16c8854f0f032a741cf13c4edeb5670aac55ab174299d1b573509cff080ee"
+    },
+    "FV.E2E.RegLevelRelax": {
+      "source": "FV/E2E/RegLevelRelax.lean",
+      "sha256": "2bfdeeb8640fb36947c12560883e4d75b47f4856279177e03ee60f0111323a75"
+    },
+    "FV.E2E.RegLevelEmit": {
+      "source": "FV/E2E/RegLevelEmit.lean",
+      "sha256": "bfd5b29eaa58511b6d085a2a6bd689956127de4d591d153f7304494a79f39aa7"
+    },
+    "FV.E2E.RegLevelMove": {
+      "source": "FV/E2E/RegLevelMove.lean",
+      "sha256": "7956381cc4074e80243d10dc06646e45e9d13d1b3a7d02bf1738dd92fb765c23"
+    },
+    "FV.E2E.RegLevelSim": {
+      "source": "FV/E2E/RegLevelSim.lean",
+      "sha256": "b915702798c8ca050af63518a71e9f87068df6afb0cae4a0bf1364b1fb1bc4b2"
+    },
+    "FV.E2E.RegLevelMachine": {
+      "source": "FV/E2E/RegLevelMachine.lean",
+      "sha256": "c195644d2b2ff1f8d05bf8c09fec38b86afe81ac933a9bc23657ffd78810e686"
+    },
+    "FV.Backend.Proof.RegallocFwd": {
+      "source": "FV/Backend/Proof/RegallocFwd.lean",
+      "sha256": "7bf134fc653bc0fb31b062615de450217b8be0aef8f80cba834ed81e72ee94d4"
+    },
+    "FV.Backend.Proof.RegallocFrame": {
+      "source": "FV/Backend/Proof/RegallocFrame.lean",
+      "sha256": "7dfe80bd97a9ced6ad1d32eda73eb2dbf7c00f2cde8ca706f8c71c053e815664"
+    },
+    "FV.Backend.Proof.RegallocMoves": {
+      "source": "FV/Backend/Proof/RegallocMoves.lean",
+      "sha256": "928bfa8dea0b8684de69dba1873944bd04fdf2c95be1afada467847a645aa30d"
+    },
+    "FV.Backend.Proof.RegallocLayout": {
+      "source": "FV/Backend/Proof/RegallocLayout.lean",
+      "sha256": "80b62b41bdb03caac2a3369fd7d629149f4d3385bcd87a7b62ba4c7717713d7f"
+    },
+    "FV.Backend.Proof.RegallocSlotsFar": {
+      "source": "FV/Backend/Proof/RegallocSlotsFar.lean",
+      "sha256": "4a7eb75f85fca7c6fb2a2d742d36d0354566aa8779b2a88957d2545b564fc4dc"
+    },
+    "FV.Backend.Proof.RegallocSlots": {
+      "source": "FV/Backend/Proof/RegallocSlots.lean",
+      "sha256": "012b38499eb178d1dddf29d5a49ec02f5f04917a456adfc286ecd886e9530ce0"
+    },
+    "FV.Backend.Proof.RegallocMemAddr": {
+      "source": "FV/Backend/Proof/RegallocMemAddr.lean",
+      "sha256": "b3e5964c16f54164e469eacaa66ac43f49200a3f8dc8636501a8ac6f79d09f23"
+    },
+    "FV.Backend.Proof.RegallocMem": {
+      "source": "FV/Backend/Proof/RegallocMem.lean",
+      "sha256": "1f55e93372f3cbc6725aacfbe50f20a026b0dba2f9980604aa501e0cfa1d535f"
+    },
+    "FV.Backend.Proof.RegallocOS": {
+      "source": "FV/Backend/Proof/RegallocOS.lean",
+      "sha256": "4048b6859c4bb2809b4909bb921403a2346098ea0bdc01ffe961a1a6f5f836e1"
+    },
+    "FV.Backend.Proof.RegallocInstsInt": {
+      "source": "FV/Backend/Proof/RegallocInstsInt.lean",
+      "sha256": "9331b0975e39006677bfec1d5321ac6cae52cef21c8d3313a7a77c9f54e3fafc"
+    },
+    "FV.Backend.Proof.RegallocTac": {
+      "source": "FV/Backend/Proof/RegallocTac.lean",
+      "sha256": "75c9d15aa7e23512b351bb02d5c71f9edeebb29dc25dba4d362b819feb9442f9"
+    },
+    "FV.Backend.Proof.RegallocInstsZR": {
+      "source": "FV/Backend/Proof/RegallocInstsZR.lean",
+      "sha256": "5917604a9dd5f6df2ef39d97eb32389bd14e9225f4dfca8d27d05e81538672c1"
+    },
+    "FV.Backend.Proof.RegallocInstsFP": {
+      "source": "FV/Backend/Proof/RegallocInstsFP.lean",
+      "sha256": "c8a251a64134ab16c1953abf4819d710406ea3d332bc3e0659da1a28e4401838"
+    },
+    "FV.E2E.RegLevelPush": {
+      "source": "FV/E2E/RegLevelPush.lean",
+      "sha256": "edd8e9cdd0543cf424fe6cea87deef42d232b5285471c35a82ad629018805781"
+    },
+    "FV.E2E.ExecReads": {
+      "source": "FV/E2E/ExecReads.lean",
+      "sha256": "d03af2f2d810b523fe445e6778f4fb1b6e26b4df0422823d25f03f4839a32458"
+    },
+    "FV.E2E.ExecFrame": {
+      "source": "FV/E2E/ExecFrame.lean",
+      "sha256": "29c0f3c7cb45817921e8c66dbb11f84c991951c7c5c62e0f634bea0d5a12b808"
+    },
+    "FV.E2E.MoveReads": {
+      "source": "FV/E2E/MoveReads.lean",
+      "sha256": "fbb9b99a650f652971268810bced4f361c3753b4687b1271502288c087d1afa7"
+    },
+    "FV.Backend.Proof.PairsC": {
+      "source": "FV/Backend/Proof/PairsC.lean",
+      "sha256": "aac9e18144db502f3c84e8bbaad2235e199d52871cd28e1f43ab4059c46e423b"
+    },
+    "FV.E2E.RegLevelBranch": {
+      "source": "FV/E2E/RegLevelBranch.lean",
+      "sha256": "03a56257ec3a55f8b1e34bfd4ab40a7ff4a8fd715d4c7a9c22b1b95f518613ef"
+    },
+    "FV.E2E.RegLevelTrap": {
+      "source": "FV/E2E/RegLevelTrap.lean",
+      "sha256": "80e5d1a9d6c8502aa6e096db5fdcf4bd4406d38c6e3b36cb6b0092639efa708c"
+    },
+    "FV.E2E.RegLevelFrame": {
+      "source": "FV/E2E/RegLevelFrame.lean",
+      "sha256": "bec869b68c2dd2d6079a08c5c346ad226d15d95809acef29e60dee895b6298fc"
+    },
+    "FV.E2E.RegLevelTry": {
+      "source": "FV/E2E/RegLevelTry.lean",
+      "sha256": "28643888126156d012898a7f9e2cee0ff98f580dc394db0d4bff7c96d7d8fc0c"
+    },
+    "FV.Backend.Proof.RegallocCover": {
+      "source": "FV/Backend/Proof/RegallocCover.lean",
+      "sha256": "677d6de5a02cf417f33acaccafb6a984a01bf34ac583e278373a84529a1c13bb"
+    },
+    "FV.Backend.Proof.RegallocAtomic": {
+      "source": "FV/Backend/Proof/RegallocAtomic.lean",
+      "sha256": "fc85c415c4802117dba26f03af3aee8088246c1ff5fd81d0305e3780c4730c78"
+    },
+    "FV.Backend.Proof.RegallocMemCorr": {
+      "source": "FV/Backend/Proof/RegallocMemCorr.lean",
+      "sha256": "792fc77f56913d33512d826bc7512bef1c061c353d76d01f9154813f01376d99"
+    },
+    "FV.Backend.Proof.RegallocMemFP": {
+      "source": "FV/Backend/Proof/RegallocMemFP.lean",
+      "sha256": "32e0cd93fe33b0f78ec9018618c2614f19e4f267f9a62a2350cff77db5207abb"
+    },
+    "FV.Backend.Proof.RegallocMemOS": {
+      "source": "FV/Backend/Proof/RegallocMemOS.lean",
+      "sha256": "9c45a20abd1fc53cd275fee0e89873ff93e0b8cd23c3625e7aaf2d16227d3d6b"
+    },
+    "FV.Backend.Proof.RegallocCSemWorld": {
+      "source": "FV/Backend/Proof/RegallocCSemWorld.lean",
+      "sha256": "8caa2881c1e1ffd8275c3a582b5e2424f4fd8fdae1e7113e889bef577f07d567"
+    },
+    "FV.E2E.RegLevelAtomic": {
+      "source": "FV/E2E/RegLevelAtomic.lean",
+      "sha256": "f14a42ad51da3d6b66a6fcb174819cd51f99192e47da30984ebcecb6ac59a1b2"
+    },
+    "FV.E2E.RegLevelJT": {
+      "source": "FV/E2E/RegLevelJT.lean",
+      "sha256": "3420cbbf07748709cc825e76936afa894270877a5db89d20ce74f258c2852453"
+    },
+    "FV.Backend.Proof.LoopRun": {
+      "source": "FV/Backend/Proof/LoopRun.lean",
+      "sha256": "52cc96460e7751e9eaf67ac95986823dd88d39e87b1558b6f631507ef03250ac"
+    },
+    "FV.E2E.RegLevelOpReads": {
+      "source": "FV/E2E/RegLevelOpReads.lean",
+      "sha256": "006554b67f133576ad288362ef333f4e027b0c0952ff770327fbc71929ddc1ad"
+    },
+    "FV.E2E.DeadCleanupRealizes": {
+      "source": "FV/E2E/DeadCleanupRealizes.lean",
+      "sha256": "3120bd166babaf943e80ae665e4b6508600f840d9755522569adad48e06efb8f"
+    },
+    "FV.Backend.Proof.DeadCleanupAdapter": {
+      "source": "FV/Backend/Proof/DeadCleanupAdapter.lean",
+      "sha256": "cb9bca849417feca9bf961a4183fe2804b711bbb7d93f9cffb98f5b0460a8d01"
+    },
+    "FV.Backend.Proof.DeadCleanupSem": {
+      "source": "FV/Backend/Proof/DeadCleanupSem.lean",
+      "sha256": "ec2316759c6469e586c263931ff868957b762718b4e5198df257f1b4025cec6d"
+    },
+    "FV.Backend.Proof.RefinesCSem": {
+      "source": "FV/Backend/Proof/RefinesCSem.lean",
+      "sha256": "e22e135b0a7fd93fd9f56d0f26e1240faf123dab0c9d2c52290cb3694426a660"
+    },
+    "FV.Backend.Proof.RefinesInsts2": {
+      "source": "FV/Backend/Proof/RefinesInsts2.lean",
+      "sha256": "cb8564137524787f22888ce9e64ed242a732aa5159681d07db56a59e7239d8cd"
+    },
+    "FV.Backend.Proof.RefinesInsts": {
+      "source": "FV/Backend/Proof/RefinesInsts.lean",
+      "sha256": "ddb22a8ad306d5ec6d2f51a0c22148c15818e4d7a324505e37fe422cb31b93bb"
+    },
+    "FV.Backend.Proof.MemRefines": {
+      "source": "FV/Backend/Proof/MemRefines.lean",
+      "sha256": "35de1fd72f98c488730664169e2ee3f86254c93e5c7687efacaa6cb0cde29b22"
+    }
+  },
+  "source_context_tree": "405776adaffb7cf5a7b47a35b2da797fe4863c91",
+  "normal_context_modules": 905,
+  "roots": [
+    "FV.E2E.DeadCleanupRealizes",
+    "FV.E2E.RegLevelCorrect",
+    "FV.E2E.RegLevelNext",
+    "FV.E2E.RegLevelOpReads"
+  ],
+  "RegLevelCorrectU_not_required": "This mixed function has no calls or unwind edges. The ordinary proof uses RegLevelCorrect, RegLevelNext and DeadCleanupRealizes. All existing unwind/source/peak guarantees remain untouched.",
+  "no_baseline_kernel_build": true
+}
