@@ -17,7 +17,7 @@ for name in ['return-pin-binary-final-state-v1.json','return-pin-executable-fina
 digest = hashlib.sha256(source.read_bytes()).hexdigest()
 env = dict(os.environ)
 env.update(json.loads((e / 'author-env-v1.json').read_text()))
-env.update(FV_MEMCAP='3G', LEAN_NUM_THREADS='2', OMP_NUM_THREADS='2', OMP_THREAD_LIMIT='2',
+env.update(FV_ROOT=str(r), FV_MEMCAP='3G', LEAN_NUM_THREADS='2', OMP_NUM_THREADS='2', OMP_THREAD_LIMIT='2',
            FV_MEMCAP_UNIT='worker-o-sret-captured-exec-v1',
            FV_MEMCAP_STATS=str(e / 'sret-captured-exec-memory-v1.log'))
 logs = e / 'sret-captured-exec-kernel-v1'
@@ -27,7 +27,8 @@ with (logs / 'summary.log').open('w') as log:
                     '--log-dir', str(logs / 'audit'), str(source)],
                    cwd=r, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
 assert hashlib.sha256(source.read_bytes()).hexdigest() == digest
-receipt = dict(status='passed', source_sha256=digest, generic_roots=0, fixed_roots=2,
+assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=r,text=True).strip() == head
+receipt = dict(status='passed', head=head, source_sha256=digest, generic_roots=0, fixed_roots=2,
                full_goal_complete=False,
                scope='The original complete linked caller/callee executes under the existing source and executable theorems for arbitrary symbolic source bytes in both cleanup modes. Every destination and source byte is specified. The fixed-image static facts supply non-vacuity; no accepted-input execution certificate is added. Default activation and full140 remain open',
                utc=datetime.datetime.now(datetime.timezone.utc).isoformat())

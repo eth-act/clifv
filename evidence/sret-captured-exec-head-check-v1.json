@@ -1,0 +1,12 @@
+{
+  "status": "prepared_not_run",
+  "syntax": "passed",
+  "script_sha256": "18cd8a7cecaabc7502445405746aefb0f4c682f8f5803879c278ec142deef513",
+  "changes": [
+    "Require the source head to remain unchanged after the kernel audit.",
+    "Record the source head in the receipt.",
+    "Use the actual owned view as FV_ROOT."
+  ],
+  "full_goal_complete": false,
+  "utc": "2026-11-02T00:09:22.311745+00:00"
+}
