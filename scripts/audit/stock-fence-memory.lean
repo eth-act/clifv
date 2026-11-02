@@ -50,15 +50,15 @@ import FV.Backend.Proof.StockMemoryStoreAccessTrap
 #print axioms Backend.Stock.Proof.FenceFixture.fault_source_entry
 #print axioms Backend.Stock.Proof.FenceFixture.unallocated_first_access_traps
 #print axioms Backend.Stock.Proof.FenceFixture.unallocated_first_access_event
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_actual_body_facts -- fixed witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_actual_body_facts -- witness: native_decide
 #print axioms Backend.Stock.Proof.FenceFixture.mixed_emitted_result_mapped
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_record_fall_refines -- fixed witness: native_decide
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_record_access_trap -- fixed witness: native_decide
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_domain_with_access_traps -- fixed witness: native_decide
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_complete_return -- fixed witness: native_decide
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_complete_division_trap -- fixed witness: native_decide
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_complete_domain_witness -- fixed witness: native_decide
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_body_all_emitted -- fixed witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_record_fall_refines -- witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_record_access_trap -- witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_domain_with_access_traps -- witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_complete_return -- witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_complete_division_trap -- witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_complete_domain_witness -- witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_body_all_emitted -- witness: native_decide
 #print axioms Backend.Stock.Proof.MemoryFaults.access_allocated_boundary
 #print axioms Backend.Stock.Proof.MemoryFaults.sourceAddrPred_unmapped
 #print axioms Backend.Stock.Proof.MemoryFaults.instFaults_unsigned_load64
@@ -128,17 +128,17 @@ import FV.Backend.Proof.StockMemoryStoreAccessTrap
 #print axioms Backend.Stock.Proof.MemoryFaults.regLevel_access_fault_worldX_value
 #print axioms Backend.Stock.Proof.MemoryFaults.ordinaryAccessShape_of_check
 #print axioms Backend.Stock.Proof.MemoryFaults.ordinaryAccessShapes_of_check
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_prepared_access_shapes
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_prepared_access_shapes -- witness: native_decide
 #print axioms Backend.Stock.Proof.MemoryFaults.accessTrap_stage
 #print axioms Backend.Stock.Proof.MemoryFaults.accessTrap_gotV_value
 #print axioms Backend.Stock.Proof.MemoryFaults.returns_stage
 #print axioms Backend.Stock.Proof.MemoryFaults.runOk_stage
-#print axioms E2E.backend_correct_worldX_stock_fence
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_complete_compilation
+#print axioms E2E.backend_correct_worldX_stock_fence -- witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_complete_compilation -- witness: native_decide
 
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_no_i128
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_legalize_identity
-#print axioms Backend.Stock.Proof.FenceFixture.mixed_original_complete_compilation
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_no_i128 -- witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_legalize_identity -- witness: native_decide
+#print axioms Backend.Stock.Proof.FenceFixture.mixed_original_complete_compilation -- witness: native_decide
 #print axioms Backend.Stock.Proof.MemoryFaults.realizes_haltAccess_trace
 #print axioms Backend.Stock.Proof.MemoryFaults.access_allocated_boundary_trace
 #print axioms Backend.Stock.Proof.MemoryFaults.access_register_level_boundary_trace

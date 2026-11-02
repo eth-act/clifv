@@ -31,7 +31,7 @@ def mixed_compile (cleanup : Bool) : Option MixedArtifacts := do
   else none
 
 private theorem compile_observed : [false,true].all (fun cleanup => (mixed_compile cleanup).isSome) = true := by
-  native_decide
+  native_decide -- witness: native_decide
 
 private theorem except_of_toOption {α : Type} {value : Except String α} {out : α}
     (observed : value.toOption = some out) : value = .ok out := by

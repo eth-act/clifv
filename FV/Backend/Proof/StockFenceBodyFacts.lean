@@ -14,7 +14,7 @@ private def bodyFacts (event : BlockScanEvent) : Bool :=
 private def allFacts : Option Bool :=
   (Stock.lower function).toOption.map fun result => result.blockScans.toList.all bodyFacts
 
-private theorem allFacts_true : allFacts = some true := by native_decide
+private theorem allFacts_true : allFacts = some true := by native_decide -- witness: native_decide
 
 private theorem successful_exists {α : Type} (value : Except String α) (test : α → Bool)
     (success : value.toOption.map test = some true) :
