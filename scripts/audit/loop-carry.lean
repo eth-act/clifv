@@ -19,4 +19,9 @@ import FV.Backend.Proof.StockLoopCarryWitness
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.successor_traps_carry_below
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_empty_parameter_carry_below
 #print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_empty_parameter_carry_below
+#print axioms Backend.Stock.Proof.LoopCarry.defCarry_available
+#print axioms Backend.Stock.Proof.LoopCarry.defCarry_entry
+#print axioms Backend.Stock.Proof.LoopCarry.defCarry_entry_rel
+#print axioms Backend.Stock.Proof.LoopCarry.defCarry_cover
 #print axioms Backend.Stock.Proof.LoopCarry.Witness.back_edge_carry_witness -- witness: native_decide
+#print axioms Backend.Stock.Proof.LoopCarry.Witness.def_carry_witness -- witness: native_decide

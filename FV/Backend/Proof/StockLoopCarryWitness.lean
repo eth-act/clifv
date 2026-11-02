@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockLoopCarryBounded
+import FV.Backend.Proof.StockLoopCarryGlobal
 import FV.Backend.Proof.StockParameterLoopProbe
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.StockScalarCheck
@@ -10,7 +10,8 @@ On its back edge `block2 → block1` the forward demand premise fails: the heade
 `v0` at entry (the loop body reads it), but the latch's terminator scan does not. The header
 carry contains `v0`, is available at the latch's entry, and discharges every structural
 premise of the latch's carry composition `jump_body_carry_returns_below` and of the forward
-edge `block1 → block2` into the loop body. -/
+edge `block1 → block2` into the loop body. `DefBefore` holds for the actual block order, the
+definition carry of the latch contains `v0`, and it covers the back edge (`defCarry_cover`). -/
 
 namespace Backend.Stock.Proof.LoopCarry.Witness
 open Backend.Proof Backend.Proof.Driver Backend.Stock.ParameterLoopCfg.Probe
@@ -158,6 +159,114 @@ theorem back_edge_carry_witness {F : BitVec 64 → Prop} {isem : Backend.Proof.S
     intro vals outMem fuel continuation s callers remaining atTerm defined returned ρ w held
     exact Control.jump_body_carry_returns_below run scope dominated family refines driver stable spec node2 rfl
       targetTag header_index header_found eventMem eventBlock carriedLatch carriedHeader backCover
+      continuation callers remaining atTerm defined returned held
+
+private def originalBlock? : Node → Option Nat
+  | .original block => some block
+  | _ => none
+
+/-- `DefBefore` over the labels of the actual block order. -/
+def DefBeforeBounded (result : Result) : Prop :=
+  ∀ ld ∈ List.range result.order.nodes.size,∀ lt ∈ List.range result.order.nodes.size,
+    ∀ d ∈ ((result.order.nodes[ld]?).bind originalBlock?).toList,
+    ∀ t ∈ ((result.order.nodes[lt]?).bind originalBlock?).toList,
+    ∀ x ∈ (availIn whileLoop result.ctx).getD t [],x ∈ parsOf whileLoop d ∨ x ∈ defsOf whileLoop d → ld < lt
+
+instance (result : Result) : Decidable (DefBeforeBounded result) := by
+  unfold DefBeforeBounded
+  infer_instance
+
+-- witness: native_decide (the block order facts of the fixed function's actual lowering only)
+private theorem observed_order : (Stock.lower whileLoop).toOption.map
+    (fun result => decide (DefBeforeBounded result ∧
+      ∀ event ∈ result.blockScans.toList,event.block = 0 →
+        event.output.records.head?.map (fun term => decide (term.output.state.demand[0]! ≠ 0)) = some true)) =
+    some true := by
+  native_decide
+
+private theorem defBefore_of_bounded {result : Result} (bounded : DefBeforeBounded result) :
+    DefBefore whileLoop result := by
+  intro d t ld lt x dTag tTag incoming defines
+  exact bounded ld (List.mem_range.mpr (Array.getElem?_eq_some_iff.mp dTag).1)
+    lt (List.mem_range.mpr (Array.getElem?_eq_some_iff.mp tTag).1)
+    d (by simp [dTag,originalBlock?]) t (by simp [tTag,originalBlock?]) x incoming defines
+
+private theorem zero_defined {d : Nat} (defines : 0 ∈ parsOf whileLoop d ∨ 0 ∈ defsOf whileLoop d) : d = 0 := by
+  match d with
+  | 0 => rfl
+  | 1 => simp [parsOf,defsOf,whileLoop] at defines
+  | 2 => simp [parsOf,defsOf,whileLoop] at defines
+  | 3 => simp [parsOf,defsOf,whileLoop] at defines
+  | d+4 => simp [parsOf,defsOf,whileLoop] at defines
+
+/-- The definition carry on the `while` loop: `DefBefore` holds for the actual block order, the
+latch's definition carry contains `v0`, and the definition carries of the latch and the header
+discharge every structural premise of the latch's carry composition through `defCarry_cover`. -/
+theorem def_carry_witness {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR) (env : Clif.Env) (cp : Clif.Program) :
+    ∃ (result : Result) (spec : Control.JumpBodySpec whileLoop result latch 2 2 ⟨1,[6,8]⟩ isem MR env cp)
+      (event : BlockScanEvent),
+      Stock.lower whileLoop = .ok result ∧ DefBefore whileLoop result ∧
+      event ∈ result.blockScans.toList ∧ event.block = 1 ∧ spec.core.scan.block = 2 ∧
+      defCarry whileLoop result 2 0 ∧
+      ∀ {vals : List Clif.Val} {outMem : Clif.Mem} {fuel : Nat},
+        (∀ (left : Nat),left < fuel → ∀ (s : Clif.State) (ρ : Nat → CV) (w : Arm.ArmState),
+          s.frame.func = whileLoop → s.callers = [] → s.frame.body = header.body →
+          s.frame.term = header.term → SourceDefinedAt whileLoop result.ctx 1 0 s.frame →
+          Clif.runLoop env cp left s = .returned vals outMem →
+          Inherited.CarryRel whileLoop result event.ctx event.block MR (defCarry whileLoop result 1)
+            event.output.state (0,s.frame,s.mem) ρ w →
+          RunOkABIAt whileLoop result.code result.edgeArgs isem MR s.frame.slots
+            ⟨spec.target,0,ρ,w⟩ (.returned vals outMem)) →
+        ∀ (s : Clif.State),s.callers = [] → s.frame.body = latch.body → s.frame.term = latch.term →
+          SourceDefinedAt whileLoop result.ctx spec.core.scan.block 0 s.frame →
+          Clif.runLoop env cp fuel s = .returned vals outMem → ∀ (ρ : Nat → CV) (w : Arm.ArmState),
+          Inherited.CarryRel whileLoop result spec.core.scan.ctx spec.core.scan.block MR
+            (defCarry whileLoop result spec.core.scan.block) spec.core.scan.output.state (0,s.frame,s.mem) ρ w →
+          RunOkABIAt whileLoop result.code result.edgeArgs isem MR s.frame.slots
+            ⟨2,spec.preludeCode.size,ρ,w⟩ (.returned vals outMem) := by
+  obtain ⟨scope,dominated,family⟩ := class_facts
+  have checked := observed
+  have checkedOrder := observed_order
+  cases run : Stock.lower whileLoop with
+  | error message => rw [run] at checked; cases checked
+  | ok result =>
+    rw [run] at checked checkedOrder
+    have facts : Facts result := of_decide_eq_true (Option.some.inj checked)
+    obtain ⟨bounded,entryDemand⟩ := of_decide_eq_true (Option.some.inj checkedOrder)
+    have before := defBefore_of_bounded bounded
+    obtain ⟨node1,node2,successors2,⟨event,eventMem,eventBlock⟩,headerDemand,latchDemand,zeroAvailable,
+      inclusion⟩ := facts
+    obtain ⟨spec⟩ := Control.stock_lower_jump_body_spec run scope dominated family node2 latch_source rfl
+      refines driver stable env cp
+    have row : result.order.successors[2]! = #[1] := by
+      simp only [getElem!_def,successors2,Option.getD_some]
+    have target : spec.target = 1 := by
+      have targets := spec.targets
+      rw [row] at targets
+      exact (List.cons.inj targets).1.symm
+    have targetTag : result.order.nodes[spec.target]? = some (.original 1) := by
+      rw [target]
+      exact node1
+    have zeroCarried : defCarry whileLoop result 2 0 := by
+      refine ⟨inclusion 0 zeroAvailable,by simp [parsOf,whileLoop],?_⟩
+      intro d defines
+      have zero := zero_defined defines
+      subst zero
+      intro entryEvent member atEntry term head
+      have mapped := entryDemand entryEvent member atEntry
+      have headEq : entryEvent.output.records.head? = some term := head
+      rw [headEq] at mapped
+      simp only [Option.map_some,Option.some.injEq,decide_eq_true_eq] at mapped
+      exact mapped
+    have cover := defCarry_cover run scope before spec.events spec.split
+      (by rw [spec.atBlock]; exact node2) eventMem (by rw [eventBlock]; exact node1)
+      (by rw [eventBlock]; exact header_source) (by rw [eventBlock,spec.atBlock]; decide)
+    refine ⟨result,spec,event,rfl,before,eventMem,eventBlock,spec.atBlock,zeroCarried,?_⟩
+    intro vals outMem fuel continuation s callers remaining atTerm defined returned ρ w held
+    exact Control.jump_body_carry_returns_below run scope dominated family refines driver stable spec node2 rfl
+      targetTag header_index header_found eventMem eventBlock defCarry_available defCarry_available
+      (by simpa only [eventBlock] using cover)
       continuation callers remaining atTerm defined returned held
 
 end Backend.Stock.Proof.LoopCarry.Witness
