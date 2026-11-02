@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "source_sha256": "58f14e45bb3a6c248777153a24e017b148c58849a99341a53c276fe54dd5a1ca",
+  "generic_roots": 11,
+  "fixed_roots": 0,
+  "full_goal_complete": false,
+  "scope": "Symbolic source contents inhabit the existing machine entry and reference source-run contracts. Static image and stack bounds discharge heap exclusion without a caller execution certificate. Actual linked-image witnesses, default activation and full140 remain open",
+  "utc": "2026-11-02T03:59:06.864766+00:00"
+}

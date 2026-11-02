@@ -1,0 +1,16 @@
+FAIL WorkerOSretExecBoundaryDraftV2.lean: theorems 11/11 rc=1 errors=1 other_axioms=[E2E.SretExecBoundary.clif_run: sorryAx]
+    /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOSretExecBoundaryDraftV2.lean:79:61: error(lean.unknownIdentifier): Unknown identifier `BaseEnv`
+    
+    Note: It is not possible to treat `BaseEnv` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+    'E2E.SretExecBoundary.pc' depends on axioms: [propext, Quot.sound]
+    'E2E.SretExecBoundary.stack_pointer' depends on axioms: [propext, Quot.sound]
+    'E2E.SretExecBoundary.return_address' depends on axioms: [propext, Quot.sound]
+    'E2E.SretExecBoundary.no_error' depends on axioms: [propext]
+    'E2E.SretExecBoundary.memory_relation' depends on axioms: [propext, Quot.sound]
+    'E2E.SretExecBoundary.reserved_bytes' depends on axioms: [propext, Quot.sound]
+    'E2E.SretExecBoundary.arguments_out' depends on axioms: [propext, Classical.choice, Quot.sound]
+    'E2E.SretExecBoundary.stack_reserved' depends on axioms: [propext, Quot.sound]
+    'E2E.SretExecBoundary.outside_call' depends on axioms: [propext, Classical.choice, Quot.sound]
+    'E2E.SretExecBoundary.clif_run' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+    'E2E.SretExecBoundary.image_intact' depends on axioms: [propext, Quot.sound]
+axiom audit: 0/1 files ok

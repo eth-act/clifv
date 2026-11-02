@@ -1,0 +1,31 @@
+from pathlib import Path
+import datetime
+import hashlib
+import json
+import os
+import subprocess
+
+b = Path('/home/lee/clifv')
+r = b / '.worktrees/stock-extending-production-20261031'
+e = b / '.git/agent-evidence/stock-memory-20261029'
+source = e / 'WorkerOSretExecBoundaryDraftV2.lean'
+assert source.is_file()
+digest = hashlib.sha256(source.read_bytes()).hexdigest()
+env = dict(os.environ)
+env.update(json.loads((e / 'author-env-v1.json').read_text()))
+env.update(FV_ROOT=str(r), FV_MEMCAP='3G', LEAN_NUM_THREADS='2', OMP_NUM_THREADS='2', OMP_THREAD_LIMIT='2',
+           FV_MEMCAP_UNIT='worker-o-sret-exec-boundary-v2-early-v1',
+           FV_MEMCAP_STATS=str(e / 'sret-exec-boundary-memory-v2-early-v1.log'))
+logs = e / 'sret-exec-boundary-kernel-v2-early-v1'
+logs.mkdir(exist_ok=True)
+with (logs / 'summary.log').open('w') as log:
+    subprocess.run(['nice', '-n', '10', str(r / 'scripts/memcap.sh'), 'python3', 'scripts/axiom-audit.py',
+                    '--log-dir', str(logs / 'audit'), str(source)],
+                   cwd=r, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+assert hashlib.sha256(source.read_bytes()).hexdigest() == digest
+receipt = dict(status='passed', source_sha256=digest, generic_roots=11, fixed_roots=0,
+               full_goal_complete=False,
+               scope='Symbolic source contents inhabit the existing machine entry and reference source-run contracts. Static image and stack bounds discharge heap exclusion without a caller execution certificate. Actual linked-image witnesses, default activation and full140 remain open',
+               utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
+(e / 'sret-exec-boundary-state-v2-early-v1.json').write_text(json.dumps(receipt, indent=2) + '\n')
+print(json.dumps(receipt), flush=True)

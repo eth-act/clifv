@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "FV/E2E/SretCopyExecBoundary.lean": "eaada2550a544a63d78b6651a7c47d7875abe82cf654fd4a1b183450a789919e",
+    "scripts/audit/sret-copy-exec-boundary.lean": "9b8180651f3bf7c4ba2a446601db469a69660d3e11dc3742a32866cdc69080c6"
+  },
+  "modules": 1,
+  "generic_roots": 11,
+  "fixed_witness_roots": 0,
+  "full_goal_complete": false,
+  "scope": "The canonical symbolic entry adapter derives OutsideCall,ClifRun,and Image.Intact from original heap and static image/stack facts. No caller execution certificate or runtime acceptance guard is added. Actual linked witnesses,default activation,and full140 remain open",
+  "utc": "2026-11-02T03:59:09.037800+00:00"
+}

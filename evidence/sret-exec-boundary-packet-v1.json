@@ -1,0 +1,10 @@
+{
+  "files": {
+    "FV/E2E/SretCopyExecBoundary.lean": "7707155406ac80834743e6e8986f0cb05081c37d9b36f5861633eefcf7a21ab2",
+    "scripts/audit/sret-copy-exec-boundary.lean": "9b8180651f3bf7c4ba2a446601db469a69660d3e11dc3742a32866cdc69080c6"
+  },
+  "full_goal_complete": false,
+  "prototype_sha256": "ccdea375278ce2e7b8101760faadc7eb1a939e93034a929072d4bfd411c1d1e5",
+  "generic_roots": 11,
+  "fixed_roots": 0
+}

@@ -1,0 +1,10 @@
+{
+  "files": {
+    "FV/E2E/SretCopyCapturedEntry.lean": "403c37ea9aaf53ec07b667b5319c7c97b6df5da1881f4c07ad7fce16b5de9976",
+    "scripts/audit/sret-copy-captured-entry.lean": "617d118e5d29b451d44f9ed2230b8f9298b641ba45982317840122c629184d5a"
+  },
+  "prototype_sha256": "96db5fd1ffa2b1ecef64e3a444c9bd0028063c87ad56b3fa6c64d42c40b842fc",
+  "generic_roots": 0,
+  "fixed_roots": 1,
+  "full_goal_complete": false
+}

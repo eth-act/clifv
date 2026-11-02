@@ -1,0 +1,70 @@
+{
+  "status": "reviewed_pass",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "generic_roots": 11,
+  "fixed_roots": 1,
+  "generic_axioms": {
+    "E2E.SretExecBoundary.pc": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.SretExecBoundary.stack_pointer": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.SretExecBoundary.return_address": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.SretExecBoundary.no_error": [
+      "propext"
+    ],
+    "E2E.SretExecBoundary.memory_relation": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.SretExecBoundary.reserved_bytes": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.SretExecBoundary.arguments_out": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.SretExecBoundary.stack_reserved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.SretExecBoundary.outside_call": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.SretExecBoundary.clif_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.SretExecBoundary.image_intact": [
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "receipts": {
+    "sret-exec-boundary-packet-state-v1-early-v2.json": "40ade13cd90a6699703473a376c2fa46e34a370936c7561a916fd19a47c58ecb",
+    "sret-captured-entry-packet-state-v1.json": "f4ff2d1f764a370197c65d0c270e5280446cffb0e6b88fa942e7b77769f95d12"
+  },
+  "artifact_hashes": {
+    ".lake/build/lib/lean/FV/E2E/SretCopyExecBoundary.olean": "fc7507a74fe502e6d8a486d55b2c0d73e7edcb68580b5c4c2ce2772d4c301a38",
+    ".lake/build/lib/lean/FV/E2E/SretCopyExecBoundary.ilean": "184202d3fabc5c9f36a66fdcaf00e241711ee874420b5fd9f89899c09e33eb6e",
+    ".lake/build/lib/lean/FV/E2E/SretCopyExecBoundary.c": "b86e58faee5617223c9817185b14338d0e75aff196d6a38d8220ec3375208a73",
+    ".lake/build/lib/lean/FV/E2E/SretCopyCapturedEntry.olean": "549c8ac2023fadc1607b8130307ac9a49926274084bafb5cc3ea5aaa87087aee",
+    ".lake/build/lib/lean/FV/E2E/SretCopyCapturedEntry.ilean": "a244ca5464d13a97c011d6d8f71f32219c36bee5e27293f20788b524c77dcbcc",
+    ".lake/build/lib/lean/FV/E2E/SretCopyCapturedEntry.c": "2ac5df6f3f2a96c94e9e8c17690bbaf12b50b71444b4c8cccdc635fa5280a940"
+  },
+  "compiled_symbolic_execution_proved": false,
+  "default_activated": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T04:03:30.889691+00:00"
+}

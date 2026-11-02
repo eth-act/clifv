@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "FV/E2E/SretCopyCapturedEntry.lean": "403c37ea9aaf53ec07b667b5319c7c97b6df5da1881f4c07ad7fce16b5de9976",
+    "scripts/audit/sret-copy-captured-entry.lean": "617d118e5d29b451d44f9ed2230b8f9298b641ba45982317840122c629184d5a"
+  },
+  "modules": 1,
+  "generic_roots": 0,
+  "fixed_witness_roots": 1,
+  "full_goal_complete": false,
+  "scope": "The unchanged complete mixed linked images inhabit OutsideCall,ClifRun,Image.Intact,and the full original source return for arbitrary symbolic bytes in both cleanup modes. Native certificates cover fixed image facts only. Full compiled execution and production activation remain open",
+  "utc": "2026-11-02T04:01:44.972202+00:00"
+}

@@ -1,0 +1,5 @@
+'E2E.SretCapturedEntry.captured_entry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_1,
+ E2E.SretCapturedEntry.static_checks._native.native_decide.ax_2]
