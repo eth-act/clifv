@@ -1,0 +1,19 @@
+{
+  "status": "not_ready",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "roots": [
+    "FV.Backend.Proof.IselMemArm",
+    "FV.E2E.Statement",
+    "FV.E2E.PreparedReturnPinCallsWitness",
+    "FV.E2E.SrcScopeDefs",
+    "FV.Backend.Proof.StockMemorySretCopyBodyWitness"
+  ],
+  "exit_code": 3,
+  "cache_restore_enabled": false,
+  "builds_started": false,
+  "missing": [
+    "FV.E2E.PreparedReturnPinCalls",
+    "FV.E2E.SrcScopeDefs"
+  ],
+  "utc": "2026-11-02T02:59:49.529724+00:00"
+}
