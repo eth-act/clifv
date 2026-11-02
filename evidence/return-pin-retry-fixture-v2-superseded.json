@@ -1,0 +1,5 @@
+{
+  "stopped": [],
+  "reason": "Apply the existing project idiom: local irreducibility for heavy fixed native checks. Existing PreparedReturnPinCallsWitness guards retryChecks this way. The unguarded full prototype hit3GiB; isolate and guard the same fixed computation without changing its Boolean condition or proof boundary.",
+  "utc": "2026-11-01T14:46:20.852327+00:00"
+}

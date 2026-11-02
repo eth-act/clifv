@@ -1,0 +1,18 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v1/FV/Backend/ReturnPinProduction.lean:32:62: error: unsolved goals
+m : Type → Type
+inst✝ : Monad m
+alloc : Array VCode → m (Array (Except String AFunc))
+pf : Clif.ParsedFile
+pre : List (String × String)
+cleanup : Bool
+accepted : returnPinModeB pf pre cleanup = true
+⊢ (if false = true then compileFileMemoryCapturedCopyNIWhen true alloc pf pre cleanup
+    else compileFileVoidCallABIWhen true alloc pf pre cleanup) =
+    compileFileVoidCallABIWhen true alloc pf pre cleanup
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v1/FV/Backend/ReturnPinProduction.lean:33:75: warning: This simp argument is unused:
+  ite_false
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [compileFileReturnPinWhen, accepted, Bool.not_true, Bool.true_and]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

@@ -1,0 +1,9 @@
+{
+  "commit": "3c368195899fa3ed4eb5ed05343f448aab3f2a6d",
+  "remote_verified": true,
+  "archive_bytes": 3192936,
+  "archive_sha256": "b9d90e935e938ebb9819222feb948c11b0b69c51b5f4b3cdedebc06c17abd600",
+  "descriptor": "return-pin-void-call-progress-v1.remote.json",
+  "source_files": 14,
+  "full_goal_complete": false
+}

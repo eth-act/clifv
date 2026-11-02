@@ -1,0 +1,12 @@
+{
+  "files": {
+    "FV/Link/ReturnPinCompileDefs.lean": "541d7b517efe9f9be36a9c0df1e4b627d92c0b0f69ed2a7f00c0e785a2ce6c96",
+    "FV/Link/ReturnPinCompileWith.lean": "f32daef208c6aa56dab3eac781f7f4dd9b3f8db9141661ee7e23f70aa4e4cc84",
+    "FV/Link/ReturnPinRetryWitness.lean": "7e26b036122fa036c696eff24722d99a33bd43d75d11a196e637f96116e16bb2",
+    "scripts/audit/return-pin-compile.lean": "d6ad68ca130beff589d2b93f64eba1aa240db61186d77cb22fa6be6b00eb1a28"
+  },
+  "generic_roots": 10,
+  "fixed_roots": 4,
+  "full_goal_complete": false,
+  "scope": "Retain the tested compatibility APIs. Reuse the existing FallbackOutput and CompileChoice for current/previous/legacy provenance. New proofs bind every tag to the actual producer and erase to the exact compatibility result. Final metadata module/witness gates remain open."
+}

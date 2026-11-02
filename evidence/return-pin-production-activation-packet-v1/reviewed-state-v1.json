@@ -1,0 +1,249 @@
+{
+  "status": "reviewed_passed",
+  "manifest": "return-pin-production-activation-packet-v1.json",
+  "generic_receipt": "generic-state-v6.json",
+  "actual_backend_receipt": "entrypoint-smoke-state-v3.json",
+  "module_count": 35,
+  "generic_roots": 3,
+  "fixed_roots": 2,
+  "actual_backend_cases": 6,
+  "source_hashes": {
+    "FV/Backend/ReturnPinProduction.lean": "070955a00765b28cb3a810152cb00b20e1a1da179ecc5a74d0d627d2f43e29f8",
+    "FV/E2E/ReturnPinProductionWitness.lean": "d909dd35bbce83cc8cf963afa8db74bd78277373afaf7a4f5f9a659249e00ff7",
+    "FVTest/Backend/Main.lean": "2a67d21b232a2774bb3e45ab7f17e8752a8e6b794402b5fb615d1a7e4b4051ba",
+    "FVTest/Link/LeanLinkMain.lean": "85786cfec5468f284845bb2206172a5c4467fae0ea6cb15fd9eca11712d54873",
+    "FVTest/E2E/LinkCheckMain.lean": "225821bf40ad7634f607f22902905c9c4b5c08205bcbbff7b3ee86be94bda732",
+    "scripts/audit/return-pin-production.lean": "e07167e17950941a053ae85474c3c5e5c738c3659ebef305527a7fe30b8f8264",
+    "scripts/audit/return-pin-production-witness.lean": "ee9cb4e3de277f11fba1f77676459e2bcac309337f64e0276d191a9d453c6c6e"
+  },
+  "measured_memory": {
+    "kernel-v1/FV_Backend_VoidCallABIProduction.lean.mem": {
+      "peak": 226873344,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v1/FV_E2E_BinaryBoundaryDefs.lean.mem": {
+      "peak": 278462464,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v1/FV_E2E_LinkImageExtension.lean.mem": {
+      "peak": 231686144,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v1/FV_E2E_ReturnPinChecksWith.lean.mem": {
+      "peak": 270159872,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v1/FV_Link_ReturnPinCompileDefs.lean.mem": {
+      "peak": 278126592,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v1/FV_Backend_ReturnPinProduction.lean.mem": {
+      "peak": 210018304,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_Backend_ReturnPinProduction.lean.mem": {
+      "peak": 218689536,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_BinaryBoundaryFacts.lean.mem": {
+      "peak": 292155392,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v3/FV_E2E_ReturnPinProductionWitness.lean.mem": {
+      "peak": 291717120,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_ReturnPinProductionWitness.lean.mem": {
+      "peak": 307417088,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticBinary.lean.mem": {
+      "peak": 293543936,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FVTest_Backend_Main.lean.mem": {
+      "peak": 273985536,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticBinaryGood.lean.mem": {
+      "peak": 291700736,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticBinaryTS.lean.mem": {
+      "peak": 369770496,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticExecBytes.lean.mem": {
+      "peak": 497098752,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_ReturnPinBinary.lean.mem": {
+      "peak": 290643968,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticBinaryGoodTS.lean.mem": {
+      "peak": 295735296,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticExecFrameSim.lean.mem": {
+      "peak": 264179712,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticExecStatic.lean.mem": {
+      "peak": 945799168,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_ReturnPinGeneratedStack.lean.mem": {
+      "peak": 267137024,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticExecRunN.lean.mem": {
+      "peak": 302907392,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticExecGoodRun.lean.mem": {
+      "peak": 307683328,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FVTest_E2E_ReturnPinLinkProofWith.lean.mem": {
+      "peak": 286064640,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticExecGoodReads.lean.mem": {
+      "peak": 301711360,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticExecGot.lean.mem": {
+      "peak": 360513536,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FVTest_E2E_LinkCheckMain.lean.mem": {
+      "peak": 354762752,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_ReturnPinExecStatic.lean.mem": {
+      "peak": 322367488,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticExecProven.lean.mem": {
+      "peak": 272900096,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_SemanticExecTS.lean.mem": {
+      "peak": 397414400,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_ReturnPinExecGot.lean.mem": {
+      "peak": 293691392,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_Link_SemanticExeWith.lean.mem": {
+      "peak": 301649920,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_E2E_ReturnPinExecProven.lean.mem": {
+      "peak": 272039936,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_Link_SemanticCompileT.lean.mem": {
+      "peak": 283414528,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_Link_SemanticExeSourceWith.lean.mem": {
+      "peak": 303001600,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_Link_ReturnPinExeWith.lean.mem": {
+      "peak": 302657536,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FV_Link_ReturnPinExeSourceWith.lean.mem": {
+      "peak": 309325824,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v4/FVTest_Link_LeanLinkMain.lean.mem": {
+      "peak": 263856128,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "entrypoint-smoke-v1/backend.mem": {
+      "peak": 258150400,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "entrypoint-smoke-v2/backend.mem": {
+      "peak": 289673216,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v6/FV_Backend_ReturnPinProduction.lean.mem": {
+      "peak": 224329728,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v6/FV_E2E_ReturnPinProductionWitness.lean.mem": {
+      "peak": 306642944,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "kernel-v6/FVTest_Backend_Main.lean.mem": {
+      "peak": 265506816,
+      "oom": 0,
+      "oom_kill": 0
+    },
+    "entrypoint-smoke-v3/backend.mem": {
+      "peak": 285913088,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  },
+  "max_measured_peak_bytes": 945799168,
+  "isolated_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v1",
+  "owned_artifacts_record": "owned-artifacts-v1.json",
+  "cleanup": "removed validation-package-v1/.lake only; source, configuration, receipts, logs and object comparisons retained",
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "remaining": [
+    "Actual current-main gates and publication",
+    "Full backend/linker/checker/generated-proof execution on captured bundle",
+    "Typed generated-proof adapter; existing LinkProof APIs expose only integer leanFiles and leanFilesCleanup",
+    "All remaining original #140 obligations"
+  ],
+  "utc": "2026-11-02T06:41:04.051926+00:00"
+}

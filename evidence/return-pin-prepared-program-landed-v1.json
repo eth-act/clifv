@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "pr": 852,
+  "source": "68b394cc095561b110e06ebb70e44dd4b439224c",
+  "merged": "dd56ea3a06b98747fc60def80b795386229a8cf9",
+  "trees_equal": true,
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T09:30:45Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41289153524/job/124796590468",
+      "name": "Quick checks",
+      "startedAt": "2026-11-01T09:30:36Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T09:35:56Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41289153652/job/124796590606",
+      "name": "Build and compare",
+      "startedAt": "2026-11-01T09:30:36Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T09:36:08Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41289153652/job/124797699312",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-01T09:35:58Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T09:36:08Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41289153652/job/124797699275",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-01T09:35:58Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "scope": "One direct cheap review and four exact-head CI checks pass. The2958-module importer closure passed before main refresh. After850/851,1727 focused modules and20 roots pass. Three old producer statements and axiom sets remain exact. All38 other input fields remain. Caller bridge, caching, consumer wiring, default activation and original140 remain open.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T08:36:24.818318+00:00"
+}

@@ -1,0 +1,4 @@
+⚠ [48/50] Replayed FV.Opt.Proof.RuleImm
+warning: FV/Opt/Proof/RuleImm.lean:653:23: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [50/50] Built FV.Opt.Proof.RuleBitops2P1 (27s)
+Build completed successfully (50 jobs).

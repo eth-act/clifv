@@ -1,0 +1,19 @@
+{
+  "status": "backed_up",
+  "branch": "agent/stock-return-pin-linker-runtime-20261101",
+  "source": "3ff2e2022d6dd1880164d8e717d9348292ee4fd0",
+  "parent": "96963e0676962d959b689dcf67b40a24f22da661",
+  "parent_tree": "765995d0b2f6bc0386b4dfa20a7cec7f23310eea",
+  "tree": "2a644ccd2dd5a0c29dea2609b0bc5d0208f9783d",
+  "source_hashes": {
+    "FV/Link/ReturnPinCompileDefs.lean": "37e7d9c01a3b4a1229a1a1d0187b3d45651aee06948a5780a9968abbea1be1c5",
+    "FV/Link/ReturnPinCompileWith.lean": "df9aea755ce7da7c0bba7ab15b31e7ad6e73551592fadf167273ac918720635f",
+    "FV/Link/ReturnPinRetryWitness.lean": "7e26b036122fa036c696eff24722d99a33bd43d75d11a196e637f96116e16bb2",
+    "scripts/audit/return-pin-compile.lean": "4077efd8f0105f3110bdad6d94f5af4eef60b24f05c81ce8931644548ed3216c"
+  },
+  "generic_roots": 4,
+  "fixed_roots": 4,
+  "full_goal_complete": false,
+  "scope": "Four-file implementation branch. All three final modules and eight audit roots pass. PR publication waits for PR860 to land so its base contains only this packet. The tracked validation worktree remains unchanged.",
+  "utc": "2026-11-01T15:06:22.409025+00:00"
+}

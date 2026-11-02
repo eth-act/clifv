@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "source_hashes": {
+    "FV/E2E/SemanticPreparedPipeline.lean": "731810f2684cf2aef5488de19a070fedf424e183942d5c91fe63be94224ffbc2",
+    "FV/E2E/PreparedReturnPinPipeline.lean": "abc62d48cb5d0b9ca7eac54e158d58210371326fd57ea77b851f4232c6be6738",
+    "FV/E2E/SemanticPipelineCheckWith.lean": "a1f5a373c0b1b75d96fdf04e87493c2868caea3a399c40b594854d2cf08cf38e",
+    "FV/E2E/SemanticPreparedMetadata.lean": "a5699cf7e84fd40736a87fe64c3289ee6cb946926337a6f36179b78fc2f7c173"
+  },
+  "old_statements_exact": 3,
+  "old_axiom_sets_exact": 3,
+  "scope": "Actual checks and prepared results derive the ABI-aware program contract. Shared metadata retains38 other fields. The three original producer APIs remain unchanged. Full witnesses and consumers remain open.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T07:38:10.569699+00:00"
+}

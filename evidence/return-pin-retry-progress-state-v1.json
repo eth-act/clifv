@@ -1,0 +1,14 @@
+{
+  "status": "development-gates-passed",
+  "source_hashes": {
+    "FV/E2E/ReturnPinPipelineRetry.lean": "c597bd1f2cb9f6cd40e67754ed36908d82c52f01c3b6a9a3b128279f496f7aaa",
+    "FV/E2E/ReturnPinPipelineRetryWitness.lean": "f72e29f950f97a83484c6feccb527702e154cd498c2d801cb92b4996379abbd1",
+    "scripts/audit/return-pin-pipeline-retry.lean": "1fd45293e1bd4858bbd91355a74ee93b2dd10f757a32fe3073a16535da80bbf9"
+  },
+  "public_roots": 16,
+  "generic_roots_standard_only": 11,
+  "current_main_validation": "pending worker-A shared #824 table cache",
+  "scope": "Actual complete-program retry. Universal old-acceptance preservation covers direct and indirect calls. Both original cleanup modes retain successful Stock artifacts or exactly retry every previous artifact. The real rejected mixed graph is accepted after complete retry and jointly inhabits the full return-pin contract. Generic and fixed witnesses pass the existing dependency kernel outputs and the16-root audit. Default activation and remaining original140 stay open.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T09:29:29.697089+00:00"
+}

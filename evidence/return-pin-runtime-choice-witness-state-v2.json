@@ -1,0 +1,107 @@
+{
+  "status": "passed",
+  "source_hashes": {
+    "FV/Link/ReturnPinCompileDefs.lean": "541d7b517efe9f9be36a9c0df1e4b627d92c0b0f69ed2a7f00c0e785a2ce6c96",
+    "FV/Link/ReturnPinCompileWith.lean": "f32daef208c6aa56dab3eac781f7f4dd9b3f8db9141661ee7e23f70aa4e4cc84",
+    "FV/Link/ReturnPinRetryWitness.lean": "7d00b245fa32f717279a092aa20c515c89953f9fa39041b400e745139af2d510",
+    "scripts/audit/return-pin-compile.lean": "205b49ed739e04852798034b22a0a55df1fd090b8e7505d22f5f8dfd8a95792f"
+  },
+  "final_modules": 3,
+  "generic_roots": 10,
+  "fixed_roots": 6,
+  "full_goal_complete": false,
+  "scope": "All three final runtime/retry/witness modules pass the pinned kernel. The unchanged audit passes all sixteen roots. The original positive mixed program retains the complete checked Stock ELF with the current tag. Actual previous and forced-legacy cases retain their existing tags and complete files. The complete rejected additional program retries the actual successful previous compiler on the original input in both cleanup modes. Publication, current-main validation, exact-head CI, remaining consumers, default activation, and original140 remain open.",
+  "utc": "2026-11-01T15:24:09.918437+00:00",
+  "previous_axiom_sets_exact": 14,
+  "axiom_sets": {
+    "Link.ReturnPinCompilerWith.compile_accepted": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.compile_retry": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.compile_accepts_previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.compile_spec": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinRetryWitness.retry_checks": [
+      "Classical.choice",
+      "Link.ReturnPinRetryWitness.retry_checks._native.native_decide.ax_1",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinRetryWitness.compiler_retries_complete_previous": [
+      "Classical.choice",
+      "Link.ReturnPinRetryWitness.retry_checks._native.native_decide.ax_1",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinRetryWitness.compiler_success": [
+      "Classical.choice",
+      "Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_1",
+      "Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_2",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinRetryWitness.compiler_keeps_complete_stock": [
+      "Classical.choice",
+      "Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_1",
+      "Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_2",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.choice_current": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.choice_retry": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.choice_accepts_previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.choice_spec": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.choice_erases": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.choice_preserves_previous_error": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinRetryWitness.choice_keeps_complete_stock": [
+      "Classical.choice",
+      "Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_1",
+      "Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_2",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinRetryWitness.choice_checks": [
+      "Classical.choice",
+      "Link.ReturnPinRetryWitness.choice_checks._native.native_decide.ax_1",
+      "Quot.sound",
+      "propext"
+    ]
+  }
+}

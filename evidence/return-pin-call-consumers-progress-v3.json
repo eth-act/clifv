@@ -1,0 +1,9 @@
+{
+  "commit": "daa178e4e9577e264946c9cc66c0396c3045f130",
+  "remote_verified": true,
+  "archive_bytes": 3521273,
+  "archive_sha256": "3999cb963688f23377e4b525c9e9a770602936670334bbf5e42d2af0f4dedffe",
+  "descriptor": "return-pin-call-consumers-progress-v3.remote.json",
+  "source_files": 35,
+  "full_goal_complete": false
+}

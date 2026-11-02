@@ -1,0 +1,13 @@
+{
+  "module": "FV.E2E.PreparedReturnPinSretWitness",
+  "unit": "fvb-732467-1-FV.E2E.PreparedReturnPinSretWitness",
+  "cap_bytes": 6442450944,
+  "returncode": 1,
+  "seconds": 3.0025885105133057,
+  "module_source_sha256": "9e8178cc81726e882590e0276f8334756814e52f4cb04eb0548a46b94c943364",
+  "artifacts": {
+    "FV.E2E.PreparedReturnPinSretWitness.log": "c1ee8f1d670f49c7e5d1d86f5406ac3ca3005861728366a2e2ecba9165edbdf6",
+    "FV.E2E.PreparedReturnPinSretWitness.mem": "7a376d2f36916df4b632b90464327fcbe5039d7ab556a76cfbe695108847a553",
+    "FV.E2E.PreparedReturnPinSretWitness.time": "0a8280dc9320c066133c9354a7026cbef12ae342c6d49e34708fbeadacfa74fb"
+  }
+}

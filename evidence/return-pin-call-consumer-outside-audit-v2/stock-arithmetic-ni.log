@@ -1,0 +1,52 @@
+'E2E.ABIReadOnly.refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.memory' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.driver' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.instruction_cases' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.registerRead_argument' depends on axioms: [propext, Quot.sound]
+'E2E.ABIReadOnly.stackRead_argument' depends on axioms: [propext, Quot.sound]
+'E2E.ABIReadOnly.checked_instruction' depends on axioms: [propext, Quot.sound]
+'E2E.ABIReadOnly.step_world' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.step_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.star_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.return_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.step_control' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.step_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.star_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.return_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.machine_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadOnly.arguments_transport' depends on axioms: [propext, Quot.sound]
+'E2E.backend_correct_world_niX_stock_arithmetic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.toSemantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.entryRegs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.noTls' depends on axioms: [propext, Quot.sound]
+'E2E.hasTls_of_vcode_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.stackArgsAvoid_frameW_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_ni_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_program_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.semanticPreparedResults_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SemanticStackBound.okB_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.SemanticBinary.binary_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.SemanticCompilerWith.attempt_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.SemanticCompilerWith.attempt_correct_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.SemanticCompilerWith.attempt_correct_source_peak' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockArithmeticNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockArithmeticNIWitness.source_returns' depends on axioms: [propext, Quot.sound]
+'E2E.StockArithmeticNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockArithmeticNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockArithmeticNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockArithmeticNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.SemanticCompilerWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SemanticCompilerWitness.checks_true._native.native_decide.ax_1]
+'E2E.SemanticCompilerWitness.compiler_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SemanticCompilerWitness.checks_true._native.native_decide.ax_1]

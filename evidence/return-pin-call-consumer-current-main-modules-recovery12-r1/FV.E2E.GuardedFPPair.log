@@ -1,0 +1,5 @@
+⚠ [343/343] Built FV.E2E.GuardedFPPair (933ms)
+warning: FV/E2E/GuardedFPPair.lean:43:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/GuardedFPPair.lean:43:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/GuardedFPPair.lean:50:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+Build completed successfully (343 jobs).

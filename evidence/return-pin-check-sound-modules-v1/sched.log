@@ -1,0 +1,6 @@
+01:15:33 want 1616 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+01:15:34 check (all) 1616 modules in 0.3s: 1615 up-to-date, 1 out of date, 0 wait for those
+01:15:34 start FV.E2E.ReturnPinCheckSound cap=6G running=1 avail=146.3G
+01:15:36 done FV.E2E.ReturnPinCheckSound rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+01:15:36 2 batch checks, 1s; 0 modules restored after another worktree built them
+01:15:36 END 1616/1616 ok, 1 built, wall 0.0 min

@@ -1,0 +1,4 @@
+⚠ [48/63] Replayed FV.Opt.Proof.RuleImm
+warning: FV/Opt/Proof/RuleImm.lean:653:23: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [63/63] Built FV.Opt.Proof.RuleSkeleton3 (209s)
+Build completed successfully (63 jobs).

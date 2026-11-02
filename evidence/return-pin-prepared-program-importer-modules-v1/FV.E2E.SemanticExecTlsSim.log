@@ -1,0 +1,19 @@
+⚠ [1150/1669] Replayed FV.Backend.Proof.StockMemoryStoreMatch
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:83:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:85:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:88:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:94:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [1496/1669] Replayed FV.Backend.Proof.StockConditionalRankedCompatibility
+warning: FV/Backend/Proof/StockConditionalRankedCompatibility.lean:61:78: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [1643/1669] Replayed FV.E2E.LinkReturnPinGood
+warning: FV/E2E/LinkReturnPinGood.lean:181:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinGood.lean:191:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:199:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinGood.lean:275:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:311:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:311:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:387:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [1726/1727] Replayed FV.E2E.SemanticExecTls
+warning: FV/E2E/SemanticExecTls.lean:208:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [1727/1727] Built FV.E2E.SemanticExecTlsSim (1.7s)
+Build completed successfully (1727 jobs).

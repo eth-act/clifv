@@ -1,0 +1,12 @@
+{
+  "removed": [
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinRetryFixtureV1.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinRetryFixtureV2.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinRetryFixtureV3.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinRetryFixtureV4.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV12.lean"
+  ],
+  "remote": "d223b2466c5825edbddc174bca9c8343a0342b91",
+  "reason": "Completed or failed verification copies have exact saved source in the verified remote archive. Preserve all original sources,diagnostics,and the three actively owned runtime module artifacts.",
+  "utc": "2026-11-01T15:50:06.739665+00:00"
+}

@@ -1,0 +1,21 @@
+'E2E.LinkCheck.returnPinArtMap_get' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.ReturnPinEntry.check_of' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.ReturnPinCtx.of_symbols' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.ReturnPinCtx.of_artifact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.ReturnPinCtx.of_entries' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.ReturnPinCtx.of_direct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.returnPinSiteWith_of' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.returnPinsWith_of' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.okRReturnPins_eq_fast' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinCheckFastWitness.captured_pipeline_passes' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ReturnPinCheckFastWitness.capturedChecks_true._native.native_decide.ax_1✝]
+'E2E.ReturnPinCheckFastWitness.mixed_pipeline_rejected' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinCallerBoundaryWitness.boundary_true._native.native_decide.ax_1✝]
+'E2E.ReturnPinCheckFastWitness.captured_program_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinSretWitness.checks_true._native.native_decide.ax_1✝]

@@ -1,0 +1,121 @@
+⚠ [1199/1556] Replayed FV.Backend.Proof.StockMemoryStoreMatch
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:83:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:85:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:88:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:94:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [1670/1728] Replayed FV.E2E.LinkReturnPinCall
+warning: FV/E2E/LinkReturnPinCall.lean:18:34: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinCall.lean:19:34: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCall.lean:239:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinCall.lean:249:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCall.lean:257:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinCall.lean:371:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCall.lean:413:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCall.lean:413:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [1671/1728] Replayed FV.E2E.LinkReturnPinCallbacks
+warning: FV/E2E/LinkReturnPinCallbacks.lean:89:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:90:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:622:47: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:630:38: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:761:26: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:820:26: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:885:36: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:1001:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+✖ [2179/2315] Building Crates.AArith.Input
+error: target is out-of-date and needs to be rebuilt
+✖ [2183/2315] Building Crates.AArithAbort.Input
+error: target is out-of-date and needs to be rebuilt
+✖ [2187/2315] Building Crates.BSlices.Input
+error: target is out-of-date and needs to be rebuilt
+⚠ [2294/2315] Replayed FV.E2E.LinkReturnPinGood
+warning: FV/E2E/LinkReturnPinGood.lean:181:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinGood.lean:191:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:199:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinGood.lean:275:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:311:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:311:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:387:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [2309/2315] Building FV.E2E.SemanticExecTlsCf
+error: target is out-of-date and needs to be rebuilt
+✖ [2316/2907] Building Crates.CStructsEnums
+error: target is out-of-date and needs to be rebuilt
+✖ [2392/2907] Building FV.Link.NonVacuityExeSource
+error: target is out-of-date and needs to be rebuilt
+✖ [2425/2907] Building FV.Opt.Proof.RuleAttr
+error: target is out-of-date and needs to be rebuilt
+✖ [2631/2907] Building Crates.GU128
+error: target is out-of-date and needs to be rebuilt
+✖ [2640/2907] Building Crates.DLoopsIters.Input
+error: target is out-of-date and needs to be rebuilt
+✖ [2655/2907] Building Crates.EOptionResult.Input
+error: target is out-of-date and needs to be rebuilt
+✖ [2659/2907] Building Crates.FCrypto.Input
+error: target is out-of-date and needs to be rebuilt
+✖ [2712/2907] Building FV.Link.ExeUnwind
+error: target is out-of-date and needs to be rebuilt
+✖ [2720/2907] Building FV.Front.RawExeContract
+error: target is out-of-date and needs to be rebuilt
+⚠ [2810/2907] Replayed FV.E2E.LinkArmT
+warning: FV/E2E/LinkArmT.lean:91:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmT.lean:98:29: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmT.lean:439:34: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmT.lean:440:34: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmT.lean:653:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmT.lean:663:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmT.lean:671:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmT.lean:785:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmT.lean:827:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmT.lean:827:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmT.lean:966:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmT.lean:967:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmT.lean:1480:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmT.lean:1599:23: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmT.lean:1658:23: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArmT.lean:1718:36: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArmT.lean:1845:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [2811/2907] Replayed FV.E2E.LinkGoodT
+warning: FV/E2E/LinkGoodT.lean:165:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkGoodT.lean:175:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkGoodT.lean:183:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkGoodT.lean:259:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkGoodT.lean:295:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkGoodT.lean:295:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkGoodT.lean:371:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [2860/2907] Building FV.Link.DeadCleanupExeT
+error: target is out-of-date and needs to be rebuilt
+✖ [2861/2907] Building FV.Link.DeadCleanupCompileTFast
+error: target is out-of-date and needs to be rebuilt
+✖ [2863/2907] Building FV.E2E.DeadCleanupExecPeakT
+error: target is out-of-date and needs to be rebuilt
+✖ [2868/2907] Building Crates.FvDemo.Input
+error: target is out-of-date and needs to be rebuilt
+✖ [2889/2907] Building Crates.HDynGeneric.Input
+error: target is out-of-date and needs to be rebuilt
+✖ [2893/2907] Building Crates.IAlloc.Input
+error: target is out-of-date and needs to be rebuilt
+✖ [2899/2907] Building FV.Link.DeadCleanupExeSourceNB
+error: target is out-of-date and needs to be rebuilt
+✖ [2903/2907] Building FV.Link.ExeSourceNB
+error: target is out-of-date and needs to be rebuilt
+Some required targets logged failures:
+- Crates.AArith.Input
+- Crates.AArithAbort.Input
+- Crates.BSlices.Input
+- FV.E2E.SemanticExecTlsCf
+- Crates.CStructsEnums
+- FV.Link.NonVacuityExeSource
+- FV.Opt.Proof.RuleAttr
+- Crates.GU128
+- Crates.DLoopsIters.Input
+- Crates.EOptionResult.Input
+- Crates.FCrypto.Input
+- FV.Link.ExeUnwind
+- FV.Front.RawExeContract
+- FV.Link.DeadCleanupExeT
+- FV.Link.DeadCleanupCompileTFast
+- FV.E2E.DeadCleanupExecPeakT
+- Crates.FvDemo.Input
+- Crates.HDynGeneric.Input
+- Crates.IAlloc.Input
+- FV.Link.DeadCleanupExeSourceNB
+- FV.Link.ExeSourceNB

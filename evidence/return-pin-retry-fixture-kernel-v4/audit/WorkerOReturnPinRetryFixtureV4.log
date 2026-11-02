@@ -1,0 +1,12 @@
+'Link.ReturnPinCompilerWith.compile_accepted' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.compile_retry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.compile_accepts_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.compile_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWitness.retry_checks' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ retry_checks._native.native_decide.ax_1]
+'Link.ReturnPinCompilerWitness.compiler_retries_complete_previous' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ retry_checks._native.native_decide.ax_1]

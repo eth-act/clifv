@@ -1,0 +1,16 @@
+{
+  "pr": 869,
+  "packet": "sret-entry-value-packet-v4",
+  "validation": "sret-869-expanded-isolated-state-v2.json",
+  "source_overlays": [
+    "sret-full-cfg-packet-v2"
+  ],
+  "apply_packet": true,
+  "parent": "return-pin-runtime-landed-v1.json",
+  "prospective_parent": "runtime-independent-delivery-prepared-v2.json",
+  "branch": "agent/stock-sret-entry-x8-20261101",
+  "prepared": "869-independent-delivery-prepared-v1.json",
+  "commit_message": "Complete original sret pointer preservation through paired ARM execution",
+  "review": "869-independent-peer-review-v1.json",
+  "landed": "sret-entry-value-landed-v1.json"
+}

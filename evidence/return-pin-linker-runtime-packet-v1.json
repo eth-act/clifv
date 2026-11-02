@@ -1,0 +1,12 @@
+{
+  "files": {
+    "FV/Link/ReturnPinCompileDefs.lean": "37e7d9c01a3b4a1229a1a1d0187b3d45651aee06948a5780a9968abbea1be1c5",
+    "FV/Link/ReturnPinCompileWith.lean": "df9aea755ce7da7c0bba7ab15b31e7ad6e73551592fadf167273ac918720635f",
+    "FV/Link/ReturnPinRetryWitness.lean": "f5956ff8715c8b8edc551afe763d5f0c97856ab779f20ca7a6488537b65f770f",
+    "scripts/audit/return-pin-compile.lean": "be2a540f977ed1e9c6b49634e10e981b5dc0bf84d3b3c17f8b3e54b2cc6877ba"
+  },
+  "generic_roots": 4,
+  "fixed_roots": 2,
+  "full_goal_complete": false,
+  "scope": "The runtime and retry definitions already compile under their final names. The isolated negative fixture passes the unchanged audit. This four-file delivery adds the final fixture module and its audit. Final fixture compilation, current-main reconciliation, exact-head CI, and publication remain open. It changes no default selector and preserves complete previous-file retry on original inputs."
+}

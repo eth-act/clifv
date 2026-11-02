@@ -1,0 +1,11 @@
+06:03:33 want 726 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+06:03:33 check (all) 726 modules in 0.3s: 723 up-to-date, 2 out of date, 1 wait for those
+06:03:33 start FV.Backend.StockVoidCallNICheck cap=6G running=1 avail=196.5G
+06:03:34 done FV.Backend.StockVoidCallNICheck rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+06:03:34 start FV.E2E.StockVoidCallSemantics cap=6G running=1 avail=197.7G
+06:03:36 done FV.E2E.StockVoidCallSemantics rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+06:03:37 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+06:03:37 start FV.E2E.StockVoidCallEntry cap=6G running=1 avail=201.8G
+06:03:39 done FV.E2E.StockVoidCallEntry rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+06:03:39 3 batch checks, 1s; 0 modules restored after another worktree built them
+06:03:39 END 726/726 ok, 3 built, wall 0.1 min

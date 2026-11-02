@@ -1,0 +1,14 @@
+{
+  "verdict": "approved",
+  "reviewer": "worker-A",
+  "source": "b3a62645be5487b0232ccf481eaedf95498027cd",
+  "source_hashes": {
+    "FV/E2E/ReturnPinPipelineRetry.lean": "c597bd1f2cb9f6cd40e67754ed36908d82c52f01c3b6a9a3b128279f496f7aaa",
+    "FV/E2E/ReturnPinPipelineRetryWitness.lean": "f72e29f950f97a83484c6feccb527702e154cd498c2d801cb92b4996379abbd1",
+    "scripts/audit/return-pin-pipeline-retry.lean": "1fd45293e1bd4858bbd91355a74ee93b2dd10f757a32fe3073a16535da80bbf9"
+  },
+  "review_agents": 0,
+  "review_builds": 0,
+  "method": "ONE QUICK, DIRTY, CHEAP direct review",
+  "note": "The old-check theorem covers direct, indirect, GOT and arity under the ordinary-callee premise. The transaction retains the checked attempt or the complete previous program. The checked theorem needs only the original okRSemanticNI premise. A rejected attempt runs production twice. No blocker."
+}

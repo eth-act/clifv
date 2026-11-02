@@ -1,0 +1,49 @@
+{
+  "removed": [
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOVoidCallSourceDraftV1.lean",
+      "saved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOVoidCallSourceDraftV1.lean",
+      "sha256": "05b38a6e7d6d5e55090c55274d8c811050face69325f4591fc21e66ee67725cb",
+      "bytes": 8201
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOVoidCallFullDraftV1.lean",
+      "saved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOVoidCallFullDraftV1.lean",
+      "sha256": "352f5e9e34ee075a34681e8404c96a999d48c130d5d84e7dba763aa67d8b8acb",
+      "bytes": 39884
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOVoidCallNIDraftV1.lean",
+      "saved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOVoidCallNIDraftV2.lean",
+      "sha256": "5d63fa7235086050740fc113a6c30eb15c6c410040f9a633f3517939d093457f",
+      "bytes": 19186
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOVoidCallPairedDraftV1.lean",
+      "saved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOVoidCallPairedDraftV2.lean",
+      "sha256": "7a9a9b8d19e1e2cf3802c0b91eecef523a526c9105d0dade9ce52587ed3a1be7",
+      "bytes": 17617
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOVoidCallCompositionDraftV1.lean",
+      "saved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOVoidCallCompositionDraftV1.lean",
+      "sha256": "524a0d15588c33c863ee80d6e96a6b3c0b7261833c1a07e2ef6298ddee74de46",
+      "bytes": 24797
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOVoidCallProductionDraftV1.lean",
+      "saved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOVoidCallProductionDraftV1.lean",
+      "sha256": "e982722f788893adcca02cff5192bfa74cac7dea95b562370c0fe6bab9aec7e6",
+      "bytes": 8429
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOVoidCallProductionDraftV2.lean",
+      "saved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOVoidCallProductionDraftV2.lean",
+      "sha256": "88c187815d7ebe68bbac25796243c7326b7812685af08ef08c8f054988ca2308",
+      "bytes": 11845
+    }
+  ],
+  "remote_backup": "6144d7694988668bbf4f3584e065b5c571f7e7d6",
+  "source_and_evidence_retained": true,
+  "utc": "2026-11-01T12:18:03.607963+00:00"
+}

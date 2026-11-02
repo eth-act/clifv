@@ -1,0 +1,9 @@
+{
+  "commit": "10974b121d17a641be514f3ee66f0c64528a2ca4",
+  "remote_verified": true,
+  "archive_bytes": 3129050,
+  "archive_sha256": "5fdd26eb3e8fe94f9d1a7e724db2054c8c06534d0d313f541af785af224675da",
+  "descriptor": "return-pin-cache-backup-v1.remote.json",
+  "source_files": 11,
+  "full_goal_complete": false
+}

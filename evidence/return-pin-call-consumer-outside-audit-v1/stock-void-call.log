@@ -1,0 +1,31 @@
+'Backend.Proof.ExtSem.voidCalls_call' depends on axioms: [propext]
+'Backend.Proof.ExtSem.voidCalls_call_inv' depends on axioms: [propext]
+'Backend.Proof.ArmStepX_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.csem_call_voidCalls_inv' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.csem_tryCall_voidCalls_inv' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.CalleeOk.voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.csemV_voidCalls_inv' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.CalleeOkG.voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.RL.CallPre.of_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.RL.GoodX.of_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ActEntry.voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.actGoodX_of_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.seqRun_call_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.seqRun_call_voidCalls_int' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.VoidCallViewWitness.actual_stock_call_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallViewWitness.observed_true._native.native_decide.ax_1✝]
+'Backend.Proof.XCallsOk.voidCalls_return' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.VoidCall.source_return_call' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.VoidCall.source_call_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.VoidCall.call_values_hold' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.VoidCall.entry_values_resolved' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.VoidCall.Layout.return_function' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.VoidCall.Layout.of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.VoidCall.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.VoidCall.check_domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.VoidCallViewWitness.actual_stock_source_domain_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallViewWitness.fullCheck_true._native.native_decide.ax_1✝]

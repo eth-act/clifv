@@ -1,0 +1,13 @@
+{
+  "module": "FV.E2E.LinkReturnPinWorldX",
+  "unit": "fvb-1706759-6-FV.E2E.LinkReturnPinWorldX",
+  "cap_bytes": 6442450944,
+  "returncode": 1,
+  "seconds": 2.0010945796966553,
+  "module_source_sha256": "52989664e1dac1d79a293c1d9ddf021153ec26821ad4caad25b99c35f96780a1",
+  "artifacts": {
+    "FV.E2E.LinkReturnPinWorldX.log": "c30b21644e7f1f820b0c953ed6c573a1d2cc6218b35f9e90e9c05c7f558daa8e",
+    "FV.E2E.LinkReturnPinWorldX.mem": "de5468a8348593a620c72ae4b621d25d8fba40af3bd737ddc192fe2e94ca4a92",
+    "FV.E2E.LinkReturnPinWorldX.time": "a3219c716b63bf15c268259d49f42cad73a99d56e038013abdcc2169c055ba50"
+  }
+}

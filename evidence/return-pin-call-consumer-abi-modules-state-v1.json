@@ -1,0 +1,10 @@
+{
+  "status": "module-check-passed",
+  "source_hashes": {
+    "FV/Backend/SemanticABICheck.lean": "82ea22a6a7594723b1f2ef818dd9c098af48c145d1c72638ec96b4b1dca60dde",
+    "FV/E2E/CompiledSemanticABI.lean": "1d0706c6ada07178a817451bc1d9612f8bfedd290748a0c8364c37d58e47e0ff"
+  },
+  "full_goal_complete": false,
+  "utc": "2026-11-01T11:19:02.253642+00:00",
+  "new_roots_pending": true
+}

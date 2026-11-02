@@ -1,0 +1,17 @@
+{
+  "retired": [
+    {
+      "pid": 1849522,
+      "source": "FV/E2E/StockVoidCallEntry.lean",
+      "sha256": "4576dc7aa0176ceb073b47de52d9f4ea677c1ea53e90f5738d96747c54783f30",
+      "reason": "Completed editor checks; source preserved before the proper kernel gate."
+    },
+    {
+      "pid": 1935527,
+      "source": ".lake/WorkerOVoidCallProductionDraftV1.lean",
+      "sha256": "e982722f788893adcca02cff5192bfa74cac7dea95b562370c0fe6bab9aec7e6",
+      "reason": "Completed editor checks; source preserved before the proper kernel gate."
+    }
+  ],
+  "utc": "2026-11-01T12:12:50.168377+00:00"
+}

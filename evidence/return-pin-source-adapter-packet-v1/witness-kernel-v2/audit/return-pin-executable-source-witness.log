@@ -1,0 +1,18 @@
+'Link.ReturnPinSourceWitness.original_source_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ E2E.ReturnPinBinaryWitness.old_checked._native.native_decide.ax_1,
+ E2E.ReturnPinBinaryWitness.old_checked._native.native_decide.ax_2,
+ Link.ReturnPinSourceWitness.checks_true._native.native_decide.ax_1✝,
+ Link.ReturnPinSourceWitness.checks_true._native.native_decide.ax_2✝]
+'Link.ReturnPinSourceWitness.original_source_peak_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ E2E.ReturnPinBinaryWitness.depth_budget._native.native_decide.ax_1,
+ E2E.ReturnPinBinaryWitness.depth_budget._native.native_decide.ax_2,
+ Link.ReturnPinSourceWitness.checks_true._native.native_decide.ax_1✝,
+ Link.ReturnPinSourceWitness.checks_true._native.native_decide.ax_2✝]

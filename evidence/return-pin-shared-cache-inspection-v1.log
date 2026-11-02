@@ -1,0 +1,12 @@
+⚠ [1243/1733] Replayed FV.Backend.Proof.StockMemoryStoreMatch
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:83:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:85:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:88:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:94:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [1682/1733] Replayed FV.E2E.ReturnPinCheckFast
+warning: FV/E2E/ReturnPinCheckFast.lean:24:53: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/E2E/ReturnPinCheckFast.lean:68:53: `if_false` has been deprecated: Use `ite_false` instead
+✖ [1732/1733] Building FV.E2E.ReturnPinPipelineRetry
+error: target is out-of-date and needs to be rebuilt
+Some required targets logged failures:
+- FV.E2E.ReturnPinPipelineRetry

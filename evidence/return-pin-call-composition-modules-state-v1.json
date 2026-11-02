@@ -1,0 +1,11 @@
+{
+  "status": "module-check-passed",
+  "source_hashes": {
+    "FV/Backend/StockVoidCallNICheck.lean": "26116618eb10da9b789f5a40b8a2831f381420cf5d7dfb2a7b0fae5454aed431",
+    "FV/E2E/StockVoidCallSemantics.lean": "1dd0f5cd5a10c3b9970725b48d1cf7cd79993dcefa772450269deddbfc9a9c00",
+    "FV/E2E/StockVoidCallEntry.lean": "a84aa23329ae7229a262455598bc830999a7e3fbcf52afe2e774827478ab5e68"
+  },
+  "full_goal_complete": false,
+  "utc": "2026-11-01T11:03:39.490666+00:00",
+  "new_roots_pending": true
+}

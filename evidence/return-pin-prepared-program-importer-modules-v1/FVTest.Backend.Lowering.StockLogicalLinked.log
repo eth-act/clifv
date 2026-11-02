@@ -1,0 +1,9 @@
+⚠ [1167/1735] Replayed FV.Backend.Proof.StockMemoryStoreMatch
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:83:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:85:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:88:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:94:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [1513/1735] Replayed FV.Backend.Proof.StockConditionalRankedCompatibility
+warning: FV/Backend/Proof/StockConditionalRankedCompatibility.lean:61:78: `if_false` has been deprecated: Use `ite_false` instead
+✔ [1870/1870] Built FVTest.Backend.Lowering.StockLogicalLinked (1.3s)
+Build completed successfully (1870 jobs).

@@ -1,0 +1,6 @@
+⚠ [395/396] Replayed FV.E2E.GuardedFPPair
+warning: FV/E2E/GuardedFPPair.lean:43:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/GuardedFPPair.lean:43:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/GuardedFPPair.lean:50:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [396/396] Built FV.E2E.PairDriverT (1.1s)
+Build completed successfully (396 jobs).

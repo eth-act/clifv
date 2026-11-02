@@ -1,0 +1,9 @@
+{
+  "status": "development-kernel-and-audit-passed",
+  "source_sha256": "f59edab5f85232f1c53a6c22faae2724a7438305af3762739df8daf556e6c89f",
+  "new_roots": 5,
+  "generic_roots_standard_only": 4,
+  "scope": "Original XNI and XTls derive the internal view. The complete source return reaches actual allocated/emitted/layout machine artifacts in both cleanup modes with original per-state guarantees. Five development kernel/audit roots are checked. Paired execution, internal no-try derivation, consumer integration and default activation remain open. Existing dependency outputs only; formal module/importer gates remain required",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T10:49:03.153528+00:00"
+}

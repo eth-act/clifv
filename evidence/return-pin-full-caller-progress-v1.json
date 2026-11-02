@@ -1,0 +1,9 @@
+{
+  "commit": "295a27ca051cf0a3f4e2e49a508e1a779a6186b6",
+  "remote_verified": true,
+  "archive_bytes": 3266889,
+  "archive_sha256": "085e0bc28cbfe81a29e8f09892557e6f1d8490cfe937f3383aaceaa4144ff0bb",
+  "descriptor": "return-pin-full-caller-progress-v1.remote.json",
+  "source_files": 14,
+  "full_goal_complete": false
+}

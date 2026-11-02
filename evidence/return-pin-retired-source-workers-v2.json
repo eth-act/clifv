@@ -1,0 +1,15 @@
+{
+  "utc": "2026-11-01T10:43:50.916460+00:00",
+  "retired": [
+    {
+      "pid": 1421868,
+      "source": "FV/E2E/ReturnPinPipelineRetryWitness.lean",
+      "reason": "Completed idle source worker; exact source and kernel evidence preserved"
+    },
+    {
+      "pid": 1621051,
+      "source": ".lake/WorkerOVoidCallFullDraftV1.lean",
+      "reason": "Completed idle source worker; exact source and kernel evidence preserved"
+    }
+  ]
+}

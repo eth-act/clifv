@@ -1,0 +1,38 @@
+'E2E.LinkCheck.staticChksSemanticFor_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.okRSemanticFor_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.okRSemanticFor_global' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.okRSemanticFor_names' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.okRSemanticFor_eq_fast' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.staticChksSemanticFor_expanded' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.semanticPreparedFactsFor' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.semanticPreparedIndFactsFor' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.semanticPreparedMetadata_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.SemanticPreparedMetadata.toSemanticNI' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.SemanticPreparedMetadata.toReturnPins' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.returnPinChecks_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.semanticPreparedReturnPinsResults_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.preparedReturnPins_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.PreparedReturnPinSretWitness.original_source_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinSretWitness.checks_true._native.native_decide.ax_1✝]
+'E2E.PreparedReturnPinSretWitness.system_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinSretWitness.checks_true._native.native_decide.ax_1✝]
+'E2E.PreparedReturnPinSretWitness.selected_stock_abi' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinSretWitness.checks_true._native.native_decide.ax_1✝]
+'E2E.PreparedReturnPinSretWitness.entry_present' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinSretWitness.checks_true._native.native_decide.ax_1✝]
+'E2E.PreparedReturnPinSretWitness.program_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinSretWitness.checks_true._native.native_decide.ax_1✝]
+'E2E.PreparedReturnPinCallerBoundaryWitness.legacy_caller_rejected_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinCallerBoundaryWitness.boundary_true._native.native_decide.ax_1✝]

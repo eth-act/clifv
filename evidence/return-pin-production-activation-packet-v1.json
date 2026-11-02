@@ -1,0 +1,40 @@
+{
+  "status": "kernel_and_audit_passed",
+  "files": {
+    "FV/Backend/ReturnPinProduction.lean": "070955a00765b28cb3a810152cb00b20e1a1da179ecc5a74d0d627d2f43e29f8",
+    "FV/E2E/ReturnPinProductionWitness.lean": "d909dd35bbce83cc8cf963afa8db74bd78277373afaf7a4f5f9a659249e00ff7",
+    "FVTest/Backend/Main.lean": "2a67d21b232a2774bb3e45ab7f17e8752a8e6b794402b5fb615d1a7e4b4051ba",
+    "FVTest/Link/LeanLinkMain.lean": "85786cfec5468f284845bb2206172a5c4467fae0ea6cb15fd9eca11712d54873",
+    "FVTest/E2E/LinkCheckMain.lean": "225821bf40ad7634f607f22902905c9c4b5c08205bcbbff7b3ee86be94bda732",
+    "scripts/audit/return-pin-production.lean": "e07167e17950941a053ae85474c3c5e5c738c3659ebef305527a7fe30b8f8264",
+    "scripts/audit/return-pin-production-witness.lean": "ee9cb4e3de277f11fba1f77676459e2bcac309337f64e0276d191a9d453c6c6e"
+  },
+  "base_hashes": {
+    "FVTest/Backend/Main.lean": "83ec07a6f1b512205c90326b2c6321514b4dcff7e2056755751fbb37f64be636",
+    "FVTest/Link/LeanLinkMain.lean": "2ebd9e3acaeb7a4fafe41151c3c55d60d194bfe604de82d7cacebd7f53539b1e",
+    "FVTest/E2E/LinkCheckMain.lean": "7ac012983cbe4d5e7846c38f528b0b7aaae061430cdc7efb04a39b28a7b60118"
+  },
+  "isolated_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v1",
+  "generic_receipt": "return-pin-production-activation-packet-v1/generic-state-v6.json",
+  "generic_roots": 3,
+  "fixed_roots": 2,
+  "preserved": {
+    "backend_previous_settings_and_callbacks_exact": true,
+    "linker_complete_previous_action_and_all_routes_exact": true,
+    "checker_typed_selection_exact": true,
+    "raw_routes": "VoidCall.NI.lowerRoutes retains original prefix and ABI routes20/21; A owns route22 integration"
+  },
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "remaining": [
+    "Actual current-main gates and publication",
+    "Full backend/linker/checker/generated-proof execution on captured bundle",
+    "Typed generated-proof adapter; existing LinkProof APIs expose only integer leanFiles and leanFilesCleanup",
+    "All remaining original #140 obligations"
+  ],
+  "utc": "2026-11-02T06:40:37.659655+00:00",
+  "reviewed_receipt": "return-pin-production-activation-packet-v1/reviewed-state-v1.json",
+  "actual_backend_cases": 6,
+  "owned_build_outputs_removed": true,
+  "max_measured_peak_bytes": 945799168
+}

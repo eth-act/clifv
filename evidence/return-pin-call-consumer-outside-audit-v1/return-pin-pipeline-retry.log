@@ -1,0 +1,31 @@
+'E2E.LinkCheck.okRSemanticFor_of_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.returnPinSiteB_of_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.returnPinsB_of_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.okRReturnPins_of_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPins_accept' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPins_retry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPins_prepared' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPins_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPins_checked' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPins_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPins_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinPipelineRetryWitness.captured_attempt_retained' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ReturnPinCheckFastWitness.capturedChecks_true._native.native_decide.ax_1✝]
+'E2E.ReturnPinPipelineRetryWitness.mixed_program_retried' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinCallerBoundaryWitness.boundary_true._native.native_decide.ax_1✝]
+'E2E.ReturnPinPipelineRetryWitness.mixed_program_accepted' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ReturnPinPipelineRetryWitness.previousChecks_true._native.native_decide.ax_1✝]
+'E2E.ReturnPinPipelineRetryWitness.mixed_system_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ReturnPinPipelineRetryWitness.previousChecks_true._native.native_decide.ax_1✝]
+'E2E.ReturnPinPipelineRetryWitness.mixed_program_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ReturnPinPipelineRetryWitness.previousChecks_true._native.native_decide.ax_1✝]

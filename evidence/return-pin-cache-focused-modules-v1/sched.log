@@ -1,0 +1,16 @@
+04:08:41 want 1681 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+04:08:41 check (all) 1681 modules in 0.4s: 1679 up-to-date, 1 out of date, 1 wait for those
+04:08:41 start FV.E2E.ReturnPinCheckFast cap=6G running=1 avail=158.4G
+04:08:43 done FV.E2E.ReturnPinCheckFast rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+04:08:44 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+04:08:44 start FV.E2E.PreparedReturnPinPipeline cap=6G running=1 avail=158.6G
+04:08:46 done FV.E2E.PreparedReturnPinPipeline rc=1 2s maxrss=2.6G cgpeak=0.3G up-to-date -> fail
+04:08:46 fail (1): FV.E2E.PreparedReturnPinPipeline
+04:08:46 3 batch checks, 1s; 0 modules restored after another worktree built them
+04:08:46 END 1680/1681 ok, 1 built, wall 0.1 min
+04:09:24 want 1681 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+04:09:24 check (all) 1681 modules in 0.4s: 1680 up-to-date, 1 out of date, 0 wait for those
+04:09:24 start FV.E2E.PreparedReturnPinPipeline cap=6G running=1 avail=159.5G
+04:09:26 done FV.E2E.PreparedReturnPinPipeline rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+04:09:27 2 batch checks, 1s; 0 modules restored after another worktree built them
+04:09:27 END 1681/1681 ok, 1 built, wall 0.0 min

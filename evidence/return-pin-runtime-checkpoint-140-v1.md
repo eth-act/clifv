@@ -1,0 +1,5 @@
+Worker-O pushed the four-file linker adapter at `3ff2e2022d6dd1880164d8e717d9348292ee4fd0` on `agent/stock-return-pin-linker-runtime-20261101`. All three final modules compile with the pinned kernel. The unchanged audit passes eight roots: four standard-only generic roots and four fixed roots.
+
+The unchanged mixed caller and sret source retain the complete Stock ELF in both cleanup modes. The additional rejected caller retries the actual successful previous compiler. The retry retains the original specification, input image, and cleanup. The generic wrapper preserves every previous successful compilation. No default selector changed.
+
+Publication waits for860 to land so this PR contains only four files. The current worktree remains clean under the existing860/865/866 delivery chain. The final executable proofs form a separate seven-file packet after the binary adapter. Old theorem variants, required axioms, original inputs, generic heap/x8 proofs, consumer integration, default activation, and full140 completion remain required. A retains successor arguments and loops. This packet edits no shared CLI probe or existing contributor file.

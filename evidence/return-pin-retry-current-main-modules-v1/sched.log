@@ -1,0 +1,9 @@
+05:30:21 want 1732 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+05:30:21 check (all) 1732 modules in 0.6s: 1730 up-to-date, 1 out of date, 1 wait for those
+05:30:21 start FV.E2E.ReturnPinPipelineRetry cap=6G running=1 avail=179.6G
+05:30:24 done FV.E2E.ReturnPinPipelineRetry rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+05:30:25 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+05:30:25 start FV.E2E.ReturnPinPipelineRetryWitness cap=6G running=1 avail=182.2G
+05:30:27 done FV.E2E.ReturnPinPipelineRetryWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+05:30:27 3 batch checks, 1s; 0 modules restored after another worktree built them
+05:30:27 END 1732/1732 ok, 2 built, wall 0.1 min

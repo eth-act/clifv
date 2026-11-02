@@ -1,0 +1,47 @@
+04:10:12 want 1729 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+04:10:12 check (all) 1729 modules in 0.4s: 1725 up-to-date, 1 out of date, 3 wait for those
+04:10:12 start FV.E2E.PreparedReturnPinProgram cap=6G running=1 avail=159.4G
+04:10:14 done FV.E2E.PreparedReturnPinProgram rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+04:10:14 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+04:10:14 start FV.E2E.PreparedReturnPinSretWitness cap=6G running=1 avail=159.1G
+04:10:17 done FV.E2E.PreparedReturnPinSretWitness rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+04:10:18 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+04:10:18 start FV.E2E.PreparedReturnPinCallerBoundaryWitness cap=6G running=1 avail=159.3G
+04:10:21 done FV.E2E.PreparedReturnPinCallerBoundaryWitness rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+04:10:21 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+04:10:21 start FV.E2E.ReturnPinCheckFastWitness cap=6G running=1 avail=158.9G
+04:10:23 done FV.E2E.ReturnPinCheckFastWitness rc=1 2s maxrss=2.6G cgpeak=0.3G up-to-date -> fail
+04:10:24 fail (1): FV.E2E.ReturnPinCheckFastWitness
+04:10:24 5 batch checks, 2s; 0 modules restored after another worktree built them
+04:10:24 END 1728/1729 ok, 3 built, wall 0.2 min
+04:10:53 want 1729 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+04:10:53 check (all) 1729 modules in 0.4s: 1728 up-to-date, 1 out of date, 0 wait for those
+04:10:53 start FV.E2E.ReturnPinCheckFastWitness cap=6G running=1 avail=159.5G
+04:10:55 done FV.E2E.ReturnPinCheckFastWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+04:10:56 2 batch checks, 1s; 0 modules restored after another worktree built them
+04:10:56 END 1729/1729 ok, 1 built, wall 0.0 min
+04:12:57 want 1729 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+04:12:57 check (all) 1729 modules in 0.4s: 1723 up-to-date, 1 out of date, 5 wait for those
+04:12:57 start FV.E2E.ReturnPinCheckFast cap=6G running=1 avail=157.6G
+04:12:59 done FV.E2E.ReturnPinCheckFast rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+04:12:59 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+04:12:59 start FV.E2E.PreparedReturnPinPipeline cap=6G running=1 avail=157.4G
+04:13:01 done FV.E2E.PreparedReturnPinPipeline rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+04:13:02 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+04:13:02 start FV.E2E.PreparedReturnPinProgram cap=6G running=1 avail=157.3G
+04:13:04 done FV.E2E.PreparedReturnPinProgram rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+04:13:04 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+04:13:04 start FV.E2E.PreparedReturnPinSretWitness cap=6G running=1 avail=157.3G
+04:13:07 done FV.E2E.PreparedReturnPinSretWitness rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+04:13:08 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+04:13:08 start FV.E2E.PreparedReturnPinCallerBoundaryWitness cap=6G running=1 avail=157.1G
+04:13:11 done FV.E2E.PreparedReturnPinCallerBoundaryWitness rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+04:13:11 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+04:13:11 start FV.E2E.ReturnPinCheckFastWitness cap=6G running=1 avail=157.3G
+04:13:13 done FV.E2E.ReturnPinCheckFastWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+04:13:13 7 batch checks, 3s; 0 modules restored after another worktree built them
+04:13:13 END 1729/1729 ok, 6 built, wall 0.3 min
+05:28:02 want 1730 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+05:28:02 check (all) 1730 modules in 0.4s: 1730 up-to-date, 0 out of date, 0 wait for those
+05:28:02 2 batch checks, 1s; 0 modules restored after another worktree built them
+05:28:02 END 1730/1730 ok, 0 built, wall 0.0 min

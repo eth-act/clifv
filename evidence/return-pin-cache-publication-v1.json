@@ -1,0 +1,23 @@
+{
+  "status": "current-main-validation-pending",
+  "pr": 854,
+  "head": "e8aa14e55c371d1e377f79fbcd6b433dc66b89b3",
+  "base": "bd6d43637a7efe146f7162045b51b76cf3a05288",
+  "reviewed_source": "d461234b46527e9923d9b90377147632c115db7c",
+  "source_hashes": {
+    "FV/E2E/PreparedReturnPinPipeline.lean": "4d57fb60790d349cd65e7117e5a66cb914429693dc3eb271b56fd556045fa868",
+    "FV/E2E/ReturnPinCheckFast.lean": "2e6739679f5c48a97dd8f0499e38d570caaf9d559516257d5456bb39bf1b7e98",
+    "FV/E2E/ReturnPinCheckFastWitness.lean": "e143b7c8e99bb1396aa8afa1bd4d19ca79d3cbecdb930bae4641e16e45b0425d",
+    "scripts/audit/return-pin-check-fast.lean": "401f00fae2b28334567607c5fd59fe8b2802f9616a987c7849c8dbe5d825a9c0"
+  },
+  "source_files_exact": true,
+  "focused_kernel_passed_on": "dd56ea3a06b98747fc60def80b795386229a8cf9",
+  "module_count": 1729,
+  "new_roots": 12,
+  "old_axiom_sets_exact": 20,
+  "shared_cache_wait": "worker-A #824 table cone",
+  "ci_watcher": "return-pin-cache-exact-head-ci-v1",
+  "remote_backup": "10974b121d17a641be514f3ee66f0c64528a2ca4",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T09:17:42.324915+00:00"
+}

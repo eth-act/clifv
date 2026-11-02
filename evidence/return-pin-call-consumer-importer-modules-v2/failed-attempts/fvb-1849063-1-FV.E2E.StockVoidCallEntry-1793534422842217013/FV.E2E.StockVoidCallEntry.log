@@ -1,0 +1,54 @@
+✖ [723/723] Building FV.E2E.StockVoidCallEntry (1.2s)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.worktrees/stock-extending-production-20261031/FV/E2E/StockVoidCallEntry.lean -o /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/StockVoidCallEntry.olean -i /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/StockVoidCallEntry.ilean -c /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/ir/FV/E2E/StockVoidCallEntry.c --setup /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/ir/FV/E2E/StockVoidCallEntry.setup.json --json
+error: FV/E2E/StockVoidCallEntry.lean:266:10: Unknown identifier `XNI`
+
+Note: It is not possible to treat `XNI` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+error: FV/E2E/StockVoidCallEntry.lean:281:20: Unknown identifier `CallLg`
+error: FV/E2E/StockVoidCallEntry.lean:276:89: unsolved goals
+Γ : Rel
+f : Clif.Function
+c : BitVec 64
+env : Clif.Env
+exts : List Clif.ExtFunc
+sigs : List Clif.Signature
+X : ExtSem
+calls : XCallsOk env exts (RelW Γ f c) X
+ni : sorry
+ext : Clif.ExtFunc
+member : ext ∈ exts
+void : ext.sig.returns = []
+g : List Clif.Val → Clif.Mem → Clif.Outcome
+found : env.extern ext.name = some g
+vals : List Clif.Val
+cm after : Clif.Mem
+returned : g vals cm = Clif.Outcome.returned [] after
+slots : List (Clif.SlotId × Nat)
+uses : List CV
+w w' : Arm.ArmState
+memory : RelW Γ f c slots cm w
+memory' : RelW Γ f c slots cm w'
+arguments : ArgsAt ext.sig vals uses w
+arguments' : ArgsAt ext.sig vals uses w'
+Z : BitVec 64 → Prop
+covers : ∀ (a : BitVec 64), Γ.F a → Z a
+worlds : SameWorld Z w w'
+actual : List CV
+out : Arm.ArmState
+run : X.call (some ext.name) uses w = some (actual, out)
+left✝³ : actual.length = (sigRets ext.sig).length
+left✝² : PrefixHold [] actual
+result : RelW Γ f c slots after out
+actual' : List CV
+out' : Arm.ArmState
+run' : X.call (some ext.name) uses w' = some (actual', out')
+left✝¹ : actual'.length = (sigRets ext.sig).length
+left✝ : PrefixHold [] actual'
+result' : RelW Γ f c slots after out'
+legitimate : sorry
+⊢ ∃ out out',
+    X.voidCalls.call (some ext.name) uses w = some ([], out) ∧
+      X.voidCalls.call (some ext.name) uses w' = some ([], out') ∧
+        RelW Γ f c slots after out ∧ RelW Γ f c slots after out' ∧ SameWorld Z out out'
+Some required targets logged failures:
+- FV.E2E.StockVoidCallEntry
+error: build failed

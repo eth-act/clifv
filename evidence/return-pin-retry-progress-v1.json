@@ -1,0 +1,9 @@
+{
+  "commit": "fcf12d62efac2dad7e764f4c5a315320413dea7a",
+  "remote_verified": true,
+  "archive_bytes": 3155347,
+  "archive_sha256": "32a06421d8703fd416839a0b1b512b509b184f297ee3a7bdb621354e51d415b4",
+  "descriptor": "return-pin-retry-progress-v1.remote.json",
+  "source_files": 14,
+  "full_goal_complete": false
+}

@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "source_hashes": {
+    "FV/E2E/SemanticPreparedPipeline.lean": "731810f2684cf2aef5488de19a070fedf424e183942d5c91fe63be94224ffbc2",
+    "FV/E2E/PreparedReturnPinCallerBoundaryWitness.lean": "54184dab47454ea0d893a90efa3da5360519298993d35b4b603b07c5cd09a5fb",
+    "FV/E2E/PreparedReturnPinPipeline.lean": "abc62d48cb5d0b9ca7eac54e158d58210371326fd57ea77b851f4232c6be6738",
+    "FV/E2E/PreparedReturnPinProgram.lean": "1f4775b27f02cb8d7d0b51357171f157d0d7088c3ca94333e2d94d7ec1967307",
+    "FV/E2E/PreparedReturnPinSretWitness.lean": "7af1a7b7598b764a5d2e8c1664895e1f21de743a685ba2d83109a50a312f027f",
+    "FV/E2E/SemanticPipelineCheckWith.lean": "a1f5a373c0b1b75d96fdf04e87493c2868caea3a399c40b594854d2cf08cf38e",
+    "FV/E2E/SemanticPreparedMetadata.lean": "a5699cf7e84fd40736a87fe64c3289ee6cb946926337a6f36179b78fc2f7c173",
+    "scripts/audit/return-pin-prepared-program.lean": "f557752193d9b6f7219610db736a816d2e1cee021bd9f75ee2a75896c608d7f5"
+  },
+  "old_statements_exact": 3,
+  "old_axiom_sets_exact": 3,
+  "new_roots": 20,
+  "scope": "Actual checks and prepared results derive the ABI-aware program contract and original program statement. Both unchanged captured sret pipelines inhabit all system fields and select stockABI. The three original APIs and axioms remain exact. Default activation and remaining consumer wiring remain open.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T08:21:04.574416+00:00"
+}

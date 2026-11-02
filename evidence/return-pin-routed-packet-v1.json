@@ -1,0 +1,9 @@
+{
+  "files": {
+    "scripts/audit/return-pin-routed-compile.lean": "a6f70da54239a3cbd7738fd0ce98fe598ba2eaa88c1eae40960cba46b8c99863",
+    "FV/Link/ReturnPinCompileRoutes.lean": "fdbf61949a66f434993eeeea2eab4ddc826af5e99674a21047e2528c0000c65a",
+    "FV/Link/ReturnPinCompileRoutesWitness.lean": "a49712ddeab2996671b9833e51a04823e86af08c0eaaec4b19f1b0e7506a5bd6"
+  },
+  "status": "staged_unverified",
+  "full_goal_complete": false
+}

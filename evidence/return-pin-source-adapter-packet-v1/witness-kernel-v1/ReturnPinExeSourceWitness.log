@@ -1,0 +1,67 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-source-adapter-packet-v1/validation-package-v1/FV/Link/ReturnPinExeSourceWitness.lean:104:6: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  ((Clif.enterSlots (Clif.StockPrologueSource.source ProductionBoundaryWitness.name [])
+            (ProductionBoundaryWitness.cm cleanup)).snd.free
+      []).leave
+in the target expression
+  Clif.runLoop closedBase.env (input cleanup).srcProg 4 (ProductionBoundaryWitness.cs cleanup word) =
+    Clif.Outcome.returned [arg word] ((Clif.enterSlots fn (ProductionBoundaryWitness.cm cleanup)).snd.free []).leave
+
+cleanup : Bool
+word : BitVec 64
+memory :
+  ((Clif.enterSlots (Clif.StockPrologueSource.source ProductionBoundaryWitness.name [])
+              (ProductionBoundaryWitness.cm cleanup)).snd.free
+        []).leave =
+    ProductionBoundaryWitness.cm cleanup
+returned :
+  Clif.runLoop closedBase.env (input cleanup).srcProg 4 (ProductionBoundaryWitness.cs cleanup word) =
+    Clif.Outcome.returned [arg word] ((Clif.enterSlots fn (ProductionBoundaryWitness.cm cleanup)).snd.free []).leave
+⊢ Clif.runLoop closedBase.env (input cleanup).srcProg 4 (ProductionBoundaryWitness.cs cleanup word) =
+    Clif.Outcome.returned [arg word] (ProductionBoundaryWitness.cm cleanup)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-source-adapter-packet-v1/validation-package-v1/FV/Link/ReturnPinExeSourceWitness.lean:145:8: error: Type mismatch: After simplification, term
+  ReturnPinBinaryWitness.outside cleanup word
+ has type
+  OutsideCall (ReturnPinBinaryWitness.original cleanup)
+    (roByte (ReturnPinBinaryWitness.original cleanup).toLinkInput (ProductionBoundaryWitness.spec cleanup).data)
+    ProductionBoundaryWitness.f
+    (SemanticStackBound.stackFn (ReturnPinBinaryWitness.original cleanup) ProductionBoundaryWitness.f)
+    (ProductionBoundaryWitness.machine cleanup word) [ProductionBoundaryWitness.argument word]
+    (ProductionBoundaryWitness.entered cleanup)
+but is expected to have type
+  OutsideCall (ProductionBoundaryWitness.input cleanup)
+    (roByte ((ProductionBoundaryWitness.spec cleanup).inputProductionWith Stock.Production.lower cleanup)
+      (ProductionBoundaryWitness.spec cleanup).data)
+    fn (SemanticStackBound.stackFn (ProductionBoundaryWitness.input cleanup) fn)
+    (ProductionBoundaryWitness.machine cleanup word) [arg word] (ProductionBoundaryWitness.cs cleanup word).mem
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-source-adapter-packet-v1/validation-package-v1/FV/Link/ReturnPinExeSourceWitness.lean:160:4: error: omega could not prove the goal:
+a possible counterexample may satisfy the constraints
+  d ≥ 0
+  c ≥ 0
+  c ≥ 4097
+  b ≥ 0
+  a ≥ 0
+  a + 3*b ≤ 4096
+where
+ a := ↑(frameDrop (art (ReturnPinBinaryWitness.original cleanup) ProductionBoundaryWitness.f).af)
+ b := ↑(ReturnPinBinaryWitness.original cleanup).D
+ c := ↑(frameDrop (art (ProductionBoundaryWitness.input cleanup) fn).af)
+ d := ↑(ProductionBoundaryWitness.input cleanup).D
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-source-adapter-packet-v1/validation-package-v1/FV/Link/ReturnPinExeSourceWitness.lean:167:8: error: Type mismatch: After simplification, term
+  ReturnPinBinaryWitness.outside_budget cleanup word (frameDrop (art (input cleanup) fn).af + (input cleanup).D * 0)
+    bounded
+ has type
+  OutsideCall (ReturnPinBinaryWitness.original cleanup)
+    (roByte (ReturnPinBinaryWitness.original cleanup).toLinkInput (ProductionBoundaryWitness.spec cleanup).data)
+    ProductionBoundaryWitness.f
+    (frameDrop (art (ProductionBoundaryWitness.input cleanup) fn).af +
+      ((ProductionBoundaryWitness.spec cleanup).inputProductionWith Stock.Production.lower cleanup).D * 0)
+    (ProductionBoundaryWitness.machine cleanup word) [ProductionBoundaryWitness.argument word]
+    (ProductionBoundaryWitness.entered cleanup)
+but is expected to have type
+  OutsideCall (ProductionBoundaryWitness.input cleanup)
+    (roByte ((ProductionBoundaryWitness.spec cleanup).inputProductionWith Stock.Production.lower cleanup)
+      (ProductionBoundaryWitness.spec cleanup).data)
+    fn
+    (frameDrop (art (ProductionBoundaryWitness.input cleanup) fn).af +
+      ((ProductionBoundaryWitness.spec cleanup).inputProductionWith Stock.Production.lower cleanup).D * 0)
+    (ProductionBoundaryWitness.machine cleanup word) [arg word] (ProductionBoundaryWitness.cs cleanup word).mem

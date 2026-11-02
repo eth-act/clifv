@@ -1,0 +1,13 @@
+{
+  "pr": 858,
+  "url": "https://github.com/eth-act/clifv/pull/858",
+  "head": "2cb05c9e2f2ab5ae897a389b8c24e93cf5b531d1",
+  "base": "dad07d7082a992047cb9efb3a33ff752b576b09e",
+  "source_hashes": {
+    "FV/Backend/StockVoidCallCheck.lean": "74ecf35d3da2209ab0a3efdb7933a8e18f5aeb2168b249479eac08dc5e89e6e6",
+    "FV/E2E/StockVoidCallView.lean": "9a5370bf7c6b2e53b2a0a2f5f39f019d46740528059758b372bd6077883f1c38",
+    "FV/E2E/StockVoidCallDomain.lean": "64f2bd58ff37ba6253571542d4faeb1d4d67e499df73683d51441380ca385002",
+    "FV/E2E/StockVoidCallWitness.lean": "411bca41ba3d40535de51525ab9aa8aa38c2222a929082de093b5412e04ed775",
+    "scripts/audit/stock-void-call.lean": "552e1a4fce4f0bad9df7b4f2e9955f057737b6b5e421be5880f45b2dcd59c204"
+  }
+}

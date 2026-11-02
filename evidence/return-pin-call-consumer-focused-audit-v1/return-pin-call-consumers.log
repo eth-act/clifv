@@ -1,0 +1,40 @@
+'Backend.SemanticABI.previous_check_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.SemanticABI.previous_exact_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticABI.of_checks_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticReturnPins.of_checks_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledProgramReturnPins.of_checks_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.okRReturnPinCalls_eq_fast' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.okRReturnPinCalls_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.semanticPreparedReturnPinCallsResults_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.preparedReturnPinCalls_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPinCalls_accept' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPinCalls_retry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPinCalls_prepared' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPinCalls_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPinCalls_checked' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPinCalls_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.LinkInput.resultsReturnPinCalls_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.PreparedReturnPinCallsWitness.original_stock_artifacts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinCallsWitness.checks_true._native.native_decide.ax_1✝]
+'E2E.PreparedReturnPinCallsWitness.system_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinCallsWitness.checks_true._native.native_decide.ax_1✝]
+'E2E.PreparedReturnPinCallsWitness.program_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinCallsWitness.checks_true._native.native_decide.ax_1✝]
+'E2E.PreparedReturnPinCallsWitness.producer_retains_attempt' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinCallsWitness.checks_true._native.native_decide.ax_1✝]
+'E2E.PreparedReturnPinCallsWitness.rejected_program_retried' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinCallsWitness.retryChecks_true._native.native_decide.ax_1✝]
+'E2E.PreparedReturnPinCallsWitness.rejected_program_accepted' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.PreparedReturnPinCallsWitness.retryChecks_true._native.native_decide.ax_1✝]

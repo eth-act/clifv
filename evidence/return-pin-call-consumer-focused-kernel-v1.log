@@ -1,0 +1,9 @@
+1843 modules (2 heavy, 252 without a record); critical path 1.15 h, serial 9.24 h (recorded)
+06:44:31 want 1843 modules (0 assumed built) budget=4G max_jobs=1 heavy>12G
+06:44:32 check (all) 1843 modules in 0.4s: 1841 up-to-date, 2 out of date, 0 wait for those
+06:44:32 start FV.E2E.LinkReturnPinGoodWitness cap=4G running=1 avail=195.8G
+06:44:34 done FV.E2E.LinkReturnPinGoodWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:44:34 start FV.E2E.PreparedReturnPinCallsWitness cap=4G running=1 avail=195.2G
+06:44:38 done FV.E2E.PreparedReturnPinCallsWitness rc=0 4s maxrss=2.6G cgpeak=0.3G built -> ok
+06:44:38 2 batch checks, 1s; 0 modules restored after another worktree built them
+06:44:38 END 1843/1843 ok, 2 built, wall 0.1 min

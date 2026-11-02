@@ -1,0 +1,15 @@
+{
+  "utc": "2026-11-01T11:04:46.899824+00:00",
+  "retired": [
+    {
+      "pid": 1660168,
+      "source": ".lake/WorkerOVoidCallNIDraftV1.lean",
+      "reason": "Completed source worker; verified snapshots preserved remotely099cd4aa"
+    },
+    {
+      "pid": 1666464,
+      "source": ".lake/WorkerOVoidCallPairedDraftV1.lean",
+      "reason": "Completed source worker; verified snapshots preserved remotely099cd4aa"
+    }
+  ]
+}

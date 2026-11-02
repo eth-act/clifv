@@ -1,0 +1,9 @@
+{
+  "commit": "099cd4aaaeb797dac686d771c5df040bda6f743d",
+  "remote_verified": true,
+  "archive_bytes": 3360912,
+  "archive_sha256": "48a904a1c106f89001c12ebf2577c34da478553ba803087a87b85890b54c3ff7",
+  "descriptor": "return-pin-machine-paired-progress-v2.remote.json",
+  "source_files": 19,
+  "full_goal_complete": false
+}

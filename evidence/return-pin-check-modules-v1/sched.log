@@ -1,0 +1,6 @@
+01:14:28 want 172 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+01:14:28 check (all) 172 modules in 0.3s: 171 up-to-date, 1 out of date, 0 wait for those
+01:14:28 start FV.Backend.ReturnPinCheck cap=6G running=1 avail=134.6G
+01:14:30 done FV.Backend.ReturnPinCheck rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+01:14:31 2 batch checks, 1s; 0 modules restored after another worktree built them
+01:14:31 END 172/172 ok, 1 built, wall 0.0 min

@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "pr": 859,
+  "source": "221a3dcb293eacaf1214fb13571db4421a266db1",
+  "merged": "4e27a14b9192f37c601c29706b3f83bf934e37ed",
+  "tested_merged_trees_equal": true,
+  "source_hashes": {
+    "FV/Backend/StockVoidCallNICheck.lean": "06c453fb7e471948ca0a951835e67a2b4902b81e401eed5f43ac09a058e3e4d6",
+    "FV/E2E/StockVoidCallEntry.lean": "d68a886ee64c8ae7d9d71de0c6e12e9ec4cc19365788d05364eb36d856ab7cfc",
+    "FV/E2E/StockVoidCallNI.lean": "524a0d15588c33c863ee80d6e96a6b3c0b7261833c1a07e2ef6298ddee74de46",
+    "FV/E2E/StockVoidCallNIWitness.lean": "d4de1e46ba588910900c220c273e4ebf23c014d789f74a2198b6b0f064a33dde",
+    "scripts/audit/stock-void-call-ni.lean": "a5995e600323a7bc993377d2978294fd8cffb4b7d143be48a1aa8a6c2280b186"
+  },
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T11:15:16Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41301041104/job/124831825007",
+      "name": "Quick checks",
+      "startedAt": "2026-11-01T11:15:07Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T11:19:53Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41301041087/job/124831840379",
+      "name": "Build and compare",
+      "startedAt": "2026-11-01T11:15:11Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T11:20:05Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41301041087/job/124832905644",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-01T11:19:56Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T11:20:06Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41301041087/job/124832905597",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-01T11:19:56Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "old_axiom_sets_exact": 20,
+  "new_roots": 16,
+  "review_agents": 0,
+  "review_builds": 0,
+  "full_goal_complete": false,
+  "utc": "2026-11-01T11:20:18.730511+00:00"
+}

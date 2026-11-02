@@ -1,0 +1,18 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/BackendEntrySmokeV1.lean:9:82: error(lean.invalidField): Invalid field notation: Type of
+  x✝
+is not known; cannot resolve field `clif`
+
+Hint: Consider replacing the field projection with a call to one of the following:
+  • `Backend.AtomicRmwLoopOp.clif`
+  • `Backend.IInfo.clif`
+  • `E2E.LinkCheck.FnInput.clif`
+  • `E2E.LinkSys.WorldEntry.clif`
+  • `Backend.Proof.Prg.CtxInvW.clif`
+  • `Backend.Stock.Memory.RetainedLoadReturnSpec.clif`
+  • `Backend.Stock.Memory.SingleLoadReturnSpec.clif`
+  • `Backend.Stock.Memory.ExtendedRoots.SingleExtendingLoadReturnSpec.clif`
+  • `Backend.Stock.Memory.IntegerRoots.RetainedIntegerLoadReturnSpec.clif`
+  • `Backend.Stock.Memory.IntegerRoots.SingleIntegerLoadReturnSpec.clif`
+  • `Backend.Stock.Memory.SretCopy.BodyRecord.clif`
+  • `Backend.Stock.Memory.StoreRoots.RetainedStoreReturnSpec.clif`
+  • `Backend.Stock.Memory.StoreRoots.SingleStoreReturnSpec.clif`

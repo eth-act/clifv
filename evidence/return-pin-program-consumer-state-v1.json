@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "source_sha256": "1f4775b27f02cb8d7d0b51357171f157d0d7088c3ca94333e2d94d7ec1967307",
+  "scope": "Actual checks and pipeline facts derive the original program statement for every valid base environment and world. The fixed full sret witness remains pending.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T07:51:14.568250+00:00"
+}

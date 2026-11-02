@@ -1,0 +1,13 @@
+{
+  "released": [
+    {
+      "pid": 621894,
+      "uri": "file:///home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinSretWitnessDraftV1.lean"
+    },
+    {
+      "pid": 716833,
+      "uri": "file:///home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinSretOpaqueDraftV1.lean"
+    }
+  ],
+  "active_canonical_worker_preserved": 640483
+}

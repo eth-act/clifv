@@ -1,0 +1,6 @@
+{
+  "scope": "Cache availability inspection only. --no-build restores completed artifacts and starts no compiler. This does not claim verification.",
+  "returncode": 3,
+  "log": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-shared-cache-inspection-v1.log",
+  "utc": "2026-11-01T10:25:48.183330+00:00"
+}

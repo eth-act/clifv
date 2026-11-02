@@ -1,0 +1,8 @@
+⚠ [522/522] Built FVTest.E2E.SemanticLinkProofWith (1.0s)
+warning: FVTest/E2E/SemanticLinkProofWith.lean:231:17: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+Build completed successfully (522 jobs).

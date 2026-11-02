@@ -1,0 +1,20 @@
+06:20:20 want 1643 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+06:20:20 check (all) 1643 modules in 0.4s: 1637 up-to-date, 2 out of date, 4 wait for those
+06:20:20 start FV.E2E.CompiledSemanticReturnPins cap=6G running=1 avail=193.8G
+06:20:22 done FV.E2E.CompiledSemanticReturnPins rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+06:20:22 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:20:22 start FV.E2E.LinkReturnPins cap=6G running=1 avail=193.0G
+06:20:24 done FV.E2E.LinkReturnPins rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+06:20:25 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:20:25 start FV.E2E.ReturnPinCheckSound cap=6G running=1 avail=193.4G
+06:20:27 done FV.E2E.ReturnPinCheckSound rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+06:20:27 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+06:20:27 start FV.E2E.CompiledProgramReturnPins cap=6G running=1 avail=194.5G
+06:20:29 done FV.E2E.CompiledProgramReturnPins rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+06:20:29 start FV.E2E.SemanticABIBoundary cap=6G running=1 avail=194.4G
+06:20:31 done FV.E2E.SemanticABIBoundary rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+06:20:32 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+06:20:32 start FV.E2E.WorldReturnPinBoundary cap=6G running=1 avail=194.0G
+06:20:34 done FV.E2E.WorldReturnPinBoundary rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+06:20:34 6 batch checks, 2s; 0 modules restored after another worktree built them
+06:20:34 END 1643/1643 ok, 6 built, wall 0.2 min

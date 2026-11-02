@@ -1,0 +1,23 @@
+{
+  "commit": "5ff7a570ab9288ef1de83240aeb58be5bd269c3f",
+  "remote_verified": true,
+  "source_hashes": {
+    "EmitReturnPinGeneratedWitnessV1.lean": "3c7b43ca123cd29f2af19dc0e2a1d007e769f9c6fcc0fc023c59bf21c91e425a",
+    "EmitReturnPinGeneratedWitnessV2.lean": "c4b484f80eba6310553d8a939141bdd80ac2534673228e46ff43afd7463a508b",
+    "WorkerOSretCapturedEntryDraftV2-before-audit-marker.lean": "f283f954eafbd0f1d38a826e94d57cd93c7721d88afc77800e88f73b53dd54fa",
+    "WorkerOSretCapturedEntryDraftV2.lean": "4504e19815456f29c7c09ce0e37a71b199fcf5f34c7e49936a606e66d66974a8",
+    "integer-production-status-current-v180.md": "7bebdc3fec995cec3518f8c28b8b96472a16a067d9e00afd0148ad41c222c1ce",
+    "return-pin-checks-packet-v1/FV/E2E/ReturnPinChecksWith.lean": "9b114c497051d84b6d81d35a9427c1906bad64143b02e064a06fc942268d2ed1",
+    "return-pin-checks-packet-v1/FV/E2E/ReturnPinChecksWithWitness.lean": "4ed3fe5e89550398d76506a551f63ea45c3d691953265a9992fd1af47c5d62b8",
+    "return-pin-checks-packet-v1/scripts/audit/return-pin-checks-with.lean": "bc56353c0064af117cdf039ad2d94ab1b6cae51456f3adacc82405c48f4b85f1",
+    "return-pin-checks-packet-v1.json": "8777c21f753c0a2da0c3bdaefb56c21b1363c92cfc59f3f2659f1da5dd41c806",
+    "return-pin-generated-proof-packet-v1/FV/E2E/ReturnPinGeneratedStack.lean": "66a23bac8b6428a40d4b465cd7153ee6e8e6260de418c78aa0fb008716373409",
+    "return-pin-generated-proof-packet-v1/FVTest/E2E/ReturnPinLinkProofWith.lean": "b77d9303b903cd3d7cc42b1d03bd91dca3ccc30f74e64932dc9ba2bfeb24f5e3",
+    "return-pin-generated-proof-packet-v1/scripts/audit/return-pin-generated-stack.lean": "9f7c279e59f59133f130272f6af73165640bc3be5b79e268834fd0a36f2ea232",
+    "return-pin-generated-proof-packet-v1.json": "37e807d72a467a0dcb524fcf054b606fae623999c304e2e77b99b94ae9c97ece",
+    "verify-return-pin-generated-proof-packet-v1.py": "d9d4bda7246a4edd80ff36a3cb52d4ce6244b076d8e46fe28ef36453b9c4d28b"
+  },
+  "proof_status": "pending",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T20:18:38.044309+00:00"
+}

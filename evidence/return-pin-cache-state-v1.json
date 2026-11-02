@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "source_hashes": {
+    "FV/E2E/PreparedReturnPinPipeline.lean": "4d57fb60790d349cd65e7117e5a66cb914429693dc3eb271b56fd556045fa868",
+    "FV/E2E/ReturnPinCheckFast.lean": "2e6739679f5c48a97dd8f0499e38d570caaf9d559516257d5456bb39bf1b7e98",
+    "FV/E2E/ReturnPinCheckFastWitness.lean": "e143b7c8e99bb1396aa8afa1bd4d19ca79d3cbecdb930bae4641e16e45b0425d",
+    "scripts/audit/return-pin-check-fast.lean": "401f00fae2b28334567607c5fd59fe8b2802f9616a987c7849c8dbe5d825a9c0"
+  },
+  "full_goal_complete": false,
+  "utc": "2026-11-01T10:28:04.786817+00:00",
+  "old_axiom_sets_exact": 20,
+  "new_roots": 12,
+  "scope": "One shared cache for actual return pins and lookups. Universal equality preserves all previous verdicts, including duplicate names and failed pipeline entries. Real captured acceptance and mixed caller rejection pass in both cleanup modes."
+}

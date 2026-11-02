@@ -1,0 +1,13 @@
+{
+  "module": "FV.E2E.SemanticStackBoundTS",
+  "unit": "fvb-1740983-311-FV.E2E.SemanticStackBoundTS",
+  "cap_bytes": 5368709120,
+  "returncode": 1,
+  "seconds": 2.0017430782318115,
+  "module_source_sha256": "8cbf63a05ce086f60d1d15b28831174c2e70a031e9bcf2d7e2859633fae2cc06",
+  "artifacts": {
+    "FV.E2E.SemanticStackBoundTS.log": "49250b94dc7dce3456bccd149adf26815f394b4d27d968a35801d6fa942c179c",
+    "FV.E2E.SemanticStackBoundTS.mem": "606e4792e3e0decf3d6a50221fbe03563e2a367fe519903a526b8f23152e1acc",
+    "FV.E2E.SemanticStackBoundTS.time": "8ca68c2c2dd93f6e212427c5c2337cd88316116cb2eb393b815ca0ee23bbb1a2"
+  }
+}

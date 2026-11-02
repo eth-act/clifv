@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "scope": "Two-file development kernel and 16-root audit check against the existing dependency outputs. No Lake target build or #824 table rebuild ran. Full current-main gate remains pending A shared table cache.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T09:28:31.669306+00:00"
+}

@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "source_hashes": {
+    "FV/E2E/ReturnPinPipelineRetry.lean": "c597bd1f2cb9f6cd40e67754ed36908d82c52f01c3b6a9a3b128279f496f7aaa",
+    "FV/E2E/ReturnPinPipelineRetryWitness.lean": "f72e29f950f97a83484c6feccb527702e154cd498c2d801cb92b4996379abbd1",
+    "scripts/audit/return-pin-pipeline-retry.lean": "1fd45293e1bd4858bbd91355a74ee93b2dd10f757a32fe3073a16535da80bbf9"
+  },
+  "full_goal_complete": false,
+  "utc": "2026-11-01T10:30:30.727826+00:00",
+  "old_axiom_sets_exact": 20,
+  "new_roots": 16,
+  "scope": "Complete-program retry keeps every successful Stock artifact and retries the entire previous program on rejection. Universal old-acceptance preservation derives all return-pin checks. Both real cleanup modes preserve source order, actual artifacts, and the complete original program statement. The mixed retry jointly inhabits the full system contract. Default activation and original140 remain open."
+}

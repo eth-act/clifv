@@ -1,0 +1,362 @@
+{
+  "files": {
+    "FV/E2E/ReturnPinExecStatic.lean": "5b632b0d2f5d34ad4f1982dd8541c6b3d7e43c6deafcc1f799eace83d09be6da",
+    "FV/E2E/ReturnPinExecGot.lean": "e2edc73ecc4e7e84cabcf78896613f7f9b49ec21ec1040813583bfed1985b8ac",
+    "FV/E2E/ReturnPinExecProven.lean": "7b37c76efa77245028a866ecde7af5a10aa15c958e6982eef0a6d02a5701cd4e",
+    "FV/E2E/ReturnPinExecWitness.lean": "62253a79c44f0baa79bf5f505eb4cfa91041df62eab99461b21b79b1ac0f2bb8",
+    "FV/Link/ReturnPinCompileDefs.lean": "37e7d9c01a3b4a1229a1a1d0187b3d45651aee06948a5780a9968abbea1be1c5",
+    "FV/Link/ReturnPinExeWith.lean": "8f0653b694ec1d367a9a4d0f1f7de281b33b598267a13468099ae8bb2b5fc5e3",
+    "FV/Link/ReturnPinCompileWith.lean": "df9aea755ce7da7c0bba7ab15b31e7ad6e73551592fadf167273ac918720635f",
+    "FV/E2E/ReturnPinLinkerWitness.lean": "8e59b599d1e7ee9611ca80b1eb27190fb071236eb35a8a3ce402bfbdda1c1e09",
+    "scripts/audit/return-pin-executable.lean": "edde656aa1e295429b0ba6c3ba2e6c9b413c13cd66d5c7bd6b0ea43b16510916"
+  },
+  "prototype": "WorkerOReturnPinLinkerDraftV11.lean",
+  "prototype_sha256": "0d18739cb31f9be70fc0b7cddffa8bcf12d220785a2740d84fe0613f06c7b7af",
+  "expected_axiom_sets": {
+    "E2E.ReturnPinExecBytes.fnOk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.codeMap_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.relocAt_inv": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.line_overlap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.relocAt_img": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.word_static": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.insn_of_good": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.symAddr_of_blrTo": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.siteAt_static": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.plain_static": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.stepOk_of_d": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runOkSN_of_n": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.pairsClosed_art": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.raNotSecond_enter": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.reachL_of_reachN": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.destsInt_of_ok": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.stepOkD_of_good": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runOkN_of_good": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.LinkSys.OkReturnPins.extImgProduction": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.image_checked": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.sysS_entry": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runGood_sysS_of": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runGood_sysS": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runGood_sysS_depth": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.runGood_sysS_peak": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.got_of_good": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.exec_of_runGood": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.binary_correct_exec_proven": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.binary_correct_exec_depth_proven": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.binary_correct_exec_peak_proven": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecWitness.code_map": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecWitness.got": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecWitness.avoids": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecWitness.ordinary": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "old_checked._native.native_decide.ax_1",
+      "old_checked._native.native_decide.ax_2",
+      "propext"
+    ],
+    "E2E.ReturnPinExecWitness.recursive_depth": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "depth_budget._native.native_decide.ax_1",
+      "depth_budget._native.native_decide.ax_2",
+      "old_checked._native.native_decide.ax_1",
+      "old_checked._native.native_decide.ax_2",
+      "propext"
+    ],
+    "E2E.ReturnPinExecWitness.peak_depth": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "depth_budget._native.native_decide.ax_1",
+      "depth_budget._native.native_decide.ax_2",
+      "old_checked._native.native_decide.ax_1",
+      "old_checked._native.native_decide.ax_2",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_spec": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.codeMap_leanLink": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.leanLink_gotSlot": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.gotOk_leanLink": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.outsideAvoids_leanLink": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_correct": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_correct_depth": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_correct_peak": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.accepts_previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWitness.compiler_success": [
+      "Classical.choice",
+      "Quot.sound",
+      "compiler_success._native.native_decide.ax_1",
+      "compiler_success._native.native_decide.ax_2",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWitness.original_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWitness.old_rejected": [
+      "Classical.choice",
+      "Quot.sound",
+      "old_rejected._native.native_decide.ax_1",
+      "old_rejected._native.native_decide.ax_2",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWitness.actual_stock": [
+      "Classical.choice",
+      "Quot.sound",
+      "actual_stock._native.native_decide.ax_1",
+      "actual_stock._native.native_decide.ax_2",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWitness.no_tls": [
+      "Classical.choice",
+      "Quot.sound",
+      "no_tls._native.native_decide.ax_1",
+      "no_tls._native.native_decide.ax_2",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWitness.contract": [
+      "Classical.choice",
+      "Quot.sound",
+      "compiler_success._native.native_decide.ax_1",
+      "compiler_success._native.native_decide.ax_2",
+      "no_tls._native.native_decide.ax_1",
+      "no_tls._native.native_decide.ax_2",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWitness.actual_mixed_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "actual_mixed_execution._native.native_decide.ax_1",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.compile_accepted": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.compile_retry": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.compile_accepts_previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.compile_spec": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWitness.compiler_keeps_complete_stock": [
+      "Classical.choice",
+      "Quot.sound",
+      "compiler_success._native.native_decide.ax_1",
+      "compiler_success._native.native_decide.ax_2",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWitness.retry_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext",
+      "retry_checks._native.native_decide.ax_1"
+    ],
+    "Link.ReturnPinCompilerWitness.compiler_retries_complete_previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext",
+      "retry_checks._native.native_decide.ax_1"
+    ]
+  },
+  "generic_roots": 43,
+  "fixed_roots": 16,
+  "full_goal_complete": false,
+  "scope": "Staged final modules only. The prototype passes96 roots, the isolated negative fixture passes6 audited roots, and both runtime modules compile under final names with4 generic roots. The final witness includes positive Stock retention and exact whole-file negative retry in both cleanup modes. Final remaining module/importer gates and full original140 remain open.",
+  "negative_fixture": "WorkerOReturnPinRetryFixtureV4.lean"
+}

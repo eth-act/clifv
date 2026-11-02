@@ -1,0 +1,7 @@
+02:56:26 want 1726 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+02:56:26 check (all) 1726 modules in 0.4s: 1725 up-to-date, 1 out of date, 0 wait for those
+02:56:26 start FV.E2E.PreparedReturnPinSretWitness cap=6G running=1 avail=142.6G
+02:56:29 done FV.E2E.PreparedReturnPinSretWitness rc=1 3s maxrss=2.6G cgpeak=0.3G up-to-date -> fail
+02:56:30 fail (1): FV.E2E.PreparedReturnPinSretWitness
+02:56:30 2 batch checks, 1s; 0 modules restored after another worktree built them
+02:56:30 END 1725/1726 ok, 0 built, wall 0.1 min

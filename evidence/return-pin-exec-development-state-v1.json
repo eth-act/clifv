@@ -1,0 +1,290 @@
+{
+  "status": "passed",
+  "source_sha256": "114a91a5b4c0142d560d68e49757d56e1696150586f7d867416d9655e844b2bd",
+  "generic_roots": 32,
+  "fixed_roots": 15,
+  "axiom_sets": {
+    "E2E.BinaryBoundaryFacts.of_semantic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.BinaryBoundaryFacts.of_returnPins": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.BinaryBoundaryFacts.img_of_codeAddr": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.BinaryBoundaryFacts.frame_facts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.BinaryBoundaryFacts.not_worldF": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.BinaryBoundaryFacts.not_worldF_out": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.BinaryBoundaryFacts.premises": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.okB_previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.okB_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.binary_correct_depth": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.BinFacts.previous": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.BinFacts.modelOf_ne": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.binary_correct_depthX": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.binary_correct_peakX": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.binFacts_of_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.okB_names": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.facts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.edgeB_of_callee": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.goodN_iff": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.budget_of": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.backend_correct_program_stackX": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinStackBound.crate_correct_stackNX": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.binary_correctX": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.trapsExplicit_of_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.old_checked": [
+      "Classical.choice",
+      "Quot.sound",
+      "old_checked._native.native_decide.ax_1",
+      "old_checked._native.native_decide.ax_2",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.ordinary_facts": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "old_checked._native.native_decide.ax_1",
+      "old_checked._native.native_decide.ax_2",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.checked": [
+      "Classical.choice",
+      "Quot.sound",
+      "old_checked._native.native_decide.ax_1",
+      "old_checked._native.native_decide.ax_2",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.outside": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.source_run": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.binary_facts": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "old_checked._native.native_decide.ax_1",
+      "old_checked._native.native_decide.ax_2",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.intact": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.complete_model_run": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "old_checked._native.native_decide.ax_1",
+      "old_checked._native.native_decide.ax_2",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.mixed_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "mixed_checks._native.native_decide.ax_1",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.mixed_contract": [
+      "Classical.choice",
+      "Quot.sound",
+      "mixed_checks._native.native_decide.ax_1",
+      "propext"
+    ],
+    "E2E.ReturnPinBinary.trapsExplicit_of_runD": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.depth": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.outside_budget": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.depth_budget": [
+      "Classical.choice",
+      "Quot.sound",
+      "depth_budget._native.native_decide.ax_1",
+      "depth_budget._native.native_decide.ax_2",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.depth_model_run": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "depth_budget._native.native_decide.ax_1",
+      "depth_budget._native.native_decide.ax_2",
+      "old_checked._native.native_decide.ax_1",
+      "old_checked._native.native_decide.ax_2",
+      "propext"
+    ],
+    "E2E.ReturnPinBinaryWitness.peak_model_run": [
+      "Classical.choice",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1",
+      "ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2",
+      "Quot.sound",
+      "depth_budget._native.native_decide.ax_1",
+      "depth_budget._native.native_decide.ax_2",
+      "old_checked._native.native_decide.ax_1",
+      "old_checked._native.native_decide.ax_2",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.fnOk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.codeMap_sound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.relocAt_inv": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.line_overlap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.relocAt_img": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.word_static": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ReturnPinExecBytes.insn_of_good": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "full_goal_complete": false,
+  "scope": "Development only. Seven executable adapters derive function layout, binary facts, relocation placement, code overlap, and instruction read simulation from the new ABI checker. The remaining executable lockstep and GOT adapters remain open. Shared allocation/image facts supply the original machine boundary. The new checker preserves every old accepted program. Ordinary, fuel-depth, peak-depth, and per-state model refinements use the original boundary and loaded-byte facts. Complete returning witnesses reuse the original executable fixture for arbitrary arguments and both cleanup modes. The unchanged mixed source passes the new checker, fails the old checker, and jointly inhabits the complete ABI contract. Sharing old public wrappers, final modules, affected importer gates, mixed executable-entry witnesses, actual execution adapters, consumers, stronger x8 values, and default activation remain open.",
+  "utc": "2026-11-01T13:57:37.142024+00:00"
+}

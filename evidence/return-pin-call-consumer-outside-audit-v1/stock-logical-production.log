@@ -1,0 +1,43 @@
+'E2E.backend_correct_worldX_stock_logical' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_logical' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockLogicalNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockLogicalNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockLogicalNIWitness.source_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockLogicalNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockLogicalNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockLogicalNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockLogicalNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockLogicalNIWitness.source_returns' depends on axioms: [propext, Quot.sound]
+'E2E.StockLogicalNIWitness.classifier_accepts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockLogicalNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockLogicalNIWitness.compiled_semantic_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockLogicalNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.SemanticLogicalCompilerWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SemanticLogicalCompilerWitness.checks_true._native.native_decide.ax_1]
+'E2E.SemanticLogicalCompilerWitness.compiler_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SemanticLogicalCompilerWitness.checks_true._native.native_decide.ax_1]
+'E2E.SemanticRoutesWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.SemanticRoutesWitness.checks_true._native.native_decide.ax_1]
+'Link.SemanticCompilerWith.compileWithRoutes_accepts_tail' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.SemanticCompilerWith.compileWithRoutes_accepts_legacy' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.SemanticCompilerWith.compileWithRoutes_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LogicalSelected.logical_register_source_dominated' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Logical.classifier_accepts' depends on axioms: [propext, Classical.choice, Quot.sound]

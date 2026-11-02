@@ -1,0 +1,30 @@
+import FV.E2E.WorldReturnPinBoundary
+
+#print axioms Backend.SemanticABI.previous_check
+#print axioms Backend.SemanticABI.previous_exact
+#print axioms E2E.CompiledSemanticABI.of_checks
+#print axioms E2E.CompiledSemanticABI.check
+#print axioms E2E.CompiledSemanticABI.alloc
+#print axioms E2E.CompiledSemanticABI.emit
+#print axioms E2E.CompiledSemanticABI.layout
+#print axioms E2E.backend_correct_world_niX_semantic_abi
+#print axioms E2E.CompiledSemanticABI.entryRegs
+#print axioms E2E.hasTls_of_vcode_semantic_abi
+#print axioms E2E.stackArgsAvoid_frameW_semantic_abi
+#print axioms E2E.ReturnPinMode.pins_of_valid
+#print axioms E2E.CompiledSemanticReturnPins.erase
+#print axioms E2E.CompiledSemanticReturnPins.of_checks
+#print axioms E2E.backend_correct_world_niX_semantic_return_pins
+#print axioms E2E.LinkSys.returnPinsB_sound
+#print axioms E2E.CompiledProgramReturnPins.of_checks
+#print axioms E2E.CompiledProgramReturnPins.check
+#print axioms E2E.CompiledProgramReturnPins.alloc
+#print axioms E2E.CompiledProgramReturnPins.emit
+#print axioms E2E.CompiledProgramReturnPins.layout
+#print axioms E2E.CompiledProgramReturnPins.entryRegs
+#print axioms E2E.hasTls_of_vcode_return_pins
+#print axioms E2E.stackArgsAvoid_frameW_return_pins
+#print axioms E2E.backend_correct_world_return_pins
+#print axioms E2E.backend_correct_world_ni_return_pins
+#print axioms E2E.no_explicit_returns_of_sret
+#print axioms E2E.armRefines_of_actRet_return_pins

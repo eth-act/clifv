@@ -1,0 +1,17 @@
+{
+  "commit": "3b4d854198f75d47391770d2d364b562d35454fa",
+  "remote_verified": true,
+  "source_hashes": {
+    "WorkerOReturnPinChecksWithDraftV1.lean": "ba99d35af5550739243c7ffcfda0d59e4a1c2eb05160b0e6701554003bc04c98",
+    "WorkerOSretCapturedEntryDraftV1.lean": "46c53f79d75b4fcbf505cc77b70d55bf226f158d2b487f7002ff4018293159a6",
+    "WorkerOSretCapturedEntryDraftV2.lean": "f283f954eafbd0f1d38a826e94d57cd93c7721d88afc77800e88f73b53dd54fa",
+    "verify-return-pin-checks-with-v1.py": "d5e815d86202881d07ef5dfeda380700a2abbcc0869ef0f06dd2c3ceb2b95aa5",
+    "verify-sret-captured-entry-v1.py": "ab0fa5168a3f0aec4f1864629070d98b91524aa67d106b905820add85dc12e95",
+    "verify-sret-captured-entry-v2.py": "00abbdea99660452aadc2eb940f601c82765d99ec6199618f72cb9669e088a64",
+    "verify-sret-symbolic-heap-packet-v4.py": "4cbc5d87aae42d9d88588f8135e8603ddc0e6d4f8bb31c8cc3a64cd4d90bb7c7",
+    "integer-production-status-current-v177.md": "a511b5ab8fc0324d83503b8399ac1b01de04f1190fbeb62e7d105c3e92673fbf"
+  },
+  "proof_status": "pending",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T19:49:41.782057+00:00"
+}

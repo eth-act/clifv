@@ -1,0 +1,17 @@
+⚠ [393/393] Built FVTest.E2E.LinkProof (1.4s)
+warning: FVTest/E2E/LinkProof.lean:52:65: `List.asString` has been deprecated: Use `String.ofList` instead
+
+Note: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.asString` to `String.ofList x`).
+warning: FVTest/E2E/LinkProof.lean:452:17: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+warning: FVTest/E2E/LinkProof.lean:652:17: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+Build completed successfully (393 jobs).

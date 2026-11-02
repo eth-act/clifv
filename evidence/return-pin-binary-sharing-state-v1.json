@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "source_hashes": {
+    "scripts/audit/return-pin-binary.lean": "2f9fb2e1dd2896ddacefb01f6b24a13e57d6991154d8d91bbba5dcca54e35aea",
+    "FV/E2E/BinaryBoundaryDefs.lean": "59d6354666dc9af6b3d6c5e5c6f490d422b4c9b3f25e17ff77010028b9765cf2",
+    "FV/E2E/BinaryBoundaryFacts.lean": "ab2848b4e20edb08913edd3df035ca9fa91b2a29f0cd9feaa0e41ca8503ece6e",
+    "FV/E2E/SemanticBinary.lean": "fcd723512024d261779ba46d92fd65e63d66e8c71e489c64c49f82dc82ba1bdb",
+    "FV/E2E/ReturnPinBinary.lean": "62195dba28e8c76e98c91caced1cfc3e54bccb598ae28e8fe2cdede133929d9d",
+    "FV/E2E/ReturnPinBinaryWitness.lean": "567356c7d2e94504dce70ec8d30d9ccada05d7ca1517179e026c18b88f706c6b"
+  },
+  "old_headers_exact": 25,
+  "old_axiom_sets_exact": 25,
+  "new_modules_checked": 2,
+  "full_goal_complete": false,
+  "scope": "The final shared definitions and metadata proofs pass the pinned kernel. The modified original binary module passes the unchanged audit with its original 25 axiom sets. Every original statement header remains exact. The tracked source and old module artifacts remain unchanged while PR860 validates. Full final-module/importer checks and the new binary consumer publication remain open.",
+  "utc": "2026-11-01T13:50:39.007908+00:00"
+}

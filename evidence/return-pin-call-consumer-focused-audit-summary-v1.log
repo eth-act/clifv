@@ -1,0 +1,6 @@
+ok   return-pin-call-consumer-legacy-audit-v1.lean: theorems 28/28 rc=0 errors=0 other_axioms=[]
+ok   return-pin-call-consumers.lean: theorems 22/22 rc=0 errors=0 other_axioms=[]
+ok   link-return-pin-good.lean: theorems 19/19 rc=0 errors=0 other_axioms=[]
+ok   return-pin-prepared-program.lean: theorems 20/20 rc=0 errors=0 other_axioms=[]
+ok   return-pin-pipeline-retry.lean: theorems 16/16 rc=0 errors=0 other_axioms=[]
+axiom audit: 5/5 files ok

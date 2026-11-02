@@ -1,0 +1,15 @@
+{
+  "status": "published",
+  "pr": 888,
+  "url": "https://github.com/eth-act/clifv/pull/888",
+  "source": "29755ba18e018e4bdb6e4d2432687358ee1f49f6",
+  "source_hashes": {
+    "scripts/audit/return-pin-executable.lean": "d42c592f671cce371fc6b337b5d820e89d80a3e9db7b1704a098800e331e0ae1",
+    "FV/E2E/ReturnPinExecStatic.lean": "5b632b0d2f5d34ad4f1982dd8541c6b3d7e43c6deafcc1f799eace83d09be6da",
+    "FV/E2E/ReturnPinExecGot.lean": "e2edc73ecc4e7e84cabcf78896613f7f9b49ec21ec1040813583bfed1985b8ac",
+    "FV/E2E/ReturnPinExecProven.lean": "7b37c76efa77245028a866ecde7af5a10aa15c958e6982eef0a6d02a5701cd4e",
+    "FV/E2E/ReturnPinExecWitness.lean": "62253a79c44f0baa79bf5f505eb4cfa91041df62eab99461b21b79b1ac0f2bb8",
+    "FV/E2E/ReturnPinLinkerWitness.lean": "487197f1d94a28ebf4776ca1d7c86ee3463db8b8353dd07fcbeb1e721aa11ef8",
+    "FV/Link/ReturnPinExeWith.lean": "8f0653b694ec1d367a9a4d0f1f7de281b33b598267a13468099ae8bb2b5fc5e3"
+  }
+}

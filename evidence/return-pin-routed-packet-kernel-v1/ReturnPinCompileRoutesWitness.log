@@ -1,0 +1,1 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-routed-packet-v1/FV/Link/ReturnPinCompileRoutesWitness.lean:1:0: error: import FV.E2E.SemanticExecGot failed, environment already contains 'E2E.LinkSys.extImgProduction' from FV.E2E.ProductionExecGot

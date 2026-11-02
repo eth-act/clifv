@@ -1,0 +1,1 @@
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinExecDraftV2.lean:1:0: error: import FV.E2E.ProductionExecGot failed, environment already contains 'E2E.LinkSys.extImgProduction' from FV.E2E.SemanticExecGot

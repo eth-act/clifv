@@ -1,0 +1,17 @@
+{
+  "verdict": "approved",
+  "reviewer": "worker-A",
+  "reviewed_source": "04c4cf66",
+  "source_hashes": {
+    "FV/Backend/StockVoidCallNICheck.lean": "06c453fb7e471948ca0a951835e67a2b4902b81e401eed5f43ac09a058e3e4d6",
+    "FV/E2E/StockVoidCallEntry.lean": "d68a886ee64c8ae7d9d71de0c6e12e9ec4cc19365788d05364eb36d856ab7cfc",
+    "FV/E2E/StockVoidCallNI.lean": "524a0d15588c33c863ee80d6e96a6b3c0b7261833c1a07e2ef6298ddee74de46",
+    "FV/E2E/StockVoidCallNIWitness.lean": "d4de1e46ba588910900c220c273e4ebf23c014d789f74a2198b6b0f064a33dde",
+    "scripts/audit/stock-void-call-ni.lean": "a5995e600323a7bc993377d2978294fd8cffb4b7d143be48a1aa8a6c2280b186"
+  },
+  "comment_only_followup": true,
+  "review_agents": 0,
+  "review_builds": 0,
+  "method": "ONE QUICK, DIRTY, CHEAP direct peer review",
+  "note": "SourceRun carries only proof-internal facts. The second execution transports the ABI-read prelude under original world, register, and stack-byte agreement. The call uses original XNI. The reviewed read-check scope note is now documented. The final change adds only that comment; exact executable and proof text remain reviewed."
+}

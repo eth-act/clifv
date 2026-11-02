@@ -1,0 +1,34 @@
+{
+  "status": "kernel_and_audit_passed",
+  "files": {
+    "FV/Link/ReturnPinExeSourceWith.lean": "f50726d0a226bed154a8d0e074155c889aa0f5e5880bba21e8409a172d6f95c3",
+    "scripts/audit/return-pin-executable-source.lean": "7aca44eb06cb788d55ff1dc1069317d89f6653a4f5d70ff9f502e247ccb958b2",
+    "FV/Link/ReturnPinExeSourceWitness.lean": "7f1924fd91afd53804f61899c68a81429edcfd0acea1e4368d7ea12e9ee5f4e1",
+    "scripts/audit/return-pin-executable-source-witness.lean": "58df6f216ec539cd06e352b32def2b301518cd885e1e3818e5eb0f88dacef886"
+  },
+  "generic_roots": 2,
+  "fixed_roots": 2,
+  "old_header_templates_exact": {
+    "attempt_correct_source": "f8eb6a42e14f28b23e6e814acc489e388cecaf9b497c5a767a2243f0300e000f",
+    "attempt_correct_source_peak": "f7b513997a0b8a5ea4bd226317cc1024502d9358e65036c52b6bc4a7770d701e"
+  },
+  "requires_kernel_gate": true,
+  "nonvacuity_witnesses": "The unchanged ProductionBoundaryWitness fixture instantiates all ordinary and peak source conditions in both cleanup modes, with an arbitrary i64 argument. Memory boundedness is derived for every continuing source state. No source premise is left as a witness assumption.",
+  "full_goal_complete": false,
+  "generic_gate": "return-pin-source-adapter-packet-v1/generic-state-v1.json",
+  "generic_axiom_sets": {
+    "Link.ReturnPinCompilerWith.attempt_correct_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Link.ReturnPinCompilerWith.attempt_correct_source_peak": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "generic_receipt": "return-pin-source-adapter-packet-v1/generic-state-v1.json",
+  "witness_receipt": "return-pin-source-adapter-packet-v1/witness-state-v2.json",
+  "isolated_outputs_removed": true
+}

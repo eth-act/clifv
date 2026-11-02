@@ -1,0 +1,310 @@
+3145 modules (2 heavy, 266 without a record); critical path 1.17 h, serial 25.54 h (recorded)
+09:34:49 want 3145 modules (0 assumed built) budget=12G max_jobs=1 heavy>12G
+09:34:50 check (all) 3145 modules in 0.5s: 3015 up-to-date, 1 out of date, 129 wait for those
+09:34:50 start FV.Opt.Proof.RuleInfraEval cap=3G running=1 avail=192.2G
+09:34:52 done FV.Opt.Proof.RuleInfraEval rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+09:34:52 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+09:34:52 start FV.Opt.Proof.RuleAuto cap=3G running=1 avail=193.1G
+09:34:54 done FV.Opt.Proof.RuleAuto rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+09:34:54 check (ready) 15 modules in 0.2s: 0 up-to-date, 15 out of date, 0 wait for those
+09:34:54 start FV.Opt.Proof.RuleBitopsEmbed cap=3G running=1 avail=192.8G
+09:35:02 done FV.Opt.Proof.RuleBitopsEmbed rc=0 8s maxrss=1.9G cgpeak=0.6G built -> ok
+09:35:02 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+09:35:02 start FV.Opt.Proof.RuleIcmpEmbed cap=3G running=1 avail=192.7G
+09:35:04 done FV.Opt.Proof.RuleIcmpEmbed rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+09:35:05 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+09:35:05 start FV.Opt.Proof.RuleIcmpEmbed2 cap=3G running=1 avail=192.7G
+09:35:07 done FV.Opt.Proof.RuleIcmpEmbed2 rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+09:35:07 check (ready) 13 modules in 0.2s: 0 up-to-date, 13 out of date, 0 wait for those
+09:35:07 start FV.Opt.Proof.RuleExtEmbed cap=3G running=1 avail=192.7G
+09:35:31 done FV.Opt.Proof.RuleExtEmbed rc=0 24s maxrss=1.8G cgpeak=0.4G built -> ok
+09:35:31 check (ready) 6 modules in 0.2s: 0 up-to-date, 6 out of date, 0 wait for those
+09:35:31 start FV.Opt.Proof.RuleRestEmbedBase cap=3G running=1 avail=192.1G
+09:35:34 done FV.Opt.Proof.RuleRestEmbedBase rc=0 3s maxrss=1.6G cgpeak=0.3G built -> ok
+09:35:34 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+09:35:34 start FV.Opt.Proof.RuleRestEmbedRotl cap=8G running=1 avail=192.9G
+09:43:53 done FV.Opt.Proof.RuleRestEmbedRotl rc=0 499s maxrss=5.5G cgpeak=4.8G built -> ok
+09:43:53 start FV.Opt.Proof.RuleRestEmbedRotr cap=8G running=1 avail=171.7G
+09:52:29 done FV.Opt.Proof.RuleRestEmbedRotr rc=0 517s maxrss=5.5G cgpeak=5.0G built -> ok
+09:52:29 start FV.Opt.Proof.RuleRestEmbedSshr cap=3G running=1 avail=193.8G
+09:52:45 done FV.Opt.Proof.RuleRestEmbedSshr rc=0 16s maxrss=1.7G cgpeak=0.4G built -> ok
+09:52:46 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+09:52:46 start FV.Opt.Proof.RuleIntSplit cap=3G running=1 avail=194.0G
+09:52:48 done FV.Opt.Proof.RuleIntSplit rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+09:52:48 check (ready) 5 modules in 0.2s: 0 up-to-date, 5 out of date, 0 wait for those
+09:52:48 start FV.Opt.Proof.RuleExtends2 cap=12G running=1 avail=193.8G
+10:00:51 done FV.Opt.Proof.RuleExtends2 rc=0 484s maxrss=10.0G cgpeak=9.6G built -> ok
+10:00:51 start FV.Opt.Proof.RuleRestEmbed cap=3G running=1 avail=209.6G
+10:00:52 done FV.Opt.Proof.RuleRestEmbed rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+10:00:53 check (ready) 11 modules in 0.2s: 0 up-to-date, 11 out of date, 0 wait for those
+10:00:53 start FV.Opt.Proof.RuleSkelEmbed cap=4G running=1 avail=209.6G
+10:02:31 done FV.Opt.Proof.RuleSkelEmbed rc=0 98s maxrss=2.4G cgpeak=1.2G built -> ok
+10:02:31 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+10:02:31 start FV.Opt.Proof.RuleSkeleton3 cap=6G running=1 avail=209.4G
+10:05:34 done FV.Opt.Proof.RuleSkeleton3 rc=0 183s maxrss=3.7G cgpeak=2.7G built -> ok
+10:05:34 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+10:05:34 start FV.Opt.Proof.RuleSelects1 cap=4G running=1 avail=192.0G
+10:09:12 done FV.Opt.Proof.RuleSelects1 rc=0 217s maxrss=2.5G cgpeak=1.4G built -> ok
+10:09:12 start FV.Opt.Proof.RuleSkeleton5 cap=6G running=1 avail=188.4G
+10:17:11 done FV.Opt.Proof.RuleSkeleton5 rc=0 480s maxrss=4.3G cgpeak=3.5G built -> ok
+10:17:11 start FV.Opt.Proof.RuleIcmp2 cap=5G running=1 avail=206.6G
+10:18:53 done FV.Opt.Proof.RuleIcmp2 rc=0 102s maxrss=2.6G cgpeak=1.6G built -> ok
+10:18:53 start FV.Opt.Proof.RuleInfraIcmp cap=3G running=1 avail=203.3G
+10:18:55 done FV.Opt.Proof.RuleInfraIcmp rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+10:18:55 check (ready) 15 modules in 0.2s: 0 up-to-date, 15 out of date, 0 wait for those
+10:18:55 start FV.Opt.Proof.RuleShifts1 cap=9G running=1 avail=203.3G
+10:22:45 done FV.Opt.Proof.RuleShifts1 rc=0 229s maxrss=6.4G cgpeak=5.6G built -> ok
+10:22:45 start FV.Opt.Proof.RuleShiftsRotate cap=5G running=1 avail=198.8G
+10:26:13 done FV.Opt.Proof.RuleShiftsRotate rc=0 208s maxrss=2.9G cgpeak=2.1G built -> ok
+10:26:13 start FV.Opt.Proof.RuleIcmpSelects cap=7G running=1 avail=200.8G
+10:29:10 done FV.Opt.Proof.RuleIcmpSelects rc=0 177s maxrss=4.7G cgpeak=4.5G built -> ok
+10:29:10 start FV.Opt.Proof.RuleIntRetry cap=3G running=1 avail=202.6G
+10:29:12 done FV.Opt.Proof.RuleIntRetry rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+10:29:12 check (ready) 6 modules in 0.2s: 0 up-to-date, 6 out of date, 0 wait for those
+10:29:12 start FV.Opt.Proof.RuleShifts2P3 cap=7G running=1 avail=202.6G
+10:32:35 done FV.Opt.Proof.RuleShifts2P3 rc=0 202s maxrss=4.4G cgpeak=3.5G built -> ok
+10:32:35 start FV.Opt.Proof.RuleSpaceshipInfra cap=3G running=1 avail=203.4G
+10:33:51 done FV.Opt.Proof.RuleSpaceshipInfra rc=0 76s maxrss=1.9G cgpeak=0.6G built -> ok
+10:33:51 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+10:33:51 start FV.Opt.Proof.RuleInfraPow2 cap=3G running=1 avail=200.3G
+10:33:55 done FV.Opt.Proof.RuleInfraPow2 rc=0 4s maxrss=1.7G cgpeak=0.4G built -> ok
+10:33:55 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+10:33:55 start FV.Opt.Proof.RuleSkeleton4 cap=7G running=1 avail=200.1G
+10:39:09 done FV.Opt.Proof.RuleSkeleton4 rc=0 314s maxrss=4.7G cgpeak=3.4G built -> ok
+10:39:09 start FV.Opt.Proof.RuleArithCancel cap=6G running=1 avail=193.4G
+10:42:01 done FV.Opt.Proof.RuleArithCancel rc=0 171s maxrss=2.9G cgpeak=2.0G built -> ok
+10:42:01 start FV.Opt.Proof.RuleSkeleton2 cap=5G running=1 avail=188.4G
+10:45:20 done FV.Opt.Proof.RuleSkeleton2 rc=0 199s maxrss=2.6G cgpeak=1.2G built -> ok
+10:45:20 start FV.Opt.Proof.RuleSpaceshipSelects cap=4G running=1 avail=168.2G
+10:48:49 done FV.Opt.Proof.RuleSpaceshipSelects rc=0 209s maxrss=2.1G cgpeak=0.7G built -> ok
+10:48:49 start FV.Opt.Proof.RuleInfraConst cap=3G running=1 avail=158.9G
+10:48:52 done FV.Opt.Proof.RuleInfraConst rc=0 3s maxrss=1.6G cgpeak=0.2G built -> ok
+10:48:53 check (ready) 5 modules in 0.4s: 0 up-to-date, 5 out of date, 0 wait for those
+10:48:53 start FV.Opt.Proof.RuleShiftsConst cap=4G running=1 avail=157.9G
+10:51:47 done FV.Opt.Proof.RuleShiftsConst rc=0 174s maxrss=2.3G cgpeak=1.1G built -> ok
+10:51:47 start FV.Opt.Proof.RuleShifts2P1 cap=6G running=1 avail=164.0G
+10:53:26 done FV.Opt.Proof.RuleShifts2P1 rc=0 99s maxrss=3.1G cgpeak=1.8G built -> ok
+10:53:26 start FV.Opt.Proof.RuleBitops5P1 cap=6G running=1 avail=155.0G
+10:54:00 done FV.Opt.Proof.RuleBitops5P1 rc=0 34s maxrss=3.2G cgpeak=2.0G built -> ok
+10:54:00 start FV.Opt.Proof.RuleIcmpComposeEval cap=4G running=1 avail=148.5G
+10:54:52 done FV.Opt.Proof.RuleIcmpComposeEval rc=0 52s maxrss=2.1G cgpeak=0.8G built -> ok
+10:54:52 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+10:54:52 start FV.Opt.Proof.RuleShifts3P1 cap=6G running=1 avail=144.7G
+10:57:49 done FV.Opt.Proof.RuleShifts3P1 rc=0 177s maxrss=3.7G cgpeak=2.4G built -> ok
+10:57:49 start FV.Opt.Proof.RuleShifts3P2 cap=7G running=1 avail=126.7G
+11:01:11 done FV.Opt.Proof.RuleShifts3P2 rc=0 201s maxrss=4.6G cgpeak=3.3G built -> ok
+11:01:11 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+11:01:11 start FV.Opt.Proof.RuleInfraI128 cap=3G running=1 avail=136.7G
+11:01:13 done FV.Opt.Proof.RuleInfraI128 rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+11:01:13 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+11:01:13 start FV.Opt.Proof.RuleFloatArms cap=3G running=1 avail=137.0G
+11:01:17 done FV.Opt.Proof.RuleFloatArms rc=0 4s maxrss=1.6G cgpeak=0.3G built -> ok
+11:01:17 check (ready) 7 modules in 0.3s: 0 up-to-date, 7 out of date, 0 wait for those
+11:01:17 start FV.Opt.Proof.RuleIcmp12 cap=6G running=1 avail=136.3G
+11:03:07 done FV.Opt.Proof.RuleIcmp12 rc=0 109s maxrss=3.0G cgpeak=2.0G built -> ok
+11:03:07 start FV.Opt.Proof.RuleIcmp7 cap=8G running=1 avail=125.9G
+11:05:48 done FV.Opt.Proof.RuleIcmp7 rc=0 161s maxrss=4.7G cgpeak=3.8G built -> ok
+11:05:48 start FV.Opt.Proof.RuleIcmp13 cap=6G running=1 avail=147.9G
+11:07:20 done FV.Opt.Proof.RuleIcmp13 rc=0 92s maxrss=3.0G cgpeak=2.2G built -> ok
+11:07:20 start FV.Opt.Proof.RuleSkeleton6 cap=7G running=1 avail=136.9G
+11:09:15 done FV.Opt.Proof.RuleSkeleton6 rc=0 115s maxrss=3.5G cgpeak=2.2G built -> ok
+11:09:15 start FV.Opt.Proof.RuleSelects11 cap=3G running=1 avail=110.7G
+11:09:49 done FV.Opt.Proof.RuleSelects11 rc=0 34s maxrss=1.7G cgpeak=0.4G built -> ok
+11:09:49 start FV.Opt.Proof.RuleBitops4 cap=7G running=1 avail=102.5G
+11:11:13 done FV.Opt.Proof.RuleBitops4 rc=0 84s maxrss=5.1G cgpeak=3.9G built -> ok
+11:11:13 start FV.Opt.Proof.RuleShifts2P2 cap=6G running=1 avail=95.9G
+11:12:52 done FV.Opt.Proof.RuleShifts2P2 rc=0 99s maxrss=3.2G cgpeak=1.9G built -> ok
+11:12:53 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+11:12:53 start FV.Opt.Proof.RuleBitops7P1 cap=6G running=1 avail=89.8G
+11:13:38 done FV.Opt.Proof.RuleBitops7P1 rc=0 45s maxrss=2.9G cgpeak=1.6G built -> ok
+11:13:38 start FV.Opt.Proof.RuleBitops3 cap=6G running=1 avail=85.0G
+11:14:53 done FV.Opt.Proof.RuleBitops3 rc=0 75s maxrss=4.8G cgpeak=3.6G built -> ok
+11:14:53 start FV.Opt.Proof.RuleBitops1 cap=8G running=1 avail=101.9G
+11:16:07 done FV.Opt.Proof.RuleBitops1 rc=0 74s maxrss=4.0G cgpeak=2.7G built -> ok
+11:16:07 start FV.Opt.Proof.RuleArithProducts cap=4G running=1 avail=95.2G
+11:17:16 done FV.Opt.Proof.RuleArithProducts rc=0 69s maxrss=1.9G cgpeak=0.8G built -> ok
+11:17:16 start FV.Opt.Proof.RuleArithOdd cap=4G running=1 avail=76.9G
+11:18:52 done FV.Opt.Proof.RuleArithOdd rc=0 96s maxrss=2.2G cgpeak=2.6G built -> ok
+11:18:52 start FV.Opt.Proof.RuleIcmpComposeRhs cap=3G running=1 avail=91.6G
+11:19:38 done FV.Opt.Proof.RuleIcmpComposeRhs rc=0 46s maxrss=1.9G cgpeak=0.6G built -> ok
+11:19:39 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+11:19:39 start FV.Opt.Proof.RuleShifts5 cap=5G running=1 avail=98.5G
+11:21:11 done FV.Opt.Proof.RuleShifts5 rc=0 92s maxrss=3.0G cgpeak=1.8G built -> ok
+11:21:11 start FV.Opt.Proof.RuleArithMulHi cap=5G running=1 avail=139.0G
+11:22:25 done FV.Opt.Proof.RuleArithMulHi rc=0 74s maxrss=2.6G cgpeak=1.5G built -> ok
+11:22:25 start FV.Opt.Proof.RuleCprop3 cap=4G running=1 avail=125.9G
+11:24:05 done FV.Opt.Proof.RuleCprop3 rc=0 100s maxrss=2.5G cgpeak=1.2G built -> ok
+11:24:05 start FV.Opt.Proof.RuleShifts4 cap=5G running=1 avail=102.1G
+11:25:24 done FV.Opt.Proof.RuleShifts4 rc=0 79s maxrss=2.9G cgpeak=1.6G built -> ok
+11:25:24 start FV.Opt.Proof.RuleArithP3 cap=5G running=1 avail=101.4G
+11:25:57 done FV.Opt.Proof.RuleArithP3 rc=0 33s maxrss=2.8G cgpeak=1.5G built -> ok
+11:25:57 start FV.Opt.Proof.RuleArithP2 cap=5G running=1 avail=100.7G
+11:26:30 done FV.Opt.Proof.RuleArithP2 rc=0 33s maxrss=2.8G cgpeak=1.5G built -> ok
+11:26:30 start FV.Opt.Proof.RuleBitops7P2 cap=6G running=1 avail=101.4G
+11:27:12 done FV.Opt.Proof.RuleBitops7P2 rc=0 42s maxrss=3.0G cgpeak=1.6G built -> ok
+11:27:12 start FV.Opt.Proof.RuleIcmpArithmetic cap=5G running=1 avail=96.2G
+11:28:10 done FV.Opt.Proof.RuleIcmpArithmetic rc=0 58s maxrss=2.6G cgpeak=1.2G built -> ok
+11:28:10 start FV.Opt.Proof.RuleBitops7P4 cap=6G running=1 avail=111.0G
+11:28:48 done FV.Opt.Proof.RuleBitops7P4 rc=0 38s maxrss=2.8G cgpeak=1.7G built -> ok
+11:28:48 start FV.Opt.Proof.RuleBitops10 cap=4G running=1 avail=108.0G
+11:30:03 done FV.Opt.Proof.RuleBitops10 rc=0 75s maxrss=2.1G cgpeak=0.9G built -> ok
+11:30:03 start FV.Opt.Proof.RuleBitops7P3 cap=6G running=1 avail=103.1G
+11:30:44 done FV.Opt.Proof.RuleBitops7P3 rc=0 41s maxrss=2.9G cgpeak=1.7G built -> ok
+11:30:45 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+11:30:45 start FV.Opt.Proof.RuleSelects2 cap=5G running=1 avail=98.5G
+11:31:34 done FV.Opt.Proof.RuleSelects2 rc=0 49s maxrss=2.6G cgpeak=1.2G built -> ok
+11:31:34 start FV.Opt.Proof.RuleBitops5P2 cap=6G running=1 avail=94.6G
+11:32:10 done FV.Opt.Proof.RuleBitops5P2 rc=0 36s maxrss=3.2G cgpeak=1.9G built -> ok
+11:32:10 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+11:32:10 start FV.Opt.Proof.RuleSelects6 cap=5G running=1 avail=91.3G
+11:33:20 done FV.Opt.Proof.RuleSelects6 rc=0 70s maxrss=2.5G cgpeak=1.1G built -> ok
+11:33:20 start FV.Opt.Proof.RuleCprop cap=7G running=1 avail=87.0G
+11:34:10 done FV.Opt.Proof.RuleCprop rc=0 50s maxrss=3.8G cgpeak=2.5G built -> ok
+11:34:10 start FV.Opt.Proof.RuleExtends cap=8G running=1 avail=80.8G
+11:35:24 done FV.Opt.Proof.RuleExtends rc=0 74s maxrss=4.8G cgpeak=3.4G built -> ok
+11:35:24 start FV.Opt.Proof.RuleIcmpComposeGuard cap=3G running=1 avail=75.2G
+11:36:03 done FV.Opt.Proof.RuleIcmpComposeGuard rc=0 39s maxrss=1.9G cgpeak=0.5G built -> ok
+11:36:03 start FV.Opt.Proof.RuleSelects9 cap=4G running=1 avail=76.5G
+11:37:16 done FV.Opt.Proof.RuleSelects9 rc=0 73s maxrss=2.2G cgpeak=0.9G built -> ok
+11:37:16 start FV.Opt.Proof.RuleArithP4 cap=5G running=1 avail=83.4G
+11:37:45 done FV.Opt.Proof.RuleArithP4 rc=0 29s maxrss=2.9G cgpeak=1.8G built -> ok
+11:37:45 start FV.Opt.Proof.RuleIcmp8 cap=5G running=1 avail=85.2G
+11:38:14 done FV.Opt.Proof.RuleIcmp8 rc=0 29s maxrss=2.6G cgpeak=1.3G built -> ok
+11:38:14 start FV.Opt.Proof.RuleSpaceship cap=5G running=1 avail=82.2G
+11:39:02 done FV.Opt.Proof.RuleSpaceship rc=0 47s maxrss=2.9G cgpeak=1.6G built -> ok
+11:39:02 start FV.Opt.Proof.RuleSelects5 cap=5G running=1 avail=74.3G
+11:39:48 done FV.Opt.Proof.RuleSelects5 rc=0 46s maxrss=2.4G cgpeak=1.2G built -> ok
+11:39:48 start FV.Opt.Proof.RuleArithP1 cap=5G running=1 avail=67.4G
+11:40:19 done FV.Opt.Proof.RuleArithP1 rc=0 31s maxrss=2.8G cgpeak=1.6G built -> ok
+11:40:19 start FV.Opt.Proof.RuleArithP5 cap=5G running=1 avail=62.5G
+11:40:53 done FV.Opt.Proof.RuleArithP5 rc=0 34s maxrss=2.9G cgpeak=1.6G built -> ok
+11:40:53 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+11:40:53 start FV.Opt.Proof.RuleBitops2P3 cap=6G running=1 avail=56.8G
+11:41:22 done FV.Opt.Proof.RuleBitops2P3 rc=0 29s maxrss=2.8G cgpeak=1.8G built -> ok
+11:41:22 start FV.Opt.Proof.RuleBitops2P2 cap=6G running=1 avail=50.8G
+11:41:54 done FV.Opt.Proof.RuleBitops2P2 rc=0 32s maxrss=2.4G cgpeak=2.6G built -> ok
+11:41:54 start FV.Opt.Proof.RuleBitops2P1 cap=6G running=1 avail=48.2G
+11:42:27 done FV.Opt.Proof.RuleBitops2P1 rc=0 33s maxrss=1.8G cgpeak=2.0G built -> ok
+11:42:28 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+11:42:28 start FV.Opt.Proof.RuleIcmp5 cap=5G running=1 avail=46.0G
+11:43:14 done FV.Opt.Proof.RuleIcmp5 rc=0 46s maxrss=2.0G cgpeak=2.1G built -> ok
+11:43:14 start FV.Opt.Proof.RuleInfraAbs cap=3G running=1 avail=62.1G
+11:43:19 done FV.Opt.Proof.RuleInfraAbs rc=0 5s maxrss=1.5G cgpeak=1.1G built -> ok
+11:43:19 check (ready) 3 modules in 0.2s: 0 up-to-date, 3 out of date, 0 wait for those
+11:43:19 start FV.Opt.Proof.RuleArith2 cap=4G running=1 avail=62.4G
+11:44:00 done FV.Opt.Proof.RuleArith2 rc=0 41s maxrss=2.1G cgpeak=0.9G built -> ok
+11:44:00 start FV.Opt.Proof.RuleSelects7 cap=3G running=1 avail=98.8G
+11:44:16 done FV.Opt.Proof.RuleSelects7 rc=0 16s maxrss=1.9G cgpeak=0.6G built -> ok
+11:44:16 start FV.Opt.Proof.RuleArith5 cap=4G running=1 avail=96.6G
+11:44:36 done FV.Opt.Proof.RuleArith5 rc=0 20s maxrss=2.3G cgpeak=1.2G built -> ok
+11:44:36 start FV.Opt.Proof.RuleBitops8 cap=3G running=1 avail=94.4G
+11:45:11 done FV.Opt.Proof.RuleBitops8 rc=0 35s maxrss=1.9G cgpeak=0.6G built -> ok
+11:45:11 start FV.Opt.Proof.RuleSelects12 cap=7G running=1 avail=83.7G
+11:45:39 done FV.Opt.Proof.RuleSelects12 rc=0 28s maxrss=3.7G cgpeak=2.4G built -> ok
+11:45:39 start FV.Opt.Proof.RuleSelects4 cap=4G running=1 avail=80.1G
+11:46:18 done FV.Opt.Proof.RuleSelects4 rc=0 39s maxrss=2.1G cgpeak=0.8G built -> ok
+11:46:18 start FV.Opt.Proof.RuleIcmp6 cap=5G running=1 avail=72.5G
+11:46:47 done FV.Opt.Proof.RuleIcmp6 rc=0 29s maxrss=2.4G cgpeak=1.1G built -> ok
+11:46:47 start FV.Opt.Proof.RuleIcmpComposeWitness cap=3G running=1 avail=63.7G
+11:47:03 done FV.Opt.Proof.RuleIcmpComposeWitness rc=0 16s maxrss=1.7G cgpeak=0.4G built -> ok
+11:47:03 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+11:47:04 start FV.Opt.Proof.RuleSkeleton cap=4G running=1 avail=62.7G
+11:47:26 done FV.Opt.Proof.RuleSkeleton rc=0 22s maxrss=2.4G cgpeak=1.0G built -> ok
+11:47:26 start FV.Opt.Proof.RuleBitops9 cap=3G running=1 avail=61.7G
+11:47:40 done FV.Opt.Proof.RuleBitops9 rc=0 14s maxrss=1.7G cgpeak=0.4G built -> ok
+11:47:40 start FV.Opt.Proof.RuleArith7 cap=5G running=1 avail=58.7G
+11:48:03 done FV.Opt.Proof.RuleArith7 rc=0 23s maxrss=2.5G cgpeak=1.2G built -> ok
+11:48:03 start FV.Opt.Proof.RuleIcmp1 cap=5G running=1 avail=56.4G
+11:48:23 done FV.Opt.Proof.RuleIcmp1 rc=0 20s maxrss=2.8G cgpeak=1.5G built -> ok
+11:48:23 start FV.Opt.Proof.RuleBitops6 cap=5G running=1 avail=55.2G
+11:48:49 done FV.Opt.Proof.RuleBitops6 rc=0 26s maxrss=2.4G cgpeak=1.1G built -> ok
+11:48:49 start FV.Opt.Proof.RuleCprop4 cap=3G running=1 avail=61.6G
+11:48:58 done FV.Opt.Proof.RuleCprop4 rc=0 9s maxrss=1.7G cgpeak=0.5G built -> ok
+11:48:58 start FV.Opt.Proof.RuleSelects10 cap=3G running=1 avail=77.7G
+11:49:13 done FV.Opt.Proof.RuleSelects10 rc=0 15s maxrss=1.7G cgpeak=0.4G built -> ok
+11:49:13 start FV.Opt.Proof.RuleIcmpCompose cap=3G running=1 avail=76.7G
+11:49:44 done FV.Opt.Proof.RuleIcmpCompose rc=0 31s maxrss=1.8G cgpeak=0.6G built -> ok
+11:49:44 start FV.Opt.Proof.RuleIcmp4 cap=4G running=1 avail=77.4G
+11:50:01 done FV.Opt.Proof.RuleIcmp4 rc=0 17s maxrss=1.9G cgpeak=0.7G built -> ok
+11:50:01 start FV.Opt.Proof.RuleArith4 cap=4G running=1 avail=76.5G
+11:50:16 done FV.Opt.Proof.RuleArith4 rc=0 15s maxrss=2.2G cgpeak=0.9G built -> ok
+11:50:16 start FV.Opt.Proof.RuleSelects3 cap=4G running=1 avail=76.5G
+11:50:43 done FV.Opt.Proof.RuleSelects3 rc=0 27s maxrss=2.1G cgpeak=0.9G built -> ok
+11:50:43 start FV.Opt.Proof.RuleCprop2 cap=4G running=1 avail=75.7G
+11:51:03 done FV.Opt.Proof.RuleCprop2 rc=0 20s maxrss=2.3G cgpeak=1.0G built -> ok
+11:51:03 start FV.Opt.Proof.RuleIcmpIdentity cap=3G running=1 avail=76.5G
+11:51:10 done FV.Opt.Proof.RuleIcmpIdentity rc=0 7s maxrss=1.6G cgpeak=0.3G built -> ok
+11:51:10 start FV.Opt.Proof.RuleArith3 cap=4G running=1 avail=76.3G
+11:51:27 done FV.Opt.Proof.RuleArith3 rc=0 17s maxrss=2.2G cgpeak=1.0G built -> ok
+11:51:27 start FV.Opt.Proof.RuleIcmp3 cap=4G running=1 avail=74.9G
+11:51:42 done FV.Opt.Proof.RuleIcmp3 rc=0 15s maxrss=2.2G cgpeak=0.9G built -> ok
+11:51:42 start FV.Opt.Proof.RuleIcmp9 cap=4G running=1 avail=73.1G
+11:51:57 done FV.Opt.Proof.RuleIcmp9 rc=0 15s maxrss=2.0G cgpeak=0.6G built -> ok
+11:51:57 start FV.Opt.Proof.RuleIcmpBounds cap=3G running=1 avail=70.5G
+11:52:08 done FV.Opt.Proof.RuleIcmpBounds rc=0 11s maxrss=1.8G cgpeak=0.5G built -> ok
+11:52:08 start FV.Opt.Proof.RuleArith6 cap=3G running=1 avail=69.1G
+11:52:14 done FV.Opt.Proof.RuleArith6 rc=0 6s maxrss=1.7G cgpeak=0.4G built -> ok
+11:52:14 start FV.Opt.Proof.RuleIcmp10 cap=4G running=1 avail=68.8G
+11:52:28 done FV.Opt.Proof.RuleIcmp10 rc=0 14s maxrss=2.1G cgpeak=0.8G built -> ok
+11:52:28 start FV.Opt.Proof.RuleArith8 cap=3G running=1 avail=67.5G
+11:52:33 done FV.Opt.Proof.RuleArith8 rc=0 5s maxrss=1.7G cgpeak=0.3G built -> ok
+11:52:33 start FV.Opt.Proof.RuleShiftsDistribution cap=3G running=1 avail=67.1G
+11:52:40 done FV.Opt.Proof.RuleShiftsDistribution rc=0 7s maxrss=1.6G cgpeak=0.3G built -> ok
+11:52:40 start FV.Opt.Proof.RuleSelects8 cap=3G running=1 avail=65.2G
+11:52:46 done FV.Opt.Proof.RuleSelects8 rc=0 6s maxrss=1.6G cgpeak=0.3G built -> ok
+11:52:46 start FV.Opt.Proof.RuleRemat cap=3G running=1 avail=63.4G
+11:52:50 done FV.Opt.Proof.RuleRemat rc=0 4s maxrss=1.7G cgpeak=0.3G built -> ok
+11:52:50 start FV.Opt.Proof.RuleArith cap=3G running=1 avail=64.1G
+11:52:52 done FV.Opt.Proof.RuleArith rc=0 2s maxrss=1.5G cgpeak=0.2G built -> ok
+11:52:52 start FV.Opt.Proof.RuleBitops2 cap=3G running=1 avail=64.1G
+11:52:54 done FV.Opt.Proof.RuleBitops2 rc=0 2s maxrss=1.5G cgpeak=0.2G built -> ok
+11:52:54 start FV.Opt.Proof.RuleBitops5 cap=3G running=1 avail=62.9G
+11:52:56 done FV.Opt.Proof.RuleBitops5 rc=0 2s maxrss=1.5G cgpeak=0.2G built -> ok
+11:52:56 start FV.Opt.Proof.RuleBitops7 cap=3G running=1 avail=62.3G
+11:52:58 done FV.Opt.Proof.RuleBitops7 rc=0 2s maxrss=1.5G cgpeak=0.2G built -> ok
+11:52:58 start FV.Opt.Proof.RuleShifts2 cap=3G running=1 avail=63.1G
+11:53:00 done FV.Opt.Proof.RuleShifts2 rc=0 2s maxrss=1.5G cgpeak=0.2G built -> ok
+11:53:00 start FV.Opt.Proof.RuleShifts3 cap=3G running=1 avail=62.8G
+11:53:02 done FV.Opt.Proof.RuleShifts3 rc=0 2s maxrss=1.5G cgpeak=0.2G built -> ok
+11:53:02 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+11:53:02 start FV.Opt.Proof.RuleAll cap=6G running=1 avail=62.8G
+11:53:23 done FV.Opt.Proof.RuleAll rc=0 21s maxrss=3.7G cgpeak=2.6G built -> ok
+11:53:23 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+11:53:23 start FV.Opt.Proof.SimpPass cap=4G running=1 avail=61.7G
+11:53:25 done FV.Opt.Proof.SimpPass rc=0 2s maxrss=1.9G cgpeak=0.2G built -> ok
+11:53:26 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+11:53:26 start FV.Opt.Proof.PipelineX cap=4G running=1 avail=61.4G
+11:53:35 done FV.Opt.Proof.PipelineX rc=0 9s maxrss=2.0G cgpeak=0.2G built -> ok
+11:53:35 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+11:53:35 start FV.E2E.OptX cap=4G running=1 avail=62.9G
+11:53:38 done FV.E2E.OptX rc=0 3s maxrss=2.4G cgpeak=0.4G built -> ok
+11:53:38 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+11:53:38 start FV.Link.OptFacts cap=5G running=1 avail=62.5G
+11:53:40 done FV.Link.OptFacts rc=0 2s maxrss=2.6G cgpeak=0.4G built -> ok
+11:53:41 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+11:53:41 start FV.Link.OptExe cap=5G running=1 avail=62.5G
+11:53:44 done FV.Link.OptExe rc=0 3s maxrss=2.8G cgpeak=0.6G built -> ok
+11:53:44 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+11:53:44 start FV.Link.DeadCleanupOptExe cap=5G running=1 avail=62.3G
+11:53:51 done FV.Link.DeadCleanupOptExe rc=0 7s maxrss=3.1G cgpeak=0.6G built -> ok
+11:53:52 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+11:53:52 start FV.Link.OptKeepsInd cap=5G running=1 avail=61.3G
+11:53:54 done FV.Link.OptKeepsInd rc=0 2s maxrss=2.6G cgpeak=0.2G built -> ok
+11:53:54 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+11:53:54 start FV.Link.OptExeSourceNB cap=5G running=1 avail=61.1G
+11:53:57 done FV.Link.OptExeSourceNB rc=0 3s maxrss=2.8G cgpeak=0.3G built -> ok
+11:53:58 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+11:53:58 start FV.Link.TailExe cap=5G running=1 avail=60.8G
+11:54:05 done FV.Link.TailExe rc=0 7s maxrss=3.2G cgpeak=0.6G built -> ok
+11:54:05 start FV.Link.DeadCleanupOptExeSourceNB cap=5G running=1 avail=59.9G
+11:54:13 done FV.Link.DeadCleanupOptExeSourceNB rc=0 8s maxrss=3.2G cgpeak=0.6G built -> ok
+11:54:13 start FV.Link.NonVacuityOptExeSource cap=5G running=1 avail=59.3G
+11:54:15 done FV.Link.NonVacuityOptExeSource rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+11:54:15 41 batch checks, 11s; 0 modules restored after another worktree built them
+11:54:15 drift memory-lower FV.Opt.Proof.RuleBitops2P1 38s/3.8G -> 33s/1.8G
+11:54:15 drift faster FV.Opt.Proof.RuleBitops5P1 146s/4.3G -> 34s/3.2G
+11:54:15 drift faster FV.Opt.Proof.RuleExtEmbed 122s/1.8G -> 24s/1.8G
+11:54:15 drift faster FV.Opt.Proof.RuleIcmp2 322s/3.0G -> 102s/2.6G
+11:54:15 drift faster FV.Opt.Proof.RuleSelects1 435s/2.8G -> 217s/2.5G
+11:54:15 drift faster FV.Opt.Proof.RuleSelects11 105s/1.9G -> 34s/1.7G
+11:54:15 END 3145/3145 ok, 130 built, wall 139.4 min

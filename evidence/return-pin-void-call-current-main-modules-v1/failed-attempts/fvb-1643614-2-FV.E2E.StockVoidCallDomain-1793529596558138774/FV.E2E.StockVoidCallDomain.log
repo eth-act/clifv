@@ -1,0 +1,33 @@
+✖ [706/706] Building FV.E2E.StockVoidCallDomain (1.7s)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.worktrees/stock-extending-production-20261031/FV/E2E/StockVoidCallDomain.lean -o /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/StockVoidCallDomain.olean -i /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/StockVoidCallDomain.ilean -c /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/ir/FV/E2E/StockVoidCallDomain.c --setup /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/ir/FV/E2E/StockVoidCallDomain.setup.json --json
+error: FV/E2E/StockVoidCallDomain.lean:173:11: Unknown identifier `ReturnABI`
+
+Note: It is not possible to treat `ReturnABI` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+error: FV/E2E/StockVoidCallDomain.lean:190:8: Unknown identifier `RunOkABI`
+
+Note: It is not possible to treat `RunOkABI` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+error: FV/E2E/StockVoidCallDomain.lean:274:16: Unknown identifier `ReturnABI`
+error: FV/E2E/StockVoidCallDomain.lean:338:10: Unknown identifier `RunOkABI`
+
+Note: It is not possible to treat `RunOkABI` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+error: FV/E2E/StockVoidCallDomain.lean:344:86: Unknown identifier `Domain`
+
+Note: It is not possible to treat `Domain` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+error: FV/E2E/StockVoidCallDomain.lean:345:9: Tactic `cases` failed with a nested error:
+Tactic `induction` failed: recursor `Exists.casesOn` can only eliminate into `Prop`
+
+f : Clif.Function
+vc : VCode
+checked : check f vc = true
+x✝ :
+  ∃ result,
+    lower f = Except.ok result ∧
+      result.code = vc ∧
+        LowerScope f ∧
+          Dominated f ∧
+            sigAbiOk f.sig = true ∧
+              Nonempty (Layout f result) ∧ (result.edgeArgs.all fun row => row.all fun x => x.isEmpty) = true
+⊢ sorry
+Some required targets logged failures:
+- FV.E2E.StockVoidCallDomain
+error: build failed

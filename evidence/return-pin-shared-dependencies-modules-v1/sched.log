@@ -1,0 +1,21 @@
+01:29:51 want 1631 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+01:29:51 check (all) 1631 modules in 0.4s: 1624 up-to-date, 3 out of date, 4 wait for those
+01:29:51 start FV.Backend.ReturnPinCheck cap=6G running=1 avail=115.4G
+01:29:52 done FV.Backend.ReturnPinCheck rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+01:29:52 start FV.E2E.LinkReturnPins cap=6G running=1 avail=115.1G
+01:29:55 done FV.E2E.LinkReturnPins rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+01:29:56 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+01:29:56 start FV.E2E.ReturnPinCheckSound cap=6G running=1 avail=115.2G
+01:29:59 done FV.E2E.ReturnPinCheckSound rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+01:29:59 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+01:29:59 start FV.E2E.CompiledProgramReturnPins cap=6G running=1 avail=114.6G
+01:30:02 done FV.E2E.CompiledProgramReturnPins rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+01:30:03 check (ready) 1 modules in 0.6s: 0 up-to-date, 1 out of date, 0 wait for those
+01:30:03 start FV.E2E.LinkProgramReturnPinsModel cap=6G running=1 avail=113.5G
+01:30:06 done FV.E2E.LinkProgramReturnPinsModel rc=0 3s maxrss=2.6G cgpeak=0.2G built -> ok
+01:30:06 start FV.E2E.LinkSemanticNIContract cap=6G running=1 avail=112.5G
+01:30:09 done FV.E2E.LinkSemanticNIContract rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+01:30:09 start FV.E2E.WorldReturnPinBoundary cap=6G running=1 avail=111.7G
+01:30:12 done FV.E2E.WorldReturnPinBoundary rc=0 3s maxrss=2.6G cgpeak=0.2G built -> ok
+01:30:12 5 batch checks, 3s; 0 modules restored after another worktree built them
+01:30:12 END 1631/1631 ok, 7 built, wall 0.4 min

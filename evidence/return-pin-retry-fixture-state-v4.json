@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "source_sha256": "ce6e5a3028cc1b8ca1abadbd2413fe9bd1cb8882a246dabee9a3c0b7f90ebf87",
+  "generic_roots": 4,
+  "fixed_roots": 2,
+  "full_goal_complete": false,
+  "scope": "The isolated complete negative retry fixture passes the proper kernel and unchanged audit. The actual current attempt rejects both fixed negative programs while the actual previous compiler succeeds. The wrapper returns that complete previous result on the original input. The full final-module/importer integration and original140 remain open.",
+  "utc": "2026-11-01T14:47:27.361326+00:00"
+}

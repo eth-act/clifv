@@ -1,0 +1,36 @@
+⚠ [1242/1640] Replayed FV.Backend.Proof.StockMemoryStoreMatch
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:83:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:85:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:88:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:94:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [1694/1738] Replayed FV.E2E.ReturnPinCheckFast
+warning: FV/E2E/ReturnPinCheckFast.lean:24:53: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/E2E/ReturnPinCheckFast.lean:68:53: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [1699/1738] Replayed FV.E2E.LinkReturnPinCall
+warning: FV/E2E/LinkReturnPinCall.lean:18:34: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinCall.lean:19:34: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCall.lean:239:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinCall.lean:249:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCall.lean:257:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinCall.lean:371:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCall.lean:413:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCall.lean:413:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [1700/1738] Replayed FV.E2E.LinkReturnPinCallbacks
+warning: FV/E2E/LinkReturnPinCallbacks.lean:89:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:90:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:622:47: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:630:38: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:761:26: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:820:26: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:885:36: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinCallbacks.lean:1001:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [1704/1738] Replayed FV.E2E.LinkReturnPinGood
+warning: FV/E2E/LinkReturnPinGood.lean:181:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinGood.lean:191:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:199:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinGood.lean:275:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:311:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:311:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:387:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [1738/1738] Built FV.E2E.PreparedReturnPinCalls (1.0s)
+Build completed successfully (1738 jobs).

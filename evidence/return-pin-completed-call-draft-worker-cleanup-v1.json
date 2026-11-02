@@ -1,0 +1,18 @@
+{
+  "utc": "2026-11-01T10:28:01.444302+00:00",
+  "source_or_evidence_removed": false,
+  "rows": [
+    {
+      "pid": 1571607,
+      "file": "WorkerOVoidCallViewDraftV1.lean",
+      "state": "retired completed idle worker",
+      "rss": 2563801088
+    },
+    {
+      "pid": 1618571,
+      "file": "WorkerOVoidCallSourceDraftV1.lean",
+      "state": "retired completed idle worker",
+      "rss": 2130137088
+    }
+  ]
+}

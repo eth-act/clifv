@@ -1,0 +1,4 @@
+02:51:12 want 1690 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+02:51:13 check (all) 1690 modules in 0.4s: 1690 up-to-date, 0 out of date, 0 wait for those
+02:51:13 2 batch checks, 1s; 0 modules restored after another worktree built them
+02:51:13 END 1690/1690 ok, 0 built, wall 0.0 min

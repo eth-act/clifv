@@ -1,0 +1,26 @@
+⚠ [1241/1254] Replayed FV.Backend.Proof.StockMemoryStoreMatch
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:83:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:85:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:88:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:94:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [1563/1725] Replayed FV.Backend.Proof.StockConditionalRankedCompatibility
+warning: FV/Backend/Proof/StockConditionalRankedCompatibility.lean:61:78: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [1690/1725] Replayed FV.E2E.LinkReturnPinGood
+warning: FV/E2E/LinkReturnPinGood.lean:181:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinGood.lean:191:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:199:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkReturnPinGood.lean:275:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:311:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:311:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkReturnPinGood.lean:387:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [1725/1725] Building FV.E2E.PreparedReturnPinSretWitness (1.9s)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.worktrees/stock-extending-production-20261031/FV/E2E/PreparedReturnPinSretWitness.lean -o /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/PreparedReturnPinSretWitness.olean -i /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/PreparedReturnPinSretWitness.ilean -c /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/ir/FV/E2E/PreparedReturnPinSretWitness.c --setup /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/ir/FV/E2E/PreparedReturnPinSretWitness.setup.json --json
+error: FV/E2E/PreparedReturnPinSretWitness.lean:76:7: Type mismatch: After simplification, term
+  h.right.right.right.left
+ has type
+  @Eq Bool (SemanticNI.check function (artOf (outputs cleanup) function).vc) false
+but is expected to have type
+  @Eq Bool (SemanticNI.check function ((system cleanup).A function).vc) false
+Some required targets logged failures:
+- FV.E2E.PreparedReturnPinSretWitness
+error: build failed

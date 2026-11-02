@@ -1,0 +1,21 @@
+{
+  "status": "backed_up",
+  "branch": "agent/stock-return-pin-linker-runtime-20261101",
+  "source": "ee29dd36d45069ccfc07bfb843fa705ee9ad0e85",
+  "parent": "96963e0676962d959b689dcf67b40a24f22da661",
+  "parent_tree": "765995d0b2f6bc0386b4dfa20a7cec7f23310eea",
+  "tree": "f40f2c08e644d67277051f83579672fdce686d87",
+  "source_hashes": {
+    "FV/Link/ReturnPinCompileDefs.lean": "541d7b517efe9f9be36a9c0df1e4b627d92c0b0f69ed2a7f00c0e785a2ce6c96",
+    "FV/Link/ReturnPinCompileWith.lean": "f32daef208c6aa56dab3eac781f7f4dd9b3f8db9141661ee7e23f70aa4e4cc84",
+    "FV/Link/ReturnPinRetryWitness.lean": "7d00b245fa32f717279a092aa20c515c89953f9fa39041b400e745139af2d510",
+    "scripts/audit/return-pin-compile.lean": "205b49ed739e04852798034b22a0a55df1fd090b8e7505d22f5f8dfd8a95792f"
+  },
+  "generic_roots": 10,
+  "fixed_roots": 6,
+  "previous_source": "3ff2e2022d6dd1880164d8e717d9348292ee4fd0",
+  "previous_axiom_sets_exact": 14,
+  "full_goal_complete": false,
+  "scope": "Four-file implementation branch. All three final modules and sixteen audit roots pass. The existing current/previous/legacy tag binds actual complete output. Erasure preserves the exact compatibility result. All fourteen earlier axiom sets remain exact. PR publication waits for PR860 to land so its base contains only this packet. The tracked validation worktree remains unchanged.",
+  "utc": "2026-11-01T15:27:07.089251+00:00"
+}

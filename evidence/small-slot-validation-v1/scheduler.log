@@ -1,0 +1,33 @@
+1221 modules (130 heavy, 3 without a record); critical path 0.66 h, serial 4.04 h (recorded)
+01:09:15 want 1221 modules (1201 assumed built) budget=3G max_jobs=1 heavy>3G
+01:09:15 check (all) 20 modules in 0.3s: 6 up-to-date, 14 out of date, 0 wait for those
+01:09:15 start FV.Backend.Proof.StockCmpNonzero16PrefixWitness cap=3G running=1 avail=203.3G
+01:09:18 done FV.Backend.Proof.StockCmpNonzero16PrefixWitness rc=0 3s maxrss=2.0G cgpeak=0.5G built -> ok
+01:09:18 start FV.Backend.Proof.StockCmpNonzero16Witness cap=3G running=1 avail=204.8G
+01:09:21 done FV.Backend.Proof.StockCmpNonzero16Witness rc=0 3s maxrss=2.0G cgpeak=0.5G built -> ok
+01:09:21 start FV.Backend.Proof.StockCmpRegisterValuesWitness cap=3G running=1 avail=211.7G
+01:09:24 done FV.Backend.Proof.StockCmpRegisterValuesWitness rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+01:09:24 start FV.Backend.Proof.LowerSimUAbi cap=3G running=1 avail=210.6G
+01:09:26 done FV.Backend.Proof.LowerSimUAbi rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+01:09:26 start FV.Backend.Proof.SretStableX cap=3G running=1 avail=209.8G
+01:09:28 done FV.Backend.Proof.SretStableX rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+01:09:28 start FV.Backend.Proof.StockAddSubAuxWitness cap=3G running=1 avail=209.1G
+01:09:30 done FV.Backend.Proof.StockAddSubAuxWitness rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+01:09:30 start FV.Backend.Proof.StockCfgReturnAtWitness cap=3G running=1 avail=207.8G
+01:09:32 done FV.Backend.Proof.StockCfgReturnAtWitness rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+01:09:32 start FV.Backend.Proof.StockCfgReturnEdge cap=3G running=1 avail=207.3G
+01:09:34 done FV.Backend.Proof.StockCfgReturnEdge rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+01:09:34 start FV.Backend.Proof.StockCmpEqualZero8Witness cap=3G running=1 avail=206.1G
+01:09:36 done FV.Backend.Proof.StockCmpEqualZero8Witness rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+01:09:36 start FV.Backend.Proof.StockCmpNarrowSourceWitness cap=3G running=1 avail=205.5G
+01:09:39 done FV.Backend.Proof.StockCmpNarrowSourceWitness rc=0 3s maxrss=1.8G cgpeak=0.3G built -> ok
+01:09:40 start FV.Backend.Proof.StockCmpNonzero8Witness cap=3G running=1 avail=204.8G
+01:09:42 done FV.Backend.Proof.StockCmpNonzero8Witness rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+01:09:42 start FV.Backend.Proof.StockCmpOriginalConstantClassification cap=3G running=1 avail=204.2G
+01:09:44 done FV.Backend.Proof.StockCmpOriginalConstantClassification rc=0 2s maxrss=1.7G cgpeak=0.3G built -> ok
+01:09:44 start FV.Backend.Proof.StockCmpZeroWitness cap=3G running=1 avail=203.9G
+01:09:47 done FV.Backend.Proof.StockCmpZeroWitness rc=0 3s maxrss=1.9G cgpeak=0.4G built -> ok
+01:09:47 start FV.Backend.Proof.StockBmaskSemanticsWitness cap=3G running=1 avail=204.1G
+01:09:49 done FV.Backend.Proof.StockBmaskSemanticsWitness rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+01:09:49 2 batch checks, 1s; 0 modules restored after another worktree built them
+01:09:49 END 1221/1221 ok, 14 built, wall 0.6 min

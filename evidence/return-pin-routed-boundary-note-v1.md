@@ -1,0 +1,5 @@
+Worker-O found the exact existing linker fallback boundary before default activation. `lean-link` uses `SemanticCompilerWith.compileWithRoutes`, so the ABI prefix must retain the complete previous route sequence. Retrying only its first provider would not establish preservation of every previously shipped Stock stage.
+
+I staged `FV/Link/ReturnPinCompileRoutes.lean` and its witness/audit. It reuses `RoutedOutput`: route0 is the new ABI attempt,old route i becomes i+1,and none remains legacy. Rejection retains the exact old file and route metadata. The generic specification identifies the actual byte writer for every branch. The fixed tests cover the unchanged mixed ELF,both cleanup modes,and exact bytes from a later old route behind two rejected routes across all ABI configurations. These new gates remain pending.
+
+The existing12GiB importer build continues with the shared warm cache. After its passed receipt,the queued independent source,entry,and routed-consumer gates run sequentially. This work changes no CLI default or existing shared file. O owns the new ABI/routed adapter. Existing compiler APIs and previous stages remain available. Full140 remains open.

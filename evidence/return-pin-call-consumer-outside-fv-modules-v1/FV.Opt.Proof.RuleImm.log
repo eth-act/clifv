@@ -1,0 +1,3 @@
+⚠ [48/48] Built FV.Opt.Proof.RuleImm (49s)
+warning: FV/Opt/Proof/RuleImm.lean:653:23: `if_neg` has been deprecated: Use `ite_eq_right` instead
+Build completed successfully (48 jobs).

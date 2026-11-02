@@ -1,0 +1,46 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-machine-draft-audit-v2.lean:133:32: warning: This simp argument is unused:
+  Array.toList_push
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_map, Array.toList_empty, List.map_cons, List.map_nil, MInst.mapRegs, retPairs,
+    List.map_map, Function.comp_def, List.map_nil]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-machine-draft-audit-v2.lean:133:50: warning: This simp argument is unused:
+  Array.toList_empty
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_map, Array.toList_push, List.map_cons, List.map_nil, MInst.mapRegs, retPairs,
+    List.map_map, Function.comp_def, List.map_nil]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-machine-draft-audit-v2.lean:142:35: warning: This simp argument is unused:
+  Array.toList_push
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_append, Array.toList_empty, List.append_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-machine-draft-audit-v2.lean:142:53: warning: This simp argument is unused:
+  Array.toList_empty
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Array.toList_append, Array.toList_push, List.append_assoc]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-machine-draft-audit-v2.lean:291:16: warning: Variable name `allocatedRun` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _allocatedRun
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+'E2E.XNI.voidCalls' depends on axioms: [propext, Quot.sound]
+'E2E.XTls.voidCalls' depends on axioms: [propext]
+'Backend.Stock.VoidCall.Layout.return_function_with' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.VoidCall.Layout.return_function_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.VoidCall.Layout.return_function_abi_read' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_worldX_stock_void_call' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.VoidCallMachineWitness.compiled_caller' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallMachineWitness.candidates_ok._native.native_decide.ax_1]

@@ -1,0 +1,13 @@
+{
+  "module": "FV.Backend.StockVoidCallCheck",
+  "unit": "fvb-1643040-1-FV.Backend.StockVoidCallCheck",
+  "cap_bytes": 6442450944,
+  "returncode": 1,
+  "seconds": 1.0006179809570312,
+  "module_source_sha256": "7a67779d4975421d71a1e927e9a3141341f1c786ed96f03bd3e7896cea8e279a",
+  "artifacts": {
+    "FV.Backend.StockVoidCallCheck.log": "d09b8ce2bee7477ff96b77ec2218915772b2fd18976130f84058eb1d5c8c8da6",
+    "FV.Backend.StockVoidCallCheck.mem": "72ed6edaea88dcb37c080f8cf7e9cac4b24369152805ea80574b1a11b35523c0",
+    "FV.Backend.StockVoidCallCheck.time": "afa523c4ce760aeba6fb1d56af9bdc3a87f9c7f103f62cdc55bad6b8e056f0e8"
+  }
+}

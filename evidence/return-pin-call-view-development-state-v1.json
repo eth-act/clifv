@@ -1,0 +1,9 @@
+{
+  "status": "development-kernel-and-audit-passed",
+  "source_sha256": "791c3f0dd678150b60a3d2956ce520b85a1ac0c56b931d11c10eb2d5dc23aba7",
+  "new_roots": 15,
+  "generic_roots_standard_only": 14,
+  "scope": "Internal void-call view preserves original machine step, callee contracts, complete entry, TLS fields and full original per-state guarantee. The actual raw Stock zero-def call executes for arbitrary original ABI outputs and callee worlds. No complete source caller domain or production activation is claimed. Existing dependency outputs only; full current-main gate remains pending A shared table cache.",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T09:45:14.355859+00:00"
+}

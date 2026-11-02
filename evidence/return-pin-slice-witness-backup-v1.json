@@ -1,0 +1,18 @@
+{
+  "commit": "b4ad7836c7a40d41fe6f8f7dea69871e764387dc",
+  "remote_verified": true,
+  "source_hashes": {
+    "ReturnPinChecksWithWitness-v1.lean": "4ed3fe5e89550398d76506a551f63ea45c3d691953265a9992fd1af47c5d62b8",
+    "integer-production-status-current-v179.md": "0c943e733050511c5542a53ab53174d4b28616607958990c6f47048dc699517e",
+    "return-pin-call-consumer-parallel-ci-result-v1.json": "235b46d3adf1479dc5313e51bb819cdc025accd9c09ecdaf6293c2d692232f49",
+    "return-pin-checks-packet-v1/FV/E2E/ReturnPinChecksWith.lean": "9b114c497051d84b6d81d35a9427c1906bad64143b02e064a06fc942268d2ed1",
+    "return-pin-checks-packet-v1/FV/E2E/ReturnPinChecksWithWitness.lean": "4ed3fe5e89550398d76506a551f63ea45c3d691953265a9992fd1af47c5d62b8",
+    "return-pin-checks-packet-v1/scripts/audit/return-pin-checks-with.lean": "def58a5bb12385cadf2a809bdfd6f6b8c4a04025a212b75018ad2e8147d11d7b",
+    "return-pin-checks-packet-v1.json": "c5289ad30d0b99f2c5a5ab581ed9a5f68ac7c31591aa8a1490349bd9bcc52705",
+    "verify-return-pin-checks-packet-v1.py": "e48246c67230ec17a1720c6cb999b4a95ff93d3cbe3aaf07c06976f052766079",
+    "verify-sret-symbolic-heap-packet-v4.py": "11605816e2ccf90c395db266cd9f07c6f9a602e361a57a06a441c33155c29121"
+  },
+  "proof_status": "pending",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T20:03:05.203343+00:00"
+}

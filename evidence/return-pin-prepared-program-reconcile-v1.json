@@ -1,0 +1,20 @@
+{
+  "main": "01aa959d4ef14457d3b424090c87ea8e21a73de1",
+  "changed_files": [
+    "FV/Backend/ConditionalForwardCfgNIProduction.lean",
+    "FV/Backend/Lowering/StockConditionalForwardCfgNI.lean",
+    "FV/Backend/Lowering/StockConditionalRankedCfg.lean",
+    "FV/Backend/Proof/StockConditionalRankedCheck.lean",
+    "FV/Backend/Proof/StockConditionalRankedCompatibility.lean",
+    "FV/Backend/Proof/StockConditionalRankedDomain.lean",
+    "FV/Backend/Proof/StockConditionalRankedShape.lean",
+    "FV/Backend/Proof/StockConditionalRankedSuccessor.lean",
+    "FV/Backend/Proof/StockParameterLeaf.lean",
+    "FV/Backend/Proof/StockParameterLeafWitness.lean",
+    "FV/E2E/StockRankedTrapWitness.lean",
+    "FVTest/E2E/LinkCheckMain.lean",
+    "scripts/audit/stock-parameter-trap-leaf.lean",
+    "scripts/audit/stock-ranked-trap-production.lean"
+  ],
+  "existing_source_unchanged_except_additive_audit": true
+}

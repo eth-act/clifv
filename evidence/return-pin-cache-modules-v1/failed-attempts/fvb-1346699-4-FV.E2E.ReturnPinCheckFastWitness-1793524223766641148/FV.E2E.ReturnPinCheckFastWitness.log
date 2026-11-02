@@ -1,0 +1,21 @@
+⚠ [1241/1423] Replayed FV.Backend.Proof.StockMemoryStoreMatch
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:83:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:85:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:88:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:94:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [1681/1728] Replayed FV.E2E.ReturnPinCheckFast
+warning: FV/E2E/ReturnPinCheckFast.lean:24:53: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/E2E/ReturnPinCheckFast.lean:68:53: `if_false` has been deprecated: Use `ite_false` instead
+✖ [1728/1728] Building FV.E2E.ReturnPinCheckFastWitness (1.4s)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.worktrees/stock-extending-production-20261031/FV/E2E/ReturnPinCheckFastWitness.lean -o /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ReturnPinCheckFastWitness.olean -i /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/E2E/ReturnPinCheckFastWitness.ilean -c /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/ir/FV/E2E/ReturnPinCheckFastWitness.c --setup /home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/ir/FV/E2E/ReturnPinCheckFastWitness.setup.json --json
+error: FV/E2E/ReturnPinCheckFastWitness.lean:39:2: Type mismatch
+  PreparedReturnPinSretWitness.program_correct cleanup
+has type
+  CrateStmtReturnPins PreparedReturnPinSretWitness.input (PreparedReturnPinSretWitness.outputs cleanup)
+    Stock.Memory.StoreRoots.ComputedFixture.function.name
+but is expected to have type
+  CrateStmtReturnPins PreparedReturnPinSretWitness.input (PreparedReturnPinSretWitness.outputs cleanup)
+    "_RNxC7fv_demo11HawPMC3YC2b"
+Some required targets logged failures:
+- FV.E2E.ReturnPinCheckFastWitness
+error: build failed

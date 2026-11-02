@@ -1,0 +1,6 @@
+Develop on dd56ea3a while A builds the #824 table cone. Do not build that cone concurrently.
+New ReturnPinCheckFast caches artifact lookups, symbols, physical pins, ABI arities and direct targets.
+The fast scan must equal the canonical scan for every input, including duplicate names and failed artifacts.
+PreparedReturnPinPipeline gains only a proved csimp replacement. Old interfaces and verdicts remain exact.
+Add positive and rejected mixed-program witnesses for both cleanup modes. Keep all old witnesses.
+No parameter files, production selectors or LinkCheckMain changes.

@@ -1,0 +1,298 @@
+'E2E.BinaryBoundaryFacts.of_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.BinaryBoundaryFacts.of_returnPins' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.BinaryBoundaryFacts.img_of_codeAddr' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.BinaryBoundaryFacts.frame_facts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.BinaryBoundaryFacts.not_worldF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.BinaryBoundaryFacts.not_worldF_out' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.BinaryBoundaryFacts.premises' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.okB_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.okB_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.binary_correct_depth' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.BinFacts.previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.BinFacts.modelOf_ne' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.binary_correct_depthX' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.binary_correct_peakX' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.binFacts_of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinStackBound.okB_names' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinStackBound.facts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinStackBound.edgeB_of_callee' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinStackBound.goodN_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinStackBound.budget_of' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinStackBound.backend_correct_program_stackX' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinStackBound.crate_correct_stackNX' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.binary_correctX' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.trapsExplicit_of_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinary.trapsExplicit_of_runD' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.fnOk' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.codeMap_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.relocAt_inv' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.line_overlap' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.relocAt_img' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.word_static' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.insn_of_good' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.symAddr_of_blrTo' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.siteAt_static' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.plain_static' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.stepOk_of_d' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.runOkSN_of_n' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.pairsClosed_art' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.raNotSecond_enter' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.reachL_of_reachN' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.destsInt_of_ok' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.stepOkD_of_good' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.runOkN_of_good' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkSys.OkReturnPins.extImgProduction' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.image_checked' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.sysS_entry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.runGood_sysS_of' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.runGood_sysS' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.runGood_sysS_depth' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.runGood_sysS_peak' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.got_of_good' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.exec_of_runGood' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.binary_correct_exec_proven' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.binary_correct_exec_depth_proven' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinExecBytes.binary_correct_exec_peak_proven' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinaryWitness.old_checked' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ old_checked._native.native_decide.ax_1,
+ old_checked._native.native_decide.ax_2]
+'E2E.ReturnPinBinaryWitness.ordinary_facts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ old_checked._native.native_decide.ax_1,
+ old_checked._native.native_decide.ax_2]
+'E2E.ReturnPinBinaryWitness.checked' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ old_checked._native.native_decide.ax_1,
+ old_checked._native.native_decide.ax_2]
+'E2E.ReturnPinBinaryWitness.outside' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2]
+'E2E.ReturnPinBinaryWitness.source_run' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2]
+'E2E.ReturnPinBinaryWitness.binary_facts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2,
+ old_checked._native.native_decide.ax_1,
+ old_checked._native.native_decide.ax_2]
+'E2E.ReturnPinBinaryWitness.intact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinaryWitness.complete_model_run' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ old_checked._native.native_decide.ax_1,
+ old_checked._native.native_decide.ax_2]
+'E2E.ReturnPinBinaryWitness.mixed_checks' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ mixed_checks._native.native_decide.ax_1]
+'E2E.ReturnPinBinaryWitness.mixed_contract' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ mixed_checks._native.native_decide.ax_1]
+'E2E.ReturnPinBinaryWitness.depth' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ReturnPinBinaryWitness.outside_budget' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2]
+'E2E.ReturnPinBinaryWitness.depth_budget' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ depth_budget._native.native_decide.ax_1,
+ depth_budget._native.native_decide.ax_2]
+'E2E.ReturnPinBinaryWitness.depth_model_run' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ depth_budget._native.native_decide.ax_1,
+ depth_budget._native.native_decide.ax_2,
+ old_checked._native.native_decide.ax_1,
+ old_checked._native.native_decide.ax_2]
+'E2E.ReturnPinBinaryWitness.peak_model_run' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ depth_budget._native.native_decide.ax_1,
+ depth_budget._native.native_decide.ax_2,
+ old_checked._native.native_decide.ax_1,
+ old_checked._native.native_decide.ax_2]
+'E2E.ReturnPinExecWitness.code_map' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2]
+'E2E.ReturnPinExecWitness.got' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2]
+'E2E.ReturnPinExecWitness.avoids' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2]
+'E2E.ReturnPinExecWitness.ordinary' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ old_checked._native.native_decide.ax_1,
+ old_checked._native.native_decide.ax_2]
+'E2E.ReturnPinExecWitness.recursive_depth' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ depth_budget._native.native_decide.ax_1,
+ depth_budget._native.native_decide.ax_2,
+ old_checked._native.native_decide.ax_1,
+ old_checked._native.native_decide.ax_2]
+'E2E.ReturnPinExecWitness.peak_depth' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.compiler_success._native.native_decide.ax_1_2,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ depth_budget._native.native_decide.ax_1,
+ depth_budget._native.native_decide.ax_2,
+ old_checked._native.native_decide.ax_1,
+ old_checked._native.native_decide.ax_2]
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2385:13: warning: Variable name `k` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _k
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+'Link.ReturnPinCompilerWith.attempt_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.codeMap_leanLink' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.leanLink_gotSlot' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.gotOk_leanLink' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.outsideAvoids_leanLink' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.attempt_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.attempt_correct_depth' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.attempt_correct_peak' depends on axioms: [propext, Classical.choice, Quot.sound]
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2478:6: error: Dependent elimination failed: Failed to solve equation
+  Except.ok file =
+    Decidable.rec
+      (fun h =>
+        (fun x =>
+            if
+                okRSemanticNI (productionStage false) (S.inputProductionWith lower false)
+                    ((S.inputProductionWith lower false).resultsProductionWith lower false) =
+                  true then
+              leanLinkProductionWith lower S file0 false
+            else Except.error "the actual production pipeline checks failed")
+          h)
+      (fun h => (fun x => Except.error outOfScopeMsg) h) (instDecidableEqBool (!inScopePar S.input0) true)
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2480:10: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2483:54: error: Application type mismatch: The argument
+  checked
+has type
+  (!inScopeInPar S.input0) = true
+but is expected to have type
+  SemanticStackBound.okB ?m.122 = true
+in the application
+  ReturnPinBinary.okB_previous checked
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2486:8: error: Dependent elimination failed: Failed to solve equation
+  Except.ok file =
+    Decidable.rec (fun h => (fun x => Except.error "the actual production pipeline checks failed") h)
+      (fun h => (fun x => leanLinkProductionWith lower S file0 false) h)
+      (instDecidableEqBool
+        (okRSemanticNI (productionStage false) (S.inputProductionWith lower false)
+          ((S.inputProductionWith lower false).resultsProductionWith lower false))
+        true)
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2478:6: error: Dependent elimination failed: Failed to solve equation
+  Except.ok file =
+    Decidable.rec
+      (fun h =>
+        (fun x =>
+            if
+                okRSemanticNI (productionStage true) (S.inputProductionWith lower true)
+                    ((S.inputProductionWith lower true).resultsProductionWith lower true) =
+                  true then
+              leanLinkProductionWith lower S file0 true
+            else Except.error "the actual production pipeline checks failed")
+          h)
+      (fun h => (fun x => Except.error outOfScopeMsg) h) (instDecidableEqBool (!inScopePar S.input0) true)
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2480:10: warning: `if_neg` has been deprecated: Use `ite_eq_right` instead
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2483:54: error: Application type mismatch: The argument
+  checked
+has type
+  (!inScopeInPar S.input0) = true
+but is expected to have type
+  SemanticStackBound.okB ?m.214 = true
+in the application
+  ReturnPinBinary.okB_previous checked
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2486:8: error: Dependent elimination failed: Failed to solve equation
+  Except.ok file =
+    Decidable.rec (fun h => (fun x => Except.error "the actual production pipeline checks failed") h)
+      (fun h => (fun x => leanLinkProductionWith lower S file0 true) h)
+      (instDecidableEqBool
+        (okRSemanticNI (productionStage true) (S.inputProductionWith lower true)
+          ((S.inputProductionWith lower true).resultsProductionWith lower true))
+        true)
+'Link.ReturnPinCompilerWith.accepts_previous' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+"mixed ELF: 1032 bytes"
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2533:20: error: failed to synthesize
+  Decidable ((input false).funcs = PreparedReturnPinCallsWitness.input.funcs)
+
+Hint: Additional diagnostic information may be available using the `set_option diagnostics true` command.
+/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean:2533:20: error: failed to synthesize
+  Decidable ((input true).funcs = PreparedReturnPinCallsWitness.input.funcs)
+
+Hint: Additional diagnostic information may be available using the `set_option diagnostics true` command.
+'Link.ReturnPinCompilerWitness.compiler_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ compiler_success._native.native_decide.ax_1,
+ compiler_success._native.native_decide.ax_2]
+'Link.ReturnPinCompilerWitness.original_source' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWitness.old_rejected' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ old_rejected._native.native_decide.ax_1,
+ old_rejected._native.native_decide.ax_2]
+'Link.ReturnPinCompilerWitness.actual_stock' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ actual_stock._native.native_decide.ax_1,
+ actual_stock._native.native_decide.ax_2]
+'Link.ReturnPinCompilerWitness.no_tls' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ no_tls._native.native_decide.ax_1,
+ no_tls._native.native_decide.ax_2]
+'Link.ReturnPinCompilerWitness.contract' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ compiler_success._native.native_decide.ax_1,
+ compiler_success._native.native_decide.ax_2,
+ no_tls._native.native_decide.ax_1,
+ no_tls._native.native_decide.ax_2]

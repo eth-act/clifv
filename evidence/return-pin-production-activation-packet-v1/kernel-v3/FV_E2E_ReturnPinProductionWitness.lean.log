@@ -1,0 +1,14 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v1/FV/E2E/ReturnPinProductionWitness.lean:34:58: error: unknown tactic
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v1/FV/E2E/ReturnPinProductionWitness.lean:34:36: error: unsolved goals
+case false
+both : checks false = true ∧ checks true = true
+⊢ checks false = true
+
+case true
+both : checks false = true ∧ checks true = true
+⊢ checks true = true
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-production-activation-packet-v1/validation-package-v1/FV/E2E/ReturnPinProductionWitness.lean:32:91: error: unsolved goals
+cleanup : Bool
+both : checks false = true ∧ checks true = true
+h : checks cleanup = true
+⊢ returnPinModeB original [] cleanup = true ∧ returnPinModeB mixed [] cleanup = false

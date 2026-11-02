@@ -1,0 +1,4 @@
+⚠ [268/268] Built FV.Backend.Proof.StockMinMaxSourceMatch (99s)
+warning: FV/Backend/Proof/StockMinMaxSourceMatch.lean:108:50: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMinMaxSourceMatch.lean:108:83: `if_neg` has been deprecated: Use `ite_eq_right` instead
+Build completed successfully (268 jobs).

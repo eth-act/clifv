@@ -1,0 +1,7 @@
+⚠ [284/285] Replayed FV.Backend.Proof.StockMemoryExtLoadSource
+warning: FV/Backend/Proof/StockMemoryExtLoadSource.lean:38:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryExtLoadSource.lean:40:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMemoryExtLoadSource.lean:43:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryExtLoadSource.lean:49:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [285/285] Built FV.Backend.Proof.StockMemoryExtLoadSelected (746ms)
+Build completed successfully (285 jobs).

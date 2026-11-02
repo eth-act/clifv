@@ -1,0 +1,13 @@
+{
+  "module": "FV.E2E.PreparedReturnPinPipeline",
+  "unit": "fvb-1318330-2-FV.E2E.PreparedReturnPinPipeline",
+  "cap_bytes": 6442450944,
+  "returncode": 1,
+  "seconds": 2.001286268234253,
+  "module_source_sha256": "c1456723e169e50717676b67e052706f8ee64bbd9bff0ff674c398d8206f1c7b",
+  "artifacts": {
+    "FV.E2E.PreparedReturnPinPipeline.log": "5e356388630780fc2218358fded5503fe64a1a3bdcf23c550a72fbeb811c27ef",
+    "FV.E2E.PreparedReturnPinPipeline.mem": "750f4c462a868834fc3a027e1783444c2bb80d9a984d7a069a5d2080adb4cdd5",
+    "FV.E2E.PreparedReturnPinPipeline.time": "fa97f4dee375cc260b7e87ed127113ccb954b931f005659db26b3acf8182eefc"
+  }
+}

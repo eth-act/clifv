@@ -1,0 +1,17 @@
+{
+  "pr": 887,
+  "packet": "return-pin-binary-packet-v1",
+  "validation": "binary-independent-reviewed-state-v1.json",
+  "source_overlays": [
+    "link-image-extension-packet-v1",
+    "return-pin-linker-runtime-packet-v5"
+  ],
+  "apply_packet": true,
+  "new_branch": true,
+  "parent": "sret-entry-value-landed-v1.json",
+  "branch": "agent/stock-return-pin-binary-20261102",
+  "prepared": "binary-independent-delivery-prepared-v1.json",
+  "commit_message": "Preserve binary boundaries for ABI-aware program contracts",
+  "review": "binary-independent-peer-review-v1.json",
+  "landed": "return-pin-binary-landed-v1.json"
+}

@@ -1,0 +1,16 @@
+{
+  "verdict": "approved",
+  "reviewer": "worker-A",
+  "source": "d74656e1",
+  "source_hashes": {
+    "FV/Backend/StockVoidCallCheck.lean": "74ecf35d3da2209ab0a3efdb7933a8e18f5aeb2168b249479eac08dc5e89e6e6",
+    "FV/E2E/StockVoidCallView.lean": "9a5370bf7c6b2e53b2a0a2f5f39f019d46740528059758b372bd6077883f1c38",
+    "FV/E2E/StockVoidCallDomain.lean": "64f2bd58ff37ba6253571542d4faeb1d4d67e499df73683d51441380ca385002",
+    "FV/E2E/StockVoidCallWitness.lean": "411bca41ba3d40535de51525ab9aa8aa38c2222a929082de093b5412e04ed775",
+    "scripts/audit/stock-void-call.lean": "552e1a4fce4f0bad9df7b4f2e9955f057737b6b5e421be5880f45b2dcd59c204"
+  },
+  "review_agents": 0,
+  "review_builds": 0,
+  "method": "ONE QUICK, DIRTY, CHEAP direct review",
+  "note": "Read Layout, return_function head, check_domain, and StockVoidCallCheck. The original one-block void-call source and ABI are pinned. Actual metadata binds symbol, empty defs, integer pinned uses, and source argument keys. The sound checker derives both complete source obligations. Nonblocking readability note: sourceKey defaults to0, but the complete source proof handles every case."
+}

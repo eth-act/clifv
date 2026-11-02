@@ -1,0 +1,34 @@
+05:39:02 want 1740 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+05:39:03 check (all) 1740 modules in 0.4s: 1736 up-to-date, 2 out of date, 2 wait for those
+05:39:03 start FV.Backend.StockVoidCallCheck cap=6G running=1 avail=198.0G
+05:39:04 done FV.Backend.StockVoidCallCheck rc=1 1s maxrss=1.6G cgpeak=0.2G up-to-date -> fail
+05:39:04 start FV.E2E.StockVoidCallView cap=6G running=1 avail=197.4G
+05:39:06 done FV.E2E.StockVoidCallView rc=0 2s maxrss=2.0G cgpeak=0.3G built -> ok
+05:39:06 fail (1): FV.Backend.StockVoidCallCheck
+05:39:06 blocked (2): FV.E2E.StockVoidCallDomain FV.E2E.StockVoidCallWitness
+05:39:06 2 batch checks, 1s; 0 modules restored after another worktree built them
+05:39:06 END 1737/1740 ok, 1 built, wall 0.1 min
+05:39:51 want 1740 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+05:39:52 check (all) 1740 modules in 0.4s: 1737 up-to-date, 1 out of date, 2 wait for those
+05:39:52 start FV.Backend.StockVoidCallCheck cap=6G running=1 avail=193.8G
+05:39:54 done FV.Backend.StockVoidCallCheck rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+05:39:54 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+05:39:54 start FV.E2E.StockVoidCallDomain cap=6G running=1 avail=197.9G
+05:39:56 done FV.E2E.StockVoidCallDomain rc=1 2s maxrss=2.2G cgpeak=0.3G up-to-date -> fail
+05:39:56 fail (1): FV.E2E.StockVoidCallDomain
+05:39:56 blocked (1): FV.E2E.StockVoidCallWitness
+05:39:56 3 batch checks, 1s; 0 modules restored after another worktree built them
+05:39:56 END 1738/1740 ok, 1 built, wall 0.1 min
+05:40:20 want 1740 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+05:40:20 check (all) 1740 modules in 0.4s: 1738 up-to-date, 1 out of date, 1 wait for those
+05:40:20 start FV.E2E.StockVoidCallDomain cap=6G running=1 avail=197.1G
+05:40:23 done FV.E2E.StockVoidCallDomain rc=0 3s maxrss=2.2G cgpeak=0.3G built -> ok
+05:40:24 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+05:40:24 start FV.E2E.StockVoidCallWitness cap=6G running=1 avail=196.3G
+05:40:27 done FV.E2E.StockVoidCallWitness rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+05:40:27 3 batch checks, 1s; 0 modules restored after another worktree built them
+05:40:27 END 1740/1740 ok, 2 built, wall 0.1 min
+05:51:01 want 1740 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+05:51:02 check (all) 1740 modules in 0.4s: 1740 up-to-date, 0 out of date, 0 wait for those
+05:51:02 2 batch checks, 1s; 0 modules restored after another worktree built them
+05:51:02 END 1740/1740 ok, 0 built, wall 0.0 min

@@ -1,0 +1,9 @@
+{
+  "retired": [
+    2290236
+  ],
+  "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinBinaryDraftV1.lean",
+  "sha256": "27043f6ce182d5351a61937159fa66f8a61f6ca2a22d703f4d331fa9487b3378",
+  "reason": "All draft editor checks passed. Retire the idle worker before the proper kernel gate.",
+  "utc": "2026-11-01T13:37:53.869534+00:00"
+}

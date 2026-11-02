@@ -1,0 +1,7 @@
+{
+  "stopped": [
+    2584296
+  ],
+  "reason": "Retain the tested compatibility API and add the existing current/previous/legacy provenance before publication. The old stock Boolean cannot identify which compiler produced the linked bytes. This improves the planned result-binding interface without changing inputs or default activation.",
+  "utc": "2026-11-01T15:14:13.002838+00:00"
+}

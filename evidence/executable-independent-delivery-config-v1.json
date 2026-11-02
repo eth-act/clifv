@@ -1,0 +1,18 @@
+{
+  "pr": 888,
+  "packet": "return-pin-executable-packet-v4",
+  "validation": "executable-independent-reviewed-state-v1.json",
+  "source_overlays": [
+    "link-image-extension-packet-v1",
+    "return-pin-linker-runtime-packet-v5",
+    "return-pin-binary-packet-v1"
+  ],
+  "apply_packet": true,
+  "new_branch": true,
+  "parent": "return-pin-binary-landed-v1.json",
+  "branch": "agent/stock-return-pin-executable-20261102",
+  "prepared": "executable-independent-delivery-prepared-v1.json",
+  "commit_message": "Prove ABI-aware linked execution through actual compiler artifacts",
+  "review": "executable-independent-peer-review-v1.json",
+  "landed": "return-pin-executable-landed-v1.json"
+}

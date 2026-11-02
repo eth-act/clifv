@@ -1,0 +1,17 @@
+{
+  "removed": [
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinSretWitnessDraftV1.lean",
+      "saved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinSretWitnessDraftV1.lean",
+      "sha256": "0c164d415b20653579873549c7b0947b42beb14403f5db5e6b990c00fdc22134",
+      "bytes": 2914
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinSretOpaqueDraftV1.lean",
+      "saved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinSretOpaqueDraftV1.lean",
+      "sha256": "e688889e0bc9702859ab00d48482e317fc5a71a89f99754262e10f3b4e5c3b2b",
+      "bytes": 2890
+    }
+  ],
+  "old_worker_idle_receipt": "old-sret-witness-lsp-idle-v1.json"
+}

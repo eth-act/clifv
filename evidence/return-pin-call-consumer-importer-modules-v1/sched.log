@@ -1,0 +1,847 @@
+06:39:43 want 2985 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+06:39:43 check (all) 2985 modules in 0.7s: 2595 up-to-date, 257 out of date, 134 wait for those
+06:39:43 wait FV.Backend.Proof.IselSzTTabS13: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:39:43 wait FV.Backend.Proof.IselShpTTabC10: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:39:43 wait FV.Backend.Proof.IselShpTTabC11: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:39:43 start FV.Backend.Proof.IselCovTTabC2 cap=3G running=1 avail=192.8G
+06:40:45 done FV.Backend.Proof.IselCovTTabC2 rc=0 61s maxrss=1.8G cgpeak=0.4G built -> ok
+06:40:45 peer done FV.Backend.Proof.IselSzTTabS13 after 61s; restoring it
+06:40:45 start FV.Backend.Proof.IselSzTTabS13 cap=7G running=1 avail=191.2G
+06:40:46 done FV.Backend.Proof.IselSzTTabS13 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:40:46 peer done FV.Backend.Proof.IselShpTTabC10 after 62s; restoring it
+06:40:46 start FV.Backend.Proof.IselShpTTabC10 cap=3G running=1 avail=192.7G
+06:40:47 done FV.Backend.Proof.IselShpTTabC10 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:40:47 peer done FV.Backend.Proof.IselShpTTabC11 after 63s; restoring it
+06:40:47 start FV.Backend.Proof.IselShpTTabC11 cap=3G running=1 avail=192.8G
+06:40:48 done FV.Backend.Proof.IselShpTTabC11 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:40:48 start FV.Backend.Proof.IselShpTTabC0 cap=3G running=1 avail=193.8G
+06:41:27 done FV.Backend.Proof.IselShpTTabC0 rc=0 39s maxrss=1.7G cgpeak=0.3G built -> ok
+06:41:27 start FV.Backend.Proof.IselEmitTTabC9 cap=3G running=1 avail=194.6G
+06:41:28 done FV.Backend.Proof.IselEmitTTabC9 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:41:28 wait FV.Backend.Proof.IselSzTTabS25: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:41:28 start FV.Backend.Proof.IselCovTTabS30 cap=7G running=1 avail=194.9G
+06:42:22 done FV.Backend.Proof.IselCovTTabS30 rc=0 54s maxrss=3.1G cgpeak=1.7G built -> ok
+06:42:22 peer done FV.Backend.Proof.IselSzTTabS25 after 54s; restoring it
+06:42:22 start FV.Backend.Proof.IselSzTTabS25 cap=8G running=1 avail=196.3G
+06:42:23 done FV.Backend.Proof.IselSzTTabS25 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:42:23 wait FV.Backend.Proof.IselShpTTabS30: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:42:23 start FV.Backend.MemorySretCopyABIProduction cap=6G running=1 avail=195.9G
+06:42:24 done FV.Backend.MemorySretCopyABIProduction rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+06:42:24 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:42:24 start FV.E2E.LinkReturnPinsWitness cap=6G running=1 avail=195.4G
+06:42:27 done FV.E2E.LinkReturnPinsWitness rc=0 3s maxrss=2.8G cgpeak=0.3G built -> ok
+06:42:28 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:42:28 start FV.E2E.ReturnPinCheckFastWitness cap=6G running=1 avail=195.4G
+06:42:30 done FV.E2E.ReturnPinCheckFastWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:42:30 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:42:30 start FV.E2E.StockVoidCallWitness cap=6G running=1 avail=195.1G
+06:42:32 done FV.E2E.StockVoidCallWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:42:33 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:42:33 start FV.Backend.Proof.IselShpTTabC9 cap=3G running=1 avail=195.1G
+06:42:34 done FV.Backend.Proof.IselShpTTabC9 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:42:34 start FV.Backend.Proof.IselCovTTabC0 cap=3G running=1 avail=195.3G
+06:42:35 done FV.Backend.Proof.IselCovTTabC0 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:42:35 start FV.Backend.Proof.IselSzTTabS50 cap=7G running=1 avail=194.7G
+06:43:37 done FV.Backend.Proof.IselSzTTabS50 rc=0 62s maxrss=4.9G cgpeak=3.5G built -> ok
+06:43:37 peer done FV.Backend.Proof.IselShpTTabS30 after 74s; restoring it
+06:43:37 start FV.Backend.Proof.IselShpTTabS30 cap=7G running=1 avail=191.9G
+06:43:38 done FV.Backend.Proof.IselShpTTabS30 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:43:38 start FV.Backend.Proof.IselSzTTabC0 cap=3G running=1 avail=191.1G
+06:43:39 done FV.Backend.Proof.IselSzTTabC0 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:43:39 start FV.Backend.Proof.IselEmitTTabC10 cap=3G running=1 avail=190.9G
+06:43:40 done FV.Backend.Proof.IselEmitTTabC10 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:43:40 start FV.Backend.Proof.IselSzTTabC2 cap=3G running=1 avail=190.9G
+06:43:41 done FV.Backend.Proof.IselSzTTabC2 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:43:41 wait FV.Backend.Proof.IselShpTTabC2: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:43:41 start FV.Backend.Proof.IselSzTTabC13 cap=4G running=1 avail=193.8G
+06:43:42 done FV.Backend.Proof.IselSzTTabC13 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:43:42 start FV.Backend.Proof.IselEmitTTabC12 cap=4G running=1 avail=194.8G
+06:44:22 done FV.Backend.Proof.IselEmitTTabC12 rc=0 40s maxrss=2.1G cgpeak=0.7G built -> ok
+06:44:22 wait FV.Backend.Proof.IselSzTTabS31: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:44:22 wait FV.Backend.Proof.IselEmitTTabC2: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:44:22 start FV.Backend.Proof.IselShpTTabC1 cap=3G running=1 avail=195.0G
+06:45:04 done FV.Backend.Proof.IselShpTTabC1 rc=0 41s maxrss=1.8G cgpeak=0.4G built -> ok
+06:45:04 peer done FV.Backend.Proof.IselShpTTabC2 after 82s; restoring it
+06:45:04 start FV.Backend.Proof.IselShpTTabC2 cap=3G running=1 avail=195.6G
+06:45:05 done FV.Backend.Proof.IselShpTTabC2 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:45:05 peer done FV.Backend.Proof.IselSzTTabS31 after 42s; restoring it
+06:45:05 start FV.Backend.Proof.IselSzTTabS31 cap=6G running=1 avail=195.6G
+06:45:06 done FV.Backend.Proof.IselSzTTabS31 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:45:06 peer done FV.Backend.Proof.IselEmitTTabC2 after 43s; restoring it
+06:45:06 start FV.Backend.Proof.IselEmitTTabC2 cap=3G running=1 avail=195.0G
+06:45:07 done FV.Backend.Proof.IselEmitTTabC2 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:45:07 start FV.Backend.Proof.IselSzTTabS43 cap=7G running=1 avail=194.6G
+06:45:08 done FV.Backend.Proof.IselSzTTabS43 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:45:08 start FV.E2E.SemanticStackBound cap=5G running=1 avail=194.8G
+06:45:10 done FV.E2E.SemanticStackBound rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:45:10 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:45:10 wait FV.Backend.Proof.IselCovTTabS32: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:45:10 start FV.Backend.Proof.IselSzTTabC1 cap=3G running=1 avail=194.8G
+06:45:11 done FV.Backend.Proof.IselSzTTabC1 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:45:11 start FV.E2E.SemanticBinary cap=5G running=1 avail=194.7G
+06:45:14 done FV.E2E.SemanticBinary rc=0 3s maxrss=2.6G cgpeak=0.4G built -> ok
+06:45:15 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:45:15 start FV.Backend.Proof.IselSzTTabC14 cap=3G running=1 avail=194.7G
+06:45:16 done FV.Backend.Proof.IselSzTTabC14 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:45:16 start FV.E2E.SemanticExecBytes cap=5G running=1 avail=194.6G
+06:45:20 done FV.E2E.SemanticExecBytes rc=0 4s maxrss=2.8G cgpeak=0.5G built -> ok
+06:45:20 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:45:20 start FV.Backend.Proof.IselSzTTabC15 cap=3G running=1 avail=194.7G
+06:45:21 done FV.Backend.Proof.IselSzTTabC15 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:45:21 start FV.Backend.Proof.IselSzTTabS0 cap=7G running=1 avail=195.0G
+06:46:05 done FV.Backend.Proof.IselSzTTabS0 rc=0 44s maxrss=4.6G cgpeak=3.2G built -> ok
+06:46:05 peer done FV.Backend.Proof.IselCovTTabS32 after 55s; restoring it
+06:46:05 start FV.Backend.Proof.IselCovTTabS32 cap=7G running=1 avail=195.7G
+06:46:06 done FV.Backend.Proof.IselCovTTabS32 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:46:06 start FV.E2E.SemanticExecStatic cap=5G running=1 avail=195.2G
+06:46:15 done FV.E2E.SemanticExecStatic rc=0 9s maxrss=3.1G cgpeak=0.9G built -> ok
+06:46:16 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:46:16 start FV.Backend.Proof.IselEmitTTabS32 cap=7G running=1 avail=189.8G
+06:46:17 done FV.Backend.Proof.IselEmitTTabS32 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:46:17 wait FV.Backend.Proof.IselSzTTabS17: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:46:17 start FV.Backend.Proof.IselSzTTabS1 cap=7G running=1 avail=189.4G
+06:46:54 done FV.Backend.Proof.IselSzTTabS1 rc=0 37s maxrss=4.6G cgpeak=3.1G built -> ok
+06:46:54 peer done FV.Backend.Proof.IselSzTTabS17 after 37s; restoring it
+06:46:54 start FV.Backend.Proof.IselSzTTabS17 cap=7G running=1 avail=193.4G
+06:46:55 done FV.Backend.Proof.IselSzTTabS17 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:46:55 start FV.E2E.SemanticLinkGood cap=5G running=1 avail=195.3G
+06:46:57 done FV.E2E.SemanticLinkGood rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:46:58 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:46:58 start FV.Backend.Proof.IselSzTTabS24 cap=6G running=1 avail=194.6G
+06:46:59 done FV.Backend.Proof.IselSzTTabS24 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:46:59 start FV.Backend.Proof.IselEmitTTabC1 cap=3G running=1 avail=194.7G
+06:47:00 done FV.Backend.Proof.IselEmitTTabC1 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:47:00 start FV.E2E.SemanticBinaryGood cap=5G running=1 avail=195.7G
+06:47:02 done FV.E2E.SemanticBinaryGood rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:47:02 start FV.E2E.SemanticExecRunN cap=5G running=1 avail=195.4G
+06:47:04 done FV.E2E.SemanticExecRunN rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:47:04 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:47:04 start FV.Link.Ld.File0 cap=4G running=1 avail=195.9G
+06:47:06 done FV.Link.Ld.File0 rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+06:47:06 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:47:06 start FV.E2E.SemanticExecGoodRun cap=5G running=1 avail=195.1G
+06:47:08 done FV.E2E.SemanticExecGoodRun rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:47:09 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:47:09 start FV.Link.Ld.PlanProof cap=4G running=1 avail=195.6G
+06:47:11 done FV.Link.Ld.PlanProof rc=0 2s maxrss=2.4G cgpeak=0.3G built -> ok
+06:47:11 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:47:11 wait FV.Backend.Proof.IselSzTTabS12: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:47:11 wait FV.Backend.Proof.IselSzTTabS49: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:47:11 start FV.E2E.SemanticExecGot cap=5G running=1 avail=195.2G
+06:47:14 done FV.E2E.SemanticExecGot rc=0 3s maxrss=2.7G cgpeak=0.4G built -> ok
+06:47:14 peer done FV.Backend.Proof.IselSzTTabS49 after 3s; restoring it
+06:47:14 start FV.Backend.Proof.IselSzTTabS49 cap=6G running=1 avail=194.1G
+06:47:15 done FV.Backend.Proof.IselSzTTabS49 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:47:15 start FV.E2E.SemanticChecksWith cap=4G running=1 avail=195.1G
+06:47:17 done FV.E2E.SemanticChecksWith rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:47:17 start FV.E2E.SemanticExecFrameSim cap=5G running=1 avail=194.6G
+06:47:19 done FV.E2E.SemanticExecFrameSim rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:47:19 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:47:20 start FV.Link.Ld.Data cap=4G running=1 avail=193.9G
+06:47:22 done FV.Link.Ld.Data rc=0 2s maxrss=2.4G cgpeak=0.3G built -> ok
+06:47:22 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:47:22 peer done FV.Backend.Proof.IselSzTTabS12 after 11s; restoring it
+06:47:22 start FV.Backend.Proof.IselSzTTabS12 cap=5G running=1 avail=194.9G
+06:47:23 done FV.Backend.Proof.IselSzTTabS12 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:47:23 start FV.Backend.Proof.IselSzTTabS35 cap=4G running=1 avail=194.6G
+06:47:24 done FV.Backend.Proof.IselSzTTabS35 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:47:24 start FV.E2E.SemanticExecGoodReads cap=5G running=1 avail=194.6G
+06:47:26 done FV.E2E.SemanticExecGoodReads rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:47:26 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:47:26 start FV.Link.Ld.Spec cap=4G running=1 avail=193.1G
+06:47:28 done FV.Link.Ld.Spec rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+06:47:28 start FVTest.E2E.SemanticLinkProofWith cap=4G running=1 avail=192.8G
+06:47:30 done FVTest.E2E.SemanticLinkProofWith rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+06:47:31 check (ready) 22 modules in 0.4s: 0 up-to-date, 22 out of date, 0 wait for those
+06:47:31 start FV.Backend.Proof.IselCovTTabC1 cap=3G running=1 avail=192.8G
+06:47:32 done FV.Backend.Proof.IselCovTTabC1 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:47:32 start FV.Backend.Proof.StockMemorySretCopyCompatibility cap=6G running=1 avail=192.9G
+06:47:33 done FV.Backend.Proof.StockMemorySretCopyCompatibility rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+06:47:33 start FV.E2E.LinkReturnPinGoodWitness cap=6G running=1 avail=192.5G
+06:47:34 done FV.E2E.LinkReturnPinGoodWitness rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:47:34 start FV.E2E.LinkReturnPinProgramWitness cap=6G running=1 avail=192.3G
+06:47:36 done FV.E2E.LinkReturnPinProgramWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:47:36 start FV.E2E.PreparedReturnPinCallsWitness cap=6G running=1 avail=195.8G
+06:47:37 done FV.E2E.PreparedReturnPinCallsWitness rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:47:37 start FV.E2E.ReturnPinPipelineRetryWitness cap=6G running=1 avail=195.5G
+06:47:39 done FV.E2E.ReturnPinPipelineRetryWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:47:39 start FV.E2E.StockVoidCallNIWitness cap=6G running=1 avail=194.1G
+06:47:41 done FV.E2E.StockVoidCallNIWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:47:41 start FV.Link.SemanticCompileDefs cap=4G running=1 avail=193.7G
+06:47:43 done FV.Link.SemanticCompileDefs rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+06:47:43 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+06:47:43 start FVTest.Backend.Lowering.StockMemoryCapturedCopyProductionLinked cap=6G running=1 avail=193.3G
+06:47:45 done FVTest.Backend.Lowering.StockMemoryCapturedCopyProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:47:45 start FVTest.Backend.Lowering.StockMemoryLoadStoreProductionLinked cap=6G running=1 avail=194.3G
+06:47:47 done FVTest.Backend.Lowering.StockMemoryLoadStoreProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+06:47:47 start FVTest.Backend.Lowering.StockMemoryProductionLinked cap=6G running=1 avail=194.3G
+06:47:49 done FVTest.Backend.Lowering.StockMemoryProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+06:47:49 start FVTest.Backend.Lowering.StockMemorySretCopyProductionObject cap=6G running=1 avail=192.2G
+06:47:51 done FVTest.Backend.Lowering.StockMemorySretCopyProductionObject rc=0 2s maxrss=1.7G cgpeak=0.2G built -> ok
+06:47:51 start FVTest.Backend.Lowering.StockMemoryStoreCfgProductionLinked cap=6G running=1 avail=191.8G
+06:47:53 done FVTest.Backend.Lowering.StockMemoryStoreCfgProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+06:47:53 start FVTest.Backend.Lowering.StockMemoryStoreProductionLinked cap=6G running=1 avail=194.0G
+06:47:55 done FVTest.Backend.Lowering.StockMemoryStoreProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+06:47:55 start FV.Backend.Proof.IselSzTTabS22 cap=4G running=1 avail=195.7G
+06:47:56 done FV.Backend.Proof.IselSzTTabS22 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:47:56 start FV.E2E.SemanticExecProven cap=5G running=1 avail=195.7G
+06:47:58 done FV.E2E.SemanticExecProven rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:47:58 start FV.Backend.Proof.IselCovTFamCover cap=4G running=1 avail=195.0G
+06:47:59 done FV.Backend.Proof.IselCovTFamCover rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:48:00 start FV.Backend.Proof.IselSzTTabS27 cap=5G running=1 avail=194.0G
+06:48:01 done FV.Backend.Proof.IselSzTTabS27 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:48:01 start FV.Backend.Proof.IselSzTTabS6 cap=7G running=1 avail=193.4G
+06:48:23 done FV.Backend.Proof.IselSzTTabS6 rc=0 22s maxrss=3.8G cgpeak=2.3G built -> ok
+06:48:23 start FV.Link.SemanticCompileWith cap=4G running=1 avail=195.4G
+06:48:25 done FV.Link.SemanticCompileWith rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+06:48:25 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:48:25 start FV.Backend.Proof.IselSzTTabS11 cap=4G running=1 avail=195.5G
+06:48:26 done FV.Backend.Proof.IselSzTTabS11 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:48:26 start FV.Link.SemanticExeWith cap=5G running=1 avail=194.7G
+06:48:28 done FV.Link.SemanticExeWith rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+06:48:29 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:48:29 start FV.Link.SemanticExeSourceWith cap=5G running=1 avail=194.3G
+06:48:31 done FV.Link.SemanticExeSourceWith rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+06:48:31 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:48:31 start FV.Backend.Proof.IselCovTTabS13 cap=5G running=1 avail=194.7G
+06:48:32 done FV.Backend.Proof.IselCovTTabS13 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:48:32 start FV.Backend.Proof.IselSzTTabB cap=4G running=1 avail=195.4G
+06:48:33 done FV.Backend.Proof.IselSzTTabB rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:48:33 start FV.E2E.SemanticLogicalCompilerWitness cap=5G running=1 avail=194.9G
+06:48:45 done FV.E2E.SemanticLogicalCompilerWitness rc=0 12s maxrss=2.9G cgpeak=0.4G built -> ok
+06:48:45 wait FV.Backend.Proof.IselShpTTabS42: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:48:45 start FV.Backend.Proof.IselSzTTabS46 cap=6G running=1 avail=193.3G
+06:48:46 done FV.Backend.Proof.IselSzTTabS46 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:48:46 start FV.E2E.SemanticCompilerWitness cap=5G running=1 avail=193.6G
+06:48:57 done FV.E2E.SemanticCompilerWitness rc=0 11s maxrss=2.9G cgpeak=0.4G built -> ok
+06:48:57 start FV.Backend.Proof.IselShpTTabS13 cap=5G running=1 avail=190.4G
+06:48:58 done FV.Backend.Proof.IselShpTTabS13 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:48:58 start FV.E2E.SemanticMixedCompilerWitness cap=5G running=1 avail=191.5G
+06:49:08 done FV.E2E.SemanticMixedCompilerWitness rc=0 10s maxrss=2.9G cgpeak=0.4G built -> ok
+06:49:09 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:49:09 wait FV.Backend.Proof.IselEmitTTabS42: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:49:09 start FV.Backend.Proof.IselSzTTabS29 cap=4G running=1 avail=192.9G
+06:49:10 done FV.Backend.Proof.IselSzTTabS29 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:49:10 start FV.Backend.Proof.IselCovTTabS42 cap=6G running=1 avail=191.8G
+06:49:11 done FV.Backend.Proof.IselCovTTabS42 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:49:11 start FV.Backend.Proof.IselShpTBrTable cap=4G running=1 avail=192.7G
+06:49:25 done FV.Backend.Proof.IselShpTBrTable rc=0 14s maxrss=2.0G cgpeak=0.4G built -> ok
+06:49:25 peer done FV.Backend.Proof.IselShpTTabS42 after 40s; restoring it
+06:49:25 start FV.Backend.Proof.IselShpTTabS42 cap=6G running=1 avail=194.4G
+06:49:26 done FV.Backend.Proof.IselShpTTabS42 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:49:26 peer done FV.Backend.Proof.IselEmitTTabS42 after 17s; restoring it
+06:49:26 start FV.Backend.Proof.IselEmitTTabS42 cap=6G running=1 avail=195.6G
+06:49:27 done FV.Backend.Proof.IselEmitTTabS42 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:49:27 start FV.Backend.Proof.IselShpTTry cap=4G running=1 avail=194.7G
+06:49:41 done FV.Backend.Proof.IselShpTTry rc=0 14s maxrss=2.2G cgpeak=0.5G built -> ok
+06:49:41 start FV.Backend.Proof.IselSzTTabS26 cap=5G running=1 avail=195.8G
+06:49:42 done FV.Backend.Proof.IselSzTTabS26 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:49:42 start FV.Backend.Proof.IselSzTTabS37 cap=4G running=1 avail=196.7G
+06:49:43 done FV.Backend.Proof.IselSzTTabS37 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:49:43 wait FV.Backend.Proof.IselCovTTabC13: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:49:43 start FV.Backend.Proof.IselShpTTabS25 cap=6G running=1 avail=196.2G
+06:49:44 done FV.Backend.Proof.IselShpTTabS25 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:49:44 start FV.Backend.Proof.IselCovTTabS25 cap=6G running=1 avail=195.3G
+06:49:45 done FV.Backend.Proof.IselCovTTabS25 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:49:45 start FV.Backend.Proof.IselSzTTabS47 cap=6G running=1 avail=194.7G
+06:49:46 done FV.Backend.Proof.IselSzTTabS47 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:49:46 wait FV.Backend.Proof.IselSzTTabS51: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:49:47 start FV.E2E.SemanticFallbackWitness cap=5G running=1 avail=194.0G
+06:50:39 done FV.E2E.SemanticFallbackWitness rc=0 52s maxrss=2.9G cgpeak=0.4G built -> ok
+06:50:39 peer done FV.Backend.Proof.IselCovTTabC13 after 55s; restoring it
+06:50:39 start FV.Backend.Proof.IselCovTTabC13 cap=4G running=1 avail=197.2G
+06:50:40 done FV.Backend.Proof.IselCovTTabC13 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:50:40 peer done FV.Backend.Proof.IselSzTTabS51 after 53s; restoring it
+06:50:40 start FV.Backend.Proof.IselSzTTabS51 cap=6G running=1 avail=195.6G
+06:50:41 done FV.Backend.Proof.IselSzTTabS51 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:50:41 start FV.E2E.SemanticRoutesWitness cap=5G running=1 avail=195.8G
+06:51:38 done FV.E2E.SemanticRoutesWitness rc=0 57s maxrss=2.9G cgpeak=0.4G built -> ok
+06:51:38 start FV.Backend.Proof.IselShpTTabS50 cap=5G running=1 avail=196.8G
+06:51:39 done FV.Backend.Proof.IselShpTTabS50 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:51:39 start FV.Backend.Proof.IselShpTCall cap=4G running=1 avail=196.6G
+06:51:50 done FV.Backend.Proof.IselShpTCall rc=0 11s maxrss=2.1G cgpeak=0.5G built -> ok
+06:51:50 start FV.Backend.Proof.IselCovTTabS50 cap=5G running=1 avail=194.2G
+06:51:51 done FV.Backend.Proof.IselCovTTabS50 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:51:51 start FV.Backend.Proof.IselSzTTabS20 cap=4G running=1 avail=194.7G
+06:51:52 done FV.Backend.Proof.IselSzTTabS20 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:51:52 start FV.Backend.Proof.IselEmitTTabS13 cap=5G running=1 avail=194.8G
+06:51:53 done FV.Backend.Proof.IselEmitTTabS13 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:51:53 start FV.Backend.Proof.IselShpTTabS43 cap=5G running=1 avail=195.1G
+06:51:54 done FV.Backend.Proof.IselShpTTabS43 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:51:54 start FV.Backend.Proof.IselSzTTabS48 cap=5G running=1 avail=194.8G
+06:51:55 done FV.Backend.Proof.IselSzTTabS48 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:51:55 start FV.Backend.Proof.IselCovTTabB cap=4G running=1 avail=194.6G
+06:51:56 done FV.Backend.Proof.IselCovTTabB rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:51:56 start FV.Backend.Proof.IselSzTTabS36 cap=4G running=1 avail=195.9G
+06:51:57 done FV.Backend.Proof.IselSzTTabS36 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:51:58 start FV.Backend.Proof.IselCovTTabS31 cap=5G running=1 avail=195.4G
+06:51:59 done FV.Backend.Proof.IselCovTTabS31 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:51:59 start FV.Backend.Proof.IselCovTTabS43 cap=5G running=1 avail=196.8G
+06:52:00 done FV.Backend.Proof.IselCovTTabS43 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:00 start FV.Backend.Proof.IselEmitTTabS25 cap=6G running=1 avail=196.1G
+06:52:01 done FV.Backend.Proof.IselEmitTTabS25 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:01 start FV.Backend.Proof.IselSzTTabS44 cap=4G running=1 avail=196.0G
+06:52:02 done FV.Backend.Proof.IselSzTTabS44 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:52:02 start FV.Backend.Proof.IselCovTTabS0 cap=5G running=1 avail=195.4G
+06:52:03 done FV.Backend.Proof.IselCovTTabS0 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:03 start FV.Backend.Proof.IselEmitTTabS50 cap=5G running=1 avail=194.9G
+06:52:04 done FV.Backend.Proof.IselEmitTTabS50 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:04 start FV.Backend.Proof.IselShpTTabS24 cap=5G running=1 avail=195.8G
+06:52:17 done FV.Backend.Proof.IselShpTTabS24 rc=0 13s maxrss=2.9G cgpeak=1.5G built -> ok
+06:52:17 start FV.Backend.Proof.IselSzTTabS21 cap=3G running=1 avail=196.1G
+06:52:18 done FV.Backend.Proof.IselSzTTabS21 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:18 start FV.Backend.Proof.IselSzTTabS4 cap=5G running=1 avail=195.4G
+06:52:19 done FV.Backend.Proof.IselSzTTabS4 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:19 start FV.Backend.Proof.IselShpTTabS0 cap=5G running=1 avail=195.0G
+06:52:20 done FV.Backend.Proof.IselShpTTabS0 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:20 wait FV.Backend.Proof.IselShpTTabS35: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:52:20 start FV.Backend.Proof.IselSzTTabS19 cap=4G running=1 avail=194.6G
+06:52:21 done FV.Backend.Proof.IselSzTTabS19 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:21 start FV.Backend.Proof.IselSzTTabS28 cap=4G running=1 avail=194.7G
+06:52:22 done FV.Backend.Proof.IselSzTTabS28 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:22 start FV.Backend.Proof.IselSzTTabS3 cap=5G running=1 avail=194.8G
+06:52:23 done FV.Backend.Proof.IselSzTTabS3 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:23 start FV.Backend.Proof.IselCovTTabS17 cap=5G running=1 avail=194.6G
+06:52:24 done FV.Backend.Proof.IselCovTTabS17 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:25 start FV.Backend.Proof.IselCovTTabS24 cap=5G running=1 avail=196.7G
+06:52:26 done FV.Backend.Proof.IselCovTTabS24 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:26 peer done FV.Backend.Proof.IselShpTTabS35 after 5s; restoring it
+06:52:26 start FV.Backend.Proof.IselShpTTabS35 cap=4G running=1 avail=196.1G
+06:52:27 done FV.Backend.Proof.IselShpTTabS35 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:27 start FV.Backend.Proof.IselCovTTabS37 cap=4G running=1 avail=196.0G
+06:52:28 done FV.Backend.Proof.IselCovTTabS37 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:28 start FV.Backend.Proof.IselEmitTTabS43 cap=5G running=1 avail=196.0G
+06:52:29 done FV.Backend.Proof.IselEmitTTabS43 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:29 start FV.Backend.Proof.IselShpTTabB cap=4G running=1 avail=196.2G
+06:52:38 done FV.Backend.Proof.IselShpTTabB rc=0 9s maxrss=2.1G cgpeak=0.7G built -> ok
+06:52:38 start FV.Backend.Proof.IselShpTTabS1 cap=5G running=1 avail=194.9G
+06:52:39 done FV.Backend.Proof.IselShpTTabS1 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:39 start FV.Backend.Proof.IselShpTTabS17 cap=5G running=1 avail=194.8G
+06:52:40 done FV.Backend.Proof.IselShpTTabS17 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:40 start FV.Backend.Proof.IselSzTTabS2 cap=4G running=1 avail=196.8G
+06:52:41 done FV.Backend.Proof.IselSzTTabS2 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:41 start FV.Backend.Proof.IselSzTTabS34 cap=4G running=1 avail=196.7G
+06:52:42 done FV.Backend.Proof.IselSzTTabS34 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:52:42 start FV.Backend.Proof.IselCovTTabS1 cap=5G running=1 avail=195.5G
+06:52:43 done FV.Backend.Proof.IselCovTTabS1 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:43 start FV.Backend.Proof.IselCovTTabS27 cap=4G running=1 avail=195.4G
+06:52:44 done FV.Backend.Proof.IselCovTTabS27 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:44 start FV.Backend.Proof.IselCovTTabS35 cap=4G running=1 avail=196.3G
+06:52:45 done FV.Backend.Proof.IselCovTTabS35 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:45 start FV.Backend.Proof.IselCovTTabS49 cap=5G running=1 avail=196.0G
+06:52:46 done FV.Backend.Proof.IselCovTTabS49 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:46 start FV.Backend.Proof.IselShpTTabS11 cap=4G running=1 avail=195.8G
+06:52:54 done FV.Backend.Proof.IselShpTTabS11 rc=0 8s maxrss=1.9G cgpeak=0.5G built -> ok
+06:52:54 start FV.Backend.Proof.IselSzTTabS39 cap=4G running=1 avail=196.3G
+06:52:55 done FV.Backend.Proof.IselSzTTabS39 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:56 start FV.Backend.Proof.IselCovTTabS12 cap=4G running=1 avail=197.1G
+06:52:57 done FV.Backend.Proof.IselCovTTabS12 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:57 start FV.Backend.Proof.IselCovTTabS22 cap=4G running=1 avail=197.0G
+06:52:58 done FV.Backend.Proof.IselCovTTabS22 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:58 start FV.Backend.Proof.IselCovTTabS26 cap=4G running=1 avail=196.2G
+06:52:59 done FV.Backend.Proof.IselCovTTabS26 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:52:59 start FV.Backend.Proof.IselShpTTabS22 cap=4G running=1 avail=195.2G
+06:53:00 done FV.Backend.Proof.IselShpTTabS22 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:00 start FV.Backend.Proof.IselShpTTabS26 cap=4G running=1 avail=195.7G
+06:53:09 done FV.Backend.Proof.IselShpTTabS26 rc=0 9s maxrss=2.4G cgpeak=1.0G built -> ok
+06:53:09 start FV.Backend.Proof.IselShpTTabS27 cap=4G running=1 avail=195.1G
+06:53:10 done FV.Backend.Proof.IselShpTTabS27 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:10 wait FV.Backend.Proof.IselShpTTabS29: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:53:10 wait FV.Backend.Proof.IselShpTTabS32: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:53:10 wait FV.Backend.Proof.IselShpTTabS37: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:53:10 start FV.Backend.Proof.IselShpTTabS46 cap=5G running=1 avail=196.4G
+06:53:20 done FV.Backend.Proof.IselShpTTabS46 rc=0 10s maxrss=3.0G cgpeak=1.6G built -> ok
+06:53:20 peer done FV.Backend.Proof.IselShpTTabS29 after 10s; restoring it
+06:53:20 start FV.Backend.Proof.IselShpTTabS29 cap=4G running=1 avail=196.7G
+06:53:21 done FV.Backend.Proof.IselShpTTabS29 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:21 peer done FV.Backend.Proof.IselShpTTabS32 after 11s; restoring it
+06:53:21 start FV.Backend.Proof.IselShpTTabS32 cap=4G running=1 avail=196.5G
+06:53:22 done FV.Backend.Proof.IselShpTTabS32 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:22 peer done FV.Backend.Proof.IselShpTTabS37 after 12s; restoring it
+06:53:22 start FV.Backend.Proof.IselShpTTabS37 cap=4G running=1 avail=196.9G
+06:53:23 done FV.Backend.Proof.IselShpTTabS37 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:23 start FV.Backend.Proof.IselShpTTabS47 cap=5G running=1 avail=196.1G
+06:53:31 done FV.Backend.Proof.IselShpTTabS47 rc=0 8s maxrss=2.6G cgpeak=1.2G built -> ok
+06:53:31 start FV.Backend.Proof.IselShpTTabS49 cap=5G running=1 avail=197.2G
+06:53:32 done FV.Backend.Proof.IselShpTTabS49 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:32 start FV.Backend.Proof.IselShpTTabS6 cap=5G running=1 avail=196.8G
+06:53:40 done FV.Backend.Proof.IselShpTTabS6 rc=0 8s maxrss=2.9G cgpeak=1.4G built -> ok
+06:53:40 start FV.Backend.Proof.IselSzTTabS14 cap=4G running=1 avail=195.3G
+06:53:41 done FV.Backend.Proof.IselSzTTabS14 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:42 start FV.Backend.Proof.IselCovTTabS11 cap=4G running=1 avail=194.2G
+06:53:43 done FV.Backend.Proof.IselCovTTabS11 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:43 start FV.Backend.Proof.IselCovTTabS29 cap=4G running=1 avail=193.6G
+06:53:44 done FV.Backend.Proof.IselCovTTabS29 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:44 start FV.Backend.Proof.IselCovTTabS46 cap=5G running=1 avail=193.5G
+06:53:45 done FV.Backend.Proof.IselCovTTabS46 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:45 start FV.Backend.Proof.IselCovTTabS47 cap=5G running=1 avail=194.6G
+06:53:46 done FV.Backend.Proof.IselCovTTabS47 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:46 start FV.Backend.Proof.IselCovTTabS6 cap=5G running=1 avail=196.8G
+06:53:47 done FV.Backend.Proof.IselCovTTabS6 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:47 start FV.Backend.Proof.IselPrgExtSoundT cap=4G running=1 avail=196.9G
+06:53:48 done FV.Backend.Proof.IselPrgExtSoundT rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:48 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:53:48 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:53:48 start FV.Backend.Proof.IselShpTTabS12 cap=4G running=1 avail=196.5G
+06:53:49 done FV.Backend.Proof.IselShpTTabS12 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:49 start FV.Backend.Proof.IselShpTTabS36 cap=4G running=1 avail=197.2G
+06:53:56 done FV.Backend.Proof.IselShpTTabS36 rc=0 7s maxrss=1.9G cgpeak=0.5G built -> ok
+06:53:56 start FV.Backend.Proof.IselSzTTabS16 cap=4G running=1 avail=196.3G
+06:53:57 done FV.Backend.Proof.IselSzTTabS16 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:57 start FV.Backend.Proof.IselCovTTabS34 cap=4G running=1 avail=196.5G
+06:53:58 done FV.Backend.Proof.IselCovTTabS34 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:53:59 start FV.Backend.Proof.IselCovTTabS44 cap=4G running=1 avail=197.2G
+06:54:00 done FV.Backend.Proof.IselCovTTabS44 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:00 start FV.Backend.Proof.IselCovTTabS51 cap=5G running=1 avail=196.9G
+06:54:01 done FV.Backend.Proof.IselCovTTabS51 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:01 wait FV.Backend.Proof.IselShpTTabS44: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:54:01 start FV.Backend.Proof.IselCovTCtor cap=3G running=1 avail=196.5G
+06:54:02 done FV.Backend.Proof.IselCovTCtor rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:02 check (ready) 3 modules in 0.1s: 0 up-to-date, 3 out of date, 0 wait for those
+06:54:02 start FV.Backend.Proof.IselCovTTabS20 cap=3G running=1 avail=196.5G
+06:54:03 done FV.Backend.Proof.IselCovTTabS20 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:03 start FV.Backend.Proof.IselCovTTabS36 cap=4G running=1 avail=196.9G
+06:54:04 done FV.Backend.Proof.IselCovTTabS36 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:04 start FV.Backend.Proof.IselCovTTabS48 cap=4G running=1 avail=197.4G
+06:54:05 done FV.Backend.Proof.IselCovTTabS48 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:05 start FV.Backend.Proof.IselEmitTTabB cap=4G running=1 avail=197.1G
+06:54:06 done FV.Backend.Proof.IselEmitTTabB rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:06 start FV.Backend.Proof.IselEmitTTabS31 cap=4G running=1 avail=196.9G
+06:54:07 done FV.Backend.Proof.IselEmitTTabS31 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:07 peer done FV.Backend.Proof.IselShpTTabS44 after 7s; restoring it
+06:54:07 start FV.Backend.Proof.IselShpTTabS44 cap=4G running=1 avail=196.7G
+06:54:08 done FV.Backend.Proof.IselShpTTabS44 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:08 start FV.Backend.Proof.IselShpTTabS20 cap=3G running=1 avail=196.6G
+06:54:09 done FV.Backend.Proof.IselShpTTabS20 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:09 start FV.Backend.Proof.IselShpTTabS21 cap=3G running=1 avail=197.2G
+06:54:14 done FV.Backend.Proof.IselShpTTabS21 rc=0 5s maxrss=1.8G cgpeak=0.4G built -> ok
+06:54:14 start FV.Backend.Proof.IselShpTTabS31 cap=3G running=1 avail=195.5G
+06:54:15 done FV.Backend.Proof.IselShpTTabS31 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:15 start FV.Backend.Proof.IselShpTTabS4 cap=4G running=1 avail=197.9G
+06:54:16 done FV.Backend.Proof.IselShpTTabS4 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:17 start FV.Backend.Proof.IselShpTTabS48 cap=4G running=1 avail=197.2G
+06:54:18 done FV.Backend.Proof.IselShpTTabS48 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:18 start FV.Backend.Proof.IselSzTTabS7 cap=4G running=1 avail=197.1G
+06:54:19 done FV.Backend.Proof.IselSzTTabS7 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:19 start FV.Backend.Proof.IselShpTTabS2 cap=4G running=1 avail=197.5G
+06:54:20 done FV.Backend.Proof.IselShpTTabS2 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:20 start FV.Backend.Proof.IselShpTTabS51 cap=5G running=1 avail=197.3G
+06:54:21 done FV.Backend.Proof.IselShpTTabS51 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:21 start FV.Backend.Proof.IselSzTTabS10 cap=3G running=1 avail=197.1G
+06:54:22 done FV.Backend.Proof.IselSzTTabS10 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:22 start FV.Backend.Proof.IselSzTTabS33 cap=4G running=1 avail=194.7G
+06:54:23 done FV.Backend.Proof.IselSzTTabS33 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:23 start FV.Backend.Proof.IselCovTTabS2 cap=4G running=1 avail=191.2G
+06:54:24 done FV.Backend.Proof.IselCovTTabS2 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:24 start FV.Backend.Proof.IselCovTTabS21 cap=3G running=1 avail=189.2G
+06:54:25 done FV.Backend.Proof.IselCovTTabS21 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:25 start FV.Backend.Proof.IselCovTTabS28 cap=3G running=1 avail=186.8G
+06:54:26 done FV.Backend.Proof.IselCovTTabS28 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:26 start FV.Backend.Proof.IselCovTTabS3 cap=4G running=1 avail=187.2G
+06:54:27 done FV.Backend.Proof.IselCovTTabS3 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:27 start FV.Backend.Proof.IselCovTTabS33 cap=3G running=1 avail=189.9G
+06:54:28 done FV.Backend.Proof.IselCovTTabS33 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:28 start FV.Backend.Proof.IselCovTTabS4 cap=4G running=1 avail=196.4G
+06:54:29 done FV.Backend.Proof.IselCovTTabS4 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:29 start FV.Backend.Proof.IselShpTTabS19 cap=3G running=1 avail=196.0G
+06:54:33 done FV.Backend.Proof.IselShpTTabS19 rc=0 4s maxrss=1.8G cgpeak=0.4G built -> ok
+06:54:33 start FV.Backend.Proof.IselShpTTabS28 cap=3G running=1 avail=196.3G
+06:54:34 done FV.Backend.Proof.IselShpTTabS28 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:35 start FV.Backend.Proof.IselShpTTabS3 cap=4G running=1 avail=197.0G
+06:54:36 done FV.Backend.Proof.IselShpTTabS3 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:36 start FV.Backend.Proof.IselShpTTabS34 cap=4G running=1 avail=196.3G
+06:54:40 done FV.Backend.Proof.IselShpTTabS34 rc=0 4s maxrss=1.9G cgpeak=0.5G built -> ok
+06:54:40 start FV.Backend.Proof.IselShpTTabS39 cap=4G running=1 avail=196.6G
+06:54:41 done FV.Backend.Proof.IselShpTTabS39 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:41 wait FV.Backend.Proof.IselShpTTabS7: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:54:41 start FV.Backend.Proof.IselSzTTabS18 cap=3G running=1 avail=196.1G
+06:54:42 done FV.Backend.Proof.IselSzTTabS18 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:42 start FV.Backend.Proof.IselSzTTabS45 cap=4G running=1 avail=197.4G
+06:54:43 done FV.Backend.Proof.IselSzTTabS45 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:43 peer done FV.Backend.Proof.IselShpTTabS7 after 2s; restoring it
+06:54:43 start FV.Backend.Proof.IselShpTTabS7 cap=3G running=1 avail=197.2G
+06:54:44 done FV.Backend.Proof.IselShpTTabS7 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:44 start FV.Backend.Proof.IselCovTTabS16 cap=4G running=1 avail=197.0G
+06:54:45 done FV.Backend.Proof.IselCovTTabS16 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:45 start FV.Backend.Proof.IselCovTTabS19 cap=3G running=1 avail=197.5G
+06:54:46 done FV.Backend.Proof.IselCovTTabS19 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:54:46 start FV.Backend.Proof.IselCovTTabS39 cap=4G running=1 avail=197.6G
+06:54:47 done FV.Backend.Proof.IselCovTTabS39 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:47 start FV.Backend.Proof.IselCovTTabS7 cap=3G running=1 avail=196.8G
+06:54:48 done FV.Backend.Proof.IselCovTTabS7 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:54:48 start FV.Backend.Proof.IselPrgTryLastT cap=4G running=1 avail=196.0G
+06:54:49 done FV.Backend.Proof.IselPrgTryLastT rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:49 start FV.Backend.Proof.IselShpTTabS10 cap=3G running=1 avail=197.1G
+06:54:52 done FV.Backend.Proof.IselShpTTabS10 rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+06:54:52 wait FV.Backend.Proof.IselShpTTabS14: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:54:52 start FV.Backend.Proof.IselShpTTabS33 cap=3G running=1 avail=196.7G
+06:54:53 done FV.Backend.Proof.IselShpTTabS33 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:54:53 peer done FV.Backend.Proof.IselShpTTabS14 after 1s; restoring it
+06:54:53 start FV.Backend.Proof.IselShpTTabS14 cap=4G running=1 avail=197.6G
+06:54:54 done FV.Backend.Proof.IselShpTTabS14 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:54:54 start FV.Backend.Proof.IselSzTTabS38 cap=4G running=1 avail=197.2G
+06:54:55 done FV.Backend.Proof.IselSzTTabS38 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:56 start FV.Backend.Proof.IselCovTTabS10 cap=3G running=1 avail=197.0G
+06:54:57 done FV.Backend.Proof.IselCovTTabS10 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:54:57 start FV.Backend.Proof.IselCovTTabS14 cap=4G running=1 avail=197.1G
+06:54:58 done FV.Backend.Proof.IselCovTTabS14 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:58 start FV.Backend.Proof.IselCovTTabS38 cap=3G running=1 avail=196.7G
+06:54:59 done FV.Backend.Proof.IselCovTTabS38 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:54:59 start FV.Backend.Proof.IselCovTTabS45 cap=3G running=1 avail=197.3G
+06:55:00 done FV.Backend.Proof.IselCovTTabS45 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:00 start FV.Backend.Proof.IselCovTTabS8 cap=3G running=1 avail=197.0G
+06:55:01 done FV.Backend.Proof.IselCovTTabS8 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:55:01 start FV.Backend.Proof.IselCovTTabS9 cap=3G running=1 avail=197.2G
+06:55:02 done FV.Backend.Proof.IselCovTTabS9 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:55:02 start FV.Backend.Proof.IselEmitTTabS0 cap=5G running=1 avail=197.4G
+06:55:03 done FV.Backend.Proof.IselEmitTTabS0 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:03 start FV.Backend.Proof.IselEmitTTabS35 cap=4G running=1 avail=196.6G
+06:55:04 done FV.Backend.Proof.IselEmitTTabS35 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:04 start FV.Backend.Proof.IselEmitTTabS37 cap=4G running=1 avail=197.0G
+06:55:05 done FV.Backend.Proof.IselEmitTTabS37 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:05 start FV.Backend.Proof.IselEmitTTabS47 cap=5G running=1 avail=197.1G
+06:55:06 done FV.Backend.Proof.IselEmitTTabS47 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:06 start FV.Backend.Proof.IselEmitTTabS49 cap=5G running=1 avail=196.5G
+06:55:07 done FV.Backend.Proof.IselEmitTTabS49 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:07 start FV.Backend.Proof.IselShpTTabS16 cap=3G running=1 avail=196.5G
+06:55:08 done FV.Backend.Proof.IselShpTTabS16 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:08 start FV.Backend.Proof.IselShpTTabS18 cap=3G running=1 avail=196.2G
+06:55:09 done FV.Backend.Proof.IselShpTTabS18 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:55:09 start FV.Backend.Proof.IselShpTTabS38 cap=3G running=1 avail=195.5G
+06:55:10 done FV.Backend.Proof.IselShpTTabS38 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:10 start FV.Backend.Proof.IselShpTTabS45 cap=3G running=1 avail=195.2G
+06:55:11 done FV.Backend.Proof.IselShpTTabS45 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:12 start FV.Backend.Proof.IselShpTTabS8 cap=3G running=1 avail=194.4G
+06:55:15 done FV.Backend.Proof.IselShpTTabS8 rc=0 3s maxrss=1.7G cgpeak=0.3G built -> ok
+06:55:15 wait FV.Backend.Proof.IselShpTTabS9: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:55:15 start FV.Backend.Proof.IselSzTTabS8 cap=3G running=1 avail=193.0G
+06:55:16 done FV.Backend.Proof.IselSzTTabS8 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:55:16 start FV.Backend.Proof.IselSzTTabS9 cap=3G running=1 avail=193.9G
+06:55:17 done FV.Backend.Proof.IselSzTTabS9 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:55:17 peer done FV.Backend.Proof.IselShpTTabS9 after 2s; restoring it
+06:55:17 start FV.Backend.Proof.IselShpTTabS9 cap=3G running=1 avail=193.2G
+06:55:18 done FV.Backend.Proof.IselShpTTabS9 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:18 start FV.Backend.Proof.IselCovTTabS18 cap=3G running=1 avail=192.4G
+06:55:19 done FV.Backend.Proof.IselCovTTabS18 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:19 start FV.Backend.Proof.IselCovTTabS41 cap=3G running=1 avail=193.2G
+06:55:20 done FV.Backend.Proof.IselCovTTabS41 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:20 start FV.Backend.Proof.IselEmitTTabS17 cap=5G running=1 avail=192.7G
+06:55:21 done FV.Backend.Proof.IselEmitTTabS17 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:21 start FV.Backend.Proof.IselEmitTTabS24 cap=5G running=1 avail=197.4G
+06:55:22 done FV.Backend.Proof.IselEmitTTabS24 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:22 start FV.Backend.Proof.IselEmitTTabS46 cap=5G running=1 avail=196.7G
+06:55:23 done FV.Backend.Proof.IselEmitTTabS46 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:23 wait FV.Backend.Proof.IselShpTCtor: another worktree is building it (/home/lee/clifv/.worktrees/stock-alu-roots-20261030 pid 1305617)
+06:55:23 start FV.Backend.Proof.IselShpTTabS40 cap=3G running=1 avail=196.7G
+06:55:24 done FV.Backend.Proof.IselShpTTabS40 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:24 peer done FV.Backend.Proof.IselShpTCtor after 1s; restoring it
+06:55:24 start FV.Backend.Proof.IselShpTCtor cap=4G running=1 avail=196.5G
+06:55:25 done FV.Backend.Proof.IselShpTCtor rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:25 start FV.Backend.Proof.IselShpTTabS41 cap=3G running=1 avail=196.6G
+06:55:26 done FV.Backend.Proof.IselShpTTabS41 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:26 start FV.Backend.Proof.IselCovTModel cap=3G running=1 avail=197.1G
+06:55:27 done FV.Backend.Proof.IselCovTModel rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:27 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+06:55:28 start FV.Backend.Proof.IselCovTTabS15 cap=3G running=1 avail=198.0G
+06:55:29 done FV.Backend.Proof.IselCovTTabS15 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:29 start FV.Backend.Proof.IselCovTTabS40 cap=3G running=1 avail=197.6G
+06:55:30 done FV.Backend.Proof.IselCovTTabS40 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:30 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:55:30 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:55:30 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+06:55:30 start FV.Backend.Proof.IselEmitTTabS29 cap=4G running=1 avail=197.3G
+06:55:31 done FV.Backend.Proof.IselEmitTTabS29 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:31 start FV.Backend.Proof.IselEmitTTabS48 cap=4G running=1 avail=197.0G
+06:55:32 done FV.Backend.Proof.IselEmitTTabS48 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:32 start FV.Backend.Proof.IselShpTTabS15 cap=3G running=1 avail=196.9G
+06:55:33 done FV.Backend.Proof.IselShpTTabS15 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:55:33 start FV.Backend.Proof.IselShpTTabS23 cap=3G running=1 avail=197.2G
+06:55:34 done FV.Backend.Proof.IselShpTTabS23 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:35 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:55:35 start FV.Backend.Proof.IselSzTTabS15 cap=3G running=1 avail=197.1G
+06:55:36 done FV.Backend.Proof.IselSzTTabS15 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:36 start FV.Backend.Proof.IselEmitTTabS22 cap=4G running=1 avail=197.4G
+06:55:37 done FV.Backend.Proof.IselEmitTTabS22 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:37 start FV.Backend.Proof.IselEmitTTabS27 cap=4G running=1 avail=197.4G
+06:55:38 done FV.Backend.Proof.IselEmitTTabS27 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:38 start FV.Backend.Proof.IselEmitTTabS44 cap=4G running=1 avail=197.5G
+06:55:39 done FV.Backend.Proof.IselEmitTTabS44 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:39 start FV.Backend.Proof.IselEmitTTabS6 cap=5G running=1 avail=197.0G
+06:55:40 done FV.Backend.Proof.IselEmitTTabS6 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:40 start FV.Backend.Proof.IselShpTModel cap=4G running=1 avail=197.1G
+06:55:41 done FV.Backend.Proof.IselShpTModel rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:41 check (ready) 1 modules in 0.1s: 0 up-to-date, 1 out of date, 0 wait for those
+06:55:41 start FV.Backend.Proof.IselSzTTabS23 cap=3G running=1 avail=196.9G
+06:55:42 done FV.Backend.Proof.IselSzTTabS23 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:42 start FV.Backend.Proof.IselSzTTabS41 cap=3G running=1 avail=196.9G
+06:55:43 done FV.Backend.Proof.IselSzTTabS41 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:43 start FV.Backend.Proof.IselEmitTTabS1 cap=5G running=1 avail=197.3G
+06:55:44 done FV.Backend.Proof.IselEmitTTabS1 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:44 start FV.Backend.Proof.IselEmitTTabS12 cap=4G running=1 avail=196.7G
+06:55:45 done FV.Backend.Proof.IselEmitTTabS12 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:45 start FV.Backend.Proof.IselSzTTabS40 cap=3G running=1 avail=197.0G
+06:55:46 done FV.Backend.Proof.IselSzTTabS40 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:47 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:55:47 start FV.Backend.Proof.IselEmitTTabS11 cap=4G running=1 avail=197.0G
+06:55:48 done FV.Backend.Proof.IselEmitTTabS11 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:48 start FV.Backend.Proof.IselEmitTTabS26 cap=4G running=1 avail=196.7G
+06:55:49 done FV.Backend.Proof.IselEmitTTabS26 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:49 start FV.Backend.Proof.IselEmitTTabS34 cap=4G running=1 avail=196.5G
+06:55:50 done FV.Backend.Proof.IselEmitTTabS34 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:50 start FV.Backend.Proof.IselEmitTTabS36 cap=4G running=1 avail=197.0G
+06:55:51 done FV.Backend.Proof.IselEmitTTabS36 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:51 start FV.Backend.Proof.IselEmitTTabS39 cap=4G running=1 avail=196.7G
+06:55:52 done FV.Backend.Proof.IselEmitTTabS39 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:52 start FV.Backend.Proof.IselEmitTTabS4 cap=4G running=1 avail=197.0G
+06:55:53 done FV.Backend.Proof.IselEmitTTabS4 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:53 start FV.Backend.Proof.IselEmitTTabS51 cap=5G running=1 avail=197.0G
+06:55:54 done FV.Backend.Proof.IselEmitTTabS51 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:54 start FV.Backend.Proof.IselShpTDriver cap=4G running=1 avail=197.0G
+06:55:55 done FV.Backend.Proof.IselShpTDriver rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:55 start FV.Backend.Proof.IselSzTSound cap=3G running=1 avail=196.4G
+06:55:56 done FV.Backend.Proof.IselSzTSound rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:55:56 start FV.Backend.Proof.IselEmitTTabS20 cap=3G running=1 avail=196.7G
+06:55:57 done FV.Backend.Proof.IselEmitTTabS20 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:55:57 start FV.Backend.Proof.IselPrgCtorNoneT cap=3G running=1 avail=197.9G
+06:55:58 done FV.Backend.Proof.IselPrgCtorNoneT rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:55:59 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:55:59 start FV.Backend.Proof.IselSzTExt cap=4G running=1 avail=197.6G
+06:56:00 done FV.Backend.Proof.IselSzTExt rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:56:00 check (ready) 1 modules in 0.3s: 1 up-to-date, 0 out of date, 0 wait for those
+06:56:00 check (ready) 1 modules in 0.3s: 1 up-to-date, 0 out of date, 0 wait for those
+06:56:00 start FV.E2E.LinkArmT cap=5G running=1 avail=196.7G
+06:56:04 done FV.E2E.LinkArmT rc=0 4s maxrss=2.9G cgpeak=0.6G built -> ok
+06:56:05 check (ready) 3 modules in 0.3s: 0 up-to-date, 3 out of date, 0 wait for those
+06:56:05 start FV.Backend.Proof.IselEmitTTabS38 cap=3G running=1 avail=197.2G
+06:56:06 done FV.Backend.Proof.IselEmitTTabS38 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:06 start FV.Backend.Proof.IselEmitTHand cap=4G running=1 avail=196.9G
+06:56:07 done FV.Backend.Proof.IselEmitTHand rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:07 start FV.Backend.Proof.IselEmitTTabS21 cap=3G running=1 avail=196.9G
+06:56:08 done FV.Backend.Proof.IselEmitTTabS21 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:08 start FV.Backend.Proof.IselEmitTTabS28 cap=3G running=1 avail=196.6G
+06:56:09 done FV.Backend.Proof.IselEmitTTabS28 rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:56:09 start FV.Backend.Proof.IselEmitTTabS7 cap=3G running=1 avail=198.2G
+06:56:10 done FV.Backend.Proof.IselEmitTTabS7 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:10 start FV.Backend.Proof.IselEmitTChk cap=3G running=1 avail=197.4G
+06:56:11 done FV.Backend.Proof.IselEmitTChk rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:11 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:56:11 start FV.Backend.Proof.IselEmitTTabS16 cap=4G running=1 avail=197.5G
+06:56:12 done FV.Backend.Proof.IselEmitTTabS16 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:12 start FV.Backend.Proof.IselEmitTTabS19 cap=3G running=1 avail=197.2G
+06:56:13 done FV.Backend.Proof.IselEmitTTabS19 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:13 start FV.Backend.Proof.IselEmitTTabS3 cap=4G running=1 avail=197.6G
+06:56:14 done FV.Backend.Proof.IselEmitTTabS3 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:14 start FV.Backend.Proof.IselEmitTTabS33 cap=3G running=1 avail=196.8G
+06:56:15 done FV.Backend.Proof.IselEmitTTabS33 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:16 start FV.Backend.Proof.IselEmitTTabS45 cap=3G running=1 avail=197.2G
+06:56:17 done FV.Backend.Proof.IselEmitTTabS45 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:17 start FV.E2E.LinkCheckT cap=5G running=1 avail=197.8G
+06:56:19 done FV.E2E.LinkCheckT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:56:19 check (ready) 6 modules in 0.4s: 0 up-to-date, 6 out of date, 0 wait for those
+06:56:19 start FV.Backend.Proof.IselEmitTTabS10 cap=3G running=1 avail=197.4G
+06:56:20 done FV.Backend.Proof.IselEmitTTabS10 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:20 start FV.Backend.Proof.IselEmitTTabS14 cap=4G running=1 avail=197.2G
+06:56:21 done FV.Backend.Proof.IselEmitTTabS14 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:21 start FV.Backend.Proof.IselEmitTTabS2 cap=4G running=1 avail=196.7G
+06:56:22 done FV.Backend.Proof.IselEmitTTabS2 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:22 start FV.Backend.Proof.IselEmitTTabS40 cap=3G running=1 avail=197.3G
+06:56:23 done FV.Backend.Proof.IselEmitTTabS40 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:23 start FV.Backend.Proof.IselEmitTTabS41 cap=3G running=1 avail=196.8G
+06:56:24 done FV.Backend.Proof.IselEmitTTabS41 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:24 start FV.Backend.Proof.IselEmitTTabS8 cap=3G running=1 avail=196.3G
+06:56:25 done FV.Backend.Proof.IselEmitTTabS8 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:25 start FV.Backend.Proof.IselEmitTTabS9 cap=3G running=1 avail=197.1G
+06:56:26 done FV.Backend.Proof.IselEmitTTabS9 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:27 start FV.Backend.Proof.IselPrgHandT cap=3G running=1 avail=197.0G
+06:56:28 done FV.Backend.Proof.IselPrgHandT rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:28 check (ready) 1 modules in 0.1s: 1 up-to-date, 0 out of date, 0 wait for those
+06:56:28 start FV.E2E.PipelineCheckT cap=5G running=1 avail=196.9G
+06:56:30 done FV.E2E.PipelineCheckT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:56:30 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:56:30 start FV.Backend.Proof.IselEmitTTabS18 cap=3G running=1 avail=197.1G
+06:56:31 done FV.Backend.Proof.IselEmitTTabS18 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:31 start FV.E2E.BinCheckT cap=5G running=1 avail=196.9G
+06:56:33 done FV.E2E.BinCheckT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:56:33 start FV.E2E.DeadCleanupLinkCheckT cap=5G running=1 avail=196.7G
+06:56:35 done FV.E2E.DeadCleanupLinkCheckT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:56:36 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:56:36 start FV.E2E.LinkGoodT cap=5G running=1 avail=196.7G
+06:56:39 done FV.E2E.LinkGoodT rc=0 3s maxrss=2.7G cgpeak=0.4G built -> ok
+06:56:39 start FV.E2E.StackBoundT cap=5G running=1 avail=196.5G
+06:56:41 done FV.E2E.StackBoundT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:56:41 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:56:41 start FV.Backend.Proof.IselEmitTTabS15 cap=3G running=1 avail=197.4G
+06:56:42 done FV.Backend.Proof.IselEmitTTabS15 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:42 start FV.Backend.Proof.IselEmitTTabS23 cap=3G running=1 avail=197.4G
+06:56:43 done FV.Backend.Proof.IselEmitTTabS23 rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:43 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:56:43 start FV.E2E.BinaryT cap=5G running=1 avail=197.6G
+06:56:45 done FV.E2E.BinaryT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:56:46 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:56:46 start FV.E2E.DeadCleanupBinCheckT cap=5G running=1 avail=197.6G
+06:56:48 done FV.E2E.DeadCleanupBinCheckT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:56:48 start FV.E2E.DeadCleanupStackBoundT cap=5G running=1 avail=197.4G
+06:56:50 done FV.E2E.DeadCleanupStackBoundT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:56:50 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:56:50 start FV.E2E.ExecBytesT cap=5G running=1 avail=198.3G
+06:56:52 done FV.E2E.ExecBytesT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:56:53 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:56:53 start FV.Backend.Proof.IselEmitTLast cap=4G running=1 avail=197.6G
+06:56:54 done FV.Backend.Proof.IselEmitTLast rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:56:54 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:56:54 start FV.E2E.BinaryGoodT cap=5G running=1 avail=198.1G
+06:56:56 done FV.E2E.BinaryGoodT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:56:56 start FV.E2E.DeadCleanupBinaryT cap=5G running=1 avail=198.0G
+06:56:59 done FV.E2E.DeadCleanupBinaryT rc=0 3s maxrss=2.7G cgpeak=0.4G built -> ok
+06:56:59 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:56:59 start FV.E2E.DeadCleanupExecBytesT cap=5G running=1 avail=192.9G
+06:57:01 done FV.E2E.DeadCleanupExecBytesT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:57:01 start FV.E2E.DeadCleanupExecStaticT cap=5G running=1 avail=189.7G
+06:57:03 done FV.E2E.DeadCleanupExecStaticT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:04 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:04 start FV.E2E.SemanticPipelineCheckT cap=5G running=1 avail=191.5G
+06:57:06 done FV.E2E.SemanticPipelineCheckT rc=0 2s maxrss=2.7G cgpeak=0.4G built -> ok
+06:57:06 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:06 start FV.E2E.DeadCleanupBinaryGoodT cap=5G running=1 avail=197.4G
+06:57:08 done FV.E2E.DeadCleanupBinaryGoodT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:57:08 start FV.E2E.DeadCleanupExecRunNT cap=5G running=1 avail=197.4G
+06:57:10 done FV.E2E.DeadCleanupExecRunNT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:11 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:11 start FV.E2E.ExecStaticT cap=5G running=1 avail=197.3G
+06:57:13 done FV.E2E.ExecStaticT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:13 check (ready) 3 modules in 0.4s: 0 up-to-date, 3 out of date, 0 wait for those
+06:57:13 start FV.E2E.LinkOutT cap=5G running=1 avail=197.2G
+06:57:16 done FV.E2E.LinkOutT rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:16 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:16 start FV.E2E.DeadCleanupExecGoodRunT cap=5G running=1 avail=197.2G
+06:57:18 done FV.E2E.DeadCleanupExecGoodRunT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:18 start FV.E2E.ExecGoodReadsT cap=5G running=1 avail=197.0G
+06:57:20 done FV.E2E.ExecGoodReadsT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:57:20 start FV.E2E.ExecGoodRunT cap=5G running=1 avail=197.1G
+06:57:22 done FV.E2E.ExecGoodRunT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:22 start FV.E2E.ExecGotT cap=5G running=1 avail=197.7G
+06:57:24 done FV.E2E.ExecGotT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:25 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:25 start FV.E2E.ExecRunNT cap=5G running=1 avail=197.4G
+06:57:27 done FV.E2E.ExecRunNT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:57:27 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:57:27 start FV.E2E.SemanticStackBoundTS cap=5G running=1 avail=197.4G
+06:57:29 done FV.E2E.SemanticStackBoundTS rc=1 2s maxrss=2.0G cgpeak=0.2G up-to-date -> fail
+06:57:29 start FV.Link.DeadCleanupExeTotal cap=4G running=1 avail=197.3G
+06:57:30 done FV.Link.DeadCleanupExeTotal rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:57:31 check (ready) 1 modules in 0.3s: 1 up-to-date, 0 out of date, 0 wait for those
+06:57:31 start FV.E2E.DeadCleanupExecGoodReadsT cap=5G running=1 avail=197.2G
+06:57:33 done FV.E2E.DeadCleanupExecGoodReadsT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:33 start FV.E2E.DeadCleanupExecGotT cap=5G running=1 avail=198.0G
+06:57:35 done FV.E2E.DeadCleanupExecGotT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:35 start FV.E2E.ExecProvenT cap=5G running=1 avail=197.6G
+06:57:37 done FV.E2E.ExecProvenT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:37 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:37 start FV.E2E.LinkOutCleanupT cap=5G running=1 avail=197.7G
+06:57:40 done FV.E2E.LinkOutCleanupT rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:40 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:57:41 start FV.Backend.Proof.FormsCoverCompleteT cap=4G running=1 avail=197.6G
+06:57:42 done FV.Backend.Proof.FormsCoverCompleteT rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:57:42 start FV.Backend.Proof.IselPrgCoverTermT cap=4G running=1 avail=197.6G
+06:57:43 done FV.Backend.Proof.IselPrgCoverTermT rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:57:43 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:57:43 start FV.Backend.Proof.SpillResClassT cap=4G running=1 avail=197.5G
+06:57:44 done FV.Backend.Proof.SpillResClassT rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:57:44 start FV.E2E.DeadCleanupExecProvenT cap=5G running=1 avail=197.6G
+06:57:46 done FV.E2E.DeadCleanupExecProvenT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:46 start FV.E2E.LinkScopeInputT cap=4G running=1 avail=197.5G
+06:57:47 done FV.E2E.LinkScopeInputT rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:57:47 check (ready) 2 modules in 0.3s: 2 up-to-date, 0 out of date, 0 wait for those
+06:57:47 check (ready) 1 modules in 0.3s: 1 up-to-date, 0 out of date, 0 wait for those
+06:57:48 start FV.E2E.SpillCtlCheckT cap=4G running=1 avail=197.5G
+06:57:49 done FV.E2E.SpillCtlCheckT rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:57:49 check (ready) 1 modules in 0.3s: 1 up-to-date, 0 out of date, 0 wait for those
+06:57:49 start FV.Link.ExeInputReach cap=4G running=1 avail=197.4G
+06:57:50 done FV.Link.ExeInputReach rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:57:50 check (ready) 1 modules in 0.3s: 1 up-to-date, 0 out of date, 0 wait for those
+06:57:50 check (ready) 1 modules in 0.3s: 1 up-to-date, 0 out of date, 0 wait for those
+06:57:50 start FV.E2E.LinkScopeIntT cap=5G running=1 avail=197.4G
+06:57:52 done FV.E2E.LinkScopeIntT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+06:57:53 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:53 start FV.Link.DeadCleanupCompileTFast cap=5G running=1 avail=197.3G
+06:57:55 done FV.Link.DeadCleanupCompileTFast rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:57:55 start FV.Link.DeadCleanupExe cap=4G running=1 avail=197.4G
+06:57:56 done FV.Link.DeadCleanupExe rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:57:56 check (ready) 2 modules in 0.4s: 1 up-to-date, 1 out of date, 0 wait for those
+06:57:56 start FV.E2E.LinkScopeChecksT2 cap=5G running=1 avail=197.0G
+06:57:58 done FV.E2E.LinkScopeChecksT2 rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+06:57:59 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+06:57:59 start FV.E2E.SemanticExecTlsCf cap=5G running=1 avail=197.0G
+06:58:01 done FV.E2E.SemanticExecTlsCf rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:01 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:01 start FV.Link.DeadCleanupExeT cap=5G running=1 avail=194.8G
+06:58:03 done FV.Link.DeadCleanupExeT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+06:58:04 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:04 start FV.E2E.LinkScopeInputT3 cap=5G running=1 avail=194.9G
+06:58:06 done FV.E2E.LinkScopeInputT3 rc=0 2s maxrss=2.9G cgpeak=0.4G built -> ok
+06:58:06 start FV.E2E.SemanticExecTls cap=5G running=1 avail=194.5G
+06:58:09 done FV.E2E.SemanticExecTls rc=0 3s maxrss=2.7G cgpeak=0.4G built -> ok
+06:58:09 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:09 start FV.Link.DeadCleanupCompileT cap=5G running=1 avail=197.3G
+06:58:11 done FV.Link.DeadCleanupCompileT rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+06:58:12 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:12 start FV.Link.ExeUCompile cap=4G running=1 avail=197.3G
+06:58:13 done FV.Link.ExeUCompile rc=0 1s maxrss=0.1G cgpeak=0.0G up-to-date -> ok
+06:58:13 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:58:13 start FV.Link.Ld.LinkTotal cap=4G running=1 avail=198.1G
+06:58:14 done FV.Link.Ld.LinkTotal rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:58:14 check (ready) 1 modules in 0.3s: 1 up-to-date, 0 out of date, 0 wait for those
+06:58:14 start FV.Link.OptCompile cap=4G running=1 avail=198.2G
+06:58:15 done FV.Link.OptCompile rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:58:15 check (ready) 1 modules in 0.2s: 1 up-to-date, 0 out of date, 0 wait for those
+06:58:15 start FV.E2E.BinCheckFast cap=4G running=1 avail=197.6G
+06:58:16 done FV.E2E.BinCheckFast rc=0 1s maxrss=0.1G cgpeak=0.1G up-to-date -> ok
+06:58:17 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:17 start FV.Link.DeadCleanupCompileT3 cap=5G running=1 avail=198.0G
+06:58:19 done FV.Link.DeadCleanupCompileT3 rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+06:58:19 start FV.E2E.SemanticExecTlsSim cap=5G running=1 avail=198.0G
+06:58:22 done FV.E2E.SemanticExecTlsSim rc=0 3s maxrss=2.7G cgpeak=0.4G built -> ok
+06:58:22 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:58:22 start FVTest.Backend.Lowering.StockGeneralDivProductionLinked cap=5G running=1 avail=197.9G
+06:58:25 done FVTest.Backend.Lowering.StockGeneralDivProductionLinked rc=0 3s maxrss=2.8G cgpeak=0.3G built -> ok
+06:58:25 start FVTest.E2E.LinkCheckMain cap=5G running=1 avail=197.8G
+06:58:28 done FVTest.E2E.LinkCheckMain rc=0 3s maxrss=2.7G cgpeak=0.4G built -> ok
+06:58:28 start FV.E2E.SemanticExecTlsProven cap=5G running=1 avail=197.6G
+06:58:30 done FV.E2E.SemanticExecTlsProven rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:58:30 start FVTest.Backend.Lowering.StockArithmeticLinked cap=4G running=1 avail=197.6G
+06:58:32 done FVTest.Backend.Lowering.StockArithmeticLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:32 start FVTest.Backend.Lowering.StockBitProductionLinked cap=4G running=1 avail=197.5G
+06:58:34 done FVTest.Backend.Lowering.StockBitProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:34 start FVTest.Backend.Lowering.StockCastProductionLinked cap=4G running=1 avail=196.8G
+06:58:36 done FVTest.Backend.Lowering.StockCastProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:36 start FVTest.Backend.Lowering.StockCmpProductionLinked cap=5G running=1 avail=197.1G
+06:58:38 done FVTest.Backend.Lowering.StockCmpProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:38 start FVTest.Backend.Lowering.StockDivProductionLinked cap=5G running=1 avail=197.2G
+06:58:40 done FVTest.Backend.Lowering.StockDivProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:40 start FVTest.Backend.Lowering.StockHighMulProductionLinked cap=5G running=1 avail=196.6G
+06:58:42 done FVTest.Backend.Lowering.StockHighMulProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:42 start FVTest.Backend.Lowering.StockLogicalLinked cap=5G running=1 avail=196.5G
+06:58:44 done FVTest.Backend.Lowering.StockLogicalLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:44 start FVTest.Backend.Lowering.StockMinMaxProductionLinked cap=5G running=1 avail=197.9G
+06:58:46 done FVTest.Backend.Lowering.StockMinMaxProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:46 start FVTest.Backend.Lowering.StockMixedDivProductionLinked cap=5G running=1 avail=197.6G
+06:58:48 done FVTest.Backend.Lowering.StockMixedDivProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:48 start FVTest.Backend.Lowering.StockMixedLinked cap=4G running=1 avail=197.4G
+06:58:50 done FVTest.Backend.Lowering.StockMixedLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:50 start FVTest.Backend.Lowering.StockMulProductionLinked cap=4G running=1 avail=197.4G
+06:58:52 done FVTest.Backend.Lowering.StockMulProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:52 start FVTest.Backend.Lowering.StockNotProductionLinked cap=4G running=1 avail=197.1G
+06:58:54 done FVTest.Backend.Lowering.StockNotProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:54 start FVTest.Backend.Lowering.StockPopcountProductionLinked cap=4G running=1 avail=198.0G
+06:58:56 done FVTest.Backend.Lowering.StockPopcountProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:56 start FVTest.Backend.Lowering.StockReturnedDivProductionLinked cap=5G running=1 avail=197.5G
+06:58:58 done FVTest.Backend.Lowering.StockReturnedDivProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:58:58 start FVTest.Backend.Lowering.StockScalarProductionLinked cap=5G running=1 avail=197.9G
+06:59:00 done FVTest.Backend.Lowering.StockScalarProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:59:00 start FVTest.Backend.Lowering.StockShiftProductionLinked cap=5G running=1 avail=197.7G
+06:59:02 done FVTest.Backend.Lowering.StockShiftProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+06:59:03 fail (1): FV.E2E.SemanticStackBoundTS
+06:59:03 blocked (9): FV.E2E.SemanticBinaryGoodTS FV.E2E.SemanticBinaryTS FV.E2E.SemanticExecTS FV.Link.SemanticCompileT FV.Link.SemanticExeSourceT FVTest.Link.FloatLinkCallsT FVTest.Link.FloatStockCompileT FVTest.Link.FloatStockSretT FVTest.Link.LeanLinkMain
+06:59:03 78 batch checks, 26s; 25 modules restored after another worktree built them
+06:59:03 drift faster FV.Backend.Proof.IselShpTTabC0 107s/2.0G -> 39s/1.7G
+06:59:03 END 2975/2985 ok, 125 built, wall 19.3 min

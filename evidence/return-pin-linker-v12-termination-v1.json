@@ -1,0 +1,10 @@
+{
+  "status": "oom-kill",
+  "scope": "run-p2450983-i15026087.scope",
+  "memory_peak_bytes": 3221225472,
+  "wall_seconds": 474,
+  "source": "WorkerOReturnPinLinkerDraftV12.lean",
+  "replacement": "WorkerOReturnPinRetryFixtureV1.lean",
+  "reason": "The systemd user journal confirms the3GiB scope hit its memory cap. Isolate the additional fixture from the full prototype and remove duplicate eval. Preserve the original source and diagnostics.",
+  "utc": "2026-11-01T14:42:32.509565+00:00"
+}

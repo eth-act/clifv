@@ -1,0 +1,6 @@
+06:18:59 want 1621 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+06:18:59 check (all) 1621 modules in 0.4s: 1620 up-to-date, 1 out of date, 0 wait for those
+06:18:59 start FV.E2E.CompiledSemanticABI cap=6G running=1 avail=194.4G
+06:19:01 done FV.E2E.CompiledSemanticABI rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+06:19:02 2 batch checks, 1s; 0 modules restored after another worktree built them
+06:19:02 END 1621/1621 ok, 1 built, wall 0.0 min

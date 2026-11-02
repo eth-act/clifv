@@ -1,0 +1,20 @@
+'Backend.SemanticABI.previous_check' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.SemanticABI.previous_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_worldX_stock_memory_abi' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticABI.of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticABI.check' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticABI.alloc' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticABI.emit' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticABI.layout' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_semantic_abi' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticABI.entryRegs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.hasTls_of_vcode_semantic_abi' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.stackArgsAvoid_frameW_semantic_abi' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemorySretCopy.previous_file_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemorySretCopy.previous_file_exact_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemorySretCopy.previous_routes_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemorySretCopy.previous_lower_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemorySretCopyCompiledWitness.compiled_sret_pipeline_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMemorySretCopyCompiledWitness.candidates_ok._native.native_decide.ax_1✝]

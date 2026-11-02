@@ -1,0 +1,61 @@
+06:23:46 want 1738 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+06:23:47 check (all) 1738 modules in 0.4s: 1722 up-to-date, 3 out of date, 13 wait for those
+06:23:47 start FV.E2E.LinkProgramReturnPinsModel cap=6G running=1 avail=192.3G
+06:23:49 done FV.E2E.LinkProgramReturnPinsModel rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+06:23:49 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+06:23:49 start FV.E2E.LinkReturnPinContract cap=6G running=1 avail=192.2G
+06:23:51 done FV.E2E.LinkReturnPinContract rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+06:23:52 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+06:23:52 start FV.E2E.LinkReturnPinCall cap=6G running=1 avail=192.0G
+06:23:56 done FV.E2E.LinkReturnPinCall rc=0 4s maxrss=2.6G cgpeak=0.4G built -> ok
+06:23:56 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+06:23:56 start FV.E2E.LinkReturnPinCallbacks cap=6G running=1 avail=193.7G
+06:23:59 done FV.E2E.LinkReturnPinCallbacks rc=0 3s maxrss=2.6G cgpeak=0.4G built -> ok
+06:23:59 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:23:59 start FV.E2E.LinkReturnPinProgram cap=6G running=1 avail=193.1G
+06:24:02 done FV.E2E.LinkReturnPinProgram rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+06:24:03 check (ready) 2 modules in 0.3s: 0 up-to-date, 2 out of date, 0 wait for those
+06:24:03 start FV.E2E.LinkReturnPinWorldX cap=6G running=1 avail=192.9G
+06:24:05 done FV.E2E.LinkReturnPinWorldX rc=1 2s maxrss=2.5G cgpeak=0.3G up-to-date -> fail
+06:24:05 start FV.E2E.ReturnPinCheckFast cap=6G running=1 avail=192.7G
+06:24:07 done FV.E2E.ReturnPinCheckFast rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:24:07 start FV.E2E.SemanticPreparedMetadata cap=6G running=1 avail=192.4G
+06:24:10 done FV.E2E.SemanticPreparedMetadata rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+06:24:10 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:24:10 start FV.E2E.PreparedReturnPinPipeline cap=6G running=1 avail=192.6G
+06:24:12 done FV.E2E.PreparedReturnPinPipeline rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:24:12 start FV.E2E.LinkSemanticNI cap=5G running=1 avail=192.5G
+06:24:14 done FV.E2E.LinkSemanticNI rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:24:15 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:24:15 start FV.E2E.SemanticPreparedPipeline cap=5G running=1 avail=192.4G
+06:24:17 done FV.E2E.SemanticPreparedPipeline rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:24:17 start FV.Backend.Lowering.StockVoidCallNI cap=6G running=1 avail=192.4G
+06:24:18 done FV.Backend.Lowering.StockVoidCallNI rc=0 1s maxrss=1.7G cgpeak=0.2G built -> ok
+06:24:18 fail (1): FV.E2E.LinkReturnPinWorldX
+06:24:18 blocked (4): FV.E2E.LinkReturnPinGood FV.E2E.PreparedReturnPinCalls FV.E2E.PreparedReturnPinProgram FV.E2E.ReturnPinPipelineRetry
+06:24:18 9 batch checks, 3s; 0 modules restored after another worktree built them
+06:24:18 END 1733/1738 ok, 11 built, wall 0.5 min
+06:26:03 want 1738 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+06:26:03 check (all) 1738 modules in 0.4s: 1733 up-to-date, 1 out of date, 4 wait for those
+06:26:03 start FV.E2E.LinkReturnPinWorldX cap=6G running=1 avail=197.2G
+06:26:05 done FV.E2E.LinkReturnPinWorldX rc=0 2s maxrss=2.5G cgpeak=0.3G built -> ok
+06:26:06 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:26:06 start FV.E2E.LinkReturnPinGood cap=6G running=1 avail=196.6G
+06:26:11 done FV.E2E.LinkReturnPinGood rc=0 5s maxrss=2.6G cgpeak=0.4G built -> ok
+06:26:11 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:26:11 start FV.E2E.PreparedReturnPinProgram cap=6G running=1 avail=197.2G
+06:26:13 done FV.E2E.PreparedReturnPinProgram rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:26:14 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:26:14 start FV.E2E.ReturnPinPipelineRetry cap=6G running=1 avail=196.0G
+06:26:16 done FV.E2E.ReturnPinPipelineRetry rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:26:16 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:26:16 start FV.E2E.PreparedReturnPinCalls cap=6G running=1 avail=195.3G
+06:26:18 done FV.E2E.PreparedReturnPinCalls rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:26:18 6 batch checks, 2s; 0 modules restored after another worktree built them
+06:26:18 END 1738/1738 ok, 5 built, wall 0.3 min
+06:33:51 want 1738 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+06:33:52 check (all) 1738 modules in 0.4s: 1737 up-to-date, 1 out of date, 0 wait for those
+06:33:52 start FV.E2E.PreparedReturnPinCalls cap=6G running=1 avail=195.9G
+06:33:54 done FV.E2E.PreparedReturnPinCalls rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:33:54 2 batch checks, 1s; 0 modules restored after another worktree built them
+06:33:54 END 1738/1738 ok, 1 built, wall 0.0 min

@@ -1,0 +1,67 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-view-draft-audit-v1.lean:41:23: warning: This simp argument is unused:
+  csem
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [actual, Option.map_none] at run
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-view-draft-audit-v1.lean:44:15: warning: This simp argument is unused:
+  csem
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [actual, Option.map_some, Option.some.injEq, Prod.mk.injEq] at run
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-view-draft-audit-v1.lean:63:18: warning: This simp argument is unused:
+  csem
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [ExtSem.voidCalls, actual] at run
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-view-draft-audit-v1.lean:63:23: warning: This simp argument is unused:
+  ExtSem.voidCalls
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [csem, actual] at run
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-view-draft-audit-v1.lean:66:15: warning: This simp argument is unused:
+  csem
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [ExtSem.voidCalls, actual, Option.map_some] at run
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-view-draft-audit-v1.lean:66:20: warning: This simp argument is unused:
+  ExtSem.voidCalls
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [csem, actual, Option.map_some] at run
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-call-view-draft-audit-v1.lean:259:15: warning: This simp argument is unused:
+  callB
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Bool.and_eq_true, decide_eq_true_eq, List.isEmpty_iff] at selected
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+'Backend.Proof.ExtSem.voidCalls_call' depends on axioms: [propext]
+'Backend.Proof.ExtSem.voidCalls_call_inv' depends on axioms: [propext]
+'Backend.Proof.ArmStepX_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.csem_call_voidCalls_inv' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.csem_tryCall_voidCalls_inv' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.CalleeOk.voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.csemV_voidCalls_inv' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.CalleeOkG.voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.RL.CallPre.of_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.RL.GoodX.of_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ActEntry.voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.actGoodX_of_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.seqRun_call_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.seqRun_call_voidCalls_int' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.VoidCallViewWitness.actual_stock_call_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallViewWitness.observed_true._native.native_decide.ax_1]

@@ -1,0 +1,5 @@
+⚠ [634/635] Replayed FV.Link.Ld.Data
+warning: FV/Link/Ld/Data.lean:341:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Link/Ld/Data.lean:361:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [635/635] Built FV.Link.Ld.Spec (945ms)
+Build completed successfully (635 jobs).

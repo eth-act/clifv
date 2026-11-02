@@ -1,0 +1,15 @@
+{
+  "removed": [
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinExecDraftV1.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinExecDraftV2.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinExecDraftV3.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinExecDraftV4.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinExecDraftV5.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinExecDraftV6.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinExecDraftV7.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinBinaryDraftV1.lean"
+  ],
+  "remote": "d993e2eaac740e0a2d04c06613025f4b56999fdb",
+  "reason": "Remove redundant verification copies after exact remote-archive checks. All saved source and logs remain. No editor worker remains.",
+  "utc": "2026-11-01T14:03:03.472992+00:00"
+}

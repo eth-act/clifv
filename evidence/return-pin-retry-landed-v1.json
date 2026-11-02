@@ -1,0 +1,60 @@
+{
+  "status": "passed",
+  "pr": 857,
+  "source": "978f375541f89c3e9252edf52044dfc1bb5cd383",
+  "merged": "dad07d7082a992047cb9efb3a33ff752b576b09e",
+  "tested_merged_trees_equal": true,
+  "source_hashes": {
+    "FV/E2E/ReturnPinPipelineRetry.lean": "c597bd1f2cb9f6cd40e67754ed36908d82c52f01c3b6a9a3b128279f496f7aaa",
+    "FV/E2E/ReturnPinPipelineRetryWitness.lean": "f72e29f950f97a83484c6feccb527702e154cd498c2d801cb92b4996379abbd1",
+    "scripts/audit/return-pin-pipeline-retry.lean": "1fd45293e1bd4858bbd91355a74ee93b2dd10f757a32fe3073a16535da80bbf9"
+  },
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T10:45:39Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41298317860/job/124823778356",
+      "name": "Quick checks",
+      "startedAt": "2026-11-01T10:45:31Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T10:50:34Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41298317779/job/124823777997",
+      "name": "Build and compare",
+      "startedAt": "2026-11-01T10:44:50Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T10:50:45Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41298317779/job/124826536610",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-01T10:50:36Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-01T10:50:47Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41298317779/job/124826536623",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-01T10:50:36Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "old_axiom_sets_exact": 20,
+  "new_roots": 16,
+  "review_agents": 0,
+  "review_builds": 0,
+  "full_goal_complete": false,
+  "utc": "2026-11-01T10:50:55.424868+00:00"
+}

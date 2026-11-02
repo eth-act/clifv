@@ -1,0 +1,13 @@
+'Backend.Stock.VoidCall.NI.checked_instruction' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.VoidCall.NI.noTryCall_of_codeCheck' depends on axioms: [propext, Quot.sound]
+'E2E.ABIReadOnly.seqRun_fall_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.VoidCallPairedWitness.caller_boundaries' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.VoidCallPairedWitness.checked_true._native.native_decide.ax_1]
+'Backend.Stock.Proof.stock_lower_entry_prelude_refines_nocall_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.VoidCall.NI.prelude_read_checks' depends on axioms: [propext, Quot.sound]
+'E2E.ABIReadOnly.seqRun_fall_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.void_call_pair' depends on axioms: [propext, Quot.sound]

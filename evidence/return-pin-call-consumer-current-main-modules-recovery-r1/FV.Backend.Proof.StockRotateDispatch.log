@@ -1,0 +1,3 @@
+⚠ [294/294] Built FV.Backend.Proof.StockRotateDispatch (66s)
+warning: FV/Backend/Proof/StockRotateDispatch.lean:49:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+Build completed successfully (294 jobs).

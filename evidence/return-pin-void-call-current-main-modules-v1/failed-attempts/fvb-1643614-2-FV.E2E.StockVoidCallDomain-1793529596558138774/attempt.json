@@ -1,0 +1,13 @@
+{
+  "module": "FV.E2E.StockVoidCallDomain",
+  "unit": "fvb-1643614-2-FV.E2E.StockVoidCallDomain",
+  "cap_bytes": 6442450944,
+  "returncode": 1,
+  "seconds": 2.0013492107391357,
+  "module_source_sha256": "31ff57443b915912947028be70e1f19e71be276f46a6adcec455bc6175804679",
+  "artifacts": {
+    "FV.E2E.StockVoidCallDomain.log": "aaa79b61f46415c536e57e628e0ff9479c2a3b5bcdd3c7013a09b492b3a9708d",
+    "FV.E2E.StockVoidCallDomain.mem": "64e3ed8124ec8f2dadcd07dfcf935c45bfcb131fa170c1668a25465f4f39fd63",
+    "FV.E2E.StockVoidCallDomain.time": "58f52ffd4e71846aab13c1b7e817f20dd723d860436e5954425149dc8ec6d1d9"
+  }
+}

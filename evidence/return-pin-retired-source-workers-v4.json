@@ -1,0 +1,15 @@
+{
+  "utc": "2026-11-01T11:44:31.273650+00:00",
+  "retired": [
+    {
+      "pid": 1719509,
+      "source": "FV/E2E/PreparedReturnPinCalls.lean",
+      "reason": "Editor checks complete; source and backup preserved. Release memory for kernel gates."
+    },
+    {
+      "pid": 1729819,
+      "source": "FV/E2E/PreparedReturnPinCallsWitness.lean",
+      "reason": "Editor checks complete; source and backup preserved. Release memory for kernel gates."
+    }
+  ]
+}

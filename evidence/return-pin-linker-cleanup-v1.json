@@ -1,0 +1,19 @@
+{
+  "removed": [
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV1.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV2.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV3.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV4.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV5.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV6.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV7.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV8.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV9.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinLinkerDraftV10.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinExecWitnessDraftV1.lean",
+    "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/WorkerOReturnPinExecWitnessDraftV2.lean"
+  ],
+  "remote": "7acb5e2019072488fef11a82eb627ef236c35c3f",
+  "reason": "Remove redundant completed verification copies after exact archive checks. All saved source and diagnostics remain.",
+  "utc": "2026-11-01T14:28:35.966429+00:00"
+}

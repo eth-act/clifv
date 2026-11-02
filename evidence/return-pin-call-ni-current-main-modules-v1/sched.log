@@ -1,0 +1,36 @@
+06:11:13 want 1748 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+06:11:13 check (all) 1748 modules in 0.4s: 1746 up-to-date, 1 out of date, 1 wait for those
+06:11:13 start FV.E2E.StockVoidCallNI cap=6G running=1 avail=197.1G
+06:11:16 done FV.E2E.StockVoidCallNI rc=0 3s maxrss=2.3G cgpeak=0.3G built -> ok
+06:11:16 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:11:16 start FV.E2E.StockVoidCallNIWitness cap=6G running=1 avail=195.1G
+06:11:18 done FV.E2E.StockVoidCallNIWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:11:19 3 batch checks, 1s; 0 modules restored after another worktree built them
+06:11:19 END 1748/1748 ok, 2 built, wall 0.1 min
+06:12:08 want 1747 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+06:12:09 check (all) 1747 modules in 0.4s: 1744 up-to-date, 1 out of date, 2 wait for those
+06:12:09 start FV.E2E.StockVoidCallEntry cap=6G running=1 avail=195.5G
+06:12:11 done FV.E2E.StockVoidCallEntry rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+06:12:11 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+06:12:11 start FV.E2E.StockVoidCallNI cap=6G running=1 avail=198.0G
+06:12:14 done FV.E2E.StockVoidCallNI rc=0 3s maxrss=2.3G cgpeak=0.3G built -> ok
+06:12:14 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:12:14 start FV.E2E.StockVoidCallNIWitness cap=6G running=1 avail=197.1G
+06:12:16 done FV.E2E.StockVoidCallNIWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+06:12:17 4 batch checks, 1s; 0 modules restored after another worktree built them
+06:12:17 END 1747/1747 ok, 3 built, wall 0.1 min
+06:13:56 want 1747 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+06:13:56 check (all) 1747 modules in 0.4s: 1743 up-to-date, 1 out of date, 3 wait for those
+06:13:56 start FV.Backend.StockVoidCallNICheck cap=6G running=1 avail=195.6G
+06:13:57 done FV.Backend.StockVoidCallNICheck rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+06:13:57 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+06:13:57 start FV.E2E.StockVoidCallEntry cap=6G running=1 avail=196.4G
+06:13:59 done FV.E2E.StockVoidCallEntry rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+06:14:00 check (ready) 1 modules in 0.3s: 0 up-to-date, 1 out of date, 0 wait for those
+06:14:00 start FV.E2E.StockVoidCallNI cap=6G running=1 avail=196.2G
+06:14:03 done FV.E2E.StockVoidCallNI rc=0 3s maxrss=2.3G cgpeak=0.3G built -> ok
+06:14:03 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+06:14:03 start FV.E2E.StockVoidCallNIWitness cap=6G running=1 avail=198.7G
+06:14:06 done FV.E2E.StockVoidCallNIWitness rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+06:14:06 5 batch checks, 2s; 0 modules restored after another worktree built them
+06:14:06 END 1747/1747 ok, 4 built, wall 0.2 min

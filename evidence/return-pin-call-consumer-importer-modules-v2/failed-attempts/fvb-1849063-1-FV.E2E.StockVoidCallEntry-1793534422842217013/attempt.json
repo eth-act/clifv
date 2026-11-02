@@ -1,0 +1,13 @@
+{
+  "module": "FV.E2E.StockVoidCallEntry",
+  "unit": "fvb-1849063-1-FV.E2E.StockVoidCallEntry",
+  "cap_bytes": 6442450944,
+  "returncode": 1,
+  "seconds": 2.0014233589172363,
+  "module_source_sha256": "38eb56f5f2165400c8abc7a5da871df20206fd35bbc78c8eac6066773d214be8",
+  "artifacts": {
+    "FV.E2E.StockVoidCallEntry.log": "e5244ef8ee4422e7e04a8f923ce1547fa58072e838ad2fc94411344561f10924",
+    "FV.E2E.StockVoidCallEntry.mem": "3a86560758d1fce97d986876fede0913a5e23d23125fc0ad5c89f0521fc5db53",
+    "FV.E2E.StockVoidCallEntry.time": "1a738cae39a1876527d2fa9e62f8032e6b695955a6be347223f6e614fe48f29b"
+  }
+}

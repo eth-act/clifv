@@ -1,0 +1,551 @@
+{
+  "seeds": [
+    "FV.Backend.Lowering.StockVoidCallNI",
+    "FV.Backend.SemanticABICheck",
+    "FV.E2E.CompiledProgramReturnPins",
+    "FV.E2E.CompiledSemanticABI",
+    "FV.E2E.CompiledSemanticReturnPins",
+    "FV.E2E.LinkReturnPinWorldX",
+    "FV.E2E.PreparedReturnPinCalls",
+    "FV.E2E.PreparedReturnPinCallsWitness",
+    "FV.E2E.SemanticABIBoundary",
+    "FV.E2E.WorldReturnPinBoundary"
+  ],
+  "affected_modules": 97,
+  "executable_roots_included": [
+    "FVTest.Backend.Lowering.StockCmpProductionLinked",
+    "FVTest.Backend.Lowering.StockDivProductionLinked",
+    "FVTest.Backend.Lowering.StockGeneralDivProductionLinked",
+    "FVTest.Backend.Lowering.StockHighMulProductionLinked",
+    "FVTest.Backend.Lowering.StockMemoryCapturedCopyProductionLinked",
+    "FVTest.Backend.Lowering.StockMemoryLoadStoreProductionLinked",
+    "FVTest.Backend.Lowering.StockMemoryProductionLinked",
+    "FVTest.Backend.Lowering.StockMemoryStoreCfgProductionLinked",
+    "FVTest.Backend.Lowering.StockMemoryStoreProductionLinked",
+    "FVTest.Backend.Lowering.StockMinMaxProductionLinked",
+    "FVTest.Backend.Lowering.StockMixedDivProductionLinked",
+    "FVTest.Backend.Lowering.StockPopcountProductionLinked",
+    "FVTest.Backend.Lowering.StockReturnedDivProductionLinked",
+    "FVTest.E2E.LinkCheckMain",
+    "FVTest.Link.LeanLinkMain"
+  ],
+  "external_direct_importers": [
+    {
+      "path": "scripts/audit/floats-typed.lean",
+      "imports": [
+        "FV.E2E.SemanticExecTS",
+        "FV.Link.SemanticCompileT",
+        "FV.Link.SemanticExeSourceT",
+        "FVTest.Link.FloatLinkCallsT",
+        "FVTest.Link.FloatStockCompileT"
+      ]
+    },
+    {
+      "path": "scripts/audit/stock-arithmetic-ni.lean",
+      "imports": [
+        "FV.E2E.SemanticCompilerWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/stock-logical-production.lean",
+      "imports": [
+        "FV.E2E.SemanticLogicalCompilerWitness",
+        "FV.E2E.SemanticRoutesWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/stock-mixed.lean",
+      "imports": [
+        "FV.E2E.SemanticFallbackWitness",
+        "FV.E2E.SemanticMixedCompilerWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/stock-memory-sret-consumers.lean",
+      "imports": [
+        "FV.Backend.Proof.StockMemorySretCopyCompatibility",
+        "FV.E2E.SemanticABIBoundary",
+        "FV.E2E.StockMemorySretCopyCompiledWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/call-return-pins.lean",
+      "imports": [
+        "FV.E2E.LinkSemanticNI"
+      ]
+    },
+    {
+      "path": "scripts/audit/semantic-return-pins.lean",
+      "imports": [
+        "FV.E2E.CompiledSemanticReturnPinsWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/link-return-pins.lean",
+      "imports": [
+        "FV.E2E.LinkReturnPinsWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/link-return-pin-program.lean",
+      "imports": [
+        "FV.E2E.LinkReturnPinProgramWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/link-return-pin-good.lean",
+      "imports": [
+        "FV.E2E.LinkReturnPinGoodWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/return-pin-prepared-program.lean",
+      "imports": [
+        "FV.E2E.PreparedReturnPinCallerBoundaryWitness",
+        "FV.E2E.PreparedReturnPinSretWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/return-pin-check-fast.lean",
+      "imports": [
+        "FV.E2E.ReturnPinCheckFastWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/stock-void-call.lean",
+      "imports": [
+        "FV.E2E.StockVoidCallWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/return-pin-pipeline-retry.lean",
+      "imports": [
+        "FV.E2E.ReturnPinPipelineRetryWitness"
+      ]
+    },
+    {
+      "path": "scripts/audit/stock-void-call-ni.lean",
+      "imports": [
+        "FV.E2E.StockVoidCallNIWitness"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/AArith.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/AArithAbort.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/BSlices.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/BinaryExecTlsWitness.lean",
+      "imports": [
+        "FV.E2E.SemanticExecTlsProven"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/BinaryExecWitness.lean",
+      "imports": [
+        "FV.E2E.SemanticExecFrameSim",
+        "FV.E2E.SemanticExecGoodRun",
+        "FV.E2E.SemanticExecProven"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/BinaryWitness.lean",
+      "imports": [
+        "FV.E2E.SemanticBinary"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/CStructsEnums.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/DLoopsIters.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/EOptionResult.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FCrypto.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemoExec.lean",
+      "imports": [
+        "FV.E2E.SemanticExecProven"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/GU128.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/HDynGeneric.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/IAlloc.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/AArith/Input.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/AArith/Slice0.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/AArith/Slice1.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/AArithAbort/Input.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/AArithAbort/Slice0.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/AArithAbort/Slice1.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/BSlices/Input.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/BSlices/Slice0.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/BSlices/Slice1.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/DLoopsIters/Input.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/DLoopsIters/Slice0.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/DLoopsIters/Slice1.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/DLoopsIters/Slice2.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/DLoopsIters/Slice3.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/EOptionResult/Input.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/EOptionResult/Slice0.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/EOptionResult/Slice1.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FCrypto/Input.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FCrypto/Slice0.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FCrypto/Slice1.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Input.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice0.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice1.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice10.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice11.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice12.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice13.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice14.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice15.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice16.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice17.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice2.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice3.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice4.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice5.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice6.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice7.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice8.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/FvDemo/Slice9.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/HDynGeneric/Input.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/HDynGeneric/Slice0.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/HDynGeneric/Slice1.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/IAlloc/Input.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/IAlloc/Slice0.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    },
+    {
+      "path": "crate-proofs/Crates/IAlloc/Slice1.lean",
+      "imports": [
+        "FV.E2E.SemanticChecksWith",
+        "FV.E2E.SemanticStackBound"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+'Link.ReturnPinCompilerWith.compile_accepted' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.compile_retry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.compile_accepts_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.compile_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinRetryWitness.retry_checks' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Link.ReturnPinRetryWitness.retry_checks._native.native_decide.ax_1]
+'Link.ReturnPinRetryWitness.compiler_retries_complete_previous' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Link.ReturnPinRetryWitness.retry_checks._native.native_decide.ax_1]
+'Link.ReturnPinRetryWitness.compiler_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_1,
+ Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_2]
+'Link.ReturnPinRetryWitness.compiler_keeps_complete_stock' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_1,
+ Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_2]
+'Link.ReturnPinCompilerWith.choice_current' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.choice_retry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.choice_accepts_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.choice_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.choice_erases' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.choice_preserves_previous_error' depends on axioms: [propext, Classical.choice, Quot.sound]

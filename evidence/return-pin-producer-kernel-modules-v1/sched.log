@@ -1,0 +1,14 @@
+02:37:58 want 1688 modules (0 assumed built) budget=8G max_jobs=1 heavy>12G
+02:37:59 check (all) 1688 modules in 0.4s: 1684 up-to-date, 1 out of date, 3 wait for those
+02:37:59 start FV.E2E.SemanticPipelineCheckWith cap=6G running=1 avail=102.0G
+02:38:01 done FV.E2E.SemanticPipelineCheckWith rc=0 2s maxrss=2.2G cgpeak=0.3G built -> ok
+02:38:01 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+02:38:01 start FV.E2E.SemanticPreparedMetadata cap=6G running=1 avail=108.3G
+02:38:04 done FV.E2E.SemanticPreparedMetadata rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+02:38:05 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+02:38:05 start FV.E2E.PreparedReturnPinPipeline cap=6G running=1 avail=122.5G
+02:38:07 done FV.E2E.PreparedReturnPinPipeline rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+02:38:07 start FV.E2E.SemanticPreparedPipeline cap=5G running=1 avail=123.8G
+02:38:09 done FV.E2E.SemanticPreparedPipeline rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+02:38:09 4 batch checks, 2s; 0 modules restored after another worktree built them
+02:38:09 END 1688/1688 ok, 4 built, wall 0.2 min

@@ -1,0 +1,23 @@
+'Link.ReturnPinCompilerWith.compile_accepted' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.compile_retry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.compile_accepts_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.compile_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:73:31: error: unknown namespace `E2E.SemanticBinary`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:79:12: error(lean.unknownIdentifier): Unknown identifier `ProductionLowering`
+
+Note: It is not possible to treat `ProductionLowering` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:79:34: error(lean.unknownIdentifier): Unknown identifier `Stock.VoidCall.NI.lowerValidated`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:82:11: error(lean.unknownIdentifier): Unknown identifier `PreparedReturnPinCallsWitness.input.funcs`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:86:14: error(lean.unknownIdentifier): Unknown identifier `PreparedReturnPinCallsWitness.input.funcs.map`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:89:50: error(lean.unknownIdentifier): Unknown identifier `PreparedReturnPinCallsWitness.rejectedInput.funcs`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:92:26: error(lean.unknownIdentifier): Unknown identifier `ProductionBoundaryWitness.plan`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:100:32: error(lean.unknownIdentifier): Unknown identifier `Stock.Production.lower`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:104:76: error: Tactic `native_decide` failed: Could not evaluate decidable instance. Error: cannot evaluate code because 'Link.ReturnPinCompilerWitness.retryChecks' uses 'sorry' and/or contains errors
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:107:52: error(lean.unknownIdentifier): Unknown identifier `Stock.Production.lower`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:108:35: error(lean.unknownIdentifier): Unknown identifier `Stock.Production.lower`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/WorkerOReturnPinRetryFixtureV1.lean:111:13: warning: declaration uses `sorry`
+'Link.ReturnPinCompilerWitness.retry_checks' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWitness.compiler_retries_complete_previous' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound]

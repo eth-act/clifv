@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "cases": 4,
+  "actual_backend_entrypoint": true,
+  "cleanup_modes": [
+    false,
+    true
+  ],
+  "fixtures": [
+    "original full captured caller and callee",
+    "original full captured caller and callee plus unrelated float leaf"
+  ],
+  "all_object_bytes_exact": true,
+  "full_goal_complete": false,
+  "requires_current_main_gates": true,
+  "utc": "2026-11-02T06:37:26.043038+00:00"
+}

@@ -1,0 +1,5 @@
+PR #847 landed62575ee8. PR #849 landed68fa4650. Both pass all four current CI checks and one direct cheap review. Tested and merged trees match. The shared linker and per-state implementations preserve all56 old theorem statements/axiom sets and38 other input conditions. Default sret activation remains incomplete.
+
+@kevaundray: I read the #843 stage notice. My next batch factors SemanticPreparedPipeline through common metadata and adds the ABI-aware producer. The metadata proof supports an arbitrary preparation stage. I keep the three original producer statements and their old id/prune variants. A new checked producer derives the complete return-pin contract internally. No caller execution certificate or no-calls input guard enters that statement.
+
+The next files are SemanticPipelineCheckWith,SemanticPreparedMetadata,PreparedReturnPinPipeline,and SemanticPreparedPipeline. Please flag direct overlap with these files. I will connect the new cleanup stage through an additive producer variant when its infrastructure is available. Worker-A owns the ranked CFG work and its selectors. I change no CFG source or LinkCheckMain in this batch.

@@ -1,0 +1,55 @@
+{
+  "status": "passed",
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "source_hashes": {
+    "FV/Link/ReturnPinExeSourceWith.lean": "f50726d0a226bed154a8d0e074155c889aa0f5e5880bba21e8409a172d6f95c3",
+    "scripts/audit/return-pin-executable-source.lean": "7aca44eb06cb788d55ff1dc1069317d89f6653a4f5d70ff9f502e247ccb958b2",
+    "FV/Link/ReturnPinExeSourceWitness.lean": "7f1924fd91afd53804f61899c68a81429edcfd0acea1e4368d7ea12e9ee5f4e1",
+    "scripts/audit/return-pin-executable-source-witness.lean": "58df6f216ec539cd06e352b32def2b301518cd885e1e3818e5eb0f88dacef886"
+  },
+  "isolated_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/return-pin-source-adapter-packet-v1/validation-package-v1",
+  "generic_modules_reused": [
+    "FV/E2E/BinaryBoundaryDefs.lean",
+    "FV/E2E/LinkImageExtension.lean",
+    "FV/Link/ReturnPinCompileDefs.lean",
+    "FV/E2E/BinaryBoundaryFacts.lean",
+    "FV/E2E/SemanticBinary.lean",
+    "FV/E2E/SemanticBinaryGood.lean",
+    "FV/E2E/SemanticExecBytes.lean",
+    "FV/E2E/ReturnPinBinary.lean",
+    "FV/E2E/SemanticExecFrameSim.lean",
+    "FV/E2E/SemanticExecStatic.lean",
+    "FV/E2E/SemanticExecRunN.lean",
+    "FV/E2E/SemanticExecGoodRun.lean",
+    "FV/E2E/SemanticExecGoodReads.lean",
+    "FV/E2E/SemanticExecGot.lean",
+    "FV/E2E/ReturnPinExecStatic.lean",
+    "FV/E2E/SemanticExecProven.lean",
+    "FV/E2E/ReturnPinExecGot.lean",
+    "FV/Link/SemanticExeWith.lean",
+    "FV/E2E/ReturnPinExecProven.lean",
+    "FV/Link/SemanticExeSourceWith.lean",
+    "FV/Link/ReturnPinExeWith.lean",
+    "FV/Link/ReturnPinExeSourceWith.lean"
+  ],
+  "incremental_modules": [
+    "FV/Link/ReturnPinExeSourceWitness.lean"
+  ],
+  "generic_roots": 2,
+  "fixed_roots": 2,
+  "measured_memory": {
+    "ReturnPinExeSourceWitness": {
+      "peak": "334843904",
+      "oom": "0",
+      "oom_kill": "0"
+    },
+    "audits": {
+      "peak": "290770944",
+      "oom": "0",
+      "oom_kill": "0"
+    }
+  },
+  "requires_current_main_gates": true,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T06:19:50.899330+00:00"
+}

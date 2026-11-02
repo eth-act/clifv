@@ -1,0 +1,6 @@
+{
+  "path": "/home/lee/clifv/.worktrees/stock-extending-production-20261031/.lake/build/lib/lean/FV/Link/ReturnPinRetryWitness.olean",
+  "sha256": "7176afa7cfd2a3e1f20e9f7757a4b218b3e8a2095c1fb0335a92982b071989a1",
+  "source_manifest": "return-pin-linker-runtime-packet-v1.json",
+  "purpose": "Owned new module artifact only. No tracked importer uses this module before publication. Preserve source and all prior kernel/audit logs before extending the fixed witnesses."
+}

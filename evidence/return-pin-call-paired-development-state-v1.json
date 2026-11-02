@@ -1,0 +1,9 @@
+{
+  "status": "development-kernel-and-audit-passed",
+  "source_sha256": "3c1efd2720cb3ad205329e4ebec013d3f1e39f3165e3b3e2c72ce515d9389765",
+  "new_roots": 4,
+  "generic_roots_standard_only": 3,
+  "scope": "Actual metadata supplies the finite ABI read boundary and derives no-try internally. Universal finite-prelude transfer retains exact original register and stack-byte agreement. The unchanged caller and an additional consumed-stack-argument fixture pass the boundary. Full paired call composition and production activation remain open. Existing dependency outputs only; formal module/importer gates remain required",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T10:54:08.451845+00:00"
+}

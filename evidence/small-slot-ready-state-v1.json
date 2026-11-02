@@ -1,0 +1,113 @@
+{
+  "status": "inspected",
+  "read_only": true,
+  "query_cap": "1GiB",
+  "stale": 325,
+  "selected": [
+    "FV.Backend.Proof.LowerSimUAbi",
+    "FV.Backend.Proof.SretStableX",
+    "FV.Backend.Proof.StockAddSubAuxWitness",
+    "FV.Backend.Proof.StockBmaskSemanticsWitness",
+    "FV.Backend.Proof.StockCfgReturnAtWitness",
+    "FV.Backend.Proof.StockCfgReturnEdge",
+    "FV.Backend.Proof.StockCmpEqualZero8Witness",
+    "FV.Backend.Proof.StockCmpNarrowSourceWitness",
+    "FV.Backend.Proof.StockCmpNonzero16PrefixWitness",
+    "FV.Backend.Proof.StockCmpNonzero16Witness",
+    "FV.Backend.Proof.StockCmpNonzero8Witness",
+    "FV.Backend.Proof.StockCmpOriginalConstantClassification",
+    "FV.Backend.Proof.StockCmpRegisterValuesWitness",
+    "FV.Backend.Proof.StockCmpZeroWitness",
+    "FV.Backend.Proof.StockConditionalBodyWitness",
+    "FV.Backend.Proof.StockConditionalClassWitness",
+    "FV.Backend.Proof.StockConditionalDomainWitness",
+    "FV.Backend.Proof.StockConditionalRankedWitness",
+    "FV.Backend.Proof.StockConditionalReturnAtWitness",
+    "FV.Backend.Proof.StockConditionalSourceReturnWitness"
+  ],
+  "profiles": {
+    "FV.Backend.Proof.LowerSimUAbi": {
+      "peak_bytes": 284164096,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.SretStableX": {
+      "peak_bytes": 292552704,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockAddSubAuxWitness": {
+      "peak_bytes": 299892736,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockBmaskSemanticsWitness": {
+      "peak_bytes": 253755392,
+      "seconds": 1.0
+    },
+    "FV.Backend.Proof.StockCfgReturnAtWitness": {
+      "peak_bytes": 301989888,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockCfgReturnEdge": {
+      "peak_bytes": 279969792,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockCmpEqualZero8Witness": {
+      "peak_bytes": 296747008,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockCmpNarrowSourceWitness": {
+      "peak_bytes": 332398592,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockCmpNonzero16PrefixWitness": {
+      "peak_bytes": 492830720,
+      "seconds": 3.0
+    },
+    "FV.Backend.Proof.StockCmpNonzero16Witness": {
+      "peak_bytes": 517996544,
+      "seconds": 3.0
+    },
+    "FV.Backend.Proof.StockCmpNonzero8Witness": {
+      "peak_bytes": 281018368,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockCmpOriginalConstantClassification": {
+      "peak_bytes": 289406976,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockCmpRegisterValuesWitness": {
+      "peak_bytes": 347078656,
+      "seconds": 3.0
+    },
+    "FV.Backend.Proof.StockCmpZeroWitness": {
+      "peak_bytes": 438304768,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockConditionalBodyWitness": {
+      "peak_bytes": 290455552,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockConditionalClassWitness": {
+      "peak_bytes": 292552704,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockConditionalDomainWitness": {
+      "peak_bytes": 283115520,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockConditionalRankedWitness": {
+      "peak_bytes": 337641472,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockConditionalReturnAtWitness": {
+      "peak_bytes": 324009984,
+      "seconds": 2.0
+    },
+    "FV.Backend.Proof.StockConditionalSourceReturnWitness": {
+      "peak_bytes": 300941312,
+      "seconds": 2.0
+    }
+  },
+  "full_owner": 1849857,
+  "head": "a4c0726d46c5908b4ac06cf797ee939af8644703",
+  "utc": "2026-11-02T06:00:00.588802+00:00"
+}

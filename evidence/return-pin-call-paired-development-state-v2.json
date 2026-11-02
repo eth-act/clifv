@@ -1,0 +1,9 @@
+{
+  "status": "development-kernel-and-audit-passed",
+  "source_sha256": "7a9a9b8d19e1e2cf3802c0b91eecef523a526c9105d0dade9ce52587ed3a1be7",
+  "new_roots": 8,
+  "generic_roots_standard_only": 7,
+  "scope": "Actual metadata supplies the finite ABI read boundary and derives no-try internally. Universal finite-prelude transfer retains exact original register and stack-byte agreement. The unchanged caller and an additional consumed-stack-argument fixture pass the boundary. Actual entry assembly derives no hidden calls. Code metadata derives all finite read obligations. Finite ABI preludes realize under existing value semantics. Original XCallsOk and XNI pair the actual void call with complete memory relations. Whole-function composition and production activation remain open. Existing dependency outputs only; formal module/importer gates remain required",
+  "full_goal_complete": false,
+  "utc": "2026-11-01T11:00:48.869960+00:00"
+}

@@ -1,0 +1,16 @@
+{
+  "status": "module-check-passed",
+  "source_hashes": {
+    "FV/Backend/SemanticABICheck.lean": "82ea22a6a7594723b1f2ef818dd9c098af48c145d1c72638ec96b4b1dca60dde",
+    "FV/E2E/CompiledSemanticABI.lean": "1d0706c6ada07178a817451bc1d9612f8bfedd290748a0c8364c37d58e47e0ff",
+    "FV/E2E/CompiledSemanticReturnPins.lean": "1af97b633a63618309b503852b859662dafad932ed62c55ae16ec8e200190be4",
+    "FV/E2E/CompiledProgramReturnPins.lean": "c1af67a373150b9433993e57eeb4ba165d2e38a17e84387b7c2bc874d21c84b2",
+    "FV/E2E/SemanticABIBoundary.lean": "071d9d1c89f81ac18c4afbeb71410297b6fd44eaadd9a73247787c8178a9225a",
+    "FV/E2E/WorldReturnPinBoundary.lean": "fbf239a9e357f07f4758b4c8b4537d84caf63b8dca1739e45b72fd509d08f3dc",
+    "FV/Backend/Lowering/StockVoidCallNI.lean": "60449d10b3e3935c84f170a960d680b13919a3945d4eb66edb02ce0f29428a9a",
+    "FV/E2E/PreparedReturnPinCalls.lean": "da7e92e419e72872794b7488843787fdbe0b4c23ce34e7a4154576524dc79515"
+  },
+  "full_goal_complete": false,
+  "utc": "2026-11-01T11:33:54.713321+00:00",
+  "new_roots_pending": true
+}

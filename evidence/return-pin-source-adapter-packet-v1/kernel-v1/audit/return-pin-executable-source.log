@@ -1,0 +1,2 @@
+'Link.ReturnPinCompilerWith.attempt_correct_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.attempt_correct_source_peak' depends on axioms: [propext, Classical.choice, Quot.sound]
