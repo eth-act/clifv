@@ -1,15 +1,15 @@
-import FV.Backend.Lowering.StockComparisonGeneralLoopCfgNI
-import FV.Backend.Proof.StockComparisonGeneralLoopWitness
+import FV.Backend.Lowering.StockGeneralLoopCfg2NI
+import FV.Backend.Proof.StockGeneralLoopWitness2
 
-/-! Non-vacuity of the general comparison/loop route: on the fixed `%countdown_zero` loop, the new
+/-! Non-vacuity of the general loop route: on the fixed `%countdown_plain` loop, the new
 provider publishes the actual unsplit Stock code, route 23 selects it, every published route before
 it is retained, and the previous provider does not publish that code. -/
 
-namespace Backend.Stock.ComparisonGeneralLoopCfg.NI.RouteFixture
+namespace Backend.Stock.GeneralLoopCfg2.NI.RouteFixture
 open Backend
 set_option autoImplicit false
 
-private abbrev function := ComparisonGeneralLoopCfg.Fixture.countdownZero
+private abbrev function := GeneralLoopCfg2.Fixture.countdownPlain
 
 private def checks : Bool :=
   lowerRoutes.length == 24 && ParameterArgsCfg.NI.lowerRoutes.length == 23 &&
@@ -56,4 +56,4 @@ theorem general_route_witness : lowerRoutes.length = 24 ∧ ParameterArgsCfg.NI.
       rw [same] at different
       simp at different
 
-end Backend.Stock.ComparisonGeneralLoopCfg.NI.RouteFixture
+end Backend.Stock.GeneralLoopCfg2.NI.RouteFixture

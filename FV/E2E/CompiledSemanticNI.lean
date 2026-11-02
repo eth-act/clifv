@@ -13,7 +13,7 @@ import FV.Backend.Proof.StockMemoryIntegerCheck
 import FV.E2E.StockMemoryCfgNI
 import FV.Backend.Proof.StockMemoryCfgClass
 import FV.Backend.Proof.StockParameterCheck
-import FV.Backend.Proof.StockComparisonGeneralLoopCheck
+import FV.Backend.Proof.StockGeneralLoopCheck2
 import FV.Backend.Proof.StockConditionalRankedCheck
 import FV.E2E.StockCfgNI
 import FV.Backend.Proof.StockTwoBlockCheck
@@ -207,7 +207,7 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
     exact .cfg domain equal reads
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
-  · obtain ⟨result,domain,run,equal⟩ := Stock.ComparisonGeneralLoopCfg.check_sound semantic
+  · obtain ⟨result,domain,run,equal⟩ := Stock.GeneralLoopCfg2.check_sound semantic
     exact .cfg domain equal reads
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
