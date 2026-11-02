@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockDivSrem64WitnessRuns
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerValueRelations
 
 namespace Backend.Stock.Proof.ScalarDiv.Srem64BoundaryWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
