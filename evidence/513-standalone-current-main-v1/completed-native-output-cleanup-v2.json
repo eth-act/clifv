@@ -1,0 +1,15 @@
+{
+  "status": "completed",
+  "removed_only": [
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/candidate/.lake/build",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/baseline/.lake/build",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/513-standalone-current-main-v1/ci-context-v4/candidate/.lake/build"
+  ],
+  "hashes": 1131,
+  "logical_bytes": 2209121930,
+  "preservation_sha256": "d5cd2bcd8b29e12fe4b9cbd51a08daf6bb04e9f753afc72303edeba4ab63bd1c",
+  "source_and_logs_preserved": true,
+  "native_cache_untouched": true,
+  "broad_and_fence_prefixes_untouched": true,
+  "utc": "2026-11-02T16:02:44.977760+00:00"
+}

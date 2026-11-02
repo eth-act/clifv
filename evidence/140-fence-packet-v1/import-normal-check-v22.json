@@ -59,7 +59,7 @@
       "FV.Opt.Legalize128Pre"
     ],
     "exit": 0,
-    "seconds": 0.4048893451690674,
-    "memstats": "peak 52989952\noom 0\noom_kill 0\n"
+    "seconds": 0.3135514259338379,
+    "memstats": "peak 47534080\noom 0\noom_kill 0\n"
   }
 }

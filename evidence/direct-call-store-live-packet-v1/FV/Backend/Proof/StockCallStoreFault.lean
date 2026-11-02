@@ -51,7 +51,9 @@ theorem source_fault_decomposition {env : Clif.Env} {cp : Clif.Program} {fr : Cl
   rcases source_call_fault_or_continues body lookup external returns trapped with failed |
       ⟨after,value,called,typed,remaining⟩
   · exact .inl failed
-  · have failed := source_store_faults rfl term little remaining
+  · have failed := source_store_faults
+      (fr := {fr with regs := fr.regs.set source value,body := [⟨[],.store .store .i64 flags source pointer 8⟩]})
+      rfl term little remaining
     obtain ⟨bits,address,readValue,readPointer,invalid,flag⟩ := source_store_trap failed
     have originalPointer : fr.get pointer = .ok address := by
       simpa only [Clif.Frame.get,Clif.Regs.set,separate,↓reduceIte] using readPointer

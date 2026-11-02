@@ -61,6 +61,12 @@ Stock deliberately revises this constructor.
 The witness alone does not prove reachable root 810 selection under an actual original-scope function. It prevents the legacy nonmatch from serving as a Stock exclusion.
 The deferred-effect invariant must preserve the producer's load/trap before the consumer's result becomes available.
 
+The coordinator reviewed this distinction again on 2026-11-02.
+The witness name refers to an evaluator helper call. It does not identify a CLIF call.
+The exact candidate uses an atomic i8 load and default flags.
+Reachable root810 selection under the original Stock scope remains unproved.
+The active worker must prove that selection before it claims this case as execution coverage.
+
 ## Calls, addresses, and stack arguments
 
 | Rows or operation | Existing facts | Remaining distinction |

@@ -1,0 +1,31 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquire810Witness.lean:56:2: error: unsolved goals
+case refine_2.loadAcquire
+result : Result
+event : BlockScanEvent
+record : ScanRecord
+step : Step
+ty✝ : CTy
+rt✝ rn✝ : Reg
+flags✝ : Clif.MemFlags
+observed :
+  ∃ a,
+    (Except.ok result).toOption = some a ∧
+      ∃ i h x,
+        x ∈ a.blockScans[i].output.records ∧
+          (x.inst = 1 ∧ Option.any (fun step => decide (810 ∈ step.rules)) x.output.step = true) ∧
+            ∃ i x_1,
+              (match x.output.emitted[i] with
+                | MInst.loadAcquire ty rt rn flags => decide (ty = CTy.int 8) && decide (flags = { })
+                | x => false) =
+                true
+lowered : lower function = Except.ok result
+scope : lowerScopeB function = true
+dominated : dominatedB function = true
+events : event ∈ result.blockScans
+records : record ∈ event.output.records
+current : record.inst = 1
+recorded : record.output.step = some step
+root : 810 ∈ step.rules
+emitted : MInst.loadAcquire (CTy.int 8) rt✝ rn✝ { } ∈ record.output.emitted
+kind : ty✝ = CTy.int 8 ∧ flags✝ = { }
+⊢ ∃ x x_1, MInst.loadAcquire (CTy.int 8) x x_1 { } ∈ record.output.emitted

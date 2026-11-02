@@ -1,0 +1,21 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "label": "StockAcquire810Witness",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquire810Witness.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquire810Witness.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquire810Witness.ilean"
+      ],
+      "exit": 1,
+      "seconds": 24.322715282440186,
+      "memstats": "peak 320860160\noom 0\noom_kill 0\n"
+    }
+  ]
+}

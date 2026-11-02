@@ -1,0 +1,38 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHelpers.lean:116:75: error(lean.unknownIdentifier): Unknown identifier `data_program`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireHelpers.lean:120:76: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  (next.base, after).fst
+in the target expression
+  { base := next.base, demand := st.demand, uses := st.uses, instBlock := st.instBlock, entryColor := st.entryColor,
+      endColor := st.endColor, tryRegs := st.tryRegs, current := st.current, color := st.color, sunk := st.sunk,
+      opportunistic := st.opportunistic, alias := st.alias } =
+    { base := (st.base.fresh RegClass.int).snd.emit instruction, demand := st.demand, uses := st.uses,
+      instBlock := st.instBlock, entryColor := st.entryColor, endColor := st.endColor, tryRegs := st.tryRegs,
+      current := st.current, color := st.color, sunk := st.sunk, opportunistic := st.opportunistic, alias := st.alias }
+
+ctx : Ctx
+cfg : Config
+overlap : cfg.checkOverlap = false
+fuel : Nat
+enough : 40 ≤ fuel
+ty flags address out : V
+st next : State
+trace after : Array RuleId
+run : ApplyInternal program (sem ctx) cfg fuel 27 422 [ty, flags, address] (st, trace) out (next, after)
+legacy :
+  ApplyInternal program (Backend.sem ctx) cfg fuel 27 422 [ty, flags, address] (st.base, trace) out (next.base, after)
+frame :
+  next =
+    { base := next.base, demand := st.demand, uses := st.uses, instBlock := st.instBlock, entryColor := st.entryColor,
+      endColor := st.endColor, tryRegs := st.tryRegs, current := st.current, color := st.color, sunk := st.sunk,
+      opportunistic := st.opportunistic, alias := st.alias }
+instruction : MInst
+decoded :
+  MInst.ofV (V.data 58 42 [ty, V.reg ((st.base, trace).fst.fresh RegClass.int).fst, address, flags]) = some instruction
+value : out = V.reg ((st.base, trace).fst.fresh RegClass.int).fst
+base : (next.base, after).fst = ((st.base, trace).fst.fresh RegClass.int).snd.emit instruction
+⊢ { base := next.base, demand := st.demand, uses := st.uses, instBlock := st.instBlock, entryColor := st.entryColor,
+      endColor := st.endColor, tryRegs := st.tryRegs, current := st.current, color := st.color, sunk := st.sunk,
+      opportunistic := st.opportunistic, alias := st.alias } =
+    { base := (st.base.fresh RegClass.int).snd.emit instruction, demand := st.demand, uses := st.uses,
+      instBlock := st.instBlock, entryColor := st.entryColor, endColor := st.endColor, tryRegs := st.tryRegs,
+      current := st.current, color := st.color, sunk := st.sunk, opportunistic := st.opportunistic, alias := st.alias }

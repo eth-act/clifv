@@ -1,0 +1,13 @@
+{
+  "owner": "worker-O execution delegate investigate_513",
+  "proof_budget": "1GiB explicit-j1;onejob",
+  "source": ".git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/source/FV/Backend/Proof",
+  "kernel_prefix": ".git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+  "cache_policy": "reuse existing fence prefix;no new cache/worktree",
+  "cleanup_owner": "this worker; preserve source/logs/receipts before owned outputs removal",
+  "accepted_case": "stock_loadSink_call_witness true: exact atomicLoad i8/defaultflags/pointer1/result0; evaluator call, not sourcecall",
+  "source_input_distinction": "helper witness does not establish reachable root810 under actual Stock LowerScope",
+  "preserved_input_sha256": "e07fc9bdcefcecb0a10d557d7281a68906be0c48ccae6ba2b664fe9193ce416b",
+  "full_goal_complete": false,
+  "utc": "2026-11-02T16:06:43.053350+00:00"
+}

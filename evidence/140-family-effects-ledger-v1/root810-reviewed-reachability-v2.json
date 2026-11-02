@@ -1,0 +1,16 @@
+{
+  "status": "reviewed_scope_clarification",
+  "previous_readme_sha256": "06b744656141e2c450cc38d0ba0d26900594d6394f48a38e6bed5805029c46b6",
+  "current_readme_sha256": "f0eca39159c1d76d71e5ae14b7d7be2da24ec14244ac51dfc8679f6f5266a084",
+  "candidate": "atomic i8 load with default flags",
+  "positive_fact": "evaluator sink helper call succeeds",
+  "not_established": "reachable root810 selection under original Stock scope",
+  "required": [
+    "actual selection",
+    "deferred value and memory effects",
+    "original load first-trap ordering"
+  ],
+  "legacy_exclusion_transferred": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-02T16:06:21.697422+00:00"
+}

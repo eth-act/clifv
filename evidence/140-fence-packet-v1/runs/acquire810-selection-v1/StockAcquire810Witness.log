@@ -1,0 +1,76 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquire810Witness.lean:44:64: error(lean.invalidField): Invalid field `toList`: The environment does not contain `List.toList`, so it is not possible to project the field `toList` from an expression
+  step.rules
+of type `List RuleId`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquire810Witness.lean:57:2: error: unsolved goals
+case refine_2.zero
+result : Result
+event : BlockScanEvent
+record : ScanRecord
+step : Step
+emitted : 0 < record.output.emitted.size
+observed :
+  ∃ a,
+    (Except.ok result).toOption = some a ∧
+      ∃ i h x,
+        x ∈ a.blockScans[i].output.records ∧
+          (x.inst = 1 ∧ Option.any (fun step => decide (810 ∈ step.rules)) x.output.step = true) ∧
+            ∃ i x_1,
+              (match x.output.emitted[i] with
+                | MInst.loadAcquire ty rt rn flags => decide (ty = CTy.int 8) && decide (flags = { })
+                | x => false) =
+                true
+lowered : lower function = Except.ok result
+scope : lowerScopeB function = true
+dominated : dominatedB function = true
+events : event ∈ result.blockScans
+records : record ∈ event.output.records
+current : record.inst = 1
+recorded : record.output.step = some step
+root : 810 ∈ step.rules
+kind :
+  (match record.output.emitted[0] with
+    | MInst.loadAcquire ty rt rn flags => decide (ty = CTy.int 8) && decide (flags = { })
+    | x => false) =
+    true
+⊢ ∃ x x_1, MInst.loadAcquire (CTy.int 8) x x_1 { } ∈ record.output.emitted
+
+case refine_2.succ
+result : Result
+event : BlockScanEvent
+record : ScanRecord
+step : Step
+n✝ : Nat
+emitted : n✝ + 1 < record.output.emitted.size
+observed :
+  ∃ a,
+    (Except.ok result).toOption = some a ∧
+      ∃ i h x,
+        x ∈ a.blockScans[i].output.records ∧
+          (x.inst = 1 ∧ Option.any (fun step => decide (810 ∈ step.rules)) x.output.step = true) ∧
+            ∃ i x_1,
+              (match x.output.emitted[i] with
+                | MInst.loadAcquire ty rt rn flags => decide (ty = CTy.int 8) && decide (flags = { })
+                | x => false) =
+                true
+lowered : lower function = Except.ok result
+scope : lowerScopeB function = true
+dominated : dominatedB function = true
+events : event ∈ result.blockScans
+records : record ∈ event.output.records
+current : record.inst = 1
+recorded : record.output.step = some step
+root : 810 ∈ step.rules
+kind :
+  (match record.output.emitted[n✝ + 1] with
+    | MInst.loadAcquire ty rt rn flags => decide (ty = CTy.int 8) && decide (flags = { })
+    | x => false) =
+    true
+⊢ ∃ x x_1, MInst.loadAcquire (CTy.int 8) x x_1 { } ∈ record.output.emitted
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquire810Witness.lean:51:4: warning: This simp argument is unused:
+  Array.contains_eq_mem
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Bool.and_eq_true, List.any_eq_true, Option.any_eq_true, Array.any_eq_true,
+    decide_eq_true_eq] at observed
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
