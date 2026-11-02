@@ -1,6 +1,7 @@
+import FV.Backend.Proof.StockMemoryLoad
 import FV.Backend.Proof.StockMemoryReadTransport
 import FV.Backend.Proof.StockMemoryIntegerDispatch
-import FV.Backend.Proof.StockMemoryOffsetEightValues
+import FV.Backend.Proof.StockMemoryOffsetEightLoadRecord
 
 namespace Backend.Stock.Memory.IntegerRoots
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64

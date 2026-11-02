@@ -1,3 +1,4 @@
+import FV.Isle.Generated.Manifest
 import FV.Backend.Proof.StockSourceEntry
 import FV.Backend.Proof.StockEntryAssembly
 import FV.Backend.Proof.StockEntryArgs

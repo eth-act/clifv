@@ -1,3 +1,5 @@
+import FV.Backend.Proof.RegallocOperands
+import FV.E2E.RegLevelPush
 import FV.Backend.Proof.IselEmitDefs
 import FV.Backend.Proof.IselEmitFns
 import FV.Backend.Proof.IselLowerAll

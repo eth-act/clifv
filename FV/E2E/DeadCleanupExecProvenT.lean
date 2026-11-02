@@ -1,6 +1,5 @@
 import FV.E2E.DeadCleanupExecGotT
 import FV.E2E.DeadCleanupExecGoodReadsT
-import FV.E2E.ExecProvenT
 import FV.E2E.DeadCleanupBinaryT
 import FV.E2E.DeadCleanupBinCheckT
 import FV.E2E.BinCheckT
@@ -14,11 +13,7 @@ import FV.E2E.DeadCleanupExecStaticT
 import FV.E2E.DeadCleanupLinkCheckT
 import FV.E2E.DeadCleanupStackBoundT
 import FV.E2E.ExecBytesT
-import FV.E2E.ExecGoodReadsT
-import FV.E2E.ExecGoodRunT
 import FV.E2E.ExecGotT
-import FV.E2E.ExecRunNT
-import FV.E2E.ExecStaticT
 import FV.E2E.LinkArmT
 import FV.E2E.LinkCheckT
 import FV.E2E.LinkGoodT

@@ -1,4 +1,4 @@
-import FV.E2E.LinkOwnCallsStmtHyp
+import FV.E2E.LinkOwnCallsStmt
 import FV.E2E.LinkOwnCallsTryHyp
 import FV.E2E.LinkOwnGotRun
 

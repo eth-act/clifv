@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockSourceView
-import FV.Backend.Proof.IselCmpInv
 import FV.Backend.Proof.StockNoOpportunityPre
 import FV.Backend.Proof.IselCovSound
 import FV.Backend.Proof.StockPatternSource

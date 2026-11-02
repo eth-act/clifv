@@ -1,4 +1,4 @@
-import FV.Backend.Proof.IselCovData
+import FV.Backend.Proof.IselCovSound
 
 /-!
 # Form coverage of the ISLE lowering (V3): the extern helpers

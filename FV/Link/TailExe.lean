@@ -1,5 +1,7 @@
 import FV.Link.TailCompile
-import FV.Link.DeadCleanupOptExe
+import FV.Opt.Proof.InterpEval
+import FV.Link.DeadCleanupExeSource
+import FV.Link.ExeInputReachCleanupIn
 import FV.E2E.TailLoopSim
 
 /-! # The executable compiler with self tail calls as loops is correct (S8, #32)

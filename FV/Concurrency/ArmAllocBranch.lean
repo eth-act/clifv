@@ -1,5 +1,6 @@
 import FV.Concurrency.ArmAllocLoopMem
 import FV.E2E.RegLevelGoto
+import FV.Backend.Proof.RefinesInsts2
 import FV.E2E.EmitLabels
 
 /-!

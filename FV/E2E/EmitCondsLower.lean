@@ -1,3 +1,5 @@
+import FV.Backend.Proof.LowerComplete
+import FV.Backend.Proof.RegallocTac
 import FV.Backend.Proof.IselEmitDefs
 import FV.Backend.Proof.LowerShapeOkFacts
 import FV.Backend.Proof.SpillStep4Cfg

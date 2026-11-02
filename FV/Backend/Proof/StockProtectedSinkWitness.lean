@@ -1,5 +1,4 @@
 import FV.Backend.Proof.StockProtectedSinkFrame
-import FV.Backend.Proof.LowerSim
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.StockNoLoadSource
 

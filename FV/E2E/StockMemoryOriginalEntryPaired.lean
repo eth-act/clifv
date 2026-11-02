@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockOriginalEntryPrelude
-import FV.E2E.StockMemoryPairedEntry
+import FV.E2E.StockMemoryPairedScan
+import FV.E2E.StockMemoryRegisterPrelude
 
 namespace E2E.StockMemory
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock Backend.Stock.Proof Backend.Stock.Proof.Control

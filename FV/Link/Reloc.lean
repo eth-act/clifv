@@ -1,4 +1,3 @@
-import FV.Link.Layout
 import FV.E2E.BinCheck
 
 /-! # Relocation of the program part (L2b)

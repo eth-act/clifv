@@ -1,7 +1,6 @@
 import FV.Backend.Proof.StockAluOperandCoverage
 import FV.Backend.Proof.StockSelectionReceipts
 import FV.Backend.Proof.IselCtlRuleIds
-import FV.Backend.Proof.StockConstantRecordValues
 
 /-! Add/subtract typed receipts derived from actual record selection. -/
 namespace Backend.Stock.Proof

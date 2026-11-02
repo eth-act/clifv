@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockMemoryExtLoadSelected
+import FV.Backend.Proof.StockMemoryExtLoadSelection
 import FV.Backend.Proof.StockMemoryLoad
 import FV.Backend.Proof.StockGuardedRecordValues
 

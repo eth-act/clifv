@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockProtectedSinkFrame
+import FV.Backend.Proof.StockProtectedSinkRules
 import FV.Backend.Proof.StockNoLoadSource
 
 namespace Backend.Stock.Proof.SinkRules

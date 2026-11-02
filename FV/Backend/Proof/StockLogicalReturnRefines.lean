@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockLogicalBodyRefines
+import FV.Backend.Proof.StockBlockCode
 import FV.Backend.Proof.StockPureReturnRefines
-import FV.Backend.Proof.StockArithmeticEntryRefines
 
 /-! Complete original-entry-to-return simulation for ordinary logical/mixed bodies.
 The source class extends the preserved Mixed class; the old theorems remain intact. -/

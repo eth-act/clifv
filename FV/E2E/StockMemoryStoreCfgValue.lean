@@ -1,4 +1,4 @@
-import FV.E2E.StockMemoryPairedFunction
+import FV.Backend.Proof.LowerSim
 import FV.Backend.Proof.DeadCleanupAdapter
 import FV.Backend.StockMemoryStoreCfgCheck
 

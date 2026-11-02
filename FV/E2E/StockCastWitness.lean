@@ -1,4 +1,5 @@
 import FV.E2E.StockCastFixtures
+import FV.Backend.Proof.StockScalarCastDomain
 import FV.E2E.StockShiftWitness
 import FV.E2E.StockScalarNI
 import FV.E2E.CompiledSemanticNI

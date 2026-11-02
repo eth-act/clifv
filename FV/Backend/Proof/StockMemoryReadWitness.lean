@@ -1,6 +1,5 @@
 import FV.Backend.Proof.StockMemoryReadTransport
 import FV.Backend.Proof.StockMemoryLoadWitness
-import FV.Backend.Proof.RefinesCSem
 
 namespace Backend.Stock.Memory.LoadFixture
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

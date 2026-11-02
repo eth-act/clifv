@@ -1,5 +1,7 @@
 import FV.Backend.Proof.StockMemorySourceExecution
-import FV.Backend.Proof.StockArithmeticEntryRefines
+import FV.Backend.Proof.StockEntryPrelude
+import FV.Backend.Proof.StockArithmeticTerminalDefined
+import FV.Backend.Proof.StockReturnContract
 
 /-! Additive ordinary source-to-return composition, including memory bodies.
 Existing ABI entry, code placement and return semantics are reused unchanged. -/

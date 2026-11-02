@@ -1,5 +1,6 @@
+import FV.Isle.Generated.Manifest
 import FV.Backend.Proof.StockMemorySourceExecution
-import FV.Backend.Proof.StockArithmeticEntryRefines
+import FV.Backend.Proof.StockArithmeticTerminalDefined
 import FV.Backend.Proof.StockPerEdgeReturnContract
 
 /-! UNVALIDATED next-batch source. The frozen production packet excludes this file.

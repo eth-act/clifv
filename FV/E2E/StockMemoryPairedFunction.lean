@@ -1,3 +1,4 @@
+import FV.E2E.StockMemoryPairedBody
 import FV.E2E.StockMemoryPairedEntryReturn
 
 namespace E2E.StockMemory

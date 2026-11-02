@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockTermIndex
 import FV.Backend.Proof.StockRuleFrame
-import FV.Backend.Proof.StockPatternSink
+import FV.Backend.Proof.IselData
 
 /-! Exhaustive syntax boundary for the actual generated program: four complete
 matched-rule contracts cover every direct sink constructor call. -/

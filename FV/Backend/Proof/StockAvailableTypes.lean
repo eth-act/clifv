@@ -1,4 +1,7 @@
-import FV.Backend.Proof.StockSelectParameterOriginalSourceValues
+import FV.Backend.Proof.StockDFG
+import FV.Backend.Proof.LowerCertBase
+import FV.Backend.Proof.StockTraversalRecordOrigin
+import FV.Backend.Proof.StockCoreScanOrigin
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 /-- Every declared original value has a type in the actual scan context;

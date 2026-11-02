@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMemorySretCopyFunctionObservation
 import FV.Backend.Proof.StockMemorySretCopyClass
 import FV.Backend.Proof.StockMemoryABIContract
 import FV.Backend.Proof.StockMemoryCfgNotrap
