@@ -22,7 +22,20 @@ is that native route for a small foundation scope:
   (the operands swapped for a greater-than or less-or-equal ordering). The flags feed the
   user of the `icmp` as for an `i64` `icmp`: a `cset`, the `b.cond` of a `brif`, the `csel`
   of a `select` (`is_nonzero_cmp`). No new extern either: `nzcv` is `Backend.externCtor`'s,
-  and `ccmp`, `sbcs_side_effect`, `produces_flags_concat` are ISLE rules.
+  and `ccmp`, `sbcs_side_effect`, `produces_flags_concat` are ISLE rules;
+* `select` and `select_spectre_guard` of `i128` values (`lower_select_cond` at `$I128`): the
+  flags of the condition (`is_nonzero_cmp`), then one `csel` per half; and a `select` of
+  narrower values on an `i128` condition (`is_nonzero` at `$I128`: `orr` of the halves, then
+  the `cmp` of `lower_select`). `select_spectre_guard` is lowered without `use_csdb`
+  (`maybe_csdb_after_select` adds no `csdb`); the stock-configured driver rejects it under
+  `use_csdb=true` (`StockConfig.usesCsdb`);
+* `bmask` of an `i128` value or to `i128` (`lower_bmask`): `orr` of the halves, then `cmp` and
+  `csetm`; the `csetm` register is both halves of an `i128` result;
+* `bitselect` at `i128` (`bitselect_i128`): `and`, `bic` and `orr` of each half. The only new
+  extern of these three items is `use_csdb` (false). Their helpers (`with_flags` of the two
+  `CSel` of `ConsumesFlagsTwiceReturnsValueRegs`, `with_flags_reg`, `csetm`, `cmp_imm`,
+  `and_imm`, `and_reg`, `bic`, `orr`) are ISLE rules, and `temp_writable_reg`, `value_reg`,
+  `value_regs` and `value_regs_get` are `Backend.externCtor`'s.
 
 Any other instruction with an `i128` operand or result makes `lower128` fail, so that a caller
 can keep the legalized lowering. `FVTest.Backend.I128Native` routes the functions that
@@ -61,9 +74,11 @@ def shift128 : Clif.BinaryOp → Bool
 
 /-- `InstructionData` with the `i128` forms of the foundation: `isplit` of an `i128`,
 `iconcat` of two `i64`, an extension to `i128`, `bitcast.i128`, an `i128` shift or rotate
-(`shift128`), an `icmp` of two `i128` values (`IntCompare`). Every other instruction is
-`instData` (which accepts `ireduce` from `i128` and a narrow shift by an `i128` amount, because
-it checks the result type). -/
+(`shift128`), an `icmp` of two `i128` values (`IntCompare`), `select`,
+`select_spectre_guard` and `bitselect` at `i128` (`Ternary`), `bmask` to `i128` (`Unary`).
+Every other instruction is `instData` (which accepts `ireduce` from `i128`, a narrow shift by
+an `i128` amount, a narrow `select` on an `i128` condition and a narrow `bmask` of an `i128`
+value, because it checks the result type). -/
 def instData128 (f : Clif.Function) : Clif.Inst → Except String V
   | .isplit .i128 x => pure (instDataV "Unary" [opcodeV "Isplit", .value x])
   | .binary op .i128 x y =>
@@ -77,13 +92,23 @@ def instData128 (f : Clif.Function) : Clif.Inst → Except String V
     pure (instDataV "LoadNoOffset" [opcodeV "Bitcast", .value x, .op (.memFlags flags)])
   | .icmp cc .i128 x y =>
     pure (instDataV "IntCompare" [opcodeV "Icmp", .values [x, y], mkVariant tyIntCC (intccName cc)])
+  | .select .i128 c x y => pure (instDataV "Ternary" [opcodeV "Select", .values [c, x, y]])
+  | .selectSpectreGuard .i128 c x y =>
+    pure (instDataV "Ternary" [opcodeV "SelectSpectreGuard", .values [c, x, y]])
+  | .bitselect .i128 c x y => pure (instDataV "Ternary" [opcodeV "Bitselect", .values [c, x, y]])
+  | .bmask .i128 x => pure (instDataV "Unary" [opcodeV "Bmask", .value x])
   | i => instData f i
 
 /-- The instructions of the foundation that may have an `i128` operand or result (`wide`: the
 `i128` values). A shift or rotate (`shift128`) is in it at `i128`, and at a narrower type when
-only its amount is an `i128` value. An `icmp` is in it at `i128`. -/
+only its amount is an `i128` value. An `icmp` is in it at `i128`. A `select` is in it at `i128`
+and on an `i128` condition, `select_spectre_guard` and `bitselect` at `i128`, and `bmask` at
+`i128` and of an `i128` value. -/
 def foundation128 (wide : Nat → Bool) : Clif.Inst → Bool
   | .isplit .i128 _ | .iconcat .i64 _ _ | .extend _ .i128 _ | .icmp _ .i128 _ _ => true
+  | .selectSpectreGuard .i128 .. | .bitselect .i128 .. => true
+  | .select ty c _ _ => ty == .i128 || wide c
+  | .bmask ty x => ty == .i128 || wide x
   | .ireduce _ x | .bitcast .i128 _ x => wide x
   | .binary op ty x _ => shift128 op && (ty == .i128 || !wide x)
   | _ => false
@@ -263,8 +288,10 @@ def buildCtx128 (f : Clif.Function) :
 /-- `Stock.externCtor` with register pairs. `put_in_regs` and `put_in_regs_vec` of an `i128`
 value give both registers, with the demand and sunk-instruction checks of `Stock.externCtor`;
 `output_pair` (`machinst/isle.rs`) makes a two-value output; `gen_return` of a signature with
-an `i128` return places the registers at `retLocs128`. `put_in_reg` of an `i128` value and
-calls with `i128` arguments or returns are unmodeled. Everything else is `Stock.externCtor`. -/
+an `i128` return places the registers at `retLocs128`; `use_csdb` is false (the stock setting
+`use_csdb=false`; the stock-configured driver rejects `select_spectre_guard` under
+`use_csdb=true`). `put_in_reg` of an `i128` value and calls with `i128` arguments or returns
+are unmodeled. Everything else is `Stock.externCtor`. -/
 def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : State) :
     ExtResult (V × State) :=
   let wide (v : Nat) : Bool := (hiReg? hi v).isSome
@@ -288,6 +315,7 @@ def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : Sta
         | none => .unmodeled "put_in_regs_vec"
     else externCtor ctx t args st
   | TId.output_pair, [.regs a, .regs b] => .ok (.regsVec [a, b], st)
+  | TId.use_csdb, [] => .ok (.bool false, st)
   | TId.gen_return, [.regsVec rss] =>
     if ctx.func.sig.returns.any (·.ty == .i128) then
       match retLocs128 ctx.func.sig with
