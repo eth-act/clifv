@@ -1,0 +1,16 @@
+{
+  "status": "APPROVED_SINGLE_ARCHIVE_ORIGIN",
+  "receipt_sha256": "d47542def8cb100defba7833c9f5bc5d9a292bf033d53e1a27778689314ed102",
+  "scope": "FV/Backend/EdgeSplit.lean only",
+  "required_gates": [
+    "source",
+    "configuration",
+    "dependency key",
+    "output hashes",
+    "actual normal check"
+  ],
+  "archive_derived": true,
+  "fresh_compiler_claim": false,
+  "review": "O checked mapping, current P trace, and three payload hashes; root approved this one origin",
+  "utc": "2026-11-03T12:47:48.528751+00:00"
+}

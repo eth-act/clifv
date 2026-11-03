@@ -1,0 +1,78 @@
+{
+  "status": "SOURCE_HEADER_COMPARISON_ONLY",
+  "files": {
+    "FV/Backend/ABIReadCfg.lean": {
+      "old_public_headers": [],
+      "candidate_sha256": "ae78852b20529c5a367010ea3b55266f5bcdbdf78011d0b24d56d410038091ad"
+    },
+    "FV/Backend/SemanticNICheck.lean": {
+      "old_public_headers": [],
+      "candidate_sha256": "ea7714a42da26019326b0c93fd827e9c2c143b2b3ffc5487335cdd6087ce32a4"
+    },
+    "FV/E2E/ABIReadCfg.lean": {
+      "old_public_headers": [
+        {
+          "name": "refines",
+          "sha256": "bc739eabb062a55ab3031f8892af3b8bd2aa0ef004e88d3b39b90dd426e80d8b"
+        },
+        {
+          "name": "driver",
+          "sha256": "b2eb8b2cffc4904335e04bf86b7b3fa8ea8decb04688f281df2887c744dc8e00"
+        },
+        {
+          "name": "memory",
+          "sha256": "cff7c40980275dd08288844b83834e558855b63c374cc303bca0eb67203511e5"
+        },
+        {
+          "name": "checked_step_frame",
+          "sha256": "cb37211f7398fde12ead51f4389deeaf50a277654fc384d150d5d3f76c2b5934"
+        },
+        {
+          "name": "checked_step_transport",
+          "sha256": "62eefd09b61ccb9670aa2f9085fe48c10fcf8d7904c01837d89a9928eb22578e"
+        },
+        {
+          "name": "step_realize",
+          "sha256": "8959a45a423b8e8d38e600ee36ae7538df3291187942524a2f121e63543494ac"
+        },
+        {
+          "name": "return_transport",
+          "sha256": "f702aca15593d0982cf5e98ea67467c942599506b30d1443357005adee142aee"
+        },
+        {
+          "name": "return_realize",
+          "sha256": "461621b2e3eba2a690f72a90b60209ad6583e1b819901e9adced04c02045bbcd"
+        },
+        {
+          "name": "machine_return",
+          "sha256": "e0cc3e465ead9b78a38eafa715e72c311f6dd2dbfa2c9fe4e83876b5dd134f0a"
+        },
+        {
+          "name": "checked_instruction",
+          "sha256": "7fd2c1c11eb694fdfa066a2347c31da0d4b65f253c4e9dde75c5cfabf1c47837"
+        }
+      ],
+      "candidate_sha256": "69000ce30bbc5a33bdee756b7e34618cedcd1beb83f3fb020b174a536518ad95"
+    },
+    "FV/E2E/CompiledSemanticNI.lean": {
+      "old_public_headers": [
+        {
+          "name": "toSemantic",
+          "sha256": "d02b43c52703e56addcd5a83aee57a8ec03294c4e68ba4340368a15b891910dd"
+        },
+        {
+          "name": "of_checks",
+          "sha256": "6386216ae577340e8ad43ae2dc7637d23cc5da5f23e428724652854b21ecdbe6"
+        },
+        {
+          "name": "backend_correct_world_niX_semantic",
+          "sha256": "89248a54598350bec26d64cf6f56b87f682e950ff1a93a6acc7f761195bf1d4d"
+        }
+      ],
+      "candidate_sha256": "fdbd172e5a4f0cbd795fc23ad0d34903260bfd3d682b19dbc92655e9a4611cf1"
+    }
+  },
+  "headers": 13,
+  "axiom_check": "separate mandatory gate",
+  "current_consumer_check": "separate mandatory gate"
+}

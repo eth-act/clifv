@@ -1,0 +1,19 @@
+--- a/FV/E2E/CompiledProgramReturnPins.lean
++++ b/FV/E2E/CompiledProgramReturnPins.lean
+@@ -134,5 +134,16 @@
+     L.returnPinsB_sound pins⟩
+ 
+ 
++theorem of_checks_call_stores {cleanup : Bool} (lower : SemanticABI.checkCallStores g (L.A g).vc = true)
++    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup (L.A g).vc) = .ok (L.A g).vcp)
++    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup (L.A g).vc) (L.A g).vcp = true)
++    (check : Backend.checkAlloc (L.A g).vcp (L.A g).rf = .ok ())
++    (alloc : lowerRFunc (L.A g).vcp (L.A g).rf = .ok (L.A g).af)
++    (emit : emitFunc (L.A g).k (L.A g).af = .ok (L.A g).fa)
++    (layout : (L.A g).fa.layout = .ok (L.A g).fb)
++    (pins : L.returnPinsB g = true) : CompiledProgramReturnPins L g :=
++  ⟨CompiledSemanticReturnPins.of_checks_call_stores lower prepared prepOk check alloc emit layout,
++    L.returnPinsB_sound pins⟩
++
+ end CompiledProgramReturnPins
+ end E2E

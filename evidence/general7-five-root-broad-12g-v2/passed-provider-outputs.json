@@ -1,0 +1,117 @@
+{
+  "FV.Backend.Proof.StockBranchLabelsCarry": {
+    "native_key": "5035e02b84de4466",
+    "outputs": {
+      "o": [
+        "f5a83b5e8b234343.olean"
+      ],
+      "m": false,
+      "i": "ab14c04c0d41eecd.ilean",
+      "c": "9621c0afd40f24ca.c"
+    },
+    "trace_sha256": "d4864aa2879e8ca87604fafee946d5d723055b4c504a9abb9ca4a0d76c3c6e16",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockBranchLabelsCarry.olean": "415d7a5298346043b58aa429e547148906dcf01b065f2d2897b262305e7a1e3a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockBranchLabelsCarry.ilean": "d2e57a414a8f2f03a7c209460b6ce97df204a9491dae06ea4c951c0c9cc285f5",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockBranchLabelsCarry.olean.hash": "9c634fcc69d2cd04792b1ba3d5338abdd71d0da8f90c161c2b6d14c186a3c2f9",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockBranchLabelsCarry.ilean.hash": "c81deeab784fc16a6c2d1b053103143f0192f2f730b698a447ab03f911d7470a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockBranchLabelsCarry.trace": "d4864aa2879e8ca87604fafee946d5d723055b4c504a9abb9ca4a0d76c3c6e16",
+      ".lake/build/ir/FV/Backend/Proof/StockBranchLabelsCarry.setup.json": "6f66ef06b90798f7b9d1f5c882348ab369bbb0f6a2d3aa7e56027f8774d4b07d",
+      ".lake/build/ir/FV/Backend/Proof/StockBranchLabelsCarry.c": "00cccb377337d44a28c1795934ddadc885f17660bf5fb98e9f7336a9de98f0dd",
+      ".lake/build/ir/FV/Backend/Proof/StockBranchLabelsCarry.c.hash": "d1c0fbd4ad7a20bba3a07d7cf06b693cd24a30430415a222dcd01eeeb48a133c"
+    },
+    "reused_completed_output": false
+  },
+  "FV.Backend.Proof.StockTableBody": {
+    "native_key": "51afd566560c373d",
+    "outputs": {
+      "o": [
+        "ba883fc702cc72a0.olean"
+      ],
+      "m": false,
+      "i": "9cfd2893e79e875e.ilean",
+      "c": "89d7c3e4e924b954.c"
+    },
+    "trace_sha256": "c408495cf207f503ed3b0aa44e2028c66d97609515a63ec33a1317a60a62d195",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTableBody.olean": "3fe1765c6f9fd9f308452950e03ecfee08ed72553c46040709c8184264d7499a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTableBody.ilean": "fc9a5dfe1593f43125b1841fa8beea833aa12e9ca5278b63117afb195bd10b21",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTableBody.olean.hash": "17940a35fa4151e3d7e12ee7a10e2d1ba2a29e0a1b5cf96a4efe2f50c3b7d7a8",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTableBody.ilean.hash": "5d96a0a4432a316b5c9ec6d6168595b12a7f7a14e0c3045aec1c617a48410a05",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTableBody.trace": "c408495cf207f503ed3b0aa44e2028c66d97609515a63ec33a1317a60a62d195",
+      ".lake/build/ir/FV/Backend/Proof/StockTableBody.setup.json": "36ec1c992a480e3e336ce967ec7f9b1eeea0579d5e6d7c535c3f54262dff92ed",
+      ".lake/build/ir/FV/Backend/Proof/StockTableBody.c": "9311223f5677b80a3e9d31f1051557567446717ef7981e47c0e77fc65bb8987b",
+      ".lake/build/ir/FV/Backend/Proof/StockTableBody.c.hash": "9bd4181d613b4d5be81fa422952c66ad2a1e9158b9856955a721d3da58bdb9f9"
+    },
+    "reused_completed_output": false
+  },
+  "FV.Backend.Proof.StockUextComparisonValues": {
+    "native_key": "9e52892dabb6c36b",
+    "outputs": {
+      "o": [
+        "3d96c75f50cbaab5.olean"
+      ],
+      "m": false,
+      "i": "7db5161cfde1d746.ilean",
+      "c": "1dc4a053f601f165.c"
+    },
+    "trace_sha256": "7fe8f0193d1d6a73d37624f7719b1d28e6c23bf79f4dbe9aa87c4b5d11b45c35",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockUextComparisonValues.olean": "5a6e3f0783fc93ef3a7cc17305022a7c94c94e51723e8c039b1c64a0cf778757",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockUextComparisonValues.ilean": "2529e1b6d35fd0111702b7215180e9e6904b495d3d1eeffee5eb90cfaef5a541",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockUextComparisonValues.olean.hash": "58a7bb5f00de09e3bd0b730ae5a984493c1e454a6da2e98a6ac4c91f94874819",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockUextComparisonValues.ilean.hash": "ca24722fb33bb1d18fe3a70e66f1014677de883fa914cb4adfca7ed1ea4f2972",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockUextComparisonValues.trace": "7fe8f0193d1d6a73d37624f7719b1d28e6c23bf79f4dbe9aa87c4b5d11b45c35",
+      ".lake/build/ir/FV/Backend/Proof/StockUextComparisonValues.setup.json": "e5d449dc85d714738b23dcf183b8a0ba1ab04f491ff20e7c559841dfce8991e3",
+      ".lake/build/ir/FV/Backend/Proof/StockUextComparisonValues.c": "4d38bf51430249c03ab199d1d4e3246f5acf8f633b792be040307265c24113c9",
+      ".lake/build/ir/FV/Backend/Proof/StockUextComparisonValues.c.hash": "d77e10c60f96860fde02185a42400383130bebf6b364f31598bad61f99c20259"
+    },
+    "reused_completed_output": false
+  },
+  "FV.Backend.Lowering.StockGeneralArgsLoopCfg4": {
+    "native_key": "e260708c81d1715f",
+    "outputs": {
+      "o": [
+        "e8cf7c3ddf0cb712.olean"
+      ],
+      "m": false,
+      "i": "90a1a7f6e8ecbcfe.ilean",
+      "c": "01351264bdaceb61.c"
+    },
+    "trace_sha256": "b832aff017593d198a9b32f155aa0573e17332e19288548c1b4919ecf17a8495",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.olean": "c0a83fb62b0ae56740aeb536994b897c3f45a9bb5a8f552df9c733d4e7575450",
+      ".lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.ilean": "626c6eebefc765b570f9746ab7244080f827972978a95767171a3ab731c48a59",
+      ".lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.olean.hash": "1c60ac176592937c3a6e58e83ce16bce7e5e7625251ba64f47c466ee2cc6ff12",
+      ".lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.ilean.hash": "45a95aeed3641800990f146c8353306b56db50ce075825c0c17ac21b384f510a",
+      ".lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.trace": "b832aff017593d198a9b32f155aa0573e17332e19288548c1b4919ecf17a8495",
+      ".lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.setup.json": "ee9c00ef6c02aada0aadbad6615f821200ad1b0fbf3d40bcd2cb3a4611083a25",
+      ".lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.c": "92c93e141f66a0c714c83759cc8aa72301aab9739a4b1f5aa56fa240f783b24d",
+      ".lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.c.hash": "a06831d28afa5435afe8622b8de29840544665e66317a70281d84ea12844f972"
+    },
+    "reused_completed_output": false
+  },
+  "FV.Backend.StockMemorySretCopyCheck": {
+    "native_key": "d960deeda4785b87",
+    "outputs": {
+      "o": [
+        "c68549f374a76703.olean"
+      ],
+      "m": false,
+      "i": "3e046e1ad7d020fb.ilean",
+      "c": "4d15dbd72e4e0d03.c"
+    },
+    "trace_sha256": "7e80b6ba43e15e64646a133e1e403b35480f9952639a9d53249dccf78897c296",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/StockMemorySretCopyCheck.ilean": "d7b6c4b175fbfdbd99e28d742fcc656862dc953ebf276ab0fb2e211e00967b04",
+      ".lake/build/lib/lean/FV/Backend/StockMemorySretCopyCheck.olean.hash": "49062c9a92ba9e407ecf5c73caca20311dec768073fd6333d4718c0e586ee58c",
+      ".lake/build/lib/lean/FV/Backend/StockMemorySretCopyCheck.trace": "7e80b6ba43e15e64646a133e1e403b35480f9952639a9d53249dccf78897c296",
+      ".lake/build/lib/lean/FV/Backend/StockMemorySretCopyCheck.ilean.hash": "0b6d07cf9afdc1121f52a023705c5d6e2893baddc17170a179db91c473877bf4",
+      ".lake/build/lib/lean/FV/Backend/StockMemorySretCopyCheck.olean": "1ee25a7a9e75d5c2d28109d7c73ee87a0fa6ae3774f24608c068e995eaf6b1fd",
+      ".lake/build/ir/FV/Backend/StockMemorySretCopyCheck.c": "9773ae70f8bbdf8cacdcfb231c49ce6104ad6c9419195243c0399e9393fbf768",
+      ".lake/build/ir/FV/Backend/StockMemorySretCopyCheck.c.hash": "4d4be5078b8cc83f96564c3fac096f9921236a131b460352fafad397e55fc06c",
+      ".lake/build/ir/FV/Backend/StockMemorySretCopyCheck.setup.json": "6b60835c07c0f40c1b365ffb99f0b03c1f6f1fc83382b8e762f66b8ad5c67d95"
+    },
+    "reused_completed_output": false
+  }
+}

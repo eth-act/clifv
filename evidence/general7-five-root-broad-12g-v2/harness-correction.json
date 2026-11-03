@@ -1,0 +1,7 @@
+{
+  "failure": "same-user writer scan inspected an unrelated UID cwd",
+  "correction": "filter by effective workspace UID before reading cwd or command",
+  "prior_attempt_preserved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-five-root-broad-12g-v1",
+  "same_user_R_writers": [],
+  "gate_sha256": "65750b55d3d036928079ba449b72179459bf1545f2af90b0bfb3542b4de7d3a0"
+}

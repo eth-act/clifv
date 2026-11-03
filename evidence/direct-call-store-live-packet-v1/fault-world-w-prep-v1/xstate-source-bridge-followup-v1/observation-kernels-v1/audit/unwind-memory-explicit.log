@@ -1,0 +1,4 @@
+'E2E.memory_event_stepX' depends on axioms: [propext, Quot.sound]
+'E2E.ReachX.trapped_run' depends on axioms: [propext, Quot.sound]
+'E2E.UnwindMemoryFaultEvent.source_trapped' depends on axioms: [propext, Quot.sound]
+'E2E.UnwindMemoryFaultEvent.excluded_by_original' depends on axioms: [propext, Quot.sound]

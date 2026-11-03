@@ -1,0 +1,28 @@
+--- a/FV/Backend/SemanticABICheck.lean
++++ b/FV/Backend/SemanticABICheck.lean
+@@ -1,3 +1,4 @@
++import FV.Backend.StockCallStoreCheck
+ import FV.Backend.StockLiveCallCheck
+ import FV.Backend.SemanticNICheck
+ import FV.Backend.StockMemorySretCopyCheck
+@@ -63,3 +64,20 @@
+     (absent : Stock.LiveCall.check f vc = false) : checkLiveCalls f vc = checkResultCalls f vc := by
+   simp only [checkLiveCalls,absent,Bool.or_false]
+ end Backend.SemanticABI
++
++namespace Backend.SemanticABI
++set_option autoImplicit false
++
++/-- Add the returned-call store class without changing any prior checker. -/
++def checkCallStores (f : Clif.Function) (vc : VCode) : Bool :=
++  checkLiveCalls f vc || Stock.CallStore.check f vc
++
++theorem previous_check_call_stores {f : Clif.Function} {vc : VCode}
++    (accepted : checkLiveCalls f vc = true) : checkCallStores f vc = true := by
++  simp only [checkCallStores,accepted,Bool.true_or]
++
++theorem previous_exact_call_stores {f : Clif.Function} {vc : VCode}
++    (absent : Stock.CallStore.check f vc = false) : checkCallStores f vc = checkLiveCalls f vc := by
++  simp only [checkCallStores,absent,Bool.or_false]
++
++end Backend.SemanticABI

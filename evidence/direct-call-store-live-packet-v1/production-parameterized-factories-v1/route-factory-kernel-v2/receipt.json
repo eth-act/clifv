@@ -1,0 +1,153 @@
+{
+  "status": "passed-focused-source-interface-only",
+  "source_hashes": {
+    "FV/Backend/Lowering/StockCheckedRoutesWith.lean": "692adcfa0fd85c42ab8d7eece63cb6ee8c6133de35077903904a8428d4014ee2"
+  },
+  "full_source_hashes": {
+    "FV/Backend/Lowering/StockCheckedRoutesWith.lean": "692adcfa0fd85c42ab8d7eece63cb6ee8c6133de35077903904a8428d4014ee2",
+    "FV/Backend/Isel.lean": "0f045515440bfdee0eaaee14ed93f55a3bebe323e98fb76081c348a8d188ad6d",
+    "FV/Isle/Interp.lean": "4aa45099acb5ee25492992a4a010d448d8cd7beed06ca601f2620052d572c82d",
+    "FV/Isle/Syntax.lean": "09825b7c796533b335806ba901a7104bd48901400a763c0e9be440ae3f861edf",
+    "FV/Backend/MInst.lean": "504d2b8c5fb87e5ff69b50f512cc833f7d943aa56324904590ef320875ee7e5f",
+    "FV/Clif.lean": "af190442e090937659e21fc84a24f173653056239857ca2b9746769e889471ba",
+    "FV/Clif/Syntax.lean": "c253dae51602c3ea9ebef6df4d4c1651bd3b4d62dad74fabba372025e0c1010f",
+    "FV/Clif/Sem.lean": "164b58992f3c92bba9030021d3706d7c7dc50179a299ba869d2196d2a70dd87a",
+    "FV/Clif/Mem.lean": "c6435ce9f98d74e9ba2e8b8d6ee6d916adc19ffc7f192721c53a5a0f24bdca98",
+    "FV/Clif/Run.lean": "b0eb7e63b6d57a3f6bc1d2a0bb16f16937c53dd5d3122590cb85de0df174f05f",
+    "FV/Clif/FSem.lean": "1db282b8fac9e46a49a58351f41e35b58d84954ce6b76c9d71241d922f798a9e",
+    "FV/Float.lean": "8447f3b693714aa928c09b729e9d2ace271be72bd9ec5310dcd3eb2a9abf6791",
+    "FV/Float/Basic.lean": "d1b14ce396ebfa7ec1de27e3c5e364eda9ef336b0a996cdb7b3c469880facdf7",
+    "FV/Float/Round.lean": "db9fbde3e2a0e4160edcf8fffdbc22fa6f4c982b193ece2dd47e1c6e89b5af25",
+    "FV/Float/Arith.lean": "e673c55dcd1bf7eee46bd9462196d0a439deae0b1ca3916234ec3292ec2d95dd",
+    "FV/Float/Convert.lean": "051ce61f637f65052581d63e0c39e8c3c901dce56adbae431f049233b942327d",
+    "FV/Clif/Print.lean": "25c2b885d5ddfa72e85a9d2818ddc74efff586b6bbad1afe6d04effba1d35418",
+    "FV/Clif/FloatLit.lean": "f72e88c9e14dc177aa9e5fdac843f0e778820876d078ab76e9b6f2333b3d5daf",
+    "FV/Clif/Parse.lean": "032cecf71e3ad50531f0e2f2725bf0e57af2bf2d9bc18bd23cad38a5f3bb5510",
+    "FV/Clif/Rust.lean": "4fca9fa20a816615cf77777dc172dc61ef9ef18fa4361dd1feb69c942f343944",
+    "FV/Isle/Generated/Program.lean": "022c862de2605cfdfe7694c0274dc052e9b16a202c2a48cbc520492e572ae8f9",
+    "FV/Isle/Generated/Ids.lean": "47fae191044e29284bdf8870ba3fdf5ae34434846f1da84458b5543d058e3d48",
+    "FV/Isle/Generated/TypeArray.lean": "39fdbc2e2cd3a61eabf12db6406e7251812459968c7dc0acccb3bc4c43f9cd1b",
+    "FV/Isle/Generated/Types00.lean": "0679ac95982b2ad1ea6abc8321cb88e5fb67f21b91e05d66101d0513a518340d",
+    "FV/Isle/Generated/TermTable.lean": "c9bf4d1850a5c28edd2c0f6f13f2b2f4c80acc852ec6c9e06f8926a0ae70391d",
+    "FV/Isle/Generated/Terms00.lean": "57c7e821497e8c63cc74fc3afa3fabe0c29c279b052a26f8f6c240492e4e5c4a",
+    "FV/Isle/Generated/Terms01.lean": "11b3be644a1e29ce3cc6ffdab7223a1e0b33d660b86366aafeac12d39b43aede",
+    "FV/Isle/Generated/Terms02.lean": "6b6a988e375feada0e1a236a2286b8c3ce5470ba0c11f1cd77d8f1da8db66515",
+    "FV/Isle/Generated/RuleArray.lean": "428a6bc5fcad236b23497b70f17cea437987f5c69f17e5d16149d3890c082e03",
+    "FV/Isle/Generated/Rules00.lean": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
+    "FV/Isle/Generated/Rules01.lean": "2f9964c0eec71285d47f1250afd0d610aaaa2df091275ca258a05f760e301550",
+    "FV/Isle/Generated/Rules02.lean": "cc5eb3ecef520bd778f7e7b0997334206a9c94e0996c4f1c6960234e0065fcc9",
+    "FV/Isle/Generated/Rules03.lean": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f",
+    "FV/Isle/Generated/RuleTable.lean": "6e775b3482f37ef6bfeefd75f5f0f373c0a64a74128bddf6a7b01d1c12d95c3a",
+    "FV/Isle/Generated/RuleLists00.lean": "9084c5e4292e91c059ad478e1721d2de10c3b0c54ef9762a1f40af74b2db7a18",
+    "FV/Isle/Generated/Specs00.lean": "166a502a6405594b092e66749336fcbafa5a7d51fa28c1e69a837fafb4ced36e",
+    "FV/Isle/Generated/Specs01.lean": "7705775f30f7ed522d4102d1539c640ef6cdd31438c345a864e0f9a615ca7561",
+    "FV/Isle/Generated/Specs02.lean": "82fe0c7433f496c4086c3450ed7ba1fbce94011c45ab3aaab6474708babf8518",
+    "FV/Isle/Generated/Specs03.lean": "d9951a29ba5935bc39d4f07c9ef7368faf18132f6ff585cbe89b34064255b18e",
+    "FV/Isle/Generated/Specs04.lean": "4ad21cc7d44d3977d039d0739e5c20498aa55f755e2d9dbe93a80347a401fc22",
+    "FV/Isle/Generated/Specs05.lean": "e35b48c875bfff317cf3c48678584fd300162daf91a5e644944782e5000f2bfe",
+    "FV/Isle/Generated/Specs06.lean": "f3d64cae4362c0ceae3acd5674cd884153a231424a578b12bcea83042eabb941"
+  },
+  "configs": {
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+    "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+  },
+  "records": [
+    {
+      "label": "proper-dependencies",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Isel",
+        "FV.Backend.MInst",
+        "FV.Clif",
+        "FV.Clif.FSem",
+        "FV.Clif.FloatLit",
+        "FV.Clif.Mem",
+        "FV.Clif.Parse",
+        "FV.Clif.Print",
+        "FV.Clif.Run",
+        "FV.Clif.Rust",
+        "FV.Clif.Sem",
+        "FV.Clif.Syntax",
+        "FV.Float",
+        "FV.Float.Arith",
+        "FV.Float.Basic",
+        "FV.Float.Convert",
+        "FV.Float.Round",
+        "FV.Isle.Generated.Ids",
+        "FV.Isle.Generated.Program",
+        "FV.Isle.Generated.RuleArray",
+        "FV.Isle.Generated.RuleLists00",
+        "FV.Isle.Generated.RuleTable",
+        "FV.Isle.Generated.Rules00",
+        "FV.Isle.Generated.Rules01",
+        "FV.Isle.Generated.Rules02",
+        "FV.Isle.Generated.Rules03",
+        "FV.Isle.Generated.Specs00",
+        "FV.Isle.Generated.Specs01",
+        "FV.Isle.Generated.Specs02",
+        "FV.Isle.Generated.Specs03",
+        "FV.Isle.Generated.Specs04",
+        "FV.Isle.Generated.Specs05",
+        "FV.Isle.Generated.Specs06",
+        "FV.Isle.Generated.TermTable",
+        "FV.Isle.Generated.Terms00",
+        "FV.Isle.Generated.Terms01",
+        "FV.Isle.Generated.Terms02",
+        "FV.Isle.Generated.TypeArray",
+        "FV.Isle.Generated.Types00",
+        "FV.Isle.Interp",
+        "FV.Isle.Syntax"
+      ],
+      "exit": 0,
+      "stats": "peak 17530880\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "kernel-StockCheckedRoutesWith",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Lowering.StockCheckedRoutesWith:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 93847552\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "complete-normal",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Lowering.StockCheckedRoutesWith"
+      ],
+      "exit": 0,
+      "stats": "peak 35880960\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "real-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-parameterized-factories-v1/route-factory-kernel-v2/audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-parameterized-factories-v1/route-factory-kernel-v2/parameterized-call-result-factories.lean"
+      ],
+      "exit": 0,
+      "stats": "peak 89706496\noom 0\noom_kill 0\n"
+    }
+  ],
+  "real_auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "standard_roots": [
+    "Backend.Stock.RoutesWith.lowerWithRoutes_explicit",
+    "Backend.Stock.RoutesWith.lowerWithRoutes_default"
+  ],
+  "open": [
+    "Actual production head binding and three CLI integration remain required."
+  ],
+  "no_new_production_admission": true
+}

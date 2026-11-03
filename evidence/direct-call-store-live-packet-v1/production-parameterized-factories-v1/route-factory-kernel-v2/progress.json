@@ -1,0 +1,89 @@
+[
+  {
+    "label": "proper-dependencies",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Isel",
+      "FV.Backend.MInst",
+      "FV.Clif",
+      "FV.Clif.FSem",
+      "FV.Clif.FloatLit",
+      "FV.Clif.Mem",
+      "FV.Clif.Parse",
+      "FV.Clif.Print",
+      "FV.Clif.Run",
+      "FV.Clif.Rust",
+      "FV.Clif.Sem",
+      "FV.Clif.Syntax",
+      "FV.Float",
+      "FV.Float.Arith",
+      "FV.Float.Basic",
+      "FV.Float.Convert",
+      "FV.Float.Round",
+      "FV.Isle.Generated.Ids",
+      "FV.Isle.Generated.Program",
+      "FV.Isle.Generated.RuleArray",
+      "FV.Isle.Generated.RuleLists00",
+      "FV.Isle.Generated.RuleTable",
+      "FV.Isle.Generated.Rules00",
+      "FV.Isle.Generated.Rules01",
+      "FV.Isle.Generated.Rules02",
+      "FV.Isle.Generated.Rules03",
+      "FV.Isle.Generated.Specs00",
+      "FV.Isle.Generated.Specs01",
+      "FV.Isle.Generated.Specs02",
+      "FV.Isle.Generated.Specs03",
+      "FV.Isle.Generated.Specs04",
+      "FV.Isle.Generated.Specs05",
+      "FV.Isle.Generated.Specs06",
+      "FV.Isle.Generated.TermTable",
+      "FV.Isle.Generated.Terms00",
+      "FV.Isle.Generated.Terms01",
+      "FV.Isle.Generated.Terms02",
+      "FV.Isle.Generated.TypeArray",
+      "FV.Isle.Generated.Types00",
+      "FV.Isle.Interp",
+      "FV.Isle.Syntax"
+    ],
+    "exit": 0,
+    "stats": "peak 17530880\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "kernel-StockCheckedRoutesWith",
+    "argv": [
+      "lake",
+      "-v",
+      "build",
+      "+FV.Backend.Lowering.StockCheckedRoutesWith:leanArts"
+    ],
+    "exit": 0,
+    "stats": "peak 93847552\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "complete-normal",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Lowering.StockCheckedRoutesWith"
+    ],
+    "exit": 0,
+    "stats": "peak 35880960\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "real-audit",
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-parameterized-factories-v1/route-factory-kernel-v2/audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-parameterized-factories-v1/route-factory-kernel-v2/parameterized-call-result-factories.lean"
+    ],
+    "exit": 0,
+    "stats": "peak 89706496\noom 0\noom_kill 0\n"
+  }
+]

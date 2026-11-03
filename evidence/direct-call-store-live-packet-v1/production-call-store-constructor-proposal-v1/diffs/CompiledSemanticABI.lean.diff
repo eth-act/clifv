@@ -1,0 +1,83 @@
+--- a/FV/E2E/CompiledSemanticABI.lean
++++ b/FV/E2E/CompiledSemanticABI.lean
+@@ -1,3 +1,4 @@
++import FV.E2E.StockCallStoreNI
+ import FV.E2E.StockLiveCallNI
+ import FV.E2E.SemanticNIBoundary
+ import FV.E2E.StockMemoryABIWorldX
+@@ -38,6 +39,11 @@
+       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+       CompiledSemanticABI f k vc vcp rf af fa fb
+ 
++  | callStore {cleanup : Bool} {result : Stock.Result} :
++      Stock.CallStore.check f result.code = true → result.code = vc →
++      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
++      CompiledSemanticABI f k vc vcp rf af fa fb
++
+ namespace CompiledSemanticABI
+ variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
+     {af : AFunc} {fa : FnAsm} {fb : FnBin}
+@@ -87,6 +93,7 @@
+   | resultCall _ _ h => exact h.check
+ 
+   | liveCall _ _ h => exact h.check
++  | callStore _ _ h => exact h.check
+ 
+ theorem alloc (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : lowerRFunc vcp rf = .ok af := by
+   cases hc with
+@@ -96,6 +103,7 @@
+   | resultCall _ _ h => exact h.alloc
+ 
+   | liveCall _ _ h => exact h.alloc
++  | callStore _ _ h => exact h.alloc
+ 
+ theorem emit (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : emitFunc k af = .ok fa := by
+   cases hc with
+@@ -105,6 +113,7 @@
+   | resultCall _ _ h => exact h.emit
+ 
+   | liveCall _ _ h => exact h.emit
++  | callStore _ _ h => exact h.emit
+ 
+ theorem layout (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : fa.layout = .ok fb := by
+   cases hc with
+@@ -114,6 +123,7 @@
+   | resultCall _ _ h => exact h.layout
+ 
+   | liveCall _ _ h => exact h.layout
++  | callStore _ _ h => exact h.layout
+ 
+ theorem of_checks_live_calls {cleanup : Bool} (lower : SemanticABI.checkLiveCalls f vc = true)
+     (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
+@@ -127,6 +137,18 @@
+     exact .liveCall (by rwa [equal]) equal
+       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+ 
++
++theorem of_checks_call_stores {cleanup : Bool} (lower : SemanticABI.checkCallStores f vc = true)
++    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
++    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
++    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
++    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
++    CompiledSemanticABI f k vc vcp rf af fa fb := by
++  rcases Bool.or_eq_true_iff.mp lower with old | caller
++  · exact of_checks_live_calls old prepared prepOk check alloc emit layout
++  · obtain ⟨result,run,equal,_,_,_,_,_⟩ := Stock.CallStore.check_sound caller
++    exact .callStore (by rwa [equal]) equal
++      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+ 
+ end CompiledSemanticABI
+ 
+@@ -214,4 +236,12 @@
+         fuel vals cm returned
+     exact ⟨us,outs,w,.inr pins,arity,values,memory,site,run,paired⟩
+ 
++  | callStore source equal h =>
++    subst vc
++    intro vals cm returned
++    obtain ⟨us,outs,w,pins,arity,values,memory,site,run,paired⟩ :=
++      backend_correct_world_niX_stock_call_store_return hsub source h hcov hX hXI hsym hslot hcs hrel hargs htr
++        fuel vals cm returned
++    exact ⟨us,outs,w,.inr pins,arity,values,memory,site,run,paired⟩
++
+ end E2E

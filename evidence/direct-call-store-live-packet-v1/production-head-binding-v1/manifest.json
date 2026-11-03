@@ -1,0 +1,23 @@
+{
+  "status": "SOURCE_ONLY;NOT_KERNEL_VERIFIED;NO_CLI_CHANGE",
+  "source_sha256": {
+    "FV/Backend/Lowering/StockGeneral7CallResultsNI.lean": "1a81888665379e5b2151950b8b704fece37392389bbf1511aa1f209364b6af9b"
+  },
+  "predecessor": {
+    "path": "/home/lee/clifv/.worktrees/loop-20261102/FV/Backend/Lowering/StockGeneralLoopCfg7NI.lean",
+    "sha256": "e050bf694c476656859be35095289715a15be534f8d0ce63cf1a0c200f72b46f",
+    "context": "O-owned staged General7 candidate on main64d; not a landed activation claim"
+  },
+  "imports": [
+    "FV.Backend.Lowering.StockGeneralLoopCfg7NI",
+    "FV.Backend.Lowering.StockCallResultExtensionsWith"
+  ],
+  "route_policy": "No added index. Every explicit choice, including out-of-range indices, delegates to the exact General7 action. Only absent choices extend the default.",
+  "open": [
+    "Focused kernels and real audit",
+    "Old route witnesses and accepted identities",
+    "Concrete artifact admission and constructor instances",
+    "Exact current Main facade/callback binding",
+    "Actual compiler/linker/checker/generated and linked ARM matrix"
+  ]
+}

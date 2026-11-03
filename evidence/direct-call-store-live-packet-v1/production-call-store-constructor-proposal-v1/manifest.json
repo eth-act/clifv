@@ -1,0 +1,41 @@
+{
+  "status": "SOURCE_ONLY;SHARED_CHANGE_PROPOSAL;NOT_KERNEL_VERIFIED",
+  "files": {
+    "FV/Backend/SemanticABICheck.lean": {
+      "base_sha256": "1f7a629ef3866ccfabbee28d3a46b805b07811a587ef13e30f2c54c40e24f048",
+      "candidate_sha256": "2ce99c835c6d6c7d677df95de5defa761f3c9e0b7bfbd0eb2da4a191f94d4b75"
+    },
+    "FV/E2E/CompiledSemanticABI.lean": {
+      "base_sha256": "160243eac3465a9d6ff4e8e93729378de59d775301f6378a75a2fb02e8cdb7f7",
+      "candidate_sha256": "a95864297e18d232ea963e6945e30d64919973f1b87fbd5eaaa367b0acf88d72"
+    },
+    "FV/E2E/CompiledSemanticReturnPins.lean": {
+      "base_sha256": "7bd5daa2b36136e4f934762e9df9e728768507526d2d192bff533731f0f66d4b",
+      "candidate_sha256": "a2057bb8d98d51eab9ec2f314a2a8b6d5bdec3e74b87a315e523c5e1be039f2f"
+    },
+    "FV/E2E/CompiledProgramReturnPins.lean": {
+      "base_sha256": "67de661d6f265006c2ff06d98cb885d42e2ee480ad411818de307e6545fb3516",
+      "candidate_sha256": "6c59145f69f3a1b33a1a3c2c797020a5856d01a4b5ee332c12c07c8d3461ac73"
+    }
+  },
+  "diff_hashes": {
+    "FV/Backend/SemanticABICheck.lean": "8be12bfab8576464ee2e7e8d69d9b1b4fb4d7094952fada372fe72d4d57281dd",
+    "FV/E2E/CompiledSemanticABI.lean": "81bd97b6bd53317ed5809280cc8e740597aa6e75ce6c159fcaece44bd58309ff",
+    "FV/E2E/CompiledSemanticReturnPins.lean": "d284a9a1ab8410808cddaa4f9e0f9d053c2914a63d54d215ca594815a611618d",
+    "FV/E2E/CompiledProgramReturnPins.lean": "cf242a7ce5fcecde4b4989e45cf76fe71063b79ca98a3abb7c16fd5d0dfd70d3"
+  },
+  "prior_packet": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-constructor-current-v1",
+  "boundary": "Add only checker/constructors for the landed call-store NI RETURN contract. Preserve every prior definition, theorem statement and constructor. No source or heap guard. No admission change to old checkers. No claimed first-fault hardware transfer. No R or tracked file write.",
+  "proof_reuse": "backend_correct_world_niX_stock_call_store_return from landed #918; preserves original TrapsExplicit, InSubset, XCallsOk, entry/memory/world conditions and paired NI return",
+  "required": [
+    "Exact old headers and AX sets",
+    "Focused current kernels and real audit",
+    "Current consumers",
+    "Full default compiler/checker/linker/generated and linked execution gates"
+  ],
+  "open": [
+    "Generic memory/callee first-fault production transfer",
+    "Caught-handler hardware faults",
+    "Concrete current Main binding"
+  ]
+}

@@ -1,0 +1,53 @@
+✔ [0/43] Ran job computation
+✔ [1/43] Ran fv:extraDep
+✔ [2/43] Replayed FV.Isle.Syntax
+✔ [3/43] Replayed FV.Isle.Interp
+✔ [4/43] Replayed FV.Clif.Syntax
+✔ [5/43] Replayed FV.Clif.Sem
+✔ [6/43] Replayed FV.Clif.Mem
+✔ [7/43] Replayed FV.Float.Basic
+✔ [8/43] Replayed FV.Float.Round
+✔ [9/43] Replayed FV.Float.Arith
+✔ [10/43] Replayed FV.Float.Convert
+✔ [11/43] Replayed FV.Float
+✔ [12/43] Replayed FV.Clif.FSem
+⚠ [13/43] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+✔ [14/43] Replayed FV.Clif.FloatLit
+✔ [15/43] Replayed FV.Clif.Print
+⚠ [16/43] Replayed FV.Clif.Parse
+warning: FV/Clif/Parse.lean:663:8: Variable name `t` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _t
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+✔ [17/43] Replayed FV.Clif.Rust
+✔ [18/43] Replayed FV.Clif
+✔ [19/43] Replayed FV.Isle.Generated.Ids
+✔ [20/43] Replayed FV.Isle.Generated.Types00
+✔ [21/43] Replayed FV.Isle.Generated.TypeArray
+✔ [22/43] Replayed FV.Isle.Generated.Terms00
+✔ [23/43] Replayed FV.Isle.Generated.Terms01
+✔ [24/43] Replayed FV.Isle.Generated.Terms02
+✔ [25/43] Replayed FV.Isle.Generated.TermTable
+✔ [26/43] Replayed FV.Isle.Generated.Rules00
+✔ [27/43] Replayed FV.Isle.Generated.Rules01
+✔ [28/43] Replayed FV.Isle.Generated.Rules02
+✔ [29/43] Replayed FV.Isle.Generated.Rules03
+✔ [30/43] Replayed FV.Isle.Generated.RuleArray
+✔ [31/43] Replayed FV.Isle.Generated.RuleLists00
+✔ [32/43] Replayed FV.Isle.Generated.RuleTable
+✔ [33/43] Replayed FV.Isle.Generated.Specs00
+✔ [34/43] Replayed FV.Isle.Generated.Specs01
+✔ [35/43] Replayed FV.Isle.Generated.Specs02
+✔ [36/43] Replayed FV.Isle.Generated.Specs03
+✔ [37/43] Replayed FV.Isle.Generated.Specs04
+✔ [38/43] Replayed FV.Isle.Generated.Specs05
+✔ [39/43] Replayed FV.Isle.Generated.Specs06
+✔ [40/43] Replayed FV.Isle.Generated.Program
+✔ [41/43] Replayed FV.Backend.MInst
+✔ [42/43] Replayed FV.Backend.Isel
+ℹ [43/43] Built FV.Backend.Lowering.StockCheckedRoutesWith (389ms)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/Backend/Lowering/StockCheckedRoutesWith.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockCheckedRoutesWith.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockCheckedRoutesWith.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockCheckedRoutesWith.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockCheckedRoutesWith.setup.json --json
+Build completed successfully (43 jobs).

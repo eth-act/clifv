@@ -1,0 +1,12 @@
+{
+  "status": "source-only;unverified;not-wired",
+  "source_hashes": {
+    "FV/Backend/Lowering/StockCheckedRoutesWith.lean": "f9e804abc7e5d1d4afa980a369d7619d5eb945ecc6dfed9499c1a2f2fa7fd641",
+    "FV/Backend/Lowering/StockCallResultExtensionsWith.lean": "b4bb147fc444a6a1b3647ec7e1ce8983850ef87b8ed2c24051f8845d7283acd2",
+    "FV/Backend/ReturnPinProfileFile.lean": "8943e56950f459444251095f35ae902672b405b598611cd9f3f214b6e718c661"
+  },
+  "previous_wrappers_unchanged": true,
+  "indices_added": [],
+  "actual_current_head_binding": "coordinator review required before shared CLI edits",
+  "whole_file_fallback": "complete supplied previous action;original callback and settings"
+}

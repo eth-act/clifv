@@ -1,0 +1,243 @@
+{
+  "status": "ALL23_OLD_HEADERS_CAPTURED;KNOWN_AX_SETS_ONLY;CURRENT_BASELINE_AUDIT_REQUIRED",
+  "main": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "source_projection_sha256": "ee7e58737001d3786d419db0bbd0012792885fc176d629f8c3f20b7d3798b696",
+  "roots": {
+    "Backend.SemanticABI.previous_check": {
+      "source": "FV/Backend/SemanticABICheck.lean",
+      "header": "theorem previous_check {f : Clif.Function} {vc : VCode} (accepted : SemanticNI.check f vc = true) :\n    check f vc = true :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "Backend.SemanticABI.previous_exact": {
+      "source": "FV/Backend/SemanticABICheck.lean",
+      "header": "theorem previous_exact {f : Clif.Function} {vc : VCode} (absent : Stock.MemorySretCopy.check f vc = false) :\n    check f vc = SemanticNI.check f vc :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "Backend.SemanticABI.previous_check_calls": {
+      "source": "FV/Backend/SemanticABICheck.lean",
+      "header": "theorem previous_check_calls {f : Clif.Function} {vc : VCode} (accepted : check f vc = true) :\n    checkCalls f vc = true :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "Backend.SemanticABI.previous_exact_calls": {
+      "source": "FV/Backend/SemanticABICheck.lean",
+      "header": "theorem previous_exact_calls {f : Clif.Function} {vc : VCode}\n    (absent : Stock.VoidCall.NI.check f vc = false) : checkCalls f vc = check f vc :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledSemanticABI.of_checks": {
+      "source": "FV/E2E/CompiledSemanticABI.lean",
+      "header": "theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)\n    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)\n    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :\n    CompiledSemanticABI f k vc vcp rf af fa fb :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledSemanticABI.of_checks_calls": {
+      "source": "FV/E2E/CompiledSemanticABI.lean",
+      "header": "theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls f vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)\n    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)\n    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :\n    CompiledSemanticABI f k vc vcp rf af fa fb :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledSemanticABI.check": {
+      "source": "FV/E2E/CompiledSemanticABI.lean",
+      "header": "theorem check (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : Backend.checkAlloc vcp rf = .ok () :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledSemanticABI.alloc": {
+      "source": "FV/E2E/CompiledSemanticABI.lean",
+      "header": "theorem alloc (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : lowerRFunc vcp rf = .ok af :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledSemanticABI.emit": {
+      "source": "FV/E2E/CompiledSemanticABI.lean",
+      "header": "theorem emit (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : emitFunc k af = .ok fa :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledSemanticABI.layout": {
+      "source": "FV/E2E/CompiledSemanticABI.lean",
+      "header": "theorem layout (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : fa.layout = .ok fb :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.backend_correct_world_niX_semantic_abi": {
+      "source": "FV/E2E/CompiledSemanticABI.lean",
+      "header": "theorem backend_correct_world_niX_semantic_abi {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}\n    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}\n    (hsub : InSubset p f) (hc : CompiledSemanticABI f k vc vcp rf af fa fb)\n    {X : ExtSem} {syms : String \u2192 Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}\n    {F : BitVec 64 \u2192 Prop} {c : BitVec 64}\n    (hcov : FormsCovered \u27e8fa.k, af.slotBase\u27e9 vcp)\n    (hX : XCallsOk env (f.externs.map (\u00b7.2))\n      (RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c) X)\n    (hXI : XCallsIndOk env (indSigs f)\n      (RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c) X)\n    (hsym : \u2200 n b, syms n = some b \u2192 X.sym n 0 = BitVec.ofNat 64 b)\n    (hslot : af.slotBase = slotOff)\n    {w\u2080 : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}\n    (hcs : ClifEntry f args cs)\n    (hrel : RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c cs.frame.slots cs.mem w\u2080)\n    (hargs : ArgsAtEntry F f.sig args w\u2080)\n    (htr : TrapsExplicit env p cs) (fuel : Nat) :\n    \u2200 vals cm, Clif.runLoop env p fuel cs = .returned vals cm \u2192\n      \u2203 (us : List (Reg \u00d7 Reg)) (outs : List CV) (w : Arm.ArmState),\n        (us.map (\u00b7.2) = (List.range us.length).map Reg.x \u2228 ReturnABI f us) \u2227 us.length = outs.length \u2227\n        PrefixHold vals outs \u2227 MemRel F syms cm w \u2227 vc.RetsSite us \u2227\n        (\u2200 (H : ArmHooks) (G : BitVec 64 \u2192 Prop) (base ra : BitVec 64) (s : Arm.ArmState),\n          ActEntry vcp rf af fa fb K F G X H base ra s w\u2080 \u2192\n          \u2203 n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s) \u2227\n            PostTrace fa af base (ArmStepX X H fa) s n \u2227\n            \u2200 i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)\n              (runX (ArmStepX X H fa) i s)) \u2227\n        (XNI F syms (f.externs.map (\u00b7.2)) (indSigs f) c\n          (CallLg env (f.externs.map (\u00b7.2)) (indSigs f)) X \u2192 XTls F X \u2192\n        \u2200 (D : BitVec 64 \u2192 Prop) (w\u2080' : Arm.ArmState),\n          RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c cs.frame.slots cs.mem w\u2080' \u2192\n          SameWorld (fun b => F b \u2228 D b) w\u2080 w\u2080' \u2192\n          (\u2200 r v, (ArgLoc.reg r, v) \u2208 (locsOf f.sig).zip args \u2192 regVal w\u2080' r = regVal w\u2080 r) \u2192\n          (\u2200 off v, (ArgLoc.stack off, v) \u2208 (locsOf f.sig).zip args \u2192 \u2200 k < v.ty.bytes,\n            w\u2080'.mem (Arm.r (.GPR 29#5) w\u2080 + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =\n              w\u2080.mem (Arm.r (.GPR 29#5) w\u2080 + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) \u2192\n          \u2200 (H : ArmHooks) (G : BitVec 64 \u2192 Prop) (base ra : BitVec 64) (s : Arm.ArmState),\n            ActEntry vcp rf af fa fb K F G X H base ra s w\u2080' \u2192\n            \u2203 n, ActRet ra (fun a => F a \u2228 D a) G us outs w s (runX (ArmStepX X H fa) n s) \u2227\n              PostTrace fa af base (ArmStepX X H fa) s n \u2227\n              \u2200 i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)\n                (runX (ArmStepX X H fa) i s)) :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.ReturnPinMode.pins_of_valid": {
+      "source": "FV/E2E/CompiledSemanticReturnPins.lean",
+      "header": "theorem pins_of_valid {mode : ReturnPinMode} {f : Clif.Function} {us : List (Reg \u00d7 Reg)}\n    (valid : mode.Valid f us) : mode.pins f us.length = us.map (\u00b7.2) :=",
+      "prior_exact_AX": [],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3",
+      "prior_AX_receipt_field": "axiom_sets; empty set is a required exact comparison",
+      "raw_no_axioms_log": {
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/contract-baseline-audit-v1/audit/stock-result-call-previous-contracts.log",
+        "sha256": "0237aded401c490740308f9c4a234a745384ba3262e329a66fcd6a07920acabf",
+        "line": "'E2E.ReturnPinMode.pins_of_valid' does not depend on any axioms"
+      }
+    },
+    "E2E.CompiledSemanticReturnPins.erase": {
+      "source": "FV/E2E/CompiledSemanticReturnPins.lean",
+      "header": "theorem erase (hc : CompiledSemanticReturnPins f k vc vcp rf af fa fb mode) :\n    CompiledSemanticABI f k vc vcp rf af fa fb :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledSemanticReturnPins.of_checks": {
+      "source": "FV/E2E/CompiledSemanticReturnPins.lean",
+      "header": "theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)\n    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)\n    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :\n    CompiledSemanticReturnPins f k vc vcp rf af fa fb (ReturnPinMode.checked f vc) :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledSemanticReturnPins.of_checks_calls": {
+      "source": "FV/E2E/CompiledSemanticReturnPins.lean",
+      "header": "theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls f vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)\n    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)\n    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :\n    CompiledSemanticReturnPins f k vc vcp rf af fa fb (ReturnPinMode.checked f vc) :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.backend_correct_world_niX_semantic_return_pins": {
+      "source": "FV/E2E/CompiledSemanticReturnPins.lean",
+      "header": "theorem backend_correct_world_niX_semantic_return_pins {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}\n    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}\n    {mode : ReturnPinMode}\n    (hsub : InSubset p f) (hc : CompiledSemanticReturnPins f k vc vcp rf af fa fb mode)\n    {X : ExtSem} {syms : String \u2192 Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}\n    {F : BitVec 64 \u2192 Prop} {c : BitVec 64}\n    (hcov : FormsCovered \u27e8fa.k, af.slotBase\u27e9 vcp)\n    (hX : XCallsOk env (f.externs.map (\u00b7.2))\n      (RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c) X)\n    (hXI : XCallsIndOk env (indSigs f)\n      (RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c) X)\n    (hsym : \u2200 n b, syms n = some b \u2192 X.sym n 0 = BitVec.ofNat 64 b)\n    (hslot : af.slotBase = slotOff)\n    {w\u2080 : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}\n    (hcs : ClifEntry f args cs)\n    (hrel : RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c cs.frame.slots cs.mem w\u2080)\n    (hargs : ArgsAtEntry F f.sig args w\u2080)\n    (htr : TrapsExplicit env p cs) (fuel : Nat) :\n    \u2200 vals cm, Clif.runLoop env p fuel cs = .returned vals cm \u2192\n      \u2203 (us : List (Reg \u00d7 Reg)) (outs : List CV) (w : Arm.ArmState),\n        ReturnPinMode.Valid mode f us \u2227 us.length = outs.length \u2227\n        PrefixHold vals outs \u2227 MemRel F syms cm w \u2227 vc.RetsSite us \u2227\n        (\u2200 (H : ArmHooks) (G : BitVec 64 \u2192 Prop) (base ra : BitVec 64) (s : Arm.ArmState),\n          ActEntry vcp rf af fa fb K F G X H base ra s w\u2080 \u2192\n          \u2203 n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s) \u2227\n            PostTrace fa af base (ArmStepX X H fa) s n \u2227\n            \u2200 i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)\n              (runX (ArmStepX X H fa) i s)) \u2227\n        (XNI F syms (f.externs.map (\u00b7.2)) (indSigs f) c\n          (CallLg env (f.externs.map (\u00b7.2)) (indSigs f)) X \u2192 XTls F X \u2192\n        \u2200 (D : BitVec 64 \u2192 Prop) (w\u2080' : Arm.ArmState),\n          RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c cs.frame.slots cs.mem w\u2080' \u2192\n          SameWorld (fun b => F b \u2228 D b) w\u2080 w\u2080' \u2192\n          (\u2200 r v, (ArgLoc.reg r, v) \u2208 (locsOf f.sig).zip args \u2192 regVal w\u2080' r = regVal w\u2080 r) \u2192\n          (\u2200 off v, (ArgLoc.stack off, v) \u2208 (locsOf f.sig).zip args \u2192 \u2200 k < v.ty.bytes,\n            w\u2080'.mem (Arm.r (.GPR 29#5) w\u2080 + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =\n              w\u2080.mem (Arm.r (.GPR 29#5) w\u2080 + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) \u2192\n          \u2200 (H : ArmHooks) (G : BitVec 64 \u2192 Prop) (base ra : BitVec 64) (s : Arm.ArmState),\n            ActEntry vcp rf af fa fb K F G X H base ra s w\u2080' \u2192\n            \u2203 n, ActRet ra (fun a => F a \u2228 D a) G us outs w s (runX (ArmStepX X H fa) n s) \u2227\n              PostTrace fa af base (ArmStepX X H fa) s n \u2227\n              \u2200 i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)\n                (runX (ArmStepX X H fa) i s)) :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.LinkSys.returnPinsB_sound": {
+      "source": "FV/E2E/CompiledProgramReturnPins.lean",
+      "header": "theorem returnPinsB_sound {g : Clif.Function} (checked : L.returnPinsB g = true) :\n    L.ReturnPinsCompatible g :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledProgramReturnPins.of_checks": {
+      "source": "FV/E2E/CompiledProgramReturnPins.lean",
+      "header": "theorem of_checks {cleanup : Bool} (lower : SemanticABI.check g (L.A g).vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup (L.A g).vc) = .ok (L.A g).vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup (L.A g).vc) (L.A g).vcp = true)\n    (check : Backend.checkAlloc (L.A g).vcp (L.A g).rf = .ok ())\n    (alloc : lowerRFunc (L.A g).vcp (L.A g).rf = .ok (L.A g).af)\n    (emit : emitFunc (L.A g).k (L.A g).af = .ok (L.A g).fa)\n    (layout : (L.A g).fa.layout = .ok (L.A g).fb)\n    (pins : L.returnPinsB g = true) : CompiledProgramReturnPins L g :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledProgramReturnPins.of_checks_calls": {
+      "source": "FV/E2E/CompiledProgramReturnPins.lean",
+      "header": "theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls g (L.A g).vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup (L.A g).vc) = .ok (L.A g).vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup (L.A g).vc) (L.A g).vcp = true)\n    (check : Backend.checkAlloc (L.A g).vcp (L.A g).rf = .ok ())\n    (alloc : lowerRFunc (L.A g).vcp (L.A g).rf = .ok (L.A g).af)\n    (emit : emitFunc (L.A g).k (L.A g).af = .ok (L.A g).fa)\n    (layout : (L.A g).fa.layout = .ok (L.A g).fb)\n    (pins : L.returnPinsB g = true) : CompiledProgramReturnPins L g :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledProgramReturnPins.check": {
+      "source": "FV/E2E/CompiledProgramReturnPins.lean",
+      "header": "theorem check {modes : Clif.Function \u2192 ReturnPinMode} (hc : CompiledProgramReturnPins L g modes) : checkAlloc (L.A g).vcp (L.A g).rf = .ok () :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledProgramReturnPins.alloc": {
+      "source": "FV/E2E/CompiledProgramReturnPins.lean",
+      "header": "theorem alloc {modes : Clif.Function \u2192 ReturnPinMode} (hc : CompiledProgramReturnPins L g modes) : lowerRFunc (L.A g).vcp (L.A g).rf = .ok (L.A g).af :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledProgramReturnPins.emit": {
+      "source": "FV/E2E/CompiledProgramReturnPins.lean",
+      "header": "theorem emit {modes : Clif.Function \u2192 ReturnPinMode} (hc : CompiledProgramReturnPins L g modes) : emitFunc (L.A g).k (L.A g).af = .ok (L.A g).fa :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    },
+    "E2E.CompiledProgramReturnPins.layout": {
+      "source": "FV/E2E/CompiledProgramReturnPins.lean",
+      "header": "theorem layout {modes : Clif.Function \u2192 ReturnPinMode} (hc : CompiledProgramReturnPins L g modes) : (L.A g).fa.layout = .ok (L.A g).fb :=",
+      "prior_exact_AX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+    }
+  },
+  "known_prior_exact_AX": 23,
+  "missing_prior_AX": [],
+  "all_current_old_AX_checks_required": true,
+  "prior_inventory_sha256": "877ad8bfa4f662c26586cb8992cb07064f74bd2063b0b5b5a5e5714cd478d67f"
+}

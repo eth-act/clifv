@@ -1,0 +1,55 @@
+--- a/FV/E2E/CompiledSemanticReturnPins.lean
++++ b/FV/E2E/CompiledSemanticReturnPins.lean
+@@ -68,6 +68,11 @@
+       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+       CompiledSemanticReturnPins f k vc vcp rf af fa fb .stockABI
+ 
++  | callStore {cleanup : Bool} {result : Stock.Result} :
++      Stock.CallStore.check f result.code = true → result.code = vc →
++      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
++      CompiledSemanticReturnPins f k vc vcp rf af fa fb .stockABI
++
+ namespace CompiledSemanticReturnPins
+ variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
+     {af : AFunc} {fa : FnAsm} {fb : FnBin} {mode : ReturnPinMode}
+@@ -82,6 +87,7 @@
+   | resultCall source equal h => exact .resultCall source equal h
+ 
+   | liveCall source equal h => exact .liveCall source equal h
++  | callStore source equal h => exact .callStore source equal h
+ 
+ /-- The actual checker and pipeline derive the mode internally. -/
+ theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)
+@@ -152,6 +158,23 @@
+     exact .liveCall (by rwa [equal]) equal
+       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+ 
++
++theorem of_checks_call_stores {cleanup : Bool} (lower : SemanticABI.checkCallStores f vc = true)
++    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
++    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
++    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
++    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
++    CompiledSemanticReturnPins f k vc vcp rf af fa fb (ReturnPinMode.checked f vc) := by
++  by_cases old : SemanticABI.checkLiveCalls f vc = true
++  · exact of_checks_live_calls old prepared prepOk check alloc emit layout
++  · have caller : Stock.CallStore.check f vc = true :=
++      (Bool.or_eq_true_iff.mp lower).resolve_left old
++    have ordinary : SemanticNI.check f vc = false := Bool.eq_false_iff.mpr
++      (fun accepted => old (SemanticABI.previous_check_live_calls (SemanticABI.previous_check_result_calls (SemanticABI.previous_check_calls (SemanticABI.previous_check accepted)))))
++    simp only [ReturnPinMode.checked,ordinary,Bool.false_eq_true,↓reduceIte]
++    obtain ⟨result,run,equal,_,_,_,_,_⟩ := Stock.CallStore.check_sound caller
++    exact .callStore (by rwa [equal]) equal
++      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+ 
+ end CompiledSemanticReturnPins
+ 
+@@ -230,4 +253,8 @@
+     exact backend_correct_world_niX_stock_live_call hsub source h hcov hX hXI hsym hslot hcs hrel hargs htr fuel
+ 
+ 
++  | callStore source equal h =>
++    subst vc
++    exact backend_correct_world_niX_stock_call_store_return hsub source h hcov hX hXI hsym hslot hcs hrel hargs htr fuel
++
+ end E2E

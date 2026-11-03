@@ -1,0 +1,31 @@
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/site-packages/psutil/_pslinux.py", line 1593, in wrapper
+    return fun(self, *args, **kwargs)
+  File "/usr/lib/python3.14/site-packages/psutil/_pslinux.py", line 2029, in cwd
+    return self._readlink(
+           ~~~~~~~~~~~~~~^
+        f"{self._procfs_path}/{self.pid}/cwd", fallback=""
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/lib/python3.14/site-packages/psutil/_pslinux.py", line 1664, in _readlink
+    return readlink(path)
+  File "/usr/lib/python3.14/site-packages/psutil/_pslinux.py", line 152, in readlink
+    path = os.readlink(path)
+PermissionError: [Errno 13] Permission denied: '/proc/183078/cwd'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-five-root-broad-12g-v1/gate.py", line 73, in <module>
+    guards()
+    ~~~~~~^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-five-root-broad-12g-v1/gate.py", line 34, in guards
+    assert process.cwd() != str(P) and not any(str(P) in a for a in (process.info['cmdline'] or [])),('R compiler active',process.pid)
+           ~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/site-packages/psutil/__init__.py", line 788, in cwd
+    return self._proc.cwd()
+           ~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/site-packages/psutil/_pslinux.py", line 1595, in wrapper
+    raise AccessDenied(pid, name) from err
+psutil.AccessDenied: (pid=183078, name='lake')

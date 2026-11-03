@@ -1,0 +1,13 @@
+{
+  "status": "SOURCE_ONLY;NOT_KERNEL_VERIFIED",
+  "source_sha256": "d0694abc2f751075012736b4fb1d923525db694197a97b5e57cb0f3798f611d3",
+  "constructor_dependency": "approved production-call-store-constructor-proposal-v1; not yet applied",
+  "trace_dependency": "canonical-linked-world-w-v3; historical passed context; current consumer gate remains required",
+  "scope": "Derive the call-store ABI artifact and ordinary/paired W return provider from actual checker/allocation/emission/layout observations and original InSubset. No new caller execution certificate or memory premise.",
+  "open": [
+    "Focused current normal kernel and real audit",
+    "Dispatch every other accepted artifact to its matching internally derived provider",
+    "Generic first-fault provider and executable transfer",
+    "All actual production matrices"
+  ]
+}
