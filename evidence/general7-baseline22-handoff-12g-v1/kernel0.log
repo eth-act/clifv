@@ -1,0 +1,340 @@
+✔ [0/135] Ran job computation
+✔ [1/135] Ran fv:extraDep
+✔ [2/135] Replayed FV.Isle.Syntax
+✔ [3/135] Replayed FV.Isle.Interp
+✔ [4/135] Replayed FV.Clif.Syntax
+✔ [5/135] Replayed FV.Clif.Sem
+✔ [6/135] Replayed FV.Clif.Mem
+✔ [7/135] Replayed FV.Float.Basic
+✔ [8/135] Replayed FV.Float.Round
+✔ [9/135] Replayed FV.Float.Arith
+✔ [10/135] Replayed FV.Float.Convert
+✔ [11/135] Replayed FV.Float
+✔ [12/135] Replayed FV.Clif.FSem
+⚠ [13/135] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+✔ [14/135] Replayed FV.Clif.FloatLit
+✔ [15/135] Replayed FV.Clif.Print
+⚠ [16/135] Replayed FV.Clif.Parse
+warning: FV/Clif/Parse.lean:663:8: Variable name `t` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _t
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+✔ [17/135] Replayed FV.Clif.Rust
+✔ [18/135] Replayed FV.Clif
+✔ [19/135] Replayed FV.Isle.Generated.Ids
+✔ [20/135] Replayed FV.Isle.Generated.Types00
+✔ [21/135] Replayed FV.Isle.Generated.TypeArray
+✔ [22/135] Replayed FV.Isle.Generated.Terms00
+✔ [23/135] Replayed FV.Isle.Generated.Terms01
+✔ [24/135] Replayed FV.Isle.Generated.Terms02
+✔ [25/135] Replayed FV.Isle.Generated.TermTable
+✔ [26/135] Replayed FV.Isle.Generated.Rules00
+✔ [27/135] Replayed FV.Isle.Generated.Rules01
+✔ [28/135] Replayed FV.Isle.Generated.Rules02
+✔ [29/135] Replayed FV.Isle.Generated.Rules03
+✔ [30/135] Replayed FV.Isle.Generated.RuleArray
+✔ [31/135] Replayed FV.Isle.Generated.RuleLists00
+✔ [32/135] Replayed FV.Isle.Generated.RuleTable
+✔ [33/135] Replayed FV.Isle.Generated.Specs00
+✔ [34/135] Replayed FV.Isle.Generated.Specs01
+✔ [35/135] Replayed FV.Isle.Generated.Specs02
+✔ [36/135] Replayed FV.Isle.Generated.Specs03
+✔ [37/135] Replayed FV.Isle.Generated.Specs04
+✔ [38/135] Replayed FV.Isle.Generated.Specs05
+✔ [39/135] Replayed FV.Isle.Generated.Specs06
+✔ [40/135] Replayed FV.Isle.Generated.Program
+✔ [41/135] Replayed FV.Backend.MInst
+✔ [42/135] Replayed FV.Backend.Isel
+✔ [43/135] Replayed FV.Backend.RegallocOps
+✔ [44/135] Replayed FV.Backend.Lowering.StockAlloc
+✔ [45/135] Replayed FV.Backend.Lowering.Stock
+✔ [46/135] Replayed FV.Backend.Lowering.StockReplay
+✔ [47/135] Replayed FV.Backend.Proof.StockPolicy
+✔ [48/135] Replayed FV.Backend.Proof.StockScan
+✔ [49/135] Replayed FV.Backend.Proof.StockBlockScan
+✔ [50/135] Replayed FV.Arm.Attr
+✔ [51/135] Replayed FV.Arm.MinTheory
+✔ [52/135] Replayed FV.Backend.Proof.IselAttr
+✔ [53/135] Replayed FV.Backend.Proof.IselData
+✔ [54/135] Replayed FV.Backend.Proof.IselInterp
+✔ [55/135] Replayed FV.Compile.Subset
+✔ [56/135] Replayed FV.Backend.Proof.DriverCheck
+✔ [57/135] Replayed FV.Backend.Proof.StockNodeRecordOrigin
+✔ [58/135] Replayed FV.Backend.Proof.StockTraversalRecordOrigin
+✔ [59/135] Replayed FV.Backend.Proof.StockCoreScanOrigin
+✔ [60/135] Replayed FV.Backend.Proof.PrepareCheck
+✔ [61/135] Replayed FV.Backend.Proof.PrepareComplete
+✔ [62/135] Replayed FV.Backend.Proof.StockSourceOrder
+✔ [63/135] Replayed FV.Backend.Proof.StockBackwardSuffixSplit
+✔ [64/135] Replayed FV.Backend.Proof.IselGeneric
+✔ [65/135] Replayed FV.Isle.Generated.Closure
+✔ [66/135] Replayed FV.Backend.RegallocCheck
+✔ [67/135] Replayed FV.Backend.Proof.VCodeSem
+✔ [68/135] Replayed FV.Backend.Proof.RegallocState
+✔ [69/135] Replayed FV.Backend.Proof.RegallocLemmas
+✔ [70/135] Replayed FV.Backend.StackAlloc
+✔ [71/135] Replayed FV.Backend.Asm
+⚠ [72/135] Replayed FV.Arm.BitVec
+warning: FV/Arm/BitVec.lean:318:41: This simp argument is unused:
+  setWidth_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [partInstall, truncate_eq_setWidth, getLsbD_or, getLsbD_and, getLsbD_not, getLsbD_shiftLeft, hi,
+    decide_true, Bool.true_and, getLsbD_setWidth, getLsbD_allOnes, Bool.not_and, Bool.not_not, getLsbD_cast,
+    BitVec.getLsbD_append, zeroExtend_eq_setWidth]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:318:54: This simp argument is unused:
+  zeroExtend_eq_setWidth
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [partInstall, truncate_eq_setWidth, getLsbD_or, getLsbD_and, getLsbD_not, getLsbD_shiftLeft, hi,
+    decide_true, Bool.true_and, getLsbD_setWidth, getLsbD_allOnes, Bool.not_and, Bool.not_not, getLsbD_cast,
+    BitVec.getLsbD_append, setWidth_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:342:56: This simp argument is unused:
+  Nat.succ_eq_one_add
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [List.length_cons, Nat.mul_one, Nat.mul_add]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:661:43: This simp argument is unused:
+  cast_heq_iff
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [append_zero_width, heq_eq_eq, Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:689:13: This simp argument is unused:
+  cast
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [zero_width_append, toNat_ofNatLT]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:689:38: This simp argument is unused:
+  toNat_ofNatLT
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [cast, zero_width_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:731:16: This simp argument is unused:
+  Nat.add_sub_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:739:12: This simp argument is unused:
+  h5
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [h6]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:746:14: This simp argument is unused:
+  Nat.testBit_mod_two_pow
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:759:28: This simp argument is unused:
+  Nat.sub_add_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth, low_le]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:759:48: This simp argument is unused:
+  low_le
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth, Nat.sub_add_cancel]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:772:39: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:773:13: This simp argument is unused:
+  h_vlt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [forall_prop_of_true] at this
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:774:28: This simp argument is unused:
+  Nat.sub_add_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:843:8: This simp argument is unused:
+  BitVec.lt_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:847:8: This simp argument is unused:
+  BitVec.lt_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:908:89: This simp argument is unused:
+  cast_ofNat
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, BitVec.extractLsb'_ofNat, Nat.zero_mod, Nat.zero_shiftRight]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:922:28: This simp argument is unused:
+  getLsbD_cast
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, getLsbD_extract]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:922:42: This simp argument is unused:
+  getLsbD_extract
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, getLsbD_cast]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:927:4: This simp argument is unused:
+  and_iff_right_iff_imp
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show (i : Nat) ≤ 7 by omega, decide_true, Bool.true_and, decide_eq_true_eq, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:927:27: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show (i : Nat) ≤ 7 by omega, decide_true, Bool.true_and, and_iff_right_iff_imp, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:929:4: This simp argument is unused:
+  Bool.and_eq_false_imp
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show ¬(i : Nat) ≤ 7 by omega, decide_false, Bool.false_and, decide_eq_true_eq, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:929:27: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show ¬(i : Nat) ≤ 7 by omega, decide_false, Bool.false_and, Bool.and_eq_false_imp, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:988:37: This simp argument is unused:
+  Fin.is_lt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getLsbD_extractLsBytes, decide_true, getLsbD_zero, Bool.and_false, implies_true]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:988:48: This simp argument is unused:
+  decide_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getLsbD_extractLsBytes, Fin.is_lt, getLsbD_zero, Bool.and_false, implies_true]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:1026:2: `[deprecated]` attribute should specify the date or library version at which the deprecation was introduced, using `(since := "...")`
+✔ [73/135] Replayed FV.Arm.Decode.DPI
+✔ [74/135] Replayed FV.Arm.Decode.DPR
+✔ [75/135] Replayed FV.Arm.Decode.BR
+✔ [76/135] Replayed FV.Arm.Decode.LDST
+✔ [77/135] Replayed FV.Arm.Decode.DPSFP
+✔ [78/135] Replayed FV.Arm.Decode.Reserved
+✔ [79/135] Replayed FV.Arm.Decode
+✔ [80/135] Replayed FV.Backend.Encode
+✔ [81/135] Replayed FV.Arm.Map
+✔ [82/135] Replayed FV.Arm.State
+✔ [83/135] Replayed FV.Arm.Insts.Common
+✔ [84/135] Replayed FV.Arm.Insts.DPI.Add_sub_imm
+✔ [85/135] Replayed FV.Arm.Insts.DPI.PC_rel_addressing
+✔ [86/135] Replayed FV.Arm.Insts.DPI.Logical_imm
+✔ [87/135] Replayed FV.Arm.Insts.DPI.Bitfield
+✔ [88/135] Replayed FV.Arm.Insts.DPI.Move_wide_imm
+✔ [89/135] Replayed FV.Arm.Insts.DPI.Extract
+✔ [90/135] Replayed FV.Arm.Insts.DPI.Insts
+✔ [91/135] Replayed FV.Arm.Insts.DPR.Add_sub_carry
+✔ [92/135] Replayed FV.Arm.Insts.DPR.Add_sub_shifted_reg
+✔ [93/135] Replayed FV.Arm.Insts.DPR.Conditional_select
+✔ [94/135] Replayed FV.Arm.Insts.DPR.Data_processing_one_source
+✔ [95/135] Replayed FV.Arm.Insts.DPR.Data_processing_two_source
+✔ [96/135] Replayed FV.Arm.Insts.DPR.Logical_shifted_reg
+✔ [97/135] Replayed FV.Arm.Insts.DPR.Data_processing_three_source
+✔ [98/135] Replayed FV.Arm.Insts.DPR.Add_sub_ext_reg
+✔ [99/135] Replayed FV.Arm.Insts.DPR.Conditional_compare
+✔ [100/135] Replayed FV.Arm.Insts.DPR.Insts
+✔ [101/135] Replayed FV.Arm.Insts.BR.Compare_branch
+✔ [102/135] Replayed FV.Arm.Insts.BR.Uncond_branch_imm
+✔ [103/135] Replayed FV.Arm.Insts.BR.Uncond_branch_reg
+✔ [104/135] Replayed FV.Arm.Insts.BR.Cond_branch_imm
+✔ [105/135] Replayed FV.Arm.Insts.BR.Hints
+✔ [106/135] Replayed FV.Arm.Insts.BR.Barrier
+✔ [107/135] Replayed FV.Arm.Insts.BR.Test_branch
+✔ [108/135] Replayed FV.Arm.Insts.BR.Mrs
+✔ [109/135] Replayed FV.Arm.Insts.BR.Insts
+✔ [110/135] Replayed FV.Arm.Insts.DPSFP.Advanced_simd_copy
+✔ [111/135] Replayed FV.Arm.Insts.DPSFP.Advanced_simd_two_reg_misc
+✔ [112/135] Replayed FV.Arm.Insts.DPSFP.Advanced_simd_three_same
+✔ [113/135] Replayed FV.Arm.Insts.DPSFP.FP_data_processing_one_source
+✔ [114/135] Replayed FV.Arm.Insts.DPSFP.Conversion_between_FP_and_Int
+✔ [115/135] Replayed FV.Arm.Insts.DPSFP.Advanced_simd_across_lanes
+✔ [116/135] Replayed FV.Arm.Insts.DPSFP.Advanced_simd_modified_immediate
+✔ [117/135] Replayed FV.Arm.Insts.DPSFP.FP_immediate
+✔ [118/135] Replayed FV.Arm.Insts.DPSFP.FP_conditional_select
+✔ [119/135] Replayed FV.Arm.Insts.DPSFP.FP_data_processing_two_source
+✔ [120/135] Replayed FV.Arm.Insts.DPSFP.FP_data_processing_three_source
+✔ [121/135] Replayed FV.Arm.Insts.DPSFP.FP_compare
+✔ [122/135] Replayed FV.Arm.Insts.DPSFP.Insts
+✔ [123/135] Replayed FV.Arm.Insts.LDST.Reg_imm
+✔ [124/135] Replayed FV.Arm.Insts.LDST.Reg_unscaled_imm
+✔ [125/135] Replayed FV.Arm.Insts.LDST.Reg_pair
+✔ [126/135] Replayed FV.Arm.Insts.LDST.Reg_literal
+✔ [127/135] Replayed FV.Arm.Insts.LDST.Insts
+✔ [128/135] Replayed FV.Arm.Insts.Reserved.Udf
+✔ [129/135] Replayed FV.Arm.Insts
+✔ [130/135] Replayed FV.Arm.Exec
+⚠ [131/135] Replayed FV.Backend.Proof.RegallocOperands
+warning: FV/Backend/Proof/RegallocOperands.lean:438:74: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:440:23: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:457:27: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:458:27: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [132/135] Replayed FV.Backend.Proof.AbiClass
+warning: FV/Backend/Proof/AbiClass.lean:373:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:375:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:375:23: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:377:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:377:23: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:378:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:378:20: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:393:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:397:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+ℹ [133/135] Replayed FV.Backend.Proof.IselContract
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/IselContract.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselContract.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselContract.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/IselContract.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/IselContract.setup.json --json
+ℹ [134/135] Replayed FV.Backend.Proof.LowerSeq
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/LowerSeq.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerSeq.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerSeq.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerSeq.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerSeq.setup.json --json
+ℹ [135/135] Built FV.Backend.Proof.StockBlockCode (25s)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/StockBlockCode.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockBlockCode.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockBlockCode.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/StockBlockCode.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/StockBlockCode.setup.json --json
+Build completed successfully (135 jobs).

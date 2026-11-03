@@ -1,0 +1,32 @@
+{
+  "status": "SOURCE_ONLY;NOT_KERNEL_CHECKED",
+  "source_sha256": "f03dd197c54abdaffdbeac519b95c8678a70c03f636654fd55c665cfb2aced4c",
+  "new_files_only": true,
+  "shared_edits": [],
+  "premises": "Existing TrapsExplicitX plus actual XState reach and unchanged source function;continuation facts remain internal.",
+  "preserves": [
+    "Clif.Run versus Clif.Unwind",
+    "trapped versus unwound",
+    "original try-call clauses",
+    "old public interfaces"
+  ],
+  "open": [
+    "Derive caught-handler reach internally.",
+    "Ordinary MapFaults alone does not map newly reachable handler memory faults.",
+    "A complete caught-exception/later-memory-fault interface remains required.",
+    "Recursive FaultsD coverage and executable first-fault simulation remain open."
+  ],
+  "source_hashes": {
+    "FV/E2E/UnwindReachSource.lean": "b3c591d9d3e72aa5ced4a9c428a555c4ee97ad55c7ba50bf1a9ffce87d905a33",
+    "FV/E2E/UnwindMemoryFaultSource.lean": "0dd51ecdfd083cb297c1d283e5394a5fb9626767146bb6f173cc46d614c899bd",
+    "FV/E2E/UnwindLinkedReachSource.lean": "99d215f1dcc1a2f5964c1bd818b8bb7acd0e8425b7ab2bde215b3a35e5b79ca1"
+  },
+  "new_interface": "MapFaultsX and TrapsExplicitMX are internal source predicates. No compiler admission uses them. Production must construct their instances from the original world/entry contracts.",
+  "actual_unwind_context": "MapFaultsFromX uses arbitrary XState and preserves tries. Entry MapFaultsX specializes initial.toX. No actual caught state is reset to toX.",
+  "focused_core_sources": [
+    "FV/E2E/UnwindReachSource.lean",
+    "FV/E2E/UnwindMemoryFaultSource.lean"
+  ],
+  "deferred_linked_reach_source": "FV/E2E/UnwindLinkedReachSource.lean requires proper current LinkClifXN;conversion theorems remain unchanged.",
+  "memory_branch": "Actual MemTrapAt events cover ordinary and atomic accesses;no memTrapInst-only exclusion."
+}

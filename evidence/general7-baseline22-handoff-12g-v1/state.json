@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "owner": 2763346,
+  "owner_birth": 1793702005.14,
+  "scheduler": 1723571,
+  "scheduler_birth": 1793694108.91,
+  "scope_parent": "/sys/fs/cgroup/user.slice/user-30034.slice/user@30034.service/clifv.slice",
+  "same_controller_resumed": true,
+  "signals_to_compilers": [],
+  "source_share_release": "source2GiB and acquire1GiB remain active;priority replaces broad12GiB",
+  "allocation": "exclusive12GiB priority providers;broad controller paused;source2GiB/acquire1GiB;no backup",
+  "full_goal_complete": false,
+  "utc": "2026-11-03T10:46:22.858714+00:00",
+  "boundary_jobs": [
+    {
+      "pid": 2750685,
+      "args": [
+        "/usr/bin/python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/lake-time.py",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/stock-current-main-full-gate-v6/runs/combined/normal/current-v6-resume1/scheduler/FV.Backend.Proof.DefGenTab.time",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/memcap.sh",
+        "lake",
+        "build",
+        "FV.Backend.Proof.DefGenTab"
+      ]
+    }
+  ],
+  "controller_paused": true,
+  "consumer": {
+    "pid": 2812157,
+    "birth": 1793702687.19
+  },
+  "consumer_exit": 0,
+  "restored_allocation": "broad12GiB/source2GiB/acquire1GiB/orchestration1GiB"
+}

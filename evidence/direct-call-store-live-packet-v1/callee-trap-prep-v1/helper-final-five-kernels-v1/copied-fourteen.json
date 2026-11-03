@@ -1,0 +1,41 @@
+{
+  "copies": {
+    ".lake/build/lib/lean/FV/Backend/Proof/IselExclT.trace": "434cca457a0a6b4e1119770f9d7f19cee56d66ab5b1faacee324a0cfe83445f0",
+    ".lake/build/ir/FV/Backend/Proof/IselExclT.setup.json": "36b042275adfd87d6366323433b28a69f71e15d2732aadf3f044f9fa4901cd75",
+    ".lake/build/lib/lean/FV/Backend/Proof/SpillEdgesIsel.trace": "b35dbbf0f36427ce5030e400adab11c5c964dc885c482f0d675f2825c26190f3",
+    ".lake/build/ir/FV/Backend/Proof/SpillEdgesIsel.setup.json": "25b371a8f6f815c8c5ad2066a25456cf9230b6f9d64743e125bf792ec0147b4b",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySourceExecution.trace": "6b2955e18b6a166ced78bc714c357999d0be3a7b704fb03008c8543b1179ed29",
+    ".lake/build/lib/lean/FV/Backend/StockVoidCallCheck.trace": "49c81dc056a8f79e273217fa82bed4c7caca5d21bc4305b5477e9f7a50fe982e",
+    ".lake/build/ir/FV/Backend/StockVoidCallCheck.setup.json": "e8c3a14cf0a5b09602b144d51039961a050833ee9446b69e5ff3467830d94f88",
+    ".lake/build/lib/lean/FV/Backend/Proof/IselTermFactsTy.trace": "86c30a624ca99d17a6fe83594dbb8dfe1b011a42c539eefc169770e50024fcd6",
+    ".lake/build/lib/lean/FV/Backend/Proof/LowerContractT.trace": "3eb5ada0de31ca068959517d3197cf580eb4873d626f8f7f71dc5f85ea6a63a2",
+    ".lake/build/ir/FV/Backend/Proof/LowerContractT.setup.json": "7685377b07ea9ab53199147d35c2bc3d13ced7c2f01585e6a9b079b296a0db89",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNotrap.trace": "7fc8d0aa9cd881eff290bbe6ea64021f199d56ee6e125ef9ed7272336a614915",
+    ".lake/build/lib/lean/FV/Backend/StockVoidCallNICheck.trace": "92bee4e7d6b2d5777cf5cca96fd5a96bdf3c1aa3710eb2a3dbdc3d34d599bbff",
+    ".lake/build/ir/FV/Backend/StockVoidCallNICheck.setup.json": "34713c31250542337d78014a616d437d7601cbe8d3f5dc69a62bb5eb5cbdc57f",
+    ".lake/build/lib/lean/FV/Backend/Proof/IselCtlTermTI.trace": "e7e8c459477f9ad63f2e16b5e44390a8cafec74350085528d2b795fc2f14d10d",
+    ".lake/build/lib/lean/FV/Backend/Proof/LowerContractTP.trace": "26cc8a23e374c9f14d2646b9537a0c2fcaf4bea4c81f65542b0eaf5506bdef57",
+    ".lake/build/ir/FV/Backend/Proof/LowerContractTP.setup.json": "16545c53e6f7981c24c3e35fc6e3c453557f43b05bd8ec81d2e8bbc4f480dc8d",
+    ".lake/build/lib/lean/FV/Backend/Proof/IselCtlCallF.trace": "092b38236d514cf462178237dffba8c2db956e964f616fc9793273499b047fc4",
+    ".lake/build/lib/lean/FV/E2E/StockVoidCallView.trace": "b678f52a99f87620b3afb1f4c8a8b0ee0ea4ccd296fc8123d255370c1dbbae46",
+    ".lake/build/lib/lean/FV/E2E/StockVoidCallDomain.trace": "8be18027f1eaed5dc752fab6efb4eb0bcbbf5c108d3e4e4bc833f2a036fccd8a",
+    ".lake/build/lib/lean/FV/E2E/StockVoidCallEntry.trace": "455607a8f193bf24a57ccb950318ce846678c360cfc395e29ea4faa622f814c1"
+  },
+  "old_R_hashes": {
+    ".lake/build/lib/lean/FV/Backend/Proof/IselExclT.trace": "31d07c7013786c3650043f27e24fb41a4cece80b48e29919d4209ebed58f1e45",
+    ".lake/build/lib/lean/FV/Backend/Proof/SpillEdgesIsel.trace": "e9e9026b33f754287f64441a0dfecfa75b6b8eccbae9b693de3ce9bfa35b1cbb",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySourceExecution.trace": "f291233b8b1c81dc0a8d4ee10ef6b31c7fa72f99a369e5f41622adcf691a4f46",
+    ".lake/build/lib/lean/FV/Backend/StockVoidCallCheck.trace": "a02f8b5e76ab8f4c84b01e44602a51cf12693297679f370654784353b54afee5",
+    ".lake/build/lib/lean/FV/Backend/Proof/IselTermFactsTy.trace": "6f1b6978a6357830e5fd966b315093eac2b9c243fc5168c5aff345e8dae3bffd",
+    ".lake/build/lib/lean/FV/Backend/Proof/LowerContractT.trace": "f37237b0ccff535fd1b2e1355a8271c8cd4a1fbe9e221a63a29258a0ad371a55",
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNotrap.trace": "816d4dcd2a5b016f92470b67a0d23a355ea28f41bf4f796561a6e5b8f3ca5aea",
+    ".lake/build/lib/lean/FV/Backend/StockVoidCallNICheck.trace": "e87aad432bd2389819615a5a820fe01a567b4af409eb5c0632db75a08e75d063",
+    ".lake/build/lib/lean/FV/Backend/Proof/IselCtlTermTI.trace": "44b0a25de75b76230633c1c24d5725166e95427d7db5aa9c5de347ec2ee341c9",
+    ".lake/build/lib/lean/FV/Backend/Proof/LowerContractTP.trace": "710891f023ccb99b51578a0af92422a2cfc1485f30faea5326880a9dae10f882",
+    ".lake/build/lib/lean/FV/Backend/Proof/IselCtlCallF.trace": "34b763f694cefd135b7f1cf88081e34dfa881fbdf5f8ca7a95b13a0a350c46e1",
+    ".lake/build/lib/lean/FV/E2E/StockVoidCallView.trace": "341cc6d07c4d4f01ce44a906fa3e89b0cf8d9154292d0b88626c24a022c1272b",
+    ".lake/build/lib/lean/FV/E2E/StockVoidCallDomain.trace": "c60710cb6e0a0802cd51b09bc10f7c22c65cbf2e65dc730e4227698b005ff616",
+    ".lake/build/lib/lean/FV/E2E/StockVoidCallEntry.trace": "f6835728c68c94336ff6fa1f3277d2bfd23d1156b5cdeff3d9d25b2dd312d325"
+  },
+  "parent_receipt_sha256": "3fe82c991b4b164ecc31a46b08fc9f32188633f717128095cc73cc68089a1d7c"
+}

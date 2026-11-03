@@ -1,0 +1,33 @@
+{
+  "proof_conditions": [
+    "Stock.lower success",
+    "original LowerScope",
+    "original Dominated",
+    "actual retained membership",
+    "selected root810 case"
+  ],
+  "Dominated_from_LowerScope": false,
+  "original_source_checks_include_dominatedB": true,
+  "original_lowerCheck_complete_retains_Dominated": true,
+  "root810_production_class_exists": false,
+  "no_new_production_guard_added": true,
+  "source_only_local_endpoint_proof": true,
+  "original_contract_sources": {
+    "FV/Backend/StockScalarCheck.lean": {
+      "read_only_source": ".worktrees/stock-extending-production-20261031/FV/Backend/StockScalarCheck.lean",
+      "sha256": "4271b75788ab3bab6500b797ecd276990f7f1b34badb9ffaf870ff67c65c8b62"
+    },
+    "FV/Backend/StockMemoryCheck.lean": {
+      "read_only_source": ".worktrees/stock-extending-production-20261031/FV/Backend/StockMemoryCheck.lean",
+      "sha256": "021946f803675e1cc189d1b23efd46c2adf81d96c7decfd1ed22334f4add7000"
+    },
+    "FV/Backend/Proof/StockMemoryCheck.lean": {
+      "read_only_source": ".worktrees/stock-extending-production-20261031/FV/Backend/Proof/StockMemoryCheck.lean",
+      "sha256": "fa1ac71eebf73b3beaf3b66cfdfe84e77ea23048fdb891d3120da321779cb5fe"
+    },
+    "FV/Backend/Proof/LowerComplete.lean": {
+      "read_only_source": ".worktrees/stock-extending-production-20261031/FV/Backend/Proof/LowerComplete.lean",
+      "sha256": "be6d4cd3734db00444f4c31d9f6ba8de8be4a0f435b6799364cab1570368203b"
+    }
+  }
+}

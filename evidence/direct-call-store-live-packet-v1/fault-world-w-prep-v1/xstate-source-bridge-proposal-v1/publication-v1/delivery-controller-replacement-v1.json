@@ -1,0 +1,14 @@
+{
+  "reason": "Refresh actual CI rollup immediately before merge;cached receipt remains evidence",
+  "pid": 3060977,
+  "birth": 1793704592.46,
+  "argv": [
+    "python3",
+    ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/xstate-source-bridge-proposal-v1/deliver-948-v1.py"
+  ],
+  "children": [],
+  "CI_passed_receipt_absent": true,
+  "signal": "SIGTERM",
+  "source_sha256": "61af9bae25bb16ef5811998e18fd6797916b8290873f76806c9bd04219c1fd70",
+  "earlier_replacement_setup_failed_without_signal": true
+}

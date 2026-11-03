@@ -1,0 +1,12 @@
+{
+  "status": "obsolete-publication-index-removed",
+  "removed": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/xstate-source-bridge-proposal-v1/publication-v1/index",
+    "sha256": "4ad44c43686fd3dd5f9424fb296fa0328b2d01dc3839d2e741a06cc77ac57e43",
+    "bytes": 772317,
+    "allocated_bytes": 774144,
+    "purpose": "Temporary publication index;tested/merged tree and exact source blobs remain in Git and canonical manifests"
+  },
+  "source_logs_failures_manifests_preserved": true,
+  "active_R_outputs_retained": "Current source/provider/production proofs still use this prefix. No obsolete independent build prefix exists for this unit."
+}

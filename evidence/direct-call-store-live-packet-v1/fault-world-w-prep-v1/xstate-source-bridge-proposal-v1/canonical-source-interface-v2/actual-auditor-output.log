@@ -1,0 +1,8 @@
+'E2E.ReachX.trans' depends on axioms: [propext, Quot.sound]
+'E2E.TrapsExplicitX.at_reached' depends on axioms: [propext, Quot.sound]
+'E2E.MapFaultsFromX.at_reached' depends on axioms: [propext, Quot.sound]
+'E2E.MapFaultsX.at_reachedX' depends on axioms: [propext, Quot.sound]
+'E2E.MapFaultsX.at_reached' depends on axioms: [propext, Quot.sound]
+'E2E.TrapsExplicitX.toMX' depends on axioms: [propext, Quot.sound]
+'E2E.UnwindMemoryWitness.default_load_admitted' depends on axioms: [propext, Quot.sound]
+'E2E.UnwindMemoryWitness.default_store_admitted' depends on axioms: [propext, Quot.sound]

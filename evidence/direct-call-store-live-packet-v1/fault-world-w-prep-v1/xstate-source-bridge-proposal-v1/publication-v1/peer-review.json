@@ -1,0 +1,11 @@
+{
+  "status": "approved",
+  "reviewer": "worker-A",
+  "head": "16e202eb15b6e95ba33bf30a9c9e3640ee4ca285",
+  "request_ai_coord": 6939,
+  "verdict": "Approved after one QUICK, DIRTY, CHEAP direct review. Witnesses establish inhabitation only;not caught-handler execution.",
+  "provenance": "Parent relayed the actual worker-A verdict in the coordination channel.",
+  "review_agents": 0,
+  "builds_by_reviewer": 0,
+  "utc": "2026-11-03T11:16:32.746702+00:00"
+}

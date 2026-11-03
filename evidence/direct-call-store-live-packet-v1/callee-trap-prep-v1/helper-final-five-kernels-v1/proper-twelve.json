@@ -1,0 +1,380 @@
+{
+  "FV/Backend/Proof/StockFenceHelpers.lean": {
+    "source_sha256": "443fc9b669d64e2abcb31c917580a02e88d0824c140eb2d5d1b2dbf15fc071dc",
+    "configs": {
+      "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+      "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+      "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+    },
+    "dependencies": {
+      "FV/Backend/Proof/StockProjection.lean": {
+        "native_key": "1333c4dd19b76b2b",
+        "outputs": {
+          "m": false,
+          "o": [
+            "8c20713016f20092.olean"
+          ],
+          "i": "1daec1a0479eaea5.ilean",
+          "c": "7aa9ad570ec59c76.c"
+        },
+        "source_sha256": "ca6df05098e43cdb765415c2cd9c208a3dfe59d1f40a39c2ddd4ad8fea15e23b"
+      },
+      "FV/Backend/Proof/IselScopedProjectionInv.lean": {
+        "native_key": "5c636e8c1a170289",
+        "outputs": {
+          "m": false,
+          "o": [
+            "7a630cbaac45e0de.olean"
+          ],
+          "i": "079e268f60fcaefe.ilean",
+          "c": "a643fd41f02dd819.c"
+        },
+        "source_sha256": "10f819df131b084c011454be10576104f941f75608c162e7beaa7f458cba8192"
+      },
+      "FV/Backend/Proof/IselCmpInv.lean": {
+        "native_key": "368a4fcc88d94716",
+        "outputs": {
+          "c": "f90a609429c916a4.c",
+          "i": "a04242084bf006f3.ilean",
+          "m": false,
+          "o": [
+            "293577dfca7f86fa.olean"
+          ]
+        },
+        "source_sha256": "db229c9530b467144de247f6fbe14d4e9dcbb113fc8860bcd0d0386320cd789e"
+      }
+    },
+    "native_key": "fac8ac2b38e06336",
+    "outputs": {
+      "o": [
+        "a8fa0714f38a0fb9.olean"
+      ],
+      "m": false,
+      "i": "52f01de5b959ef88.ilean",
+      "c": "ba5c0d3a767af802.c"
+    },
+    "trace_sha256": "98cad3f04da75bc3d256506cc8d5daae5b4a2d4c960d59a120d258bfe776c513",
+    "kernel_record": {
+      "label": "helper-0-kernel",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockFenceHelpers:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 338219008\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/Backend/Proof/StockFenceMetadataModel.lean": {
+    "source_sha256": "92927e520337a1e2eafe3e950fe36cffbea7e122817d579f8c00df3ec6c0fb7a",
+    "configs": {
+      "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+      "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+      "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+    },
+    "dependencies": {
+      "FV/Backend/Lowering/Stock.lean": {
+        "native_key": "0b0ee8b0010a8e66",
+        "outputs": {
+          "m": false,
+          "o": [
+            "34aa1cf1aeff3951.olean"
+          ],
+          "i": "ae41cba858526fe6.ilean",
+          "c": "199e7f372fdb7ddd.c"
+        },
+        "source_sha256": "b81f1973800ac6ac42d127968d1f5448da8722dd8c22a135fb6d8c9451f22e3e"
+      }
+    },
+    "native_key": "9337a75a910fc361",
+    "outputs": {
+      "o": [
+        "69b3024402bb1679.olean"
+      ],
+      "m": false,
+      "i": "e90940be5547a963.ilean",
+      "c": "ce8ac34b85cda179.c"
+    },
+    "trace_sha256": "d5363143160236ca88ff25686d40e17fb75497a9cee21e20bb06e475043bfe6e",
+    "kernel_record": {
+      "label": "helper-1-kernel",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockFenceMetadataModel:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 126955520\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/Backend/Proof/StockFenceScan.lean": {
+    "source_sha256": "f1320960e699b9e30bd67aa246b97a77203d0367ee1ef173ae2337be16d6ab77",
+    "configs": {
+      "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+      "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+      "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+    },
+    "dependencies": {
+      "FV/Backend/Lowering/Stock.lean": {
+        "native_key": "0b0ee8b0010a8e66",
+        "outputs": {
+          "m": false,
+          "o": [
+            "34aa1cf1aeff3951.olean"
+          ],
+          "i": "ae41cba858526fe6.ilean",
+          "c": "199e7f372fdb7ddd.c"
+        },
+        "source_sha256": "b81f1973800ac6ac42d127968d1f5448da8722dd8c22a135fb6d8c9451f22e3e"
+      }
+    },
+    "native_key": "af425be97273f755",
+    "outputs": {
+      "o": [
+        "954f63b4940e5585.olean"
+      ],
+      "m": false,
+      "i": "5c2d3792eed0d030.ilean",
+      "c": "47b32f0e3c6c216f.c"
+    },
+    "trace_sha256": "e050a86b16ffd84aea9b2bc698d54108add9203382488a5eba19de4be5416c4c",
+    "kernel_record": {
+      "label": "helper-2-kernel",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockFenceScan:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 100720640\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/Backend/Proof/StockFenceMetadataPositive.lean": {
+    "source_sha256": "213f5fef0013f0d011189a949097fc1dee63aa45f90d38c27a53a167845e5c23",
+    "native_key": "0abb3a34b0f8244e",
+    "outputs": {
+      "o": [
+        "59c8a6640415056c.olean"
+      ],
+      "m": false,
+      "i": "84785d40a5125110.ilean",
+      "c": "a435e203624588e4.c"
+    },
+    "trace_sha256": "91d15ce1fb780b58c65bcdedcbf8f0ce1896d8955a80070037d801b8d4a4b16a",
+    "olean_sha256": "84cdf1000db4b11b3e903c989fedb40b246000f2185aad0656ff9e103eeb96ed",
+    "kernel_record": {
+      "label": "kernel0",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockFenceMetadataPositive:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 127475712\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/Backend/Proof/StockSourceResults.lean": {
+    "source_sha256": "081f158d20fd4810fbfa6599f175ec612cbe8e51f94f63d723580f895e56db10",
+    "native_key": "34d2915d949d32c0",
+    "outputs": {
+      "o": [
+        "04a135f51ffd2258.olean"
+      ],
+      "m": false,
+      "i": "6de75b217e7c8f78.ilean",
+      "c": "53dbd25beeab6ae0.c"
+    },
+    "trace_sha256": "897fd325ab1ac4b0bb904add3060d93e637676dc7ddb81e81d81923c1000941d",
+    "olean_sha256": "0c8763d369478997f41979c279be1e5059d07ec5d6dc5cc20e841c399d83924a",
+    "kernel_record": {
+      "label": "kernel1",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockSourceResults:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 256708608\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/Backend/Proof/StockDirectCallResult.lean": {
+    "source_sha256": "1808f16d7be8f2a99ad69b7cb08d138c26c44ecf65758757f0b34578774f854b",
+    "native_key": "2c9ee9f4efb224e7",
+    "outputs": {
+      "o": [
+        "98d033f9a950acfd.olean"
+      ],
+      "m": false,
+      "i": "12946cc76af459c1.ilean",
+      "c": "b370db83521c0061.c"
+    },
+    "trace_sha256": "163ad1612a5d06fcb5bfd0445d017848faec43f16fd88ebabfe7a0bbf7faa666",
+    "olean_sha256": "0d333b07f3f1829d0db10728929718ebd70e9fb0562ef1b20b85e8029108f4b4",
+    "kernel_record": {
+      "label": "kernel2",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockDirectCallResult:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 251912192\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/Backend/Proof/StockLiveCallArithmetic.lean": {
+    "source_sha256": "de0daf302172cf6aabf5026795d5391da5580e2acb7d228d24dc67ca1052aafe",
+    "native_key": "86869eb88585970e",
+    "outputs": {
+      "o": [
+        "8843f1dc67790012.olean"
+      ],
+      "m": false,
+      "i": "1e73ce429db72182.ilean",
+      "c": "9020003c4edf3099.c"
+    },
+    "trace_sha256": "d6ee60bde557866842f61f1fdc3273295cdae350619a587671ec26d824aaf5fe",
+    "olean_sha256": "8951e2ba078e091aa571e1c7a29b2126301fb77558a80bd0671040e63cd48488",
+    "kernel_record": {
+      "label": "kernel3",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockLiveCallArithmetic:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 252186624\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/Backend/Proof/StockLiveCallSource.lean": {
+    "source_sha256": "1a463371e008c10b4c5b876fdc4f61f3988994830d04b42f50e59b960289f0d5",
+    "native_key": "d2b8d36065958371",
+    "outputs": {
+      "o": [
+        "2293eaa29dbde628.olean"
+      ],
+      "m": false,
+      "i": "6c8af7f55efc70bd.ilean",
+      "c": "33eaf7efbe365a1a.c"
+    },
+    "trace_sha256": "d6e068df19c478a60c6082aad0c999d174aef5e714113eb7f5d39d2f95beeae3",
+    "olean_sha256": "8558ade41e06d44b316c2fae2eaefa5aa9e169759c61c3736a7f9ad69c5fbcd6",
+    "kernel_record": {
+      "label": "kernel0",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockLiveCallSource:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 639324160\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/Backend/StockResultCallCheck.lean": {
+    "source_sha256": "0e3c6533013e18cdb9e3d8e96f57379675baa0c0a68c972954c86e06ab35d7f9",
+    "native_key": "371d6e918a37295d",
+    "outputs": {
+      "o": [
+        "fe063bcf0bd03e90.olean"
+      ],
+      "m": false,
+      "i": "bf3828f45da8d9e5.ilean",
+      "c": "8ecfd695ccaf901b.c"
+    },
+    "trace_sha256": "d3ddd1cc5b71d33dd29d779e4110716e1b5a4fd30995ca29def2fb2eba67dc26",
+    "olean_sha256": "1c02dc0255b802bb886aa83714c8c579ea96f0b90d0bc5fb509000abf5579a41",
+    "kernel_record": {
+      "label": "kernel1",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.StockResultCallCheck:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 204627968\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/Backend/StockLiveCallCheck.lean": {
+    "source_sha256": "dcdfbb8e5c1d06412bd5fdc2aedc878a9bfb41d3928a05613bca226e8fd7b5a8",
+    "native_key": "cf927c75ee98b81b",
+    "outputs": {
+      "o": [
+        "9a189d58006a8d88.olean"
+      ],
+      "m": false,
+      "i": "a1f5907be8cc8604.ilean",
+      "c": "f2f58fe2021d17b3.c"
+    },
+    "trace_sha256": "ae339e6db51071275bff48a7c7ec404d9e3d01328fe06c54347c1f6998821c86",
+    "olean_sha256": "7e4debab6deb0895195ccd9384abd034a5ac7983842f07acb551e769c2e3fcf3",
+    "kernel_record": {
+      "label": "kernel2",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.StockLiveCallCheck:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 220807168\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/E2E/StockLiveCallLayout.lean": {
+    "source_sha256": "492971e284612c4d7a3b77a92ac6e036f62180ed7779d5eec3b83fec538a90c0",
+    "native_key": "1cc76ff06a224d26",
+    "outputs": {
+      "o": [
+        "63e80eb5c4bd5d0b.olean"
+      ],
+      "m": false,
+      "i": "e1b76df19b173051.ilean",
+      "c": "f03440d4be97504b.c"
+    },
+    "trace_sha256": "8e67676549696b6afa236129503387cc7642ce730a2a11b616c43258d115c9ae",
+    "olean_sha256": "d8c5f2fa03f99bae06f0bd9839b6702dabad14587c9a89e728fcae28b0cc5ab9",
+    "kernel_record": {
+      "label": "kernel3",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.E2E.StockLiveCallLayout:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 227962880\noom 0\noom_kill 0\n"
+    }
+  },
+  "FV/E2E/StockLiveCallPrelude.lean": {
+    "source_sha256": "cf694448e1278a1167e7fdc7f8f6c2801a87af7ee5b33e51e82c446945d8db10",
+    "native_key": "b11c33fc8bb7a25a",
+    "outputs": {
+      "o": [
+        "12d22166290c0d7c.olean"
+      ],
+      "m": false,
+      "i": "3fb28ae3053f39cb.ilean",
+      "c": "7d175fa3dc58a423.c"
+    },
+    "trace_sha256": "5cc0e546a31a42874ad171774965b2166af3f884a212032281c15b8735c8f692",
+    "olean_sha256": "53b68d7c9411f3135a9f33a4b10f88527d6a292969bcc9b10b6bd38f656d8010",
+    "kernel_record": {
+      "label": "kernel4",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.E2E.StockLiveCallPrelude:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 579919872\noom 0\noom_kill 0\n"
+    }
+  }
+}

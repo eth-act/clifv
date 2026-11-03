@@ -1,0 +1,50 @@
+{
+  "status": "passed-all-four-exact-head-checks",
+  "head": "16e202eb15b6e95ba33bf30a9c9e3640ee4ca285",
+  "base": "64d1bd8e04cb1b9845a4090e3c4e3db247709ae0",
+  "tree": "8d5605ad5f609be6b9e8595989ce79523d4d614d",
+  "checks": {
+    "Quick checks": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T11:12:44Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41625619182/job/125882093178",
+      "name": "Quick checks",
+      "startedAt": "2026-11-03T11:12:35Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    "Build and compare": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T11:18:06Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41625619014/job/125882093543",
+      "name": "Build and compare",
+      "startedAt": "2026-11-03T11:12:35Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    "Check lost matches": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T11:18:25Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41625619014/job/125884703667",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-03T11:18:14Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    "Publish PR result": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T11:18:19Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41625619014/job/125884703552",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-03T11:18:09Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  },
+  "snapshot_sha256": "6caeeac4c1309b6f0d6b2e0ade3b0a0ca48181dedf6d00879aaecacda0e592b5",
+  "review_and_current_base_tree_gate": "still required before squash delivery"
+}

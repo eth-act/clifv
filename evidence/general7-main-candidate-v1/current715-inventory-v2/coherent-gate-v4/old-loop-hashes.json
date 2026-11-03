@@ -1,0 +1,1050 @@
+{
+  ".lake/build/lib/lean/FV/Backend/Proof/IselCovDriver.trace": {
+    "sha256": "1434561c41f6c12368444cbe7a33b65f223449f3a4bb9ca8e35600bddc66696b",
+    "size": 3317
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/IselCovDriver.olean.hash": {
+    "sha256": "210efbc56b3587d87295a4c364d5ab7e7385751994bf981d060cd15813bb13cc",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/IselCovDriver.olean": {
+    "sha256": "c2f6b2b69743baf62d299f11200ce28baa883deef2b4582a9ad0434bfb6e4eae",
+    "size": 245152
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/IselFlow.trace": {
+    "sha256": "80710794842c479528022a6b0b4215385d6efd71e6374dcf37aebde74b5174b6",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/IselFlow.olean.hash": {
+    "sha256": "ab5cf42dfb78b4e18bc6217f708a2216946f7d2be5cdd0e26ab71c1ba04005ec",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/IselFlow.olean": {
+    "sha256": "a659a396790f4fad75230b086cd440c04de07eb94175e87a32e9fc3b6b746c82",
+    "size": 1957968
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/LowerCertBase.trace": {
+    "sha256": "fda49be5d744d4b436ffd818cd394de45c3e588395e94627528d550761704456",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/LowerCertBase.olean.hash": {
+    "sha256": "93a41fb3e71f1ffd575384d5264bab909b09a5c9fcfbdf299218e1482e91868a",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/LowerCertBase.olean": {
+    "sha256": "823981c1644ad8e8524eea0dd94f9be18c805b772bd333110f731d63a4ae06bc",
+    "size": 1520000
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubAllSourceValues.trace": {
+    "sha256": "a47b04edacc078cfcab594d14c71f4dc8f7db1fc8d67f2adcf5f1dd713b0fe5c",
+    "size": 2791
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubAllValues.trace": {
+    "sha256": "509e52c80cfa4cb889350e8559dfcf88fcd5ccf3ada6632917e118062c13a15b",
+    "size": 3146
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubDispatch.trace": {
+    "sha256": "21d445d1ec2ffc9e83ee7c3af54c7fd57356d55a8310219f694a562feb019a9c",
+    "size": 2725
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubImmediateValues.trace": {
+    "sha256": "e5e4e5355e58e92682c4059920ae0ef2af4896687c4ac6def4122561c6797109",
+    "size": 3364
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubMatch.trace": {
+    "sha256": "f875ac901572f3c7a9257816c6e155df79438541edf81b2afc6a5713c92b96de",
+    "size": 3043
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubNegativeMatch.trace": {
+    "sha256": "625ae35297ed4f5be69397d49627a7b0c2649d2f69184688c14177cb02da923b",
+    "size": 2935
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubNegativeValues.trace": {
+    "sha256": "286e7c5875081fb7068fe039a4258d1f96a5d700332243f000486aa6d1b20427",
+    "size": 3176
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubObserved.trace": {
+    "sha256": "bfaec263e945761747b711ec616c6bc92b2d5bf445ca3e7deadc640d77deb0f0",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubRecordValues.trace": {
+    "sha256": "3934d2f598c7f8a6fd50e7528e71b0c4912675d378ab09ecb9af0322b86451d2",
+    "size": 2763
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubScanRefines.trace": {
+    "sha256": "db025477da7845833e2027bdb53e7326158ea16bda174506e95e2d7ede4404b9",
+    "size": 2766
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubSelected.trace": {
+    "sha256": "93ed53e655f507403b1c70d59ed377efb41c177415a5bb64f9f1e26809faafa2",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubSemantics.trace": {
+    "sha256": "c2a15a06de8066153c6c3e8eb5b9c4db4ca47f64cafb32f3cf4b46162f8bee84",
+    "size": 2719
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubSourceValues.trace": {
+    "sha256": "fd4041f1e6e3592577c8c506402d426472490bfdb4754705c0aec0c037c19504",
+    "size": 2773
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubUnifiedValues.trace": {
+    "sha256": "a53778287478d9b337555e7e1117a3b792e2027503a252dfe4361cbfe0cba052",
+    "size": 2974
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAddSubValues.trace": {
+    "sha256": "1bfe075be3fa48e57bae70f4b14c146ae77bc10a83d19da46a3cc57b13dfcbef",
+    "size": 3101
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAliasAvailable.trace": {
+    "sha256": "46d31f7c1f383bc76f8853ffdc38d3fb4d51c49e3d41952483ba4a28dbb2b68c",
+    "size": 2712
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAliasDomain.trace": {
+    "sha256": "77d4e730345f4267353c13f0ca5825cca225071b8575ac756dd8b3c2e17d2e29",
+    "size": 2720
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAliasSemantics.trace": {
+    "sha256": "0dfd4aacc057b29cd7446e13e6358d661900a1ae0d5a5b36e36648613a368dbc",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAliasTerminal.trace": {
+    "sha256": "5ef4bfc2b639fab109add05a0271aeabf48331ec09d395c1a4acf9bcc3edd854",
+    "size": 2726
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAlu.trace": {
+    "sha256": "548a20217844028911bfa457133ebfbe605c787cbb40d795bbf52bc53364c15a",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAluOperandCoverage.trace": {
+    "sha256": "49acaf16ad79e2614fb7a36bc6853138d652d758e78803350575b476a6a25358",
+    "size": 2730
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAluRecordValues.trace": {
+    "sha256": "b3d86e09cdae253108f0af216a2ac83d5c95cfcfcb4050978358b0891a939804",
+    "size": 2746
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAluSelectedValues.trace": {
+    "sha256": "577c1597bdfb67363a8a062d964278e27545542ee4590b480c2ba0538737e1c3",
+    "size": 2939
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticBodyRefines.trace": {
+    "sha256": "729a147afc76881478e554bb4ad46342df31f39ddd0f6ecf950f8b6a7f3486cf",
+    "size": 2795
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticEntryRefines.trace": {
+    "sha256": "c5112c3d21ab156de8b6ff73ae1aa0f31647cc6c7110d65703a69620a963eb91",
+    "size": 2795
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticReturnRefines.trace": {
+    "sha256": "6ad112177d859a1923340e07e02143e161ecd768840213c1fb1bab419340618c",
+    "size": 3363
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticSourceExecution.trace": {
+    "sha256": "88e78b7303c89d63f98f2d67d8a955315e1ebb41f83ea4cc46d5fa29ecd04101",
+    "size": 2635
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticSourceFrame.trace": {
+    "sha256": "e232ae5bfb3a41d5de9bb0d49d06298f4b0b67bb22b5e948dc8312c46ede123b",
+    "size": 2607
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticSourceRefines.trace": {
+    "sha256": "5c35ad8e408678a2875abcd2ab622f58279f0004535dd04a8807ca3479585aee",
+    "size": 2617
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticTerminalDefined.trace": {
+    "sha256": "ddec5b47f55ba41cf8d9f9f2a19a5d3268628af602a1ba5d50d248c42885d36b",
+    "size": 2829
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAvailableProvenance.trace": {
+    "sha256": "bb8da7ab439b0567adf0d0bd35035600a738f183a1b74f871b23f9ffc249a8c7",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAvailableTypes.trace": {
+    "sha256": "342238ed357396da2aa3b3ccaeb61fbcf2edf76870c2c6610fa6c05681d284a6",
+    "size": 3079
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockAvailableValues.trace": {
+    "sha256": "74eaabc9685aa01c165be4e871cad2862fd09ecd6a38749a14c390a403e288cc",
+    "size": 2717
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockBindingFlow.trace": {
+    "sha256": "200ccad1cf6100a6826f68f78d64c4e006075a5c868e5dc812b75290c58734b3",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockBlockCode.trace": {
+    "sha256": "e9f369925cf773e230ca3b03aac94ce9ac0f2ddecaf9d9857f17c9af55444aab",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockBodyScanRefines.trace": {
+    "sha256": "96db7e43696f5bfceb95733470f96217748696a152fb4a14ace1ecc8d41e244f",
+    "size": 2546
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpConditionValues.trace": {
+    "sha256": "74679444583ad8845fb9e6e2223e5df4a2c8692f0443d84927ca2557585341ac",
+    "size": 2757
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpEqualZero16Values.trace": {
+    "sha256": "1fc55dd868273248aa10bd16900f217607ec43633971c2f9997be78d60e6ac55",
+    "size": 3178
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpEqualZero8Values.trace": {
+    "sha256": "07bdc72ea99683cbb19f32576a2a9be6852eb8ef48a9862881d2e7502500d46b",
+    "size": 3333
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpImmediateEmission.trace": {
+    "sha256": "b0d7b7b4a5b429e746239611e9167ee4953f364b498ebcd8114071b2fa2682fb",
+    "size": 3101
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpImmediateSourceValues.trace": {
+    "sha256": "46924355c3ebf195e0618d0586767a77a587a5940ebe41ebcb7698b48e4ab7e7",
+    "size": 3548
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpMachineValues.trace": {
+    "sha256": "26922b683b3a9506753aa3af403da5c418a2f1aca8f6c6f2dd17445e49694935",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNarrowImmediateObserved.trace": {
+    "sha256": "85ee67a2cedaf5b369d771fd6131819cf590bbd96ce8e462a18397af50952d6a",
+    "size": 2830
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNarrowImmediateSourceValues.trace": {
+    "sha256": "20ddafc198f10ff2aab2fb4a99f00eb3dbf6aec9bcae5c2867981f3b36ff059d",
+    "size": 3452
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNarrowMatchedValues.trace": {
+    "sha256": "edfde5597ac8cc1c0d65ed57fa5c6a395b7aa3f1800c8205c9175e758680d3e5",
+    "size": 3858
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNarrowRhsObserved.trace": {
+    "sha256": "7e0f4ee9b0e7a9be174be072ac8be4ab4a5916742b969e34d9125bf76a9beff1",
+    "size": 2763
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNarrowSourceValues.trace": {
+    "sha256": "58bd8b490c73ce7a4b0ba98a9b695087edaa791f9e1cda6b5eb7ab61b9dc2d3f",
+    "size": 3364
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero16OriginalSelection.trace": {
+    "sha256": "9b5810b790bacfd67663c04446266b0d2e937bd6d5415453887243695aff6ae5",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero16PrefixValues.trace": {
+    "sha256": "f9dd2f8bbfa7c6c39622c7c318af18de0fd73f1db3840cfe6cb2b35b4ad443a2",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero16Values.trace": {
+    "sha256": "ebd19aed5c895fd850430a2ede393d5c81fd8462f5c880be9c99bf1a82b5a167",
+    "size": 2969
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero32OriginalSelection.trace": {
+    "sha256": "5ea9f20186539f019d6330ff52bdce5602d7b9f851966b22519a4644063d20ee",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero32OriginalValues.trace": {
+    "sha256": "18d6f637c86a67649ef1c256cc8acec8cdbf87746825e7f2c518d095de3bbe00",
+    "size": 3436
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero32RhsValues.trace": {
+    "sha256": "f1ef8bcd4384f0c70fad867dce4daa222bfa2d8b7d2a36793df504cc40ace06c",
+    "size": 3172
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero64OriginalSelection.trace": {
+    "sha256": "cd17b8eb516e749c101480fd07cb02132bc4ebc1b333f564047eaf6ba02eda2c",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero64OriginalValues.trace": {
+    "sha256": "0582d037cd228b6a71de4927726982a1d5b2e31a9aafa294eeb1e488557fec78",
+    "size": 3230
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero8Emission.trace": {
+    "sha256": "3f9d12d40548871ee488a721e833b0dd78b610cf8bed5fcdb5c884450020f1ca",
+    "size": 2936
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero8OriginalSelection.trace": {
+    "sha256": "815e1c96eb43e2c9118c44dd15c4ab06d669f384b3b70fa670071b5d7e6190d0",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpNonzero8Values.trace": {
+    "sha256": "fd73bdb203ee1c734c5b9c33d5817c202310725f9fa926d2870c7e03d3b21221",
+    "size": 3133
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpPredecessorSignedEmission.trace": {
+    "sha256": "1eab52272826726652cad2b909d9707dfdd21c3c901a43592a7a93405b7eaa80",
+    "size": 3157
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpPredecessorSignedSourceValues.trace": {
+    "sha256": "67ad7b1970ea2000474e97746aa0f02db1afc6d01b544d04982082b3bece1e10",
+    "size": 3620
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpPredecessorUnsignedEmission.trace": {
+    "sha256": "6d19e7979974f773f671f56e0d97af5bb55b3e8352c923e91b5f841ebc7f49d3",
+    "size": 3171
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpPredecessorUnsignedSourceValues.trace": {
+    "sha256": "6d6d0bfb6c80e7c8c0e3ba89d6c889703a03864d7f9a2b8f06b9320b437cd117",
+    "size": 3638
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpRegisterEmission.trace": {
+    "sha256": "2aea1ee7e15e7d4fe4cea70e57c0aad7dfe1558154528ad3fff08b192360bc2e",
+    "size": 3094
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpRegisterTraceValues.trace": {
+    "sha256": "959fdedf0aa2768d6f135284c2d47af5adec9f4a3258aad70f3bbac1dd922915",
+    "size": 3165
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpWideActualValues.trace": {
+    "sha256": "6f6ccfd95089c8ad788ae889a43b7eefb6b834744eebc5adac78fbd2e3a50e7e",
+    "size": 4109
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpZero16OriginalRhsValues.trace": {
+    "sha256": "1b6bfb8014c9c06eddb26926f7efdd7a6692df7df1bf61b5b3ca040d33d4f17d",
+    "size": 3258
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpZero32OriginalRhsValues.trace": {
+    "sha256": "93a4eb4edcb3ddd786ef484ead86704de03c974da90994cb3eea0eb766436033",
+    "size": 2848
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpZero64OriginalRhsValues.trace": {
+    "sha256": "88d6908cbd4559402cf465b443f664ac9a085b99492e47038738a15bb01109ec",
+    "size": 2844
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpZero8OriginalRhsValues.trace": {
+    "sha256": "82c3589d37c907e785cf2d39137ca989d6ccd8fc1c52a9af06360429db88fd92",
+    "size": 3245
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpZeroHelpers.trace": {
+    "sha256": "510df39c3f0910c1d5b656c7b22779bd7355be862f0beb45ccf67dde29403603",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpZeroHelpers.olean": {
+    "sha256": "2393381dc73e6e23068cc37560fb708b6f2b54baa79ff59495eabcc1eaf351ac",
+    "size": 2803432
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCmpZeroHelpers.olean.hash": {
+    "sha256": "85c890ffc32176bbd48f35496d0b2a85ef6d23b8b370b18a319cca18caa8ac39",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCoverageBlock.trace": {
+    "sha256": "957625145094c6ae01b8cba42d8deb2928d0d7907571b99377bf1a690cceae78",
+    "size": 2707
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCoverageDriver.trace": {
+    "sha256": "d3b0816a94187ed124018b5c7cc187248f90999a8f5fa56d0c9d1461ffcb4122",
+    "size": 2895
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCoverageModel.olean": {
+    "sha256": "fbcbad1ab4273ddabb6ac1af4eb30c4997c18a1a38c331078af1740e5a8edbe9",
+    "size": 513088
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCoverageModel.olean.hash": {
+    "sha256": "71f6c1ca851e2a75ec55fe133d7cf25fd3e628ea52111d39ae5ae07a26d90459",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCoverageModel.trace": {
+    "sha256": "d3a886b7c170d24788014e5224893728af04feaecda8d8f04ee159ea09773e80",
+    "size": 3811
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCoverageRecords.trace": {
+    "sha256": "9d4841933d20f986b286f20d32b5a20f6b2333c71a75940c80cb6dd39b1e7ffd",
+    "size": 2544
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCoverageRoots.trace": {
+    "sha256": "fd22a139acc2a6dbd78b27aef826dc70244c2ca0f94d80763fe29c8db77ed49d",
+    "size": 3046
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCoverageScans.trace": {
+    "sha256": "cca8199325e73bd948d5ca72a2d97ea263c55f3fae1a26ac1b5766fb6602f06a",
+    "size": 2696
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCoverageTerms.trace": {
+    "sha256": "229c66d2d013e930f47be8950922a3bbe79cadc9ee9fe94e8f3be43c00e6ffbc",
+    "size": 2528
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockCtorFlow.trace": {
+    "sha256": "33c5ff97b92b7885620493758f536ca3e164c9ff3c08ace68ef1a09fe2c3c8d8",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDemandExtent.trace": {
+    "sha256": "3ba2018a770515fed8eda7125d05cc4a5e850024c3fbd0d9aab388cc8ce572c3",
+    "size": 2907
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDemandExtent.olean": {
+    "sha256": "ada1d201ab1b365ed75d2b152eb334ba31b7b54357fef4607f938e1adaca64f1",
+    "size": 4657496
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDemandExtent.olean.hash": {
+    "sha256": "8d4ef264710d503a8a80717715505383003254a4075a9839930de835759b9052",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDemandMono.olean": {
+    "sha256": "c66f5dc839fc4a0980e7955dbba8d7c6ed9d9b3d5c155922549cebb4964e0e0f",
+    "size": 2925048
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDemandMono.olean.hash": {
+    "sha256": "d226c82b8c9a277a1880072e280e27e43989ab83e625f9a9bf3bfb2d25197398",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDemandMono.trace": {
+    "sha256": "0de9044426f4aa9bdfec0380438236ac179d848076c583d9690fbd3bebe1ee41",
+    "size": 2515
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockDriverBounds.trace": {
+    "sha256": "d9a84a39b606d499e0b419ac3fe15d7c9a7b606b2a7a74575de696fa2a98ca92",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEmissionSemantics.trace": {
+    "sha256": "b26eb5808fad500a7886af35ecaf5ca9dbf89d98b6fd3294f849185693d5a894",
+    "size": 2737
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEmittedScan.trace": {
+    "sha256": "b6f39b562b6b257638fefef0118eafb6fa596159a75526db219837cc76e9e202",
+    "size": 2710
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEntryABI.trace": {
+    "sha256": "28486ed061a695cdc3391cfa99bb92c1cfc4c1e74f7b30a616697f435439d87d",
+    "size": 3189
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEntryAliases.trace": {
+    "sha256": "3362d991d217b54c0a1b9c68dfc7607b78809b0e74f61ed7e5b78b3a556ab98c",
+    "size": 2523
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEntryArgs.trace": {
+    "sha256": "3f204924213c2096b7455f744e38265c18dd9528ba2df1b1ab845570d4202cc8",
+    "size": 2809
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEntryAssembly.trace": {
+    "sha256": "dfbcf36812950f2018ce1c4dbe97343d7ed4d9018063723840bb5b4433a6ec1c",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEntryCode.trace": {
+    "sha256": "6afd93f5de3d8479016bc56223a92444dd2c2ee61733b18caf7e9dd68afc406f",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEntryLoads.trace": {
+    "sha256": "aee0949dc0238877609e155dfcf3a764ad094e982d79ff55529d8715bcad71bb",
+    "size": 2649
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEntryOrder.trace": {
+    "sha256": "8fdb868ba18760541d2266c4d3433e9da7008049740ccfc2e6d142404640c560",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEntryPrelude.trace": {
+    "sha256": "14994e25c54fee7acfddfb2b72beafa5b2d416119df040b304c99d3245dac316",
+    "size": 3046
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockEntrySeed.trace": {
+    "sha256": "f50fca29a2acb1ba1820d7b465e3bc138d4fe24fa4ff644b391db9a0c25d8d74",
+    "size": 3214
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockExtendRequests.trace": {
+    "sha256": "ac3cb94ed63ed2149f3a47fb83004eb470e8ba88ebabeb000564ea51eec7df34",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockExtendSemantics.trace": {
+    "sha256": "87fb6c397cc5cf5dc04978f544c84d52b5c6f188e26a88389dee82af5a242468",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockExtendValues.trace": {
+    "sha256": "09739956c9625ca24e6b9421e1e84b86a7600dee545ac9f32b5d8558a6b3adb4",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockFreshAlias.trace": {
+    "sha256": "88cd4c7d48001f7f6d86f09d67d4a77ae0b9cfe16d3cec601eb590d26a1303fd",
+    "size": 2686
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockFreshRecordValues.trace": {
+    "sha256": "8d748a068148f0b4c114cb3a787a4fc1699d1584bfcec4fabecad0822984dc61",
+    "size": 2733
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockGuardedOmission.trace": {
+    "sha256": "d1d319a617531b2448f2b566fa522a8289300b7845edf697e677052a12b07ae4",
+    "size": 2550
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockGuardedRecordValues.trace": {
+    "sha256": "2194e6a4f8dd5b94794425af07058ad3346e859b70d281c17d89d692af728705",
+    "size": 2955
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockLogicalLookthrough.trace": {
+    "sha256": "26aef8aa4490504fca884460ec1e0a58fd83fe1188f72a97403d2fb9a8be9f1e",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockLogicalLookthrough.olean": {
+    "sha256": "81deafc3ebcb2fc982cb3c0b02f1c556eed87edd28735644212c1704eb2f10ec",
+    "size": 5266744
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockLogicalLookthrough.olean.hash": {
+    "sha256": "6a65de111ad7e395d1677b23a7fea4ae183ff7713aaf91aa257b23b1a9ec5c20",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMappedFlow.trace": {
+    "sha256": "b9208cdaa4b69b46b9434a8573c377eca45976b03f841acf6122300a7057fbf2",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMappedFlow.olean.hash": {
+    "sha256": "a8e701567b3a07cc7494eeda421e31f5ea7763fa126022f0d7985eeafdc98026",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMappedFlow.olean": {
+    "sha256": "7391ca160ab20077e83a0e8f3bf4f9b55485b9388d03d9f468b8de9805c5844d",
+    "size": 862872
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMulFusedMatch.trace": {
+    "sha256": "a135c0947211225661c7e2aa5e5f0a9771bb71c19367300f27db511e138853c1",
+    "size": 2699
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMulFusedRecordValues.trace": {
+    "sha256": "57a36adac1c7ee4651525536c2b5d8ee03aec0bbc924cb86b3e9c17f65336547",
+    "size": 2770
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMulFusedRhs.trace": {
+    "sha256": "2d69f68e7252bd96b31694b19805b9cd2a034ad9fdb1083c5969f53c431d2a66",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMulFusedSemantics.trace": {
+    "sha256": "5465e5dbfcf34826398c61982dbdcfc7babae766b77ab83f9e6f20ef971cb2ff",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMulFusedValues.trace": {
+    "sha256": "eeb8b3298c7050b3bad4d371f29ca65e7611da71c226ebc1f616ef05efd64d92",
+    "size": 2733
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMulRhs.trace": {
+    "sha256": "4ff4a1e311a7dcc1812e5060e0e64c86640997af18bc5db555098d0ccf8cac04",
+    "size": 2656
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMulSemantics.trace": {
+    "sha256": "3ef498ddc322f77d0a1efbd4d8ba9c537ae0421ae0b36ed846e87b8953d547c7",
+    "size": 2698
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockMulValues.trace": {
+    "sha256": "3f166d833aa94564e4b86d45c8d0bca61b656872b4816162e7c4631773094e5b",
+    "size": 2858
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockNoOpportunityCtor.trace": {
+    "sha256": "f5b2c6998d65171959c47dad4688f724437030d7281b32f9b73588bff1dc47a2",
+    "size": 2558
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockPayloadAliasOrigins.olean.hash": {
+    "sha256": "bae8522fc95cf5a0a69ccbfa6df6f45755aba1c7782dd45c6fde0c54dbbffefd",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockPayloadAliasOrigins.trace": {
+    "sha256": "57f15398fbc680d5794e8359c95ca01e62e5e2fcf5acadb188cb66059ecce492",
+    "size": 2919
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockPayloadAliasOrigins.olean": {
+    "sha256": "fa8a0a41c51248da1edf2e3cf58564ccee6fe176be67d0e621baa52c6f4bf551",
+    "size": 4082296
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockPreparedSemantics.trace": {
+    "sha256": "d14ed838e56fb99b8d4d1b412b9600bb179acf799792dba8312ac142bad611c7",
+    "size": 2718
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockPureDriverUnsunk.trace": {
+    "sha256": "53a4a982ca6f38489566c5e9b6dba420021072384568729c756091753f3b7dfe",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockPureRecordCoverage.trace": {
+    "sha256": "ca9a5aa2b26062d9db574ab9c092e0551dafa472106cbdd37d920437e2310475",
+    "size": 2955
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockPureUnsunk.trace": {
+    "sha256": "29d97f048012b47ed19ae36c94ac6f1b98ab97b8e07eb1df571322c103ade04a",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockPureUnsunk.olean": {
+    "sha256": "0a7ea1ef9a3c0988199901f5ce3a07a5fb3ab59ded51a2678eb9258c2fc140f0",
+    "size": 3300560
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockPureUnsunk.olean.hash": {
+    "sha256": "ea9cb9c13e1ce8d054bddcfc0b4af6e5572417ccf8b1bf230e5a018f9d911a3c",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockRecordFinalAlias.trace": {
+    "sha256": "2e97fb67a5d2db4f9e3511021cd1a5d1e616b456da842417a5c0477c04c64ae8",
+    "size": 3561
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockRecordIntervals.trace": {
+    "sha256": "6230d6e4f036a15977d31d59433768db914cbee30e3d06b041a2ea41aa5ae9db",
+    "size": 2544
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockRecordedFlow.trace": {
+    "sha256": "3a0f7423ed2e7c8b2738d0068fbcccd3111a9f840d990f1a4ae88c6f483004cc",
+    "size": 2908
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockRequestSuccess.trace": {
+    "sha256": "d284f852f1acd0d50c5a095e18156343f619efb60adacdc37a9b69120734e44c",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReservedFlow.olean.hash": {
+    "sha256": "f0ba3d4f0312a81e98e3321922a16630fd73b4c3e3f2a496f5bab04c843c669e",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReservedFlow.olean": {
+    "sha256": "38fa92841d14f7ee4e0487c164567c45a93bc14140f98f6488d59bee14dae8d1",
+    "size": 891384
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReservedFlow.trace": {
+    "sha256": "2e4893bf59c2da6561c0319fecf5340be5c4879e9881c0689f09472de1c3bffd",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReservedScanFlow.trace": {
+    "sha256": "7b4dfa167310edee3eff61336c5061e64244a9c8ccb8921f85638b5c0ecdec43",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReservedScanFlow.olean.hash": {
+    "sha256": "5d3c80dbc5f25e323fa7533287c3a1206d3c72c63f1101829f3c720fe06ce470",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReservedScanFlow.olean": {
+    "sha256": "4da87ac575d069c4df26c9e84ff880dded3ec593ebb0459c765d78c65c16e4c1",
+    "size": 390136
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReservedTerminal.trace": {
+    "sha256": "24dd89f44375a762fd13f82a0d2622664a420def6cd32ecc3f7abc3e59c30b63",
+    "size": 2934
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockResults.trace": {
+    "sha256": "900d4bba1a6114de4baa31bb2c14d2d4f74497c870535656fa31744fbf45a730",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockResults.olean.hash": {
+    "sha256": "ef763baafdc1b90e50410ae97b914a8e3cada208413fe5dd7543852d135f3704",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockResults.olean": {
+    "sha256": "6c2c67543124517d447ad825c340196a9cc295b484e85a7c9f3994c376afcbf1",
+    "size": 868536
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReturnArity.trace": {
+    "sha256": "389ed84a0840450b248390887ce0040ec97539010cd86720b65217b547b49a5c",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReturnAutomaticSource.trace": {
+    "sha256": "0da25fc99c38867e6da4dd5d479ebd8a2fd4cb83410c13e1117208458aa150ce",
+    "size": 2793
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReturnContract.trace": {
+    "sha256": "cd4b95cd104a2b1e8f857c6310d26e2cf3535b4bd153bf7586914e7ee47de4a4",
+    "size": 2732
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReturnHelpers.trace": {
+    "sha256": "a2464017269a0aa24e6c8cca1fe9392f79b834314a51d35c23e81ef0889eea96",
+    "size": 2851
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReturnRecordCalls.trace": {
+    "sha256": "375e1755824d884b1bef629a4f48b0d50d45c386f88728e8870df703df9ea76e",
+    "size": 2935
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReturnRecordSource.trace": {
+    "sha256": "73ef2322db0f062a0dde8849f4e24d0c3a4978e2cd5041d07c494011518e886e",
+    "size": 2948
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReturnRootCalls.trace": {
+    "sha256": "c6e4776365d72dfcfbece20b4f88a09a560046bcbfb94a5f8712e59b53057c2b",
+    "size": 2892
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockReturnSourceRuns.trace": {
+    "sha256": "1c4b37806fe7c74ecb37e7446d368d084f26d97be247fc0e9bb7514f22bfe26d",
+    "size": 2911
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockRootFlow.olean.hash": {
+    "sha256": "18bc501a0d41dd7feee2fe45f6727692f5f0ce5e53d93dcf4e317cd0c74312ee",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockRootFlow.trace": {
+    "sha256": "a3d6692f232c568ce0fd89c6fc6de2e28205dc8f8f2641bb341b0aeba340f53d",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockRootFlow.olean": {
+    "sha256": "47068831bc47008af7dee6b7263652aeb8b5d4b5fd824c00d66fced5caa2491a",
+    "size": 874416
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockRootOpcode.trace": {
+    "sha256": "89156c28101bf83addd7e60b70815dc8f17b6e458057afa311540c743117a1a5",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockRootOpcodeMatch.trace": {
+    "sha256": "b579d89146105515082fd1bf210128c9cc0c1ac96e05c22ee7da3056059455c1",
+    "size": 2881
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSSAScanConnection.trace": {
+    "sha256": "3473b245c01e86f4baca56f1df2059553ece6500636464ca839f5961e081dea1",
+    "size": 2737
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockScanFrontiers.trace": {
+    "sha256": "a0d3360867467b2fa041f06be76c2760122172025f790aa3dfc694f2b308f4c9",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockScanSemantics.trace": {
+    "sha256": "5f19110a9ab21ed8e98d787beb6434bd9beabff5abe37550b45658d77dd4247e",
+    "size": 3045
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockScopeRoots.trace": {
+    "sha256": "9887b56eac9e1b25cc8959e2e80abb6c48587e6c8a0d2b2a4433258757ff8ec8",
+    "size": 3038
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectBuilders.trace": {
+    "sha256": "aa11a4fab8b40b2f546acea5ace1df9b97bfdeb57d5492350be466b622bacf91",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectComparisonCompanionValues.trace": {
+    "sha256": "e8bec49782126391c0412c5786574e89dc009d7acdd11ed3ed43cc9ccaaf5813",
+    "size": 3105
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectComparisonConditionShape.trace": {
+    "sha256": "cdf3e608e8f506814d71de850dcca127b2eb7d7c7adba5ad5eb7106cd30c0af1",
+    "size": 2892
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectComparisonValues.trace": {
+    "sha256": "db48d5be59e80ef57fae10aa25c502569c3bda312b78c0a58256d0ed01d35c85",
+    "size": 3631
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectConditionCalls.trace": {
+    "sha256": "30cf6385b7248e32e0092f478548e8ef0a557d877e7bc3feb602d5ea7f0e765a",
+    "size": 3111
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectConditionInvertShape.trace": {
+    "sha256": "9342c23014587ee7890c83fc13d0d85728b5476fae446abf03609ab5578b30af",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectConditionInvertShape.olean.hash": {
+    "sha256": "4d10f93c959d79925f5bd3d524b81ac631e8cc9276bdfbba05853b9116f83b78",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectConditionInvertShape.olean": {
+    "sha256": "1b3998f67f8e2571fbbdb80cc3f16706b5e4379467482dba5071c0799acc13c5",
+    "size": 83264
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectConditionObserved.olean": {
+    "sha256": "46c5c01aa5edc172b1390f6d3f953e9a58b7567e68ebaca70c0fe10e40136d41",
+    "size": 334920
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectConditionObserved.olean.hash": {
+    "sha256": "0e48126e4d153aa8db1a86839bd5f5b129971ee7fee7fd8172e35b767e3da32d",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectConditionObserved.trace": {
+    "sha256": "6a8999b5c1177e0a20b87b5bd33ec007a4c88d66fdfee9e9eb3627582ac0d60f",
+    "size": 2817
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectConditionOriginValues.trace": {
+    "sha256": "933f8915303d5049f46a34e8ab5924720f4c3df30a985227dff62338dbc7d5c4",
+    "size": 2643
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectConditionReplacement.trace": {
+    "sha256": "214f35f733e6f27e58add770f6ae4633962aec3ffe703b43918db6527a9b8f6d",
+    "size": 2868
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectDecodeFlags.trace": {
+    "sha256": "5b9d3d6624bcd26782adbdd1aa411fa6860f688147a816e92f4da2598e3f2db7",
+    "size": 2739
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectDecodedObserved.trace": {
+    "sha256": "fd9a83316ec9072a43396b2b69d63b02dabd0f008e885a11cd4c10b2f9df78d1",
+    "size": 2603
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectDecodedRequests.trace": {
+    "sha256": "e01b4ee590ab0d08504df1c28e8202f84dc77643fd0ef6d4936fb4223bf0908c",
+    "size": 2787
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNarrowComparisonShape.trace": {
+    "sha256": "307cd97ce546682057864237c802a87dfacd4cf160bdec2d5cbc18fd307fa1a8",
+    "size": 3673
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzero16Shape.trace": {
+    "sha256": "ec5afb7723dab0bd648e9bf1c66afd6e04e45bfb226b0f7bde1f46b9599d7277",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzero16Shape.olean": {
+    "sha256": "b35f73064f1e9d1ccb7a0b7528242a605977d7f1b6921801e8b32d0ed798b98d",
+    "size": 171400
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzero16Shape.olean.hash": {
+    "sha256": "747ffce8edf4cccbadc8a065da113dddb441954b38272a1a480e45d4c6524865",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzero16Values.trace": {
+    "sha256": "12321d1adcbd35352da34598e9ecc107fd33ddf47dea11f2733464bef81cfbd4",
+    "size": 3433
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzero8Values.trace": {
+    "sha256": "dde2527f56a99c62e8e2b1139ebc4dc33c30d2b4207cc3ff07e985cbe9460f8c",
+    "size": 3193
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzeroActualValues.olean": {
+    "sha256": "d3e05659ae38f92a601d2b4b11ea60212f875b4b8dee4674d941db317ab805e4",
+    "size": 353152
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzeroActualValues.olean.hash": {
+    "sha256": "d509f615bdf8aa3afe31899e3c72a11b99d7b21c1bda665929b6425a385108f9",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzeroActualValues.trace": {
+    "sha256": "7f980d3624cbc7b013588180f9b9a547efe43d8f0f2bb6bf3756de008dc7420f",
+    "size": 3045
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzeroConditionShape.trace": {
+    "sha256": "2c3fd9442ffb32f0fe0d02438147f0e0a5a5a831494344c2b5c8485d9a948f43",
+    "size": 3273
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzeroWideShape.trace": {
+    "sha256": "f0a7dba34ea9d028147603efefddb9a27327ada8e6268197b6e31cb2e2011497",
+    "size": 3246
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectNonzeroWideValues.trace": {
+    "sha256": "79ea87208dfba70856b57549377b1c7417769e57a9ab1a5dd689ab84a363af6e",
+    "size": 2827
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectObserved.trace": {
+    "sha256": "99af648a6625e957f944f7fd964e38a062ba7e5215a9ca2541f546320f626152",
+    "size": 2537
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectOriginalConditionValues.trace": {
+    "sha256": "930ba9de8d31e9301b32d2f5f3972c115cc0401e92f0a2a751e5f00719c3fdf6",
+    "size": 3311
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectOriginalRecordValues.trace": {
+    "sha256": "ac46f9d61a39618fc3b46ea538ba41fe54a8a6855bc44e6ba6b315c1cc76f3f2",
+    "size": 3038
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectOriginalRootValues.trace": {
+    "sha256": "c343985989f411d8836a22bb7e32b6437da91152b88e2d6a7175ce7d8651b4e0",
+    "size": 2854
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectOriginalSourceMatch.trace": {
+    "sha256": "1c26df27abbe8c0c81e839c7f88a14282ca862395273b85f7719e4f2fba03a9a",
+    "size": 3161
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectOriginalSourceValues.trace": {
+    "sha256": "cf3b99b77a5ff8001164f78659815b4384501345680be6d75f406c660e9ebfdb",
+    "size": 2648
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectReplacementResolved.trace": {
+    "sha256": "46de4dfe9456b37def45591a9e247d647fac83f5b2807f500e07d74d3d7059fb",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectRequests.trace": {
+    "sha256": "92d8971e693bab3f94a63393268a9af91a83f6511d6a4379abec8f55375f268a",
+    "size": 2729
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectScanRefines.trace": {
+    "sha256": "2626637655472d160b846dfbce619f9aecb94452bf91f76870d34ea0bebae084",
+    "size": 2957
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectSourceValues.trace": {
+    "sha256": "b818f929feb6181f3132ded1f40bdee2e448ee572ef5c566f7520c32c90acb0a",
+    "size": 3130
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectValues.trace": {
+    "sha256": "96cb47f02bf56fd2af8d52d0611e056f58afe61ab089ed52fafa8ffceae0935a",
+    "size": 2696
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectWideComparisonShape.trace": {
+    "sha256": "407834c236e90cc28433004899f21c2943d94e74e9420d571df07e3a9af2915e",
+    "size": 4487
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectZeroConditionShape.trace": {
+    "sha256": "0416916728d19640ed777ef56f8d5093a1027fada4fc70ab800fafb0261e1ce6",
+    "size": 3244
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectZeroObserved.trace": {
+    "sha256": "7a4387931a33ac887b709f742eb0d9d9e52bf5fba8f669ba67789b0f12f9b17b",
+    "size": 2744
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectZeroReplacement.trace": {
+    "sha256": "e8e70baea3073478061e3f507bd42d4cf2150b38c6ebe8beb3aa512a9f6092e9",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectZeroReplacementResolved.trace": {
+    "sha256": "2f90ec9de2bec9b4f0a7bc1151a7fef46bc1f8414a0fcc9b74d3571170cc7fc7",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectZeroSourceValues.trace": {
+    "sha256": "2adc3bb0cd00489704b3e9887cf0da6ca18f84d80fe59c49ce08ff42eca7f5eb",
+    "size": 3169
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectedBindingFlow.trace": {
+    "sha256": "1489e9949a0a62b3992cdff5a429735dd4e3fb6b821555aa11bd874513bc8d17",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectedFlow.trace": {
+    "sha256": "7e6801eb995d4cade7f77339109c1c480faccf3fd9cfec9a2dfdf7fabab9d741",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectedFlow.olean": {
+    "sha256": "26d75113569a092749592df7d4224f1486611d6d80c13123715edb57b554d95d",
+    "size": 340112
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectedFlow.olean.hash": {
+    "sha256": "008e8b015999ffcf6b68d8f976bd821a2560908add6e214b94a1cf20a75eca09",
+    "size": 16
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectedProvenance.trace": {
+    "sha256": "ceece2b7fc5a4a475972374c91ad2ade2dc231a2d498caa37f86b546510b5900",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSelectionReceipts.trace": {
+    "sha256": "a8939adff7cc04608ece477ca52aeaa194c6f8a3d88699a305916595bb07ec7b",
+    "size": 2733
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSinkFrame.trace": {
+    "sha256": "c91c15ac12e3635ec4e5fbc32796265c1b09c0328b881a620f47318543ca1b62",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSourceAliasRank.trace": {
+    "sha256": "d68bb5c6de2db822b0b1489c012892e27311859b06d2ea9efea4671885f20d2a",
+    "size": 2732
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSourceAliasRecords.trace": {
+    "sha256": "5c5d74a1425da67ee56d4d5814bec752a41fc882ac8f2cf9f2e13a095fdb37d3",
+    "size": 2761
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSourceDFG.trace": {
+    "sha256": "fc4b137fd6b8ef88d8a1b49ada566a2a8479386d438b272dcc676f283250ec0f",
+    "size": 2877
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSourceDefined.trace": {
+    "sha256": "258eb7e842de74af2b440dbe0291431a16faf4f5339b34b08fafcc99fe3253e2",
+    "size": 3205
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSourceEntry.trace": {
+    "sha256": "bd0062c6aa4c3dcf8d124c1216fa10ea637eb6d58c87994cd838f7800bf6d608",
+    "size": 2514
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSourceSinkModel.trace": {
+    "sha256": "4992c460e215fd5145a119465556c7d669d93f2298fa10c5a33fe4a0c03179e6",
+    "size": 3943
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSourceSinkTable.trace": {
+    "sha256": "4c5b7bc2e91f4411af4b9d6a402e38d1bc2a850125590cc9b72c6da7ad9e2a3e",
+    "size": 2715
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockSourceTerminal.trace": {
+    "sha256": "da636033b910eb9f3e1e2d521ff1cd6fabf1f43ef2fc9b62d0db1f4cff9aae33",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockTermContract.trace": {
+    "sha256": "b00354b4cb3b03ce69433f745e59824fbeef92f3659968e517c31fb4317255be",
+    "size": 2838
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockTermDataOrigin.trace": {
+    "sha256": "45eabe97d24e30c752648c413cc1d8eb84ee564b50068844f74ed419d6d1fe38",
+    "size": 2929
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockTerminalBlocks.trace": {
+    "sha256": "e73cbb4c38249fd8af397feb9392f520ae5ed7c4760cbf726981efb04fdfe6b7",
+    "size": 2718
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockTerminalDriver.trace": {
+    "sha256": "19a77d382d8ccd2d004b4d0168af812de04802067d167b36078d3b44a85f0107",
+    "size": 3096
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockTerminalEmission.trace": {
+    "sha256": "fd9192f3ef05f8c61b3c169f500bae640c62437ef2069042a09cef71b037a358",
+    "size": 2743
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockTerminalRoots.trace": {
+    "sha256": "b63bb00c3e0b012aeaac2690698e761ea77a1ab41299fd42333555eca3e0ea6b",
+    "size": 2705
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockTerminalScans.trace": {
+    "sha256": "2f4daa0b37399701f1f1a9c5ccdd7741077bab8d986590801baa547b1fb6e631",
+    "size": 2711
+  },
+  ".lake/build/lib/lean/FV/Backend/Proof/StockTraversalAliasConnection.trace": {
+    "sha256": "a17efe3f5feab782950dd5f2a40fef24610718d6100428012da9516490e07b40",
+    "size": 3182
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadBitSteps.trace": {
+    "sha256": "fdfdfb5a0dd6c952b43233cba9cff64f96049b3a0d33bda21999b1707ba7eac4",
+    "size": 2569
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadBooleanSteps.trace": {
+    "sha256": "40e77d6025f5bbed7e03d461232c3b20941d8ab8f750ca9d739f0595a4cde9f8",
+    "size": 2597
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadBoundary.trace": {
+    "sha256": "1cd5137c14337268dc588fe896308ea59d8e8595bdc22c41dd0acd851c09dcd6",
+    "size": 3028
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadCastSteps.trace": {
+    "sha256": "771158ed4597fdf0150cc24c43bff83ab52eb12ec63bddd54199b7d051665000",
+    "size": 2576
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadCfgBoundary.trace": {
+    "sha256": "3c467f8195d35da26c5b382e8dd1f5c47b956b155937694e012a99910d0036af",
+    "size": 3049
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadComparisonSteps.trace": {
+    "sha256": "5c15213090de82e0b0c46eb4ea570104a52c352c6a7386d00ebf141009c44c1c",
+    "size": 2618
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadDiv.trace": {
+    "sha256": "7f12c7800fe0b0cf3f2b0df1f787aa8111300281908e6930e77bb760a3f12b4e",
+    "size": 2987
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadDivSteps.trace": {
+    "sha256": "81e25d85d14eaf5c04ce8742daac545e5852e283a2b4266716d5e2e850798db2",
+    "size": 2556
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadExtendedComparisonSteps.trace": {
+    "sha256": "31bc0aad07c7265c24148e17d2c54b38fdfc69cc12447f5409cc2cc64b495b5d",
+    "size": 2674
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadFlagsSteps.trace": {
+    "sha256": "27c88ea37f9ed62df17a1b09b9c3b16f2b6d2226ebea44c5f44245004ef7e1c8",
+    "size": 2750
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadHighMulSteps.trace": {
+    "sha256": "121e01494dda188c96c9d1fec864a62edc8a607e7ecacdadbe3df20d7698d958",
+    "size": 2597
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadMaskSteps.trace": {
+    "sha256": "715a41b31f61e8bef5653c515e53c6c7a5f674982475ebf8397c43d294142079",
+    "size": 2576
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadOnlyCheck.trace": {
+    "sha256": "81a47d774e6582a629a491ab9015922a08bc7effa51ef900c9333f6fad40ec63",
+    "size": 2555
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadOnlyRealize.trace": {
+    "sha256": "3ba724a3eb896424dd89ae67dfb61c090f144e3a7c5cff2e4429c77564a4cd34",
+    "size": 2627
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadOnlySem.trace": {
+    "sha256": "e7d5bb457ea27019022ff71e23eb4a60f8a698e112a4045901cab11f39a53f67",
+    "size": 166
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadOnlyTransport.trace": {
+    "sha256": "3c80de0ea804dbcaefcc4082f3d4a9b323b3a89218e3ad48d5bc6a7a7a396958",
+    "size": 2853
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadPopcountSteps.trace": {
+    "sha256": "c04d1da62b1d36f5f58288a428b0da20dae5d23b499dd34dae1c041f2a5e65e5",
+    "size": 2604
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadScalar.trace": {
+    "sha256": "fd3acec024d282eec23d18f52859c6095cbcb9085dff23699dfebe91894bfb92",
+    "size": 4049
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadShiftSteps.trace": {
+    "sha256": "3a94807a3977559e27230af9e4073c326ba281502b864e3df39cf226e0d9033c",
+    "size": 2583
+  },
+  ".lake/build/lib/lean/FV/E2E/ABIReadTrapBoundary.trace": {
+    "sha256": "0769a0012c2d61c7c50962a6f17ed716dd0c90c49b2485ffbf4364d980a9bccc",
+    "size": 2432
+  },
+  ".lake/build/lib/lean/FV/E2E/StockArithmeticArtifact.trace": {
+    "sha256": "c50d4b14052504f2b3e536001c7861557f01f545fdb6cc0b33401442a76d64bb",
+    "size": 2802
+  },
+  ".lake/build/lib/lean/FV/E2E/StockArithmeticSemantics.trace": {
+    "sha256": "3834fb7c87ce69fdc56988ad8931d14ea40b3dabd4df563e32a4d41023e3665a",
+    "size": 3508
+  },
+  ".lake/build/lib/lean/FV/E2E/StockArithmeticStage.trace": {
+    "sha256": "7a5f7263236c2d53715ef754927b88b520a0fd4fcf77883806b0959830e15d49",
+    "size": 2995
+  }
+}

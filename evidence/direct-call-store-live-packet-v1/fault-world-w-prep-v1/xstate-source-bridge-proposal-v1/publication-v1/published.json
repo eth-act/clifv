@@ -1,0 +1,14 @@
+{
+  "status": "published-awaiting-review-and-four-CI-checks",
+  "url": "https://github.com/eth-act/clifv/pull/948",
+  "head": "16e202eb15b6e95ba33bf30a9c9e3640ee4ca285",
+  "base": "64d1bd8e04cb1b9845a4090e3c4e3db247709ae0",
+  "tree": "8d5605ad5f609be6b9e8595989ce79523d4d614d",
+  "branch": "agent/unwind-source-fault-interface-20261103",
+  "source_hashes": {
+    "FV/E2E/UnwindReachSource.lean": "b3c591d9d3e72aa5ced4a9c428a555c4ee97ad55c7ba50bf1a9ffce87d905a33",
+    "FV/E2E/UnwindMemoryFaultSource.lean": "0dd51ecdfd083cb297c1d283e5394a5fb9626767146bb6f173cc46d614c899bd",
+    "scripts/audit/unwind-memory-source.lean": "8238624a74223fce0f723f5fd2c8eab3d49f020c1e304d5beefcaa7ef814b977"
+  },
+  "canonical_manifest_sha256": "75c83392517f9167f5a08d0a6aa030ad5a7ff87f377524b6871d3e7866884ee1"
+}
