@@ -1,0 +1,58 @@
+✔ [0/47] Ran job computation
+✔ [1/47] Ran fv:extraDep
+✔ [2/47] Replayed FV.Isle.Syntax
+✔ [3/47] Replayed FV.Isle.Interp
+✔ [4/47] Replayed FV.Clif.Syntax
+✔ [5/47] Replayed FV.Clif.Sem
+✔ [6/47] Replayed FV.Clif.Mem
+✔ [7/47] Replayed FV.Float.Basic
+✔ [8/47] Replayed FV.Float.Round
+✔ [9/47] Replayed FV.Float.Arith
+✔ [10/47] Replayed FV.Float.Convert
+✔ [11/47] Replayed FV.Float
+✔ [12/47] Replayed FV.Clif.FSem
+⚠ [13/47] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+✔ [14/47] Replayed FV.Clif.FloatLit
+✔ [15/47] Replayed FV.Clif.Print
+⚠ [16/47] Replayed FV.Clif.Parse
+warning: FV/Clif/Parse.lean:663:8: Variable name `t` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _t
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+✔ [17/47] Replayed FV.Clif.Rust
+✔ [18/47] Replayed FV.Clif
+✔ [19/47] Replayed FV.Isle.Generated.Ids
+✔ [20/47] Replayed FV.Isle.Generated.Types00
+✔ [21/47] Replayed FV.Isle.Generated.TypeArray
+✔ [22/47] Replayed FV.Isle.Generated.Terms00
+✔ [23/47] Replayed FV.Isle.Generated.Terms01
+✔ [24/47] Replayed FV.Isle.Generated.Terms02
+✔ [25/47] Replayed FV.Isle.Generated.TermTable
+✔ [26/47] Replayed FV.Isle.Generated.Rules00
+✔ [27/47] Replayed FV.Isle.Generated.Rules01
+✔ [28/47] Replayed FV.Isle.Generated.Rules02
+✔ [29/47] Replayed FV.Isle.Generated.Rules03
+✔ [30/47] Replayed FV.Isle.Generated.RuleArray
+✔ [31/47] Replayed FV.Isle.Generated.RuleLists00
+✔ [32/47] Replayed FV.Isle.Generated.RuleTable
+✔ [33/47] Replayed FV.Isle.Generated.Specs00
+✔ [34/47] Replayed FV.Isle.Generated.Specs01
+✔ [35/47] Replayed FV.Isle.Generated.Specs02
+✔ [36/47] Replayed FV.Isle.Generated.Specs03
+✔ [37/47] Replayed FV.Isle.Generated.Specs04
+✔ [38/47] Replayed FV.Isle.Generated.Specs05
+✔ [39/47] Replayed FV.Isle.Generated.Specs06
+✔ [40/47] Replayed FV.Isle.Generated.Program
+✔ [41/47] Replayed FV.Backend.MInst
+✔ [42/47] Replayed FV.Backend.Isel
+✔ [43/47] Replayed FV.Backend.RegallocOps
+✔ [44/47] Replayed FV.Backend.Lowering.StockAlloc
+✔ [45/47] Replayed FV.Backend.Lowering.Stock
+ℹ [46/47] Replayed FV.Backend.Proof.StockFenceMetadataModel
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/Backend/Proof/StockFenceMetadataModel.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockFenceMetadataModel.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockFenceMetadataModel.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof/StockFenceMetadataModel.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof/StockFenceMetadataModel.setup.json --json
+ℹ [47/47] Built FV.Backend.Proof.StockFenceMetadataPositive (360ms)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/Backend/Proof/StockFenceMetadataPositive.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockFenceMetadataPositive.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockFenceMetadataPositive.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof/StockFenceMetadataPositive.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof/StockFenceMetadataPositive.setup.json --json
+Build completed successfully (47 jobs).

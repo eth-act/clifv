@@ -1,0 +1,291 @@
+{
+  "FV/Backend/Proof/IselTermFactsTy.lean": {
+    "source_sha256": "1a659a4c1fb800e42aef4f32705771276624d72501823ba5ef1bca9c944a9aa7",
+    "stored_native_key": "9263c33e4f6687d9",
+    "stored_trace_sha256": "6f1b6978a6357830e5fd966b315093eac2b9c243fc5168c5aff345e8dae3bffd",
+    "stored_outputs": {
+      "o": [
+        "e4005d36aa61a13b.olean"
+      ],
+      "m": false,
+      "i": "b51914609deaa501.ilean",
+      "c": "c97e43cd5eb2cdc5.c"
+    },
+    "dependencies": [
+      "FV/Backend/Proof/IselTermIntPos.lean",
+      "FV/Compile/SubsetT.lean",
+      "FV/Backend/Proof/IselTermFactsRules.lean",
+      "FV/Backend/Proof/SpillEdgesIsel.lean",
+      "FV/Backend/Proof/IselFlow.lean"
+    ],
+    "pending_predecessors": [],
+    "current_expected_key": "query pending",
+    "current_cache_lookup": "query pending",
+    "historical_estimate": {
+      "peak_MiB": 4804.0,
+      "seconds": 164.0,
+      "scope": "historical aggregate estimate;not a bound for this new key"
+    },
+    "active_writer": null
+  },
+  "FV/Backend/Proof/LowerContractT.lean": {
+    "source_sha256": "7c7642aa1ff985044160b0454c86b9695754f56b39174e77a638bc8bfeef0bab",
+    "stored_native_key": "d93f997a3d942dce",
+    "stored_trace_sha256": "f37237b0ccff535fd1b2e1355a8271c8cd4a1fbe9e221a63a29258a0ad371a55",
+    "stored_outputs": {
+      "m": false,
+      "o": [
+        "73564a4f6fd04898.olean"
+      ],
+      "i": "86d61fe1e0316cf1.ilean",
+      "c": "763e557dad6e5b07.c"
+    },
+    "dependencies": [
+      "FV/Backend/Proof/LowerContract.lean",
+      "FV/Backend/Proof/DriverCheckTy.lean",
+      "FV/Backend/Proof/IselExclT.lean",
+      "FV/Backend/Proof/IselTermIntPos.lean",
+      "FV/Compile/StoreTyped.lean",
+      "FV/Backend/Proof/InstScopeTF.lean"
+    ],
+    "pending_predecessors": [],
+    "current_expected_key": "query pending",
+    "current_cache_lookup": "query pending",
+    "historical_estimate": {
+      "peak_MiB": 6012.0,
+      "seconds": 70.0,
+      "scope": "historical aggregate estimate;not a bound for this new key"
+    },
+    "active_writer": null
+  },
+  "FV/Backend/Proof/StockMemoryNotrap.lean": {
+    "source_sha256": "1a797f6518ff6c05e5548cfecac442d5bbe53b85a6b4d0a7e2f5f63a297f92d7",
+    "stored_native_key": "185c4dd2e274a568",
+    "stored_trace_sha256": "816d4dcd2a5b016f92470b67a0d23a355ea28f41bf4f796561a6e5b8f3ca5aea",
+    "stored_outputs": {
+      "o": [
+        "44d9e392737a0fde.olean"
+      ],
+      "m": false,
+      "i": "f804eea91c87f2b6.ilean",
+      "c": "d759220dbfd53f23.c"
+    },
+    "dependencies": [
+      "FV/Backend/Proof/StockMemorySourceExecution.lean",
+      "FV/Clif/MemTrap.lean"
+    ],
+    "pending_predecessors": [],
+    "current_expected_key": "query pending",
+    "current_cache_lookup": "query pending",
+    "historical_estimate": {
+      "peak_MiB": 2275.0,
+      "seconds": 2.0,
+      "scope": "historical aggregate estimate;not a bound for this new key"
+    },
+    "active_writer": null
+  },
+  "FV/Backend/StockVoidCallNICheck.lean": {
+    "source_sha256": "06c453fb7e471948ca0a951835e67a2b4902b81e401eed5f43ac09a058e3e4d6",
+    "stored_native_key": "39846c16164ddb49",
+    "stored_trace_sha256": "e87aad432bd2389819615a5a820fe01a567b4af409eb5c0632db75a08e75d063",
+    "stored_outputs": {
+      "m": false,
+      "o": [
+        "ef94bb07b8ab2156.olean"
+      ],
+      "i": "7593b0bb0a563b21.ilean",
+      "c": "a2be8113da77e0a9.c"
+    },
+    "dependencies": [
+      "FV/Backend/StockVoidCallCheck.lean",
+      "FV/Backend/ABIReadOnly.lean"
+    ],
+    "pending_predecessors": [],
+    "current_expected_key": "query pending",
+    "current_cache_lookup": "query pending",
+    "historical_estimate": null,
+    "active_writer": null
+  },
+  "FV/Backend/Proof/IselCtlTermTI.lean": {
+    "source_sha256": "8ae1a3abb44f2a388b0a1e15d34e30c79871b8de3b0c420acc30b7d8958f4f94",
+    "stored_native_key": "a96935d55d483db4",
+    "stored_trace_sha256": "44b0a25de75b76230633c1c24d5725166e95427d7db5aa9c5de347ec2ee341c9",
+    "stored_outputs": {
+      "o": [
+        "c3cd503e57a0a01d.olean"
+      ],
+      "m": false,
+      "i": "cb833cf9ffe8dd17.ilean",
+      "c": "6b69dcd7a356a648.c"
+    },
+    "dependencies": [
+      "FV/Backend/Proof/IselCtlRuleIds.lean",
+      "FV/Backend/Proof/IselTermFactsTy.lean",
+      "FV/Backend/Proof/PairsC.lean",
+      "FV/Backend/Proof/LowerContractT.lean"
+    ],
+    "pending_predecessors": [
+      "FV/Backend/Proof/IselTermFactsTy.lean",
+      "FV/Backend/Proof/LowerContractT.lean"
+    ],
+    "current_expected_key": "deferred until predecessors are proper",
+    "current_cache_lookup": "no lookup without a valid current key",
+    "historical_estimate": {
+      "peak_MiB": 2083.0,
+      "seconds": 6.0,
+      "scope": "historical aggregate estimate;not a bound for this new key"
+    },
+    "active_writer": null
+  },
+  "FV/Backend/Proof/LowerContractTP.lean": {
+    "source_sha256": "8d3f816a4fd6ff377771c76189f9edb97703fabdb75370315a7bc4b12c4d9b8c",
+    "stored_native_key": "4b4dbe019d1ae8f3",
+    "stored_trace_sha256": "710891f023ccb99b51578a0af92422a2cfc1485f30faea5326880a9dae10f882",
+    "stored_outputs": {
+      "m": false,
+      "o": [
+        "f5df10f779dd1e09.olean"
+      ],
+      "i": "7404156b29b9fe4e.ilean",
+      "c": "a6f73e9e42b8f5bd.c"
+    },
+    "dependencies": [
+      "FV/Backend/Proof/LowerContractT.lean",
+      "FV/Backend/Proof/IselContractP.lean"
+    ],
+    "pending_predecessors": [
+      "FV/Backend/Proof/LowerContractT.lean"
+    ],
+    "current_expected_key": "deferred until predecessors are proper",
+    "current_cache_lookup": "no lookup without a valid current key",
+    "historical_estimate": {
+      "peak_MiB": 5955.0,
+      "seconds": 42.0,
+      "scope": "historical aggregate estimate;not a bound for this new key"
+    },
+    "active_writer": null
+  },
+  "FV/Backend/Proof/IselCtlCallF.lean": {
+    "source_sha256": "9b2a3eb5f86aff2b8d3f0b20a935ce01978afef226e32f868f708391eb7aca7c",
+    "stored_native_key": "dc91ac1846b1551a",
+    "stored_trace_sha256": "34b763f694cefd135b7f1cf88081e34dfa881fbdf5f8ca7a95b13a0a350c46e1",
+    "stored_outputs": {
+      "o": [
+        "dbac538f379d4464.olean"
+      ],
+      "m": false,
+      "i": "6d815991b6dc4b13.ilean",
+      "c": "0e245dde60e43c4f.c"
+    },
+    "dependencies": [
+      "FV/Backend/Proof/LowerContractTP.lean",
+      "FV/Backend/Proof/IselTermFactsCallT.lean",
+      "FV/Backend/Proof/IselCtlTermTI.lean",
+      "FV/Backend/Proof/DriverCheckT.lean"
+    ],
+    "pending_predecessors": [
+      "FV/Backend/Proof/IselCtlTermTI.lean",
+      "FV/Backend/Proof/LowerContractTP.lean"
+    ],
+    "current_expected_key": "deferred until predecessors are proper",
+    "current_cache_lookup": "no lookup without a valid current key",
+    "historical_estimate": {
+      "peak_MiB": 2138.0,
+      "seconds": 14.0,
+      "scope": "historical aggregate estimate;not a bound for this new key"
+    },
+    "active_writer": null
+  },
+  "FV/E2E/StockVoidCallView.lean": {
+    "source_sha256": "9a5370bf7c6b2e53b2a0a2f5f39f019d46740528059758b372bd6077883f1c38",
+    "stored_native_key": "fdf9414e9546e674",
+    "stored_trace_sha256": "341cc6d07c4d4f01ce44a906fa3e89b0cf8d9154292d0b88626c24a022c1272b",
+    "stored_outputs": {
+      "o": [
+        "6993dbeafc023a66.olean"
+      ],
+      "m": false,
+      "i": "67c75dfb261a4595.ilean",
+      "c": "631f67bdbe086c46.c"
+    },
+    "dependencies": [
+      "FV/E2E/LinkWorld.lean",
+      "FV/Backend/Proof/IselCtlCallF.lean"
+    ],
+    "pending_predecessors": [
+      "FV/Backend/Proof/IselCtlCallF.lean"
+    ],
+    "current_expected_key": "deferred until predecessors are proper",
+    "current_cache_lookup": "no lookup without a valid current key",
+    "historical_estimate": {
+      "peak_MiB": 265.0,
+      "seconds": 2.0,
+      "scope": "historical aggregate estimate;not a bound for this new key"
+    },
+    "active_writer": null
+  },
+  "FV/E2E/StockVoidCallDomain.lean": {
+    "source_sha256": "64f2bd58ff37ba6253571542d4faeb1d4d67e499df73683d51441380ca385002",
+    "stored_native_key": "d7e8e1486a9d1395",
+    "stored_trace_sha256": "c60710cb6e0a0802cd51b09bc10f7c22c65cbf2e65dc730e4227698b005ff616",
+    "stored_outputs": {
+      "o": [
+        "81cd3c7d21697597.olean"
+      ],
+      "m": false,
+      "i": "cfc708bc1ded8e41.ilean",
+      "c": "23567305e5a35a1a.c"
+    },
+    "dependencies": [
+      "FV/Backend/StockVoidCallCheck.lean",
+      "FV/Backend/Proof/StockTermContract.lean",
+      "FV/E2E/StockVoidCallView.lean",
+      "FV/Backend/Proof/StockSourceEntry.lean",
+      "FV/Backend/Proof/StockMemoryNotrap.lean",
+      "FV/Backend/Proof/StockEntryPrelude.lean"
+    ],
+    "pending_predecessors": [
+      "FV/Backend/Proof/StockMemoryNotrap.lean",
+      "FV/E2E/StockVoidCallView.lean"
+    ],
+    "current_expected_key": "deferred until predecessors are proper",
+    "current_cache_lookup": "no lookup without a valid current key",
+    "historical_estimate": {
+      "peak_MiB": 303.0,
+      "seconds": 3.0,
+      "scope": "historical aggregate estimate;not a bound for this new key"
+    },
+    "active_writer": null
+  },
+  "FV/E2E/StockVoidCallEntry.lean": {
+    "source_sha256": "4576dc7aa0176ceb073b47de52d9f4ea677c1ea53e90f5738d96747c54783f30",
+    "stored_native_key": "be15329c0b731fc4",
+    "stored_trace_sha256": "f6835728c68c94336ff6fa1f3277d2bfd23d1156b5cdeff3d9d25b2dd312d325",
+    "stored_outputs": {
+      "o": [
+        "278f3dd5b4e0cc15.olean"
+      ],
+      "m": false,
+      "i": "e43355023ec600ae.ilean",
+      "c": "d073050a6ba9f686.c"
+    },
+    "dependencies": [
+      "FV/Backend/StockVoidCallNICheck.lean",
+      "FV/E2E/StockVoidCallDomain.lean",
+      "FV/E2E/PairDriver.lean",
+      "FV/E2E/ABIReadOnlyRealize.lean"
+    ],
+    "pending_predecessors": [
+      "FV/Backend/StockVoidCallNICheck.lean",
+      "FV/E2E/StockVoidCallDomain.lean"
+    ],
+    "current_expected_key": "deferred until predecessors are proper",
+    "current_cache_lookup": "no lookup without a valid current key",
+    "historical_estimate": {
+      "peak_MiB": 293.0,
+      "seconds": 2.0,
+      "scope": "historical aggregate estimate;not a bound for this new key"
+    },
+    "active_writer": null
+  }
+}

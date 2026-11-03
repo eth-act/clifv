@@ -1,0 +1,382 @@
+{
+  "status": "passed-seven-of-twelve-proper-helpers",
+  "proper": {
+    "FV/Backend/Proof/StockFenceHelpers.lean": {
+      "source_sha256": "443fc9b669d64e2abcb31c917580a02e88d0824c140eb2d5d1b2dbf15fc071dc",
+      "configs": {
+        "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+        "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+        "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+      },
+      "dependencies": {
+        "FV/Backend/Proof/StockProjection.lean": {
+          "native_key": "1333c4dd19b76b2b",
+          "outputs": {
+            "m": false,
+            "o": [
+              "8c20713016f20092.olean"
+            ],
+            "i": "1daec1a0479eaea5.ilean",
+            "c": "7aa9ad570ec59c76.c"
+          },
+          "source_sha256": "ca6df05098e43cdb765415c2cd9c208a3dfe59d1f40a39c2ddd4ad8fea15e23b"
+        },
+        "FV/Backend/Proof/IselScopedProjectionInv.lean": {
+          "native_key": "5c636e8c1a170289",
+          "outputs": {
+            "m": false,
+            "o": [
+              "7a630cbaac45e0de.olean"
+            ],
+            "i": "079e268f60fcaefe.ilean",
+            "c": "a643fd41f02dd819.c"
+          },
+          "source_sha256": "10f819df131b084c011454be10576104f941f75608c162e7beaa7f458cba8192"
+        },
+        "FV/Backend/Proof/IselCmpInv.lean": {
+          "native_key": "368a4fcc88d94716",
+          "outputs": {
+            "c": "f90a609429c916a4.c",
+            "i": "a04242084bf006f3.ilean",
+            "m": false,
+            "o": [
+              "293577dfca7f86fa.olean"
+            ]
+          },
+          "source_sha256": "db229c9530b467144de247f6fbe14d4e9dcbb113fc8860bcd0d0386320cd789e"
+        }
+      },
+      "native_key": "fac8ac2b38e06336",
+      "outputs": {
+        "o": [
+          "a8fa0714f38a0fb9.olean"
+        ],
+        "m": false,
+        "i": "52f01de5b959ef88.ilean",
+        "c": "ba5c0d3a767af802.c"
+      },
+      "trace_sha256": "98cad3f04da75bc3d256506cc8d5daae5b4a2d4c960d59a120d258bfe776c513",
+      "kernel_record": {
+        "label": "helper-0-kernel",
+        "argv": [
+          "lake",
+          "-v",
+          "build",
+          "+FV.Backend.Proof.StockFenceHelpers:leanArts"
+        ],
+        "exit": 0,
+        "stats": "peak 338219008\noom 0\noom_kill 0\n"
+      }
+    },
+    "FV/Backend/Proof/StockFenceMetadataModel.lean": {
+      "source_sha256": "92927e520337a1e2eafe3e950fe36cffbea7e122817d579f8c00df3ec6c0fb7a",
+      "configs": {
+        "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+        "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+        "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+      },
+      "dependencies": {
+        "FV/Backend/Lowering/Stock.lean": {
+          "native_key": "0b0ee8b0010a8e66",
+          "outputs": {
+            "m": false,
+            "o": [
+              "34aa1cf1aeff3951.olean"
+            ],
+            "i": "ae41cba858526fe6.ilean",
+            "c": "199e7f372fdb7ddd.c"
+          },
+          "source_sha256": "b81f1973800ac6ac42d127968d1f5448da8722dd8c22a135fb6d8c9451f22e3e"
+        }
+      },
+      "native_key": "9337a75a910fc361",
+      "outputs": {
+        "o": [
+          "69b3024402bb1679.olean"
+        ],
+        "m": false,
+        "i": "e90940be5547a963.ilean",
+        "c": "ce8ac34b85cda179.c"
+      },
+      "trace_sha256": "d5363143160236ca88ff25686d40e17fb75497a9cee21e20bb06e475043bfe6e",
+      "kernel_record": {
+        "label": "helper-1-kernel",
+        "argv": [
+          "lake",
+          "-v",
+          "build",
+          "+FV.Backend.Proof.StockFenceMetadataModel:leanArts"
+        ],
+        "exit": 0,
+        "stats": "peak 126955520\noom 0\noom_kill 0\n"
+      }
+    },
+    "FV/Backend/Proof/StockFenceScan.lean": {
+      "source_sha256": "f1320960e699b9e30bd67aa246b97a77203d0367ee1ef173ae2337be16d6ab77",
+      "configs": {
+        "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+        "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+        "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+      },
+      "dependencies": {
+        "FV/Backend/Lowering/Stock.lean": {
+          "native_key": "0b0ee8b0010a8e66",
+          "outputs": {
+            "m": false,
+            "o": [
+              "34aa1cf1aeff3951.olean"
+            ],
+            "i": "ae41cba858526fe6.ilean",
+            "c": "199e7f372fdb7ddd.c"
+          },
+          "source_sha256": "b81f1973800ac6ac42d127968d1f5448da8722dd8c22a135fb6d8c9451f22e3e"
+        }
+      },
+      "native_key": "af425be97273f755",
+      "outputs": {
+        "o": [
+          "954f63b4940e5585.olean"
+        ],
+        "m": false,
+        "i": "5c2d3792eed0d030.ilean",
+        "c": "47b32f0e3c6c216f.c"
+      },
+      "trace_sha256": "e050a86b16ffd84aea9b2bc698d54108add9203382488a5eba19de4be5416c4c",
+      "kernel_record": {
+        "label": "helper-2-kernel",
+        "argv": [
+          "lake",
+          "-v",
+          "build",
+          "+FV.Backend.Proof.StockFenceScan:leanArts"
+        ],
+        "exit": 0,
+        "stats": "peak 100720640\noom 0\noom_kill 0\n"
+      }
+    },
+    "FV/Backend/Proof/StockFenceMetadataPositive.lean": {
+      "source_sha256": "213f5fef0013f0d011189a949097fc1dee63aa45f90d38c27a53a167845e5c23",
+      "native_key": "0abb3a34b0f8244e",
+      "outputs": {
+        "o": [
+          "59c8a6640415056c.olean"
+        ],
+        "m": false,
+        "i": "84785d40a5125110.ilean",
+        "c": "a435e203624588e4.c"
+      },
+      "trace_sha256": "91d15ce1fb780b58c65bcdedcbf8f0ce1896d8955a80070037d801b8d4a4b16a",
+      "olean_sha256": "84cdf1000db4b11b3e903c989fedb40b246000f2185aad0656ff9e103eeb96ed",
+      "kernel_record": {
+        "label": "kernel0",
+        "argv": [
+          "lake",
+          "-v",
+          "build",
+          "+FV.Backend.Proof.StockFenceMetadataPositive:leanArts"
+        ],
+        "exit": 0,
+        "stats": "peak 127475712\noom 0\noom_kill 0\n"
+      }
+    },
+    "FV/Backend/Proof/StockSourceResults.lean": {
+      "source_sha256": "081f158d20fd4810fbfa6599f175ec612cbe8e51f94f63d723580f895e56db10",
+      "native_key": "34d2915d949d32c0",
+      "outputs": {
+        "o": [
+          "04a135f51ffd2258.olean"
+        ],
+        "m": false,
+        "i": "6de75b217e7c8f78.ilean",
+        "c": "53dbd25beeab6ae0.c"
+      },
+      "trace_sha256": "897fd325ab1ac4b0bb904add3060d93e637676dc7ddb81e81d81923c1000941d",
+      "olean_sha256": "0c8763d369478997f41979c279be1e5059d07ec5d6dc5cc20e841c399d83924a",
+      "kernel_record": {
+        "label": "kernel1",
+        "argv": [
+          "lake",
+          "-v",
+          "build",
+          "+FV.Backend.Proof.StockSourceResults:leanArts"
+        ],
+        "exit": 0,
+        "stats": "peak 256708608\noom 0\noom_kill 0\n"
+      }
+    },
+    "FV/Backend/Proof/StockDirectCallResult.lean": {
+      "source_sha256": "1808f16d7be8f2a99ad69b7cb08d138c26c44ecf65758757f0b34578774f854b",
+      "native_key": "2c9ee9f4efb224e7",
+      "outputs": {
+        "o": [
+          "98d033f9a950acfd.olean"
+        ],
+        "m": false,
+        "i": "12946cc76af459c1.ilean",
+        "c": "b370db83521c0061.c"
+      },
+      "trace_sha256": "163ad1612a5d06fcb5bfd0445d017848faec43f16fd88ebabfe7a0bbf7faa666",
+      "olean_sha256": "0d333b07f3f1829d0db10728929718ebd70e9fb0562ef1b20b85e8029108f4b4",
+      "kernel_record": {
+        "label": "kernel2",
+        "argv": [
+          "lake",
+          "-v",
+          "build",
+          "+FV.Backend.Proof.StockDirectCallResult:leanArts"
+        ],
+        "exit": 0,
+        "stats": "peak 251912192\noom 0\noom_kill 0\n"
+      }
+    },
+    "FV/Backend/Proof/StockLiveCallArithmetic.lean": {
+      "source_sha256": "de0daf302172cf6aabf5026795d5391da5580e2acb7d228d24dc67ca1052aafe",
+      "native_key": "86869eb88585970e",
+      "outputs": {
+        "o": [
+          "8843f1dc67790012.olean"
+        ],
+        "m": false,
+        "i": "1e73ce429db72182.ilean",
+        "c": "9020003c4edf3099.c"
+      },
+      "trace_sha256": "d6ee60bde557866842f61f1fdc3273295cdae350619a587671ec26d824aaf5fe",
+      "olean_sha256": "8951e2ba078e091aa571e1c7a29b2126301fb77558a80bd0671040e63cd48488",
+      "kernel_record": {
+        "label": "kernel3",
+        "argv": [
+          "lake",
+          "-v",
+          "build",
+          "+FV.Backend.Proof.StockLiveCallArithmetic:leanArts"
+        ],
+        "exit": 0,
+        "stats": "peak 252186624\noom 0\noom_kill 0\n"
+      }
+    }
+  },
+  "records": [
+    {
+      "label": "deps0",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Proof.StockFenceMetadataModel"
+      ],
+      "exit": 0,
+      "stats": "peak 33529856\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "kernel0",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockFenceMetadataPositive:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 127475712\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "deps1",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Proof.StockSourceDefined"
+      ],
+      "exit": 0,
+      "stats": "peak 46964736\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "kernel1",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockSourceResults:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 256708608\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "deps2",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Proof.StockSourceResults",
+        "FV.Backend.Proof.StockResults",
+        "FV.Backend.Proof.IselCtlCallRules",
+        "FV.E2E.ExtSemGuard"
+      ],
+      "exit": 0,
+      "stats": "peak 47742976\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "kernel2",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockDirectCallResult:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 251912192\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "deps3",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Proof.StockDirectCallResult",
+        "FV.Backend.Proof.IselFamily",
+        "FV.Backend.Proof.IselCmpIcmp"
+      ],
+      "exit": 0,
+      "stats": "peak 49897472\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "kernel3",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.Proof.StockLiveCallArithmetic:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 252186624\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "normal-seven",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Proof.StockDirectCallResult",
+        "FV.Backend.Proof.StockFenceHelpers",
+        "FV.Backend.Proof.StockFenceMetadataModel",
+        "FV.Backend.Proof.StockFenceMetadataPositive",
+        "FV.Backend.Proof.StockFenceScan",
+        "FV.Backend.Proof.StockLiveCallArithmetic",
+        "FV.Backend.Proof.StockSourceResults"
+      ],
+      "exit": 0,
+      "stats": "peak 35389440\noom 0\noom_kill 0\n"
+    }
+  ],
+  "baseline672_receipt_sha256": "68ac222c1c22bba2226f1e2329ca44d589ce318aa754526bc3021868d956511b",
+  "first_three_exact": true,
+  "remaining": [
+    "FV/Backend/Proof/StockLiveCallSource.lean",
+    "FV/Backend/StockLiveCallCheck.lean",
+    "FV/Backend/StockResultCallCheck.lean",
+    "FV/E2E/StockLiveCallLayout.lean",
+    "FV/E2E/StockLiveCallPrelude.lean"
+  ],
+  "broad_four_provider_roots_still_open": true,
+  "source_scope": "all helper698 sources unchanged;baseline686 projection to main64d verified",
+  "utc": "2026-11-03T09:28:42.987560+00:00"
+}

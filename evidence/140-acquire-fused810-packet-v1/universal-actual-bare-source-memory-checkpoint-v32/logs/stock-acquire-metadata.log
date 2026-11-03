@@ -1,0 +1,484 @@
+'Backend.Stock.Proof.Acquire810.body_color_count' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_unchanged_color_quiet' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_widened_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_iflet_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_root_match_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.sink_atomic_forward' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.output_reg_forward' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_rhs_forward' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.sink_atomic_call_receipt' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_rhs_sink_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_rhs_inputs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_rule_sink_provenance' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.sink_atomic_match_data' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.mapped_atomic_producer' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.sink_atomic_call_data' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_rule_original_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_pair_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_emission_binding' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_record_binding' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_record_final_binding' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_rhs_output' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_selected_rule' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_selected_final_binding' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_quiet_source_outcome' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_quiet_source_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_color_interval_source' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.entryColors' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.color_distance' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.member_color_bounds' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.ordered' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.distinct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_ctor_color_without_sink' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.PendingSinks.append' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.stock_ctor_pending_execution' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_apply_pending_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_runTerm_pending_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.finalColor' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pending' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_atomic_rhs_pending' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_atomic_call_pending' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_rhs_pending' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_rule_pending_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_singleton' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_color_size' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.body_color_keeps_slot' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.body_colored_exact' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_colored_pair_order' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_color_events_fold' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.block_color_events_fold' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_events_fold' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.sourceMetadata_color_events' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_color_events' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.color_events_count' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.color_events_size' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.color_events_keeps_slot' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.color_event_exact' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.color_event_pair_order' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_color_events_member' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_color_events_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_color_events_order' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.block_color_events_member' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.block_layout_before' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_blocks_index_order' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.block_color_event_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.block_color_event_order' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_event_order' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_event_inside' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_event_no_overwrite' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_event_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_event_pair_exact' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.member_positive' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_positive_member' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_order_reflects_slots' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.source_members' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.source_order' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_pending_source_members' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_source_order' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_root_match_target_width' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_root_source_target_width' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_target_width' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_selected_pair_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_atomic_match_address' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_atomic_rhs_request' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_atomic_call_request' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.mapped_atomic_original_fields' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_atomic_original_request' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pointer_request' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pointer_demanded' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pointer_held' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_original_definition' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_original_statement' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_root_args_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_root_args_value_data' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_original_extension_data' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_root_match_original_value' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_rule_original_extension_source' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pointer_available' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_original_pointer_request' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_original_pointer_demanded' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_guarded_pointer_held' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_inst_pointer_frame' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_steps_pointer_frame' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.available_pointer_unwritten' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.available_source_prefix_pointer' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_original_prefix_pointer' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.forget' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.PendingMarks.append' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.PendingMarks.entryColors' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.sunk_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.sunk_size' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.marked_mono' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.ordered' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_ctor_sunk_without_sink_shape' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.stock_ctor_pending_marks_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_apply_pending_marks_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_runTerm_pending_marks_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarksExecution.forget' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.bindResults_mark_fields' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.scanState_sunk' does not depend on any axioms
+'Backend.Stock.Proof.Acquire810.stock_lower_record_pending_marks' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_pending_mark_sources' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.opportunisticValues_sunk' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.opportunistic_sunk' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.scans_forward_chunks' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.scanBlock_forward_chunks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_scan_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_all_sunk_updates' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_sunk_updates' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_all_source_sunk_updates' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_source_sunk_updates' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_source_queue' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_frontier' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_record_frontiers' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.RecordFrontiers.append' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.RecordFrontiers.reverse' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.RecordFrontiers.source_members' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_forward_frontiers' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.atomic_source_step_read' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_source_read' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.atomic_source_eval_trap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.indexed_source_atomic_trap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.color_some' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.nonempty_color_some' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_pending_marks_order' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_event_lookup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.color_at_split' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.source_event_at_split' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_pending_source_interval' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.instData_read_format' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.buildCtx_sink_format_sources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.SinkFormatSources.termCtx' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.SinkFormatSources.withTryRegs' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.blockCore_scan_sink_format_sources' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_format_eval_memory' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_format_source_step_memory' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.lowerNode_sink_format_sources' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_sink_format_sources' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_sink_format_source_memory' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_pattern_sink_source_memory' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.deferred_load_bound_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.deferred_load_root_args' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.deferred_load_rule_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_eligibility_sink_source_memory' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadPendingMarks.forget' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadPendingMarks.append' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadPendingMarks.source_memory' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadPendingExecution.refl' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadPendingExecution.trans' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_ctor_free_read_frame' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.pattern_sink_read_target' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.eligibility_sink_read_target' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_expr_read_pending' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_let_read_pending' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.pattern_sink_rule_read_pending' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.eligibility_sink_rule_read_pending' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.read_pending_interpreter_frames' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_helper_read_pending' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_branch_helper_read_pending' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_read_pending_marks' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_read_pending_interval' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_read_frontier' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_read_frontiers' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.ScansSpec.record_prefix' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.ScansSpec.read_frontier_groups' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_prior_read_frontier' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.sunk_fold_absent' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.sunk_fold_marked' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_marked_read_provenance' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_marked_read_or_entry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.color_covered' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_equal_slots' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.source_interval_member' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadPendingMarks.source_interval_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.SourceReadFrame.of_source_view' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_slots_termCtx' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.SourceSlotsPreserved.withTryRegs' does not depend on any axioms
+'Backend.Stock.Proof.Acquire810.buildCtx_read_marked' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadMarked.of_sunk_eq' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadPendingMarks.preserves_read_marked' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingMarks.none_empty' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_runTerm_none_sunk' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.emitBranch_sunk' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.outgoingStep_sunk' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.collectOutgoing_sunk' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.blockCore_scan_input_sunk' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_original_slots' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadMarked.of_read_fold' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_scan_read_marked' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_actual_core_read_marked' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.lowerNode_mark_origin' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.lowerNode_blockScans_keep' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.lowerNodes_blockScans_keep' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_actual_node_read_marked' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_actual_nodes_read_marked' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_all_read_marked' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_marked_source_read' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadQueueCut.zero' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadQueueCut.of_color_eq' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadQueueCut.shrink' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadQueueCut.append_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadQueueCut.reset_execution' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ReadQueueCut.source_read' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_slot_colors_order' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_metadata_positive_order' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.referenceCut_tail_bound' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.source_event_tail_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.scan_indices_head' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.scan_indices_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.scan_indices_reverse_order' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.opportunisticValues_color_fields' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.opportunistic_color_fields' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.scanState_entry_colors' does not depend on any axioms
+'Backend.Stock.Proof.Acquire810.scanState_color_zero' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.scanState_color_positive' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.scan_no_emission_color' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ScansSpec.record_run' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_read_queue_step' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_cut_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.ScansSpec.cons_inv' does not depend on any axioms
+'Backend.Stock.Proof.Acquire810.ScansSpec.read_queue_progress' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.ScansSpec.nil_inv' does not depend on any axioms
+'Backend.Stock.Proof.Acquire810.ScansSpec.read_queue_from_term' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_scan_prefix_read_queue_cut' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_read_queue_cut' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.ScansSpec.record_indices' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.ScansSpec.record_output_prefix' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_output_read_queue_cut' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.referenceCut_fold_above' does not depend on any axioms
+'Backend.Stock.Proof.Acquire810.source_reference_fold_above' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_indices_reverse' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_prefix_cut_above' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_crossed_source_reads' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_output_color' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.SourceColorGap.zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.SourceColorGap.at_color' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.SourceColorGap.of_color_eq' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.SourceColorGap.shrink' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.SourceColorGap.append_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.SourceColorGap.reset_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_source_color_gap' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.ScansSpec.source_color_gap_progress' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.ScansSpec.source_color_gap_from_term' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_scan_prefix_source_color_gap' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_output_source_color_gap' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.uncolored_source_read_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_steps_read_memory' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_output_source_color' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_between_source_read_frames' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_event_build_source_slots' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.original_colored_statement_event' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_between_statement_read_frames' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_successful_interval_memory' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.bare_source_statement_step' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.bare_source_next_result' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.bare_returned_source_slice' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_actual_successful_slice_memory' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]

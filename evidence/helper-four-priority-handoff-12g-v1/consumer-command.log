@@ -1,0 +1,29 @@
+deps0 0
+key0 0
+ready0 3
+kernel0 0
+normal0 0
+deps1 0
+key1 0
+ready1 3
+kernel1 0
+normal1 0
+deps2 0
+key2 0
+ready2 3
+kernel2 0
+normal2 0
+deps3 0
+key3 0
+ready3 3
+kernel3 0
+normal3 0
+complete686 3
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/helper-four-priority-handoff-12g-v1/gate.py", line 74, in <module>
+    run('complete686', ['build', '--no-build', *[module(n) for n in sorted(I['source686_hashes'])]])
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/helper-four-priority-handoff-12g-v1/gate.py", line 35, in run
+    assert rc in allowed, (label, rc, 'Inspect exact diagnostic; no unchanged retry')
+           ^^^^^^^^^^^^^
+AssertionError: ('complete686', 3, 'Inspect exact diagnostic; no unchanged retry')

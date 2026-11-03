@@ -1,0 +1,112 @@
+[
+  {
+    "label": "deps0",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Proof.StockFenceMetadataModel"
+    ],
+    "exit": 0,
+    "stats": "peak 33529856\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "kernel0",
+    "argv": [
+      "lake",
+      "-v",
+      "build",
+      "+FV.Backend.Proof.StockFenceMetadataPositive:leanArts"
+    ],
+    "exit": 0,
+    "stats": "peak 127475712\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "deps1",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Proof.StockSourceDefined"
+    ],
+    "exit": 0,
+    "stats": "peak 46964736\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "kernel1",
+    "argv": [
+      "lake",
+      "-v",
+      "build",
+      "+FV.Backend.Proof.StockSourceResults:leanArts"
+    ],
+    "exit": 0,
+    "stats": "peak 256708608\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "deps2",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Proof.StockSourceResults",
+      "FV.Backend.Proof.StockResults",
+      "FV.Backend.Proof.IselCtlCallRules",
+      "FV.E2E.ExtSemGuard"
+    ],
+    "exit": 0,
+    "stats": "peak 47742976\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "kernel2",
+    "argv": [
+      "lake",
+      "-v",
+      "build",
+      "+FV.Backend.Proof.StockDirectCallResult:leanArts"
+    ],
+    "exit": 0,
+    "stats": "peak 251912192\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "deps3",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Proof.StockDirectCallResult",
+      "FV.Backend.Proof.IselFamily",
+      "FV.Backend.Proof.IselCmpIcmp"
+    ],
+    "exit": 0,
+    "stats": "peak 49897472\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "kernel3",
+    "argv": [
+      "lake",
+      "-v",
+      "build",
+      "+FV.Backend.Proof.StockLiveCallArithmetic:leanArts"
+    ],
+    "exit": 0,
+    "stats": "peak 252186624\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "normal-seven",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Proof.StockDirectCallResult",
+      "FV.Backend.Proof.StockFenceHelpers",
+      "FV.Backend.Proof.StockFenceMetadataModel",
+      "FV.Backend.Proof.StockFenceMetadataPositive",
+      "FV.Backend.Proof.StockFenceScan",
+      "FV.Backend.Proof.StockLiveCallArithmetic",
+      "FV.Backend.Proof.StockSourceResults"
+    ],
+    "exit": 0,
+    "stats": "peak 35389440\noom 0\noom_kill 0\n"
+  }
+]

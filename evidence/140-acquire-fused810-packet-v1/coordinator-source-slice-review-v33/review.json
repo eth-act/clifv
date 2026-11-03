@@ -1,0 +1,20 @@
+{
+  "status": "reviewed_source_only_positioned_slice",
+  "utc": "2026-11-03T10:00:09.942658+00:00",
+  "theorem_sources": {
+    "StockAcquireActualSourceSliceMemory.lean": "bf3747a09031937b9012bd68070f22fe0737fa634dd5112ad12393a02b0520cb",
+    "StockAcquireActualTrappedSliceMemory.lean": "9a242666d9bd303354d38e7a095d34d5d7bc552ac0f53a3f2df6491eb81ff5b1"
+  },
+  "v32_receipt_sha256": "c8600376d521d73ff74b730312f3a6f8ef970a606b5d480e2d9f7730c2bfd47d",
+  "v33_receipt_sha256": "3aae04465d3e641c82d35be63805e25927fa6afc2f86bf8c4ebddb9fb326f048",
+  "standard_roots": 279,
+  "all_276_prior_sets_exact": true,
+  "all_264_v30_sets_exact": true,
+  "successful_slice_memory": true,
+  "first_source_fault_or_residual_trap": true,
+  "arbitrary_original_environment": true,
+  "local_block_slice_positioning_remains": true,
+  "delayed_source_machine_memory_correspondence": false,
+  "emitted_first_fault_execution": false,
+  "full_goal_complete": false
+}
