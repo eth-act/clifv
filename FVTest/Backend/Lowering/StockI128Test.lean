@@ -2,8 +2,9 @@ import FV.Backend.Lowering.StockI128
 
 /-! Probes for the native `i128` stock lowering `Backend.Stock.lower128` (no proof).
 
-* The `#guard`s below check that `lower128` lowers the 16 foundation shapes and 13 `i128` shift
-  and rotate shapes (`shifts`), that the instructions it selects have the shape of stock
+* The `#guard`s below check that `lower128` lowers the 16 foundation shapes, 13 `i128` shift
+  and rotate shapes (`shifts`) and 15 `i128` comparison shapes (`compares`), that the
+  instructions it selects have the shape of stock
   Cranelift's (the expected VCode of the filetests, with registers abstracted, and without
   regalloc moves and the frame), and they pin its exact pre-allocation VCode.
 * Further `#guard`s check that `lower128` gives the result of `Stock.lower` on functions without
@@ -36,7 +37,13 @@ def aluName : ALUOp → String
   | .orr => "orr" | .and => "and" | .eor => "eor" | .add => "add" | .sub => "sub"
   | .addS => "adds" | .subS => "subs" | .andS => "ands"
   | .asr => "asr" | .lsr => "lsr" | .lsl => "lsl" | .orrNot => "orn" | .extr => "extr"
+  | .sbcS => "sbcs"
   | op => s!"?{lastName op}"
+
+/-- An `NZCV` immediate as Cranelift prints it: `#nzcv`, a set flag in upper case. -/
+def nzcv (f : NZCV) : String :=
+  let c (ch : Char) (b : Bool) : Char := if b then ch.toUpper else ch
+  s!"#{c 'n' f.n}{c 'z' f.z}{c 'c' f.c}{c 'v' f.v}"
 
 def amode : AMode → String
   | .fpOffset off => s!"[fp, #{off}]"
@@ -44,8 +51,9 @@ def amode : AMode → String
   | m => s!"?{(repr m).pretty}"
 
 /-- One instruction in the syntax of Cranelift's VCode printing (`isa/aarch64/inst/mod.rs`),
-for the instructions of the foundation and of the shifts and rotates; `?` and the representation for every other one. `args`
-and `rets` show their (vreg, physical register) pairs. -/
+for the instructions of the foundation, the shifts and rotates and the comparisons; `?` and the
+representation for every other one. `args` and `rets` show their (vreg, physical register)
+pairs. -/
 def inst : MInst → String
   | .args ps => " ".intercalate ("args" :: ps.map fun (a, p) => s!"{reg a}={reg p}")
   | .rets ps => " ".intercalate ("rets" :: ps.map fun (a, p) => s!"{reg a}={reg p}")
@@ -64,8 +72,10 @@ def inst : MInst → String
   | .aluRRImmLogic op _ rd rn imm => s!"{aluName op} {reg rd}, {reg rn}, #{imm.value}"
   | .csel rd rn rm c => s!"csel {reg rd}, {reg rn}, {reg rm}, {lastName c}"
   | .cset rd c => s!"cset {reg rd}, {lastName c}"
+  | .ccmp _ rn rm f c => s!"ccmp {reg rn}, {reg rm}, {nzcv f}, {lastName c}"
   | .condBr t e (.notZero r _) => s!"cbnz {reg r}, label{t} ; b label{e}"
   | .condBr t e (.zero r _) => s!"cbz {reg r}, label{t} ; b label{e}"
+  | .condBr t e (.cond c) => s!"b.{lastName c} label{t} ; b label{e}"
   | .jump l => s!"b label{l}"
   | .mov _ rd rm => s!"mov {reg rd}, {reg rm}"
   | i => s!"?{(repr i).pretty}"
@@ -559,6 +569,174 @@ block0(v0: i16, v1: i128):
       "sub %5, %4, #16", "sub %6, xzr, %5", "lsr %7, %3, %4", "lsl %8, %3, %6", "orr %9, %8, %7",
       "rets %9=x0"] }]
 
+/-- `icmp` of `i128` operands (`inst.isle` `emit_icmp_i128`): `eq`/`ne` compare the low halves
+and then the high halves (`cmp` and `ccmp`, `emit_icmp_i128_eq_ne`), the orderings subtract with
+borrow (`cmp` and `sbcs`), a greater-than or less-or-equal ordering with the operands swapped.
+The flags feed a `cset`, a `b.cond` of a `brif` (through the `uextend`, `is_nonzero_cmp`), or a
+`csel` of a `select`. -/
+def compares : List Shape := [
+  { name := "icmp_eq_i128", source := "isa/aarch64/condbr.clif"
+    clif := "function %icmp_eq_i128(i128, i128) -> i8 {
+block0(v0: i128, v1: i128):
+  v2 = icmp eq v0, v1
+  return v2
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "ccmp x1, x3, #nzcv, eq", "cset x0, eq", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2",
+      "ccmp %1, %3, #nzcv, eq", "cset %4, eq", "rets %4=x0"] },
+  { name := "icmp_ne_i128", source := "isa/aarch64/condbr.clif"
+    clif := "function %icmp_ne_i128(i128, i128) -> i8 {
+block0(v0: i128, v1: i128):
+  v2 = icmp ne v0, v1
+  return v2
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "ccmp x1, x3, #nzcv, eq", "cset x0, ne", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2",
+      "ccmp %1, %3, #nzcv, eq", "cset %4, ne", "rets %4=x0"] },
+  { name := "icmp_slt_i128", source := "isa/aarch64/condbr.clif"
+    clif := "function %icmp_slt_i128(i128, i128) -> i8 {
+block0(v0: i128, v1: i128):
+  v2 = icmp slt v0, v1
+  return v2
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "sbcs xzr, x1, x3", "cset x0, lt", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2", "sbcs xzr, %1, %3",
+      "cset %4, lt", "rets %4=x0"] },
+  { name := "icmp_ult_i128", source := "isa/aarch64/condbr.clif"
+    clif := "function %icmp_ult_i128(i128, i128) -> i8 {
+block0(v0: i128, v1: i128):
+  v2 = icmp ult v0, v1
+  return v2
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "sbcs xzr, x1, x3", "cset x0, lo", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2", "sbcs xzr, %1, %3",
+      "cset %4, lo", "rets %4=x0"] },
+  { name := "icmp_sle_i128", source := "isa/aarch64/condbr.clif"
+    clif := "function %icmp_sle_i128(i128, i128) -> i8 {
+block0(v0: i128, v1: i128):
+  v2 = icmp sle v0, v1
+  return v2
+}"
+    stock := ["block0:", "subs xzr, x2, x0", "sbcs xzr, x3, x1", "cset x0, ge", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %2, %0", "sbcs xzr, %3, %1",
+      "cset %4, ge", "rets %4=x0"] },
+  { name := "icmp_ule_i128", source := "isa/aarch64/condbr.clif"
+    clif := "function %icmp_ule_i128(i128, i128) -> i8 {
+block0(v0: i128, v1: i128):
+  v2 = icmp ule v0, v1
+  return v2
+}"
+    stock := ["block0:", "subs xzr, x2, x0", "sbcs xzr, x3, x1", "cset x0, hs", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %2, %0", "sbcs xzr, %3, %1",
+      "cset %4, hs", "rets %4=x0"] },
+  { name := "icmp_sgt_i128", source := "isa/aarch64/condbr.clif"
+    clif := "function %icmp_sgt_i128(i128, i128) -> i8 {
+block0(v0: i128, v1: i128):
+  v2 = icmp sgt v0, v1
+  return v2
+}"
+    stock := ["block0:", "subs xzr, x2, x0", "sbcs xzr, x3, x1", "cset x0, lt", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %2, %0", "sbcs xzr, %3, %1",
+      "cset %4, lt", "rets %4=x0"] },
+  { name := "icmp_ugt_i128", source := "isa/aarch64/condbr.clif"
+    clif := "function %icmp_ugt_i128(i128, i128) -> i8 {
+block0(v0: i128, v1: i128):
+  v2 = icmp ugt v0, v1
+  return v2
+}"
+    stock := ["block0:", "subs xzr, x2, x0", "sbcs xzr, x3, x1", "cset x0, lo", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %2, %0", "sbcs xzr, %3, %1",
+      "cset %4, lo", "rets %4=x0"] },
+  { name := "icmp_sge_i128", source := "isa/aarch64/condbr.clif"
+    clif := "function %icmp_sge_i128(i128, i128) -> i8 {
+block0(v0: i128, v1: i128):
+  v2 = icmp sge v0, v1
+  return v2
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "sbcs xzr, x1, x3", "cset x0, ge", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2", "sbcs xzr, %1, %3",
+      "cset %4, ge", "rets %4=x0"] },
+  { name := "icmp_uge_i128", source := "isa/aarch64/condbr.clif"
+    clif := "function %icmp_uge_i128(i128, i128) -> i8 {
+block0(v0: i128, v1: i128):
+  v2 = icmp uge v0, v1
+  return v2
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "sbcs xzr, x1, x3", "cset x0, hs", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2", "sbcs xzr, %1, %3",
+      "cset %4, hs", "rets %4=x0"] },
+  { name := "i128_bricmp_eq", source := "isa/aarch64/condbr.clif"
+    clif := "function %i128_bricmp_eq(i128, i128) {
+block0(v0: i128, v1: i128):
+  v2 = icmp eq v0, v1
+  v3 = uextend.i32 v2
+  brif v3, block1, block1
+
+block1:
+  return
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "ccmp x1, x3, #nzcv, eq", "b.eq label1 ; b label2",
+      "block1:", "b label3", "block2:", "b label3", "block3:", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2",
+      "ccmp %1, %3, #nzcv, eq", "b.eq label1 ; b label2", "block1:", "b label3", "block2:",
+      "b label3", "block3:", "rets"] },
+  { name := "i128_bricmp_ne", source := "isa/aarch64/condbr.clif"
+    clif := "function %i128_bricmp_ne(i128, i128) {
+block0(v0: i128, v1: i128):
+  v2 = icmp ne v0, v1
+  v3 = uextend.i32 v2
+  brif v3, block1, block1
+
+block1:
+  return
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "ccmp x1, x3, #nzcv, eq", "b.ne label1 ; b label2",
+      "block1:", "b label3", "block2:", "b label3", "block3:", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2",
+      "ccmp %1, %3, #nzcv, eq", "b.ne label1 ; b label2", "block1:", "b label3", "block2:",
+      "b label3", "block3:", "rets"] },
+  { name := "i128_bricmp_slt", source := "isa/aarch64/condbr.clif"
+    clif := "function %i128_bricmp_slt(i128, i128) {
+block0(v0: i128, v1: i128):
+  v2 = icmp slt v0, v1
+  v3 = uextend.i32 v2
+  brif v3, block1, block1
+
+block1:
+  return
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "sbcs xzr, x1, x3", "b.lt label1 ; b label2",
+      "block1:", "b label3", "block2:", "b label3", "block3:", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2", "sbcs xzr, %1, %3",
+      "b.lt label1 ; b label2", "block1:", "b label3", "block2:", "b label3", "block3:", "rets"] },
+  { name := "i128_bricmp_ugt", source := "isa/aarch64/condbr.clif"
+    clif := "function %i128_bricmp_ugt(i128, i128) {
+block0(v0: i128, v1: i128):
+  v2 = icmp ugt v0, v1
+  v3 = uextend.i32 v2
+  brif v3, block1, block1
+
+block1:
+  return
+}"
+    stock := ["block0:", "subs xzr, x2, x0", "sbcs xzr, x3, x1", "b.lo label1 ; b label2",
+      "block1:", "b label3", "block2:", "b label3", "block3:", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %2, %0", "sbcs xzr, %3, %1",
+      "b.lo label1 ; b label2", "block1:", "b label3", "block2:", "b label3", "block3:", "rets"] },
+  { name := "f", source := "isa/aarch64/condops.clif (`%f(i128, i64, i64)`)"
+    clif := "function %f(i128, i64, i64) -> i64 {
+block0(v0: i128, v1: i64, v2: i64):
+  v3 = iconst.i64 42
+  v4 = uextend.i128 v3
+  v5 = icmp eq v0, v4
+  v6 = select.i64 v5, v1, v2
+  return v6
+}"
+    stock := ["block0:", "movz x7, #42", "movz x8, #0", "subs xzr, x0, x7",
+      "ccmp x1, x8, #nzcv, eq", "csel x0, x2, x3, eq", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "movz %6, #42", "movz %5, #0",
+      "subs xzr, %0, %6", "ccmp %1, %5, #nzcv, eq", "csel %4, %2, %3, eq", "rets %4=x0"] }]
+
 /-- `lower128` lowers the shape, its instruction shape is stock's, and its exact VCode is the
 pinned one. -/
 def shapeOk (s : Shape) : Bool :=
@@ -655,9 +833,9 @@ block0(v0: i128, v1: i128):
     v2 = iadd v0, v1
     return v2
 }",
-  "function %cmp(i128, i128) -> i8 {
+  "function %sub(i128, i128) -> i128 {
 block0(v0: i128, v1: i128):
-    v2 = icmp eq v0, v1
+    v2 = isub v0, v1
     return v2
 }",
   "function %sel(i128, i64, i64) -> i64 {
@@ -689,6 +867,8 @@ def rejected (src : String) : Bool :=
 #guard extras.all shapeOk
 #guard shifts.length == 13
 #guard shifts.all shapeOk
+#guard compares.length == 15
+#guard compares.all shapeOk
 #guard i128Free.all fun s => (function? s).any fun f => !has128 f && agrees f
 #guard outside.all rejected
 
@@ -727,7 +907,7 @@ partial def clifFiles (p : System.FilePath) : IO (Array System.FilePath) := do
 
 /-- Print each shape: whether it lowers, its shape against stock's, its exact VCode. -/
 def printShapes : IO Unit := do
-  for s in shapes ++ extras ++ shifts do
+  for s in shapes ++ extras ++ shifts ++ compares do
     match function? s.clif with
     | none => IO.println s!"{s.name}: parse error"
     | some f => match lower128 f with
@@ -776,7 +956,12 @@ def main (args : List String) : IO UInt32 := do
       let text ← IO.FS.readFile path
       let expect := if hasSub text "precise-output" && hasSub text "target aarch64" then
         expectedVCode text else []
+      let mut seen : List String := []
       for (name, func) in parse text do
+        -- the `k`-th function named `name` has the `k`-th expectation of that name (a file
+        -- may repeat a name, e.g. `isa/aarch64/condops.clif` `%f`)
+        let k := seen.count name
+        seen := name :: seen
         let .ok f := func | continue
         if has128 f then
           wide := wide + 1
@@ -784,7 +969,7 @@ def main (args : List String) : IO UInt32 := do
           | .error e => if print then IO.println s!"reject {path} %{name}: {e}"
           | .ok r =>
             wideLowered := wideLowered + 1
-            match expect.lookup name with
+            match ((expect.filter (·.1 == name))[k]?).map (·.2) with
             | none =>
               wideNoExpect := wideNoExpect + 1
               IO.println s!"lowered {path} %{name}: no expected VCode"
