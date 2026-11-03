@@ -1,0 +1,1530 @@
+{
+  "status": "materialized_review_pending",
+  "revision": "c4f310c56d43c054ab14ea1d8f0a92bf26e470be",
+  "tree": "9b462e046c84606819a711b3453761bc33a1f6ae",
+  "changed_files": [
+    {
+      "path": "FV/Backend/Lowering/StockCallStoreWith.lean",
+      "old_sha256": null,
+      "new_blob": "13a252d481ecec018d65be5efa3dd5c1bc0ffa01",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockComparisonGeneralLoopCfg.lean",
+      "old_sha256": null,
+      "new_blob": "ee72bbd6428a1ccb6963dd6a1074c4aff5ee3989",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralArgsLoopCfg2.lean",
+      "old_sha256": null,
+      "new_blob": "9f2b1aa01c0f21c626bb8faf1d40c4aecd46bab5",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralArgsLoopCfg3.lean",
+      "old_sha256": null,
+      "new_blob": "820cceaaefafd2905ecd3240ec078d9dadb59b8a",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralArgsLoopCfg4.lean",
+      "old_sha256": null,
+      "new_blob": "bd14f19fbe37cde43d5974c5ed078d7146f2b061",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralArgsLoopCfg5.lean",
+      "old_sha256": null,
+      "new_blob": "8410bb6e45d728fdfa8f3c99ee2a2989c546bc2f",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralArgsLoopCfg6.lean",
+      "old_sha256": null,
+      "new_blob": "978f765ddab3244821750b2ff0184974a72d41c1",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralArgsLoopCfg7.lean",
+      "old_sha256": null,
+      "new_blob": "9a5a7502c1825669282e8eb9e099440f67ad6023",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralLoopCfg2.lean",
+      "old_sha256": null,
+      "new_blob": "a85ffaaa66901c5dd61f791fd6c1426c4becd57b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralLoopCfg3.lean",
+      "old_sha256": null,
+      "new_blob": "14733aba628b7c5a54ab80ceb9207966bae04817",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralLoopCfg4.lean",
+      "old_sha256": null,
+      "new_blob": "e54cb16c3b3533c1f582b63afad94405b2c65d22",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralLoopCfg5.lean",
+      "old_sha256": null,
+      "new_blob": "467e1be8ad2e1cf6be963239fe2af65dbc3606fe",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralLoopCfg6.lean",
+      "old_sha256": null,
+      "new_blob": "2c4861ed5f54b0114458625bbe22625d25ac4d00",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Lowering/StockGeneralLoopCfg7.lean",
+      "old_sha256": null,
+      "new_blob": "8e50cd0893d5f6427e22bb40ced7ec6418840741",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/IselContract.lean",
+      "old_sha256": "4c6c88b66498b4e75672f44350632a11155838cf88930b6c17d7aeec430cc8e7",
+      "new_blob": "ba3cf0fc08bca799256833451e7e83da816e39af",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquire810Witness.lean",
+      "old_sha256": null,
+      "new_blob": "26301a31a514c6d088d19b2454d84449d656af9b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireAllocated.lean",
+      "old_sha256": null,
+      "new_blob": "aacb71353379a15a6c3b483b4ab12f51e238d2e2",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireAllocatedLine.lean",
+      "old_sha256": null,
+      "new_blob": "7bcd4051bb9f09a3389f15855ba76acaa020e731",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireArmFault.lean",
+      "old_sha256": null,
+      "new_blob": "b2a11b3397427b5b45d8889c5de2faeee17c05a4",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireBinding.lean",
+      "old_sha256": null,
+      "new_blob": "7f473ed29a6e4bc0a800ec9dc002a25bc86f5a64",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireCompiledCoverage.lean",
+      "old_sha256": null,
+      "new_blob": "18fafadc088418f3401c95a638977a07b42d269e",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireCompiledWitness.lean",
+      "old_sha256": null,
+      "new_blob": "72264abd2a8e93a233735b6c8bd9ce94929ddef4",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireEncodingFault.lean",
+      "old_sha256": null,
+      "new_blob": "4c40a629a504a6ac84a65a75d5fd2112b9421439",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireEntry.lean",
+      "old_sha256": null,
+      "new_blob": "467ad96defae76576053e95c7c6505bda9ee8c2e",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireEntryNormal.lean",
+      "old_sha256": null,
+      "new_blob": "d38a4d80ca07da90e361f5775f2484d5498f8885",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireFaultSite.lean",
+      "old_sha256": null,
+      "new_blob": "7abbc67dcbc89fee948a66e4709603b6fe46e9ea",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireForward.lean",
+      "old_sha256": null,
+      "new_blob": "6b2c3946775b3c28c42ac22002cea4ea5bf9d5b1",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireHalt.lean",
+      "old_sha256": null,
+      "new_blob": "cec74b7f343c2f65c2d296c6b528fb861f4d245a",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireHelpers.lean",
+      "old_sha256": null,
+      "new_blob": "a610f1b11489793f0ba9a89221eaafc865841ca3",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireLineFault.lean",
+      "old_sha256": null,
+      "new_blob": "90b3dc362e7776b1626c62a7c0b9588e78fee54b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireMachine.lean",
+      "old_sha256": null,
+      "new_blob": "34bc0594b7fcce99dfbd6f510d52d71d21362d07",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireMachineBoundary.lean",
+      "old_sha256": null,
+      "new_blob": "20e2879524eafd50b73a652e2ed920f6d4e9f7cd",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireMachineCheck.lean",
+      "old_sha256": null,
+      "new_blob": "632f14ff435f8c07f9e12f6001281b923e81791f",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireOriginal.lean",
+      "old_sha256": null,
+      "new_blob": "8c4adc58512169504eb365e39d96b5ca067a0b2d",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquirePrepare.lean",
+      "old_sha256": null,
+      "new_blob": "b1d76fe7b71ba2b735afc18bdf1a7db21d4b1e96",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquirePreparedShapes.lean",
+      "old_sha256": null,
+      "new_blob": "0c8d4c78c20aca354b5b1746081e6c5f6af0ec84",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireRealizes.lean",
+      "old_sha256": null,
+      "new_blob": "e03cc0f43641778ee734c4f4b6a08847b088a35b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireRecordWitness.lean",
+      "old_sha256": null,
+      "new_blob": "e7bebbeef2fe72733b4a349ca59efebaa0e8b948",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireRegisterLevel.lean",
+      "old_sha256": null,
+      "new_blob": "10dec7e24d39e3372210a830079b04840f727b7d",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireShapeCheck.lean",
+      "old_sha256": null,
+      "new_blob": "49234393bec0b3c1a390c37e2ba614f77c2df1b5",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireSourceDomain.lean",
+      "old_sha256": null,
+      "new_blob": "23c3f342c66ff17390cb9b005c9d0129208098aa",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireSourceMachine.lean",
+      "old_sha256": null,
+      "new_blob": "25edddd49c569d3cd004aefe05c8cd37890ac150",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireSourceOutcome.lean",
+      "old_sha256": null,
+      "new_blob": "925456232f74db10d0c83bdc85e774934469db92",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireSourceReturn.lean",
+      "old_sha256": null,
+      "new_blob": "61221c44786a1cea90d97df11945dc1f2a5cfb02",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireStage.lean",
+      "old_sha256": null,
+      "new_blob": "f9320e2ff5d788287de0ffad84aab1b1c769436c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireTrace.lean",
+      "old_sha256": null,
+      "new_blob": "ab60d2c5fbeab1038ae1a109bc16ef87d7a9b234",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireTrapBoundary.lean",
+      "old_sha256": null,
+      "new_blob": "06999b4e62493163a874a550619e78bcd9559ed9",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireValue.lean",
+      "old_sha256": null,
+      "new_blob": "64b8a6f0b7da9a0c4c39c8bd8de868ba7e9a77b0",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockAcquireVirtualReturn.lean",
+      "old_sha256": null,
+      "new_blob": "355073491d3125a969f1b21ec960da6532b55fa7",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockBranchCond5Carry.lean",
+      "old_sha256": null,
+      "new_blob": "3b5354886de1fa4e54ab0c9994ce97eefc4a72eb",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockBranchCond7Carry.lean",
+      "old_sha256": null,
+      "new_blob": "3fb8c2bb38c5ad958d784b680ab1bba2eddd7039",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockBranchFreshDefs.lean",
+      "old_sha256": null,
+      "new_blob": "10cd2cf5fa6689959134742b0f588debcb259bb7",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockBranchIntervals.lean",
+      "old_sha256": null,
+      "new_blob": "4671ea2f519ee23f835f45c9c3c2e1bd72d48629",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockBranchLabelsCarry.lean",
+      "old_sha256": null,
+      "new_blob": "a60c59c5a9810135924e7aeac669ee72520d1168",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCallStoreAddress.lean",
+      "old_sha256": null,
+      "new_blob": "03c50091820dc9ac31fd788246a88d4a6f5b41a2",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCallStoreCalleeTrap.lean",
+      "old_sha256": null,
+      "new_blob": "76cb08bfe5b941f624e2ae3ec30780bf0aaafa49",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCallStoreFault.lean",
+      "old_sha256": null,
+      "new_blob": "bd613114b9887b3a67d0ee89862f4e74f7dab317",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCallStoreResult.lean",
+      "old_sha256": null,
+      "new_blob": "be36c89b73ed0beea52b53ae47aff4118f2541c9",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockCallStoreSource.lean",
+      "old_sha256": null,
+      "new_blob": "03239696a3a11ad43472e14aadfcb5a6732f019c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopCarry.lean",
+      "old_sha256": null,
+      "new_blob": "63e3906d3d83bbdb2cff5641498dfd4b1d2bc1a7",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopCheck.lean",
+      "old_sha256": null,
+      "new_blob": "8aa1d95d4375159a19c6d50ee397f1d65dd18706",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopClass.lean",
+      "old_sha256": null,
+      "new_blob": "6490b93897accbf16e7b605f617e2b66dbb72882",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopCompatibility.lean",
+      "old_sha256": null,
+      "new_blob": "cc9dcfcdd1e2ba8b2992c00949142973927402fa",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopDomain.lean",
+      "old_sha256": null,
+      "new_blob": "bd96ec494474a2e5edb33eca667965b04c88839b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopWitness.lean",
+      "old_sha256": null,
+      "new_blob": "06d9308c2d540cfb147ec31457277ea61edc9e47",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralSubsumption.lean",
+      "old_sha256": null,
+      "new_blob": "d0d8a941d19b8e9af2a18be5852ff1c507068918",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceAccessComposition.lean",
+      "old_sha256": null,
+      "new_blob": "cef783c790de07c5a0df1178c62dc6ac43e54a25",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceAccessWitness.lean",
+      "old_sha256": null,
+      "new_blob": "60a524c63cc23a3d4dfdd8f85d5c36fbd61344b9",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceBarrier.lean",
+      "old_sha256": null,
+      "new_blob": "a98dc97f8847d7de72ab8a488348a2329edbc961",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceBodyFacts.lean",
+      "old_sha256": null,
+      "new_blob": "478744f0e66df711e49a84fb8e14f05cb9f99287",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceBodyRefines.lean",
+      "old_sha256": null,
+      "new_blob": "91940440bbf98feb891df5634f0f696cdadd7454",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceCompiledWitness.lean",
+      "old_sha256": null,
+      "new_blob": "63789d2bb0bce04494348d2f5dce693d57250c08",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceConsumer.lean",
+      "old_sha256": null,
+      "new_blob": "3f52a614782ba916ade0599f45a86c3c0f8773fb",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceHelpers.lean",
+      "old_sha256": null,
+      "new_blob": "3bd24f725be0270df1a9b0f5c8281b425d167e5e",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceInventory.lean",
+      "old_sha256": null,
+      "new_blob": "9ca7f1f55a4c7b71a42d622f69e32ed3424665bc",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceMachine.lean",
+      "old_sha256": null,
+      "new_blob": "0746b2546d6a5e0a49162f12d7d77c1605a708dc",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceMetadataModel.lean",
+      "old_sha256": null,
+      "new_blob": "bba517283b17217fc57e62d0e82d2c99100807f1",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceMetadataPositive.lean",
+      "old_sha256": null,
+      "new_blob": "b207adc5b7456f8c8793329b01ea5aeb7ff29010",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceMixedBodyRefines.lean",
+      "old_sha256": null,
+      "new_blob": "fee93ad88bafb5d2d6320244262feb532d25efd0",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceMixedBodyTrap.lean",
+      "old_sha256": null,
+      "new_blob": "1c56151482c61de165bfe43b0aca7b1977d5d398",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceMixedDomain.lean",
+      "old_sha256": null,
+      "new_blob": "2ebb9be73225af93bec133873e770068ac1e406a",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceMixedNonvacuity.lean",
+      "old_sha256": null,
+      "new_blob": "434838d69f7e17c06fc57a2cd68f22140299491f",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceOriginal.lean",
+      "old_sha256": null,
+      "new_blob": "d0d698c0d0adaf3e55037a386f5e48004d71c40f",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFencePreparedShapes.lean",
+      "old_sha256": null,
+      "new_blob": "7969ef29edd25f1ce5e97f1eea2d13acaf3337b5",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceRecord.lean",
+      "old_sha256": null,
+      "new_blob": "ff78b719555d14efd729cfec1247cba238b3c773",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceRecordExact.lean",
+      "old_sha256": null,
+      "new_blob": "8f5646072e3edb0e4c4910a52a7be01c78de81ba",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceRecordOrigin.lean",
+      "old_sha256": null,
+      "new_blob": "7efb5e2d61b61deed06ddef8e46af8c889d12836",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceRetainedWitness.lean",
+      "old_sha256": null,
+      "new_blob": "bf1ec48cad89fe50f7a3a2a951f4e63981c3d42d",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceRoot.lean",
+      "old_sha256": null,
+      "new_blob": "737fde695335d027395805f89bf43156222a179f",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceScan.lean",
+      "old_sha256": null,
+      "new_blob": "5df3ec97235cbc75c9d41500b3917ce1a10cab62",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceSelected.lean",
+      "old_sha256": null,
+      "new_blob": "94adb919edef004516b9f08d540518768b696b7c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceSemantics.lean",
+      "old_sha256": null,
+      "new_blob": "da1cc8232df1edcba00662a1666dce445f29cb61",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceSource.lean",
+      "old_sha256": null,
+      "new_blob": "e7afe8dfc3f53ff210f2769f7b625828e6203893",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceSourceContract.lean",
+      "old_sha256": null,
+      "new_blob": "b49f351d1f343a525d6c6de61a6b6d89b22d798b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceSourceRefines.lean",
+      "old_sha256": null,
+      "new_blob": "1a1a8f09f90c69a91ffd8d57d70ef5ae39694ae0",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceSourceTrap.lean",
+      "old_sha256": null,
+      "new_blob": "33c1f1d227d42facdb5f6971b43cf1df8fe2f1e3",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceTrapOrder.lean",
+      "old_sha256": null,
+      "new_blob": "f6e759285f8ce658940dc7f23637d10bef47ab73",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceUnsunk.lean",
+      "old_sha256": null,
+      "new_blob": "78e585039108c773dbb72b139016e411be964408",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockFenceWitness.lean",
+      "old_sha256": null,
+      "new_blob": "66e5eed22ff79cb4f2010aa4dff65defb5e615d9",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopClass2.lean",
+      "old_sha256": null,
+      "new_blob": "2ae65667e7a83c5858c6e3cbc5a64b187ccd0e0f",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopClass3.lean",
+      "old_sha256": null,
+      "new_blob": "4a1b89defab71026c89979a783adbc65c36114bf",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopClass4.lean",
+      "old_sha256": null,
+      "new_blob": "a63839dd710cc29bd0da67a6cb00e9ed1b4710c6",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopClass5.lean",
+      "old_sha256": null,
+      "new_blob": "d3c9e9407856e327d206692d8dd5bfb2520200f3",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopClass6.lean",
+      "old_sha256": null,
+      "new_blob": "97517529ecdebceae0e5e4a1aef344991cc21cb4",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopClass7.lean",
+      "old_sha256": null,
+      "new_blob": "9d8bd015d59d0607f7128ab26372d57c62309c94",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopDomain2.lean",
+      "old_sha256": null,
+      "new_blob": "499e97b4492906b2afc34f2c9350881c9a09a756",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopDomain3.lean",
+      "old_sha256": null,
+      "new_blob": "39dfb9706ae06dd65be92b84b6de5a7a39e96fc3",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopDomain4.lean",
+      "old_sha256": null,
+      "new_blob": "467c66c8f25b97b8e9d382863354729b605c7b9c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopDomain5.lean",
+      "old_sha256": null,
+      "new_blob": "c48476fe6a0afa216c4d4fabbd17255de029fc7b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopDomain6.lean",
+      "old_sha256": null,
+      "new_blob": "1f9074640a36ab064f6f53d63a19ab34c5fd3cbe",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopDomain7.lean",
+      "old_sha256": null,
+      "new_blob": "ab6f83498e18ca28e6639e1fa495b40f70112f11",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralArgsLoopWitness6.lean",
+      "old_sha256": null,
+      "new_blob": "edd297a83f1cba03591c7b82ecfafdf06123cb24",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralCondCarry.lean",
+      "old_sha256": null,
+      "new_blob": "d46e9070bc79720085d1b1bec0c68e5519574906",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopCheck2.lean",
+      "old_sha256": null,
+      "new_blob": "c3b6d9b776156d62599c9162a3c60333a13c0959",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopCheck3.lean",
+      "old_sha256": null,
+      "new_blob": "2812cd61176a6a4f109dff4c76163ed210c756d6",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopCheck4.lean",
+      "old_sha256": null,
+      "new_blob": "d7b8e49e5dff35ce7b40e88ed557407197e6abaf",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopCheck5.lean",
+      "old_sha256": null,
+      "new_blob": "64fe04a3db57011e7f1fb7ad52bca84462ad22a1",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopCheck6.lean",
+      "old_sha256": null,
+      "new_blob": "1da24f9bfb24842afa8fcca37a168c4cbfb2ca4b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopCheck7.lean",
+      "old_sha256": null,
+      "new_blob": "a7d130e706c0ed7e892a12960c055527a3c0f998",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopDomain2.lean",
+      "old_sha256": null,
+      "new_blob": "e023e6c7969a064da5d895b24c43fe102e6394e0",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopDomain3.lean",
+      "old_sha256": null,
+      "new_blob": "8397536305d2fd9de3c879bdb5d14edc223b15dd",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopDomain4.lean",
+      "old_sha256": null,
+      "new_blob": "d74f1c94b72c1e324c1df43291d13ed36476e0c4",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopDomain5.lean",
+      "old_sha256": null,
+      "new_blob": "417f20acbe19d1c5a8681921b055b67b1dacf58a",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopDomain6.lean",
+      "old_sha256": null,
+      "new_blob": "e15355a04e248e4392b94442e0d191dba5dd7984",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopDomain7.lean",
+      "old_sha256": null,
+      "new_blob": "29aed4f22477cef21846de5de6d4cfea19b82deb",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopWitness2.lean",
+      "old_sha256": null,
+      "new_blob": "c92c783e5f8b1e907778ad08c74e8f82a2d69f18",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopWitness3.lean",
+      "old_sha256": null,
+      "new_blob": "a156b79bd06b3bea8b33ead9069343e72efc4937",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopWitness4.lean",
+      "old_sha256": null,
+      "new_blob": "33e48f2e795b4de878bbd3399de88b279b4a275f",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopWitness5.lean",
+      "old_sha256": null,
+      "new_blob": "feceb3f3d48aacab4a7ba553e13ddb0f378f7e93",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopWitness6.lean",
+      "old_sha256": null,
+      "new_blob": "a7a8eae8c563b84451a8fa4d0869deedb68a34b3",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralLoopWitness7.lean",
+      "old_sha256": null,
+      "new_blob": "9e88b9e9825017c4851226187824396a65e93907",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralSubsumption2.lean",
+      "old_sha256": null,
+      "new_blob": "8fc9798d41329d06583a6d0eac56530b1c88d18c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralSubsumption3.lean",
+      "old_sha256": null,
+      "new_blob": "d6d43cde8a54ce4df797b116ed169492d4696ad7",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralSubsumption4.lean",
+      "old_sha256": null,
+      "new_blob": "c86f1527a3faac279d1fdc3e0ade8746136e6500",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralSubsumption5.lean",
+      "old_sha256": null,
+      "new_blob": "e734dd021e3d5b8d7040307ea097be4eb7e2cff9",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralSubsumption6.lean",
+      "old_sha256": null,
+      "new_blob": "050adbf92414af7961f920f0b7bd744e0d5ecb9e",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockGeneralSubsumption7.lean",
+      "old_sha256": null,
+      "new_blob": "cde76d619928daa91097afecc0d949b5a03ea1e4",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessAllocated.lean",
+      "old_sha256": null,
+      "new_blob": "628173bb5e5f909c31ebbb83da9795c68908eea5",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessArmFault.lean",
+      "old_sha256": null,
+      "new_blob": "1b5577e3c4f0ddd96d37cefd922be7e11af664c4",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessEncodingFault.lean",
+      "old_sha256": null,
+      "new_blob": "277d5d3935933b210d11a12ad7507aabd65a6c0f",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessEntryTrap.lean",
+      "old_sha256": null,
+      "new_blob": "e8dd6109686900c61abb9fa82c026fe4e994aa04",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessFaultSite.lean",
+      "old_sha256": null,
+      "new_blob": "8cd8d5e0e232a035ea5f0d6bb513e4a755ffd6da",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessHalt.lean",
+      "old_sha256": null,
+      "new_blob": "bff697349b9a9e6e0247108c6da7fe09810733a8",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessLineFacts.lean",
+      "old_sha256": null,
+      "new_blob": "6bfab3393994197b6b2a0e7180c3455e14de52d5",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessLoadLine.lean",
+      "old_sha256": null,
+      "new_blob": "4be12c801448258c1325fdd58bd28485ac9d67bd",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessMachine.lean",
+      "old_sha256": null,
+      "new_blob": "269c9a733ed5a361f72947901104528e575ba5c8",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessMachineCheck.lean",
+      "old_sha256": null,
+      "new_blob": "c408a12dd82624a2e36d1ee84d0205958773455b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessPlacement.lean",
+      "old_sha256": null,
+      "new_blob": "738568009914abe827c11574c46bc9b4fdef6a7b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessPrepare.lean",
+      "old_sha256": null,
+      "new_blob": "d15aed25cfd77ec08ce718aac82c6320c5a0b36c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessReach.lean",
+      "old_sha256": null,
+      "new_blob": "d37dda61b03ab5b2dd64765094e550f817f0c70c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessRealizes.lean",
+      "old_sha256": null,
+      "new_blob": "6acc245c354b1c914460b45fee6aabf1362653ed",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessRegisterLevel.lean",
+      "old_sha256": null,
+      "new_blob": "ed7648d4dcd0e3019e9b164a7a920bf1069982a9",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessScanTrap.lean",
+      "old_sha256": null,
+      "new_blob": "3ff5f75fdfb8b9c6f1eda6bf157cff799b7a24ee",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessShape.lean",
+      "old_sha256": null,
+      "new_blob": "a1431caca5a006fc90801e64296dc20014826983",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessShapeCheck.lean",
+      "old_sha256": null,
+      "new_blob": "d13f206e08a03cb4a39096a2af313bd5546646ca",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessSourcePrefix.lean",
+      "old_sha256": null,
+      "new_blob": "889fcf94e8bc1aa70ddc5bef858c3df8c8d8ba1d",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessSourceTrap.lean",
+      "old_sha256": null,
+      "new_blob": "13e64f118c1af8d89be95635c5d1f41246ff898f",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessStage.lean",
+      "old_sha256": null,
+      "new_blob": "051fc22543604873522debfbddff44f03bf1a249",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessStoreEmission.lean",
+      "old_sha256": null,
+      "new_blob": "2f6ae016cf751770ea9ed5772033fdedaba1c4c0",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessStoreLine.lean",
+      "old_sha256": null,
+      "new_blob": "7b24ebeeddf7594ab664f0e5df8e6e79539ad0de",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessTrace.lean",
+      "old_sha256": null,
+      "new_blob": "adf5cabf4d358e19fc5b185049736df2ddb3a40c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryAccessTrap.lean",
+      "old_sha256": null,
+      "new_blob": "e439dab1a1d239e23252ffe12365e4aec2bf9d48",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryDivAccessRefines.lean",
+      "old_sha256": null,
+      "new_blob": "1f8cc87c7b1c67919686aa269050666e8e4c95e2",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryFaultContract.lean",
+      "old_sha256": null,
+      "new_blob": "e261d58a57486375f46e8b7062798421c778ee1b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryLoadAccessTrap.lean",
+      "old_sha256": null,
+      "new_blob": "b1db79cd78699ca5ab4c097460cfe93af5ea16dd",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetSixteenAddress.lean",
+      "old_sha256": null,
+      "new_blob": "7d62da5084a652d4b6356003ebd557acb0d2d588",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetSixteenLoad.lean",
+      "old_sha256": null,
+      "new_blob": "670a12662cbe030464ad46db95a6f26d3c00100b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetSixteenLoadRecord.lean",
+      "old_sha256": null,
+      "new_blob": "c724cc7769faab2956d542bda88c88d27f75b105",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetSixteenScanRefines.lean",
+      "old_sha256": null,
+      "new_blob": "0f37e200754f3d5d4d1f4fe200d67046f4f5279c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetSixteenSourceValues.lean",
+      "old_sha256": null,
+      "new_blob": "224a8d94e48b43323adacf0165ff40945bfe94c5",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryOffsetSixteenValues.lean",
+      "old_sha256": null,
+      "new_blob": "f40e8f78a0bff2ea8e7996852ef4de09bba22ac9",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockMemoryStoreAccessTrap.lean",
+      "old_sha256": null,
+      "new_blob": "08597ace63c1baf1b8894dd81453347507d64f35",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockNarrow16CondCarry.lean",
+      "old_sha256": null,
+      "new_blob": "86be4106762866785156f1321591080419b1853e",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockNarrow16ConditionCores.lean",
+      "old_sha256": null,
+      "new_blob": "24ed46fc5879ed7818530f3a6e5730a44ce3adb7",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockNarrow16ConditionValues.lean",
+      "old_sha256": null,
+      "new_blob": "b08aac41109c6c7cc511b0c183225c4d3cbe2552",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockNarrowCondCarry.lean",
+      "old_sha256": null,
+      "new_blob": "136c1bde3c9446ee56912ba3ae3eb08556c7782f",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockNarrowConditionCores.lean",
+      "old_sha256": null,
+      "new_blob": "4c82e79948f38cb885c0f629a52d8b3a9c5c6f12",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockNarrowConditionValues.lean",
+      "old_sha256": null,
+      "new_blob": "b19d4064aa8358a08bb04283c8ddcba08bd0c8ea",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockPlainBandCores.lean",
+      "old_sha256": null,
+      "new_blob": "19bea4bba03a79549b1dc0cc1c41a38876adcd69",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockPlainBandSelection.lean",
+      "old_sha256": null,
+      "new_blob": "6362e3d62a9aa1e6e385928a75cd9e86af328674",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockPlainBandValues.lean",
+      "old_sha256": null,
+      "new_blob": "7c3f4ad13c367be4d8bda06f42a52b342c2e12da",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockPlainConditionCores.lean",
+      "old_sha256": null,
+      "new_blob": "f7e0d6d749d331b88ca2f0bb91a97af4b895784c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockPlainConditionSelection.lean",
+      "old_sha256": null,
+      "new_blob": "82e62193edf90f498e3493742cd17a6fc577d856",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockPlainConditionValues.lean",
+      "old_sha256": null,
+      "new_blob": "0eb4421d623b2a5525cb8e74c9091995ee4589e0",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTableBody.lean",
+      "old_sha256": null,
+      "new_blob": "f1c3a1261d1c6fe1cb432fb5f0fb2c8be1a0c293",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTableBranchValues.lean",
+      "old_sha256": null,
+      "new_blob": "6acfe3b5dad3500e5515d538c01abea2ff1c324c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTableCarry.lean",
+      "old_sha256": null,
+      "new_blob": "13850d25be7baff46446741281f6ee6e2e2654cf",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTableCore.lean",
+      "old_sha256": null,
+      "new_blob": "1a9c17c5922a73e39e26f0f6c73e144e024b2d7d",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTableIntervals.lean",
+      "old_sha256": null,
+      "new_blob": "66b41bb12f8e96f9c4c353dc20886995e261baba",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTableLoop.lean",
+      "old_sha256": null,
+      "new_blob": "aebb7eaf6f9b3fb5a16d9c4a0069dbd112259ba3",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTableSelection.lean",
+      "old_sha256": null,
+      "new_blob": "dc4715c6101db43cb288c96b7a19be860dfe5f92",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTableValues.lean",
+      "old_sha256": null,
+      "new_blob": "dd357b6125c874f0b79d7e79f309fd02d696d7c7",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTableWitness.lean",
+      "old_sha256": null,
+      "new_blob": "580173cabcb5288d180f67d4bd455ccf8260b0b6",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTestBitCondCarry.lean",
+      "old_sha256": null,
+      "new_blob": "f62bff5a2dde8f7eba7e2f89b64098b3ed624496",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTestBitConditionCores.lean",
+      "old_sha256": null,
+      "new_blob": "2241053c6ccd87a678752163e40d161e4759ea66",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTestBitConditionValues.lean",
+      "old_sha256": null,
+      "new_blob": "4c13592ace5984efb100fb095fa65b5609ab72e0",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockTestBitSelection.lean",
+      "old_sha256": null,
+      "new_blob": "63b4970c117a66dbc25d3d2d7736c64a91b463ef",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockUextComparisonCores.lean",
+      "old_sha256": null,
+      "new_blob": "91c3a75bea45296e201e5a76f176c9293cc422f5",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockUextComparisonFacts.lean",
+      "old_sha256": null,
+      "new_blob": "6e3a781e0758ac620fc7745b553deca3c8428866",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/Proof/StockUextComparisonValues.lean",
+      "old_sha256": null,
+      "new_blob": "87e8aeccd5cbabbc454bc54dfd9a8118d1d64b7d",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/Backend/StockCallStoreCheck.lean",
+      "old_sha256": null,
+      "new_blob": "b70a5dd080b7756d6c644b3e29f18ac5cd9799f1",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreAccessShape.lean",
+      "old_sha256": null,
+      "new_blob": "98d5a871623d3ccc35033ef5d0649993394b8863",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreAccessTail.lean",
+      "old_sha256": null,
+      "new_blob": "5449833001f5ea9679fad464d157e396318a8cea",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreCalleeTrap.lean",
+      "old_sha256": null,
+      "new_blob": "c53803dad98140cd3e28e6f33349338db4c64e91",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreCompiledWitness.lean",
+      "old_sha256": null,
+      "new_blob": "f61bd10a49794152a2dafe33226f2811a1a70c05",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreDomain.lean",
+      "old_sha256": null,
+      "new_blob": "65d7b816cc7745e2b018f9489fcb43432c6a20b9",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreExplicitC.lean",
+      "old_sha256": null,
+      "new_blob": "8bc8e3a3d5b4922cbee5f2c22a329cda33372774",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreFaultMachine.lean",
+      "old_sha256": null,
+      "new_blob": "0926d6923862f8a39745f2dc51cb4eff998f6187",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreFaultReady.lean",
+      "old_sha256": null,
+      "new_blob": "5af61706a790cb1b37fb4598d37bfed0c1326efa",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreFaultRun.lean",
+      "old_sha256": null,
+      "new_blob": "988a3f794cc12c87dbeabae5378b3827c9ccff85",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreFaultWitness.lean",
+      "old_sha256": null,
+      "new_blob": "21da454e131fa503d62143342e86a23217e64cfb",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreFirstTrap.lean",
+      "old_sha256": null,
+      "new_blob": "804488e96511a2340367b1e82df933b581063cf3",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreFirstTrapChecked.lean",
+      "old_sha256": null,
+      "new_blob": "1ae711f78886087816b300424ad938b25b38d4db",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreFirstTrapWitness.lean",
+      "old_sha256": null,
+      "new_blob": "61f625a920b08ac3d311b482658322b81fc61706",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreFixture.lean",
+      "old_sha256": null,
+      "new_blob": "a1673ccba84ec79ce36bd780dd678e3b14aa446c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreFunction.lean",
+      "old_sha256": null,
+      "new_blob": "e2aad5c87251eb425e1e72a47b640f9a8cd5201a",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreLayout.lean",
+      "old_sha256": null,
+      "new_blob": "28b217d0ea7806fd8710913786487947a02860f5",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreNI.lean",
+      "old_sha256": null,
+      "new_blob": "4b6f4653d9df24001cf5944ca53c2edadc93c0ed",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreNoTrap.lean",
+      "old_sha256": null,
+      "new_blob": "12948491dea052bc6a8b020a5c344cafa0d24445",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreNoTry.lean",
+      "old_sha256": null,
+      "new_blob": "f8668516bb5528360bbd8a90efe3fd364b79c32b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStorePreparedShapes.lean",
+      "old_sha256": null,
+      "new_blob": "fc4102c1a9274d73040bbf382a79417ad272bcd5",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreProviderWitness.lean",
+      "old_sha256": null,
+      "new_blob": "b06e5b1191bc6bf4a77afbc35e8a21cda6e44ffe",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreReady.lean",
+      "old_sha256": null,
+      "new_blob": "a80efc3a97551dbaf14633ee2bcf36b6261ccf2b",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreRun.lean",
+      "old_sha256": null,
+      "new_blob": "c459d5bbb4af75ec792ca0c2e8c10b5bf94cbe97",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreSourceFault.lean",
+      "old_sha256": null,
+      "new_blob": "837fc90fb37a6db70ab3a13ff2229665a7808ead",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreSourceResult.lean",
+      "old_sha256": null,
+      "new_blob": "33728aef9dc43ad7c86a36efc7d5fcab40dbe9db",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreSourceWitness.lean",
+      "old_sha256": null,
+      "new_blob": "e2334e63086d67c33de5cc5427bab2d8ab632291",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreTail.lean",
+      "old_sha256": null,
+      "new_blob": "24a04bcbcc81ca5de84304195dead1fb3c8478b3",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreTrapMachine.lean",
+      "old_sha256": null,
+      "new_blob": "1b454b4888d6e10337dd40f99dd64016cb0bf133",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreTrapReady.lean",
+      "old_sha256": null,
+      "new_blob": "0b8ab0f687e617ff5366a45a93af522d36b9409c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreTrapRun.lean",
+      "old_sha256": null,
+      "new_blob": "14a19fd2ffa4345b03e7a98d079f180734d4d0ed",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreTrapSourceWitness.lean",
+      "old_sha256": null,
+      "new_blob": "8375c2da32e5d9adcdeae983a26779ed0ca204ac",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreTrapStage.lean",
+      "old_sha256": null,
+      "new_blob": "1e169da6af65a5ded8127e20ef02dd7ed589eed9",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockCallStoreTrapTail.lean",
+      "old_sha256": null,
+      "new_blob": "2be0050122543fca347396938d650533f07abae7",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/StockLogicalExtrRootWitness.lean",
+      "old_sha256": "3f3f7e3737d7289388870db8ca05664190daca8569656219537fcff4645477c8",
+      "new_blob": "f22f6cd3bf0226ebcfc66cfb96a6c420b31d136c",
+      "mode": "100644"
+    },
+    {
+      "path": "FV/E2E/WorldTrapStopProvider.lean",
+      "old_sha256": null,
+      "new_blob": "c48e223090b2818d6d014bce4f40e2de0dbcbce7",
+      "mode": "100644"
+    },
+    {
+      "path": "LEARNINGS.md",
+      "old_sha256": "817eb7c9ec44c42fef7f9295cf6309d87fdaf9019394d75226e4dda2dafb0a26",
+      "new_blob": "640741517cbc03808c0b2bca33065b2b1dbecc71",
+      "mode": "100644"
+    },
+    {
+      "path": "lakefile.toml",
+      "old_sha256": "e2e5235e7fbec9f185941be9d46808defd6245ef6e7377130d1377e356493a3a",
+      "new_blob": "4c0d54168c65eaa7b55760264391ddfa203fa607",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/comparison-general.lean",
+      "old_sha256": null,
+      "new_blob": "e63d801f93c90b5a19850212bb7f6557825457ff",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/general-cond.lean",
+      "old_sha256": null,
+      "new_blob": "80b7db3375d9b247bc4022425f6d153209eff730",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/general-cond5.lean",
+      "old_sha256": null,
+      "new_blob": "538c165c535f9b5ad6006418185ca3dda8a8a865",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/general-cond7.lean",
+      "old_sha256": null,
+      "new_blob": "e0dcb269ecaa8945ce41a1b051bca72d243445b6",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/general-narrow.lean",
+      "old_sha256": null,
+      "new_blob": "75f94b51e7d1f6dc96c026c3dbcf7463eb67acab",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/general-narrow16.lean",
+      "old_sha256": null,
+      "new_blob": "2d6044c0175735e08583bf838a5b9425dda5adc2",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/general-table.lean",
+      "old_sha256": null,
+      "new_blob": "f686aa7a54b96c34986509612a43bb133f20cdaf",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/stock-acquire810.lean",
+      "old_sha256": null,
+      "new_blob": "93f763cc639a24144c3ef7034860128aac2d267f",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/stock-call-store-callee-complete.lean",
+      "old_sha256": null,
+      "new_blob": "b2308045d69fcbdacba1ca57928a50dee2d2bde3",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/stock-call-store-class-final.lean",
+      "old_sha256": null,
+      "new_blob": "1a1409051765f8f0fba7fbb134122abc339325d1",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/stock-fence-memory.lean",
+      "old_sha256": null,
+      "new_blob": "59d98930821ac2ff555116fc0774679d68c62fa4",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/stock-fence.lean",
+      "old_sha256": null,
+      "new_blob": "da58699709b1cb25e29becd0880b412ce6c90912",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/audit/table-term.lean",
+      "old_sha256": null,
+      "new_blob": "55718982092b3cb773955e69102cfb385e044052",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/lake-module-peaks.tsv",
+      "old_sha256": "3b793e35a56c79729d51b01404f888b7d8b693f7766410f835f77e611ef1fc1b",
+      "new_blob": "9d76a3b820ffd00fda77fb65c0a1cae9f36f16a3",
+      "mode": "100644"
+    },
+    {
+      "path": "scripts/lake-serial-build.py",
+      "old_sha256": "4a5953944dff6094ecc7e7821d7e145634a8b74274293e1467fdef1c318b2360",
+      "new_blob": "f6d564984df24cad0987c884cf689f7b7775aafd",
+      "mode": "100755"
+    }
+  ],
+  "old_trace_count": 4061,
+  "original_manifest_unchanged": true,
+  "sole_package": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+  "cache_unchanged": true,
+  "removed_sources": []
+}
