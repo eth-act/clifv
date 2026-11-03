@@ -1,5 +1,5 @@
 import FV.Clif.Parse
-import FV.Backend.Proof.StockTableValues
+import FV.Backend.Proof.StockTableCore
 import FV.Backend.Proof.LowerDecide
 
 /-! Non-vacuity of the Stock `br_table` theorems on the real `%f` of
@@ -18,12 +18,15 @@ entry argument move followed by `tableCode 4 [3, 2, 1] v192 204`: `emit_island 4
 `subs wzr, v192, #3` and `jt_sequence` with the temporaries `v204`, `v205`, as in the filetest's
 expected VCode (`jumptable_lowered`). In the real built context, the terminator slot of block 0
 with its prepared data satisfies every premise of `table_named_code` and `table_named_values`, and
-the actual named branch run succeeds (`jumptable_table_values`). One marked `native_decide`
+the actual named branch run succeeds (`jumptable_table_values`). The actual retained core of
+block 0 satisfies the premises of `stock_lower_table_core` and `CoreOrigin.table_values`: its
+retained emission is `tableCode 4 [3, 2, 1] r n` at the frontier `n` of its actual input, and it
+takes the `branchIdx` edge of the source index (`jumptable_core`). One marked `native_decide`
 evaluates the parse, the scope check, the context build, the named branch run and the lowering of
 this fixed function. -/
 
 namespace Backend.Stock.Proof.TableBranch.Witness
-open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64 ConditionalValues
 set_option autoImplicit false
 set_option maxRecDepth 20000
 attribute [local irreducible] Isle.Aarch64.program
@@ -89,7 +92,8 @@ private def checks : Bool :=
     | _ => false) &&
   match Stock.lower function with
   | .ok result => decide (result.order.successors[0]? = some labels.toArray) &&
-      decide (result.code.blocks[0]?.map (·.insts) = some blockCode)
+      decide (result.code.blocks[0]?.map (·.insts) = some blockCode) &&
+      decide (result.order.nodes[0]? = some (.original 0))
   | .error _ => false
 
 -- witness: native_decide (the parse, scope check, context build, named branch run and lowering of the fixed function %f only)
@@ -104,7 +108,8 @@ private theorem parts :
       | _ => false) = true ∧
     (match Stock.lower function with
       | .ok result => decide (result.order.successors[0]? = some labels.toArray) &&
-          decide (result.code.blocks[0]?.map (·.insts) = some blockCode)
+          decide (result.code.blocks[0]?.map (·.insts) = some blockCode) &&
+          decide (result.order.nodes[0]? = some (.original 0))
       | .error _ => false) = true := by
   have h := checks_true
   unfold checks at h
@@ -164,7 +169,7 @@ theorem jumptable_lowered :
   | ok result =>
     rw [run] at lowered
     simp only [Bool.and_eq_true,decide_eq_true_eq] at lowered
-    exact ⟨result,rfl,lowered.1,lowered.2⟩
+    exact ⟨result,rfl,lowered.1.1,lowered.1.2⟩
 
 /-- **The table theorems apply to the real terminator of `%f`.** In the built context of the real
 lowering, the slot of the `br_table` of block 0 with its prepared data `tableData 0` satisfies the
@@ -216,7 +221,7 @@ theorem jumptable_table_values :
         obtain ⟨d,ts,r,labelsEq,mapped,_,state,emitted,_⟩ := table_named_code slot typed (by decide) branch
         simp only [labels,List.cons.injEq] at labelsEq
         obtain ⟨rfl,rfl⟩ := labelsEq
-        refine ⟨result,rfl,lowered.1,?_⟩
+        refine ⟨result,rfl,lowered.1.1,?_⟩
         rw [context,initial]
         refine ⟨inv,slot,typed,out,next,trace,r,branch,mapped,state,emitted,?_⟩
         intro F isem refines fr bits getX aliases ρ bounded extent held
@@ -225,5 +230,65 @@ theorem jumptable_table_values :
         simp only [labels,List.cons.injEq] at labelsEq'
         obtain ⟨rfl,rfl⟩ := labelsEq'
         exact ⟨code,codeEq,execution⟩
+
+/-- **The table theorems apply to the actual retained core of `%f`.** Block 0 is the original
+block at label 0 of the real lowering. Its actual core retains its named branch run in the actual
+terminator context, which satisfies `MappedCtxInv`; the retained code is exactly
+`tableCode 4 [3, 2, 1] r n` at the frontier `n` of the actual core input, with `r` the register of
+`v0`; and from values held at the emission output, the resolved retained code stops at its
+`jt_sequence` on the `branchIdx` edge `tableTarget bits.toNat 3` of the source index `bits`. -/
+theorem jumptable_core :
+    ∃ result,Stock.lower function = .ok result ∧ result.order.nodes[0]? = some (.original 0) ∧
+      result.code.blocks[0]?.map (·.insts) = some blockCode ∧
+      ∃ (ranges : Array (Nat × Nat)) (input : State) (core : LoweredBlockCore)
+        (origin : CoreOrigin {Driver.termCtx result.ctx (ranges[0]!.2-1) (tableData 0) with
+            tryRegs := input.tryRegs[ranges[0]!.2-1]!}
+          function 0 (ranges[0]!.2-1) result.order.successors[0]! input core),
+        lowerBlockCore result.ctx result.order function function.blocks[0]! 0 ranges[0]!.1 ranges[0]!.2
+          (tableData 0) result.order.successors[0]! input = .ok core ∧
+        core.scan ∈ result.blockScans.toList ∧ MappedCtxInv function core.scan.ctx ∧
+        ∃ r,result.ctx.valueReg? 0 = some r ∧
+          origin.emission.code = (tableCode 4 [3,2,1] r input.base.nextVreg).toArray ∧
+          origin.emission.state.base.nextVreg = input.base.nextVreg+2 ∧
+          ∀ {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem},Refines F isem →
+            ∀ {fr : Clif.Frame} {bits : BitVec 32},fr.getAs 0 .i32 = .ok bits →
+            ∀ {aliases : Array (Option Nat)} {ρ : Nat → CV},aliases.size ≤ input.base.nextVreg →
+            (∀ value r,core.scan.ctx.valueReg? value = some r → value < input.demand.size) →
+            ValuesHeld (Demanded origin.emission.state) core.scan.ctx fr
+              (fun key => ρ (aliasNum aliases key)) →
+            ∀ world,LastTableExecution F isem labels (origin.emission.code.toList.map
+              (·.mapRegs (Backend.lowerFunction.resolve aliases (aliases.size+1))))
+              (tableTarget bits.toNat 3) ρ world := by
+  have lowered := parts.2.2.2.2.2
+  cases run : Stock.lower function with
+  | error message => rw [run] at lowered; cases lowered
+  | ok result =>
+    rw [run] at lowered
+    simp only [Bool.and_eq_true,decide_eq_true_eq] at lowered
+    obtain ⟨⟨successors,code⟩,tag⟩ := lowered
+    obtain ⟨ranges,created⟩ := lower_build run
+    have same := Except.ok.inj (created.symm.trans build)
+    have context : result.ctx = built.1 := congrArg Prod.fst same
+    have typeX : result.ctx.valueType? 0 = some (.int 32) := by rw [context]; exact typed
+    have successorsEq : result.order.successors[0]! = labels.toArray := by
+      rw [getElem!_def,successors]
+    have small : result.order.successors[0]!.size ≤ 4096 := by rw [successorsEq]; decide
+    obtain ⟨ranges',input,core,origin,_,coreRun,events,_,scanCtx,inv',slot',typeHere,d,ts,r,labelsEq,
+      mapped,emitted,frontier⟩ :=
+      stock_lower_table_core run scope tag rfl rfl typeX small
+    rw [successorsEq] at labelsEq
+    simp only [labels,List.cons.injEq] at labelsEq
+    obtain ⟨rfl,rfl⟩ := labelsEq
+    refine ⟨result,rfl,tag,code,ranges',input,core,origin,coreRun,events,inv',r,mapped,emitted,frontier,?_⟩
+    intro F isem refines fr bits getX aliases ρ bounded extent held world
+    rw [scanCtx] at inv' slot' typeHere extent held
+    obtain ⟨d,ts,labelsEq,_,_,execution⟩ :=
+      origin.table_values inv' slot' typeHere small refines getX bounded extent held
+    have labelsActual : labels = result.order.successors[0]!.toList := by rw [successorsEq]
+    rw [successorsEq] at labelsEq
+    simp only [labels,List.cons.injEq] at labelsEq
+    obtain ⟨rfl,rfl⟩ := labelsEq
+    rw [labelsActual]
+    exact execution world
 
 end Backend.Stock.Proof.TableBranch.Witness
