@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSelectConditions
 import FV.Backend.Proof.StockSelectZeroSourceValues
 namespace Backend.Stock.Proof.ScalarSelect.ZeroSourceWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

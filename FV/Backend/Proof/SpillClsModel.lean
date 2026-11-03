@@ -1,4 +1,4 @@
-import FV.Backend.Proof.SpillClsTab
+import FV.Backend.Proof.SpillClsCheck
 import FV.Backend.Proof.SpillClsExt
 import FV.Backend.Proof.IselCovExt
 import FV.Backend.Proof.IselFlowInst

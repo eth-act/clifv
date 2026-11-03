@@ -13,7 +13,7 @@ theorem spec_eq {i : MInst} (checked : Backend.ABIReadDiv.additional i = true) (
   cases i <;> first | rfl | cases checked
 
 /-- Trapping guards retain all original physical ABI reads. A true guard
-terminates; a false guard and a quotient continue normally. -/
+terminates; a false guard and a quotient continue normally; `udf` terminates. -/
 theorem step_frame {i : MInst} (checked : Backend.ABIReadDiv.additional i = true) {sb : Nat}
     {us outs : List CV} {w t : Arm.ArmState} {ctl : Ctl}
     (run : mspec sb i us w = some (outs,t,ctl)) :
@@ -77,5 +77,12 @@ theorem step_frame {i : MInst} (checked : Backend.ABIReadDiv.additional i = true
     split
     · exact Or.inr (Or.inr rfl)
     · exact Or.inl rfl
+  | udf code =>
+    cases us with
+    | cons => cases run
+    | nil =>
+      simp only [ispec,Option.some.injEq,Prod.mk.injEq] at run
+      obtain ⟨rfl,rfl,rfl⟩ := run
+      exact ⟨FlagFrame.refl _,Or.inr (Or.inr rfl)⟩
   | _ => cases checked
 end E2E.DivRead

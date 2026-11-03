@@ -6,7 +6,7 @@
 #   default sets: --corpus --runtests --survey
 #   --corpus:   corpus/clif/*.clif and corpus/clif/extrt/*.clif
 #   --runtests: Cranelift's runtests/*.clif
-#   --survey:   cg_clif survey output (scripts/rust-clif, $SURVEY, default /tmp/rust-clif-survey):
+#   --survey:   cg_clif survey output (scripts/rust-clif, $SURVEY, default ${TMPDIR:-/tmp}/rust-clif-survey):
 #               the smoke file with run lines (smoke/smoke.clif) and every tools/*.unopt.reader.clif
 #               (no run lines: optimised and verifier-checked only); skipped if absent
 #   --opt-*:    mid-end options (FVTest/Opt/Common.lean), passed to clif-opt and opt-difftest
@@ -28,7 +28,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 RUNTESTS=third_party/wasmtime/cranelift/filetests/filetests/runtests
-SURVEY=${SURVEY:-/tmp/rust-clif-survey}
+SURVEY=${SURVEY:-${TMPDIR:-/tmp}/rust-clif-survey}
 
 VERBOSE=()
 OPTARGS=()

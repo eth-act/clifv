@@ -1,4 +1,4 @@
-import FV.E2E.StockMemoryPairedBody
+import FV.E2E.PairDriver
 import FV.Backend.Proof.StockPerEdgeReturnContract
 
 namespace E2E.StockMemory

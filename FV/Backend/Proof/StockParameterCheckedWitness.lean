@@ -17,10 +17,11 @@ theorem checked_returning_witness : ∃ result,Stock.lower function = .ok result
     Stock.ParameterCfg.lowerValidated function = .ok result.code := by
   obtain ⟨result,run,tag,reads⟩ := lowered
   have selected : Stock.ParameterCfg.eligible function = true := rfl
+  have selectedLeaf : Stock.ParameterCfg.leafEligible function = true := rfl
   have checked : Stock.ParameterCfg.check function result.code = true := by
     simp [Stock.ParameterCfg.check,original_input_checks.1,run]
   exact ⟨result,run,original_domain_witness,checked,by
-    simp [Stock.ParameterCfg.lowerValidated,selected,run,checked,reads]⟩
+    simp [Stock.ParameterCfg.lowerValidated,selectedLeaf,run,checked,reads]⟩
 
 /-- A reachable original divide-by-zero path also inhabits the checked provider. -/
 theorem checked_trapping_witness : ∃ result,Stock.lower Trap.function = .ok result ∧
@@ -28,9 +29,10 @@ theorem checked_trapping_witness : ∃ result,Stock.lower Trap.function = .ok re
     Stock.ParameterCfg.lowerValidated Trap.function = .ok result.code := by
   obtain ⟨result,run,tag,reads⟩ := Trap.lowered
   have selected : Stock.ParameterCfg.eligible Trap.function = true := rfl
+  have selectedLeaf : Stock.ParameterCfg.leafEligible Trap.function = true := rfl
   have checked : Stock.ParameterCfg.check Trap.function result.code = true := by
     simp [Stock.ParameterCfg.check,original_input_checks.2,run]
   exact ⟨result,run,Trap.original_domain_witness,checked,by
-    simp [Stock.ParameterCfg.lowerValidated,selected,run,checked,reads]⟩
+    simp [Stock.ParameterCfg.lowerValidated,selectedLeaf,run,checked,reads]⟩
 
 end Backend.Stock.Proof.ParameterCfg.Fixture

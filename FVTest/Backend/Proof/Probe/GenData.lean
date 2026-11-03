@@ -1,3 +1,4 @@
+import FV.Isle.Generated.Closure
 import FV.Backend.Isel
 import Lean
 open Backend Isle Isle.Aarch64

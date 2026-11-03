@@ -1,6 +1,8 @@
 import FV.Opt.Proof.SimpSimX
 import FV.Opt.Proof.UnreachableX
-import FV.Opt.Proof.SimpPass
+import FV.Opt.Proof.SimpLoop
+import FV.Opt.Proof.Pipeline
+import FV.Opt.Proof.RuleAll
 
 /-!
 # The pipeline refines, `call_indirect` and `try_call` included (`Opt.optimizeX_simX`)

@@ -1,4 +1,6 @@
-import FV.Backend.Lowering.StockMemoryIntegerNI
+import FV.Link.TypedCompileSourceModes
+import FV.Link.ReturnPinExeSourceWith
+import FV.Backend.Lowering.StockMemoryCapturedCopyNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.Link.DeadCleanupCompileT3
@@ -461,15 +463,15 @@ def main (args0 : List String) : IO UInt32 := do
   -- provider can require a different region size from the emitted objects.
   -- Other exception, optimizer and tail-call variants retain their routes;
   -- typed `--verified` (S11e6) keeps its own route below.
-  let hasCfg := SC0.funcs.any (fun fi => (((Backend.Stock.MemoryUnsigned.eligible fi.func || Backend.Stock.MemoryCfg.eligible fi.func || Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func))
-  let stockEnabled := !typedV && !opt && !tailOn && SC0.funcs.any (fun fi => (((Backend.Stock.MemoryUnsigned.eligible fi.func || Backend.Stock.MemoryCfg.eligible fi.func || Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
+  let hasCfg := SC0.funcs.any (fun fi => (((((((Backend.Stock.MemoryCapturedCopy.eligible fi.func || Backend.Stock.MemoryLoadStore.eligible fi.func) || Backend.Stock.MemoryStoreCfg.eligible fi.func) || Backend.Stock.MemoryStore.eligible fi.func) || Backend.Stock.MemoryExtending.eligible fi.func) || Backend.Stock.MemoryUnsigned.eligible fi.func || Backend.Stock.MemoryCfg.eligible fi.func || Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func))
+  let stockEnabled := !typedV && !opt && !tailOn && SC0.funcs.any (fun fi => (((((((Backend.Stock.MemoryCapturedCopy.eligible fi.func || Backend.Stock.MemoryLoadStore.eligible fi.func) || Backend.Stock.MemoryStoreCfg.eligible fi.func) || Backend.Stock.MemoryStore.eligible fi.func) || Backend.Stock.MemoryExtending.eligible fi.func) || Backend.Stock.MemoryUnsigned.eligible fi.func || Backend.Stock.MemoryCfg.eligible fi.func || Backend.Stock.Memory.eligible fi.func || Backend.Stock.ParameterCfg.eligible fi.func || Backend.Stock.ConditionalForwardCfg.eligible fi.func) || Backend.Stock.ConditionalCfg.eligible fi.func) || Backend.Stock.ForwardCfg.eligible fi.func || Backend.Stock.LinearCfg.eligible fi.func || Backend.Stock.TwoBlock.Entry.eligible fi.func) || Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
     (hasCfg || !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)) &&
     -- #739: every route's `attempt` first checks `inScopePar` (`inScopeInPar` without the
     -- cleanup) of its placed spec, whose per-function conjunct `fnScopeB` (`fnScopeInB`) does not
     -- read the placement; when it fails, all routes fail and `compileWithRoutes` is `compile SC`,
     -- so skip the routes' placements (each one the full pipeline)
     (parMap (if deadCleanup then fnScopeB else fnScopeInB) SC0.input0.prog.funcs).all id
-  let routes := [Backend.Stock.MemoryUnsigned.lowerValidated,Backend.Stock.MemoryCfg.lowerValidated,Backend.Stock.Memory.lowerValidated,Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
+  let routes := [Backend.Stock.MemoryCapturedCopy.lowerValidated,Backend.Stock.MemoryLoadStore.lowerValidated,Backend.Stock.MemoryStoreCfg.lowerValidated,Backend.Stock.MemoryUnsigned.lowerValidated,Backend.Stock.MemoryCfg.lowerValidated,Backend.Stock.Memory.lowerValidated,Backend.Stock.ParameterCfg.lowerValidated,Backend.Stock.ConditionalForwardCfg.lowerValidated,Backend.Stock.ConditionalCfg.lowerValidated,Backend.Stock.ForwardCfg.lowerValidated,Backend.Stock.LinearCfg.lowerValidated,Backend.Stock.TwoBlock.Entry.lowerValidated,Backend.Stock.TwoBlock.lowerValidated,Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
   -- typed `--verified`: `compileExeT` (S11e6, #419)
   if typedV then
@@ -535,6 +537,26 @@ def main (args0 : List String) : IO UInt32 := do
         IO.eprintln s!"lean-link:   {n}: {fs}"
       printExclusions exe S SC true (bad.map (·.1))
       return 1
+  -- This complete-file attempt leaves every previous mode and retry action below intact.
+  let returnPinEnabled := !opt && !tailOn && SC0.funcs.any (fun fi =>
+    Backend.Stock.MemorySretCopy.eligible fi.func || (Backend.Stock.VoidCall.sourceData? fi.func).isSome)
+  if returnPinEnabled then
+    let lower := Backend.Stock.VoidCall.NI.lowerValidated
+    let SP := SC0.placedProductionWith lower deadCleanup
+    match Link.ReturnPinCompilerWith.attempt lower SP file0 deadCleanup with
+    | .ok file =>
+      IO.FS.writeBinFile exe file
+      IO.println s!"lean-link: {exe}: {summary} written by Link.ReturnPinCompilerWith.attempt (Link.ReturnPinCompilerWith.attempt_correct, Link.ReturnPinCompilerWith.attempt_correct_depth)"
+      if let some f := ldFile then
+        match ← ldCheck SP file0 f with
+        | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
+        | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
+      let src := if srcOk then
+          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.ReturnPinCompilerWith.attempt_correct_source, Link.ReturnPinCompilerWith.attempt_correct_source_peak"
+        else "; outside SrcScopeB: about the legalised program only"
+      IO.println s!"lean-link: {exe}: coverage: Link.ReturnPinCompilerWith.attempt_correct, Link.ReturnPinCompilerWith.attempt_correct_depth{src}"
+      return 0
+    | .error _ => pure ()
   let compiled := if stockEnabled then SemanticCompilerWith.compileWithRoutes routes SC0 file0 deadCleanup
     else (compile SC file0).map fun file => (⟨file,none⟩ : SemanticCompilerWith.RoutedOutput)
   match compiled with
@@ -598,6 +620,24 @@ def main (args0 : List String) : IO UInt32 := do
       IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
     return 0
   | .error e =>
+    -- Recover a typed file with its actual complete route and production stage.
+    if !opt && !tailOn then
+      for typedLower in routes do
+        let TP := SC0.placedProductionWith typedLower deadCleanup
+        match Link.TypedCompilerWith.attempt typedLower TP file0 deadCleanup with
+        | .ok file =>
+          IO.FS.writeBinFile exe file
+          IO.println s!"lean-link: {exe}: {summary} written by Link.TypedCompilerWith.attempt (Link.TypedCompilerWith.attempt_correct)"
+          if let some f := ldFile then
+            match ← ldCheck TP file0 f with
+            | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
+            | .error why => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {why}"
+          let src := if srcOk then
+              "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.TypedCompilerWith.attempt_correct_source, Link.TypedCompilerWith.attempt_correct_source_peak"
+            else "; outside SrcScopeB: about the legalised program only"
+          IO.println s!"lean-link: {exe}: coverage: Link.TypedCompilerWith.attempt_correct, Link.TypedCompilerWith.attempt_correct_depth, Link.TypedCompilerWith.attempt_correct_peak{src}"
+          return 0
+        | .error _ => pure ()
     if e != outOfScopeMsg && e != outOfScopeInMsg then
       IO.eprintln s!"lean-link: {exe}: {e}"
       return 1

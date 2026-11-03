@@ -6,7 +6,7 @@ open Backend.Proof.Driver
 set_option autoImplicit false
 
 def sourceOk (f : Clif.Function) : Bool :=
-  productionEligible f && lowerScopeB f && dominatedB f && sigAbiOk f.sig
+  (productionEligible f || maskTrapEligible f) && lowerScopeB f && dominatedB f && sigAbiOk f.sig
 
 /-- Actual source and Stock artifact checks. No runtime proof input. -/
 def check (f : Clif.Function) (vc : VCode) : Bool :=

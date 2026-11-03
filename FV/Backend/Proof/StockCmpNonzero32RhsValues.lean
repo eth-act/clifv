@@ -1,3 +1,6 @@
+import FV.Backend.Proof.StockExtendRequests
+import FV.Backend.Proof.StockCmpConditionValues
+import FV.Backend.Proof.StockDemandMono
 import FV.Backend.Proof.StockCmpNonzeroNarrowCalls
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

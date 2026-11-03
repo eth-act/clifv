@@ -1,5 +1,6 @@
 import Lean
 import FV.Backend.Lowering.StockD0
+import FV.Arm.MinTheory
 import FV.Backend.Proof.LowerLoopCode
 
 namespace Backend.Stock.D0

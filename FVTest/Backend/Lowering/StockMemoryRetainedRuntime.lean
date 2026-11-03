@@ -1,3 +1,4 @@
+import FV.Backend.MemoryStoreCfgNIProduction
 import FVTest.Backend.Lowering.StockTwoBlockProductionRuntime
 import FV.Backend.Proof.StockMemoryCompatibility
 
@@ -40,6 +41,15 @@ def check (kind : String) : IO Unit := do
         let old ← get (Stock.ParameterCfg.lowerValidated f)
         let current ← get (Stock.Memory.lowerValidated f)
         require (decide (current = old)) "retained actual lowering or history changed"
+        let previous ← get (Stock.MemoryUnsigned.lowerValidated f)
+        let extending ← get (Stock.MemoryExtending.lowerValidated f)
+        require (decide (extending = previous)) "extending provider changed retained artifact/history"
+        require (!Stock.MemoryStore.eligible f) "retained class overlaps store source selector"
+        let store ← get (Stock.MemoryStore.lowerValidated f)
+        require (decide (store = extending)) "store provider changed retained artifact/history"
+        require (!Stock.MemoryStoreCfg.eligible f) "retained class overlaps CFG store source selector"
+        let cfgStore ← get (Stock.MemoryStoreCfg.lowerValidated f)
+        require (decide (cfgStore = store)) "CFG store provider changed retained artifact/history"
         cases := cases+1
       for cleanup in [false,true] do
         let allocate : Array VCode → IO (Array (Except String AFunc)) := fun vcs => pure (allocateLean vcs)
@@ -53,6 +63,31 @@ def check (kind : String) : IO Unit := do
         require (actualBytes == oldBytes && current.tableJson == old.tableJson &&
           current.unsupported == old.unsupported && current.unverified == old.unverified && current.unvalidated == old.unvalidated)
           "retained whole-program output, identities or stages changed"
+        require (!(pf.funcs.any fun p => p.func.toOption.any Stock.MemoryExtending.eligible))
+          "retained class unexpectedly overlaps extending source selector"
+        let previousFile ← compileFileMemoryIntegerNIWhen true allocate pf [] cleanup
+        let extendingFile ← compileFileMemoryExtLoadNIWhen true allocate pf [] cleanup
+        let previousBytes ← get previousFile.object
+        let extendingBytes ← get extendingFile.object
+        require (extendingBytes == previousBytes && extendingFile.tableJson == previousFile.tableJson &&
+          extendingFile.text == previousFile.text && extendingFile.rules == previousFile.rules &&
+          extendingFile.unsupported == previousFile.unsupported && extendingFile.unverified == previousFile.unverified &&
+          extendingFile.unvalidated == previousFile.unvalidated)
+          "extending provider changed retained whole-file bytes/identities/history/stages"
+        let storeFile ← compileFileMemoryStoreNIWhen true allocate pf [] cleanup
+        let storeBytes ← get storeFile.object
+        require (storeBytes == extendingBytes && storeFile.tableJson == extendingFile.tableJson &&
+          storeFile.text == extendingFile.text && storeFile.rules == extendingFile.rules &&
+          storeFile.unsupported == extendingFile.unsupported && storeFile.unverified == extendingFile.unverified &&
+          storeFile.unvalidated == extendingFile.unvalidated)
+          "store provider changed retained whole-file bytes/identities/history/stages"
+        let cfgStoreFile ← compileFileMemoryStoreCfgNIWhen true allocate pf [] cleanup
+        let cfgStoreBytes ← get cfgStoreFile.object
+        require (cfgStoreBytes == storeBytes && cfgStoreFile.tableJson == storeFile.tableJson &&
+          cfgStoreFile.text == storeFile.text && cfgStoreFile.rules == storeFile.rules &&
+          cfgStoreFile.unsupported == storeFile.unsupported && cfgStoreFile.unverified == storeFile.unverified &&
+          cfgStoreFile.unvalidated == storeFile.unvalidated)
+          "CFG store provider changed retained whole-file bytes/identities/history/stages"
         programs := programs+1
     else throw (IO.userError "retained class unexpectedly overlaps memory source selector")
   IO.println s!"STOCK_MEMORY_RETAINED_MATRIX_PASS {kind}: {cases} original functions, {programs} whole programs, exact Lean-allocator bytes/history/stages"

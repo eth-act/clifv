@@ -209,7 +209,7 @@ REALIZED = re.compile(r"(eq|match|proof|omega)_\d+|eq_def|eq_unfold|induct|induc
 def import_conflicts(mods, cwd=ROOT, env=None):
     """Pairs of modules that define the same (non-auxiliary) constant name (scripts/shake/Names.lean);
     two such modules cannot be imported into one environment."""
-    tmp = pathlib.Path("/tmp/shake/names")
+    tmp = pathlib.Path(os.environ.get("TMPDIR") or "/tmp") / "shake/names"
     tmp.mkdir(parents=True, exist_ok=True)
     lst, out = tmp / "mods.txt", tmp / "names.tsv"
     lst.write_text("\n".join(mods) + "\n")
@@ -609,7 +609,7 @@ def main():
     mods = all_modules()
     if a.only:
         mods = pathlib.Path(a.only).read_text().split()
-    tmp = pathlib.Path("/tmp/shake")
+    tmp = pathlib.Path(os.environ.get("TMPDIR") or "/tmp") / "shake"
     tmp.mkdir(exist_ok=True)
     facts_path = a.facts
     if not facts_path:

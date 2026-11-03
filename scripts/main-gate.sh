@@ -31,6 +31,9 @@
 # link-check` on every test executable), and plain examples/compare.sh on
 # examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame).
 #
+# Shared Lake cache: FV_LAKE_CACHE when set (it is in orb login shells), else
+# /home/kev/work/clifv-lake-cache.
+#
 # Budgets (128 GB machine, docs/TO-PROVE.md §7): scheduler GATE_BUDGET (32G), module caps up to
 # GATE_MAX_CAP (28G), single memcapped commands GATE_CAP (28G).
 #
@@ -66,7 +69,7 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   local L=$1 CLIF=${2:-1} DEPS=${3:-1} W fail=0 r
   W=$(pwd)
   mkdir -p "$L"
-  export FV_LAKE_CACHE=/home/kev/work/clifv-lake-cache
+  export FV_LAKE_CACHE=${FV_LAKE_CACHE:-/home/kev/work/clifv-lake-cache}
   local cap=${GATE_CAP:-28G}
   local MC=(env FV_MEMCAP="$cap" LEAN_NUM_THREADS=2 scripts/memcap.sh)
   local M12=(env FV_MEMCAP=12G LEAN_NUM_THREADS=2 scripts/memcap.sh)

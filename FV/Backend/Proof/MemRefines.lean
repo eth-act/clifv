@@ -1,5 +1,6 @@
 import FV.Backend.Proof.RefinesInsts
 import FV.Backend.Proof.RegallocMemAddr
+import FV.Backend.Proof.RegallocMemOS
 import FV.Backend.Proof.LoopRun
 
 /-!

@@ -27,7 +27,7 @@ def extension : MInst → Bool
 
 /-- Additional bit/rotate producers; earlier scalar selectors remain fixed. -/
 def bitProducer : MInst → Bool
-  | .bitRR .. | .aluRRR .extr .. | .aluRRImmShift .extr .. => true
+  | .bitRR .. | .aluRRR .extr .. | .aluRRImmShift .extr .. | .aluRRRShift .extr .. => true
   | _ => false
 
 /-- The exact vector producers used by scalar popcount. -/

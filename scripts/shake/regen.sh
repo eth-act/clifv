@@ -8,7 +8,7 @@
 # FVTest, Corpus and crate-proofs. Afterwards: `git diff --stat`, then the gates (PR body).
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-out=${SHAKE_OUT:-/tmp/shake-regen}
+out=${SHAKE_OUT:-${TMPDIR:-/tmp}/shake-regen}
 mkdir -p "$out"
 scripts/lake-serial-build.py --out "$out/before" "$@" FV FVTest Corpus
 # crate-proofs: analysed if built (cd crate-proofs && lake build), else the old closures of its imports are kept

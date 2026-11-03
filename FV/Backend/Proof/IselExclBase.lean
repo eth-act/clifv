@@ -1,3 +1,4 @@
+import FV.Isle.Lookup
 import FV.Backend.Proof.IselContract
 import FV.Backend.Proof.IselExtern
 
@@ -120,7 +121,7 @@ def fails (a : AV) : Pattern → Bool
       | .exact v => !(v == c)
       | _ => false
   | .term ty t args =>
-    match termOf p t with
+    match termOfT p t with
     | .error _ => true
     | .ok term =>
       match term.kind with
@@ -129,7 +130,7 @@ def fails (a : AV) : Pattern → Bool
         | .data =>
           match args with
           | .term _ oT [] :: rest =>
-            match termOf p oT with
+            match termOfT p oT with
             | .error _ => true
             | .ok oterm =>
               match oterm.kind with

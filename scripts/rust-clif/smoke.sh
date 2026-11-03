@@ -15,8 +15,8 @@ set -euo pipefail
 TOOLCHAIN=${TOOLCHAIN:-nightly-2026-09-26}
 root=$(cd "$(dirname "$0")/../.." && pwd)
 here="$root/scripts/rust-clif"
-out=${1:-/tmp/rust-clif-survey/out}
-[[ "$out" == --no-data ]] && out=/tmp/rust-clif-survey/out
+out=${1:-${TMPDIR:-/tmp}/rust-clif-survey/out}
+[[ "$out" == --no-data ]] && out=${TMPDIR:-/tmp}/rust-clif-survey/out
 work=${SMOKE_WORK:-$out/../smoke}
 rm -rf "$work"
 mkdir -p "$work"

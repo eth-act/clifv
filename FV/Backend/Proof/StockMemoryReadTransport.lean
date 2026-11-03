@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockMemoryLoad
+import FV.Backend.Proof.IselMemSem
+import FV.Backend.Proof.StockPolicy
 
 namespace Backend.Stock.Memory
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

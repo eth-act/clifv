@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Write cg_clif's data objects for every dumped crate of the survey corpus (clif-data-export).
-#   scripts/rust-clif/data-export.sh [OUT_DIR]      (default /tmp/rust-clif-survey/out)
+#   scripts/rust-clif/data-export.sh [OUT_DIR]      (default ${TMPDIR:-/tmp}/rust-clif-survey/out)
 # Writes OUT/../data/<profile>-<crate>.data.clif and a summary line per run.
 set -uo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
-out=${1:-/tmp/rust-clif-survey/out}
+out=${1:-${TMPDIR:-/tmp}/rust-clif-survey/out}
 tool="$root/rust/target/release/clif-data-export"
 data="$out/../data"
 mkdir -p "$data"

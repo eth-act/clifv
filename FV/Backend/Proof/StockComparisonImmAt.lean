@@ -1,0 +1,252 @@
+import FV.Backend.Proof.StockOriginalEntryPrelude
+import FV.Backend.Proof.StockConditionalReturnAt
+import FV.Backend.Proof.StockConditionalTrapAt
+import FV.Backend.Proof.StockComparisonImmCores
+
+namespace Backend.Stock.Proof.ConditionalValues
+open Backend.Proof Backend.Proof.Driver
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 20000
+
+/-- Immediate comparison-branch entry reuses the shared ABI prelude proof;
+actual two-instruction immediate comparison emission derives nonempty core
+code, rather than asking for a code fact. -/
+theorem comparison_imm_entry_prelude {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {b : Clif.Block} {c : Nat} {yes no : Clif.BlockCall} {isem : Backend.Proof.Sem}
+    {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+    (spec : ConditionalBodySpec f result b 0 0 c yes no isem MR env cp)
+    (termShape : b.term = .brif c yes no)
+    {cc : Clif.IntCC} {ty : Clif.Ty} {x y : Nat}
+    (origin : result.ctx.defClif? c = some (.icmp cc ty x y)) (wide : Bool)
+    (typeX : result.ctx.valueType? x = some (.int (if wide then 64 else 32)))
+    (parameterX : result.ctx.defInst? x = none)
+    {ty' : Clif.Ty} {k : BitVec ty'.width} (constY : result.ctx.defClif? y = some (.iconst ty' k))
+    {imm : Imm12} (fits : Imm12.ofNat? k.toNat = some imm)
+    (nonzero : cc = .eq ∨ cc = .ne → k ≠ 0)
+    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr) (driver : DriverSem isem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (memorySem : MemRefines F sb syms isem) (stable : MRStable F MR)
+    {w : Arm.ArmState} (memory : MR fr.slots cm w)
+    (arguments : ArgsAtEntry F f.sig args w) :
+    ∃ ρ' w',Star (VStepAt result.code result.edgeArgs isem)
+      (.run ⟨0,0,entrySeed spec.core.scan.ctx fr,w⟩)
+      (.run ⟨0,spec.preludeCode.size,ρ',w'⟩) ∧
+      GuardedScanRel f result spec.core.scan.ctx spec.core.scan.block MR
+        spec.core.scan.output.state (0,fr,cm) ρ' w' ∧
+      ValuesHeld (fun _ => True) spec.core.scan.ctx fr
+        (fun key => ρ' (aliasNum result.final.alias key)) ∧ SameWorld F w' w := by
+  have block : f.blocks[0]? = some b := by simpa only [spec.atBlock] using spec.split.block
+  have count := spec.comparison_imm_emission_size run scope block termShape origin wide typeX
+    parameterX constY fits nonzero
+  have nonempty : 0 < spec.core.code.size := by
+    rw [spec.bodyCode]
+    simp only [Array.size_append,count]
+    omega
+  let entry : Control.EntryCoreSpec f result b := {
+    ranges := spec.ranges
+    params := spec.params
+    core := spec.core
+    raw := spec.raw
+    preludeCode := spec.preludeCode
+    build := spec.build
+    sizes := spec.sizes
+    assembled := spec.assembled
+    events := spec.events
+    block := block
+    rawCode := spec.rawCode
+    placed := spec.placed
+    nonempty := nonempty }
+  exact Control.original_entry_prelude run scope dominated entry entered driver memorySem stable memory arguments
+
+/-- Whole-body immediate comparison-branch return composition, including
+actual selected copies and synthetic jumps. The immediate analog of
+`returning_empty_comparison_at`: only the retained core differs. -/
+theorem ConditionalBodySpec.returning_empty_comparison_imm_at
+    {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    {b : Clif.Block} {label bi c : Nat} {yes no : Clif.BlockCall}
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
+    {env : Clif.Env} {cp : Clif.Program}
+    (spec : ConditionalBodySpec f result b label bi c yes no isem MR env cp)
+    (tag : result.order.nodes[label]? = some (.original bi))
+    (termShape : b.term = .brif c yes no)
+    {cc : Clif.IntCC} {ty : Clif.Ty} {x y : Nat}
+    (origin : result.ctx.defClif? c = some (.icmp cc ty x y)) (wide : Bool)
+    (typeX : result.ctx.valueType? x = some (.int (if wide then 64 else 32)))
+    (parameterX : result.ctx.defInst? x = none)
+    {ty' : Clif.Ty} {k : BitVec ty'.width} (constY : result.ctx.defClif? y = some (.iconst ty' k))
+    {imm : Imm12} (fits : Imm12.ofNat? k.toNat = some imm)
+    (nonzero : cc = .eq ∨ cc = .ne → k ≠ 0)
+    (emptyArgs : yes.args = [] ∧ no.args = [])
+    {vals : List Clif.Val} {cm : Clif.Mem}
+    (successors : ∀ (index : Nat) (bc : Clif.BlockCall),(dests b.term)[index]? = some bc →
+      Nonempty (SuccessorReturn f result label bc isem MR env cp vals cm))
+    {fuel : Nat} {s : Clif.State} (callers : s.callers = [])
+    (remaining : s.frame.body = b.body) (atTerm : s.frame.term = b.term)
+    (defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 s.frame)
+    (returned : Clif.runLoop env cp fuel s = .returned vals cm)
+    {ρ : Nat → CV} {world : Arm.ArmState}
+    (held : GuardedScanRel f result spec.core.scan.ctx spec.core.scan.block MR spec.core.scan.output.state
+      (0,s.frame,s.mem) ρ world) :
+    RunOkABIAt f result.code result.edgeArgs isem MR s.frame.slots
+      ⟨label,spec.preludeCode.size,ρ,world⟩ (.returned vals cm) := by
+  obtain ⟨t,left,value,fr,index,inst,ops,regs,prefixWorld,endWorld,
+    total,empty,frame,steps,read,crossed,nextReturned,tDefined,last,machine,post,targets,terminal⟩ :=
+    spec.returning_comparison_imm_core run scope dominated family refines driver stable
+      termShape origin wide typeX parameterX constY fits nonzero remaining atTerm defined returned held
+  let bc := if Clif.Sem.truthy value.bits then yes else no
+  let choice := if Clif.Sem.truthy value.bits then 0 else 1
+  have selected : (dests b.term)[choice]? = some bc := by
+    cases truth : Clif.Sem.truthy value.bits <;> simp [dests,termShape,choice,bc,truth]
+  obtain ⟨next⟩ := successors choice bc selected
+  have nextBlock : next.event.block = sourceTargetIndex f bc := by
+    simpa only [sourceTargetIndex,next.lookup,Option.getD_some] using next.atBlock
+  have arguments : ValuesHeld (fun x => x ∈ bc.args) result.ctx t.frame
+      (fun key => regs (aliasNum result.final.alias key)) := by
+    intro x member
+    have noArgs : bc.args = [] := by
+      dsimp only [bc]
+      split <;> simp_all only [emptyArgs.1,emptyArgs.2]
+    rw [noArgs] at member
+    cases member
+  obtain ⟨tl,targetLabel,ρnext,targetIndex,targetTag,route,nextDefined,nextHeld⟩ :=
+    spec.selected_successor_guarded run scope dominated tag selected next.member nextBlock
+      (by simpa only [next.atBlock] using next.tag) next.forward post
+      (by simpa only [spec.atBlock] using tDefined) crossed arguments
+  have indexEq : tl = next.index := Option.some.inj (targetIndex.symm.trans next.lookup)
+  subst tl
+  have labelEq : targetLabel = next.targetLabel := stock_blockOrder_original_unique
+    (stock_lower_order run) (fun h => scope.nonempty (List.length_eq_zero_iff.mp h)) targetTag next.tag
+  subst targetLabel
+  obtain ⟨destination,args,sourceRegs,found,readArgs,types,set,frEq⟩ := enterBlock_spec crossed
+  have destinationEq : destination = next.block := by
+    rw [post.1] at found
+    exact Option.some.inj (found.symm.trans next.found)
+  have bodyEq : fr.body = next.block.body := by rw [frEq,destinationEq]
+  have termEq : fr.term = next.block.term := by rw [frEq,destinationEq]
+  have slotEq : fr.slots = s.frame.slots := by rw [frEq]; exact frame.2.2.1
+  have finished := next.returns left {t with frame := fr} ρnext endWorld
+    nextHeld.1 (frame.1.trans callers) bodyEq termEq nextDefined nextReturned nextHeld
+  let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
+  have segment : SegAt {spec.raw with
+      insts := spec.raw.insts.map (·.mapRegs resolve)
+      params := spec.raw.params.map resolve
+      branchArgs := spec.raw.branchArgs.map resolve}
+      spec.preludeCode.size (spec.core.code.toList.map (·.mapRegs resolve)) := by
+    intro k hk
+    have bound : k < spec.core.code.size := by simpa using hk
+    simp only [spec.rawCode,Array.map_append]
+    rw [Array.getElem?_append_right (by simpa only [Array.size_map] using Nat.le_add_right spec.preludeCode.size k)]
+    simp only [Array.size_map,Nat.add_sub_cancel_left]
+    simp [bound]
+  have endPosition : spec.preludeCode.size+(spec.body.code.size+index)+1 =
+      (spec.raw.insts.map (·.mapRegs resolve)).size := by
+    simp only [spec.rawCode,spec.bodyCode,Array.size_map,Array.size_append]
+    omega
+  have path := route.execute run scope driver.toDriverSemG spec.placed segment machine endPosition
+  have whole := RunOkABIAt.prefix path finished
+  simpa only [slotEq] using whole
+
+/-- First body traps and later source-selected traps compose through actual
+immediate comparison-branch cores, copies and synthetic jumps into the VCode
+trap contract. The immediate analog of `trapping_empty_comparison_at`. -/
+theorem ConditionalBodySpec.trapping_empty_comparison_imm_at
+    {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    {b : Clif.Block} {label bi c : Nat} {yes no : Clif.BlockCall}
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
+    {env : Clif.Env} {cp : Clif.Program}
+    (spec : ConditionalBodySpec f result b label bi c yes no isem MR env cp)
+    (tag : result.order.nodes[label]? = some (.original bi))
+    (termShape : b.term = .brif c yes no)
+    {cc : Clif.IntCC} {ty : Clif.Ty} {x y : Nat}
+    (origin : result.ctx.defClif? c = some (.icmp cc ty x y)) (wide : Bool)
+    (typeX : result.ctx.valueType? x = some (.int (if wide then 64 else 32)))
+    (parameterX : result.ctx.defInst? x = none)
+    {ty' : Clif.Ty} {k : BitVec ty'.width} (constY : result.ctx.defClif? y = some (.iconst ty' k))
+    {imm : Imm12} (fits : Imm12.ofNat? k.toNat = some imm)
+    (nonzero : cc = .eq ∨ cc = .ne → k ≠ 0)
+    (emptyArgs : yes.args = [] ∧ no.args = [])
+    {trapCode : Clif.TrapCode}
+    (successors : ∀ (index : Nat) (bc : Clif.BlockCall),(dests b.term)[index]? = some bc →
+      Nonempty (SuccessorTrap f result label bc isem MR env cp trapCode))
+    {fuel : Nat} {s : Clif.State} (callers : s.callers = [])
+    (remaining : s.frame.body = b.body) (atTerm : s.frame.term = b.term)
+    (defined : SourceDefinedAt f result.ctx spec.core.scan.block 0 s.frame)
+    (returned : Clif.runLoop env cp fuel s = .trapped trapCode)
+    {ρ : Nat → CV} {world : Arm.ArmState}
+    (held : GuardedScanRel f result spec.core.scan.ctx spec.core.scan.block MR spec.core.scan.output.state
+      (0,s.frame,s.mem) ρ world) :
+    RunOkABIAt f result.code result.edgeArgs isem MR s.frame.slots
+      ⟨label,spec.preludeCode.size,ρ,world⟩ (.trapped trapCode) := by
+  let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
+  have segment : SegAt {spec.raw with
+      insts := spec.raw.insts.map (·.mapRegs resolve)
+      params := spec.raw.params.map resolve
+      branchArgs := spec.raw.branchArgs.map resolve}
+      spec.preludeCode.size (spec.core.code.toList.map (·.mapRegs resolve)) := by
+    intro k hk
+    have bound : k < spec.core.code.size := by simpa using hk
+    simp only [spec.rawCode,Array.map_append]
+    rw [Array.getElem?_append_right (by simpa only [Array.size_map] using Nat.le_add_right spec.preludeCode.size k)]
+    simp only [Array.size_map,Nat.add_sub_cancel_left]
+    simp [bound]
+  have carry := spec.trapping_comparison_imm_core run scope dominated family refines driver stable
+    termShape origin wide typeX parameterX constY fits nonzero remaining atTerm defined returned held
+  rcases carry with failed | ⟨t,left,value,fr,index,inst,ops,regs,prefixWorld,endWorld,
+    total,empty,frame,steps,read,crossed,nextReturned,tDefined,last,machine,post,targets,terminal⟩
+  · obtain ⟨offset,i,ops,regs,prefixWorld,outs,endWorld,execution,coded⟩ := failed
+    obtain ⟨path,bound,instruction,operands,semantics,arity,control⟩ :=
+      seqRun_stop_starAt (edges := result.edgeArgs) spec.placed segment execution
+    exact ⟨label,spec.preludeCode.size+offset,regs,prefixWorld,_,i,ops,outs,endWorld,path,
+      spec.placed,instruction,operands,semantics,coded⟩
+  ·
+    let bc := if Clif.Sem.truthy value.bits then yes else no
+    let choice := if Clif.Sem.truthy value.bits then 0 else 1
+    have selected : (dests b.term)[choice]? = some bc := by
+      cases truth : Clif.Sem.truthy value.bits <;> simp [dests,termShape,choice,bc,truth]
+    obtain ⟨next⟩ := successors choice bc selected
+    have nextBlock : next.event.block = sourceTargetIndex f bc := by
+      simpa only [sourceTargetIndex,next.lookup,Option.getD_some] using next.atBlock
+    have arguments : ValuesHeld (fun x => x ∈ bc.args) result.ctx t.frame
+        (fun key => regs (aliasNum result.final.alias key)) := by
+      intro x member
+      have noArgs : bc.args = [] := by
+        dsimp only [bc]
+        split <;> simp_all only [emptyArgs.1,emptyArgs.2]
+      rw [noArgs] at member
+      cases member
+    obtain ⟨tl,targetLabel,ρnext,targetIndex,targetTag,route,nextDefined,nextHeld⟩ :=
+      spec.selected_successor_guarded run scope dominated tag selected next.member nextBlock
+        (by simpa only [next.atBlock] using next.tag) next.forward post
+        (by simpa only [spec.atBlock] using tDefined) crossed arguments
+    have indexEq : tl = next.index := Option.some.inj (targetIndex.symm.trans next.lookup)
+    subst tl
+    have labelEq : targetLabel = next.targetLabel := stock_blockOrder_original_unique
+      (stock_lower_order run) (fun h => scope.nonempty (List.length_eq_zero_iff.mp h)) targetTag next.tag
+    subst targetLabel
+    obtain ⟨destination,args,sourceRegs,found,readArgs,types,set,frEq⟩ := enterBlock_spec crossed
+    have destinationEq : destination = next.block := by
+      rw [post.1] at found
+      exact Option.some.inj (found.symm.trans next.found)
+    have bodyEq : fr.body = next.block.body := by rw [frEq,destinationEq]
+    have termEq : fr.term = next.block.term := by rw [frEq,destinationEq]
+    have slotEq : fr.slots = s.frame.slots := by rw [frEq]; exact frame.2.2.1
+    have finished := next.traps left {t with frame := fr} ρnext endWorld
+      nextHeld.1 (frame.1.trans callers) bodyEq termEq nextDefined nextReturned nextHeld
+    have endPosition : spec.preludeCode.size+(spec.body.code.size+index)+1 =
+        (spec.raw.insts.map (·.mapRegs resolve)).size := by
+      simp only [spec.rawCode,spec.bodyCode,Array.size_map,Array.size_append]
+      omega
+    have path := route.execute run scope driver.toDriverSemG spec.placed segment machine endPosition
+    have whole := RunOkABIAt.prefix path finished
+    simpa only [slotEq] using whole
+
+end Backend.Stock.Proof.ConditionalValues

@@ -1,4 +1,5 @@
 import FV.E2E.StockMulFixtures
+import FV.Backend.Proof.StockScalarMulDomain
 import FV.E2E.StockNotWitness
 import FV.E2E.StockScalarNI
 import FV.E2E.CompiledSemanticNI

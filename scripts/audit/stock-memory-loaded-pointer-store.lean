@@ -1,0 +1,21 @@
+import FV.Backend.Proof.StockMemoryLoadedPointerAddress
+import FV.Backend.Proof.StockMemoryLoadedPointerFixture
+import FV.Backend.Proof.StockMemoryLoadedPointerAddressWitness
+import FV.Backend.Proof.StockMemoryLoadedPointerStoreSelection
+import FV.Backend.Proof.StockMemoryLoadedPointerStoreEvaluation
+import FV.Backend.Proof.StockMemoryLoadedPointerStoreRecord
+import FV.Backend.Proof.StockMemoryLoadedPointerStoreCoverage
+import FV.Backend.Proof.StockMemoryLoadedPointerStoreWitness
+import FV.Backend.Proof.StockMemoryLoadedPointerStoreRetention
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_loaded_pointer_amode_zero_width
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_loaded_pointer_address_zero_width
+#print axioms Backend.Stock.Memory.IntegerRoots.stock_loaded_pointer_address_zero_sunk
+#print axioms Backend.Stock.Memory.IntegerRoots.LoadedPointerFixture.captured_loaded_pointer_context_witness -- witness: native_decide
+#print axioms Backend.Stock.Memory.IntegerRoots.captured_loaded_pointer_address_witness -- witness: native_decide
+#print axioms Backend.Stock.Memory.IntegerRoots.captured_loaded_pointer_rejection_witness -- witness: native_decide
+#print axioms Backend.Stock.Memory.StoreRoots.stock_loaded_pointer_integer_store_rhs
+#print axioms Backend.Stock.Memory.StoreRoots.stock_loaded_pointer_store_rhs_result
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_loaded_pointer_store_record
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_loaded_pointer_store_operand_coverage
+#print axioms Backend.Stock.Memory.StoreRoots.LoadedPointerWitness.captured_loaded_pointer_store_record_witness -- witness: native_decide
+#print axioms Backend.Stock.Memory.StoreRoots.stock_lower_loaded_pointer_store_definition_emitted

@@ -1,5 +1,5 @@
 import FV.Backend.Proof.StockDivSdivSafe8WitnessRuns
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerValueRelations
 
 namespace Backend.Stock.Proof.ScalarDiv.SdivSafe8Witness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

@@ -15,7 +15,7 @@ set_option autoImplicit false
 set_option Elab.async false
 set_option maxRecDepth 20000
 
-private theorem selected_empty {f : Clif.Function} (shape : Shape f)
+private theorem selected_empty {f : Clif.Function} (shape : LeafShape f)
     {bi index id : Nat} {b : Clif.Block} {args : List Clif.TryArg}
     (source : f.blocks[bi]? = some b) (selected : (destinations b.term)[index]? = some (id,args)) :
     bi = 0 ∧ b = shape.entry ∧ ∃ bc,(dests b.term)[index]? = some bc ∧ bc.args = [] := by
@@ -30,9 +30,11 @@ private theorem selected_empty {f : Clif.Function} (shape : Shape f)
       cases index with
       | zero => exact ⟨shape.no,by simp [shape.term,dests],(shape.targets shape.no (Or.inr rfl)).1⟩
       | succ index => simp [shape.term,destinations] at selected
-  · obtain ⟨params,xs,ret⟩ := shape.leaves bi b source entry
-    simp only [ret,destinations,List.getElem?_nil] at selected
-    cases selected
+  · obtain ⟨params,⟨xs,ret⟩ | ⟨c,trap⟩⟩ := shape.leaves bi b source entry
+    · simp only [ret,destinations,List.getElem?_nil] at selected
+      cases selected
+    · simp only [trap,destinations,List.getElem?_nil] at selected
+      cases selected
 
 private theorem assembled_arguments {ctx : Ctx} {f : Clif.Function} {b : Clif.Block}
     {bi label : Nat} {targets : Array Nat} {outgoing : Array (Array Reg)}
@@ -48,9 +50,10 @@ private theorem assembled_arguments {ctx : Ctx} {f : Clif.Function} {b : Clif.Bl
   all_goals cases run; simp_all
 
 /-- The compatible source class derives exact agreement with the existing
-single-vector edge interface, including actual synthetic critical-edge blocks. -/
-theorem Shape.legacy_compatible {f : Clif.Function} {result : Result}
-    (shape : Shape f) (run : Stock.lower f = .ok result)
+single-vector edge interface, including actual synthetic critical-edge blocks.
+Leaves may return or trap: neither has outgoing edges. -/
+theorem LeafShape.legacy_compatible {f : Clif.Function} {result : Result}
+    (shape : LeafShape f) (run : Stock.lower f = .ok result)
     (scope : LowerScope f) (dominated : Dominated f)
     {isem : Backend.Proof.Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
     (spec : ConditionalBodySpec f result shape.entry 0 0 shape.condition shape.yes shape.no isem MR env cp) :
@@ -118,5 +121,15 @@ theorem Shape.legacy_compatible {f : Clif.Function} {result : Result}
         refine ⟨_,placed,?_⟩
         simpa only [outgoingAt,edgeArgumentNumbers,empty,List.map_nil,
           noRegisters,Array.map_empty] using vector
+
+/-- The compatible source class derives exact agreement with the existing
+single-vector edge interface, including actual synthetic critical-edge blocks. -/
+theorem Shape.legacy_compatible {f : Clif.Function} {result : Result}
+    (shape : Shape f) (run : Stock.lower f = .ok result)
+    (scope : LowerScope f) (dominated : Dominated f)
+    {isem : Backend.Proof.Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+    (spec : ConditionalBodySpec f result shape.entry 0 0 shape.condition shape.yes shape.no isem MR env cp) :
+    EdgeLegacyCompatible result.code result.edgeArgs :=
+  shape.toLeafShape.legacy_compatible run scope dominated spec
 
 end Backend.Stock.ConditionalCfg

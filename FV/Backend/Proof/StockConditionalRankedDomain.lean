@@ -6,7 +6,7 @@ import FV.Backend.Proof.StockScalarContract
 namespace Backend.Stock.ConditionalCfg
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.Stock.Proof.ConditionalValues
 private theorem selected_tail {f : Clif.Function} {result : Result}
-    (shape : RankedShape f) (run : Stock.lower f = .ok result) (scope : LowerScope f)
+    (shape : RankedLeafShape f) (run : Stock.lower f = .ok result) (scope : LowerScope f)
     {index : Nat} {bc : Clif.BlockCall} (selected : (dests shape.entry.term)[index]? = some bc) :
     ∃ tl targetLabel b,blockIdx? f bc.block = some tl ∧ f.block? bc.block = some b ∧
       f.blocks[tl]? = some b ∧ result.order.nodes[targetLabel]? = some (.original tl) ∧
@@ -29,7 +29,7 @@ private theorem selected_tail {f : Clif.Function} {result : Result}
 
 
 
-private theorem source_entry_parts {f : Clif.Function} (shape : RankedShape f)
+private theorem source_entry_parts {f : Clif.Function} (shape : RankedLeafShape f)
     {args : List Clif.Val} {fr : Clif.Frame} (entered : SourceEntry f args fr) :
     fr.body = shape.entry.body ∧ fr.term = shape.entry.term := by
   obtain ⟨b,regs,entry,types,paramTypes,set,frame⟩ := entered
@@ -38,10 +38,10 @@ private theorem source_entry_parts {f : Clif.Function} (shape : RankedShape f)
   cases Option.some.inj (source.symm.trans shape.source)
   exact ⟨congrArg Clif.Frame.body frame,congrArg Clif.Frame.term frame⟩
 
-/-- The first compatible conditional source class satisfies the unchanged
+/-- The conditional source class with ranked jump tails to return or trap leaves satisfies the unchanged
 universal production domain, with actual ABI entry, selected copies, return and
 first-trap semantics. All compiler/DFG/choice/compatibility facts are derived. -/
-theorem domain_of_ranked_shape {f : Clif.Function} (shape : RankedShape f)
+theorem domain_of_ranked_leaf_shape {f : Clif.Function} (shape : RankedLeafShape f)
     (scope : LowerScope f) (dominated : Dominated f) (abi : sigAbiOk f.sig = true)
     (ordinary : (sigRets f.sig).any (·.purpose == .sret) = false) : Scalar.Domain f := by
   refine ⟨scope,dominated,abi,ordinary,?_,?_⟩
@@ -56,7 +56,7 @@ theorem domain_of_ranked_shape {f : Clif.Function} (shape : RankedShape f)
       intro index bc selected
       obtain ⟨tl,targetLabel,b,lookup,found,source,targetTag,nonentry,forward⟩ :=
         selected_tail shape run scope selected
-      exact SuccessorReturn.of_ranked_tail run scope dominated abi shape.ranked shape.tails shape.family refines driver stable
+      exact SuccessorReturn.of_ranked_leaf_tail run scope dominated abi shape.ranked shape.tails shape.family refines driver stable
         lookup found source targetTag nonentry forward
     obtain ⟨remaining,atTerm⟩ := source_entry_parts shape entered
     obtain ⟨ρ,w,path,guarded,values,sameWorld⟩ := conditional_entry_prelude run scope dominated spec
@@ -81,7 +81,7 @@ theorem domain_of_ranked_shape {f : Clif.Function} (shape : RankedShape f)
       intro index bc selected
       obtain ⟨tl,targetLabel,b,lookup,found,source,targetTag,nonentry,forward⟩ :=
         selected_tail shape run scope selected
-      exact SuccessorTrap.of_ranked_tail run scope dominated abi shape.ranked shape.tails shape.family refines driver stable
+      exact SuccessorTrap.of_ranked_leaf_tail run scope dominated abi shape.ranked shape.tails shape.family refines driver stable
         lookup found source targetTag nonentry forward
     obtain ⟨remaining,atTerm⟩ := source_entry_parts shape entered
     obtain ⟨ρ,w,path,guarded,values,sameWorld⟩ := conditional_entry_prelude run scope dominated spec
@@ -96,5 +96,13 @@ theorem domain_of_ranked_shape {f : Clif.Function} (shape : RankedShape f)
     have whole := RunOkABIAt.prefix path finished
     exact ⟨entrySeed spec.core.scan.ctx fr,whole.legacyCompatible (shape.legacy_compatible run scope dominated spec)⟩
 
+
+/-- The first compatible conditional source class satisfies the unchanged
+universal production domain, with actual ABI entry, selected copies, return and
+first-trap semantics. All compiler/DFG/choice/compatibility facts are derived. -/
+theorem domain_of_ranked_shape {f : Clif.Function} (shape : RankedShape f)
+    (scope : LowerScope f) (dominated : Dominated f) (abi : sigAbiOk f.sig = true)
+    (ordinary : (sigRets f.sig).any (·.purpose == .sret) = false) : Scalar.Domain f :=
+  domain_of_ranked_leaf_shape shape.toLeaf scope dominated abi ordinary
 
 end Backend.Stock.ConditionalCfg

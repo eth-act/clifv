@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockMemoryInput
 import FV.Backend.Proof.StockMemoryRecordKernel
 import FV.Backend.Proof.StockMemoryRecordValues
 

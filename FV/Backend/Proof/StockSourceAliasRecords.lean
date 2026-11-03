@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockCoverageRecords
 import FV.Backend.Proof.StockSourceAliasRank
 
 /-! Locate producing scan records for aliases installed on actual source mappings. -/

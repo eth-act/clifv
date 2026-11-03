@@ -23,6 +23,16 @@ def controlEligible (f : Clif.Function) (bi : Nat) : Clif.Terminator → Bool
     targetAfter f bi yes && targetAfter f bi no
   | _ => false
 
+/-- As `controlEligible`, and a nonentry block may also end in `trap`. -/
+def controlLeafEligible (f : Clif.Function) (bi : Nat) : Clif.Terminator → Bool
+  | .trap _ => bi != 0
+  | term => controlEligible f bi term
+
+def sourceLeafEligible (f : Clif.Function) : Bool :=
+  f.blocks.zipIdx.all (fun (b,bi) => controlLeafEligible f bi b.term) &&
+  f.blocks.all (fun b => b.body.all Scalar.maskMixedBodyEligible) &&
+  f.sig.params.all Scalar.narrowAbiEligible && f.sig.returns.all Scalar.narrowAbiEligible
+
 def sourceEligible (f : Clif.Function) : Bool :=
   f.blocks.zipIdx.all (fun (b,bi) => controlEligible f bi b.term) &&
   f.blocks.all (fun b => b.body.all Scalar.maskMixedBodyEligible) &&
@@ -32,7 +42,7 @@ def hasNonentryConditional (f : Clif.Function) : Bool :=
   f.blocks.drop 1 |>.any fun b => match b.term with | .brif .. => true | _ => false
 
 def sourceOk (f : Clif.Function) : Bool :=
-  sourceEligible f && lowerScopeB f && dominatedB f && sigAbiOk f.sig
+  sourceLeafEligible f && lowerScopeB f && dominatedB f && sigAbiOk f.sig
 
 def check (f : Clif.Function) (vc : VCode) : Bool :=
   sourceOk f && match Stock.lower f with

@@ -1,6 +1,5 @@
 import FV.E2E.StockMemoryEffectKernel
 import FV.E2E.StockMemoryPairedFunctionWitness
-import FV.Backend.Proof.StockMemoryCheck
 import FV.Backend.Lowering.StockMemoryNI
 import FV.Backend.SemanticNICheck
 

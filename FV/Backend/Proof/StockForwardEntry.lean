@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockForwardTrap
+import FV.Backend.Proof.StockForwardLeaf
 import FV.Backend.Proof.StockJumpEntryPrelude
 
 namespace Backend.Stock.Proof.ForwardSource
@@ -7,12 +8,12 @@ set_option autoImplicit false
 set_option Elab.async false
 set_option maxRecDepth 20000
 
-/-- Instruction-zero ABI return simulation for any ranked scalar jump/return
+/-- Instruction-zero ABI return simulation for any ranked scalar jump/return/trap
 source graph whose entry jumps onward. All blocks may have ordinary bodies and
 inherited source values; no fixed chain length or forwarding premise is used. -/
-theorem scalar_return_frame {f : Clif.Function} {result : Result} {rank : Nat → Nat}
+theorem scalar_return_frame_of_leaf {f : Clif.Function} {result : Result} {rank : Nat → Nat}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
-    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : JumpReturnBlocks f)
+    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : JumpLeafBlocks f)
     (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
     {entry : Clif.Block} {bc : Clif.BlockCall} (source : f.blocks[0]? = some entry)
     (jump : entry.term = .jump bc)
@@ -34,7 +35,7 @@ theorem scalar_return_frame {f : Clif.Function} {result : Result} {rank : Nat �
     rw [row] at targets
     exact (List.cons.inj targets).1.symm
   obtain ⟨targetBlock,targetFound,targetSource⟩ := block?_of_idx targetIndex
-  obtain ⟨next,nextEvent,nextBlock,nextReturns⟩ := nonentry_returns run scope dominated abi ranked terms family refines driver stable
+  obtain ⟨next,nextEvent,nextBlock,nextReturns⟩ := nonentry_returns_of_leafTerms run scope dominated abi ranked terms.nonentry family refines driver stable
     env cp targetTag targetSource targetNonentry
   obtain ⟨table,computed,size,bounded⟩ := stock_blockOrder_sourceTable (stock_lower_order run)
   have edge : tl ∈ table[0]!.toList := by rw [jump_source_row computed source jump targetIndex]; simp
@@ -68,12 +69,31 @@ theorem scalar_return_frame {f : Clif.Function} {result : Result} {rank : Nat �
     returned guarded
   exact ⟨entrySeed spec.core.scan.ctx fr,RunOkABIAt.prefix path finished⟩
 
-/-- Instruction-zero ABI first-trap simulation for any ranked scalar jump/return
+/-- Instruction-zero ABI return simulation for any ranked scalar jump/return
 source graph whose entry jumps onward. All blocks may have ordinary bodies and
 inherited source values; no fixed chain length or forwarding premise is used. -/
-theorem scalar_trap_frame {f : Clif.Function} {result : Result} {rank : Nat → Nat}
+theorem scalar_return_frame {f : Clif.Function} {result : Result} {rank : Nat → Nat}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : JumpReturnBlocks f)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    {entry : Clif.Block} {bc : Clif.BlockCall} (source : f.blocks[0]? = some entry)
+    (jump : entry.term = .jump bc)
+    {env : Clif.Env} {cp : Clif.Program} {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr) {fuel : Nat} {vals : List Clif.Val} {outMem : Clif.Mem}
+    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals outMem)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {sb : Nat} {syms : String → Option Nat}
+    (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
+    {w0 : Arm.ArmState} (memory : MR fr.slots cm w0) (arguments : ArgsAtEntry F f.sig args w0) :
+    ∃ ρ0,RunOkABIAt f result.code result.edgeArgs isem MR fr.slots ⟨0,0,ρ0,w0⟩ (.returned vals outMem) :=
+  scalar_return_frame_of_leaf run scope dominated abi ranked terms.toLeaf family source jump entered returned refines driver memorySem stable memory arguments
+
+/-- Instruction-zero ABI first-trap simulation for any ranked scalar jump/return/trap
+source graph whose entry jumps onward. All blocks may have ordinary bodies and
+inherited source values; no fixed chain length or forwarding premise is used. -/
+theorem scalar_trap_frame_of_leaf {f : Clif.Function} {result : Result} {rank : Nat → Nat}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : JumpLeafBlocks f)
     (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
     {entry : Clif.Block} {bc : Clif.BlockCall} (source : f.blocks[0]? = some entry)
     (jump : entry.term = .jump bc)
@@ -95,7 +115,7 @@ theorem scalar_trap_frame {f : Clif.Function} {result : Result} {rank : Nat → 
     rw [row] at targets
     exact (List.cons.inj targets).1.symm
   obtain ⟨targetBlock,targetFound,targetSource⟩ := block?_of_idx targetIndex
-  obtain ⟨next,nextEvent,nextBlock,nextTraps⟩ := nonentry_traps run scope dominated abi ranked terms family refines driver stable
+  obtain ⟨next,nextEvent,nextBlock,nextTraps⟩ := nonentry_traps_of_leafTerms run scope dominated abi ranked terms.nonentry family refines driver stable
     env cp targetTag targetSource targetNonentry
   obtain ⟨table,computed,size,bounded⟩ := stock_blockOrder_sourceTable (stock_lower_order run)
   have edge : tl ∈ table[0]!.toList := by rw [jump_source_row computed source jump targetIndex]; simp
@@ -128,5 +148,24 @@ theorem scalar_trap_frame {f : Clif.Function} {result : Result} {rank : Nat → 
     (by simpa only [spec.atBlock] using Control.source_defined_entry_frame dominated result.ctx entered)
     returned guarded
   exact ⟨entrySeed spec.core.scan.ctx fr,RunOkABIAt.prefix path finished⟩
+
+/-- Instruction-zero ABI first-trap simulation for any ranked scalar jump/return
+source graph whose entry jumps onward. All blocks may have ordinary bodies and
+inherited source values; no fixed chain length or forwarding premise is used. -/
+theorem scalar_trap_frame {f : Clif.Function} {result : Result} {rank : Nat → Nat}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) (ranked : Ranked f rank) (terms : JumpReturnBlocks f)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    {entry : Clif.Block} {bc : Clif.BlockCall} (source : f.blocks[0]? = some entry)
+    (jump : entry.term = .jump bc)
+    {env : Clif.Env} {cp : Clif.Program} {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr) {fuel : Nat} {code : Clif.TrapCode}
+    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .trapped code)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {sb : Nat} {syms : String → Option Nat}
+    (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
+    {w0 : Arm.ArmState} (memory : MR fr.slots cm w0) (arguments : ArgsAtEntry F f.sig args w0) :
+    ∃ ρ0,RunOkABIAt f result.code result.edgeArgs isem MR fr.slots ⟨0,0,ρ0,w0⟩ (.trapped code) :=
+  scalar_trap_frame_of_leaf run scope dominated abi ranked terms.toLeaf family source jump entered returned refines driver memorySem stable memory arguments
 
 end Backend.Stock.Proof.ForwardSource

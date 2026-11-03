@@ -1,4 +1,5 @@
 import FV.E2E.StockCmpFixtures
+import FV.Backend.Proof.StockScalarCmpDomain
 import FV.E2E.StockMinMaxWitness
 import FV.E2E.StockScalarNI
 import FV.E2E.CompiledSemanticNI

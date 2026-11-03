@@ -1,5 +1,7 @@
 import FV.E2E.LinkWorld
 import FV.E2E.StockArithmeticStageContract
+import FV.E2E.StockArithmeticSemantics
+import FV.Backend.Proof.StockArithmeticNoTrap
 import FV.E2E.StockArithmeticStage
 import FV.Backend.Proof.StockArithmeticCheck
 import FV.E2E.DeadCleanupRegLevelX

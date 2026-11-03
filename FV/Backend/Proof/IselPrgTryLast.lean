@@ -2,7 +2,7 @@ import FV.Backend.Proof.IselPrgInv
 import FV.Backend.Proof.SpillLocal
 import FV.E2E.RegLevelPush
 import FV.Backend.Proof.IselCovDom
-import FV.Backend.Proof.IselCtl
+import FV.Backend.Proof.IselCtlRuleIds
 import FV.Backend.Proof.IselFlow
 import FV.Backend.Proof.IselCtlTryInd
 

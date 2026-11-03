@@ -3,6 +3,7 @@ import FV.Backend.Proof.StockAluSelectedValues
 import FV.Backend.Proof.StockLogicalExtrMatchedValues
 import FV.Backend.Proof.StockLogicalExtrSelectedValues
 import FV.Backend.Proof.StockLogicalExtrSourceTransfer
+import FV.Backend.Proof.LowerValueRelations
 
 
 namespace E2E.StockLogicalExtrWitness

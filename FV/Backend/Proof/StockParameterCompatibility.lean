@@ -5,6 +5,7 @@ import FV.Backend.Proof.StockBranchArgumentDemand
 import FV.Backend.Proof.StockGraphEdges
 import FV.Backend.Proof.StockCriticalOwners
 import FV.Backend.Proof.StockParameterTerms
+import FV.Backend.Proof.StockParameterLeaf
 import FV.Backend.Proof.StockConditionalBodyCalls
 import FV.Backend.Proof.PerEdgeLegacyCompatible
 
@@ -38,9 +39,10 @@ private theorem assembled_arguments {ctx : Ctx} {f : Clif.Function} {b : Clif.Bl
     | split at run
   all_goals cases run; simp_all
 
-/-- Arbitrary parameter conditionals retain exact actual per-edge/single-vector agreement. -/
-theorem parameter_legacy_compatible {f : Clif.Function} {result : Result}
-    (terms : ParameterTerms f) (run : Stock.lower f = .ok result)
+/-- Arbitrary parameter conditionals retain exact actual per-edge/single-vector agreement;
+blocks may also end in `trap`, which has no outgoing edge. -/
+theorem parameter_legacy_compatible_of_leaf {f : Clif.Function} {result : Result}
+    (terms : ParameterLeafTerms f) (run : Stock.lower f = .ok result)
     (scope : LowerScope f) (dominated : Dominated f)
     (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
     {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
@@ -76,7 +78,7 @@ theorem parameter_legacy_compatible {f : Clif.Function} {result : Result}
       cases node with
       | original bi =>
         obtain ⟨b,id,args,ti,source,destination,found,targetNode⟩ := stock_lower_indexed_successor_origin run tag row selected
-        rcases terms bi b source with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,yes,no,term,yesEmpty,noEmpty,parameter⟩
+        rcases terms bi b source with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,yes,no,term,yesEmpty,noEmpty,parameter⟩ | ⟨leafCode,trap⟩
         · have only : index = 0 := by
             cases index with
             | zero => rfl
@@ -111,9 +113,10 @@ theorem parameter_legacy_compatible {f : Clif.Function} {result : Result}
             · exact stock_lower_deferred_outgoing run tag successor synthetic
           refine ⟨_,spec.placed,?_⟩
           simpa only [outgoingAt,rawArgs,Array.map_empty] using vector
+        · simp only [trap,destinations,List.getElem?_nil] at destination; cases destination
       | edge pred k ti =>
         obtain ⟨b,id,args,source,destination,found⟩ := stock_lower_critical_source run tag
-        rcases terms pred b source with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,yes,no,term,yesEmpty,noEmpty,parameter⟩
+        rcases terms pred b source with ⟨bc,jump⟩ | ⟨xs,ret⟩ | ⟨c,yes,no,term,yesEmpty,noEmpty,parameter⟩ | ⟨leafCode,trap⟩
         · exact False.elim (CriticalOwners.jump_no_edge (stock_lower_order run) source jump k ti
             (Array.mem_toList_iff.mpr (Array.mem_of_getElem? tag)))
         · simp only [ret,destinations,List.getElem?_nil] at destination; cases destination
@@ -133,5 +136,16 @@ theorem parameter_legacy_compatible {f : Clif.Function} {result : Result}
           have vector := stock_lower_critical_argument_vector run scope tag source selectedBc
           refine ⟨_,placed,?_⟩
           simpa only [outgoingAt,edgeArgumentNumbers,empty,List.map_nil,noRegisters,Array.map_empty] using vector
+        · simp only [trap,destinations,List.getElem?_nil] at destination; cases destination
+
+/-- Arbitrary parameter conditionals retain exact actual per-edge/single-vector agreement. -/
+theorem parameter_legacy_compatible {f : Clif.Function} {result : Result}
+    (terms : ParameterTerms f) (run : Stock.lower f = .ok result)
+    (scope : LowerScope f) (dominated : Dominated f)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MaskBody.Family stm.inst)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR) (env : Clif.Env) (cp : Clif.Program) :
+    EdgeLegacyCompatible result.code result.edgeArgs :=
+  parameter_legacy_compatible_of_leaf terms.toLeaf run scope dominated family refines driver stable env cp
 
 end Backend.Stock.Proof.ParameterCfg

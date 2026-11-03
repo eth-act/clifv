@@ -1,4 +1,6 @@
-import FV.E2E.StockMemoryNI
+import FV.E2E.StockArithmeticStageContract
+import FV.E2E.StockArithmeticSemantics
+import FV.E2E.ABIReadOnlyMachine
 import FV.E2E.StockMemoryCfgMachine
 import FV.E2E.StockMemoryCfgPairedFunction
 

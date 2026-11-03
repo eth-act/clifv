@@ -1,0 +1,20 @@
+import FV.Backend.Proof.StockParameterArgsLoopWitness
+
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_selected_parameter_carry_below
+#print axioms Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_selected_parameter_carry_below
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.conditional_args_carry_returns
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.args_loop_returns_below
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.args_loop_returns
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.conditional_args_carry_traps
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.args_loop_traps_below
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.args_loop_traps
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.args_loop_jump_entry_returns
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.args_loop_jump_entry_traps
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.args_loop_conditional_entry_returns
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.args_loop_conditional_entry_traps
+#print axioms Backend.Stock.Proof.ParameterArgsLoopCfg.domainAt_of_parameter_args_loop_cfg
+#print axioms Backend.Stock.ParameterArgsLoopCfg.source_leaf_eligible_facts
+#print axioms Backend.Stock.ParameterArgsLoopCfg.domainAt_of_source_leaf_eligible
+#print axioms Backend.Stock.ParameterArgsLoopCfg.source_ok_sound
+#print axioms Backend.Stock.ParameterArgsLoopCfg.check_sound
+#print axioms Backend.Stock.ParameterArgsLoopCfg.Fixture.countdown_witness -- witness: native_decide

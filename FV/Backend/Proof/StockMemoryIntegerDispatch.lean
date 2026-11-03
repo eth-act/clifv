@@ -12,12 +12,12 @@ private theorem inventory : sourceOpcodeIds 29 = [1041,1042,1043,1044,1047,1048]
 
 /-- Original load opcode/type data determines the actual selected root internally.
 The emitted-record adapter therefore needs no selected-ID input condition. -/
-theorem stock_selected_integer_load_rule (width : Width) {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
-    {i x : Nat} {info : IInfo} {flags : Clif.MemFlags}
-    (source : ctx.insts[i]? = some info) (clif : info.clif = some (.load .load width.sourceTy flags x 0))
+theorem stock_selected_integer_load_rule_offset (width : Width) {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
+    {i x : Nat} {info : IInfo} {flags : Clif.MemFlags} {offset : Int}
+    (source : ctx.insts[i]? = some info) (clif : info.clif = some (.load .load width.sourceTy flags x offset))
     {st next : State} {out : V} {trace : List RuleId}
     (selected : LowerSelection ctx i st out next trace) : selected.rule = width.root := by
-  obtain ⟨little,data,type⟩ := integer_load_source_data width inv source clif
+  obtain ⟨little,data,type⟩ := integer_load_source_data_offset width inv source clif
   have member := stock_selected_source_opcode_ids inv source clif data selected
   rw [inventory] at member
   simp only [List.mem_cons,List.not_mem_nil,or_false] at member
@@ -133,8 +133,30 @@ theorem stock_selected_integer_load_rule (width : Width) {f : Clif.Function} {ct
     rw [impossible] at extraction
     cases extraction
 
+/-- Preserve the original zero-offset theorem variant. -/
+theorem stock_selected_integer_load_rule (width : Width) {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
+    {i x : Nat} {info : IInfo} {flags : Clif.MemFlags}
+    (source : ctx.insts[i]? = some info) (clif : info.clif = some (.load .load width.sourceTy flags x 0))
+    {st next : State} {out : V} {trace : List RuleId}
+    (selected : LowerSelection ctx i st out next trace) : selected.rule = width.root := by
+  exact stock_selected_integer_load_rule_offset width inv source clif selected
+
 /-- An actual emitted load derives its selected ID directly from original source
 metadata and whole-driver receipts, without a separate root certificate. -/
+theorem stock_lower_integer_load_selected_id_offset (width : Width) {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f)
+    {event : BlockScanEvent} {record : ScanRecord}
+    (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
+    {info : IInfo} {x : Nat} {flags : Clif.MemFlags} {offset : Int}
+    (source : event.ctx.insts[record.inst]? = some info)
+    (clif : info.clif = some (.load .load width.sourceTy flags x offset))
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted) :
+    step.rules.getLast? = some width.root.id := by
+  obtain ⟨receipt⟩ := stock_lower_record_selection run events records recorded emitted
+  have chosen := stock_selected_integer_load_rule_offset width (stock_lower_record_context run scope events).1 source clif receipt.selected
+  rw [receipt.rules,receipt.selected.last_rule,chosen]
+
+/-- Preserve the original zero-offset theorem variant. -/
 theorem stock_lower_integer_load_selected_id (width : Width) {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f)
     {event : BlockScanEvent} {record : ScanRecord}
@@ -144,8 +166,6 @@ theorem stock_lower_integer_load_selected_id (width : Width) {f : Clif.Function}
     (clif : info.clif = some (.load .load width.sourceTy flags x 0))
     {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted) :
     step.rules.getLast? = some width.root.id := by
-  obtain ⟨receipt⟩ := stock_lower_record_selection run events records recorded emitted
-  have chosen := stock_selected_integer_load_rule width (stock_lower_record_context run scope events).1 source clif receipt.selected
-  rw [receipt.rules,receipt.selected.last_rule,chosen]
+  exact stock_lower_integer_load_selected_id_offset width run scope events records source clif recorded emitted
 
 end Backend.Stock.Memory.IntegerRoots

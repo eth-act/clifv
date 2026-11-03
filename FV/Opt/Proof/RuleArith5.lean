@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.RuleInfraShiftAmt
 
 /-!
 # `opts/arithmetic.isle` (part 5): proven `simplify` rules
@@ -6,6 +7,11 @@ import FV.Opt.Proof.RuleRestEmbed
 Each rule by the template that closes it (`RuleAuto.lean`, `RuleBitopsEmbed.lean`,
 `RuleExtEmbed.lean`, `RuleRestEmbed.lean`); a `first` chain lists the templates the rule was
 checked against, in order.
+
+The bit-vector goals of 610–612, `x <<< a ^^^ z <<< a = (x ^^^ z) <<< a` and the same for `>>>`
+and `sshiftRight` (one per value type and amount type), go to `kbv_amt` first
+(`RuleInfraShiftAmt.lean`: the two shifts are collected into one). The general `kbv` search closes
+them too, but took up to 97 s per goal (`arithmetic_611`: 880 s for its 49 goals).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -14,6 +20,11 @@ namespace Opt.Proof
 
 open Isle Isle.Opt
 
+-- In this module `kbv` first tries `kbv_amt` (`RuleInfraShiftAmt.lean`) on the isolated goal, under
+-- `kbv_guard` (a failure, also a runtime exception, falls through to the general search).
+open Lean Elab Tactic in
+local elab_rules : tactic
+  | `(tactic| kbv) => Opt.Proof.KernelBV.isolate (do evalTactic (← `(tactic| kbv_guard 200000 kbv_amt)))
 
 set_option maxHeartbeats 4000000 in
 /-- `arithmetic.isle:578`. -/

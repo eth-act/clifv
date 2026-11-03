@@ -30,10 +30,26 @@ theorem domain_of_eligible {f : Clif.Function} (eligible : eligible f = true)
     simpa [(normal_abi shape.abiReturns) p member] using sret
   exact domain_of_shape shape scope dominated abi ordinary
 
+/-- The same for the leaf selector: each nonentry block returns or ends in `trap`. -/
+theorem domain_of_leafEligible {f : Clif.Function} (eligible : leafEligible f = true)
+    (scope : LowerScope f) (dominated : Dominated f) (abi : sigAbiOk f.sig = true) : Scalar.Domain f := by
+  obtain ⟨shape⟩ := leafEligible_shape eligible
+  have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
+    apply List.find?_eq_none.mpr
+    intro p member
+    simp [(normal_abi shape.abiParams) p member]
+  have ordinary : (sigRets f.sig).any (·.purpose == .sret) = false := by
+    rw [sigRets,noSret]
+    apply Bool.eq_false_iff.mpr
+    intro any
+    obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
+    simpa [(normal_abi shape.abiReturns) p member] using sret
+  exact domain_of_leafShape shape scope dominated abi ordinary
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Scalar.Domain f := by
   simp only [sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
-  exact domain_of_eligible eligible (lowerScope_of scope) (dominated_of dominated) abi
+  exact domain_of_leafEligible eligible (lowerScope_of scope) (dominated_of dominated) abi
 
 theorem check_sound {f : Clif.Function} {vc : VCode} (checked : check f vc = true) :
     ∃ result,Scalar.Domain f ∧ Stock.lower f = .ok result ∧ result.code = vc := by

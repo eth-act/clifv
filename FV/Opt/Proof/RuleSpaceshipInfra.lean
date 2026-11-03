@@ -76,17 +76,40 @@ open Lean Elab Tactic in
 elab "spaceship_noinfo " t:tacticSeq : tactic =>
   withEnableInfoTree false (evalTactic t)
 
+/-- `opt_norm` that also simplifies the alternatives of every `match`, as `opt_norm` did before
+`opt_match_head`: `spaceship_rhs_eval` splits on the `if`s and `typeOf` reads of the whole
+hypothesis, and with the alternatives unsimplified it splits on many more of them. -/
+syntax "spaceship_norm " ident ("[" (Lean.Parser.Tactic.simpStar <|> Lean.Parser.Tactic.simpErase <|> Lean.Parser.Tactic.simpLemma),* "]")? : tactic
+macro_rules
+  | `(tactic| spaceship_norm $h:ident) => `(tactic| spaceship_norm $h [])
+  | `(tactic| spaceship_norm $h:ident [$ts,*]) => `(tactic|
+      try simp (disch := assumption) only [opt_data, opt_monad, opt_imm, $ts,*] at $h:ident)
+
+open Lean Elab Tactic in
+/-- `opt_unfold` at the first call `rw` finds, also inside the alternatives of `match`es (with
+`spaceship_norm`). -/
+elab "spaceship_unfold " h:ident : tactic => withMainContext do
+  let used := (← instantiateMVars (← (← getFVarId h).getType)).getUsedConstants
+  for l in optUnfoldEqns do
+    unless used.contains l.getPrefix do continue
+    let s ← saveState
+    try
+      evalTactic (← `(tactic| rw [$(mkIdent l):ident] at $h:ident))
+      return
+    catch _ => s.restore
+  throwError "spaceship_unfold: no equation lemma rewrites {h}"
+
 set_option hygiene false in
 macro "spaceship_rhs_eval" : tactic => `(tactic| (
-  opt_norm hev
+  spaceship_norm hev
   repeat' (first
     | spaceship_close_error hev
     | (spaceship_typeof hev <;> (try opt_types_x) <;>
-        try opt_norm hev [except_throw_bind', except_error_bind'])
+        try spaceship_norm hev [except_throw_bind', except_error_bind'])
     | (opt_split_ite hev <;>
-        try opt_norm hev [except_throw_bind', except_error_bind'])
-    | (opt_unfold hev
-       opt_norm hev [except_throw_bind', except_error_bind']))
+        try spaceship_norm hev [except_throw_bind', except_error_bind'])
+    | (spaceship_unfold hev
+       spaceship_norm hev [except_throw_bind', except_error_bind']))
   all_goals rule_rhs_y))
 
 set_option hygiene false in
