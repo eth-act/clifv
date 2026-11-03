@@ -1,0 +1,8 @@
+{
+  "head": "f01fc597cf36bdec6d2551a6c6163a3ca2bacf8c",
+  "verdict": "approved;no blocking defect",
+  "method": "one direct QUICK DIRTY CHEAP pass;no builds;no agents",
+  "diff_sha256": "9b0e8aa689006edd432adddbdb9ce492876020659522d483b20f1220756b44a2",
+  "scope": "unverified native minmax and add/sub overflow;mul overflow rejection remains",
+  "utc": "2026-11-03T08:27:21.190551+00:00"
+}

@@ -1,0 +1,47 @@
+--- a/FV/Backend/SemanticABICheck.lean
++++ b/FV/Backend/SemanticABICheck.lean
+@@ -1,6 +1,8 @@
++import FV.Backend.StockLiveCallCheck
+ import FV.Backend.SemanticNICheck
+ import FV.Backend.StockMemorySretCopyCheck
+ import FV.Backend.StockVoidCallNICheck
++import FV.Backend.StockResultCallCheck
+ 
+ namespace Backend.SemanticABI
+ set_option autoImplicit false
+@@ -29,3 +31,35 @@
+   simp [checkCalls,absent]
+ 
+ end Backend.SemanticABI
++
++namespace Backend.SemanticABI
++set_option autoImplicit false
++
++/-- Admit the proved explicit-result caller without changing the previous checker. -/
++def checkResultCalls (f : Clif.Function) (vc : VCode) : Bool :=
++  checkCalls f vc || Stock.ResultCall.check f vc
++
++theorem previous_check_result_calls {f : Clif.Function} {vc : VCode}
++    (accepted : checkCalls f vc = true) : checkResultCalls f vc = true := by
++  simp only [checkResultCalls,accepted,Bool.true_or]
++
++theorem previous_exact_result_calls {f : Clif.Function} {vc : VCode}
++    (absent : Stock.ResultCall.check f vc = false) : checkResultCalls f vc = checkCalls f vc := by
++  simp only [checkResultCalls,absent,Bool.or_false]
++
++end Backend.SemanticABI
++
++namespace Backend.SemanticABI
++set_option autoImplicit false
++
++def checkLiveCalls (f : Clif.Function) (vc : VCode) : Bool :=
++  checkResultCalls f vc || Stock.LiveCall.check f vc
++
++theorem previous_check_live_calls {f : Clif.Function} {vc : VCode}
++    (accepted : checkResultCalls f vc = true) : checkLiveCalls f vc = true := by
++  simp only [checkLiveCalls,accepted,Bool.true_or]
++
++theorem previous_exact_live_calls {f : Clif.Function} {vc : VCode}
++    (absent : Stock.LiveCall.check f vc = false) : checkLiveCalls f vc = checkResultCalls f vc := by
++  simp only [checkLiveCalls,absent,Bool.or_false]
++end Backend.SemanticABI

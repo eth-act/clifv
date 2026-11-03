@@ -1,0 +1,55 @@
+{
+  "status": "staged-additive-sources;not-kernel-validated-current",
+  "main": "9a3f25fb20cd26d3744476319253d712417f057e",
+  "records": {
+    "FV/Backend/SemanticABICheck.lean": {
+      "current_sha256": "82ea22a6a7594723b1f2ef818dd9c098af48c145d1c72638ec96b4b1dca60dde",
+      "candidate_sha256": "1f7a629ef3866ccfabbee28d3a46b805b07811a587ef13e30f2c54c40e24f048",
+      "added_lines": 34,
+      "removed_lines": 0,
+      "old_headers_exact": 4,
+      "new_theorems": [
+        "previous_check_live_calls",
+        "previous_check_result_calls",
+        "previous_exact_live_calls",
+        "previous_exact_result_calls"
+      ]
+    },
+    "FV/E2E/CompiledSemanticABI.lean": {
+      "current_sha256": "1d0706c6ada07178a817451bc1d9612f8bfedd290748a0c8364c37d58e47e0ff",
+      "candidate_sha256": "160243eac3465a9d6ff4e8e93729378de59d775301f6378a75a2fb02e8cdb7f7",
+      "added_lines": 64,
+      "removed_lines": 0,
+      "old_headers_exact": 7,
+      "new_theorems": [
+        "of_checks_live_calls",
+        "of_checks_result_calls"
+      ]
+    },
+    "FV/E2E/CompiledSemanticReturnPins.lean": {
+      "current_sha256": "1af97b633a63618309b503852b859662dafad932ed62c55ae16ec8e200190be4",
+      "candidate_sha256": "7bd5daa2b36136e4f934762e9df9e728768507526d2d192bff533731f0f66d4b",
+      "added_lines": 58,
+      "removed_lines": 0,
+      "old_headers_exact": 5,
+      "new_theorems": [
+        "of_checks_live_calls",
+        "of_checks_result_calls"
+      ]
+    },
+    "FV/E2E/CompiledProgramReturnPins.lean": {
+      "current_sha256": "c1af67a373150b9433993e57eeb4ba165d2e38a17e84387b7c2bc874d21c84b2",
+      "candidate_sha256": "67de661d6f265006c2ff06d98cb885d42e2ee480ad411818de307e6545fb3516",
+      "added_lines": 23,
+      "removed_lines": 0,
+      "old_headers_exact": 7,
+      "new_theorems": [
+        "of_checks_live_calls",
+        "of_checks_result_calls"
+      ]
+    }
+  },
+  "all_old_headers_exact": 23,
+  "stageF": "old variants remain;new stageF variants must be separate",
+  "frozen_R_and_c22_unchanged": true
+}

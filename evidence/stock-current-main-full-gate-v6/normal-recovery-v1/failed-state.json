@@ -1,0 +1,19 @@
+{
+  "status": "failed_normal",
+  "revision": "c4f310c56d43c054ab14ea1d8f0a92bf26e470be",
+  "tree": "9b462e046c84606819a711b3453761bc33a1f6ae",
+  "records": [
+    {
+      "phase": "consumer-baseline",
+      "exit": 0,
+      "log_sha256": "e16f396166dc52a6ab79c0b88cdc900e86cab409ca80206478823d8030c362ab"
+    },
+    {
+      "phase": "normal",
+      "exit": 1,
+      "log_sha256": "08b7aa4ba05cb2166e73b1a610820d60aa193fb0ef5e26bd0e4cf3b1dd9c38e5"
+    }
+  ],
+  "full_goal_complete": false,
+  "utc": "2026-11-03T08:16:21.224701+00:00"
+}

@@ -1,0 +1,32 @@
+{
+  "original_driver_sha256": "4653c6fb260915e5f831483a93758b09a75dc657a2dc2a2ff6a8be65e3d806a8",
+  "continuation_sha256": "5998185b3856afd9dec42564bee7bbc611fccad0290886b1f1ad47a339aafbf1",
+  "original_failure_sha256": "6a7ff896ee2d088592f85bf4232a50654d5df783ee5c9aab2ad663c99efbc270",
+  "profile_override_sha256": "ba57161f44a0b8351438b8e05b7ba592e6e3b2f7ae3cf045a664c508aa7f1458",
+  "target": "FV.Backend.Proof.StockNoLoadScan",
+  "reason": "exact4GiB cgroup OOM;oom1 kill1",
+  "recovery_budget": "exclusive12GiB;original aggregate16GiB",
+  "source_change": "none",
+  "preserved_consumer_baseline": true,
+  "preserved_queue_manifest": true,
+  "phases": [
+    "audits",
+    "tools",
+    "crates",
+    "e2e",
+    "comparison",
+    "runtime-encoder",
+    "examples",
+    "crate-parity",
+    "retained-matrices",
+    "nonmemory-matrices",
+    "configured-tests",
+    "binding-providers",
+    "preservation"
+  ],
+  "final_checks": [
+    "required-axioms",
+    "identities"
+  ],
+  "full_goal_complete": false
+}

@@ -1,0 +1,5 @@
+'E2E.MemoryFaultSource.mapFaults_at_reached_activation' depends on axioms: [propext, Quot.sound]
+'E2E.MemoryFaultSource.mapFaults_after_source_step' depends on axioms: [propext, Quot.sound]
+'E2E.MemoryFaultSource.mapFaults_after_linked_source_step' depends on axioms: [propext, Quot.sound]
+'E2E.MemoryFaultSource.runLoop_linkN_mapFaults' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.MemoryFaultSource.runLoop_linkD_mapFaults' depends on axioms: [propext, Classical.choice, Quot.sound]

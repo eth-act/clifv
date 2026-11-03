@@ -1,0 +1,377 @@
+diff --git a/FV/Backend/Lowering/StockI128.lean b/FV/Backend/Lowering/StockI128.lean
+index d5eaff97f..468940d87 100644
+--- a/FV/Backend/Lowering/StockI128.lean
++++ b/FV/Backend/Lowering/StockI128.lean
+@@ -22,7 +22,20 @@ is that native route for a small foundation scope:
+   (the operands swapped for a greater-than or less-or-equal ordering). The flags feed the
+   user of the `icmp` as for an `i64` `icmp`: a `cset`, the `b.cond` of a `brif`, the `csel`
+   of a `select` (`is_nonzero_cmp`). No new extern either: `nzcv` is `Backend.externCtor`'s,
+-  and `ccmp`, `sbcs_side_effect`, `produces_flags_concat` are ISLE rules.
++  and `ccmp`, `sbcs_side_effect`, `produces_flags_concat` are ISLE rules;
++* `select` and `select_spectre_guard` of `i128` values (`lower_select_cond` at `$I128`): the
++  flags of the condition (`is_nonzero_cmp`), then one `csel` per half; and a `select` of
++  narrower values on an `i128` condition (`is_nonzero` at `$I128`: `orr` of the halves, then
++  the `cmp` of `lower_select`). `select_spectre_guard` is lowered without `use_csdb`
++  (`maybe_csdb_after_select` adds no `csdb`); the stock-configured driver rejects it under
++  `use_csdb=true` (`StockConfig.usesCsdb`);
++* `bmask` of an `i128` value or to `i128` (`lower_bmask`): `orr` of the halves, then `cmp` and
++  `csetm`; the `csetm` register is both halves of an `i128` result;
++* `bitselect` at `i128` (`bitselect_i128`): `and`, `bic` and `orr` of each half. The only new
++  extern of these three items is `use_csdb` (false). Their helpers (`with_flags` of the two
++  `CSel` of `ConsumesFlagsTwiceReturnsValueRegs`, `with_flags_reg`, `csetm`, `cmp_imm`,
++  `and_imm`, `and_reg`, `bic`, `orr`) are ISLE rules, and `temp_writable_reg`, `value_reg`,
++  `value_regs` and `value_regs_get` are `Backend.externCtor`'s.
+ 
+ Any other instruction with an `i128` operand or result makes `lower128` fail, so that a caller
+ can keep the legalized lowering. `FVTest.Backend.I128Native` routes the functions that
+@@ -61,9 +74,11 @@ def shift128 : Clif.BinaryOp → Bool
+ 
+ /-- `InstructionData` with the `i128` forms of the foundation: `isplit` of an `i128`,
+ `iconcat` of two `i64`, an extension to `i128`, `bitcast.i128`, an `i128` shift or rotate
+-(`shift128`), an `icmp` of two `i128` values (`IntCompare`). Every other instruction is
+-`instData` (which accepts `ireduce` from `i128` and a narrow shift by an `i128` amount, because
+-it checks the result type). -/
++(`shift128`), an `icmp` of two `i128` values (`IntCompare`), `select`,
++`select_spectre_guard` and `bitselect` at `i128` (`Ternary`), `bmask` to `i128` (`Unary`).
++Every other instruction is `instData` (which accepts `ireduce` from `i128`, a narrow shift by
++an `i128` amount, a narrow `select` on an `i128` condition and a narrow `bmask` of an `i128`
++value, because it checks the result type). -/
+ def instData128 (f : Clif.Function) : Clif.Inst → Except String V
+   | .isplit .i128 x => pure (instDataV "Unary" [opcodeV "Isplit", .value x])
+   | .binary op .i128 x y =>
+@@ -77,13 +92,23 @@ def instData128 (f : Clif.Function) : Clif.Inst → Except String V
+     pure (instDataV "LoadNoOffset" [opcodeV "Bitcast", .value x, .op (.memFlags flags)])
+   | .icmp cc .i128 x y =>
+     pure (instDataV "IntCompare" [opcodeV "Icmp", .values [x, y], mkVariant tyIntCC (intccName cc)])
++  | .select .i128 c x y => pure (instDataV "Ternary" [opcodeV "Select", .values [c, x, y]])
++  | .selectSpectreGuard .i128 c x y =>
++    pure (instDataV "Ternary" [opcodeV "SelectSpectreGuard", .values [c, x, y]])
++  | .bitselect .i128 c x y => pure (instDataV "Ternary" [opcodeV "Bitselect", .values [c, x, y]])
++  | .bmask .i128 x => pure (instDataV "Unary" [opcodeV "Bmask", .value x])
+   | i => instData f i
+ 
+ /-- The instructions of the foundation that may have an `i128` operand or result (`wide`: the
+ `i128` values). A shift or rotate (`shift128`) is in it at `i128`, and at a narrower type when
+-only its amount is an `i128` value. An `icmp` is in it at `i128`. -/
++only its amount is an `i128` value. An `icmp` is in it at `i128`. A `select` is in it at `i128`
++and on an `i128` condition, `select_spectre_guard` and `bitselect` at `i128`, and `bmask` at
++`i128` and of an `i128` value. -/
+ def foundation128 (wide : Nat → Bool) : Clif.Inst → Bool
+   | .isplit .i128 _ | .iconcat .i64 _ _ | .extend _ .i128 _ | .icmp _ .i128 _ _ => true
++  | .selectSpectreGuard .i128 .. | .bitselect .i128 .. => true
++  | .select ty c _ _ => ty == .i128 || wide c
++  | .bmask ty x => ty == .i128 || wide x
+   | .ireduce _ x | .bitcast .i128 _ x => wide x
+   | .binary op ty x _ => shift128 op && (ty == .i128 || !wide x)
+   | _ => false
+@@ -263,8 +288,10 @@ def buildCtx128 (f : Clif.Function) :
+ /-- `Stock.externCtor` with register pairs. `put_in_regs` and `put_in_regs_vec` of an `i128`
+ value give both registers, with the demand and sunk-instruction checks of `Stock.externCtor`;
+ `output_pair` (`machinst/isle.rs`) makes a two-value output; `gen_return` of a signature with
+-an `i128` return places the registers at `retLocs128`. `put_in_reg` of an `i128` value and
+-calls with `i128` arguments or returns are unmodeled. Everything else is `Stock.externCtor`. -/
++an `i128` return places the registers at `retLocs128`; `use_csdb` is false (the stock setting
++`use_csdb=false`; the stock-configured driver rejects `select_spectre_guard` under
++`use_csdb=true`). `put_in_reg` of an `i128` value and calls with `i128` arguments or returns
++are unmodeled. Everything else is `Stock.externCtor`. -/
+ def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : State) :
+     ExtResult (V × State) :=
+   let wide (v : Nat) : Bool := (hiReg? hi v).isSome
+@@ -288,6 +315,7 @@ def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : Sta
+         | none => .unmodeled "put_in_regs_vec"
+     else externCtor ctx t args st
+   | TId.output_pair, [.regs a, .regs b] => .ok (.regsVec [a, b], st)
++  | TId.use_csdb, [] => .ok (.bool false, st)
+   | TId.gen_return, [.regsVec rss] =>
+     if ctx.func.sig.returns.any (·.ty == .i128) then
+       match retLocs128 ctx.func.sig with
+diff --git a/FVTest/Backend/Lowering/StockI128Test.lean b/FVTest/Backend/Lowering/StockI128Test.lean
+index 77599cb0f..cb3836228 100644
+--- a/FVTest/Backend/Lowering/StockI128Test.lean
++++ b/FVTest/Backend/Lowering/StockI128Test.lean
+@@ -3,7 +3,8 @@ import FV.Backend.Lowering.StockI128
+ /-! Probes for the native `i128` stock lowering `Backend.Stock.lower128` (no proof).
+ 
+ * The `#guard`s below check that `lower128` lowers the 16 foundation shapes, 13 `i128` shift
+-  and rotate shapes (`shifts`) and 15 `i128` comparison shapes (`compares`), that the
++  and rotate shapes (`shifts`), 15 `i128` comparison shapes (`compares`) and 14 `select`,
++  `select_spectre_guard`, `bmask` and `bitselect` shapes (`selects`), that the
+   instructions it selects have the shape of stock
+   Cranelift's (the expected VCode of the filetests, with registers abstracted, and without
+   regalloc moves and the frame), and they pin its exact pre-allocation VCode.
+@@ -13,7 +14,9 @@ import FV.Backend.Lowering.StockI128
+   `lake env lean --run FVTest/Backend/Lowering/StockI128Test.lean [--print] [PATH...]`,
+   with the default path `third_party/wasmtime/cranelift/filetests/filetests/isa/aarch64`
+   (`--print`: also the exact VCode and the rejection reasons). With `--shapes`, it prints the
+-  shapes and the results of the checks above instead.
++  shapes and the results of the checks above instead. A `select_spectre_guard` function of a
++  `use_csdb` filetest is not compared: `lower128` lowers without `use_csdb`, and the
++  stock-configured driver rejects such a function (`StockConfig.usesCsdb`).
+ -/
+ 
+ namespace Backend.Stock.I128Test
+@@ -37,7 +40,7 @@ def aluName : ALUOp → String
+   | .orr => "orr" | .and => "and" | .eor => "eor" | .add => "add" | .sub => "sub"
+   | .addS => "adds" | .subS => "subs" | .andS => "ands"
+   | .asr => "asr" | .lsr => "lsr" | .lsl => "lsl" | .orrNot => "orn" | .extr => "extr"
+-  | .sbcS => "sbcs"
++  | .sbcS => "sbcs" | .andNot => "bic"
+   | op => s!"?{lastName op}"
+ 
+ /-- An `NZCV` immediate as Cranelift prints it: `#nzcv`, a set flag in upper case. -/
+@@ -51,7 +54,8 @@ def amode : AMode → String
+   | m => s!"?{(repr m).pretty}"
+ 
+ /-- One instruction in the syntax of Cranelift's VCode printing (`isa/aarch64/inst/mod.rs`),
+-for the instructions of the foundation, the shifts and rotates and the comparisons; `?` and the
++for the instructions of the foundation, the shifts and rotates, the comparisons and the
++selects; `?` and the
+ representation for every other one. `args` and `rets` show their (vreg, physical register)
+ pairs. -/
+ def inst : MInst → String
+@@ -70,8 +74,10 @@ def inst : MInst → String
+   | .aluRRImm12 op _ rd rn imm => s!"{aluName op} {reg rd}, {reg rn}, #{imm.value}"
+   | .aluRRImmShift op _ rd rn imm => s!"{aluName op} {reg rd}, {reg rn}, #{imm}"
+   | .aluRRImmLogic op _ rd rn imm => s!"{aluName op} {reg rd}, {reg rn}, #{imm.value}"
++  | .aluRRRExtend op _ rd rn rm e => s!"{aluName op} {reg rd}, {reg rn}, {reg rm}, {lastName e}"
+   | .csel rd rn rm c => s!"csel {reg rd}, {reg rn}, {reg rm}, {lastName c}"
+   | .cset rd c => s!"cset {reg rd}, {lastName c}"
++  | .csetm rd c => s!"csetm {reg rd}, {lastName c}"
+   | .ccmp _ rn rm f c => s!"ccmp {reg rn}, {reg rm}, {nzcv f}, {lastName c}"
+   | .condBr t e (.notZero r _) => s!"cbnz {reg r}, label{t} ; b label{e}"
+   | .condBr t e (.zero r _) => s!"cbz {reg r}, label{t} ; b label{e}"
+@@ -737,6 +743,172 @@ block0(v0: i128, v1: i64, v2: i64):
+     pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "movz %6, #42", "movz %5, #0",
+       "subs xzr, %0, %6", "ccmp %1, %5, #nzcv, eq", "csel %4, %2, %3, eq", "rets %4=x0"] }]
+ 
++/-- `select` and `select_spectre_guard` with an `i128` result or condition, `bmask` from or to
++`i128`, and `bitselect` at `i128`. One flag-setter (the `icmp`, an `i128` `icmp` through
++`emit_icmp_i128`, or `is_nonzero` of the condition: `ands`/`subs` of a narrow value, `orr` of the
++halves of an `i128` value), then one `csel` per half (`lower_select_cond` at `$I128`). Without
++`use_csdb`, `select_spectre_guard` is `select` (`maybe_csdb_after_select`). `bmask` of an `i128`
++value tests the `orr` of the halves, and `bmask` to `i128` gives the `csetm` register as both
++halves (`lower_bmask`). `bitselect` is `and`/`bic`/`orr` per half (`bitselect_i128`). The runtest
++shapes have no filetest with expected VCode: `stock` is the stock code of the CI comparison
++snapshot in the syntax of the VCode printing (`cmp` is `subs` to `xzr`/`wzr`, `mov` of an
++immediate is `movz`). -/
++def selects : List Shape := [
++  { name := "select_icmp_i8_i128", source := "isa/aarch64/condops.clif (`%f(i8, i128, i128)`, select)"
++    clif := "function %f(i8, i128, i128) -> i128 {
++block0(v0: i8, v1: i128, v2: i128):
++  v3 = iconst.i8 42
++  v4 = icmp eq v0, v3
++  v5 = select v4, v1, v2
++  return v5
++}"
++    stock := ["block0:", "uxtb w6, w0", "subs wzr, w6, #42", "csel x0, x2, x4, eq",
++      "csel x1, x3, x5, eq", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x2 %2=x3 %3=x4 %4=x5", "uxtb %5, %0", "subs xzr, %5, #42",
++      "csel %6, %1, %3, eq", "csel %7, %2, %4, eq", "rets %6=x0 %7=x1"] },
++  { name := "select_icmp_i128_i128", source := "isa/aarch64/condops.clif (`%f(i128, i128, i128)`, select)"
++    clif := "function %f(i128, i128, i128) -> i128 {
++block0(v0: i128, v1: i128, v2: i128):
++  v3 = iconst.i64 42
++  v4 = uextend.i128 v3
++  v5 = icmp eq v0, v4
++  v6 = select.i128 v5, v1, v2
++  return v6
++}"
++    stock := ["block0:", "movz x10, #42", "movz x11, #0", "subs xzr, x0, x10",
++      "ccmp x1, x11, #nzcv, eq", "csel x0, x2, x4, eq", "csel x1, x3, x5, eq", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3 %4=x4 %5=x5", "movz %9, #42", "movz %8, #0",
++      "subs xzr, %0, %9", "ccmp %1, %8, #nzcv, eq", "csel %6, %2, %4, eq", "csel %7, %3, %5, eq",
++      "rets %6=x0 %7=x1"] },
++  { name := "i128_select", source := "isa/aarch64/condops.clif"
++    clif := "function %i128_select(i8, i128, i128) -> i128 {
++block0(v0: i8, v1: i128, v2: i128):
++  v3 = select.i128 v0, v1, v2
++  return v3
++}"
++    stock := ["block0:", "ands wzr, w0, #255", "csel x0, x2, x4, ne", "csel x1, x3, x5, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x2 %2=x3 %3=x4 %4=x5", "ands xzr, %0, #255",
++      "csel %5, %1, %3, ne", "csel %6, %2, %4, ne", "rets %5=x0 %6=x1"] },
++  { name := "guard_icmp_i8_i128",
++    source := "isa/aarch64/condops.clif (`%f(i8, i128, i128)`, select_spectre_guard)"
++    clif := "function %f(i8, i128, i128) -> i128 {
++block0(v0: i8, v1: i128, v2: i128):
++  v3 = iconst.i8 42
++  v4 = icmp eq v0, v3
++  v5 = select_spectre_guard.i128 v4, v1, v2
++  return v5
++}"
++    stock := ["block0:", "uxtb w6, w0", "subs wzr, w6, #42", "csel x0, x2, x4, eq",
++      "csel x1, x3, x5, eq", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x2 %2=x3 %3=x4 %4=x5", "uxtb %5, %0", "subs xzr, %5, #42",
++      "csel %6, %1, %3, eq", "csel %7, %2, %4, eq", "rets %6=x0 %7=x1"] },
++  { name := "guard_icmp_i128_i128",
++    source := "isa/aarch64/condops.clif (`%f(i128, i128, i128)`, select_spectre_guard)"
++    clif := "function %f(i128, i128, i128) -> i128 {
++block0(v0: i128, v1: i128, v2: i128):
++  v3 = iconst.i64 42
++  v4 = uextend.i128 v3
++  v5 = icmp eq v0, v4
++  v6 = select_spectre_guard.i128 v5, v1, v2
++  return v6
++}"
++    stock := ["block0:", "movz x10, #42", "movz x11, #0", "subs xzr, x0, x10",
++      "ccmp x1, x11, #nzcv, eq", "csel x0, x2, x4, eq", "csel x1, x3, x5, eq", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3 %4=x4 %5=x5", "movz %9, #42", "movz %8, #0",
++      "subs xzr, %0, %9", "ccmp %1, %8, #nzcv, eq", "csel %6, %2, %4, eq", "csel %7, %3, %5, eq",
++      "rets %6=x0 %7=x1"] },
++  { name := "select_spectre_guard_i128_slt",
++    source := "runtests/selectif-spectre-guard.clif (CI snapshot stock code)"
++    clif := "function %select_spectre_guard_i128_slt(i8, i128, i128) -> i128 {
++block0(v0: i8, v1: i128, v2: i128):
++  v3 = iconst.i8 42
++  v4 = icmp slt v0, v3
++  v5 = select_spectre_guard.i128 v4, v1, v2
++  return v5
++}"
++    stock := ["block0:", "movz w9, #42", "sxtb w7, w0", "subs wzr, w7, w9, sxtb",
++      "csel x0, x2, x4, lt", "csel x1, x3, x5, lt", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x2 %2=x3 %3=x4 %4=x5", "movz %8, #42", "sxtb %5, %0",
++      "subs xzr, %5, %8, sxtb", "csel %6, %1, %3, lt", "csel %7, %2, %4, lt", "rets %6=x0 %7=x1"] },
++  { name := "i128_cond_select", source := "runtests/i128-select.clif (CI snapshot stock code)"
++    clif := "function %i128_cond_select(i128, i128, i128) -> i128 {
++block0(v0: i128, v1: i128, v2: i128):
++    v3 = select.i128 v0, v1, v2
++    return v3
++}"
++    stock := ["block0:", "orr x7, x0, x1", "subs xzr, x7, xzr", "csel x0, x2, x4, ne",
++      "csel x1, x3, x5, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3 %4=x4 %5=x5", "orr %6, %0, %1",
++      "subs xzr, %6, xzr", "csel %7, %2, %4, ne", "csel %8, %3, %5, ne", "rets %7=x0 %8=x1"] },
++  { name := "select_i128_cond", source := "runtests/select.clif (CI snapshot stock code)"
++    clif := "function %select_i128_cond(i64, i64) -> i32 {
++block0(v0: i64, v1: i64):
++    v2 = iconcat v0, v1
++    v3 = iconst.i32 42
++    v4 = iconst.i32 97
++    v5 = select v2, v3, v4
++    return v5
++}"
++    stock := ["block0:", "movz w6, #42", "movz w7, #97", "orr x5, x0, x1", "subs xzr, x5, xzr",
++      "csel x0, x6, x7, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1", "movz %5, #42", "movz %4, #97", "orr %2, %0, %1",
++      "subs xzr, %2, xzr", "csel %3, %5, %4, ne", "rets %3=x0"] },
++  { name := "bmask_i128_i128", source := "isa/aarch64/bmask.clif"
++    clif := "function %bmask_i128_i128(i128) -> i128 {
++block0(v0: i128):
++  v1 = bmask.i128 v0
++  return v1
++}"
++    stock := ["block0:", "orr x3, x0, x1", "subs xzr, x3, #0", "csetm x1, ne", "mov x0, x1", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1", "orr %2, %0, %1", "subs xzr, %2, #0", "csetm %3, ne",
++      "rets %3=x0 %3=x1"] },
++  { name := "bmask_i128_i64", source := "isa/aarch64/bmask.clif"
++    clif := "function %bmask_i128_i64(i128) -> i64 {
++block0(v0: i128):
++  v1 = bmask.i64 v0
++  return v1
++}"
++    stock := ["block0:", "orr x3, x0, x1", "subs xzr, x3, #0", "csetm x0, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1", "orr %2, %0, %1", "subs xzr, %2, #0", "csetm %3, ne",
++      "rets %3=x0"] },
++  { name := "bmask_i128_i8", source := "isa/aarch64/bmask.clif"
++    clif := "function %bmask_i128_i8(i128) -> i8 {
++block0(v0: i128):
++  v1 = bmask.i8 v0
++  return v1
++}"
++    stock := ["block0:", "orr x3, x0, x1", "subs xzr, x3, #0", "csetm x0, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1", "orr %2, %0, %1", "subs xzr, %2, #0", "csetm %3, ne",
++      "rets %3=x0"] },
++  { name := "bmask_i64_i128", source := "isa/aarch64/bmask.clif"
++    clif := "function %bmask_i64_i128(i64) -> i128 {
++block0(v0: i64):
++  v1 = bmask.i128 v0
++  return v1
++}"
++    stock := ["block0:", "subs xzr, x0, #0", "csetm x1, ne", "mov x0, x1", "ret"]
++    pinned := ["block0:", "args %0=x0", "subs xzr, %0, #0", "csetm %1, ne", "rets %1=x0 %1=x1"] },
++  { name := "bmask_i8_i128", source := "isa/aarch64/bmask.clif"
++    clif := "function %bmask_i8_i128(i8) -> i128 {
++block0(v0: i8):
++  v1 = bmask.i128 v0
++  return v1
++}"
++    stock := ["block0:", "and w2, w0, #255", "subs wzr, w2, #0", "csetm x1, ne", "mov x0, x1", "ret"]
++    pinned := ["block0:", "args %0=x0", "and %1, %0, #255", "subs xzr, %1, #0", "csetm %2, ne",
++      "rets %2=x0 %2=x1"] },
++  { name := "f0", source := "isa/aarch64/bitselect-i128.clif"
++    clif := "function %f0(i128, i128, i128) -> i128 {
++block0(v0: i128, v1: i128, v2: i128):
++    v3 = bitselect v0, v1, v2
++    return v3
++}"
++    stock := ["block0:", "and x7, x2, x0", "and x9, x3, x1", "bic x11, x4, x0", "bic x13, x5, x1",
++      "orr x0, x7, x11", "orr x1, x9, x13", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3 %4=x4 %5=x5", "and %6, %2, %0",
++      "and %7, %3, %1", "bic %8, %4, %0", "bic %9, %5, %1", "orr %10, %6, %8", "orr %11, %7, %9",
++      "rets %10=x0 %11=x1"] }]
++
+ /-- `lower128` lowers the shape, its instruction shape is stock's, and its exact VCode is the
+ pinned one. -/
+ def shapeOk (s : Shape) : Bool :=
+@@ -838,10 +1010,10 @@ block0(v0: i128, v1: i128):
+     v2 = isub v0, v1
+     return v2
+ }",
+-  "function %sel(i128, i64, i64) -> i64 {
+-block0(v0: i128, v1: i64, v2: i64):
+-    v3 = select v0, v1, v2
+-    return v3
++  "function %band(i128, i128) -> i128 {
++block0(v0: i128, v1: i128):
++    v2 = band v0, v1
++    return v2
+ }",
+   "function %call(i128) -> i128 {
+     fn0 = %g(i128) -> i128
+@@ -869,6 +1041,8 @@ def rejected (src : String) : Bool :=
+ #guard shifts.all shapeOk
+ #guard compares.length == 15
+ #guard compares.all shapeOk
++#guard selects.length == 14
++#guard selects.all shapeOk
+ #guard i128Free.all fun s => (function? s).any fun f => !has128 f && agrees f
+ #guard outside.all rejected
+ 
+@@ -907,7 +1081,7 @@ partial def clifFiles (p : System.FilePath) : IO (Array System.FilePath) := do
+ 
+ /-- Print each shape: whether it lowers, its shape against stock's, its exact VCode. -/
+ def printShapes : IO Unit := do
+-  for s in shapes ++ extras ++ shifts ++ compares do
++  for s in shapes ++ extras ++ shifts ++ compares ++ selects do
+     match function? s.clif with
+     | none => IO.println s!"{s.name}: parse error"
+     | some f => match lower128 f with
+@@ -947,6 +1121,7 @@ def main (args : List String) : IO UInt32 := do
+   let mut wideLowered := 0
+   let mut wideMatch := 0
+   let mut wideNoExpect := 0
++  let mut wideCsdb := 0
+   let mut bad := 0
+   for root in roots do
+     for path in ← clifFiles root do
+@@ -965,6 +1140,11 @@ def main (args : List String) : IO UInt32 := do
+         let .ok f := func | continue
+         if has128 f then
+           wide := wide + 1
++          let guard := f.blocks.any fun b => b.body.any (·.inst matches .selectSpectreGuard ..)
++          if hasSub text "use_csdb" && guard then
++            wideCsdb := wideCsdb + 1
++            IO.println s!"use_csdb {path} %{name}: not compared (lowered without use_csdb)"
++            continue
+           match lower128 f with
+           | .error e => if print then IO.println s!"reject {path} %{name}: {e}"
+           | .ok r =>
+@@ -989,7 +1169,7 @@ def main (args : List String) : IO UInt32 := do
+             IO.println s!"DIFFERENTIAL FAILURE {path} %{name}"
+   IO.println s!"i128-free functions: {free}, lower128 = Stock.lower on {freeSame}"
+   IO.println s!"i128 functions: {wide}, lowered {wideLowered}, stock shape {wideMatch}, \
+-    no expected VCode {wideNoExpect}"
++    no expected VCode {wideNoExpect}, use_csdb select_spectre_guard {wideCsdb}"
+   return if bad == 0 then 0 else 1
+ 
+ end Backend.Stock.I128Test

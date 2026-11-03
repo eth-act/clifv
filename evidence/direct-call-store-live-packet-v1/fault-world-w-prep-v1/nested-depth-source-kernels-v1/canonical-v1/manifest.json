@@ -1,0 +1,28 @@
+{
+  "status": "focused-kernels-and-real-audit-pass",
+  "hashes": {
+    "progress.json": "f378976b6b6da697169ad40fe55d18d46b066d5a3654235551581da752fe179e",
+    "receipt.json": "08bf40050b3b91208187018464a159a2f3d0c3845a9abc22bb965db42bdd7625",
+    "nested-depth-source.lean": "fe61786f41b9736e1c010effe1252059f18b801518eccade76162301df31ff75",
+    "MemoryFaultNestedSource.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "LinkMemoryFaultSourceDepth.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "actual-audit.log": "cab84490ac18362e9bce58588e4e3d1e20ebc267aff08e0657bc27df94dc93aa",
+    "MemoryFaultNestedSource.mem": "1eb304324c5f1518c77d495504e85f659ad1cfcd5f5affb2b6554231577d9844",
+    "LinkMemoryFaultSourceDepth.mem": "fd6156f80034593633ae3e8b94aedf3bfef7d1e543c6b01dace0df1ceee84a3b",
+    "actual-audit.mem": "b9100186d2493cfe412c6f48d9001d167a5d61915d1600d32d40292608487a94",
+    "source/FV/E2E/MemoryFaultNestedSource.lean": "f2a84e30ed2e954d9618694465e981de9fc25f91e733815077add2986effa9ee",
+    "source/FV/E2E/LinkMemoryFaultSourceDepth.lean": "c1912e3921d5c2c605cb9cc03cf299532e2c18a7e258b11c84744c394b5d6c64",
+    "audit/nested-depth-source.log": "bfc193fc6739148df08838ec28ff5635ed947e4fe2bea485b6708b9f4404ca69"
+  },
+  "new_standard_roots": 5,
+  "guarantees": [
+    "Actual source steps derive mapping for reached/nested activations without separate successful-entry premises.",
+    "Bounded fuel/depth linking derives local MapFaults under exact original runN/runD conditions."
+  ],
+  "remaining": [
+    "Native current delivery gates for these two new modules.",
+    "Recursive FaultsD cut coverage.",
+    "Executable first-fault ordering.",
+    "Complete production adapters and actual matrices."
+  ]
+}

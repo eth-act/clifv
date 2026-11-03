@@ -1,0 +1,8 @@
+{
+  "head": "df6b6bbea480da4e0c252d85cdbbc2eaec235797",
+  "verdict": "approved;no blocking defect",
+  "method": "one direct QUICK DIRTY CHEAP pass;no builds;no agents",
+  "diff_sha256": "6f95c44c01535867ece12a7481dc15eaa1003e2c9c4217faf9e678de81c403f6",
+  "scope": "stock-config native unverified arithmetic only;widening imul isplit rejection retained",
+  "utc": "2026-11-03T08:06:46.657599+00:00"
+}

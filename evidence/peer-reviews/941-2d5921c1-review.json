@@ -1,0 +1,9 @@
+{
+  "head": "2d5921c12ffa7384ed5af1aea303c89b9f2f329b",
+  "verdict": "approved;no blocking defect",
+  "method": "one direct QUICK DIRTY CHEAP pass;no builds;no agents",
+  "diff_sha256": "722839ea1ab650aa1ac59e5a85c203f47821639bf892c04becec2721f648ea35",
+  "csdb_boundary": "StockConfig.configure rejects csdb=true on original or legalized selectSpectreGuard source after native replacement",
+  "scope": "unverified native route only",
+  "utc": "2026-11-03T07:57:54.613943+00:00"
+}

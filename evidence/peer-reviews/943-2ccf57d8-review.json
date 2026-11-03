@@ -1,0 +1,8 @@
+{
+  "head": "2ccf57d85f8ce73029cf16f1211092eaa7065cdf",
+  "verdict": "approved;no blocking defect",
+  "method": "one direct QUICK DIRTY CHEAP pass;no builds;no agents",
+  "diff_sha256": "08c8a497014e4ecf5a5a571b3989ed9eb0e0ddc609e5bd3192656cb835915755",
+  "scope": "unverified native bitwise/unary route only;popcnt fallback preserved",
+  "utc": "2026-11-03T08:15:34.018184+00:00"
+}

@@ -1,0 +1,22 @@
+✔ [0/17] Ran job computation
+✔ [1/17] Ran fv:extraDep
+✔ [2/17] Replayed FV.Clif.Syntax
+✔ [3/17] Replayed FV.Clif.Sem
+✔ [4/17] Replayed FV.Clif.Mem
+✔ [5/17] Replayed FV.Float.Basic
+✔ [6/17] Replayed FV.Float.Round
+✔ [7/17] Replayed FV.Float.Arith
+✔ [8/17] Replayed FV.Float.Convert
+✔ [9/17] Replayed FV.Float
+✔ [10/17] Replayed FV.Clif.FSem
+⚠ [11/17] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+✔ [12/17] Replayed FV.Opt.Proof.SemSim
+✔ [13/17] Replayed FV.E2E.LinkClif
+✔ [14/17] Replayed FV.Clif.Unwind
+✔ [15/17] Replayed FV.Clif.LinkClifX
+ℹ [16/17] Replayed FV.E2E.LinkClifN
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/FV/E2E/LinkClifN.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/LinkClifN.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/LinkClifN.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/ir/FV/E2E/LinkClifN.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/ir/FV/E2E/LinkClifN.setup.json --json
+ℹ [17/17] Built FV.Clif.LinkClifXN (2.1s)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/FV/Clif/LinkClifXN.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/Clif/LinkClifXN.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/Clif/LinkClifXN.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/ir/FV/Clif/LinkClifXN.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/ir/FV/Clif/LinkClifXN.setup.json --json
+Build completed successfully (17 jobs).

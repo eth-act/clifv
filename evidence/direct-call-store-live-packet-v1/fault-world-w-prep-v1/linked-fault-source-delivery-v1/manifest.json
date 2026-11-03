@@ -1,0 +1,18 @@
+{
+  "status": "coherent-source-unit;focused-prototypes-passed;current-consumer-gates-open",
+  "source_hashes": {
+    "FV/E2E/LinkClifN.lean": "e9c657ec04c1a8a18b3a515ac4fadbb8be1164dbae9682fece5f43b9d9e6b22d",
+    "FV/E2E/MemoryFaultCallersTransport.lean": "ab84dcb5dd17c2600351e749c6651dea85b820109afdd0afc89d8bcd8570a1c2",
+    "FV/E2E/LinkMemoryFaultSource.lean": "c0328762cdf7db50a2ba2f49fea938d6326b342b5d16297488fb201021b56547",
+    "scripts/audit/linked-memory-fault-source.lean": "13caaa84a8a54b352b1c90397ec252977bc9219fd7a99e7dedc11e3166d7bbf2"
+  },
+  "current_inventory_sha256": "fe581c54a3d1e89073ba32fc3b6597a5ff7f34ae0604909636503d890efa0a0e",
+  "old_headers_exact": 30,
+  "old_axiom_sets_exact": 30,
+  "combined_audit_roots": 41,
+  "combined_audit_status": "prepared;individual_root_gates_passed;combined_real_audit_still_required",
+  "prefix_checkpoint_sha256": "61aff4230a137944e9ae21c0aa8f9d42e6007d321fa96e863082625ba3efb51f",
+  "mapping_checkpoint_sha256": "a97c2d81304f5b5c8f4dcd52304190dfd46de7d92b4991269663ddd9b7f46606",
+  "cleanup_owner": "source_guarantees;active output overlays retained for next proof;remove after verified backup",
+  "publication_owner": "parent"
+}

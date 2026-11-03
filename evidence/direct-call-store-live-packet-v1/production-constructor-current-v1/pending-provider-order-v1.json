@@ -1,0 +1,63 @@
+{
+  "status": "source-only-order;no-build-authorization",
+  "current_main": "9a3f25fb20cd26d3744476319253d712417f057e",
+  "synthetic_records_are_untrusted": true,
+  "pending_topological_order": [
+    "FV/Backend/Proof/StockSourceResults.lean",
+    "FV/Backend/StockResultCallCheck.lean",
+    "FV/Backend/Proof/StockDirectCallResult.lean",
+    "FV/Backend/Proof/StockLiveCallArithmetic.lean",
+    "FV/Backend/StockLiveCallCheck.lean",
+    "FV/E2E/StockResultCallSource.lean",
+    "FV/Backend/Proof/StockLiveCallSource.lean",
+    "FV/E2E/StockLiveCallTail.lean",
+    "FV/E2E/StockResultCallLayout.lean",
+    "FV/E2E/StockResultCallPair.lean",
+    "FV/E2E/StockLiveCallLayout.lean",
+    "FV/E2E/StockResultCallRun.lean",
+    "FV/E2E/StockLiveCallPrelude.lean",
+    "FV/E2E/StockLiveCallSourceResult.lean",
+    "FV/E2E/StockResultCallDomain.lean",
+    "FV/E2E/StockLiveCallFunction.lean",
+    "FV/E2E/StockLiveCallReady.lean",
+    "FV/E2E/StockResultCallMachine.lean",
+    "FV/E2E/StockLiveCallDomain.lean",
+    "FV/E2E/StockLiveCallRun.lean",
+    "FV/E2E/StockResultCallNI.lean",
+    "FV/E2E/StockLiveCallNI.lean"
+  ],
+  "in_approved_twelve_helper_packet": [
+    "FV/Backend/Proof/StockDirectCallResult.lean",
+    "FV/Backend/Proof/StockLiveCallArithmetic.lean",
+    "FV/Backend/Proof/StockLiveCallSource.lean",
+    "FV/Backend/Proof/StockSourceResults.lean",
+    "FV/Backend/StockLiveCallCheck.lean",
+    "FV/Backend/StockResultCallCheck.lean",
+    "FV/E2E/StockLiveCallLayout.lean",
+    "FV/E2E/StockLiveCallPrelude.lean"
+  ],
+  "remaining_after_helpers": [
+    "FV/E2E/StockResultCallSource.lean",
+    "FV/E2E/StockLiveCallTail.lean",
+    "FV/E2E/StockResultCallLayout.lean",
+    "FV/E2E/StockResultCallPair.lean",
+    "FV/E2E/StockResultCallRun.lean",
+    "FV/E2E/StockLiveCallSourceResult.lean",
+    "FV/E2E/StockResultCallDomain.lean",
+    "FV/E2E/StockLiveCallFunction.lean",
+    "FV/E2E/StockLiveCallReady.lean",
+    "FV/E2E/StockResultCallMachine.lean",
+    "FV/E2E/StockLiveCallDomain.lean",
+    "FV/E2E/StockLiveCallRun.lean",
+    "FV/E2E/StockResultCallNI.lean",
+    "FV/E2E/StockLiveCallNI.lean"
+  ],
+  "normal_keys": "unknown until each proper dependency context passes and the real kernel writes its trace",
+  "build_policy": "After StockResults changes, verify its exact proper key. Complete the approved helper repair before these downstream kernels. Do not build broad providers.",
+  "new_constructor_targets": [
+    "FV/Backend/SemanticABICheck.lean",
+    "FV/E2E/CompiledSemanticABI.lean",
+    "FV/E2E/CompiledSemanticReturnPins.lean",
+    "FV/E2E/CompiledProgramReturnPins.lean"
+  ]
+}

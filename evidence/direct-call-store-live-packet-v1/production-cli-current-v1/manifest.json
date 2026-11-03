@@ -1,0 +1,30 @@
+{
+  "status": "source-only;not-compiled-current",
+  "main": "9a3f25fb20cd26d3744476319253d712417f057e",
+  "records": {
+    "FVTest/Backend/Main.lean": {
+      "current_sha256": "56e793373a81d00b2df7ea4f57f245f91fd359b17bf0500f4afb037fa4683566",
+      "candidate_sha256": "d5b0b64dfc73e05ab4fa6d8ff133cc1de6036eb797f5fc06cb9ca17671f9cb46"
+    },
+    "FVTest/Link/LeanLinkMain.lean": {
+      "current_sha256": "cbe614dd4078ccc337e7b5c87a2b4d6982d4176c4be78d5cf1410e58c23a5840",
+      "candidate_sha256": "1949316650df416df095886ba653b9584b39ea836371d34747351fe395a3ad29"
+    },
+    "FVTest/E2E/LinkCheckMain.lean": {
+      "current_sha256": "3e234b481a1dff1620abd230b5e3bc64494c14285bd64b5a56016fd0d05d7f16",
+      "candidate_sha256": "8c2441e064b2f8aa1008c2048c246f4444f006e87d8822f57aca098178cc7b19"
+    }
+  },
+  "Main_exact_inverse": true,
+  "linker_complete_previous_action_byte_exact": true,
+  "checker_profiles": "new live/result modes use their own provider/admission/emitter;rejected whole-file mode uses original VoidCallNI provider/admission/emitter",
+  "typed_branch_retained": true,
+  "route_indices": "all previous indices retained;none added",
+  "callbacks_and_allocator": "current #938/#939 wrapper,I128 replacement,receipts,guards and callbacks retained",
+  "required": [
+    "proper prerequisite kernels",
+    "all old AX/header gates",
+    "actual CLI/generated and linked execution matrices",
+    "ordinary/callee first-fault production transfer"
+  ]
+}

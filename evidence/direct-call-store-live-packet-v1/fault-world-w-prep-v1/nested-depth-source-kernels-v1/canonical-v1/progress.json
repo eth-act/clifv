@@ -1,0 +1,48 @@
+[
+  {
+    "label": "MemoryFaultNestedSource",
+    "argv": [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+      "-j1",
+      "-R",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-kernels-v1/source",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-kernels-v1/outputs/FV/E2E/MemoryFaultNestedSource.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-kernels-v1/outputs/FV/E2E/MemoryFaultNestedSource.ilean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-kernels-v1/source/FV/E2E/MemoryFaultNestedSource.lean"
+    ],
+    "exit": 0,
+    "stats": "peak 189562880\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "LinkMemoryFaultSourceDepth",
+    "argv": [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+      "-j1",
+      "-R",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-kernels-v1/source",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-kernels-v1/outputs/FV/E2E/LinkMemoryFaultSourceDepth.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-kernels-v1/outputs/FV/E2E/LinkMemoryFaultSourceDepth.ilean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-kernels-v1/source/FV/E2E/LinkMemoryFaultSourceDepth.lean"
+    ],
+    "exit": 0,
+    "stats": "peak 191946752\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "actual-audit",
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-kernels-v1/audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-kernels-v1/nested-depth-source.lean"
+    ],
+    "exit": 0,
+    "stats": "peak 187711488\noom 0\noom_kill 0\n"
+  }
+]

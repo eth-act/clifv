@@ -1,0 +1,57 @@
+--- a/FVTest/Link/LeanLinkMain.lean
++++ b/FVTest/Link/LeanLinkMain.lean
+@@ -1,3 +1,7 @@
++import FV.Backend.Lowering.StockLiveCallRoutes
++import FV.Link.LiveCallExeWith
++import FV.Backend.Lowering.StockResultCallRoutes
++import FV.Link.ResultCallExeWith
+ import FV.Link.TypedCompileSourceModes
+ import FV.Link.ReturnPinExeSourceWith
+ import FV.Backend.Lowering.StockMemoryCapturedCopyNI
+@@ -538,6 +542,46 @@
+       printExclusions exe S SC true (bad.map (·.1))
+       return 1
+   -- This complete-file attempt leaves every previous mode and retry action below intact.
++  let liveCallEnabled := !opt && !tailOn && SC0.funcs.any (fun fi =>
++    (Backend.Stock.LiveCall.sourceData? fi.func).isSome)
++  if liveCallEnabled then
++    let lower := Backend.Stock.LiveCall.lowerValidated
++    let SP := SC0.placedProductionWith lower deadCleanup
++    match Link.LiveCallCompilerWith.attempt lower SP file0 deadCleanup with
++    | .ok file =>
++      IO.FS.writeBinFile exe file
++      IO.println s!"lean-link: {exe}: {summary} written by Link.LiveCallCompilerWith.attempt (Link.LiveCallCompilerWith.attempt_correct, Link.LiveCallCompilerWith.attempt_correct_depth)"
++      if let some f := ldFile then
++        match ← ldCheck SP file0 f with
++        | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
++        | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
++      let src := if srcOk then
++          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.LiveCallCompilerWith.attempt_correct_source, Link.LiveCallCompilerWith.attempt_correct_source_peak"
++        else "; outside SrcScopeB: about the legalised program only"
++      IO.println s!"lean-link: {exe}: coverage: Link.LiveCallCompilerWith.attempt_correct, Link.LiveCallCompilerWith.attempt_correct_depth{src}"
++      return 0
++    | .error _ => pure ()
++  -- This complete-file attempt leaves every previous mode and retry action below intact.
++  let resultCallEnabled := !opt && !tailOn && SC0.funcs.any (fun fi =>
++    Backend.Stock.MemorySretCopy.eligible fi.func || (Backend.Stock.VoidCall.sourceData? fi.func).isSome ||
++    (Backend.Stock.ResultCall.sourceData? fi.func).isSome)
++  if resultCallEnabled then
++    let lower := Backend.Stock.ResultCall.lowerValidated
++    let SP := SC0.placedProductionWith lower deadCleanup
++    match Link.ResultCallCompilerWith.attempt lower SP file0 deadCleanup with
++    | .ok file =>
++      IO.FS.writeBinFile exe file
++      IO.println s!"lean-link: {exe}: {summary} written by Link.ResultCallCompilerWith.attempt (Link.ResultCallCompilerWith.attempt_correct, Link.ResultCallCompilerWith.attempt_correct_depth)"
++      if let some f := ldFile then
++        match ← ldCheck SP file0 f with
++        | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
++        | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
++      let src := if srcOk then
++          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.ResultCallCompilerWith.attempt_correct_source, Link.ResultCallCompilerWith.attempt_correct_source_peak"
++        else "; outside SrcScopeB: about the legalised program only"
++      IO.println s!"lean-link: {exe}: coverage: Link.ResultCallCompilerWith.attempt_correct, Link.ResultCallCompilerWith.attempt_correct_depth{src}"
++      return 0
++    | .error _ => pure ()
+   let returnPinEnabled := !opt && !tailOn && SC0.funcs.any (fun fi =>
+     Backend.Stock.MemorySretCopy.eligible fi.func || (Backend.Stock.VoidCall.sourceData? fi.func).isSome)
+   if returnPinEnabled then

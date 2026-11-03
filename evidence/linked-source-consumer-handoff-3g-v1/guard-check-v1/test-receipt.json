@@ -1,0 +1,6 @@
+{
+  "syntax": "passed",
+  "dead_owner_guard_resumes_owned_dummy": "passed",
+  "launcher_denies_missing_permit_after_owner_exit": "passed",
+  "actual_scheduler_signals": []
+}
