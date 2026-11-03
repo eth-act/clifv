@@ -1,0 +1,14 @@
+{
+  "approved": true,
+  "mixed_lease_restored": true,
+  "mixed_receipt_sha256": "4028d8d12e114c893a305e403b35dcf1328b4d3291ed60fc878d3665a9b6b829",
+  "mixed_guard_sha256": "20ae2077d796c3bd6457f690fb324f69d17ba6ad7236d2bbcfc84d5a036bd65c",
+  "prepared_sha256": "704914c4b8474694ff95e9fff9565f4a3fa68649ade8461451d07aeb88c0ff7b",
+  "acquire_R394_reader": "finished_naturally_and_released_R",
+  "source_R_writer_release_sha256": "323de8dca5ea730df2eae5475f78c964200e8e9c4bf4f4ef33e0ec75877fc469",
+  "R_writers": [],
+  "shared_locks_checked_free": true,
+  "scheduler": 1723571,
+  "scheduler_birth": 1793694108.91,
+  "utc": "2026-11-03T22:40:40.961214+00:00"
+}

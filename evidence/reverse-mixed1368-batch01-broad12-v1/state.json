@@ -1,0 +1,42 @@
+{
+  "status": "failed_inspect_exact_diagnostic",
+  "owner": 1810244,
+  "owner_birth": 1793742644.85,
+  "scheduler": 1723571,
+  "scheduler_birth": 1793694108.91,
+  "scope_parent": "/sys/fs/cgroup/user.slice/user-30034.slice/user@30034.service/clifv.slice",
+  "same_controller_resumed": true,
+  "signals_to_compilers": [],
+  "source_share_release": "source2GiB and acquire1GiB remain active;priority replaces broad12GiB",
+  "allocation": "exclusive12GiB priority providers;broad controller paused;source2GiB/acquire1GiB;no backup",
+  "full_goal_complete": false,
+  "config_plan_sha256": "b88e536194c1ea5639fd5d96b769ba70408a5646f2f6e0425a8d7cb7f91df98f",
+  "utc": "2026-11-03T21:52:57.546434+00:00",
+  "boundary_jobs": [
+    {
+      "pid": 1803017,
+      "args": [
+        "/usr/bin/python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/lake-time.py",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/stock-current-main-full-gate-v6/runs/combined/normal/current-v6-resume1/scheduler/FV.Backend.Proof.StockRotateLeftRegisterWitness.time",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/memcap.sh",
+        "lake",
+        "build",
+        "FV.Backend.Proof.StockRotateLeftRegisterWitness"
+      ]
+    }
+  ],
+  "controller_paused": true,
+  "consumer": {
+    "pid": 1814734,
+    "birth": 1793742768.18
+  },
+  "consumer_exit": 1,
+  "error": "AssertionError(('Inspect exact consumer diagnostic; no unchanged retry', 1))",
+  "configuration_restoration": {
+    "original_config_restored": true,
+    "original_sha256": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+    "changed": false
+  },
+  "restored_allocation": "broad12GiB/source2GiB/acquire1GiB/orchestration1GiB"
+}

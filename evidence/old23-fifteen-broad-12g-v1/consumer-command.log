@@ -1,0 +1,9 @@
+unaffected1730 0
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/old23-fifteen-broad-12g-v1/gate.py", line 73, in <module>
+    guards(True);unaffected=sorted(set(g)-set(names));assert len(unaffected)==1730;run('unaffected1730',['lake','build','--no-build',*unaffected]);origins={n:origin(n) for n in unaffected};(D/'unaffected-creators.json').write_text(json.dumps(origins,indent=2)+'\n')
+                                                                                                                                                              ~~~~~~^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/old23-fifteen-broad-12g-v1/gate.py", line 48, in origin
+    a=known.get(n);assert a and a['native_key']==md['depHash'] and a['trace_sha256']==sha(tr) and a['payload_sha256']==payload,(n,'unsupported compact creator')
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('FV.Compile.SubsetTC', 'unsupported compact creator')

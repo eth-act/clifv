@@ -1,0 +1,17 @@
+{
+  "scope": "read-only diagnosis; no reuse",
+  "records": [
+    {
+      "label": "current-key",
+      "exit": 0,
+      "stdout": "\"a928860d431fe036\"\n",
+      "log_sha256": "cd2989f805b863c2b6002afec80702e3dff44f8f09ca8e4ef14a9a1a62818886"
+    },
+    {
+      "label": "full-normal",
+      "exit": 3,
+      "stdout": null,
+      "log_sha256": "d5f5185e51049b96362f0711da821020ca2306240275f73509ad948c381bd585"
+    }
+  ]
+}

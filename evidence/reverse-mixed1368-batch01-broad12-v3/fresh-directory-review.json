@@ -1,0 +1,17 @@
+{
+  "status": "fresh_static_only_directory;not_launched",
+  "files": {
+    "gate.py": "f819504843491421bd22accda386152b8a8337c75c83bf0967f322a4253fbf59",
+    "run.py": "6b61e26fdd8ca83ff8c9a7d90530869406a0da31aa9706511787cb3d9e0e0697",
+    "guard.py": "e9173284d13b05f2eddd5374ee0bed6503f429d7bf39704bca2a4cbaece56dee",
+    "launch.py": "fe81e71507505eeb304934dfdbddbe87de3de20c7118a1ac8a2e1b91bb964313",
+    "restore_config.py": "0f124c9301351dd72c55f0507c06e924c51f9dee276ca3db1e36a30368d97c39",
+    "original-G-lakefile.toml": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+    "config-restoration.json": "b88e536194c1ea5639fd5d96b769ba70408a5646f2f6e0425a8d7cb7f91df98f"
+  },
+  "runtime_files_absent": true,
+  "creator_of_v2_stale_release": "coordinator setup copied from v1 before owner launch",
+  "v2_consumer_started": false,
+  "v2_gate_started": false,
+  "v2_release_sha": "f76d3a4182b638c709eb93f015b9cab3934ce91ce9c836768505344c6cf294b4"
+}

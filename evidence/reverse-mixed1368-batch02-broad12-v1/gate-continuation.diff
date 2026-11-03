@@ -1,0 +1,42 @@
+--- batch01/gate.py
++++ batch02/gate.py
+@@ -96,14 +96,26 @@
+   if rc!=0:continue
+   assert sha(tr)==before;expected=cold('donor-cold',root,n);return owner,root,expected
+  return None
++prior_path=E/'reverse-mixed1368-batch01-broad12-v3/receipt.json'
++assert sha(prior_path)=='6bd7911e7cfe1e6470d916575cb9d2ef947a8c05e1158ca34bc89b27e0ae35fd'
++prior=json.loads(prior_path.read_text());assert prior['status']=='BATCH_LIMIT_PASSED_INCOMPLETE' and prior['fresh_kernels']==64
++prior_nodes=prior['nodes'];assert len(prior_nodes)==80
++assert [x['target'] for x in prior_nodes]==[x['target'] for x in I['nodes_topological'][:80]]
++def prior_guard():
++ for x in prior_nodes:
++  assert creator_ok(x['target'],x['key']),('prior creator drift',x['target'])
++  for f,h in x['outputs'].items():assert sha(G/f)==h,('prior output drift',f)
+ status='RUNNING';error=None
+ try:
+  guards();assert (G/'lakefile.toml').read_bytes()==original;full_source_check(order);normal('unaffected2013',C['unaffected2013']);assert keys('baseline2013-keys',C['unaffected2013'])==baseKeys
+  for f,h in base['payload_sha256'].items():assert sha(G/f)==h,('baseline output drift',f)
+  for row in bindings['rows']:assert creator_ok(row['target'],row['key']),('baseline creator drift',row['target'])
+  for f,h in I['protected118_prior_nodes'].items():assert sha(G/f)==h,('protected118 drift',f)
++ prior_guard();normal('prior80-normal',[x['target'] for x in prior_nodes])
++ assert keys('prior80-keys',[x['target'] for x in prior_nodes])=={x['target']:x['key'] for x in prior_nodes}
++ currentKeys.update({x['target']:x['key'] for x in prior_nodes})
+  tmp=G/'lakefile.toml.mixed1368-project';tmp.write_bytes(projected);os.replace(tmp,G/'lakefile.toml')
+- for i,row in enumerate(I['nodes_topological']):
++ for i,row in enumerate(I['nodes_topological'][80:],start=80):
+   if fresh>=64 or time.monotonic()-started>=1800:status='BATCH_LIMIT_PASSED_INCOMPLETE';break
+   n=row['target'];guards();deps=sorted(closure(n)-{n},key=index.get);full_source_check(closure(n));assert all(x in currentKeys for x in deps),('unvalidated predecessor',n);normal('deps-'+str(i),deps);key=keys('key-'+str(i),[n])[n]
+   if row['initial_current_key'] is not None:assert key==row['initial_current_key'],('initial key drift',n,key)
+@@ -133,9 +145,9 @@
+ finally:
+  restoration=restore_config(L);(L/'gate-config-restoration.json').write_text(json.dumps(restoration,indent=2)+'\n')
+  if status!='FAILED_AT_FIRST_DIAGNOSTIC':
+-  normal('batch-original-normals',[x['target'] for x in nodes]);normal('baseline2013-final',C['unaffected2013']);full_source_check(order)
++  prior_guard();normal('prior80-final',[x['target'] for x in prior_nodes]);normal('batch-original-normals',[x['target'] for x in nodes]);normal('baseline2013-final',C['unaffected2013']);full_source_check(order)
+   for f,h in base['payload_sha256'].items():assert sha(G/f)==h,('baseline mutated',f)
+   for f,h in I['protected118_prior_nodes'].items():assert sha(G/f)==h,('protected118 mutated',f)
+   if status=='ALL1368_TARGETS_PASSED_PENDING_FINAL_GATES':
+    normal('complete3381',order);requested=json.loads((D/'remaining-cone-proposal-v1.json').read_text())['requested'];normal('reverse326',requested);status='PASSED_COMPLETE3381_NORMAL_AND326;FINAL_PROVENANCE_AUDIT_REQUIRED'
+- (L/'receipt.json').write_text(json.dumps({'status':status,'proposal_sha256':sha(proposal),'nodes':nodes,'commands':records,'fresh_kernels':fresh,'error':error,'elapsed_seconds':time.monotonic()-started,'baseline2013_outputs_unchanged':True,'protected118_unchanged':True,'canonical_config_restored':True,'full_original_goal':'OPEN'},indent=2)+'\n');(L/'lease-ended.json').write_text('{"canonical_config_restored":true}\n')
++ (L/'receipt.json').write_text(json.dumps({'status':status,'proposal_sha256':sha(proposal),'nodes':nodes,'commands':records,'fresh_kernels':fresh,'skipped_prior_nodes':80,'prior560_outputs_unchanged':True,'prior_receipt_sha256':sha(prior_path),'error':error,'elapsed_seconds':time.monotonic()-started,'baseline2013_outputs_unchanged':True,'protected118_unchanged':True,'canonical_config_restored':True,'full_original_goal':'OPEN'},indent=2)+'\n');(L/'lease-ended.json').write_text('{"canonical_config_restored":true}\n')

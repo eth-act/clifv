@@ -1,0 +1,15 @@
+{
+  "status": "fresh_static_only_no_runtime_state",
+  "files": {
+    "gate.py": "4d645461bc119e3692c1289738473b612dc3444b6dc00bc0102beec0299983a4",
+    "run.py": "a17fd30cd6edba352408e09ed95d369af8379daa118cf01809700735c7e1bfeb",
+    "guard.py": "e9173284d13b05f2eddd5374ee0bed6503f429d7bf39704bca2a4cbaece56dee",
+    "launch.py": "fe81e71507505eeb304934dfdbddbe87de3de20c7118a1ac8a2e1b91bb964313",
+    "restore_config.py": "0f124c9301351dd72c55f0507c06e924c51f9dee276ca3db1e36a30368d97c39",
+    "original-G-lakefile.toml": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+    "config-restoration.json": "b88e536194c1ea5639fd5d96b769ba70408a5646f2f6e0425a8d7cb7f91df98f",
+    "gate-continuation.diff": "fac19b73125b662fe607169116a7e90047be1f19f2724936422bc4d824323c1a",
+    "continuation-proposal.json": "30cd9adaa9b0a36071dc4420b35e5fd5f1dc84a97452df36c0443d1e766fc033"
+  },
+  "runtime_state_absent": true
+}

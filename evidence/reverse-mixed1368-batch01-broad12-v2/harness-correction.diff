@@ -1,0 +1,16 @@
+--- v1/gate.py
++++ v2/gate.py
+@@ -36,7 +36,12 @@
+  guards();seq+=1;label=str(seq).zfill(4)+'-'+label;out=L/(label+'.stdout');err=L/(label+'.stderr');mem=L/(label+'.mem');e=dict(env,FV_MEMCAP_STATS=str(mem),FV_MEMCAP_UNIT='worker-o-mixed1368-b01-'+str(seq))
+  with out.open('w') as o,err.open('w') as x:p=subprocess.run([str(P/'scripts/memcap.sh'),*argv],cwd=root,env=e,stdout=o,stderr=x)
+  r={'label':label,'argv':argv,'cwd':str(root),'exit':p.returncode,'stdout_sha256':sha(out),'stderr_sha256':sha(err),'memory':mem.read_text() if mem.exists() else 'MISSING'};records.append(r);(L/'commands.json').write_text(json.dumps(records,indent=2)+'\n');assert p.returncode in allowed,(label,p.returncode,str(err));return p.returncode,out.read_text(),err.read_text()
+-def normal(label,names,root=G,allowed=(0,)):return run(label,[tool,'build','--no-build',*names],root,allowed)
++def normal(label,names,root=G,allowed=(0,)):
++ if not names:
++  records.append({'label':label,'cwd':str(root),'exit':0,'status':'ZERO_PROPER_DEPENDENCIES','target_count':0,'lake_invoked':False})
++  (L/'commands.json').write_text(json.dumps(records,indent=2)+'\n')
++  return 0,'',''
++ return run(label,[tool,'build','--no-build',*names],root,allowed)
+ def keys(label,names):
+  _,text,_=run(label,[tool,'--json','query','--no-build',*['+'+n+':depHash' for n in names]]);got=[json.loads(x) for x in text.splitlines() if x.strip()];assert len(got)==len(names);return dict(zip(names,got))
+ def payloads(root,n):

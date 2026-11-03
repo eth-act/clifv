@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/reverse-mixed1368-batch01-broad12-v1/gate.py", line 103, in <module>
+    n=row['target'];guards();deps=sorted(closure(n)-{n},key=index.get);full_source_check(closure(n));assert all(x in currentKeys for x in deps),('unvalidated predecessor',n);normal('deps-'+str(i),deps);key=keys('key-'+str(i),[n])[n]
+                                                                                                                                                                              ~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/reverse-mixed1368-batch01-broad12-v1/gate.py", line 39, in normal
+    def normal(label,names,root=G,allowed=(0,)):return run(label,[tool,'build','--no-build',*names],root,allowed)
+                                                       ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/reverse-mixed1368-batch01-broad12-v1/gate.py", line 38, in run
+    r={'label':label,'argv':argv,'cwd':str(root),'exit':p.returncode,'stdout_sha256':sha(out),'stderr_sha256':sha(err),'memory':mem.read_text() if mem.exists() else 'MISSING'};records.append(r);(L/'commands.json').write_text(json.dumps(records,indent=2)+'\n');assert p.returncode in allowed,(label,p.returncode,str(err));return p.returncode,out.read_text(),err.read_text()
+                                                                                                                                                                                                                                                                           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('0003-deps-0', 3, '/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/reverse-mixed1368-batch01-broad12-v1/0003-deps-0.stderr')

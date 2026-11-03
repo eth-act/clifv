@@ -1,0 +1,7 @@
+{
+  "owner": "C",
+  "descriptor": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/outputs/fv/63903f5e5fce0ef6.json",
+  "sha256": "9728c487f8408c97286861a791fb7813fa9c1fcb4f83b34dc0c161df274500aa",
+  "action": "matched held descriptor;no artifact consumed;fresh R compilation approved",
+  "setup_differences_held": 21
+}

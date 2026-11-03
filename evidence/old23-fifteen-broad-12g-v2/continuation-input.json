@@ -1,0 +1,57 @@
+{
+  "status": "PROPOSED_EXACT_REGISTRY_CONTINUATION;NO_LAUNCH",
+  "approved_proposal_sha256": "5e1544450469f3f7efc89db54914d98ef5b36c002a68b1ee0b538a7f92a3d8e5",
+  "failed_owner_state_sha256": "7bc6f6a218ceb847f305ce269e920d94acaed26dee1af498ff869d87c94c8559",
+  "failed_consumer_log_sha256": "380a5dd35f85e9158fdf7cf95a1e682b31949eb1963e1286570a6df70e7f7cb8",
+  "failed_guard_receipt_sha256": "ac33b4865e0ae932aabe6d83089a75e905ee925da5db790e603a9f5c162756b0",
+  "complete_creator_classification": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/old23-complete-consumed-origin-continuation-v3/receipt.json",
+  "complete_creator_classification_sha256": "1986ebec28d32c0d7c203898394ae8cbb815ce84193a58e783111eede115e78c",
+  "registry_sha256": "49e5d97593e748f2238b00db41b8cbab330ef8768744499bea0d3f912040e754",
+  "existing_approval_additions_only": [
+    "FV.Compile.SubsetTC",
+    "FV.Compile.SubsetTF"
+  ],
+  "out_of_scope_release_modules": [
+    {
+      "module": "FV.ArmFault.Step",
+      "release_receipt_sha256": "4ce80786963309e2ec9db793e35b07a655f652fb31b27050f28b35495b12c4eb",
+      "action": "not applied;outside declared1745 closure"
+    },
+    {
+      "module": "FV.Concurrency.ArmFootprint",
+      "release_receipt_sha256": "4ce80786963309e2ec9db793e35b07a655f652fb31b27050f28b35495b12c4eb",
+      "action": "not applied;outside declared1745 closure"
+    },
+    {
+      "module": "FV.Concurrency.ArmInstFoot",
+      "release_receipt_sha256": "4ce80786963309e2ec9db793e35b07a655f652fb31b27050f28b35495b12c4eb",
+      "action": "not applied;outside declared1745 closure"
+    },
+    {
+      "module": "FV.Concurrency.ArmThread",
+      "release_receipt_sha256": "4ce80786963309e2ec9db793e35b07a655f652fb31b27050f28b35495b12c4eb",
+      "action": "not applied;outside declared1745 closure"
+    },
+    {
+      "module": "FV.Concurrency.Armv8",
+      "release_receipt_sha256": "14195addaed7c12929458560acefa48edef162e64ea7f2ab8ad84b494f8dc62a",
+      "action": "not applied;outside declared1745 closure"
+    },
+    {
+      "module": "FV.Concurrency.Exec",
+      "release_receipt_sha256": "14195addaed7c12929458560acefa48edef162e64ea7f2ab8ad84b494f8dc62a",
+      "action": "not applied;outside declared1745 closure"
+    },
+    {
+      "module": "FV.Concurrency.Rel",
+      "release_receipt_sha256": "14195addaed7c12929458560acefa48edef162e64ea7f2ab8ad84b494f8dc62a",
+      "action": "not applied;outside declared1745 closure"
+    }
+  ],
+  "unaffected_normal_reuse": "reuse passed1730 only after every current source/config/trace/key/payload binding matches; do not rerun that successful stage",
+  "new_target_kernels_completed_in_v1": 0,
+  "preserved_recovered_target": "FV.Backend.Proof.StockMemoryOrdinaryCfgJumpReturnAt",
+  "targets_and_final_gates": "same15;skip actual normals;fresh six roots and necessary eight descendants only;final1745/consumed creators/old23 exact AX remain required",
+  "BodySplit_donor_setup_hold": 21,
+  "new_origin_release_or_setup_exception": false
+}

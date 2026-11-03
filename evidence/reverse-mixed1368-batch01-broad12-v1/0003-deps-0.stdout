@@ -1,0 +1,2232 @@
+⚠ [3/5462] Replayed FV.Arm.BitVec
+warning: FV/Arm/BitVec.lean:318:41: This simp argument is unused:
+  setWidth_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [partInstall, truncate_eq_setWidth, getLsbD_or, getLsbD_and, getLsbD_not, getLsbD_shiftLeft, hi,
+    decide_true, Bool.true_and, getLsbD_setWidth, getLsbD_allOnes, Bool.not_and, Bool.not_not, getLsbD_cast,
+    BitVec.getLsbD_append, zeroExtend_eq_setWidth]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:318:54: This simp argument is unused:
+  zeroExtend_eq_setWidth
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [partInstall, truncate_eq_setWidth, getLsbD_or, getLsbD_and, getLsbD_not, getLsbD_shiftLeft, hi,
+    decide_true, Bool.true_and, getLsbD_setWidth, getLsbD_allOnes, Bool.not_and, Bool.not_not, getLsbD_cast,
+    BitVec.getLsbD_append, setWidth_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:342:56: This simp argument is unused:
+  Nat.succ_eq_one_add
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [List.length_cons, Nat.mul_one, Nat.mul_add]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:661:43: This simp argument is unused:
+  cast_heq_iff
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [append_zero_width, heq_eq_eq, Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:689:13: This simp argument is unused:
+  cast
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [zero_width_append, toNat_ofNatLT]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:689:38: This simp argument is unused:
+  toNat_ofNatLT
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [cast, zero_width_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:731:16: This simp argument is unused:
+  Nat.add_sub_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:739:12: This simp argument is unused:
+  h5
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [h6]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:746:14: This simp argument is unused:
+  Nat.testBit_mod_two_pow
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:759:28: This simp argument is unused:
+  Nat.sub_add_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth, low_le]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:759:48: This simp argument is unused:
+  low_le
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth, Nat.sub_add_cancel]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:772:39: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:773:13: This simp argument is unused:
+  h_vlt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [forall_prop_of_true] at this
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:774:28: This simp argument is unused:
+  Nat.sub_add_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:843:8: This simp argument is unused:
+  BitVec.lt_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:847:8: This simp argument is unused:
+  BitVec.lt_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:908:89: This simp argument is unused:
+  cast_ofNat
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, BitVec.extractLsb'_ofNat, Nat.zero_mod, Nat.zero_shiftRight]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:922:28: This simp argument is unused:
+  getLsbD_cast
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, getLsbD_extract]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:922:42: This simp argument is unused:
+  getLsbD_extract
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, getLsbD_cast]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:927:4: This simp argument is unused:
+  and_iff_right_iff_imp
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show (i : Nat) ≤ 7 by omega, decide_true, Bool.true_and, decide_eq_true_eq, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:927:27: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show (i : Nat) ≤ 7 by omega, decide_true, Bool.true_and, and_iff_right_iff_imp, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:929:4: This simp argument is unused:
+  Bool.and_eq_false_imp
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show ¬(i : Nat) ≤ 7 by omega, decide_false, Bool.false_and, decide_eq_true_eq, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:929:27: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show ¬(i : Nat) ≤ 7 by omega, decide_false, Bool.false_and, Bool.and_eq_false_imp, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:988:37: This simp argument is unused:
+  Fin.is_lt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getLsbD_extractLsBytes, decide_true, getLsbD_zero, Bool.and_false, implies_true]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:988:48: This simp argument is unused:
+  decide_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getLsbD_extractLsBytes, Fin.is_lt, getLsbD_zero, Bool.and_false, implies_true]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:1026:2: `[deprecated]` attribute should specify the date or library version at which the deprecation was introduced, using `(since := "...")`
+✖ [68/5462] Building FV.Arm.Memory.Attr
+error: target is out-of-date and needs to be rebuilt
+✖ [74/5462] Building FV.Arm.Tactics.Common
+error: target is out-of-date and needs to be rebuilt
+✖ [75/5462] Building FV.Arm.Tactics.Simp
+error: target is out-of-date and needs to be rebuilt
+✖ [80/5462] Building FV.Arm.Tactics.Sym.Common
+error: target is out-of-date and needs to be rebuilt
+✖ [83/5462] Building FV.Arm.Tactics.Sym.LCtxSearch
+error: target is out-of-date and needs to be rebuilt
+✖ [89/5462] Building FV.Arm.ProgramKeep
+error: target is out-of-date and needs to be rebuilt
+✖ [90/5462] Building FV.Concurrency.ArmFootprint
+error: target is out-of-date and needs to be rebuilt
+⚠ [104/5462] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+⚠ [107/5462] Replayed FV.Clif.Parse
+warning: FV/Clif/Parse.lean:663:8: Variable name `t` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _t
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [170/5462] Replayed FV.Backend.Proof.RegallocOperands
+warning: FV/Backend/Proof/RegallocOperands.lean:438:74: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:440:23: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:457:27: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:458:27: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [171/5462] Replayed FV.Backend.Proof.AbiClass
+warning: FV/Backend/Proof/AbiClass.lean:373:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:375:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:375:23: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:377:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:377:23: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:378:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:378:20: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:393:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:397:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [190/5462] Replayed FV.Backend.Proof.IselCmpInv
+warning: FV/Backend/Proof/IselCmpInv.lean:34:78: This simp argument is unused:
+  StateT.bind
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [liftM, monadLift, MonadLift.monadLift, StateT.lift, bind, Except.bind, pure, StateT.pure, Except.pure,
+    StateT.run]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/IselCmpInv.lean:444:25: This simp argument is unused:
+  hc
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [Functor.map, Except.map, M.run_bind, M.run_set, M.except_ok_bind, M.run_pure, Except.ok.injEq,
+    Prod.mk.injEq, Option.some.injEq, ExtResult.ok.injEq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/IselCmpInv.lean:444:29: This simp argument is unused:
+  Functor.map
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hc, Except.map, M.run_bind, M.run_set, M.except_ok_bind, M.run_pure, Except.ok.injEq,
+    Prod.mk.injEq, Option.some.injEq, ExtResult.ok.injEq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/IselCmpInv.lean:444:42: This simp argument is unused:
+  Except.map
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hc, Functor.map, M.run_bind, M.run_set, M.except_ok_bind, M.run_pure, Except.ok.injEq,
+    Prod.mk.injEq, Option.some.injEq, ExtResult.ok.injEq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/IselCmpInv.lean:450:25: This simp argument is unused:
+  hc
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [243/5462] Replayed FV.Opt.Proof.SemFacts
+warning: FV/Opt/Proof/SemFacts.lean:273:72: `dif_pos` has been deprecated: Use `dite_eq_left` instead
+✖ [244/5462] Building FV.Backend.Lowering.StockI128
+error: target is out-of-date and needs to be rebuilt
+✖ [245/5462] Building FV.Backend.SkipDead
+error: target is out-of-date and needs to be rebuilt
+⚠ [251/5462] Replayed FV.Backend.Proof.RegallocSound
+warning: FV/Backend/Proof/RegallocSound.lean:124:18: `dif_pos` has been deprecated: Use `dite_eq_left` instead
+⚠ [277/5462] Replayed FV.Backend.Proof.IselMemArm
+warning: FV/Backend/Proof/IselMemArm.lean:104:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselMemArm.lean:110:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselMemArm.lean:110:20: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselMemArm.lean:111:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselMemArm.lean:116:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselMemArm.lean:120:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselMemArm.lean:121:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselMemArm.lean:121:64: `if_pos` has been deprecated: Use `ite_eq_left` instead
+✖ [283/5462] Building FV.Backend.Proof.IselOutBoundDefs
+error: target is out-of-date and needs to be rebuilt
+✖ [284/5462] Building FV.Backend.Proof.IselOutBoundExt
+error: target is out-of-date and needs to be rebuilt
+ℹ [285/5462] Replayed FV.Backend.Proof.StockD0Code
+info: FV/Backend/Proof/StockD0Code.lean:87:0: 'Backend.Stock.D0.erased_code' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: FV/Backend/Proof/StockD0Code.lean:88:0: 'Backend.Stock.D0.normalized_eq_legacy' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: FV/Backend/Proof/StockD0Code.lean:89:0: 'Backend.Stock.D0.eligible_sound' depends on axioms: [propext, Quot.sound]
+ℹ [286/5462] Replayed FV.Backend.Proof.StockD0Dispatch
+info: FV/Backend/Proof/StockD0Dispatch.lean:47:0: 'Backend.Stock.D0.defaultLower_eq_legacy' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: FV/Backend/Proof/StockD0Dispatch.lean:48:0: 'Backend.Stock.D0.failed_stock_falls_back' depends on axioms: [propext, Classical.choice, Quot.sound]
+info: FV/Backend/Proof/StockD0Dispatch.lean:49:0: 'Backend.Stock.D0.selectWith_eq_original' depends on axioms: [propext, Classical.choice, Quot.sound]
+⚠ [289/5462] Replayed FV.E2E.LinkPlace
+warning: FV/E2E/LinkPlace.lean:98:36: `if_true` has been deprecated: Use `ite_true` instead
+✖ [331/5462] Building FV.Backend.Proof.PerEdgePrepareUnsplitGraph
+error: target is out-of-date and needs to be rebuilt
+✖ [332/5462] Building FV.Backend.Proof.PerEdgeSpillHomes
+error: target is out-of-date and needs to be rebuilt
+✖ [338/5462] Building FV.Backend.Proof.StockPrologueCodeCore
+error: target is out-of-date and needs to be rebuilt
+✖ [340/5462] Building FV.Backend.Proof.StockDiagnosticChecker
+error: target is out-of-date and needs to be rebuilt
+✖ [341/5462] Building FV.Backend.Proof.StockPrologueAllCode
+error: target is out-of-date and needs to be rebuilt
+✖ [342/5462] Building FV.Backend.Proof.StockScalarAddSource
+error: target is out-of-date and needs to be rebuilt
+✖ [344/5462] Building FV.Backend.Proof.StockCastPair
+error: target is out-of-date and needs to be rebuilt
+✖ [345/5462] Building FV.Backend.Proof.StockCmpPureWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [347/5462] Building FV.Backend.Proof.StockD0Edges
+error: target is out-of-date and needs to be rebuilt
+✖ [348/5462] Building FV.Backend.Proof.StockD0Source
+error: target is out-of-date and needs to be rebuilt
+✖ [356/5462] Building FV.Backend.Proof.StockMinMaxNarrowFixtures
+error: target is out-of-date and needs to be rebuilt
+✖ [359/5462] Building FV.Backend.Proof.StockPrologueAllSource
+error: target is out-of-date and needs to be rebuilt
+✖ [361/5462] Building FV.Backend.Proof.StockPrologueInput
+error: target is out-of-date and needs to be rebuilt
+✖ [367/5462] Building FV.Clif.LinkClifX
+error: target is out-of-date and needs to be rebuilt
+✖ [369/5462] Building FV.Clif.MemTrapWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [370/5462] Building FV.Clif.Vector
+error: target is out-of-date and needs to be rebuilt
+✖ [371/5462] Building FV.DSL.Map
+error: target is out-of-date and needs to be rebuilt
+✖ [380/5462] Building FV.Compile.Runtime
+error: target is out-of-date and needs to be rebuilt
+✖ [384/5462] Building FV.Concurrency.ClifMM
+error: target is out-of-date and needs to be rebuilt
+✖ [387/5462] Building FV.Concurrency.Code
+error: target is out-of-date and needs to be rebuilt
+✖ [406/5462] Building FV.Concurrency.ArmProgram
+error: target is out-of-date and needs to be rebuilt
+✖ [411/5462] Building FV.Concurrency.CallResumeChecks
+error: target is out-of-date and needs to be rebuilt
+✖ [412/5462] Building FV.Concurrency.CallValid
+error: target is out-of-date and needs to be rebuilt
+✖ [416/5462] Building FV.E2E.ArmGprFoot
+error: target is out-of-date and needs to be rebuilt
+⚠ [421/5462] Replayed FV.Opt.Proof.LegalMem
+warning: FV/Opt/Proof/LegalMem.lean:145:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalMem.lean:145:19: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalMem.lean:146:52: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalMem.lean:148:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalMem.lean:150:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalMem.lean:150:21: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalMem.lean:151:54: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalMem.lean:152:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalMem.lean:152:21: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalMem.lean:161:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalMem.lean:166:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalMem.lean:167:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalMem.lean:168:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalMem.lean:169:24: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalMem.lean:169:24: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalMem.lean:172:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [422/5462] Replayed FV.Opt.Proof.LegalExt
+warning: FV/Opt/Proof/LegalExt.lean:77:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalExt.lean:80:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalExt.lean:81:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalExt.lean:83:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalExt.lean:84:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalExt.lean:115:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [426/5462] Replayed FV.Opt.Proof.LegalShift
+warning: FV/Opt/Proof/LegalShift.lean:64:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalShift.lean:64:20: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalShift.lean:65:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalShift.lean:65:20: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalShift.lean:90:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalShift.lean:90:18: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalShift.lean:92:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalShift.lean:92:18: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalShift.lean:99:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalShift.lean:99:18: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalShift.lean:101:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalShift.lean:101:18: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalShift.lean:122:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalShift.lean:123:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [431/5462] Replayed FV.Opt.Proof.LegalPlan
+warning: FV/Opt/Proof/LegalPlan.lean:313:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalPlan.lean:313:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalPlan.lean:374:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalPlan.lean:374:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalPlan.lean:644:8: `dif_pos` has been deprecated: Use `dite_eq_left` instead
+⚠ [432/5462] Replayed FV.Opt.Proof.LegalSim
+warning: FV/Opt/Proof/LegalSim.lean:261:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:271:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalSim.lean:308:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:309:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:338:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalSim.lean:339:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalSim.lean:1191:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:1191:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:1191:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:1198:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalSim.lean:1198:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalSim.lean:1198:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalSim.lean:1216:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:1216:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:1216:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:1222:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalSim.lean:1222:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalSim.lean:1222:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalSim.lean:1565:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:1571:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Opt/Proof/LegalSim.lean:2643:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Opt/Proof/LegalSim.lean:2656:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [434/5462] Building FV.E2E.LinkPlaceB
+error: target is out-of-date and needs to be rebuilt
+✖ [438/5462] Building FV.Opt.Proof.DomInv
+error: target is out-of-date and needs to be rebuilt
+✖ [443/5462] Building FV.Opt.Proof.Unreachable
+error: target is out-of-date and needs to be rebuilt
+✖ [451/5462] Building FV.Opt.Proof.SimpDen
+error: target is out-of-date and needs to be rebuilt
+✖ [457/5462] Building FV.Opt.Proof.InterpMatch
+error: target is out-of-date and needs to be rebuilt
+✖ [458/5462] Building FV.Opt.Proof.InterpState
+error: target is out-of-date and needs to be rebuilt
+✖ [460/5462] Building FV.Opt.Proof.RuleAttr
+error: target is out-of-date and needs to be rebuilt
+✖ [462/5462] Building FV.Opt.Proof.RuleNode
+error: target is out-of-date and needs to be rebuilt
+✖ [463/5462] Building FV.Opt.Proof.RuleTactic
+error: target is out-of-date and needs to be rebuilt
+✖ [520/5462] Building FV.Opt.Proof.RuleInfraShiftAmt
+error: target is out-of-date and needs to be rebuilt
+✖ [528/5462] Building FV.Opt.Proof.RuleSpaceshipUnsigned
+error: target is out-of-date and needs to be rebuilt
+✖ [529/5462] Building FV.Opt.Proof.RuleSpaceshipSigned
+error: target is out-of-date and needs to be rebuilt
+✖ [540/5462] Building FV.Opt.Proof.RuleShiftsConstSem
+error: target is out-of-date and needs to be rebuilt
+✖ [583/5462] Building FV.Opt.Proof.RuleInfraDivConst
+error: target is out-of-date and needs to be rebuilt
+✖ [595/5462] Building FV.E2E.LinkClifRev
+error: target is out-of-date and needs to be rebuilt
+✖ [600/5462] Building FV.Opt.Proof.LegalSimS
+error: target is out-of-date and needs to be rebuilt
+✖ [604/5462] Building FV.Opt.Proof.SemSimX
+error: target is out-of-date and needs to be rebuilt
+✖ [610/5462] Building FV.Opt.Proof.SemRaise
+error: target is out-of-date and needs to be rebuilt
+✖ [622/5462] Building FV.E2E.LinkPlaceSlotlessWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [628/5462] Building FV.Opt.Retype
+error: target is out-of-date and needs to be rebuilt
+⚠ [648/5462] Replayed FV.Front.RenameStep
+warning: FV/Front/RenameStep.lean:254:32: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Front/RenameStep.lean:255:52: `if_false` has been deprecated: Use `ite_false` instead
+✖ [650/5462] Building FV.Front.RenameRunX
+error: target is out-of-date and needs to be rebuilt
+✖ [651/5462] Building FV.Isle.Pretty
+error: target is out-of-date and needs to be rebuilt
+✖ [653/5462] Building FV.Isle.Generated.Opt.Closure
+error: target is out-of-date and needs to be rebuilt
+✖ [654/5462] Building FV.Isle.Generated.Opt.Manifest
+error: target is out-of-date and needs to be rebuilt
+✖ [665/5462] Building FV.Opt
+error: target is out-of-date and needs to be rebuilt
+✖ [666/5462] Building FV.Opt.Proof.CompleteUnreachable
+error: target is out-of-date and needs to be rebuilt
+✖ [667/5462] Building FV.Opt.Proof.CheckSpec
+error: target is out-of-date and needs to be rebuilt
+✖ [672/5462] Building FV.Opt.Proof.DomFacts
+error: target is out-of-date and needs to be rebuilt
+✖ [677/5462] Building FV.Opt.Proof.RulesProv
+error: target is out-of-date and needs to be rebuilt
+✖ [691/5462] Building FV.Opt.Proof.CompleteSimpCex
+error: target is out-of-date and needs to be rebuilt
+✖ [693/5462] Building FV.Opt.ZeroSlots
+error: target is out-of-date and needs to be rebuilt
+⚠ [705/5462] Replayed FV.Backend.Proof.LowerContract
+warning: FV/Backend/Proof/LowerContract.lean:98:55: The syntax is now `structure S : Type extends P` rather than `structure S extends P : Type`
+
+Note: The purpose of this change is to accommodate `structure S extends toP : P` syntax for naming parent projections.
+⚠ [710/5462] Replayed FV.Backend.Proof.DriverCheckSound
+warning: FV/Backend/Proof/DriverCheckSound.lean:519:92: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/DriverCheckSound.lean:561:6: `if_true` has been deprecated: Use `ite_true` instead
+✖ [752/5462] Building FV.Backend
+error: target is out-of-date and needs to be rebuilt
+⚠ [756/5462] Replayed FV.Backend.Proof.IselCmpRun
+warning: FV/Backend/Proof/IselCmpRun.lean:175:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [759/5462] Replayed FV.Backend.Proof.IselCtlBase
+warning: FV/Backend/Proof/IselCtlBase.lean:89:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCtlBase.lean:91:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [765/5462] Building FV.Backend.Lowering.StockComparisonCfg
+error: target is out-of-date and needs to be rebuilt
+✖ [766/5462] Building FV.Backend.Lowering.StockConditionalArgsRankedCfg
+error: target is out-of-date and needs to be rebuilt
+✖ [768/5462] Building FV.Backend.Lowering.StockResultCallWith
+error: target is out-of-date and needs to be rebuilt
+✖ [769/5462] Building FV.Backend.Lowering.StockCheckedWith
+error: target is out-of-date and needs to be rebuilt
+⚠ [799/5462] Replayed FV.Backend.Proof.LowerSim
+warning: FV/Backend/Proof/LowerSim.lean:1922:46: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+⚠ [804/5462] Replayed FV.Backend.Proof.IselCtlCallRules
+warning: FV/Backend/Proof/IselCtlCallRules.lean:927:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCtlCallRules.lean:1081:11: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [815/5462] Replayed FV.Backend.Proof.IselCovCtor
+warning: FV/Backend/Proof/IselCovCtor.lean:502:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:502:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:518:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:518:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:520:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:520:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:523:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:523:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:525:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:525:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:527:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:527:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:529:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:529:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:532:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:532:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:534:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:534:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:537:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:537:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:539:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:539:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:540:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:540:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:542:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:542:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:543:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:543:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:545:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:545:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:546:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:546:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:548:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:548:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:552:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:552:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:554:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:554:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:558:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:558:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:560:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:560:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:564:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:564:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:566:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:566:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:581:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:581:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:583:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:583:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:598:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:598:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:600:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:600:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:603:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:603:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:605:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:605:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:620:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:620:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:622:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:622:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:625:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:625:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:627:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:627:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:631:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:631:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:633:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:633:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:637:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:637:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:639:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:639:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:643:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:643:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:645:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:645:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:649:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCovCtor.lean:649:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [834/5462] Replayed FV.Backend.Proof.IselTermsLogic
+warning: FV/Backend/Proof/IselTermsLogic.lean:57:20: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:58:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:58:23: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:62:20: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:67:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:67:25: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:74:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:74:27: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:74:47: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:83:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:83:41: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselTermsLogic.lean:83:60: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [837/5462] Replayed FV.Backend.Proof.IselCtlTry
+warning: FV/Backend/Proof/IselCtlTry.lean:399:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselCtlTry.lean:472:11: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [847/5462] Replayed FV.E2E.RegLevelMachine
+warning: FV/E2E/RegLevelMachine.lean:121:6: `dite_cond_eq_true` has been deprecated: Use `dite_eq_left_of_eq_true` instead
+⚠ [848/5462] Replayed FV.Backend.Proof.RegallocFrame
+warning: FV/Backend/Proof/RegallocFrame.lean:127:29: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocFrame.lean:128:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocFrame.lean:197:71: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocFrame.lean:197:71: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocFrame.lean:204:68: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocFrame.lean:204:68: `if_true` has been deprecated: Use `ite_true` instead
+⚠ [850/5462] Replayed FV.Backend.Proof.RegallocLayout
+warning: FV/Backend/Proof/RegallocLayout.lean:46:15: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocLayout.lean:139:22: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocLayout.lean:149:50: `if_true` has been deprecated: Use `ite_true` instead
+⚠ [851/5462] Replayed FV.Backend.Proof.RegallocSlots
+warning: FV/Backend/Proof/RegallocSlots.lean:336:28: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/RegallocSlots.lean:342:28: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RegallocSlots.lean:365:20: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocSlots.lean:366:30: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/RegallocSlots.lean:368:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocSlots.lean:390:20: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocSlots.lean:391:30: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RegallocSlots.lean:393:23: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [858/5462] Replayed FV.Backend.Proof.RegallocMemAddr
+warning: FV/Backend/Proof/RegallocMemAddr.lean:115:27: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocMemAddr.lean:115:36: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [860/5462] Replayed FV.Backend.Proof.RegallocMoves
+warning: FV/Backend/Proof/RegallocMoves.lean:38:29: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:39:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:83:29: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:84:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:111:29: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:112:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:231:22: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:233:25: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [862/5462] Replayed FV.E2E.RegLevelPush
+warning: FV/E2E/RegLevelPush.lean:688:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelPush.lean:690:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelPush.lean:1017:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelPush.lean:1022:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [866/5462] Replayed FV.E2E.RegLevelOp
+warning: FV/E2E/RegLevelOp.lean:103:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelOp.lean:103:20: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelOp.lean:104:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelOp.lean:104:29: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [871/5462] Replayed FV.Backend.Proof.RegallocCover
+warning: FV/Backend/Proof/RegallocCover.lean:83:58: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocCover.lean:85:62: `if_true` has been deprecated: Use `ite_true` instead
+✖ [876/5462] Building FV.Backend.Proof.SpillCtlFormsT
+error: target is out-of-date and needs to be rebuilt
+⚠ [881/5462] Replayed FV.Backend.Proof.RefinesInsts2
+warning: FV/Backend/Proof/RefinesInsts2.lean:31:25: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:32:25: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:33:25: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:34:25: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:35:25: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:36:25: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:37:25: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:38:25: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:39:25: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:54:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:55:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:56:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:57:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:58:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:59:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:60:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:61:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:62:26: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:68:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:69:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:70:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:71:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:72:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:73:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:74:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:75:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:76:26: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:185:24: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:187:37: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:191:17: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:196:24: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:198:37: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:203:17: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:246:77: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:246:77: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:254:45: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:315:32: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:315:32: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:323:45: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:375:44: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:384:44: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:396:64: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RefinesInsts2.lean:401:56: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [884/5462] Replayed FV.Backend.Proof.MemRefines
+warning: FV/Backend/Proof/MemRefines.lean:425:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:451:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:463:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:479:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:510:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:510:19: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/MemRefines.lean:514:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/MemRefines.lean:517:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+✖ [897/5462] Building FV.Backend.Proof.SpillClsTab
+error: target is out-of-date and needs to be rebuilt
+✖ [900/5462] Building FV.Backend.Proof.SpillClsModel
+error: target is out-of-date and needs to be rebuilt
+✖ [902/5462] Building FV.Backend.Proof.SpillClsChain
+error: target is out-of-date and needs to be rebuilt
+✖ [910/5462] Building FV.Backend.Proof.DeadCleanupCset
+error: target is out-of-date and needs to be rebuilt
+✖ [915/5462] Building FV.Backend.Proof.DeadCleanupPrepareMap
+error: target is out-of-date and needs to be rebuilt
+✖ [916/5462] Building FV.Backend.Proof.DeadCleanupRun
+error: target is out-of-date and needs to be rebuilt
+✖ [917/5462] Building FV.Backend.Proof.DeadCleanupWitness
+error: target is out-of-date and needs to be rebuilt
+⚠ [933/5462] Replayed FV.Backend.Proof.StockCoverageCtor
+warning: FV/Backend/Proof/StockCoverageCtor.lean:137:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:137:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:153:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:153:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:155:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:155:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:158:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:158:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:160:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:160:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:162:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:162:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:164:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:164:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:167:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:167:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:169:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:169:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:172:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:172:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:174:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:174:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:175:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:175:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:177:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:177:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:178:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:178:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:180:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:180:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:181:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:181:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:183:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:183:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:187:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:187:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:189:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:189:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:193:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:193:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:195:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:195:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:199:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:199:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:201:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:201:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:216:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:216:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:218:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:218:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:233:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:233:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:235:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:235:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:238:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:238:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:240:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:240:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:255:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:255:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:257:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:257:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:260:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:260:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:262:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:262:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:266:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:266:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:268:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:268:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:272:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:272:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:274:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:274:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:278:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:278:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:280:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:280:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:284:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:284:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:513:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockCoverageCtor.lean:516:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [941/5462] Replayed FV.Backend.Proof.StockSourceSinkModel
+warning: FV/Backend/Proof/StockSourceSinkModel.lean:68:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockSourceSinkModel.lean:73:24: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [985/5462] Replayed FV.Unw.Model
+warning: FV/Unw/Model.lean:177:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Unw/Model.lean:191:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Unw/Model.lean:191:20: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Unw/Model.lean:191:39: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Unw/Model.lean:196:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Unw/Model.lean:234:20: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Unw/Model.lean:235:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Unw/Model.lean:248:20: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Unw/Model.lean:249:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [986/5462] Building FV.Unw.EhFrame
+error: target is out-of-date and needs to be rebuilt
+✖ [988/5462] Building FV.Backend.Proof.IndexedPredMultiplicity
+error: target is out-of-date and needs to be rebuilt
+✖ [993/5462] Building FV.Backend.Proof.IselCovTForm
+error: target is out-of-date and needs to be rebuilt
+✖ [1075/5462] Building FV.Backend.Proof.IselFlowT
+error: target is out-of-date and needs to be rebuilt
+✖ [1076/5462] Building FV.Backend.Proof.IselExclTF
+error: target is out-of-date and needs to be rebuilt
+✖ [1077/5462] Building FV.Backend.Proof.LowerLoopCtxTF
+error: target is out-of-date and needs to be rebuilt
+⚠ [1098/5462] Replayed FV.Backend.Proof.IselTermsALUAExtr
+warning: FV/Backend/Proof/IselTermsALUAExtr.lean:39:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [1111/5462] Replayed FV.Backend.Proof.IselMemBase
+warning: FV/Backend/Proof/IselMemBase.lean:59:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselMemBase.lean:60:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselMemBase.lean:124:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselMemBase.lean:125:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselMemBase.lean:136:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselMemBase.lean:137:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselMemBase.lean:150:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselMemBase.lean:153:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [1124/5462] Building FV.Backend.Proof.LowerLoopRunT
+error: target is out-of-date and needs to be rebuilt
+✖ [1127/5462] Building FV.Backend.Proof.IselFloatMem
+error: target is out-of-date and needs to be rebuilt
+✖ [1130/5462] Building FV.Backend.Proof.VCodeSemICall
+error: target is out-of-date and needs to be rebuilt
+✖ [1133/5462] Building FV.Backend.Proof.IselMemBaseTI
+error: target is out-of-date and needs to be rebuilt
+✖ [1135/5462] Building FV.Backend.Proof.IselCtlUnmatchTI
+error: target is out-of-date and needs to be rebuilt
+✖ [1137/5462] Building FV.Backend.Proof.IselSzTDefs
+error: target is out-of-date and needs to be rebuilt
+✖ [1139/5462] Building FV.Backend.Proof.IselSzExt
+error: target is out-of-date and needs to be rebuilt
+✖ [1512/5462] Building FV.Backend.Proof.IselSzSound
+error: target is out-of-date and needs to be rebuilt
+✖ [1658/5462] Building FV.Backend.Proof.IselNonETI
+error: target is out-of-date and needs to be rebuilt
+✖ [1659/5462] Building FV.Backend.Proof.IselOutBoundCall
+error: target is out-of-date and needs to be rebuilt
+⚠ [1661/5462] Replayed FV.E2E.Main
+warning: FV/E2E/Main.lean:81:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Main.lean:87:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [1668/5462] Replayed FV.E2E.Pair
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:165:16: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [1671/5462] Building FV.Backend.Proof.IselOutBoundTry
+error: target is out-of-date and needs to be rebuilt
+✖ [1676/5462] Building FV.Backend.Proof.IselPrgExtSoundT
+error: target is out-of-date and needs to be rebuilt
+✖ [1681/5462] Building FV.Backend.Proof.IselPrgCtorNoneT
+error: target is out-of-date and needs to be rebuilt
+✖ [1685/5462] Building FV.Backend.Proof.IselPrgExtSound
+error: target is out-of-date and needs to be rebuilt
+✖ [1690/5462] Building FV.Backend.Proof.IselPrgHandT
+error: target is out-of-date and needs to be rebuilt
+✖ [1693/5462] Building FV.Backend.Proof.IselPrgTabTF
+error: target is out-of-date and needs to be rebuilt
+✖ [1695/5462] Building FV.Backend.Proof.IselSem
+error: target is out-of-date and needs to be rebuilt
+✖ [1697/5462] Building FV.Backend.Proof.LSFn
+error: target is out-of-date and needs to be rebuilt
+✖ [1699/5462] Building FV.Backend.Proof.LSSeg
+error: target is out-of-date and needs to be rebuilt
+✖ [1702/5462] Building FV.Backend.Proof.LSMoves
+error: target is out-of-date and needs to be rebuilt
+✖ [1705/5462] Building FV.Backend.Proof.LSTermFixed
+error: target is out-of-date and needs to be rebuilt
+✖ [1851/5462] Building FV.Backend.Proof.LowerSimT
+error: target is out-of-date and needs to be rebuilt
+✖ [1855/5462] Building FV.Backend.Proof.LowerSimUCheckTC
+error: target is out-of-date and needs to be rebuilt
+✖ [1858/5462] Building FV.Backend.Proof.PerEdgeRegallocSound
+error: target is out-of-date and needs to be rebuilt
+✖ [1860/5462] Building FV.Backend.Proof.StockBranchArgumentShape
+error: target is out-of-date and needs to be rebuilt
+✖ [1863/5462] Building FV.Backend.Proof.PerEdgePrepareWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1865/5462] Building FV.Backend.Proof.PerEdgePrepareJump
+error: target is out-of-date and needs to be rebuilt
+✖ [1871/5462] Building FV.Backend.Proof.StockPerSuccessorWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1875/5462] Building FV.Backend.Proof.StockTermContractWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1878/5462] Building FV.Backend.Proof.PrepareReachability
+error: target is out-of-date and needs to be rebuilt
+✖ [1881/5462] Building FV.Backend.Proof.PerEdgeSpillRoutes
+error: target is out-of-date and needs to be rebuilt
+✖ [1893/5462] Building FV.Backend.Proof.PrepareTotalIsel
+error: target is out-of-date and needs to be rebuilt
+✖ [1896/5462] Building FV.Backend.Proof.RelocProvModel
+error: target is out-of-date and needs to be rebuilt
+✖ [1897/5462] Building FV.Backend.Proof.RelocProvRoot
+error: target is out-of-date and needs to be rebuilt
+✖ [1899/5462] Building FV.Backend.Proof.ReorderedGraphIncoming
+error: target is out-of-date and needs to be rebuilt
+✖ [1900/5462] Building FV.Backend.Proof.SpillInstCheck
+error: target is out-of-date and needs to be rebuilt
+⚠ [1902/5462] Replayed FV.Backend.Proof.SretStable
+warning: FV/Backend/Proof/SretStable.lean:245:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:248:58: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:254:60: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:261:63: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:268:56: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/SretStable.lean:269:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [1903/5462] Building FV.Backend.Proof.StaleRegion
+error: target is out-of-date and needs to be rebuilt
+✖ [1905/5462] Building FV.Backend.Proof.StockPrologueDomain
+error: target is out-of-date and needs to be rebuilt
+✖ [1906/5462] Building FV.Backend.Proof.StockScalarAddDomain
+error: target is out-of-date and needs to be rebuilt
+✖ [1907/5462] Building FV.Backend.Proof.StockPrologueAllDomain
+error: target is out-of-date and needs to be rebuilt
+✖ [1911/5462] Building FV.Backend.Proof.StockBoundaryValues
+error: target is out-of-date and needs to be rebuilt
+✖ [1912/5462] Building FV.Backend.Proof.StockBranchArgumentDemandWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1915/5462] Building FV.Backend.Proof.StockReturnDriverRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [1917/5462] Building FV.Backend.Proof.StockCmpParameterDriverRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [1918/5462] Building FV.Backend.Proof.StockCmpZeroLeftMatch
+error: target is out-of-date and needs to be rebuilt
+✖ [1922/5462] Building FV.Backend.Proof.StockCmpNonencodableFailures
+error: target is out-of-date and needs to be rebuilt
+✖ [1923/5462] Building FV.Backend.Proof.StockCmpPredecessorSignedMatch
+error: target is out-of-date and needs to be rebuilt
+✖ [1925/5462] Building FV.Backend.Proof.StockCmpPredecessorUnsignedMatch
+error: target is out-of-date and needs to be rebuilt
+✖ [1927/5462] Building FV.Backend.Proof.StockCmpConstantLeftFailures
+error: target is out-of-date and needs to be rebuilt
+✖ [1928/5462] Building FV.Backend.Proof.StockCmpMatchedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1929/5462] Building FV.Backend.Proof.StockCmpNarrowRhsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1931/5462] Building FV.Backend.Proof.StockMinMaxRegisterDriverRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [1933/5462] Building FV.Backend.Proof.StockConditionalEmptyFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [1934/5462] Building FV.Backend.Proof.StockConditionalEmptyTrapSource
+error: target is out-of-date and needs to be rebuilt
+✖ [1937/5462] Building FV.Backend.Proof.StockConditionalTrapFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [1938/5462] Building FV.Backend.Proof.StockConstantBoundary
+error: target is out-of-date and needs to be rebuilt
+✖ [1939/5462] Building FV.Backend.Proof.StockConstantBoundaryWitness
+error: target is out-of-date and needs to be rebuilt
+⚠ [1941/5462] Replayed FV.E2E.EmitSize
+warning: FV/E2E/EmitSize.lean:360:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/EmitSize.lean:369:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [1943/5462] Building FV.E2E.EmitReady
+error: target is out-of-date and needs to be rebuilt
+✖ [1944/5462] Building FV.E2E.EmitCondsDefs
+error: target is out-of-date and needs to be rebuilt
+✖ [1945/5462] Building FV.E2E.SizeVC
+error: target is out-of-date and needs to be rebuilt
+✖ [1947/5462] Building FV.E2E.SpillCheckAllocFix
+error: target is out-of-date and needs to be rebuilt
+✖ [1948/5462] Building FV.E2E.DeadCleanupSpillWords
+error: target is out-of-date and needs to be rebuilt
+✖ [1950/5462] Building FV.Backend.Proof.StockDivImmWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1951/5462] Building FV.Backend.Proof.StockDivResolvedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1953/5462] Building FV.Backend.Proof.StockFloatCheckDomain
+error: target is out-of-date and needs to be rebuilt
+✖ [1954/5462] Building FV.Backend.Proof.StockLoadDelay
+error: target is out-of-date and needs to be rebuilt
+✖ [1955/5462] Building FV.Backend.Proof.StockLowerProjection
+error: target is out-of-date and needs to be rebuilt
+✖ [1973/5462] Building FV.Backend.Proof.StockMemoryExtLoadWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1974/5462] Building FV.Backend.Proof.StockMemoryHelperWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1976/5462] Building FV.Backend.Proof.StockMemoryStorePaired
+error: target is out-of-date and needs to be rebuilt
+✖ [1977/5462] Building FV.Backend.Proof.StockMemoryStoreSource
+error: target is out-of-date and needs to be rebuilt
+✖ [1984/5462] Building FV.Backend.Proof.StockNoLoadSinkWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1988/5462] Building FV.Backend.Proof.StockProtectedSinkScan
+error: target is out-of-date and needs to be rebuilt
+✖ [1989/5462] Building FV.Backend.Proof.StockResolvedDefsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1990/5462] Building FV.Backend.Proof.StockRotateAuxWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1993/5462] Building FV.Backend.Proof.StockSelectComparisonActualFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [1996/5462] Building FV.Backend.Proof.StockShiftRhsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1997/5462] Building FV.Backend.Proof.StockSinkRuleRhsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1998/5462] Building FV.Backend.Proof.StockSretReturnContractWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [1999/5462] Building FV.Backend.Proof.StockTerminalControlWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2000/5462] Building FV.Backend.Proof.UnwCallStmt
+error: target is out-of-date and needs to be rebuilt
+✖ [2002/5462] Building FV.Backend.Proof.VCodeSemIWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2005/5462] Building FV.Backend.Proof.VCodeSemIDriver
+error: target is out-of-date and needs to be rebuilt
+✖ [2006/5462] Building FV.Backend.Proof.StockCallStoreAddress
+error: target is out-of-date and needs to be rebuilt
+✖ [2007/5462] Building FV.Backend.Proof.StockMemoryAccessTrap
+error: target is out-of-date and needs to be rebuilt
+✖ [2009/5462] Building FV.Backend.Proof.StockAcquire810Witness
+error: target is out-of-date and needs to be rebuilt
+✖ [2011/5462] Building FV.Backend.Proof.StockMemoryOffsetSixteenAddress
+error: target is out-of-date and needs to be rebuilt
+⚠ [2014/5462] Replayed FV.E2E.RegLevelUnwind
+warning: FV/E2E/RegLevelUnwind.lean:88:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelUnwind.lean:88:22: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelUnwind.lean:126:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelUnwind.lean:126:26: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelUnwind.lean:135:23: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelUnwind.lean:135:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelUnwind.lean:141:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelUnwind.lean:141:29: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelUnwind.lean:294:18: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [2035/5462] Building FV.Concurrency.IselVary
+error: target is out-of-date and needs to be rebuilt
+✖ [2039/5462] Building FV.Concurrency.IselDriverT
+error: target is out-of-date and needs to be rebuilt
+✖ [2049/5462] Building FV.Concurrency.FrameDisj
+error: target is out-of-date and needs to be rebuilt
+✖ [2054/5462] Building FV.E2E.ClifEnvOnly
+error: target is out-of-date and needs to be rebuilt
+✖ [2055/5462] Building FV.E2E.PairEntry
+error: target is out-of-date and needs to be rebuilt
+✖ [2056/5462] Building FV.E2E.RegLevelNoCall
+error: target is out-of-date and needs to be rebuilt
+✖ [2067/5462] Building FV.E2E.PrepareSoundW
+error: target is out-of-date and needs to be rebuilt
+✖ [2069/5462] Building FV.E2E.TrapCallClif
+error: target is out-of-date and needs to be rebuilt
+✖ [2072/5462] Building FV.E2E.UnwindPrepare
+error: target is out-of-date and needs to be rebuilt
+✖ [2088/5462] Building FV.E2E.ExtSemGuardWitness
+error: target is out-of-date and needs to be rebuilt
+⚠ [2091/5462] Replayed FV.E2E.SretCopyHeapBoundary
+warning: FV/E2E/SretCopyHeapBoundary.lean:39:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/SretCopyHeapBoundary.lean:57:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/SretCopyHeapBoundary.lean:68:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/SretCopyHeapBoundary.lean:168:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/SretCopyHeapBoundary.lean:231:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/SretCopyHeapBoundary.lean:231:24: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/SretCopyHeapBoundary.lean:238:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/SretCopyHeapBoundary.lean:238:26: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/SretCopyHeapBoundary.lean:243:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+✖ [2094/5462] Building FV.E2E.SretCopyResultBytesWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2116/5462] Building FV.E2E.UnwindReachSource
+error: target is out-of-date and needs to be rebuilt
+✖ [2151/5462] Building FV.Backend.StockLiveCallCheck
+error: target is out-of-date and needs to be rebuilt
+✖ [2153/5462] Building FV.Backend.Lowering.StockComparisonGeneralLoopCfg
+error: target is out-of-date and needs to be rebuilt
+⚠ [2167/5462] Replayed FV.Backend.Proof.SpillCtlPipe
+warning: FV/Backend/Proof/SpillCtlPipe.lean:94:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:187:31: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:188:25: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:194:26: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:203:59: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:208:59: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:226:16: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:226:28: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+✖ [2175/5462] Building FV.Backend.Proof.DeadCleanupKill
+error: target is out-of-date and needs to be rebuilt
+✖ [2180/5462] Building FV.Backend.Proof.DefAssembleBase
+error: target is out-of-date and needs to be rebuilt
+✖ [2190/5462] Building FV.Backend.Proof.KillTryDefs
+error: target is out-of-date and needs to be rebuilt
+✖ [2194/5462] Building FV.Backend.Proof.KillOracle
+error: target is out-of-date and needs to be rebuilt
+✖ [2197/5462] Building FV.Backend.Proof.SpillDefinedArgs
+error: target is out-of-date and needs to be rebuilt
+✖ [2201/5462] Building FV.Backend.Proof.DefGenSem
+error: target is out-of-date and needs to be rebuilt
+⚠ [2240/5462] Replayed FV.Backend.Proof.IselCtlCallF
+warning: FV/Backend/Proof/IselCtlCallF.lean:830:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [2241/5462] Building FV.Backend.Proof.IselCovTCall
+error: target is out-of-date and needs to be rebuilt
+⚠ [2253/5462] Replayed FV.Backend.Proof.IselAtomic
+warning: FV/Backend/Proof/IselAtomic.lean:302:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselAtomic.lean:311:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselAtomic.lean:313:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselAtomic.lean:316:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselAtomic.lean:750:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselAtomic.lean:750:21: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/IselAtomic.lean:752:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/IselAtomic.lean:752:21: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [2264/5462] Building FV.Backend.Proof.FpFormsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2277/5462] Building FV.Backend.Proof.IselCtlBranchTI
+error: target is out-of-date and needs to be rebuilt
+⚠ [2278/5462] Replayed FV.Backend.Proof.IselCtlTryF
+warning: FV/Backend/Proof/IselCtlTryF.lean:512:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [2280/5462] Building FV.Backend.Proof.IselSzCall
+error: target is out-of-date and needs to be rebuilt
+✖ [2282/5462] Building FV.Backend.Proof.IselSzBrTable
+error: target is out-of-date and needs to be rebuilt
+✖ [2328/5462] Building FV.Backend.Proof.IselMemFuncAddrMemTI
+error: target is out-of-date and needs to be rebuilt
+✖ [2329/5462] Building FV.Backend.Proof.IselTlsMemTI
+error: target is out-of-date and needs to be rebuilt
+✖ [2331/5462] Building FV.Backend.Proof.IselMemTrap
+error: target is out-of-date and needs to be rebuilt
+⚠ [2338/5462] Replayed FV.E2E.RegLevelFrame
+warning: FV/E2E/RegLevelFrame.lean:899:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelFrame.lean:901:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [2339/5462] Replayed FV.E2E.RegLevelTry
+warning: FV/E2E/RegLevelTry.lean:323:25: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [2341/5462] Replayed FV.E2E.RegLevelAtomic
+warning: FV/E2E/RegLevelAtomic.lean:712:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelAtomic.lean:715:15: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelAtomic.lean:727:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelAtomic.lean:730:15: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [2346/5462] Building FV.E2E.FinalDirect
+error: target is out-of-date and needs to be rebuilt
+⚠ [2350/5462] Replayed FV.E2E.Lockstep
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:91:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:91:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:91:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:91:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:95:24: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:91:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:91:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:95:24: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:87:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:275:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:275:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:285:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:291:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:511:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:514:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:518:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:521:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:628:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:629:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:646:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:647:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:649:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:669:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:670:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:693:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:694:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:702:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:703:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:743:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:744:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:746:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [2366/5462] Replayed FV.E2E.LinkArm
+warning: FV/E2E/LinkArm.lean:112:27: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:114:27: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:148:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:166:6: `dif_neg` has been deprecated: Use `dite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:264:6: `dif_pos` has been deprecated: Use `dite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:821:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:1464:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:1469:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:1947:34: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:1948:34: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2287:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:2297:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2305:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:2419:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2461:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2461:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2715:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:2716:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3250:30: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3309:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3312:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3323:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3324:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3336:47: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3429:22: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3488:22: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3557:32: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3603:36: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3728:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+✖ [2369/5462] Building FV.E2E.LinkOwnCalls
+error: target is out-of-date and needs to be rebuilt
+✖ [2372/5462] Building FV.Backend.Proof.IselPrgCover
+error: target is out-of-date and needs to be rebuilt
+✖ [2374/5462] Building FV.Backend.Proof.IselPrgCtxT
+error: target is out-of-date and needs to be rebuilt
+✖ [2383/5462] Building FV.Backend.Proof.SpillStep4
+error: target is out-of-date and needs to be rebuilt
+✖ [2386/5462] Building FV.Backend.Proof.LowerContractTC
+error: target is out-of-date and needs to be rebuilt
+⚠ [2513/5462] Replayed FV.Backend.Proof.StockShiftRootMatch
+warning: FV/Backend/Proof/StockShiftRootMatch.lean:85:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockShiftRootMatch.lean:91:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [2515/5462] Replayed FV.Backend.Proof.StockShiftBitfieldMatch
+warning: FV/Backend/Proof/StockShiftBitfieldMatch.lean:178:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockShiftBitfieldMatch.lean:196:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [2517/5462] Replayed FV.Backend.Proof.StockCastBaseValues
+warning: FV/Backend/Proof/StockCastBaseValues.lean:268:79: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [2541/5462] Replayed FV.Backend.Proof.StockRotateNarrowValues
+warning: FV/Backend/Proof/StockRotateNarrowValues.lean:98:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [2548/5462] Replayed FV.Backend.Proof.StockRotateNarrowRegisterValues
+warning: FV/Backend/Proof/StockRotateNarrowRegisterValues.lean:30:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [2554/5462] Replayed FV.Backend.Proof.StockRotateDispatch
+warning: FV/Backend/Proof/StockRotateDispatch.lean:49:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [2559/5462] Replayed FV.Backend.Proof.StockMinMaxSourceMatch
+warning: FV/Backend/Proof/StockMinMaxSourceMatch.lean:108:50: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMinMaxSourceMatch.lean:108:83: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [2670/5462] Replayed FV.Backend.Proof.StockSelectedGraph
+warning: FV/Backend/Proof/StockSelectedGraph.lean:65:38: `Nat.lt.step` has been deprecated: Use `Nat.lt_succ_of_lt` instead
+
+Note: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.step` to `Nat.lt_succ_of_lt x`).
+✖ [2693/5462] Building FV.Backend.Proof.LowerSimUAbi
+error: target is out-of-date and needs to be rebuilt
+✖ [2694/5462] Building FV.Backend.Proof.StockParameterShape
+error: target is out-of-date and needs to be rebuilt
+✖ [2695/5462] Building FV.Backend.Proof.StockCriticalValues
+error: target is out-of-date and needs to be rebuilt
+✖ [2698/5462] Building FV.Backend.Proof.StockCriticalEdgeArity
+error: target is out-of-date and needs to be rebuilt
+✖ [2712/5462] Building FV.Backend.Proof.SpillDefinedPrep
+error: target is out-of-date and needs to be rebuilt
+✖ [2716/5462] Building FV.Backend.Proof.SretStableX
+error: target is out-of-date and needs to be rebuilt
+✖ [2717/5462] Building FV.Backend.Proof.StockAddSubAuxWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2726/5462] Building FV.Backend.Proof.StockBitrevWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2727/5462] Building FV.Backend.Proof.StockBmaskSelectionWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2729/5462] Building FV.Backend.Proof.StockBmaskSemanticsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2731/5462] Building FV.Backend.Proof.StockBnotWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2732/5462] Building FV.Backend.Proof.StockBranchTargetsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2733/5462] Building FV.Backend.Proof.StockCastNoTypeWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2735/5462] Building FV.Backend.Proof.StockTerminalSinkWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2737/5462] Building FV.Backend.Proof.StockJumpEdgeValues
+error: target is out-of-date and needs to be rebuilt
+✖ [2740/5462] Building FV.Backend.Proof.StockLinearCfgFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [2748/5462] Building FV.Backend.Proof.StockCmpImmediateSelection
+error: target is out-of-date and needs to be rebuilt
+✖ [2780/5462] Building FV.Backend.Proof.StockCmpZeroEmitterSelection
+error: target is out-of-date and needs to be rebuilt
+✖ [2781/5462] Building FV.Backend.Proof.StockCmpNonzero32Selection
+error: target is out-of-date and needs to be rebuilt
+✖ [2793/5462] Building FV.Backend.Proof.StockCmpConditionWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2808/5462] Building FV.Backend.Proof.StockCmpEqualZero8Witness
+error: target is out-of-date and needs to be rebuilt
+✖ [2810/5462] Building FV.Backend.Proof.StockCmpImmediateValues
+error: target is out-of-date and needs to be rebuilt
+✖ [2812/5462] Building FV.Backend.Proof.StockCmpMachineWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2813/5462] Building FV.Backend.Proof.StockCmpNarrowSelection
+error: target is out-of-date and needs to be rebuilt
+✖ [2842/5462] Building FV.Backend.Proof.StockCmpNonzero16Selection
+error: target is out-of-date and needs to be rebuilt
+✖ [2858/5462] Building FV.Backend.Proof.StockCmpNonzero8Selection
+error: target is out-of-date and needs to be rebuilt
+✖ [2903/5462] Building FV.Backend.Proof.StockCmpNarrowMachineValues
+error: target is out-of-date and needs to be rebuilt
+✖ [2904/5462] Building FV.Backend.Proof.StockCmpNarrowSourceWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2910/5462] Building FV.Backend.Proof.StockCmpNonzero16OriginalWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2911/5462] Building FV.Backend.Proof.StockCmpNonzero16PrefixWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2912/5462] Building FV.Backend.Proof.StockCmpNonzero16Witness
+error: target is out-of-date and needs to be rebuilt
+✖ [2913/5462] Building FV.Backend.Proof.StockCmpNonzero32OriginalWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2914/5462] Building FV.Backend.Proof.StockCmpNonzero64OriginalWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2915/5462] Building FV.Backend.Proof.StockCmpNonzero8OriginalWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2917/5462] Building FV.Backend.Proof.StockCmpNonzero8Witness
+error: target is out-of-date and needs to be rebuilt
+✖ [2918/5462] Building FV.Backend.Proof.StockCmpOriginalConstantClassification
+error: target is out-of-date and needs to be rebuilt
+✖ [2919/5462] Building FV.Backend.Proof.StockCmpRegisterSelection
+error: target is out-of-date and needs to be rebuilt
+✖ [2925/5462] Building FV.Backend.Proof.StockCmpSourceMatchWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2936/5462] Building FV.Backend.Proof.StockCmpPredecessorSignedSourceWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2937/5462] Building FV.Backend.Proof.StockCmpPredecessorSignedValues
+error: target is out-of-date and needs to be rebuilt
+✖ [2940/5462] Building FV.Backend.Proof.StockCmpPredecessorUnsignedSourceWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [2941/5462] Building FV.Backend.Proof.StockCmpPredecessorUnsignedValues
+error: target is out-of-date and needs to be rebuilt
+✖ [2943/5462] Building FV.Backend.Proof.StockCmpRegisterValues
+error: target is out-of-date and needs to be rebuilt
+✖ [2967/5462] Building FV.Backend.Proof.StockCmpZero16OriginalRightEmitterValues
+error: target is out-of-date and needs to be rebuilt
+✖ [2991/5462] Building FV.Backend.Proof.StockCmpZero32OriginalRightEmitterValues
+error: target is out-of-date and needs to be rebuilt
+✖ [3005/5462] Building FV.Backend.Proof.StockCmpZero64OriginalRightEmitterValues
+error: target is out-of-date and needs to be rebuilt
+✖ [3028/5462] Building FV.Backend.Proof.StockCmpZero8OriginalRightEmitterValues
+error: target is out-of-date and needs to be rebuilt
+✖ [3036/5462] Building FV.Backend.Proof.StockCmpZeroSelection
+error: target is out-of-date and needs to be rebuilt
+✖ [3055/5462] Building FV.Backend.Proof.StockComparisonBranchSelectionWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3057/5462] Building FV.Backend.Proof.StockComparisonImmFactsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3058/5462] Building FV.Backend.Proof.StockSelectComparisonCompanionWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3066/5462] Building FV.Backend.Proof.StockConditionalResolvedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3068/5462] Building FV.E2E.LoweringProvenance
+error: target is out-of-date and needs to be rebuilt
+✖ [3086/5462] Building FV.E2E.SizeLower
+error: target is out-of-date and needs to be rebuilt
+✖ [3087/5462] Building FV.E2E.LinkOwnFrames
+error: target is out-of-date and needs to be rebuilt
+✖ [3091/5462] Building FV.E2E.PipelineCheck
+error: target is out-of-date and needs to be rebuilt
+✖ [3093/5462] Building FV.E2E.DeadCleanupCover
+error: target is out-of-date and needs to be rebuilt
+✖ [3102/5462] Building FV.E2E.DeadCleanupDirect
+error: target is out-of-date and needs to be rebuilt
+✖ [3104/5462] Building FV.Backend.Proof.StockDivBodyValueWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3105/5462] Building FV.Backend.Proof.StockDivConstant
+error: target is out-of-date and needs to be rebuilt
+✖ [3106/5462] Building FV.Backend.Proof.StockDivDividendValueWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3107/5462] Building FV.Backend.Proof.StockDivGuardWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3108/5462] Building FV.Backend.Proof.StockDivHelperWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3109/5462] Building FV.Backend.Proof.StockDivImmResolvedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3110/5462] Building FV.Backend.Proof.StockDivSourceRequests
+error: target is out-of-date and needs to be rebuilt
+✖ [3111/5462] Building FV.Backend.Proof.StockDivResolvedGuardWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3112/5462] Building FV.Backend.Proof.StockDivRhsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3113/5462] Building FV.Backend.Proof.StockDivSafeMatch
+error: target is out-of-date and needs to be rebuilt
+✖ [3114/5462] Building FV.Backend.Proof.StockEmptyBodySplitWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3115/5462] Building FV.Backend.Proof.StockExtendWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3116/5462] Building FV.Backend.Proof.StockFloatMemoryRoots
+error: target is out-of-date and needs to be rebuilt
+✖ [3117/5462] Building FV.Backend.Proof.StockLinearCfgTrapFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [3118/5462] Building FV.Backend.Proof.StockLogicalRecordWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3119/5462] Building FV.Backend.Proof.StockLogicalExtrValuesWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3120/5462] Building FV.Backend.Proof.StockLogicalNotRecordWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3121/5462] Building FV.Backend.Proof.StockLogicalNotWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3122/5462] Building FV.Backend.Proof.StockLogicalNotXorFusedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3123/5462] Building FV.Backend.Proof.StockLogicalNotXorWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3131/5462] Building FV.Backend.Proof.StockMemoryInput
+error: target is out-of-date and needs to be rebuilt
+✖ [3132/5462] Building FV.Backend.Proof.StockMemoryRecordKernel
+error: target is out-of-date and needs to be rebuilt
+⚠ [3135/5462] Replayed FV.Backend.Proof.StockMemoryStoreMatch
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:83:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:85:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:88:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryStoreMatch.lean:94:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [3153/5462] Building FV.Backend.Proof.StockMemoryLoadedPointerFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [3155/5462] Building FV.Backend.Proof.StockMemoryRecordFrame
+error: target is out-of-date and needs to be rebuilt
+⚠ [3158/5462] Replayed FV.Backend.Proof.StockMemoryExtLoadSource
+warning: FV/Backend/Proof/StockMemoryExtLoadSource.lean:38:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryExtLoadSource.lean:40:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/StockMemoryExtLoadSource.lean:43:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/StockMemoryExtLoadSource.lean:49:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [3170/5462] Replayed FV.E2E.PairDriverU
+warning: FV/E2E/PairDriverU.lean:49:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/PairDriverU.lean:49:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/PairDriverU.lean:60:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✖ [3173/5462] Building FV.Backend.Proof.StockMemoryExtLoadRecordFrame
+error: target is out-of-date and needs to be rebuilt
+✖ [3177/5462] Building FV.Backend.Proof.StockMemoryIntegerRecordFrame
+error: target is out-of-date and needs to be rebuilt
+✖ [3181/5462] Building FV.Backend.Proof.StockMemoryIntegerLoadWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3187/5462] Building FV.Backend.Proof.StockMemoryStoreRecordFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [3195/5462] Building FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues
+error: target is out-of-date and needs to be rebuilt
+✖ [3197/5462] Building FV.Backend.Proof.StockMemoryReadWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3199/5462] Building FV.Backend.Proof.StockMemorySretCopyCheck
+error: target is out-of-date and needs to be rebuilt
+✖ [3203/5462] Building FV.Backend.Proof.StockMemoryStoreMatchWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3204/5462] Building FV.Backend.Proof.StockMemoryStorePairedSource
+error: target is out-of-date and needs to be rebuilt
+✖ [3205/5462] Building FV.Backend.Proof.StockMemoryStoreWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3206/5462] Building FV.Backend.Proof.StockMinMaxNarrowSourceReads
+error: target is out-of-date and needs to be rebuilt
+✖ [3207/5462] Building FV.Backend.Proof.StockMinMaxRegisterSourceReads
+error: target is out-of-date and needs to be rebuilt
+✖ [3209/5462] Building FV.Backend.Proof.StockMinMaxRegisterValues
+error: target is out-of-date and needs to be rebuilt
+✖ [3210/5462] Building FV.Backend.Proof.StockSelectConditions
+error: target is out-of-date and needs to be rebuilt
+✖ [3212/5462] Building FV.Backend.Proof.StockMinMaxWideSourceReads
+error: target is out-of-date and needs to be rebuilt
+✖ [3213/5462] Building FV.Backend.Proof.StockMulFusedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3214/5462] Building FV.Backend.Proof.StockMulWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3215/5462] Building FV.Backend.Proof.StockNegWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3216/5462] Building FV.Backend.Proof.StockNonEOpsRoots
+error: target is out-of-date and needs to be rebuilt
+✖ [3218/5462] Building FV.Backend.Proof.StockPerEdgeDirectWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3219/5462] Building FV.Backend.Proof.StockSourceCallWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3224/5462] Building FV.Backend.Proof.StockRotateLeftImmediateWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3225/5462] Building FV.Backend.Proof.StockRotateLeftRegisterWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3226/5462] Building FV.Backend.Proof.StockRotateRightImmediateWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3227/5462] Building FV.Backend.Proof.StockRotateRightRegisterWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3228/5462] Building FV.Backend.Proof.StockScopeRootsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3232/5462] Building FV.Backend.Proof.StockSelectConditionOriginWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3236/5462] Building FV.Backend.Proof.StockSelectNonzeroAllocation
+error: target is out-of-date and needs to be rebuilt
+✖ [3242/5462] Building FV.Backend.Proof.StockSelectReplacementWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3244/5462] Building FV.Backend.Proof.StockSelectZeroReplacementWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3247/5462] Building FV.Backend.Proof.StockComparisonZeroFactsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3248/5462] Building FV.Backend.Proof.StockDirectCallResultFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [3250/5462] Building FV.Backend.Proof.StockLiveCallArithmetic
+error: target is out-of-date and needs to be rebuilt
+✖ [3251/5462] Building FV.Backend.Proof.StockFenceRoot
+error: target is out-of-date and needs to be rebuilt
+✖ [3252/5462] Building FV.Backend.Proof.StockFenceInventory
+error: target is out-of-date and needs to be rebuilt
+✖ [3256/5462] Building FV.Backend.Proof.StockAcquireHelpers
+error: target is out-of-date and needs to be rebuilt
+✖ [3270/5462] Building FV.E2E.RegLevelCorrectU
+error: target is out-of-date and needs to be rebuilt
+✖ [3301/5462] Building FV.Backend.Proof.StockGeneralSubsumption3
+error: target is out-of-date and needs to be rebuilt
+✖ [3308/5462] Building FV.Backend.Proof.StockGeneralSubsumption4
+error: target is out-of-date and needs to be rebuilt
+✖ [3309/5462] Building FV.Backend.Proof.StockGeneralSubsumption5
+error: target is out-of-date and needs to be rebuilt
+✖ [3310/5462] Building FV.Backend.Proof.StockGeneralSubsumption7
+error: target is out-of-date and needs to be rebuilt
+✖ [3321/5462] Building FV.E2E.StackBound
+error: target is out-of-date and needs to be rebuilt
+✖ [3322/5462] Building FV.E2E.BinCheck
+error: target is out-of-date and needs to be rebuilt
+✖ [3405/5462] Building FV.E2E
+error: target is out-of-date and needs to be rebuilt
+✖ [3419/5462] Building FV.E2E.LinkProduction
+error: target is out-of-date and needs to be rebuilt
+✖ [3427/5462] Building FV.E2E.RegLevelCorrectI
+error: target is out-of-date and needs to be rebuilt
+✖ [3433/5462] Building FV.E2E.PairGuardS
+error: target is out-of-date and needs to be rebuilt
+✖ [3472/5462] Building FV.E2E.PairDriverF
+error: target is out-of-date and needs to be rebuilt
+✖ [3474/5462] Building FV.E2E.Legal
+error: target is out-of-date and needs to be rebuilt
+✖ [3480/5462] Building FV.E2E.RelWPatch
+error: target is out-of-date and needs to be rebuilt
+✖ [3487/5462] Building FV.E2E.StockVoidCallView
+error: target is out-of-date and needs to be rebuilt
+✖ [3489/5462] Building FV.E2E.LinkArmBaseDet
+error: target is out-of-date and needs to be rebuilt
+✖ [3495/5462] Building FV.E2E.LinkGood
+error: target is out-of-date and needs to be rebuilt
+✖ [3518/5462] Building FV.E2E.WorldUnwindGot
+error: target is out-of-date and needs to be rebuilt
+✖ [3527/5462] Building FV.E2E.CodeMap
+error: target is out-of-date and needs to be rebuilt
+✖ [3528/5462] Building FV.E2E.GuardedFP
+error: target is out-of-date and needs to be rebuilt
+✖ [3543/5462] Building FV.E2E.DeadCleanupTC
+error: target is out-of-date and needs to be rebuilt
+✖ [3547/5462] Building FV.E2E.SretReturn
+error: target is out-of-date and needs to be rebuilt
+✖ [3550/5462] Building FV.E2E.CallReturnPinsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3633/5462] Building FV.E2E.LinkImageExtension
+error: target is out-of-date and needs to be rebuilt
+✖ [3638/5462] Building FV.E2E.NonVacuity
+error: target is out-of-date and needs to be rebuilt
+✖ [3662/5462] Building FV.E2E.StockLogicalExtrWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3675/5462] Building FV.E2E.StockCallStoreTrapTail
+error: target is out-of-date and needs to be rebuilt
+✖ [3743/5462] Building FV.Backend.Proof.EdgeSplitWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3988/5462] Building FV.Backend.Proof.StockActualAddSubBodyRefines
+error: target is out-of-date and needs to be rebuilt
+✖ [3989/5462] Building FV.Backend.Proof.StockActualBodyRefines
+error: target is out-of-date and needs to be rebuilt
+✖ [3990/5462] Building FV.Backend.Proof.StockAddSubExtensionWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3991/5462] Building FV.Backend.Proof.StockAddSubImmediateWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3992/5462] Building FV.Backend.Proof.StockAddSubNegativeWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3993/5462] Building FV.Backend.Proof.StockAddSubShiftEdgeWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [3994/5462] Building FV.Backend.Proof.StockAddSubShiftWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4005/5462] Building FV.Backend.Proof.StockBitrevDispatchWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4007/5462] Building FV.Backend.Proof.StockBswapDispatchWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4008/5462] Building FV.Backend.Proof.StockBswapWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4019/5462] Building FV.Backend.Proof.StockCfgReturnAtWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4020/5462] Building FV.Backend.Proof.StockCfgReturnEdge
+error: target is out-of-date and needs to be rebuilt
+✖ [4022/5462] Building FV.Backend.Proof.StockReturnVCode
+error: target is out-of-date and needs to be rebuilt
+✖ [4052/5462] Building FV.Backend.Proof.StockComparisonImmClass
+error: target is out-of-date and needs to be rebuilt
+✖ [4061/5462] Building FV.Backend.Proof.StockConditionalArgsClass
+error: target is out-of-date and needs to be rebuilt
+⚠ [4072/5462] Replayed FV.Backend.Proof.StockConditionalCompatibility
+warning: FV/Backend/Proof/StockConditionalCompatibility.lean:69:78: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [4080/5462] Replayed FV.Backend.Proof.StockConditionalRankedCompatibility
+warning: FV/Backend/Proof/StockConditionalRankedCompatibility.lean:62:78: `if_false` has been deprecated: Use `ite_false` instead
+✖ [4083/5462] Building FV.Backend.Proof.StockConditionalRankedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4088/5462] Building FV.Backend.Proof.StockConditionalSelectedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4092/5462] Building FV.Backend.Proof.StockConditionalTrapLeafWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4096/5462] Building FV.Backend.Proof.StockCountClzNonzeroWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4097/5462] Building FV.Backend.Proof.StockCountClzZeroWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4098/5462] Building FV.Backend.Proof.StockCountCtzNonzeroWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4099/5462] Building FV.Backend.Proof.StockCountCtzZeroWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4114/5462] Building FV.Backend.Proof.StockDivDivisorValueWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4115/5462] Building FV.Backend.Proof.StockDivMinimumWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4116/5462] Building FV.Backend.Proof.StockDivSelectedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4117/5462] Building FV.Backend.Proof.StockDivRemSelectedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4119/5462] Building FV.Backend.Proof.StockDivRecordReceipts
+error: target is out-of-date and needs to be rebuilt
+✖ [4121/5462] Building FV.Backend.Proof.StockDivSdiv16WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4124/5462] Building FV.Backend.Proof.StockDivSdiv32WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4127/5462] Building FV.Backend.Proof.StockDivSdiv64WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4130/5462] Building FV.Backend.Proof.StockDivSdiv8WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4133/5462] Building FV.Backend.Proof.StockDivSdivSafe16WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4135/5462] Building FV.Backend.Proof.StockDivSdivSafe32WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4137/5462] Building FV.Backend.Proof.StockDivSdivSafe64WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4139/5462] Building FV.Backend.Proof.StockDivSdivSafe8WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4141/5462] Building FV.Backend.Proof.StockDivSignedRecordReceipts
+error: target is out-of-date and needs to be rebuilt
+✖ [4143/5462] Building FV.Backend.Proof.StockDivSrem16WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4146/5462] Building FV.Backend.Proof.StockDivSrem32WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4149/5462] Building FV.Backend.Proof.StockDivSrem64WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4152/5462] Building FV.Backend.Proof.StockDivSrem8WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4155/5462] Building FV.Backend.Proof.StockDivUdiv16WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4157/5462] Building FV.Backend.Proof.StockDivUdiv32WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4159/5462] Building FV.Backend.Proof.StockDivUdiv8WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4161/5462] Building FV.Backend.Proof.StockDivUdivWideWitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4163/5462] Building FV.Backend.Proof.StockDivUrem16WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4165/5462] Building FV.Backend.Proof.StockDivUrem32WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4167/5462] Building FV.Backend.Proof.StockDivUrem64WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4169/5462] Building FV.Backend.Proof.StockDivUrem8WitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4172/5462] Building FV.Backend.Proof.StockEntryDivisionFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [4174/5462] Building FV.Backend.Proof.StockEntryLoadsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4175/5462] Building FV.Backend.Proof.StockEntryScalarFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [4177/5462] Building FV.Backend.Proof.StockEntrySeedWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4182/5462] Building FV.Backend.Proof.StockForwardDemandWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4183/5462] Building FV.Backend.Proof.StockForwardLeafWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4184/5462] Building FV.Backend.Proof.StockForwardWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4185/5462] Building FV.Backend.Proof.StockHighMulWitnessRuns
+error: target is out-of-date and needs to be rebuilt
+✖ [4188/5462] Building FV.Backend.Proof.StockInheritedJump
+error: target is out-of-date and needs to be rebuilt
+✖ [4190/5462] Building FV.Backend.Proof.StockQuietBlockWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4194/5462] Building FV.Backend.Proof.StockJumpEdgeParameters
+error: target is out-of-date and needs to be rebuilt
+✖ [4205/5462] Building FV.Backend.Proof.StockLogicalSourceExecution
+error: target is out-of-date and needs to be rebuilt
+✖ [4253/5462] Building FV.Backend.Proof.StockMemoryCapturedFixture
+error: target is out-of-date and needs to be rebuilt
+✖ [4263/5462] Building FV.Backend.Proof.StockMemoryComputedStoreRecordWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4265/5462] Building FV.Backend.Proof.StockMemoryEntryWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4304/5462] Building FV.Backend.Proof.StockMemoryNopReturnBody
+error: target is out-of-date and needs to be rebuilt
+✖ [4306/5462] Building FV.Backend.Proof.StockMemoryOffsetEightStoreRetention
+error: target is out-of-date and needs to be rebuilt
+✖ [4312/5462] Building FV.Backend.Proof.StockMemoryOrdinaryJumpSpec
+error: target is out-of-date and needs to be rebuilt
+✖ [4313/5462] Building FV.Backend.Proof.StockMemoryOrdinaryTrapWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4316/5462] Building FV.Backend.Proof.StockMemorySingleWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4317/5462] Building FV.Backend.Proof.StockMemoryStoreDemandTransport
+error: target is out-of-date and needs to be rebuilt
+✖ [4330/5462] Building FV.Backend.Proof.StockReturnFullValues
+error: target is out-of-date and needs to be rebuilt
+✖ [4347/5462] Building FV.Backend.Proof.StockMemoryStoreNonentryReturn
+error: target is out-of-date and needs to be rebuilt
+✖ [4371/5462] Building FV.Backend.Proof.StockNegDispatchWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4372/5462] Building FV.Backend.Proof.StockNoLoadDriverWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4374/5462] Building FV.Backend.Proof.StockParameterAnyArgsLeaf
+error: target is out-of-date and needs to be rebuilt
+✖ [4377/5462] Building FV.Backend.Proof.StockParameterLeafWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4378/5462] Building FV.Backend.Proof.StockPopcountNonzeroWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4380/5462] Building FV.Backend.Proof.StockPopcountZeroWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4381/5462] Building FV.Backend.Proof.StockProtectedSinkDriverWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4383/5462] Building FV.Backend.Proof.StockProtectedSinkWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4387/5462] Building FV.Backend.Proof.StockReturnedDefinitionWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4405/5462] Building FV.Backend.Proof.StockShiftWitnessInputs
+error: target is out-of-date and needs to be rebuilt
+✖ [4411/5462] Building FV.Backend.Proof.StockTwoBlockTrapWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4412/5462] Building FV.Backend.Proof.StockComparisonZeroClass
+error: target is out-of-date and needs to be rebuilt
+✖ [4418/5462] Building FV.Backend.Proof.StockFenceSource
+error: target is out-of-date and needs to be rebuilt
+✖ [4447/5462] Building FV.Backend.Proof.StockMemoryAccessSourcePrefix
+error: target is out-of-date and needs to be rebuilt
+✖ [4473/5462] Building FV.Backend.Proof.StockTableWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4587/5462] Building FV.E2E.StockArithmeticArtifactWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [4777/5462] Building FV.E2E.LinkSiteTC
+error: target is out-of-date and needs to be rebuilt
+✖ [4779/5462] Building FV.E2E.StockMemoryABIWorldX
+error: target is out-of-date and needs to be rebuilt
+✖ [4780/5462] Building FV.E2E.StockMemoryOrdinaryPairedJump
+error: target is out-of-date and needs to be rebuilt
+✖ [4784/5462] Building FV.E2E.StockMemoryNopNonentryPairedReturn
+error: target is out-of-date and needs to be rebuilt
+✖ [4790/5462] Building FV.E2E.SemanticPipelineCheckWith
+error: target is out-of-date and needs to be rebuilt
+✖ [4793/5462] Building FV.E2E.CalleeWith
+error: target is out-of-date and needs to be rebuilt
+✖ [4820/5462] Building FV.Link.Layout
+error: target is out-of-date and needs to be rebuilt
+✖ [4900/5462] Building FV.E2E.SrcScopeDefs
+error: target is out-of-date and needs to be rebuilt
+✖ [5001/5462] Building FV.E2E.StockCodeWorldX
+error: target is out-of-date and needs to be rebuilt
+✖ [5005/5462] Building FV.E2E.StockMaskChecks
+error: target is out-of-date and needs to be rebuilt
+✖ [5015/5462] Building FV.E2E.StockMemoryStoreNonentryPairedReturn
+error: target is out-of-date and needs to be rebuilt
+✖ [5021/5462] Building FV.E2E.StockMixedDivChecks
+error: target is out-of-date and needs to be rebuilt
+✖ [5022/5462] Building FV.E2E.StockReturnedDivChecks
+error: target is out-of-date and needs to be rebuilt
+✖ [5025/5462] Building FV.E2E.StockResultCallSource
+error: target is out-of-date and needs to be rebuilt
+✖ [5221/5462] Building FV.Backend.Proof.StockParameterInput
+error: target is out-of-date and needs to be rebuilt
+✖ [5231/5462] Building FV.Backend.Proof.StockComparisonArgsLoopCheck
+error: target is out-of-date and needs to be rebuilt
+✖ [5235/5462] Building FV.Backend.Proof.StockParameterLoopCheck
+error: target is out-of-date and needs to be rebuilt
+✖ [5237/5462] Building FV.Backend.Proof.StockComparisonLoopCheck
+error: target is out-of-date and needs to be rebuilt
+✖ [5239/5462] Building FV.Backend.Proof.StockParameterArgsLoopCheck
+error: target is out-of-date and needs to be rebuilt
+✖ [5241/5462] Building FV.Backend.Proof.StockComparisonComputedLoopCheck
+error: target is out-of-date and needs to be rebuilt
+✖ [5243/5462] Building FV.Backend.Proof.StockComparisonComputedArgsLoopCheck
+error: target is out-of-date and needs to be rebuilt
+✖ [5276/5462] Building FV.Backend.Proof.StockGeneralArgsLoopWitness6
+error: target is out-of-date and needs to be rebuilt
+✖ [5426/5462] Building FV.E2E.StockNarrowRootsWitness
+error: target is out-of-date and needs to be rebuilt
+✖ [5431/5462] Building FV.E2E.StockTrapWitness
+error: target is out-of-date and needs to be rebuilt
+Some required targets logged failures:
+- FV.Arm.Memory.Attr
+- FV.Arm.Tactics.Common
+- FV.Arm.Tactics.Simp
+- FV.Arm.Tactics.Sym.Common
+- FV.Arm.Tactics.Sym.LCtxSearch
+- FV.Arm.ProgramKeep
+- FV.Concurrency.ArmFootprint
+- FV.Backend.Lowering.StockI128
+- FV.Backend.SkipDead
+- FV.Backend.Proof.IselOutBoundDefs
+- FV.Backend.Proof.IselOutBoundExt
+- FV.Backend.Proof.PerEdgePrepareUnsplitGraph
+- FV.Backend.Proof.PerEdgeSpillHomes
+- FV.Backend.Proof.StockPrologueCodeCore
+- FV.Backend.Proof.StockDiagnosticChecker
+- FV.Backend.Proof.StockPrologueAllCode
+- FV.Backend.Proof.StockScalarAddSource
+- FV.Backend.Proof.StockCastPair
+- FV.Backend.Proof.StockCmpPureWitness
+- FV.Backend.Proof.StockD0Edges
+- FV.Backend.Proof.StockD0Source
+- FV.Backend.Proof.StockMinMaxNarrowFixtures
+- FV.Backend.Proof.StockPrologueAllSource
+- FV.Backend.Proof.StockPrologueInput
+- FV.Clif.LinkClifX
+- FV.Clif.MemTrapWitness
+- FV.Clif.Vector
+- FV.DSL.Map
+- FV.Compile.Runtime
+- FV.Concurrency.ClifMM
+- FV.Concurrency.Code
+- FV.Concurrency.ArmProgram
+- FV.Concurrency.CallResumeChecks
+- FV.Concurrency.CallValid
+- FV.E2E.ArmGprFoot
+- FV.E2E.LinkPlaceB
+- FV.Opt.Proof.DomInv
+- FV.Opt.Proof.Unreachable
+- FV.Opt.Proof.SimpDen
+- FV.Opt.Proof.InterpMatch
+- FV.Opt.Proof.InterpState
+- FV.Opt.Proof.RuleAttr
+- FV.Opt.Proof.RuleNode
+- FV.Opt.Proof.RuleTactic
+- FV.Opt.Proof.RuleInfraShiftAmt
+- FV.Opt.Proof.RuleSpaceshipUnsigned
+- FV.Opt.Proof.RuleSpaceshipSigned
+- FV.Opt.Proof.RuleShiftsConstSem
+- FV.Opt.Proof.RuleInfraDivConst
+- FV.E2E.LinkClifRev
+- FV.Opt.Proof.LegalSimS
+- FV.Opt.Proof.SemSimX
+- FV.Opt.Proof.SemRaise
+- FV.E2E.LinkPlaceSlotlessWitness
+- FV.Opt.Retype
+- FV.Front.RenameRunX
+- FV.Isle.Pretty
+- FV.Isle.Generated.Opt.Closure
+- FV.Isle.Generated.Opt.Manifest
+- FV.Opt
+- FV.Opt.Proof.CompleteUnreachable
+- FV.Opt.Proof.CheckSpec
+- FV.Opt.Proof.DomFacts
+- FV.Opt.Proof.RulesProv
+- FV.Opt.Proof.CompleteSimpCex
+- FV.Opt.ZeroSlots
+- FV.Backend
+- FV.Backend.Lowering.StockComparisonCfg
+- FV.Backend.Lowering.StockConditionalArgsRankedCfg
+- FV.Backend.Lowering.StockResultCallWith
+- FV.Backend.Lowering.StockCheckedWith
+- FV.Backend.Proof.SpillCtlFormsT
+- FV.Backend.Proof.SpillClsTab
+- FV.Backend.Proof.SpillClsModel
+- FV.Backend.Proof.SpillClsChain
+- FV.Backend.Proof.DeadCleanupCset
+- FV.Backend.Proof.DeadCleanupPrepareMap
+- FV.Backend.Proof.DeadCleanupRun
+- FV.Backend.Proof.DeadCleanupWitness
+- FV.Unw.EhFrame
+- FV.Backend.Proof.IndexedPredMultiplicity
+- FV.Backend.Proof.IselCovTForm
+- FV.Backend.Proof.IselFlowT
+- FV.Backend.Proof.IselExclTF
+- FV.Backend.Proof.LowerLoopCtxTF
+- FV.Backend.Proof.LowerLoopRunT
+- FV.Backend.Proof.IselFloatMem
+- FV.Backend.Proof.VCodeSemICall
+- FV.Backend.Proof.IselMemBaseTI
+- FV.Backend.Proof.IselCtlUnmatchTI
+- FV.Backend.Proof.IselSzTDefs
+- FV.Backend.Proof.IselSzExt
+- FV.Backend.Proof.IselSzSound
+- FV.Backend.Proof.IselNonETI
+- FV.Backend.Proof.IselOutBoundCall
+- FV.Backend.Proof.IselOutBoundTry
+- FV.Backend.Proof.IselPrgExtSoundT
+- FV.Backend.Proof.IselPrgCtorNoneT
+- FV.Backend.Proof.IselPrgExtSound
+- FV.Backend.Proof.IselPrgHandT
+- FV.Backend.Proof.IselPrgTabTF
+- FV.Backend.Proof.IselSem
+- FV.Backend.Proof.LSFn
+- FV.Backend.Proof.LSSeg
+- FV.Backend.Proof.LSMoves
+- FV.Backend.Proof.LSTermFixed
+- FV.Backend.Proof.LowerSimT
+- FV.Backend.Proof.LowerSimUCheckTC
+- FV.Backend.Proof.PerEdgeRegallocSound
+- FV.Backend.Proof.StockBranchArgumentShape
+- FV.Backend.Proof.PerEdgePrepareWitness
+- FV.Backend.Proof.PerEdgePrepareJump
+- FV.Backend.Proof.StockPerSuccessorWitness
+- FV.Backend.Proof.StockTermContractWitness
+- FV.Backend.Proof.PrepareReachability
+- FV.Backend.Proof.PerEdgeSpillRoutes
+- FV.Backend.Proof.PrepareTotalIsel
+- FV.Backend.Proof.RelocProvModel
+- FV.Backend.Proof.RelocProvRoot
+- FV.Backend.Proof.ReorderedGraphIncoming
+- FV.Backend.Proof.SpillInstCheck
+- FV.Backend.Proof.StaleRegion
+- FV.Backend.Proof.StockPrologueDomain
+- FV.Backend.Proof.StockScalarAddDomain
+- FV.Backend.Proof.StockPrologueAllDomain
+- FV.Backend.Proof.StockBoundaryValues
+- FV.Backend.Proof.StockBranchArgumentDemandWitness
+- FV.Backend.Proof.StockReturnDriverRuns
+- FV.Backend.Proof.StockCmpParameterDriverRuns
+- FV.Backend.Proof.StockCmpZeroLeftMatch
+- FV.Backend.Proof.StockCmpNonencodableFailures
+- FV.Backend.Proof.StockCmpPredecessorSignedMatch
+- FV.Backend.Proof.StockCmpPredecessorUnsignedMatch
+- FV.Backend.Proof.StockCmpConstantLeftFailures
+- FV.Backend.Proof.StockCmpMatchedWitness
+- FV.Backend.Proof.StockCmpNarrowRhsWitness
+- FV.Backend.Proof.StockMinMaxRegisterDriverRuns
+- FV.Backend.Proof.StockConditionalEmptyFixture
+- FV.Backend.Proof.StockConditionalEmptyTrapSource
+- FV.Backend.Proof.StockConditionalTrapFixture
+- FV.Backend.Proof.StockConstantBoundary
+- FV.Backend.Proof.StockConstantBoundaryWitness
+- FV.E2E.EmitReady
+- FV.E2E.EmitCondsDefs
+- FV.E2E.SizeVC
+- FV.E2E.SpillCheckAllocFix
+- FV.E2E.DeadCleanupSpillWords
+- FV.Backend.Proof.StockDivImmWitness
+- FV.Backend.Proof.StockDivResolvedWitness
+- FV.Backend.Proof.StockFloatCheckDomain
+- FV.Backend.Proof.StockLoadDelay
+- FV.Backend.Proof.StockLowerProjection
+- FV.Backend.Proof.StockMemoryExtLoadWitness
+- FV.Backend.Proof.StockMemoryHelperWitness
+- FV.Backend.Proof.StockMemoryStorePaired
+- FV.Backend.Proof.StockMemoryStoreSource
+- FV.Backend.Proof.StockNoLoadSinkWitness
+- FV.Backend.Proof.StockProtectedSinkScan
+- FV.Backend.Proof.StockResolvedDefsWitness
+- FV.Backend.Proof.StockRotateAuxWitness
+- FV.Backend.Proof.StockSelectComparisonActualFixture
+- FV.Backend.Proof.StockShiftRhsWitness
+- FV.Backend.Proof.StockSinkRuleRhsWitness
+- FV.Backend.Proof.StockSretReturnContractWitness
+- FV.Backend.Proof.StockTerminalControlWitness
+- FV.Backend.Proof.UnwCallStmt
+- FV.Backend.Proof.VCodeSemIWitness
+- FV.Backend.Proof.VCodeSemIDriver
+- FV.Backend.Proof.StockCallStoreAddress
+- FV.Backend.Proof.StockMemoryAccessTrap
+- FV.Backend.Proof.StockAcquire810Witness
+- FV.Backend.Proof.StockMemoryOffsetSixteenAddress
+- FV.Concurrency.IselVary
+- FV.Concurrency.IselDriverT
+- FV.Concurrency.FrameDisj
+- FV.E2E.ClifEnvOnly
+- FV.E2E.PairEntry
+- FV.E2E.RegLevelNoCall
+- FV.E2E.PrepareSoundW
+- FV.E2E.TrapCallClif
+- FV.E2E.UnwindPrepare
+- FV.E2E.ExtSemGuardWitness
+- FV.E2E.SretCopyResultBytesWitness
+- FV.E2E.UnwindReachSource
+- FV.Backend.StockLiveCallCheck
+- FV.Backend.Lowering.StockComparisonGeneralLoopCfg
+- FV.Backend.Proof.DeadCleanupKill
+- FV.Backend.Proof.DefAssembleBase
+- FV.Backend.Proof.KillTryDefs
+- FV.Backend.Proof.KillOracle
+- FV.Backend.Proof.SpillDefinedArgs
+- FV.Backend.Proof.DefGenSem
+- FV.Backend.Proof.IselCovTCall
+- FV.Backend.Proof.FpFormsWitness
+- FV.Backend.Proof.IselCtlBranchTI
+- FV.Backend.Proof.IselSzCall
+- FV.Backend.Proof.IselSzBrTable
+- FV.Backend.Proof.IselMemFuncAddrMemTI
+- FV.Backend.Proof.IselTlsMemTI
+- FV.Backend.Proof.IselMemTrap
+- FV.E2E.FinalDirect
+- FV.E2E.LinkOwnCalls
+- FV.Backend.Proof.IselPrgCover
+- FV.Backend.Proof.IselPrgCtxT
+- FV.Backend.Proof.SpillStep4
+- FV.Backend.Proof.LowerContractTC
+- FV.Backend.Proof.LowerSimUAbi
+- FV.Backend.Proof.StockParameterShape
+- FV.Backend.Proof.StockCriticalValues
+- FV.Backend.Proof.StockCriticalEdgeArity
+- FV.Backend.Proof.SpillDefinedPrep
+- FV.Backend.Proof.SretStableX
+- FV.Backend.Proof.StockAddSubAuxWitness
+- FV.Backend.Proof.StockBitrevWitness
+- FV.Backend.Proof.StockBmaskSelectionWitness
+- FV.Backend.Proof.StockBmaskSemanticsWitness
+- FV.Backend.Proof.StockBnotWitness
+- FV.Backend.Proof.StockBranchTargetsWitness
+- FV.Backend.Proof.StockCastNoTypeWitness
+- FV.Backend.Proof.StockTerminalSinkWitness
+- FV.Backend.Proof.StockJumpEdgeValues
+- FV.Backend.Proof.StockLinearCfgFixture
+- FV.Backend.Proof.StockCmpImmediateSelection
+- FV.Backend.Proof.StockCmpZeroEmitterSelection
+- FV.Backend.Proof.StockCmpNonzero32Selection
+- FV.Backend.Proof.StockCmpConditionWitness
+- FV.Backend.Proof.StockCmpEqualZero8Witness
+- FV.Backend.Proof.StockCmpImmediateValues
+- FV.Backend.Proof.StockCmpMachineWitness
+- FV.Backend.Proof.StockCmpNarrowSelection
+- FV.Backend.Proof.StockCmpNonzero16Selection
+- FV.Backend.Proof.StockCmpNonzero8Selection
+- FV.Backend.Proof.StockCmpNarrowMachineValues
+- FV.Backend.Proof.StockCmpNarrowSourceWitness
+- FV.Backend.Proof.StockCmpNonzero16OriginalWitness
+- FV.Backend.Proof.StockCmpNonzero16PrefixWitness
+- FV.Backend.Proof.StockCmpNonzero16Witness
+- FV.Backend.Proof.StockCmpNonzero32OriginalWitness
+- FV.Backend.Proof.StockCmpNonzero64OriginalWitness
+- FV.Backend.Proof.StockCmpNonzero8OriginalWitness
+- FV.Backend.Proof.StockCmpNonzero8Witness
+- FV.Backend.Proof.StockCmpOriginalConstantClassification
+- FV.Backend.Proof.StockCmpRegisterSelection
+- FV.Backend.Proof.StockCmpSourceMatchWitness
+- FV.Backend.Proof.StockCmpPredecessorSignedSourceWitness
+- FV.Backend.Proof.StockCmpPredecessorSignedValues
+- FV.Backend.Proof.StockCmpPredecessorUnsignedSourceWitness
+- FV.Backend.Proof.StockCmpPredecessorUnsignedValues
+- FV.Backend.Proof.StockCmpRegisterValues
+- FV.Backend.Proof.StockCmpZero16OriginalRightEmitterValues
+- FV.Backend.Proof.StockCmpZero32OriginalRightEmitterValues
+- FV.Backend.Proof.StockCmpZero64OriginalRightEmitterValues
+- FV.Backend.Proof.StockCmpZero8OriginalRightEmitterValues
+- FV.Backend.Proof.StockCmpZeroSelection
+- FV.Backend.Proof.StockComparisonBranchSelectionWitness
+- FV.Backend.Proof.StockComparisonImmFactsWitness
+- FV.Backend.Proof.StockSelectComparisonCompanionWitness
+- FV.Backend.Proof.StockConditionalResolvedWitness
+- FV.E2E.LoweringProvenance
+- FV.E2E.SizeLower
+- FV.E2E.LinkOwnFrames
+- FV.E2E.PipelineCheck
+- FV.E2E.DeadCleanupCover
+- FV.E2E.DeadCleanupDirect
+- FV.Backend.Proof.StockDivBodyValueWitness
+- FV.Backend.Proof.StockDivConstant
+- FV.Backend.Proof.StockDivDividendValueWitness
+- FV.Backend.Proof.StockDivGuardWitness
+- FV.Backend.Proof.StockDivHelperWitness
+- FV.Backend.Proof.StockDivImmResolvedWitness
+- FV.Backend.Proof.StockDivSourceRequests
+- FV.Backend.Proof.StockDivResolvedGuardWitness
+- FV.Backend.Proof.StockDivRhsWitness
+- FV.Backend.Proof.StockDivSafeMatch
+- FV.Backend.Proof.StockEmptyBodySplitWitness
+- FV.Backend.Proof.StockExtendWitness
+- FV.Backend.Proof.StockFloatMemoryRoots
+- FV.Backend.Proof.StockLinearCfgTrapFixture
+- FV.Backend.Proof.StockLogicalRecordWitness
+- FV.Backend.Proof.StockLogicalExtrValuesWitness
+- FV.Backend.Proof.StockLogicalNotRecordWitness
+- FV.Backend.Proof.StockLogicalNotWitness
+- FV.Backend.Proof.StockLogicalNotXorFusedWitness
+- FV.Backend.Proof.StockLogicalNotXorWitness
+- FV.Backend.Proof.StockMemoryInput
+- FV.Backend.Proof.StockMemoryRecordKernel
+- FV.Backend.Proof.StockMemoryLoadedPointerFixture
+- FV.Backend.Proof.StockMemoryRecordFrame
+- FV.Backend.Proof.StockMemoryExtLoadRecordFrame
+- FV.Backend.Proof.StockMemoryIntegerRecordFrame
+- FV.Backend.Proof.StockMemoryIntegerLoadWitness
+- FV.Backend.Proof.StockMemoryStoreRecordFixture
+- FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues
+- FV.Backend.Proof.StockMemoryReadWitness
+- FV.Backend.Proof.StockMemorySretCopyCheck
+- FV.Backend.Proof.StockMemoryStoreMatchWitness
+- FV.Backend.Proof.StockMemoryStorePairedSource
+- FV.Backend.Proof.StockMemoryStoreWitness
+- FV.Backend.Proof.StockMinMaxNarrowSourceReads
+- FV.Backend.Proof.StockMinMaxRegisterSourceReads
+- FV.Backend.Proof.StockMinMaxRegisterValues
+- FV.Backend.Proof.StockSelectConditions
+- FV.Backend.Proof.StockMinMaxWideSourceReads
+- FV.Backend.Proof.StockMulFusedWitness
+- FV.Backend.Proof.StockMulWitness
+- FV.Backend.Proof.StockNegWitness
+- FV.Backend.Proof.StockNonEOpsRoots
+- FV.Backend.Proof.StockPerEdgeDirectWitness
+- FV.Backend.Proof.StockSourceCallWitness
+- FV.Backend.Proof.StockRotateLeftImmediateWitness
+- FV.Backend.Proof.StockRotateLeftRegisterWitness
+- FV.Backend.Proof.StockRotateRightImmediateWitness
+- FV.Backend.Proof.StockRotateRightRegisterWitness
+- FV.Backend.Proof.StockScopeRootsWitness
+- FV.Backend.Proof.StockSelectConditionOriginWitness
+- FV.Backend.Proof.StockSelectNonzeroAllocation
+- FV.Backend.Proof.StockSelectReplacementWitness
+- FV.Backend.Proof.StockSelectZeroReplacementWitness
+- FV.Backend.Proof.StockComparisonZeroFactsWitness
+- FV.Backend.Proof.StockDirectCallResultFixture
+- FV.Backend.Proof.StockLiveCallArithmetic
+- FV.Backend.Proof.StockFenceRoot
+- FV.Backend.Proof.StockFenceInventory
+- FV.Backend.Proof.StockAcquireHelpers
+- FV.E2E.RegLevelCorrectU
+- FV.Backend.Proof.StockGeneralSubsumption3
+- FV.Backend.Proof.StockGeneralSubsumption4
+- FV.Backend.Proof.StockGeneralSubsumption5
+- FV.Backend.Proof.StockGeneralSubsumption7
+- FV.E2E.StackBound
+- FV.E2E.BinCheck
+- FV.E2E
+- FV.E2E.LinkProduction
+- FV.E2E.RegLevelCorrectI
+- FV.E2E.PairGuardS
+- FV.E2E.PairDriverF
+- FV.E2E.Legal
+- FV.E2E.RelWPatch
+- FV.E2E.StockVoidCallView
+- FV.E2E.LinkArmBaseDet
+- FV.E2E.LinkGood
+- FV.E2E.WorldUnwindGot
+- FV.E2E.CodeMap
+- FV.E2E.GuardedFP
+- FV.E2E.DeadCleanupTC
+- FV.E2E.SretReturn
+- FV.E2E.CallReturnPinsWitness
+- FV.E2E.LinkImageExtension
+- FV.E2E.NonVacuity
+- FV.E2E.StockLogicalExtrWitness
+- FV.E2E.StockCallStoreTrapTail
+- FV.Backend.Proof.EdgeSplitWitness
+- FV.Backend.Proof.StockActualAddSubBodyRefines
+- FV.Backend.Proof.StockActualBodyRefines
+- FV.Backend.Proof.StockAddSubExtensionWitness
+- FV.Backend.Proof.StockAddSubImmediateWitness
+- FV.Backend.Proof.StockAddSubNegativeWitness
+- FV.Backend.Proof.StockAddSubShiftEdgeWitness
+- FV.Backend.Proof.StockAddSubShiftWitness
+- FV.Backend.Proof.StockBitrevDispatchWitness
+- FV.Backend.Proof.StockBswapDispatchWitness
+- FV.Backend.Proof.StockBswapWitness
+- FV.Backend.Proof.StockCfgReturnAtWitness
+- FV.Backend.Proof.StockCfgReturnEdge
+- FV.Backend.Proof.StockReturnVCode
+- FV.Backend.Proof.StockComparisonImmClass
+- FV.Backend.Proof.StockConditionalArgsClass
+- FV.Backend.Proof.StockConditionalRankedWitness
+- FV.Backend.Proof.StockConditionalSelectedWitness
+- FV.Backend.Proof.StockConditionalTrapLeafWitness
+- FV.Backend.Proof.StockCountClzNonzeroWitness
+- FV.Backend.Proof.StockCountClzZeroWitness
+- FV.Backend.Proof.StockCountCtzNonzeroWitness
+- FV.Backend.Proof.StockCountCtzZeroWitness
+- FV.Backend.Proof.StockDivDivisorValueWitness
+- FV.Backend.Proof.StockDivMinimumWitness
+- FV.Backend.Proof.StockDivSelectedWitness
+- FV.Backend.Proof.StockDivRemSelectedWitness
+- FV.Backend.Proof.StockDivRecordReceipts
+- FV.Backend.Proof.StockDivSdiv16WitnessRuns
+- FV.Backend.Proof.StockDivSdiv32WitnessRuns
+- FV.Backend.Proof.StockDivSdiv64WitnessRuns
+- FV.Backend.Proof.StockDivSdiv8WitnessRuns
+- FV.Backend.Proof.StockDivSdivSafe16WitnessRuns
+- FV.Backend.Proof.StockDivSdivSafe32WitnessRuns
+- FV.Backend.Proof.StockDivSdivSafe64WitnessRuns
+- FV.Backend.Proof.StockDivSdivSafe8WitnessRuns
+- FV.Backend.Proof.StockDivSignedRecordReceipts
+- FV.Backend.Proof.StockDivSrem16WitnessRuns
+- FV.Backend.Proof.StockDivSrem32WitnessRuns
+- FV.Backend.Proof.StockDivSrem64WitnessRuns
+- FV.Backend.Proof.StockDivSrem8WitnessRuns
+- FV.Backend.Proof.StockDivUdiv16WitnessRuns
+- FV.Backend.Proof.StockDivUdiv32WitnessRuns
+- FV.Backend.Proof.StockDivUdiv8WitnessRuns
+- FV.Backend.Proof.StockDivUdivWideWitnessRuns
+- FV.Backend.Proof.StockDivUrem16WitnessRuns
+- FV.Backend.Proof.StockDivUrem32WitnessRuns
+- FV.Backend.Proof.StockDivUrem64WitnessRuns
+- FV.Backend.Proof.StockDivUrem8WitnessRuns
+- FV.Backend.Proof.StockEntryDivisionFixture
+- FV.Backend.Proof.StockEntryLoadsWitness
+- FV.Backend.Proof.StockEntryScalarFixture
+- FV.Backend.Proof.StockEntrySeedWitness
+- FV.Backend.Proof.StockForwardDemandWitness
+- FV.Backend.Proof.StockForwardLeafWitness
+- FV.Backend.Proof.StockForwardWitness
+- FV.Backend.Proof.StockHighMulWitnessRuns
+- FV.Backend.Proof.StockInheritedJump
+- FV.Backend.Proof.StockQuietBlockWitness
+- FV.Backend.Proof.StockJumpEdgeParameters
+- FV.Backend.Proof.StockLogicalSourceExecution
+- FV.Backend.Proof.StockMemoryCapturedFixture
+- FV.Backend.Proof.StockMemoryComputedStoreRecordWitness
+- FV.Backend.Proof.StockMemoryEntryWitness
+- FV.Backend.Proof.StockMemoryNopReturnBody
+- FV.Backend.Proof.StockMemoryOffsetEightStoreRetention
+- FV.Backend.Proof.StockMemoryOrdinaryJumpSpec
+- FV.Backend.Proof.StockMemoryOrdinaryTrapWitness
+- FV.Backend.Proof.StockMemorySingleWitness
+- FV.Backend.Proof.StockMemoryStoreDemandTransport
+- FV.Backend.Proof.StockReturnFullValues
+- FV.Backend.Proof.StockMemoryStoreNonentryReturn
+- FV.Backend.Proof.StockNegDispatchWitness
+- FV.Backend.Proof.StockNoLoadDriverWitness
+- FV.Backend.Proof.StockParameterAnyArgsLeaf
+- FV.Backend.Proof.StockParameterLeafWitness
+- FV.Backend.Proof.StockPopcountNonzeroWitness
+- FV.Backend.Proof.StockPopcountZeroWitness
+- FV.Backend.Proof.StockProtectedSinkDriverWitness
+- FV.Backend.Proof.StockProtectedSinkWitness
+- FV.Backend.Proof.StockReturnedDefinitionWitness
+- FV.Backend.Proof.StockShiftWitnessInputs
+- FV.Backend.Proof.StockTwoBlockTrapWitness
+- FV.Backend.Proof.StockComparisonZeroClass
+- FV.Backend.Proof.StockFenceSource
+- FV.Backend.Proof.StockMemoryAccessSourcePrefix
+- FV.Backend.Proof.StockTableWitness
+- FV.E2E.StockArithmeticArtifactWitness
+- FV.E2E.LinkSiteTC
+- FV.E2E.StockMemoryABIWorldX
+- FV.E2E.StockMemoryOrdinaryPairedJump
+- FV.E2E.StockMemoryNopNonentryPairedReturn
+- FV.E2E.SemanticPipelineCheckWith
+- FV.E2E.CalleeWith
+- FV.Link.Layout
+- FV.E2E.SrcScopeDefs
+- FV.E2E.StockCodeWorldX
+- FV.E2E.StockMaskChecks
+- FV.E2E.StockMemoryStoreNonentryPairedReturn
+- FV.E2E.StockMixedDivChecks
+- FV.E2E.StockReturnedDivChecks
+- FV.E2E.StockResultCallSource
+- FV.Backend.Proof.StockParameterInput
+- FV.Backend.Proof.StockComparisonArgsLoopCheck
+- FV.Backend.Proof.StockParameterLoopCheck
+- FV.Backend.Proof.StockComparisonLoopCheck
+- FV.Backend.Proof.StockParameterArgsLoopCheck
+- FV.Backend.Proof.StockComparisonComputedLoopCheck
+- FV.Backend.Proof.StockComparisonComputedArgsLoopCheck
+- FV.Backend.Proof.StockGeneralArgsLoopWitness6
+- FV.E2E.StockNarrowRootsWitness
+- FV.E2E.StockTrapWitness

@@ -1,0 +1,318 @@
+{
+  "FV.Backend.Proof.StockMemoryOrdinaryCfgJumpReturnAt": {
+    "native_key": "dd9fbe1277d35195",
+    "trace_sha256": "09879f2dc853adf421086b8ee2197362fe13c76ff8f2e0093a1f6d68fc1d4e94",
+    "payload_sha256": {
+      "olean": "ed2031192b61522587750d899a0457021b3696a8f5ddbbdbddee2714c44a23b2",
+      "ilean": "411217c3abb3e6824eade64e7f43d4df8146a0bfc1474e4fde6ecd79fb0853e0",
+      "c": "98de77410c132700c8d4fbbe46f11cd40d2a0e94ba94bab0406da4571f3d4341"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryCfgJumpReturnAt.trace.nobuild": "0b27fa4a7ac30e7d3be0a30704d8bf02a2c8960600120564ccab6aeccfadeeb0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryCfgJumpReturnAt.olean": "ed2031192b61522587750d899a0457021b3696a8f5ddbbdbddee2714c44a23b2",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryCfgJumpReturnAt.ilean": "411217c3abb3e6824eade64e7f43d4df8146a0bfc1474e4fde6ecd79fb0853e0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryCfgJumpReturnAt.olean.hash": "428ba70657db46300c6bf42eee3d8501bb88f39197a38a3dac28120aae09e555",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryCfgJumpReturnAt.ilean.hash": "044f3412fa122b86ba51bcd7f7354e2a4fbf5102b90a97c1d7c136a777893a60",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryCfgJumpReturnAt.trace": "09879f2dc853adf421086b8ee2197362fe13c76ff8f2e0093a1f6d68fc1d4e94",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryCfgJumpReturnAt.setup.json": "3b2ae39e0bb2f1e6beb2eefb7a53cfbefee11e75dbb32b0cf46c498673bb9aec",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryCfgJumpReturnAt.c": "98de77410c132700c8d4fbbe46f11cd40d2a0e94ba94bab0406da4571f3d4341",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryCfgJumpReturnAt.c.hash": "8fb99ceaf74378c6162d22bdf8360f58b5c698ebee51496024e1e9c66dd5f149"
+    },
+    "existing_normal_reused": true
+  },
+  "FV.Backend.Proof.StockMemorySretCopyBodySplit": {
+    "native_key": "63903f5e5fce0ef6",
+    "trace_sha256": "f6491d093251e52d4f12070f345e2af22a381bc97d05eee52274ed3753b5884b",
+    "payload_sha256": {
+      "olean": "9992633acb876defe7f92dbc7c4cb73b948f22c3baaadd6faf1604fb3b25c563",
+      "ilean": "a478fd9bc70c818fc8d41cec48f45dd22873f648240bdf37659512076ad521c2",
+      "c": "bc935d116ba55392f7d11118bb156f639a85d074365294d23e912ea9513949ee"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.trace": "f6491d093251e52d4f12070f345e2af22a381bc97d05eee52274ed3753b5884b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.olean": "9992633acb876defe7f92dbc7c4cb73b948f22c3baaadd6faf1604fb3b25c563",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.ilean.hash": "607613af68a757ab455aae2f6fd082cd8ee1eadad9d6261325a97a2da44ef126",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.ilean": "a478fd9bc70c818fc8d41cec48f45dd22873f648240bdf37659512076ad521c2",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.olean.hash": "a43e7387e964d7caccd003b4cee881c31873be71702f5ffc56d8dfc4e406b2e7",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBodySplit.setup.json": "9ef526bbe17b6d16a09e4e34e001352bd00cd7fa8bfc07aa1e9fe3b49eaa1201",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBodySplit.c": "bc935d116ba55392f7d11118bb156f639a85d074365294d23e912ea9513949ee",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBodySplit.c.hash": "6389ab9ba0f17169af7c522d1892db1ea665a7b5dfc4086d77c6639c72ca531a"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.Backend.Proof.StockMemorySretCopyCheck": {
+    "native_key": "7081b4a4d3efcfad",
+    "trace_sha256": "d5617a1f679c5a9fc7358b766e9e8e095d15c0e9b627a182fa6e7f23cbbc4fdc",
+    "payload_sha256": {
+      "olean": "d129ff72c0300650c6813f3e45ec8dc8df5f2d2ebf2eca48e06fabca0fd6ba1e",
+      "ilean": "419a08235010ac53bc82cc62fc5a8f4043b8f9facd199ecb703768cb05e22336",
+      "c": "8343c114f092dbc106d2d51f0bb8ded5a96722eeddc7ff4df92e48a25eb026a5"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyCheck.olean": "d129ff72c0300650c6813f3e45ec8dc8df5f2d2ebf2eca48e06fabca0fd6ba1e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyCheck.ilean": "419a08235010ac53bc82cc62fc5a8f4043b8f9facd199ecb703768cb05e22336",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyCheck.trace": "d5617a1f679c5a9fc7358b766e9e8e095d15c0e9b627a182fa6e7f23cbbc4fdc",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyCheck.olean.hash": "23c026d09f49cfef3d79ba8b1968dee64ba54c78996ba94bbfa1cc793e90403f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyCheck.ilean.hash": "0627cd36de951666a99197d3c70c5266e4a76ca7ac40effe74629cc5a5b88f21",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyCheck.c": "8343c114f092dbc106d2d51f0bb8ded5a96722eeddc7ff4df92e48a25eb026a5",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyCheck.setup.json": "7d84ce4d2315a74b52c88a5b2de26ef57aba48b0782d51602c5591b33340889c",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyCheck.c.hash": "24a6b46a1ec6d0ed517b47ce52aa1cc44ea8c69900d8d2b1e2898177c5af52a5"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.Backend.Proof.StockMemorySretCopyFunction": {
+    "native_key": "24d00eb5a0b9f8c6",
+    "trace_sha256": "52c33b822f68990830ad19c55a03bd5774f0f8ce8980f74a5bcd51d976e5c752",
+    "payload_sha256": {
+      "olean": "306b09c234c932472b8083e145949ceac9d23592c9990a3bb7ea23c42dd438e5",
+      "ilean": "7298e9583ddfe26f98c358a423ac85f92f3f465bcd0275bc5f301999b17b36ed",
+      "c": "5a18a2f58e286a62fc7884c11a384f9987ae7479747388b3f8afa1d5cfb1496c"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFunction.trace": "52c33b822f68990830ad19c55a03bd5774f0f8ce8980f74a5bcd51d976e5c752",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFunction.ilean.hash": "29314ec6b85a8670ebf185eb9c43ee1171dfffab9e32e93c08aa7cc12a78718f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFunction.ilean": "7298e9583ddfe26f98c358a423ac85f92f3f465bcd0275bc5f301999b17b36ed",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFunction.olean.hash": "a8499b2fe7b6624a7f5e512e59dd050be40f647084e9c21072e7e39c94a2587c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFunction.olean": "306b09c234c932472b8083e145949ceac9d23592c9990a3bb7ea23c42dd438e5",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyFunction.setup.json": "f0c6fb53358916c3336a34a0a9cf0733b63d9db53795a95c0d372226419d7c1c",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyFunction.c": "5a18a2f58e286a62fc7884c11a384f9987ae7479747388b3f8afa1d5cfb1496c",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyFunction.c.hash": "967fa54c15af9e4b42e9d353cd036477a282339ce5b61adc3f584e4335ac9ed4"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.Backend.Proof.StockMemorySretCopyFunctionObservation": {
+    "native_key": "b4e1af63470d7427",
+    "trace_sha256": "7fcc83c240d312d3877003096919b10a4666012650a3a781ec8b5c6315cfd860",
+    "payload_sha256": {
+      "olean": "0248e5da4545c938fcf00e55fb291b77e2bdcfde7c94209d5b9ce1e5cd589929",
+      "ilean": "76c38c027d35d3ffab2a869c2812518a175a02277b7a09edfa7f5e97d53ff901",
+      "c": "43399fec4467355df49aaea5bd45bedeb090290796a535032a903f225768341c"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFunctionObservation.trace": "7fcc83c240d312d3877003096919b10a4666012650a3a781ec8b5c6315cfd860",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFunctionObservation.olean.hash": "d5f9d1fd1796288fd94d583256a0da109f6a23a9facfe166161bd856841559f6",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFunctionObservation.ilean.hash": "453fb906bf238e6e7a81599f144f1c9b9c8745c66f065e40faf71b4989300c3c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFunctionObservation.ilean": "76c38c027d35d3ffab2a869c2812518a175a02277b7a09edfa7f5e97d53ff901",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyFunctionObservation.olean": "0248e5da4545c938fcf00e55fb291b77e2bdcfde7c94209d5b9ce1e5cd589929",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyFunctionObservation.setup.json": "17d72761cd79bdc3f7dc7417867bb714cd434be42da2abb7eb6d22987ac810ee",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyFunctionObservation.c.hash": "f5dbb8b90ffda5609b8c679825ec3cf397a86aa0c3c8870f8d8ce088c695908e",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyFunctionObservation.c": "43399fec4467355df49aaea5bd45bedeb090290796a535032a903f225768341c"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.Backend.Proof.StockMemorySretCopyDomain": {
+    "native_key": "d6bff6cd05314acf",
+    "trace_sha256": "cbb49c8b2021c2497638fd2b8ee03c517e0bb99640c8016bcc498adce90d73d3",
+    "payload_sha256": {
+      "olean": "2837e830a9496fdb9b6d82ddf07f576c1f8712e843b236b78501b507cfd72d05",
+      "ilean": "df0c2943988580ff8438d467455485832903346b149e9c8433c96783c506b28f",
+      "c": "aaac7c3a2222ba533383bd89898182180ecee6a63fc576ead435b5ce5a6189e3"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyDomain.trace": "cbb49c8b2021c2497638fd2b8ee03c517e0bb99640c8016bcc498adce90d73d3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyDomain.ilean": "df0c2943988580ff8438d467455485832903346b149e9c8433c96783c506b28f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyDomain.olean.hash": "b87e349432cad60acf2e662cc2576ef0ee0e133b225388a7dfb4db0b4ff92060",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyDomain.ilean.hash": "079def73a7f23940da55ef0db93c22256099a3654f043cf6b92989072bcbe001",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyDomain.olean": "2837e830a9496fdb9b6d82ddf07f576c1f8712e843b236b78501b507cfd72d05",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyDomain.setup.json": "cd0a28320c052c1fcc634e0262f55935ff15bab0f372d1ee41ffb1d9e16f9633",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyDomain.c.hash": "035d190320f0d359ca35372ddaa8927ae8ad450d6d64fba72b4175788d50ae73",
+      ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyDomain.c": "aaac7c3a2222ba533383bd89898182180ecee6a63fc576ead435b5ce5a6189e3"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.Backend.ReturnPinCheck": {
+    "native_key": "a57b4b94b2fe6b65",
+    "trace_sha256": "cf7cad398bb8ec8b7ea4c08c4fd0a21f58f5036a5fba11894cd70a8956421d06",
+    "payload_sha256": {
+      "olean": "810797555c7d2be9cd60dfb3ef58483d202ccf34a3cd4930c29f5c76eb376664",
+      "ilean": "6c50ff3db9c1c1c0a15dfd6b7b495bfae8be71ff92b3d3ba0d764edffaab9b03",
+      "c": "6cb39ea21fc9f49819556f447a2eaa71fd3a3721d09eb6858dced083fd19f422"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.olean": "810797555c7d2be9cd60dfb3ef58483d202ccf34a3cd4930c29f5c76eb376664",
+      ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.trace": "cf7cad398bb8ec8b7ea4c08c4fd0a21f58f5036a5fba11894cd70a8956421d06",
+      ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.ilean": "6c50ff3db9c1c1c0a15dfd6b7b495bfae8be71ff92b3d3ba0d764edffaab9b03",
+      ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.olean.hash": "7c7edd1d70a8d94b5a1f38123578be644f2d14653bb75743cb37251fac5b74ce",
+      ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.ilean.hash": "c3b169c249a6b2ace41ac364c06fba6812dab1764d4f74e89419617333151cb8",
+      ".lake/build/ir/FV/Backend/ReturnPinCheck.c": "6cb39ea21fc9f49819556f447a2eaa71fd3a3721d09eb6858dced083fd19f422",
+      ".lake/build/ir/FV/Backend/ReturnPinCheck.c.hash": "43d2e8bed753c30c5ee9809395ed6e25ca251ae34b67d7c1909bdce7bc908416",
+      ".lake/build/ir/FV/Backend/ReturnPinCheck.setup.json": "fa064919a25c67dc3da8e34e83e8132289e1d84642f29e60a5602456c2998923"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.Backend.SemanticABICheck": {
+    "native_key": "fc7ed5c3a04e5f2e",
+    "trace_sha256": "93a05e9c39d7c2fd6fd1688af97a4c5b8e2b200b4bc334906b58e632b85d9843",
+    "payload_sha256": {
+      "olean": "1201996dc016844dbbe265c148287461ecabca554d7d6a48c5b6d8fae9c86e1b",
+      "ilean": "3a3d8d6c08110862f861590d33fc00b08266d580f49a9aa7b1f6907b9e11c60a",
+      "c": "7556819c134ba1629ed707a207341b8e665186fd3ab9a6d16783c5481097564b"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/SemanticABICheck.ilean": "3a3d8d6c08110862f861590d33fc00b08266d580f49a9aa7b1f6907b9e11c60a",
+      ".lake/build/lib/lean/FV/Backend/SemanticABICheck.olean.hash": "089779cf974c31a4541e1c31395d100b73fc268080e4ce90cb25664d953f359c",
+      ".lake/build/lib/lean/FV/Backend/SemanticABICheck.trace": "93a05e9c39d7c2fd6fd1688af97a4c5b8e2b200b4bc334906b58e632b85d9843",
+      ".lake/build/lib/lean/FV/Backend/SemanticABICheck.olean": "1201996dc016844dbbe265c148287461ecabca554d7d6a48c5b6d8fae9c86e1b",
+      ".lake/build/lib/lean/FV/Backend/SemanticABICheck.ilean.hash": "f0297084a1c17ec8ff297807cea518c4c8a32073386ef8cab78cbe37d14b9c68",
+      ".lake/build/ir/FV/Backend/SemanticABICheck.c": "7556819c134ba1629ed707a207341b8e665186fd3ab9a6d16783c5481097564b",
+      ".lake/build/ir/FV/Backend/SemanticABICheck.c.hash": "5d91da9795690f679bc814992401fcd725a72f3db01a015c9cd4ff9412a3d375",
+      ".lake/build/ir/FV/Backend/SemanticABICheck.setup.json": "e67d4adb0f2991f19e209373a498fff16dfc1569defd06c401ea9e78b83638c5"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.E2E.SemanticNIBoundary": {
+    "native_key": "8133c4a55eb02c52",
+    "trace_sha256": "3eeee4dfc33c0018338e72e7ecdde6781a67dca2215577516d552d766e4e5e89",
+    "payload_sha256": {
+      "olean": "37a57dcddca0077781705f14e3ffd2a78356936ed9eea6f850bc56cce05c3d15",
+      "ilean": "bdfb30d19a998209bf92ab988262bfa281d025a6ea4363213c5f00092f812521",
+      "c": "ad61acb2b629a7f26438f12146052c9290bc67e7c4958c103f4a877d055bdd8e"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/SemanticNIBoundary.trace": "3eeee4dfc33c0018338e72e7ecdde6781a67dca2215577516d552d766e4e5e89",
+      ".lake/build/lib/lean/FV/E2E/SemanticNIBoundary.olean": "37a57dcddca0077781705f14e3ffd2a78356936ed9eea6f850bc56cce05c3d15",
+      ".lake/build/lib/lean/FV/E2E/SemanticNIBoundary.ilean": "bdfb30d19a998209bf92ab988262bfa281d025a6ea4363213c5f00092f812521",
+      ".lake/build/lib/lean/FV/E2E/SemanticNIBoundary.olean.hash": "28ab1a0ce216784d0c325be87b70a12c2d19dea638502ce68d2e3f44c8e415ee",
+      ".lake/build/lib/lean/FV/E2E/SemanticNIBoundary.ilean.hash": "5b39fc6319e25cea498236c4fd5689fac9894fcd9764514812c32f2513c8e70e",
+      ".lake/build/ir/FV/E2E/SemanticNIBoundary.setup.json": "1411dd9999dda66ecbab924f3aea8a38c8124da431ebbd94d25661491ce6da99",
+      ".lake/build/ir/FV/E2E/SemanticNIBoundary.c": "ad61acb2b629a7f26438f12146052c9290bc67e7c4958c103f4a877d055bdd8e",
+      ".lake/build/ir/FV/E2E/SemanticNIBoundary.c.hash": "d0e563945f3dc94777a3266ba99475af8ee5707069f0f7b5323ecd4c4ee25954"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.E2E.StockMemorySretCopyNI": {
+    "native_key": "09372cefe5e66c97",
+    "trace_sha256": "d8e1128505b8dbb0417b0308871a3dc4e4353e8957b7206b014dfa880387b58c",
+    "payload_sha256": {
+      "olean": "9eb7f5b6101bbc3f7d5b55200a2128747a11d1a55c714a76cc33b8a8783ccd12",
+      "ilean": "f8202c5cba415140fc74a4769dbd226b88dbac5ff3c7ad8477944c2200d1eff7",
+      "c": "ece88546c6e4aa451e0f55188389be6c9ce6eea1a777d8c6c329aae9f2b99d90"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyNI.trace": "d8e1128505b8dbb0417b0308871a3dc4e4353e8957b7206b014dfa880387b58c",
+      ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyNI.olean": "9eb7f5b6101bbc3f7d5b55200a2128747a11d1a55c714a76cc33b8a8783ccd12",
+      ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyNI.ilean": "f8202c5cba415140fc74a4769dbd226b88dbac5ff3c7ad8477944c2200d1eff7",
+      ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyNI.olean.hash": "2b167021cd6fdb584ac5909e829eff21c2fc052b2dcb1979ba3692947c4078ab",
+      ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyNI.ilean.hash": "acc996e23d10693dcd0119c835cb85bd5c0661ee564496026dc90758b33a783f",
+      ".lake/build/ir/FV/E2E/StockMemorySretCopyNI.setup.json": "f03956613e920f770976a0ce1db5d0521d8b6478f09392efde90a42f8b328afd",
+      ".lake/build/ir/FV/E2E/StockMemorySretCopyNI.c": "ece88546c6e4aa451e0f55188389be6c9ce6eea1a777d8c6c329aae9f2b99d90",
+      ".lake/build/ir/FV/E2E/StockMemorySretCopyNI.c.hash": "cac747b8b01ab588f9ed5ea429fb6dfd84f15f0d743c1b475b7ad18edcb3e04a"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.E2E.CompiledSemanticABI": {
+    "native_key": "bbc1bdfe404d129d",
+    "trace_sha256": "0723a3fb01f1191d82a31c5ceeeaa08260a20f73af56f285899c6fac71eaf6d1",
+    "payload_sha256": {
+      "olean": "5425dfaa43d192c5d75df620295437ea0c8a418f7a363f0a379c7fb00b822433",
+      "ilean": "04f3cf1951ae654c4fcca865bd6aa324f027160788a62f5ea703d23ecda92128",
+      "c": "8eede54a6d3fb1615f1c0f232c9078b83e4e8a53389a58a2eaec80b39fe4dfee"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/CompiledSemanticABI.trace": "0723a3fb01f1191d82a31c5ceeeaa08260a20f73af56f285899c6fac71eaf6d1",
+      ".lake/build/lib/lean/FV/E2E/CompiledSemanticABI.olean": "5425dfaa43d192c5d75df620295437ea0c8a418f7a363f0a379c7fb00b822433",
+      ".lake/build/lib/lean/FV/E2E/CompiledSemanticABI.ilean": "04f3cf1951ae654c4fcca865bd6aa324f027160788a62f5ea703d23ecda92128",
+      ".lake/build/lib/lean/FV/E2E/CompiledSemanticABI.olean.hash": "42770ebc4d61db02cf25a2a3d4974ebdd73333a85aac911aba41c2c41647d590",
+      ".lake/build/lib/lean/FV/E2E/CompiledSemanticABI.ilean.hash": "83f409dc2aafaf691c26e0ea267d7ee15dcfc9a5794d22cde59fc048f93b51cb",
+      ".lake/build/ir/FV/E2E/CompiledSemanticABI.setup.json": "ed7364bd29d2e3967fbbd1772e40c3ee5af05d8ea4f7d30618ca4bc4c63e6c0a",
+      ".lake/build/ir/FV/E2E/CompiledSemanticABI.c": "8eede54a6d3fb1615f1c0f232c9078b83e4e8a53389a58a2eaec80b39fe4dfee",
+      ".lake/build/ir/FV/E2E/CompiledSemanticABI.c.hash": "88a80df83f672bb2d0ee02b700ed976fbd36c7a656ef59f188751d5d4050c041"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.E2E.CompiledSemanticReturnPins": {
+    "native_key": "9ed17f7dac8e4291",
+    "trace_sha256": "d144de75cccc0ee50581dd8e37c5a26313543c0d6059bee3b48387c41be27fbf",
+    "payload_sha256": {
+      "olean": "fb7dd74fc7dc2ab13acc7c694316765fbcbcc0030a39c2cbd7bb2fb145c7e202",
+      "ilean": "680e54b2240732dc3bc5be34213e009fd23cf14b68fc34e89c4db68ad658465a",
+      "c": "ba4186fbca994cac80f867d3085c3ec901f6f57e18b6e76dba664e540c0eef71"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/CompiledSemanticReturnPins.trace": "d144de75cccc0ee50581dd8e37c5a26313543c0d6059bee3b48387c41be27fbf",
+      ".lake/build/lib/lean/FV/E2E/CompiledSemanticReturnPins.olean": "fb7dd74fc7dc2ab13acc7c694316765fbcbcc0030a39c2cbd7bb2fb145c7e202",
+      ".lake/build/lib/lean/FV/E2E/CompiledSemanticReturnPins.ilean": "680e54b2240732dc3bc5be34213e009fd23cf14b68fc34e89c4db68ad658465a",
+      ".lake/build/lib/lean/FV/E2E/CompiledSemanticReturnPins.olean.hash": "65687c9c693523432724d67c65d9bcff7f1cdf9d2a36dc27d244f9bb557ae090",
+      ".lake/build/lib/lean/FV/E2E/CompiledSemanticReturnPins.ilean.hash": "dc22a4f171784f1cf8b9cb64d2f9aece1eb92d6826ca3db1f5c3ca783bb7072e",
+      ".lake/build/ir/FV/E2E/CompiledSemanticReturnPins.setup.json": "91e1b886ceb4aa0131ad8c47a27f6b09989ee0c37f4c5cb49f0ce9ef83ed2ba6",
+      ".lake/build/ir/FV/E2E/CompiledSemanticReturnPins.c": "ba4186fbca994cac80f867d3085c3ec901f6f57e18b6e76dba664e540c0eef71",
+      ".lake/build/ir/FV/E2E/CompiledSemanticReturnPins.c.hash": "35b1a4a22d9e17a3612db96fee3a89b06079761b016e3d4f657e4f1e537a08c1"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.E2E.LinkReturnPins": {
+    "native_key": "4d2f294a7bf90980",
+    "trace_sha256": "469cfd5b4d1e3759a1de9c28c14759f62960f32fe14b66074629e83ae47bbde5",
+    "payload_sha256": {
+      "olean": "ef5c0f8c64c9cb189a9e4cbf91c5b76f68dd6dfa7fae7df01df92e0dbb5c1312",
+      "ilean": "8b254a4a40ab52523c4376f359cb85dd278e2847c4d59250c549219a4db719db",
+      "c": "93768d8c9c55c19b3c3abac2945d3e015eb518dd1c129305b2f88daafe921630"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/LinkReturnPins.trace": "469cfd5b4d1e3759a1de9c28c14759f62960f32fe14b66074629e83ae47bbde5",
+      ".lake/build/lib/lean/FV/E2E/LinkReturnPins.olean": "ef5c0f8c64c9cb189a9e4cbf91c5b76f68dd6dfa7fae7df01df92e0dbb5c1312",
+      ".lake/build/lib/lean/FV/E2E/LinkReturnPins.ilean": "8b254a4a40ab52523c4376f359cb85dd278e2847c4d59250c549219a4db719db",
+      ".lake/build/lib/lean/FV/E2E/LinkReturnPins.olean.hash": "16746812cfafc4e7c213e90ca1b0e8884c6bb4ad040d1f99d16c6baed1b4c508",
+      ".lake/build/lib/lean/FV/E2E/LinkReturnPins.ilean.hash": "c88a04404d3fb8769dd518939eeebf4a1a3da88098d75340928b49d63e1e9a49",
+      ".lake/build/ir/FV/E2E/LinkReturnPins.setup.json": "d2c0a786190cd023c8d30ea55efff6986686a8afda331fa186d874cbe506e5ad",
+      ".lake/build/ir/FV/E2E/LinkReturnPins.c": "93768d8c9c55c19b3c3abac2945d3e015eb518dd1c129305b2f88daafe921630",
+      ".lake/build/ir/FV/E2E/LinkReturnPins.c.hash": "4e93800a2a43ae3f37518ed56c8423aacb1e85eeb0af9e9946fa9fb70353f170"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.E2E.ReturnPinCheckSound": {
+    "native_key": "8e573899d8614dff",
+    "trace_sha256": "dfe8bf8a735972a1c35af075ea932e79b6388ac3bca3fb0e41a2b030166cd689",
+    "payload_sha256": {
+      "olean": "e2162e73eb3bd58e0aeb77a73f3cdce460db1c133bce236d38f4c79c2a117e3e",
+      "ilean": "3244122aa61875bee01c122c53598e404c8d895791ca9fde1f71a4b4f4058c39",
+      "c": "46dcc97695e19aad071442f18dc38cf9271852a9477cd877178c2e68fb385aa2"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ReturnPinCheckSound.trace": "dfe8bf8a735972a1c35af075ea932e79b6388ac3bca3fb0e41a2b030166cd689",
+      ".lake/build/lib/lean/FV/E2E/ReturnPinCheckSound.olean": "e2162e73eb3bd58e0aeb77a73f3cdce460db1c133bce236d38f4c79c2a117e3e",
+      ".lake/build/lib/lean/FV/E2E/ReturnPinCheckSound.ilean": "3244122aa61875bee01c122c53598e404c8d895791ca9fde1f71a4b4f4058c39",
+      ".lake/build/lib/lean/FV/E2E/ReturnPinCheckSound.olean.hash": "2f50ee2f6f0e6cfbc6a27fcffdd843ee12ce10de0123360a6c2ff55fc0e81f6c",
+      ".lake/build/lib/lean/FV/E2E/ReturnPinCheckSound.ilean.hash": "d6118c69283932f3ab6f605b96feae49fd61b3896e853b737286c15f097f140b",
+      ".lake/build/ir/FV/E2E/ReturnPinCheckSound.setup.json": "7c9c1911776f9a744a09397ed2f479ae4b9c915233e7930649be0ab73d1fbed0",
+      ".lake/build/ir/FV/E2E/ReturnPinCheckSound.c": "46dcc97695e19aad071442f18dc38cf9271852a9477cd877178c2e68fb385aa2",
+      ".lake/build/ir/FV/E2E/ReturnPinCheckSound.c.hash": "63a32c82e733da983abab2e6f79af0fe5d7a5ba2f6e3fac3be6fee50754662a8"
+    },
+    "existing_normal_reused": false
+  },
+  "FV.E2E.CompiledProgramReturnPins": {
+    "native_key": "5683b29d91105875",
+    "trace_sha256": "64dc4fc71414786ae61e1ee1fde22bb2fca86f52bfb2127857c678aacb4f7a8c",
+    "payload_sha256": {
+      "olean": "6c0c10fd5782d0e15743f263f8096b7ecd521c58b58210123e88e761e7026d2a",
+      "ilean": "6a7b8f90c2553bcb8a09da6b022f88fcfd23e42b52190e3b8519e554474f2d83",
+      "c": "6191bfecb2d18b1f48bb1a24011d12cbd1baa9342c5d9df32c9220dc17c2c903"
+    },
+    "creator": "full-input native creator",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/CompiledProgramReturnPins.trace": "64dc4fc71414786ae61e1ee1fde22bb2fca86f52bfb2127857c678aacb4f7a8c",
+      ".lake/build/lib/lean/FV/E2E/CompiledProgramReturnPins.olean": "6c0c10fd5782d0e15743f263f8096b7ecd521c58b58210123e88e761e7026d2a",
+      ".lake/build/lib/lean/FV/E2E/CompiledProgramReturnPins.ilean": "6a7b8f90c2553bcb8a09da6b022f88fcfd23e42b52190e3b8519e554474f2d83",
+      ".lake/build/lib/lean/FV/E2E/CompiledProgramReturnPins.olean.hash": "3eddc197a08947a4d345fb42ea5de11bbcd475119a3f4177cd93200c5f6966f9",
+      ".lake/build/lib/lean/FV/E2E/CompiledProgramReturnPins.ilean.hash": "0696f99e0a52da0b60d417ab833f96398639b350d73f5d8cd9bdb544b4da5c15",
+      ".lake/build/ir/FV/E2E/CompiledProgramReturnPins.setup.json": "94996560e28d1821ef11b7e443f76ad0d4a5f35527efbf97c7c8466af747006b",
+      ".lake/build/ir/FV/E2E/CompiledProgramReturnPins.c": "6191bfecb2d18b1f48bb1a24011d12cbd1baa9342c5d9df32c9220dc17c2c903",
+      ".lake/build/ir/FV/E2E/CompiledProgramReturnPins.c.hash": "79edfd56636db19b33af3fae07f1222eeb6400f04b8be200d49618fa7269f8c0"
+    },
+    "existing_normal_reused": false
+  }
+}

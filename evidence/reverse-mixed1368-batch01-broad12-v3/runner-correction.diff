@@ -1,0 +1,16 @@
+--- v2/run.py
++++ v3/run.py
+@@ -2,6 +2,13 @@
+ import datetime, fcntl, hashlib, json, os, psutil, select, signal, subprocess, sys, time
+ D = Path(__file__).resolve().parent
+ from restore_config import restore_config
++static_files = {'gate.py', 'run.py', 'guard.py', 'launch.py', 'restore_config.py',
++    'original-G-lakefile.toml', 'config-restoration.json', 'fresh-directory-review.json',
++    'runner-correction.diff', '__pycache__'}
++assert all(f.name in static_files for f in D.iterdir()), 'Non-static file exists before owner preflight'
++for runtime_name in ['command-release-v1.json', 'state.json', 'permit.json',
++    'consumer-identity.json', 'guard-armed.json', 'receipt.json', 'commands.json']:
++    assert not (D / runtime_name).exists(), ('Stale runtime file', runtime_name)
+ E = D.parent
+ B = Path('/home/lee/clifv')
+ W = E / 'direct-call-store-live-packet-v1/fault-world-w-prep-v1'

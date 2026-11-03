@@ -1,0 +1,12 @@
+{
+  "status": "IMMUTABLE_PREPARED_V1;NEVER_LAUNCHED",
+  "files": {
+    "run.py": "db242b64454a53177f8a8ceddf1a614e0c6275d428a0a44930452058e968ac89",
+    "gate.py": "210d0d84def725dc945b60c41640908810897d0d53584a3e543bc9c68f207ed1",
+    "guard.py": "1131be9a39e5e220d5ce70b423cced9abb4f7713642d1cf64cc9c7cfd7620906",
+    "launch.py": "fe81e71507505eeb304934dfdbddbe87de3de20c7118a1ac8a2e1b91bb964313",
+    "prepared-inputs.json": "47872fcb2efd382f34761d2607cfd9cba23666d9b8e5a7f78f89486dabb32969",
+    "named-approved-origins.json": "74c59b4098adc4b1c79eff9b1fd45294775cfefc63f24b94fe5924672e74d377",
+    "R-writer-release.json": "323de8dca5ea730df2eae5475f78c964200e8e9c4bf4f4ef33e0ec75877fc469"
+  }
+}

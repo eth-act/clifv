@@ -1,0 +1,9 @@
+{
+  "status": "R_WRITERS_RELEASED_FOR_APPROVED_OLD23_LEASE;NOT_LAUNCHED",
+  "utc": "2026-11-03T22:33:27.225785+00:00",
+  "source_share": "ordinary2GiB remains allocated outside R; no R/G operations during later lease",
+  "R_compilers_or_verifiers": [],
+  "G_access": "already released to coordinator mixed lease; no G operation requested",
+  "donor_recovery_receipt_sha256": "0600d50ee04e16b3ec21a810b094f4365dbd68bef0219d3236ca2669d1dbe8d9",
+  "no_kernel_started": true
+}

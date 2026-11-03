@@ -1,0 +1,12 @@
+{
+  "status": "R_WRITERS_RELEASED_FOR_REVIEWED_CONTINUATION;NOT_LAUNCHED",
+  "utc": "2026-11-03T22:50:58.886144+00:00",
+  "R_compilers_or_verifiers": [],
+  "G_access": "none;held release remains",
+  "configuration_sha256": {
+    "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+  },
+  "all_prior_outputs_preserved": true
+}

@@ -1,0 +1,21 @@
+{
+  "failed_selection_sha256": "d936893481999181d0a300f49dc01f8780903ff45b01c96d44604ab17dbecf12",
+  "failed_script_sha256": "0fc9baac44d0c36d35e5724b60ae6f99de8ae43e8cde218bb7b7289c44deaea7",
+  "groups": {
+    "acquire": {
+      "files": 7308,
+      "bytes": 81196227
+    },
+    "production": {
+      "files": 701,
+      "bytes": 96647941
+    },
+    "reverse-and-guards": {
+      "files": 1606,
+      "bytes": 79832565
+    }
+  },
+  "all_original9615_paths_partitioned_once": true,
+  "newer_reviewed_acquire_checkpoint": 106,
+  "no_original_selected_path_dropped": true
+}
