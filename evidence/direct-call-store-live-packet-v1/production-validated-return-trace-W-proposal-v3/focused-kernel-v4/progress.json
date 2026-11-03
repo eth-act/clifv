@@ -1,0 +1,41 @@
+[
+  {
+    "label": "kernel",
+    "argv": [
+      "lake",
+      "-v",
+      "build",
+      "+FV.E2E.ValidatedReturnTraceW:leanArts"
+    ],
+    "exit": 0,
+    "log_sha256": "e9e68f52aebc42c37006f077dce401de7605c575190795543f64e2cc061c00c2",
+    "memory": "peak 231690240\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "normal388",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.E2E.ValidatedReturnTraceW"
+    ],
+    "exit": 0,
+    "log_sha256": "d9132a8cb23d2a52282a074d5389cbc4114280d478a1b791e0cc4dae9b6f2f6b",
+    "memory": "peak 22810624\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "real-audit",
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-validated-return-trace-W-proposal-v3/focused-kernel-v4/audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-validated-return-trace-W-proposal-v3/focused-kernel-v4/validated-return-trace-w.lean"
+    ],
+    "exit": 0,
+    "log_sha256": "e2938b66f44cd52c503e2f774c13bbb967a68f19a18f6fca6e86adabd5c3912f",
+    "memory": "peak 219525120\noom 0\noom_kill 0\n"
+  }
+]

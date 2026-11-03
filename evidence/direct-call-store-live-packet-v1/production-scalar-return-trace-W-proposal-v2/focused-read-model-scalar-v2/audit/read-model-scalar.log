@@ -1,0 +1,6 @@
+'E2E.MixedFlagBoundary.machine_returnW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.machine_returnW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.DivBoundary.machine_returnW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.machine_returnW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_scalarW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.worldReturnTraceProvider_scalar' depends on axioms: [propext, Classical.choice, Quot.sound]

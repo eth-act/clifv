@@ -1,0 +1,8 @@
+import FV.E2E.CallStoreAdmission
+import FV.E2E.CallStoreBinary
+import FV.E2E.ReturnPinGeneratedStackKernel
+namespace E2E.CallStoreGeneratedStack
+open LinkCheck
+abbrev crate_correct_stackN := @ReturnPinGeneratedStackFor.crate_correct_stackN ReturnPinAdmission.callStores
+abbrev crate_correct_stack := @ReturnPinGeneratedStackFor.crate_correct_stack ReturnPinAdmission.callStores
+end E2E.CallStoreGeneratedStack

@@ -1,0 +1,52 @@
+{
+  "head": "775f257026bb159c8b5feed2475446c56db3778b",
+  "base": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "tested_tree": "371ed73529b5828ea7a3278c21542579879c8778",
+  "checks": {
+    "Quick checks": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T16:42:36Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41676890746/job/126059816309",
+      "name": "Quick checks",
+      "startedAt": "2026-11-03T16:42:18Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    "Build and compare": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T17:09:12Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41676890772/job/126059816605",
+      "name": "Build and compare",
+      "startedAt": "2026-11-03T16:42:18Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    "Check lost matches": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T17:09:31Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41676890772/job/126075702326",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-03T17:09:19Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    "Publish PR result": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T17:09:30Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41676890772/job/126075702363",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-03T17:09:16Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  },
+  "peer_approved": true,
+  "window": "A accepted via root; explicit start sent",
+  "full326": "mandatory subsequent full validation; not replaced by direct33",
+  "full_goal_complete": false,
+  "utc": "2026-11-03T17:13:34.985588+00:00"
+}

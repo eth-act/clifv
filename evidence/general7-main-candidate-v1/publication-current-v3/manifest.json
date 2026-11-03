@@ -1,0 +1,144 @@
+{
+  "status": "READY_FOR_COMMIT_AND_PR;NOT_MERGED",
+  "actual_main": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "source_hashes8": {
+    "FV/Backend/ABIReadCfg.lean": "ae78852b20529c5a367010ea3b55266f5bcdbdf78011d0b24d56d410038091ad",
+    "FV/Backend/Lowering/StockGeneralLoopCfg7NI.lean": "e050bf694c476656859be35095289715a15be534f8d0ce63cf1a0c200f72b46f",
+    "FV/Backend/Proof/StockGeneralRouteWitness7.lean": "5c4102020483805a179bfd9732ad0a950f5aa46043fe7dc6171ed9573827336f",
+    "FV/Backend/SemanticNICheck.lean": "ea7714a42da26019326b0c93fd827e9c2c143b2b3ffc5487335cdd6087ce32a4",
+    "FV/E2E/ABIReadCfg.lean": "69000ce30bbc5a33bdee756b7e34618cedcd1beb83f3fb020b174a536518ad95",
+    "FV/E2E/ABIReadCfgTableWitness.lean": "64f03f2566c8a7e5301f3ee9aaad995e064ecdfccb3c9115d07b46dd7a141ec1",
+    "FV/E2E/CompiledSemanticNI.lean": "fdbd172e5a4f0cbd795fc23ad0d34903260bfd3d682b19dbc92655e9a4611cf1",
+    "scripts/audit/general-route7.lean": "2760c7126a506884bd448bdd37f4c11264928775c7dc233206532a8effd0dd04"
+  },
+  "receipts": {
+    "post_ff_audit": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/publication-final-audit-v3/receipt.json",
+      "sha256": "237218c2a110cf920643d72b2974da6cfe024613a73014ed14c3e51d781f9dd7"
+    },
+    "source_headers": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/publication-current-v3/current-main-header-source-binding.json",
+      "sha256": "216d46bc3d4134f48d1b2dfecb6643793784f77bce6fa56a3fc4f83a18d37211"
+    },
+    "focused25": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/independent-backend-NI-v6/receipt.json",
+      "sha256": "81d97a2c1c0137839b04707fb8e33dc2e00d877e2f95652f24fe89599cab97df"
+    },
+    "focused5": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/receipt.json",
+      "sha256": "2f5eda78a0f6fa2ec4599c1153c306e06511694fa361c7683c7f00d5f3ddd832"
+    },
+    "consumer33": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-direct33-consumers-broad-12g-v1/receipt.json",
+      "sha256": "c83099f8b98f81bf2cd276851ea95e997121089f90adbc80db80ffd35302df84"
+    },
+    "consumer_guard": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-direct33-consumers-broad-12g-v1/guard-receipt.json",
+      "sha256": "d28e397d67314f658314c6303d94290f247d54fb7769088307c6248d165cfa3d"
+    },
+    "runtime": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/actual-module-runtime-v2/manifest.json",
+      "sha256": "a96534bfd6404cb9d80fcbfb2ca7669c41953cd74ad4bc00ce35e7aabaf9305f"
+    },
+    "old13": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/old-baseline-repair-and-audit-v1/receipt.json",
+      "sha256": "4cd730518a0e2fa27dbdb81017007e511026f2821eab4a1b6eb8daab9101d4a4"
+    }
+  },
+  "focused_kernels": 30,
+  "consumer_kernels": 33,
+  "current_normal_modules": 1831,
+  "old_headers_exact": 13,
+  "old_AX_sets_exact": 13,
+  "standard_audit_roots": 17,
+  "fixed_native_audit_roots": 1,
+  "candidate_axiom_sets": {
+    "E2E.CfgBoundary.refines": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.driver": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.checked_step_frame": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.checked_step_transport": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.Realize.step_realize": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.return_transport": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.return_realize": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.machine_return": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.checked_instruction": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticNI.toSemantic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticNI.of_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_world_niX_semantic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ABIReadCfgTableWitness.testBit_admitted": [
+      "propext"
+    ],
+    "E2E.ABIReadCfgTableWitness.island_admitted": [
+      "propext"
+    ],
+    "E2E.ABIReadCfgTableWitness.table_admitted": [
+      "propext"
+    ],
+    "E2E.ABIReadCfgTableWitness.testBit_physical_rejected": [
+      "propext"
+    ],
+    "Backend.Stock.GeneralLoopCfg7.NI.RouteFixture.general_route_witness": [
+      "Backend.Stock.GeneralLoopCfg7.NI.RouteFixture.checks_true._native.native_decide.ax_1_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "current_Main_activation": "SEPARATE_OPEN_UNIT",
+  "reverse326_validation": "OPEN",
+  "peer_review": "PENDING_ONE_DIRECT_CHEAP_A_REVIEW",
+  "exact_head_CI_and_tested_tree": "REQUIRED_AFTER_PUBLICATION"
+}

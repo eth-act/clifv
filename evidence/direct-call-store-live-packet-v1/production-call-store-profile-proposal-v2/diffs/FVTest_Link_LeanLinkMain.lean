@@ -1,0 +1,33 @@
+--- current/FVTest/Link/LeanLinkMain.lean
++++ candidate/FVTest/Link/LeanLinkMain.lean
+@@ -1,3 +1,5 @@
++import FV.Backend.General7CallStoreProduction
++import FV.Link.CallStoreExeWith
+ import FV.Link.TypedCompileSourceModes
+ import FV.Link.ReturnPinExeSourceWith
+ import FV.Backend.Lowering.StockMemoryCapturedCopyNI
+@@ -538,6 +540,24 @@
+       printExclusions exe S SC true (bad.map (·.1))
+       return 1
+   -- This complete-file attempt leaves every previous mode and retry action below intact.
++  let callStoreEnabled := !opt && !tailOn
++  if callStoreEnabled then
++    let lower := Backend.Stock.GeneralLoopCfg7.CallStoreNI.lowerValidated
++    let SP := SC0.placedProductionWith lower deadCleanup
++    match Link.CallStoreCompilerWith.attempt lower SP file0 deadCleanup with
++    | .ok file =>
++      IO.FS.writeBinFile exe file
++      IO.println s!"lean-link: {exe}: {summary} written by Link.CallStoreCompilerWith.attempt (Link.CallStoreCompilerWith.attempt_correct, Link.CallStoreCompilerWith.attempt_correct_depth)"
++      if let some f := ldFile then
++        match ← ldCheck SP file0 f with
++        | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
++        | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
++      let src := if srcOk then
++          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.CallStoreCompilerWith.attempt_correct_source, Link.CallStoreCompilerWith.attempt_correct_source_peak"
++        else "; outside SrcScopeB: about the legalised program only"
++      IO.println s!"lean-link: {exe}: coverage: Link.CallStoreCompilerWith.attempt_correct, Link.CallStoreCompilerWith.attempt_correct_depth{src}"
++      return 0
++    | .error _ => pure ()
+   let returnPinEnabled := !opt && !tailOn && SC0.funcs.any (fun fi =>
+     Backend.Stock.MemorySretCopy.eligible fi.func || (Backend.Stock.VoidCall.sourceData? fi.func).isSome)
+   if returnPinEnabled then

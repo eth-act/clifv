@@ -1,0 +1,30 @@
+{
+  "status": "UNVERIFIED_NEW_FILE_ONLY_SCALAR_W_EXPORT",
+  "source_baseline": "Exact actualmain2c600854 StockScalarNI input and body snapshot",
+  "new_source": "FV/E2E/StockScalarNIW.lean",
+  "new_source_sha256": "5de365aa79e1850cb689433a1893ff822ae83b9847e26ec38f8178f07ef005e9",
+  "original_source_sha256": "83feb6f159589628e3209e9c006c2e9bf05ad4129999809f61d4a682dae290d1",
+  "old_input_header_exact_after_name_normalization": true,
+  "old_ordinary_and_paired_conclusions_preserved": "Only actGoodX becomes the stronger actGoodXW; all other conclusion bytes remain exact.",
+  "old_body_exact_after_machine_export_and_name_normalization": true,
+  "staged_scalar_machine_helper_sha256": "758c0d3a55f6c7f4a040e55ff194af91313c2793ba6542f0435c452f55a9ebb6",
+  "approved_helper_manifest_sha256": "0cfe9c856cdf51a4116ff2b803396455d3952fcc7e0ce2dfa4e6f5befa298232",
+  "source_context_sha256": "08ba24558b48ed216813dc9518b5e81e8a1940a699fa2dd3ef93f7d6f54650bb",
+  "source_closure_count": 765,
+  "import_cycles": [],
+  "audit_roots": [
+    "E2E.backend_correct_world_niX_stock_scalarW",
+    "E2E.worldReturnTraceProvider_scalar"
+  ],
+  "new_caller_premises": [],
+  "old_files_changed": [],
+  "compiler_ran": false,
+  "held_W_closure": "No compilation until proper dependencies and allocation are released.",
+  "remaining": [
+    "Exact current native dependency gate",
+    "Focused kernel and actual repository audit",
+    "Complete accepted-artifact dispatcher and production/runtime gates"
+  ],
+  "previous_immutable_manifest_sha256": "b5f4d21947e89822ed7fb3fe5c06f2f9992e7cbc6f09f5d86150238630496949",
+  "scalar_source_unchanged": true
+}

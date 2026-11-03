@@ -1,0 +1,22 @@
+{
+  "status": "MERGED_EXACT_TESTED_TREE",
+  "PR": 949,
+  "source_head": "775f257026bb159c8b5feed2475446c56db3778b",
+  "recorded_base": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "merge_commit": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "tested_tree": "371ed73529b5828ea7a3278c21542579879c8778",
+  "merged_tree": "371ed73529b5828ea7a3278c21542579879c8778",
+  "all_four_CI_passed": true,
+  "peer_approved": true,
+  "normal_modules": 1831,
+  "focused_kernels": 30,
+  "consumer_kernels": 33,
+  "audit_standard": 17,
+  "audit_fixed": 1,
+  "old_statements_AX_exact": 13,
+  "acceptance_sets": "expanded for eight earlier providers",
+  "full326": "open mandatory full validation",
+  "Main_activation": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-03T17:13:41.321507+00:00"
+}

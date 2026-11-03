@@ -1,0 +1,15 @@
+{
+  "proposal_sha256": "8e06b3066f562546b31736b7e57f529d26ee2f8b0ff34ee118d08af3c2dde411",
+  "scripts": {
+    "run.py": "60103ebdd3b061d194044c51773d51453235a1d58f23ab3da83d5562d9d1d851",
+    "guard.py": "98b364a84c85db9ebe6ea48fcbe41f6a45ca750aa23460a8617847264b3d39a0",
+    "gate.py": "fc527bc2beeecdad87bbc72e94a2a495605be47f835cad27e5ed42a8c907e0f8",
+    "launch.py": "fe81e71507505eeb304934dfdbddbe87de3de20c7118a1ac8a2e1b91bb964313",
+    "restore_config.py": "4b03e80157604a205f8eb741a23412e52d90e73df3c321d472c9dbf70724d95b"
+  },
+  "independent_guard_tests_sha256": "29f22128f8ad598105ecb580d01e5721ade58efee6e9a6f4d7845b6b82c70872",
+  "config_restoration_plan_sha256": "e1027be3509017cd18e60586d8918805b526dce786246d11c7b36860ddb1e432",
+  "writer_release_sha256": "4b0d9d094350ae9e1fe325a0d76ba598ee88663ef355239e3a7394b621837eb7",
+  "root_approval": "Exact8e06b306; sequential exclusive12GiB; independent scheduler/config restoration; normal1831",
+  "no_compiler_started": true
+}

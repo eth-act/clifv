@@ -1,0 +1,79 @@
+{
+  "status": "SOURCE_ONLY;NO_KERNEL_DEFAULT_OR_EXECUTION_CLAIM",
+  "main": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "new_sources": {
+    "FVTest/Backend/Main.lean": "f662bd52505d3fe0c8f59e8b34b1fc013b46982e32d5aaba516b3e29e9efd36d",
+    "FVTest/E2E/CallStoreLinkProofWith.lean": "ee5817b247164002478cf0e98a764824b67014f91e726f3d6a0438ae2fe88805",
+    "FVTest/E2E/LinkCheckMain.lean": "528088cf0c10ba832e1a5b9c69df43d432e569104f24e99eab04d4f27ebaaf92",
+    "FVTest/Link/LeanLinkMain.lean": "eff4076f3ee2ed8c215d9e9cc173972ca88bcea84a67d44431b59cbd27081510",
+    "FV/E2E/CallStoreAdmission.lean": "13347c9ee9d6b9d09304cb76dccb3a97488635eb00159914a38b1f096875e35f",
+    "FV/E2E/CallStoreBinary.lean": "308cc10b73950eb181df7f8bff657cf431bd38797bdeb5dd5db207258870b90d",
+    "FV/E2E/CallStoreExec.lean": "f3930a2693d6e048918b12136b78923b2dfcd2a74223cbdfde34d99005be1996",
+    "FV/E2E/CallStoreChecks.lean": "a36e7eae54f41726b8f47d4ad0aae674f789e0cf9d6f9cb6b05fb659adcc1c8a",
+    "FV/E2E/CallStoreGeneratedStack.lean": "f954aed39285eb4ede929f5ebef2859688fcb66d6ac64e35a2fef6b2145181ba",
+    "FV/Link/CallStoreExeWith.lean": "56217bbd97f408988960e30aae4720cdf6957279fea3b02fbf3234cad3f80233",
+    "FV/Backend/General7CallStoreProduction.lean": "f051493ce356e814f438d4368295bf22b8c20ec631130aea08208e0ec1b5041b"
+  },
+  "exact_Main_facade_inverse": true,
+  "original_Main_sha256": "56e793373a81d00b2df7ea4f57f245f91fd359b17bf0500f4afb037fa4683566",
+  "I128Native_unchanged_git_blob": "4d45d0c9d14f2d8e03992fb4a8b0cf93149199ab",
+  "dependency_sources": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current-adapter-prep-v2/preserved-support/FV/Link/LiveCallExeWith.lean": "283b43dd2417ff3b2b53a1ef29212321e1207358851cfa58fbc16cf052cc1a81",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current-adapter-prep-v2/preserved-support/FV/E2E/ReturnPinAdmission.lean": "9a47c3ae4253b636a90c7ea3896342638c8ba17262c624423673eb960585fd78",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-call-store-constructor-proposal-v1/manifest.json": "933cd7951a0a094adab3ecd066e899d150fc4354905d97d28ad150b62ff465ab",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-head-binding-v1/manifest.json": "f465b3468ad52b70b7a4459a9e37d8142e317a8e3280c21f79dda86cf4164626",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-parameterized-factories-v1/source/FV/Backend/ReturnPinProfileFile.lean": "8943e56950f459444251095f35ae902672b405b598611cd9f3f214b6e718c661"
+  },
+  "old_file_action": "compileFileReturnPinWhen enabled alloc pf pre cleanup; complete whole-file retry retained",
+  "explicit_routes": "Every explicit choice delegates to the complete supplied General7 NI.lowerWithRoutes, including out-of-range choices. No new index.",
+  "new_admission": "Derived internally from the checked artifact; no caller provider or heap premise",
+  "source_guards_added": [],
+  "remaining": [
+    "Bind complete source/config/native context and import cycles",
+    "Focused generic/profile/three-CLI kernels and repository audits",
+    "Exact old headers/AX and all accepted stage/identity comparisons",
+    "Construct complete return-trace dispatcher and first-fault provider internally",
+    "Run actual raw/cleanup three-CLI/generated and linked execution, with original float variant",
+    "Flag exact shared CLI boundary before tracked edits and publication"
+  ],
+  "expanded_hardware_faults": "OPEN; no first-fault claim",
+  "tracked_old_files_changed": [],
+  "staged_existing_path_copies": [
+    "FVTest/Backend/Main.lean",
+    "FVTest/Link/LeanLinkMain.lean",
+    "FVTest/E2E/LinkCheckMain.lean"
+  ],
+  "prior_source_packet_sha256": "333eda215764d8b37d34db7454f00b927efcea017ec36286ff5f433f5056ba14",
+  "thin_alias_origins": {
+    "FV/E2E/CallStoreBinary.lean": {
+      "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current-adapter-prep-v2/preserved-support/FV/E2E/LiveCallBinary.lean",
+      "source_sha256": "44cd1dd102a18ecf7e51f910289d57fb29e9a0f182974ae21841926eb447ec2b",
+      "kind": "thin generic-kernel aliases; no copied binary/executable kernel"
+    },
+    "FV/E2E/CallStoreExec.lean": {
+      "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current-adapter-prep-v2/preserved-support/FV/E2E/LiveCallExec.lean",
+      "source_sha256": "46d533b8b2e679e5ae23b451f35d1cd814aba325cd06f9618c0a68a2179736be",
+      "kind": "thin generic-kernel aliases; no copied binary/executable kernel"
+    },
+    "FV/E2E/CallStoreChecks.lean": {
+      "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current-adapter-prep-v2/preserved-support/FV/E2E/LiveCallChecks.lean",
+      "source_sha256": "e959f070995db2fe5481b12bf20d735e3af85a4be23a95648f83609ac3fbd4a6",
+      "kind": "thin generic-kernel aliases; no copied binary/executable kernel"
+    },
+    "FV/E2E/CallStoreGeneratedStack.lean": {
+      "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current-adapter-prep-v2/preserved-support/FV/E2E/LiveCallGeneratedStack.lean",
+      "source_sha256": "146e6583b6aa5d0e0a611308892f2163956b27a67a6c25a90e5ee9e5b3b933ef",
+      "kind": "thin generic-kernel aliases; no copied binary/executable kernel"
+    },
+    "FVTest/E2E/CallStoreLinkProofWith.lean": {
+      "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current-adapter-prep-v2/preserved-support/FVTest/E2E/LiveCallLinkProofWith.lean",
+      "source_sha256": "bfdea36868a444cd4951a929ec6bae28ca2eb1abc692f0586ef78941baeadf09",
+      "kind": "thin existing generic-emitter profile"
+    }
+  },
+  "complete_previous_linker_action_retained": true,
+  "typed_emitter_retained": true,
+  "cached_ReturnPinCtx_retained": true,
+  "actual_default_probe": "New call-store default first when all actual raw entries pass internal admission; otherwise full General7 predecessor with explicit route recovery.",
+  "routes": "No new indices. Explicit choices retain all General7 routes0\u201323 and old out-of-range behavior."
+}

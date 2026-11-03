@@ -1,0 +1,54 @@
+{
+  "status": "SOURCE_CORRECTION_ONLY;KERNEL_AND_AUDIT_PENDING",
+  "main_source_baseline": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "old_source_records": {
+    "FV/E2E/ValidatedNoninterference.lean": {
+      "source_sha256": "f77b39273774e808c6f53dd387870a674a2729b366a03079cfa39d57eab4f0f0",
+      "old_theorem": "backend_correct_world_niX_validated",
+      "new_theorem": "backend_correct_world_niX_validatedW",
+      "old_inputs_byte_exact": true,
+      "machine_export": "regLevelCorrect_worldXW"
+    },
+    "FV/E2E/ValidatedCleanup.lean": {
+      "source_sha256": "06ea4acf7f9c8bdd2e639c456e3903c2d3d788ea738462e649df6e2a13a75114",
+      "old_theorem": "backend_correct_world_niX_cleanup_validated",
+      "new_theorem": "backend_correct_world_niX_cleanup_validatedW",
+      "old_inputs_byte_exact": true,
+      "machine_export": "regLevelCorrect_worldX_valueW"
+    }
+  },
+  "source_sha256": "0dd90ef2e2e8a8ae97cb744ea8880a103c0bb44222b7d479cc3ab77d2b38e31c",
+  "shared_modified_paths": [],
+  "moved_shared_statements": [],
+  "imports": [
+    "FV.E2E.ValidatedNoninterference",
+    "FV.E2E.ValidatedCleanup",
+    "FV.E2E.RegLevelCorrectXW",
+    "FV.E2E.DeadCleanupRegLevelW",
+    "FV.E2E.WorldReturnTraceCore"
+  ],
+  "existing_virtual_exports": [
+    "iselSim_relW_validated",
+    "vcode_ni_validated",
+    "iselSim_relW_cleanup_validated",
+    "vcode_ni_value_validated"
+  ],
+  "conversion_inspection": "Only legacy-to-validated embedding exists. No inverse conversion to CompiledEither is assumed. These new W exports consume the actual validated contracts directly.",
+  "machine_reuse": "machine_return_valueW needs valueSem. Raw validated exports csem. Reuse its existing underlying csem/value W kernels with the unchanged virtual source and paired proofs.",
+  "old_public_contracts": "No old source or theorem changes. All old headers and AX sets remain required comparisons.",
+  "open": [
+    "Focused proper current dependency gate",
+    "New kernels and real auditor",
+    "Complete dispatcher over the 14 Stock NI branches and four other ABI branches",
+    "All production and executable fault gates"
+  ],
+  "no_R_access": true,
+  "previous_manifest_sha256": "d160e78ede5810a3a6b3366092c045c06b36fb1b4782267fab9e645aba8db1ea",
+  "import_correction": "The existing light Core file defines the exact provider type. The new module needs no call-store provider theorem. Import the Core directly and avoid its aggregator.",
+  "approved_core_source_sha256": "caa7f7403b10b3aefb8df087ddf16f0b27884a0180fda924ac3a974d0c68a20d",
+  "namespace_fix": "Qualify the existing Backend.DeadCleanup symbols in the cleanup proof only.",
+  "previous_immutable_proposal_sha256": "a805cf85381005a5330bd16e68dda18308e19bfe7010bd16002fec87a9eaff9f",
+  "preserved_failure_log_sha256": "41c372b5e7d4c6b6202344bfab510febe7d9a4f401d4c8a0b9ebcd02d83013e5",
+  "passed_proper387_log_sha256": "9a1b137bf58bb3cffd1f2bfae55fbb10558fccdaced92a1bdaa98345231e8e2f",
+  "source_context_sha256": "a63b2a4785011325f2dc9a2e6804abbe9000890eafcff37a934b07771d2520b2"
+}

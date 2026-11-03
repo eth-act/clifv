@@ -1,0 +1,27 @@
+{
+  "status": "PASSED_INDEPENDENT_CONFIG_AND_SCHEDULER_EXIT_TESTS",
+  "records": [
+    {
+      "case": "owner_and_consumer_kill",
+      "guard_exit": 0,
+      "waited_for_consumer_and_cgroup_end": true,
+      "original_config_restored": true,
+      "same_controller_running": true,
+      "receipt_sha256": "8c8a3c35246746f047c45b88c75be54fa72e8e2189f8cfbcabb99e6599c01ba5",
+      "fake_processes_only": true
+    },
+    {
+      "case": "normal_exit",
+      "guard_exit": 0,
+      "waited_for_consumer_and_cgroup_end": false,
+      "original_config_restored": true,
+      "same_controller_running": true,
+      "receipt_sha256": "a7096742cb2006573f8fe530aea4ae01ece5b05835571f8a23cc3d1643146416",
+      "fake_processes_only": true
+    }
+  ],
+  "production_guard_sha256": "98b364a84c85db9ebe6ea48fcbe41f6a45ca750aa23460a8617847264b3d39a0",
+  "production_restorer_sha256": "4b03e80157604a205f8eb741a23412e52d90e73df3c321d472c9dbf70724d95b",
+  "production_sources_unmodified": true,
+  "no_real_compiler_signalled": true
+}

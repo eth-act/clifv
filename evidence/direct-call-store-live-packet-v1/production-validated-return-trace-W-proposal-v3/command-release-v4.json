@@ -1,0 +1,8 @@
+{
+  "approved": true,
+  "allocation": "2G",
+  "prefix_returned_by_coordinator": true,
+  "script_sha256": "b2ab64e7b4f2183b848ebfb092e2da13e05d3fe57e57da1868836e3d5b95ea8e",
+  "proposal_sha256": "135154e882ed8df490f3ad94cea475b434a48da9d53ea2a2d2fa94128ce20750",
+  "authority": "Parent approved qualifying the exact namespace diagnostic, reusing proper387, and checking only the changed kernel before normal/audit."
+}

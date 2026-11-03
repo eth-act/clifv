@@ -1,0 +1,11 @@
+{
+  "status": "PASSED_STAGED_VALIDATED_W_EXPORT;NOT_PRODUCTION_COMPLETE",
+  "source_sha256": "0dd90ef2e2e8a8ae97cb744ea8880a103c0bb44222b7d479cc3ab77d2b38e31c",
+  "receipt_sha256": "3669c47724573728d0d460b7969598c5f6a716d544c39737279ad86a8894ff2b",
+  "original_conditions_and_paired_fields_preserved": true,
+  "four_roots_standard_only": true,
+  "new_caller_premises": [],
+  "failed_v3_source_and_log_preserved": true,
+  "current_context": "R actualmain2c600854 with explicit approved WorldReturnTraceCore definition and current proper387",
+  "future_source_context_gates_still_required": true
+}

@@ -1,0 +1,18 @@
+{
+  "phase": "published-awaiting-one-cheap-review-and-four-CI-tree-gates",
+  "local_head": "775f257026bb159c8b5feed2475446c56db3778b",
+  "base": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "branch": "agent/stock-general7-main-20261103",
+  "no_merge_authorized_here": true,
+  "utc": "2026-11-03T16:42:12.721708+00:00",
+  "PR_url": "https://github.com/eth-act/clifv/pull/949",
+  "PR_number": 949,
+  "PR_view": {
+    "baseRefOid": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+    "headRefOid": "775f257026bb159c8b5feed2475446c56db3778b",
+    "mergeable": "UNKNOWN",
+    "state": "OPEN",
+    "statusCheckRollup": [],
+    "url": "https://github.com/eth-act/clifv/pull/949"
+  }
+}

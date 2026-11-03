@@ -1,0 +1,118 @@
+{
+  "status": "ACTUAL_MAIN_2c600854_AND_ALL8_STAGED_SOURCES_BOUND;13_OLD_HEADERS_EXACT",
+  "base": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "source_hashes8": {
+    "FV/Backend/ABIReadCfg.lean": "ae78852b20529c5a367010ea3b55266f5bcdbdf78011d0b24d56d410038091ad",
+    "FV/Backend/Lowering/StockGeneralLoopCfg7NI.lean": "e050bf694c476656859be35095289715a15be534f8d0ce63cf1a0c200f72b46f",
+    "FV/Backend/Proof/StockGeneralRouteWitness7.lean": "5c4102020483805a179bfd9732ad0a950f5aa46043fe7dc6171ed9573827336f",
+    "FV/Backend/SemanticNICheck.lean": "ea7714a42da26019326b0c93fd827e9c2c143b2b3ffc5487335cdd6087ce32a4",
+    "FV/E2E/ABIReadCfg.lean": "69000ce30bbc5a33bdee756b7e34618cedcd1beb83f3fb020b174a536518ad95",
+    "FV/E2E/ABIReadCfgTableWitness.lean": "64f03f2566c8a7e5301f3ee9aaad995e064ecdfccb3c9115d07b46dd7a141ec1",
+    "FV/E2E/CompiledSemanticNI.lean": "fdbd172e5a4f0cbd795fc23ad0d34903260bfd3d682b19dbc92655e9a4611cf1",
+    "scripts/audit/general-route7.lean": "2760c7126a506884bd448bdd37f4c11264928775c7dc233206532a8effd0dd04"
+  },
+  "old_headers13": [
+    {
+      "path": "FV/E2E/ABIReadCfg.lean",
+      "declaration": "refines",
+      "exact_through_assignment": true,
+      "header_sha256": "602ede3fbe8768977b19f5f9139ae634252941851977668269713503712ff117",
+      "prior_header_digest": "bc739eabb062a55ab3031f8892af3b8bd2aa0ef004e88d3b39b90dd426e80d8b"
+    },
+    {
+      "path": "FV/E2E/ABIReadCfg.lean",
+      "declaration": "driver",
+      "exact_through_assignment": true,
+      "header_sha256": "e596f74c92abe7d2d60231f138dd49ab64c6113814811ef1389465e15997dff7",
+      "prior_header_digest": "b2eb8b2cffc4904335e04bf86b7b3fa8ea8decb04688f281df2887c744dc8e00"
+    },
+    {
+      "path": "FV/E2E/ABIReadCfg.lean",
+      "declaration": "memory",
+      "exact_through_assignment": true,
+      "header_sha256": "9693166e472fbb9ab04d0aab7ef12dcd6572288bdf93bd1d7e6b6db3f7c37a91",
+      "prior_header_digest": "cff7c40980275dd08288844b83834e558855b63c374cc303bca0eb67203511e5"
+    },
+    {
+      "path": "FV/E2E/ABIReadCfg.lean",
+      "declaration": "checked_step_frame",
+      "exact_through_assignment": true,
+      "header_sha256": "363a8e8bf77e5c0c5ecaebc20e8250ea34478c269555306661742ba88111619c",
+      "prior_header_digest": "cb37211f7398fde12ead51f4389deeaf50a277654fc384d150d5d3f76c2b5934"
+    },
+    {
+      "path": "FV/E2E/ABIReadCfg.lean",
+      "declaration": "checked_step_transport",
+      "exact_through_assignment": true,
+      "header_sha256": "c1013ed586c180c23935f7c3f840ba3c03783a268ef3433576db05c4236dc322",
+      "prior_header_digest": "62eefd09b61ccb9670aa2f9085fe48c10fcf8d7904c01837d89a9928eb22578e"
+    },
+    {
+      "path": "FV/E2E/ABIReadCfg.lean",
+      "declaration": "step_realize",
+      "exact_through_assignment": true,
+      "header_sha256": "281c20cbbf887bc5f9d8891ea849a02e3cd5f4e7f057e8e3e60deed11f5a1b1f",
+      "prior_header_digest": "8959a45a423b8e8d38e600ee36ae7538df3291187942524a2f121e63543494ac"
+    },
+    {
+      "path": "FV/E2E/ABIReadCfg.lean",
+      "declaration": "return_transport",
+      "exact_through_assignment": true,
+      "header_sha256": "d7a4981ced5b0794f26fcab9395ab3d69bcab4ebdaf2b63ea988d5f8ea8c0cf0",
+      "prior_header_digest": "f702aca15593d0982cf5e98ea67467c942599506b30d1443357005adee142aee"
+    },
+    {
+      "path": "FV/E2E/ABIReadCfg.lean",
+      "declaration": "return_realize",
+      "exact_through_assignment": true,
+      "header_sha256": "d97bc1af9eefd7fb74ba12e35f2f61c4ff4b336d1e82d9cd234c7f2d9f90d1ab",
+      "prior_header_digest": "461621b2e3eba2a690f72a90b60209ad6583e1b819901e9adced04c02045bbcd"
+    },
+    {
+      "path": "FV/E2E/ABIReadCfg.lean",
+      "declaration": "machine_return",
+      "exact_through_assignment": true,
+      "header_sha256": "f041928ca581ddf8ea7062c05ce2601be8aeb84d4a1e778c56a50b054f0871d6",
+      "prior_header_digest": "e0cc3e465ead9b78a38eafa715e72c311f6dd2dbfa2c9fe4e83876b5dd134f0a"
+    },
+    {
+      "path": "FV/E2E/ABIReadCfg.lean",
+      "declaration": "checked_instruction",
+      "exact_through_assignment": true,
+      "header_sha256": "252087c45866d8719ce597fcb5457a43df9aadc37fd6fd605834831cfda7df2a",
+      "prior_header_digest": "7fd2c1c11eb694fdfa066a2347c31da0d4b65f253c4e9dde75c5cfabf1c47837"
+    },
+    {
+      "path": "FV/E2E/CompiledSemanticNI.lean",
+      "declaration": "toSemantic",
+      "exact_through_assignment": true,
+      "header_sha256": "6c7718791da79045f98fd5f7601b066e758be65c87bc1401ab3c8824555c7106",
+      "prior_header_digest": "d02b43c52703e56addcd5a83aee57a8ec03294c4e68ba4340368a15b891910dd"
+    },
+    {
+      "path": "FV/E2E/CompiledSemanticNI.lean",
+      "declaration": "of_checks",
+      "exact_through_assignment": true,
+      "header_sha256": "eb353a902639c9853f2b21619e7c77467e4f9a7d01f0eadbdabc69c7bbee01e4",
+      "prior_header_digest": "6386216ae577340e8ad43ae2dc7637d23cc5da5f23e428724652854b21ecdbe6"
+    },
+    {
+      "path": "FV/E2E/CompiledSemanticNI.lean",
+      "declaration": "backend_correct_world_niX_semantic",
+      "exact_through_assignment": true,
+      "header_sha256": "ad4311150b8d6b40d7eda1c45a5d0950faf91df39166f560437c430c4c8e8d74",
+      "prior_header_digest": "89248a54598350bec26d64cf6f56b87f682e950ff1a93a6acc7f761195bf1d4d"
+    }
+  ],
+  "staged_paths": [
+    "FV/Backend/ABIReadCfg.lean",
+    "FV/Backend/Lowering/StockGeneralLoopCfg7NI.lean",
+    "FV/Backend/Proof/StockGeneralRouteWitness7.lean",
+    "FV/Backend/SemanticNICheck.lean",
+    "FV/E2E/ABIReadCfg.lean",
+    "FV/E2E/ABIReadCfgTableWitness.lean",
+    "FV/E2E/CompiledSemanticNI.lean",
+    "scripts/audit/general-route7.lean"
+  ],
+  "unstaged_paths": []
+}

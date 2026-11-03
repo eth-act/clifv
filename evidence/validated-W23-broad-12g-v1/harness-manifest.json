@@ -1,0 +1,13 @@
+{
+  "proposal_sha256": "0feb0ffb758985530f5b6cdd023c75027d663049cdc8b9f1c59816275cbc82d8",
+  "scripts": {
+    "run.py": "d0feace15ee898ce10f46115f0c7254a5ac6b3721b8bbdf2bc56ea162b25e8d0",
+    "guard.py": "48ecc865ee276efb8802b73ddd3641f0df2525c13040128f5f99509086130676",
+    "gate.py": "7a3501ba9655c8e6a8ed91988acee613990afe9e7b525e7099e2c9097e9f6944",
+    "launch.py": "fe81e71507505eeb304934dfdbddbe87de3de20c7118a1ac8a2e1b91bb964313"
+  },
+  "writer_release_sha256": "556db304b49120ba989fa93a3a8f8ab24d07c53b22b7c62ff4b84d08f439c4df",
+  "ExecWrites_repeat_forbidden": true,
+  "no_compiler_started": true,
+  "root_approval": "Exact0feb0ffb; sequential existing broad12GiB; proper387; independent restoration"
+}

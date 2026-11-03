@@ -1,0 +1,15 @@
+{
+  "status": "approved",
+  "PR": 949,
+  "head": "775f257026bb159c8b5feed2475446c56db3778b",
+  "reviewer": "worker-A",
+  "review": "One direct cheap review, requested by coordinator through ai-coord7976; exact-head approval relayed by coordinator",
+  "nonblocking_note": "ABIReadCfg.additional expands acceptance sets for eight previous NI providers. Old13 header/AX preservation does not mean unchanged acceptance sets.",
+  "review_loop_closed": true,
+  "merge_requires": [
+    "all four exact-head CI checks",
+    "actual base/head equality",
+    "tested-tree equality"
+  ],
+  "utc": "2026-11-03T16:50:29.639504+00:00"
+}

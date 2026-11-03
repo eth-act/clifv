@@ -1,0 +1,57 @@
+{
+  "status": "ALL_FOUR_EXACT_HEAD_CI_PASSED_AND_TESTED_TREE_BOUND;NO_MERGE",
+  "PR": 949,
+  "head": "775f257026bb159c8b5feed2475446c56db3778b",
+  "base": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "actual_main": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "tested_tree": "371ed73529b5828ea7a3278c21542579879c8778",
+  "remote_head_tree": "371ed73529b5828ea7a3278c21542579879c8778",
+  "candidate_merge_tree": "371ed73529b5828ea7a3278c21542579879c8778",
+  "tree_equal": true,
+  "checks": {
+    "Quick checks": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T16:42:36Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41676890746/job/126059816309",
+      "name": "Quick checks",
+      "startedAt": "2026-11-03T16:42:18Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    "Build and compare": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T17:09:12Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41676890772/job/126059816605",
+      "name": "Build and compare",
+      "startedAt": "2026-11-03T16:42:18Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    "Check lost matches": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T17:09:31Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41676890772/job/126075702326",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-03T17:09:19Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    "Publish PR result": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T17:09:30Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41676890772/job/126075702363",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-03T17:09:16Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  },
+  "peer_review_required_separately": true,
+  "mergeable": "MERGEABLE",
+  "manifest_sha256": "11973c26453fc2fa7476c7a683aa68b8ec4ce77ea06ac94c7ddc4fa3ff6e6810",
+  "utc": "2026-11-03T17:09:42.607750+00:00"
+}
