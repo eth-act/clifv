@@ -1,0 +1,20 @@
+{
+  "canonical_receipt_sha256": "66fc8f2ae865b2370cd6ad701f7aa0598ddf5b8587f8839dbf8ef348b43b5ef4",
+  "original_input_premises": [
+    "Stock.lower f = .ok result",
+    "LowerScope f"
+  ],
+  "actual_entry_mark_theorem": "ReadMarked result.ctx result.final \u2227 \u2200 event \u2208 result.blockScans.toList, ReadMarked result.ctx event.input",
+  "actual_record_mark_theorem": "\u2200 actual retained record and producer, record.input.sunk[producer]! = true \u2192 SourceReadFrame event.ctx producer",
+  "initialization": "buildCtx_read_marked derives the global initial invariant from successful Stock.buildCtx and its actual replicated-false sunk array. No caller certificate.",
+  "inherited_entries": "Actual node callbacks compose real branch/outgoing sunk frames and retained scan read groups. Block-entry marks are preserved and classified, not assumed empty.",
+  "SourceReadFrame_scope": "Every successful original source step at that slot preserves source memory, for arbitrary env/program/frame/memory. Fault absence is not claimed.",
+  "whole_pending_read_classification_flag": false,
+  "whole_pending_read_classification_scope": "Arbitrary PendingMarks traces and complete deferred-effect execution remain unclassified. Actual complete driver mark classification is separately proved. The earlier unexported branch-mark wrapper is now discharged by emitBranch_sunk.",
+  "crossed_effect_mark_invariant": false,
+  "delayed_memory_equality": false,
+  "emitted_first_fault_execution": false,
+  "current_main_gate": false,
+  "production_integration": false,
+  "next_internal_obligation": "Prove scan color coverage at each original source cut, then derive marks/read membership for every source effect crossed by an actual deferred producer. No color<=cut invariant is required; inherited marks remain allowed."
+}

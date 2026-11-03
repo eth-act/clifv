@@ -1,0 +1,61 @@
+[
+  {
+    "label": "proper161",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.E2E.LinkMemoryFaultSource"
+    ],
+    "exit": 0,
+    "stats": "peak 36823040\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "native0",
+    "argv": [
+      "lake",
+      "-v",
+      "build",
+      "+FV.E2E.MemoryFaultNestedSource:leanArts"
+    ],
+    "exit": 0,
+    "stats": "peak 224202752\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "native1",
+    "argv": [
+      "lake",
+      "-v",
+      "build",
+      "+FV.E2E.LinkMemoryFaultSourceDepth:leanArts"
+    ],
+    "exit": 0,
+    "stats": "peak 227258368\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "complete163",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.E2E.MemoryFaultNestedSource",
+      "FV.E2E.LinkMemoryFaultSourceDepth"
+    ],
+    "exit": 0,
+    "stats": "peak 33517568\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "repository-audit",
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-native-v1/audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-native-v1/linked-fault-source-depth.lean"
+    ],
+    "exit": 0,
+    "stats": "peak 204537856\noom 0\noom_kill 0\n"
+  }
+]

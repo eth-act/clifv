@@ -1,0 +1,53 @@
+[
+  {
+    "utc": "2026-11-03T08:29:13.915398+00:00",
+    "view": {
+      "baseRefOid": "40b0222a3fb484ec6cb2aad781ed3d0513931f73",
+      "headRefOid": "7c5867519c610a0a9b4912511df1ef62fec716ff",
+      "mergeable": "MERGEABLE",
+      "state": "OPEN",
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-11-03T08:21:33Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41602622493/job/125804726181",
+          "name": "Quick checks",
+          "startedAt": "2026-11-03T08:21:17Z",
+          "status": "COMPLETED",
+          "workflowName": "Quick checks"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-11-03T08:26:04Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41602622520/job/125804726516",
+          "name": "Build and compare",
+          "startedAt": "2026-11-03T08:21:07Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-11-03T08:26:15Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41602622520/job/125806738440",
+          "name": "Check lost matches",
+          "startedAt": "2026-11-03T08:26:07Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-11-03T08:26:19Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41602622520/job/125806738379",
+          "name": "Publish PR result",
+          "startedAt": "2026-11-03T08:26:07Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        }
+      ]
+    }
+  }
+]

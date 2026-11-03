@@ -1,0 +1,28 @@
+{
+  "status": "passed-exclusive12GiB-current-normal-kernel",
+  "revision": "c4f310c56d43c054ab14ea1d8f0a92bf26e470be",
+  "module": "FV.Backend.Proof.StockNoLoadScan",
+  "source_sha256": "ed0e8a7645e955b411e7503bed20785db3d24876ec9ff6a710835e093e79dad8",
+  "config_hashes": {
+    "lakefile.toml": "e2e5235e7fbec9f185941be9d46808defd6245ef6e7377130d1377e356493a3a",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b"
+  },
+  "native_key": "421f058530f250cb",
+  "native_trace_sha256": "380387d1f803348f3eeaeca53d563567a838a7a5f19d95e11d825ae36de9871e",
+  "native_outputs": {
+    "o": [
+      "230ee7c9b6abc479.olean"
+    ],
+    "m": false,
+    "i": "4585e319a50e8167.ilean",
+    "c": "1b298019304e77d4.c"
+  },
+  "synthetic": false,
+  "memory": "peak 4555345920\noom 0\noom_kill 0\n",
+  "time": "Maximum resident set size (kbytes): 5872056\nElapsed seconds: 31.73149682098301\nExit status: 0\n",
+  "log_sha256": "43afe6290e5b795521b7aaa6bd8b8bb03e6ec1d5295d78f6166eb61057d44b8d",
+  "cap": "12G",
+  "original4GiB_oom_preserved": true,
+  "utc": "2026-11-03T08:38:08.889191+00:00"
+}

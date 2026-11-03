@@ -1,0 +1,17 @@
+{
+  "status": "controlled-read-only-polling-replacement",
+  "old_watcher_pid": 1992741,
+  "old_controller_pid": 1992742,
+  "identity_checked": "/proc/1992742/cmdline matched merge-linked-source-unit-v3.py",
+  "child_guard": "Every existing child command was checked as gh pr view944. No compiler or merge child was permitted.",
+  "before_merge_receipt_absent": true,
+  "signal": "SIGTERM sent only to1992742",
+  "source_or_compiler_or_merge_process_signalled": false,
+  "old_replacement_record_sha256": "10c36af7bbd3e19085225aa6987dc0969f67220276690f24400df1267f68dade",
+  "successor_watcher_pid": 2022036,
+  "successor_script": "merge-linked-source-unit-v4.py",
+  "successor_healthy_unchanged": true,
+  "merge_deadline_UTC": "2026-11-03T08:41:30+00:00",
+  "window_expiry_UTC": "2026-11-03T08:42:00+00:00",
+  "written_UTC": "2026-11-03T08:35:57.073002+00:00"
+}

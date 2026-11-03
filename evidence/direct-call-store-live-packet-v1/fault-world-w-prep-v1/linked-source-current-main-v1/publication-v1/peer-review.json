@@ -1,0 +1,10 @@
+{
+  "status": "approved-by-one-direct-peer-review",
+  "reviewer": "worker-A",
+  "head": "7c5867519c610a0a9b4912511df1ef62fec716ff",
+  "request_ai_coord_message": 6400,
+  "verdict_source": "coordinator relay to source_guarantees",
+  "exact_relay": "A explicitly approved PR944 at7c5867519 after one direct cheap review. Parent reports no blocker; the review loop is closed.",
+  "builds_or_review_agents": "none requested or used",
+  "CI_requirement": "all four exact-head checks must pass before merge"
+}

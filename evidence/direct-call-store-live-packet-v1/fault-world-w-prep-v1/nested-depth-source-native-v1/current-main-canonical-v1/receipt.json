@@ -1,0 +1,291 @@
+{
+  "status": "proper-native-extension-of-PR944-head",
+  "parent_head": "7c5867519c610a0a9b4912511df1ef62fec716ff",
+  "parent_tested_tree": "10f44f8890377fafa3491eae6839416937eda864",
+  "source_hashes": {
+    "FV/E2E/MemoryFaultNestedSource.lean": "f2a84e30ed2e954d9618694465e981de9fc25f91e733815077add2986effa9ee",
+    "FV/E2E/LinkMemoryFaultSourceDepth.lean": "c1912e3921d5c2c605cb9cc03cf299532e2c18a7e258b11c84744c394b5d6c64"
+  },
+  "artifacts": {
+    "FV.E2E.MemoryFaultNestedSource": {
+      "native_key": "199504d516bc55de",
+      "outputs": {
+        "o": [
+          "8acf142094deddbc.olean"
+        ],
+        "m": false,
+        "i": "1e13fb3ff7062575.ilean",
+        "c": "80a424457bd310a4.c"
+      },
+      "trace_sha256": "58dbb6c46c7246364185cc5dc035e642e63f9a359986b3745eb189e917808fc4",
+      "olean_sha256": "f06f6e3dcc93d1832576d19924c4aba1f6f083631974358c00a5bbf280dd07e4"
+    },
+    "FV.E2E.LinkMemoryFaultSourceDepth": {
+      "native_key": "a7a000c9901e1cb0",
+      "outputs": {
+        "o": [
+          "15f0100ecb77ea11.olean"
+        ],
+        "m": false,
+        "i": "b760c4a059f974cc.ilean",
+        "c": "361309e92d738fdf.c"
+      },
+      "trace_sha256": "f9983d14712ecd3b0c5e4276dde3f5498879d1f275d8d5978e4abfc4d6c099a3",
+      "olean_sha256": "40f805cbe1073b99166f71c17bb6a803fc867a4fc0a4eaaf303b894f44a171c6"
+    }
+  },
+  "records": [
+    {
+      "label": "proper161",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.E2E.LinkMemoryFaultSource"
+      ],
+      "exit": 0,
+      "stats": "peak 36823040\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "native0",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.E2E.MemoryFaultNestedSource:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 224202752\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "native1",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.E2E.LinkMemoryFaultSourceDepth:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 227258368\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "complete163",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.E2E.MemoryFaultNestedSource",
+        "FV.E2E.LinkMemoryFaultSourceDepth"
+      ],
+      "exit": 0,
+      "stats": "peak 33517568\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "repository-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-native-v1/audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/nested-depth-source-native-v1/linked-fault-source-depth.lean"
+      ],
+      "exit": 0,
+      "stats": "peak 204537856\noom 0\noom_kill 0\n"
+    }
+  ],
+  "axiom_sets": {
+    "Clif.linkEnvR_none": [
+      "propext"
+    ],
+    "Clif.linkEnvR_some": [
+      "propext"
+    ],
+    "Clif.linkEnvN_none": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.linkEnvN_some": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.enterFunc_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.callCont_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.indCont_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.step_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.initState_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.runsOf_runLoop": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.linkEnvR_keeps": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.linkEnvN_keeps": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.names_func": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.names_extern": [],
+    "Clif.callExternAt_alias": [
+      "propext"
+    ],
+    "Clif.bareNames_iff": [
+      "propext"
+    ],
+    "Clif.callExternAt_eq": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Clif.lookup_name_mem": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.callExternAt_congr": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.Reaches.snoc": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.Reaches.trans": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.Reaches.under": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_returned_reaches": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.DepthLe.callee": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.depthLe_of_depthB": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.runsOf_runD": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_linkR": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_linkN": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_linkD": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_linkR_reaches": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.reaches_of_reach": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.reach_of_reaches": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.reach_under_callers": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_without_callers": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_at_callee": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.runLoop_linkR_mapFaults": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_at_linked_callee": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_at_linked_enterFunc": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_at_linked_callCont": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_at_linked_indCont": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_at_reached_activation": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_after_source_step": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_after_linked_source_step": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.runLoop_linkN_mapFaults": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.runLoop_linkD_mapFaults": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "old41_exact": true,
+  "normal_modules": 163,
+  "full_recursive_fault_coverage": "open",
+  "executable_first_fault": "open",
+  "consumer_receipt_sha256": "73b39d88254d27842bd0cce5fd9299bb6cf98147f2cb01973b216e74c41d04a1"
+}

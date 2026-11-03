@@ -1,0 +1,51 @@
+{
+  "status": "all-four-CI-and-peer-and-current-base-tree-passed",
+  "head": "b59b569cf788c0be0cb829f0909d5fc0d2125231",
+  "base": "b6e3ec8c1f115203279efa2c34c7f723cf6e3abf",
+  "tree": "4f6f3638b4e483b16f5dfdd1884bea33e617d821",
+  "github_test_merge": "e8f6241fcbe0e3dee89a1b7d3f1b90129905a61a",
+  "checks": {
+    "Quick checks": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T08:31:44Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41603922579/job/125808971633",
+      "name": "Quick checks",
+      "startedAt": "2026-11-03T08:31:35Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    "Build and compare": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T08:36:25Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41603922516/job/125808970873",
+      "name": "Build and compare",
+      "startedAt": "2026-11-03T08:31:37Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    "Check lost matches": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T08:36:39Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41603922516/job/125810950085",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-03T08:36:29Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    "Publish PR result": {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T08:36:43Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41603922516/job/125810950342",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-03T08:36:28Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  },
+  "peer_review_sha256": "49674b58ff34290b7f282f462f1f758905ef1a51e3a405e448cf2d15a4e077dc",
+  "publication_receipt_sha256": "5d2daa3a6dedfb539a57e44d2579123f670f1f25c339d580f89f57c87462c625"
+}

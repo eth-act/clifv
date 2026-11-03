@@ -1,0 +1,6 @@
+{
+  "status": "read-only-poll-controller-terminated",
+  "pid": 1992742,
+  "reason": "Replace with explicit08:42UTC window deadline and08:41:30merge cutoff",
+  "compiler_or_merge_command_signalled": false
+}
