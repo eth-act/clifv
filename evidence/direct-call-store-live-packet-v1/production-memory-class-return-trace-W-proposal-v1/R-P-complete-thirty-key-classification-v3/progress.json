@@ -1,0 +1,576 @@
+[
+  {
+    "label": "R-complete-normal30",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Proof.StockLinearCfgDemand",
+      "FV.Backend.Proof.StockMemoryAddressSelection",
+      "FV.Backend.Proof.StockMemoryDispatch",
+      "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+      "FV.E2E.PairDriverU",
+      "FV.E2E.StockMemoryRegisterPrelude",
+      "FV.Backend.Proof.StockMemoryLoadSelection",
+      "FV.Backend.Proof.StockMemorySretCopyBody",
+      "FV.E2E.StockMemoryIntegerPairedSource",
+      "FV.E2E.StockMemoryOffsetEightPairedSource",
+      "FV.Backend.Proof.StockMemoryRecordValues",
+      "FV.Backend.Proof.StockMemorySretCopyJumpSpec",
+      "FV.Backend.Proof.StockMemoryPairedRecord",
+      "FV.Backend.Proof.StockMemorySelectedValues",
+      "FV.Backend.Proof.StockMemorySourceValues",
+      "FV.Backend.Proof.StockMemoryScanRefines",
+      "FV.Backend.Proof.StockMemoryAutoScan",
+      "FV.E2E.StockMemoryPairedSource",
+      "FV.E2E.StockMemoryPairedScan",
+      "FV.E2E.StockMemoryIntegerPairedScan",
+      "FV.E2E.StockMemoryOffsetEightPairedScan",
+      "FV.E2E.StockMemoryOmittedPairedScan",
+      "FV.E2E.StockMemoryOrdinaryPairedJump",
+      "FV.E2E.StockMemoryOriginalEntryPaired",
+      "FV.E2E.StockMemoryPairedJump",
+      "FV.E2E.StockMemoryPairedReturnEdgeBody",
+      "FV.E2E.StockMemoryStorePairedScan",
+      "FV.E2E.StockMemoryNopPairedPrelude",
+      "FV.E2E.StockMemoryNopNonentryPairedReturn",
+      "FV.E2E.StockMemoryPairedNopJump"
+    ],
+    "exit": 3,
+    "log_sha256": "3ce27682f48be3cd7e4911e1487986304e72b1303ee5b459ea8335f9d6329b04",
+    "memory": "peak 50577408\noom 0\noom_kill 0\n",
+    "reused_from": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v1"
+  },
+  {
+    "label": "R-key0",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockLinearCfgDemand:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "6b4795593041e4702ae14d16122a7c65fd2ae74e07a6089f073e4660176449f1",
+    "memory": "peak 39510016\noom 0\noom_kill 0\n",
+    "reused_from": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v1"
+  },
+  {
+    "label": "R-key1",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemoryAddressSelection:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "c41cc34afb593261d150f0490ed51dad4c48cdf4fa2f1863be18db2ff266edcd",
+    "memory": "peak 22110208\noom 0\noom_kill 0\n",
+    "reused_from": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v1"
+  },
+  {
+    "label": "R-key2",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemoryDispatch:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "00a978ed11386a07167805cd7c9cd5085527f9c6e88f66c94e6e4f1814f3de92",
+    "memory": "peak 31264768\noom 0\noom_kill 0\n",
+    "reused_from": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v1"
+  },
+  {
+    "label": "R-key3",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemorySretCopyBodySpec:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "f2bec13f4b1bd0b73be876595faf0f947662a9945abae03f283f490d64680980",
+    "memory": "peak 41545728\noom 0\noom_kill 0\n",
+    "reused_from": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v1"
+  },
+  {
+    "label": "R-key4",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.PairDriverU:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "bad891c9ca8226647d51916af15f48f542288ae5670da495125650577df8f281",
+    "memory": "peak 32165888\noom 0\noom_kill 0\n",
+    "reused_from": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v1"
+  },
+  {
+    "label": "R-key5",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryRegisterPrelude:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "3adc9334470a01b4cd9dc22a7a35ba4e4feeb98b88b990b224ae759abb1d4c08",
+    "memory": "peak 34652160\noom 0\noom_kill 0\n",
+    "reused_from": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v1"
+  },
+  {
+    "label": "R-key6",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemoryLoadSelection:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "f9e86be8527512d24e4414368f92730ce60c7173770863c588e64392cdc303f1",
+    "memory": "peak 24903680\noom 0\noom_kill 0\n",
+    "reused_from": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v1"
+  },
+  {
+    "label": "R-key7",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemorySretCopyBody:depHash"
+    ],
+    "exit": 3,
+    "log_sha256": "634f6baeb8543f4f67d92404a10b973dee08dee190cbdbc1ae902e6cb45b4e5b",
+    "memory": "peak 43036672\noom 0\noom_kill 0\n",
+    "reused_from": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v1"
+  },
+  {
+    "label": "R-key8",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryIntegerPairedSource:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "9edf6057c11c438b6202f272755c7c75f4fa792c50be0e35a86b8d78af54e989",
+    "memory": "peak 38293504\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key9",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryOffsetEightPairedSource:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "dc6a535c4a1138b8c5d2e740d3c3c2659ddc39f9c94361c9def121a8dc0df72b",
+    "memory": "peak 34635776\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key10",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemoryRecordValues:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "5ba097531bade20d53bc4ec1e41a7768ddcb145a2a8973ad42ac4999019dc36a",
+    "memory": "peak 26259456\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key12",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemoryPairedRecord:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "c69d0ca1fae2e0efc6cf97fca1582ecddcaa573fbc3185a2b9a703f38262b069",
+    "memory": "peak 30023680\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key13",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemorySelectedValues:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "9d828e73abfe90c96692bb90462c38591f2c28e773c8041530a9c2ef82a942dc",
+    "memory": "peak 29151232\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key14",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemorySourceValues:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "77bc9d9578c7d1c7d677bdedf53faedd2246715b9d291e4e5a69c549e6d4f588",
+    "memory": "peak 32555008\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key15",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemoryScanRefines:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "83a6188d14f70367680b65cf231969d6f2b3a0f0c7a08e61cd150bddb9ef433a",
+    "memory": "peak 31191040\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key16",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemoryAutoScan:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "1bb9e954d86b88d5ab1081f5f1aedc8a98216a6d157a20f50c944fe2a7175135",
+    "memory": "peak 34369536\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key17",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryPairedSource:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "2c9df544be2ae3d39de0aa097a9040b001b38941a929ae38622f01f47e9318ca",
+    "memory": "peak 36466688\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key18",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryPairedScan:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "6a3fecf564b2513f07d4404e3157e00607169071842255c26cf7bc7924896b3f",
+    "memory": "peak 38039552\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key19",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryIntegerPairedScan:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "e0ffb9490985d7c128aed0ca58ae668394a3157534369479a2efbcef244ea351",
+    "memory": "peak 35512320\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key20",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryOffsetEightPairedScan:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "ba413e80b8990ca65cfbbb6b57848182f0201d65f15c812958b5d9b88f623185",
+    "memory": "peak 35475456\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key21",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryOmittedPairedScan:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "e224b8985d5b03b52ff0f1c3a5f32dc5a645c2116e2c8dab5946824561e396f4",
+    "memory": "peak 34824192\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key22",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryOrdinaryPairedJump:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "0fc09649c8750af0097cd8ba50185fb1a926005a44d57f88fc32893b0f40002b",
+    "memory": "peak 47681536\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key23",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryOriginalEntryPaired:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "4e9ede5b2f84f9723d0b78b38d2345d4d4bffa2b820cb827f9a91c9938c58b66",
+    "memory": "peak 40034304\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key24",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryPairedJump:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "e2d408ad908c3d436a80942494bb8a246865717c21e3aa4f65bd642a4840a1f5",
+    "memory": "peak 44371968\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key25",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryPairedReturnEdgeBody:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "0210f3b547a03c11dc2db5b57087e39cd29a713b3e6ae430a29657926b1dd805",
+    "memory": "peak 39129088\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key26",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryStorePairedScan:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "d6668413465eb6d9a8fbbac07d58849eff6cce32aad3b200b942ad5535b5ac44",
+    "memory": "peak 37670912\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key27",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryNopPairedPrelude:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "5f52d1bc0b9babb43eec2a1594c0705af45aec1fb2d37acff3ab3f27cada08cf",
+    "memory": "peak 45805568\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key28",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryNopNonentryPairedReturn:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "37dfd8ca32675016d8895f74c68dfb3630c475de6c52d3cff8d143071b4f36af",
+    "memory": "peak 43560960\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-key29",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryPairedNopJump:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "e5b7a33dc8716fd474c3ca0b5929d0006c3b2c81e8c8d8b79a5d74aad6691dbc",
+    "memory": "peak 44240896\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "P-complete-normal30",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Proof.StockLinearCfgDemand",
+      "FV.Backend.Proof.StockMemoryAddressSelection",
+      "FV.Backend.Proof.StockMemoryDispatch",
+      "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+      "FV.E2E.PairDriverU",
+      "FV.E2E.StockMemoryRegisterPrelude",
+      "FV.Backend.Proof.StockMemoryLoadSelection",
+      "FV.Backend.Proof.StockMemorySretCopyBody",
+      "FV.E2E.StockMemoryIntegerPairedSource",
+      "FV.E2E.StockMemoryOffsetEightPairedSource",
+      "FV.Backend.Proof.StockMemoryRecordValues",
+      "FV.Backend.Proof.StockMemorySretCopyJumpSpec",
+      "FV.Backend.Proof.StockMemoryPairedRecord",
+      "FV.Backend.Proof.StockMemorySelectedValues",
+      "FV.Backend.Proof.StockMemorySourceValues",
+      "FV.Backend.Proof.StockMemoryScanRefines",
+      "FV.Backend.Proof.StockMemoryAutoScan",
+      "FV.E2E.StockMemoryPairedSource",
+      "FV.E2E.StockMemoryPairedScan",
+      "FV.E2E.StockMemoryIntegerPairedScan",
+      "FV.E2E.StockMemoryOffsetEightPairedScan",
+      "FV.E2E.StockMemoryOmittedPairedScan",
+      "FV.E2E.StockMemoryOrdinaryPairedJump",
+      "FV.E2E.StockMemoryOriginalEntryPaired",
+      "FV.E2E.StockMemoryPairedJump",
+      "FV.E2E.StockMemoryPairedReturnEdgeBody",
+      "FV.E2E.StockMemoryStorePairedScan",
+      "FV.E2E.StockMemoryNopPairedPrelude",
+      "FV.E2E.StockMemoryNopNonentryPairedReturn",
+      "FV.E2E.StockMemoryPairedNopJump"
+    ],
+    "exit": 3,
+    "log_sha256": "4f17824d81a91b722206b2edb8ef842d28f0c1d2e9ad96cbe434b927b3058c5b",
+    "memory": "peak 46981120\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "P-key0",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockLinearCfgDemand:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "6c5305b772e95eb5ce02625b1fbc218a0c30da674ce59f45494a8315461a536b",
+    "memory": "peak 42893312\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "P-key1",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemoryAddressSelection:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "84da43ae2492c499201315f31c9cf563425d7a371df2e611f59116fb01732810",
+    "memory": "peak 25436160\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "P-key2",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemoryDispatch:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "d8826108c613e0ec76e78ff85dd5a18318681b0bf96b87e3b69a048cac38b0eb",
+    "memory": "peak 31891456\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "P-key3",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemorySretCopyBodySpec:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "40a855a95eebda7ba6cb687229978407346eb15bda0c171c1b7470ed0cc5b650",
+    "memory": "peak 37986304\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "P-key4",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.PairDriverU:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "a8cc48f0ec5541aa374beaad46c361ea538cea2c01b8bf3b51637c7aa0fe25b1",
+    "memory": "peak 33009664\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "P-key5",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.E2E.StockMemoryRegisterPrelude:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "1b9c1329b92ca03ad56bb50d4f77f570efd90ed0b6c78d66e6d5b09d73b05676",
+    "memory": "peak 33783808\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "P-key7",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemorySretCopyBody:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "918450803edc734ee8216b8b0dcc9215b0e959650d429aa175811ba90e16dedf",
+    "memory": "peak 44015616\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "P-key11",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Backend.Proof.StockMemorySretCopyJumpSpec:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "ffc5d4afb650e7f73a4698b507b37b7979f23430e2687ee98f7ec769dfe8a243",
+    "memory": "peak 43126784\noom 0\noom_kill 0\n"
+  }
+]

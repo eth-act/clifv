@@ -1,0 +1,59 @@
+{
+  "status": "FROZEN_PASSED_CURRENT8F_INDEPENDENT_PRODUCTION391",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "source": {
+    "FV/E2E/CompiledProductionReturnTraceW.lean": "33362e863a8442c27ee18faadf037da6f09e984b66b58b20ae15c25955b52b61",
+    "FV/E2E/WorldReturnTraceLegacy.lean": "34475e27f907953dc5479d490da27ec50e016c1a345fa3b66d126fbc2465c8fe",
+    "FV/E2E/WorldReturnTraceCore.lean": "caa7f7403b10b3aefb8df087ddf16f0b27884a0180fda924ac3a974d0c68a20d",
+    "FV/E2E/ValidatedReturnTraceW.lean": "0dd90ef2e2e8a8ae97cb744ea8880a103c0bb44222b7d479cc3ab77d2b38e31c"
+  },
+  "evidence_references": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/Legacy-fresh-current8f-v1/receipt.json": "affb9fa5b6d29a31ebb83418ce5cd30a4863999f5f27533db3854e1bcb968490",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/Legacy-fresh-current8f-v1/current-source-context.json": "dc15fcd5c685559e260151561ccc37a9b899a3d737fd36dd36db190591160358",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/Legacy-fresh-current8f-v1/preserved-output-hashes.json": "9639cf54a3d36bc4e3ae628d78f4879e31c3d5aa733dc4c96a8e8f97bec98ae7",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/production391-focused-v2/receipt.json": "a9e152d85cdf0ccfec51f1b41d97884458049a3727d1d7256717ff851047d892",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/production391-focused-v2/current-source-context.json": "dc15fcd5c685559e260151561ccc37a9b899a3d737fd36dd36db190591160358",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/production391-kernel-manifest.json": "ba7e500eb90e12e3f01bf833afbb2e30d900b7eba6c29395928109cf5d14b4bd",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/run-Legacy-then-production391-v1.py": "afc869e8b90131353ff8ad2ed1538c35ef200bf74018e03e8b416663436040d9",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/verify-production391-focused-v2.py": "1a3a5912c50f7752ddcd59a4397575cfc948940465552aa347041cc127a91881"
+  },
+  "normal_modules": 391,
+  "fresh_kernels": [
+    "FV.E2E.WorldReturnTraceLegacy",
+    "FV.E2E.CompiledProductionReturnTraceW"
+  ],
+  "standard_axiom_roots": {
+    "E2E.worldReturnTraceProvider_production": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "owned_R_output_hashes": {
+    ".lake/build/lib/lean/FV/E2E/WorldReturnTraceLegacy.trace": "0e88587664cdb3c284161f4dda3e49a0a4a3f94b9f27b982490f66531ea6ef6d",
+    ".lake/build/lib/lean/FV/E2E/WorldReturnTraceLegacy.olean": "a7daf9288af2baa03e5b9fba7fc201a1fc94b719a6a80ac9f67ff358f9eefd0c",
+    ".lake/build/lib/lean/FV/E2E/WorldReturnTraceLegacy.ilean": "72c85552f27b488d62c9d4cee30cf2c0d4c806c4ee495dddd480ee61c9a91b9c",
+    ".lake/build/lib/lean/FV/E2E/WorldReturnTraceLegacy.olean.hash": "404b7b1d07316a21ca2e80187c19d14c9bf7584b71148434dc1c78e443f76e7b",
+    ".lake/build/lib/lean/FV/E2E/WorldReturnTraceLegacy.ilean.hash": "49f1d150df981850c91eed5bc90cc1ff6d5092172c00a5b2627caa749f7df053",
+    ".lake/build/ir/FV/E2E/WorldReturnTraceLegacy.setup.json": "70204174fc9f3896a84e6bcce8e50004b43729feea3b3246ef6075e4c6d2a6c6",
+    ".lake/build/ir/FV/E2E/WorldReturnTraceLegacy.c": "53ad4f76df663e8643e25625585ee707b2069d5e0e0747589ab5cb076ef40fae",
+    ".lake/build/ir/FV/E2E/WorldReturnTraceLegacy.c.hash": "299a7d0ea04a4e2c26981f4ef9d963e2a6341f40db4eec3c3bf16fc4a30ad014",
+    ".lake/build/lib/lean/FV/E2E/CompiledProductionReturnTraceW.olean": "6832bd9120c916d7dc5ec7af1588c655d003ba236ca3b4f9e727db3c8c7c7f54",
+    ".lake/build/lib/lean/FV/E2E/CompiledProductionReturnTraceW.ilean": "6bac3152fd87c590d75df87be4c2a2e0f99916eb7504962afe4077ba3b684f08",
+    ".lake/build/lib/lean/FV/E2E/CompiledProductionReturnTraceW.olean.hash": "7a36435ce1c4dcb955ca9a8cd922fca1fdbf3bfcd2044821f4724a5857128887",
+    ".lake/build/lib/lean/FV/E2E/CompiledProductionReturnTraceW.ilean.hash": "ec639cd9b3be98c474aa90a57cfff88a7f5b19b360586b05e7934afc28f65216",
+    ".lake/build/lib/lean/FV/E2E/CompiledProductionReturnTraceW.trace": "63a1810d2d1b7441222218092a7870a602af565ec90be1d559d8986c7b594104",
+    ".lake/build/ir/FV/E2E/CompiledProductionReturnTraceW.setup.json": "01e440b71b5442e094d80754454a7a4c454ecdbaf5444cc0ea40a51f7687a2f9",
+    ".lake/build/ir/FV/E2E/CompiledProductionReturnTraceW.c": "40f7346aaa7d01ce356d5e7166e83298d37f85b824b82d715ff4db7b3fb43b25",
+    ".lake/build/ir/FV/E2E/CompiledProductionReturnTraceW.c.hash": "9915dc751405c2f110515912a0bfd14429d651a69d2d34cbf9c24ad6184f320b"
+  },
+  "scope": "internal provider for existing production legacy,Stock raw,Stock cleanup branches",
+  "open": [
+    "complete NI and artifact dispatcher",
+    "linked program instance construction",
+    "generic fault and first-fault transfer",
+    "CLI activation and runtime matrices",
+    "reverse326,reverse1095,affected93"
+  ],
+  "cleanup_owner": "source_guarantees;retain active R outputs and canonical evidence"
+}

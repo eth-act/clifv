@@ -1,0 +1,152 @@
+{
+  "FV.Backend.Proof.StockLinearCfgDemand": {
+    "stored_native_key": "e88219203dade921",
+    "current_native_key": "7b90dce152aecbac",
+    "stored_inputs_sha256": "72b7965a8bae01994dfd25af241c3d3da60fa7e10ebcf4fa54c02d11cd814157",
+    "computed_inputs_sha256": "964ff2bf3a92ae59e4f73880a0377f07ddafd90368fcc72b17d0097d30d60931",
+    "exact_input_differences": [
+      {
+        "field": "/0/1/1/1/2/1",
+        "stored": "6f5dbe154154060b",
+        "computed": "55bfd8614f864802"
+      }
+    ],
+    "computed_descriptor_outputs": null,
+    "R_actual_trace_matches_current": true,
+    "named_changed_inputs": {
+      "FV.Backend.Proof.StockCfgJumpDemand transitive imports (legacy)": {
+        "stored": "6f5dbe154154060b",
+        "current": "55bfd8614f864802"
+      }
+    }
+  },
+  "FV.Backend.Proof.StockMemoryAddressSelection": {
+    "stored_native_key": "59f563d793e483e6",
+    "current_native_key": "75b3e4fdb4a557e7",
+    "stored_inputs_sha256": "ad07de5be66f84e378d0ad481abd6bdb9254b9ceb916a2bb7b3802c368cc86c3",
+    "computed_inputs_sha256": "8d01d65874f9a2977f165b1fe5c0d572a5d9b6cf5253f9823eae491e7e8db3a3",
+    "exact_input_differences": [
+      {
+        "field": "/0/1/1/1/0/1",
+        "stored": "abaa2eeb70af0b8c",
+        "computed": "bb2a95ca74c54726"
+      },
+      {
+        "field": "/0/1/1/1/1/1",
+        "stored": "e8f2ea999c0ee7de",
+        "computed": "cccd513a8cb788ec"
+      }
+    ],
+    "computed_descriptor_outputs": null,
+    "R_actual_trace_matches_current": true,
+    "named_changed_inputs": {
+      "FV.Backend.Proof.StockValues:importAllArts": {
+        "stored": "e8f2ea999c0ee7de",
+        "current": "cccd513a8cb788ec"
+      },
+      "FV.Backend.Proof.StockValues transitive imports (legacy)": {
+        "stored": "abaa2eeb70af0b8c",
+        "current": "bb2a95ca74c54726"
+      }
+    }
+  },
+  "FV.Backend.Proof.StockMemoryDispatch": {
+    "stored_native_key": "8ab9b0c307198211",
+    "current_native_key": "35ec7d38845c2123",
+    "stored_inputs_sha256": "148e5dd608f69cd93df2212be0c9c267b2a9cd66b6873692cd86e9c9132683bb",
+    "computed_inputs_sha256": "7775042680e5e4d1271cbb2f6df4f65f864a9dd5031d41877dfc87273a68e70b",
+    "exact_input_differences": [
+      {
+        "field": "/0/1/1/1/2/1",
+        "stored": "ab8eb5a658f3b2a8",
+        "computed": "dc255813043ba55b"
+      }
+    ],
+    "computed_descriptor_outputs": null,
+    "R_actual_trace_matches_current": true,
+    "named_changed_inputs": {
+      "FV.Backend.Proof.StockRootOpcodeMatch transitive imports (legacy)": {
+        "stored": "ab8eb5a658f3b2a8",
+        "current": "dc255813043ba55b"
+      }
+    }
+  },
+  "FV.E2E.PairDriverU": {
+    "stored_native_key": "ee1cef49119e3a71",
+    "current_native_key": "0afaaf5948d22f8a",
+    "stored_inputs_sha256": "3928b10e7c9838ba6fda7d40f57c499ee1ffad9d17ee68ad2108c653f2c2937f",
+    "computed_inputs_sha256": "f89c7f222251aa6c039e6b17b50e20dee0fdc82f99d1adc3d4f233cc53cfa7f2",
+    "exact_input_differences": [
+      {
+        "field": "/0/1/1/1/0/1",
+        "stored": "03069c5606f42926",
+        "computed": "7cfa08168f3bd1f6"
+      },
+      {
+        "field": "/0/1/1/1/1/1",
+        "stored": "2b318f599cd8d248",
+        "computed": "73bb16a718dfe4f9"
+      },
+      {
+        "field": "/0/1/1/1/2/1",
+        "stored": "317dfd44000fba95",
+        "computed": "47972e4ca77f38a2"
+      },
+      {
+        "field": "/0/1/1/1/4/1",
+        "stored": "145ebc5789f6f580",
+        "computed": "f90ec5f58cc7af73"
+      }
+    ],
+    "computed_descriptor_outputs": null,
+    "R_actual_trace_matches_current": true,
+    "named_changed_inputs": {
+      "FV.E2E.PairRaise transitive imports (legacy)": {
+        "stored": "03069c5606f42926",
+        "current": "7cfa08168f3bd1f6"
+      },
+      "FV.E2E.IselSimU transitive imports (legacy)": {
+        "stored": "317dfd44000fba95",
+        "current": "47972e4ca77f38a2"
+      },
+      "FV.E2E.PairRaise:importAllArts": {
+        "stored": "2b318f599cd8d248",
+        "current": "73bb16a718dfe4f9"
+      },
+      "FV.Backend.Proof.LowerSimUCheck transitive imports (legacy)": {
+        "stored": "145ebc5789f6f580",
+        "current": "f90ec5f58cc7af73"
+      }
+    }
+  },
+  "FV.E2E.StockMemoryRegisterPrelude": {
+    "stored_native_key": "3626bec0ce9733b2",
+    "current_native_key": "c6bfd040168ad9cf",
+    "stored_inputs_sha256": "39ddaf01b7e15dc55e270de304e9b4f55b6a8303d08ad2a5f4bac06097e06a79",
+    "computed_inputs_sha256": "5d434b260ef929259908fa57e6bb11ef6e8196ed707cb7642fc7f02cae1839e9",
+    "exact_input_differences": [
+      {
+        "field": "/0/1/1/1/0/1",
+        "stored": "3a6fbf5732d9541c",
+        "computed": "5bb0120b16933f4e"
+      },
+      {
+        "field": "/0/1/1/1/2/1",
+        "stored": "357e8308bce08daa",
+        "computed": "35ddaecaa84024a3"
+      }
+    ],
+    "computed_descriptor_outputs": null,
+    "R_actual_trace_matches_current": true,
+    "named_changed_inputs": {
+      "FV.Backend.Proof.StockEntryABI transitive imports (legacy)": {
+        "stored": "357e8308bce08daa",
+        "current": "35ddaecaa84024a3"
+      },
+      "FV.E2E.PairDriver transitive imports (legacy)": {
+        "stored": "3a6fbf5732d9541c",
+        "current": "5bb0120b16933f4e"
+      }
+    }
+  }
+}

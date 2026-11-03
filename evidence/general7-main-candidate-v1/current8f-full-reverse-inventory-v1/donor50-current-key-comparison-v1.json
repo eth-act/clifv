@@ -1,0 +1,1356 @@
+{
+  "scope": "native-key matches only; donor full normal/provenance/payload checks required",
+  "rows": [
+    {
+      "target": "FV.Backend.Proof.DriverCheckTy",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "eb46cc5deffb7b60",
+          "trace_sha256": "424a0484ae4375fb1cacf41cb122596e9e24ec7111012d8a435e8d7c215aa3d0",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "eb46cc5deffb7b60",
+          "trace_sha256": "424a0484ae4375fb1cacf41cb122596e9e24ec7111012d8a435e8d7c215aa3d0",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "eb46cc5deffb7b60",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "eb46cc5deffb7b60",
+          "trace_sha256": "424a0484ae4375fb1cacf41cb122596e9e24ec7111012d8a435e8d7c215aa3d0",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "eb46cc5deffb7b60",
+          "trace_sha256": "424a0484ae4375fb1cacf41cb122596e9e24ec7111012d8a435e8d7c215aa3d0",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.InstScopeTF",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "af7f25ef4401a2ec",
+          "trace_sha256": "67488c8c69bdde4c30c28b373a76349df740377a180cd98f429cd678022805fe",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "af7f25ef4401a2ec",
+          "trace_sha256": "67488c8c69bdde4c30c28b373a76349df740377a180cd98f429cd678022805fe",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "af7f25ef4401a2ec",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "af7f25ef4401a2ec",
+          "trace_sha256": "67488c8c69bdde4c30c28b373a76349df740377a180cd98f429cd678022805fe",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "af7f25ef4401a2ec",
+          "trace_sha256": "67488c8c69bdde4c30c28b373a76349df740377a180cd98f429cd678022805fe",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.IselExclT",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "be15c32fadcd83ac",
+          "trace_sha256": "434cca457a0a6b4e1119770f9d7f19cee56d66ab5b1faacee324a0cfe83445f0",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "be15c32fadcd83ac",
+          "trace_sha256": "434cca457a0a6b4e1119770f9d7f19cee56d66ab5b1faacee324a0cfe83445f0",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "be15c32fadcd83ac",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "be15c32fadcd83ac",
+          "trace_sha256": "434cca457a0a6b4e1119770f9d7f19cee56d66ab5b1faacee324a0cfe83445f0",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "be15c32fadcd83ac",
+          "trace_sha256": "434cca457a0a6b4e1119770f9d7f19cee56d66ab5b1faacee324a0cfe83445f0",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemorySretCopyClass",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "R",
+          "depHash": "ebe6699fdbc95ca4",
+          "trace_sha256": "e2395f2a543e81bbdcb145d22bf8639e77fae1834a7af250424929d4196038dc",
+          "key_status": "actual current query matches",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "ebe6699fdbc95ca4",
+      "matching_donors": [
+        {
+          "owner": "R",
+          "depHash": "ebe6699fdbc95ca4",
+          "trace_sha256": "e2395f2a543e81bbdcb145d22bf8639e77fae1834a7af250424929d4196038dc",
+          "key_status": "actual current query matches",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "38d272b87d314fee",
+          "trace_sha256": "0622a22bcf7e2d86148da5fbc6aa04219ce77affa706ece4b51d6b7cc328b6e7",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "38d272b87d314fee",
+          "trace_sha256": "0622a22bcf7e2d86148da5fbc6aa04219ce77affa706ece4b51d6b7cc328b6e7",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "38d272b87d314fee",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "38d272b87d314fee",
+          "trace_sha256": "0622a22bcf7e2d86148da5fbc6aa04219ce77affa706ece4b51d6b7cc328b6e7",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "38d272b87d314fee",
+          "trace_sha256": "0622a22bcf7e2d86148da5fbc6aa04219ce77affa706ece4b51d6b7cc328b6e7",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryOffsetEightStoreExec",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "36ecc3f586c2d5b5",
+          "trace_sha256": "1e22ae1433e4fcc60269a274b2d864a6bb833db339285c983038366e145df8c4",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "36ecc3f586c2d5b5",
+          "trace_sha256": "1e22ae1433e4fcc60269a274b2d864a6bb833db339285c983038366e145df8c4",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "36ecc3f586c2d5b5",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "36ecc3f586c2d5b5",
+          "trace_sha256": "1e22ae1433e4fcc60269a274b2d864a6bb833db339285c983038366e145df8c4",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "36ecc3f586c2d5b5",
+          "trace_sha256": "1e22ae1433e4fcc60269a274b2d864a6bb833db339285c983038366e145df8c4",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.E2E.LowerDirect",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "b73527df3dc8d586",
+          "trace_sha256": "280b2fbb75991ee6710c4ed3c13edee9f064395f9b23e603031fd8a77fc6f1d7",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "c0a02fd1eb9da19f",
+          "trace_sha256": "4afa4f65d053eb9c26b32610ed6871b522e32170bb44e7c1dda69c7589afc7cb",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "b73527df3dc8d586",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "b73527df3dc8d586",
+          "trace_sha256": "280b2fbb75991ee6710c4ed3c13edee9f064395f9b23e603031fd8a77fc6f1d7",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.KillPrep",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "47a7d6dd49ad7692",
+          "trace_sha256": "d55f5822ff47a00242e5062eecfc6c8a4e49cc149d686e060e31abffa996f6fc",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "2b139b4f00870fd0",
+          "trace_sha256": "03bd517bbca50f3dc7d1e2396b0e744fd13652ada25c5e992c8cd9ac660bb9b3",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "47a7d6dd49ad7692",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "47a7d6dd49ad7692",
+          "trace_sha256": "d55f5822ff47a00242e5062eecfc6c8a4e49cc149d686e060e31abffa996f6fc",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.SpillClsExt",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "7fcc2630e63a2d0b",
+          "trace_sha256": "0cbe3f0a3072acae1ac2f9d91690fe86873d10507018cce714ab657c5160d83a",
+          "key_status": "actual current query matches",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "7fcc2630e63a2d0b",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "7fcc2630e63a2d0b",
+          "trace_sha256": "0cbe3f0a3072acae1ac2f9d91690fe86873d10507018cce714ab657c5160d83a",
+          "key_status": "actual current query matches",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.KillCtor",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "2e9802c5cb3cf41c",
+          "trace_sha256": "cb40b2b49e05f9516c63410d1d94bfe6e176c15b40fb4a49af4c5f132452c56c",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "65391f3d61d2fb5c",
+          "trace_sha256": "a0a831406a7234df3f33d8ae6099bf105e0d7a978b90dd4a9b7202e2ce2676b9",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "2e9802c5cb3cf41c",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "2e9802c5cb3cf41c",
+          "trace_sha256": "cb40b2b49e05f9516c63410d1d94bfe6e176c15b40fb4a49af4c5f132452c56c",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.KillOracle",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "eb69cb8ef8a3b412",
+          "trace_sha256": "189fd233928a57482bececf87e62379399738561d0a9ff8270c35d23c092d284",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "eb69cb8ef8a3b412",
+          "trace_sha256": "189fd233928a57482bececf87e62379399738561d0a9ff8270c35d23c092d284",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "00a3f5d2a36e5913",
+      "matching_donors": []
+    },
+    {
+      "target": "FV.Backend.Proof.TermSetData",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "4c3eb2db56d9ce3d",
+          "trace_sha256": "053e8fa9c8ef2c8a82c5120e8300cbb3a79fecf619f54eb6ff0de3489ecc09f8",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "4c3eb2db56d9ce3d",
+          "trace_sha256": "053e8fa9c8ef2c8a82c5120e8300cbb3a79fecf619f54eb6ff0de3489ecc09f8",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "4c3eb2db56d9ce3d",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "4c3eb2db56d9ce3d",
+          "trace_sha256": "053e8fa9c8ef2c8a82c5120e8300cbb3a79fecf619f54eb6ff0de3489ecc09f8",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "4c3eb2db56d9ce3d",
+          "trace_sha256": "053e8fa9c8ef2c8a82c5120e8300cbb3a79fecf619f54eb6ff0de3489ecc09f8",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.KillTab",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "e470885d97914e07",
+          "trace_sha256": "ac2db1d205f1fb10647179a786edec197d49ab9f4134ffa8eee1bfb7279c54c6",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "5361686863b4a689",
+          "trace_sha256": "65d80bd12b42d151b370c25a4171df7e34940dc1fb566e2d2c37b835d4045510",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "e470885d97914e07",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "e470885d97914e07",
+          "trace_sha256": "ac2db1d205f1fb10647179a786edec197d49ab9f4134ffa8eee1bfb7279c54c6",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.KillAssemble",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "c08da70c2c17282f",
+          "trace_sha256": "9df28c14782055e0fafa2668ad1b2f2fd0741a9614397b668859308685b816a8",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "eba78fc8efcb289e",
+          "trace_sha256": "b3ac3887bd5c8f912c864e499f04e7034e2b95480e49fcc1333e6d980510da7c",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "c08da70c2c17282f",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "c08da70c2c17282f",
+          "trace_sha256": "9df28c14782055e0fafa2668ad1b2f2fd0741a9614397b668859308685b816a8",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.SpillEdges",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "ee8aa2773a7b9c18",
+          "trace_sha256": "6f06117d83f2d0fe4391c08da73e20b7439b4789a38b64d92467a9bbde84f91d",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "217003c1922bd1b0",
+          "trace_sha256": "7bc6d334302b3fb2e52bf1781818cb1bc68e21cbe9bf398704a2e4fd8d0bd7c3",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "ee8aa2773a7b9c18",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "ee8aa2773a7b9c18",
+          "trace_sha256": "6f06117d83f2d0fe4391c08da73e20b7439b4789a38b64d92467a9bbde84f91d",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalMem",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "3ffd75408259fd18",
+          "trace_sha256": "e583b6051b2e5c4c0be7acbaeaed52778d06eed2cd831ad0f62036ff123b8fdb",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "3ffd75408259fd18",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "3ffd75408259fd18",
+          "trace_sha256": "e583b6051b2e5c4c0be7acbaeaed52778d06eed2cd831ad0f62036ff123b8fdb",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalExt",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "4e502bafcfe168f7",
+          "trace_sha256": "38de7f27cd1cbba9ecaf8831132d8d574d6fad2ee14f077facc706ccde79c5a1",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "4e502bafcfe168f7",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "4e502bafcfe168f7",
+          "trace_sha256": "38de7f27cd1cbba9ecaf8831132d8d574d6fad2ee14f077facc706ccde79c5a1",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalRust",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "8d74331ad831c737",
+          "trace_sha256": "36580346e473b8c13fc5c0e7e2ad56add1161d28398592bfd2499cb0cf7812fe",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "8d74331ad831c737",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "8d74331ad831c737",
+          "trace_sha256": "36580346e473b8c13fc5c0e7e2ad56add1161d28398592bfd2499cb0cf7812fe",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalBase",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "4cb9152aa056603f",
+          "trace_sha256": "4d4e73ff06bd66fa804e3c5f5d51972fa6280bfb31428826e1e781d47d101e57",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "4cb9152aa056603f",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "4cb9152aa056603f",
+          "trace_sha256": "4d4e73ff06bd66fa804e3c5f5d51972fa6280bfb31428826e1e781d47d101e57",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalPat",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "f03116ce9497aaf6",
+          "trace_sha256": "15710af57167c5105303289f60ac889e4ba9d217716bcc85ec03915d7362c834",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "f03116ce9497aaf6",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "f03116ce9497aaf6",
+          "trace_sha256": "15710af57167c5105303289f60ac889e4ba9d217716bcc85ec03915d7362c834",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalArith",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "ef6e62a7741a4be8",
+          "trace_sha256": "0d1ab019d9c5f79d873178fcc622e5e0c98f803b6eb843155c0fe9344a02b64f",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "ef6e62a7741a4be8",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "ef6e62a7741a4be8",
+          "trace_sha256": "0d1ab019d9c5f79d873178fcc622e5e0c98f803b6eb843155c0fe9344a02b64f",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalShift",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "a013135a30d9ee61",
+          "trace_sha256": "bccd65c61c2229a97f428aafbb68effbe6db7b5c409acc13e4de8ed81a168201",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "a013135a30d9ee61",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "a013135a30d9ee61",
+          "trace_sha256": "bccd65c61c2229a97f428aafbb68effbe6db7b5c409acc13e4de8ed81a168201",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalShift16",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "48afd361868184dc",
+          "trace_sha256": "340a44c9df717601c9969d0f1b64737201d3eb4b51350451537cd9f055985933",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "48afd361868184dc",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "48afd361868184dc",
+          "trace_sha256": "340a44c9df717601c9969d0f1b64737201d3eb4b51350451537cd9f055985933",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalShift32",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "374622a56442f51e",
+          "trace_sha256": "6724bb0457116774486ef3fa82f2aeb2e7d4d878c05dcf306fe9610fd3e2703a",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "374622a56442f51e",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "374622a56442f51e",
+          "trace_sha256": "6724bb0457116774486ef3fa82f2aeb2e7d4d878c05dcf306fe9610fd3e2703a",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalShift64",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "aac3ecc3064001c6",
+          "trace_sha256": "5e4460954fe1bd0bb1534ec447526e7f657873c3ec96e10541bb80d8dd9c47ba",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "aac3ecc3064001c6",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "aac3ecc3064001c6",
+          "trace_sha256": "5e4460954fe1bd0bb1534ec447526e7f657873c3ec96e10541bb80d8dd9c47ba",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalShift8",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "39b185cbb7b4b1e8",
+          "trace_sha256": "c570a49507d3c3ad44eed1423da5d0aff472d2827c9254676081cfa28c9c9bb5",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "39b185cbb7b4b1e8",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "39b185cbb7b4b1e8",
+          "trace_sha256": "c570a49507d3c3ad44eed1423da5d0aff472d2827c9254676081cfa28c9c9bb5",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalPlan",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "91fad120b3834e0d",
+          "trace_sha256": "e21a3011744e8c301df93b0174e7e4efb7f3daa81cbe8eab58daf95a094c98a6",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "91fad120b3834e0d",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "91fad120b3834e0d",
+          "trace_sha256": "e21a3011744e8c301df93b0174e7e4efb7f3daa81cbe8eab58daf95a094c98a6",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalSem",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "9dbbc6869ff2b3f1",
+          "trace_sha256": "2ed87879975a87b9b9dcee536873314587b6d2796ddd08823edc9511bb105d1b",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "9dbbc6869ff2b3f1",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "9dbbc6869ff2b3f1",
+          "trace_sha256": "2ed87879975a87b9b9dcee536873314587b6d2796ddd08823edc9511bb105d1b",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalStep",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "cf9bc460c7f8dcd8",
+          "trace_sha256": "6413939058859d777cb4d316edeb4e81c8051ac17a6e8435b3601d6c36c9cf1f",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "cf9bc460c7f8dcd8",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "cf9bc460c7f8dcd8",
+          "trace_sha256": "6413939058859d777cb4d316edeb4e81c8051ac17a6e8435b3601d6c36c9cf1f",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalSim",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "751f3caf310402be",
+          "trace_sha256": "85da7b83609cbb3515427348251f06a16c6ab1b3bf61261f871aa378f9db3491",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "751f3caf310402be",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "751f3caf310402be",
+          "trace_sha256": "85da7b83609cbb3515427348251f06a16c6ab1b3bf61261f871aa378f9db3491",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.IselCovTFam",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "1226b9cd5b71ed5b",
+          "trace_sha256": "0bdac2f697aa8d47e03468ceb66c57a8182b20cfa2e7d9772ab642a5a045e208",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "1226b9cd5b71ed5b",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "1226b9cd5b71ed5b",
+          "trace_sha256": "0bdac2f697aa8d47e03468ceb66c57a8182b20cfa2e7d9772ab642a5a045e208",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgCtorSound",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "8f2cc705d6485e31",
+          "trace_sha256": "e586e26339deea912de99c7084d901b5a9f8821eec6b41d89889cb893afba60b",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "8f2cc705d6485e31",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "8f2cc705d6485e31",
+          "trace_sha256": "e586e26339deea912de99c7084d901b5a9f8821eec6b41d89889cb893afba60b",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgHand",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "02c9a11cfa4417f7",
+          "trace_sha256": "1334b9a7213925ac83da6848633a19823ca48aba9e44896c8b98dc45c7ce6a48",
+          "key_status": "actual current query matches",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "02c9a11cfa4417f7",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "02c9a11cfa4417f7",
+          "trace_sha256": "1334b9a7213925ac83da6848633a19823ca48aba9e44896c8b98dc45c7ce6a48",
+          "key_status": "actual current query matches",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgTryLast",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "8298d529014ff494",
+          "trace_sha256": "7b2ffb3412be3c4200a91055d2de7cdc003d0ae95fd55ed39376d2d6c2e0d8d9",
+          "key_status": "actual current query matches",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "8298d529014ff494",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "8298d529014ff494",
+          "trace_sha256": "7b2ffb3412be3c4200a91055d2de7cdc003d0ae95fd55ed39376d2d6c2e0d8d9",
+          "key_status": "actual current query matches",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.DefGenOfV",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "aca8ec02641bda5e",
+          "trace_sha256": "dd2aa951f4dfecb5f2cac55d330b944a6ef3d7842512f90329ccbd7a5d2d3276",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "ffea1fed2c9bc295",
+          "trace_sha256": "75f8058fc71c1235c33ba7aac1ec83b69b0d72121d9b573f4aa3e28be7958ca0",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "aca8ec02641bda5e",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "aca8ec02641bda5e",
+          "trace_sha256": "dd2aa951f4dfecb5f2cac55d330b944a6ef3d7842512f90329ccbd7a5d2d3276",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgRootTF",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "aa56cad6d66da560",
+          "trace_sha256": "570d4b0c19cdf8023793590ff6ea28906be9eb8bd1709999f8e75b920bedad72",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "aa56cad6d66da560",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "aa56cad6d66da560",
+          "trace_sha256": "570d4b0c19cdf8023793590ff6ea28906be9eb8bd1709999f8e75b920bedad72",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgTabF64",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "252cd6d72da4b417",
+          "trace_sha256": "c973e3b310a1f4c4085ee4f14641dc1e7f3b27df258eea5b27713172a8306b49",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "252cd6d72da4b417",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "252cd6d72da4b417",
+          "trace_sha256": "c973e3b310a1f4c4085ee4f14641dc1e7f3b27df258eea5b27713172a8306b49",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgTabT",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "c2b6c9a8e037c84b",
+          "trace_sha256": "586d28bf29303043e42a3833fb146e62d5bf63f780c3d2ebfde910cea42442cb",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "c2b6c9a8e037c84b",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "c2b6c9a8e037c84b",
+          "trace_sha256": "586d28bf29303043e42a3833fb146e62d5bf63f780c3d2ebfde910cea42442cb",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalComplete",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "989ab8005ad481a6",
+          "trace_sha256": "1c1d282a5f30cd5b8531779439563a917436bf9e8cc481480d521a90c2e5b1da",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "989ab8005ad481a6",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "989ab8005ad481a6",
+          "trace_sha256": "1c1d282a5f30cd5b8531779439563a917436bf9e8cc481480d521a90c2e5b1da",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalDirect",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "4eaf6c7e126e0ec2",
+          "trace_sha256": "2d669c990c60063d3dcd66a5600588fd92ee128e082c3917903cefd66d919104",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "4eaf6c7e126e0ec2",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "4eaf6c7e126e0ec2",
+          "trace_sha256": "2d669c990c60063d3dcd66a5600588fd92ee128e082c3917903cefd66d919104",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Legalize128Pre",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "08f90e4dedcc7a33",
+          "trace_sha256": "5a2ae241eae5732150c8707e6cf192b04359358e344b7fba0f93956266a159b7",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "08f90e4dedcc7a33",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "08f90e4dedcc7a33",
+          "trace_sha256": "5a2ae241eae5732150c8707e6cf192b04359358e344b7fba0f93956266a159b7",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.Proof.LegalPre",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "1fcd397f47ae1812",
+          "trace_sha256": "c3d63d5f89bf523a8e3499a31abcb9a99b090f19c8bd5ad9fc079fa82965b28d",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "1fcd397f47ae1812",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "1fcd397f47ae1812",
+          "trace_sha256": "c3d63d5f89bf523a8e3499a31abcb9a99b090f19c8bd5ad9fc079fa82965b28d",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Front.Rename",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "e0f25436975ef000",
+          "trace_sha256": "4e1570d806bc08eea62f533cabacfd878c86523f303698866de60f8026a4799f",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "e0f25436975ef000",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "e0f25436975ef000",
+          "trace_sha256": "4e1570d806bc08eea62f533cabacfd878c86523f303698866de60f8026a4799f",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Front.Raw",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "57d9b6ccf97431ba",
+          "trace_sha256": "32d2f574b1b578caf1d5905538bef1be3b9d2d130d23381e6bf9549b62191d00",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "57d9b6ccf97431ba",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "57d9b6ccf97431ba",
+          "trace_sha256": "32d2f574b1b578caf1d5905538bef1be3b9d2d130d23381e6bf9549b62191d00",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Front.Perm",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "7a15442aa40e2a62",
+          "trace_sha256": "672102805c6b5a606eb733451a07e72023e285c4e379234742368c555f7d9855",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "7a15442aa40e2a62",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "7a15442aa40e2a62",
+          "trace_sha256": "672102805c6b5a606eb733451a07e72023e285c4e379234742368c555f7d9855",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Front.RenameStep",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "3cd7470708cf12df",
+          "trace_sha256": "3001f73b8e34ede5fb58d4bd6ba4bb88ab639d0852e977856ea98eb3f78ebb28",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "3cd7470708cf12df",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "3cd7470708cf12df",
+          "trace_sha256": "3001f73b8e34ede5fb58d4bd6ba4bb88ab639d0852e977856ea98eb3f78ebb28",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Front.RenameRun",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "71e51886774b674f",
+          "trace_sha256": "cc6f082806bf3bd712a6747da858e8b9a2cf29baaf7e7170e8cd150d3e9d945c",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "71e51886774b674f",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "71e51886774b674f",
+          "trace_sha256": "cc6f082806bf3bd712a6747da858e8b9a2cf29baaf7e7170e8cd150d3e9d945c",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.E2E.RegLevelUTry",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "4ddd3986748774e8",
+          "trace_sha256": "4498f73dfc172d30d709c1ad3d316fcf093d5345cfdc7e30f154ee2710eef92a",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "4ddd3986748774e8",
+          "trace_sha256": "4498f73dfc172d30d709c1ad3d316fcf093d5345cfdc7e30f154ee2710eef92a",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "4ddd3986748774e8",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "4ddd3986748774e8",
+          "trace_sha256": "4498f73dfc172d30d709c1ad3d316fcf093d5345cfdc7e30f154ee2710eef92a",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        },
+        {
+          "owner": "R",
+          "depHash": "4ddd3986748774e8",
+          "trace_sha256": "4498f73dfc172d30d709c1ad3d316fcf093d5345cfdc7e30f154ee2710eef92a",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FV.Opt.LegalExn",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "cada3a57e5856c85",
+          "trace_sha256": "c4d7b8f86e8449263399ffd74df8ea0e9282778c06a1164e1b67f81fe3cca101",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "cada3a57e5856c85",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "cada3a57e5856c85",
+          "trace_sha256": "c4d7b8f86e8449263399ffd74df8ea0e9282778c06a1164e1b67f81fe3cca101",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    },
+    {
+      "target": "FVTest.Link.LdArgs",
+      "blocked_ancestors": [],
+      "query_ready_after_frontier_classification": true,
+      "candidates": [
+        {
+          "owner": "P",
+          "depHash": "e63530c7a7d962a9",
+          "trace_sha256": "f734001cbc2be7994ff631447903943ee5462965cebc8dd6d4b0bace8b5254eb",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ],
+      "actual_current_key": "e63530c7a7d962a9",
+      "matching_donors": [
+        {
+          "owner": "P",
+          "depHash": "e63530c7a7d962a9",
+          "trace_sha256": "f734001cbc2be7994ff631447903943ee5462965cebc8dd6d4b0bace8b5254eb",
+          "key_status": "source matches; actual current key still required",
+          "actual_normal_still_required": true
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "queried": 50,
+    "matches": 49,
+    "mismatches": 1
+  }
+}

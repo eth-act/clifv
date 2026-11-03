@@ -1,0 +1,268 @@
+{
+  "status": "PROPOSED_FRESH_R_REPAIR;NO_KERNEL_AUTHORIZED_OR_RUN",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "readiness_receipt_sha256": "7c58e1a493f786fa5b11702567d6ff57f7e7181d8176b035f0a8194389a2670f",
+  "configs": {
+    "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+  },
+  "BodySpec_complete_proper_R_dependency_count": 922,
+  "root_nodes": [
+    "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+    "FV.E2E.StockMemoryOffsetEightStorePairedScan"
+  ],
+  "ready_R_targets": [],
+  "nodes_in_transitive_order": [
+    {
+      "target": "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+      "source_sha256": "71e1855d9488321e207cc71677666819e74795d2a666357a4fe304501627a485",
+      "normal_exit": 3,
+      "classification": "current leaf unbuilt",
+      "current_key": "23159d9c9bcb44c0",
+      "blocked_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec"
+      ],
+      "old_output_hashes": {
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySpec.olean": "bf3af726c47fac15998042f4c12c6670ee7799980a5be47f200a0aee9c009c6a",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySpec.ilean": "be095cdd00c17f3750da4f9cadb48d04432badbad029be78b7db5cf7129b8d86",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySpec.olean.hash": "77ebeeb9a5364833368bb3ade13a6de92704166bb3342548ef4064c536bc426c",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySpec.ilean.hash": "ebd5cdc430e43ec2ceb43d175a7adab4fe1cbc8deb3191bcc27e315e23c23aef",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySpec.trace": "47f5294f7ac98e902f72ab153181bc1ffd71e3b74a0483cc9257991658427833",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySpec.trace.nobuild": "2ee44625829efd7d2e95aafe1822723853b5546e59502994210c70578bb3d6fc",
+        ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBodySpec.setup.json": "fb796b5edac282484c44e395827d0accb6181780b52b2b008b127987f70258ea",
+        ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBodySpec.c": "cb11bbb47f1873541ec77d84c63549a03d098753e9dbd4c64b1eeeb8a01932da",
+        ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBodySpec.c.hash": "d04de9b2152029bdf12ab7df8e27d701fc0ff7b75576c6c3e926c4d65d03bfdf"
+      },
+      "historical_profile": {
+        "row": "FV.Backend.Proof.StockMemorySretCopyBodySpec\t296\t2.0",
+        "historical_peak_MiB": 296,
+        "historical_peak_bytes": 310378496,
+        "current_key_fit": "UNMEASURED; historical estimate only"
+      }
+    },
+    {
+      "target": "FV.E2E.StockMemoryOffsetEightStorePairedScan",
+      "source_sha256": "21b137ec5a37944d8c246a5616bb765e3fa1c5d9583694b77525473a54e01868",
+      "normal_exit": 3,
+      "classification": "current leaf unbuilt",
+      "current_key": "bec3cb9d07bc9ec7",
+      "blocked_by": [
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan"
+      ],
+      "old_output_hashes": {
+        ".lake/build/lib/lean/FV/E2E/StockMemoryOffsetEightStorePairedScan.olean": "a596dea2fc39f25a693315f9714dc6d4b81be83842f0b758df0558b5814a1c4e",
+        ".lake/build/lib/lean/FV/E2E/StockMemoryOffsetEightStorePairedScan.ilean": "f03ed6d564894853aeadd0d4ad7f89f985a760e05ebd0e93d3d3ab5b2e3d3809",
+        ".lake/build/lib/lean/FV/E2E/StockMemoryOffsetEightStorePairedScan.olean.hash": "ef518f217317976cddb09b2def52c58407481560ebcdccea6f95c6512d0743c7",
+        ".lake/build/lib/lean/FV/E2E/StockMemoryOffsetEightStorePairedScan.ilean.hash": "177d24be7aa50433aba2a472c3a731852acbbe0c140fd42486fbb4b1e94d6002",
+        ".lake/build/lib/lean/FV/E2E/StockMemoryOffsetEightStorePairedScan.trace": "eb6bee470b4603911f7c981ea370a64b7c90eff4b7aaab049ea123bee6ccec5a",
+        ".lake/build/lib/lean/FV/E2E/StockMemoryOffsetEightStorePairedScan.trace.nobuild": "c644ff3412b66643fdbc799e39cfe94b190c17d8ef4f447160f05d57c190345e",
+        ".lake/build/ir/FV/E2E/StockMemoryOffsetEightStorePairedScan.setup.json": "480d05511920ed6d1302ec3745f55b3dace6634a197e6d6029b0b7850b3b8453",
+        ".lake/build/ir/FV/E2E/StockMemoryOffsetEightStorePairedScan.c": "6c10aa3d3cdf13046e4747322cc62cb90ebbc10edaa6854ab9b4df8d37dbe604",
+        ".lake/build/ir/FV/E2E/StockMemoryOffsetEightStorePairedScan.c.hash": "83f210ecd7f8dd9830b662e5d902a97064fd3559ee0471751cf19aff7dbf733b"
+      },
+      "historical_profile": {
+        "row": "FV.E2E.StockMemoryOffsetEightStorePairedScan\t272\t2.0",
+        "historical_peak_MiB": 272,
+        "historical_peak_bytes": 285212672,
+        "current_key_fit": "UNMEASURED; historical estimate only"
+      }
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemorySretCopyBody",
+      "source_sha256": "cd1788d19b42af3e8bc8b97b9dd248714599f2d82db523aa1b664eb65b14d716",
+      "normal_exit": 3,
+      "classification": "conditional; bind key only after predecessors pass",
+      "current_key": null,
+      "blocked_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec"
+      ],
+      "old_output_hashes": {
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBody.olean": "0975263e4f396c07dc4e2cba459b8d763338d66124536beae43c87b2dff7862c",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBody.ilean": "4079187337e1645620a19c2904e400d13352cb4c9d464a71b477c0808cf8b502",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBody.olean.hash": "90d29af4b4cecb2b1c5f96cc253c2e120397dde5d6327cf680a17c55ca5e4d57",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBody.ilean.hash": "a6b72219e14396b526d7270effe133a782f553509c8428d8b866e002124b4aae",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBody.trace": "79d00ab724347c63f0f69eef3805b512640b481b60943c87d0e18901b807c2d8",
+        ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBody.setup.json": "10735e50d4ee558c1a56a39d1f4341c2c5033bf3e04d64a30a174d082fa2f786",
+        ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBody.c": "3efd96d8bab0702936278911d0226806e846bf3c4dc1ab024940fda97b394990",
+        ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBody.c.hash": "d6cbad9fe4b3c1a9f7498e8fb887e9a3ca5f17bcd358a95ee0538fd51616e05a"
+      },
+      "historical_profile": {
+        "row": "FV.Backend.Proof.StockMemorySretCopyBody\t272\t2.0",
+        "historical_peak_MiB": 272,
+        "historical_peak_bytes": 285212672,
+        "current_key_fit": "UNMEASURED; historical estimate only"
+      }
+    },
+    {
+      "target": "FV.E2E.StockMemorySretCopyPairedBody",
+      "source_sha256": "1f78690c55f4f6de2f014f820b95e86470ea667ab42088e1259c40e9f1ee110d",
+      "normal_exit": 3,
+      "classification": "conditional; bind key only after predecessors pass",
+      "current_key": null,
+      "blocked_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan"
+      ],
+      "old_output_hashes": {
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBody.olean": "a4c76d0611688246fd083d75686b9695038348db48bc29ee2841d1b6ef1cdeeb",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBody.ilean": "e68ffc0a09775013cc952bb412b198cda3917e3f6411ba300f70e108a7453db0",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBody.olean.hash": "dd8b232618c1924e25410698fbe4177d0430bbd2d2b8faa0ad96f4a1301bf568",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBody.ilean.hash": "bb7e1d05c7d24691c7858241995094e00fa195895f0c75c1faf0fb706b124e31",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBody.trace": "8627ad64cea9c0288c518864256a3c1e130ae60a2d62d9c941bed94095b00c11",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedBody.setup.json": "0cb99ba34fbca95f5354eddee8419e7b9e7ec3d8d2d16a5b33b7c4b92e7a8ad5",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedBody.c": "83330364afc6c82c83dc4d005e535e14d30ca8fe6da2a3b6c63622b481c1a8f8",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedBody.c.hash": "826b41ea07a64caf71f90e506403b405ff8a43d24b4b6931e923956cc57bca98"
+      },
+      "historical_profile": {
+        "row": "FV.E2E.StockMemorySretCopyPairedBody\t280\t2.0",
+        "historical_peak_MiB": 280,
+        "historical_peak_bytes": 293601280,
+        "current_key_fit": "UNMEASURED; historical estimate only"
+      }
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemorySretCopyJumpSpec",
+      "source_sha256": "d35442fb84fe1b6fcdb3cac6a59cbe548e4ae0d0c2d177d9ad4691f035c54d90",
+      "normal_exit": 3,
+      "classification": "conditional; bind key only after predecessors pass",
+      "current_key": null,
+      "blocked_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec"
+      ],
+      "old_output_hashes": {
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyJumpSpec.olean": "57f7fbadea1b642b84f4c2d12949e0b2880d043a8fa08be596a9f1e3fc7bbdc5",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyJumpSpec.ilean": "47326991bbb85978c918dfe87e77e2d67c1273d29701acbb7d54102e946d1d4f",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyJumpSpec.olean.hash": "82ff30d38a06b3b9cd1f543df31adb5122587911fc052e16ea41af42810eea79",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyJumpSpec.ilean.hash": "f79211d88ea88fbf600a425839b88169eb70af6e4bbb6062967daaa05114d69d",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyJumpSpec.trace": "c5e5a87712a9ab6b9f79dab126a780dbe3a1654aa69d92d2ada786b6d83468d0",
+        ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyJumpSpec.setup.json": "00a138e294f66c44ea9166a5068c6c575496f9f47a5fb96b98dea3a980705114",
+        ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyJumpSpec.c": "47bc767845cb842c2ad03c1c8cbc0af6aee153c6c3cabf6ab7c5ec6694ce9333",
+        ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyJumpSpec.c.hash": "314364166b56e15d83c667f519268764562a7f2ada51bb91bd3161e6dadc415c"
+      },
+      "historical_profile": {
+        "row": "FV.Backend.Proof.StockMemorySretCopyJumpSpec\t273\t2.0",
+        "historical_peak_MiB": 273,
+        "historical_peak_bytes": 286261248,
+        "current_key_fit": "UNMEASURED; historical estimate only"
+      }
+    },
+    {
+      "target": "FV.E2E.StockMemorySretCopyPairedBodySplit",
+      "source_sha256": "e99fea4113012fe0e31665763029b1bdedeb28ae90929b4054e0f04587e8ef77",
+      "normal_exit": 3,
+      "classification": "conditional; bind key only after predecessors pass",
+      "current_key": null,
+      "blocked_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan"
+      ],
+      "old_output_hashes": {
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBodySplit.olean": "ff20656b0981924b677045aa23aabaeeb57c71cda43ea758c09304fbd2c79565",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBodySplit.ilean": "22c00b6a0c3f5e640169463acd5718260ba640535604e4ad1e6d518738616920",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBodySplit.olean.hash": "ab2f8b10a560375f9a79216f4b22e938efd1cf090c6f91fbeb729eb8d563299b",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBodySplit.ilean.hash": "ba8642d3da47b4a9e0c964308f99044845b0bf136783280bb7aa867719706c79",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBodySplit.trace": "d340db32bbd435a5422cb54dd44d4a2066e7931d03dce04745b769b3aa840eff",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedBodySplit.setup.json": "d37490f2f43e4bfafd43582c974b2700da8a3b4b9e4b6b7f4b28855d03e436e3",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedBodySplit.c": "91d51724e9c1b7a00baf1d87518403c9e3af95898386eba3ad5a6e7cbf263da8",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedBodySplit.c.hash": "a725ae5914cde6f101550ebef6e6f00348f8b6745ed4fcd1a8d32aae913e1f38"
+      },
+      "historical_profile": {
+        "row": "FV.E2E.StockMemorySretCopyPairedBodySplit\t276\t2.0",
+        "historical_peak_MiB": 276,
+        "historical_peak_bytes": 289406976,
+        "current_key_fit": "UNMEASURED; historical estimate only"
+      }
+    },
+    {
+      "target": "FV.E2E.StockMemorySretCopyPairedFunction",
+      "source_sha256": "d64d6a3ec4ecd923286c37f5e383557bf0c3e6425fb86652f3b7b04f6eb4b835",
+      "normal_exit": 3,
+      "classification": "conditional; bind key only after predecessors pass",
+      "current_key": null,
+      "blocked_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan"
+      ],
+      "old_output_hashes": {
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedFunction.olean": "df21fe969f94baa1e576bfae39bf86509e983825d73620c5fbdc0a8661c3b62d",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedFunction.ilean": "a6cc143cfdf754532224992022fec242a0cc320cba39a3db8a486d29b3b8957f",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedFunction.olean.hash": "045815c72318f2ff4a6fdfc8cfd1c2af410cfc191d8d1b0ae38d2ed7d4f4e540",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedFunction.ilean.hash": "c8c65f1c3210133a8a39c3148eeceb7e34348084577b8477593a87c997a2ee92",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedFunction.trace": "3e40f694eed49225e281f44cfecdf796bc39faecdc1263ae9b48f4ce72fec6ad",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedFunction.setup.json": "81b6d4979d44b4e2f0202efdfc9857a5b92cfa9f4d7bdec299e3158fff8e7cc1",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedFunction.c": "247e894c855900a9666907f2750ff7515285cc0b4280376fd8b9a102984bf511",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedFunction.c.hash": "8f818bd0516a5cc6238f568a34c3db761db39643a85d236fb3d2a865f2a4d80f"
+      },
+      "historical_profile": {
+        "row": "FV.E2E.StockMemorySretCopyPairedFunction\t301\t2.0",
+        "historical_peak_MiB": 301,
+        "historical_peak_bytes": 315621376,
+        "current_key_fit": "UNMEASURED; historical estimate only"
+      }
+    },
+    {
+      "target": "FV.E2E.StockMemorySretCopyPairedCanonical",
+      "source_sha256": "5def6b42117a2fff45876bb976bc2516673accbefa1b66d14cfbcf17e411f948",
+      "normal_exit": 3,
+      "classification": "conditional; bind key only after predecessors pass",
+      "current_key": null,
+      "blocked_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan"
+      ],
+      "old_output_hashes": {
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedCanonical.olean": "5171202f52fb64c5362f17f3174ebe66cccb6fc0ab502de6938c4d287ae0bc62",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedCanonical.ilean": "81b10a5bc43850be5ca93ec1247670ced998c40974d4cb984a6c74a1f46dfacc",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedCanonical.olean.hash": "45a7cb8f56e3f05fdc36aef929830f630d669e8ec6364eda00c029c1d0e83783",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedCanonical.ilean.hash": "854fc4e8199f46e000ed672dabf10dddb154f5298f552f3b46df74e56c5ad5d0",
+        ".lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedCanonical.trace": "1f412cb84cb511e255cfb2d78724d9201b611f214dd93d03c3f81a691358c0b3",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedCanonical.setup.json": "7fc22afd83a36e8bc89b770129bc742092b436e2bab3adf015409b9ea3122bbd",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedCanonical.c": "8dd5e104159b5d84c7c5a444fcd0b9ebef56ec16247696a48206adaf383abf56",
+        ".lake/build/ir/FV/E2E/StockMemorySretCopyPairedCanonical.c.hash": "7a0ac83b690f3d147037636e58544027e47146aa16bb55df5d4935978ef1637a"
+      },
+      "historical_profile": {
+        "row": "FV.E2E.StockMemorySretCopyPairedCanonical\t264\t2.0",
+        "historical_peak_MiB": 264,
+        "historical_peak_bytes": 276824064,
+        "current_key_fit": "UNMEASURED; historical estimate only"
+      }
+    }
+  ],
+  "historical_profile_file": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/stock-current-main-full-gate-v6/conservative-peaks.tsv",
+    "sha256": "8d28a8ebd87b7516e7348675805db34262cd9e22016a5276717f5a92270741dc"
+  },
+  "historical_unit_proof": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining29-conditional-cone-proposal-v1/historical-unit-proof-v1.json",
+    "sha256": "23ca722964ee5bf755efc13e13fae66e36bbbfe380d94964f6bb97833856ea05",
+    "producer_commit": "8a70f34",
+    "producer_path": "scripts/lake-serial-build.py",
+    "unit": "MiB"
+  },
+  "active_R_writers": [],
+  "allocation": "ordinary source2GiB; one sequential compiler; explicit-j1; restoration disabled",
+  "requested_scope": "two current roots plus only required conditional descendants; skip every actual current normal target",
+  "before_each_kernel": [
+    "exact source/config/protected hashes and same-user writer exclusion",
+    "complete actual proper R dependencies",
+    "query current native key after predecessor normals",
+    "actual target normal; skip if proper",
+    "preserve all old output files before any fresh leaf"
+  ],
+  "stop_conditions": [
+    "unsupported dependency or origin",
+    "first compiler diagnostic",
+    "measured cap failure; no unchanged retry"
+  ],
+  "P_and_G": "read-only; no P repair or G reuse; no new setup exception",
+  "final_checks": [
+    "every attempted target actual R normal",
+    "complete affected22",
+    "complete baseline1357",
+    "retained five-root real audit2952c704",
+    "later separate twelve-memory-export focused kernels and actual real audit"
+  ],
+  "protected": "all reviewed W outputs, fresh Legacy391, four original fresh roots, both early donors, eight successful descendant recoveries",
+  "new_caller_premises": []
+}

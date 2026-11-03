@@ -1,0 +1,277 @@
+{
+  "status": "PROPOSED_BOUNDED_DONOR_ONLY_RECOVERY;NOT_RUN",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "classification_receipt_sha256": "9e1f2881543e7735104669e323f12d5c86c4c4cb9d3ce6ccb5fada018fea5866",
+  "allocation": "ordinary2GiB; sequential checks/copies; no compiler",
+  "topological_nodes": [
+    {
+      "target": "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+      "source_sha256": "79b60a3da845090256bb249dcc4d2c6de39c228eb926d71f19e94dfb1af64066",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage",
+        "FV.Backend.Proof.StockDemandedScan",
+        "FV.Backend.Proof.StockDivReturnDemand"
+      ],
+      "failed_transitive_ancestors": [],
+      "current_expected_key": "5c1044857cd33608",
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": 0,
+      "transitive_predecessors_in_eleven": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+      "source_sha256": "ec6089c7544432f570541871cb793e5cda29ed0f525233396463b2eb48a77422",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreExec",
+        "FV.Backend.Proof.StockGuardedRecordValues"
+      ],
+      "failed_transitive_ancestors": [],
+      "current_expected_key": "f2850c98605d604c",
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": 0,
+      "transitive_predecessors_in_eleven": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines",
+      "source_sha256": "04d715efc38482d14623d022e092dde92cbfb21d542ac0ecc879efafef19c783",
+      "direct_imports": [
+        "FV.Backend.Proof.StockSelectScanRefines",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ],
+      "current_expected_key": null,
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": null,
+      "transitive_predecessors_in_eleven": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+      "source_sha256": "71e1855d9488321e207cc71677666819e74795d2a666357a4fe304501627a485",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryComputedStoreRecordSpec",
+        "FV.Backend.Proof.StockMemoryStoreDemandTransport",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockGuardedOmission",
+        "FV.Backend.Proof.StockMemoryIntegerSelected"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention"
+      ],
+      "current_expected_key": null,
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": null,
+      "transitive_predecessors_in_eleven": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention"
+      ]
+    },
+    {
+      "target": "FV.E2E.StockMemoryOffsetEightStorePairedScan",
+      "source_sha256": "21b137ec5a37944d8c246a5616bb765e3fa1c5d9583694b77525473a54e01868",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+        "FV.E2E.StockMemoryPairedScan"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ],
+      "current_expected_key": null,
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": null,
+      "transitive_predecessors_in_eleven": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemorySretCopyBody",
+      "source_sha256": "cd1788d19b42af3e8bc8b97b9dd248714599f2d82db523aa1b664eb65b14d716",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.Backend.Proof.StockMemoryOffsetEightScanRefines",
+        "FV.Backend.Proof.StockMemoryIntegerScanRefines",
+        "FV.Backend.Proof.StockMemoryStoreScanRefines",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ],
+      "current_expected_key": null,
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": null,
+      "transitive_predecessors_in_eleven": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec"
+      ]
+    },
+    {
+      "target": "FV.E2E.StockMemorySretCopyPairedBody",
+      "source_sha256": "1f78690c55f4f6de2f014f820b95e86470ea667ab42088e1259c40e9f1ee110d",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.E2E.StockMemoryOffsetEightPairedScan",
+        "FV.E2E.StockMemoryIntegerPairedScan",
+        "FV.E2E.StockMemoryOmittedPairedScan",
+        "FV.E2E.StockMemoryPairedScan",
+        "FV.E2E.StockMemoryStorePairedScan",
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ],
+      "current_expected_key": null,
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": null,
+      "transitive_predecessors_in_eleven": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan"
+      ]
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemorySretCopyJumpSpec",
+      "source_sha256": "d35442fb84fe1b6fcdb3cac6a59cbe548e4ae0d0c2d177d9ad4691f035c54d90",
+      "direct_imports": [
+        "FV.Clif.MemTrap",
+        "FV.Backend.Proof.StockMemoryOrdinaryJumpSpec",
+        "FV.Backend.Proof.StockMemorySretCopyBody"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ],
+      "current_expected_key": null,
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": null,
+      "transitive_predecessors_in_eleven": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+        "FV.Backend.Proof.StockMemorySretCopyBody",
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec"
+      ]
+    },
+    {
+      "target": "FV.E2E.StockMemorySretCopyPairedBodySplit",
+      "source_sha256": "e99fea4113012fe0e31665763029b1bdedeb28ae90929b4054e0f04587e8ef77",
+      "direct_imports": [
+        "FV.E2E.StockMemorySretCopyPairedBody",
+        "FV.Backend.Proof.StockBodySplitUnique"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ],
+      "current_expected_key": null,
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": null,
+      "transitive_predecessors_in_eleven": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan",
+        "FV.E2E.StockMemorySretCopyPairedBody"
+      ]
+    },
+    {
+      "target": "FV.E2E.StockMemorySretCopyPairedFunction",
+      "source_sha256": "d64d6a3ec4ecd923286c37f5e383557bf0c3e6425fb86652f3b7b04f6eb4b835",
+      "direct_imports": [
+        "FV.E2E.StockMemoryOrdinaryPairedJump",
+        "FV.E2E.StockMemorySretCopyPairedBodySplit",
+        "FV.E2E.StockMemoryNopNonentryPairedReturn",
+        "FV.E2E.StockMemoryPairedNopJump",
+        "FV.E2E.StockMemoryOriginalEntryPaired",
+        "FV.Backend.Proof.StockLinearCfgShape",
+        "FV.Backend.Proof.StockLinearCfgDemand",
+        "FV.Backend.Proof.StockJumpEntryPrelude",
+        "FV.Backend.Proof.StockMemoryNopJumpSpec",
+        "FV.Backend.Proof.StockMemorySretCopyJumpSpec"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ],
+      "current_expected_key": null,
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": null,
+      "transitive_predecessors_in_eleven": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+        "FV.Backend.Proof.StockMemorySretCopyBody",
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.Backend.Proof.StockMemorySretCopyJumpSpec",
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan",
+        "FV.E2E.StockMemorySretCopyPairedBody",
+        "FV.E2E.StockMemorySretCopyPairedBodySplit"
+      ]
+    },
+    {
+      "target": "FV.E2E.StockMemorySretCopyPairedCanonical",
+      "source_sha256": "5def6b42117a2fff45876bb976bc2516673accbefa1b66d14cfbcf17e411f948",
+      "direct_imports": [
+        "FV.E2E.StockMemorySretCopyPairedFunction",
+        "FV.Backend.Proof.StockLinearCfgCompatibility"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ],
+      "current_expected_key": null,
+      "conditional_key_policy": "query only after actual predecessor normality",
+      "known_P_full_normal": null,
+      "transitive_predecessors_in_eleven": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+        "FV.Backend.Proof.StockMemorySretCopyBody",
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.Backend.Proof.StockMemorySretCopyJumpSpec",
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan",
+        "FV.E2E.StockMemorySretCopyPairedBody",
+        "FV.E2E.StockMemorySretCopyPairedBodySplit",
+        "FV.E2E.StockMemorySretCopyPairedFunction"
+      ]
+    }
+  ],
+  "counts": {
+    "current_roots": 2,
+    "conditional_descendants": 9,
+    "new_kernels": 0
+  },
+  "checks_before_each_copy": [
+    "exact approved current8f source/configuration hashes",
+    "actual complete R dependencies normal",
+    "actual current key query after predecessor normality",
+    "matching P native key and full-input nonsynthetic trace",
+    "actual full P normal with complete source/dependency keys and payload hashes",
+    "same-user affected writer exclusion before and after checks",
+    "only the two existing named setup exceptions8b1a7b23; retain R setup files"
+  ],
+  "copy_scope": "trace, olean, ilean, C and three hash sidecars; preserve old files before replacement",
+  "stop_conditions": [
+    "missing or mismatched donor",
+    "unsupported provenance",
+    "new dependency payload difference",
+    "active exact writer",
+    "failed normal check"
+  ],
+  "protected": "all reviewed W outputs, four fresh roots, both early donors and five descendant recoveries",
+  "final_checks": [
+    "every recovered node actual R normal",
+    "complete affected22",
+    "complete baseline1357"
+  ],
+  "no_G_reuse": true,
+  "no_kernel_authorized": true,
+  "graph_order_policy": "full transitive import reachability"
+}

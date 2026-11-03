@@ -1,0 +1,68 @@
+{
+  "scope": "full source match, actual native keys and group normals; no reuse or acceptance yet",
+  "records": [
+    {
+      "owner": "P",
+      "targets": [
+        "FV.Backend.Proof.DriverCheckTy",
+        "FV.Backend.Proof.InstScopeTF",
+        "FV.Backend.Proof.IselExclT",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreExec",
+        "FV.E2E.LowerDirect",
+        "FV.Backend.Proof.KillPrep",
+        "FV.Backend.Proof.SpillClsExt",
+        "FV.Backend.Proof.KillCtor",
+        "FV.Backend.Proof.TermSetData",
+        "FV.Backend.Proof.KillTab",
+        "FV.Backend.Proof.KillAssemble",
+        "FV.Backend.Proof.SpillEdges",
+        "FV.Opt.Proof.LegalMem",
+        "FV.Opt.Proof.LegalExt",
+        "FV.Opt.Proof.LegalRust",
+        "FV.Opt.Proof.LegalBase",
+        "FV.Opt.Proof.LegalPat",
+        "FV.Opt.Proof.LegalArith",
+        "FV.Opt.Proof.LegalShift",
+        "FV.Opt.Proof.LegalShift16",
+        "FV.Opt.Proof.LegalShift32",
+        "FV.Opt.Proof.LegalShift64",
+        "FV.Opt.Proof.LegalShift8",
+        "FV.Opt.Proof.LegalPlan",
+        "FV.Opt.Proof.LegalSem",
+        "FV.Opt.Proof.LegalStep",
+        "FV.Opt.Proof.LegalSim",
+        "FV.Backend.Proof.IselCovTFam",
+        "FV.Backend.Proof.IselPrgCtorSound",
+        "FV.Backend.Proof.IselPrgHand",
+        "FV.Backend.Proof.IselPrgTryLast",
+        "FV.Backend.Proof.DefGenOfV",
+        "FV.Backend.Proof.IselPrgRootTF",
+        "FV.Backend.Proof.IselPrgTabF64",
+        "FV.Backend.Proof.IselPrgTabT",
+        "FV.Opt.Proof.LegalComplete",
+        "FV.Opt.Proof.LegalDirect",
+        "FV.Opt.Legalize128Pre",
+        "FV.Opt.Proof.LegalPre",
+        "FV.Front.Rename",
+        "FV.Front.Raw",
+        "FV.Front.Perm",
+        "FV.Front.RenameStep",
+        "FV.Front.RenameRun",
+        "FV.E2E.RegLevelUTry",
+        "FV.Opt.LegalExn",
+        "FVTest.Link.LdArgs"
+      ],
+      "exit": 0,
+      "log_sha256": "537c90796cc89569b8018c15a53174456c0aa9dcc83be28dd84594688d026814"
+    },
+    {
+      "owner": "R",
+      "targets": [
+        "FV.Backend.Proof.StockMemorySretCopyClass"
+      ],
+      "exit": 0,
+      "log_sha256": "0bb53cdb6e19ec4dfe00b54bd984efd1e95c7bef6db6d52a80165f485e1ecedc"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "status": "STOPPED_ON_UNAPPROVED_SETUP_DIFFERENCE;NO_COMPARISON_EXCEPTION_ADDED",
+  "passed_copies": {
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention": {
+      "native_key": "5c1044857cd33608",
+      "trace_sha256": "3c6346b645fb3f222de8f3f44ebd565a98de945cc8a8f944d4cc871e70809b09",
+      "artifacts": {
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.trace": "3c6346b645fb3f222de8f3f44ebd565a98de945cc8a8f944d4cc871e70809b09",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.olean": "15b2781b4dfcbd44834020ce1da8965cbaec84c1a8c3bc36b2eae7b7d639513c",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.olean.hash": "ee5efa3cf8cafa834a8831cc35875fff3a0480b50ae74f488b893c87acc3cffd",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.ilean": "b9e81379e9d120a2b6146f1eef6bed08b78501c8955851c75a1b31db51f2dd7a",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.ilean.hash": "6b7d9ce1173fec526cf1ba7ea0c8a2489377fb3622c8316d08addcd85ba13d16",
+        ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.c": "ffb6364552bd5e0dd0963738e765fb781a80614f3ccf88255dd4dd8624e176f6",
+        ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.c.hash": "9e93a651bc42ab265990cc5c7b4a215fedd21ba5b16d9bae513a7430c690b894"
+      },
+      "all_R_setup_files_retained": true,
+      "actual_producer": "full-input nonsynthetic P native trace"
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues": {
+      "native_key": "f2850c98605d604c",
+      "trace_sha256": "d09fcd8433e2346b0b41605aa421c3c65a496a5ee81c536dda3b18138ad27eef",
+      "artifacts": {
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreSourceValues.trace": "d09fcd8433e2346b0b41605aa421c3c65a496a5ee81c536dda3b18138ad27eef",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreSourceValues.olean": "dc8b6cca225610597b8bd30ab7e194afe4af71b3c551fb173800ea5e964d80f2",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreSourceValues.olean.hash": "1a2de423bf2526d679f71ec3ea590fd2a78594c947356019f034f30284a6b598",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreSourceValues.ilean": "a19091b60ae90f110b5d0f666226f4449e740de31d82be99f84baf995d857521",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreSourceValues.ilean.hash": "fcf3b2059bcece8f54aff70484e20d6430ad595464cdf92bb819d27108a4a2db",
+        ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightStoreSourceValues.c": "c81f3956c4e22cc9736f90561eb0ffa9292fb3ea28c137e4aa2d3908cd1e1be5",
+        ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightStoreSourceValues.c.hash": "a51e0d6eea778548d53d1e0c02afb1ece988a37073b5009ce2324c32362e7530"
+      },
+      "all_R_setup_files_retained": true,
+      "actual_producer": "full-input nonsynthetic P native trace"
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines": {
+      "native_key": "b581fa30cfa817ad",
+      "trace_sha256": "e04d713a8e9d841250cf1c15cfedf89a7cba85d801ab77363e29de9e6bcd2c1c",
+      "artifacts": {
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreScanRefines.trace": "e04d713a8e9d841250cf1c15cfedf89a7cba85d801ab77363e29de9e6bcd2c1c",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreScanRefines.olean": "5479f9dd6ae23116e24bebca3e00bcb0a4c0f89ab416562d3dbf28e9828125e0",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreScanRefines.olean.hash": "c12d1a9f2c4d4d20929733b0cbf312c60b4a5cdf52ae80ffedd81fc85f052ea9",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreScanRefines.ilean": "3a1bdb5958b374903fd56abed690900084d2e885858c70f3958854e2c49371fa",
+        ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreScanRefines.ilean.hash": "e013a31d1f7fb13e68edc8f693208a64dee41c24df8a9077ac0361661666e640",
+        ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightStoreScanRefines.c": "2a3622d4a973e5dc4cff4b679694770af544eede97cc16b2fa1a4350ce5178f4",
+        ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightStoreScanRefines.c.hash": "33b6bf840fca0e952f8d9b9db264491fea5f2129de5cb6e1c04a1d0fbd135bd1"
+      },
+      "all_R_setup_files_retained": true,
+      "actual_producer": "full-input nonsynthetic P native trace"
+    }
+  },
+  "failed_index": 3,
+  "failed_target": "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+  "failed_dependency_input": ".lake/build/ir/FV/Backend/Proof/StockMemoryComputedStoreRecordSpec.setup.json",
+  "R_sha256": "8f22954b24f3d131cbaeaadf2c1a0876587aabf61839529fb93d2c01bdf079bc",
+  "P_sha256": "27d08e4c8fc012cd547aec05bdea4ad3262a3d52b3cf2a309018e2d2818cfbdd",
+  "JSON_keys_R": [
+    "plugins",
+    "package",
+    "options",
+    "name",
+    "isModule",
+    "importArts",
+    "dynlibs"
+  ],
+  "JSON_keys_P": [
+    "plugins",
+    "package",
+    "options",
+    "name",
+    "isModule",
+    "importArts",
+    "dynlibs"
+  ],
+  "exact_prefix_substitution_equal": true,
+  "progress_sha256": "eb3f2df5b5e316ef5d43a6a8457528b5827f590f3512bf1d514ced414940814a",
+  "new_kernels": [],
+  "affected22": "NOT_RUN",
+  "baseline1357": "NOT_RUN",
+  "existing_setup_exception": "8b1a7b23 retained; new input not included"
+}

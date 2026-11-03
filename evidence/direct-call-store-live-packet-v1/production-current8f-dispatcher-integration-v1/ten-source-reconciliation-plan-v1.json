@@ -1,0 +1,90 @@
+{
+  "status": "SOURCE_ONLY_CURRENT8F_BASELINE_RECONCILIATION_PLAN;NOT_APPLIED",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "dispatcher_manifest_sha256": "4d0135138c6e52e24d0b028e147f4195a3d9659f3dfc0703a78e508672428c34",
+  "records": {
+    "FV.E2E.StockResultCallNI": {
+      "source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/prospective-baseline-source/FV/E2E/StockResultCallNI.lean",
+      "exact8f_sha256": "10f8a4427ec678c07272617817b414959dc2e4e2596e03940987fbcbf12ec61a",
+      "R_before_sha256": null,
+      "operation_if_approved": "restore missing published source",
+      "applied": false
+    },
+    "FV.Backend.SemanticNICheck": {
+      "source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/prospective-baseline-source/FV/Backend/SemanticNICheck.lean",
+      "exact8f_sha256": "ea7714a42da26019326b0c93fd827e9c2c143b2b3ffc5487335cdd6087ce32a4",
+      "R_before_sha256": "9f7f76174d07598be01b2102759e68c0c409eff200f208df3b25930fbdba4ae7",
+      "operation_if_approved": "replace only preserved stale validation source",
+      "applied": false
+    },
+    "FV.E2E.CompiledSemanticNI": {
+      "source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/prospective-baseline-source/FV/E2E/CompiledSemanticNI.lean",
+      "exact8f_sha256": "fdbd172e5a4f0cbd795fc23ad0d34903260bfd3d682b19dbc92655e9a4611cf1",
+      "R_before_sha256": "e0776f2b3189d634c82f463955912537d70d725ed528178e20b2666f4d5c818b",
+      "operation_if_approved": "replace only preserved stale validation source",
+      "applied": false
+    },
+    "FV.E2E.StockLiveCallNI": {
+      "source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/prospective-baseline-source/FV/E2E/StockLiveCallNI.lean",
+      "exact8f_sha256": "c54539056f42db75df106b1fc9d72df0868bb852fa3fcdc75f49b1736e46887f",
+      "R_before_sha256": null,
+      "operation_if_approved": "restore missing published source",
+      "applied": false
+    },
+    "FV.E2E.StockLiveCallRun": {
+      "source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/prospective-baseline-source/FV/E2E/StockLiveCallRun.lean",
+      "exact8f_sha256": "bb2e4152958351ab398a974a303343c8ad0a41d5bc92d247e3f4b3a1ff975173",
+      "R_before_sha256": null,
+      "operation_if_approved": "restore missing published source",
+      "applied": false
+    },
+    "FV.E2E.StockLiveCallTail": {
+      "source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/prospective-baseline-source/FV/E2E/StockLiveCallTail.lean",
+      "exact8f_sha256": "9cee0610702e71167dbbb7beb2be93f5ce8edb559711d1c631526cea41f18284",
+      "R_before_sha256": null,
+      "operation_if_approved": "restore missing published source",
+      "applied": false
+    },
+    "FV.E2E.StockLiveCallReady": {
+      "source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/prospective-baseline-source/FV/E2E/StockLiveCallReady.lean",
+      "exact8f_sha256": "22e261d70c2926614bce89caa19876541c3b1f5e30e78378931238ddd2ff6cd1",
+      "R_before_sha256": null,
+      "operation_if_approved": "restore missing published source",
+      "applied": false
+    },
+    "FV.E2E.StockLiveCallSourceResult": {
+      "source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/prospective-baseline-source/FV/E2E/StockLiveCallSourceResult.lean",
+      "exact8f_sha256": "498b41219ed5fe852fff2bca822c7566151e073d1df118472c654e47ee1a8708",
+      "R_before_sha256": null,
+      "operation_if_approved": "restore missing published source",
+      "applied": false
+    },
+    "FV.E2E.StockLiveCallDomain": {
+      "source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/prospective-baseline-source/FV/E2E/StockLiveCallDomain.lean",
+      "exact8f_sha256": "0d527319b6febac49f0c52e5cb3ba0fe677de4416ef25b26819eff1c019b0723",
+      "R_before_sha256": null,
+      "operation_if_approved": "restore missing published source",
+      "applied": false
+    },
+    "FV.E2E.StockLiveCallFunction": {
+      "source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/prospective-baseline-source/FV/E2E/StockLiveCallFunction.lean",
+      "exact8f_sha256": "9d0c273814e308e172075a35c233569ad486564e4b82c7c2243a95283b0574bf",
+      "R_before_sha256": null,
+      "operation_if_approved": "restore missing published source",
+      "applied": false
+    }
+  },
+  "R_changes": [],
+  "G_changes": [],
+  "tracked_changes": [],
+  "follow_up": [
+    "preserve all affected R native traces/payloads before rebinding",
+    "check complete baseline source/config/key/origin closure once",
+    "reuse only exact coherent completed outputs",
+    "separate required owned kernels from broad-owned providers",
+    "retain all old23 and prior182 AX/header comparisons",
+    "retain original direct consumer/runtime and326/1095/93 gates"
+  ],
+  "constructor_candidates": "unchanged reviewed bytes; all four published bases equal2c and8f",
+  "CLI_activation": "separate source-only projection; not activated"
+}
