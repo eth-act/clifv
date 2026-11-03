@@ -1,0 +1,20 @@
+{
+  "status": "EXACT_ABSENT_MAIN_SOURCE_RESTORATION_ONLY;NO_ARTIFACT_READINESS",
+  "main": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "baseline_count": 209,
+  "restored": {
+    "FV.Backend.Lowering.StockGeneralArgsLoopCfg7": {
+      "source_sha256": "06a77dd533937e57581c9ad8fae2ad2437620d8472a5a6309f7024fdcfe2020b",
+      "origin": "2c6008540ece15aa8e2ae2813322247f0d67e48b:FV/Backend/Lowering/StockGeneralArgsLoopCfg7.lean",
+      "G_exact": true
+    },
+    "FV.Backend.Lowering.StockGeneralLoopCfg7": {
+      "source_sha256": "8bfaef72b3eea1d36a84f3048d30eb03a1d7289f76507a5860769a4b52a71d71",
+      "origin": "2c6008540ece15aa8e2ae2813322247f0d67e48b:FV/Backend/Lowering/StockGeneralLoopCfg7.lean",
+      "G_exact": true
+    }
+  },
+  "existing_drift": [],
+  "no_existing_file_overwrite": true,
+  "normal_key_gate": "REQUIRED before donor reuse or kernels"
+}

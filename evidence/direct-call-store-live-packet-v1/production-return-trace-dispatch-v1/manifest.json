@@ -1,0 +1,119 @@
+{
+  "status": "COMPLETE_BRANCH_ENUMERATION;W_DISPATCH_NOT_COMPLETE",
+  "constructor_source_sha256": "a2057bb8d98d51eab9ec2f314a2a8b6d5bdec3e74b87a315e523c5e1be039f2f",
+  "NI_source_sha256": "fdbd172e5a4f0cbd795fc23ad0d34903260bfd3d682b19dbc92655e9a4611cf1",
+  "outer_branches": {
+    "compatible": {
+      "ordinary_provider": "backend_correct_world_niX_semantic",
+      "return_convention": "ordinary legacy register map",
+      "nested_cases": {
+        "arithmetic": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "mixed": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "logical": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "scalar": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "scalarDiv": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "cfg": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "memory": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "memoryCfg": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "memoryUnsigned": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "memoryExtending": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "memoryStore": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "memoryStoreCfg": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "memoryLoadStore": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        },
+        "memoryCapturedCopy": {
+          "W_status": "missing full RL.WritesAt prefix from current generic NI result",
+          "ordinary_NI_preserved": true
+        }
+      },
+      "production_cases": {
+        "legacy": {
+          "provider": "worldReturnTraceProvider_pipeline",
+          "artifact": "CompiledEither; exact raw/cleanup legacy variants"
+        },
+        "stock": {
+          "artifact": "CompiledValidated",
+          "W_status": "inspect conversion/reuse before claiming missing; existing NI export uses actGoodX"
+        },
+        "stockCleanup": {
+          "artifact": "CompiledCleanupValidated",
+          "W_status": "inspect conversion/reuse before claiming missing; existing NI export uses actGoodX"
+        }
+      }
+    },
+    "memorySretCopy": {
+      "ordinary_provider": "backend_correct_world_niX_stock_sret_copy_memory",
+      "return_convention": "ReturnABI f",
+      "W_status": "No full W provider export found. Existing ordinary/paired NI theorem exports actGoodX, not actGoodXW.",
+      "needed": "Derive complete RL.WritesAt prefix internally from existing class and actual checked pipeline."
+    },
+    "voidCall": {
+      "ordinary_provider": "backend_correct_world_niX_stock_void_call",
+      "return_convention": "ReturnABI f",
+      "W_status": "No full W provider export found. Existing ordinary/paired NI theorem exports actGoodX, not actGoodXW.",
+      "needed": "Derive complete RL.WritesAt prefix internally from existing class and actual checked pipeline."
+    },
+    "resultCall": {
+      "ordinary_provider": "backend_correct_world_niX_stock_result_call",
+      "return_convention": "ReturnABI f",
+      "W_status": "No full W provider export found. Existing ordinary/paired NI theorem exports actGoodX, not actGoodXW.",
+      "needed": "Derive complete RL.WritesAt prefix internally from existing class and actual checked pipeline."
+    },
+    "liveCall": {
+      "ordinary_provider": "backend_correct_world_niX_stock_live_call",
+      "return_convention": "ReturnABI f",
+      "W_status": "No full W provider export found. Existing ordinary/paired NI theorem exports actGoodX, not actGoodXW.",
+      "needed": "Derive complete RL.WritesAt prefix internally from existing class and actual checked pipeline."
+    },
+    "callStore": {
+      "provider": "worldReturnTraceProvider_callStore",
+      "scope": "historical passed full ordinary and paired W provider; current gate still required",
+      "return_convention": "ReturnABI f"
+    }
+  },
+  "source_files": {
+    "WorldReturnTraceProvider": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/canonical-linked-world-w-v3/source/FV/E2E/WorldReturnTraceProvider.lean",
+    "legacy_constructor": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/canonical-linked-world-w-v3/source/FV/E2E/WorldReturnTraceLegacy.lean",
+    "generic_machine_W_reuse": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/canonical-linked-world-w-v3/source/FV/E2E/StockMemoryMachineReturnValueW.lean"
+  },
+  "exact_gap": "A complete dispatcher must construct RL.WritesAt for every accepted ordinary and paired return prefix. The preserved NI result gives actGoodX. Only actGoodXW.toX exists; its converse is not supplied.",
+  "permitted_next_step": "Reuse the generic machine W consumer on the existing virtual return and paired source compositions. Preserve existing theorem variants. Do not add a provider parameter, lowerCheckW guard, legacy-output guard, or rejection of accepted classes."
+}

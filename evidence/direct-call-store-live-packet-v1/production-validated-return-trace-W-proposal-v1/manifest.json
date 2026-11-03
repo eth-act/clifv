@@ -1,0 +1,46 @@
+{
+  "status": "SOURCE_ONLY;NEW_FILE_PROPOSAL;NOT_KERNEL_VERIFIED",
+  "main_source_baseline": "2c6008540ece15aa8e2ae2813322247f0d67e48b",
+  "old_source_records": {
+    "FV/E2E/ValidatedNoninterference.lean": {
+      "source_sha256": "f77b39273774e808c6f53dd387870a674a2729b366a03079cfa39d57eab4f0f0",
+      "old_theorem": "backend_correct_world_niX_validated",
+      "new_theorem": "backend_correct_world_niX_validatedW",
+      "old_inputs_byte_exact": true,
+      "machine_export": "regLevelCorrect_worldXW"
+    },
+    "FV/E2E/ValidatedCleanup.lean": {
+      "source_sha256": "06ea4acf7f9c8bdd2e639c456e3903c2d3d788ea738462e649df6e2a13a75114",
+      "old_theorem": "backend_correct_world_niX_cleanup_validated",
+      "new_theorem": "backend_correct_world_niX_cleanup_validatedW",
+      "old_inputs_byte_exact": true,
+      "machine_export": "regLevelCorrect_worldX_valueW"
+    }
+  },
+  "source_sha256": "48c38f6de0ee7920e7dbae2ea24adca6356af809802e1747048144376898b24b",
+  "shared_modified_paths": [],
+  "moved_shared_statements": [],
+  "imports": [
+    "FV.E2E.ValidatedNoninterference",
+    "FV.E2E.ValidatedCleanup",
+    "FV.E2E.RegLevelCorrectXW",
+    "FV.E2E.DeadCleanupRegLevelW",
+    "FV.E2E.WorldReturnTraceProvider"
+  ],
+  "existing_virtual_exports": [
+    "iselSim_relW_validated",
+    "vcode_ni_validated",
+    "iselSim_relW_cleanup_validated",
+    "vcode_ni_value_validated"
+  ],
+  "conversion_inspection": "Only legacy-to-validated embedding exists. No inverse conversion to CompiledEither is assumed. These new W exports consume the actual validated contracts directly.",
+  "machine_reuse": "machine_return_valueW needs valueSem. Raw validated exports csem. Reuse its existing underlying csem/value W kernels with the unchanged virtual source and paired proofs.",
+  "old_public_contracts": "No old source or theorem changes. All old headers and AX sets remain required comparisons.",
+  "open": [
+    "Focused proper current dependency gate",
+    "New kernels and real auditor",
+    "Complete dispatcher over the 14 Stock NI branches and four other ABI branches",
+    "All production and executable fault gates"
+  ],
+  "no_R_access": true
+}

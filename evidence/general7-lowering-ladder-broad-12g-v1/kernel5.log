@@ -1,0 +1,416 @@
+✔ [0/173] Ran job computation
+✔ [1/173] Ran fv:extraDep
+✔ [2/173] Replayed FV.Isle.Syntax
+✔ [3/173] Replayed FV.Isle.Interp
+✔ [4/173] Replayed FV.Clif.Syntax
+✔ [5/173] Replayed FV.Clif.Sem
+✔ [6/173] Replayed FV.Clif.Mem
+✔ [7/173] Replayed FV.Float.Basic
+✔ [8/173] Replayed FV.Float.Round
+✔ [9/173] Replayed FV.Float.Arith
+✔ [10/173] Replayed FV.Float.Convert
+✔ [11/173] Replayed FV.Float
+✔ [12/173] Replayed FV.Clif.FSem
+⚠ [13/173] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+✔ [14/173] Replayed FV.Clif.FloatLit
+✔ [15/173] Replayed FV.Clif.Print
+⚠ [16/173] Replayed FV.Clif.Parse
+warning: FV/Clif/Parse.lean:663:8: Variable name `t` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _t
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+✔ [17/173] Replayed FV.Clif.Rust
+✔ [18/173] Replayed FV.Clif
+✔ [19/173] Replayed FV.Isle.Generated.Ids
+✔ [20/173] Replayed FV.Isle.Generated.Types00
+✔ [21/173] Replayed FV.Isle.Generated.TypeArray
+✔ [22/173] Replayed FV.Isle.Generated.Terms00
+✔ [23/173] Replayed FV.Isle.Generated.Terms01
+✔ [24/173] Replayed FV.Isle.Generated.Terms02
+✔ [25/173] Replayed FV.Isle.Generated.TermTable
+✔ [26/173] Replayed FV.Isle.Generated.Rules00
+✔ [27/173] Replayed FV.Isle.Generated.Rules01
+✔ [28/173] Replayed FV.Isle.Generated.Rules02
+✔ [29/173] Replayed FV.Isle.Generated.Rules03
+✔ [30/173] Replayed FV.Isle.Generated.RuleArray
+✔ [31/173] Replayed FV.Isle.Generated.RuleLists00
+✔ [32/173] Replayed FV.Isle.Generated.RuleTable
+✔ [33/173] Replayed FV.Isle.Generated.Specs00
+✔ [34/173] Replayed FV.Isle.Generated.Specs01
+✔ [35/173] Replayed FV.Isle.Generated.Specs02
+✔ [36/173] Replayed FV.Isle.Generated.Specs03
+✔ [37/173] Replayed FV.Isle.Generated.Specs04
+✔ [38/173] Replayed FV.Isle.Generated.Specs05
+✔ [39/173] Replayed FV.Isle.Generated.Specs06
+✔ [40/173] Replayed FV.Isle.Generated.Program
+✔ [41/173] Replayed FV.Backend.MInst
+✔ [42/173] Replayed FV.Backend.Isel
+✔ [43/173] Replayed FV.Backend.RegallocOps
+✔ [44/173] Replayed FV.Backend.Lowering.StockAlloc
+✔ [45/173] Replayed FV.Backend.Lowering.Stock
+✔ [46/173] Replayed FV.Backend.Lowering.StockD0
+✔ [47/173] Replayed FV.Backend.Lowering.StockPrologue
+✔ [48/173] Replayed FV.Backend.Lowering.StockProduction
+✔ [49/173] Replayed FV.Backend.Lowering.StockPrologueAll
+✔ [50/173] Replayed FV.Backend.Lowering.StockScalarAdd
+✔ [51/173] Replayed FV.Backend.Lowering.StockScalarProduction
+✔ [52/173] Replayed FV.Backend.DeadCleanup
+✔ [53/173] Replayed FV.Backend.Lowering.StockArithmetic
+✔ [54/173] Replayed FV.Backend.Lowering.StockMixed
+✔ [55/173] Replayed FV.Backend.Lowering.StockLogical
+✔ [56/173] Replayed FV.Backend.Lowering.StockScalar
+✔ [57/173] Replayed FV.Compile.Subset
+✔ [58/173] Replayed FV.Backend.Proof.DriverCheck
+✔ [59/173] Replayed FV.Backend.Proof.IselGeneric
+✔ [60/173] Replayed FV.Isle.Generated.Closure
+✔ [61/173] Replayed FV.Backend.Proof.IselAttr
+✔ [62/173] Replayed FV.Backend.Proof.IselData
+✔ [63/173] Replayed FV.Backend.RegallocCheck
+✔ [64/173] Replayed FV.Backend.Proof.VCodeSem
+✔ [65/173] Replayed FV.Backend.Proof.RegallocState
+✔ [66/173] Replayed FV.Backend.Proof.RegallocLemmas
+✔ [67/173] Replayed FV.Backend.StackAlloc
+✔ [68/173] Replayed FV.Backend.Asm
+✔ [69/173] Replayed FV.Arm.Attr
+⚠ [70/173] Replayed FV.Arm.BitVec
+warning: FV/Arm/BitVec.lean:318:41: This simp argument is unused:
+  setWidth_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [partInstall, truncate_eq_setWidth, getLsbD_or, getLsbD_and, getLsbD_not, getLsbD_shiftLeft, hi,
+    decide_true, Bool.true_and, getLsbD_setWidth, getLsbD_allOnes, Bool.not_and, Bool.not_not, getLsbD_cast,
+    BitVec.getLsbD_append, zeroExtend_eq_setWidth]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:318:54: This simp argument is unused:
+  zeroExtend_eq_setWidth
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [partInstall, truncate_eq_setWidth, getLsbD_or, getLsbD_and, getLsbD_not, getLsbD_shiftLeft, hi,
+    decide_true, Bool.true_and, getLsbD_setWidth, getLsbD_allOnes, Bool.not_and, Bool.not_not, getLsbD_cast,
+    BitVec.getLsbD_append, setWidth_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:342:56: This simp argument is unused:
+  Nat.succ_eq_one_add
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [List.length_cons, Nat.mul_one, Nat.mul_add]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:661:43: This simp argument is unused:
+  cast_heq_iff
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [append_zero_width, heq_eq_eq, Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:689:13: This simp argument is unused:
+  cast
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [zero_width_append, toNat_ofNatLT]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:689:38: This simp argument is unused:
+  toNat_ofNatLT
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [cast, zero_width_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:731:16: This simp argument is unused:
+  Nat.add_sub_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:739:12: This simp argument is unused:
+  h5
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [h6]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:746:14: This simp argument is unused:
+  Nat.testBit_mod_two_pow
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:759:28: This simp argument is unused:
+  Nat.sub_add_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth, low_le]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:759:48: This simp argument is unused:
+  low_le
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth, Nat.sub_add_cancel]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:772:39: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:773:13: This simp argument is unused:
+  h_vlt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [forall_prop_of_true] at this
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:774:28: This simp argument is unused:
+  Nat.sub_add_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:843:8: This simp argument is unused:
+  BitVec.lt_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:847:8: This simp argument is unused:
+  BitVec.lt_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:908:89: This simp argument is unused:
+  cast_ofNat
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, BitVec.extractLsb'_ofNat, Nat.zero_mod, Nat.zero_shiftRight]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:922:28: This simp argument is unused:
+  getLsbD_cast
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, getLsbD_extract]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:922:42: This simp argument is unused:
+  getLsbD_extract
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, getLsbD_cast]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:927:4: This simp argument is unused:
+  and_iff_right_iff_imp
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show (i : Nat) ≤ 7 by omega, decide_true, Bool.true_and, decide_eq_true_eq, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:927:27: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show (i : Nat) ≤ 7 by omega, decide_true, Bool.true_and, and_iff_right_iff_imp, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:929:4: This simp argument is unused:
+  Bool.and_eq_false_imp
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show ¬(i : Nat) ≤ 7 by omega, decide_false, Bool.false_and, decide_eq_true_eq, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:929:27: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show ¬(i : Nat) ≤ 7 by omega, decide_false, Bool.false_and, Bool.and_eq_false_imp, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:988:37: This simp argument is unused:
+  Fin.is_lt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getLsbD_extractLsBytes, decide_true, getLsbD_zero, Bool.and_false, implies_true]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:988:48: This simp argument is unused:
+  decide_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getLsbD_extractLsBytes, Fin.is_lt, getLsbD_zero, Bool.and_false, implies_true]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:1026:2: `[deprecated]` attribute should specify the date or library version at which the deprecation was introduced, using `(since := "...")`
+✔ [71/173] Replayed FV.Arm.Decode.DPI
+✔ [72/173] Replayed FV.Arm.Decode.DPR
+✔ [73/173] Replayed FV.Arm.Decode.BR
+✔ [74/173] Replayed FV.Arm.Decode.LDST
+✔ [75/173] Replayed FV.Arm.Decode.DPSFP
+✔ [76/173] Replayed FV.Arm.Decode.Reserved
+✔ [77/173] Replayed FV.Arm.Decode
+✔ [78/173] Replayed FV.Backend.Encode
+✔ [79/173] Replayed FV.Arm.Map
+✔ [80/173] Replayed FV.Arm.MinTheory
+✔ [81/173] Replayed FV.Arm.State
+✔ [82/173] Replayed FV.Arm.Insts.Common
+✔ [83/173] Replayed FV.Arm.Insts.DPI.Add_sub_imm
+✔ [84/173] Replayed FV.Arm.Insts.DPI.PC_rel_addressing
+✔ [85/173] Replayed FV.Arm.Insts.DPI.Logical_imm
+✔ [86/173] Replayed FV.Arm.Insts.DPI.Bitfield
+✔ [87/173] Replayed FV.Arm.Insts.DPI.Move_wide_imm
+✔ [88/173] Replayed FV.Arm.Insts.DPI.Extract
+✔ [89/173] Replayed FV.Arm.Insts.DPI.Insts
+✔ [90/173] Replayed FV.Arm.Insts.DPR.Add_sub_carry
+✔ [91/173] Replayed FV.Arm.Insts.DPR.Add_sub_shifted_reg
+✔ [92/173] Replayed FV.Arm.Insts.DPR.Conditional_select
+✔ [93/173] Replayed FV.Arm.Insts.DPR.Data_processing_one_source
+✔ [94/173] Replayed FV.Arm.Insts.DPR.Data_processing_two_source
+✔ [95/173] Replayed FV.Arm.Insts.DPR.Logical_shifted_reg
+✔ [96/173] Replayed FV.Arm.Insts.DPR.Data_processing_three_source
+✔ [97/173] Replayed FV.Arm.Insts.DPR.Add_sub_ext_reg
+✔ [98/173] Replayed FV.Arm.Insts.DPR.Conditional_compare
+✔ [99/173] Replayed FV.Arm.Insts.DPR.Insts
+✔ [100/173] Replayed FV.Arm.Insts.BR.Compare_branch
+✔ [101/173] Replayed FV.Arm.Insts.BR.Uncond_branch_imm
+✔ [102/173] Replayed FV.Arm.Insts.BR.Uncond_branch_reg
+✔ [103/173] Replayed FV.Arm.Insts.BR.Cond_branch_imm
+✔ [104/173] Replayed FV.Arm.Insts.BR.Hints
+✔ [105/173] Replayed FV.Arm.Insts.BR.Barrier
+✔ [106/173] Replayed FV.Arm.Insts.BR.Test_branch
+✔ [107/173] Replayed FV.Arm.Insts.BR.Mrs
+✔ [108/173] Replayed FV.Arm.Insts.BR.Insts
+✔ [109/173] Replayed FV.Arm.Insts.DPSFP.Advanced_simd_copy
+✔ [110/173] Replayed FV.Arm.Insts.DPSFP.Advanced_simd_two_reg_misc
+✔ [111/173] Replayed FV.Arm.Insts.DPSFP.Advanced_simd_three_same
+✔ [112/173] Replayed FV.Arm.Insts.DPSFP.FP_data_processing_one_source
+✔ [113/173] Replayed FV.Arm.Insts.DPSFP.Conversion_between_FP_and_Int
+✔ [114/173] Replayed FV.Arm.Insts.DPSFP.Advanced_simd_across_lanes
+✔ [115/173] Replayed FV.Arm.Insts.DPSFP.Advanced_simd_modified_immediate
+✔ [116/173] Replayed FV.Arm.Insts.DPSFP.FP_immediate
+✔ [117/173] Replayed FV.Arm.Insts.DPSFP.FP_conditional_select
+✔ [118/173] Replayed FV.Arm.Insts.DPSFP.FP_data_processing_two_source
+✔ [119/173] Replayed FV.Arm.Insts.DPSFP.FP_data_processing_three_source
+✔ [120/173] Replayed FV.Arm.Insts.DPSFP.FP_compare
+✔ [121/173] Replayed FV.Arm.Insts.DPSFP.Insts
+✔ [122/173] Replayed FV.Arm.Insts.LDST.Reg_imm
+✔ [123/173] Replayed FV.Arm.Insts.LDST.Reg_unscaled_imm
+✔ [124/173] Replayed FV.Arm.Insts.LDST.Reg_pair
+✔ [125/173] Replayed FV.Arm.Insts.LDST.Reg_literal
+✔ [126/173] Replayed FV.Arm.Insts.LDST.Insts
+✔ [127/173] Replayed FV.Arm.Insts.Reserved.Udf
+✔ [128/173] Replayed FV.Arm.Insts
+✔ [129/173] Replayed FV.Arm.Exec
+⚠ [130/173] Replayed FV.Backend.Proof.RegallocOperands
+warning: FV/Backend/Proof/RegallocOperands.lean:438:74: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:440:23: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:457:27: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:458:27: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [131/173] Replayed FV.Backend.Proof.AbiClass
+warning: FV/Backend/Proof/AbiClass.lean:373:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:375:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:375:23: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:377:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:377:23: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:378:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:378:20: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:393:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:397:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+ℹ [132/173] Replayed FV.Backend.Proof.IselContract
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/IselContract.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselContract.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/IselContract.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/IselContract.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/IselContract.setup.json --json
+ℹ [133/173] Replayed FV.Backend.Proof.LowerSeq
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/LowerSeq.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerSeq.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerSeq.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerSeq.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerSeq.setup.json --json
+ℹ [134/173] Replayed FV.Backend.Proof.LowerRename
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/LowerRename.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerRename.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerRename.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerRename.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerRename.setup.json --json
+⚠ [135/173] Replayed FV.Backend.Proof.LowerContract
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/LowerContract.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerContract.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerContract.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerContract.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerContract.setup.json --json
+warning: FV/Backend/Proof/LowerContract.lean:98:55: The syntax is now `structure S : Type extends P` rather than `structure S extends P : Type`
+
+Note: The purpose of this change is to accommodate `structure S extends toP : P` syntax for naming parent projections.
+✔ [136/173] Replayed FV.Clif.FloatFacts
+ℹ [137/173] Replayed FV.Backend.Proof.LowerFrame
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/LowerFrame.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerFrame.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerFrame.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerFrame.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerFrame.setup.json --json
+ℹ [138/173] Replayed FV.Backend.Proof.LowerShape
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/LowerShape.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerShape.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerShape.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerShape.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerShape.setup.json --json
+ℹ [139/173] Replayed FV.Backend.Proof.LowerSpec
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/LowerSpec.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerSpec.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerSpec.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerSpec.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerSpec.setup.json --json
+ℹ [140/173] Replayed FV.Backend.Proof.LowerLoopCtx
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/LowerLoopCtx.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerLoopCtx.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerLoopCtx.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerLoopCtx.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerLoopCtx.setup.json --json
+⚠ [141/173] Replayed FV.Backend.Proof.DriverCheckSound
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/DriverCheckSound.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DriverCheckSound.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/DriverCheckSound.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/DriverCheckSound.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/DriverCheckSound.setup.json --json
+warning: FV/Backend/Proof/DriverCheckSound.lean:519:92: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/DriverCheckSound.lean:561:6: `if_true` has been deprecated: Use `ite_true` instead
+✔ [142/173] Replayed FV.Backend.Proof.IselInterp
+ℹ [143/173] Replayed FV.Backend.Proof.LowerFix
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/LowerFix.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerFix.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerFix.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerFix.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerFix.setup.json --json
+ℹ [144/173] Replayed FV.Backend.Proof.LowerDecide
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Proof/LowerDecide.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerDecide.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/LowerDecide.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerDecide.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Proof/LowerDecide.setup.json --json
+ℹ [145/173] Replayed FV.Backend.StockArithmeticCheck
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/StockArithmeticCheck.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/StockArithmeticCheck.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/StockArithmeticCheck.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/StockArithmeticCheck.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/StockArithmeticCheck.setup.json --json
+ℹ [146/173] Replayed FV.Backend.Lowering.StockParameterCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockParameterCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockParameterCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockParameterCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockParameterCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockParameterCfg.setup.json --json
+ℹ [147/173] Replayed FV.Backend.Lowering.StockParameterLoopCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockParameterLoopCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockParameterLoopCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockParameterLoopCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockParameterLoopCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockParameterLoopCfg.setup.json --json
+ℹ [148/173] Replayed FV.Backend.Lowering.StockConditionalArgsCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockConditionalArgsCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockConditionalArgsCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockConditionalArgsCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockConditionalArgsCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockConditionalArgsCfg.setup.json --json
+✔ [149/173] Replayed FV.Backend.RegallocPerEdgePrepare
+✔ [150/173] Replayed FV.Backend.Proof.PrepareCheck
+✔ [151/173] Replayed FV.Backend.RegallocPerEdgePrepareCheck
+✔ [152/173] Replayed FV.Backend.EdgeSplit
+ℹ [153/173] Replayed FV.Backend.Lowering.StockParameterArgsCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockParameterArgsCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockParameterArgsCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockParameterArgsCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockParameterArgsCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockParameterArgsCfg.setup.json --json
+ℹ [154/173] Replayed FV.Backend.Lowering.StockParameterAnyArgsCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockParameterAnyArgsCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockParameterAnyArgsCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockParameterAnyArgsCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockParameterAnyArgsCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockParameterAnyArgsCfg.setup.json --json
+ℹ [155/173] Replayed FV.Backend.Lowering.StockParameterArgsLoopCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockParameterArgsLoopCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockParameterArgsLoopCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockParameterArgsLoopCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockParameterArgsLoopCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockParameterArgsLoopCfg.setup.json --json
+ℹ [156/173] Replayed FV.Backend.Lowering.StockConditionalCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockConditionalCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockConditionalCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockConditionalCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockConditionalCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockConditionalCfg.setup.json --json
+ℹ [157/173] Replayed FV.Backend.Lowering.StockComparisonImmCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockComparisonImmCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonImmCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonImmCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonImmCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonImmCfg.setup.json --json
+ℹ [158/173] Replayed FV.Backend.Lowering.StockComparisonZeroCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockComparisonZeroCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonZeroCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonZeroCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonZeroCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonZeroCfg.setup.json --json
+ℹ [159/173] Replayed FV.Backend.Lowering.StockComparisonLoopCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockComparisonLoopCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonLoopCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonLoopCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonLoopCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonLoopCfg.setup.json --json
+ℹ [160/173] Replayed FV.Backend.Lowering.StockComparisonArgsLoopCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockComparisonArgsLoopCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonArgsLoopCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonArgsLoopCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonArgsLoopCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonArgsLoopCfg.setup.json --json
+ℹ [161/173] Replayed FV.Backend.Lowering.StockComparisonComputedLoopCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockComparisonComputedLoopCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonComputedLoopCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonComputedLoopCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonComputedLoopCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonComputedLoopCfg.setup.json --json
+ℹ [162/173] Replayed FV.Backend.Lowering.StockComparisonComputedArgsLoopCfg
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockComparisonComputedArgsLoopCfg.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonComputedArgsLoopCfg.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockComparisonComputedArgsLoopCfg.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonComputedArgsLoopCfg.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockComparisonComputedArgsLoopCfg.setup.json --json
+ℹ [163/173] Replayed FV.Backend.Lowering.StockGeneralArgsLoopCfg2
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockGeneralArgsLoopCfg2.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg2.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg2.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg2.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg2.setup.json --json
+ℹ [164/173] Replayed FV.Backend.Lowering.StockGeneralLoopCfg2
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockGeneralLoopCfg2.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralLoopCfg2.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralLoopCfg2.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockGeneralLoopCfg2.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockGeneralLoopCfg2.setup.json --json
+ℹ [165/173] Replayed FV.Backend.Lowering.StockGeneralArgsLoopCfg3
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockGeneralArgsLoopCfg3.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg3.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg3.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg3.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg3.setup.json --json
+ℹ [166/173] Replayed FV.Backend.Lowering.StockGeneralLoopCfg3
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j2 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/Backend/Lowering/StockGeneralLoopCfg3.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralLoopCfg3.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralLoopCfg3.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockGeneralLoopCfg3.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/Backend/Lowering/StockGeneralLoopCfg3.setup.json --json
+ℹ [167/173] Replayed FV.Backend.Lowering.StockGeneralArgsLoopCfg4
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg4.setup.json --json
+ℹ [168/173] Replayed FV.Backend.Lowering.StockGeneralLoopCfg4
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/Backend/Lowering/StockGeneralLoopCfg4.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralLoopCfg4.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralLoopCfg4.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralLoopCfg4.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralLoopCfg4.setup.json --json
+ℹ [169/173] Replayed FV.Backend.Lowering.StockGeneralArgsLoopCfg5
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/Backend/Lowering/StockGeneralArgsLoopCfg5.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg5.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg5.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg5.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg5.setup.json --json
+ℹ [170/173] Replayed FV.Backend.Lowering.StockGeneralLoopCfg5
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/Backend/Lowering/StockGeneralLoopCfg5.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralLoopCfg5.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralLoopCfg5.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralLoopCfg5.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralLoopCfg5.setup.json --json
+ℹ [171/173] Replayed FV.Backend.Lowering.StockGeneralArgsLoopCfg6
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/Backend/Lowering/StockGeneralArgsLoopCfg6.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg6.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg6.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg6.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg6.setup.json --json
+ℹ [172/173] Replayed FV.Backend.Lowering.StockGeneralLoopCfg6
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/Backend/Lowering/StockGeneralLoopCfg6.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralLoopCfg6.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralLoopCfg6.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralLoopCfg6.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralLoopCfg6.setup.json --json
+ℹ [173/173] Built FV.Backend.Lowering.StockGeneralArgsLoopCfg7 (778ms)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/stock-cfg-source-20261025/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/Backend/Lowering/StockGeneralArgsLoopCfg7.lean -o /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg7.olean -i /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Lowering/StockGeneralArgsLoopCfg7.ilean -c /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg7.c --setup /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Lowering/StockGeneralArgsLoopCfg7.setup.json --json
+Build completed successfully (173 jobs).
