@@ -1,7 +1,7 @@
 import FV.Backend.Lowering.Stock
 
 /-!
-# Native `i128` lowering for the stock driver (foundation, not wired)
+# Native `i128` lowering for the stock driver (unverified)
 
 `Opt.Legalize128` splits every `i128` value into two `i64` values before the lowering. Stock
 Cranelift keeps an `i128` value in a register pair instead (`ValueRegs` with two vregs,
@@ -10,10 +10,17 @@ is that native route for a small foundation scope:
 
 * `i128` block parameters, branch arguments, function parameters and returns;
 * `isplit`, `iconcat`, `uextend`/`sextend` to `i128`, `ireduce` from `i128`, `bitcast.i128`;
-* `brif` on an `i128` value (`orr` of the two halves, then `cbnz`).
+* `brif` on an `i128` value (`orr` of the two halves, then `cbnz`);
+* `ishl`, `ushr`, `sshr`, `rotl`, `rotr` of an `i128` value (`lower.isle` `lower_shl128`,
+  `lower_ushr128`, `lower_sshr128` and the `rotl`/`rotr` `$I128` rules), and these shifts and
+  rotates of a narrower value by an `i128` amount (the narrow rules use the amount's low
+  register, `value_regs_get y 0`). These rules need no new extern: the externs `value_regs`
+  and `value_regs_get` are `Backend.externCtor`'s, and the helpers (`lsl`, `orr_not`,
+  `tst_imm`, `csel`, `imm`, `with_flags`, `consumes_flags_concat`) are ISLE rules.
 
 Any other instruction with an `i128` operand or result makes `lower128` fail, so that a caller
-can keep the legalized lowering. Nothing calls `lower128` yet, and nothing proves it.
+can keep the legalized lowering. `FVTest.Backend.I128Native` routes the functions that
+`lower128` lowers in the stock-configured driver. Nothing proves `lower128`.
 
 `lower128` is a copy of `Stock.lower`, because `Stock.runTerm` is fixed to `Stock.sem`. The
 copies of result binding, opportunistic definitions, branch arguments and block assembly use
@@ -40,11 +47,22 @@ def valueRegs128? (ctx : Ctx) (hi : HiRegs) (v : Nat) : Option (List Reg) :=
 
 /-! ## Instruction data and scope -/
 
+/-- The shifts and rotates that `lower128` lowers with an `i128` operand: at `i128` (the
+`$I128` rules of `lower.isle`), and at a narrower type by an `i128` amount. -/
+def shift128 : Clif.BinaryOp → Bool
+  | .ishl | .ushr | .sshr | .rotl | .rotr => true
+  | _ => false
+
 /-- `InstructionData` with the `i128` forms of the foundation: `isplit` of an `i128`,
-`iconcat` of two `i64`, an extension to `i128`, `bitcast.i128`. Every other instruction is
-`instData` (which accepts `ireduce` from `i128`, because it checks the result type). -/
+`iconcat` of two `i64`, an extension to `i128`, `bitcast.i128`, an `i128` shift or rotate
+(`shift128`). Every other instruction is `instData` (which accepts `ireduce` from `i128` and a
+narrow shift by an `i128` amount, because it checks the result type). -/
 def instData128 (f : Clif.Function) : Clif.Inst → Except String V
   | .isplit .i128 x => pure (instDataV "Unary" [opcodeV "Isplit", .value x])
+  | .binary op .i128 x y =>
+    match shift128 op, binaryOpcode op with
+    | true, some n => pure (instDataV "Binary" [opcodeV n, .values [x, y]])
+    | _, _ => instData f (.binary op .i128 x y)
   | .iconcat .i64 x y => pure (instDataV "Binary" [opcodeV "Iconcat", .values [x, y]])
   | .extend op .i128 x =>
     pure (instDataV "Unary" [opcodeV (if op == .uextend then "Uextend" else "Sextend"), .value x])
@@ -53,10 +71,12 @@ def instData128 (f : Clif.Function) : Clif.Inst → Except String V
   | i => instData f i
 
 /-- The instructions of the foundation that may have an `i128` operand or result (`wide`: the
-`i128` values). -/
+`i128` values). A shift or rotate (`shift128`) is in it at `i128`, and at a narrower type when
+only its amount is an `i128` value. -/
 def foundation128 (wide : Nat → Bool) : Clif.Inst → Bool
   | .isplit .i128 _ | .iconcat .i64 _ _ | .extend _ .i128 _ => true
   | .ireduce _ x | .bitcast .i128 _ x => wide x
+  | .binary op ty x _ => shift128 op && (ty == .i128 || !wide x)
   | _ => false
 
 /-- The terminators that may have an `i128` operand: branches and `return`. The calls of
