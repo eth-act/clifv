@@ -3,9 +3,9 @@ import FV.Backend.Lowering.StockI128
 /-! Probes for the native `i128` stock lowering `Backend.Stock.lower128` (no proof).
 
 * The `#guard`s below check that `lower128` lowers the 16 foundation shapes, 13 `i128` shift
-  and rotate shapes (`shifts`), 15 `i128` comparison shapes (`compares`) and 14 `select`,
-  `select_spectre_guard`, `bmask` and `bitselect` shapes (`selects`), that the
-  instructions it selects have the shape of stock
+  and rotate shapes (`shifts`), 15 `i128` comparison shapes (`compares`), 14 `select`,
+  `select_spectre_guard`, `bmask` and `bitselect` shapes (`selects`) and 10 arithmetic shapes
+  (`ariths`), that the instructions it selects have the shape of stock
   Cranelift's (the expected VCode of the filetests, with registers abstracted, and without
   regalloc moves and the frame), and they pin its exact pre-allocation VCode.
 * Further `#guard`s check that `lower128` gives the result of `Stock.lower` on functions without
@@ -40,7 +40,12 @@ def aluName : ALUOp → String
   | .orr => "orr" | .and => "and" | .eor => "eor" | .add => "add" | .sub => "sub"
   | .addS => "adds" | .subS => "subs" | .andS => "ands"
   | .asr => "asr" | .lsr => "lsr" | .lsl => "lsl" | .orrNot => "orn" | .extr => "extr"
-  | .sbcS => "sbcs" | .andNot => "bic"
+  | .sbcS => "sbcs" | .andNot => "bic" | .adc => "adc" | .sbc => "sbc" | .uMulH => "umulh"
+  | .sMulH => "smulh"
+  | op => s!"?{lastName op}"
+
+def alu3Name : ALUOp3 → String
+  | .mAdd => "madd" | .mSub => "msub"
   | op => s!"?{lastName op}"
 
 /-- An `NZCV` immediate as Cranelift prints it: `#nzcv`, a set flag in upper case. -/
@@ -54,8 +59,8 @@ def amode : AMode → String
   | m => s!"?{(repr m).pretty}"
 
 /-- One instruction in the syntax of Cranelift's VCode printing (`isa/aarch64/inst/mod.rs`),
-for the instructions of the foundation, the shifts and rotates, the comparisons and the
-selects; `?` and the
+for the instructions of the foundation, the shifts and rotates, the comparisons, the
+selects and the arithmetic; `?` and the
 representation for every other one. `args` and `rets` show their (vreg, physical register)
 pairs. -/
 def inst : MInst → String
@@ -67,10 +72,12 @@ def inst : MInst → String
     else
       let w := match fromBits with | 8 => "b" | 16 => "h" | _ => "w"
       s!"{if signed then "sxt" else "uxt"}{w} {reg rd}, {reg rn}"
-  | .movWide .movZ rd imm _ =>
-    if imm.shift == 0 then s!"movz {reg rd}, #{imm.bits}"
-    else s!"movz {reg rd}, #{imm.bits}, LSL #{imm.shift}"
+  | .movWide op rd imm _ =>
+    let name := match op with | .movZ => "movz" | .movN => "movn"
+    if imm.shift == 0 then s!"{name} {reg rd}, #{imm.bits}"
+    else s!"{name} {reg rd}, #{imm.bits}, LSL #{imm.shift}"
   | .aluRRR op _ rd rn rm => s!"{aluName op} {reg rd}, {reg rn}, {reg rm}"
+  | .aluRRRR op _ rd rn rm ra => s!"{alu3Name op} {reg rd}, {reg rn}, {reg rm}, {reg ra}"
   | .aluRRImm12 op _ rd rn imm => s!"{aluName op} {reg rd}, {reg rn}, #{imm.value}"
   | .aluRRImmShift op _ rd rn imm => s!"{aluName op} {reg rd}, {reg rn}, #{imm}"
   | .aluRRImmLogic op _ rd rn imm => s!"{aluName op} {reg rd}, {reg rn}, #{imm.value}"
@@ -909,6 +916,119 @@ block0(v0: i128, v1: i128, v2: i128):
       "and %7, %3, %1", "bic %8, %4, %0", "bic %9, %5, %1", "orr %10, %6, %8", "orr %11, %7, %9",
       "rets %10=x0 %11=x1"] }]
 
+/-- `i128` arithmetic. `iadd` is `adds` of the low halves and `adc` of the high halves
+(`iadd_i128`), `isub` is `subs` and `sbc` (`sub_i128`), and `ineg` is `sub_i128` from two
+`movz #0` (`value_regs_zero`). `imul` is `umulh` and three `madd` (`imul_i128`); of two
+`uextend`s or two `sextend`s, it is one `madd` and `umulh` or `smulh`. `iabs` is `asr`, two
+`eor`, `subs` and `sbc`, and `bnot` is `orn` of each half. The runtest shapes have no filetest
+with expected VCode: `stock` is the stock code of the CI comparison snapshot in the syntax of
+the VCode printing (`mov` of an immediate is `movz`/`movn`, `mvn` is `orn` from `xzr`). -/
+def ariths : List Shape := [
+  { name := "add_i128", source := "isa/aarch64/arithmetic.clif"
+    clif := "function %add_i128(i128, i128) -> i128 {
+block0(v0: i128, v1: i128):
+    v2 = iadd v0, v1
+    return v2
+}"
+    stock := ["block0:", "adds x0, x0, x2", "adc x1, x1, x3", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "adds %4, %0, %2", "adc %5, %1, %3",
+      "rets %4=x0 %5=x1"] },
+  { name := "sub_i128", source := "isa/aarch64/arithmetic.clif"
+    clif := "function %sub_i128(i128, i128) -> i128 {
+block0(v0: i128, v1: i128):
+    v2 = isub v0, v1
+    return v2
+}"
+    stock := ["block0:", "subs x0, x0, x2", "sbc x1, x1, x3", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs %4, %0, %2", "sbc %5, %1, %3",
+      "rets %4=x0 %5=x1"] },
+  { name := "mul_i128", source := "isa/aarch64/arithmetic.clif"
+    clif := "function %mul_i128(i128, i128) -> i128 {
+block0(v0: i128, v1: i128):
+    v2 = imul v0, v1
+    return v2
+}"
+    stock := ["block0:", "umulh x5, x0, x2", "madd x7, x0, x3, x5", "madd x1, x1, x2, x7",
+      "madd x0, x0, x2, xzr", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "umulh %4, %0, %2",
+      "madd %5, %0, %3, %4", "madd %6, %1, %2, %5", "madd %7, %0, %2, xzr", "rets %7=x0 %6=x1"] },
+  { name := "f11", source := "isa/aarch64/iabs.clif"
+    clif := "function %f11(i128) -> i128 {
+block0(v0: i128):
+  v1 = iabs v0
+  return v1
+}"
+    stock := ["block0:", "asr x3, x1, #63", "eor x5, x1, x3", "eor x7, x0, x3", "subs x0, x7, x3",
+      "sbc x1, x5, x3", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "asr %2, %1, #63", "eor %3, %1, %2",
+      "eor %4, %0, %2", "subs %5, %4, %2", "sbc %6, %3, %2", "rets %5=x0 %6=x1"] },
+  { name := "mul_uextend_i64", source := "isa/aarch64/i128.clif"
+    clif := "function %mul_uextend_i64(i64, i64) -> i128 {
+block0(v0: i64, v1: i64):
+    v2 = uextend.i128 v0
+    v3 = uextend.i128 v1
+    v4 = imul v2, v3
+    return v4
+}"
+    stock := ["block0:", "madd x3, x0, x1, xzr", "umulh x1, x0, x1", "mov x0, x3", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "madd %2, %0, %1, xzr", "umulh %3, %0, %1",
+      "rets %2=x0 %3=x1"] },
+  { name := "mul_sextend_i64", source := "isa/aarch64/i128.clif"
+    clif := "function %mul_sextend_i64(i64, i64) -> i128 {
+block0(v0: i64, v1: i64):
+    v2 = sextend.i128 v0
+    v3 = sextend.i128 v1
+    v4 = imul v2, v3
+    return v4
+}"
+    stock := ["block0:", "madd x3, x0, x1, xzr", "smulh x1, x0, x1", "mov x0, x3", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "madd %2, %0, %1, xzr", "smulh %3, %0, %1",
+      "rets %2=x0 %3=x1"] },
+  { name := "ineg_i128", source := "runtests/i128-ineg.clif (CI snapshot stock code)"
+    clif := "function %ineg_i128(i128) -> i128 {
+block0(v0: i128):
+  v1 = ineg.i128 v0
+  return v1
+}"
+    stock := ["block0:", "movz x3, #0", "movz x5, #0", "subs x0, x3, x0", "sbc x1, x5, x1", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "movz %2, #0", "movz %3, #0", "subs %4, %2, %0",
+      "sbc %5, %3, %1", "rets %4=x0 %5=x1"] },
+  { name := "iadd_imm_neg", source := "runtests/i128-arithmetic.clif (CI snapshot stock code)"
+    clif := "function %iadd_imm_neg(i128) -> i128 {
+block0(v0: i128):
+    v2 = iconst.i64 -1
+    v3 = sextend.i128 v2
+    v1 = iadd v0, v3
+    return v1
+}"
+    stock := ["block0:", "movn x6, #0", "asr x7, x6, #63", "adds x0, x0, x6", "adc x1, x1, x7",
+      "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "movn %5, #0", "asr %4, %5, #63",
+      "adds %2, %0, %5", "adc %3, %1, %4", "rets %2=x0 %3=x1"] },
+  { name := "add_i128_splats", source := "runtests/i128-arithmetic.clif (CI snapshot stock code)"
+    clif := "function %add_i128_splats(i64, i64, i64, i64) -> i128 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = iconcat v0, v1
+    v5 = iconcat v2, v3
+    v6 = iadd v4, v5
+    return v6
+}"
+    stock := ["block0:", "adds x0, x0, x2", "adc x1, x1, x3", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "adds %4, %0, %2", "adc %5, %1, %3",
+      "rets %4=x0 %5=x1"] },
+  { name := "fold_iadd_bnot_x_to_allones_i128_rt"
+    source := "runtests/i128-arithmetic-extends.clif (CI snapshot stock code)"
+    clif := "function %fold_iadd_bnot_x_to_allones_i128_rt(i128) -> i128 {
+block0(v0: i128):
+    v1 = bnot v0
+    v2 = iadd v1, v0
+    return v2
+}"
+    stock := ["block0:", "orn x5, xzr, x0", "orn x7, xzr, x1", "adds x0, x5, x0",
+      "adc x1, x7, x1", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "orn %4, xzr, %0", "orn %5, xzr, %1",
+      "adds %2, %4, %0", "adc %3, %5, %1", "rets %2=x0 %3=x1"] }]
+
 /-- `lower128` lowers the shape, its instruction shape is stock's, and its exact VCode is the
 pinned one. -/
 def shapeOk (s : Shape) : Bool :=
@@ -998,17 +1118,27 @@ block0(v0: i64):
 
 /-! ## Rejections -/
 
-/-- `i128` instructions outside the foundation: `lower128` fails on each. -/
+/-- `i128` instructions outside the foundation, and the `isplit` of a widening `imul` (its
+`lower.isle` rule needs the extern `value_is_unused`, which `externCtor128` does not model):
+`lower128` fails on each. -/
 def outside : List String := [
-  "function %add(i128, i128) -> i128 {
+  "function %bor(i128, i128) -> i128 {
 block0(v0: i128, v1: i128):
-    v2 = iadd v0, v1
+    v2 = bor v0, v1
     return v2
 }",
-  "function %sub(i128, i128) -> i128 {
-block0(v0: i128, v1: i128):
-    v2 = isub v0, v1
-    return v2
+  "function %clz(i128) -> i128 {
+block0(v0: i128):
+    v1 = clz v0
+    return v1
+}",
+  "function %umul_high_i64_isplit(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2 = uextend.i128 v0
+    v3 = uextend.i128 v1
+    v4 = imul v2, v3
+    v5, v6 = isplit v4
+    return v6
 }",
   "function %band(i128, i128) -> i128 {
 block0(v0: i128, v1: i128):
@@ -1043,6 +1173,8 @@ def rejected (src : String) : Bool :=
 #guard compares.all shapeOk
 #guard selects.length == 14
 #guard selects.all shapeOk
+#guard ariths.length == 10
+#guard ariths.all shapeOk
 #guard i128Free.all fun s => (function? s).any fun f => !has128 f && agrees f
 #guard outside.all rejected
 
@@ -1081,7 +1213,7 @@ partial def clifFiles (p : System.FilePath) : IO (Array System.FilePath) := do
 
 /-- Print each shape: whether it lowers, its shape against stock's, its exact VCode. -/
 def printShapes : IO Unit := do
-  for s in shapes ++ extras ++ shifts ++ compares ++ selects do
+  for s in shapes ++ extras ++ shifts ++ compares ++ selects ++ ariths do
     match function? s.clif with
     | none => IO.println s!"{s.name}: parse error"
     | some f => match lower128 f with
