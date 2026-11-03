@@ -4,6 +4,7 @@ import FV.Opt.Legalize128Pass
 import FV.Opt.LegalExn
 import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
+import FVTest.Backend.I128Native
 import FVTest.Backend.AllocChoice
 import FVTest.Backend.CraneliftInput
 import FV.Backend.Proof.LowerSimUCheck
@@ -273,10 +274,12 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
           !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
           allocNone pf (unv128 ++ unvTry) o.deadCleanup)
     | some c => do
+      -- native `i128` lowering for the functions `I128Native.nativeSet` admits (#554)
+      let native := if pipelineT then [] else I128Native.nativeSet source pf o.deadCleanup
       let configuredAlloc : Array VCode → IO (Array (Except String AFunc)) := fun vcs => do
         -- A whole-file retry replaces the previous attempt's configuration receipt.
         rejected.set #[]
-        StockConfig.allocateWith c clif rejected allocNone vcs
+        StockConfig.allocateWith c clif rejected allocNone (I128Native.replace native vcs)
       compileFileReturnPinWhen (!pipelineT && !o.opt.isSome &&
           !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
         configuredAlloc pf
