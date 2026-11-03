@@ -19,9 +19,11 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- **The frame-record pair and `ret`**: the instructions the lock cannot step (any `stp`/`ldp`:
-only the frame record's are ever emitted). -/
+/-- **The frame-record pair and `ret`**: the instructions the lock cannot step (any `stp`/`ldp`
+with `sp` pre/post-indexing: only the prologue and epilogue emit those). The signed-offset form
+`[xn, #off]` (`unscaled`), which only `MInst.loadP64`/`storeP64` emit, is not one. -/
 def _root_.Backend.Insn.frLine : Insn → Bool
+  | .stp _ _ (.unscaled ..) | .ldp _ _ (.unscaled ..) => false
   | .ret | .stp .. | .ldp .. => true
   | _ => false
 

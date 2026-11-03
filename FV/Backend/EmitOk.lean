@@ -54,6 +54,8 @@ def immOkB : MInst → Bool
     (s == .size32 || s == .size64) && (op != .cvt32To64 || s == .size32) &&
       (op != .cvt64To32 || s == .size64)
   | .fpuRRR _ s .. | .fpuRRRR _ s .. | .fpuCmp s .. => s == .size32 || s == .size64
+  -- `ldp`/`stp` (signed offset): a multiple of 8 in the signed 7-bit range scaled by 8
+  | .loadP64 _ _ _ off _ | .storeP64 _ _ _ off _ => decide (off % 8 = 0 ∧ -512 ≤ off ∧ off ≤ 504)
   | _ => true
 
 /-- No `condBr`/`trapIf` with an `al`/`nv` condition. -/

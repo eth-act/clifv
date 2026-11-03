@@ -28,6 +28,7 @@ open Backend Backend.Proof
 /-- The memory-access forms (their canonical runs read or write memory). -/
 def _root_.Backend.MInst.isMemAcc : Backend.MInst → Bool
   | .load .. | .store .. | .loadAcquire .. | .storeRelease .. | .fpuLoad .. | .fpuStore .. => true
+  | .loadP64 .. | .storeP64 .. => true
   | _ => false
 
 namespace E2E
@@ -417,6 +418,8 @@ def LockGuard (F Z : BitVec 64 → Prop) (sb : Nat) : MInst → List CV → Arm.
   | .storeRelease ty (.vreg _ .int) (.vreg _ .int) _, [u, _], _ => AtomTy ty ∧ Avoids F ty.bytes (lo64 u)
   | .load .., _, _ | .store .., _, _ | .loadAcquire .., _, _ | .storeRelease .., _, _
   | .fpuLoad .., _, _ | .fpuStore .., _, _ => False
+  -- `ldp`/`stp` (`lower128` only): outside the memory rules, as the uncovered forms above
+  | .loadP64 .., _, _ | .storeP64 .., _, _ => False
   | .atomicRmwLoop .., _, _ | .atomicCasLoop .., _, _ | .tryCall .., _, _ | .args _, _, _ => False
   | _, _, _ => True
 

@@ -5,10 +5,11 @@ import FV.Backend.Lowering.StockI128
 * The `#guard`s below check that `lower128` lowers the 16 foundation shapes, 13 `i128` shift
   and rotate shapes (`shifts`), 15 `i128` comparison shapes (`compares`), 14 `select`,
   `select_spectre_guard`, `bmask` and `bitselect` shapes (`selects`), 10 arithmetic shapes
-  (`ariths`), 14 bit-operation shapes (`bitops`), 4 minimum and maximum shapes (`minmaxes`)
-  and 4 overflow shapes (`overflows`), that the instructions it selects have the
-  shape of stock Cranelift's (the expected VCode of the filetests, with registers abstracted,
-  and without regalloc moves and the frame), and they pin its exact pre-allocation VCode.
+  (`ariths`), 14 bit-operation shapes (`bitops`), 4 minimum and maximum shapes (`minmaxes`),
+  4 overflow shapes (`overflows`) and 18 load and store shapes (`mems`), that the instructions
+  it selects have the shape of stock Cranelift's (the expected VCode of the filetests, with
+  registers abstracted, and without regalloc moves and the frame), and they pin its exact
+  pre-allocation VCode.
 * Further `#guard`s check that `lower128` gives the result of `Stock.lower` on functions without
   `i128` values, and that it rejects `i128` instructions outside the foundation.
 * `main` does the two checks over Cranelift's filetests (the build does not run it):
@@ -60,6 +61,10 @@ def nzcv (f : NZCV) : String :=
   let c (ch : Char) (b : Bool) : Char := if b then ch.toUpper else ch
   s!"#{c 'n' f.n}{c 'z' f.z}{c 'c' f.c}{c 'v' f.v}"
 
+/-- A `PairAMode::SignedOffset` as Cranelift prints it (`[xn]`, `[xn, #off]`). -/
+def pairAMode (rn : Reg) (off : Int) : String :=
+  if off == 0 then s!"[{reg rn}]" else s!"[{reg rn}, #{off}]"
+
 def amode : AMode → String
   | .fpOffset off => s!"[fp, #{off}]"
   | .spOffset off => s!"[sp, #{off}]"
@@ -99,6 +104,10 @@ def inst : MInst → String
   | .condBr t e (.cond c) => s!"b.{lastName c} label{t} ; b label{e}"
   | .jump l => s!"b label{l}"
   | .mov _ rd rm => s!"mov {reg rd}, {reg rm}"
+  | .loadP64 rt rt2 rn off _ => s!"ldp {reg rt}, {reg rt2}, {pairAMode rn off}"
+  | .storeP64 rt rt2 rn off _ => s!"stp {reg rt}, {reg rt2}, {pairAMode rn off}"
+  | .loadAddr rd (.slotOffset off) =>
+    if off == 0 then s!"mov {reg rd}, sp" else s!"add {reg rd}, sp, #{off}"
   | i => s!"?{(repr i).pretty}"
 
 /-- The registers of an instruction, with those of the `args`/`rets` pseudo-instructions (which
@@ -162,12 +171,25 @@ def isMove64 (line : String) : Bool :=
   | ["mov", a, b] => a.startsWith "x" && a.endsWith "," && b.startsWith "x"
   | _ => false
 
+/-- `line` with the extend operators in lower case (Cranelift's VCode printing writes `SXTW`,
+the disassembly of the CI snapshot `sxtw`; the renderer writes lower case). -/
+def lowerExtend (line : String) : String :=
+  ["UXTB", "UXTH", "UXTW", "UXTX", "SXTB", "SXTH", "SXTW", "SXTX"].foldl
+    (fun l e => l.replace e e.toLower) line
+
+/-- Is `line` the frame allocation of the prologue or the epilogue (`sub sp, sp, …`,
+`add sp, sp, …`, and the `movz`/`movk` of `w16` that load a large frame size)? -/
+def isFrameAlloc (line : String) : Bool :=
+  line.startsWith "sub sp, sp," || line.startsWith "add sp, sp," ||
+    line.startsWith "movz w16," || line.startsWith "movk w16,"
+
 /-- The instruction shape of stock's expected VCode (after allocation): no frame setup, no
 `ret`, no 64-bit register moves; registers abstracted. -/
 def stockShape (lines : List String) : List String :=
   ((lines.map trim).filter fun l =>
-    !l.isEmpty && l != "ret" && l != "mov fp, sp" && !hasSub l "fp, lr" && !isMove64 l)
-    |>.map abstractLine
+    !l.isEmpty && l != "ret" && l != "mov fp, sp" && !hasSub l "fp, lr" && !isMove64 l &&
+      !isFrameAlloc l)
+    |>.map (abstractLine ∘ lowerExtend)
 
 /-- The instruction shape of a Lean VCode: block labels and instructions, without the `args`
 and `rets` pseudo-instructions and register copies; registers abstracted. -/
@@ -1286,6 +1308,273 @@ block0(v0: i128, v1: i128):
     pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs %4, %0, %2", "sbcs %5, %1, %3",
       "cset %6, lo", "rets %4=x0 %5=x1 %6=x2"] }]
 
+/-- `i128` loads and stores (`load_i128`, `store_i128`): one `ldp`/`stp` of the register pair
+with a `PairAMode::SignedOffset` (`pair_amode`: the offset when it is a multiple of 8 in
+`-512..504`, else `amode_add` of it and offset 0). A `stack_addr` is the `mov`/`add` from `sp` of
+`abi_stackslot_addr`. The runtests have no expected VCode: their `stock` is the stock code of the
+CI comparison snapshot, in the VCode syntax. -/
+def mems : List Shape := [
+  { name := "i128", source := "isa/aarch64/amodes.clif"
+    clif := "function %i128(i64) -> i128 {
+block0(v0: i64):
+  v1 = load.i128 v0
+  store.i128 v1, v0
+  return v1
+}"
+    stock := ["block0:", "mov x5, x0", "ldp x0, x1, [x5]", "stp x0, x1, [x5]", "ret"]
+    pinned := ["block0:", "args %0=x0", "ldp %1, %2, [%0]", "stp %1, %2, [%0]",
+      "rets %1=x0 %2=x1"] },
+  { name := "i128_imm_offset", source := "isa/aarch64/amodes.clif"
+    clif := "function %i128_imm_offset(i64) -> i128 {
+block0(v0: i64):
+  v1 = load.i128 v0+16
+  store.i128 v1, v0+16
+  return v1
+}"
+    stock := ["block0:", "mov x5, x0", "ldp x0, x1, [x5, #16]", "stp x0, x1, [x5, #16]", "ret"]
+    pinned := ["block0:", "args %0=x0", "ldp %1, %2, [%0, #16]", "stp %1, %2, [%0, #16]",
+      "rets %1=x0 %2=x1"] },
+  { name := "i128_imm_offset_large", source := "isa/aarch64/amodes.clif"
+    clif := "function %i128_imm_offset_large(i64) -> i128 {
+block0(v0: i64):
+  v1 = load.i128 v0+504
+  store.i128 v1, v0+504
+  return v1
+}"
+    stock := ["block0:", "mov x5, x0", "ldp x0, x1, [x5, #504]", "stp x0, x1, [x5, #504]", "ret"]
+    pinned := ["block0:", "args %0=x0", "ldp %1, %2, [%0, #504]", "stp %1, %2, [%0, #504]",
+      "rets %1=x0 %2=x1"] },
+  { name := "i128_imm_offset_negative_large", source := "isa/aarch64/amodes.clif"
+    clif := "function %i128_imm_offset_negative_large(i64) -> i128 {
+block0(v0: i64):
+  v1 = load.i128 v0-512
+  store.i128 v1, v0-512
+  return v1
+}"
+    stock := ["block0:", "mov x5, x0", "ldp x0, x1, [x5, #-512]", "stp x0, x1, [x5, #-512]", "ret"]
+    pinned := ["block0:", "args %0=x0", "ldp %1, %2, [%0, #-512]", "stp %1, %2, [%0, #-512]",
+      "rets %1=x0 %2=x1"] },
+  { name := "i128_add_offset", source := "isa/aarch64/amodes.clif"
+    clif := "function %i128_add_offset(i64) -> i128 {
+block0(v0: i64):
+  v3 = iconst.i64 32
+  v1 = iadd v0, v3
+  v2 = load.i128 v1
+  store.i128 v2, v1
+  return v2
+}"
+    stock := ["block0:", "add x4, x0, #32", "ldp x0, x1, [x4]", "stp x0, x1, [x4]", "ret"]
+    pinned := ["block0:", "args %0=x0", "add %3, %0, #32", "ldp %1, %2, [%3]", "stp %1, %2, [%3]",
+      "rets %1=x0 %2=x1"] },
+  { name := "i128_32bit_sextend_simple", source := "isa/aarch64/amodes.clif"
+    clif := "function %i128_32bit_sextend_simple(i32) -> i128 {
+block0(v0: i32):
+  v1 = sextend.i64 v0
+  v2 = load.i128 v1
+  store.i128 v2, v1
+  return v2
+}"
+    stock := ["block0:", "sxtw x4, w0", "ldp x0, x1, [x4]", "stp x0, x1, [x4]", "ret"]
+    pinned := ["block0:", "args %0=x0", "sxtw %3, %0", "ldp %1, %2, [%3]", "stp %1, %2, [%3]",
+      "rets %1=x0 %2=x1"] },
+  { name := "i128_32bit_sextend", source := "isa/aarch64/amodes.clif"
+    clif := "function %i128_32bit_sextend(i64, i32) -> i128 {
+block0(v0: i64, v1: i32):
+  v2 = sextend.i64 v1
+  v3 = iadd.i64 v0, v2
+  v6 = iconst.i64 24
+  v4 = iadd v3, v6
+  v5 = load.i128 v4
+  store.i128 v5, v4
+  return v5
+}"
+    stock := ["block0:", "add x6, x0, x1, SXTW", "add x6, x6, #24", "ldp x0, x1, [x6]",
+      "stp x0, x1, [x6]", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "add %5, %0, %1, sxtw", "add %4, %5, #24",
+      "ldp %2, %3, [%4]", "stp %2, %3, [%4]", "rets %2=x0 %3=x1"] },
+  { name := "i128_stack_load", source := "isa/aarch64/stack.clif"
+    clif := "function %i128_stack_load() -> i128 {
+ss0 = explicit_slot 16
+
+block0:
+  v1 = stack_addr.i64 ss0
+  v0 = load.i128 notrap v1
+  return v0
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "sub sp, sp, #16", "block0:", "mov x2, sp",
+      "ldp x0, x1, [x2]", "add sp, sp, #16", "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "mov %2, sp", "ldp %0, %1, [%2]", "rets %0=x0 %1=x1"] },
+  { name := "i128_stack_load_inst_offset", source := "isa/aarch64/stack.clif"
+    clif := "function %i128_stack_load_inst_offset() -> i128 {
+ss0 = explicit_slot 16
+ss1 = explicit_slot 16
+
+block0:
+  v1 = stack_addr.i64 ss1+16
+  v0 = load.i128 notrap v1
+  return v0
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "sub sp, sp, #32", "block0:",
+      "add x2, sp, #32", "ldp x0, x1, [x2]", "add sp, sp, #32", "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "add %2, sp, #32", "ldp %0, %1, [%2]", "rets %0=x0 %1=x1"] },
+  { name := "i128_stack_load_big", source := "isa/aarch64/stack.clif"
+    clif := "function %i128_stack_load_big() -> i128 {
+ss0 = explicit_slot 100000
+ss1 = explicit_slot 8
+
+block0:
+  v1 = stack_addr.i64 ss0
+  v0 = load.i128 notrap v1
+  return v0
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "movz w16, #34480",
+      "movk w16, w16, #1, LSL #16", "sub sp, sp, x16, UXTX", "block0:", "mov x2, sp",
+      "ldp x0, x1, [x2]", "movz w16, #34480", "movk w16, w16, #1, LSL #16", "add sp, sp, x16, UXTX",
+      "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "mov %2, sp", "ldp %0, %1, [%2]", "rets %0=x0 %1=x1"] },
+  { name := "i128_stack_store", source := "isa/aarch64/stack.clif"
+    clif := "function %i128_stack_store(i128) {
+ss0 = explicit_slot 16
+
+block0(v0: i128):
+  v1 = stack_addr.i64 ss0
+  store.i128 notrap v0, v1
+  return
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "sub sp, sp, #16", "block0:", "mov x3, sp",
+      "stp x0, x1, [x3]", "add sp, sp, #16", "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "mov %2, sp", "stp %0, %1, [%2]", "rets"] },
+  { name := "i128_stack_store_inst_offset", source := "isa/aarch64/stack.clif"
+    clif := "function %i128_stack_store_inst_offset(i128) {
+ss0 = explicit_slot 16
+ss1 = explicit_slot 16
+
+block0(v0: i128):
+  v1 = stack_addr.i64 ss1+16
+  store.i128 notrap v0, v1
+  return
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "sub sp, sp, #32", "block0:",
+      "add x3, sp, #32", "stp x0, x1, [x3]", "add sp, sp, #32", "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "add %2, sp, #32", "stp %0, %1, [%2]", "rets"] },
+  { name := "i128_stack_store_big", source := "isa/aarch64/stack.clif"
+    clif := "function %i128_stack_store_big(i128) {
+ss0 = explicit_slot 100000
+ss1 = explicit_slot 8
+
+block0(v0: i128):
+  v1 = stack_addr.i64 ss0
+  store.i128 notrap v0, v1
+  return
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "movz w16, #34480",
+      "movk w16, w16, #1, LSL #16", "sub sp, sp, x16, UXTX", "block0:", "mov x3, sp",
+      "stp x0, x1, [x3]", "movz w16, #34480", "movk w16, w16, #1, LSL #16", "add sp, sp, x16, UXTX",
+      "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "mov %2, sp", "stp %0, %1, [%2]", "rets"] },
+  { name := "i128_stack_store_load"
+    source := "runtests/i128-load-store.clif (CI snapshot stock code)"
+    clif := "function %i128_stack_store_load(i128) -> i8 {
+    ss0 = explicit_slot 16
+
+block0(v0: i128):
+    v3 = stack_addr.i64 ss0
+    store.i128 notrap v0, v3
+    v4 = stack_addr.i64 ss0
+    v1 = load.i128 notrap v4
+
+    v2 = icmp.i128 eq v0, v1
+    return v2
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "sub sp, sp, #16", "block0:", "mov x7, sp",
+      "stp x0, x1, [x7]", "mov x8, sp", "ldp x7, x8, [x8]", "subs xzr, x0, x7",
+      "ccmp x1, x8, #nzcv, eq", "cset x0, eq", "add sp, sp, #16", "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "mov %6, sp", "stp %0, %1, [%6]", "mov %5, sp",
+      "ldp %3, %4, [%5]", "subs xzr, %0, %3", "ccmp %1, %4, #nzcv, eq", "cset %2, eq",
+      "rets %2=x0"] },
+  { name := "i128_stack_store_load_inst_offset"
+    source := "runtests/i128-load-store.clif (CI snapshot stock code)"
+    clif := "function %i128_stack_store_load_inst_offset(i128) -> i8 {
+    ss0 = explicit_slot 16
+    ss1 = explicit_slot 16
+    ss2 = explicit_slot 16
+
+block0(v0: i128):
+    v3 = stack_addr.i64 ss1+16
+    store.i128 notrap v0, v3
+    v4 = stack_addr.i64 ss1+16
+    v1 = load.i128 notrap v4
+
+    v2 = icmp.i128 eq v0, v1
+    return v2
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "sub sp, sp, #48", "block0:",
+      "add x7, sp, #32", "stp x0, x1, [x7]", "add x8, sp, #32", "ldp x7, x8, [x8]",
+      "subs xzr, x0, x7", "ccmp x1, x8, #nzcv, eq", "cset x0, eq", "add sp, sp, #48",
+      "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "add %6, sp, #32", "stp %0, %1, [%6]",
+      "add %5, sp, #32", "ldp %3, %4, [%5]", "subs xzr, %0, %3", "ccmp %1, %4, #nzcv, eq",
+      "cset %2, eq", "rets %2=x0"] },
+  { name := "i128_stack_store_load_big_offset"
+    source := "runtests/i128-load-store.clif (CI snapshot stock code)"
+    clif := "function %i128_stack_store_load_big_offset(i128) -> i8 {
+    ss0 = explicit_slot 100000
+    ss1 = explicit_slot 8
+
+block0(v0: i128):
+    v3 = stack_addr.i64 ss0
+    store.i128 notrap v0, v3
+    v4 = stack_addr.i64 ss0
+    v1 = load.i128 notrap v4
+
+    v2 = icmp.i128 eq v0, v1
+    return v2
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "movz w16, #34480",
+      "movk w16, w16, #1, LSL #16", "sub sp, sp, x16, UXTX", "block0:", "mov x7, sp",
+      "stp x0, x1, [x7]", "mov x8, sp", "ldp x7, x8, [x8]", "subs xzr, x0, x7",
+      "ccmp x1, x8, #nzcv, eq", "cset x0, eq", "movz w16, #34480", "movk w16, w16, #1, LSL #16",
+      "add sp, sp, x16, UXTX", "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "mov %6, sp", "stp %0, %1, [%6]", "mov %5, sp",
+      "ldp %3, %4, [%5]", "subs xzr, %0, %3", "ccmp %1, %4, #nzcv, eq", "cset %2, eq",
+      "rets %2=x0"] },
+  { name := "i128_store_load", source := "runtests/i128-load-store.clif (CI snapshot stock code)"
+    clif := "function %i128_store_load(i128) -> i8 {
+    ss0 = explicit_slot 16
+
+block0(v0: i128):
+    v1 = stack_addr.i64 ss0
+    store.i128 v0, v1
+    v2 = load.i128 v1
+
+    v3 = icmp.i128 eq v0, v2
+    return v3
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "sub sp, sp, #16", "block0:", "mov x6, sp",
+      "stp x0, x1, [x6]", "ldp x6, x7, [x6]", "subs xzr, x0, x6", "ccmp x1, x7, #nzcv, eq",
+      "cset x0, eq", "add sp, sp, #16", "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "mov %5, sp", "stp %0, %1, [%5]", "ldp %3, %4, [%5]",
+      "subs xzr, %0, %3", "ccmp %1, %4, #nzcv, eq", "cset %2, eq", "rets %2=x0"] },
+  { name := "i128_store_load_offset"
+    source := "runtests/i128-load-store.clif (CI snapshot stock code)"
+    clif := "function %i128_store_load_offset(i128) -> i8 {
+    ss0 = explicit_slot 32
+
+block0(v0: i128):
+    v1 = stack_addr.i64 ss0
+    store.i128 v0, v1+16
+    v2 = load.i128 v1+16
+
+    v3 = icmp.i128 eq v0, v2
+    return v3
+}"
+    stock := ["stp fp, lr, [sp, #-16]!", "mov fp, sp", "sub sp, sp, #32", "block0:", "mov x6, sp",
+      "stp x0, x1, [x6, #16]", "ldp x6, x7, [x6, #16]", "subs xzr, x0, x6",
+      "ccmp x1, x7, #nzcv, eq", "cset x0, eq", "add sp, sp, #32", "ldp fp, lr, [sp], #16", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "mov %5, sp", "stp %0, %1, [%5, #16]",
+      "ldp %3, %4, [%5, #16]", "subs xzr, %0, %3", "ccmp %1, %4, #nzcv, eq", "cset %2, eq",
+      "rets %2=x0"] }]
+
 /-- `lower128` lowers the shape, its instruction shape is stock's, and its exact VCode is the
 pinned one. -/
 def shapeOk (s : Shape) : Bool :=
@@ -1376,7 +1665,8 @@ block0(v0: i64):
 /-! ## Rejections -/
 
 /-- `i128` instructions outside the foundation (`popcnt`, whose rule needs `MInst.MovToVec`,
-`umul_overflow`, which has no `$I128` rule, and others), and the `isplit` of a widening
+`umul_overflow`, which has no `$I128` rule, a big-endian load, which `little_or_native_endian`
+does not match, and others), and the `isplit` of a widening
 `imul` (its `lower.isle` rule needs the extern `value_is_unused`, which `externCtor128` does
 not model): `lower128` fails on each. -/
 def outside : List String := [
@@ -1409,9 +1699,9 @@ block0(v0: i128):
     v1 = call fn0(v0)
     return v1
 }",
-  "function %load(i64) -> i128 {
+  "function %load_big(i64) -> i128 {
 block0(v0: i64):
-    v1 = load.i128 v0
+    v1 = load.i128 big v0
     return v1
 }"]
 
@@ -1439,6 +1729,8 @@ def rejected (src : String) : Bool :=
 #guard minmaxes.all shapeOk
 #guard overflows.length == 4
 #guard overflows.all shapeOk
+#guard mems.length == 18
+#guard mems.all shapeOk
 #guard i128Free.all fun s => (function? s).any fun f => !has128 f && agrees f
 #guard outside.all rejected
 
@@ -1478,7 +1770,7 @@ partial def clifFiles (p : System.FilePath) : IO (Array System.FilePath) := do
 /-- Print each shape: whether it lowers, its shape against stock's, its exact VCode. -/
 def printShapes : IO Unit := do
   for s in shapes ++ extras ++ shifts ++ compares ++ selects ++ ariths ++ bitops ++ minmaxes ++
-      overflows do
+      overflows ++ mems do
     match function? s.clif with
     | none => IO.println s!"{s.name}: parse error"
     | some f => match lower128 f with

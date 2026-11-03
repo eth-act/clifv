@@ -196,8 +196,12 @@ def forms : List (String × G Insn) := [
   ("ldp_stp", do
     let rt ← gprZR
     let rt2 ← gprZR
-    let m ← if ← coin then pure (AMode.spPreIndexed (8 * (← randInt (-64) 63)))
-            else pure (AMode.spPostIndexed (8 * (← randInt (-64) 63)))
+    -- SP pre/post-indexed (frames), or a base register (or `sp`) and a signed offset
+    -- (`MInst.loadP64`/`storeP64`)
+    let m ← match ← rand 3 with
+      | 0 => pure (AMode.spPreIndexed (8 * (← randInt (-64) 63)))
+      | 1 => pure (AMode.spPostIndexed (8 * (← randInt (-64) 63)))
+      | _ => pure (AMode.unscaled (← gprSP) (8 * (← randInt (-64) 63)))
     -- LDP with Rt = Rt2 is CONSTRAINED UNPREDICTABLE
     if ← coin then pure (.stp rt rt2 m)
     else pure (.ldp rt (if rt == rt2 then (if rt == .x 0 then .x 1 else .x 0) else rt2) m)),

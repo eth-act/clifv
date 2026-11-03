@@ -573,6 +573,14 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
       pure (.LDST (.Reg_pair_pre_indexed { opc := 2, V := 0, L, imm7 := ← imm s, Rt2, Rn := 31, Rt }))
     | .spPostIndexed s =>
       pure (.LDST (.Reg_pair_post_indexed { opc := 2, V := 0, L, imm7 := ← imm s, Rt2, Rn := 31, Rt }))
+    | .unscaled rn s =>
+      -- C6.2 LDP/STP (signed offset) `[xn, #s]` (Cranelift `PairAMode::SignedOffset`, `emit.rs`
+      -- `enc_ldst_pair(0b1010100101/0b1010100100, ...)`): `rn` is a GPR or `sp` (encoding 31);
+      -- an `ldp` with equal destinations is CONSTRAINED UNPREDICTABLE
+      -- (`reg_pair_constrain_unpredictable`), so it is rejected
+      if L = 1#1 ∧ Rt = Rt2 then throw s!"ldp with equal destinations {repr rt}"
+      pure (.LDST (.Reg_pair_signed_offset { opc := 2, V := 0, L, imm7 := ← imm s, Rt2,
+                                             Rn := ← rn.encSP, Rt }))
     | m => throw s!"ldp/stp mode {repr m}"
   | .mov w rd rm =>
     if rd == .sp || rm == .sp then
