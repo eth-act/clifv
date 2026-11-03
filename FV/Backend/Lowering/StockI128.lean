@@ -67,7 +67,15 @@ is that native route for a small foundation scope:
   `alu_rrr_with_flags_paired`, `alu_rrr_with_flags_chained`, `cset_paired` and
   `with_flags_chained` are ISLE rules. `umul_overflow` and `smul_overflow` at `i128` stay
   outside: stock has no `$I128` rule for them. At `i8`..`i64` the overflow operations are
-  outside `instData` (no `InstructionData` for them), so `Stock.lower` fails on them.
+  outside `instData` (no `InstructionData` for them), so `Stock.lower` fails on them;
+* `load` and `store` at `i128` (`load_i128`, `store_i128`): one `ldp` or `stp` of the register
+  pair (`aarch64_loadp64`, `aarch64_storep64`: `MInst.loadP64`, `MInst.storeP64`) at the
+  `PairAMode::SignedOffset` of `pair_amode`: the base register and the offset when the offset is
+  a multiple of 8 in `-512..504` (the new extern `simm7_scaled_from_i64`), else `amode_add` of
+  the offset and offset 0. `MInst.ofV` does not model the two instructions, so `externCtor128`
+  builds them at `emit` (`pairOfV?`). A big-endian access stays outside
+  (`little_or_native_endian`). A `stack_load` or `stack_store` is a `stack_addr` and a `load` or
+  `store` (Cranelift's legalization; the filetests are written so).
 
 Any other instruction with an `i128` operand or result makes `lower128` fail, so that a caller
 can keep the legalized lowering. `FVTest.Backend.I128Native` routes the functions that
@@ -160,7 +168,8 @@ def unary128 : Clif.UnaryOp → Option String
 (`shift128`), arithmetic, bitwise, minimum or maximum operation (`arith128`, `bitop128`,
 `minmax128`, `Binary`; `unary128`, `Unary`), an overflow operation (`overflow128`, `Binary`),
 an `icmp` of two `i128` values (`IntCompare`), `select`, `select_spectre_guard` and
-`bitselect` at `i128` (`Ternary`), `bmask` to `i128` (`Unary`). Every other instruction is
+`bitselect` at `i128` (`Ternary`), `bmask` to `i128` (`Unary`), a little-endian `load` or
+`store` of an `i128` (`Load`, `Store`). Every other instruction is
 `instData` (which accepts `ireduce` from `i128`, a narrow shift by an `i128` amount, a narrow
 `select` on an `i128` condition and a narrow `bmask` of an `i128` value, because it checks the
 result type). -/
@@ -190,6 +199,14 @@ def instData128 (f : Clif.Function) : Clif.Inst → Except String V
     pure (instDataV "Ternary" [opcodeV "SelectSpectreGuard", .values [c, x, y]])
   | .bitselect .i128 c x y => pure (instDataV "Ternary" [opcodeV "Bitselect", .values [c, x, y]])
   | .bmask .i128 x => pure (instDataV "Unary" [opcodeV "Bmask", .value x])
+  | .load .load .i128 flags p off =>
+    if flags.endianness == some .big then throw "big-endian load"
+    else pure (instDataV "Load"
+      [opcodeV (loadOpcode .load), .value p, .op (.memFlags flags), .int off])
+  | .store .store .i128 flags x p off =>
+    if flags.endianness == some .big then throw "big-endian store"
+    else pure (instDataV "Store"
+      [opcodeV (storeOpcode .store), .values [x, p], .op (.memFlags flags), .int off])
   | i => instData f i
 
 /-- The instructions of the foundation that may have an `i128` operand or result (`wide`: the
@@ -197,11 +214,12 @@ def instData128 (f : Clif.Function) : Clif.Inst → Except String V
 only its amount is an `i128` value. The arithmetic, bitwise, minimum, maximum and overflow
 operations (`arith128`, `bitop128`, `unary128`, `minmax128`, `overflow128`) and an `icmp` are
 in it at `i128`. A `select` is in it at `i128` and on an `i128` condition,
-`select_spectre_guard` and `bitselect` at `i128`, and `bmask` at `i128` and of an `i128`
-value. -/
+`select_spectre_guard` and `bitselect` at `i128`, `bmask` at `i128` and of an `i128`
+value, and a `load` or `store` of an `i128`. -/
 def foundation128 (wide : Nat → Bool) : Clif.Inst → Bool
   | .isplit .i128 _ | .iconcat .i64 _ _ | .extend _ .i128 _ | .icmp _ .i128 _ _ => true
   | .selectSpectreGuard .i128 .. | .bitselect .i128 .. => true
+  | .load .load .i128 .. | .store .store .i128 .. => true
   | .select ty c _ _ => ty == .i128 || wide c
   | .bmask ty x => ty == .i128 || wide x
   | .ireduce _ x | .bitcast .i128 _ x => wide x
@@ -384,13 +402,36 @@ def buildCtx128 (f : Clif.Function) :
 
 /-! ## Extern constructors -/
 
+/-- The register and byte offset of a `PairAMode::SignedOffset` value (`SImm7Scaled` is the
+byte offset, as `externCtor128`'s `simm7_scaled_from_i64` gives it). -/
+def pairAModeOfV? (v : V) : Option (Reg × Int) := do
+  let (k, fs) ← v.enumOf? TyId.PairAMode
+  match k, fs with
+  | VIdx.PairAMode.SignedOffset, [r, .int off] => return (← r.reg?, off)
+  | _, _ => none
+
+/-- The `MInst.LoadP64`/`StoreP64` of an ISLE `MInst` value with a `PairAMode::SignedOffset`
+address (`aarch64_loadp64`, `aarch64_storep64`), which `MInst.ofV` does not model. -/
+def pairOfV? (v : V) : Option MInst := do
+  let (k, fs) ← v.enumOf? tyMInst
+  match k, fs with
+  | VIdx.MInst.LoadP64, [rt, rt2, m, fl] =>
+    let (rn, off) ← pairAModeOfV? m
+    return .loadP64 (← rt.reg?) (← rt2.reg?) rn off (← fl.memFlags?)
+  | VIdx.MInst.StoreP64, [rt, rt2, m, fl] =>
+    let (rn, off) ← pairAModeOfV? m
+    return .storeP64 (← rt.reg?) (← rt2.reg?) rn off (← fl.memFlags?)
+  | _, _ => none
+
 /-- `Stock.externCtor` with register pairs. `put_in_regs` and `put_in_regs_vec` of an `i128`
 value give both registers, with the demand and sunk-instruction checks of `Stock.externCtor`;
 `output_pair` (`machinst/isle.rs`) makes a two-value output; `gen_return` of a signature with
 an `i128` return places the registers at `retLocs128`; `use_csdb` is false (the stock setting
 `use_csdb=false`; the stock-configured driver rejects `select_spectre_guard` under
-`use_csdb=true`). `put_in_reg` of an `i128` value and calls with `i128` arguments or returns
-are unmodeled. Everything else is `Stock.externCtor`. -/
+`use_csdb=true`); `simm7_scaled_from_i64` gives the byte offset of a `SImm7Scaled` at `$I64`;
+`emit` of `MInst.LoadP64`/`StoreP64` with a `PairAMode::SignedOffset` emits `MInst.loadP64`/
+`storeP64` (`pairOfV?`). `put_in_reg` of an `i128` value and calls with `i128` arguments or
+returns are unmodeled. Everything else is `Stock.externCtor`. -/
 def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : State) :
     ExtResult (V × State) :=
   let wide (v : Nat) : Bool := (hiReg? hi v).isSome
@@ -415,6 +456,14 @@ def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : Sta
     else externCtor ctx t args st
   | TId.output_pair, [.regs a, .regs b] => .ok (.regsVec [a, b], st)
   | TId.use_csdb, [] => .ok (.bool false, st)
+  -- `simm7_scaled_from_i64` at `$I64` (`SImm7Scaled::maybe_from_i64`): the byte offset, a
+  -- multiple of 8 in `-512..504`
+  | TId.simm7_scaled_from_i64, [.int v, .ty ty] =>
+    if ty == .int 64 && v % 8 == 0 && -512 ≤ v && v ≤ 504 then .ok (.int v, st) else .fail
+  | TId.emit, [i] =>
+    match pairOfV? i with
+    | some m => .ok (.op .unit, { st with base := st.base.emit m })
+    | none => externCtor ctx t args st
   | TId.gen_return, [.regsVec rss] =>
     if ctx.func.sig.returns.any (·.ty == .i128) then
       match retLocs128 ctx.func.sig with
