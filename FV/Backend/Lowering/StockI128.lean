@@ -55,7 +55,19 @@ is that native route for a small foundation scope:
   with the halves swapped. No new extern: `i128_alu_bitop`, `lower_clz128`, `a64_clz`,
   `a64_cls`, `rbit`, `a64_rev64`, `eon`, `madd`, `cmp64_imm` and `with_flags_reg` are ISLE
   rules. `popcnt` at `i128` stays outside: its rule (`popcnt_i128`) moves the high half into
-  the vector register with `mov_to_vec` (`MInst.MovToVec`), which `MInst` does not model.
+  the vector register with `mov_to_vec` (`MInst.MovToVec`), which `MInst` does not model;
+* `umin`, `umax`, `smin` and `smax` at `i128` (`minmax128`, rule 2 of each): `lower_select` at
+  `$I128` of the `emit_icmp` of the operands, that is `cmp` and `sbcs` as for an `icmp`, then
+  one `csel` per half;
+* `uadd_overflow`, `sadd_overflow`, `usub_overflow` and `ssub_overflow` at `i128`
+  (`overflow128`, `overflow_op_128`): `adds`/`adcs` or `subs`/`sbcs` of the halves, then a
+  `cset` of the overflow condition. The two results are the register pair of the sum or
+  difference and the register of the `i8` flag (`multi_reg_to_pair_and_single`, then
+  `output_pair`), and the driver binds each result as for any instruction. No new extern:
+  `alu_rrr_with_flags_paired`, `alu_rrr_with_flags_chained`, `cset_paired` and
+  `with_flags_chained` are ISLE rules. `umul_overflow` and `smul_overflow` at `i128` stay
+  outside: stock has no `$I128` rule for them. At `i8`..`i64` the overflow operations are
+  outside `instData` (no `InstructionData` for them), so `Stock.lower` fails on them.
 
 Any other instruction with an `i128` operand or result makes `lower128` fail, so that a caller
 can keep the legalized lowering. `FVTest.Backend.I128Native` routes the functions that
@@ -106,6 +118,27 @@ def bitop128 : Clif.BinaryOp → Bool
   | .band | .bor | .bxor => true
   | _ => false
 
+/-- The integer minimum and maximum that `lower128` lowers at `i128` (rule 2 of `umin`, `smin`,
+`umax` and `smax`): `lower_select` at `$I128` of the `emit_icmp` of the two operands, that is
+`cmp` of the low halves, `sbcs` of the high halves (the operands swapped for a maximum), then
+one `csel` per half. -/
+def minmax128 : Clif.BinaryOp → Bool
+  | .smin | .smax | .umin | .umax => true
+  | _ => false
+
+/-- The overflow operations that `lower128` lowers at `i128` (`overflow_op_128`): `adds` and
+`adcs` (`uadd_overflow`, `sadd_overflow`) or `subs` and `sbcs` (`usub_overflow`,
+`ssub_overflow`) of the halves, then the `cset` of the overflow condition (`hs`, `vs`, `lo`,
+`vs`). The result is the pair of the `i128` value and the `i8` flag
+(`multi_reg_to_pair_and_single`, `output_pair`). Not `umul_overflow` and `smul_overflow`:
+stock has no `$I128` rule for them. -/
+def overflow128 : Clif.OverflowOp → Option String
+  | .uaddOverflow => some "UaddOverflow"
+  | .saddOverflow => some "SaddOverflow"
+  | .usubOverflow => some "UsubOverflow"
+  | .ssubOverflow => some "SsubOverflow"
+  | _ => none
+
 /-- The unary operations that `lower128` lowers at `i128`: `ineg` (`sub_i128` from
 `value_regs_zero`), `iabs` (`asr`, two `eor`, `subs` and `sbc`), `bnot` (`orn` of each half),
 `clz` (`lower_clz128`), `ctz` (`rbit` of each half, then `lower_clz128`), `cls` (the `$I128`
@@ -124,8 +157,9 @@ def unary128 : Clif.UnaryOp → Option String
 
 /-- `InstructionData` with the `i128` forms of the foundation: `isplit` of an `i128`,
 `iconcat` of two `i64`, an extension to `i128`, `bitcast.i128`, an `i128` shift or rotate
-(`shift128`), arithmetic or bitwise operation (`arith128`, `bitop128`, `Binary`; `unary128`,
-`Unary`), an `icmp` of two `i128` values (`IntCompare`), `select`, `select_spectre_guard` and
+(`shift128`), arithmetic, bitwise, minimum or maximum operation (`arith128`, `bitop128`,
+`minmax128`, `Binary`; `unary128`, `Unary`), an overflow operation (`overflow128`, `Binary`),
+an `icmp` of two `i128` values (`IntCompare`), `select`, `select_spectre_guard` and
 `bitselect` at `i128` (`Ternary`), `bmask` to `i128` (`Unary`). Every other instruction is
 `instData` (which accepts `ireduce` from `i128`, a narrow shift by an `i128` amount, a narrow
 `select` on an `i128` condition and a narrow `bmask` of an `i128` value, because it checks the
@@ -133,13 +167,17 @@ result type). -/
 def instData128 (f : Clif.Function) : Clif.Inst → Except String V
   | .isplit .i128 x => pure (instDataV "Unary" [opcodeV "Isplit", .value x])
   | .binary op .i128 x y =>
-    match shift128 op || arith128 op || bitop128 op, binaryOpcode op with
+    match shift128 op || arith128 op || bitop128 op || minmax128 op, binaryOpcode op with
     | true, some n => pure (instDataV "Binary" [opcodeV n, .values [x, y]])
     | _, _ => instData f (.binary op .i128 x y)
   | .unary op .i128 x =>
     match unary128 op with
     | some n => pure (instDataV "Unary" [opcodeV n, .value x])
     | none => instData f (.unary op .i128 x)
+  | .overflow op .i128 x y =>
+    match overflow128 op with
+    | some n => pure (instDataV "Binary" [opcodeV n, .values [x, y]])
+    | none => instData f (.overflow op .i128 x y)
   | .iconcat .i64 x y => pure (instDataV "Binary" [opcodeV "Iconcat", .values [x, y]])
   | .extend op .i128 x =>
     pure (instDataV "Unary" [opcodeV (if op == .uextend then "Uextend" else "Sextend"), .value x])
@@ -156,10 +194,11 @@ def instData128 (f : Clif.Function) : Clif.Inst → Except String V
 
 /-- The instructions of the foundation that may have an `i128` operand or result (`wide`: the
 `i128` values). A shift or rotate (`shift128`) is in it at `i128`, and at a narrower type when
-only its amount is an `i128` value. The arithmetic and bitwise operations (`arith128`,
-`bitop128`, `unary128`) and an `icmp` are in it at `i128`. A `select` is in it at `i128` and on
-an `i128` condition, `select_spectre_guard` and `bitselect` at `i128`, and `bmask` at `i128` and
-of an `i128` value. -/
+only its amount is an `i128` value. The arithmetic, bitwise, minimum, maximum and overflow
+operations (`arith128`, `bitop128`, `unary128`, `minmax128`, `overflow128`) and an `icmp` are
+in it at `i128`. A `select` is in it at `i128` and on an `i128` condition,
+`select_spectre_guard` and `bitselect` at `i128`, and `bmask` at `i128` and of an `i128`
+value. -/
 def foundation128 (wide : Nat → Bool) : Clif.Inst → Bool
   | .isplit .i128 _ | .iconcat .i64 _ _ | .extend _ .i128 _ | .icmp _ .i128 _ _ => true
   | .selectSpectreGuard .i128 .. | .bitselect .i128 .. => true
@@ -167,8 +206,10 @@ def foundation128 (wide : Nat → Bool) : Clif.Inst → Bool
   | .bmask ty x => ty == .i128 || wide x
   | .ireduce _ x | .bitcast .i128 _ x => wide x
   | .binary op ty x _ =>
-    shift128 op && (ty == .i128 || !wide x) || (arith128 op || bitop128 op) && ty == .i128
+    shift128 op && (ty == .i128 || !wide x) ||
+      (arith128 op || bitop128 op || minmax128 op) && ty == .i128
   | .unary op ty _ => ty == .i128 && (unary128 op).isSome
+  | .overflow op ty _ _ => ty == .i128 && (overflow128 op).isSome
   | _ => false
 
 /-- The terminators that may have an `i128` operand: branches and `return`. The calls of
