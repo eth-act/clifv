@@ -1,0 +1,14 @@
+deps128 0
+key 0
+ready 3
+kernel 0
+normal-target 0
+proper387 3
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/validated-ExecWrites-broad-12g-v1/gate.py", line 53, in <module>
+    run('normal-target',['build','--no-build',target]);run('proper387',['build','--no-build',*I['final_proper387_targets']]);tr=R/'.lake/build/lib/lean/FV/E2E/ExecWrites.trace';data=json.loads(tr.read_text());assert data.get('inputs') and not data.get('synthetic') and data['depHash']==I['current_key']
+                                                       ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/validated-ExecWrites-broad-12g-v1/gate.py", line 22, in run
+    records.append({'label':label,'root':str(root),'argv':['lake',*args],'exit':rc,'log_sha256':sha(D/(label+'.log')),'memory':(D/(label+'.mem')).read_text()});(D/'progress.json').write_text(json.dumps(records,indent=2)+'\n');print(label,rc,flush=True);assert rc in allowed,(label,rc);return rc
+                                                                                                                                                                                                                                                                    ^^^^^^^^^^^^^
+AssertionError: ('proper387', 3)

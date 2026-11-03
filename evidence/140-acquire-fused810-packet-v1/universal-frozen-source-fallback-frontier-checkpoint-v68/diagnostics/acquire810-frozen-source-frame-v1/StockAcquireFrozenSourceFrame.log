@@ -1,0 +1,4 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFrozenSourceFrame.lean:59:4: error: 'change' tactic failed, pattern
+  record.input.demand[value]! ≠ 0
+is not definitionally equal to target
+  Demanded record.input value ∧ value ∈ availOf f (availIn f result.ctx) bi point.fst

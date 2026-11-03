@@ -1,0 +1,27 @@
+{
+  "scope": "Actual General7 module runtime; no Main CLI activation",
+  "fixture_identities": [
+    "Backend.Stock.GeneralLoopCfg6.Fixture.jumptable from the unchanged jumptable.clif capture",
+    "General7Runtime.identity: i64 parameter returned unchanged"
+  ],
+  "fixture_source_hashes": {
+    "FV/Backend/Proof/StockGeneralLoopWitness6.lean": "394485a50c27792d17f42eb586e085ab333d627ca65375f68c672f1de9f93b47",
+    "General7Runtime.lean": "f5a13e611b1482230bf235f292283e520c89a6766f623135ffe8ab805bb9ae0f"
+  },
+  "receipt_sha256": "30b5f70c2f1ba3451853ff3545963d57e307c1919a65583965ab641571a32f7b",
+  "runtime_log_sha256": "9ce459df041d8f8e34b8f4e9e221a82f1d0099833708fd4317a4cc9bf481097d",
+  "focused_dependencies_receipts": {
+    "independent-backend-NI-v6": "81d97a2c1c0137839b04707fb8e33dc2e00d877e2f95652f24fe89599cab97df",
+    "remaining-focused-roots-v2": "2f5eda78a0f6fa2ec4599c1153c306e06511694fa361c7683c7f00d5f3ddd832"
+  },
+  "cases": [
+    "new_default_and_route23_actual_stock: true",
+    "all_old_routes_and_out_of_range_jumptable: true",
+    "all_old_routes_and_out_of_range_identity: true",
+    "previous_identity_exact_default: true"
+  ],
+  "peak_bytes": 240173056,
+  "oom": 0,
+  "oom_kill": 0,
+  "failed_v1_preserved": true
+}

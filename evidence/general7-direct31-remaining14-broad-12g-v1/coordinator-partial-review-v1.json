@@ -1,0 +1,232 @@
+{
+  "status": "PARTIAL_PASSED_OUTPUTS_PRESERVED",
+  "targets": 43,
+  "fresh_kernels": {
+    "FV.Backend.Proof.IselEmitModel": {
+      "key": "a7d2a06da986a4d1",
+      "source_sha256": "8819f2a83cec0b2fa48116644b4095fd170a50c58201a1c3622f68e0e8178426",
+      "memory": "peak 293933056\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.IselEmitLast": {
+      "key": "2381e98f761ceb0e",
+      "source_sha256": "c424584507600454c186b790a7a31a7f6c9fc75e6f875b532a5a4743cd040623",
+      "memory": "peak 504516608\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.IselEmitHand": {
+      "key": "bcbaaed5a55edcc9",
+      "source_sha256": "13c2fc656abd1ff4d74c4f80e1ce112d47f8c7be1eb48f5d90e2b4ab94442af5",
+      "memory": "peak 351358976\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.IselEmitDriver": {
+      "key": "fba1fa2f8ecb49a5",
+      "source_sha256": "d908736749809a4b435dbec7be1aae6aaa8056c1cd89185c61a748e137b5cc9c",
+      "memory": "peak 303448064\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.LowerTotal": {
+      "key": "64ea542132bd8d6b",
+      "source_sha256": "b7034c0ba68961ca5deca52ad80fbedeff19be59e69d93f4d217e02506e7b444",
+      "memory": "peak 4583038976\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.IselPrgCtx": {
+      "key": "40f55bc0c065fe36",
+      "source_sha256": "765e7c6e0479a03dd08a9d10644a24a7bc6eb30d86dfd7d6ef6589d3dd324dda",
+      "memory": "peak 276013056\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockBitReturnRefines": {
+      "key": "5f1d26c066a95be0",
+      "source_sha256": "cded66dffa134e39c4496411db801c646096b3304149853191e1cf3025b0c697",
+      "memory": "peak 350580736\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockBnotReturnRefines": {
+      "key": "651cc47dc5375e94",
+      "source_sha256": "e7ad4562e855f56fd43301129c69fcf91f6480410f0767d8866fbf8dca326187",
+      "memory": "peak 259510272\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockCastReturnRefines": {
+      "key": "e2f0d62053422c23",
+      "source_sha256": "e5ee12d2c57e7c80d4e4341ccac01e81f471a3d5f647fddd4eb41fdd6ad5a7e1",
+      "memory": "peak 260616192\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockInheritedFixture": {
+      "key": "548a938d9892ed20",
+      "source_sha256": "657956896ed542f8248b501447d1932c8593911124031f0a9abf5e45a3263ebe",
+      "memory": "peak 8225533952\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockCfgEntryAtWitness": {
+      "key": "428c8feca5f8826b",
+      "source_sha256": "fd5557cd17464fce354222bc1826f598726e1e233f06e7ffc5cd232707ef3d47",
+      "memory": "peak 359165952\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockCmpReturnRefines": {
+      "key": "07676308fb4d827d",
+      "source_sha256": "8572ea6a0a237489c210e9a2af5ee7090d8a3f89fda43b7262d57a96740b903f",
+      "memory": "peak 255811584\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockConstantNotrap": {
+      "key": "2c1ffd0e599864a5",
+      "source_sha256": "4390dd280d03afc2af72a41f314d1ac033e95fc918874bacf91844a7062840e0",
+      "memory": "peak 260194304\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockConstantReturnRefines": {
+      "key": "daf63cf82e66a0b6",
+      "source_sha256": "d73e66cfec17227e6f93db51b4fde33562301d7c119895448eb16ad452e1a094",
+      "memory": "peak 262217728\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockMemoryLoadWitness": {
+      "key": "bb8990fdbedbabb0",
+      "source_sha256": "d42cf089de1de05a0688fe92ba9378e92c6555161d98b76b86cf914286344efa",
+      "memory": "peak 259100672\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockMemorySingleFixture": {
+      "key": "4714d5ee01cb9585",
+      "source_sha256": "0414706970de71b4ecbcd70b2b14dba1833a29add6d4dde0eb4b177449acb9b3",
+      "memory": "peak 6175260672\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockMinMaxReturnRefines": {
+      "key": "1ab333d8e6350b00",
+      "source_sha256": "66cfb660ba6d0ff9c5f9748b84a2e99e8adad0c8c0167cbe85e518afc4cbfdf0",
+      "memory": "peak 259751936\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockMulReturnRefines": {
+      "key": "1b68f88ee3d879c3",
+      "source_sha256": "41196fffd7e35e74eb8fd626d8c237c3c2730b557bd1616f8226b01eb7fb1687",
+      "memory": "peak 261820416\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockParameterFixture": {
+      "key": "a5f6900930aba216",
+      "source_sha256": "8fa50afb6dd9d0866fd3a8185ef7a06a338bfaea83dc4f415f7432aedb682e70",
+      "memory": "peak 239751168\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockPopcountReturnRefines": {
+      "key": "898c12356d1f67dc",
+      "source_sha256": "b1bea2032b8c9e6fb6724f4c7504f1bbaa12cad5b58ee47c78216ea2c6cba845",
+      "memory": "peak 259244032\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockScalarBitDomain": {
+      "key": "d2601a050cf3720c",
+      "source_sha256": "16f13c1548891678f9bc7ec2908bf7357d4c02b0dee30dbaaa702f17b6b6d55f",
+      "memory": "peak 261541888\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockScalarBnotDomain": {
+      "key": "65ff11272cf9507a",
+      "source_sha256": "d368bdfc09c6808070552e319aefc1ea2a2c0f17b37f0567dbb3fdb91cc57d95",
+      "memory": "peak 264499200\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockScalarCastDomain": {
+      "key": "5fae4a8ae2b2ab3b",
+      "source_sha256": "13b8ff05cde8c6907745d79502b3288069b639682d16128cbbe8fb5aa70d0930",
+      "memory": "peak 260980736\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockScalarCmpDomain": {
+      "key": "1ec8d85f8b0da851",
+      "source_sha256": "fd7019a085c82d2e34e68d955a187272a7a95f53ac5b2d8c9402cf8055d47ed7",
+      "memory": "peak 281571328\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockScalarConstantDomain": {
+      "key": "883071286085f370",
+      "source_sha256": "c296441725e2cd8ae9c72023ec728c493a37645b56f70b31b9591ce7405f0d0d",
+      "memory": "peak 265924608\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockScalarMinMaxDomain": {
+      "key": "2185f79dae5cb291",
+      "source_sha256": "db34f79071a155ad119184b124f5a31f7c20954e58757dc620a68855ee106f5e",
+      "memory": "peak 268775424\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockScalarMulDomain": {
+      "key": "230889ed88010e16",
+      "source_sha256": "e70a0e265f332f95f1e73949d6592706dc76b10f9409a0f65e0713f2b85910ca",
+      "memory": "peak 262049792\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockScalarPopcountDomain": {
+      "key": "62a83309d68cf96f",
+      "source_sha256": "36f321f5c1c1c408ac01ac3f282cd34aa945aee57be229d9e02d21b7b880f79f",
+      "memory": "peak 264601600\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockShiftReturnRefines": {
+      "key": "b508ff9e8a753868",
+      "source_sha256": "411a02bcb40512826496fa8d46c5f6e7f30447dde460ba80132f6bed354c5f19",
+      "memory": "peak 260546560\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.Backend.Proof.StockScalarShiftDomain": {
+      "key": "9f90ade3de08c2d7",
+      "source_sha256": "f91c0336d9fca2fee9393ec20f730e1cec2b30740967534fd3b90f9c5cb26a64",
+      "memory": "peak 263376896\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.E2E.LinkCheck": {
+      "key": "f506cfc45abc9598",
+      "source_sha256": "2d7dad93c41a36219160336a8453b1e02a45e286de2504a8b93dfdf641d715ea",
+      "memory": "peak 429355008\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.E2E.LinkOwnCallsDefs": {
+      "key": "1fcbe8ee9f81ebc0",
+      "source_sha256": "9277de3804b118603f9951a4df20ffc97b6fb9d313a219f1f2bc041839888c66",
+      "memory": "peak 258973696\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.E2E.LinkOwnFramesDefs": {
+      "key": "114e7dfd669071ca",
+      "source_sha256": "b1c5b43baaf788f2ebf99409851078de688e3da49fe2ced7505d87ea39e43fd0",
+      "memory": "peak 258084864\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.E2E.LinkScopeDefs": {
+      "key": "cd0babfec0859119",
+      "source_sha256": "3d9fb489bbd16b5e0cfcddba7510c0f52505057a7ea2a08996ebfdb5d05d65de",
+      "memory": "peak 266772480\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.E2E.LinkScopeInputDefs": {
+      "key": "5622cf1db214ba71",
+      "source_sha256": "341e8abe94914abba34b057f124d58315b38729763be7dae70995d36b7f8b1dd",
+      "memory": "peak 260374528\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.E2E.LinkScopeFast": {
+      "key": "96be1eb0e188c779",
+      "source_sha256": "9ef77f8426741a13fd5621a31ff016f9ba939ecf23143df1656bf349edce45d6",
+      "memory": "peak 267296768\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    },
+    "FV.E2E.LinkCheckFast": {
+      "key": "f29634a271160ff8",
+      "source_sha256": "a2a89841c8c4330bcb9297f9a91bd3122e5b55458bb5ca5c22cac22c916c6140",
+      "memory": "peak 277057536\noom 0\noom_kill 0\n",
+      "kernel_exit": 0
+    }
+  },
+  "normal1768": false,
+  "failure": "unsupported matching P origin for FV.E2E.StockMulFixtures before kernel43",
+  "scheduler_restored": 1723571,
+  "utc": "2026-11-03T15:41:15.311488+00:00"
+}

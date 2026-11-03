@@ -1,0 +1,7 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFallbackExtendFresh.lean:72:13: warning: This simp argument is unused:
+  State.mark
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [LState.fresh, LState.emit, scanState]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

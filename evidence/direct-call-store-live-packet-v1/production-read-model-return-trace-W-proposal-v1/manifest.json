@@ -1,0 +1,29 @@
+{
+  "status": "SOURCE_ONLY;NO_KERNEL_OR_PRODUCTION_CLAIM",
+  "new_sources": {
+    "FV/E2E/ABIReadModelsReturnTraceW.lean": "9e0fe6df0335090310e09f2501a1fc451bb7005c3d7fe2716062b650257f749e"
+  },
+  "original_input_headers_exact": {
+    "E2E.MixedFlagBoundary.machine_returnW": true,
+    "E2E.ScalarBoundary.machine_returnW": true,
+    "E2E.DivBoundary.machine_returnW": true,
+    "E2E.CfgBoundary.machine_returnW": true
+  },
+  "old_source_snapshots": {
+    "FV.E2E.ABIReadFlags": "cb744ccacb702ebe2a7e74e1c42d4b379a99f1ae82b20259948cef981c5081f8",
+    "FV.E2E.ABIReadScalar": "829e6ced107bb6afe1f2cef1d020aa6792ad9156855e4113a50a6bf73472403a",
+    "FV.E2E.ABIReadDiv": "2251813606b0bbae679cbb3bc718c26ee8b67cd2be5d210e3bc0785acc74b943",
+    "FV.E2E.ABIReadCfg": "3ff00ae04d56b9a54e406f778a520b9cf5b0912ee968ed7f0ffafcb28956e19d"
+  },
+  "proof_reuse": "Public existing virtual realization and one existing machine_return_valueW consumer. Scalar/div models reuse original public instruction/frame/transport/realize fields. No old NI or checker changes.",
+  "new_shared_paths": [],
+  "new_import_cycle": false,
+  "source_baseline": "Preserved actualmain2c600854 source; new kernel remains unverified",
+  "audit_roots": [
+    "E2E.MixedFlagBoundary.machine_returnW",
+    "E2E.ScalarBoundary.machine_returnW",
+    "E2E.DivBoundary.machine_returnW",
+    "E2E.CfgBoundary.machine_returnW"
+  ],
+  "remaining": "Bind source/config/native keys, verify new kernel/audit after ExecWrites readiness, then derive unchanged source class and full paired provider for remaining accepted cases."
+}

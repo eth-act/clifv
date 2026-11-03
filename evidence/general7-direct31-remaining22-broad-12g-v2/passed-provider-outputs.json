@@ -1,0 +1,488 @@
+{
+  "FV.E2E.StockMulFixtures": {
+    "native_key": "dec708c6184cfdeb",
+    "outputs": {
+      "m": false,
+      "o": [
+        "19039ccb97fd3f3d.olean"
+      ],
+      "i": "e0445b46c78642be.ilean",
+      "c": "bbefa030509cbc61.c"
+    },
+    "trace_sha256": "b52936f6fafdc217e0ef9b8848562b48cb353dd5e84bce1c0efb0a7a402e9b44",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockMulFixtures.trace": "b52936f6fafdc217e0ef9b8848562b48cb353dd5e84bce1c0efb0a7a402e9b44",
+      ".lake/build/lib/lean/FV/E2E/StockMulFixtures.olean": "cfdd017a5539412a930b7cdcc8d30937b7b1dc48c2d37447dcb9a4c0f1db2f97",
+      ".lake/build/lib/lean/FV/E2E/StockMulFixtures.ilean": "3a88266d6f3b5318b58d8721bc4ec099034546d2919a493f20a98f076533bbcf",
+      ".lake/build/lib/lean/FV/E2E/StockMulFixtures.olean.hash": "5f203ed5a4070a7fd6331d2e32ca00f0d3712dc126b937d035567d1b68c6a29b",
+      ".lake/build/lib/lean/FV/E2E/StockMulFixtures.ilean.hash": "4ec47b22a972a38d814b22cd018ef6bac2ad97f31e7b752823867b2cb56c0a64",
+      ".lake/build/ir/FV/E2E/StockMulFixtures.c.hash": "0c9ea548286a98aac1657b4accdf698691cb677eec5d622e57889f8971046199",
+      ".lake/build/ir/FV/E2E/StockMulFixtures.c": "3c67dc5076983a1710b182c1fa4cb9d5f32f3e525d171c554a4968de66ed2447"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockShiftFixtures": {
+    "native_key": "93ddc4ca12f3fcac",
+    "outputs": {
+      "m": false,
+      "o": [
+        "63d928a27a89ab5a.olean"
+      ],
+      "i": "f85c42caa53527a3.ilean",
+      "c": "17b77755fb2632ee.c"
+    },
+    "trace_sha256": "37dc3b8d7a17135e7f6092dbb25692ad5fcc896b7c8ff3930646584d5695a9d0",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockShiftFixtures.olean.hash": "e521038b5418a41bbeaf23ffd7f6799b1b8cdebb4f00e2d08ef1626e45ea6229",
+      ".lake/build/lib/lean/FV/E2E/StockShiftFixtures.ilean.hash": "0541230940ca9e28d684fc35042a35046ca9bce3aae645f63a16f6a814e373b9",
+      ".lake/build/lib/lean/FV/E2E/StockShiftFixtures.trace": "37dc3b8d7a17135e7f6092dbb25692ad5fcc896b7c8ff3930646584d5695a9d0",
+      ".lake/build/lib/lean/FV/E2E/StockShiftFixtures.ilean": "4c0dab7465e9c9dc0820b1e432ae33bbcde0811de9bfad04da444e2f5b0e3dcf",
+      ".lake/build/lib/lean/FV/E2E/StockShiftFixtures.olean": "abea52ea39a532a1c754b4b7662df2a0c7023997cbc5724086c2d93a123d305e",
+      ".lake/build/ir/FV/E2E/StockShiftFixtures.c": "fbe61ae10f1b0c5b2748c399ee408ffe572f7664b04bcdb1e665d77ea9458f50",
+      ".lake/build/ir/FV/E2E/StockShiftFixtures.c.hash": "61975e5ba8258e2dba3bdbc521f73339aef3874de311348e660287633606d35d"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockCastFixtures": {
+    "native_key": "40b8f4a8e4e9faae",
+    "outputs": {
+      "m": false,
+      "o": [
+        "cc3d2d5e88742b3e.olean"
+      ],
+      "i": "59dbdb3da6bbc40a.ilean",
+      "c": "16bac912f3e528dc.c"
+    },
+    "trace_sha256": "55080741b334376bde71dc4d4e8993dcbdcbd9aede7a729be2d5125907b0bdeb",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockCastFixtures.olean": "a5757094cc2c14d3d633e87be7a4b2d5d7d8917b2de63517953b0620c781a66d",
+      ".lake/build/lib/lean/FV/E2E/StockCastFixtures.ilean": "1daae41d0fdcb20d8b0ec4309967c10d751bb958b953ccb1ce10561f113540ef",
+      ".lake/build/lib/lean/FV/E2E/StockCastFixtures.olean.hash": "8f949ed35385bd229a9a0a3678f5767971a2902fc934e2207baa7727ef70a3ed",
+      ".lake/build/lib/lean/FV/E2E/StockCastFixtures.trace": "55080741b334376bde71dc4d4e8993dcbdcbd9aede7a729be2d5125907b0bdeb",
+      ".lake/build/lib/lean/FV/E2E/StockCastFixtures.ilean.hash": "d68e5df17ad8ef57825a73fa4befee1577e86649b40262f7c9e798338919896c",
+      ".lake/build/ir/FV/E2E/StockCastFixtures.c": "6921d47cb17976e0ca860ce9831f0398ce1789a1ac7fbeb7ae3f376c341ac401",
+      ".lake/build/ir/FV/E2E/StockCastFixtures.c.hash": "88798fbace79f5eda2a7d4592e1998e983dafcebcacd7d0ecc2c76912cca7d2f"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockBitFixtures": {
+    "native_key": "27aaee475e0151dc",
+    "outputs": {
+      "m": false,
+      "o": [
+        "55540e7c5d2c3a09.olean"
+      ],
+      "i": "068d9dd5a1cb5f70.ilean",
+      "c": "42bc7f473c55948d.c"
+    },
+    "trace_sha256": "f62c97f56913574902b57ff234543bbf0ffb3b23343f6c06954b1fcd5feeef91",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockBitFixtures.olean": "323a84275983d2213b4d6f9fdbc81ec387f49b9474b35f697bd34d9b79e3688a",
+      ".lake/build/lib/lean/FV/E2E/StockBitFixtures.ilean": "b31a63b4ca050caaea682622949efbc34ee848bf131d3aeb59ac539a7d96a942",
+      ".lake/build/lib/lean/FV/E2E/StockBitFixtures.ilean.hash": "c75f52621e09a61a5cdbb9e780126747a1c27c5dc66b1aeaf7eb8b2b93174359",
+      ".lake/build/lib/lean/FV/E2E/StockBitFixtures.olean.hash": "f75174c64dcb80a330c9a0797925a5d4e783c21bec1f18cd25e8398e2ab917f1",
+      ".lake/build/lib/lean/FV/E2E/StockBitFixtures.trace": "f62c97f56913574902b57ff234543bbf0ffb3b23343f6c06954b1fcd5feeef91",
+      ".lake/build/ir/FV/E2E/StockBitFixtures.c": "e38f85ee96fc9588426797ef08abb35445a785a820d4d775ad6b6b3b8f11bade",
+      ".lake/build/ir/FV/E2E/StockBitFixtures.c.hash": "70726cf529bcc9febaaff4a187b451210a813202b31b679a9fd75d80334c0244"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockPopcountFixtures": {
+    "native_key": "7e70e1dc1aa3767c",
+    "outputs": {
+      "m": false,
+      "o": [
+        "50b122102603b341.olean"
+      ],
+      "i": "53938e3460855b40.ilean",
+      "c": "d7f47daab9a6ee68.c"
+    },
+    "trace_sha256": "5d6c64b8cc93dc0f907752059a905bb7455ba88cb5d7d617d2c67e86645715e6",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockPopcountFixtures.ilean": "b7ae03df63f8631073acf70b31b93d111963840e544406286cddac5511e7cb5b",
+      ".lake/build/lib/lean/FV/E2E/StockPopcountFixtures.trace": "5d6c64b8cc93dc0f907752059a905bb7455ba88cb5d7d617d2c67e86645715e6",
+      ".lake/build/lib/lean/FV/E2E/StockPopcountFixtures.olean": "19bd14d6ba7a2e77cbf4b25e40fee9c180eb7c27407bdc9220cd5192d133a2b1",
+      ".lake/build/lib/lean/FV/E2E/StockPopcountFixtures.olean.hash": "95e0ee3305e7d2095021cdc9dcb53eead3cd5c190af55d1233ec4b31526c2bbb",
+      ".lake/build/lib/lean/FV/E2E/StockPopcountFixtures.ilean.hash": "d4eb785b80cf817c299851153dbf80452537bb1f6471565641d6325cb4c3a772",
+      ".lake/build/ir/FV/E2E/StockPopcountFixtures.c.hash": "52a03e36274f63496b7b56b68a4d0e138081c5b49c249173698980ec4b8cbb21",
+      ".lake/build/ir/FV/E2E/StockPopcountFixtures.c": "47f27b02886c88f4e946adf72dd8fafe9c58c96992117931c5982b29857d0805"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockMinMaxFixtures": {
+    "native_key": "b820261de3c6eb14",
+    "outputs": {
+      "m": false,
+      "o": [
+        "63de21626cfa5cf9.olean"
+      ],
+      "i": "8ea555a9be5cb595.ilean",
+      "c": "4bffe6e17bf8ca0e.c"
+    },
+    "trace_sha256": "d61673197f542f634a3a580b6df1f9d6e328bbd80fbfc4a6124a205be41c6937",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockMinMaxFixtures.trace": "d61673197f542f634a3a580b6df1f9d6e328bbd80fbfc4a6124a205be41c6937",
+      ".lake/build/lib/lean/FV/E2E/StockMinMaxFixtures.olean": "6d4a9ebf364334ea414d14393511ad3dde0b958120fda744e0ce2e0596ecb666",
+      ".lake/build/lib/lean/FV/E2E/StockMinMaxFixtures.ilean": "22b2cfc5ea08d765f416ad4c3654650388b11a4b98d8f45c0a96a4c8e4aad94a",
+      ".lake/build/lib/lean/FV/E2E/StockMinMaxFixtures.olean.hash": "747f91b6c74619496581fb4231acf11adb8e6b8c29cefeb9b86c820dea75e45c",
+      ".lake/build/lib/lean/FV/E2E/StockMinMaxFixtures.ilean.hash": "33f71f03c83a98af00b9ccd33659ebee0ff552c8910e9c7cff90ab75455f815c",
+      ".lake/build/ir/FV/E2E/StockMinMaxFixtures.c": "a00187cc3dddba14b77e11ff1f5b89a37c0e7973831c20fbb407dcea200d3f9d",
+      ".lake/build/ir/FV/E2E/StockMinMaxFixtures.c.hash": "cc3c604d70372ae5d3488b09ca64669cddc5dd4992af4731d967565b12fab7c6"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockCmpFixtures": {
+    "native_key": "c77a62545d171051",
+    "outputs": {
+      "m": false,
+      "o": [
+        "e0a21fc8eb8d32d3.olean"
+      ],
+      "i": "9b8075adcc09d552.ilean",
+      "c": "7c690b9177f1460d.c"
+    },
+    "trace_sha256": "7a12dc1810e89a8105af7716540f1036dbbc0fca30c78cbb7054397281bff280",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockCmpFixtures.trace": "7a12dc1810e89a8105af7716540f1036dbbc0fca30c78cbb7054397281bff280",
+      ".lake/build/lib/lean/FV/E2E/StockCmpFixtures.olean": "224a41830277d51eaefbb9a31e832e6beedcd9807972fd43d2ef60f5a67a04ce",
+      ".lake/build/lib/lean/FV/E2E/StockCmpFixtures.ilean": "7b49e40649f01e8d525d56e408e6432cfbad99b704e910e360ca1df25e6f8c01",
+      ".lake/build/lib/lean/FV/E2E/StockCmpFixtures.olean.hash": "c4b2b6ca8c29c2b7232e69c998dde5f48500b153e2a1f93b28fafe04b60b996e",
+      ".lake/build/lib/lean/FV/E2E/StockCmpFixtures.ilean.hash": "bc3173da91b02cbf078600c981995ea8d012ad646aa17c7320d876ef74f426d1",
+      ".lake/build/ir/FV/E2E/StockCmpFixtures.c": "036257320faa9421c0a97652c4a58141c41e464219021e467964eca4bfb0329c",
+      ".lake/build/ir/FV/E2E/StockCmpFixtures.c.hash": "ec52c2242f6ca4a029ee9381dc64c4f66ae599dff8417d07c8d1ef1da5026730"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockHighMulFixtures": {
+    "native_key": "5f2575941e7958d0",
+    "outputs": {
+      "m": false,
+      "o": [
+        "3f32bed62fcffc96.olean"
+      ],
+      "i": "22aca0b6c8cbf936.ilean",
+      "c": "ef92ae0661997783.c"
+    },
+    "trace_sha256": "f1f5e94fa0a6fc11233a90347405a18ea1521c7f1d92a9ae9c60ff83437dc965",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockHighMulFixtures.olean": "13cfa355f0624246f6621d783d841bee7612b844718d40aad6ed797ae8bb50e7",
+      ".lake/build/lib/lean/FV/E2E/StockHighMulFixtures.ilean": "fcaafedb14c138c2e6253339d0c783e23802d3b7c8a3bfbeb38c6ba2e314af14",
+      ".lake/build/lib/lean/FV/E2E/StockHighMulFixtures.ilean.hash": "7858d78c5788c4fc00b891ac53e0ec333776554972be68770b0ff9275f84aa8f",
+      ".lake/build/lib/lean/FV/E2E/StockHighMulFixtures.olean.hash": "92dbc2b4b9f3bd69e5e15fa1cf3014f2d34c8437bbf88b3a34a597b1464a890c",
+      ".lake/build/lib/lean/FV/E2E/StockHighMulFixtures.trace": "f1f5e94fa0a6fc11233a90347405a18ea1521c7f1d92a9ae9c60ff83437dc965",
+      ".lake/build/ir/FV/E2E/StockHighMulFixtures.c": "a92aaa9f0516cd990fc3744d091ab55770a5fb4fa3ee9c35a72e3af6a4bcfcf8",
+      ".lake/build/ir/FV/E2E/StockHighMulFixtures.c.hash": "82ca5cf8668bce5512141e3ceac073e2c5fbcc07450a99eb00f459c2891c7bff"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockAluRootsFixtures": {
+    "native_key": "9f725c91f8576fb9",
+    "outputs": {
+      "m": false,
+      "o": [
+        "959a59dcf9cac092.olean"
+      ],
+      "i": "75eb3d5f7f65cf68.ilean",
+      "c": "1310a71290c8e449.c"
+    },
+    "trace_sha256": "7a71c2b7d14ddce2189d99f322b4e0547193ae2df890eb78b66d2c6f5808212c",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockAluRootsFixtures.ilean": "63bfdbdddbdced3ba6440edc82b1a6e663a29235268e1e0fb607dc9b63a3011f",
+      ".lake/build/lib/lean/FV/E2E/StockAluRootsFixtures.olean.hash": "147a1ccd265c9fb41b2d9c399d75fc0febd8550e97a479e66614c602603fa4b6",
+      ".lake/build/lib/lean/FV/E2E/StockAluRootsFixtures.ilean.hash": "011283d23fefa051392e862ea56425a1c3724366e62c07fd1faf1e1621702d56",
+      ".lake/build/lib/lean/FV/E2E/StockAluRootsFixtures.trace": "7a71c2b7d14ddce2189d99f322b4e0547193ae2df890eb78b66d2c6f5808212c",
+      ".lake/build/lib/lean/FV/E2E/StockAluRootsFixtures.olean": "b663f4a144f1449bbbd9e0449352bc1cbfb7b2fcdc557f1bc896cdd008156c1e",
+      ".lake/build/ir/FV/E2E/StockAluRootsFixtures.c": "9a2a625789dbecafca975ff8ed3424a9bfb3133b7d90b47fcb4bf42446f78a47",
+      ".lake/build/ir/FV/E2E/StockAluRootsFixtures.c.hash": "75043804a538b480ffdcc9a8283a31a3111595017d29920ec637342ddae9777e"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockCfgFixtures": {
+    "native_key": "71ce03f4ecc22660",
+    "outputs": {
+      "m": false,
+      "o": [
+        "cab43d343d596f09.olean"
+      ],
+      "i": "7a6ff1b436a0ae2e.ilean",
+      "c": "99ec7f2dd2d6c227.c"
+    },
+    "trace_sha256": "10c577b50e649bfda0e52c44cb78fc0aaa967f5fe48b3cff8337687ab0d308d8",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockCfgFixtures.olean.hash": "545d3eb2c4f25a6f987ab1118ee5a4dcd9653c1dea338bac9ea0209c5936b042",
+      ".lake/build/lib/lean/FV/E2E/StockCfgFixtures.ilean.hash": "2ca5d8f5f5cecd8f470009cb00a9f778c0164e53ad3cefc1846119bfb89eaccc",
+      ".lake/build/lib/lean/FV/E2E/StockCfgFixtures.trace": "10c577b50e649bfda0e52c44cb78fc0aaa967f5fe48b3cff8337687ab0d308d8",
+      ".lake/build/lib/lean/FV/E2E/StockCfgFixtures.olean": "d79cc4387ecb1946921cb08c93ff3501289a4b8452a89d8aaac84e60c06c37c4",
+      ".lake/build/lib/lean/FV/E2E/StockCfgFixtures.ilean": "abb90d8e63a5481f0169a545af5dad9271cfefab2328e858792cf0547f9a47d9",
+      ".lake/build/ir/FV/E2E/StockCfgFixtures.c": "9e5252842aaa4eed4fbe1f500b3b7db8dac9ac0d0454321f5afca9e1d49ee4fe",
+      ".lake/build/ir/FV/E2E/StockCfgFixtures.c.hash": "bfcbd8cb5ce6c4cdbe86422c6a0d01d7fb75b6085db463c395dd7a40b47dea83"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockConditionalCfgFixtures": {
+    "native_key": "12489acea8c4e9e3",
+    "outputs": {
+      "m": false,
+      "o": [
+        "65c9b1e3beb539fa.olean"
+      ],
+      "i": "6f708c8093681ecb.ilean",
+      "c": "9f086a1df28a6cec.c"
+    },
+    "trace_sha256": "b2be3ce98254a2a200a43f9910a2d8514788afb3700f5df4587d0c06f7abeabe",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockConditionalCfgFixtures.ilean.hash": "27305fd76db7dc741ec3bee53ca91264fcc4d0646d200f11283a498ed4b5955e",
+      ".lake/build/lib/lean/FV/E2E/StockConditionalCfgFixtures.olean": "1735ca31f1960b820dc484689fee944bcd1214e0c8d025bd1fde8a2b0a7e9049",
+      ".lake/build/lib/lean/FV/E2E/StockConditionalCfgFixtures.ilean": "c1f5d181cf90c0d7c8a500234d5ebb8ed2ae199853fc1c610fdf8634f4caa981",
+      ".lake/build/lib/lean/FV/E2E/StockConditionalCfgFixtures.olean.hash": "ee534a9d850cd7739f52a1c4e8f10e8c4759e3506c5687a6d7b9a22354da4a50",
+      ".lake/build/lib/lean/FV/E2E/StockConditionalCfgFixtures.trace": "b2be3ce98254a2a200a43f9910a2d8514788afb3700f5df4587d0c06f7abeabe",
+      ".lake/build/ir/FV/E2E/StockConditionalCfgFixtures.c": "55e4387492c2b98fce5591b777e51a0748ec08344c16621e5d5d81cecad3c46a",
+      ".lake/build/ir/FV/E2E/StockConditionalCfgFixtures.c.hash": "67dcf2a9c2bd8cab0d5f576b331b8af04ef59545c553cefbd3cdf28b8b4c5f06"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockConditionalForwardCfgFixtures": {
+    "native_key": "e3725eeb89adb2f6",
+    "outputs": {
+      "m": false,
+      "o": [
+        "fc38f6c377bfec27.olean"
+      ],
+      "i": "ca387abf293fa7ca.ilean",
+      "c": "c949b10f31b263a4.c"
+    },
+    "trace_sha256": "ed10f2652af2520d8d034896edc834b4cc5d69244a1ac04875386232ef856029",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockConditionalForwardCfgFixtures.ilean.hash": "bdfd3b900da28c84a86b1411d29fb0a5358558e919559125ed8ceb547ff98ddc",
+      ".lake/build/lib/lean/FV/E2E/StockConditionalForwardCfgFixtures.ilean": "1664cff3e86af67e385d2b5681fc44008c4c674f582338e4853654be9c3c8b41",
+      ".lake/build/lib/lean/FV/E2E/StockConditionalForwardCfgFixtures.olean.hash": "934bbc3a7d3fe839e468b432172343d655c7510488fde369754fc006cea03d9f",
+      ".lake/build/lib/lean/FV/E2E/StockConditionalForwardCfgFixtures.trace": "ed10f2652af2520d8d034896edc834b4cc5d69244a1ac04875386232ef856029",
+      ".lake/build/lib/lean/FV/E2E/StockConditionalForwardCfgFixtures.olean": "59f95e53b1241d94db236568b5d26494f2da859e1ce9efc899e05ad40b7573a7",
+      ".lake/build/ir/FV/E2E/StockConditionalForwardCfgFixtures.c": "48f07a39ab73af266d443dce713576fb876e20dcc2845a4d357f1ed3cc9fe151",
+      ".lake/build/ir/FV/E2E/StockConditionalForwardCfgFixtures.c.hash": "4577062b1db6cbcff01de01cbad80557820cb5ae2530477d55414b4af6e8b9ff"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockDivFixtures": {
+    "native_key": "a01f262291ee153e",
+    "outputs": {
+      "m": false,
+      "o": [
+        "64c4d72c5981bb22.olean"
+      ],
+      "i": "f77f9d094420f6f3.ilean",
+      "c": "a373b88adfe9da83.c"
+    },
+    "trace_sha256": "265bcd6cf5a25dc7a780f79ad7029aedcd156b122df4a95dcde0d9f98b354768",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockDivFixtures.ilean.hash": "d70a4fe1421dbc2ecbd0a8c4849190c868df9769a533e9d339873bf79dfdef25",
+      ".lake/build/lib/lean/FV/E2E/StockDivFixtures.ilean": "a58e0da8a4b5cb2d70814165f4c941a530f82e880ae97bc5d2b2b054e716f9a8",
+      ".lake/build/lib/lean/FV/E2E/StockDivFixtures.olean.hash": "e5cdc26f5d17ae4b8f3cd588d7cfb62318a8563658a53020df969f774cd22fcc",
+      ".lake/build/lib/lean/FV/E2E/StockDivFixtures.olean": "76036f0bca4640f5389859bb646ba6ccaa38de2bffeeaacfadb536a76a072b3b",
+      ".lake/build/lib/lean/FV/E2E/StockDivFixtures.trace": "265bcd6cf5a25dc7a780f79ad7029aedcd156b122df4a95dcde0d9f98b354768",
+      ".lake/build/ir/FV/E2E/StockDivFixtures.c": "e336ce94a60a2610ceb67c3f65ddeb7bc50cb1dd646fdf6c147fc3151d739770",
+      ".lake/build/ir/FV/E2E/StockDivFixtures.c.hash": "e1216aa7047b4d770ba674a8f2d3a91e1655bab6db4660abd9e123adedec4eaa"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockEntryCfgFixtures": {
+    "native_key": "3e09c5d2e14d5448",
+    "outputs": {
+      "m": false,
+      "o": [
+        "b7c241acb7860318.olean"
+      ],
+      "i": "f0834cec9fbdc56f.ilean",
+      "c": "256905d9758ceeeb.c"
+    },
+    "trace_sha256": "6daa5a6cf1fe1f011a5f3e4b147ae4881f2c538723cf8e05da12b7cf5fe7d0dd",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockEntryCfgFixtures.trace": "6daa5a6cf1fe1f011a5f3e4b147ae4881f2c538723cf8e05da12b7cf5fe7d0dd",
+      ".lake/build/lib/lean/FV/E2E/StockEntryCfgFixtures.olean": "d3e19a0a5a8b35fea1592a3a47d9f119d2f0f1819bdae95b3cf951b7299290ff",
+      ".lake/build/lib/lean/FV/E2E/StockEntryCfgFixtures.ilean": "c83ce6a84cff13dbc5a949726560774ff76df7b7645d76b75d7a479706bed85d",
+      ".lake/build/lib/lean/FV/E2E/StockEntryCfgFixtures.olean.hash": "6654245e1db852c7dbe37a4b29a9035fb0318617d543ec8d7b764bcde9196ce1",
+      ".lake/build/lib/lean/FV/E2E/StockEntryCfgFixtures.ilean.hash": "157b7298a031dca551212a3cabe555ccdb617b7d5acfa408631fba8d32c534fd",
+      ".lake/build/ir/FV/E2E/StockEntryCfgFixtures.c": "0977809aff2c2f345c3ab0d3561eed2fb370d86c240988e8bcb756af1e3218e0",
+      ".lake/build/ir/FV/E2E/StockEntryCfgFixtures.c.hash": "fa5858c4c807accc275b362f0363e31fab43772896322b1288102074c384e133"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockLinearCfgFixtures": {
+    "native_key": "37d7f3a269b824a1",
+    "outputs": {
+      "m": false,
+      "o": [
+        "1d8cb145af4ca0d2.olean"
+      ],
+      "i": "dcd1c29aa9e9c927.ilean",
+      "c": "0d9b5d49dd619a72.c"
+    },
+    "trace_sha256": "fe64643bb635a324d7ce2696469720dccf46d7ab487166e0138721d07922fab6",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockLinearCfgFixtures.trace": "fe64643bb635a324d7ce2696469720dccf46d7ab487166e0138721d07922fab6",
+      ".lake/build/lib/lean/FV/E2E/StockLinearCfgFixtures.olean": "1b646c321f7b306715f0b5fedafab1b993b9670169ad128e9c47ba5c8b073bd5",
+      ".lake/build/lib/lean/FV/E2E/StockLinearCfgFixtures.ilean.hash": "a57c73f3ce0b51851554fc6bc06a78a2440f78accf8e2447be69055c04af38ae",
+      ".lake/build/lib/lean/FV/E2E/StockLinearCfgFixtures.olean.hash": "5b995582c6862ffae5f40720576baecbbed8cd0690615761b303891281f1a42e",
+      ".lake/build/lib/lean/FV/E2E/StockLinearCfgFixtures.ilean": "a8ade484253969826e6b0105cccfca8e9a9e32a8035378dbddd84f498ec0094e",
+      ".lake/build/ir/FV/E2E/StockLinearCfgFixtures.c": "c50a9fa89bd19c9061db99a071f58011b505e901892e8b2cba070498dc643fea",
+      ".lake/build/ir/FV/E2E/StockLinearCfgFixtures.c.hash": "8599ea82f30eb2998a46645e53a3297c6b4089d462d30de94adae49220dd74a6"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockForwardCfgFixtures": {
+    "native_key": "c2b7c07e37f4e93b",
+    "outputs": {
+      "m": false,
+      "o": [
+        "1f508d5559503417.olean"
+      ],
+      "i": "aaea2cadf7bcc174.ilean",
+      "c": "38caf032842d1de8.c"
+    },
+    "trace_sha256": "860898b6708961f689e80a95be2d21cb58c5c34db7b38e6cf6319397b03b18d8",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockForwardCfgFixtures.trace": "860898b6708961f689e80a95be2d21cb58c5c34db7b38e6cf6319397b03b18d8",
+      ".lake/build/lib/lean/FV/E2E/StockForwardCfgFixtures.olean": "887208320fbc0123442f4e548b454e0be33b542cb659328ad7395f412d1aabc2",
+      ".lake/build/lib/lean/FV/E2E/StockForwardCfgFixtures.ilean": "1df32f3e363bb9b9798b178d13920ce3a7b311580ea6350ca611ac21bb46b5fa",
+      ".lake/build/lib/lean/FV/E2E/StockForwardCfgFixtures.olean.hash": "efa2ff2e9de63fda60106d5da9b7982d053ed532eeed3babd5cbb0309e254389",
+      ".lake/build/lib/lean/FV/E2E/StockForwardCfgFixtures.ilean.hash": "15637b72e929cf3359921db5b9bba1f08fff599300a14d6dadbe906666a4edf4",
+      ".lake/build/ir/FV/E2E/StockForwardCfgFixtures.c": "e0550b5674ea6e8828acfdbc64fba3da3b26bbd43a5ffd29c2c4aa0ac910e112",
+      ".lake/build/ir/FV/E2E/StockForwardCfgFixtures.c.hash": "b1bd773690ef8195c1fbe97a77a1988b534e7a6329cc5a999c46fe821206d8c5"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockMixedDivFixtures": {
+    "native_key": "19db2cd2a53d69a8",
+    "outputs": {
+      "m": false,
+      "o": [
+        "f4f1151f77886e85.olean"
+      ],
+      "i": "22f15e4a58ca3343.ilean",
+      "c": "8ceb614d63ab4c01.c"
+    },
+    "trace_sha256": "1b710d25cc7bfd9b5bc7b544b7b30c58acfab24b97e3946f6121d8f74c0ec3fe",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockMixedDivFixtures.trace": "1b710d25cc7bfd9b5bc7b544b7b30c58acfab24b97e3946f6121d8f74c0ec3fe",
+      ".lake/build/lib/lean/FV/E2E/StockMixedDivFixtures.olean": "61d31beb38e8589d82363de0bc260d3cad6988ded1d47cd8317d7b965f7b708a",
+      ".lake/build/lib/lean/FV/E2E/StockMixedDivFixtures.ilean": "981d4cff88a4dcd7b8e92e91e214943bd6c3273356cf469cf114f93f7cc6f738",
+      ".lake/build/lib/lean/FV/E2E/StockMixedDivFixtures.olean.hash": "a22b6b4c7dabcb39d27be960ba05f6ed5f208adafaba4685482a76a80ede1e7f",
+      ".lake/build/lib/lean/FV/E2E/StockMixedDivFixtures.ilean.hash": "ebec641637806a97cca97d2566e07a910406f14da1fb537dc90e468b4c1b1f15",
+      ".lake/build/ir/FV/E2E/StockMixedDivFixtures.c": "b715325456a0e9371716e1f4e5fbd5d496e5c4f56246e89a328b9e340fda06b6",
+      ".lake/build/ir/FV/E2E/StockMixedDivFixtures.c.hash": "04685d84f5eef2e0b80ac27e3e8119cd6b1356e4bfef3baa50f11effab2a94c3"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockReturnedDivFixtures": {
+    "native_key": "3657a16f9f64acaf",
+    "outputs": {
+      "m": false,
+      "o": [
+        "e4b9529b45d8d6c1.olean"
+      ],
+      "i": "29b382cf0513c861.ilean",
+      "c": "00191efeca5374ff.c"
+    },
+    "trace_sha256": "6c2a2e70780967fb7456bbe7f63f7300fe4ca42006c0c781a433d7af91f4abc8",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockReturnedDivFixtures.trace": "6c2a2e70780967fb7456bbe7f63f7300fe4ca42006c0c781a433d7af91f4abc8",
+      ".lake/build/lib/lean/FV/E2E/StockReturnedDivFixtures.olean": "a1f25d361bde9ffff7231dd5604f948e6d9f0b9f518ec9e833ddc906c8edfd9c",
+      ".lake/build/lib/lean/FV/E2E/StockReturnedDivFixtures.olean.hash": "3aa41ed8f3ebc8a0b0d43cbe2fa78e92af1a03feb3ca40522948ed35b38d290e",
+      ".lake/build/lib/lean/FV/E2E/StockReturnedDivFixtures.ilean.hash": "da3a0bbc2279e23e77dbedc4b1c6f2b9e78e1a241316b90df0e7ea5fb53738a9",
+      ".lake/build/lib/lean/FV/E2E/StockReturnedDivFixtures.ilean": "c49c67c291362b28d6dfca2b799ad8b9747590978199300822f2c76112c24441",
+      ".lake/build/ir/FV/E2E/StockReturnedDivFixtures.c": "224d85890050873d8f6f1c9498328154b2ff369592bb31e8f2dc7f73affafc10",
+      ".lake/build/ir/FV/E2E/StockReturnedDivFixtures.c.hash": "5c77a1ed0c5e2c63b6f2a42b3dbbf95aab6b72c652c364be333331df1d62dcb9"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockGeneralDivFixtures": {
+    "native_key": "b3445c1b086ab5e0",
+    "outputs": {
+      "m": false,
+      "o": [
+        "f21d0097d34fa150.olean"
+      ],
+      "i": "478fd25da495552c.ilean",
+      "c": "e7dc63fa4f45c816.c"
+    },
+    "trace_sha256": "4c2a4b4bf1d0db858a28752b544f81381a2c0b12fa19976fb9c0965be640c9de",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockGeneralDivFixtures.trace": "4c2a4b4bf1d0db858a28752b544f81381a2c0b12fa19976fb9c0965be640c9de",
+      ".lake/build/lib/lean/FV/E2E/StockGeneralDivFixtures.olean": "40e2fa7c32319949a0ec531062ae94d5ad8acd36079831b326eeba6478fab198",
+      ".lake/build/lib/lean/FV/E2E/StockGeneralDivFixtures.ilean": "699e2b6c0f6a11fa07df2984ad31e0e79407fe47d53dc8a2c61ecf4a38fe84b4",
+      ".lake/build/lib/lean/FV/E2E/StockGeneralDivFixtures.olean.hash": "733e78813254a038d04e06914dfd4adcd534f9306e609f945d13a699ef403c5f",
+      ".lake/build/lib/lean/FV/E2E/StockGeneralDivFixtures.ilean.hash": "6e34281dd7840541f0e457a0ca1c6a25abde6d0abf733468d979a0c2a818e68d",
+      ".lake/build/ir/FV/E2E/StockGeneralDivFixtures.c": "92ed7ed825f01f583722174a94948d309d60719021fc92b65b9ee7da828b145f",
+      ".lake/build/ir/FV/E2E/StockGeneralDivFixtures.c.hash": "5b481aecfde0f4c472974b59418e88797221b8b530e2da595f74fb123c6cb901"
+    },
+    "reused_completed_output": true
+  },
+  "FV.E2E.StockMemoryEffectKernel": {
+    "native_key": "8ae851946a5da39a",
+    "outputs": {
+      "o": [
+        "84daa6ca5e3eb69a.olean"
+      ],
+      "m": false,
+      "i": "4714d96c72def949.ilean",
+      "c": "164b73ebfc8ec0d1.c"
+    },
+    "trace_sha256": "70b56af140b0949ada81270dfecf40a8a8d8278c9ee0077297aa465eba1c07b5",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockMemoryEffectKernel.olean": "aff7f23962a472a952f0bfb72ccdf4e047142c155c979e1b99841b76c0e523d9",
+      ".lake/build/lib/lean/FV/E2E/StockMemoryEffectKernel.ilean": "153ab51776bfa041d09a50001db75134851d7e053f94e30b11ca749234b353b4",
+      ".lake/build/lib/lean/FV/E2E/StockMemoryEffectKernel.olean.hash": "7b5be23db7feda624f8f6f92029c86187306a35ec61f0daac79a03a381e1258e",
+      ".lake/build/lib/lean/FV/E2E/StockMemoryEffectKernel.ilean.hash": "15ff248fccba2aab60d3e1135675290ee8ec17474076f46da56374d27e210c45",
+      ".lake/build/lib/lean/FV/E2E/StockMemoryEffectKernel.trace": "70b56af140b0949ada81270dfecf40a8a8d8278c9ee0077297aa465eba1c07b5",
+      ".lake/build/ir/FV/E2E/StockMemoryEffectKernel.setup.json": "c493755e439a728db9436f3f0bc65951c1d11e7d2fed97715629476d025ebea8",
+      ".lake/build/ir/FV/E2E/StockMemoryEffectKernel.c": "5b60733c4d0e91d8181d298ab38c65776ea934f4a9c9b273b8c596587b760667",
+      ".lake/build/ir/FV/E2E/StockMemoryEffectKernel.c.hash": "66e35fb89512eb2eab558fa64870f912d27570d7e508bf8a8441e980b759628b"
+    },
+    "reused_completed_output": false
+  },
+  "FV.E2E.StockMemoryPairedFunctionWitness": {
+    "native_key": "58bdb0dc45aa5f6e",
+    "outputs": {
+      "o": [
+        "c90dc65430c000c0.olean"
+      ],
+      "m": false,
+      "i": "6de000888a5ea6c0.ilean",
+      "c": "2650bf5e2a804f17.c"
+    },
+    "trace_sha256": "eb6d27a588d6eb1e7e1929e30b1f9c894f28cac95e8216c7310062b36a1d5722",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockMemoryPairedFunctionWitness.olean": "1242e337f8094df92082de0db5823a793097f2c90966be6c0bc6ec1d4d01d1ff",
+      ".lake/build/lib/lean/FV/E2E/StockMemoryPairedFunctionWitness.ilean": "9e70ba2be79aad92020e6f812da1cce02e75a79fd14729a104584ace9830bd72",
+      ".lake/build/lib/lean/FV/E2E/StockMemoryPairedFunctionWitness.olean.hash": "27474cf900a598a2ececb9a7ca5b2233eec7bee47235f224e35c4b34a5967f77",
+      ".lake/build/lib/lean/FV/E2E/StockMemoryPairedFunctionWitness.ilean.hash": "212dc5c3bb8783bb7e4416e238a40bb7b2a6166911aab8da9f4cf64810617399",
+      ".lake/build/lib/lean/FV/E2E/StockMemoryPairedFunctionWitness.trace": "eb6d27a588d6eb1e7e1929e30b1f9c894f28cac95e8216c7310062b36a1d5722",
+      ".lake/build/ir/FV/E2E/StockMemoryPairedFunctionWitness.setup.json": "048e820b7b6b56095a9119d66a54fb5da6b495957553aea01270ae3dddebf51b",
+      ".lake/build/ir/FV/E2E/StockMemoryPairedFunctionWitness.c": "b221c226f9105fb1d144ae8a4bea529c177c7b8da5d34fc942a72ffe4a5cfc15",
+      ".lake/build/ir/FV/E2E/StockMemoryPairedFunctionWitness.c.hash": "de317a67149fc53f6c62a119f7a3e4de85175e91d43e6cba34572beb8cfcd9e4"
+    },
+    "reused_completed_output": false
+  },
+  "FV.E2E.StockParameterCfgFixtures": {
+    "native_key": "8d24f05714d20d66",
+    "outputs": {
+      "m": false,
+      "o": [
+        "5affa071470141a7.olean"
+      ],
+      "i": "309761cf242c6a7a.ilean",
+      "c": "01a3d6e68194de3a.c"
+    },
+    "trace_sha256": "0409b03e1850ccac9e99f8705a3740d4056ad185189f7ea965cd3dbe0bf0f96b",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockParameterCfgFixtures.trace": "0409b03e1850ccac9e99f8705a3740d4056ad185189f7ea965cd3dbe0bf0f96b",
+      ".lake/build/lib/lean/FV/E2E/StockParameterCfgFixtures.olean": "507d578daef193cc5020c4025f8d88f4f8132ac62116921549b138e3cfb6c871",
+      ".lake/build/lib/lean/FV/E2E/StockParameterCfgFixtures.ilean": "af9480b953376710e679b9dc73fe98cb1a8d9082b836a0fe44b86b78a2f54400",
+      ".lake/build/lib/lean/FV/E2E/StockParameterCfgFixtures.olean.hash": "480a5e19374fa51f2a14dff1c17bf892a3970bd93a4b0120cb339f2a0f81ebe1",
+      ".lake/build/lib/lean/FV/E2E/StockParameterCfgFixtures.ilean.hash": "4240bac5a851c74438d413a698f1cc90166fc0556c1ae6c8d7bd9798867834d4",
+      ".lake/build/ir/FV/E2E/StockParameterCfgFixtures.c": "e0025e41a298c4a4805f3b43c4b34cc030da1bf0fb24f3d518e09e3b68cedfdd",
+      ".lake/build/ir/FV/E2E/StockParameterCfgFixtures.c.hash": "5876e416f64c882a3648b6f9b9964d1d5e621d433f6f7d2df7cc1abc0581e269"
+    },
+    "reused_completed_output": true
+  }
+}

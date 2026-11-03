@@ -1,0 +1,14 @@
+{
+  "proposal_sha256": "d91c57bccb37d97ba5d5d234e408718fb7043db71de71e7ac8e8f44eac32bb26",
+  "scripts": {
+    "run.py": "39badd05b77f85dfa08ccdb5fbd39f65156745fc56f9d48a10d97c9779348bcb",
+    "guard.py": "2aaccf19ace10e3852ca709819232cd6a45409c80a7faf5057dae63969ed655f",
+    "gate.py": "0b2ae04f8f8a6d8e72bef76dc47bd9f2540877206c1258302d3743616c74136e",
+    "launch.py": "fe81e71507505eeb304934dfdbddbe87de3de20c7118a1ac8a2e1b91bb964313"
+  },
+  "writer_release_sha256": "08bdecc568b999e230c7c47ca78095d91c24e716f454c1fa3941e3fbf28091b1",
+  "specific_origin_release_sha256": "00f19a74035722256d65a747135032c91a05ffcd3d6acff2cf8af64001a07673",
+  "passed43_skipped": true,
+  "ExecWrites_included": false,
+  "no_compiler_started": true
+}

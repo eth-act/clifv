@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockAcquireFrozenSourceFrame",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFrozenSourceFrame.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireFrozenSourceFrame.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireFrozenSourceFrame.ilean"
+      ],
+      "exit": 0,
+      "seconds": 1.898939847946167,
+      "memstats": "peak 211427328\noom 0\noom_kill 0\n",
+      "source_sha256": "56a409b95fbb50fcd9bd5d7e97404519bcf870fd8b61d8fe2857370724f8eb8f",
+      "olean_sha256": "b4d42f213c1778dcd87d2ab431dd65f43868c8ea242822acc450240ce0602684"
+    }
+  ]
+}

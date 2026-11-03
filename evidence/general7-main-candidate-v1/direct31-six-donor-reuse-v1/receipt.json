@@ -1,0 +1,158 @@
+{
+  "status": "SIX_APPROVED_ARCHIVE_DONORS_ACTUAL_NORMAL_PASSED",
+  "records": [
+    {
+      "label": "actual-R-seven-normal",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.E2E.StockCodeStageContract",
+        "FV.E2E.StockLogicalFixtures",
+        "FV.E2E.StockNarrowFixtures",
+        "FV.E2E.StockNotFixtures",
+        "FV.E2E.StockProductionFixtures",
+        "FV.E2E.StockScalarFixtures"
+      ],
+      "exit": 0,
+      "stats": "peak 39944192\noom 0\noom_kill 0\n"
+    }
+  ],
+  "copied": {
+    "FV.E2E.StockCodeStageContract": {
+      "source_sha256": "460c69e3ae31042b1e40dde1bd33cb81f3b1f79e69aac7b1e67380bdb21c1c28",
+      "native_key": "e4db2aca39f27069",
+      "trace_sha256": "7df2be7ea0e4b1be77371614a0efd648a747aa9870cf757bfe81774d2a6eaa08",
+      "outputs": {
+        "m": false,
+        "o": [
+          "c6bc438550bc02b5.olean"
+        ],
+        "i": "f967e0e79aad840a.ilean",
+        "c": "75db91792d19cb82.c"
+      },
+      "artifacts": {
+        ".lake/build/lib/lean/FV/E2E/StockCodeStageContract.trace": "7df2be7ea0e4b1be77371614a0efd648a747aa9870cf757bfe81774d2a6eaa08",
+        ".lake/build/lib/lean/FV/E2E/StockCodeStageContract.olean": "532415661663f5dbf32b53fabe1093d2a572e76876b150ced0a756cd0a3822cd",
+        ".lake/build/lib/lean/FV/E2E/StockCodeStageContract.ilean": "4b786b5e533e30d9267ad7807b8489446e9195d867e3f6ad55efb638533b86cf",
+        ".lake/build/lib/lean/FV/E2E/StockCodeStageContract.olean.hash": "0a08c347dbfbd1edbe6f867fae174a9243eb3d01fa88e969d11333e6e7d98be4",
+        ".lake/build/lib/lean/FV/E2E/StockCodeStageContract.ilean.hash": "d698df5e4e6290a6b400f65e7848c193215d76500d6d96e7415a1dbb00d53233",
+        ".lake/build/ir/FV/E2E/StockCodeStageContract.c": "544c5835ef3e5ec960f3ec08f9ae71e6fb2c1d107bed598f39b879b75294d810",
+        ".lake/build/ir/FV/E2E/StockCodeStageContract.c.hash": "97823f088d5a921e258b38d487bde47781c9beccb8ba76bbf725ac0e57534fd6"
+      }
+    },
+    "FV.E2E.StockLogicalFixtures": {
+      "source_sha256": "2dc72bc24a04e66b97b3ca42b9b3622fc2dac23ba8a6379484af6c9eac6805ae",
+      "native_key": "7b49d67cd0c5ba89",
+      "trace_sha256": "5bba9329c8d6bfeabaf77d8c14f0e1394731e59d7ba651481da43aa8dd4deab2",
+      "outputs": {
+        "m": false,
+        "o": [
+          "4174f6de3605b4c8.olean"
+        ],
+        "i": "d4caa98b23bc7e5a.ilean",
+        "c": "bbb290e664e395be.c"
+      },
+      "artifacts": {
+        ".lake/build/lib/lean/FV/E2E/StockLogicalFixtures.trace": "5bba9329c8d6bfeabaf77d8c14f0e1394731e59d7ba651481da43aa8dd4deab2",
+        ".lake/build/lib/lean/FV/E2E/StockLogicalFixtures.olean": "5f98668421eb14376dee1e2b9f632e35cc08fddd511722555405605938473141",
+        ".lake/build/lib/lean/FV/E2E/StockLogicalFixtures.ilean": "aa2655a8bd34a5450a0b24167ec16ed6276f6af30a738add9a386e4218ff9fcb",
+        ".lake/build/lib/lean/FV/E2E/StockLogicalFixtures.olean.hash": "09eb1ed93a2063103d7589737fdfd79498f349204539e5561f8f3d74a7b8ec22",
+        ".lake/build/lib/lean/FV/E2E/StockLogicalFixtures.ilean.hash": "0e15dd84f48e7f51e1fcc7a3db4590c5072e97650d6b0da73bc9f79c08ef3ec8",
+        ".lake/build/ir/FV/E2E/StockLogicalFixtures.c": "009f76726f45dea2c367d36c5af35e2a98f5af2a5522639a4736fe5ac979b705",
+        ".lake/build/ir/FV/E2E/StockLogicalFixtures.c.hash": "b07ee47fc1d411369c2058bdd7630025815fd181698813081c260a488c5f5319"
+      }
+    },
+    "FV.E2E.StockNarrowFixtures": {
+      "source_sha256": "2400c5e1f9ed9415d0ed22b65c13c681979b0687d55d0e29ccda51a593aae854",
+      "native_key": "2324e99c2d82f1de",
+      "trace_sha256": "6a81b4ce8789ba74eba602a0f9ed92a8d0508dba159fbc646c4f4ec9801992ae",
+      "outputs": {
+        "m": false,
+        "o": [
+          "a229e00613f5d257.olean"
+        ],
+        "i": "493887cbbe358bcf.ilean",
+        "c": "0b81da01e1aac69a.c"
+      },
+      "artifacts": {
+        ".lake/build/lib/lean/FV/E2E/StockNarrowFixtures.trace": "6a81b4ce8789ba74eba602a0f9ed92a8d0508dba159fbc646c4f4ec9801992ae",
+        ".lake/build/lib/lean/FV/E2E/StockNarrowFixtures.olean": "4cc902264d61e4e70f9772370369f6f96d8796da0a483b3052046e9d1253d9ba",
+        ".lake/build/lib/lean/FV/E2E/StockNarrowFixtures.ilean": "8aad72c077196f97e3c50fa7dcf4f7dc5f132ade1c3a5b14de8914e73d05b58a",
+        ".lake/build/lib/lean/FV/E2E/StockNarrowFixtures.olean.hash": "10e315f9a08a910411141e69cd00f11905e0bef28beccfe22ff6fd29c062ba09",
+        ".lake/build/lib/lean/FV/E2E/StockNarrowFixtures.ilean.hash": "d5d2093e7a81e2abcb83f399b24d5979080198e901189c71f5e65cfc0e6abbae",
+        ".lake/build/ir/FV/E2E/StockNarrowFixtures.c": "ec23115899b89243a9720cf2bd38dfc15b29622cd6ebb05bb4df71a688cd9d8f",
+        ".lake/build/ir/FV/E2E/StockNarrowFixtures.c.hash": "6dc7959690c928ebfd96322bc5620814dc695bf8529cc307ef7d4e94b67346ed"
+      }
+    },
+    "FV.E2E.StockNotFixtures": {
+      "source_sha256": "85571371b39e663eeb28e48c74cdee15b573df10c96d429a2dc9760086a5fc75",
+      "native_key": "71b9fd03947fc2c5",
+      "trace_sha256": "5de4e06bcaa136ee11e2f140d97130993f1df3884dd419cffcdeeebd1c84f285",
+      "outputs": {
+        "m": false,
+        "o": [
+          "a4d75ef3dda93b2f.olean"
+        ],
+        "i": "398650c6d27189ac.ilean",
+        "c": "b40d5b63b44823cd.c"
+      },
+      "artifacts": {
+        ".lake/build/lib/lean/FV/E2E/StockNotFixtures.trace": "5de4e06bcaa136ee11e2f140d97130993f1df3884dd419cffcdeeebd1c84f285",
+        ".lake/build/lib/lean/FV/E2E/StockNotFixtures.olean": "5d6e54203e25223a1b96e28781c57357c3199cdcee6c416bab443163f5601dfc",
+        ".lake/build/lib/lean/FV/E2E/StockNotFixtures.ilean": "af81cf3e0b45f8db9370f3bbb80c9936de25ed7a83d7c5f595e3c762328cb619",
+        ".lake/build/lib/lean/FV/E2E/StockNotFixtures.olean.hash": "974e3a818853f0e142f21111a49f0c78c4816c696326b49b2f78fbf57b81175d",
+        ".lake/build/lib/lean/FV/E2E/StockNotFixtures.ilean.hash": "144a26329f1ee0feaf84f39ff47f8370bc5c4fcfef356aa4cf9855f0ae1a9c9c",
+        ".lake/build/ir/FV/E2E/StockNotFixtures.c": "817f798bef5d28cb009d74443b1be8d70039526186b93b17e39fcf3064dcc402",
+        ".lake/build/ir/FV/E2E/StockNotFixtures.c.hash": "245f24e25db767e3359e3aa5778f14a7ccff4bdc97c5301b2fb8a5ba0de75a73"
+      }
+    },
+    "FV.E2E.StockProductionFixtures": {
+      "source_sha256": "54d9f2003b7fa13185bcb13e6e498770ad5cff0553241e801bdcbdbd5591641b",
+      "native_key": "a095981b37e2ffe8",
+      "trace_sha256": "008bf51dfebcadee7a2a0a237fcb38f6b5fc5ec61bf0bb77e21419cb960992d7",
+      "outputs": {
+        "m": false,
+        "o": [
+          "dc2b64154ec282b4.olean"
+        ],
+        "i": "941d26c43f446b66.ilean",
+        "c": "b3e844d4545d1171.c"
+      },
+      "artifacts": {
+        ".lake/build/lib/lean/FV/E2E/StockProductionFixtures.trace": "008bf51dfebcadee7a2a0a237fcb38f6b5fc5ec61bf0bb77e21419cb960992d7",
+        ".lake/build/lib/lean/FV/E2E/StockProductionFixtures.olean": "448dbf072b6fa7561e444325122a2c22a5aeedaacb6d357dcc754e85b9e8b8be",
+        ".lake/build/lib/lean/FV/E2E/StockProductionFixtures.ilean": "fd010023851d909e83f7f4405a5243273720ca817d5b99a7c184bdbd9f1453e4",
+        ".lake/build/lib/lean/FV/E2E/StockProductionFixtures.olean.hash": "5b1a58d0b7bd3b495d8e8f81c9f6fe90a908b1b3583c118f80f9d075cd8343e0",
+        ".lake/build/lib/lean/FV/E2E/StockProductionFixtures.ilean.hash": "a37469798444cefb61a503c0e49fe6201b1389617b4caf7ff299329a736463f4",
+        ".lake/build/ir/FV/E2E/StockProductionFixtures.c": "43a555e48decd0a87219934c1fa08395fce8b28bff8fbf40081488742b78baa3",
+        ".lake/build/ir/FV/E2E/StockProductionFixtures.c.hash": "73b462f4e4c01f76531efef87660395caa62a872b90ef75adff5c4f31b9abc53"
+      }
+    },
+    "FV.E2E.StockScalarFixtures": {
+      "source_sha256": "050eb23af880766600bf9309a2d92a0f8523fc3a7101837f3de339295f50c2f0",
+      "native_key": "94e13b0ce4228b8f",
+      "trace_sha256": "cf8a6c35694cadeb0cc855c9fdff6c52bebbeadfd83b896c0329ff8021e4ac11",
+      "outputs": {
+        "m": false,
+        "o": [
+          "9264b11aaa5469a0.olean"
+        ],
+        "i": "6333858ab2341ba1.ilean",
+        "c": "141de685987a7c7b.c"
+      },
+      "artifacts": {
+        ".lake/build/lib/lean/FV/E2E/StockScalarFixtures.trace": "cf8a6c35694cadeb0cc855c9fdff6c52bebbeadfd83b896c0329ff8021e4ac11",
+        ".lake/build/lib/lean/FV/E2E/StockScalarFixtures.olean": "5fe58d9a3fefa20803984b77a251c848b7c2c6ae009453b04e22cb8d6bc4d2ad",
+        ".lake/build/lib/lean/FV/E2E/StockScalarFixtures.ilean": "a4bc34eb3008e200d9ed251a4828fbe48d9250fcaf98cc9e88890747c8d14ae9",
+        ".lake/build/lib/lean/FV/E2E/StockScalarFixtures.olean.hash": "858de1adb0fa897d081486418c2058a1b9267730d78c5f09bd0f6bc53905bba5",
+        ".lake/build/lib/lean/FV/E2E/StockScalarFixtures.ilean.hash": "70848c0d6cf6158ee7c86b18a85d8b0461ec50c7cdcd89661d518c20fdb682bc",
+        ".lake/build/ir/FV/E2E/StockScalarFixtures.c": "fecf56c38ae8cc766d5334e8cb55c5ba078753f57a22e440e08d0737970d599a",
+        ".lake/build/ir/FV/E2E/StockScalarFixtures.c.hash": "48efefdf401cea0868c98a772a31878874bf3137a3ddaef85bae65e58ba9e093"
+      }
+    }
+  },
+  "original_query_receipt_sha256": "13a29ee30384b05e221bb78061829d734989cbf597a03a171d464217b94af8b2",
+  "all12_helpers_preserved": true,
+  "no_shared_write": true
+}

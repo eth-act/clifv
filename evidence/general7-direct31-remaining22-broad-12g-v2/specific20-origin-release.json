@@ -1,0 +1,6 @@
+{
+  "approved": true,
+  "receipt_sha256": "0dfe62d4a587efa0dbbfc6d08c6dc6d418ad851a5cd6c057c81867ee81d73a81",
+  "scope": "Only the20 named exact archive origins; source/config/key/output/normal gates remain mandatory",
+  "authority": "Parent relayed root approval in the current task"
+}

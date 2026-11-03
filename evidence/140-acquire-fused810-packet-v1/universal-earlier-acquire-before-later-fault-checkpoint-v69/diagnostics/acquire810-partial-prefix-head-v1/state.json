@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockAcquirePartialPrefixHead",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquirePartialPrefixHead.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquirePartialPrefixHead.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquirePartialPrefixHead.ilean"
+      ],
+      "exit": 0,
+      "seconds": 0.9972469806671143,
+      "memstats": "peak 226689024\noom 0\noom_kill 0\n",
+      "source_sha256": "4a6567b9e6b97788ab478d09c625cb1f9cb03b8c661d5f6766667523aeacfd3f",
+      "olean_sha256": "99128050c20ae0e2318507f150b7cd8b715bd5a2e1f91774e70e5f7f2b7dab9b"
+    }
+  ]
+}

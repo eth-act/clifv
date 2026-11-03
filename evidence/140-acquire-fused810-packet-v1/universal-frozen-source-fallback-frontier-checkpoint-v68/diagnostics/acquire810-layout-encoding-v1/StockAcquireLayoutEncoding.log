@@ -1,0 +1,2147 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireLayoutEncoding.lean:12:47: error(lean.unknownIdentifier): Unknown identifier `ArmInst`
+
+Note: It is not possible to treat `ArmInst` as an implicitly bound variable here because the `autoImplicit` option is set to `false`.
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireLayoutEncoding.lean:32:4: error: `simp` made no progress
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireLayoutEncoding.lean:26:75: error: unsolved goals
+case h_3
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : ALUOp
+w✝ : Bool
+rd✝ rn✝ : Reg
+imm✝ : Imm12
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.aluImm12 op✝ w✝ rd✝ rn✝ imm✝
+encoded :
+  (match op✝.addSub? with
+    | some (o, S) =>
+      have __do_jp := fun Rd => do
+        let __do_lift ← uField "imm12" 12 imm✝.bits
+        let __do_lift_1 ← rn✝.encSP
+        pure
+            (Arm.ArmInst.DPI
+              (Arm.DataProcImmInst.Add_sub_imm
+                { sf := b1 w✝, op := o, S := S, sh := b1 imm✝.shift12, imm12 := __do_lift, Rn := __do_lift_1,
+                  Rd := Rd }));
+      if (S == 1) = true then do
+        let Rd ← rd✝.encZR
+        __do_jp Rd
+      else do
+        let Rd ← rd✝.encSP
+        __do_jp Rd
+    | x => throw (toString "aluImm12 " ++ toString (repr op✝))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_4
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : ALUOp
+w✝ : Bool
+rd✝ rn✝ : Reg
+v✝ : Nat
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.logicImm op✝ w✝ rd✝ rn✝ v✝
+encoded :
+  (match op✝.logic? with
+    | some (opc, 0#1) =>
+      match bitmaskEnc? w✝ v✝ with
+      | some (N, immr, imms) =>
+        have __do_jp := fun Rd => do
+          let __do_lift ← rn✝.encZR
+          pure
+              (Arm.ArmInst.DPI
+                (Arm.DataProcImmInst.Logical_imm
+                  { sf := b1 w✝, opc := opc, N := N, immr := immr, imms := imms, Rn := __do_lift, Rd := Rd }));
+        if (opc == 3) = true then do
+          let Rd ← rd✝.encZR
+          __do_jp Rd
+        else do
+          let Rd ← rd✝.encSP
+          __do_jp Rd
+      | x => throw (toString (hex v✝) ++ toString " is not a bitmask immediate")
+    | x => throw (toString "logicImm " ++ toString (repr op✝))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_5
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : ShiftOp
+w✝ : Bool
+rd✝ rn✝ : Reg
+amt✝ : Nat
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.shiftImm op✝ w✝ rd✝ rn✝ amt✝
+encoded :
+  (have size := if w✝ = true then 64 else 32;
+    have __do_jp := fun __r => do
+      let Rd ← rd✝.encZR
+      let Rn ← rn✝.encZR
+      have bf : BitVec 2 → Nat → Nat → Arm.ArmInst := fun opc immr imms =>
+        Arm.ArmInst.DPI
+          (Arm.DataProcImmInst.Bitfield
+            { sf := b1 w✝, opc := opc, N := b1 w✝, immr := BitVec.ofNat 6 immr, imms := BitVec.ofNat 6 imms, Rn := Rn,
+              Rd := Rd })
+      match op✝ with
+        | ShiftOp.lsl => pure (bf 2 ((size - amt✝) % size) (size - 1 - amt✝))
+        | ShiftOp.lsr => pure (bf 2 amt✝ (size - 1))
+        | ShiftOp.asr => pure (bf 0 amt✝ (size - 1))
+        | ShiftOp.ror =>
+          pure
+            (Arm.ArmInst.DPI
+              (Arm.DataProcImmInst.Extract
+                { sf := b1 w✝, op21 := 0, N := b1 w✝, o0 := 0, Rm := Rn, imms := BitVec.ofNat 6 amt✝, Rn := Rn,
+                  Rd := Rd }));
+    if amt✝ ≥ size then do
+      let __r ← throw (toString "shift amount " ++ toString amt✝ ++ toString " ≥ " ++ toString size)
+      __do_jp __r
+    else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_6
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : ALUOp
+w✝ : Bool
+rd✝ rn✝ rm✝ : Reg
+sh✝ : ShiftOpAndAmt
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.aluRRRShift op✝ w✝ rd✝ rn✝ rm✝ sh✝
+encoded :
+  (have size := if w✝ = true then 64 else 32;
+    have __do_jp := fun __r =>
+      have sf := b1 w✝;
+      do
+      let Rd ← rd✝.encZR
+      let Rn ← rn✝.encZR
+      let Rm ← rm✝.encZR
+      have imm6 : BitVec 6 := BitVec.ofNat 6 sh✝.amt
+      match op✝.addSub?, op✝.logic? with
+        | some (o, S), x =>
+          have __do_jp := fun __r =>
+            pure
+              (Arm.ArmInst.DPR
+                (Arm.DataProcRegInst.Add_sub_shifted_reg
+                  { sf := sf, op := o, S := S, shift := sh✝.op.bits, Rm := Rm, imm6 := imm6, Rn := Rn, Rd := Rd }));
+          if (sh✝.op == ShiftOp.ror) = true then do
+            let __r ← throw "ror is not allowed in add/sub (shifted register)"
+            __do_jp __r
+          else __do_jp ()
+        | none, some (opc, N) =>
+          pure
+            (Arm.ArmInst.DPR
+              (Arm.DataProcRegInst.Logical_shifted_reg
+                { sf := sf, opc := opc, shift := sh✝.op.bits, N := N, Rm := Rm, imm6 := imm6, Rn := Rn, Rd := Rd }))
+        | none, none => throw (toString "aluRRRShift " ++ toString (repr op✝));
+    if sh✝.amt ≥ size then do
+      let __r ← throw (toString "shift amount " ++ toString sh✝.amt ++ toString " ≥ " ++ toString size)
+      __do_jp __r
+    else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_7
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+w✝ : Bool
+rd✝ rn✝ rm✝ : Reg
+lsb✝ : Nat
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.extr w✝ rd✝ rn✝ rm✝ lsb✝
+encoded :
+  (have __do_jp := fun __r => do
+      let __do_lift ← rm✝.encZR
+      let __do_lift_1 ← rn✝.encZR
+      let __do_lift_2 ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.Extract
+              { sf := b1 w✝, op21 := 0, N := b1 w✝, o0 := 0, Rm := __do_lift, imms := BitVec.ofNat 6 lsb✝,
+                Rn := __do_lift_1, Rd := __do_lift_2 }));
+    if lsb✝ ≥ if w✝ = true then 64 else 32 then do
+      let __r ← throw (toString "extr lsb " ++ toString lsb✝)
+      __do_jp __r
+    else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_8
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : ALUOp
+w✝ : Bool
+rd✝ rn✝ rm✝ : Reg
+e✝ : ExtendOp
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.aluRRRExtend op✝ w✝ rd✝ rn✝ rm✝ e✝
+encoded :
+  (match op✝.addSub? with
+    | some (o, S) =>
+      have __do_jp := fun Rd => do
+        let __do_lift ← rm✝.encZR
+        let __do_lift_1 ← rn✝.encSP
+        pure
+            (Arm.ArmInst.DPR
+              (Arm.DataProcRegInst.Add_sub_ext_reg
+                { sf := b1 w✝, op := o, S := S, opt := 0, Rm := __do_lift, option := e✝.bits, imm3 := 0,
+                  Rn := __do_lift_1, Rd := Rd }));
+      if (S == 1) = true then do
+        let Rd ← rd✝.encZR
+        __do_jp Rd
+      else do
+        let Rd ← rd✝.encSP
+        __do_jp Rd
+    | x => throw (toString "aluRRRExtend " ++ toString (repr op✝))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_9
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : BitOp
+w✝ : Bool
+rd✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.bitRR op✝ w✝ rd✝ rn✝
+encoded :
+  (have opcode :=
+      match op✝, w✝ with
+      | BitOp.rbit, x => 0
+      | BitOp.rev16, x => 1
+      | BitOp.rev32, x => 2
+      | BitOp.rev64, true => 3
+      | BitOp.rev64, false => 2
+      | BitOp.clz, x => 4
+      | BitOp.cls, x => 5;
+    do
+    let __do_lift ← rn✝.encZR
+    let __do_lift_1 ← rd✝.encZR
+    pure
+        (Arm.ArmInst.DPR
+          (Arm.DataProcRegInst.Data_processing_one_source
+            { sf := b1 w✝, S := 0, opcode2 := 0, opcode := opcode, Rn := __do_lift, Rd := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_10
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : LoadOp
+rt✝ : Reg
+m✝ : AMode
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.load op✝ rt✝ m✝
+encoded :
+  (match op✝.fields with
+    | (size, V, opc) =>
+      have __do_jp := fun Rt => ldstFields size V opc op✝.bytes Rt m✝;
+      if (V == 1) = true then do
+        let Rt ← rt✝.encV
+        __do_jp Rt
+      else do
+        let Rt ← rt✝.encZR
+        __do_jp Rt) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_11
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : StoreOp
+rt✝ : Reg
+m✝ : AMode
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.store op✝ rt✝ m✝
+encoded :
+  (match op✝.fields with
+    | (size, V, opc) =>
+      have __do_jp := fun Rt => ldstFields size V opc op✝.bytes Rt m✝;
+      if (V == 1) = true then do
+        let Rt ← rt✝.encV
+        __do_jp Rt
+      else do
+        let Rt ← rt✝.encZR
+        __do_jp Rt) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_12
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rt✝ rt2✝ : Reg
+m✝ : AMode
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.ldp rt✝ rt2✝ m✝
+encoded :
+  (have L :=
+      match Insn.bfm op wide dest pointer immr imms with
+      | Insn.ldp rt rt2 m => 1#1
+      | x => 0#1;
+    do
+    let Rt ← rt✝.encZR
+    let Rt2 ← rt2✝.encZR
+    have imm : Int → Except String (BitVec 7) := fun s =>
+      if (s % 8 != 0) = true then throw (toString "pair offset " ++ toString s) else sField "imm7" 7 (s / 8)
+    match m✝ with
+      | AMode.spPreIndexed s => do
+        let __do_lift ← imm s
+        pure
+            (Arm.ArmInst.LDST
+              (Arm.LDSTInst.Reg_pair_pre_indexed
+                { opc := 2, V := 0, L := L, imm7 := __do_lift, Rt2 := Rt2, Rn := 31, Rt := Rt }))
+      | AMode.spPostIndexed s => do
+        let __do_lift ← imm s
+        pure
+            (Arm.ArmInst.LDST
+              (Arm.LDSTInst.Reg_pair_post_indexed
+                { opc := 2, V := 0, L := L, imm7 := __do_lift, Rt2 := Rt2, Rn := 31, Rt := Rt }))
+      | m => throw (toString "ldp/stp mode " ++ toString (repr m))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_13
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rt✝ rt2✝ : Reg
+m✝ : AMode
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.stp rt✝ rt2✝ m✝
+encoded :
+  (have L :=
+      match Insn.bfm op wide dest pointer immr imms with
+      | Insn.ldp rt rt2 m => 1#1
+      | x => 0#1;
+    do
+    let Rt ← rt✝.encZR
+    let Rt2 ← rt2✝.encZR
+    have imm : Int → Except String (BitVec 7) := fun s =>
+      if (s % 8 != 0) = true then throw (toString "pair offset " ++ toString s) else sField "imm7" 7 (s / 8)
+    match m✝ with
+      | AMode.spPreIndexed s => do
+        let __do_lift ← imm s
+        pure
+            (Arm.ArmInst.LDST
+              (Arm.LDSTInst.Reg_pair_pre_indexed
+                { opc := 2, V := 0, L := L, imm7 := __do_lift, Rt2 := Rt2, Rn := 31, Rt := Rt }))
+      | AMode.spPostIndexed s => do
+        let __do_lift ← imm s
+        pure
+            (Arm.ArmInst.LDST
+              (Arm.LDSTInst.Reg_pair_post_indexed
+                { opc := 2, V := 0, L := L, imm7 := __do_lift, Rt2 := Rt2, Rn := 31, Rt := Rt }))
+      | m => throw (toString "ldp/stp mode " ++ toString (repr m))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_14
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+w✝ : Bool
+rd✝ rm✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.mov w✝ rd✝ rm✝
+encoded :
+  (if (rd✝ == Reg.sp || rm✝ == Reg.sp) = true then do
+      let __do_lift ← rm✝.encSP
+      let __do_lift_1 ← rd✝.encSP
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.Add_sub_imm
+              { sf := b1 w✝, op := 0, S := 0, sh := 0, imm12 := 0, Rn := __do_lift, Rd := __do_lift_1 }))
+    else do
+      let __do_lift ← rm✝.encZR
+      let __do_lift_1 ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPR
+            (Arm.DataProcRegInst.Logical_shifted_reg
+              { sf := b1 w✝, opc := 1, shift := 0, N := 0, Rm := __do_lift, imm6 := 0, Rn := 31,
+                Rd := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_15
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : MoveWideOp
+w✝ : Bool
+rd✝ : Reg
+imm✝ : MoveWideConst
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.movWide op✝ w✝ rd✝ imm✝
+encoded :
+  (have __do_jp := fun __r => do
+      let __do_lift ← uField "imm16" 16 imm✝.bits
+      let __do_lift_1 ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.Move_wide_imm
+              { sf := b1 w✝, opc := if (op✝ == MoveWideOp.movZ) = true then 2 else 0, hw := BitVec.ofNat 2 imm✝.shift,
+                imm16 := __do_lift, Rd := __do_lift_1 }));
+    if imm✝.shift ≥ if w✝ = true then 4 else 2 then do
+      let __r ← throw (toString "movz/movn shift " ++ toString imm✝.shift)
+      __do_jp __r
+    else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_16
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+w✝ : Bool
+rd✝ : Reg
+imm✝ : MoveWideConst
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.movk w✝ rd✝ imm✝
+encoded :
+  (have __do_jp := fun __r => do
+      let __do_lift ← uField "imm16" 16 imm✝.bits
+      let __do_lift_1 ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.Move_wide_imm
+              { sf := b1 w✝, opc := 3, hw := BitVec.ofNat 2 imm✝.shift, imm16 := __do_lift, Rd := __do_lift_1 }));
+    if imm✝.shift ≥ if w✝ = true then 4 else 2 then do
+      let __r ← throw (toString "movk shift " ++ toString imm✝.shift)
+      __do_jp __r
+    else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_17
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : BfmOp
+w✝ : Bool
+rd✝ rn✝ : Reg
+immr✝ imms✝ : Nat
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.bfm op✝ w✝ rd✝ rn✝ immr✝ imms✝
+encoded :
+  (have size := if w✝ = true then 64 else 32;
+    have __do_jp := fun __r => do
+      let __do_lift ← rn✝.encZR
+      let __do_lift_1 ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.Bitfield
+              { sf := b1 w✝, opc := if (op✝ == BfmOp.sBfm) = true then 0 else 2, N := b1 w✝,
+                immr := BitVec.ofNat 6 immr✝, imms := BitVec.ofNat 6 imms✝, Rn := __do_lift, Rd := __do_lift_1 }));
+    if (decide (immr✝ ≥ size) || decide (imms✝ ≥ size)) = true then do
+      let __r ← throw (toString "bfm #" ++ toString immr✝ ++ toString ", #" ++ toString imms✝)
+      __do_jp __r
+    else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_18
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ : Reg
+c✝ : Cond
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.cset rd✝ c✝
+encoded :
+  (have __do_jp := fun __r => do
+      let __do_lift ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPR
+            (Arm.DataProcRegInst.Conditional_select
+              { sf := 1, op := 0, S := 0, Rm := 31, cond := c✝.invert.bits, op2 := 1, Rn := 31, Rd := __do_lift }));
+    if (c✝ == Cond.al || c✝ == Cond.nv) = true then do
+      let __r ← throw "cset al/nv"
+      __do_jp __r
+    else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_19
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ rn✝ rm✝ : Reg
+c✝ : Cond
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.csel rd✝ rn✝ rm✝ c✝
+encoded :
+  (do
+      let __do_lift ← rm✝.encZR
+      let __do_lift_1 ← rn✝.encZR
+      let __do_lift_2 ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPR
+            (Arm.DataProcRegInst.Conditional_select
+              { sf := 1, op := 0, S := 0, Rm := __do_lift, cond := c✝.bits, op2 := 0, Rn := __do_lift_1,
+                Rd := __do_lift_2 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_20
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+w✝ : Bool
+rn✝ rm✝ : Reg
+f✝ : NZCV
+c✝ : Cond
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.ccmp w✝ rn✝ rm✝ f✝ c✝
+encoded :
+  (do
+      let __do_lift ← rm✝.encZR
+      let __do_lift_1 ← rn✝.encZR
+      pure
+          (Arm.ArmInst.DPR
+            (Arm.DataProcRegInst.Conditional_compare_reg
+              { sf := b1 w✝, op := 1, S := 1, Rm := __do_lift, cond := c✝.bits, o2 := 0, Rn := __do_lift_1, o3 := 0,
+                nzcv := BitVec.ofNat 4 f✝.bits }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_21
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+w✝ : Bool
+rn✝ : Reg
+imm✝ : Nat
+f✝ : NZCV
+c✝ : Cond
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.ccmpImm w✝ rn✝ imm✝ f✝ c✝
+encoded :
+  (do
+      let __do_lift ← uField "imm5" 5 imm✝
+      let __do_lift_1 ← rn✝.encZR
+      pure
+          (Arm.ArmInst.DPR
+            (Arm.DataProcRegInst.Conditional_compare_imm
+              { sf := b1 w✝, op := 1, S := 1, imm5 := __do_lift, cond := c✝.bits, o2 := 0, Rn := __do_lift_1, o3 := 0,
+                nzcv := BitVec.ofNat 4 f✝.bits }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_22
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rd✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fmovToFp s✝ rd✝ rn✝
+encoded :
+  (have __do_jp := fun __x =>
+      match __x with
+      | (sf, ftype) => do
+        let __do_lift ← rn✝.encZR
+        let __do_lift_1 ← rd✝.encV
+        pure
+            (Arm.ArmInst.DPSFP
+              (Arm.DataProcSFPInst.Conversion_between_FP_and_Int
+                { sf := sf, S := 0, ftype := ftype, rmode := 0, opcode := 7, Rn := __do_lift, Rd := __do_lift_1 }));
+    match s✝ with
+    | ScalarSize.size16 => do
+      let __x ← pure (0, 3)
+      __do_jp __x
+    | ScalarSize.size32 => do
+      let __x ← pure (0, 0)
+      __do_jp __x
+    | ScalarSize.size64 => do
+      let __x ← pure (1, 1)
+      __do_jp __x
+    | x => do
+      let __x ← throw (toString "fmov size " ++ toString (repr s✝))
+      __do_jp __x) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_23
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rd✝ rn✝ : Reg
+idx✝ : Nat
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.umov s✝ rd✝ rn✝ idx✝
+encoded :
+  (have __do_jp := fun __x =>
+      match __x with
+      | (q, imm5) => do
+        let __do_lift ← uField "umov index" 5 imm5
+        let __do_lift_1 ← rn✝.encV
+        let __do_lift_2 ← rd✝.encZR
+        pure
+            (Arm.ArmInst.DPSFP
+              (Arm.DataProcSFPInst.Advanced_simd_copy
+                { Q := q, op := 0, imm5 := __do_lift, imm4 := 7, Rn := __do_lift_1, Rd := __do_lift_2 }));
+    match s✝ with
+    | ScalarSize.size8 => do
+      let __x ← pure (0, idx✝ * 2 + 1)
+      __do_jp __x
+    | ScalarSize.size16 => do
+      let __x ← pure (0, idx✝ * 4 + 2)
+      __do_jp __x
+    | ScalarSize.size32 => do
+      let __x ← pure (0, idx✝ * 8 + 4)
+      __do_jp __x
+    | ScalarSize.size64 => do
+      let __x ← pure (1, idx✝ * 16 + 8)
+      __do_jp __x
+    | x => do
+      let __x ← throw (toString "umov size " ++ toString (repr s✝))
+      __do_jp __x) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_24
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : VectorSize
+rd✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.cnt s✝ rd✝ rn✝
+encoded :
+  (match s✝.qsize with
+    | (Q, size) =>
+      have __do_jp := fun __r => do
+        let __do_lift ← rn✝.encV
+        let __do_lift_1 ← rd✝.encV
+        pure
+            (Arm.ArmInst.DPSFP
+              (Arm.DataProcSFPInst.Advanced_simd_two_reg_misc
+                { Q := Q, U := 0, size := size, opcode := 5, Rn := __do_lift, Rd := __do_lift_1 }));
+      if (size != 0) = true then do
+        let __r ← throw (toString "cnt arrangement " ++ toString (repr s✝))
+        __do_jp __r
+      else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_25
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : VecLanesOp
+s✝ : VectorSize
+rd✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.vecLanes op✝ s✝ rd✝ rn✝
+encoded :
+  (match s✝.qsize with
+    | (Q, size) =>
+      have __do_jp := fun __r => do
+        let __do_lift ← rn✝.encV
+        let __do_lift_1 ← rd✝.encV
+        pure
+            (Arm.ArmInst.DPSFP
+              (Arm.DataProcSFPInst.Advanced_simd_across_lanes
+                { Q := Q, U := b1 (op✝ == VecLanesOp.uaddlv), size := size,
+                  opcode := if (op✝ == VecLanesOp.addv) = true then 27 else 3, Rn := __do_lift, Rd := __do_lift_1 }));
+      if (s✝ == VectorSize.size32x2 || s✝ == VectorSize.size64x2) = true then do
+        let __r ← throw (toString "addv/uaddlv arrangement " ++ toString (repr s✝))
+        __do_jp __r
+      else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_26
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : VectorSize
+rd✝ rn✝ rm✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.addp s✝ rd✝ rn✝ rm✝
+encoded :
+  (match s✝.qsize with
+    | (Q, size) => do
+      let __do_lift ← rm✝.encV
+      let __do_lift_1 ← rn✝.encV
+      let __do_lift_2 ← rd✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.Advanced_simd_three_same
+              { Q := Q, U := 0, size := size, Rm := __do_lift, opcode := 23, Rn := __do_lift_1, Rd := __do_lift_2 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_27
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+t✝ : Lbl
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.b t✝
+encoded :
+  (do
+      let __do_lift ← { pc := lineOffset fa.lines.toList j, lbl := fun x => labels[x]? }.pcRel "b" 26 4 t✝
+      pure (Arm.ArmInst.BR (Arm.BranchInst.Uncond_branch_imm { op := 0, imm26 := __do_lift }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_28
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+c✝ : Cond
+t✝ : Lbl
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.bcond c✝ t✝
+encoded :
+  (do
+      let __do_lift ← { pc := lineOffset fa.lines.toList j, lbl := fun x => labels[x]? }.pcRel "b.cond" 19 4 t✝
+      pure (Arm.ArmInst.BR (Arm.BranchInst.Cond_branch_imm { imm19 := __do_lift, o0 := 0, cond := c✝.bits }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_29
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+nz✝ w✝ : Bool
+rt✝ : Reg
+t✝ : Lbl
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.cbz nz✝ w✝ rt✝ t✝
+encoded :
+  (do
+      let __do_lift ← { pc := lineOffset fa.lines.toList j, lbl := fun x => labels[x]? }.pcRel "cbz" 19 4 t✝
+      let __do_lift_1 ← rt✝.encZR
+      pure
+          (Arm.ArmInst.BR
+            (Arm.BranchInst.Compare_branch { sf := b1 w✝, op := b1 nz✝, imm19 := __do_lift, Rt := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_30
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+nz✝ : Bool
+rt✝ : Reg
+bit✝ : Nat
+t✝ : Lbl
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.tbz nz✝ rt✝ bit✝ t✝
+encoded :
+  (have __do_jp := fun __r => do
+      let __do_lift ← { pc := lineOffset fa.lines.toList j, lbl := fun x => labels[x]? }.pcRel "tbz" 14 4 t✝
+      let __do_lift_1 ← rt✝.encZR
+      pure
+          (Arm.ArmInst.BR
+            (Arm.BranchInst.Test_branch
+              { b5 := BitVec.ofNat 1 (bit✝ / 32), op := b1 nz✝, b40 := BitVec.ofNat 5 (bit✝ % 32), imm14 := __do_lift,
+                Rt := __do_lift_1 }));
+    if bit✝ ≥ 64 then do
+      let __r ← throw (toString "tbz bit " ++ toString bit✝)
+      __do_jp __r
+    else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_31
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+sym✝ : String
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.bl sym✝
+encoded : pure (Arm.ArmInst.BR (Arm.BranchInst.Uncond_branch_imm { op := 1, imm26 := 0 })) = Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_32
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.blr rn✝
+encoded :
+  (do
+      let __do_lift ← rn✝.encZR
+      pure
+          (Arm.ArmInst.BR
+            (Arm.BranchInst.Uncond_branch_reg { opc := 1, op2 := 31, op3 := 0, Rn := __do_lift, op4 := 0 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_33
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.br rn✝
+encoded :
+  (do
+      let __do_lift ← rn✝.encZR
+      pure
+          (Arm.ArmInst.BR
+            (Arm.BranchInst.Uncond_branch_reg { opc := 0, op2 := 31, op3 := 0, Rn := __do_lift, op4 := 0 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_34
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.ret
+encoded :
+  pure (Arm.ArmInst.BR (Arm.BranchInst.Uncond_branch_reg { opc := 2, op2 := 31, op3 := 0, Rn := 30, op4 := 0 })) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_35
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+imm✝ : Nat
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.udf imm✝
+encoded :
+  (do
+      let __do_lift ← uField "udf immediate" 16 imm✝
+      pure (Arm.ArmInst.RES (Arm.ReservedInst.Udf { imm16 := __do_lift }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_36
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ : Reg
+t✝ : Lbl
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.adr rd✝ t✝
+encoded :
+  (do
+      let imm ← { pc := lineOffset fa.lines.toList j, lbl := fun x => labels[x]? }.pcRel "adr" 21 1 t✝
+      let __do_lift ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.PC_rel_addressing
+              { op := 0, immlo := BitVec.extractLsb' 0 2 imm, immhi := BitVec.extractLsb' 2 19 imm,
+                Rd := __do_lift }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_37
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ : Reg
+sym✝ : String
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.adrpGot rd✝ sym✝
+encoded :
+  (do
+      let __do_lift ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.PC_rel_addressing { op := 1, immlo := 0, immhi := 0, Rd := __do_lift }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_38
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ : Reg
+sym✝ : String
+addend✝ : Int
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.adrp rd✝ sym✝ addend✝
+encoded :
+  (do
+      let __do_lift ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.PC_rel_addressing { op := 1, immlo := 0, immhi := 0, Rd := __do_lift }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_39
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ rn✝ : Reg
+sym✝ : String
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.ldrGotLo12 rd✝ rn✝ sym✝
+encoded :
+  (do
+      let __do_lift ← rn✝.encSP
+      let __do_lift_1 ← rd✝.encZR
+      pure
+          (Arm.ArmInst.LDST
+            (Arm.LDSTInst.Reg_unsigned_imm
+              { size := 3, V := 0, opc := 1, imm12 := 0, Rn := __do_lift, Rt := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_40
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ rn✝ : Reg
+sym✝ : String
+addend✝ : Int
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.addLo12 rd✝ rn✝ sym✝ addend✝
+encoded :
+  (do
+      let __do_lift ← rn✝.encSP
+      let __do_lift_1 ← rd✝.encSP
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.Add_sub_imm
+              { sf := 1, op := 0, S := 0, sh := 0, imm12 := 0, Rn := __do_lift, Rd := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_41
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+bits✝ : Nat
+rt✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.ldar bits✝ rt✝ rn✝
+encoded : Insn.armFields.exclFields bits✝ 1 1 31 rt✝ rn✝ = Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_42
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+bits✝ : Nat
+rt✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.stlr bits✝ rt✝ rn✝
+encoded : Insn.armFields.exclFields bits✝ 1 0 31 rt✝ rn✝ = Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_43
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+bits✝ : Nat
+rt✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.ldaxr bits✝ rt✝ rn✝
+encoded : Insn.armFields.exclFields bits✝ 0 1 31 rt✝ rn✝ = Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_44
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+bits✝ : Nat
+rs✝ rt✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.stlxr bits✝ rs✝ rt✝ rn✝
+encoded :
+  (do
+      let __do_lift ← rs✝.encZR
+      Insn.armFields.exclFields bits✝ 0 0 __do_lift rt✝ rn✝) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_45
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.dmbish
+encoded : pure (Arm.ArmInst.BR (Arm.BranchInst.Barrier { CRm := 11#4, op2 := 5#3 })) = Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_46
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ : Reg
+c✝ : Cond
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.csetm rd✝ c✝
+encoded :
+  (have __do_jp := fun __r => do
+      let __do_lift ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPR
+            (Arm.DataProcRegInst.Conditional_select
+              { sf := 1, op := 1, S := 0, Rm := 31, cond := c✝.invert.bits, op2 := 0, Rn := 31, Rd := __do_lift }));
+    if (c✝ == Cond.al || c✝ == Cond.nv) = true then do
+      let __r ← throw "csetm al/nv"
+      __do_jp __r
+    else __do_jp ()) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_47
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ : Reg
+sym✝ : String
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.adrpTlsDesc rd✝ sym✝
+encoded :
+  (do
+      let __do_lift ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.PC_rel_addressing { op := 1, immlo := 0, immhi := 0, Rd := __do_lift }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_48
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rt✝ rn✝ : Reg
+sym✝ : String
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.ldrTlsDescLo12 rt✝ rn✝ sym✝
+encoded :
+  (do
+      let __do_lift ← rn✝.encSP
+      let __do_lift_1 ← rt✝.encZR
+      pure
+          (Arm.ArmInst.LDST
+            (Arm.LDSTInst.Reg_unsigned_imm
+              { size := 3, V := 0, opc := 1, imm12 := 0, Rn := __do_lift, Rt := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_49
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ rn✝ : Reg
+sym✝ : String
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.addTlsDescLo12 rd✝ rn✝ sym✝
+encoded :
+  (do
+      let __do_lift ← rn✝.encSP
+      let __do_lift_1 ← rd✝.encSP
+      pure
+          (Arm.ArmInst.DPI
+            (Arm.DataProcImmInst.Add_sub_imm
+              { sf := 1, op := 0, S := 0, sh := 0, imm12 := 0, Rn := __do_lift, Rd := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_50
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rn✝ : Reg
+sym✝ : String
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.blrTlsDesc rn✝ sym✝
+encoded :
+  (do
+      let __do_lift ← rn✝.encZR
+      pure
+          (Arm.ArmInst.BR
+            (Arm.BranchInst.Uncond_branch_reg { opc := 1, op2 := 31, op3 := 0, Rn := __do_lift, op4 := 0 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_51
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rt✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.mrsTpidrEl0 rt✝
+encoded :
+  (do
+      let __do_lift ← rt✝.encZR
+      pure
+          (Arm.ArmInst.BR
+            (Arm.BranchInst.Mrs { o0 := 1, op1 := 3#3, CRn := 13#4, CRm := 0, op2 := 2#3, Rt := __do_lift }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_52
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rd✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuMove s✝ rd✝ rn✝
+encoded :
+  (do
+      let __do_lift ← Insn.armFields.fpFtype s✝
+      let __do_lift_1 ← rn✝.encV
+      let __do_lift_2 ← rd✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.FP_data_processing_one_source
+              { M := 0, S := 0, ftype := __do_lift, opcode := 0, Rn := __do_lift_1, Rd := __do_lift_2 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_53
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+rd✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuMove128 rd✝ rn✝
+encoded :
+  (do
+      let Rn ← rn✝.encV
+      let __do_lift ← rd✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.Advanced_simd_three_same
+              { Q := 1, U := 0, size := 2, Rm := Rn, opcode := 3, Rn := Rn, Rd := __do_lift }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_54
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : FPUOp1
+s✝ : ScalarSize
+rd✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuRR op✝ s✝ rd✝ rn✝
+encoded :
+  (have __do_jp := fun opcode => do
+      let __do_lift ← Insn.armFields.fpFtype s✝
+      let __do_lift_1 ← rn✝.encV
+      let __do_lift_2 ← rd✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.FP_data_processing_one_source
+              { M := 0, S := 0, ftype := __do_lift, opcode := opcode, Rn := __do_lift_1, Rd := __do_lift_2 }));
+    match op✝, s✝ with
+    | FPUOp1.abs, x => do
+      let opcode ← pure 1
+      __do_jp opcode
+    | FPUOp1.neg, x => do
+      let opcode ← pure 2
+      __do_jp opcode
+    | FPUOp1.sqrt, x => do
+      let opcode ← pure 3
+      __do_jp opcode
+    | FPUOp1.cvt32To64, ScalarSize.size32 => do
+      let opcode ← pure 5
+      __do_jp opcode
+    | FPUOp1.cvt64To32, ScalarSize.size64 => do
+      let opcode ← pure 4
+      __do_jp opcode
+    | x, x_1 => do
+      let opcode ← throw (toString "fcvt source size " ++ toString (repr s✝))
+      __do_jp opcode) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_55
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : FPUOp2
+s✝ : ScalarSize
+rd✝ rn✝ rm✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuRRR op✝ s✝ rd✝ rn✝ rm✝
+encoded :
+  (have opcode :=
+      match op✝ with
+      | FPUOp2.mul => 0
+      | FPUOp2.div => 1
+      | FPUOp2.add => 2
+      | FPUOp2.sub => 3
+      | FPUOp2.max => 4
+      | FPUOp2.min => 5;
+    do
+    let __do_lift ← Insn.armFields.fpFtype s✝
+    let __do_lift_1 ← rm✝.encV
+    let __do_lift_2 ← rn✝.encV
+    let __do_lift_3 ← rd✝.encV
+    pure
+        (Arm.ArmInst.DPSFP
+          (Arm.DataProcSFPInst.FP_data_processing_two_source
+            { M := 0, S := 0, ftype := __do_lift, Rm := __do_lift_1, opcode := opcode, Rn := __do_lift_2,
+              Rd := __do_lift_3 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_56
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : FPUOp3
+s✝ : ScalarSize
+rd✝ rn✝ rm✝ ra✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuRRRR op✝ s✝ rd✝ rn✝ rm✝ ra✝
+encoded :
+  (match
+      match op✝ with
+      | FPUOp3.mAdd => (0, 0)
+      | FPUOp3.mSub => (0, 1)
+      | FPUOp3.nMAdd => (1, 0)
+      | FPUOp3.nMSub => (1, 1) with
+    | (o1, o0) => do
+      let __do_lift ← Insn.armFields.fpFtype s✝
+      let __do_lift_1 ← rm✝.encV
+      let __do_lift_2 ← ra✝.encV
+      let __do_lift_3 ← rn✝.encV
+      let __do_lift_4 ← rd✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.FP_data_processing_three_source
+              { M := 0, S := 0, ftype := __do_lift, o1 := o1, Rm := __do_lift_1, o0 := o0, Ra := __do_lift_2,
+                Rn := __do_lift_3, Rd := __do_lift_4 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_57
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rn✝ rm✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuCmp s✝ rn✝ rm✝
+encoded :
+  (do
+      let __do_lift ← Insn.armFields.fpFtype s✝
+      let __do_lift_1 ← rm✝.encV
+      let __do_lift_2 ← rn✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.FP_compare
+              { M := 0, S := 0, ftype := __do_lift, Rm := __do_lift_1, op := 0, Rn := __do_lift_2, opcode2 := 0 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_58
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : FpuRoundMode
+rd✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuRound op✝ rd✝ rn✝
+encoded :
+  (match
+      match op✝ with
+      | FpuRoundMode.nearest32 => (0, 8)
+      | FpuRoundMode.nearest64 => (1, 8)
+      | FpuRoundMode.plus32 => (0, 9)
+      | FpuRoundMode.plus64 => (1, 9)
+      | FpuRoundMode.minus32 => (0, 10)
+      | FpuRoundMode.minus64 => (1, 10)
+      | FpuRoundMode.zero32 => (0, 11)
+      | FpuRoundMode.zero64 => (1, 11) with
+    | (ftype, opcode) => do
+      let __do_lift ← rn✝.encV
+      let __do_lift_1 ← rd✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.FP_data_processing_one_source
+              { M := 0, S := 0, ftype := ftype, opcode := opcode, Rn := __do_lift, Rd := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_59
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : FpuToIntOp
+rd✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuToInt op✝ rd✝ rn✝
+encoded :
+  (match
+      match op✝ with
+      | FpuToIntOp.f32ToI32 => (0, 0, 0)
+      | FpuToIntOp.f32ToU32 => (0, 0, 1)
+      | FpuToIntOp.f32ToI64 => (1, 0, 0)
+      | FpuToIntOp.f32ToU64 => (1, 0, 1)
+      | FpuToIntOp.f64ToI32 => (0, 1, 0)
+      | FpuToIntOp.f64ToU32 => (0, 1, 1)
+      | FpuToIntOp.f64ToI64 => (1, 1, 0)
+      | FpuToIntOp.f64ToU64 => (1, 1, 1) with
+    | (sf, ftype, opcode) => do
+      let __do_lift ← rn✝.encV
+      let __do_lift_1 ← rd✝.encZR
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.Conversion_between_FP_and_Int
+              { sf := sf, S := 0, ftype := ftype, rmode := 3, opcode := opcode, Rn := __do_lift,
+                Rd := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_60
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+op✝ : IntToFpuOp
+rd✝ rn✝ : Reg
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.intToFpu op✝ rd✝ rn✝
+encoded :
+  (match
+      match op✝ with
+      | IntToFpuOp.i32ToF32 => (0, 0, 2)
+      | IntToFpuOp.u32ToF32 => (0, 0, 3)
+      | IntToFpuOp.i64ToF32 => (1, 0, 2)
+      | IntToFpuOp.u64ToF32 => (1, 0, 3)
+      | IntToFpuOp.i32ToF64 => (0, 1, 2)
+      | IntToFpuOp.u32ToF64 => (0, 1, 3)
+      | IntToFpuOp.i64ToF64 => (1, 1, 2)
+      | IntToFpuOp.u64ToF64 => (1, 1, 3) with
+    | (sf, ftype, opcode) => do
+      let __do_lift ← rn✝.encZR
+      let __do_lift_1 ← rd✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.Conversion_between_FP_and_Int
+              { sf := sf, S := 0, ftype := ftype, rmode := 0, opcode := opcode, Rn := __do_lift,
+                Rd := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_61
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rd✝ rn✝ rm✝ : Reg
+c✝ : Cond
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuCSel s✝ rd✝ rn✝ rm✝ c✝
+encoded :
+  (do
+      let __do_lift ← Insn.armFields.fpFtype s✝
+      let __do_lift_1 ← rm✝.encV
+      let __do_lift_2 ← rn✝.encV
+      let __do_lift_3 ← rd✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.FP_conditional_select
+              { M := 0, S := 0, ftype := __do_lift, Rm := __do_lift_1, cond := c✝.bits, Rn := __do_lift_2,
+                Rd := __do_lift_3 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_62
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rd✝ : Reg
+imm8✝ : Nat
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuMoveFPImm s✝ rd✝ imm8✝
+encoded :
+  (do
+      let __do_lift ← Insn.armFields.fpFtype s✝
+      let __do_lift_1 ← uField "fmov immediate" 8 imm8✝
+      let __do_lift_2 ← rd✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.FP_immediate
+              { M := 0, S := 0, ftype := __do_lift, imm8 := __do_lift_1, imm5 := 0, Rd := __do_lift_2 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_63
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : VectorSize
+rd✝ : Reg
+imm8✝ : Nat
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.movi s✝ rd✝ imm8✝
+encoded :
+  (have __do_jp := fun cmode => do
+      let imm ← uField "movi immediate" 8 imm8✝
+      let __do_lift ← rd✝.encV
+      pure
+          (Arm.ArmInst.DPSFP
+            (Arm.DataProcSFPInst.Advanced_simd_modified_immediate
+              { Q := s✝.qsize.fst, op := 0, a := BitVec.extractLsb' 7 1 imm, b := BitVec.extractLsb' 6 1 imm,
+                c := BitVec.extractLsb' 5 1 imm, cmode := cmode, o2 := 0, d := BitVec.extractLsb' 4 1 imm,
+                e := BitVec.extractLsb' 3 1 imm, f := BitVec.extractLsb' 2 1 imm, g := BitVec.extractLsb' 1 1 imm,
+                h := BitVec.extractLsb' 0 1 imm, Rd := __do_lift }));
+    match s✝ with
+    | VectorSize.size8x8 => do
+      let cmode ← pure 14
+      __do_jp cmode
+    | VectorSize.size8x16 => do
+      let cmode ← pure 14
+      __do_jp cmode
+    | VectorSize.size16x4 => do
+      let cmode ← pure 8
+      __do_jp cmode
+    | VectorSize.size16x8 => do
+      let cmode ← pure 8
+      __do_jp cmode
+    | VectorSize.size32x2 => do
+      let cmode ← pure 0
+      __do_jp cmode
+    | VectorSize.size32x4 => do
+      let cmode ← pure 0
+      __do_jp cmode
+    | VectorSize.size64x2 => do
+      let cmode ← throw "movi arrangement 2d"
+      __do_jp cmode) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_64
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rt✝ : Reg
+m✝ : AMode
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuLoad s✝ rt✝ m✝
+encoded :
+  (do
+      let size ← Insn.armFields.fpLdstSize s✝
+      let __do_lift ← rt✝.encV
+      ldstFields size 1 1 s✝.bytes __do_lift m✝) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_65
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rt✝ : Reg
+m✝ : AMode
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuStore s✝ rt✝ m✝
+encoded :
+  (do
+      let size ← Insn.armFields.fpLdstSize s✝
+      let __do_lift ← rt✝.encV
+      ldstFields size 1 0 s✝.bytes __do_lift m✝) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_66
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rt✝ rt2✝ : Reg
+m✝ : AMode
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuLoadP s✝ rt✝ rt2✝ m✝
+encoded :
+  (have L :=
+      match Insn.bfm op wide dest pointer immr imms with
+      | Insn.fpuLoadP size rt rt2 m => 1#1
+      | x => 0#1;
+    do
+    let opc ← Insn.armFields.fpOpc s✝
+    let Rt ← rt✝.encV
+    let Rt2 ← rt2✝.encV
+    have imm : Int → Except String (BitVec 7) := fun o =>
+      if (o % ↑s✝.bytes != 0) = true then throw (toString "pair offset " ++ toString o)
+      else sField "imm7" 7 (o / ↑s✝.bytes)
+    match m✝ with
+      | AMode.spPreIndexed o => do
+        let __do_lift ← imm o
+        pure
+            (Arm.ArmInst.LDST
+              (Arm.LDSTInst.Reg_pair_pre_indexed
+                { opc := opc, V := 1, L := L, imm7 := __do_lift, Rt2 := Rt2, Rn := 31, Rt := Rt }))
+      | AMode.spPostIndexed o => do
+        let __do_lift ← imm o
+        pure
+            (Arm.ArmInst.LDST
+              (Arm.LDSTInst.Reg_pair_post_indexed
+                { opc := opc, V := 1, L := L, imm7 := __do_lift, Rt2 := Rt2, Rn := 31, Rt := Rt }))
+      | m => throw (toString "ldp/stp mode " ++ toString (repr m))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_67
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rt✝ rt2✝ : Reg
+m✝ : AMode
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuStoreP s✝ rt✝ rt2✝ m✝
+encoded :
+  (have L :=
+      match Insn.bfm op wide dest pointer immr imms with
+      | Insn.fpuLoadP size rt rt2 m => 1#1
+      | x => 0#1;
+    do
+    let opc ← Insn.armFields.fpOpc s✝
+    let Rt ← rt✝.encV
+    let Rt2 ← rt2✝.encV
+    have imm : Int → Except String (BitVec 7) := fun o =>
+      if (o % ↑s✝.bytes != 0) = true then throw (toString "pair offset " ++ toString o)
+      else sField "imm7" 7 (o / ↑s✝.bytes)
+    match m✝ with
+      | AMode.spPreIndexed o => do
+        let __do_lift ← imm o
+        pure
+            (Arm.ArmInst.LDST
+              (Arm.LDSTInst.Reg_pair_pre_indexed
+                { opc := opc, V := 1, L := L, imm7 := __do_lift, Rt2 := Rt2, Rn := 31, Rt := Rt }))
+      | AMode.spPostIndexed o => do
+        let __do_lift ← imm o
+        pure
+            (Arm.ArmInst.LDST
+              (Arm.LDSTInst.Reg_pair_post_indexed
+                { opc := opc, V := 1, L := L, imm7 := __do_lift, Rt2 := Rt2, Rn := 31, Rt := Rt }))
+      | m => throw (toString "ldp/stp mode " ++ toString (repr m))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32
+
+case h_68
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : sorry
+labelMap : labelOffsets fa.lines = Except.ok labels
+i✝ : Insn
+s✝ : ScalarSize
+rt✝ : Reg
+t✝ : Lbl
+heq✝ : Insn.bfm op wide dest pointer immr imms = Insn.fpuLoadLit s✝ rt✝ t✝
+encoded :
+  (do
+      let opc ← Insn.armFields.fpOpc s✝
+      let __do_lift ← { pc := lineOffset fa.lines.toList j, lbl := fun x => labels[x]? }.pcRel "ldr (literal)" 19 4 t✝
+      let __do_lift_1 ← rt✝.encV
+      pure
+          (Arm.ArmInst.LDST (Arm.LDSTInst.Reg_literal { opc := opc, V := 1, imm19 := __do_lift, Rt := __do_lift_1 }))) =
+    Except.ok sorry
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32

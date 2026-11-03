@@ -1,0 +1,18 @@
+{
+  "status": "FRESH_TARGET_NORMAL_PASSED_CLOSURE_INCOMPLETE",
+  "key": "ce8418ae5da34146",
+  "trace_sha256": "f000f79433ec03ebc9d95d8c24ac0aae5e8ce411f1de57dfa50f1d8eccc0dccc",
+  "outputs": {
+    ".lake/build/lib/lean/FV/E2E/ExecWrites.olean": "eacb5bb4386b018256c643ea0e0a8ab1cec1d58de5f23eae1810871c7e8cd2d4",
+    ".lake/build/lib/lean/FV/E2E/ExecWrites.ilean": "96c7fb066d0233a3fc8ae5d06a5988127393a9308745d7b28423f66ac8fdb912",
+    ".lake/build/ir/FV/E2E/ExecWrites.c": "53cc72ac9084f6cc0637f7a92155704a28f0497ccfffe1917f023efed15c1f64"
+  },
+  "memory": "peak 513978368\noom 0\noom_kill 0\n",
+  "proper387_exit": 3,
+  "rejected": [
+    "FV.E2E.RegLevelOpWrites",
+    "FV.E2E.MoveWrites",
+    "FV.E2E.ExecWritesFrame"
+  ],
+  "scheduler_live_exact_birth": 1793694108.91
+}

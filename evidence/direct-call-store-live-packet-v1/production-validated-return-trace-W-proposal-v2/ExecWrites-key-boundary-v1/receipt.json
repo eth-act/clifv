@@ -1,0 +1,40 @@
+{
+  "R": {
+    "exit": 0,
+    "keys": [
+      "ce8418ae5da34146"
+    ],
+    "stored_trace": {
+      "schemaVersion": "2025-09-10",
+      "depHash": "7d565c765fb63eb4",
+      "outputs": {
+        "m": false,
+        "o": [
+          "abcf23b76f7ed395.olean"
+        ],
+        "i": "b541cbbb253195d4.ilean",
+        "c": "3e13671ecc9b5ba4.c"
+      }
+    },
+    "trace_sha256": "a7fcb496bd3df5551b9a7f8220eef21c3f218fe8e352805f926e5f708494a8ae"
+  },
+  "P": {
+    "exit": 0,
+    "keys": [
+      "ce8418ae5da34146"
+    ],
+    "stored_trace": {
+      "schemaVersion": "2025-09-10",
+      "depHash": "7d565c765fb63eb4",
+      "outputs": {
+        "m": false,
+        "o": [
+          "abcf23b76f7ed395.olean"
+        ],
+        "i": "b541cbbb253195d4.ilean",
+        "c": "3e13671ecc9b5ba4.c"
+      }
+    },
+    "trace_sha256": "a7fcb496bd3df5551b9a7f8220eef21c3f218fe8e352805f926e5f708494a8ae"
+  }
+}

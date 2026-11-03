@@ -1,0 +1,9 @@
+{
+  "R_G_writers": [],
+  "R_released": true,
+  "G_released_for_read_only_donor_checks": true,
+  "proposal_sha256": "63fb8ab4bb6eee09a306171f246b9578a96c19dc13c416c258db04651c697115",
+  "active_source_compiler": false,
+  "source_edits_copies_builds_verifiers_stopped": true,
+  "utc": "2026-11-03T15:34:03.937781+00:00"
+}

@@ -1,0 +1,26 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireLayoutEncoding.lean:30:4: error: Dependent elimination failed: Failed to solve equation
+  Except.ok fields =
+    Decidable.rec
+      (fun h =>
+        (fun x => do
+            let __do_lift ← pointer.encZR
+            let __do_lift_1 ← dest.encZR
+            pure
+                (Arm.ArmInst.DPI
+                  (Arm.DataProcImmInst.Bitfield
+                    { sf := b1 wide, opc := if (op == BfmOp.sBfm) = true then 0 else 2, N := b1 wide,
+                      immr := BitVec.ofNat 6 immr, imms := BitVec.ofNat 6 imms, Rn := __do_lift, Rd := __do_lift_1 })))
+          h)
+      (fun h =>
+        (fun x => do
+            throw (toString "bfm #" ++ toString immr ++ toString ", #" ++ toString imms)
+            let __do_lift ← pointer.encZR
+            let __do_lift_1 ← dest.encZR
+            pure
+                (Arm.ArmInst.DPI
+                  (Arm.DataProcImmInst.Bitfield
+                    { sf := b1 wide, opc := if (op == BfmOp.sBfm) = true then 0 else 2, N := b1 wide,
+                      immr := BitVec.ofNat 6 immr, imms := BitVec.ofNat 6 imms, Rn := __do_lift, Rd := __do_lift_1 })))
+          h)
+      (instDecidableEqBool (decide (immr ≥ 64) || decide (imms ≥ 64)) true)
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireLayoutEncoding.lean:32:4: error: `simp` made no progress

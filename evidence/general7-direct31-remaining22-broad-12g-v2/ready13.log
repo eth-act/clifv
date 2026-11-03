@@ -1,0 +1,13 @@
+⚠ [13/49] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+⚠ [16/49] Replayed FV.Clif.Parse
+warning: FV/Clif/Parse.lean:663:8: Variable name `t` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _t
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+✖ [49/49] Building FV.E2E.StockEntryCfgFixtures
+error: target is out-of-date and needs to be rebuilt
+Some required targets logged failures:
+- FV.E2E.StockEntryCfgFixtures

@@ -1,0 +1,19 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireLayoutEncoding.lean:28:3: error: unknown tactic
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireLayoutEncoding.lean:26:75: error: unsolved goals
+fa : FnAsm
+fb : FnBin
+layout : fa.layout = Except.ok fb
+j immr imms : Nat
+op : BfmOp
+wide : Bool
+dest pointer : Reg
+trap : Option Clif.TrapCode
+found : fa.lines.toList[j]? = some (Line.ins (Insn.bfm op wide dest pointer immr imms) trap)
+labels : Std.HashMap Lbl Nat
+fields : Arm.ArmInst
+labelMap : labelOffsets fa.lines = Except.ok labels
+encoded :
+  Insn.armFields { pc := lineOffset fa.lines.toList j, lbl := fun x => labels[x]? }
+      (Insn.bfm op wide dest pointer immr imms) =
+    Except.ok fields
+⊢ (immr < if wide = true then 64 else 32) ∧ imms < if wide = true then 64 else 32

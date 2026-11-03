@@ -1,0 +1,12 @@
+{
+  "proposal_sha256": "63fb8ab4bb6eee09a306171f246b9578a96c19dc13c416c258db04651c697115",
+  "scripts": {
+    "run.py": "3e03009dbde92e1a2883eb4f953b8e42f94030c1f18b0fc8348ee5f47e76a594",
+    "guard.py": "660805223b9731f69797373ee6cc5e33d3943357a1d074d93ecd6814f1a44efb",
+    "gate.py": "e1c01ca5ac1af970e0dab921ba49ff0695b0eaa35a66dfd1e7197805273a0daa",
+    "launch.py": "fe81e71507505eeb304934dfdbddbe87de3de20c7118a1ac8a2e1b91bb964313"
+  },
+  "writer_release_sha256": "adb324bcf63d7ca88a606dc814e2cd65e65bcba01223e591f2b86053023b0e89",
+  "no_compiler_started": true,
+  "guard_protocol": "same tested natural-boundary controller pause, independent pid/birth guard, cgroup drain before resume"
+}

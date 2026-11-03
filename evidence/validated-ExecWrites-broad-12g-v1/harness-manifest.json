@@ -1,0 +1,12 @@
+{
+  "manifest_sha256": "2953c07ff948f6c59a9cde558d5e726966ed0347ca3fc69a8b606690768933d9",
+  "scripts": {
+    "run.py": "b1e9bd099793c4419ea24bd12afda1f9eced4008875276c2cca6c5035e7d6149",
+    "guard.py": "914cbc944c28c37dae49138c851d1cd248fe923fd9737bcde05c0c048f66162c",
+    "gate.py": "e0ad10ec7b899b66bda2408cffc90008ab243435aeffc6147a25ef92e4a73bc0",
+    "launch.py": "fe81e71507505eeb304934dfdbddbe87de3de20c7118a1ac8a2e1b91bb964313"
+  },
+  "prior_cone_receipt_sha256": "6ded3045dcef361dcf98fac3430266b21a2a4e3ddc13bf49c05d06e928fe1140",
+  "root_approved": "Separate ExecWrites proposal2953c07f after corrected consumer cone; full proper387 required",
+  "no_compiler_started": true
+}

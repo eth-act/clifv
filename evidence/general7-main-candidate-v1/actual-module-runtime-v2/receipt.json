@@ -1,0 +1,31 @@
+{
+  "exit": 0,
+  "argv": [
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/memcap.sh",
+    "lake",
+    "env",
+    "lean",
+    "-j1",
+    "--run",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/actual-module-runtime-v2/General7Runtime.lean"
+  ],
+  "source_sha256": "f5a13e611b1482230bf235f292283e520c89a6766f623135ffe8ab805bb9ae0f",
+  "config_hashes": {
+    "lakefile.toml": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b"
+  },
+  "candidate_hashes": {
+    "FV/Backend/ABIReadCfg.lean": "ae78852b20529c5a367010ea3b55266f5bcdbdf78011d0b24d56d410038091ad",
+    "FV/Backend/Lowering/StockGeneralLoopCfg7NI.lean": "e050bf694c476656859be35095289715a15be534f8d0ce63cf1a0c200f72b46f",
+    "FV/Backend/Proof/StockGeneralRouteWitness7.lean": "5c4102020483805a179bfd9732ad0a950f5aa46043fe7dc6171ed9573827336f",
+    "FV/Backend/SemanticNICheck.lean": "ea7714a42da26019326b0c93fd827e9c2c143b2b3ffc5487335cdd6087ce32a4",
+    "FV/E2E/ABIReadCfg.lean": "69000ce30bbc5a33bdee756b7e34618cedcd1beb83f3fb020b174a536518ad95",
+    "FV/E2E/ABIReadCfgTableWitness.lean": "64f03f2566c8a7e5301f3ee9aaad995e064ecdfccb3c9115d07b46dd7a141ec1",
+    "FV/E2E/CompiledSemanticNI.lean": "fdbd172e5a4f0cbd795fc23ad0d34903260bfd3d682b19dbc92655e9a4611cf1",
+    "scripts/audit/general-route7.lean": "2760c7126a506884bd448bdd37f4c11264928775c7dc233206532a8effd0dd04"
+  },
+  "focused_receipt_sha256": "2f5eda78a0f6fa2ec4599c1153c306e06511694fa361c7683c7f00d5f3ddd832",
+  "memory": "peak 240173056\noom 0\noom_kill 0\n",
+  "scope": "actual module execution; no Main activation claim"
+}
