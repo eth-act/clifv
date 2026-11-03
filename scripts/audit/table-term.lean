@@ -20,6 +20,12 @@ import FV.Backend.Proof.StockTableWitness
 #print axioms Backend.Stock.Proof.TableBranch.table_named_values
 #print axioms Backend.Stock.Proof.TableBranch.table_named_bounds
 #print axioms Backend.Stock.Proof.TableBranch.table_fixed_allocation
+#print axioms Backend.Stock.Proof.TableBranch.table_core_calls
+#print axioms Backend.Stock.Proof.TableBranch.table_core_origin
+#print axioms Backend.Stock.Proof.TableBranch.stock_lower_table_core
+#print axioms Backend.Stock.Proof.TableBranch.LastTableExecution.guarded
+#print axioms Backend.Stock.Proof.ConditionalValues.CoreOrigin.table_values
 #print axioms Backend.Stock.Proof.TableBranch.Witness.prepared
 #print axioms Backend.Stock.Proof.TableBranch.Witness.jumptable_lowered -- witness: native_decide
 #print axioms Backend.Stock.Proof.TableBranch.Witness.jumptable_table_values -- witness: native_decide
+#print axioms Backend.Stock.Proof.TableBranch.Witness.jumptable_core -- witness: native_decide
