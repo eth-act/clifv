@@ -1,0 +1,9 @@
+{
+  "status": "approved-by-one-direct-peer-review",
+  "reviewer": "worker-A",
+  "head": "8568efe784d1ad2d0b84cac83a41aa0af5bb64d9",
+  "request_ai_coord_message": 6501,
+  "verdict_source": "coordinator relay",
+  "exact_relay": "A approved PR946 at8568efe78 through one direct cheap review; the review loop is closed.",
+  "builds_or_review_agents": "none"
+}

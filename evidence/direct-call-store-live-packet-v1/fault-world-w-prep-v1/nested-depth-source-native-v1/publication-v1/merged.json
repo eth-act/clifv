@@ -1,0 +1,20 @@
+{
+  "status": "merged",
+  "PR": 946,
+  "url": "https://github.com/eth-act/clifv/pull/946",
+  "commit": "64d1bd8e04cb1b9845a4090e3c4e3db247709ae0",
+  "tested_head": "8568efe784d1ad2d0b84cac83a41aa0af5bb64d9",
+  "publication_base": "1c24ae6dc0a70cba3179b8d5c0433edf6ba8e493",
+  "tested_tree": "0c1b72d5e766035e7c717f495e507f2ac9ca60f6",
+  "merged_tree": "0c1b72d5e766035e7c717f495e507f2ac9ca60f6",
+  "tree_equal": true,
+  "all_four_CI_success": true,
+  "peer_reviews": 1,
+  "normal_modules": 163,
+  "real_standard_audit_roots": 46,
+  "old41_AXIOM_sets_exact": true,
+  "full_recursive_coverage_open": true,
+  "full_goal": "active;incomplete",
+  "utc": "2026-11-03T08:52:39.947421+00:00",
+  "before_receipt_sha256": "f59ba57482cc7d032a677f685dd80a95ddda668cabd9f2c73c8d5e7d30e48296"
+}

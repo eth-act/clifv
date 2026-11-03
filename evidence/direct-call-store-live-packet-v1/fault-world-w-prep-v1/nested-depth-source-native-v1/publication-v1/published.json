@@ -1,0 +1,19 @@
+{
+  "status": "published;one-peer-review-and-four-CI-pending",
+  "base": "1c24ae6dc0a70cba3179b8d5c0433edf6ba8e493",
+  "head": "8568efe784d1ad2d0b84cac83a41aa0af5bb64d9",
+  "tree": "0c1b72d5e766035e7c717f495e507f2ac9ca60f6",
+  "branch": "agent/nested-source-fault-map-20261103",
+  "url": "https://github.com/eth-act/clifv/pull/946",
+  "changes": [
+    "FV/E2E/LinkMemoryFaultSourceDepth.lean",
+    "FV/E2E/MemoryFaultNestedSource.lean",
+    "scripts/audit/linked-memory-fault-source-depth.lean"
+  ],
+  "canonical_manifest_sha256": "0024d54ec6dfc02a56cbfedcc61802ccb4b46545e9f242f62374e51d94b3e2c6",
+  "source_hashes": {
+    "FV/E2E/MemoryFaultNestedSource.lean": "f2a84e30ed2e954d9618694465e981de9fc25f91e733815077add2986effa9ee",
+    "FV/E2E/LinkMemoryFaultSourceDepth.lean": "c1912e3921d5c2c605cb9cc03cf299532e2c18a7e258b11c84744c394b5d6c64",
+    "scripts/audit/linked-memory-fault-source-depth.lean": "3e10882697663cadc7448e5afd7cf130d6d796dd9fcf01cff8c7bb468695d37b"
+  }
+}

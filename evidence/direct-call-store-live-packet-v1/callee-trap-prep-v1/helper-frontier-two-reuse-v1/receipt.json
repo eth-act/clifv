@@ -1,0 +1,13 @@
+{
+  "status": "passed-complete-proper-helper-two-frontier",
+  "targets": [
+    "FV/Backend/Proof/StockAliasSemantics.lean",
+    "FV/Backend/Proof/LowerCertBase.lean"
+  ],
+  "closure_modules": 178,
+  "source_config_native_IR_checked": true,
+  "all_owned_helpers_untouched": true,
+  "provider_builds": 0,
+  "before_sha256": "b8f47b77d041ff45b3d75f26e02017876411480a4418a2a8845a8d2c7086cc41",
+  "copied_sha256": "3b625ce4568ec935ecbbfccedccec0a17647f20b73a857685f1412c7e28cdad2"
+}
