@@ -18,6 +18,9 @@ A `br_table x dc tbl` block has `tbl.length + 1` successor labels (`table_succes
 * The resolved retained emission stops at its `jt_sequence` on the `branchIdx` edge, with the
   register file and the guarded frame of the body's end (`TableBodySpec.table_branch_values_last`).
   The emission output frontier is the core input plus two: the scan-input frontier is input + 2.
+* The emission defines only its two temporaries, in the branch interval
+  (`TableBodySpec.table_fresh_defs`), so they differ from the resolved register of every available
+  value (`TableBodySpec.branch_temp_outside`).
 * The `jt_sequence` writes its two temporaries after the stop. They are in the branch interval, so
   the register update at the stop keeps every register outside it
   (`TableBodySpec.table_stop_update_frame`), the guarded frame
@@ -385,5 +388,62 @@ theorem TableBodySpec.table_carry_of_update {f : Clif.Function} {result : Result
   change VHolds v (regs (aliasNum result.final.alias n))
   rw [frame _ (outside (available y need) (by rw [← mapEq]; exact mapped))]
   exact holds
+
+/-- **The retained `br_table` emission defines only its two temporaries**, the next two registers
+after the core input: its definitions are in the branch interval. -/
+theorem TableBodySpec.table_fresh_defs {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f)
+    {b : Clif.Block} {label bi x : Nat} {dc : Clif.BlockCall} {tbl : List Clif.BlockCall}
+    {isem : Backend.Proof.Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+    (spec : TableBodySpec f result b label bi x dc tbl isem MR env cp)
+    (block : f.blocks[bi]? = some b) (termShape : b.term = .brTable x dc tbl)
+    (typeX : result.ctx.valueType? x = some (.int 32))
+    (small : result.order.successors[label]!.size ≤ 4096) :
+    ∀ m ∈ spec.origin.emission.code.toList,∀ k ∈ vdefs m,
+      spec.input.base.nextVreg ≤ k ∧ k < spec.origin.emission.state.base.nextVreg := by
+  have ctxEq := (stock_lowerBlockCore_scanOrigin spec.coreRun).2.1
+  have inv := (stock_lower_record_context run scope spec.events).1
+  rw [ctxEq] at inv
+  have slot := spec.table_slot block termShape
+  have typeHere : {Driver.termCtx result.ctx (spec.ranges[bi]!.2-1) spec.data with
+      tryRegs := spec.input.tryRegs[spec.ranges[bi]!.2-1]!}.valueType? x = some (.int 32) := typeX
+  have labelsSmall : result.order.successors[label]!.toList.length ≤ 4096 := by
+    simpa only [Array.length_toList] using small
+  obtain ⟨d,ts,r,_,mapped,_,_,emitted,frontier⟩ := table_named_code slot typeHere labelsSmall spec.origin.call
+  obtain ⟨key,rfl⟩ := inv.valueReg x r mapped
+  have actual : spec.origin.emission.code.toList = tableCode d ts (.vreg key .int) spec.input.base.nextVreg := by
+    rw [spec.origin.emitted]
+    have buffers := congrArg Array.toList emitted
+    simpa only [Array.toList_append,Array.toList_empty,List.toList_toArray,List.nil_append] using buffers
+  intro m member k defined
+  rw [actual] at member
+  have inside := tableCode_defs d ts key spec.input.base.nextVreg m member k defined
+  have frontierEq : spec.origin.emission.state.base.nextVreg = spec.input.base.nextVreg+2 := frontier
+  omega
+
+/-- **The `br_table` temporaries are outside the resolved registers of the available values.**
+Every register that the resolved `br_table` emission defines differs from the resolved register of
+every value available at any source point, in particular at the terminator of the block and at the
+entries of its successors. -/
+theorem TableBodySpec.branch_temp_outside {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {b : Clif.Block} {label bi x : Nat} {dc : Clif.BlockCall} {tbl : List Clif.BlockCall}
+    {isem : Backend.Proof.Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+    (spec : TableBodySpec f result b label bi x dc tbl isem MR env cp)
+    (tag : result.order.nodes[label]? = some (.original bi))
+    (termShape : b.term = .brTable x dc tbl) (typeX : result.ctx.valueType? x = some (.int 32))
+    (small : result.order.successors[label]!.size ≤ 4096)
+    {m : MInst} (member : m ∈ spec.origin.emission.code.toList.map
+      (·.mapRegs (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))))
+    {d : Nat} (defined : d ∈ vdefs m)
+    {bi' j y key : Nat} (available : y ∈ availOf f (availIn f result.ctx) bi' j)
+    (mapped : result.ctx.valueReg? y = some (.vreg key .int)) :
+    d ≠ aliasNum result.final.alias key := by
+  have block : f.blocks[bi]? = some b := by simpa only [spec.atBlock] using spec.split.block
+  obtain ⟨capped,outside⟩ := spec.branch_alias_outside run scope dominated tag termShape typeX small
+  have interval := resolved_defs_inside run capped (spec.table_fresh_defs run scope block termShape typeX small)
+    m member d defined
+  have away := outside available mapped
+  omega
 
 end Backend.Stock.Proof.ConditionalValues

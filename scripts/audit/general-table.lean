@@ -14,6 +14,8 @@ import FV.Backend.Proof.StockGeneralArgsLoopWitness6
 #print axioms Backend.Stock.Proof.ConditionalValues.TableBodySpec.table_stop_update_frame
 #print axioms Backend.Stock.Proof.ConditionalValues.TableBodySpec.guarded_of_table_update
 #print axioms Backend.Stock.Proof.ConditionalValues.TableBodySpec.table_carry_of_update
+#print axioms Backend.Stock.Proof.ConditionalValues.TableBodySpec.table_fresh_defs
+#print axioms Backend.Stock.Proof.ConditionalValues.TableBodySpec.branch_temp_outside
 #print axioms Backend.Stock.Proof.ConditionalValues.table_dests_target
 #print axioms Backend.Stock.Proof.ConditionalValues.TableBodySpec.returning_table_carry_core
 #print axioms Backend.Stock.Proof.ConditionalValues.TableBodySpec.trapping_table_carry_core
