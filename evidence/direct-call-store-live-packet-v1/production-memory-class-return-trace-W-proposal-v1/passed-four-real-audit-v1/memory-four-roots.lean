@@ -1,0 +1,10 @@
+import FV.Backend.Proof.StockMemoryStoreDemandTransport
+import FV.Backend.Proof.StockMemorySretCopyClass
+import FV.E2E.StockMemoryNopNonentryPairedReturn
+import FV.E2E.StockMemoryOrdinaryPairedJump
+
+#print axioms Backend.Stock.Memory.StoreRoots.stock_retained_store_demand_before
+#print axioms Backend.Stock.Memory.StoreRoots.stock_retained_stored_definition_emitted
+#print axioms Backend.Stock.Memory.SretCopy.CfgClass
+#print axioms E2E.StockMemory.actual_nonentry_paired_nop_return
+#print axioms E2E.StockMemory.ordinary_paired_jump_body_returns_at_of_body

@@ -1,0 +1,24 @@
+{
+  "status": "focused_kernels_passed_real_audit_pending",
+  "modules": {
+    "FV.Backend.Proof.StockAcquireFenceFrozenFrontier": {
+      "source_sha256": "651ad42545b7ffa000bac5a806b00277f95ba93490a930352488c8db684e7688",
+      "olean_sha256": "157779d33b01bb4cb7cfc789c372c4acad4a522481e2845f73e926560c2bdac5"
+    },
+    "FV.E2E.StockAcquireSeqRefinesSimulation": {
+      "source_sha256": "e036f123a79b8087e535c471b365bc0ef96bd6681475fbc7682a3f411513ee81",
+      "olean_sha256": "66e74710e402a0fc9ee7ac97ebb6ecf1a3c0bda378e12052bb31e30fee2e75df"
+    },
+    "FV.E2E.StockAcquirePairedIspecRefines": {
+      "source_sha256": "6309956d109d4341cbbc1a1797e7480adadb8ed6ba6d73fd4462061b01a967a8",
+      "olean_sha256": "b68b789f0fbf3f93616bb02a7fdda3542a100bbd1cc29c215298ba2a4450dbaf"
+    },
+    "FV.E2E.StockAcquirePureModelPaired": {
+      "source_sha256": "d9007c9ceb757c0d68570a06075c67e9418a055432a71f5eec20bd0eb464856e",
+      "olean_sha256": "8bbb63a8b2d2f503e29ae5a3b535f474b428cd1457f4fb96a135f8a5fe59bb85"
+    }
+  },
+  "previous_canonical_v87_sha256": "21c0701b1e155cc323676415687ba8ec846e80c8bb7f1a4847a5eebf3fab347e",
+  "no_new_audit_coverage_claim": true,
+  "full_goal_complete": false
+}

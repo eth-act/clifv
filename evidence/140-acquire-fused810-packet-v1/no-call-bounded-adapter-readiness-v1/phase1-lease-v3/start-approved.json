@@ -1,0 +1,11 @@
+{
+  "parent_resource_approved": true,
+  "source2_released": true,
+  "acquire1_released": true,
+  "source_release_sha256": "65af97c3c6a3c4ca55b88423044bbbcf940d94f480e9409da2235f11e9140381",
+  "own_release_sha256": "a4aec7c8c6969f605209a9a595c4f24d0a63d9e5675e5d9bf904e5f5f1d8aebf",
+  "authority": "Parent renewed exact corrected phase1 approval after both renewed releases.",
+  "proposal_sha256": "4fd49bbe71d6dce3015658dcc4b1f9a26c245b3d04590eb59bd0e16abf868b08",
+  "gate_sha256": "cf6aacc4efb900b602b48a0e958f7e36da576a6c61a55470fcf96eadc44a576b",
+  "guard_harness_sha256": "7681fb46488546a83a8dda60451568834b9f46e2319b17ea619beace1f931e5f"
+}

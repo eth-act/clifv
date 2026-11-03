@@ -1,0 +1,11 @@
+{
+  "parent_resource_approved": true,
+  "source2_released": true,
+  "acquire1_released": true,
+  "source_release_sha256": "12de37ff234d92fed1ef3a444e55cb92b3643b48cdc522a426b449383d846ed9",
+  "own_release_sha256": "4f4af5014f57bb35a455a8584e784625bff9404a11f9ecb33a423a615792d569",
+  "authority": "Parent approved exact phase4 proposal3b38b401 and only retained CompiledEitherW27565fc1/6ea54535; both shares renewed after natural exits.",
+  "proposal_sha256": "3b38b40190229785daaf06be488e068130b97055651b5a901664a884c75bf40c",
+  "gate_sha256": "aee2da417780b6112770cb6ab2ca7ab38da0f3827a8ef5f70483c806c9539529",
+  "guard_harness_sha256": "7681fb46488546a83a8dda60451568834b9f46e2319b17ea619beace1f931e5f"
+}

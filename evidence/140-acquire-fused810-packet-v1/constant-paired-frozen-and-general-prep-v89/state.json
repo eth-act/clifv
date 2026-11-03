@@ -1,0 +1,11 @@
+{
+  "status": "frozen_callback_kernel_passed_general_success_callback_unverified",
+  "sources": {
+    "FV/E2E/StockAcquireConstantPairedFrozenFrontier.lean": "b20451a6974405e033cb50d5b72c6cd4c23744873a0255ce6ecbfbcc11d8b4f9",
+    "FV/E2E/StockAcquireConstantPairedFrontierGeneral.lean": "07731904cbdb45217711776c39bb70f595ccbf140f0accf6357b745a37150cec"
+  },
+  "prior_v88_sha256": "3ba5a2072135f8eee538d8bb5176d1faebb07cc8ec995e6f7515be8ba0c9c3c6",
+  "real_audit_pending": true,
+  "scope": "The frozen callback keeps source point and capture history fixed. The successful callback advances source history only with an actual successful indexed step. Both preserve arbitraryZ rather than tyingZ to current memory.",
+  "full_goal_complete": false
+}

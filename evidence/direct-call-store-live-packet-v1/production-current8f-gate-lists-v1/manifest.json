@@ -1,0 +1,1840 @@
+{
+  "status": "SOURCE_ONLY_GATE_LISTS;NO_VERIFIER_OR_COMPILER_RAN",
+  "target_main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "resource_state": "full source 2 GiB released; execution requires explicit return",
+  "old_constructor23": {
+    "inventory_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-call-store-constructor-proposal-v1/old-contract-inventory-v2.json",
+    "roots": {
+      "Backend.SemanticABI.previous_check": {
+        "source": "FV/Backend/SemanticABICheck.lean",
+        "header": "theorem previous_check {f : Clif.Function} {vc : VCode} (accepted : SemanticNI.check f vc = true) :\n    check f vc = true :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "Backend.SemanticABI.previous_exact": {
+        "source": "FV/Backend/SemanticABICheck.lean",
+        "header": "theorem previous_exact {f : Clif.Function} {vc : VCode} (absent : Stock.MemorySretCopy.check f vc = false) :\n    check f vc = SemanticNI.check f vc :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "Backend.SemanticABI.previous_check_calls": {
+        "source": "FV/Backend/SemanticABICheck.lean",
+        "header": "theorem previous_check_calls {f : Clif.Function} {vc : VCode} (accepted : check f vc = true) :\n    checkCalls f vc = true :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "Backend.SemanticABI.previous_exact_calls": {
+        "source": "FV/Backend/SemanticABICheck.lean",
+        "header": "theorem previous_exact_calls {f : Clif.Function} {vc : VCode}\n    (absent : Stock.VoidCall.NI.check f vc = false) : checkCalls f vc = check f vc :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledSemanticABI.of_checks": {
+        "source": "FV/E2E/CompiledSemanticABI.lean",
+        "header": "theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)\n    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)\n    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :\n    CompiledSemanticABI f k vc vcp rf af fa fb :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledSemanticABI.of_checks_calls": {
+        "source": "FV/E2E/CompiledSemanticABI.lean",
+        "header": "theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls f vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)\n    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)\n    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :\n    CompiledSemanticABI f k vc vcp rf af fa fb :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledSemanticABI.check": {
+        "source": "FV/E2E/CompiledSemanticABI.lean",
+        "header": "theorem check (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : Backend.checkAlloc vcp rf = .ok () :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledSemanticABI.alloc": {
+        "source": "FV/E2E/CompiledSemanticABI.lean",
+        "header": "theorem alloc (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : lowerRFunc vcp rf = .ok af :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledSemanticABI.emit": {
+        "source": "FV/E2E/CompiledSemanticABI.lean",
+        "header": "theorem emit (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : emitFunc k af = .ok fa :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledSemanticABI.layout": {
+        "source": "FV/E2E/CompiledSemanticABI.lean",
+        "header": "theorem layout (hc : CompiledSemanticABI f k vc vcp rf af fa fb) : fa.layout = .ok fb :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.backend_correct_world_niX_semantic_abi": {
+        "source": "FV/E2E/CompiledSemanticABI.lean",
+        "header": "theorem backend_correct_world_niX_semantic_abi {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}\n    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}\n    (hsub : InSubset p f) (hc : CompiledSemanticABI f k vc vcp rf af fa fb)\n    {X : ExtSem} {syms : String \u2192 Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}\n    {F : BitVec 64 \u2192 Prop} {c : BitVec 64}\n    (hcov : FormsCovered \u27e8fa.k, af.slotBase\u27e9 vcp)\n    (hX : XCallsOk env (f.externs.map (\u00b7.2))\n      (RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c) X)\n    (hXI : XCallsIndOk env (indSigs f)\n      (RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c) X)\n    (hsym : \u2200 n b, syms n = some b \u2192 X.sym n 0 = BitVec.ofNat 64 b)\n    (hslot : af.slotBase = slotOff)\n    {w\u2080 : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}\n    (hcs : ClifEntry f args cs)\n    (hrel : RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c cs.frame.slots cs.mem w\u2080)\n    (hargs : ArgsAtEntry F f.sig args w\u2080)\n    (htr : TrapsExplicit env p cs) (fuel : Nat) :\n    \u2200 vals cm, Clif.runLoop env p fuel cs = .returned vals cm \u2192\n      \u2203 (us : List (Reg \u00d7 Reg)) (outs : List CV) (w : Arm.ArmState),\n        (us.map (\u00b7.2) = (List.range us.length).map Reg.x \u2228 ReturnABI f us) \u2227 us.length = outs.length \u2227\n        PrefixHold vals outs \u2227 MemRel F syms cm w \u2227 vc.RetsSite us \u2227\n        (\u2200 (H : ArmHooks) (G : BitVec 64 \u2192 Prop) (base ra : BitVec 64) (s : Arm.ArmState),\n          ActEntry vcp rf af fa fb K F G X H base ra s w\u2080 \u2192\n          \u2203 n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s) \u2227\n            PostTrace fa af base (ArmStepX X H fa) s n \u2227\n            \u2200 i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)\n              (runX (ArmStepX X H fa) i s)) \u2227\n        (XNI F syms (f.externs.map (\u00b7.2)) (indSigs f) c\n          (CallLg env (f.externs.map (\u00b7.2)) (indSigs f)) X \u2192 XTls F X \u2192\n        \u2200 (D : BitVec 64 \u2192 Prop) (w\u2080' : Arm.ArmState),\n          RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c cs.frame.slots cs.mem w\u2080' \u2192\n          SameWorld (fun b => F b \u2228 D b) w\u2080 w\u2080' \u2192\n          (\u2200 r v, (ArgLoc.reg r, v) \u2208 (locsOf f.sig).zip args \u2192 regVal w\u2080' r = regVal w\u2080 r) \u2192\n          (\u2200 off v, (ArgLoc.stack off, v) \u2208 (locsOf f.sig).zip args \u2192 \u2200 k < v.ty.bytes,\n            w\u2080'.mem (Arm.r (.GPR 29#5) w\u2080 + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =\n              w\u2080.mem (Arm.r (.GPR 29#5) w\u2080 + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) \u2192\n          \u2200 (H : ArmHooks) (G : BitVec 64 \u2192 Prop) (base ra : BitVec 64) (s : Arm.ArmState),\n            ActEntry vcp rf af fa fb K F G X H base ra s w\u2080' \u2192\n            \u2203 n, ActRet ra (fun a => F a \u2228 D a) G us outs w s (runX (ArmStepX X H fa) n s) \u2227\n              PostTrace fa af base (ArmStepX X H fa) s n \u2227\n              \u2200 i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)\n                (runX (ArmStepX X H fa) i s)) :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.ReturnPinMode.pins_of_valid": {
+        "source": "FV/E2E/CompiledSemanticReturnPins.lean",
+        "header": "theorem pins_of_valid {mode : ReturnPinMode} {f : Clif.Function} {us : List (Reg \u00d7 Reg)}\n    (valid : mode.Valid f us) : mode.pins f us.length = us.map (\u00b7.2) :=",
+        "prior_exact_AX": [],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3",
+        "prior_AX_receipt_field": "axiom_sets; empty set is a required exact comparison",
+        "raw_no_axioms_log": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/contract-baseline-audit-v1/audit/stock-result-call-previous-contracts.log",
+          "sha256": "0237aded401c490740308f9c4a234a745384ba3262e329a66fcd6a07920acabf",
+          "line": "'E2E.ReturnPinMode.pins_of_valid' does not depend on any axioms"
+        }
+      },
+      "E2E.CompiledSemanticReturnPins.erase": {
+        "source": "FV/E2E/CompiledSemanticReturnPins.lean",
+        "header": "theorem erase (hc : CompiledSemanticReturnPins f k vc vcp rf af fa fb mode) :\n    CompiledSemanticABI f k vc vcp rf af fa fb :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledSemanticReturnPins.of_checks": {
+        "source": "FV/E2E/CompiledSemanticReturnPins.lean",
+        "header": "theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)\n    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)\n    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :\n    CompiledSemanticReturnPins f k vc vcp rf af fa fb (ReturnPinMode.checked f vc) :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledSemanticReturnPins.of_checks_calls": {
+        "source": "FV/E2E/CompiledSemanticReturnPins.lean",
+        "header": "theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls f vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)\n    (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)\n    (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :\n    CompiledSemanticReturnPins f k vc vcp rf af fa fb (ReturnPinMode.checked f vc) :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.backend_correct_world_niX_semantic_return_pins": {
+        "source": "FV/E2E/CompiledSemanticReturnPins.lean",
+        "header": "theorem backend_correct_world_niX_semantic_return_pins {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}\n    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}\n    {mode : ReturnPinMode}\n    (hsub : InSubset p f) (hc : CompiledSemanticReturnPins f k vc vcp rf af fa fb mode)\n    {X : ExtSem} {syms : String \u2192 Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}\n    {F : BitVec 64 \u2192 Prop} {c : BitVec 64}\n    (hcov : FormsCovered \u27e8fa.k, af.slotBase\u27e9 vcp)\n    (hX : XCallsOk env (f.externs.map (\u00b7.2))\n      (RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c) X)\n    (hXI : XCallsIndOk env (indSigs f)\n      (RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c) X)\n    (hsym : \u2200 n b, syms n = some b \u2192 X.sym n 0 = BitVec.ofNat 64 b)\n    (hslot : af.slotBase = slotOff)\n    {w\u2080 : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}\n    (hcs : ClifEntry f args cs)\n    (hrel : RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c cs.frame.slots cs.mem w\u2080)\n    (hargs : ArgsAtEntry F f.sig args w\u2080)\n    (htr : TrapsExplicit env p cs) (fuel : Nat) :\n    \u2200 vals cm, Clif.runLoop env p fuel cs = .returned vals cm \u2192\n      \u2203 (us : List (Reg \u00d7 Reg)) (outs : List CV) (w : Arm.ArmState),\n        ReturnPinMode.Valid mode f us \u2227 us.length = outs.length \u2227\n        PrefixHold vals outs \u2227 MemRel F syms cm w \u2227 vc.RetsSite us \u2227\n        (\u2200 (H : ArmHooks) (G : BitVec 64 \u2192 Prop) (base ra : BitVec 64) (s : Arm.ArmState),\n          ActEntry vcp rf af fa fb K F G X H base ra s w\u2080 \u2192\n          \u2203 n, ActRet ra F G us outs w s (runX (ArmStepX X H fa) n s) \u2227\n            PostTrace fa af base (ArmStepX X H fa) s n \u2227\n            \u2200 i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)\n              (runX (ArmStepX X H fa) i s)) \u2227\n        (XNI F syms (f.externs.map (\u00b7.2)) (indSigs f) c\n          (CallLg env (f.externs.map (\u00b7.2)) (indSigs f)) X \u2192 XTls F X \u2192\n        \u2200 (D : BitVec 64 \u2192 Prop) (w\u2080' : Arm.ArmState),\n          RelW \u27e8F, syms, slotOff, (RAFrame.compute vcp rf).intBase\u27e9 f c cs.frame.slots cs.mem w\u2080' \u2192\n          SameWorld (fun b => F b \u2228 D b) w\u2080 w\u2080' \u2192\n          (\u2200 r v, (ArgLoc.reg r, v) \u2208 (locsOf f.sig).zip args \u2192 regVal w\u2080' r = regVal w\u2080 r) \u2192\n          (\u2200 off v, (ArgLoc.stack off, v) \u2208 (locsOf f.sig).zip args \u2192 \u2200 k < v.ty.bytes,\n            w\u2080'.mem (Arm.r (.GPR 29#5) w\u2080 + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =\n              w\u2080.mem (Arm.r (.GPR 29#5) w\u2080 + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) \u2192\n          \u2200 (H : ArmHooks) (G : BitVec 64 \u2192 Prop) (base ra : BitVec 64) (s : Arm.ArmState),\n            ActEntry vcp rf af fa fb K F G X H base ra s w\u2080' \u2192\n            \u2203 n, ActRet ra (fun a => F a \u2228 D a) G us outs w s (runX (ArmStepX X H fa) n s) \u2227\n              PostTrace fa af base (ArmStepX X H fa) s n \u2227\n              \u2200 i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)\n                (runX (ArmStepX X H fa) i s)) :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.LinkSys.returnPinsB_sound": {
+        "source": "FV/E2E/CompiledProgramReturnPins.lean",
+        "header": "theorem returnPinsB_sound {g : Clif.Function} (checked : L.returnPinsB g = true) :\n    L.ReturnPinsCompatible g :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledProgramReturnPins.of_checks": {
+        "source": "FV/E2E/CompiledProgramReturnPins.lean",
+        "header": "theorem of_checks {cleanup : Bool} (lower : SemanticABI.check g (L.A g).vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup (L.A g).vc) = .ok (L.A g).vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup (L.A g).vc) (L.A g).vcp = true)\n    (check : Backend.checkAlloc (L.A g).vcp (L.A g).rf = .ok ())\n    (alloc : lowerRFunc (L.A g).vcp (L.A g).rf = .ok (L.A g).af)\n    (emit : emitFunc (L.A g).k (L.A g).af = .ok (L.A g).fa)\n    (layout : (L.A g).fa.layout = .ok (L.A g).fb)\n    (pins : L.returnPinsB g = true) : CompiledProgramReturnPins L g :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledProgramReturnPins.of_checks_calls": {
+        "source": "FV/E2E/CompiledProgramReturnPins.lean",
+        "header": "theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls g (L.A g).vc = true)\n    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup (L.A g).vc) = .ok (L.A g).vcp)\n    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup (L.A g).vc) (L.A g).vcp = true)\n    (check : Backend.checkAlloc (L.A g).vcp (L.A g).rf = .ok ())\n    (alloc : lowerRFunc (L.A g).vcp (L.A g).rf = .ok (L.A g).af)\n    (emit : emitFunc (L.A g).k (L.A g).af = .ok (L.A g).fa)\n    (layout : (L.A g).fa.layout = .ok (L.A g).fb)\n    (pins : L.returnPinsB g = true) : CompiledProgramReturnPins L g :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledProgramReturnPins.check": {
+        "source": "FV/E2E/CompiledProgramReturnPins.lean",
+        "header": "theorem check {modes : Clif.Function \u2192 ReturnPinMode} (hc : CompiledProgramReturnPins L g modes) : checkAlloc (L.A g).vcp (L.A g).rf = .ok () :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledProgramReturnPins.alloc": {
+        "source": "FV/E2E/CompiledProgramReturnPins.lean",
+        "header": "theorem alloc {modes : Clif.Function \u2192 ReturnPinMode} (hc : CompiledProgramReturnPins L g modes) : lowerRFunc (L.A g).vcp (L.A g).rf = .ok (L.A g).af :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledProgramReturnPins.emit": {
+        "source": "FV/E2E/CompiledProgramReturnPins.lean",
+        "header": "theorem emit {modes : Clif.Function \u2192 ReturnPinMode} (hc : CompiledProgramReturnPins L g modes) : emitFunc (L.A g).k (L.A g).af = .ok (L.A g).fa :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      },
+      "E2E.CompiledProgramReturnPins.layout": {
+        "source": "FV/E2E/CompiledProgramReturnPins.lean",
+        "header": "theorem layout {modes : Clif.Function \u2192 ReturnPinMode} (hc : CompiledProgramReturnPins L g modes) : (L.A g).fa.layout = .ok (L.A g).fb :=",
+        "prior_exact_AX": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "prior_AX_receipt_sha256": "f61e817c4285185a126dc30fa6bd3c4538b13df0ef6fd74a06d044d192ef62c3"
+      }
+    },
+    "gate": "actual current baseline auditor, candidate auditor, and exact three-way sets; retain empty pins_of_valid set"
+  },
+  "preserved_predecessor182": {
+    "receipt_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/live-consumer-audit-final-v1/receipt.json",
+    "expected_old_axiom_sets": {
+      "E2E.CompiledProgramReturnPins.of_checks_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.SemanticABI.previous_check_result_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.got_of_good": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.gotOk_leanLink": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.raNotSecond_enter": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallStackBound.crate_correct_stackNX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallBinary.binary_correct_depth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.destsInt_of_ok": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinChecksWith.okRProduction_of_checks": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticABI.emit": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.line_overlap": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.sysS_entry": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.gotOk_leanLink": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.okRReturnPinFor_eq_fast": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.accepts_previous_semantic": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledProgramReturnPins.emit": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.trapsExplicit_of_run": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.okB_previous": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.stepOk_of_d": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.image_checked": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallBinary.trapsExplicit_of_run": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.binary_correct_exec_depth_proven": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.plain_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.exec_of_runGood": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.runGood_sysS": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.siteAt_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledProgramReturnPins.of_checks_result_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledProgramReturnPins.entryRegs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.codeMap_leanLink": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.hasTls_of_vcode_return_pins": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.semanticPreparedReturnPinCallsResults_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.stepOk_of_d": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.leanLink_gotSlot": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.binary_correct_depthX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticReturnPins.of_checks_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.relocAt_img": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.runGood_sysS": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.runOkN_of_good": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.hasTls_of_vcode_semantic_abi": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticReturnPins.of_checks_result_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticABI.of_checks_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.attempt_correct_source_peak": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.SemanticABI.previous_check": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallBinary.BinFacts.modelOf_ne": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_prepared": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_accept": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_retry": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.reachL_of_reachN": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallGeneratedStack.crate_correct_stack": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinStackBound.goodN_iff": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinChecksWith.fnsBProduction_append": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.sysS_entry": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.SemanticABI.previous_exact": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.relocAt_inv": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.attempt_correct_depth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.backend_correct_world_ni_return_pins": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkSys.returnPinsB_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_correct": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallStackBound.backend_correct_program_stackX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallBinary.binary_correct_depthX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.preparedReturnPinCalls_correct": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.attempt_correct_source": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.semanticPreparedReturnPinFor_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.binary_correct_exec_peak_proven": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinChecksWith.accepts_previous": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.destsInt_of_ok": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.okRReturnPinResultCalls_previous": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.trapsExplicit_of_runD": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallBinary.trapsExplicit_of_runD": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticABI.layout": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.no_explicit_returns_of_sret": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_checked": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallChecks.accepts_previous": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.BinFacts.modelOf_ne": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.okB_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallBinary.binFacts_of_checks": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallBinary.binary_correct_peakX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinChecksWith.checks_iff": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.codeMap_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinStackBound.edgeB_of_callee": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinStackBound.budget_of": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallStackBound.goodN_iff": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.raNotSecond_enter": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.extImgProduction": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.accepts_previous": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallGeneratedStack.crate_correct_stackN": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinStackBound.okB_names": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.pairsClosed_art": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.backend_correct_world_return_pins": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.stepOkD_of_good": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.runGood_sysS_peak": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.binary_correct_exec_depth_proven": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinStackBound.facts": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledProgramReturnPins.check": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_source": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.BinFacts.previous": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.line_overlap": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkSys.OkReturnPins.extImgProduction": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.insn_of_good": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.attempt_correct_source": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.fnOk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.binary_correct_peakX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.attempt_spec": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.runGood_sysS_depth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.pairsClosed_art": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallStackBound.okB_names": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.armRefines_of_actRet_return_pins": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.word_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.siteAt_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinStackBound.backend_correct_program_stackX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledProgramReturnPins.alloc": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.runOkN_of_good": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.attempt_correct": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.image_checked": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.binFacts_of_checks": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.accepts_previous": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinStackBound.crate_correct_stackNX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.runOkSN_of_n": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.insn_of_good": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.outsideAvoids_leanLink": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.got_of_good": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticABI.of_checks_result_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallChecks.fnsBProduction_append": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.backend_correct_world_niX_semantic_abi": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.fnOk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.symAddr_of_blrTo": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.binary_correct_exec_proven": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.plain_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.okRReturnPinFor_previous": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.outsideAvoids_leanLink": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.okRReturnPinCalls_eq_fast": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinChecksWith.crate_correct_production": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.backend_correct_worldX_return_pins": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticABI.of_checks": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledProgramReturnPins.layout": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallChecks.checks_iff": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.symAddr_of_blrTo": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.SemanticABI.previous_check_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallStackBound.facts": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallChecks.crate_correct_production": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.SemanticABI.previous_exact_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.runGood_sysS_of": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.runGood_sysS_of": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.okRReturnPinCalls_previous": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallChecks.okRProduction_of_checks": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.runGood_sysS_peak": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.attempt_correct_source_peak": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.exec_of_runGood": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallBinary.binary_correctX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallStackBound.edgeB_of_callee": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.runGood_sysS_depth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallStackBound.budget_of": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.codeMap_leanLink": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.relocAt_img": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.stackArgsAvoid_frameW_semantic_abi": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.attempt_correct": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticReturnPins.erase": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.stackArgsAvoid_frameW_return_pins": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticReturnPins.of_checks": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.reachL_of_reachN": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.word_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.backend_correct_world_niX_semantic_return_pins": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.attempt_correct_peak": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.codeMap_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.binary_correct_exec_peak_proven": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticABI.alloc": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.binary_correct_depth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticABI.check": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.attempt_correct_peak": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.binary_correct_exec_proven": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.leanLink_gotSlot": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ResultCallCompilerWith.attempt_correct_depth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinBinary.binary_correctX": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.LinkCheck.LinkInput.resultsReturnPinCalls_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ReturnPinExecBytes.relocAt_inv": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.SemanticABI.previous_exact_result_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.runOkSN_of_n": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallBinary.okB_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Link.ReturnPinCompilerWith.attempt_spec": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledProgramReturnPins.of_checks": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.CompiledSemanticABI.entryRegs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "E2E.ResultCallExecBytes.stepOkD_of_good": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "gate": "actual current candidate audit plus exact prior comparison; raw-line-safe parser; no omitted roots"
+  },
+  "preserved_predecessor381_headers": {
+    "receipt_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-arithmetic-live-packet-v1/live-old-header-comparison-v1.json",
+    "expected_headers": {
+      "FV/Backend/StockResultCallCheck.lean:structure SourceData:0": "e4ba2c0fb16093227ccd890c5612a0e0992e559b90426fd6f6eeab7ab63b3414",
+      "FV/Backend/StockResultCallCheck.lean:def sourceData?:0": "af5461225dd449d94eac41511c60b5fcd7a31f0fad87873e542237714c38f9d6",
+      "FV/Backend/StockResultCallCheck.lean:def sourceB:0": "130f5474ba74abce9de428c8eef8b7532a78b358a79cfd0f3673fcffb4c74ab0",
+      "FV/Backend/StockResultCallCheck.lean:def resolvedReg?:0": "d85fb69d2dd31cc16dfb5af1ec3509133894c39ae91ccadf61308070d9806dee",
+      "FV/Backend/StockResultCallCheck.lean:def parameterPins:0": "50827e91b859481730501f01b027ebb127d5623525625dc7e5dae3fb6dbdec36",
+      "FV/Backend/StockResultCallCheck.lean:def codeB:0": "4d3fbe7eb746d35c0fc601563b1cc68399e77b5f44011237b25369e73581994c",
+      "FV/Backend/StockResultCallCheck.lean:def scanB:0": "29896bb10f1bc121d7c7525ea151ce4a9e91f253a9acc1ed8e9df5bdcbeeedfe",
+      "FV/Backend/StockResultCallCheck.lean:def instruction:0": "a1c80d7bbfac3b903d0f7c45de8c24920cf88b976ef0d377dcfdca762df964c9",
+      "FV/Backend/StockResultCallCheck.lean:def codeCheck:0": "68e21b85343fcf0cb789fcae75ad78786ab21a87d9bb36b64b7da4e3bbbd541b",
+      "FV/Backend/StockResultCallCheck.lean:def check:0": "8b495ef042f787e0fe77524e41ffa65c9fa286bc0822fdd5972847ec5144df30",
+      "FV/Backend/SemanticABICheck.lean:def check:0": "8b495ef042f787e0fe77524e41ffa65c9fa286bc0822fdd5972847ec5144df30",
+      "FV/Backend/SemanticABICheck.lean:theorem previous_check:0": "e05f17be6cf427611aae7f092ab190457a5c550cad1db4c95404fba9c36e8115",
+      "FV/Backend/SemanticABICheck.lean:theorem previous_exact:0": "754961599c5aa6a0874f4efbd72ea460b5b9ca09e26271d73f193811bcc243ad",
+      "FV/Backend/SemanticABICheck.lean:def checkCalls:0": "b3e202752f01c976040298ad04406fd2c7280b5cd4b7eb3e7c85550d7f6dda08",
+      "FV/Backend/SemanticABICheck.lean:theorem previous_check_calls:0": "074a8de21ba3f36cda18a7686003183da21ebe951951037f7039845afd8ff567",
+      "FV/Backend/SemanticABICheck.lean:theorem previous_exact_calls:0": "027ab8cab49fad0d5b4e62fff2aadd4cc86c1a86750379419812f1a4405dad64",
+      "FV/Backend/SemanticABICheck.lean:def checkResultCalls:0": "ab5a26a6bc98f2a43d920fdc32411b9f9df269469c888d9cc684a2b88468b928",
+      "FV/Backend/SemanticABICheck.lean:theorem previous_check_result_calls:0": "e241158123b3295bb8ec3869a05ffbe360cab97cef9370d511e60bed821da7dc",
+      "FV/Backend/SemanticABICheck.lean:theorem previous_exact_result_calls:0": "55457b842fb4f71397ddb8642eb06857c9369a91375a007269f8301b0c4eafc8",
+      "FV/Backend/ResultCallProduction.lean:def lowerCheckedResultCall:0": "73bb8f2be8dfa0304a11eb8866f8cf4f81d48988381ef136f38ac045e2ad6cba",
+      "FV/Backend/ResultCallProduction.lean:def lowerForAllocationResultCall:0": "f3a6ac0e400a7baef24441605372224053234f43e70aff84e13ce0c325d64fb4",
+      "FV/Backend/ResultCallProduction.lean:def entry:0": "78421ceb8614ff08f94fb2d52bfc57d190995c79bb7452711af32f5f0db5b2f1",
+      "FV/Backend/ResultCallProduction.lean:def entries:0": "397e69484f1a350b9ebd8d67853ed0291cfbc5a37f7249dd7f9eefb09c2c41e0",
+      "FV/Backend/ResultCallProduction.lean:def modeB:0": "376d71500a61a18b6f1e36269d5e2d1648fbabf3f97e00c4db16245e7509dc82",
+      "FV/Backend/ResultCallProduction.lean:def compileFileResultCallWhen:0": "27054ceddd53e23e779bf314bdc102012e8e672a8690fed17cbca85d68932e54",
+      "FV/Backend/ResultCallProduction.lean:theorem compileFileResultCallWhen_disabled:0": "cb8577aaf85e4453a97ecc504f1d05aa363cb717066acbf003c248b2acaaa6f9",
+      "FV/Backend/ResultCallProduction.lean:theorem compileFileResultCallWhen_retry:0": "4eb416db8cdfe8ff70b3d8ac496dbce8354d0e8f20596547f215e10dde64d335",
+      "FV/E2E/StockResultCallSource.lean:theorem result_return_run:0": "86adbbbc763e6d64d7780124d84be54701bf7ff8ecc3230fdc02ca03b01f789e",
+      "FV/E2E/StockResultCallSource.lean:theorem source_return_call:0": "e3cdee48d5f0611debc9d3c01121a01cf3fce49fd082b88b693d3a6ae708fbbe",
+      "FV/E2E/StockResultCallLayout.lean:structure Layout:0": "0ce30f0be40ad1e41de1e7d7ca9c44d398879b2de57d7a0f268a1b5f204bd0a4",
+      "FV/E2E/StockResultCallLayout.lean:theorem Layout.source_fields:0": "24bc83a87b03e767109f9b2fafc04af984450856681480d84baa26dcfa119991",
+      "FV/E2E/StockResultCallLayout.lean:theorem Layout.scan_fields:0": "be24e19148964f91ff62691555641ce07056e008443e40591745d70079f85117",
+      "FV/E2E/StockResultCallLayout.lean:theorem check_sound:0": "1a76fbc10c87ec3ee684012c35a88672243ddacaedb95e5da55627a5f214d793",
+      "FV/E2E/StockResultCallLayout.lean:theorem Layout.source_result:0": "d51e1f300372e78c8995b951436435a3d7967b19e8f880af72b6209222225092",
+      "FV/E2E/StockResultCallPair.lean:theorem result_call_pair:0": "46ae8ddd0094c0684e4676218eb50349d07f34a6ae71aae487fd79cad880b7a8",
+      "FV/E2E/StockResultCallRun.lean:structure SourceRun:0": "1b60d5beef6b26452724b57530233a7b81440546ee282c9569d98462c386b85e",
+      "FV/E2E/StockResultCallRun.lean:theorem Layout.source_run:0": "68ccdadf192a9c6ce882d5a17fef54ea106c531611337967ef986026af5d50ad",
+      "FV/E2E/StockResultCallRun.lean:theorem seqRun_call_result:0": "146eb5f058b7170ba121d3b42714f1e01101e6207afaa98205bb10876c6f90ec",
+      "FV/E2E/StockResultCallRun.lean:theorem SourceRun.virtual_return:0": "6898f53f04ea1eca34b9326be78535817cc527426b9c332fc80581060359bb03",
+      "FV/E2E/StockResultCallRun.lean:theorem SourceRun.execute:0": "2f73182c20f2dc176f6b0e85d86ecace857980c33910465fcce852f9bd05254b",
+      "FV/E2E/StockResultCallRun.lean:theorem SourceRun.execute_other:0": "dd45e1a9481365e99871aa3bb36cb2b8fd52244e641d223af1ff542da5574ec8",
+      "FV/E2E/StockResultCallDomain.lean:theorem source_call_notrap:0": "f1a38baef154d4a37ff78b0ea1450868c7c92e93780b1f4a8bab4df48ee5f52d",
+      "FV/E2E/StockResultCallDomain.lean:theorem Layout.return_function:0": "3de206fa39b06761354a871b03bd34b4d9c0c8190f5d41147d6c7ef335bd1471",
+      "FV/E2E/StockResultCallDomain.lean:structure Domain:0": "bf3f9878bd1d51849ac33c282cdfed3472fbc291906de577d5467a6e661be5fa",
+      "FV/E2E/StockResultCallDomain.lean:theorem check_domain:0": "fe4eb3e16d21b093617676d36a002295949105871ef0244f62a975136dc26970",
+      "FV/E2E/StockResultCallMachine.lean:theorem stock_result_call_machine_return:0": "17e7b02dd9279c24913c5660fb4195821280d9f1bef9e8b1e06691620210463d",
+      "FV/E2E/StockResultCallNI.lean:theorem backend_correct_world_niX_stock_result_call:0": "7264c4b87ceb7bd172401bac395d087da45d6c7a56836615e955ddc94d36dcf9",
+      "FV/E2E/StockResultCallNI.lean:theorem backend_correct_worldX_stock_result_call:0": "5ba434e88af12aa67c2a1891b65c3b4cc1790d2d9d2d8c73625b3c3aadcda3c2",
+      "FV/E2E/CompiledSemanticABI.lean:inductive CompiledSemanticABI:0": "20626a0bed06f3cdb98ba4100715a8e564201c23e0db9afe3ce1cea9c3ff67a6",
+      "FV/E2E/CompiledSemanticABI.lean:theorem of_checks:0": "868372e5b180d19c43c0b42ffde888209357ea2f1bf72f2d07519159cc682690",
+      "FV/E2E/CompiledSemanticABI.lean:theorem of_checks_calls:0": "045c0efc5d3e7ba9b00d8676bbbd03ed9654bc659ffa76d89c2ad5dff835b0c5",
+      "FV/E2E/CompiledSemanticABI.lean:theorem of_checks_result_calls:0": "3215d3916c3d5988c46a4983ab798ded6781bcc8ea91cb0abc4a11fb43c70d0b",
+      "FV/E2E/CompiledSemanticABI.lean:theorem check:0": "96c5ca3b8f5ac49d9e70d8ef44452e86abbbf6c8e988078db5d567a25916e25b",
+      "FV/E2E/CompiledSemanticABI.lean:theorem alloc:0": "5b61d6038728b906a00f7db6b9e70f009855bf415cbb6b0e751827b66cde09a4",
+      "FV/E2E/CompiledSemanticABI.lean:theorem emit:0": "cdaec062cdc77c598b68b34ebe5a62ee42eb547b1702bd0898b47d88e19aa332",
+      "FV/E2E/CompiledSemanticABI.lean:theorem layout:0": "7fb75d638dd752257bdbae5cbed6c56a8c27bc3daeb5f399c4e9d7f157174ba5",
+      "FV/E2E/CompiledSemanticABI.lean:theorem backend_correct_world_niX_semantic_abi:0": "249883d784600b6dc4548dbd353633522690fd572286d0577249ade5bbb8481c",
+      "FV/E2E/CompiledSemanticReturnPins.lean:inductive ReturnPinMode:0": "ae0a02adf304febc6c3e825a7bcd5c7306f6701c22bb38c204506420576ac3ef",
+      "FV/E2E/CompiledSemanticReturnPins.lean:def Valid:0": "962608c404f34963fcaab8d12dd591883990980cce0b11f4c1e83230381db0d2",
+      "FV/E2E/CompiledSemanticReturnPins.lean:def checked:0": "f5a301e571c6d97fff21d71fb67d71cc4b3082c444a6f4bdeb305ef42b1dd69d",
+      "FV/E2E/CompiledSemanticReturnPins.lean:def pins:0": "0214511a53e9b304c9fab98f489053b0c9ba47f13954d33ebc567d2e05b5a275",
+      "FV/E2E/CompiledSemanticReturnPins.lean:theorem pins_of_valid:0": "b4ed2536b2c221dd47917b04b52142aad6484313a8ee902f655964a5a0b4d424",
+      "FV/E2E/CompiledSemanticReturnPins.lean:inductive CompiledSemanticReturnPins:0": "fd3c117d8323f33dabba0dc63908578a008d041b5db008bda41bb6708094cb2f",
+      "FV/E2E/CompiledSemanticReturnPins.lean:theorem erase:0": "2b309fbb5d99bc0464bb73de3ce52c7c5ee200246ba0f1188dd0e04a94ce1105",
+      "FV/E2E/CompiledSemanticReturnPins.lean:theorem of_checks:0": "d56f21cd9da58ab2a7605fa1b7c245b70abfa73f81c6b59ff8ee46533faba42a",
+      "FV/E2E/CompiledSemanticReturnPins.lean:theorem of_checks_calls:0": "a79b972ee834428ad0af4700701001469e50602118aad1ff9f6c8b6e07767878",
+      "FV/E2E/CompiledSemanticReturnPins.lean:theorem of_checks_result_calls:0": "3a30dd962518755fce2fdae7c020d38719a85030d1da511686ba95bd01558738",
+      "FV/E2E/CompiledSemanticReturnPins.lean:theorem backend_correct_world_niX_semantic_return_pins:0": "830839f19819b46fffbfa6257736ba2948a875a611cdcaeb63444cdd5d4fe80f",
+      "FV/E2E/CompiledProgramReturnPins.lean:def returnPinSiteB:0": "88145eb54ad3659b23bf627fbd47dea8276b0c2e271a8b4ac43cf2ae1ff0788e",
+      "FV/E2E/CompiledProgramReturnPins.lean:def returnPinsB:0": "dd472406176f192524d81b177bff8bdd341dcba978d390e097788f4e2bca1ac1",
+      "FV/E2E/CompiledProgramReturnPins.lean:structure ReturnPinsCompatible:0": "694bbf16db42efb34e171a534ef87ed4cbb7f05202b90a8624c46a8585f8b025",
+      "FV/E2E/CompiledProgramReturnPins.lean:theorem returnPinsB_sound:0": "275f29a9f5e0bb9560e81ddefc235fde827dd6a5ab6fb2bec59f7703e7f55492",
+      "FV/E2E/CompiledProgramReturnPins.lean:structure CompiledProgramReturnPins:0": "32d9429f87fce0eadda71e18d342935cc89c6c81767e8eefbc4200e4299061df",
+      "FV/E2E/CompiledProgramReturnPins.lean:theorem of_checks:0": "935f559d8e6f496b2379d62e33e09549eed8e8b4a8b33140d2332c4ea0a6e953",
+      "FV/E2E/CompiledProgramReturnPins.lean:theorem of_checks_calls:0": "82c9aac941da51cf8d212fe1f1f791ccef8ee6491fd16a30655c39b201cda1ff",
+      "FV/E2E/CompiledProgramReturnPins.lean:theorem of_checks_result_calls:0": "81f2689e2ab5e9755957d1ab57d6cd2c3504887abd1b6fcd329f1f1c549a0a91",
+      "FV/E2E/CompiledProgramReturnPins.lean:theorem check:0": "7a42b343f1379f7448cceb67eb6ca15d442e0441ca00c771900a6ae54dae8ef3",
+      "FV/E2E/CompiledProgramReturnPins.lean:theorem alloc:0": "7cb6cf66597b7b14d01d672517ba8192f60bfd819fceb558d8fe379fd51a16d1",
+      "FV/E2E/CompiledProgramReturnPins.lean:theorem emit:0": "ad85cfd1f1078d8b444033f0821b9775c381518cfdad1ff79957662ff04170fa",
+      "FV/E2E/CompiledProgramReturnPins.lean:theorem layout:0": "c7c2cef0c1f450aef09ad2551ca580196139b0cb71f118d489e0ee77c606f2a5",
+      "FV/E2E/PreparedReturnPinCalls.lean:def returnPinCallsExtra:0": "a36ccacc3ef1e8ceabec0349a7339510f68af8007d6eb3283d274951b33c414f",
+      "FV/E2E/PreparedReturnPinCalls.lean:def okRReturnPinCalls:0": "c29c59100db5a09292d8a124026c03cca145f150d98ad59bdd0fe14290dfe241",
+      "FV/E2E/PreparedReturnPinCalls.lean:def okRReturnPinCallsFast:0": "37ef07599922304be0b7ef55361781a4bb6d6d82251d6c46c843cc17fe4bd83a",
+      "FV/E2E/PreparedReturnPinCalls.lean:theorem okRReturnPinCalls_previous:0": "b605bbeb918a145420f1caa5cef58a3d8f3ec909a5c9c390483274700144dc17",
+      "FV/E2E/PreparedReturnPinCalls.lean:theorem semanticPreparedReturnPinCallsResults_sound:0": "50101671f784de4064423918c24debcc9968a4b78e6449d540f2bf30be557280",
+      "FV/E2E/PreparedReturnPinCalls.lean:theorem preparedReturnPinCalls_correct:0": "50b9fed4bbf42c59e89e382c7418f1b79f6fdbafacd376fb0daf876b51f4bf4e",
+      "FV/E2E/PreparedReturnPinCalls.lean:def LinkInput.resultsReturnPinCalls:0": "c5c548895a43e800288d211300c3868f9005edd9bf90adda1ddbf6edeee2b08d",
+      "FV/E2E/PreparedReturnPinCalls.lean:theorem LinkInput.resultsReturnPinCalls_accept:0": "cdf9b3a5006c22e409a43b46aa7c5968cadb2a23359bf6719fa4c5390ad98c9c",
+      "FV/E2E/PreparedReturnPinCalls.lean:theorem LinkInput.resultsReturnPinCalls_retry:0": "5821bb1ef862381f9f3db6d4e82ce8e4baaaa1034f0642ac45de42716a02c7e4",
+      "FV/E2E/PreparedReturnPinCalls.lean:theorem LinkInput.resultsReturnPinCalls_prepared:0": "2b984e915c6dea35154dbb432e91a99a4812f95c1e7531eabdff602de66b057a",
+      "FV/E2E/PreparedReturnPinCalls.lean:theorem LinkInput.resultsReturnPinCalls_source:0": "2d9d988390f4d8ea36a3d78318f1f1f9d5035d1121102f6a7f7568f0850afe2a",
+      "FV/E2E/PreparedReturnPinCalls.lean:theorem LinkInput.resultsReturnPinCalls_checked:0": "d7527832f365265848bb5664ddf86bf44eeceef974936b12efa62d803b0a3581",
+      "FV/E2E/PreparedReturnPinCalls.lean:theorem LinkInput.resultsReturnPinCalls_sound:0": "7def282e2b8218bcb94903f4068f5361f6f8ca13755feffdaec55bb134a27299",
+      "FV/E2E/PreparedReturnPinCalls.lean:theorem LinkInput.resultsReturnPinCalls_correct:0": "58cf6c263c427e184a7893cce19d5ae5610b314165621297c101563932885159",
+      "FV/E2E/SemanticABIBoundary.lean:theorem entryRegs:0": "b3ef65ba8b5ad334cc2cdc19b832bb3d145d5f97d66d2ffc1bc815cf7ef0800b",
+      "FV/E2E/SemanticABIBoundary.lean:theorem void_call_noTls:0": "a478d23bfe479a52801cfbf8fac14e4f99b1ba7c1ee434768b754eb29f11fc21",
+      "FV/E2E/SemanticABIBoundary.lean:theorem hasTls_of_vcode_semantic_abi:0": "f85eaf776bf79482e3b892dec23a86f05ad5cd69d5a99ff356f6e542441a8e39",
+      "FV/E2E/SemanticABIBoundary.lean:theorem stackArgsAvoid_frameW_semantic_abi:0": "1d2ff4c5b6db7a0deeb407ee9f614ee774bd67fce1f9e8e19546e44898298e6c",
+      "FV/E2E/WorldReturnPinBoundary.lean:theorem entryRegs:0": "88bd375dc1979f26d376818d480f52633da373252cc958e120bb9a6db98a33df",
+      "FV/E2E/WorldReturnPinBoundary.lean:theorem hasTls_of_vcode_return_pins:0": "9fd65e2aa57302ac38282496607b3fd6dd87166267c9d976cb0eef61e7a62cdf",
+      "FV/E2E/WorldReturnPinBoundary.lean:theorem stackArgsAvoid_frameW_return_pins:0": "88329764e7df2c489b3f5186718d3e8ed2328eadd191e3c5fd7c53afe8772652",
+      "FV/E2E/WorldReturnPinBoundary.lean:theorem backend_correct_world_return_pins:0": "7f92d2d9eb9430a1d337f07a9d6def3ace334d8d63eac759e79c1892f6596493",
+      "FV/E2E/WorldReturnPinBoundary.lean:theorem backend_correct_world_ni_return_pins:0": "48b92b2eedb39265d7f44997aa00356a9dfc8fb1ef36a96b6ac196df9bae5123",
+      "FV/E2E/WorldReturnPinBoundary.lean:theorem no_explicit_returns_of_sret:0": "8943cc6eac9dcd39f37e73379157d2a017edbb91a0ee4564e5158c77b2a030e9",
+      "FV/E2E/WorldReturnPinBoundary.lean:theorem armRefines_of_actRet_return_pins:0": "567fcc740401391a92bf200402383c7bf07d051db38fdd97ba7d8f758c6ecf11",
+      "FV/E2E/LinkReturnPinWorldX.lean:theorem backend_correct_worldX_return_pins:0": "89227fd6c5a3f4e411f6c9b081f8e5ffd8104b8a84a6846205390fffb2d19eab",
+      "FV/E2E/ReturnPinChecksWith.lean:def fnsBProduction:0": "f901033c36bc1b423e959f7ab33395f40a3acce9c5563226c00f58237a91bf4c",
+      "FV/E2E/ReturnPinChecksWith.lean:theorem fnsBProduction_append:0": "62cbcd7186ae527f6a9ecd13d0f888edbefefb83977171d5d32d6e566e060098",
+      "FV/E2E/ReturnPinChecksWith.lean:theorem checks_iff:0": "c603bf47d78034038fe581eb315d309b26b2aeddb171d0cc656b619d4d0848b2",
+      "FV/E2E/ReturnPinChecksWith.lean:theorem okRProduction_of_checks:0": "94336173d20e4874cc534d3d2fb4c7b79d2d47e1cc31a12409c9995bf975dc0f",
+      "FV/E2E/ReturnPinChecksWith.lean:def CrateStmtProduction:0": "f5f4039bc849455a44967ed43b664c940777e915bf43295491264ef25a064b0e",
+      "FV/E2E/ReturnPinChecksWith.lean:theorem crate_correct_production:0": "b2159107f62b33ba19fab82cfcbfbabc0b346eaadbc2b7297010c725b2080354",
+      "FV/E2E/ReturnPinChecksWith.lean:theorem accepts_previous:0": "e2239b2edf6c33f4fe650cca131f3e9958db252ab77e556670cc459195b47356",
+      "FV/E2E/ReturnPinAdmission.lean:structure ReturnPinAdmission:0": "3ee86c4a08b1fb57486d78666756445d6ccf0e460f423842dcecd34389b7e780",
+      "FV/E2E/ReturnPinAdmission.lean:def returnPinResultCallsExtra:0": "96a719d8a65f028fc93cd057d61c1b3e555712c402ec8d69394c35a2e07419f8",
+      "FV/E2E/ReturnPinAdmission.lean:def ReturnPinAdmission.previous:0": "50119a599a9c765e959734ee925400aaf39a989a822e032197dff3a2fb5ff50b",
+      "FV/E2E/ReturnPinAdmission.lean:def ReturnPinAdmission.resultCalls:0": "6a52abcaf566ae193642aae4d425c9d4dc979059a6887c91f57b02055f2db6e8",
+      "FV/E2E/ReturnPinAdmission.lean:def okRReturnPinFor:0": "93f232547ea27637c93df90e4ef0e5c2e73b39c60859c0db63a9b19d01f54f21",
+      "FV/E2E/ReturnPinAdmission.lean:def okRReturnPinForFast:0": "7166da33badd7f052ae8a4cc84965ea4490d26ecef781f191203f54ce3ecb2f6",
+      "FV/E2E/ReturnPinAdmission.lean:theorem okRReturnPinFor_previous:0": "5540366b2ca2a7f5e7c61ee5b10d6ea85287a0c2674c245966e9216e551ebec5",
+      "FV/E2E/ReturnPinAdmission.lean:def okRReturnPinResultCalls:0": "946c4c8444c6daadafd60bc0e563df9ee9c33a55e35ee58860c4730537e9d008",
+      "FV/E2E/ReturnPinAdmission.lean:theorem semanticPreparedReturnPinFor_sound:0": "9865925c04332021479b87c7a4d2c7bdb3bdfcb2c5d399095d551e9209ffc33a",
+      "FV/E2E/ReturnPinAdmission.lean:theorem okRReturnPinResultCalls_previous:0": "5e84eee1744e2e8c7fc893e24051151bcb9a603c7bfaf63ed6d6adf50064cdd0",
+      "FV/E2E/ReturnPinAdmission.lean:theorem preparedReturnPinFor_correct:0": "ce20edb9d15ed319ae03cb7db220e0307c754c056797c085e8cb526a5777e6fd",
+      "FV/E2E/ReturnPinBinaryKernel.lean:def okBFor:0": "cd4454eb9f9c6413b814b5d0aa7e6b98120c5d4501fd9aa4a2c0147beaa1dd56",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem okB_sound:0": "4a72975c891d3a225f4c04260355517e78066878c0dcb37602c22f2f13d6567e",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem binary_correct_depth:0": "d44e89283e8781cd3f43a48b0d8768836ecf48dfc8145639308f3c51163b3a37",
+      "FV/E2E/ReturnPinBinaryKernel.lean:structure BinFacts:0": "dc78f8499aaf4dcecec669953c33351888d05cec62c2b119cf4a24098081d005",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem BinFacts.modelOf_ne:0": "926acf4fdd4274de97e98b16e5692e925d3a8fa938393278ae6fe87ba6110a66",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem binary_correct_depthX:0": "51a2302bfd7de32691fba3d3ea36fce12b4b7bb039fb3634ffc4be13fea2dd65",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem binary_correct_peakX:0": "2a7c408f4306fda35b63c83d3bd663614ea1fd6726d4d942eb4c07c17a133b40",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem binFacts_of_checks:0": "190a08777e779e042c0b7fa344af25004797a05555a27a284c78c390be4903f5",
+      "FV/E2E/ReturnPinBinaryKernel.lean:abbrev CompilerInput:0": "31f7f7c1ab02e62453a81f4757681589d2f4feee3885b810c98bbdf0caccfd18",
+      "FV/E2E/ReturnPinBinaryKernel.lean:abbrev okBFor:0": "32247cad890149ffe5791c35ea7c0a26c2890fd8557d87382f1bf40d73a4b59c",
+      "FV/E2E/ReturnPinBinaryKernel.lean:abbrev ofInput:0": "22b9b9b462d193da0537d1d615afa853567cd9d5d43b5ca2849e16fa92436d0f",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem okB_names:0": "74a5b2b4d8e7fdb5c8af539bbc102a74169f939cd2c05411572b5891b0469c77",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem facts:0": "9c9f2ce920a19ed9509f5285dc2d53be31374da01d26bf08304ef0a0966a6ac8",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem edgeB_of_callee:0": "93f4e4f16386f7ec02c197e5f711e40b768e84cc444fa4cfe333f2ba22d1db5f",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem goodN_iff:0": "23550b3ce31c9897a7d66834caed1d22be7d7eb2b163e5912400aaef3e09d108",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem budget_of:0": "709d18d8ed9c642d2220ae34cd8db09fa876a8ac21dcbf06a1f4618c35855f6b",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem backend_correct_program_stackX:0": "7584a53747d01e82844cf05f642379b0b8723f79301e3d5e800ac447f16328f8",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem crate_correct_stackNX:0": "2e62415709c93e5e0777fba1023bf1e74cab37f4eaec4210666aa0591d2d114e",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem binary_correctX:0": "46f475bbdf288c875035a90ab77df8e8981c7ffaa3ea5e993a14eabed7737f38",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem trapsExplicit_of_run:0": "4af3a77ecb73ce5847ea8f7b3ff75531f0d4f1f7ede49a2a1f08c8977f7c3c50",
+      "FV/E2E/ReturnPinBinaryKernel.lean:theorem trapsExplicit_of_runD:0": "7b4d7b1518075ffd07c999a724fb36434ccaebcd61916125ef9e36e39b9bab85",
+      "FV/E2E/ReturnPinBinary.lean:def okB:0": "17abcb1c2eb02958d3cb6c65b56b702714de938787126e236718baaaddc6a74c",
+      "FV/E2E/ReturnPinBinary.lean:theorem okB_previous:0": "2bc7cf1906509d291bf21fe776c2644b6f14d49732d9c8f7719606c92fa1ceff",
+      "FV/E2E/ReturnPinBinary.lean:theorem okB_sound:0": "4a72975c891d3a225f4c04260355517e78066878c0dcb37602c22f2f13d6567e",
+      "FV/E2E/ReturnPinBinary.lean:theorem binary_correct_depth:0": "d44e89283e8781cd3f43a48b0d8768836ecf48dfc8145639308f3c51163b3a37",
+      "FV/E2E/ReturnPinBinary.lean:structure BinFacts:0": "39a97a8e36a6eb299ad54e59fb9e8997b743936a592ab3c1ae649a76e37a27ef",
+      "FV/E2E/ReturnPinBinary.lean:theorem BinFacts.previous:0": "5797243142789b5d97975b6b26ab4868c5a067ea420049e667af440c9928b047",
+      "FV/E2E/ReturnPinBinary.lean:theorem BinFacts.modelOf_ne:0": "36e58bd30912cbea7370bc7057d3ba5c716785fba1829056c2b50c0f3e5d79bb",
+      "FV/E2E/ReturnPinBinary.lean:theorem binary_correct_depthX:0": "75f375b5425fec73638b8795f4a2c825d13e7ee5177067db6707e7ff9851813d",
+      "FV/E2E/ReturnPinBinary.lean:theorem binary_correct_peakX:0": "61211a3fdfd90c47f2a99d878d19cf5416ca59a4acfc4e6c434fc42ae94fefa0",
+      "FV/E2E/ReturnPinBinary.lean:theorem binFacts_of_checks:0": "67cea5d0c5b1ccaedbb872543d944e6fda9911f45afcda30eccec88e9befdab5",
+      "FV/E2E/ReturnPinBinary.lean:abbrev CompilerInput:0": "31f7f7c1ab02e62453a81f4757681589d2f4feee3885b810c98bbdf0caccfd18",
+      "FV/E2E/ReturnPinBinary.lean:abbrev okB:0": "94f1a98ed47cadb47292dafd42ce281d4149d295a15cd6f2bba14ff1c95fd18f",
+      "FV/E2E/ReturnPinBinary.lean:abbrev ofInput:0": "22b9b9b462d193da0537d1d615afa853567cd9d5d43b5ca2849e16fa92436d0f",
+      "FV/E2E/ReturnPinBinary.lean:theorem okB_names:0": "74a5b2b4d8e7fdb5c8af539bbc102a74169f939cd2c05411572b5891b0469c77",
+      "FV/E2E/ReturnPinBinary.lean:theorem facts:0": "c94e6cb8b5e98f5828dc718098f26077039ee65df3aa001b5b9116714bd61c96",
+      "FV/E2E/ReturnPinBinary.lean:theorem edgeB_of_callee:0": "93f4e4f16386f7ec02c197e5f711e40b768e84cc444fa4cfe333f2ba22d1db5f",
+      "FV/E2E/ReturnPinBinary.lean:theorem goodN_iff:0": "23550b3ce31c9897a7d66834caed1d22be7d7eb2b163e5912400aaef3e09d108",
+      "FV/E2E/ReturnPinBinary.lean:theorem budget_of:0": "709d18d8ed9c642d2220ae34cd8db09fa876a8ac21dcbf06a1f4618c35855f6b",
+      "FV/E2E/ReturnPinBinary.lean:theorem backend_correct_program_stackX:0": "7584a53747d01e82844cf05f642379b0b8723f79301e3d5e800ac447f16328f8",
+      "FV/E2E/ReturnPinBinary.lean:theorem crate_correct_stackNX:0": "2e62415709c93e5e0777fba1023bf1e74cab37f4eaec4210666aa0591d2d114e",
+      "FV/E2E/ReturnPinBinary.lean:theorem binary_correctX:0": "249f194b3b643cd936dcb4d5e9836aa1b5e86bb43bf7a0b83867a4b24d75d037",
+      "FV/E2E/ReturnPinBinary.lean:theorem trapsExplicit_of_run:0": "4af3a77ecb73ce5847ea8f7b3ff75531f0d4f1f7ede49a2a1f08c8977f7c3c50",
+      "FV/E2E/ReturnPinBinary.lean:theorem trapsExplicit_of_runD:0": "7b4d7b1518075ffd07c999a724fb36434ccaebcd61916125ef9e36e39b9bab85",
+      "FV/E2E/ResultCallBinary.lean:abbrev okB:0": "94f1a98ed47cadb47292dafd42ce281d4149d295a15cd6f2bba14ff1c95fd18f",
+      "FV/E2E/ResultCallBinary.lean:abbrev okB:1": "94f1a98ed47cadb47292dafd42ce281d4149d295a15cd6f2bba14ff1c95fd18f",
+      "FV/E2E/ResultCallBinary.lean:abbrev BinFacts:0": "f903977a35045076a46f00e456c8be3602c1f5f29978b56bae131c2c2957bd8b",
+      "FV/E2E/ResultCallBinary.lean:abbrev okB_sound:0": "6ed6c2007ec86c5bf14f6fd7a7dfd736d5aa72987faadd5db5350fed7080192d",
+      "FV/E2E/ResultCallBinary.lean:abbrev binary_correct_depth:0": "2cefa77bfa23bf2e4467b5ff8bff194609d3960cbb927257892a978a20e60e34",
+      "FV/E2E/ResultCallBinary.lean:abbrev BinFacts.modelOf_ne:0": "0a063c39d3f5e367d392ae99b218ec265f9c3391f5f88c86f8ae4aee25c3fa12",
+      "FV/E2E/ResultCallBinary.lean:abbrev binary_correct_depthX:0": "357590d76e20678678bc41d9f79f6c0e6b4c32d9289d3bb72006491d38641ed9",
+      "FV/E2E/ResultCallBinary.lean:abbrev binary_correct_peakX:0": "83958a5c95fe78243d725ed3c5898c48278f8acceed085e6a3a0c43174921538",
+      "FV/E2E/ResultCallBinary.lean:abbrev binFacts_of_checks:0": "8af6595d8626c10a11ff9f70f7258f1a09df8c3ca958d7fa7168846f011533b8",
+      "FV/E2E/ResultCallBinary.lean:abbrev binary_correctX:0": "4eb1bc6a053c189ada7f8d939beb6a5c08826844e61674895d1995f2d5ad91b7",
+      "FV/E2E/ResultCallBinary.lean:abbrev trapsExplicit_of_run:0": "36ca201ca5c8fc5c634ba9e7d16caf2144052d1081ce2abebc5a7d8e58947d86",
+      "FV/E2E/ResultCallBinary.lean:abbrev trapsExplicit_of_runD:0": "073a0f569442f7b33cded34ae2ee5294c9be8d5ab03f434c87a70573199d6a9c",
+      "FV/E2E/ResultCallBinary.lean:abbrev CompilerInput:0": "31f7f7c1ab02e62453a81f4757681589d2f4feee3885b810c98bbdf0caccfd18",
+      "FV/E2E/ResultCallBinary.lean:abbrev ofInput:0": "22b9b9b462d193da0537d1d615afa853567cd9d5d43b5ca2849e16fa92436d0f",
+      "FV/E2E/ResultCallBinary.lean:abbrev okB_names:0": "85dfa064db7f8831c8690869da61fc98487043d2adc20df0754b71b70192ffd7",
+      "FV/E2E/ResultCallBinary.lean:abbrev facts:0": "1b89d77822887919cf93d5191d808bdafeafc95e51302d9335bd2631bc808e21",
+      "FV/E2E/ResultCallBinary.lean:abbrev edgeB_of_callee:0": "4d21dfe6798b915ba2bd3bd15ae0f4b412d3193f47788f6b7c37f502f0cf3d1e",
+      "FV/E2E/ResultCallBinary.lean:abbrev goodN_iff:0": "8b0221135759d87e6205d0f42e0f2a6fbacb0acee488c172e6ab09b1d78cf4bd",
+      "FV/E2E/ResultCallBinary.lean:abbrev budget_of:0": "c0c6a4e5f173d2e1536dec82fe982fd97450b40e03b3f60e22a71b17ece549da",
+      "FV/E2E/ResultCallBinary.lean:abbrev backend_correct_program_stackX:0": "2a669c4b75504bdd9130da97c41eba5cc95b59886dd8cd01c5e13e383cc5eef0",
+      "FV/E2E/ResultCallBinary.lean:abbrev crate_correct_stackNX:0": "145d485fbfd879ad083ffd87aff6ad54f7971620b3d25ed45a41b56b61905ded",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem fnOk:0": "9fdf97c0375cd7eaa3c9a0199636d359d2a84a5ce988030eeafd0d7a25e1605d",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem codeMap_sound:0": "b32d6e073643d5963eabda49299f0ea1737d8d797c9d406656bd0d9aaad58f85",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem relocAt_inv:0": "f2f5804ddcf6e55d11909c7682ca8d44190e5ba9281927df71a78b3175c2965d",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem line_overlap:0": "c2eec577b5ab92d8fe565a0384f86e3f0ab760357bf7c0464ab4f94c26652525",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem relocAt_img:0": "1b60eb2ae75b82731198663a0739db0c5a257a833ccc6b0b37e399894dd366c4",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem word_static:0": "698e8468a755ee6dbf3683b691314e72e64eb77516bc9c4f494d3fdfca7364cf",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem insn_of_good:0": "0d4a1ee920456994d774961037535a087377d6c2f8cf225f9b62f98041139091",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem symAddr_of_blrTo:0": "55ceb07042dde82e59142d52e2faea1a6f44a3654cbef12f0b2c17db8c50dbca",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem siteAt_static:0": "b46c01333bdd631f72cf0efd40990340c3be1d4cbe05e0f8cd6f46b0555a5fb1",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem plain_static:0": "d2d68a135e3b46e5c52381a889a60d88b18bed97d98eea6fc72ea71e4f481381",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem stepOk_of_d:0": "944cc5f41afc65fc59eec155f667015700d3abde00a8ee711f0d5cc32e2f8bfd",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem runOkSN_of_n:0": "ac7a747665a1e0f478ab7d0e0d72600c96d9264d8095c962bce118921025333e",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem pairsClosed_art:0": "30609afe65b958a2bce1bac8bf7e4b28291ef94e3498c73f11ce291d77922a6a",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem raNotSecond_enter:0": "3c355b6b682d4f1256c6f346cc340360b5021d7d4e663c4b2dd8cd2468de487e",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem reachL_of_reachN:0": "227f72512bbc1e84c6475303247085d30a6b5c4a6606426218764c265019e3ba",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem destsInt_of_ok:0": "311e153de0d20f076792534f4304c85114e48e0e88eeca4a7037323673c3b058",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem stepOkD_of_good:0": "095d741aafc7f0bf44605f62761ec7d84af3c065223f9c80185dcd2906de4867",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem runOkN_of_good:0": "ce9f596799827d2b42c89b2c161cf510222de5eba2adbc1a247fafa09dd95309",
+      "FV/E2E/ReturnPinExecStatic.lean:theorem image_checked:0": "3415a5005aa58c6c75906fe84f3d2f8a620e816bb9817b114b9456e4f426814f",
+      "FV/E2E/ReturnPinExecGot.lean:theorem OkReturnPins.extImgProduction:0": "2a17b4f02d8b407ebff20e54bdfddbe16c90b570f9280ea9c9aae33923182a03",
+      "FV/E2E/ReturnPinExecGot.lean:theorem sysS_entry:0": "0939088e16ad0666813b71a0d5295b5de05a13fa3f45f2f4c60777a8513cb881",
+      "FV/E2E/ReturnPinExecGot.lean:theorem runGood_sysS_of:0": "03c89b9b1df35bc7ce07cde22b6a6323a4ca3541da97683960855155bbbf9023",
+      "FV/E2E/ReturnPinExecGot.lean:theorem runGood_sysS:0": "3c895e588ead152973bab016e83edbec1abeab90c3cea6d83c93de72608ce074",
+      "FV/E2E/ReturnPinExecGot.lean:theorem runGood_sysS_depth:0": "573c9dcb45ff512cb9717283671564722a940710559d6b586b967da0469b4497",
+      "FV/E2E/ReturnPinExecGot.lean:theorem runGood_sysS_peak:0": "53041943f02076e6960c92bc7435a1b2d771f959eb524748f19e9054dcb81f53",
+      "FV/E2E/ReturnPinExecGot.lean:theorem got_of_good:0": "92de657b6f184ca699866cf001b30e3581014dde247da1e24f10ef58a603ed21",
+      "FV/E2E/ReturnPinExecProven.lean:theorem exec_of_runGood:0": "e467b53f7dc5bef8c2bf1edf45757d534764a01d95a9fc677a6205511c2b44ce",
+      "FV/E2E/ReturnPinExecProven.lean:theorem binary_correct_exec_proven:0": "61c246d8da8b77fc575d5839d98dc6268aafe206d79b26920199db31178e2f5f",
+      "FV/E2E/ReturnPinExecProven.lean:theorem binary_correct_exec_depth_proven:0": "e65ba66638011b15d69cf25a56d2377642f6c4df564b7a19084ca35f9fb6e4a7",
+      "FV/E2E/ReturnPinExecProven.lean:theorem binary_correct_exec_peak_proven:0": "a5ed0ee0d35ca83510afa166f9b1bb157eda6de6313fe8fdc63f6d4654965248",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem fnOk:0": "1cd7630ef626ac9381442b6a49e5dba9f15e99d3851dc1fdc79eeb7289b04284",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem codeMap_sound:0": "57b09d5bae135369dadc4bbaf9c0f7021238beff0653ef12b151bf8c938d6746",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem relocAt_inv:0": "c5b0b4bc84cab334bc927388ecd35ea91845bef1c38fb0651a040843fc7b2e6f",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem line_overlap:0": "3ffc7e4ebdfd492db7966d794606e66bef79289d2642a3c8bab813848e483e7b",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem relocAt_img:0": "b06b7467eb4e7c954363131a21ee7a2c6c79811c2ae13ccc42f10c066ca04f87",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem word_static:0": "a2f4d9a18758a600aa227d4790c5645a55082830ebc22558c4159ea5d3398e9a",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem insn_of_good:0": "c5315e7aa1c84984b401ad0996b52e868105570d5e21e412a98e2c8341be0088",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem symAddr_of_blrTo:0": "68db4b0f0b9b0e3e9d4c6476ef44bf99cee90818f1563a074ef45a46bde71855",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem siteAt_static:0": "0fabbf1f12ff6d3a7e20145213ee20cacf2968e29bac3affefe92cda3afcc829",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem plain_static:0": "51328fce82e162ce2a4342fe75ee978b5a4c6d178ec78e2ee85dd5d4f2ea4d0b",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem stepOk_of_d:0": "d427551673ce2f9f3a031f568fb563a107c3b4073bd6278c1fe920e4852b5009",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem runOkSN_of_n:0": "0d72facd7a304cc746147a5a3170e91b4f5b9c996429c58a25941c33e6937ed1",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem pairsClosed_art:0": "b8126a68cee883609fa29e9da5230aa84850fe2cd4db54aac59d4cb1531c79d9",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem raNotSecond_enter:0": "805aad3470570f10cbc139914956d5b8188d155d06d4147a7f1e20e218ea2213",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem reachL_of_reachN:0": "18af4f62a8615fe2dd3c1152dbdc0fb51f256c71ff5e6b40ef493b8a2d5dafa6",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem destsInt_of_ok:0": "311e153de0d20f076792534f4304c85114e48e0e88eeca4a7037323673c3b058",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem stepOkD_of_good:0": "b9ebf684b703041056519b350be6b9ab048c35efd33961335f3d7fa798c0144a",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem runOkN_of_good:0": "b4acfb376ed9ed14e63ce4af5a49cde15295c9c5423cdf81f46da838fd6ed53e",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem image_checked:0": "dceeee53a4d68e72e335eb4ae463ea7004ac4202a7630f57fbf2f49171a78572",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem OkReturnPins.extImgProductionFor:0": "0d066ba27adc584b8567565f043f532a27a7e21646f29c51ba4c5e76b88028df",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem sysS_entry:0": "569ae4879666095c8f16f389b66f2309afe333e3a2948e58f93601b78ebd8bc7",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem runGood_sysS_of:0": "692cf8cbfb063def3261bcd85ad04a614dec39b77ae469715bff2855fb3672b5",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem runGood_sysS:0": "3de9d6661f943e1b64b292c7fbb484759a9b09550daff5243a0aee9e7315a3d0",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem runGood_sysS_depth:0": "69e42cc3cff516f8739edb20d96967ed6c89ad6d8330031137c274de97f94d9c",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem runGood_sysS_peak:0": "ded41c4cd33074cea54d676202db95f7bae6410e097be498841116639e803775",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem got_of_good:0": "d2604f6b3493a44ac9c7210ce746c8d8064ac5134cb334ec4bf57fa4dca2a462",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem exec_of_runGood:0": "100346d94ce8917a1cfe2b751020812c437dba2e49eea29328e9b8dd96021f85",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem binary_correct_exec_proven:0": "c17aeb74a67470a8d5cfdafbf00093351efcaad50ea116835949c24d781ec35f",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem binary_correct_exec_depth_proven:0": "d5056332c617d375bdf26f75aa732fb29a09738540f0562a9a3dc3c4164a0a0f",
+      "FV/E2E/ReturnPinExecutableKernel.lean:theorem binary_correct_exec_peak_proven:0": "c217d8a6e530e4ae432967e3742bdce84d7fcc8ddf13d41848f150a04d23f460",
+      "FV/E2E/ReturnPinChecksKernel.lean:def fnsBProductionFor:0": "617efc67f42d2db1a2d21dbe9fb9c3966c0e6e8c9a783b719a4376b6f43156b6",
+      "FV/E2E/ReturnPinChecksKernel.lean:theorem fnsBProduction_append:0": "62cbcd7186ae527f6a9ecd13d0f888edbefefb83977171d5d32d6e566e060098",
+      "FV/E2E/ReturnPinChecksKernel.lean:theorem checks_iff:0": "ece00ba7f8ec39b83503eefbc382f7c7ddbd82eb5d11634f923866a344b55112",
+      "FV/E2E/ReturnPinChecksKernel.lean:theorem okRProduction_of_checks:0": "b7334f79a46483c53a2cee388e2bb4a9fabf0e8f72f66ac3cf4d501d88e7f1f3",
+      "FV/E2E/ReturnPinChecksKernel.lean:def CrateStmtProduction:0": "f5f4039bc849455a44967ed43b664c940777e915bf43295491264ef25a064b0e",
+      "FV/E2E/ReturnPinChecksKernel.lean:theorem crate_correct_production:0": "6df585d322ee3519da90ecadf953cf572c3abe076657b5f0670b59ec78f9b6b0",
+      "FV/E2E/ReturnPinGeneratedStackKernel.lean:theorem crate_correct_stackN:0": "055556187dc33689647303859b1398c7007efb48b72c23ff9f9570d7fd177f65",
+      "FV/E2E/ReturnPinGeneratedStackKernel.lean:theorem crate_correct_stack:0": "25c0902212d46889d9229beed508d8aad2e6d54d16205a3522e0ca145326c406",
+      "FV/E2E/ReturnPinGeneratedStack.lean:theorem crate_correct_stackN:0": "5a51ca6884083aeefb73034fb697aaeabc69d2858a858e70e6f14a2e2756f42c",
+      "FV/E2E/ReturnPinGeneratedStack.lean:theorem crate_correct_stack:0": "64ebe40eda86ad2968b64fab17dc185aa03b8920949608b56de749335f302230",
+      "FV/E2E/ResultCallChecks.lean:abbrev fnsBProduction:0": "a086227379c9132731890f3a25867a395889f3bc10a0680e9cff526a23eaabf6",
+      "FV/E2E/ResultCallChecks.lean:abbrev fnsBProduction_append:0": "6b8d402335a921b23ed0abd152fbd1c4297667f24cb64126b94625c24c4101bf",
+      "FV/E2E/ResultCallChecks.lean:abbrev checks_iff:0": "b4b56fccc8274f16868ffe3eab888d4d197b603c3b190d8da0c95680d73bb074",
+      "FV/E2E/ResultCallChecks.lean:abbrev okRProduction_of_checks:0": "274d4c36ce633520638c06a6838c43bad86667b9225da207dc1f3a7f1a658d6e",
+      "FV/E2E/ResultCallChecks.lean:abbrev CrateStmtProduction:0": "e1211e7e3c611e3ee875e5e7606d4cfc41ee164895db7ff6b31642981f6854cc",
+      "FV/E2E/ResultCallChecks.lean:abbrev crate_correct_production:0": "3d3cad45e26b18ba46465bba0c0cac680c2d1c2af95b209cc5e07c3982f1f5a1",
+      "FV/E2E/ResultCallChecks.lean:theorem accepts_previous:0": "6fae0c53f4746c955acf5d8ad85d5e6b8c30f3f6f7b719cf3f78a26683bc12ea",
+      "FV/E2E/ResultCallGeneratedStack.lean:abbrev crate_correct_stackN:0": "c6bf74c99bd66525d3bb5308d2a553c8341e9e949ae6bca6e5ec357d2df9e070",
+      "FV/E2E/ResultCallGeneratedStack.lean:abbrev crate_correct_stack:0": "b93d64f0435808c1c794ccdaf3945a177661042a68943f11fb7c7da0d724fc94",
+      "FV/Link/ReturnPinAttemptKernel.lean:def attemptWith:0": "eb321c837536f2151524e18c64250226b5ce5ff1c0db73211e258fb4b5ded908",
+      "FV/Link/ReturnPinCompileDefs.lean:def attempt:0": "08275661e3376c7c49513d80c5f71523cd2f30803a0030063d42309b6a3e20e5",
+      "FV/Link/ReturnPinCompileDefs.lean:def compileWithFallback:0": "c34b39b6d2e9ea156aa88b90b9b1def2f4c0a5dd3c276e79e168c48acd052580",
+      "FV/Link/ReturnPinCompileDefs.lean:def compileWithChoice:0": "310a8b197b0e57a4d25379c6c5a859f0bca2bbfe839c0eb48420d0255b357c76",
+      "FV/Link/ReturnPinCompileDefs.lean:def eraseChoice:0": "312dd1ffba9e109bc5ee5fe67aa5a39fd6921a47acfee4d477223dbae97c16ed",
+      "FV/Link/ReturnPinCompilerKernel.lean:abbrev attemptFor:0": "f00e937ef7d0b03d44cb915bd077c36e4c17433f67eba611208beee57bddd33a",
+      "FV/Link/ReturnPinCompilerKernel.lean:abbrev input:0": "97a88139786a05bba561f0e9156d7e7f5c80cac1d06e5df92644982b2fa7e081",
+      "FV/Link/ReturnPinCompilerKernel.lean:theorem attempt_spec:0": "3f6d1c1dd09ec9abcc3d34d3ac1129d60cf45dc60bbdf642403547e02a92d35f",
+      "FV/Link/ReturnPinCompilerKernel.lean:theorem codeMap_leanLink:0": "db3bb4db9e2d3c8d2b172331bbdfdd5b87de53804db10fd43310c393184a695e",
+      "FV/Link/ReturnPinCompilerKernel.lean:theorem leanLink_gotSlot:0": "39f6b6594d33b9fc0ed09453b820fad795acdc7d89394426cb04fa9a52b7ac2b",
+      "FV/Link/ReturnPinCompilerKernel.lean:theorem gotOk_leanLink:0": "57cbd45d874678fecd404fc445bf59c8cad1097112d145ac21d38d16fbafe0b4",
+      "FV/Link/ReturnPinCompilerKernel.lean:theorem outsideAvoids_leanLink:0": "099c88a40681173982700e1a9550c9cc2b1561f24e7699dbe705e23425314937",
+      "FV/Link/ReturnPinCompilerKernel.lean:theorem attempt_correct:0": "c7920eda1417949f9a7f120e271f182a1c6607ae66c24dd551d493fa627444cd",
+      "FV/Link/ReturnPinCompilerKernel.lean:theorem attempt_correct_depth:0": "f3b7942a365d8dd688953fbdaff3e930ce0e091379df36280ce3ef3cb108fa07",
+      "FV/Link/ReturnPinCompilerKernel.lean:theorem attempt_correct_peak:0": "dca1aef8538fb320acb43bd992bc0c35ceb96243aa584cc27d1a50834f829cfb",
+      "FV/Link/ReturnPinExeWith.lean:abbrev input:0": "97a88139786a05bba561f0e9156d7e7f5c80cac1d06e5df92644982b2fa7e081",
+      "FV/Link/ReturnPinExeWith.lean:theorem attempt_spec:0": "4f86102351f7407ed0faae64d434dab9bf5ea609bfd456d3cb135d03f8bd4594",
+      "FV/Link/ReturnPinExeWith.lean:theorem codeMap_leanLink:0": "db3bb4db9e2d3c8d2b172331bbdfdd5b87de53804db10fd43310c393184a695e",
+      "FV/Link/ReturnPinExeWith.lean:theorem leanLink_gotSlot:0": "39f6b6594d33b9fc0ed09453b820fad795acdc7d89394426cb04fa9a52b7ac2b",
+      "FV/Link/ReturnPinExeWith.lean:theorem gotOk_leanLink:0": "57cbd45d874678fecd404fc445bf59c8cad1097112d145ac21d38d16fbafe0b4",
+      "FV/Link/ReturnPinExeWith.lean:theorem outsideAvoids_leanLink:0": "099c88a40681173982700e1a9550c9cc2b1561f24e7699dbe705e23425314937",
+      "FV/Link/ReturnPinExeWith.lean:theorem attempt_correct:0": "c7920eda1417949f9a7f120e271f182a1c6607ae66c24dd551d493fa627444cd",
+      "FV/Link/ReturnPinExeWith.lean:theorem attempt_correct_depth:0": "f3b7942a365d8dd688953fbdaff3e930ce0e091379df36280ce3ef3cb108fa07",
+      "FV/Link/ReturnPinExeWith.lean:theorem attempt_correct_peak:0": "dca1aef8538fb320acb43bd992bc0c35ceb96243aa584cc27d1a50834f829cfb",
+      "FV/Link/ReturnPinExeWith.lean:theorem accepts_previous:0": "92b54de1f09e7dffd9eae67e77144c0488f28662156c454cceb1a5058e9e853a",
+      "FV/Link/ReturnPinCompilerSourceKernel.lean:theorem attempt_correct_source:0": "8ac145a4b3135ade9ff5e235fe684e7fea38c26bc854cfd93a172ee776f7022b",
+      "FV/Link/ReturnPinCompilerSourceKernel.lean:theorem attempt_correct_source_peak:0": "5ef7c0a08e3b2505de3ce147cfb9ec319eaa3f87dc1dda9e4bc2d23e4ff83c74",
+      "FV/Link/ReturnPinExeSourceWith.lean:theorem attempt_correct_source:0": "8ac145a4b3135ade9ff5e235fe684e7fea38c26bc854cfd93a172ee776f7022b",
+      "FV/Link/ReturnPinExeSourceWith.lean:theorem attempt_correct_source_peak:0": "5ef7c0a08e3b2505de3ce147cfb9ec319eaa3f87dc1dda9e4bc2d23e4ff83c74",
+      "FV/Link/ResultCallExeWith.lean:abbrev input:0": "2aa537caf0a37aa00cc5edfbfc70745a49ebee22caa62ae14c09298de05538a1",
+      "FV/Link/ResultCallExeWith.lean:abbrev attempt:0": "582df6defd567b7ae4277a71f1418fed5fe991565a5c5bc6f9546605365908dd",
+      "FV/Link/ResultCallExeWith.lean:abbrev attempt_spec:0": "481f472d3dc12597d45cf15d8e349e1cf208ccaf64657dc9652eaf250006e223",
+      "FV/Link/ResultCallExeWith.lean:abbrev codeMap_leanLink:0": "4326379b74497058378fa4897ece9cd00175a7b23faad8933c6f5b66287cd4df",
+      "FV/Link/ResultCallExeWith.lean:abbrev leanLink_gotSlot:0": "e70e0e9dbdd02f988a4c7310f23a66c7a142a74b371fbff55c4c29e826ae1b73",
+      "FV/Link/ResultCallExeWith.lean:abbrev gotOk_leanLink:0": "6d4c287ead531cf09848d3204addd2ca4993682f947f682c51f5d837392f10f2",
+      "FV/Link/ResultCallExeWith.lean:abbrev outsideAvoids_leanLink:0": "1d892f3138e4b77335ec07d5a9d52e42575ae25c22efdf31cdfe1237fd9a9280",
+      "FV/Link/ResultCallExeWith.lean:abbrev attempt_correct:0": "4a080d7dea9a445bb7ccf157d3471239f523af5f248d101690c2a35363a5cf9a",
+      "FV/Link/ResultCallExeWith.lean:abbrev attempt_correct_depth:0": "8e3faec928b44c1891338aecfd65b490ca23f4c797209e2589ba7925eacaa61b",
+      "FV/Link/ResultCallExeWith.lean:abbrev attempt_correct_peak:0": "af41444b88f1b23baddb36fe02988eb0cbfaecdbdcef307946cb6dda133f7275",
+      "FV/Link/ResultCallExeWith.lean:abbrev attempt_correct_source:0": "978444b83643b0f273f2db8e71e39a9b9572188d47f7919f19a40a97377d7156",
+      "FV/Link/ResultCallExeWith.lean:abbrev attempt_correct_source_peak:0": "f624fe2b679db36c93e857378cc69132e91278c3f7f1998335f98032558090fc",
+      "FV/Link/ResultCallExeWith.lean:theorem accepts_previous:0": "d74159acafef98da2de3b44c614b25ca26f762970f92d7e60b52cae97405b1d9",
+      "FV/Link/ResultCallExeWith.lean:theorem accepts_previous_semantic:0": "e27dc59a8c919cf2dc6c01d874657edf9952405b62d6e85ee0aa77e8cf3908a4",
+      "FV/Backend/Lowering/StockResultCallWith.lean:def candidate:0": "b87570c22f48edd9d706e13734d6154645e1ec8dbab4fdd9ae8824c2f6c40438",
+      "FV/Backend/Lowering/StockResultCallWith.lean:def lowerWithPrevious:0": "1cc5e46127906e24381df27963f355adb4d2f28a160a1268145ca4be06ffecf9",
+      "FV/Backend/Lowering/StockResultCallWith.lean:theorem lowerWithPrevious_retry:0": "32450bbdb67551c393460191323334011d746e12ee09a4840f5846b7c6b4aca2",
+      "FV/Backend/Lowering/StockResultCallWith.lean:theorem lowerWithPrevious_selects:0": "d49a10032db45c72029bf064c2f4456232e102490a7d00f354f99a12d7d61289",
+      "FV/Backend/Lowering/StockResultCallWith.lean:theorem candidate_stock:0": "78e6217aece3d8d37350ecaa772da42b8bf716f528671cb69206bef6fa686ac7",
+      "FV/Backend/Lowering/StockResultCallWith.lean:theorem lowerWithPrevious_preserves:0": "90cf730a376eb43092d022e1d9c0b19e59e8abd2ecb90a16b85e1e3ce5ceed5a",
+      "FV/Backend/Lowering/StockResultCallWith.lean:theorem lowerWithPrevious_accepts:0": "7c0760827f0eaab14ac958e23754a221377509338ece47bb4519067284dc037a",
+      "FV/Backend/Lowering/StockResultCallRoutes.lean:def lowerValidated:0": "01bd669508c9e4fc88161a0e62f162fa05ccf277ebdb255ae604dfac0248f740",
+      "FV/Backend/Lowering/StockResultCallRoutes.lean:def lowerWithRoutes:0": "0e3e1cb8be6aa362c643514357ab92327d6f4c988a2961d8d026ff7a21526590",
+      "FV/Backend/Lowering/StockResultCallRoutes.lean:theorem lowerWithRoutes_explicit:0": "7b3a862cecd614ecd96ebb44b7a5cb2abf7053b11a2022b8668432fc956bbfd0",
+      "FV/Backend/Lowering/StockResultCallRoutes.lean:theorem lowerWithRoutes_default:0": "b442ac3c85ecb1d8bcce67f7c27502ec3589bd42059ffb9bd91fd00a327f1cbe",
+      "FVTest/Backend/Main.lean:def usage:0": "07aa38a9b7b0ccf942401e3d403e5c7e85d8d0fc10aa21a92ab8032888d12f92",
+      "FVTest/Backend/Main.lean:def closureIds:0": "ed06627cbd2ec0e435b715eb9717450a4155c9df11b73dc7480d4816e4f22e52",
+      "FVTest/Backend/Main.lean:structure Opts:0": "fb19d2a0406755da0faebbe9da23654042240cd890d6a4f1916f1220abfec386",
+      "FVTest/Backend/Main.lean:abbrev AllocRecord:0": "2ded36d0c75bf075fbc285bceab78653505f38322585effe0c7fd09f88d4f227",
+      "FVTest/Backend/Main.lean:def allocVerdict:0": "4cada07c2ede52ff38f19ed9f961162970ec2b4d016429bbe9b53188807c816e",
+      "FVTest/Backend/Main.lean:def allocRecording:0": "4f0171e07a8f631a6350e58b6f7181bafdf1452a2a1b258adf4f66f83dfd45df",
+      "FVTest/Backend/Main.lean:def allocRecordingNamed:0": "a1b1205ac32772c5700354dccec19e7cad0e999e48c9badd67bfc3cb50ca47dc",
+      "FVTest/Backend/Main.lean:def unwindCheckFailure?:0": "53e4282f333a5fed70e62a395519b5f64a15308ce1848de7336bf33caf773859",
+      "FVTest/Backend/Main.lean:def run:0": "03f04a09817b622e2c7357d32fa9fe8d0619cc3f1ce5129e7d7c2edfefb7c3e7",
+      "FVTest/Backend/Main.lean:def main:0": "c59ee3fedf753e6fb669f77c362da846f30e97e992341656f82ced2cbc73fdbb",
+      "FVTest/Link/LeanLinkMain.lean:def hex:0": "156aabcd3ac75ed8240395fd183e29fec469f03d624be4744d30a68f4e5bbc3e",
+      "FVTest/Link/LeanLinkMain.lean:def scopeFails:0": "86dfb4c9dfc978f4b454d462d77947ead129e9f748330b620554fd9864192e71",
+      "FVTest/Link/LeanLinkMain.lean:def srcFails:0": "dd06ad55df7aaf7d3883c79187b2064f0e5b916d36d920cc0791ee1ffee611a5",
+      "FVTest/Link/LeanLinkMain.lean:def exclusions:0": "7da36536d53dd2e0cb6ee111761999617d867c2c3f2e067480e6dbeebc4e3476",
+      "FVTest/Link/LeanLinkMain.lean:def typedFails:0": "a65f65dbb05cdfd98f225cb958513bd3c8ec643183e44244d762605e1aa5d635",
+      "FVTest/Link/LeanLinkMain.lean:def stockDiffersB:0": "58291a56fbb451c293dd49c0188fd7e8ef672c93ecea090a0d0e630b47c8defc",
+      "FVTest/Link/LeanLinkMain.lean:def typedStockFails:0": "532ea2624cbd8e59db4a9c1cdc134fb6e9f0beede29d9fa5af36ef2470dd0aa8",
+      "FVTest/Link/LeanLinkMain.lean:def printExclusions:0": "2d97ed0bbbf053b9ae8aabc006ca19ce2f4c5148e838593c9db80f0e3836ee90",
+      "FVTest/Link/LeanLinkMain.lean:def takeOpt:0": "b888a34786803a8db779eff071924de57bb0b250228b9102a6a668a6ed0cee16",
+      "FVTest/Link/LeanLinkMain.lean:def ldCheck:0": "8c33a2a26585c8613dae730390d8ca31e1b829d302bbb3dd7d1ad94fc7dc0b57",
+      "FVTest/Link/LeanLinkMain.lean:def ldInCheck:0": "6a033dcf6a1e66faabed057f74f7b40d5f1f7a6770e132a26f9d22fe662f0f47",
+      "FVTest/Link/LeanLinkMain.lean:def main:0": "4066e8654aa64ca83e3401bd004dd9249b4298dc001cd2e06c52d3936df6cf82",
+      "FVTest/E2E/LinkCheckMain.lean:def main:0": "c59ee3fedf753e6fb669f77c362da846f30e97e992341656f82ced2cbc73fdbb",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:structure ProofApi:0": "cffa535315144283dc6bb88fae9bc89b11f0408881842fd1d80c35c3d7333e0b",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def ProofApi.previous:0": "f3448ec663003caf9798f49226a0d14ec7b7f15195d9091691188e0db7a4eea7",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def ProofApi.resultCalls:0": "e9f0d6739af0d3aaaea423cfa54402cd07ebf44ffff842e41baec8d5828ad8b9",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def leanFilesReturnPinFor:0": "f4c777d1470507d98220277552483d8d02df5b006a59b8285dd7f5e0fe7f2053",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def input:0": "dff1aa72053694f6d6fdb35d8356b3afecf8d66bbc195d1ffec7b8d31cf5eebf",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def compilerInput:0": "391309eb9d29f5f02a7efc677e62cf5ba48ce8f30d76275b39a6e3d39a045cdf",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:abbrev actualLower:0": "a56a9a1b0d91f766864c2ff8be9ed772c81f42fc1b362627cf4ba03f589ff63f",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:abbrev actualStage:0": "d279463415019b470822f0207176ba64550b42a1823b76f99a6ffc8c87257d56",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:abbrev actualResults:0": "4f1460cbfb130dcbe196b0cf0b87cd62ca539744d14ffa073ebff6c4483ad37e",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def dataObjs:0": "9785fe8ba5bc973b1e7998c77bb0918c554303387eeefe1fe5d3e3a56483dc4f",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def exHdr:0": "043268eb5e345dac893b42a8808b8305305b285f38bb9cdd499e02fa9ffdb301",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def exData:0": "41ef6fa1697bb6902979cdfa6c0a997102a08098f6fce62039e2a60e4ad71125",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def exSyms:0": "d3c45880a222ff24ea20dc5431fd54e4c579dcbe8b4b86bbfff65bcd064ee7d0",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def symCert:0": "f18e470f23bb1dbff330bac218b71224f6daddab7f4f6f53d0ee65f45f5806c1",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem slice:0": "2d6ed1932b756f6b5949bfef18329b7eda32af8d4bee37d176cfb064a9ad9184",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem slice:1": "093d222da21fc39b99f15fdcb34654383cf8ef3e2cacab87ce58a31f4501c270",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def ex:0": "64908b64d451212fdea2a6bbc53e7f88654e6e66ef47868ea63ddeefeec95086",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem noTls:0": "36fc2c185f3ee9aba8d65e7869b6ba29a13c1799ca4e6f833799b87a53c32273",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem base_closed:0": "3bffc94e17efaabd0205fe458704db9ab7f878e0648aa4fecf3725ced8963135",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem globalB_input:0": "b92121b06900e50f9cd3513d4b2eb07fef840710fa157cc482f0e325500361e6",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem okB_input:0": "3951f3ab03f1b104351bd5462a414ef7df90f5716e1322ffcd8270eadbbcc77a",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem link_ok:0": "8b7076bf92b3f11d5f55fc001c6da7fdf10da4aa8d2485c03c3a80967ea8cee2",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def entryNames:0": "d428873ec826c9751ee35a2c9185648f0585b47826871fce3537ddeb082c014f",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def entriesPresentB:0": "8c2523359ee5a8bea8ea9eed82fa2ac4fcd83c2c7783e7621a31b22886a664a8",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem entriesPresentB_true:0": "9467fcea1ab214d5feb1abe04743156968e9c40d6926d6d2df633f3dbbe5580c",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem entries_present:0": "7d265aac8eb7fcdf167372188807302313263a08a2654a368d7c7478e0ecfd02",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem hdr_bin:0": "44563f745a41276cabcccd1cc2b4ab86491df5a319b34ffee623c868888457d5",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem data_bin:0": "945d1a8058a49e96f10c668a831a9b5bbf5b0cedd84ac72168ce5178b3a32010",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem syms_bin:0": "ca77b3f267cfa30dcf8ff6a0d4312f6637456389f24f3b47fb8734abe94495bc",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def exAll:0": "c8299f36af67df41ec5c2e318ba0ff676afea5d5b03e5d25b93008f167cb5cc0",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem bin_ok:0": "82697357bccdd738794b598e810be278bdac6878eae774209202223cb735e440",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem stack_ok:0": "25e6006abdffad360c865325ed95abeb39f67569e94cd062366a4ba49c8abe6c",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def stackEntries:0": "da7b72b44e29d4a7d1892b22d75c56ad6606696d6edac6ec346ac277e4d55dd4",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:theorem stack_entries:0": "e2d31bf7cfd06e0261e34525520d8ddac3160d606ea80039b8733d061b51ebc4",
+      "FVTest/E2E/ReturnPinLinkProofWith.lean:def leanFilesReturnPinWith:0": "97e6c015a242e08243c8b6829cf21ddef7fa797b12042c93cdded831b2088b84",
+      "FVTest/E2E/ResultCallLinkProofWith.lean:def leanFilesResultCallWith:0": "da432031e6a1cde1820985912db0a6203f739d10adfa0191e54751d245c084e0"
+    },
+    "gate": "exact declaration headers through assignment token; preserve every old occurrence; flag actual drift"
+  },
+  "W_export_pairs": [
+    {
+      "old_root": "E2E.backend_correct_world_niX_validated",
+      "new_root": "E2E.backend_correct_world_niX_validatedW",
+      "old_import": "FV.E2E.ValidatedWorld",
+      "new_import": "FV.E2E.ValidatedReturnTraceW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_cleanup_validated",
+      "new_root": "E2E.backend_correct_world_niX_cleanup_validatedW",
+      "old_import": "FV.E2E.ValidatedCleanup",
+      "new_import": "FV.E2E.ValidatedReturnTraceW"
+    },
+    {
+      "old_root": "E2E.ABIReadOnly.machine_return",
+      "new_root": "E2E.ABIReadOnly.machine_returnW",
+      "old_import": "FV.E2E.ABIReadOnlyMachine",
+      "new_import": "FV.E2E.ABIReadOnlyMachineW"
+    },
+    {
+      "old_root": "E2E.MixedFlagBoundary.machine_return",
+      "new_root": "E2E.MixedFlagBoundary.machine_returnW",
+      "old_import": "FV.E2E.ABIReadFlags",
+      "new_import": "FV.E2E.ABIReadModelsReturnTraceW"
+    },
+    {
+      "old_root": "E2E.ScalarBoundary.machine_return",
+      "new_root": "E2E.ScalarBoundary.machine_returnW",
+      "old_import": "FV.E2E.ABIReadScalar",
+      "new_import": "FV.E2E.ABIReadModelsReturnTraceW"
+    },
+    {
+      "old_root": "E2E.DivBoundary.machine_return",
+      "new_root": "E2E.DivBoundary.machine_returnW",
+      "old_import": "FV.E2E.ABIReadDiv",
+      "new_import": "FV.E2E.ABIReadModelsReturnTraceW"
+    },
+    {
+      "old_root": "E2E.CfgBoundary.machine_return",
+      "new_root": "E2E.CfgBoundary.machine_returnW",
+      "old_import": "FV.E2E.ABIReadCfg",
+      "new_import": "FV.E2E.ABIReadModelsReturnTraceW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_arithmetic",
+      "new_root": "E2E.backend_correct_world_niX_stock_arithmeticW",
+      "old_import": "FV.E2E.StockArithmeticNI",
+      "new_import": "FV.E2E.StockArithmeticNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_mixed",
+      "new_root": "E2E.backend_correct_world_niX_stock_mixedW",
+      "old_import": "FV.E2E.StockMixedNI",
+      "new_import": "FV.E2E.StockMixedNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_logical",
+      "new_root": "E2E.backend_correct_world_niX_stock_logicalW",
+      "old_import": "FV.E2E.StockLogicalNI",
+      "new_import": "FV.E2E.StockLogicalNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_scalar",
+      "new_root": "E2E.backend_correct_world_niX_stock_scalarW",
+      "old_import": "FV.E2E.StockScalarNI",
+      "new_import": "FV.E2E.StockScalarNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_div",
+      "new_root": "E2E.backend_correct_world_niX_stock_divW",
+      "old_import": "FV.E2E.StockDivNI",
+      "new_import": "FV.E2E.StockDivNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_cfg",
+      "new_root": "E2E.backend_correct_world_niX_stock_cfgW",
+      "old_import": "FV.E2E.StockCfgNI",
+      "new_import": "FV.E2E.StockCfgNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_result_call",
+      "new_root": "E2E.backend_correct_world_niX_stock_result_callW",
+      "old_import": "FV.E2E.StockResultCallNI",
+      "new_import": "FV.E2E.StockResultCallNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_memory",
+      "new_root": "E2E.backend_correct_world_niX_stock_memoryW",
+      "old_import": "FV.E2E.StockMemoryNI",
+      "new_import": "FV.E2E.StockMemoryNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_memory_cfg",
+      "new_root": "E2E.backend_correct_world_niX_stock_memory_cfgW",
+      "old_import": "FV.E2E.StockMemoryCfgNI",
+      "new_import": "FV.E2E.StockMemoryCfgNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_integer_memory",
+      "new_root": "E2E.backend_correct_world_niX_stock_integer_memoryW",
+      "old_import": "FV.E2E.StockMemoryIntegerNI",
+      "new_import": "FV.E2E.StockMemoryIntegerNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_extending_memory",
+      "new_root": "E2E.backend_correct_world_niX_stock_extending_memoryW",
+      "old_import": "FV.E2E.StockMemoryExtLoadNI",
+      "new_import": "FV.E2E.StockMemoryExtLoadNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_store_memory",
+      "new_root": "E2E.backend_correct_world_niX_stock_store_memoryW",
+      "old_import": "FV.E2E.StockMemoryStoreNI",
+      "new_import": "FV.E2E.StockMemoryStoreNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_store_cfg_memory",
+      "new_root": "E2E.backend_correct_world_niX_stock_store_cfg_memoryW",
+      "old_import": "FV.E2E.StockMemoryStoreCfgNI",
+      "new_import": "FV.E2E.StockMemoryStoreCfgNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_load_store_memory",
+      "new_root": "E2E.backend_correct_world_niX_stock_load_store_memoryW",
+      "old_import": "FV.E2E.StockMemoryLoadStoreNI",
+      "new_import": "FV.E2E.StockMemoryLoadStoreNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_captured_copy_memory",
+      "new_root": "E2E.backend_correct_world_niX_stock_captured_copy_memoryW",
+      "old_import": "FV.E2E.StockMemoryCapturedCopyNI",
+      "new_import": "FV.E2E.StockMemoryCapturedCopyNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_sret_copy_memory",
+      "new_root": "E2E.backend_correct_world_niX_stock_sret_copy_memoryW",
+      "old_import": "FV.E2E.StockMemorySretCopyNI",
+      "new_import": "FV.E2E.StockMemorySretCopyNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_void_call",
+      "new_root": "E2E.backend_correct_world_niX_stock_void_callW",
+      "old_import": "FV.E2E.StockVoidCallNI",
+      "new_import": "FV.E2E.StockVoidCallNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_stock_live_call",
+      "new_root": "E2E.backend_correct_world_niX_stock_live_callW",
+      "old_import": "FV.E2E.StockLiveCallNI",
+      "new_import": "FV.E2E.StockLiveCallNIW"
+    },
+    {
+      "old_root": "E2E.StockMemory.machine_return",
+      "new_root": "E2E.StockMemory.machine_returnW",
+      "old_import": "FV.E2E.StockMemoryMachine",
+      "new_import": "FV.E2E.StockMemoryMachineW"
+    },
+    {
+      "old_root": "E2E.StockMemoryCfg.machine_return",
+      "new_root": "E2E.StockMemoryCfg.machine_returnW",
+      "old_import": "FV.E2E.StockMemoryCfgMachine",
+      "new_import": "FV.E2E.StockMemoryCfgMachineW"
+    },
+    {
+      "old_root": "E2E.StockMemory.StoreRoots.machine_return",
+      "new_root": "E2E.StockMemory.StoreRoots.machine_returnW",
+      "old_import": "FV.E2E.StockMemoryStoreMachine",
+      "new_import": "FV.E2E.StockMemoryStoreMachineW"
+    },
+    {
+      "old_root": "E2E.StockMemoryStoreCfg.machine_return",
+      "new_root": "E2E.StockMemoryStoreCfg.machine_returnW",
+      "old_import": "FV.E2E.StockMemoryStoreCfgMachine",
+      "new_import": "FV.E2E.StockMemoryStoreCfgMachineW"
+    },
+    {
+      "old_root": "E2E.backend_correct_worldX_stock_memory",
+      "new_root": "E2E.backend_correct_worldX_stock_memoryW",
+      "old_import": "FV.E2E.StockMemoryWorldX",
+      "new_import": "FV.E2E.StockMemoryWorldXW"
+    },
+    {
+      "old_root": "E2E.backend_correct_worldX_stock_memory_cfg",
+      "new_root": "E2E.backend_correct_worldX_stock_memory_cfgW",
+      "old_import": "FV.E2E.StockMemoryCfgWorldX",
+      "new_import": "FV.E2E.StockMemoryCfgWorldXW"
+    },
+    {
+      "old_root": "E2E.backend_correct_worldX_stock_memory_abi",
+      "new_root": "E2E.backend_correct_worldX_stock_memory_abiW",
+      "old_import": "FV.E2E.StockMemoryABIWorldX",
+      "new_import": "FV.E2E.StockMemoryABIWorldXW"
+    },
+    {
+      "old_root": "E2E.stock_void_call_machine_return",
+      "new_root": "E2E.stock_void_call_machine_returnW",
+      "old_import": "FV.E2E.StockVoidCallNI",
+      "new_import": "FV.E2E.StockVoidCallNIW"
+    },
+    {
+      "old_root": "E2E.actGoodX_of_voidCalls",
+      "new_root": "E2E.actGoodXW_of_voidCalls",
+      "old_import": "FV.E2E.StockVoidCallView",
+      "new_import": "FV.E2E.StockVoidCallNIW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_semantic",
+      "new_root": "E2E.backend_correct_world_niX_semanticW",
+      "old_import": "FV.E2E.CompiledSemanticNI",
+      "new_import": "FV.E2E.CompiledSemanticReturnTraceW"
+    },
+    {
+      "old_root": "E2E.backend_correct_world_niX_semantic_return_pins",
+      "new_root": "E2E.backend_correct_world_niX_semantic_return_pinsW",
+      "old_import": "FV.E2E.CompiledSemanticReturnPins",
+      "new_import": "FV.E2E.CompiledReturnPinReturnTraceW"
+    }
+  ],
+  "W_export_policy": "capture current old sets and full headers before each candidate gate; standard-only new roots; compare exact old sets independently; never treat stronger W conclusion as old-source replacement",
+  "four_owned_shared_candidates": [
+    "FV.Backend.SemanticABICheck",
+    "FV.E2E.CompiledSemanticABI",
+    "FV.E2E.CompiledSemanticReturnPins",
+    "FV.E2E.CompiledProgramReturnPins"
+  ],
+  "current8f_separate_direct_consumers": [
+    "FV.Backend.MemorySretCopyABIProduction",
+    "FV.Backend.VoidCallABIProduction",
+    "FV.E2E.CompiledSemanticReturnPinsWitness",
+    "FV.E2E.LinkReturnPinContract",
+    "FV.E2E.LinkReturnPins",
+    "FV.E2E.ReturnPinCheckFast",
+    "FV.E2E.SemanticABIBoundary",
+    "FV.E2E.StockMemorySretCopyCompiledWitness",
+    "FV.E2E.WorldReturnPinBoundary"
+  ],
+  "current8f_direct_consumers_count": 9,
+  "new_profile_and_cli_targets11": [
+    "FV.Backend.General7CallStoreProduction",
+    "FV.E2E.CallStoreAdmission",
+    "FV.E2E.CallStoreBinary",
+    "FV.E2E.CallStoreChecks",
+    "FV.E2E.CallStoreExec",
+    "FV.E2E.CallStoreGeneratedStack",
+    "FV.Link.CallStoreExeWith",
+    "FVTest.Backend.Main",
+    "FVTest.E2E.CallStoreLinkProofWith",
+    "FVTest.E2E.LinkCheckMain",
+    "FVTest.Link.LeanLinkMain"
+  ],
+  "CLI_targets": [
+    "FVTest.Backend.Main",
+    "FVTest.Link.LeanLinkMain",
+    "FVTest.E2E.LinkCheckMain"
+  ],
+  "current_source_context_policy": "refresh the prior2c staged profile projection to exact8f blobs; retain frozen old receipts as historical; check source/config/dependency/native IR and active writers before copying/building",
+  "first_after_restoration": {
+    "target": "FV.E2E.CompiledProductionReturnTraceW",
+    "closure_count": 391,
+    "baseline_count": 390,
+    "audit_roots": [
+      "E2E.worldReturnTraceProvider_production"
+    ]
+  },
+  "subsequent_ready_units": [
+    "FV.E2E.StockMemoryABIWorldXW",
+    "FV.E2E.StockVoidCallNIW",
+    "FV.E2E.StockLiveCallNIW",
+    "twelve memory W exports after shared reverse326 repair",
+    "FV.E2E.CompiledSemanticReturnTraceW",
+    "FV.E2E.CompiledReturnPinReturnTraceW",
+    "FV.E2E.LinkReturnPinGoodWInternal"
+  ],
+  "required_activation_checks": [
+    "Main exact facade inverse against current8f; retain stock wrapper and I128Native bytes",
+    "original typed emitter and whole-file fallback",
+    "explicit routes0-23 plus24 and1000 delegate to complete predecessor",
+    "no new raw route; route24 remains split reservation",
+    "old accepted identities retained when default selects different code",
+    "checkCallStores monotonicity for every retained old route",
+    "original caller/callee and distinct float file, raw and cleanup, through all three CLIs",
+    "generated proof kernels and real auditor for every successful case",
+    "actual linker/checker admission and object/ELF/allocator hashes",
+    "original serialized allocator answers, x19 save and linked ArmRet",
+    "default trapping store return and first-store-fault outcomes; arbitrary callee memory",
+    "callee traps, nested/try/caught branches and executable first-fault ordering remain required"
+  ],
+  "broader_open_obligations": [
+    "General7 full326 reverse validation",
+    "linked-source1095 reverse validation",
+    "wider93 affected ABI importer cone",
+    "generic hardware memory-fault and caught-handler transfer",
+    "full original140 completion"
+  ]
+}

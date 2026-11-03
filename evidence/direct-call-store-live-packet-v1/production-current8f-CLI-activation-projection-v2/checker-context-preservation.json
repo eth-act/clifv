@@ -1,0 +1,10 @@
+{
+  "status": "SOURCE_ONLY_STATIC_PRESERVATION",
+  "block": "mutable link input, cached LinkCtx and ReturnPinCtx, data/stack/memory checks through proof emitter selection",
+  "byte_exact": true,
+  "sha256": "27a1a7acdfe153bccbbc33c3198b92c11559bb25ef81240bbf9fa51203f01138",
+  "original_ReturnPinCtx_count": 1,
+  "candidate_ReturnPinCtx_count": 1,
+  "manifest_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-CLI-activation-projection-v2/manifest.json",
+  "manifest_sha256": "be6c93e55372e3651c0146000b17b2036fbb4743448eb673016d0f6d5665bc7e"
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "label": "passed-four-normal",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.Proof.StockMemoryStoreDemandTransport",
+      "FV.Backend.Proof.StockMemorySretCopyClass",
+      "FV.E2E.StockMemoryNopNonentryPairedReturn",
+      "FV.E2E.StockMemoryOrdinaryPairedJump"
+    ],
+    "exit": 0,
+    "log_sha256": "49eb19a6d30f1866e6a121a706e562766d36220699a6935c8d36c372d6526ba9",
+    "memory": "peak 69132288\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "real-five-root-audit",
+    "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/passed-four-real-audit-v1/audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/passed-four-real-audit-v1/memory-four-roots.lean"
+    ],
+    "exit": 0,
+    "log_sha256": "2bd154d5915e2cbfa4f1f3639b96cb724f70cd28f9c8ccdbb0f211bb8989a752",
+    "memory": "peak 1465868288\noom 0\noom_kill 0\n"
+  }
+]

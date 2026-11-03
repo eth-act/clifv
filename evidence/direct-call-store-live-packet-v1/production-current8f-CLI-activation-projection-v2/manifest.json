@@ -1,0 +1,207 @@
+{
+  "status": "SOURCE_ONLY_EXACT_CURRENT8F_CLI_PROJECTION;NO_KERNEL_OR_ACTIVATION_CLAIM",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "prior_reviewed_profile_manifest": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-call-store-profile-proposal-v2/manifest.json",
+  "prior_reviewed_profile_sha256": "6ed0d7c9a0b9f6b6f17b029cfc5e27e2f228acdab436e0e4e4f2ecd40d0b1c6a",
+  "copied_reviewed_sources11": {
+    "FVTest/Backend/Main.lean": {
+      "sha256": "f662bd52505d3fe0c8f59e8b34b1fc013b46982e32d5aaba516b3e29e9efd36d",
+      "prior_sha256": "f662bd52505d3fe0c8f59e8b34b1fc013b46982e32d5aaba516b3e29e9efd36d",
+      "unchanged_reviewed_source": true
+    },
+    "FVTest/E2E/CallStoreLinkProofWith.lean": {
+      "sha256": "ee5817b247164002478cf0e98a764824b67014f91e726f3d6a0438ae2fe88805",
+      "prior_sha256": "ee5817b247164002478cf0e98a764824b67014f91e726f3d6a0438ae2fe88805",
+      "unchanged_reviewed_source": true
+    },
+    "FVTest/E2E/LinkCheckMain.lean": {
+      "sha256": "528088cf0c10ba832e1a5b9c69df43d432e569104f24e99eab04d4f27ebaaf92",
+      "prior_sha256": "528088cf0c10ba832e1a5b9c69df43d432e569104f24e99eab04d4f27ebaaf92",
+      "unchanged_reviewed_source": true
+    },
+    "FVTest/Link/LeanLinkMain.lean": {
+      "sha256": "eff4076f3ee2ed8c215d9e9cc173972ca88bcea84a67d44431b59cbd27081510",
+      "prior_sha256": "eff4076f3ee2ed8c215d9e9cc173972ca88bcea84a67d44431b59cbd27081510",
+      "unchanged_reviewed_source": true
+    },
+    "FV/E2E/CallStoreAdmission.lean": {
+      "sha256": "13347c9ee9d6b9d09304cb76dccb3a97488635eb00159914a38b1f096875e35f",
+      "prior_sha256": "13347c9ee9d6b9d09304cb76dccb3a97488635eb00159914a38b1f096875e35f",
+      "unchanged_reviewed_source": true
+    },
+    "FV/E2E/CallStoreBinary.lean": {
+      "sha256": "308cc10b73950eb181df7f8bff657cf431bd38797bdeb5dd5db207258870b90d",
+      "prior_sha256": "308cc10b73950eb181df7f8bff657cf431bd38797bdeb5dd5db207258870b90d",
+      "unchanged_reviewed_source": true
+    },
+    "FV/E2E/CallStoreExec.lean": {
+      "sha256": "f3930a2693d6e048918b12136b78923b2dfcd2a74223cbdfde34d99005be1996",
+      "prior_sha256": "f3930a2693d6e048918b12136b78923b2dfcd2a74223cbdfde34d99005be1996",
+      "unchanged_reviewed_source": true
+    },
+    "FV/E2E/CallStoreChecks.lean": {
+      "sha256": "a36e7eae54f41726b8f47d4ad0aae674f789e0cf9d6f9cb6b05fb659adcc1c8a",
+      "prior_sha256": "a36e7eae54f41726b8f47d4ad0aae674f789e0cf9d6f9cb6b05fb659adcc1c8a",
+      "unchanged_reviewed_source": true
+    },
+    "FV/E2E/CallStoreGeneratedStack.lean": {
+      "sha256": "f954aed39285eb4ede929f5ebef2859688fcb66d6ac64e35a2fef6b2145181ba",
+      "prior_sha256": "f954aed39285eb4ede929f5ebef2859688fcb66d6ac64e35a2fef6b2145181ba",
+      "unchanged_reviewed_source": true
+    },
+    "FV/Link/CallStoreExeWith.lean": {
+      "sha256": "56217bbd97f408988960e30aae4720cdf6957279fea3b02fbf3234cad3f80233",
+      "prior_sha256": "56217bbd97f408988960e30aae4720cdf6957279fea3b02fbf3234cad3f80233",
+      "unchanged_reviewed_source": true
+    },
+    "FV/Backend/General7CallStoreProduction.lean": {
+      "sha256": "f051493ce356e814f438d4368295bf22b8c20ec631130aea08208e0ec1b5041b",
+      "prior_sha256": "f051493ce356e814f438d4368295bf22b8c20ec631130aea08208e0ec1b5041b",
+      "unchanged_reviewed_source": true
+    }
+  },
+  "current_old_source_bindings": {
+    "FVTest/Backend/Main.lean": {
+      "git_commit": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+      "git_blob": "67a883d607c3abdac86f216a33c9ec4c65765300",
+      "sha256": "56e793373a81d00b2df7ea4f57f245f91fd359b17bf0500f4afb037fa4683566",
+      "bytes": 26155,
+      "role": "current CLI base"
+    },
+    "FVTest/Link/LeanLinkMain.lean": {
+      "git_commit": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+      "git_blob": "827bf0f80a9d10de37d9dc6c8b8ea06a9a7fbf2f",
+      "sha256": "cbe614dd4078ccc337e7b5c87a2b4d6982d4176c4be78d5cf1410e58c23a5840",
+      "bytes": 49411,
+      "role": "current CLI base"
+    },
+    "FVTest/E2E/LinkCheckMain.lean": {
+      "git_commit": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+      "git_blob": "1f8678a938cfc615f4e304978b32f5c1dfe9c945",
+      "sha256": "3e234b481a1dff1620abd230b5e3bc64494c14285bd64b5a56016fd0d05d7f16",
+      "bytes": 25761,
+      "role": "current CLI base"
+    },
+    "FVTest/Backend/I128Native.lean": {
+      "git_commit": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+      "git_blob": "4d45d0c9d14f2d8e03992fb4a8b0cf93149199ab",
+      "sha256": "ab60a8d51b6a1418dc1979b6595049a6c443934cb2b0c25594c37404e551d8ac",
+      "bytes": 6095,
+      "role": "preserved current dependency"
+    },
+    "FVTest/Backend/StockConfig.lean": {
+      "git_commit": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+      "git_blob": "a5c63295551584ab30d960e790ff50e0ecbf3c9c",
+      "sha256": "dd2377dcea00a7931969a828b0b06640cc8fbe916c4281f2711cdaca6c06c266",
+      "bytes": 13040,
+      "role": "preserved current dependency"
+    },
+    "FVTest/Backend/AllocChoice.lean": {
+      "git_commit": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+      "git_blob": "2cb17b77e1b861ae408de5836ede2a9121b8259d",
+      "sha256": "efe920f9beb6f8f17bb076c53873f7fec4931c200d5fb7b64324650ac3af2534",
+      "bytes": 1147,
+      "role": "preserved current dependency"
+    },
+    "FV/Backend/Lowering/StockGeneralLoopCfg7NI.lean": {
+      "git_commit": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+      "git_blob": "9aa382c62f839e01cca15e04f6d96f710fb62705",
+      "sha256": "e050bf694c476656859be35095289715a15be534f8d0ce63cf1a0c200f72b46f",
+      "bytes": 1367,
+      "role": "preserved current dependency"
+    },
+    "FV/Backend/Lowering/StockParameterArgsCfgNI.lean": {
+      "git_commit": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+      "git_blob": "2fdfb0a58cfaaa612c9e596e09fa07370a6b6188",
+      "sha256": "432a85b6de26d45648b4a0d7ce1f014630dda8c14449629f071988840c648871",
+      "bytes": 1404,
+      "role": "preserved current dependency"
+    },
+    "FV/Backend/ReturnPinProduction.lean": {
+      "git_commit": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+      "git_blob": "574b6c2efd2fed4e37781de6d349de67b098a4fd",
+      "sha256": "070955a00765b28cb3a810152cb00b20e1a1da179ecc5a74d0d627d2f43e29f8",
+      "bytes": 2558,
+      "role": "preserved current dependency"
+    }
+  },
+  "exact_diffs": {
+    "FVTest/Backend/Main.lean": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-CLI-activation-projection-v2/diff/FVTest/Backend/Main.diff",
+      "sha256": "b1d0f6ee9aebd4900a12cbba910be92bf65a31f4068d910de095d6fbb5be6685",
+      "added": 3,
+      "removed": 3
+    },
+    "FVTest/Link/LeanLinkMain.lean": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-CLI-activation-projection-v2/diff/FVTest/Link/LeanLinkMain.diff",
+      "sha256": "d8ff2e49e73ed7c9357adfd420b2cf7a24b0f75fc3c5d696a3dd69d271fd1f66",
+      "added": 20,
+      "removed": 0
+    },
+    "FVTest/E2E/LinkCheckMain.lean": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-CLI-activation-projection-v2/diff/FVTest/E2E/LinkCheckMain.diff",
+      "sha256": "11a8e8e4325207bcea502f677701500c3291ea7785e19ae5e548537a2835ad66",
+      "added": 33,
+      "removed": 21
+    }
+  },
+  "Main_exact_inverse": {
+    "holds": true,
+    "changes": [
+      "one import replacement",
+      "two facade calls"
+    ],
+    "preserves": [
+      "stock-config wrapper",
+      "I128 native replacement",
+      "config receipts",
+      "configuredAlloc callback",
+      "flags and guards",
+      "parsed file",
+      "pre-list",
+      "cleanup argument"
+    ]
+  },
+  "Linker_exact_inverse": {
+    "holds": true,
+    "changes": [
+      "two imports",
+      "one new complete-file attempt before all old attempts"
+    ],
+    "entire_previous_source_retained": true
+  },
+  "checker_typed_branch": {
+    "byte_exact": true,
+    "sha256": "ae70034d1fe1d7d2d7ec4afb9956cc099ff752df824da8a9fbc035f491de1fd8",
+    "preserved_copy": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-CLI-activation-projection-v2/preserved-typed-checker-branch.lean.txt"
+  },
+  "checker_changes": [
+    "derive callStoreMode from actual raw candidates",
+    "probe new default then every complete General7 explicit route",
+    "retain explicit route0 recovery and old out-of-range delegation",
+    "select the additive internal admission profile",
+    "select the call-store proof emitter only in the untyped new profile",
+    "retain all typed emitter branches and cached context"
+  ],
+  "route_policy": "No new index; all explicit choices delegate to complete current General7 predecessor; routes21/22/23 preserved and24 reserved",
+  "old_file_action": "The new facade receives the entire current compileFileReturnPinWhen action, callback, parsed file, pre-list, cleanup and enabled flag",
+  "tracked_files_modified": [],
+  "resource_state": "source2GiB released; only requested source projection preparation ran",
+  "open": [
+    "exact current source/config/native-key closure after restoration",
+    "all old23/182 AX and381 headers",
+    "new and old kernel/auditor gates",
+    "nine current direct consumers and eleven profile/CLI roots",
+    "typed/explicit0/out-of-range/default identity runtime",
+    "raw and cleanup all-three-CLI/generated/linker/checker matrices",
+    "original allocator/x19/linked ArmRet",
+    "first-fault provider and generic caught/nested transfer",
+    "tracked CLI overlap approval before edits",
+    "publication review/four-CI/tested-tree gates"
+  ],
+  "preserved_static_inverse_failure": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-CLI-activation-projection-v1/manifest.json",
+    "sha256": "d09375270a444e9c0098c31bfdd0e2ed7ac658413de66d86285d404535b48f26",
+    "reason": "V1 removed the Main import instead of replacing it, and removed an existing linker comment. Candidate bytes were correct and unchanged."
+  }
+}

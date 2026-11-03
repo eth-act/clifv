@@ -1,0 +1,22 @@
+  let (typed, typedS, R0, stat, note) :
+      Bool × Bool × Res × List (String × List (String × Bool)) × String :=
+    match stockTS with
+    | some statS =>
+      (true, true, R0I, statS,
+        s!"  typed checks: the {failI.length} function(s) failing the integer validators pass the typed ones on the Stock route's results (okRWithTS's); the typed Stock checker is used")
+    | none => if o.deadCleanup && !failI.isEmpty then
+      let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
+      let probe := Link.parMap (fun (fi : FnInput) =>
+        let r := I0.pipeCleanupOf fi
+        (bad (staticChksWithT (fun _ => DeadCleanup.prune) { I0 with D := max D0 (frameDrop (getOk r).af) }
+          fi.func r)).isEmpty) (I0.funcs.filter fun fi => failSet.contains fi.func.name)
+      let fixed := (probe.filter id).length
+      if fixed > 0 then
+        let R0T : Res := Link.parMap (fun fi => (fi.func, I0.pipeCleanupOf fi)) I0.funcs
+        let DT := (R0T.map fun e => frameDrop (getOk e.2).af).foldl max 0
+        (true, false, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT (fun _ => DeadCleanup.prune) { I0 with D := DT } e.1 e.2)) R0T,
+          s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's); the typed checker is used")
+      else (false, false, R0I, statI, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones")
+    else (false, false, R0I, statI, "")
+  let nStat := (stat.filter fun e => !(bad e.2).isEmpty).length
+  if !note.isEmpty then IO.println note

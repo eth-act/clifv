@@ -1,0 +1,12 @@
+{
+  "parent_resource_approved": true,
+  "source2_released": true,
+  "acquire1_released": true,
+  "authority": "Parent approved weak correction858edfd1 under approved phase1 policy; source391 exited naturally and renewed full2GiB release; own1GiB renewed release b11fb6ba",
+  "own_release_sha256": "b11fb6babd77d8e631383097e2e073246665fd759ee52a3690b0466961b1b012",
+  "proposal_sha256": "4fd49bbe71d6dce3015658dcc4b1f9a26c245b3d04590eb59bd0e16abf868b08",
+  "weak_projection_manifest_sha256": "858edfd13617b2a13b7fcb790a2912efec2eab81f6a1ad11dc2b2445481a9b2a",
+  "gate_sha256": "b10a3e7fa2be000c9df355f2fec2c09112f32e0f28778c69d04d810614270be4",
+  "guard_harness_sha256": "cf2b1badb6cdf9cf1bd47736a40c52fad532d13a94dfce7e5a900bef1d356148",
+  "retained_W_approval_sha256": "b21adb0f7fed5b0ed48d64813effa9f91b9cd54366865203c340b0ef2b750560"
+}

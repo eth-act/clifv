@@ -1,0 +1,6 @@
+{
+  "head": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "targets": 326,
+  "normal_exit": 3,
+  "kind": "read-only readiness preflight; no fresh kernel claim"
+}

@@ -1,0 +1,14 @@
+{
+  "status": "cold_native_C_hash_matches_creator_outputs_c",
+  "actual_C_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/ir/FV/E2E/CompiledEitherW.c",
+  "actual_content_sha256": "2cfadb00152d6b81fe0d3a19662599c104c270cfadc9061b5566ce89c897f7af",
+  "native_content_hash": "22fa5ca7f3680a19",
+  "creator_outputs_c": "22fa5ca7f3680a19.c",
+  "computeFileHash_cache_allowed": false,
+  "helper_sha256": "1e65ef99c3224ec2a3f3b6d1a71c457d784410b551e72ee0331c55cedabbcf29",
+  "log_sha256": "9ade507b83336d861dd5abf187aaf94a641f05a764282b10d45f94c93375dc61",
+  "actual_exit": 0,
+  "watch_event_id": 8403,
+  "watch_event_payload": "[watch, your own job; act on it, no reply] 'acquire810-compiled-either-w-c-binding-v1' succeeded (exit 0) after 0s. Log: /home/lee/clifv/.ai-coord/jobs/worker-O-20261103-140642-acquire810-compiled-either-w-c-binding-v1.log\nLast lines:\n  /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/ir/FV/E2E/CompiledEitherW.c\t22fa5ca7f3680a19",
+  "stats": "peak 74235904\noom 0\noom_kill 0\n"
+}

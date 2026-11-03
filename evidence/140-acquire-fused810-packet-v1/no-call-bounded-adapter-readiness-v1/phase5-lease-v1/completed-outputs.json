@@ -1,0 +1,64 @@
+{
+  "FV.E2E.LinkGood": {
+    "source_sha256": "ec6dcc3ad3622c439e1234ce997f972470ded1d8666d6c4941051bb093b4e6f5",
+    "normal_input_key": "57c6312d46c34f55",
+    "outputs": {
+      "o": [
+        "a1b4e18a71a02123.olean"
+      ],
+      "m": false,
+      "i": "928c4f977b731309.ilean",
+      "c": "6e0090566ddf0de4.c"
+    },
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/LinkGood.olean": "010585ebafae128af55aaf755128bca75eada9375d6b809f63f55fd6ba65c1a7",
+      ".lake/build/lib/lean/FV/E2E/LinkGood.ilean": "256fb8f13ba5f0a03c9c4ce93cdb3d5e7088792734dc8036d245efeb6f17f1cc",
+      ".lake/build/lib/lean/FV/E2E/LinkGood.olean.hash": "028ae62f4edb06d9f1734b1c346d014d4ac1035d711cdc810d3d62601d131f2b",
+      ".lake/build/lib/lean/FV/E2E/LinkGood.ilean.hash": "5ef65c48cc15d2bbd1020bb800d4aa8f2a57d80b2641ad58625c0cb721094480",
+      ".lake/build/lib/lean/FV/E2E/LinkGood.trace": "3585d445c09c91cd6a0ba604f5b37c443123ffd70ae91a6f0c43ffbe08128e90",
+      ".lake/build/ir/FV/E2E/LinkGood.setup.json": "d30bc9240a4723a96a400ad95a44295f6752cf940050f8163fe6abe287e7f0eb",
+      ".lake/build/ir/FV/E2E/LinkGood.c": "4b29bf35674fdba6003d719c5a77ea1906949bd9a66bcbe3fd4cf60c57edd119",
+      ".lake/build/ir/FV/E2E/LinkGood.c.hash": "9e01801684bcfd2e307db5e7c93abba715a2c5ffe24755fc2dd30783472d9f94"
+    },
+    "origin": {
+      "actual_leaf_record": {
+        "label": "leaf-0",
+        "argv": [
+          "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+          "-v",
+          "build",
+          "+FV.E2E.LinkGood:leanArts"
+        ],
+        "exit": 0,
+        "stats": "peak 344883200\noom 0\noom_kill 0\n",
+        "effective_Lean_observations": [
+          {
+            "pid": 536240,
+            "birth": 1793733604.62,
+            "argv": [
+              "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+              "-j1",
+              "-Dlinter.unusedSimpArgs=false",
+              "-Dlinter.unusedVariables=false",
+              "-Dlinter.unnecessarySimpa=false",
+              "-Dlinter.unusedSectionVars=false",
+              "-Dlinter.defProp=false",
+              "-Dlinter.constructorNameAsVariable=false",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/E2E/LinkGood.lean",
+              "-o",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/E2E/LinkGood.olean",
+              "-i",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/E2E/LinkGood.ilean",
+              "-c",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/ir/FV/E2E/LinkGood.c",
+              "--setup",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/ir/FV/E2E/LinkGood.setup.json",
+              "--json"
+            ]
+          }
+        ],
+        "unexpected_compilers": []
+      }
+    }
+  }
+}

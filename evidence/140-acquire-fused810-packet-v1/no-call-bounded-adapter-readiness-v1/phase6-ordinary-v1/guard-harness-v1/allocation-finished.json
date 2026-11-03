@@ -1,0 +1,7 @@
+{
+  "status": "ordinary_allocation_finished",
+  "source_share_borrowed": false,
+  "acquire_GiB": 1,
+  "reason": "independent all-exit guard after owner and all consumers exit",
+  "utc": "2026-11-03T19:26:13.253406+00:00"
+}

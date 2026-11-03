@@ -1,0 +1,48 @@
+{
+  "status": "PROPOSED_NARROW_SETUP_INPUT_COMPARISON;NO_GUARD_CHANGED_OR_COPY",
+  "classification_receipt_sha256": "f68d045e2ebd340fab3d965be8b69ad5dbc1b6cb66b209c90888c4e2c3306495",
+  "pinned_Lake_Module_path": "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/src/lean/lake/Lake/Build/Module.lean",
+  "pinned_Lake_Module_sha256": "4a84a2896dedea36679a15515043860e28b95e596b28552f56bad1ff1eade27e",
+  "source_evidence": {
+    "checkArtifactsExist_lines": "824-836 require olean, ilean, native C and relevant module/LLVM variants; setup is not a declared output",
+    "compileLeanModule_call_line": 989,
+    "legacy_import_artifact_lines": "515-524 import the olean; this proposal still retains all C/ilean/payload guards"
+  },
+  "exact_setup_inputs": {
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreDispatch.setup.json": {
+      "R_sha256": "25897d00817771fe95af2acae644428af79c75b0141aca779ecf0193e4710fb8",
+      "P_sha256": "0a7692066d7fd8e93a2df87491f861aa9e1d02d7e8903d7e5d14e220d281fa10",
+      "equal_after_exact_R_P_prefix_substitution": true,
+      "normalization_scope": "Only the two exact package prefixes; no fields or options removed",
+      "keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreSelected.setup.json": {
+      "R_sha256": "dbb15bb76145e6f9659200a84f0dec59fc879294da88f9272ccab3770e437f51",
+      "P_sha256": "67f7bcfeca924b4fb801771720217cd99f8d4d2a94a0b09be77a76fef2bd860b",
+      "equal_after_exact_R_P_prefix_substitution": true,
+      "normalization_scope": "Only the two exact package prefixes; no fields or options removed",
+      "keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ]
+    }
+  },
+  "P_Record_actual_required_payload_differences": [],
+  "proposal": "Permit only these two proven prefix-only setup-input differences for P Record. Preserve both files and keep R setup inputs unchanged. Copy no unrelated provider metadata. Continue exact full source/config/key/native payload checks, provenance, active-writer checks, and actual R normal verification.",
+  "P_Continuation": "Already has zero dependency output differences and full matching normal/provenance checks",
+  "G": "Retains diagnostic/archive differences; no G donor acceptance requested",
+  "no_implicit_schema_rule": true
+}

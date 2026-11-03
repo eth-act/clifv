@@ -1,0 +1,11 @@
+{
+  "parent_resource_approved": true,
+  "source2_released": true,
+  "acquire1_released": true,
+  "authority": "Parent approved exact phase1 proposal 4fd49bbe and LinkClif origin 77285b59; both shares explicitly released",
+  "proposal_sha256": "4fd49bbe71d6dce3015658dcc4b1f9a26c245b3d04590eb59bd0e16abf868b08",
+  "approved_LinkClif_origin_sha256": "77285b5964a67c1f176285f3f2712944a2dd586e8069b0b94cde02b99b4562ab",
+  "scope": "Only four named leaves; no dependencies; stop first failure; retained W requires separate approval",
+  "gate_sha256": "d582c2252e6be25b070c1538b53a9a819422b96cc3901e11efa6eae5ecdd250f",
+  "guard_harness_sha256": "065979e3516f606fdb6d2318b466ef20a1b75bde6f1c9f862d1f2708c6736e2e"
+}

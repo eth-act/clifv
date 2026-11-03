@@ -1,0 +1,31 @@
+{
+  "status": "corrected_only_four_owned_flat_paths",
+  "files": [
+    {
+      "old_owned_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/LinkClif.olean",
+      "correct_owned_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/E2E/LinkClif.olean",
+      "sha256": "65e77a79dbc570298e07110692e02a3a1700c19c90e0af9f2ac796e4d9e248f4",
+      "nlink_before": 1
+    },
+    {
+      "old_owned_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/LinkClif.ilean",
+      "correct_owned_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/E2E/LinkClif.ilean",
+      "sha256": "596cc10e5c11ae21194f88a17194627a94215eb1351ea3f0fdf4023976bf6884",
+      "nlink_before": 1
+    },
+    {
+      "old_owned_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/ir/LinkClif.c",
+      "correct_owned_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/ir/FV/E2E/LinkClif.c",
+      "sha256": "defa7fce868958a9a8f207df3f0a9097e95a9bfcc6cb8f030d2f2574f7e55b27",
+      "nlink_before": 1
+    },
+    {
+      "old_owned_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/LinkClif.trace",
+      "correct_owned_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/E2E/LinkClif.trace",
+      "sha256": "c6eafebd758a097a256925ae183a20393e246668a55c36f59baaf21d1678be98",
+      "nlink_before": 1
+    }
+  ],
+  "native_bytes_unchanged": true,
+  "normal_check_pending": true
+}

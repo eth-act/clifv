@@ -1,0 +1,29 @@
+{
+  "status": "approved_native_LinkClif_recovered_at_correct_namespace_and_actual_normal_passed",
+  "native_key": "cbd1bb10b6863ea7",
+  "outputs": {
+    "m": false,
+    "o": [
+      "db8e2178cc861df7.olean"
+    ],
+    "i": "0cdeaa5af9093331.ilean",
+    "c": "9414c42eb262839f.c"
+  },
+  "artifacts": {
+    ".lake/build/lib/lean/FV/E2E/LinkClif.olean": "65e77a79dbc570298e07110692e02a3a1700c19c90e0af9f2ac796e4d9e248f4",
+    ".lake/build/lib/lean/FV/E2E/LinkClif.ilean": "596cc10e5c11ae21194f88a17194627a94215eb1351ea3f0fdf4023976bf6884",
+    ".lake/build/ir/FV/E2E/LinkClif.c": "defa7fce868958a9a8f207df3f0a9097e95a9bfcc6cb8f030d2f2574f7e55b27"
+  },
+  "source_sha256": "78a5c92ac0aaceebc472571abd43504a86b556fc93c531b925af9299a9ecd862",
+  "trace_sha256": "c6eafebd758a097a256925ae183a20393e246668a55c36f59baaf21d1678be98",
+  "approved_origin_sha256": "77285b5964a67c1f176285f3f2712944a2dd586e8069b0b94cde02b99b4562ab",
+  "failed_flat_layout_sha256": "b8e9e780a73ace24749cf75601e969bbe73de38f86c3d1e5f0fe43e9936d22bf",
+  "corrected_owned_path_receipt_sha256": "ddfe14708c248cc1072368dea268a67b4cd2d836c336433c85ee45ff8bacdbf5",
+  "actual_normal_exit": 0,
+  "actual_normal_event_id": 8292,
+  "actual_normal_event_payload": "[watch, your own job; act on it, no reply] 'acquire810-LinkClif-correct-path-normal-v1' succeeded (exit 0) after 0s. Log: /home/lee/clifv/.ai-coord/jobs/worker-O-20261103-132918-acquire810-LinkClif-correct-path-normal-v1.log\nLast lines:\n  \u26a0 [11/13] Replayed FV.Clif.Run\n  warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead\n  All targets up-to-date (13 jobs).",
+  "stats": "peak 27938816\noom 0\noom_kill 0\n",
+  "canonical_config_sha256": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+  "no_Lean_build": true,
+  "no_shared_cache_write": true
+}

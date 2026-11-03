@@ -1,0 +1,30 @@
+{
+  "targets": [
+    "FV.Backend.Proof.LowerLoopCtxT",
+    "FV.Backend.Proof.StockDirectCallResult",
+    "FV.Backend.Proof.IselTermFactsTy",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+    "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation",
+    "FV.Backend.Proof.StockMemoryOrdinaryCfgJumpReturnAt",
+    "FV.E2E.PrepDirect",
+    "FV.Backend.Proof.SpillLocalPipe",
+    "FV.Backend.Proof.IselShpDriver",
+    "FV.Backend.Proof.SpillEdgesLow",
+    "FV.Backend.Proof.KillOfV",
+    "FV.Backend.Proof.TermSetRoots",
+    "FV.Backend.Proof.KillGen",
+    "FV.Backend.Proof.IselCovTSem",
+    "FV.Backend.Proof.IselCovTCheck",
+    "FV.Backend.Proof.IselPrgCtorBase",
+    "FV.Backend.Proof.DefRuns",
+    "FV.Backend.Proof.DefGenDom",
+    "FV.Backend.Proof.IselPrgExtTF",
+    "FV.Backend.Proof.IselPrgRootT",
+    "FV.E2E.SretCopyExecEntry",
+    "FV.E2E.SretCopyResultBytes",
+    "FV.E2E.RegLevelCallSite",
+    "FV.E2E.RegLevelFrameSaved"
+  ],
+  "exit": 0,
+  "scope": "P normal only; exact current-source/key binding is separately recorded"
+}

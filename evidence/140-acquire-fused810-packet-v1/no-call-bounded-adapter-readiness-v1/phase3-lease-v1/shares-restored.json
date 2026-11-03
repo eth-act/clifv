@@ -1,0 +1,7 @@
+{
+  "status": "restored",
+  "source_GiB": 2,
+  "acquire_GiB": 1,
+  "reason": "phase3 owner all-exit finally after all consumers and scopes exit",
+  "utc": "2026-11-03T19:03:19.540444+00:00"
+}

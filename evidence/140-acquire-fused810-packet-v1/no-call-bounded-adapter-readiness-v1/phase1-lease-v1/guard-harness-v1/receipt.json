@@ -1,0 +1,10 @@
+{
+  "status": "passed_real_owner_failure_and_live_consumer_guard",
+  "owner_exit": 7,
+  "guard_exit": 0,
+  "no_early_restore": true,
+  "source_GiB": 2,
+  "acquire_GiB": 1,
+  "real_lease_state_untouched": true,
+  "guard_source_sha256": "698a90a5fd8cfe89cbf5619f9f390ea10787bd6c6e011859951f3675c28a3097"
+}

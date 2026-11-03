@@ -1,0 +1,24 @@
+{
+  "status": "passed_actual384_normal_and_all_twelve_keys_unchanged",
+  "keys": {
+    "FV.E2E.RegLevelCorrectX": "2862eef808cc066f",
+    "FV.E2E.DeadCleanupWorldX": "42ff28d91bf2c785",
+    "FV.E2E.LinkClif": "cbd1bb10b6863ea7",
+    "FV.E2E.LinkWorldXW": "d86fc4c3beea0459",
+    "FV.E2E.DeadCleanupWorldXW": "2f483f351094a856",
+    "FV.E2E.LinkWorldX": "b35c5e3883905110",
+    "FV.E2E.LinkClifN": "449ed896fdcb130e",
+    "FV.E2E.Link": "cc2f9f2e01683268",
+    "FV.E2E.CompiledEither": "cfa5ab1ba93a25fe",
+    "FV.E2E.LinkPlace": "5c9ee145acafbded",
+    "FV.E2E.LinkArm": "5b69d2172986191e",
+    "FV.E2E.CompiledEitherW": "d5e7fd26cd02855c"
+  },
+  "config_hashes": {
+    "lakefile.toml": "ae904dd0de8c2eefdf7e9a190eb78e80d93022247f455fc90952a16f2f073d37",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b"
+  },
+  "canonical_sha256": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+  "projected_sha256": "ae904dd0de8c2eefdf7e9a190eb78e80d93022247f455fc90952a16f2f073d37"
+}

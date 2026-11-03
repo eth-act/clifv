@@ -1,0 +1,32 @@
+{
+  "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord": {
+    "native_key": "876ae79ce3800f20",
+    "trace_sha256": "837f5cb5e23062ccb7ae7b0f76683a937d524c74c6652163ecb4f9a5c5083971",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRecord.trace": "837f5cb5e23062ccb7ae7b0f76683a937d524c74c6652163ecb4f9a5c5083971",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRecord.olean": "39c5d8d941aaad891273e76c1b4c75b5da7b6edab896c4f9be32d5542a69b4dc",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRecord.olean.hash": "f4910589aa549f449774a681bddff059a7b0d409486373bc2bd72c7d0a6568fb",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRecord.ilean": "43eb34ee895f3583beff8078308541b1a8283fc3cde84b5d9cabb6051dc4a661",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRecord.ilean.hash": "2a80f60ddbfebbd59ecaa659492b8286cfed7056aa0e6897a979d696c7b786b5",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightStoreRecord.c": "f2843d61ff6517b6585b19233f3f929e6f4dd58dcfc38252e263c0215fa95c89",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightStoreRecord.c.hash": "7b0f297e70fd500a8cb922d39cc7b7c34205ffe48915c913bbf54e83579676c4"
+    },
+    "all_R_setup_files_retained": true,
+    "actual_producer": "full-input nonsynthetic P native trace"
+  },
+  "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation": {
+    "native_key": "15d820bc9f274dc8",
+    "trace_sha256": "48267e6ff5ecb0eaaa7c5486bf44216e674e49c2be34acbfe2398677027caf40",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinarySourceContinuation.trace": "48267e6ff5ecb0eaaa7c5486bf44216e674e49c2be34acbfe2398677027caf40",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinarySourceContinuation.olean": "050903a579f4b0c4ddcd18751621846779737fea88241f02d4557ac0cf4d64a6",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinarySourceContinuation.olean.hash": "ddf2116275ce3514fd56ca814dc1ef7731574bbea5d1d64a037d38dd992f8d70",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinarySourceContinuation.ilean": "e5745687d9071c40be1ccd4ed2cfa5d21ce809d4d208dcef77b152c6db48bd4c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinarySourceContinuation.ilean.hash": "281661f7140b77cefe03bcd6975755ce9db3c7ca90bf9d9aa82875aa315341a4",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinarySourceContinuation.c": "93ee8eca144a11b51580282cad9f8894fc1167848a2520a3475190c3b9ca9725",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinarySourceContinuation.c.hash": "07db4b0c591b7194cdfae37d3799e10e8cb5aed710144951c852603e56976c65"
+    },
+    "all_R_setup_files_retained": true,
+    "actual_producer": "full-input nonsynthetic P native trace"
+  }
+}

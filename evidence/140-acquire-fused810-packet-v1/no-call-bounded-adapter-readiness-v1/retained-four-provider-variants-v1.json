@@ -1,0 +1,667 @@
+{
+  "status": "static_retained_variant_inventory_only",
+  "rows": [
+    {
+      "module": "FV.E2E.DeadCleanupWorldXW",
+      "path": ".git/agent-evidence/stock-memory-20261029/validated-W23-broad-12g-v1/old-provider-outputs/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldXW.trace",
+      "key": "2f483f351094a856",
+      "expected_key": "2f483f351094a856",
+      "key_match": true,
+      "trace_sha256": "9d40549cc4f630c535d9a7d224c50696082640ae313b048fcb94bbcaa21817b8",
+      "output_descriptors": {
+        "o": [
+          "771e9f77f3f7a721.olean"
+        ],
+        "m": false,
+        "i": "a06503aeca79f8bb.ilean",
+        "c": "c4b69d5735125213.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/validated-W23-broad-12g-v1/old-provider-outputs/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldXW.olean": {
+          "exists": true,
+          "sha256": "e7ff0bcf13600735902451c5850a97487906a7f11392be3f612e52dd7f24e6f6"
+        },
+        ".git/agent-evidence/stock-memory-20261029/validated-W23-broad-12g-v1/old-provider-outputs/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldXW.ilean": {
+          "exists": true,
+          "sha256": "d04160dfefc943f0b3511fa26bcf2c92c4c11112a858b258edcfbba88ba505d4"
+        },
+        ".git/agent-evidence/stock-memory-20261029/validated-W23-broad-12g-v1/old-provider-outputs/.lake/build/ir/FV/E2E/DeadCleanupWorldXW.c": {
+          "exists": true,
+          "sha256": "d3f98bd192c0954701d94c4d012163bc4a388c80265b20e6c259c50374910e14"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.LinkWorldXW",
+      "path": ".git/agent-evidence/stock-memory-20261029/validated-W23-broad-12g-v1/old-provider-outputs/.lake/build/lib/lean/FV/E2E/LinkWorldXW.trace",
+      "key": "d86fc4c3beea0459",
+      "expected_key": "d86fc4c3beea0459",
+      "key_match": true,
+      "trace_sha256": "f4d333c41147c9af00d8c3ec7b8500961bc6a42b7eaff14f4600abe93e816e6e",
+      "output_descriptors": {
+        "o": [
+          "eec1f4b180832bb9.olean"
+        ],
+        "m": false,
+        "i": "63b839239db4f932.ilean",
+        "c": "fafeac159149c927.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/validated-W23-broad-12g-v1/old-provider-outputs/.lake/build/lib/lean/FV/E2E/LinkWorldXW.olean": {
+          "exists": true,
+          "sha256": "ade9d7a92f00b539de355725829f2e49625bfd03070c8426f456f34a754165b1"
+        },
+        ".git/agent-evidence/stock-memory-20261029/validated-W23-broad-12g-v1/old-provider-outputs/.lake/build/lib/lean/FV/E2E/LinkWorldXW.ilean": {
+          "exists": true,
+          "sha256": "5bea38c8e8cbdfe742ec1a40be7f6172284c42b58dfb9b3b3fecc0c9f01fb65d"
+        },
+        ".git/agent-evidence/stock-memory-20261029/validated-W23-broad-12g-v1/old-provider-outputs/.lake/build/ir/FV/E2E/LinkWorldXW.c": {
+          "exists": true,
+          "sha256": "b1359d6bbdb0916d3325660ebf286752ec599fdc3abb4bb2196fa5853e327c8d"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.LinkClif",
+      "path": ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-no-build-copy-preflight-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/LinkClif.trace",
+      "key": "cbd1bb10b6863ea7",
+      "expected_key": "cbd1bb10b6863ea7",
+      "key_match": true,
+      "trace_sha256": "8ea2bfd06536530b5fb56d8bccacb3823cda1948a44a6b0228d6ac1a07ce3c56",
+      "output_descriptors": {
+        "o": [
+          "db8e2178cc861df7.olean"
+        ],
+        "m": false,
+        "l": "2009753969e618c4.ltar",
+        "i": "0cdeaa5af9093331.ilean",
+        "c": "9414c42eb262839f.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-no-build-copy-preflight-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/LinkClif.olean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-no-build-copy-preflight-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/LinkClif.ilean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-no-build-copy-preflight-v2/prior-descriptors/.lake/build/ir/FV/E2E/LinkClif.c": {
+          "exists": false,
+          "sha256": null
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.LinkClif",
+      "path": ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-baseline21-archive-provenance-v1/reproduced-traces/FV/E2E/LinkClif.trace",
+      "key": "cbd1bb10b6863ea7",
+      "expected_key": "cbd1bb10b6863ea7",
+      "key_match": true,
+      "trace_sha256": "c6eafebd758a097a256925ae183a20393e246668a55c36f59baaf21d1678be98",
+      "output_descriptors": {
+        "m": false,
+        "o": [
+          "db8e2178cc861df7.olean"
+        ],
+        "i": "0cdeaa5af9093331.ilean",
+        "c": "9414c42eb262839f.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-baseline21-archive-provenance-v1/reproduced-traces/FV/E2E/LinkClif.olean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-baseline21-archive-provenance-v1/reproduced-traces/FV/E2E/LinkClif.ilean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-baseline21-archive-provenance-v1/reproduced-traces/FV/E2E/LinkClif.trace/.lake/build/ir/FV/E2E/LinkClif.c": {
+          "exists": false,
+          "sha256": null
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.RegLevelCorrectX",
+      "path": ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.trace",
+      "key": "de1bbce488daa732",
+      "expected_key": "2862eef808cc066f",
+      "key_match": false,
+      "trace_sha256": "cd2960d45355473068a00066c199e238b2de20f4074635cf51c2d0dba326ec6c",
+      "output_descriptors": {
+        "o": [
+          "c5ff5027251f3082.olean"
+        ],
+        "m": false,
+        "i": "3337bbabed3da224.ilean",
+        "c": "734e162967077706.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.olean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.ilean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/ir/FV/E2E/RegLevelCorrectX.c": {
+          "exists": false,
+          "sha256": null
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.DeadCleanupWorldX",
+      "path": ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.trace",
+      "key": "da35949c729c23e2",
+      "expected_key": "42ff28d91bf2c785",
+      "key_match": false,
+      "trace_sha256": "a32d282652ff22c1293f95319b65abc28cfd3ff3b38d06ad8714a2a68826c8cf",
+      "output_descriptors": {
+        "o": [
+          "4268e1a893c57994.olean"
+        ],
+        "m": false,
+        "i": "0b112810f809b63e.ilean",
+        "c": "34407504fde1c942.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.olean": {
+          "exists": true,
+          "sha256": "839a6d9a4d2e49bed9699874b1abb45481232eafce27204c6582704093b83998"
+        },
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.ilean": {
+          "exists": true,
+          "sha256": "1f846385899fd43e3bb6875724b26c3dfe0e28949b78897a342eb5449045bb42"
+        },
+        ".git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/ir/FV/E2E/DeadCleanupWorldX.c": {
+          "exists": false,
+          "sha256": null
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.LinkClif",
+      "path": ".git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/no-call-bounded-adapter-readiness-v1/linkclif-native-origin-v1/reproduced-traces/FV/E2E/LinkClif.trace",
+      "key": "cbd1bb10b6863ea7",
+      "expected_key": "cbd1bb10b6863ea7",
+      "key_match": true,
+      "trace_sha256": "c6eafebd758a097a256925ae183a20393e246668a55c36f59baaf21d1678be98",
+      "output_descriptors": {
+        "m": false,
+        "o": [
+          "db8e2178cc861df7.olean"
+        ],
+        "i": "0cdeaa5af9093331.ilean",
+        "c": "9414c42eb262839f.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/no-call-bounded-adapter-readiness-v1/linkclif-native-origin-v1/reproduced-traces/FV/E2E/LinkClif.olean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/no-call-bounded-adapter-readiness-v1/linkclif-native-origin-v1/reproduced-traces/FV/E2E/LinkClif.ilean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/no-call-bounded-adapter-readiness-v1/linkclif-native-origin-v1/reproduced-traces/FV/E2E/LinkClif.trace/.lake/build/ir/FV/E2E/LinkClif.c": {
+          "exists": false,
+          "sha256": null
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.RegLevelCorrectX",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.trace",
+      "key": "2862eef808cc066f",
+      "expected_key": "2862eef808cc066f",
+      "key_match": true,
+      "trace_sha256": "0b1135884c9f104ca3b002804dbaf7c4e4d1299870f710fb4950c1617305fc48",
+      "output_descriptors": {
+        "o": [
+          "c5ff5027251f3082.olean"
+        ],
+        "m": false,
+        "i": "3337bbabed3da224.ilean",
+        "c": "734e162967077706.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.olean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.ilean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/ir/FV/E2E/RegLevelCorrectX.c": {
+          "exists": false,
+          "sha256": null
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.DeadCleanupWorldX",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.trace",
+      "key": "42ff28d91bf2c785",
+      "expected_key": "42ff28d91bf2c785",
+      "key_match": true,
+      "trace_sha256": "18252d43cbde00bdf5ab4099f8ef5ad45df185359a5c2a6c5815d86a39f5e957",
+      "output_descriptors": {
+        "o": [
+          "3855d8b3bb813a93.olean"
+        ],
+        "m": false,
+        "i": "3f76ff095c9f928d.ilean",
+        "c": "34407504fde1c942.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.olean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.ilean": {
+          "exists": false,
+          "sha256": null
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/ir/FV/E2E/DeadCleanupWorldX.c": {
+          "exists": false,
+          "sha256": null
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.DeadCleanupWorldXW",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldXW.trace",
+      "key": "2f483f351094a856",
+      "expected_key": "2f483f351094a856",
+      "key_match": true,
+      "trace_sha256": "9d40549cc4f630c535d9a7d224c50696082640ae313b048fcb94bbcaa21817b8",
+      "output_descriptors": {
+        "o": [
+          "771e9f77f3f7a721.olean"
+        ],
+        "m": false,
+        "i": "a06503aeca79f8bb.ilean",
+        "c": "c4b69d5735125213.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldXW.olean": {
+          "exists": true,
+          "sha256": "e7ff0bcf13600735902451c5850a97487906a7f11392be3f612e52dd7f24e6f6"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldXW.ilean": {
+          "exists": true,
+          "sha256": "d04160dfefc943f0b3511fa26bcf2c92c4c11112a858b258edcfbba88ba505d4"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/ir/FV/E2E/DeadCleanupWorldXW.c": {
+          "exists": true,
+          "sha256": "d3f98bd192c0954701d94c4d012163bc4a388c80265b20e6c259c50374910e14"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.LinkWorldXW",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/lib/lean/FV/E2E/LinkWorldXW.trace",
+      "key": "d86fc4c3beea0459",
+      "expected_key": "d86fc4c3beea0459",
+      "key_match": true,
+      "trace_sha256": "f4d333c41147c9af00d8c3ec7b8500961bc6a42b7eaff14f4600abe93e816e6e",
+      "output_descriptors": {
+        "o": [
+          "eec1f4b180832bb9.olean"
+        ],
+        "m": false,
+        "i": "63b839239db4f932.ilean",
+        "c": "fafeac159149c927.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/lib/lean/FV/E2E/LinkWorldXW.olean": {
+          "exists": true,
+          "sha256": "ade9d7a92f00b539de355725829f2e49625bfd03070c8426f456f34a754165b1"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/lib/lean/FV/E2E/LinkWorldXW.ilean": {
+          "exists": true,
+          "sha256": "5bea38c8e8cbdfe742ec1a40be7f6172284c42b58dfb9b3b3fecc0c9f01fb65d"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/ir/FV/E2E/LinkWorldXW.c": {
+          "exists": true,
+          "sha256": "b1359d6bbdb0916d3325660ebf286752ec599fdc3abb4bb2196fa5853e327c8d"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.DeadCleanupWorldX",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.trace",
+      "key": "9e008f0c17aab63e",
+      "expected_key": "42ff28d91bf2c785",
+      "key_match": false,
+      "trace_sha256": "61396ed3bc743714f73c8c44d80391cee149cc5925b5f38df0f013976af6bd84",
+      "output_descriptors": {
+        "o": [
+          "3855d8b3bb813a93.olean"
+        ],
+        "m": false,
+        "i": "3f76ff095c9f928d.ilean",
+        "c": "34407504fde1c942.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.olean": {
+          "exists": true,
+          "sha256": "bc2a58ab7c20baac4535b15f9e7c0f666c0c97c41b58f8150419e2813c870be0"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.ilean": {
+          "exists": true,
+          "sha256": "910c7d146b3948a74c45f52e40167f41291b29dfa93ac76d855d3030c6713123"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/ir/FV/E2E/DeadCleanupWorldX.c": {
+          "exists": true,
+          "sha256": "9bbf4b7a7a1c133a1df3d66c5adac2e214e773c3cda465f5a9353b482eaa4308"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.RegLevelCorrectX",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.trace",
+      "key": "038f0446c25408ac",
+      "expected_key": "2862eef808cc066f",
+      "key_match": false,
+      "trace_sha256": "46294afcb0d91f0ac81c162c7e1e40c2250067fbef03c54c5dce2fc3bb2e1987",
+      "output_descriptors": {
+        "o": [
+          "c5ff5027251f3082.olean"
+        ],
+        "m": false,
+        "i": "3337bbabed3da224.ilean",
+        "c": "734e162967077706.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.olean": {
+          "exists": true,
+          "sha256": "a452c580fc72992682052b20bcc65378d038bf53f788b0fc87df0cdc0a423f75"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.ilean": {
+          "exists": true,
+          "sha256": "f6ea5cee4b01e21c08404844771544c452f67839457ba0ec7d3212dc0dacb6a6"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/ir/FV/E2E/RegLevelCorrectX.c": {
+          "exists": true,
+          "sha256": "6a77c3ddc033c483a0ef2d0021cef23056e514155cf2b7b8f16ffdaa8d1510b6"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.LinkClif",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/LinkClif.trace",
+      "key": "cbd1bb10b6863ea7",
+      "expected_key": "cbd1bb10b6863ea7",
+      "key_match": true,
+      "trace_sha256": "c6eafebd758a097a256925ae183a20393e246668a55c36f59baaf21d1678be98",
+      "output_descriptors": {
+        "m": false,
+        "o": [
+          "db8e2178cc861df7.olean"
+        ],
+        "i": "0cdeaa5af9093331.ilean",
+        "c": "9414c42eb262839f.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/LinkClif.olean": {
+          "exists": true,
+          "sha256": "65e77a79dbc570298e07110692e02a3a1700c19c90e0af9f2ac796e4d9e248f4"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/LinkClif.ilean": {
+          "exists": true,
+          "sha256": "596cc10e5c11ae21194f88a17194627a94215eb1351ea3f0fdf4023976bf6884"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/ir/FV/E2E/LinkClif.c": {
+          "exists": true,
+          "sha256": "defa7fce868958a9a8f207df3f0a9097e95a9bfcc6cb8f030d2f2574f7e55b27"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.LinkClif",
+      "path": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LinkClif.trace",
+      "key": "cbd1bb10b6863ea7",
+      "expected_key": "cbd1bb10b6863ea7",
+      "key_match": true,
+      "trace_sha256": "c6eafebd758a097a256925ae183a20393e246668a55c36f59baaf21d1678be98",
+      "output_descriptors": {
+        "m": false,
+        "o": [
+          "db8e2178cc861df7.olean"
+        ],
+        "i": "0cdeaa5af9093331.ilean",
+        "c": "9414c42eb262839f.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LinkClif.olean": {
+          "exists": true,
+          "sha256": "65e77a79dbc570298e07110692e02a3a1700c19c90e0af9f2ac796e4d9e248f4"
+        },
+        ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LinkClif.ilean": {
+          "exists": true,
+          "sha256": "596cc10e5c11ae21194f88a17194627a94215eb1351ea3f0fdf4023976bf6884"
+        },
+        ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/E2E/LinkClif.c": {
+          "exists": true,
+          "sha256": "defa7fce868958a9a8f207df3f0a9097e95a9bfcc6cb8f030d2f2574f7e55b27"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.DeadCleanupWorldX",
+      "path": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.trace",
+      "key": "9e008f0c17aab63e",
+      "expected_key": "42ff28d91bf2c785",
+      "key_match": false,
+      "trace_sha256": "61396ed3bc743714f73c8c44d80391cee149cc5925b5f38df0f013976af6bd84",
+      "output_descriptors": {
+        "o": [
+          "3855d8b3bb813a93.olean"
+        ],
+        "m": false,
+        "i": "3f76ff095c9f928d.ilean",
+        "c": "34407504fde1c942.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.olean": {
+          "exists": true,
+          "sha256": "bc2a58ab7c20baac4535b15f9e7c0f666c0c97c41b58f8150419e2813c870be0"
+        },
+        ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.ilean": {
+          "exists": true,
+          "sha256": "910c7d146b3948a74c45f52e40167f41291b29dfa93ac76d855d3030c6713123"
+        },
+        ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/E2E/DeadCleanupWorldX.c": {
+          "exists": true,
+          "sha256": "9bbf4b7a7a1c133a1df3d66c5adac2e214e773c3cda465f5a9353b482eaa4308"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.RegLevelCorrectX",
+      "path": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.trace",
+      "key": "038f0446c25408ac",
+      "expected_key": "2862eef808cc066f",
+      "key_match": false,
+      "trace_sha256": "46294afcb0d91f0ac81c162c7e1e40c2250067fbef03c54c5dce2fc3bb2e1987",
+      "output_descriptors": {
+        "o": [
+          "c5ff5027251f3082.olean"
+        ],
+        "m": false,
+        "i": "3337bbabed3da224.ilean",
+        "c": "734e162967077706.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.olean": {
+          "exists": true,
+          "sha256": "a452c580fc72992682052b20bcc65378d038bf53f788b0fc87df0cdc0a423f75"
+        },
+        ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.ilean": {
+          "exists": true,
+          "sha256": "f6ea5cee4b01e21c08404844771544c452f67839457ba0ec7d3212dc0dacb6a6"
+        },
+        ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/E2E/RegLevelCorrectX.c": {
+          "exists": true,
+          "sha256": "6a77c3ddc033c483a0ef2d0021cef23056e514155cf2b7b8f16ffdaa8d1510b6"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.LinkClif",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/LinkClif.trace",
+      "key": "cbd1bb10b6863ea7",
+      "expected_key": "cbd1bb10b6863ea7",
+      "key_match": true,
+      "trace_sha256": "c6eafebd758a097a256925ae183a20393e246668a55c36f59baaf21d1678be98",
+      "output_descriptors": {
+        "m": false,
+        "o": [
+          "db8e2178cc861df7.olean"
+        ],
+        "i": "0cdeaa5af9093331.ilean",
+        "c": "9414c42eb262839f.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/LinkClif.olean": {
+          "exists": true,
+          "sha256": "65e77a79dbc570298e07110692e02a3a1700c19c90e0af9f2ac796e4d9e248f4"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/LinkClif.ilean": {
+          "exists": true,
+          "sha256": "596cc10e5c11ae21194f88a17194627a94215eb1351ea3f0fdf4023976bf6884"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/E2E/LinkClif.c": {
+          "exists": true,
+          "sha256": "defa7fce868958a9a8f207df3f0a9097e95a9bfcc6cb8f030d2f2574f7e55b27"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.RegLevelCorrectX",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.trace",
+      "key": "038f0446c25408ac",
+      "expected_key": "2862eef808cc066f",
+      "key_match": false,
+      "trace_sha256": "46294afcb0d91f0ac81c162c7e1e40c2250067fbef03c54c5dce2fc3bb2e1987",
+      "output_descriptors": {
+        "o": [
+          "c5ff5027251f3082.olean"
+        ],
+        "m": false,
+        "i": "3337bbabed3da224.ilean",
+        "c": "734e162967077706.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.olean": {
+          "exists": true,
+          "sha256": "a452c580fc72992682052b20bcc65378d038bf53f788b0fc87df0cdc0a423f75"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/RegLevelCorrectX.ilean": {
+          "exists": true,
+          "sha256": "f6ea5cee4b01e21c08404844771544c452f67839457ba0ec7d3212dc0dacb6a6"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/E2E/RegLevelCorrectX.c": {
+          "exists": true,
+          "sha256": "6a77c3ddc033c483a0ef2d0021cef23056e514155cf2b7b8f16ffdaa8d1510b6"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.DeadCleanupWorldX",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.trace",
+      "key": "9e008f0c17aab63e",
+      "expected_key": "42ff28d91bf2c785",
+      "key_match": false,
+      "trace_sha256": "61396ed3bc743714f73c8c44d80391cee149cc5925b5f38df0f013976af6bd84",
+      "output_descriptors": {
+        "o": [
+          "3855d8b3bb813a93.olean"
+        ],
+        "m": false,
+        "i": "3f76ff095c9f928d.ilean",
+        "c": "34407504fde1c942.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.olean": {
+          "exists": true,
+          "sha256": "bc2a58ab7c20baac4535b15f9e7c0f666c0c97c41b58f8150419e2813c870be0"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldX.ilean": {
+          "exists": true,
+          "sha256": "910c7d146b3948a74c45f52e40167f41291b29dfa93ac76d855d3030c6713123"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/E2E/DeadCleanupWorldX.c": {
+          "exists": true,
+          "sha256": "9bbf4b7a7a1c133a1df3d66c5adac2e214e773c3cda465f5a9353b482eaa4308"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.DeadCleanupWorldXW",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldXW.trace",
+      "key": "c5d2d5d190d02e29",
+      "expected_key": "2f483f351094a856",
+      "key_match": false,
+      "trace_sha256": "7fb272fac6ca57c2d983bdc776d23096973433b0806e9a77e049a0ac9882a58d",
+      "output_descriptors": {
+        "o": [
+          "771e9f77f3f7a721.olean"
+        ],
+        "m": false,
+        "i": "a06503aeca79f8bb.ilean",
+        "c": "c4b69d5735125213.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldXW.olean": {
+          "exists": true,
+          "sha256": "e7ff0bcf13600735902451c5850a97487906a7f11392be3f612e52dd7f24e6f6"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/DeadCleanupWorldXW.ilean": {
+          "exists": true,
+          "sha256": "d04160dfefc943f0b3511fa26bcf2c92c4c11112a858b258edcfbba88ba505d4"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/E2E/DeadCleanupWorldXW.c": {
+          "exists": true,
+          "sha256": "d3f98bd192c0954701d94c4d012163bc4a388c80265b20e6c259c50374910e14"
+        }
+      }
+    },
+    {
+      "module": "FV.E2E.LinkWorldXW",
+      "path": ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/LinkWorldXW.trace",
+      "key": "db25d315a5479212",
+      "expected_key": "d86fc4c3beea0459",
+      "key_match": false,
+      "trace_sha256": "b14f2b78213299b92ce637273881edc1a12de1b515555e08977964098967eee2",
+      "output_descriptors": {
+        "o": [
+          "eec1f4b180832bb9.olean"
+        ],
+        "m": false,
+        "i": "63b839239db4f932.ilean",
+        "c": "fafeac159149c927.c"
+      },
+      "payloads": {
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/LinkWorldXW.olean": {
+          "exists": true,
+          "sha256": "ade9d7a92f00b539de355725829f2e49625bfd03070c8426f456f34a754165b1"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/LinkWorldXW.ilean": {
+          "exists": true,
+          "sha256": "5bea38c8e8cbdfe742ec1a40be7f6172284c42b58dfb9b3b3fecc0c9f01fb65d"
+        },
+        ".git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/E2E/LinkWorldXW.c": {
+          "exists": true,
+          "sha256": "b1359d6bbdb0916d3325660ebf286752ec599fdc3abb4bb2196fa5853e327c8d"
+        }
+      }
+    }
+  ],
+  "no_payload_copy": true
+}

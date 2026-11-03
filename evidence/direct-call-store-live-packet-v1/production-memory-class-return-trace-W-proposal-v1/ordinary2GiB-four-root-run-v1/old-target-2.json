@@ -1,0 +1,11 @@
+{
+  ".lake/build/lib/lean/FV/E2E/StockMemoryNopNonentryPairedReturn.ilean": "fa08a190284e34087e7683767cb697a45ad4ecd70a6708e5225de2fa2adac6e4",
+  ".lake/build/lib/lean/FV/E2E/StockMemoryNopNonentryPairedReturn.ilean.hash": "815e5a0e77c9bb8c20322d31f5ac64c3318ca8ab14a1ebb472f0cbd3c3e19e1e",
+  ".lake/build/lib/lean/FV/E2E/StockMemoryNopNonentryPairedReturn.olean": "93b4f5351bb04befcf43918d666d1062639dfa93bfadf8abab6f3de969a3db49",
+  ".lake/build/lib/lean/FV/E2E/StockMemoryNopNonentryPairedReturn.olean.hash": "107068a8e7cd6fe28b09b23b22108dd4677e69a75c8f9038f023e525f71d2ca1",
+  ".lake/build/lib/lean/FV/E2E/StockMemoryNopNonentryPairedReturn.trace": "1463698f8f41725fcc5b03acbd8bba4093d49f754152862a96f57d101baca7da",
+  ".lake/build/lib/lean/FV/E2E/StockMemoryNopNonentryPairedReturn.trace.nobuild": "0b508abdebe96f1e3ad1d342f5583c74ebc167acb40988900e176bcb33478103",
+  ".lake/build/ir/FV/E2E/StockMemoryNopNonentryPairedReturn.c": "69788ca949e7d78c669a4eecb73e14b096cdb722423e73b127f171c3d71394ef",
+  ".lake/build/ir/FV/E2E/StockMemoryNopNonentryPairedReturn.c.hash": "91b7d494e9ad915ea18bdb3283423ef78de6eae7581575d1711fe13da25f3004",
+  ".lake/build/ir/FV/E2E/StockMemoryNopNonentryPairedReturn.setup.json": "383619e76336006690cb8f7cc78bc8d810737191bf3d1fa611f6603a8265eb25"
+}

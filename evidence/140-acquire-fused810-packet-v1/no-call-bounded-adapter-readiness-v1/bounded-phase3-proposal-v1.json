@@ -1,0 +1,803 @@
+{
+  "status": "PROPOSAL_ONLY_NO_PROVIDER_BUILD_AUTHORIZED",
+  "phase2_sha256": "46815667197d62b9a273a2ec344c8bd81ebb82d9555e9faace42dc29fda0455d",
+  "query_receipt_sha256": "cda1a0486767b96d494e1ae9254fc31e1e9cdb44639054d05d611a2168f9962a",
+  "retained_inventory_sha256": "1efe1297d5f162f7e07698388bb134cf560156275038473340b10d657c444afc",
+  "linkplace_creator_receipt_sha256": "53332a851b4f94982035f0f03184852f3abc92299e562d96f3c7c826468ca427",
+  "linkplace_donor_comparison_sha256": "d6a67df334c690028d55f55116dc276e047e7b9fec0194943b7637c2192fb7db",
+  "requested_cap_GiB": 3,
+  "requested_share_transfer": "source2 + acquire1 only after both renewed releases and parent approval",
+  "aggregate_budget_GiB": 16,
+  "broad_GiB": 12,
+  "orchestration_GiB": 1,
+  "config_policy": "temporary approved weak-j1 projection; preserve canonical bytes; verify expected keys; fresh independent all-exit config/share guard",
+  "leaf_policy": "only CompiledEither leaf; normal dependencies before recovery/build; stop first failure; actual normal after each",
+  "proposed_order": [
+    {
+      "module": "FV.E2E.LinkPlace",
+      "source_sha256": "e9be297f0981fca6148dd554faa2648519150c78b173f2526672099eccb1e74a",
+      "expected_key": "5c9ee145acafbded",
+      "complete_closure": [
+        "FV.Clif.FSem",
+        "FV.Clif.Mem",
+        "FV.Clif.Run",
+        "FV.Clif.Sem",
+        "FV.Clif.Syntax",
+        "FV.E2E.LinkClif",
+        "FV.E2E.LinkClifN",
+        "FV.E2E.LinkPlace",
+        "FV.Float",
+        "FV.Float.Arith",
+        "FV.Float.Basic",
+        "FV.Float.Convert",
+        "FV.Float.Round",
+        "FV.Opt.Proof.SemSim"
+      ],
+      "all_dependencies_in_passed382": true,
+      "action": "recover_exact_approved_native_archive_after_review",
+      "variants": [
+        {
+          "module": "FV.E2E.LinkPlace",
+          "trace": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-no-build-copy-preflight-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/LinkPlace.trace",
+          "trace_sha256": "de0c681bde569efcf55e5a3056fda014c33bc74c34f170553a053d07bbe4387b",
+          "native_key": "5c9ee145acafbded",
+          "expected_key": "5c9ee145acafbded",
+          "key_match": true,
+          "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-no-build-copy-preflight-v2/prior-descriptors/FV/E2E/LinkPlace.lean",
+          "source_matches": false,
+          "payloads": {
+            "olean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-no-build-copy-preflight-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/LinkPlace.olean",
+              "exists": true,
+              "sha256": "9167d77b1cc201fe6b8ad03e55abf96388846d1c78adbc49cd356d9b1a512872"
+            },
+            "ilean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-no-build-copy-preflight-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/LinkPlace.ilean",
+              "exists": false,
+              "sha256": null
+            },
+            "c": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/direct33-no-build-copy-preflight-v2/prior-descriptors/.lake/build/ir/FV/E2E/LinkPlace.c",
+              "exists": false,
+              "sha256": null
+            }
+          },
+          "active_writers": [],
+          "creator_provenance": "not_yet_bound",
+          "not_approved_for_reuse": true
+        },
+        {
+          "module": "FV.E2E.LinkPlace",
+          "trace": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/LinkPlace.trace",
+          "trace_sha256": "2e69a4386feb57a16aa070d2eefa0bfa953e3ac2e8d86bd7c61931a21bf9b979",
+          "native_key": "5c9ee145acafbded",
+          "expected_key": "5c9ee145acafbded",
+          "key_match": true,
+          "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/FV/E2E/LinkPlace.lean",
+          "source_matches": false,
+          "payloads": {
+            "olean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/LinkPlace.olean",
+              "exists": false,
+              "sha256": null
+            },
+            "ilean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/LinkPlace.ilean",
+              "exists": false,
+              "sha256": null
+            },
+            "c": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/ir/FV/E2E/LinkPlace.c",
+              "exists": false,
+              "sha256": null
+            }
+          },
+          "active_writers": [],
+          "creator_provenance": "not_yet_bound",
+          "not_approved_for_reuse": true
+        },
+        {
+          "module": "FV.E2E.LinkPlace",
+          "trace": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LinkPlace.trace",
+          "trace_sha256": "2e69a4386feb57a16aa070d2eefa0bfa953e3ac2e8d86bd7c61931a21bf9b979",
+          "native_key": "5c9ee145acafbded",
+          "expected_key": "5c9ee145acafbded",
+          "key_match": true,
+          "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/E2E/LinkPlace.lean",
+          "source_matches": true,
+          "payloads": {
+            "olean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LinkPlace.olean",
+              "exists": true,
+              "sha256": "9167d77b1cc201fe6b8ad03e55abf96388846d1c78adbc49cd356d9b1a512872"
+            },
+            "ilean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/LinkPlace.ilean",
+              "exists": true,
+              "sha256": "7c21609f74fd9c6de265fa3200743c31c6bb82146bc06475b48965ac5264c4bc"
+            },
+            "c": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/E2E/LinkPlace.c",
+              "exists": true,
+              "sha256": "70f8141343d49cbfb1ba006e46c89bb4c14d1d11c55f2431c28722c6d1357afd"
+            }
+          },
+          "active_writers": [],
+          "creator_provenance": "not_yet_bound",
+          "not_approved_for_reuse": true
+        },
+        {
+          "module": "FV.E2E.LinkPlace",
+          "trace": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/LinkPlace.trace",
+          "trace_sha256": "48af6341bbc454b484b38e2143dc1bbafff6a96b87d164e98b43752b01dbad58",
+          "native_key": "1c0d6a44fbac994c",
+          "expected_key": "5c9ee145acafbded",
+          "key_match": false,
+          "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/FV/E2E/LinkPlace.lean",
+          "source_matches": true,
+          "payloads": {
+            "olean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/LinkPlace.olean",
+              "exists": true,
+              "sha256": "1af08c220f7b87e013a3bed3e2dd581d0ba3492093fa253bd40f981692810f08"
+            },
+            "ilean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/LinkPlace.ilean",
+              "exists": true,
+              "sha256": "7c21609f74fd9c6de265fa3200743c31c6bb82146bc06475b48965ac5264c4bc"
+            },
+            "c": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/ir/FV/E2E/LinkPlace.c",
+              "exists": true,
+              "sha256": "70f8141343d49cbfb1ba006e46c89bb4c14d1d11c55f2431c28722c6d1357afd"
+            }
+          },
+          "active_writers": [],
+          "creator_provenance": "not_yet_bound",
+          "not_approved_for_reuse": true
+        },
+        {
+          "module": "FV.E2E.LinkPlace",
+          "trace": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/LinkPlace.trace",
+          "trace_sha256": "48af6341bbc454b484b38e2143dc1bbafff6a96b87d164e98b43752b01dbad58",
+          "native_key": "1c0d6a44fbac994c",
+          "expected_key": "5c9ee145acafbded",
+          "key_match": false,
+          "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/E2E/LinkPlace.lean",
+          "source_matches": true,
+          "payloads": {
+            "olean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/LinkPlace.olean",
+              "exists": true,
+              "sha256": "1af08c220f7b87e013a3bed3e2dd581d0ba3492093fa253bd40f981692810f08"
+            },
+            "ilean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/LinkPlace.ilean",
+              "exists": true,
+              "sha256": "7c21609f74fd9c6de265fa3200743c31c6bb82146bc06475b48965ac5264c4bc"
+            },
+            "c": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/E2E/LinkPlace.c",
+              "exists": true,
+              "sha256": "70f8141343d49cbfb1ba006e46c89bb4c14d1d11c55f2431c28722c6d1357afd"
+            }
+          },
+          "active_writers": [],
+          "creator_provenance": "not_yet_bound",
+          "not_approved_for_reuse": true
+        }
+      ],
+      "historical_peaks": [
+        {
+          "module": "FV.E2E.LinkPlace",
+          "raw_record": "FV.E2E.LinkPlace\t611\t2.0",
+          "evidence_path": ".git/agent-evidence/stock-memory-20261029/stock-current-main-full-gate-v6/conservative-peaks.tsv",
+          "historical_not_an_exact_new_key_profile": true
+        }
+      ],
+      "peak_bound_to_current_key": false
+    },
+    {
+      "module": "FV.E2E.CompiledEither",
+      "source_sha256": "69bed92675c620a3fe1a7bccfbff820cbeae1a0ec093535d5964a03cb138bd06",
+      "expected_key": "cfa5ab1ba93a25fe",
+      "complete_closure": [
+        "FV.Arm.Attr",
+        "FV.Arm.BitVec",
+        "FV.Arm.Decode",
+        "FV.Arm.Decode.BR",
+        "FV.Arm.Decode.DPI",
+        "FV.Arm.Decode.DPR",
+        "FV.Arm.Decode.DPSFP",
+        "FV.Arm.Decode.LDST",
+        "FV.Arm.Decode.Reserved",
+        "FV.Arm.Exec",
+        "FV.Arm.FromMathlib",
+        "FV.Arm.Insts",
+        "FV.Arm.Insts.BR.Barrier",
+        "FV.Arm.Insts.BR.Compare_branch",
+        "FV.Arm.Insts.BR.Cond_branch_imm",
+        "FV.Arm.Insts.BR.Hints",
+        "FV.Arm.Insts.BR.Insts",
+        "FV.Arm.Insts.BR.Mrs",
+        "FV.Arm.Insts.BR.Test_branch",
+        "FV.Arm.Insts.BR.Uncond_branch_imm",
+        "FV.Arm.Insts.BR.Uncond_branch_reg",
+        "FV.Arm.Insts.Common",
+        "FV.Arm.Insts.DPI.Add_sub_imm",
+        "FV.Arm.Insts.DPI.Bitfield",
+        "FV.Arm.Insts.DPI.Extract",
+        "FV.Arm.Insts.DPI.Insts",
+        "FV.Arm.Insts.DPI.Logical_imm",
+        "FV.Arm.Insts.DPI.Move_wide_imm",
+        "FV.Arm.Insts.DPI.PC_rel_addressing",
+        "FV.Arm.Insts.DPR.Add_sub_carry",
+        "FV.Arm.Insts.DPR.Add_sub_ext_reg",
+        "FV.Arm.Insts.DPR.Add_sub_shifted_reg",
+        "FV.Arm.Insts.DPR.Conditional_compare",
+        "FV.Arm.Insts.DPR.Conditional_select",
+        "FV.Arm.Insts.DPR.Data_processing_one_source",
+        "FV.Arm.Insts.DPR.Data_processing_three_source",
+        "FV.Arm.Insts.DPR.Data_processing_two_source",
+        "FV.Arm.Insts.DPR.Insts",
+        "FV.Arm.Insts.DPR.Logical_shifted_reg",
+        "FV.Arm.Insts.DPSFP.Advanced_simd_across_lanes",
+        "FV.Arm.Insts.DPSFP.Advanced_simd_copy",
+        "FV.Arm.Insts.DPSFP.Advanced_simd_modified_immediate",
+        "FV.Arm.Insts.DPSFP.Advanced_simd_three_same",
+        "FV.Arm.Insts.DPSFP.Advanced_simd_two_reg_misc",
+        "FV.Arm.Insts.DPSFP.Conversion_between_FP_and_Int",
+        "FV.Arm.Insts.DPSFP.FP_compare",
+        "FV.Arm.Insts.DPSFP.FP_conditional_select",
+        "FV.Arm.Insts.DPSFP.FP_data_processing_one_source",
+        "FV.Arm.Insts.DPSFP.FP_data_processing_three_source",
+        "FV.Arm.Insts.DPSFP.FP_data_processing_two_source",
+        "FV.Arm.Insts.DPSFP.FP_immediate",
+        "FV.Arm.Insts.DPSFP.Insts",
+        "FV.Arm.Insts.LDST.Insts",
+        "FV.Arm.Insts.LDST.Reg_imm",
+        "FV.Arm.Insts.LDST.Reg_literal",
+        "FV.Arm.Insts.LDST.Reg_pair",
+        "FV.Arm.Insts.LDST.Reg_unscaled_imm",
+        "FV.Arm.Insts.Reserved.Udf",
+        "FV.Arm.Map",
+        "FV.Arm.Memory.MemoryProofs",
+        "FV.Arm.Memory.Separate",
+        "FV.Arm.Memory.SeparateProofs",
+        "FV.Arm.MinTheory",
+        "FV.Arm.State",
+        "FV.Arm.Tactics.Attr",
+        "FV.Arm.Tactics.BvOmegaBench",
+        "FV.Backend.Asm",
+        "FV.Backend.DeadCleanup",
+        "FV.Backend.Encode",
+        "FV.Backend.InputScope",
+        "FV.Backend.Isel",
+        "FV.Backend.MInst",
+        "FV.Backend.Proof.AbiClass",
+        "FV.Backend.Proof.CSemRename",
+        "FV.Backend.Proof.DeadCleanupAdapter",
+        "FV.Backend.Proof.DeadCleanupCFG",
+        "FV.Backend.Proof.DeadCleanupCorrect",
+        "FV.Backend.Proof.DeadCleanupEdges",
+        "FV.Backend.Proof.DeadCleanupFlow",
+        "FV.Backend.Proof.DeadCleanupLive",
+        "FV.Backend.Proof.DeadCleanupPrepare",
+        "FV.Backend.Proof.DeadCleanupSem",
+        "FV.Backend.Proof.DeadCleanupSimulation",
+        "FV.Backend.Proof.DeadCleanupStructure",
+        "FV.Backend.Proof.DriverCheck",
+        "FV.Backend.Proof.DriverCheckSound",
+        "FV.Backend.Proof.Encode",
+        "FV.Backend.Proof.EncodeBR",
+        "FV.Backend.Proof.EncodeBase",
+        "FV.Backend.Proof.EncodeBranch",
+        "FV.Backend.Proof.EncodeDPI",
+        "FV.Backend.Proof.EncodeDPR",
+        "FV.Backend.Proof.EncodeDPSFP",
+        "FV.Backend.Proof.EncodeLDST",
+        "FV.Backend.Proof.EncodeLayout",
+        "FV.Backend.Proof.EncodeRES",
+        "FV.Backend.Proof.EncodeStep",
+        "FV.Backend.Proof.FastSubst",
+        "FV.Backend.Proof.IselAtomic",
+        "FV.Backend.Proof.IselAttr",
+        "FV.Backend.Proof.IselCmpBase",
+        "FV.Backend.Proof.IselCmpCond",
+        "FV.Backend.Proof.IselCmpDiv",
+        "FV.Backend.Proof.IselCmpDivRem",
+        "FV.Backend.Proof.IselCmpDivRoot",
+        "FV.Backend.Proof.IselCmpEmit",
+        "FV.Backend.Proof.IselCmpExt",
+        "FV.Backend.Proof.IselCmpIcmp",
+        "FV.Backend.Proof.IselCmpInv",
+        "FV.Backend.Proof.IselCmpMinMax",
+        "FV.Backend.Proof.IselCmpRoot",
+        "FV.Backend.Proof.IselCmpRun",
+        "FV.Backend.Proof.IselCmpSdiv",
+        "FV.Backend.Proof.IselCmpSelect",
+        "FV.Backend.Proof.IselCmpTerms",
+        "FV.Backend.Proof.IselCmpVec",
+        "FV.Backend.Proof.IselContract",
+        "FV.Backend.Proof.IselContractP",
+        "FV.Backend.Proof.IselCtl",
+        "FV.Backend.Proof.IselCtlBase",
+        "FV.Backend.Proof.IselCtlBrTable",
+        "FV.Backend.Proof.IselCtlBranch",
+        "FV.Backend.Proof.IselCtlBrif",
+        "FV.Backend.Proof.IselCtlCall",
+        "FV.Backend.Proof.IselCtlCallInd",
+        "FV.Backend.Proof.IselCtlCallRules",
+        "FV.Backend.Proof.IselCtlRuleIds",
+        "FV.Backend.Proof.IselCtlTbz",
+        "FV.Backend.Proof.IselCtlTerm",
+        "FV.Backend.Proof.IselCtlTry",
+        "FV.Backend.Proof.IselCtlTryInd",
+        "FV.Backend.Proof.IselCtlUnmatch",
+        "FV.Backend.Proof.IselData",
+        "FV.Backend.Proof.IselExcl",
+        "FV.Backend.Proof.IselExclBase",
+        "FV.Backend.Proof.IselExclData",
+        "FV.Backend.Proof.IselExclSound",
+        "FV.Backend.Proof.IselExtern",
+        "FV.Backend.Proof.IselFamALUA",
+        "FV.Backend.Proof.IselFamALUAExt",
+        "FV.Backend.Proof.IselFamALUAExtr",
+        "FV.Backend.Proof.IselFamALUALogic",
+        "FV.Backend.Proof.IselFamALUALogicNot",
+        "FV.Backend.Proof.IselFamALUAMul",
+        "FV.Backend.Proof.IselFamALUAMulN",
+        "FV.Backend.Proof.IselFamALUARules",
+        "FV.Backend.Proof.IselFamALUATI",
+        "FV.Backend.Proof.IselFamAluBBase",
+        "FV.Backend.Proof.IselFamAluBBfm",
+        "FV.Backend.Proof.IselFamAluBBitrev",
+        "FV.Backend.Proof.IselFamAluBBswap",
+        "FV.Backend.Proof.IselFamAluBClz",
+        "FV.Backend.Proof.IselFamAluBExtend",
+        "FV.Backend.Proof.IselFamAluBIconst",
+        "FV.Backend.Proof.IselFamAluBMisc",
+        "FV.Backend.Proof.IselFamAluBNotShift",
+        "FV.Backend.Proof.IselFamAluBPopcnt",
+        "FV.Backend.Proof.IselFamAluBRot",
+        "FV.Backend.Proof.IselFamAluBRotTerms",
+        "FV.Backend.Proof.IselFamAluBShift",
+        "FV.Backend.Proof.IselFamAluBShiftBase",
+        "FV.Backend.Proof.IselFamAluBShiftTerms",
+        "FV.Backend.Proof.IselFamAluBUnary",
+        "FV.Backend.Proof.IselFamily",
+        "FV.Backend.Proof.IselFamilyALU",
+        "FV.Backend.Proof.IselFloatArith",
+        "FV.Backend.Proof.IselFloatBitcast",
+        "FV.Backend.Proof.IselFloatCmp",
+        "FV.Backend.Proof.IselFloatCmpEmit",
+        "FV.Backend.Proof.IselFloatConst",
+        "FV.Backend.Proof.IselFloatCvt",
+        "FV.Backend.Proof.IselFloatRound",
+        "FV.Backend.Proof.IselFloatSelect",
+        "FV.Backend.Proof.IselFloatVac",
+        "FV.Backend.Proof.IselGeneric",
+        "FV.Backend.Proof.IselInterp",
+        "FV.Backend.Proof.IselLcf",
+        "FV.Backend.Proof.IselLowerAll",
+        "FV.Backend.Proof.IselMemAddr",
+        "FV.Backend.Proof.IselMemAmode",
+        "FV.Backend.Proof.IselMemAmodeTop",
+        "FV.Backend.Proof.IselMemArm",
+        "FV.Backend.Proof.IselMemBase",
+        "FV.Backend.Proof.IselMemFuncAddr",
+        "FV.Backend.Proof.IselMemHelpers",
+        "FV.Backend.Proof.IselMemNoIconst",
+        "FV.Backend.Proof.IselMemRoots",
+        "FV.Backend.Proof.IselMemRun",
+        "FV.Backend.Proof.IselMemSem",
+        "FV.Backend.Proof.IselRules",
+        "FV.Backend.Proof.IselRulesALU",
+        "FV.Backend.Proof.IselRulesALUA",
+        "FV.Backend.Proof.IselSemCmp",
+        "FV.Backend.Proof.IselTerms",
+        "FV.Backend.Proof.IselTermsALUA",
+        "FV.Backend.Proof.IselTermsALUAExt",
+        "FV.Backend.Proof.IselTermsALUAExtr",
+        "FV.Backend.Proof.IselTermsALUAMul",
+        "FV.Backend.Proof.IselTermsALUAMulN",
+        "FV.Backend.Proof.IselTermsAluB",
+        "FV.Backend.Proof.IselTermsImm",
+        "FV.Backend.Proof.IselTermsLogic",
+        "FV.Backend.Proof.IselTermsLogicNot",
+        "FV.Backend.Proof.IselTermsShift",
+        "FV.Backend.Proof.IselTls",
+        "FV.Backend.Proof.LoopRun",
+        "FV.Backend.Proof.LowerContract",
+        "FV.Backend.Proof.LowerFrame",
+        "FV.Backend.Proof.LowerLemmas",
+        "FV.Backend.Proof.LowerOutcomes",
+        "FV.Backend.Proof.LowerRename",
+        "FV.Backend.Proof.LowerSeq",
+        "FV.Backend.Proof.LowerShape",
+        "FV.Backend.Proof.LowerSim",
+        "FV.Backend.Proof.LowerValueRelations",
+        "FV.Backend.Proof.MemRefines",
+        "FV.Backend.Proof.PairsC",
+        "FV.Backend.Proof.PrepareCheck",
+        "FV.Backend.Proof.PrepareComplete",
+        "FV.Backend.Proof.PrepareSound",
+        "FV.Backend.Proof.RefinesCSem",
+        "FV.Backend.Proof.RefinesInsts",
+        "FV.Backend.Proof.RefinesInsts2",
+        "FV.Backend.Proof.RegallocAtomic",
+        "FV.Backend.Proof.RegallocCSem",
+        "FV.Backend.Proof.RegallocCSemWorld",
+        "FV.Backend.Proof.RegallocCover",
+        "FV.Backend.Proof.RegallocFrame",
+        "FV.Backend.Proof.RegallocFwd",
+        "FV.Backend.Proof.RegallocInstsFP",
+        "FV.Backend.Proof.RegallocInstsInt",
+        "FV.Backend.Proof.RegallocInstsZR",
+        "FV.Backend.Proof.RegallocLayout",
+        "FV.Backend.Proof.RegallocLemmas",
+        "FV.Backend.Proof.RegallocMem",
+        "FV.Backend.Proof.RegallocMemAddr",
+        "FV.Backend.Proof.RegallocMemCorr",
+        "FV.Backend.Proof.RegallocMemFP",
+        "FV.Backend.Proof.RegallocMemOS",
+        "FV.Backend.Proof.RegallocMoves",
+        "FV.Backend.Proof.RegallocOS",
+        "FV.Backend.Proof.RegallocOperands",
+        "FV.Backend.Proof.RegallocSlots",
+        "FV.Backend.Proof.RegallocSlotsFar",
+        "FV.Backend.Proof.RegallocSound",
+        "FV.Backend.Proof.RegallocState",
+        "FV.Backend.Proof.RegallocTac",
+        "FV.Backend.Proof.TryRegs",
+        "FV.Backend.Proof.VCodeSem",
+        "FV.Backend.Proof.VCodeSemI",
+        "FV.Backend.Proof.VCodeSemISeq",
+        "FV.Backend.Regalloc",
+        "FV.Backend.RegallocCheck",
+        "FV.Backend.RegallocOps",
+        "FV.Backend.SpillAlloc",
+        "FV.Backend.StackAlloc",
+        "FV.Clif",
+        "FV.Clif.FSem",
+        "FV.Clif.FloatFacts",
+        "FV.Clif.FloatLit",
+        "FV.Clif.Mem",
+        "FV.Clif.Parse",
+        "FV.Clif.Print",
+        "FV.Clif.Run",
+        "FV.Clif.Rust",
+        "FV.Clif.Sem",
+        "FV.Clif.Syntax",
+        "FV.Compile.StoreTyped",
+        "FV.Compile.Subset",
+        "FV.Compile.SubsetT",
+        "FV.E2E.CompiledEither",
+        "FV.E2E.Compose",
+        "FV.E2E.DeadCleanupContracts",
+        "FV.E2E.DeadCleanupFinal",
+        "FV.E2E.DeadCleanupGot",
+        "FV.E2E.DeadCleanupGuarded",
+        "FV.E2E.DeadCleanupPair",
+        "FV.E2E.DeadCleanupPipeline",
+        "FV.E2E.DeadCleanupRealizes",
+        "FV.E2E.DeadCleanupRegLevel",
+        "FV.E2E.DeadCleanupRegLevelX",
+        "FV.E2E.DeadCleanupWorld",
+        "FV.E2E.DeadCleanupWorldX",
+        "FV.E2E.ExecFrame",
+        "FV.E2E.ExecReads",
+        "FV.E2E.Final",
+        "FV.E2E.GotFlow",
+        "FV.E2E.Guarded",
+        "FV.E2E.LinkWorld",
+        "FV.E2E.LinkWorldX",
+        "FV.E2E.Lockstep",
+        "FV.E2E.Main",
+        "FV.E2E.MoveReads",
+        "FV.E2E.Pair",
+        "FV.E2E.PairDriver",
+        "FV.E2E.RegLevelArgs",
+        "FV.E2E.RegLevelAtomic",
+        "FV.E2E.RegLevelBranch",
+        "FV.E2E.RegLevelCall",
+        "FV.E2E.RegLevelCorrect",
+        "FV.E2E.RegLevelCorrectX",
+        "FV.E2E.RegLevelDriverSem",
+        "FV.E2E.RegLevelEmit",
+        "FV.E2E.RegLevelFrame",
+        "FV.E2E.RegLevelGoodX",
+        "FV.E2E.RegLevelGoto",
+        "FV.E2E.RegLevelJT",
+        "FV.E2E.RegLevelMachine",
+        "FV.E2E.RegLevelMove",
+        "FV.E2E.RegLevelNext",
+        "FV.E2E.RegLevelOp",
+        "FV.E2E.RegLevelOpReads",
+        "FV.E2E.RegLevelPush",
+        "FV.E2E.RegLevelRelax",
+        "FV.E2E.RegLevelSim",
+        "FV.E2E.RegLevelTls",
+        "FV.E2E.RegLevelTrap",
+        "FV.E2E.RegLevelTry",
+        "FV.E2E.Statement",
+        "FV.Float",
+        "FV.Float.Arith",
+        "FV.Float.Basic",
+        "FV.Float.Convert",
+        "FV.Float.Round",
+        "FV.Isle.Generated.Closure",
+        "FV.Isle.Generated.Ids",
+        "FV.Isle.Generated.Program",
+        "FV.Isle.Generated.RuleArray",
+        "FV.Isle.Generated.RuleLists00",
+        "FV.Isle.Generated.RuleTable",
+        "FV.Isle.Generated.Rules00",
+        "FV.Isle.Generated.Rules01",
+        "FV.Isle.Generated.Rules02",
+        "FV.Isle.Generated.Rules03",
+        "FV.Isle.Generated.Specs00",
+        "FV.Isle.Generated.Specs01",
+        "FV.Isle.Generated.Specs02",
+        "FV.Isle.Generated.Specs03",
+        "FV.Isle.Generated.Specs04",
+        "FV.Isle.Generated.Specs05",
+        "FV.Isle.Generated.Specs06",
+        "FV.Isle.Generated.TermTable",
+        "FV.Isle.Generated.Terms00",
+        "FV.Isle.Generated.Terms01",
+        "FV.Isle.Generated.Terms02",
+        "FV.Isle.Generated.TypeArray",
+        "FV.Isle.Generated.Types00",
+        "FV.Isle.Interp",
+        "FV.Isle.Lookup",
+        "FV.Isle.Syntax",
+        "FV.Opt.Proof.SemSim"
+      ],
+      "all_dependencies_in_passed382": true,
+      "action": "compile_only_missing_leaf_after_resource_approval",
+      "variants": [
+        {
+          "module": "FV.E2E.CompiledEither",
+          "trace": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/CompiledEither.trace",
+          "trace_sha256": "1a97dc2b6df8a40be94104a7c017a3f0f2dda21c0592cbae6320d055b8b2f86c",
+          "native_key": "03d32850183764d7",
+          "expected_key": "cfa5ab1ba93a25fe",
+          "key_match": false,
+          "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/FV/E2E/CompiledEither.lean",
+          "source_matches": false,
+          "payloads": {
+            "olean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/CompiledEither.olean",
+              "exists": true,
+              "sha256": "fbeab6414a5f6486d5477b871a3b611c4f0e99defefee9c7170ce65f07ada0ce"
+            },
+            "ilean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/lib/lean/FV/E2E/CompiledEither.ilean",
+              "exists": false,
+              "sha256": null
+            },
+            "c": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/remaining-focused-roots-v2/prior-descriptors/.lake/build/ir/FV/E2E/CompiledEither.c",
+              "exists": false,
+              "sha256": null
+            }
+          },
+          "active_writers": [],
+          "creator_provenance": "not_yet_bound",
+          "not_approved_for_reuse": true
+        },
+        {
+          "module": "FV.E2E.CompiledEither",
+          "trace": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/CompiledEither.trace",
+          "trace_sha256": "976fcb3a354c2eada190391b08a953090f35d84d281f6437e3c3d12d0a6cbcb1",
+          "native_key": "cfa5ab1ba93a25fe",
+          "expected_key": "cfa5ab1ba93a25fe",
+          "key_match": true,
+          "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/FV/E2E/CompiledEither.lean",
+          "source_matches": false,
+          "payloads": {
+            "olean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/CompiledEither.olean",
+              "exists": false,
+              "sha256": null
+            },
+            "ilean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/lib/lean/FV/E2E/CompiledEither.ilean",
+              "exists": false,
+              "sha256": null
+            },
+            "c": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/current64d-linked-provider-materialization-v1/prior-descriptors/.lake/build/ir/FV/E2E/CompiledEither.c",
+              "exists": false,
+              "sha256": null
+            }
+          },
+          "active_writers": [],
+          "creator_provenance": "not_yet_bound",
+          "not_approved_for_reuse": true
+        },
+        {
+          "module": "FV.E2E.CompiledEither",
+          "trace": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/CompiledEither.trace",
+          "trace_sha256": "ae499b9a0724692c5e3e6b8262b1c6a1bf5dd74c72c275884ce8c4b33b66a747",
+          "native_key": "9f69194e930e6c5e",
+          "expected_key": "cfa5ab1ba93a25fe",
+          "key_match": false,
+          "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/FV/E2E/CompiledEither.lean",
+          "source_matches": true,
+          "payloads": {
+            "olean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/CompiledEither.olean",
+              "exists": true,
+              "sha256": "6170f887cd4ca3dd5e46442af28f8ef8b8b9eabc0c299a392a20e46f9adf38e3"
+            },
+            "ilean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/CompiledEither.ilean",
+              "exists": true,
+              "sha256": "1f486428dd3bbd7993e7f2a2745dd80fc46f396a3281a9271b13dfdcea92a1d5"
+            },
+            "c": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/ir/FV/E2E/CompiledEither.c",
+              "exists": true,
+              "sha256": "5a56f3803cc8a1209915af3f3f1de6a76fdc5bd138f8e7434659d608f1340a6f"
+            }
+          },
+          "active_writers": [],
+          "creator_provenance": "not_yet_bound",
+          "not_approved_for_reuse": true
+        },
+        {
+          "module": "FV.E2E.CompiledEither",
+          "trace": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/CompiledEither.trace",
+          "trace_sha256": "ae499b9a0724692c5e3e6b8262b1c6a1bf5dd74c72c275884ce8c4b33b66a747",
+          "native_key": "9f69194e930e6c5e",
+          "expected_key": "cfa5ab1ba93a25fe",
+          "key_match": false,
+          "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/FV/E2E/CompiledEither.lean",
+          "source_matches": true,
+          "payloads": {
+            "olean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/CompiledEither.olean",
+              "exists": true,
+              "sha256": "6170f887cd4ca3dd5e46442af28f8ef8b8b9eabc0c299a392a20e46f9adf38e3"
+            },
+            "ilean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/lib/lean/FV/E2E/CompiledEither.ilean",
+              "exists": true,
+              "sha256": "1f486428dd3bbd7993e7f2a2745dd80fc46f396a3281a9271b13dfdcea92a1d5"
+            },
+            "c": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-current-main-v1/package/.lake/build/ir/FV/E2E/CompiledEither.c",
+              "exists": true,
+              "sha256": "5a56f3803cc8a1209915af3f3f1de6a76fdc5bd138f8e7434659d608f1340a6f"
+            }
+          },
+          "active_writers": [],
+          "creator_provenance": "not_yet_bound",
+          "not_approved_for_reuse": true
+        },
+        {
+          "module": "FV.E2E.CompiledEither",
+          "trace": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/CompiledEither.trace",
+          "trace_sha256": "ae499b9a0724692c5e3e6b8262b1c6a1bf5dd74c72c275884ce8c4b33b66a747",
+          "native_key": "9f69194e930e6c5e",
+          "expected_key": "cfa5ab1ba93a25fe",
+          "key_match": false,
+          "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/FV/E2E/CompiledEither.lean",
+          "source_matches": true,
+          "payloads": {
+            "olean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/CompiledEither.olean",
+              "exists": true,
+              "sha256": "6170f887cd4ca3dd5e46442af28f8ef8b8b9eabc0c299a392a20e46f9adf38e3"
+            },
+            "ilean": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/CompiledEither.ilean",
+              "exists": true,
+              "sha256": "1f486428dd3bbd7993e7f2a2745dd80fc46f396a3281a9271b13dfdcea92a1d5"
+            },
+            "c": {
+              "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/E2E/CompiledEither.c",
+              "exists": true,
+              "sha256": "5a56f3803cc8a1209915af3f3f1de6a76fdc5bd138f8e7434659d608f1340a6f"
+            }
+          },
+          "active_writers": [],
+          "creator_provenance": "not_yet_bound",
+          "not_approved_for_reuse": true
+        }
+      ],
+      "historical_peaks": [
+        {
+          "module": "FV.E2E.CompiledEither",
+          "raw_record": "FV.E2E.CompiledEither\t2406\t2.0",
+          "evidence_path": ".git/agent-evidence/stock-memory-20261029/stock-current-main-full-gate-v6/conservative-peaks.tsv",
+          "historical_not_an_exact_new_key_profile": true
+        },
+        {
+          "module": "FV.E2E.CompiledEither",
+          "raw_record": "FV.E2E.CompiledEither\t252\t2",
+          "evidence_path": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/lake-module-peaks.tsv",
+          "historical_not_an_exact_new_key_profile": true
+        },
+        {
+          "module": "FV.E2E.CompiledEither",
+          "raw_record": "FV.E2E.CompiledEither\t266\t2",
+          "evidence_path": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/lake-module-peaks.tsv",
+          "historical_not_an_exact_new_key_profile": true
+        }
+      ],
+      "peak_bound_to_current_key": false
+    }
+  ],
+  "remaining_eight": [
+    {
+      "module": "FV.E2E.CompiledEither",
+      "expected_key": "cfa5ab1ba93a25fe",
+      "query_exit": 0,
+      "missing_frontier": []
+    },
+    {
+      "module": "FV.E2E.LinkPlace",
+      "expected_key": "5c9ee145acafbded",
+      "query_exit": 0,
+      "missing_frontier": []
+    },
+    {
+      "module": "FV.E2E.LinkArm",
+      "expected_key": null,
+      "query_exit": 3,
+      "missing_frontier": [
+        "FV.E2E.CompiledEither",
+        "FV.E2E.LinkPlace"
+      ]
+    },
+    {
+      "module": "FV.E2E.LinkGood",
+      "expected_key": null,
+      "query_exit": 3,
+      "missing_frontier": [
+        "FV.E2E.CompiledEither",
+        "FV.E2E.LinkPlace"
+      ]
+    },
+    {
+      "module": "FV.E2E.LinkGoodBounded",
+      "expected_key": null,
+      "query_exit": 3,
+      "missing_frontier": [
+        "FV.E2E.CompiledEither",
+        "FV.E2E.LinkPlace"
+      ]
+    },
+    {
+      "module": "FV.E2E.CompiledEitherW",
+      "expected_key": null,
+      "query_exit": 3,
+      "missing_frontier": [
+        "FV.E2E.CompiledEither"
+      ]
+    },
+    {
+      "module": "FV.E2E.LinkGoodW",
+      "expected_key": null,
+      "query_exit": 3,
+      "missing_frontier": [
+        "FV.E2E.CompiledEither",
+        "FV.E2E.LinkPlace"
+      ]
+    },
+    {
+      "module": "FV.E2E.LinkGoodBoundedW",
+      "expected_key": null,
+      "query_exit": 3,
+      "missing_frontier": [
+        "FV.E2E.CompiledEither",
+        "FV.E2E.LinkPlace"
+      ]
+    }
+  ],
+  "after_phase": "normal384 then metadata-only requery remaining six; no blind downstream build",
+  "full_goal_complete": false
+}

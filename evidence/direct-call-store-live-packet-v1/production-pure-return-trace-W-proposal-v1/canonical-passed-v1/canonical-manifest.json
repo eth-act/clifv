@@ -1,0 +1,13 @@
+{
+  "status": "PASSED_CURRENT8F;EIGHT_STANDARD_ROOTS",
+  "files": {
+    "source/FV/E2E/StockMixedNIW.lean": "335e65c143c7b8f40ab9aec22a4da01f89bf094e3f6bb28b3bee7a52547f79eb",
+    "source/FV/E2E/StockLogicalNIW.lean": "0984a90dfa59dec5357f2d3b1fd0f03bfd666975d20cced524b40a8b04b79804",
+    "source/FV/E2E/StockDivNIW.lean": "6f9b0159cbfd2829b4800a6ade4607abad1682f4d4c72f370ad521030a837b2c",
+    "source/FV/E2E/StockCfgNIW.lean": "865e1ffa46d8c60e07560b5e96bf39099cec1092f3b6a2e563ba91551e0486a1",
+    "receipt.json": "e29b95034cb92039ce179402c2d3a550a65b143390dc71483ca9fa39e6ea234e",
+    "manifest.json": "6f5121a1faeef04f76cf5535af7404ad7c209430136b1e18abcbccd223d693fd",
+    "current8f-kernel-manifest.json": "471163f1495b724e4a7c21db533e5d2d87780742f0703d6593916318d9f0f426",
+    "current-source-context.json": "28a1fb33bd43e439304cedb063551e54e2b29489cd4b8fa13b6210ca77c67ef0"
+  }
+}

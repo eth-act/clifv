@@ -1,0 +1,84 @@
+{
+  "status": "SOURCE_ONLY;NO_KERNEL_CLAIM",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "modules": {
+    "FV.E2E.StockMixedNIW": {
+      "sha256": "335e65c143c7b8f40ab9aec22a4da01f89bf094e3f6bb28b3bee7a52547f79eb",
+      "old_source_sha256": "4d704b56e0997d3f21be45ac5975268e4121e4adc176d80c40b17f2f90085e5f",
+      "original_input_header_exact": true,
+      "original_theorem": "backend_correct_world_niX_stock_mixed",
+      "roots": [
+        "backend_correct_world_niX_stock_mixedW",
+        "E2E.worldReturnTraceProvider_mixed"
+      ],
+      "machine_helper": "MixedFlagBoundary.machine_returnW",
+      "body_changes": [
+        "theorem name",
+        "actGoodX to actGoodXW",
+        "existing W machine consumer"
+      ]
+    },
+    "FV.E2E.StockLogicalNIW": {
+      "sha256": "0984a90dfa59dec5357f2d3b1fd0f03bfd666975d20cced524b40a8b04b79804",
+      "old_source_sha256": "f6786ccdbfa238395fecbc7f7a058ddfc3f3291350f7a59fecf07479ea79f1b8",
+      "original_input_header_exact": true,
+      "original_theorem": "backend_correct_world_niX_stock_logical",
+      "roots": [
+        "backend_correct_world_niX_stock_logicalW",
+        "E2E.worldReturnTraceProvider_logical"
+      ],
+      "machine_helper": "MixedFlagBoundary.machine_returnW",
+      "body_changes": [
+        "theorem name",
+        "actGoodX to actGoodXW",
+        "existing W machine consumer"
+      ]
+    },
+    "FV.E2E.StockDivNIW": {
+      "sha256": "6f9b0159cbfd2829b4800a6ade4607abad1682f4d4c72f370ad521030a837b2c",
+      "old_source_sha256": "c241ec8eedd68f9646c3e53084f4c00e965a6c0d59ad8240573e39c8e68f7f4c",
+      "original_input_header_exact": true,
+      "original_theorem": "backend_correct_world_niX_stock_div",
+      "roots": [
+        "backend_correct_world_niX_stock_divW",
+        "E2E.worldReturnTraceProvider_div"
+      ],
+      "machine_helper": "DivBoundary.machine_returnW",
+      "body_changes": [
+        "theorem name",
+        "actGoodX to actGoodXW",
+        "existing W machine consumer"
+      ]
+    },
+    "FV.E2E.StockCfgNIW": {
+      "sha256": "865e1ffa46d8c60e07560b5e96bf39099cec1092f3b6a2e563ba91551e0486a1",
+      "old_source_sha256": "d2affc4488558b3d17af6041c09332eba761200b9d2e386df9831712471c9fbe",
+      "original_input_header_exact": true,
+      "original_theorem": "backend_correct_world_niX_stock_cfg",
+      "roots": [
+        "backend_correct_world_niX_stock_cfgW",
+        "E2E.worldReturnTraceProvider_cfg"
+      ],
+      "machine_helper": "CfgBoundary.machine_returnW",
+      "body_changes": [
+        "theorem name",
+        "actGoodX to actGoodXW",
+        "existing W machine consumer"
+      ]
+    }
+  },
+  "old_files_changed": [],
+  "new_caller_premises": [],
+  "open": [
+    "proper dependency keys",
+    "focused kernels",
+    "real eight-root audit",
+    "complete dispatcher",
+    "production activation"
+  ],
+  "import_cycle_check": {
+    "acyclic": true,
+    "modules": 810
+  },
+  "original_theorem_body_exact_after_three_named_substitutions": true
+}

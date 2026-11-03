@@ -1,0 +1,11 @@
+{
+  "status": "passed_failure_guard_restores_config_and_both_shares_only_after_live_consumer_exits",
+  "no_early_config_restore": true,
+  "no_early_share_restore": true,
+  "canonical_bytes_exact": true,
+  "owner_exit": 7,
+  "guard_exit": 0,
+  "real_F_config_untouched": true,
+  "guard_sha256": "698a90a5fd8cfe89cbf5619f9f390ea10787bd6c6e011859951f3675c28a3097",
+  "common_sha256": "8dc7dbc8321dc7b08a380b8731ef56bc85be2ef9ff9ac2ba41024675ef8d4ea2"
+}

@@ -1,0 +1,82 @@
+{
+  "status": "PASSED_FOUR_PROPER_ROOTS_AND_REAL_FIVE_STANDARD_ROOT_AUDIT;AFFECTED_CONE_OPEN",
+  "utc": "2026-11-03T18:44:08.840385+00:00",
+  "reused_successful_actual_audit_records": [
+    {
+      "label": "passed-four-normal",
+      "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.Proof.StockMemoryStoreDemandTransport",
+        "FV.Backend.Proof.StockMemorySretCopyClass",
+        "FV.E2E.StockMemoryNopNonentryPairedReturn",
+        "FV.E2E.StockMemoryOrdinaryPairedJump"
+      ],
+      "exit": 0,
+      "log_sha256": "49eb19a6d30f1866e6a121a706e562766d36220699a6935c8d36c372d6526ba9",
+      "memory": "peak 69132288\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "real-five-root-audit",
+      "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/passed-four-real-audit-v1/audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/passed-four-real-audit-v1/memory-four-roots.lean"
+      ],
+      "exit": 0,
+      "log_sha256": "2bd154d5915e2cbfa4f1f3639b96cb724f70cd28f9c8ccdbb0f211bb8989a752",
+      "memory": "peak 1465868288\noom 0\noom_kill 0\n"
+    }
+  ],
+  "all_five_actual_sets": {
+    "Backend.Stock.Memory.StoreRoots.stock_retained_store_demand_before": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.StoreRoots.stock_retained_stored_definition_emitted": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Memory.SretCopy.CfgClass": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.actual_nonentry_paired_nop_return": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockMemory.ordinary_paired_jump_body_returns_at_of_body": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "repository_auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "audit_source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/passed-four-real-audit-v1/memory-four-roots.lean",
+  "audit_source_sha256": "b15e8ce4617f1cdc3c73f49c546f933521132c96577d1c5156c1c30562e22eff",
+  "raw_log_hashes": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/passed-four-real-audit-v1/audit/memory-four-roots.log": "5f7c01109a8f28d88c4f65b45020db2aaa430e191031c690c654e19375455b56"
+  },
+  "failed_collector_receipt_sha256": "b9ae6f3124590711a2ea9ff56e16996354822b2b915e313857f3743c2f038ec2",
+  "collector_erratum": "The added CfgClass empty-set assertion was unsupported. Actual CfgClass uses only the three standard axioms. The real audit and all policy checks passed. No source, kernel, or required original AX set changed.",
+  "ReturnPinMode_pins_of_valid_empty_requirement": "Retained unchanged in official23; this erratum does not affect it",
+  "four_kernel_receipt_sha256": "e599cad15f7674a603e6940fa35d928d2f41fafccfa8970f5c8dd91500874ba0",
+  "all_four_target_and_protected_hashes_still_exact": true,
+  "required_open": [
+    "affected22 normal; rejected OffsetEightStoreRecord and OrdinarySourceContinuation",
+    "baseline1357",
+    "remaining twelve new memory W exports"
+  ],
+  "descendant_kernels": []
+}

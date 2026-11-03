@@ -1,0 +1,24 @@
+{
+  "status": "SOURCE_ONLY;NO_KERNEL_CLAIM",
+  "source_sha256": "6cf4e22e386aab7d1529272e7ae7de01f28a18e57dbff77fae9ca23bad5d21af",
+  "staged_backend_checker_origin": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-call-store-constructor-proposal-v1/source/FV/Backend/SemanticABICheck.lean",
+  "new_caller_premises": [],
+  "shared_edits": [],
+  "roots": [
+    "Backend.SemanticABI.retained_calls_callStores",
+    "Backend.SemanticABI.retained_call_route_disjunction",
+    "Backend.SemanticABI.retained_call_route_check"
+  ],
+  "scope": "universal old-call admission monotonicity, including the existing typed alternative and identical allocation/preparation/object conjuncts",
+  "does_not_claim": [
+    "route probing finds every original identity",
+    "typed/raw mixture activates correctly",
+    "default or actual CLI execution"
+  ],
+  "open": [
+    "proper staged dependency gate",
+    "three-root real audit",
+    "exact current checker integration",
+    "actual explicit0/out-of-range/typed runtime"
+  ]
+}

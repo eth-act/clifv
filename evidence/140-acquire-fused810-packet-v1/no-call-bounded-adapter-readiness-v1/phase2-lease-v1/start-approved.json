@@ -1,0 +1,11 @@
+{
+  "parent_resource_approved": true,
+  "source2_released": true,
+  "acquire1_released": true,
+  "source_release_sha256": "2e8c6f51bdc0e19c85ab03f71bc4378299d594ee8e7e66d6e67506ca371f0838",
+  "own_release_sha256": "3718bcfa00100d03491996fc878ed42c1c4c147e11e9cbf1ed1c48d3e2af291f",
+  "authority": "Parent confirmed phase2 cfc443bf and only origin80b88531 after both renewed releases.",
+  "proposal_sha256": "cfc443bffecf9ffb908f97b7989ccc0ade1005ce52fa10d0fa99771092fd7df1",
+  "gate_sha256": "123bc45e39961edcab8396140664d2ea74dab7a10506c92096cf82b5fc5cbd5c",
+  "guard_harness_sha256": "7681fb46488546a83a8dda60451568834b9f46e2319b17ea619beace1f931e5f"
+}

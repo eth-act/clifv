@@ -1,0 +1,5 @@
+{
+  "status": "canonical_bytes_restored",
+  "sha256": "43045e07e709b38e470076ff8235b68ca6e63400498c0aa847f6e743f230166e",
+  "reason": "independent all-exit guard after owner and all consumers exit"
+}

@@ -1,0 +1,10 @@
+{
+  "parent_resource_approved": true,
+  "ordinary_acquire1_assigned": true,
+  "source_share_borrowed": false,
+  "broad_share_borrowed": false,
+  "authority": "Parent approved exact phase6 f9082d3c in ordinary1GiB; recover only LinkGoodW per e167c354/817e0bf0, compile only LinkGoodBoundedadf01cd52c05c66c.",
+  "proposal_sha256": "f9082d3cdd172a1c64e655531db70cf82f1111037a46747a06f5f943b1117a3b",
+  "gate_sha256": "fd9f5818872e7cf6a24812caac86a75faa7868736423664ee3987cbcc59c5946",
+  "guard_harness_sha256": "8e823601a82b376e8895e93f005b9b1b08836a80056d12ceb22a52348ca36f29"
+}

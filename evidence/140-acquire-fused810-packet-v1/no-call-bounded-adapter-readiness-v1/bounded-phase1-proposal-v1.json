@@ -1,0 +1,153 @@
+{
+  "status": "proposal_only_no_provider_build_authorized",
+  "topological_order": [
+    "FV.E2E.RegLevelCorrectX",
+    "FV.E2E.LinkWorldX",
+    "FV.E2E.DeadCleanupWorldX",
+    "FV.E2E.CompiledEither",
+    "FV.E2E.LinkClif",
+    "FV.E2E.LinkClifN",
+    "FV.E2E.Link",
+    "FV.E2E.LinkPlace",
+    "FV.E2E.LinkArm",
+    "FV.E2E.LinkGood",
+    "FV.E2E.LinkGoodBounded",
+    "FV.E2E.LinkWorldXW",
+    "FV.E2E.DeadCleanupWorldXW",
+    "FV.E2E.CompiledEitherW",
+    "FV.E2E.LinkGoodW",
+    "FV.E2E.LinkGoodBoundedW"
+  ],
+  "current_expected_keys": {
+    "FV.E2E.RegLevelCorrectX": "2862eef808cc066f",
+    "FV.E2E.DeadCleanupWorldX": "42ff28d91bf2c785",
+    "FV.E2E.LinkClif": "cbd1bb10b6863ea7",
+    "FV.E2E.LinkWorldXW": "d86fc4c3beea0459",
+    "FV.E2E.DeadCleanupWorldXW": "2f483f351094a856"
+  },
+  "blocked_downstream_queries": [
+    {
+      "module": "FV.E2E.LinkWorldX",
+      "stderr_sha256": "56b65b1172d342cc1bd1a7ada890b3019d2b3d09a2eeb139e7d16220896a46e7"
+    },
+    {
+      "module": "FV.E2E.CompiledEither",
+      "stderr_sha256": "85acdbba3355c543a2e0ef23c15f7ae65418bf1e003c2567aa31008c390b5a39"
+    },
+    {
+      "module": "FV.E2E.LinkClifN",
+      "stderr_sha256": "9f31e0c05c7f779808f35d36854daaf7c6a95f665c7518d0c1ba57eb1d305110"
+    },
+    {
+      "module": "FV.E2E.Link",
+      "stderr_sha256": "e75f98d4f8118cffec3d430993dbc93dd0eb52bcade03a1eddbdeae1652573f9"
+    },
+    {
+      "module": "FV.E2E.LinkPlace",
+      "stderr_sha256": "d05089fd6dfefbb008bdd8bf8e9859a739c46e7e56096a7166e1cc93f3adc236"
+    },
+    {
+      "module": "FV.E2E.LinkArm",
+      "stderr_sha256": "4e424e6dfab08133a64a0762370977a06762f793301430b87d9a700861dece21"
+    },
+    {
+      "module": "FV.E2E.LinkGood",
+      "stderr_sha256": "f9187d681ef0f6f9f2c3f85c9052bac65cac0e1e1134bdd86b29432218243683"
+    },
+    {
+      "module": "FV.E2E.LinkGoodBounded",
+      "stderr_sha256": "e7382b96f5f43a021bbc489ba09320514b63c9252e6937cfd4390792e201c6f9"
+    },
+    {
+      "module": "FV.E2E.CompiledEitherW",
+      "stderr_sha256": "abb7af9dbc4647dc059dd5dd52ae0103b0eb96ac17cb322919722139568b9d68"
+    },
+    {
+      "module": "FV.E2E.LinkGoodW",
+      "stderr_sha256": "bb4f0068a57c1bc881a900cddbbb736a1eab6945aca3d35d669c7f86e7f6dd9e"
+    },
+    {
+      "module": "FV.E2E.LinkGoodBoundedW",
+      "stderr_sha256": "1af280557e7a99daf15391cdcd5bb2409b1c7ab51dde9d4367da1df4b2871a27"
+    }
+  ],
+  "phase1_cache_recovery_candidate": "FV.E2E.LinkClif",
+  "phase1_leaf_build_targets": [
+    "FV.E2E.RegLevelCorrectX",
+    "FV.E2E.DeadCleanupWorldX",
+    "FV.E2E.LinkWorldXW",
+    "FV.E2E.DeadCleanupWorldXW"
+  ],
+  "phase1_rule": "Only exact leaf attempts; all existing dependency keys must pass first; no dependency compilation",
+  "proposed_cap_bytes": 3221225472,
+  "proposed_threads": 1,
+  "requires_parent_resource_handoff": true,
+  "ordinary_share_bytes": 1073741824,
+  "no_build_before_parent_review_and_handoff": true,
+  "stop_on_first_failure": true,
+  "after_phase1": "Verify each actual normal key/output record, recheck complete available closure, then requery eleven downstream keys before another proposal",
+  "historical_profiles": [
+    {
+      "module": "FV.E2E.DeadCleanupWorldX",
+      "raw_record": "FV.E2E.DeadCleanupWorldX\t2417\t2.0",
+      "evidence_path": ".git/agent-evidence/stock-memory-20261029/stock-current-main-full-gate-v6/conservative-peaks.tsv",
+      "historical_not_an_exact_new_key_profile": true
+    },
+    {
+      "module": "FV.E2E.DeadCleanupWorldXW",
+      "raw_record": "FV.E2E.DeadCleanupWorldXW\t2442\t1.0",
+      "evidence_path": ".git/agent-evidence/stock-memory-20261029/stock-current-main-full-gate-v6/conservative-peaks.tsv",
+      "historical_not_an_exact_new_key_profile": true
+    },
+    {
+      "module": "FV.E2E.LinkWorldXW",
+      "raw_record": "FV.E2E.LinkWorldXW\t2345\t1.0",
+      "evidence_path": ".git/agent-evidence/stock-memory-20261029/stock-current-main-full-gate-v6/conservative-peaks.tsv",
+      "historical_not_an_exact_new_key_profile": true
+    },
+    {
+      "module": "FV.E2E.RegLevelCorrectX",
+      "raw_record": "FV.E2E.RegLevelCorrectX\t1963\t1.0",
+      "evidence_path": ".git/agent-evidence/stock-memory-20261029/stock-current-main-full-gate-v6/conservative-peaks.tsv",
+      "historical_not_an_exact_new_key_profile": true
+    },
+    {
+      "module": "FV.E2E.RegLevelCorrectX",
+      "raw_record": "FV.E2E.RegLevelCorrectX\t234\t1",
+      "evidence_path": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/lake-module-peaks.tsv",
+      "historical_not_an_exact_new_key_profile": true
+    },
+    {
+      "module": "FV.E2E.DeadCleanupWorldX",
+      "raw_record": "FV.E2E.DeadCleanupWorldX\t228\t2",
+      "evidence_path": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/lake-module-peaks.tsv",
+      "historical_not_an_exact_new_key_profile": true
+    },
+    {
+      "module": "FV.E2E.RegLevelCorrectX",
+      "raw_record": "FV.E2E.RegLevelCorrectX\t234\t2",
+      "evidence_path": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/lake-module-peaks.tsv",
+      "historical_not_an_exact_new_key_profile": true
+    },
+    {
+      "module": "FV.E2E.DeadCleanupWorldX",
+      "raw_record": "FV.E2E.DeadCleanupWorldX\t268\t2",
+      "evidence_path": ".git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/lake-module-peaks.tsv",
+      "historical_not_an_exact_new_key_profile": true
+    }
+  ],
+  "unknown_peak_modules": [
+    "FV.E2E.LinkGoodBounded",
+    "FV.E2E.LinkGoodBoundedW"
+  ],
+  "profiles_not_bound_to_new_expected_keys": true,
+  "cache_inspection_sha256": "a60ea84ca61ffa82433275d298cc24b21f0dea8d2d831a6e6abf3d9bd60881f8",
+  "query_receipt_sha256": "67547ac009d891b4dc7c7450b7a69ced579b95846945f081b2b49963a8359ab7",
+  "existing374_actual_normal_sha256": "58b34367bbb2f7e86e228b5df2cdffba576e4c306f09840b425cb7909420cbd3",
+  "exact_three_creator_receipt_sha256": "3001d19371c46ccb4cd219f687e127766b560f6c96b8580ccfacd81044f66c00",
+  "all_existing_sources_and_config_preserved": true,
+  "source_stage_count": 16,
+  "artifact_promotions": 0,
+  "provider_builds": 0,
+  "utc": "2026-11-03T18:06:20.531351+00:00"
+}

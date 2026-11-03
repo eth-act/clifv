@@ -1,0 +1,1051 @@
+{
+  "status": "SOURCE_ONLY_COMPLETE_SIXTEEN_NODE_CLASSIFICATION;NO_KERNEL_OR_VERIFIER",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "four_parent_kernel_receipt_sha256": "e599cad15f7674a603e6940fa35d928d2f41fafccfa8970f5c8dd91500874ba0",
+  "four_parent_real_audit_receipt_sha256": "2952c704121e8d702ba3ae155a9ce8d8efd4041eb04b1ff78934e4c24cb60e76",
+  "roots": [
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+    "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation"
+  ],
+  "records": {
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage": {
+      "source_sha256": "e10389681df44937ecd9fe4dfcb2396ffed65d76dda8e86607c17ec377e7e34a",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+        "FV.Backend.Proof.StockAluOperandCoverage",
+        "FV.Backend.Proof.StockDemandExtent"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreCoverage.trace",
+          "trace_sha256": "6bbb9e81ea9ef7287ffed7af0779cd663a9025d6a423d74f0208cfa0f860448f",
+          "stored_native_key": "4a9fbf1ad48a2639",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "d9a6b9df5f5c43c2.olean"
+            ],
+            "m": false,
+            "i": "f98579866dbc2125.ilean",
+            "c": "a51cf3bbd1bdce8f.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreCoverage.trace",
+          "trace_sha256": "8932f466082f51aacff90da7a8bb1d672b0ffd4ba195dc44df6d57e19b25a271",
+          "stored_native_key": "83f9d189caf8a326",
+          "synthetic": true,
+          "has_inputs": false,
+          "output_descriptors": {
+            "o": [
+              "d9a6b9df5f5c43c2.olean"
+            ],
+            "m": false,
+            "i": "f98579866dbc2125.ilean",
+            "c": "a51cf3bbd1bdce8f.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreCoverage.trace",
+          "trace_sha256": "0622a22bcf7e2d86148da5fbc6aa04219ce77affa706ece4b51d6b7cc328b6e7",
+          "stored_native_key": "38d272b87d314fee",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "d9a6b9df5f5c43c2.olean"
+            ],
+            "m": false,
+            "i": "f98579866dbc2125.ilean",
+            "c": "a51cf3bbd1bdce8f.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreExec": {
+      "source_sha256": "548c4b4b17779453248d016488b367e898d96ff872722cdb3bcfdca1c2cee04c",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+        "FV.Backend.Proof.StockMemoryLoad",
+        "FV.Backend.Proof.StockMemoryStoreContract",
+        "FV.Backend.Proof.IselMemRoots"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreExec.trace",
+          "trace_sha256": "d984363b714059f9dfdbfc781bab558d89533126ff30021a59afe0ae13a103d8",
+          "stored_native_key": "e8b8a0b23b5e5c03",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "f71e88df26062adc.olean"
+            ],
+            "m": false,
+            "i": "f91a0a773309b985.ilean",
+            "c": "58612b90b1acf70e.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreExec.trace",
+          "trace_sha256": "0af809f622990ab831ff8619d1ad8bb145759194768d7c80247f0b952e1b5b36",
+          "stored_native_key": "6312541dd108c57f",
+          "synthetic": true,
+          "has_inputs": false,
+          "output_descriptors": {
+            "o": [
+              "f71e88df26062adc.olean"
+            ],
+            "m": false,
+            "i": "f91a0a773309b985.ilean",
+            "c": "58612b90b1acf70e.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreExec.trace",
+          "trace_sha256": "1e22ae1433e4fcc60269a274b2d864a6bb833db339285c983038366e145df8c4",
+          "stored_native_key": "36ecc3f586c2d5b5",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "f71e88df26062adc.olean"
+            ],
+            "m": false,
+            "i": "f91a0a773309b985.ilean",
+            "c": "58612b90b1acf70e.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord": {
+      "source_sha256": "0ab774b413e931383415da7749387077310bd8328dbabcdc3997ed76f39eb384",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryStoreSelected",
+        "FV.Backend.Proof.StockMemoryOffsetEightStore"
+      ],
+      "failed_transitive_ancestors": [],
+      "role": "independent current rejection",
+      "current_expected_key": "PENDING_PINNED_LAKE_QUERY_AFTER_PARENT_RESTORATION",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRecord.trace",
+          "trace_sha256": "202c28fa40e5e4d8fb20c38aace31a7dbe62ed77ea7e52fad56cd2b88901741d",
+          "stored_native_key": "4e5cfcb5d9900e98",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "a19c7f7a11138421.olean"
+            ],
+            "m": false,
+            "i": "a8313860f36d2950.ilean",
+            "c": "cf94ab708b15655b.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRecord.trace",
+          "trace_sha256": "837f5cb5e23062ccb7ae7b0f76683a937d524c74c6652163ecb4f9a5c5083971",
+          "stored_native_key": "876ae79ce3800f20",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "a19c7f7a11138421.olean"
+            ],
+            "m": false,
+            "i": "a8313860f36d2950.ilean",
+            "c": "cf94ab708b15655b.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRecord.trace",
+          "trace_sha256": "837f5cb5e23062ccb7ae7b0f76683a937d524c74c6652163ecb4f9a5c5083971",
+          "stored_native_key": "876ae79ce3800f20",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "a19c7f7a11138421.olean"
+            ],
+            "m": false,
+            "i": "a8313860f36d2950.ilean",
+            "c": "cf94ab708b15655b.c"
+          }
+        }
+      },
+      "G24_record": {
+        "target": "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+        "key": "876ae79ce3800f20",
+        "source_sha256": "0ab774b413e931383415da7749387077310bd8328dbabcdc3997ed76f39eb384",
+        "trace_sha256": "837f5cb5e23062ccb7ae7b0f76683a937d524c74c6652163ecb4f9a5c5083971",
+        "current_source_sha256": "0ab774b413e931383415da7749387077310bd8328dbabcdc3997ed76f39eb384",
+        "donors": {
+          "P": {
+            "trace_sha256": "837f5cb5e23062ccb7ae7b0f76683a937d524c74c6652163ecb4f9a5c5083971"
+          }
+        }
+      },
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention": {
+      "source_sha256": "79b60a3da845090256bb249dcc4d2c6de39c228eb926d71f19e94dfb1af64066",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage",
+        "FV.Backend.Proof.StockDemandedScan",
+        "FV.Backend.Proof.StockDivReturnDemand"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.trace",
+          "trace_sha256": "7a21386b28fca03c64e9e8ff70336f5bee3e45243ea2bb3874eb9ec67b624af1",
+          "stored_native_key": "57c96268f086d6de",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "073bb4442bf9afa2.olean"
+            ],
+            "m": false,
+            "i": "4c0eb74139a01faa.ilean",
+            "c": "82c71ccf65b06d1d.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.trace",
+          "trace_sha256": "ccc6cac73d2271e6a598809df7a6aa779f8166c381fa1a11b357ca5e79f92bf1",
+          "stored_native_key": "30e2fe947f97a0f8",
+          "synthetic": true,
+          "has_inputs": false,
+          "output_descriptors": {
+            "o": [
+              "073bb4442bf9afa2.olean"
+            ],
+            "m": false,
+            "i": "4c0eb74139a01faa.ilean",
+            "c": "82c71ccf65b06d1d.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreRetention.trace",
+          "trace_sha256": "3c6346b645fb3f222de8f3f44ebd565a98de945cc8a8f944d4cc871e70809b09",
+          "stored_native_key": "5c1044857cd33608",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "073bb4442bf9afa2.olean"
+            ],
+            "m": false,
+            "i": "4c0eb74139a01faa.ilean",
+            "c": "82c71ccf65b06d1d.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines": {
+      "source_sha256": "04d715efc38482d14623d022e092dde92cbfb21d542ac0ecc879efafef19c783",
+      "direct_imports": [
+        "FV.Backend.Proof.StockSelectScanRefines",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreScanRefines.trace",
+          "trace_sha256": "85ab4251698512132fbd5e1bbafa97721e071ed7194786ec5b8451953c90b0a7",
+          "stored_native_key": "f094bca3cd940b28",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "e088fdd055bfdd87.olean"
+            ],
+            "m": false,
+            "i": "61d708266d23033d.ilean",
+            "c": "075f2e146e169ca1.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreScanRefines.trace",
+          "trace_sha256": "0c4af7b0764c0a659809128bde01b2de1d3813e84d3ec14d1e7c5d4da23c76c2",
+          "stored_native_key": "30ded879e2d7deab",
+          "synthetic": true,
+          "has_inputs": false,
+          "output_descriptors": {
+            "o": [
+              "e088fdd055bfdd87.olean"
+            ],
+            "m": false,
+            "i": "61d708266d23033d.ilean",
+            "c": "075f2e146e169ca1.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreScanRefines.trace",
+          "trace_sha256": "e04d713a8e9d841250cf1c15cfedf89a7cba85d801ab77363e29de9e6bcd2c1c",
+          "stored_native_key": "b581fa30cfa817ad",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "e088fdd055bfdd87.olean"
+            ],
+            "m": false,
+            "i": "61d708266d23033d.ilean",
+            "c": "075f2e146e169ca1.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues": {
+      "source_sha256": "ec6089c7544432f570541871cb793e5cda29ed0f525233396463b2eb48a77422",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreExec",
+        "FV.Backend.Proof.StockGuardedRecordValues"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreSourceValues.trace",
+          "trace_sha256": "5ccc9252a51a7cf11a37580d4689c4452e0effd30a7d9f427a604c9087602449",
+          "stored_native_key": "97250a2978e4998a",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "0462adaa35582fea.olean"
+            ],
+            "m": false,
+            "i": "bd3eaeb9a7438996.ilean",
+            "c": "7818a313790e5481.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreSourceValues.trace",
+          "trace_sha256": "67099230e5420d55c7bc35337da39ec55bf95e09edac93ac71dac713e68083b0",
+          "stored_native_key": "71504be2166b5f0d",
+          "synthetic": true,
+          "has_inputs": false,
+          "output_descriptors": {
+            "o": [
+              "0462adaa35582fea.olean"
+            ],
+            "m": false,
+            "i": "bd3eaeb9a7438996.ilean",
+            "c": "7818a313790e5481.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightStoreSourceValues.trace",
+          "trace_sha256": "d09fcd8433e2346b0b41605aa421c3c65a496a5ee81c536dda3b18138ad27eef",
+          "stored_native_key": "f2850c98605d604c",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "0462adaa35582fea.olean"
+            ],
+            "m": false,
+            "i": "bd3eaeb9a7438996.ilean",
+            "c": "7818a313790e5481.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.Backend.Proof.StockMemoryOrdinaryJumpSpec": {
+      "source_sha256": "62f11c4bc9bad45ec874f2b7e80ec439a461e78fd8e64e04da58a93aa25bc9a4",
+      "direct_imports": [
+        "FV.Backend.Proof.StockJumpBodyRefines",
+        "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation",
+        "FV.Backend.Proof.StockMemoryBodyNotrap"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpSpec.trace",
+          "trace_sha256": "47a7ee781f49c21ecc96f17d79e749aee082e7f52f8da22b9ad0b5635be2757d",
+          "stored_native_key": "2d6deecd97f7526c",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "dc2ac98a9467ceee.olean"
+            ],
+            "m": false,
+            "i": "2e25406fc5a7dcd4.ilean",
+            "c": "4c689e719b60dbde.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpSpec.trace",
+          "trace_sha256": "3940b02b6277769c60a57c600e59002ad2c66aed29f3e47ec17f0098a8d25cbc",
+          "stored_native_key": "e61707241efd292a",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "dc2ac98a9467ceee.olean"
+            ],
+            "m": false,
+            "i": "2e25406fc5a7dcd4.ilean",
+            "c": "4c689e719b60dbde.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpSpec.trace",
+          "trace_sha256": "0913e7ca518d7585e86766997e745af2fb19ce9c34ceb349785f153257ca0496",
+          "stored_native_key": "6c0b44fd46a54d3d",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "dc2ac98a9467ceee.olean"
+            ],
+            "m": false,
+            "i": "2e25406fc5a7dcd4.ilean",
+            "c": "4c689e719b60dbde.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation": {
+      "source_sha256": "1ed66fee239693f63c409c058441964c5e9a0593333dafb0d8585c1e9373d004",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryOrdinarySourceTrap"
+      ],
+      "failed_transitive_ancestors": [],
+      "role": "independent current rejection",
+      "current_expected_key": "PENDING_PINNED_LAKE_QUERY_AFTER_PARENT_RESTORATION",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinarySourceContinuation.trace",
+          "trace_sha256": "eacc188f13cdfcdc8af032882e3f1eb9dfd787a670d750757290fe8735866b02",
+          "stored_native_key": "4974574fba819f05",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "26689029da1bf676.olean"
+            ],
+            "m": false,
+            "i": "1ef73e72dbc8bf0f.ilean",
+            "c": "1bb3e0b22bb5cd37.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinarySourceContinuation.trace",
+          "trace_sha256": "48267e6ff5ecb0eaaa7c5486bf44216e674e49c2be34acbfe2398677027caf40",
+          "stored_native_key": "15d820bc9f274dc8",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "26689029da1bf676.olean"
+            ],
+            "m": false,
+            "i": "1ef73e72dbc8bf0f.ilean",
+            "c": "1bb3e0b22bb5cd37.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinarySourceContinuation.trace",
+          "trace_sha256": "48267e6ff5ecb0eaaa7c5486bf44216e674e49c2be34acbfe2398677027caf40",
+          "stored_native_key": "15d820bc9f274dc8",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "26689029da1bf676.olean"
+            ],
+            "m": false,
+            "i": "1ef73e72dbc8bf0f.ilean",
+            "c": "1bb3e0b22bb5cd37.c"
+          }
+        }
+      },
+      "G24_record": {
+        "target": "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation",
+        "key": "15d820bc9f274dc8",
+        "source_sha256": "1ed66fee239693f63c409c058441964c5e9a0593333dafb0d8585c1e9373d004",
+        "trace_sha256": "48267e6ff5ecb0eaaa7c5486bf44216e674e49c2be34acbfe2398677027caf40",
+        "current_source_sha256": "1ed66fee239693f63c409c058441964c5e9a0593333dafb0d8585c1e9373d004",
+        "donors": {
+          "P": {
+            "trace_sha256": "48267e6ff5ecb0eaaa7c5486bf44216e674e49c2be34acbfe2398677027caf40"
+          }
+        }
+      },
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.Backend.Proof.StockMemorySretCopyBody": {
+      "source_sha256": "cd1788d19b42af3e8bc8b97b9dd248714599f2d82db523aa1b664eb65b14d716",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.Backend.Proof.StockMemoryOffsetEightScanRefines",
+        "FV.Backend.Proof.StockMemoryIntegerScanRefines",
+        "FV.Backend.Proof.StockMemoryStoreScanRefines",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBody.trace",
+          "trace_sha256": "79d00ab724347c63f0f69eef3805b512640b481b60943c87d0e18901b807c2d8",
+          "stored_native_key": "b1755cb93aa8c5eb",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "325dc018e1e50be6.olean"
+            ],
+            "m": false,
+            "i": "75a27adb8477148c.ilean",
+            "c": "8c6831ced57fca3d.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBody.trace",
+          "trace_sha256": "e660cd446946467eb5d69ce687e292f579ed20556656fc9b32a06fe4ba04eb7e",
+          "stored_native_key": "260f40f817aee280",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "325dc018e1e50be6.olean"
+            ],
+            "m": false,
+            "i": "75a27adb8477148c.ilean",
+            "c": "8c6831ced57fca3d.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBody.trace",
+          "trace_sha256": "e91899647cb53f50a03c37285c43961342b190ee012a2db3e6eb880f4a848741",
+          "stored_native_key": "417ecc63cdb79170",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "325dc018e1e50be6.olean"
+            ],
+            "m": false,
+            "i": "75a27adb8477148c.ilean",
+            "c": "8c6831ced57fca3d.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.Backend.Proof.StockMemorySretCopyBodySpec": {
+      "source_sha256": "71e1855d9488321e207cc71677666819e74795d2a666357a4fe304501627a485",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryComputedStoreRecordSpec",
+        "FV.Backend.Proof.StockMemoryStoreDemandTransport",
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+        "FV.Backend.Proof.StockGuardedOmission",
+        "FV.Backend.Proof.StockMemoryIntegerSelected"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySpec.trace",
+          "trace_sha256": "47f5294f7ac98e902f72ab153181bc1ffd71e3b74a0483cc9257991658427833",
+          "stored_native_key": "8ef8c0576b46c081",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "01c5eb732ed106a5.olean"
+            ],
+            "m": false,
+            "i": "3669ed67b6b0a31a.ilean",
+            "c": "29168d9ca31dbba5.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySpec.trace",
+          "trace_sha256": "ee5fe2003a957088b68bfa3949dcc95b00809b9a93cc0d4e0f4485ec92fc9b59",
+          "stored_native_key": "7ef7041e8c51661f",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "01c5eb732ed106a5.olean"
+            ],
+            "m": false,
+            "i": "3669ed67b6b0a31a.ilean",
+            "c": "29168d9ca31dbba5.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySpec.trace",
+          "trace_sha256": "54ff86937bb1fe3d054b91e9a98939909ebe1a2ca2b7b44b7743030577f45608",
+          "stored_native_key": "23159d9c9bcb44c0",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "01c5eb732ed106a5.olean"
+            ],
+            "m": false,
+            "i": "3669ed67b6b0a31a.ilean",
+            "c": "29168d9ca31dbba5.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.Backend.Proof.StockMemorySretCopyJumpSpec": {
+      "source_sha256": "d35442fb84fe1b6fcdb3cac6a59cbe548e4ae0d0c2d177d9ad4691f035c54d90",
+      "direct_imports": [
+        "FV.Clif.MemTrap",
+        "FV.Backend.Proof.StockMemoryOrdinaryJumpSpec",
+        "FV.Backend.Proof.StockMemorySretCopyBody"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+        "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyJumpSpec.trace",
+          "trace_sha256": "c5e5a87712a9ab6b9f79dab126a780dbe3a1654aa69d92d2ada786b6d83468d0",
+          "stored_native_key": "d48404c769963d8e",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "9c9e17fb94aa94c1.olean"
+            ],
+            "m": false,
+            "i": "278c5565b6a6daab.ilean",
+            "c": "aa4da4efebe8b547.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyJumpSpec.trace",
+          "trace_sha256": "e030ad2f07a538f19cc083c3da18015753724ce3cf8df7a878a8328d790aaffd",
+          "stored_native_key": "eb6328d17b755382",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "9c9e17fb94aa94c1.olean"
+            ],
+            "m": false,
+            "i": "278c5565b6a6daab.ilean",
+            "c": "aa4da4efebe8b547.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyJumpSpec.trace",
+          "trace_sha256": "c1e967e6d98349b90348f2976fd21f8eb247e7c8cabb010fee12e3447833e7ca",
+          "stored_native_key": "50ca0f47eeb5b144",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "9c9e17fb94aa94c1.olean"
+            ],
+            "m": false,
+            "i": "278c5565b6a6daab.ilean",
+            "c": "aa4da4efebe8b547.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.E2E.StockMemoryOffsetEightStorePairedScan": {
+      "source_sha256": "21b137ec5a37944d8c246a5616bb765e3fa1c5d9583694b77525473a54e01868",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+        "FV.E2E.StockMemoryPairedScan"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/StockMemoryOffsetEightStorePairedScan.trace",
+          "trace_sha256": "eb6bee470b4603911f7c981ea370a64b7c90eff4b7aaab049ea123bee6ccec5a",
+          "stored_native_key": "3cdbd434580f6f1e",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "ee17ae0dd9b055e2.olean"
+            ],
+            "m": false,
+            "i": "300d91a850d28c9a.ilean",
+            "c": "a44f949d4037ca25.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/E2E/StockMemoryOffsetEightStorePairedScan.trace",
+          "trace_sha256": "9d8a71891a5d17eaeabbaf1b64b78689df747de501ac06b8bb9e57af8ae4d8a6",
+          "stored_native_key": "a532e0e5e6b74fc3",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "ee17ae0dd9b055e2.olean"
+            ],
+            "m": false,
+            "i": "300d91a850d28c9a.ilean",
+            "c": "a44f949d4037ca25.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/StockMemoryOffsetEightStorePairedScan.trace",
+          "trace_sha256": "eb6bee470b4603911f7c981ea370a64b7c90eff4b7aaab049ea123bee6ccec5a",
+          "stored_native_key": "3cdbd434580f6f1e",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "ee17ae0dd9b055e2.olean"
+            ],
+            "m": false,
+            "i": "300d91a850d28c9a.ilean",
+            "c": "a44f949d4037ca25.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.E2E.StockMemorySretCopyPairedBody": {
+      "source_sha256": "1f78690c55f4f6de2f014f820b95e86470ea667ab42088e1259c40e9f1ee110d",
+      "direct_imports": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+        "FV.E2E.StockMemoryOffsetEightPairedScan",
+        "FV.E2E.StockMemoryIntegerPairedScan",
+        "FV.E2E.StockMemoryOmittedPairedScan",
+        "FV.E2E.StockMemoryPairedScan",
+        "FV.E2E.StockMemoryStorePairedScan",
+        "FV.E2E.StockMemoryOffsetEightStorePairedScan"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBody.trace",
+          "trace_sha256": "8627ad64cea9c0288c518864256a3c1e130ae60a2d62d9c941bed94095b00c11",
+          "stored_native_key": "8296d45216d28a46",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "dc26d8f35cac87e1.olean"
+            ],
+            "m": false,
+            "i": "0b6730702397d78f.ilean",
+            "c": "7413f1cea942e764.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBody.trace",
+          "trace_sha256": "6411324b6435c0a5c6cb4d3e88d1bdd25a5e40af6958b89f10164464da84ebfb",
+          "stored_native_key": "bd10a973ffd569e3",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "819d2c739cb42904.olean"
+            ],
+            "m": false,
+            "i": "0b6730702397d78f.ilean",
+            "c": "7413f1cea942e764.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBody.trace",
+          "trace_sha256": "8627ad64cea9c0288c518864256a3c1e130ae60a2d62d9c941bed94095b00c11",
+          "stored_native_key": "8296d45216d28a46",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "dc26d8f35cac87e1.olean"
+            ],
+            "m": false,
+            "i": "0b6730702397d78f.ilean",
+            "c": "7413f1cea942e764.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.E2E.StockMemorySretCopyPairedBodySplit": {
+      "source_sha256": "e99fea4113012fe0e31665763029b1bdedeb28ae90929b4054e0f04587e8ef77",
+      "direct_imports": [
+        "FV.E2E.StockMemorySretCopyPairedBody",
+        "FV.Backend.Proof.StockBodySplitUnique"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBodySplit.trace",
+          "trace_sha256": "d340db32bbd435a5422cb54dd44d4a2066e7931d03dce04745b769b3aa840eff",
+          "stored_native_key": "249a166d7a611479",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "4877e30202e2dc10.olean"
+            ],
+            "m": false,
+            "i": "50528b4d648202cf.ilean",
+            "c": "8024a2c53dac56ce.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBodySplit.trace",
+          "trace_sha256": "5760e805a6373a68a3b6dc4071967033a8b083379ac2070d15973e8a096f2895",
+          "stored_native_key": "905cfccbfc5da526",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "3b078e9bba4af73f.olean"
+            ],
+            "m": false,
+            "i": "50528b4d648202cf.ilean",
+            "c": "8024a2c53dac56ce.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedBodySplit.trace",
+          "trace_sha256": "d340db32bbd435a5422cb54dd44d4a2066e7931d03dce04745b769b3aa840eff",
+          "stored_native_key": "249a166d7a611479",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "4877e30202e2dc10.olean"
+            ],
+            "m": false,
+            "i": "50528b4d648202cf.ilean",
+            "c": "8024a2c53dac56ce.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.E2E.StockMemorySretCopyPairedCanonical": {
+      "source_sha256": "5def6b42117a2fff45876bb976bc2516673accbefa1b66d14cfbcf17e411f948",
+      "direct_imports": [
+        "FV.E2E.StockMemorySretCopyPairedFunction",
+        "FV.Backend.Proof.StockLinearCfgCompatibility"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+        "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedCanonical.trace",
+          "trace_sha256": "1f412cb84cb511e255cfb2d78724d9201b611f214dd93d03c3f81a691358c0b3",
+          "stored_native_key": "2d146b8c1b02b515",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "17c51170f03f69db.olean"
+            ],
+            "m": false,
+            "i": "358d917049f549c2.ilean",
+            "c": "1d29d4c8be8a56c4.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedCanonical.trace",
+          "trace_sha256": "0b7037eaf278e066f6622265cf8f01e0c146026c34b41d48ec72d72e3153a8e1",
+          "stored_native_key": "a96522c69d6d501b",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "a1b24b08ea1dff6e.olean"
+            ],
+            "m": false,
+            "i": "358d917049f549c2.ilean",
+            "c": "1d29d4c8be8a56c4.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedCanonical.trace",
+          "trace_sha256": "1f412cb84cb511e255cfb2d78724d9201b611f214dd93d03c3f81a691358c0b3",
+          "stored_native_key": "2d146b8c1b02b515",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "17c51170f03f69db.olean"
+            ],
+            "m": false,
+            "i": "358d917049f549c2.ilean",
+            "c": "1d29d4c8be8a56c4.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    },
+    "FV.E2E.StockMemorySretCopyPairedFunction": {
+      "source_sha256": "d64d6a3ec4ecd923286c37f5e383557bf0c3e6425fb86652f3b7b04f6eb4b835",
+      "direct_imports": [
+        "FV.E2E.StockMemoryOrdinaryPairedJump",
+        "FV.E2E.StockMemorySretCopyPairedBodySplit",
+        "FV.E2E.StockMemoryNopNonentryPairedReturn",
+        "FV.E2E.StockMemoryPairedNopJump",
+        "FV.E2E.StockMemoryOriginalEntryPaired",
+        "FV.Backend.Proof.StockLinearCfgShape",
+        "FV.Backend.Proof.StockLinearCfgDemand",
+        "FV.Backend.Proof.StockJumpEntryPrelude",
+        "FV.Backend.Proof.StockMemoryNopJumpSpec",
+        "FV.Backend.Proof.StockMemorySretCopyJumpSpec"
+      ],
+      "failed_transitive_ancestors": [
+        "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+        "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation"
+      ],
+      "role": "conditional descendant; no kernel authorization",
+      "current_expected_key": "DEFERRED_UNTIL_REJECTED_ANCESTORS_PASS",
+      "stored_trace_records": {
+        "R": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedFunction.trace",
+          "trace_sha256": "3e40f694eed49225e281f44cfecdf796bc39faecdc1263ae9b48f4ce72fec6ad",
+          "stored_native_key": "0a31158d2890d344",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "e3de34da157bfe03.olean"
+            ],
+            "m": false,
+            "i": "f5245993531f8346.ilean",
+            "c": "37197b83dfce40e2.c"
+          }
+        },
+        "G": {
+          "path": "/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedFunction.trace",
+          "trace_sha256": "5a25fdd15915d36e539a2d6fc9571f3e617fc5285929fa17e6a7209bf7700995",
+          "stored_native_key": "dba29673f596b1e4",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "90725111cae932b0.olean"
+            ],
+            "m": false,
+            "i": "f5245993531f8346.ilean",
+            "c": "37197b83dfce40e2.c"
+          }
+        },
+        "P": {
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyPairedFunction.trace",
+          "trace_sha256": "3e40f694eed49225e281f44cfecdf796bc39faecdc1263ae9b48f4ce72fec6ad",
+          "stored_native_key": "0a31158d2890d344",
+          "synthetic": false,
+          "has_inputs": true,
+          "output_descriptors": {
+            "o": [
+              "e3de34da157bfe03.olean"
+            ],
+            "m": false,
+            "i": "f5245993531f8346.ilean",
+            "c": "37197b83dfce40e2.c"
+          }
+        }
+      },
+      "G24_record": null,
+      "current_complete_donor_readiness": "UNVERIFIED; G24 prior leaf normal is insufficient"
+    }
+  },
+  "G24_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/current8f-full-reverse-inventory-v1/reuse24-artifacts-v1.json",
+  "G24_sha256": "2f628d7574a8b9115bb5194a82326c5427c769879a5f73e6b1738ad1d17a5bba",
+  "post_return_checks": [
+    "Require coordinator source-share confirmation",
+    "Check each rejected root complete R dependencies with actual no-build; query only after parents are proper",
+    "Compare exact R current key with G24 stored key; no stored-key readiness inference",
+    "Check full G/P source/config/native dependency/output context and exact active writers before any reuse",
+    "Preserve unsupported origins and mismatched descriptors; no acceptance-rule changes",
+    "Freeze both roots and all fourteen conditional descendants together; request one bounded unresolved repair verdict"
+  ],
+  "descendant_compilers_authorized": false,
+  "remaining_required_gates": [
+    "affected22 normal",
+    "baseline1357",
+    "new twelve-export kernels and real audit",
+    "full return dispatcher and actual production activation"
+  ]
+}

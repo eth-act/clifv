@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "owner_exit": 7,
+  "guard_exit": 0,
+  "no_early_config_restore": true,
+  "canonical_bytes_exact": true,
+  "no_source_handoff_claim": true,
+  "real_F_untouched": true
+}

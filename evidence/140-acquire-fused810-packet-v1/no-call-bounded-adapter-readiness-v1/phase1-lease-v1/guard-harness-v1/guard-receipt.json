@@ -1,0 +1,8 @@
+{
+  "status": "restored",
+  "source_GiB": 2,
+  "acquire_GiB": 1,
+  "owner": 308511,
+  "owner_alive_at_restore": false,
+  "compiler_signals": []
+}

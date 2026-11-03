@@ -1,0 +1,27 @@
+{
+  "status": "FOUR_ROOT_KERNELS_AND_NORMALS_PASS;FULL_CONE_STOPPED",
+  "files": {
+    "receipt.json": "e599cad15f7674a603e6940fa35d928d2f41fafccfa8970f5c8dd91500874ba0",
+    "passed-targets.json": "b5927138c04a4313176ef108bce47af9732facb8308bd5b30ed77a0eb6a60ca6",
+    "ordinary2GiB-four-root-alternative-v1.json": "35e3ee2cdb3d4221aca17937a4ff3a88c199b6036f8d87daa57e9598efa6e6df",
+    "four-root-harness-manifest-v1.json": "671668a7a7e22528e9efa3e4bd65e194602383177611b91981bc1b3dd8baea5d",
+    "shared-reverse326-key-bridge-v1.json": "7a1abb9119964ec5733643bb2ee1042f6b06acedaf003512809713a4e0a3d73b",
+    "protected-before.json": "8c4b3fb66332fb47505294e31b84485fdedb5c1facfbc37e5cdcc2841d5636fb",
+    "source/FV/Backend/Proof/StockMemoryStoreDemandTransport.lean": "f0b6aaf57ad6f992626ef25a800866794e4226a40ec8921dbbbbb72696fe613d",
+    "source/FV/Backend/Proof/StockMemorySretCopyClass.lean": "93a2504eb3378d8c0b2936491083cf385eb15659f32d2aa61bc39142484d9eff",
+    "source/FV/E2E/StockMemoryNopNonentryPairedReturn.lean": "983a0c85555343e993d9056ae5ca051d60b67cd35119d6ba5f9bd18b462f0ffe",
+    "source/FV/E2E/StockMemoryOrdinaryPairedJump.lean": "1c68caa5f888ebdb2941e387e498922aaa138fab7a5baa9b88900d1039c0f7a5"
+  },
+  "required_missing": [
+    "affected22 normal",
+    "real five-root audit",
+    "baseline1357"
+  ],
+  "actual_remaining_frontier": [
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+    "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation"
+  ],
+  "no_descendant_kernel_ran": true,
+  "all_protected_W_and_donor_outputs_still_exact": true,
+  "Loop_reuse": "four proper artifacts only, after parent review and exact current G guards"
+}

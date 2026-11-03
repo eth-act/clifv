@@ -1,0 +1,13 @@
+{
+  "status": "failed",
+  "owner": 304044,
+  "owner_birth": 1793729778.5,
+  "scope_parent": "/sys/fs/cgroup/user.slice/user-30034.slice/user@30034.service/clifv.slice",
+  "allocation": "broad12/phase1_3/orchestration1",
+  "signals_to_compilers": [],
+  "consumer": {
+    "pid": 308689,
+    "birth": 1793729943.61
+  },
+  "exit": 1
+}

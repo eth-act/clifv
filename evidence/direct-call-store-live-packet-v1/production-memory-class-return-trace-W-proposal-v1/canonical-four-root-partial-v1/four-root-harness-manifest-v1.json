@@ -1,0 +1,41 @@
+{
+  "status": "PREPARED_SOURCE_ONLY;DO_NOT_EXECUTE_BEFORE_PARENT_RESTORATION",
+  "proposal_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/ordinary2GiB-four-root-alternative-v1.json",
+  "proposal_sha256": "35e3ee2cdb3d4221aca17937a4ff3a88c199b6036f8d87daa57e9598efa6e6df",
+  "script_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/run-ordinary-four-roots-v1.py",
+  "script_sha256": "094736380a53a7e8e800f4314fa518b5bb708b84db0b0700eb2bf243d1f0f8d7",
+  "source_context_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/source-context.json",
+  "source_context_sha256": "6ae3042ff20aab7475f750bbfccace72abe19206ce7f1aac058d32dd41e07632",
+  "bridge_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/shared-reverse326-key-bridge-v1.json",
+  "bridge_sha256": "7a1abb9119964ec5733643bb2ee1042f6b06acedaf003512809713a4e0a3d73b",
+  "protected_W_receipts_manifest": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/return-trace-progress-current8f-v1.json",
+  "protected_W_receipts_manifest_sha256": "4369c0d35a98363d2bf854342987789878eb626f1bbbaf714afcfbe64a2a6460",
+  "protected_two_donor_receipt_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/two-proper-donor-reuse-v1/receipt.json",
+  "protected_two_donor_receipt_sha256": "cbb8daa420c1fa375703c2c15d0327ab15996a54ad86e401ae5809e9a203b1a0",
+  "canonical_memcap_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/memcap.sh",
+  "normal_target_counts": {
+    "kernels_max": 4,
+    "affected_normal": 22,
+    "real_audit_roots": 5,
+    "full_baseline_normal": 1357,
+    "conditional_descendant_kernels": 0
+  },
+  "post_return_prelaunch": "Python syntax validation, source/config recheck, and exact active-writer check. No source validation executed during acquire phase1.",
+  "first_watched_command": [
+    "ai-coord",
+    "watch",
+    "--label",
+    "Current8f-memory-four-roots-ordinary2G-v1",
+    "--",
+    "ionice",
+    "-c",
+    "3",
+    "nice",
+    "-n",
+    "10",
+    "python3",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/run-ordinary-four-roots-v1.py"
+  ],
+  "failure_policy": "Stop first failure; preserve partial outputs and all old target copies; no cap change or unchanged retry",
+  "resource_state": "Full source2GiB release renewed65af97c3; acquire phase1 owns it"
+}

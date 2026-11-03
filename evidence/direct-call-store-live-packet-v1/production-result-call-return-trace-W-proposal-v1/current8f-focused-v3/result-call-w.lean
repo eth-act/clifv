@@ -1,0 +1,4 @@
+import FV.E2E.StockResultCallNIW
+
+#print axioms E2E.backend_correct_world_niX_stock_result_callW
+#print axioms E2E.worldReturnTraceProvider_resultCall

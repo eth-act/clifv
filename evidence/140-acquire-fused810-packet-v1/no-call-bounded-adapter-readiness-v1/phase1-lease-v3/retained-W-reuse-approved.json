@@ -1,0 +1,9 @@
+{
+  "receipt_sha256": "e9eaffc06fb8b62047cb11c5007f56ab3f93080ca0f26ce0c55af48a4adf7824",
+  "C_binding_sha256": "a7bb348f92b9d4875c9426beeff82bc898bfcb1d4ba7abf398c96a822bb6d2ee",
+  "approved_only": [
+    "FV.E2E.LinkWorldXW",
+    "FV.E2E.DeadCleanupWorldXW"
+  ],
+  "authority": "Parent explicitly approved only these two retained W variants with cold C binding"
+}

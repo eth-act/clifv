@@ -1,0 +1,26 @@
+{
+  "affected_baseline": [
+    "FV.E2E.StockResultCallDomain",
+    "FV.E2E.StockResultCallLayout",
+    "FV.E2E.StockResultCallPair",
+    "FV.E2E.StockResultCallRun",
+    "FV.E2E.StockResultCallSource"
+  ],
+  "expected_source_key": "717a34a67ea22f5c",
+  "donors": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package": {
+      "trace_sha256": "a1d9232f411783e8d3b857b372cfa35ad3b8a48d2b4c28dd00bc8737ded258db",
+      "native_key": "717a34a67ea22f5c",
+      "synthetic": false,
+      "inputs": true,
+      "matches": true
+    },
+    "/home/lee/clifv/.worktrees/loop-20261102": {
+      "trace_sha256": "b6e2671e2158c0b0544a3805d07c2a01390e0b2b004ebae53be13627955a0821",
+      "native_key": "80c2628b95e8ef1f",
+      "synthetic": false,
+      "inputs": true,
+      "matches": false
+    }
+  }
+}

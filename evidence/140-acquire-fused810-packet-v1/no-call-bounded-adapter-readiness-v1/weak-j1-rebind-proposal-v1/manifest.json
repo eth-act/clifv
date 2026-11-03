@@ -1,0 +1,18 @@
+{
+  "status": "proposal_only_F_unmodified",
+  "before_sha256": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+  "candidate_sha256": "ae904dd0de8c2eefdf7e9a190eb78e80d93022247f455fc90952a16f2f073d37",
+  "only_change": "Prepend explicit -j1 to the existing weakLeanArgs array",
+  "pinned_Lake_docs": "Lake/Config/LeanConfig.lean:173-180 weak arguments do not affect build traces",
+  "pinned_Lake_compile": "Lake/Build/Module.lean:984 weakLeanArgs ++ leanArgs",
+  "pinned_Lake_trace": "Lake/Build/Module.lean:613 hashes leanArgs only",
+  "required_before_any_new_provider_build": [
+    "Parent approval",
+    "Flag config change to source_guarantees",
+    "Preserve old v25 config and all snapshots",
+    "Create distinct v26 metadata/verifier binding",
+    "Run actual374 normal check and compare all five expected leaf keys",
+    "Fresh all-exit guard and renewed release of source2/acquire1"
+  ],
+  "no_tracked_source_or_shared_cache_change": true
+}

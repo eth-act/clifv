@@ -1,0 +1,250 @@
+{
+  "status": "PROVENANCE_EVIDENCE_ONLY;ACCEPTANCE_STILL_ON_HOLD",
+  "tool": "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/leantar",
+  "tool_sha256": "06d613dffd2a6fd996b095bfd835c2bb720886f9eb7e13ed2adddd7df4507bf3",
+  "tool_version": "leantar 0.1.20",
+  "Lake_Module_source_sha256": "4a84a2896dedea36679a15515043860e28b95e596b28552f56bad1ff1eade27e",
+  "Lake_Common_source_sha256": "03c6017c49303720287e76e7c31decea54f1fddec5d0d7fd358e036e3b48575c",
+  "authoritative_recovery_state_sha256": "16987831c9b2c59b839a2be4658cd7af60e8a9a1c69be30302e9849a8d418fc4",
+  "late_recovery_receipt_sha256": "681abc12df0d8470bab08c2bbbd29a52411f11b33400ef76da7906019ccac632",
+  "reference_G_v1_receipt_sha256": "b1d4a24db9deeee3cadfc284b937362f44515a77acd310e50b0ee700e0a8f42c",
+  "full_F_P_comparison_sha256": "e85f47a52b4f15bff121fbf8b4c37f6e569c95f8af4823713704504f306f6efa",
+  "records": {
+    "FV/E2E/LinkPlace.lean": {
+      "F_source_sha256": "e9be297f0981fca6148dd554faa2648519150c78b173f2526672099eccb1e74a",
+      "F_expected_key": "5c9ee145acafbded",
+      "F_outputs_missing": true,
+      "P_trace_sha256": "2e69a4386feb57a16aa070d2eefa0bfa953e3ac2e8d86bd7c61931a21bf9b979",
+      "P_trace_keys": [
+        "depHash",
+        "log",
+        "outputs",
+        "schemaVersion"
+      ],
+      "R_trace_sha256": "48af6341bbc454b484b38e2143dc1bbafff6a96b87d164e98b43752b01dbad58",
+      "native_key": "5c9ee145acafbded",
+      "outputs": {
+        "c": "ddef694b78600d75.c",
+        "i": "161e0533bb09b7b8.ilean",
+        "m": false,
+        "o": [
+          "dc54dcda7df564d3.olean"
+        ]
+      },
+      "candidates": [
+        {
+          "descriptor": "0bfe45942702a31e.ltar",
+          "artifact_id": "13130562702",
+          "stage": "stage-w1-8",
+          "producer": {
+            "id": 125167972738,
+            "run_id": 41408842551,
+            "workflow_name": "Full gate",
+            "head_branch": "main",
+            "run_url": "https://api.github.com/repos/eth-act/clifv/actions/runs/41408842551",
+            "run_attempt": 1,
+            "node_id": "CR_kwDOUul6zM8AAAAdJJexgg",
+            "head_sha": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+            "url": "https://api.github.com/repos/eth-act/clifv/actions/jobs/125167972738",
+            "html_url": "https://github.com/eth-act/clifv/actions/runs/41408842551/job/125167972738",
+            "status": "completed",
+            "conclusion": "success",
+            "created_at": "2026-11-02T08:20:27Z",
+            "started_at": "2026-11-02T08:20:30Z",
+            "completed_at": "2026-11-02T09:43:12Z",
+            "name": "Build wave 1 (8) / shard 8",
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1,
+                "started_at": "2026-11-02T08:20:30Z",
+                "completed_at": "2026-11-02T08:20:32Z"
+              },
+              {
+                "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2,
+                "started_at": "2026-11-02T08:20:32Z",
+                "completed_at": "2026-11-02T08:20:36Z"
+              },
+              {
+                "name": "Run ./.github/actions/fv-lean",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3,
+                "started_at": "2026-11-02T08:20:36Z",
+                "completed_at": "2026-11-02T08:25:47Z"
+              },
+              {
+                "name": "Run actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4,
+                "started_at": "2026-11-02T08:25:47Z",
+                "completed_at": "2026-11-02T08:25:49Z"
+              },
+              {
+                "name": "Build",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5,
+                "started_at": "2026-11-02T08:25:49Z",
+                "completed_at": "2026-11-02T09:43:03Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6,
+                "started_at": "2026-11-02T09:43:03Z",
+                "completed_at": "2026-11-02T09:43:06Z"
+              },
+              {
+                "name": "Memory and swap",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 7,
+                "started_at": "2026-11-02T09:43:06Z",
+                "completed_at": "2026-11-02T09:43:06Z"
+              },
+              {
+                "name": "Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 8,
+                "started_at": "2026-11-02T09:43:06Z",
+                "completed_at": "2026-11-02T09:43:08Z"
+              },
+              {
+                "name": "Post Run ./.github/actions/fv-lean",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 15,
+                "started_at": "2026-11-02T09:43:08Z",
+                "completed_at": "2026-11-02T09:43:08Z"
+              },
+              {
+                "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 16,
+                "started_at": "2026-11-02T09:43:08Z",
+                "completed_at": "2026-11-02T09:43:09Z"
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 17,
+                "started_at": "2026-11-02T09:43:09Z",
+                "completed_at": "2026-11-02T09:43:09Z"
+              }
+            ],
+            "check_run_url": "https://api.github.com/repos/eth-act/clifv/check-runs/125167972738",
+            "labels": [
+              "ubuntu-24.04"
+            ],
+            "runner_id": 1000085523,
+            "runner_name": "GitHub Actions 1000085523",
+            "runner_group_id": 0,
+            "runner_group_name": "GitHub Actions"
+          },
+          "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-8-outputs-0.jsonl",
+          "mapping_sha256": "52eb825812373b84e5319c58c360ae339cc2fca016ee802a3f6e7177c6b46133",
+          "zip_sha256": "ae9b914d244a5032e2a219de5d2a1b663227f9de0cc2b86831b47ec017aebaa4",
+          "archive_exists": true,
+          "exit": 0,
+          "archive_sha256": "40d8164e9f26ea853205153633521b547cb0131c01888470fe1acd31ff6e8ef7",
+          "unpacked_trace": {
+            "depHash": "5c9ee145acafbded",
+            "log": [
+              {
+                "level": "warning",
+                "message": "FV/E2E/LinkPlace.lean:98:36: `if_true` has been deprecated: Use `ite_true` instead"
+              }
+            ],
+            "outputs": {
+              "c": "ddef694b78600d75.c",
+              "i": "161e0533bb09b7b8.ilean",
+              "m": false,
+              "o": [
+                "dc54dcda7df564d3.olean"
+              ]
+            },
+            "schemaVersion": "2025-09-10"
+          },
+          "trace_matches": true,
+          "trace_bytes_exact": true,
+          "payloads": {
+            "olean": {
+              "extracted_sha256": "9167d77b1cc201fe6b8ad03e55abf96388846d1c78adbc49cd356d9b1a512872",
+              "P_sha256": "9167d77b1cc201fe6b8ad03e55abf96388846d1c78adbc49cd356d9b1a512872",
+              "exact": true,
+              "F_output_missing": true,
+              "no_copy": true
+            },
+            "ilean": {
+              "extracted_sha256": "7c21609f74fd9c6de265fa3200743c31c6bb82146bc06475b48965ac5264c4bc",
+              "P_sha256": "7c21609f74fd9c6de265fa3200743c31c6bb82146bc06475b48965ac5264c4bc",
+              "exact": true,
+              "F_output_missing": true,
+              "no_copy": true
+            },
+            "c": {
+              "extracted_sha256": "70f8141343d49cbfb1ba006e46c89bb4c14d1d11c55f2431c28722c6d1357afd",
+              "P_sha256": "70f8141343d49cbfb1ba006e46c89bb4c14d1d11c55f2431c28722c6d1357afd",
+              "exact": true,
+              "F_output_missing": true,
+              "no_copy": true
+            }
+          }
+        }
+      ],
+      "matched": {
+        "artifact_id": "13130562702",
+        "stage": "stage-w1-8",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "0bfe45942702a31e.ltar",
+        "archive_sha256": "40d8164e9f26ea853205153633521b547cb0131c01888470fe1acd31ff6e8ef7",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-8-outputs-0.jsonl",
+        "mapping_sha256": "52eb825812373b84e5319c58c360ae339cc2fca016ee802a3f6e7177c6b46133",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "9167d77b1cc201fe6b8ad03e55abf96388846d1c78adbc49cd356d9b1a512872",
+            "P_sha256": "9167d77b1cc201fe6b8ad03e55abf96388846d1c78adbc49cd356d9b1a512872",
+            "exact": true,
+            "F_output_missing": true,
+            "no_copy": true
+          },
+          "ilean": {
+            "extracted_sha256": "7c21609f74fd9c6de265fa3200743c31c6bb82146bc06475b48965ac5264c4bc",
+            "P_sha256": "7c21609f74fd9c6de265fa3200743c31c6bb82146bc06475b48965ac5264c4bc",
+            "exact": true,
+            "F_output_missing": true,
+            "no_copy": true
+          },
+          "c": {
+            "extracted_sha256": "70f8141343d49cbfb1ba006e46c89bb4c14d1d11c55f2431c28722c6d1357afd",
+            "P_sha256": "70f8141343d49cbfb1ba006e46c89bb4c14d1d11c55f2431c28722c6d1357afd",
+            "exact": true,
+            "F_output_missing": true,
+            "no_copy": true
+          }
+        }
+      }
+    }
+  },
+  "reproduced": [
+    "FV/E2E/LinkPlace.lean"
+  ],
+  "unresolved": [],
+  "no_shared_write": true,
+  "no_build": true,
+  "scratch_removed": true,
+  "utc": "2026-11-03T18:50:06.550134+00:00"
+}

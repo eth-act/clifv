@@ -1,0 +1,48 @@
+{
+  "status": "SOURCE_ONLY;NO_KERNEL_CLAIM",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "modules": {
+    "StockVoidCallNIW": {
+      "sha256": "6373c44a8c55680bb0d1819e6b30f07d63e377a8ffc5a7db360f6fa2cd2e32bf",
+      "old_sha256": "524a0d15588c33c863ee80d6e96a6b3c0b7261833c1a07e2ef6298ddee74de46",
+      "old_input_header_and_conclusion_exact_after_W_names": true
+    },
+    "StockLiveCallNIW": {
+      "sha256": "990ab3a963327516282d57887446999385558bd204de10cad4d55ab7e178909a",
+      "old_sha256": "c54539056f42db75df106b1fc9d72df0868bb852fa3fcdc75f49b1736e46887f",
+      "old_input_header_and_conclusion_exact_after_W_names": true
+    }
+  },
+  "shared_edits": [],
+  "new_caller_premises": [],
+  "internal_void_view": "GoodX transport reuses actGoodX_of_voidCalls; WritesAt depends on the same code, G, and machine state",
+  "paired_live_argument_transport": "ABIReadOnly.arguments_transport from original world/register/stack inputs",
+  "open": [
+    "source/import closure",
+    "proper dependencies",
+    "focused kernels and real audit",
+    "complete dispatcher",
+    "production activation"
+  ],
+  "import_cycle_check": {
+    "acyclic": true,
+    "modules": 791
+  },
+  "exact_current_main_missing_sources_staged_separately": [
+    "FV.E2E.StockLiveCallNI",
+    "FV.E2E.StockLiveCallDomain",
+    "FV.E2E.StockLiveCallFunction",
+    "FV.E2E.StockLiveCallSourceResult",
+    "FV.E2E.StockLiveCallTail",
+    "FV.E2E.StockLiveCallRun",
+    "FV.E2E.StockLiveCallReady"
+  ],
+  "roots": [
+    "E2E.actGoodXW_of_voidCalls",
+    "E2E.stock_void_call_machine_returnW",
+    "E2E.backend_correct_world_niX_stock_void_callW",
+    "E2E.worldReturnTraceProvider_voidCall",
+    "E2E.backend_correct_world_niX_stock_live_callW",
+    "E2E.worldReturnTraceProvider_liveCall"
+  ]
+}

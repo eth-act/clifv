@@ -1,0 +1,118 @@
+{
+  "status": "SOURCE_ONLY;NO_KERNEL_CLAIM",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "modules": {
+    "StockMemoryCfgMachineW": {
+      "sha256": "c65641a0930764649d4a43ad1134b4b638951243d83fd8b4c32a15934efef3bb",
+      "old_sha256": "b3823d33224ab79f6c8d704424ece112c9688e7d9e852c9204254b83f3017cd3",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.StockMemoryCfg.machine_returnW"
+      ]
+    },
+    "StockMemoryStoreMachineW": {
+      "sha256": "0c453c9f401de602b792a9c07f341e79d1c17d488555074f5ff26ce7761b2b76",
+      "old_sha256": "95283d633408c2e5ad3e810057367224cc9762796666dd8221ba7d4e9a06e584",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.StockMemory.StoreRoots.machine_returnW"
+      ]
+    },
+    "StockMemoryStoreCfgMachineW": {
+      "sha256": "807d650dad3398d5e12cba53e19e99df689f1732057d27f5fc4d76672b71b516",
+      "old_sha256": "671d5e4441836f9c1852293e0fabe8c91fa55609b60fcf4b5bf4c2d7497da61a",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.StockMemoryStoreCfg.machine_returnW"
+      ]
+    },
+    "StockMemoryCfgWorldXW": {
+      "sha256": "e15933cb2b8a050325e46c0fe3c9a33c9b77273fc14dcdf8024cff1665341911",
+      "old_sha256": "81c6f8101a5633176eccf373f192a8e40bbb5be22730bac8685edd43c1c14ac3",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.backend_correct_worldX_stock_memory_cfgW"
+      ]
+    },
+    "StockMemoryCfgNIW": {
+      "sha256": "89ade2954349e1eb40bead2450b3687a166d20c3477212303c0faab1bd19e49c",
+      "old_sha256": "8a5b07d63b180841da4dbd5399b3193d277a9bb61572179a88b4364b785b4c92",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.backend_correct_world_niX_stock_memory_cfgW"
+      ]
+    },
+    "StockMemoryIntegerNIW": {
+      "sha256": "6dc71097e99aae31cb5da3d21d564e3987ce82f8ab1ace7995012a8ce8b5b109",
+      "old_sha256": "288161bd0b042d88242638a8277a04ae91b1cf446d342855f5ef7d466e970924",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.backend_correct_world_niX_stock_integer_memoryW"
+      ]
+    },
+    "StockMemoryExtLoadNIW": {
+      "sha256": "82b79277319428cb3f992de2bb8abbbb7eacf5912fbcdea28c4a5f6c1a30183c",
+      "old_sha256": "4dc0cb9e6b4c39a9d878fd26c5d1ad14b7b58d71c42d7734aa673316144a9617",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.backend_correct_world_niX_stock_extending_memoryW"
+      ]
+    },
+    "StockMemoryStoreNIW": {
+      "sha256": "56ea5fe509853bde1b1e260942b04fd8d0c4355934e1b2bc9c5fe6cf1d71e598",
+      "old_sha256": "e70d19f60db4a9b0e108889d178d54b89831b9ca35c5c3f039dcda335d10b50c",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.backend_correct_world_niX_stock_store_memoryW"
+      ]
+    },
+    "StockMemoryStoreCfgNIW": {
+      "sha256": "605fcf26a3b9b56216302721f56436a7dae3d4c7d1ee2e53015a7782249a57d3",
+      "old_sha256": "35ac3934be6c3b04a725811a5ce736d4a23d71efe493988e701c64ac298eeb93",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.backend_correct_world_niX_stock_store_cfg_memoryW"
+      ]
+    },
+    "StockMemoryLoadStoreNIW": {
+      "sha256": "196258203fb310e2e07a77bdb8a996cef3c6d6344d36a69bfd4ec79c86d1533e",
+      "old_sha256": "1847de5a471808f374e64560eb6f0dce709f8db87c6f5b85e34cb58321c6d32b",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.backend_correct_world_niX_stock_load_store_memoryW"
+      ]
+    },
+    "StockMemoryCapturedCopyNIW": {
+      "sha256": "d9c36feb8f7f56e7763478a2f31565046d34cfe96ad535dc49c4caf8a45ce3a4",
+      "old_sha256": "5fa949226e0432d8f7a062c04f66f0d56d043d6365d7cc08e0541efa6f47de3e",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.backend_correct_world_niX_stock_captured_copy_memoryW"
+      ]
+    },
+    "StockMemorySretCopyNIW": {
+      "sha256": "4e95071966b0452a2b218d664195fc9c1f70924c9d6f4ec0120a2eeb915a4e8d",
+      "old_sha256": "b2ab65487f6ca61da488ffb70cc4dac16f10787311f1fb788ce6a883489eae7f",
+      "original_input_header_exact": true,
+      "roots": [
+        "E2E.backend_correct_world_niX_stock_sret_copy_memoryW"
+      ]
+    }
+  },
+  "old_files_changed": [],
+  "new_caller_premises": [],
+  "generic_machine_consumer": "one existing machine_return_valueW",
+  "ordinary_non_TLS_export": "StockMemoryWorldXW; StockMemoryCfgWorldXW for cfg family",
+  "dispatcher_policy": "retain original XTls split for every memory branch; retain both return conventions",
+  "open": [
+    "import graph and source/dependency context",
+    "focused kernels",
+    "real roots audit",
+    "complete dispatcher",
+    "actual activation and hardware faults"
+  ],
+  "import_cycle_check": {
+    "acyclic": true,
+    "modules": 1369
+  }
+}

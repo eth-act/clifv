@@ -1,0 +1,14 @@
+{
+  "status": "cold_native_C_hash_matches_creator_outputs_c",
+  "actual_C_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/ir/FV/E2E/LinkGoodW.c",
+  "actual_content_sha256": "dcca2cdecf23fe8089dc4bf344572d83710a3646c4897bd8dc4ce9c4d45ec720",
+  "native_content_hash": "2c017ec0127d3b7b",
+  "creator_outputs_c": "2c017ec0127d3b7b.c",
+  "computeFileHash_cache_allowed": false,
+  "helper_sha256": "1e65ef99c3224ec2a3f3b6d1a71c457d784410b551e72ee0331c55cedabbcf29",
+  "log_sha256": "0c5b4ecb71c5c27f51f9f1aadebca07ce9cfc9a0a75d75b041a41f4317380883",
+  "actual_exit": 0,
+  "watch_event_id": 8441,
+  "watch_event_payload": "[watch, your own job; act on it, no reply] 'acquire810-link-good-w-c-binding-v1' succeeded (exit 0) after 0s. Log: /home/lee/clifv/.ai-coord/jobs/worker-O-20261103-142150-acquire810-link-good-w-c-binding-v1.log\nLast lines:\n  /home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/ir/FV/E2E/LinkGoodW.c\t2c017ec0127d3b7b",
+  "stats": "peak 66224128\noom 0\noom_kill 0\n"
+}

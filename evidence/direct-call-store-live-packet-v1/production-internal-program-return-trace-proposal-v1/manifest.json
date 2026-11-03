@@ -1,0 +1,26 @@
+{
+  "status": "SOURCE_ONLY;NO_KERNEL_CLAIM",
+  "staged_dispatcher_manifest_sha256": "74f709629d214949e423089f1d45351450ccc09c5a06a276346cef8f221914d1",
+  "source_sha256": "9582e7351087ddc8fe1b076d7d763174ae1e1785577e2393369b37e89f4ffe71",
+  "shared_edits": [],
+  "new_caller_premises": [],
+  "retained_original_inputs": [
+    "OkReturnPins modes",
+    "CrunOk",
+    "Budget \u03ba",
+    "original depth induction premises"
+  ],
+  "provider_family": "derived internally from hL.subset and hL.compiled.artifact for every actual program function",
+  "roots": [
+    "E2E.LinkSys.worldReturnTraceProviders_of_ok",
+    "E2E.LinkSys.thmGW_of_return_pins_internal",
+    "E2E.LinkSys.thmGW_return_pins_internal"
+  ],
+  "open": [
+    "full dispatcher focused kernels",
+    "source/import closure",
+    "proper current keys and real auditor",
+    "bounded fault-prefix and first-fault executable transfer",
+    "production activation"
+  ]
+}

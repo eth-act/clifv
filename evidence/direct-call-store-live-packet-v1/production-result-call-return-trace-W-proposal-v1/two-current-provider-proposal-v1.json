@@ -1,0 +1,42 @@
+{
+  "status": "PROPOSED_TWO_SEQUENTIAL_NORMAL_LEAVES;NO_BUILD",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "targets": [
+    {
+      "target": "FV.E2E.StockResultCallRun",
+      "source_sha256": "6e200eb797d954c40b3ab628ea53691861b0023502e869d7f13ae4bf9a15ac28",
+      "expected_key": "e7427a0aca4f5634",
+      "key_policy": "bind after predecessor normal pass",
+      "historical_mem_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/focused-kernel-v7/FV_E2E_StockResultCallRun.lean.mem",
+      "historical_mem_sha256": "950b2e236dc74cf94c93750eb97b4089fa912b744c8ea18fadee76dd1f9e5d15",
+      "historical_mem": "peak 276213760\noom 0\noom_kill 0\n",
+      "historical_scope": "raw focused kernel, preserved old context; current normal fit remains unmeasured"
+    },
+    {
+      "target": "FV.E2E.StockResultCallDomain",
+      "source_sha256": "f795571754f362279420cb18344bc7df3b813a8f9153fc622eb2620cbf616c2f",
+      "expected_key": null,
+      "key_policy": "bind after predecessor normal pass",
+      "historical_mem_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/focused-kernel-v7/FV_E2E_StockResultCallDomain.lean.mem",
+      "historical_mem_sha256": "54c880e4e526de99ee92a41f64587d388a4d0eb4a9ec1e4603ee2766317e6e1a",
+      "historical_mem": "peak 273661952\noom 0\noom_kill 0\n",
+      "historical_scope": "raw focused kernel, preserved old context; current normal fit remains unmeasured"
+    }
+  ],
+  "configs": {
+    "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+  },
+  "current_progress": "unaffected770 and three proper donor modules pass",
+  "outputs_preserved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/current8f-three-donor-reuse-v1/partial-receipt.json",
+  "policy": {
+    "cap": "2 GiB proposed after coordinator review",
+    "jobs": 1,
+    "lean_jobs": 1,
+    "restoration": false,
+    "shared_writes": false,
+    "stop_on_dependency_or_cap_failure": true
+  },
+  "final_gate": "baseline775; then owned StockResultCallNIW normal, complete776, real two-root audit"
+}

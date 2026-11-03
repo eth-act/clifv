@@ -1,0 +1,8 @@
+{
+  "status": "ordinary_allocation_finished",
+  "source_share_borrowed": false,
+  "acquire_GiB": 1,
+  "owner": 555048,
+  "owner_alive_at_restore": false,
+  "compiler_signals": []
+}

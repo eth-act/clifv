@@ -1,0 +1,8 @@
+'E2E.backend_correct_world_niX_stock_mixedW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.worldReturnTraceProvider_mixed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_logicalW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.worldReturnTraceProvider_logical' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_divW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.worldReturnTraceProvider_div' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_cfgW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.worldReturnTraceProvider_cfg' depends on axioms: [propext, Classical.choice, Quot.sound]

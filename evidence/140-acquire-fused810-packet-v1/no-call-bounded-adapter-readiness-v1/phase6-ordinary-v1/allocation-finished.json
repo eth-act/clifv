@@ -1,0 +1,7 @@
+{
+  "status": "ordinary_allocation_finished",
+  "source_share_borrowed": false,
+  "acquire_GiB": 1,
+  "reason": "phase6 owner all-exit finally after all consumers and scopes exit",
+  "utc": "2026-11-03T19:26:34.118811+00:00"
+}

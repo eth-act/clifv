@@ -1,0 +1,11 @@
+{
+  "parent_resource_approved": true,
+  "source2_released": true,
+  "acquire1_released": true,
+  "source_release_sha256": "a0e421dc7bd8a058ca7f8f371a9b6f9e6d7a363a713c77e4a694cf0a6733ff19",
+  "own_release_sha256": "11fdb696f529d47fdad9c8b7071a4d76de3cfb1a009181a862ab6163ea88724b",
+  "authority": "Parent approved only proposal4035f149 and LinkPlace origin53332a85; both shares renewed after natural exits.",
+  "proposal_sha256": "4035f149c3b6cc402ad6b3661d9e9b3fe99f7a35263196c8fd732838eafb2360",
+  "gate_sha256": "cce850a733f4f9815b30cdf75f5a8a8072cfd02e7db5359358421bfe0246404c",
+  "guard_harness_sha256": "7681fb46488546a83a8dda60451568834b9f46e2319b17ea619beace1f931e5f"
+}

@@ -1,0 +1,6 @@
+⚠ [11/13] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+✖ [13/13] Building FV.E2E.LinkClif
+error: target is out-of-date and needs to be rebuilt
+Some required targets logged failures:
+- FV.E2E.LinkClif

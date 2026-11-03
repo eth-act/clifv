@@ -1,0 +1,31 @@
+{
+  "status": "full_retained_C_content_binding_for_parent_review",
+  "prior_coherence_sha256": "e9eaffc06fb8b62047cb11c5007f56ab3f93080ca0f26ce0c55af48a4adf7824",
+  "records": {
+    "FV.E2E.LinkWorldXW": {
+      "actual_C_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/ir/FV/E2E/LinkWorldXW.c",
+      "actual_content_sha256": "b1359d6bbdb0916d3325660ebf286752ec599fdc3abb4bb2196fa5853e327c8d",
+      "pinned_Lake_binary_content_hash": "fafeac159149c927",
+      "creator_outputs_c": "fafeac159149c927.c",
+      "exact_native_descriptor_match": true,
+      "cached_hash_sidecars_read": false
+    },
+    "FV.E2E.DeadCleanupWorldXW": {
+      "actual_C_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/historical-R-preserved-before-c4f-v1/owned-outputs/.lake/build/ir/FV/E2E/DeadCleanupWorldXW.c",
+      "actual_content_sha256": "d3f98bd192c0954701d94c4d012163bc4a388c80265b20e6c259c50374910e14",
+      "pinned_Lake_binary_content_hash": "c4b69d5735125213",
+      "creator_outputs_c": "c4b69d5735125213.c",
+      "exact_native_descriptor_match": true,
+      "cached_hash_sidecars_read": false
+    }
+  },
+  "helper_sha256": "1e65ef99c3224ec2a3f3b6d1a71c457d784410b551e72ee0331c55cedabbcf29",
+  "Lean_executable_sha256": "0be84d44d1d5e9e3b6af00122eca15213df4c7b62edac389a0ec3bc9f0e63e6f",
+  "Lake_Trace_source_sha256": "ae8987432fdb2f722971c7dfa10096e138dfc9f244a75aeb5e7abbd2cbd94bff",
+  "Lake_Module_source_sha256": "4a84a2896dedea36679a15515043860e28b95e596b28552f56bad1ff1eade27e",
+  "hash_function": "Lake.computeFileHash path false; same binary hashing as Module.computeArtifacts",
+  "stdout_sha256": "a7d2669b6274c2c75014bfbbe65950321dac7c6f848f421f463f974fc8f4368e",
+  "memstats": "peak 64765952\noom 0\noom_kill 0\n",
+  "no_provider_build": true,
+  "no_payload_copy": true
+}

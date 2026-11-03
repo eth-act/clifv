@@ -1,0 +1,90 @@
+{
+  "FV.E2E.LinkPlace": {
+    "source_sha256": "e9be297f0981fca6148dd554faa2648519150c78b173f2526672099eccb1e74a",
+    "normal_input_key": "5c9ee145acafbded",
+    "outputs": {
+      "c": "ddef694b78600d75.c",
+      "i": "161e0533bb09b7b8.ilean",
+      "m": false,
+      "o": [
+        "dc54dcda7df564d3.olean"
+      ]
+    },
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/LinkPlace.olean": "9167d77b1cc201fe6b8ad03e55abf96388846d1c78adbc49cd356d9b1a512872",
+      ".lake/build/lib/lean/FV/E2E/LinkPlace.ilean": "7c21609f74fd9c6de265fa3200743c31c6bb82146bc06475b48965ac5264c4bc",
+      ".lake/build/lib/lean/FV/E2E/LinkPlace.trace": "2e69a4386feb57a16aa070d2eefa0bfa953e3ac2e8d86bd7c61931a21bf9b979",
+      ".lake/build/lib/lean/FV/E2E/LinkPlace.olean.hash": "3cb012cd6f35eeaaaef59735b0a24e9fb5729905ac0253e7e8cc7b10ece5cdc5",
+      ".lake/build/lib/lean/FV/E2E/LinkPlace.ilean.hash": "0d290e882c732c4009916c34086a21c99e8676faadae965d11d0de82be7431c9",
+      ".lake/build/ir/FV/E2E/LinkPlace.c": "70f8141343d49cbfb1ba006e46c89bb4c14d1d11c55f2431c28722c6d1357afd",
+      ".lake/build/ir/FV/E2E/LinkPlace.c.hash": "0267965d2123055f85af333a45494bc2068ee7903049d64abf40bfc7e4e15d08"
+    },
+    "origin": {
+      "approved_native_origin_sha256": "53332a851b4f94982035f0f03184852f3abc92299e562d96f3c7c826468ca427",
+      "archive_sha256": "40d8164e9f26ea853205153633521b547cb0131c01888470fe1acd31ff6e8ef7",
+      "namespace_paths_checked": true
+    }
+  },
+  "FV.E2E.CompiledEither": {
+    "source_sha256": "69bed92675c620a3fe1a7bccfbff820cbeae1a0ec093535d5964a03cb138bd06",
+    "normal_input_key": "cfa5ab1ba93a25fe",
+    "outputs": {
+      "o": [
+        "47b18b81201d3430.olean"
+      ],
+      "m": false,
+      "i": "42c3fd324a7de97a.ilean",
+      "c": "e3e5672eeafa1771.c"
+    },
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/CompiledEither.olean": "6170f887cd4ca3dd5e46442af28f8ef8b8b9eabc0c299a392a20e46f9adf38e3",
+      ".lake/build/lib/lean/FV/E2E/CompiledEither.ilean": "1f486428dd3bbd7993e7f2a2745dd80fc46f396a3281a9271b13dfdcea92a1d5",
+      ".lake/build/lib/lean/FV/E2E/CompiledEither.olean.hash": "e45ee49cc6f41e01b4ec4ce91fcf75c9997e3e4239b724a31fed1ead205562d1",
+      ".lake/build/lib/lean/FV/E2E/CompiledEither.ilean.hash": "8a3aba223e35670831d01344eb612440e4131321b1d6f22e777e5d7eaa18f9d1",
+      ".lake/build/lib/lean/FV/E2E/CompiledEither.trace": "2a2cd1196958a1392b9b2cac21a2adcbbfbcc74c2d3e54af3e1200e4fcfe2925",
+      ".lake/build/ir/FV/E2E/CompiledEither.setup.json": "e6c9fc7290206f5c9d601bcec30c98b51678518a535b1321ad09cb50dc543c2b",
+      ".lake/build/ir/FV/E2E/CompiledEither.c": "5a56f3803cc8a1209915af3f3f1de6a76fdc5bd138f8e7434659d608f1340a6f",
+      ".lake/build/ir/FV/E2E/CompiledEither.c.hash": "744f720bb7700df802f37d55c3405d3e3411acfc5703c677e069b30d896471c0"
+    },
+    "origin": {
+      "actual_leaf_record": {
+        "label": "leaf-0",
+        "argv": [
+          "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+          "-v",
+          "build",
+          "+FV.E2E.CompiledEither:leanArts"
+        ],
+        "exit": 0,
+        "stats": "peak 226869248\noom 0\noom_kill 0\n",
+        "effective_Lean_observations": [
+          {
+            "pid": 482071,
+            "birth": 1793732595.74,
+            "argv": [
+              "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+              "-j1",
+              "-Dlinter.unusedSimpArgs=false",
+              "-Dlinter.unusedVariables=false",
+              "-Dlinter.unnecessarySimpa=false",
+              "-Dlinter.unusedSectionVars=false",
+              "-Dlinter.defProp=false",
+              "-Dlinter.constructorNameAsVariable=false",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/E2E/CompiledEither.lean",
+              "-o",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/E2E/CompiledEither.olean",
+              "-i",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/E2E/CompiledEither.ilean",
+              "-c",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/ir/FV/E2E/CompiledEither.c",
+              "--setup",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/ir/FV/E2E/CompiledEither.setup.json",
+              "--json"
+            ]
+          }
+        ],
+        "unexpected_compilers": []
+      }
+    }
+  }
+}

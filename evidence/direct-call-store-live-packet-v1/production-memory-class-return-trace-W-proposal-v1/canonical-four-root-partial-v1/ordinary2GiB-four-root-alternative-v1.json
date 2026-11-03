@@ -1,0 +1,190 @@
+{
+  "status": "PROPOSED_ALTERNATIVE;NO_REASSIGNMENT_OR_BUILD",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "bridge_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/shared-reverse326-key-bridge-v1.json",
+  "bridge_sha256": "7a1abb9119964ec5733643bb2ee1042f6b06acedaf003512809713a4e0a3d73b",
+  "original_reverse326_proposal_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/current8f-full-reverse-inventory-v1/remaining-cone-proposal-v1.json",
+  "original_reverse326_proposal_sha256": "1191bfd91138d3eadbd7a325871ce7e72f62728213143b53391a7fc876d2695c",
+  "targets4": [
+    {
+      "target": "FV.Backend.Proof.StockMemoryStoreDemandTransport",
+      "source_sha256": "f0b6aaf57ad6f992626ef25a800866794e4226a40ec8921dbbbbb72696fe613d",
+      "expected_key": "35d860da4e5d2323",
+      "direct_imports": [
+        "FV.Backend.Proof.StockDemandedScan",
+        "FV.Backend.Proof.StockMemoryRetainedStoreReturnSpec",
+        "FV.Backend.Proof.StockMemoryStoreCoverage"
+      ],
+      "failed_transitive_predecessors": [],
+      "profile_row": [
+        "FV.Backend.Proof.StockMemoryStoreDemandTransport",
+        "269",
+        "3.0"
+      ],
+      "profile_scope": "historical conservative profile in MiB; not current-key fit evidence",
+      "cache_and_donor_status": "P/G current source matches; stored native keys differ from current R and Loop proposal; do not reuse them",
+      "original_assignment": "approved reverse326 Loop repair",
+      "proposed_owner": "owned R only after explicit reassignment and phase1 guard return"
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemorySretCopyClass",
+      "source_sha256": "93a2504eb3378d8c0b2936491083cf385eb15659f32d2aa61bc39142484d9eff",
+      "expected_key": "ebe6699fdbc95ca4",
+      "direct_imports": [
+        "FV.Backend.Proof.StockPolicy",
+        "FV.Backend.Proof.LowerSpec"
+      ],
+      "failed_transitive_predecessors": [],
+      "profile_row": null,
+      "profile_scope": "No historical profile; current fit unknown",
+      "cache_and_donor_status": "P/G current source matches; stored native keys differ from current R and Loop proposal; do not reuse them",
+      "original_assignment": "approved reverse326 Loop repair",
+      "proposed_owner": "owned R only after explicit reassignment and phase1 guard return"
+    },
+    {
+      "target": "FV.E2E.StockMemoryNopNonentryPairedReturn",
+      "source_sha256": "983a0c85555343e993d9056ae5ca051d60b67cd35119d6ba5f9bd18b462f0ffe",
+      "expected_key": "63f98422bb885812",
+      "direct_imports": [
+        "FV.E2E.StockMemoryNopPairedPrelude",
+        "FV.E2E.StockMemoryPairedReturnEdgeBody",
+        "FV.Backend.Proof.StockCfgReturnBlock",
+        "FV.Backend.Proof.StockCfgTraversalScans"
+      ],
+      "failed_transitive_predecessors": [],
+      "profile_row": [
+        "FV.E2E.StockMemoryNopNonentryPairedReturn",
+        "276",
+        "2.0"
+      ],
+      "profile_scope": "historical conservative profile in MiB; not current-key fit evidence",
+      "cache_and_donor_status": "P/G current source matches; stored native keys differ from current R and Loop proposal; do not reuse them",
+      "original_assignment": "approved reverse326 Loop repair",
+      "proposed_owner": "owned R only after explicit reassignment and phase1 guard return"
+    },
+    {
+      "target": "FV.E2E.StockMemoryOrdinaryPairedJump",
+      "source_sha256": "1c68caa5f888ebdb2941e387e498922aaa138fab7a5baa9b88900d1039c0f7a5",
+      "expected_key": "ecefa9ee089f4855",
+      "direct_imports": [
+        "FV.Backend.Proof.StockCfgSuccessorDemand",
+        "FV.Backend.Proof.StockInheritedJumpDefined",
+        "FV.Backend.Proof.StockMemorySourceExecution",
+        "FV.Backend.Proof.StockCfgDemandValues",
+        "FV.Backend.Proof.StockPerEdgeReturnContract",
+        "FV.Backend.Proof.StockComputedCfg",
+        "FV.E2E.StockMemoryPairedScan",
+        "FV.E2E.PairDriver",
+        "FV.Backend.Proof.VCodeSemISeq"
+      ],
+      "failed_transitive_predecessors": [],
+      "profile_row": [
+        "FV.E2E.StockMemoryOrdinaryPairedJump",
+        "292",
+        "2.0"
+      ],
+      "profile_scope": "historical conservative profile in MiB; not current-key fit evidence",
+      "cache_and_donor_status": "P/G current source matches; stored native keys differ from current R and Loop proposal; do not reuse them",
+      "original_assignment": "approved reverse326 Loop repair",
+      "proposed_owner": "owned R only after explicit reassignment and phase1 guard return"
+    }
+  ],
+  "config_records": {
+    "R": {
+      "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+      "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+      "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+    },
+    "Loop": {
+      "lakefile.toml": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+      "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+      "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+    }
+  },
+  "protected_two_donors": [
+    "FV.Backend.Proof.StockMemoryOffsetEightStore",
+    "FV.Backend.Proof.StockMemoryOrdinarySourceTrap"
+  ],
+  "protected_donor_receipt_sha256": "cbb8daa420c1fa375703c2c15d0327ab15996a54ad86e401ae5809e9a203b1a0",
+  "protected_passed_W_receipts": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/return-trace-progress-current8f-v1.json",
+  "affected_baseline22": [
+    "FV.Backend.Proof.StockMemoryOffsetEightStore",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreExec",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+    "FV.Backend.Proof.StockMemoryOrdinaryJumpSpec",
+    "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation",
+    "FV.Backend.Proof.StockMemoryOrdinarySourceTrap",
+    "FV.Backend.Proof.StockMemorySretCopyBody",
+    "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+    "FV.Backend.Proof.StockMemorySretCopyClass",
+    "FV.Backend.Proof.StockMemorySretCopyJumpSpec",
+    "FV.Backend.Proof.StockMemoryStoreDemandTransport",
+    "FV.E2E.StockMemoryNopNonentryPairedReturn",
+    "FV.E2E.StockMemoryOffsetEightStorePairedScan",
+    "FV.E2E.StockMemoryOrdinaryPairedJump",
+    "FV.E2E.StockMemorySretCopyPairedBody",
+    "FV.E2E.StockMemorySretCopyPairedBodySplit",
+    "FV.E2E.StockMemorySretCopyPairedCanonical",
+    "FV.E2E.StockMemorySretCopyPairedFunction"
+  ],
+  "conditional_baseline16": [
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreCoverage",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreExec",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreRecord",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreRetention",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreScanRefines",
+    "FV.Backend.Proof.StockMemoryOffsetEightStoreSourceValues",
+    "FV.Backend.Proof.StockMemoryOrdinaryJumpSpec",
+    "FV.Backend.Proof.StockMemoryOrdinarySourceContinuation",
+    "FV.Backend.Proof.StockMemorySretCopyBody",
+    "FV.Backend.Proof.StockMemorySretCopyBodySpec",
+    "FV.Backend.Proof.StockMemorySretCopyJumpSpec",
+    "FV.E2E.StockMemoryOffsetEightStorePairedScan",
+    "FV.E2E.StockMemorySretCopyPairedBody",
+    "FV.E2E.StockMemorySretCopyPairedBodySplit",
+    "FV.E2E.StockMemorySretCopyPairedCanonical",
+    "FV.E2E.StockMemorySretCopyPairedFunction"
+  ],
+  "new_class_exports12_remain_separate": true,
+  "profile_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/stock-current-main-full-gate-v6/conservative-peaks.tsv",
+  "profile_sha256": "8d28a8ebd87b7516e7348675805db34262cd9e22016a5276717f5a92270741dc",
+  "resource_policy": {
+    "owner": "R source share",
+    "cap_bytes": 2147483648,
+    "sequential_jobs": 1,
+    "explicit_Lean_jobs": 1,
+    "restoration_enabled": false,
+    "shared_P_G_C_A_writes": false,
+    "stop_on_first_actual_dependency_key_source_provenance_compiler_or_cap_failure": true,
+    "increase_cap_on_failure": false
+  },
+  "per_target_protocol": [
+    "Require parent reassignment and returned source share; require no other R compiler",
+    "Bind unchanged current8f source and exact config bytes",
+    "Check complete current proper dependencies before querying the target native key",
+    "Requery the current key and require the bridge expected key",
+    "Prefer an independently complete exact supported artifact if one appeared; never duplicate an active writer",
+    "Preserve old trace/payload hashes before a fresh restoration-disabled normal kernel",
+    "Record actual command, current key, all artifacts, peak, OOM counters, natural termination",
+    "Run actual per-target normal check; preserve every passed target and stop on real failure"
+  ],
+  "after_four": [
+    "Run full affected22 actual normal check",
+    "Run unchanged repository auditor on the five listed public roots, including the no-axiom class constant",
+    "Run complete current baseline1357; keep the twelve new exports unclaimed until its proper gate passes",
+    "If conditional descendants reject, preserve the complete rejected set; no automatic extra kernel is authorized by this four-root alternative"
+  ],
+  "audit_roots": [
+    "Backend.Stock.Memory.StoreRoots.stock_retained_store_demand_before",
+    "Backend.Stock.Memory.StoreRoots.stock_retained_stored_definition_emitted",
+    "Backend.Stock.Memory.SretCopy.CfgClass",
+    "E2E.StockMemory.actual_nonentry_paired_nop_return",
+    "E2E.StockMemory.ordinary_paired_jump_body_returns_at_of_body"
+  ],
+  "Loop_handoff": "Parent removes these four roots from duplicate Loop compilation only after reviewing R proper receipts. Loop rechecks its current keys/source/config/dependency/output records before exact reuse. Original assignment remains unchanged until that verdict.",
+  "guards": "No acceptance, memory, try-call, TLS, heap, or caller execution premise changes"
+}

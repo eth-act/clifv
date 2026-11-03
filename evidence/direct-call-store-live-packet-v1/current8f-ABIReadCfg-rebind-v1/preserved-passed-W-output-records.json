@@ -1,0 +1,84 @@
+{
+  "validated": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-validated-return-trace-W-proposal-v3/focused-kernel-v4/receipt.json",
+    "sha256": "3669c47724573728d0d460b7969598c5f6a716d544c39737279ad86a8894ff2b",
+    "outputs": {
+      ".lake/build/lib/lean/FV/E2E/ValidatedReturnTraceW.olean.hash": "a697fe2a88fdf88d7b8138ca5bdec5954ed1f31d7b131562ce9fe31aa55e4559",
+      ".lake/build/lib/lean/FV/E2E/ValidatedReturnTraceW.ilean.hash": "656099e8a36788f0ac72f830dc8528c31e861f30376db69dc26aa065cda8dbb8",
+      ".lake/build/lib/lean/FV/E2E/ValidatedReturnTraceW.trace": "f6cc650ab22d6ef9d20bdab82559d4dec83aabecff7bf6ad81c99326ad403427",
+      ".lake/build/lib/lean/FV/E2E/ValidatedReturnTraceW.olean": "226bb2975d7ec6e96e35207d54fc10c302596b765312356a41f2a95c73f6c7da",
+      ".lake/build/lib/lean/FV/E2E/ValidatedReturnTraceW.ilean": "63f9185a40bcfad16b24434672c506aa0029ec4c47b58398e89fafb55a390a14",
+      ".lake/build/ir/FV/E2E/ValidatedReturnTraceW.setup.json": "b85eb9fe5d8afeebf2c1d199a1937a887e0f88e8a7d4efb873b531a9af1d0dd6",
+      ".lake/build/ir/FV/E2E/ValidatedReturnTraceW.c": "1aa94d8cae8ea33e9604ed1a833d5157935615a6887b6b78917876a6c338f1eb",
+      ".lake/build/ir/FV/E2E/ValidatedReturnTraceW.c.hash": "1cb00613f4770b27acade112d0447552ecd5972541a1962bf4471dda21f9ad57"
+    }
+  },
+  "arithmetic": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-arithmetic-return-trace-W-proposal-v1/current8f-focused-v1/receipt.json",
+    "sha256": "bbbbecfccd09537b200bd4a391fc4f0df3911165458953739accbefb9961d4be",
+    "outputs": {
+      "FV.E2E.ABIReadOnlyMachineW": {
+        "native_key": "1f7bf85c414b51f6",
+        "trace_sha256": "01cf1be9c9372b6dcffefe84c13395d0dd736bb04039b769ad8b53fe886b7e1f",
+        "artifacts": {
+          ".lake/build/lib/lean/FV/E2E/ABIReadOnlyMachineW.trace": "01cf1be9c9372b6dcffefe84c13395d0dd736bb04039b769ad8b53fe886b7e1f",
+          ".lake/build/lib/lean/FV/E2E/ABIReadOnlyMachineW.ilean.hash": "a6b0042a35291f47a3bd97d3e7a3e5f1ad2e4dd7a085652f47de1a6d4b7e5cf6",
+          ".lake/build/lib/lean/FV/E2E/ABIReadOnlyMachineW.olean.hash": "566ec00226041cb0519962a020f6afb40519bc39ad922347abff209b0d931a4b",
+          ".lake/build/lib/lean/FV/E2E/ABIReadOnlyMachineW.olean": "fe277305156fd6e1026539a20b0c1a8796b41f2150a319e97c1e092c70fabcaa",
+          ".lake/build/lib/lean/FV/E2E/ABIReadOnlyMachineW.ilean": "1b427c697b65d7f45776081659f138c29ed037559a3eb37c358261126eb000eb",
+          ".lake/build/ir/FV/E2E/ABIReadOnlyMachineW.setup.json": "32312c1b93fcd0cd69fa18fab72651402eaea9e5a524ffdddd48e47f5bce0916",
+          ".lake/build/ir/FV/E2E/ABIReadOnlyMachineW.c": "4bee542d4e4124382338f828b3ad612a5fa133d144699fe09f0bb1643792728e",
+          ".lake/build/ir/FV/E2E/ABIReadOnlyMachineW.c.hash": "0361d9c389142f08b104be3eaaf63935a6ab5be654a6028105cdbe5ad5b944af"
+        }
+      },
+      "FV.E2E.StockArithmeticNIW": {
+        "native_key": "c57a32af30fe0c49",
+        "trace_sha256": "630a3ee2f71c7e7d23ccc5db73d15aa4bf46db9cbeebc2c55199fe0d649de651",
+        "artifacts": {
+          ".lake/build/lib/lean/FV/E2E/StockArithmeticNIW.ilean.hash": "e168c8fdde640e908734cd3e2e1a669a4e5f062c0fb2c75a6d75e8abad6941ff",
+          ".lake/build/lib/lean/FV/E2E/StockArithmeticNIW.trace": "630a3ee2f71c7e7d23ccc5db73d15aa4bf46db9cbeebc2c55199fe0d649de651",
+          ".lake/build/lib/lean/FV/E2E/StockArithmeticNIW.olean": "482607914a6cf4fd7f7ec610800af361166b6f9a717384d16b1dce37767a99dd",
+          ".lake/build/lib/lean/FV/E2E/StockArithmeticNIW.olean.hash": "8d78377525ead67d80d09fdd874e1f15be0c66d2e01dcfd269033024c958f926",
+          ".lake/build/lib/lean/FV/E2E/StockArithmeticNIW.ilean": "1b8aa102f0d012f5b46d4a96e595e5ad3e59059e7daf33f4c18a080355045c8c",
+          ".lake/build/ir/FV/E2E/StockArithmeticNIW.setup.json": "b2e14d23aaeadb04bb11b40d986e0c74d9a68f8fe3b5004ab66a92b7560ab3c0",
+          ".lake/build/ir/FV/E2E/StockArithmeticNIW.c": "a6213b8d3d260149d635fc5dae141a0af189b9c5612e9ff4c272a69b06e8af65",
+          ".lake/build/ir/FV/E2E/StockArithmeticNIW.c.hash": "4ecfbc2d4d88f5e5a417186e339fc0af63ea6d16cd7bc2f6480a3b556f7c1806"
+        }
+      }
+    }
+  },
+  "scalar": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-scalar-return-trace-W-proposal-v2/focused-read-model-scalar-v2/receipt.json",
+    "sha256": "54a59cb31c5360fac41869eb937c61d1dde5cd1e9e998aa6b7703273f3ad64bc",
+    "outputs": {
+      "FV.E2E.ABIReadModelsReturnTraceW": {
+        "native_key": "a66cb0c584449df7",
+        "trace_sha256": "2f8767b10efff0fc2912906757720d497466b80999d6df7e223151c3ac923d07",
+        "artifacts": {
+          ".lake/build/lib/lean/FV/E2E/ABIReadModelsReturnTraceW.olean": "36f1becfd61dfd2c1e5c2768d47c7e5a7bed634c39eaa9cb567279d025312588",
+          ".lake/build/lib/lean/FV/E2E/ABIReadModelsReturnTraceW.ilean": "d73b4c643f679f402a55f91c256eefe16b80844d18af83f168c35896a2105523",
+          ".lake/build/lib/lean/FV/E2E/ABIReadModelsReturnTraceW.olean.hash": "804d99733c356e2bc58b5ee1ab136be3a7ed75675077105ff7395f437a0f9fac",
+          ".lake/build/lib/lean/FV/E2E/ABIReadModelsReturnTraceW.ilean.hash": "f6822f7ba10207d6ab12a7f8cf48b30f8a845d47cd7238d0a49c32ddefba5fa5",
+          ".lake/build/lib/lean/FV/E2E/ABIReadModelsReturnTraceW.trace": "2f8767b10efff0fc2912906757720d497466b80999d6df7e223151c3ac923d07",
+          ".lake/build/ir/FV/E2E/ABIReadModelsReturnTraceW.setup.json": "e6b74dd79127177092ee59e3f90cca476977871932de781060f9b7f02036f340",
+          ".lake/build/ir/FV/E2E/ABIReadModelsReturnTraceW.c": "2fc81831b413e8afa6bb7843d2c5df95f9a9f92c4dbe706e8ddda626ed3b7f96",
+          ".lake/build/ir/FV/E2E/ABIReadModelsReturnTraceW.c.hash": "9f19c9c16b0b36c481abff1c99756bc58c1aaaf78e3ef825d13820410f4d06e4"
+        }
+      },
+      "FV.E2E.StockScalarNIW": {
+        "native_key": "8ba3998b730a6eed",
+        "trace_sha256": "cf5865ee6e58a99ab2b4d8bb24cb5ed58cf3d087cdbc6f7689fd027b74b8a620",
+        "artifacts": {
+          ".lake/build/lib/lean/FV/E2E/StockScalarNIW.olean": "a42489c05eb998f6362e77d5eb755e5d134e7fc1028aaedea97006ea39cf1f33",
+          ".lake/build/lib/lean/FV/E2E/StockScalarNIW.olean.hash": "62e971cf7ad719058ca31c2e179b3bf983038809e338d4c5d03268ce35bbd2ea",
+          ".lake/build/lib/lean/FV/E2E/StockScalarNIW.trace": "cf5865ee6e58a99ab2b4d8bb24cb5ed58cf3d087cdbc6f7689fd027b74b8a620",
+          ".lake/build/lib/lean/FV/E2E/StockScalarNIW.ilean.hash": "f761d01bb79b3bbdf3be47e43d640a51fbf0ecb01515d768adcfe97039345220",
+          ".lake/build/lib/lean/FV/E2E/StockScalarNIW.ilean": "e902f9a96e5188e93f73ae963ccdbce4e863afa35e1eb0a776827e12d517c9be",
+          ".lake/build/ir/FV/E2E/StockScalarNIW.setup.json": "fb47f7cbdac4b4704193fd3d420184e17ba717646a051559860d52b58d8ba6ff",
+          ".lake/build/ir/FV/E2E/StockScalarNIW.c": "855b61b20e982c2c1acac8def5d164c7b2a711491526a8608d74613f65bda393",
+          ".lake/build/ir/FV/E2E/StockScalarNIW.c.hash": "ee032a0827ca8e66f0de0ba45481628f6114bdf7a516f80c3c5c2003dad89806"
+        }
+      }
+    }
+  }
+}

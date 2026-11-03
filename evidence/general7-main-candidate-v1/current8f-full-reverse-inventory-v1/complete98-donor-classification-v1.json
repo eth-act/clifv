@@ -1,0 +1,2543 @@
+{
+  "scope": "candidate metadata only; actual normal and approved-origin checks remain required",
+  "rows": [
+    {
+      "target": "FV.Backend.Proof.DriverCheckT",
+      "key": "7cf665b799c6883a",
+      "current_source_sha256": "1ad31de07bf140f592beb12da01e9295b11bdd39e6afbfbaf8551a205ecfc78b",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "4cbf6ce4099782695efd1b7d3abe424120b2a100bc5d0b321af5bf0dee1ce1a9",
+          "trace_depHash": "7cf665b799c6883a",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "4cbf6ce4099782695efd1b7d3abe424120b2a100bc5d0b321af5bf0dee1ce1a9",
+          "trace_depHash": "7cf665b799c6883a",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.StockResultCallCheck",
+      "key": "371d6e918a37295d",
+      "current_source_sha256": "0e3c6533013e18cdb9e3d8e96f57379675baa0c0a68c972954c86e06ab35d7f9",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "63e912b8c694669deddea498d242ff9a284975c3d784b6d70e31556dd6f751ad",
+          "trace_depHash": "371d6e918a37295d",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "d3ddd1cc5b71d33dd29d779e4110716e1b5a4fd30995ca29def2fb2eba67dc26",
+          "trace_depHash": "371d6e918a37295d",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockSourceResults",
+      "key": "34d2915d949d32c0",
+      "current_source_sha256": "081f158d20fd4810fbfa6599f175ec612cbe8e51f94f63d723580f895e56db10",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "0b2b529253f6b1277f87cb89be69aa1e00dc16457a5f0499fbb761899ce9b639",
+          "trace_depHash": "34d2915d949d32c0",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "897fd325ab1ac4b0bb904add3060d93e637676dc7ddb81e81d81923c1000941d",
+          "trace_depHash": "34d2915d949d32c0",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.ExtSemGuard",
+      "key": "910f1b55675dff08",
+      "current_source_sha256": "4e1ad1350fbbabcaffb1d88ee7859764a67db4f16d8097becf119024c24d3d37",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "2d5c81220f67834d001d26c6afdacb384ae329cd5b249a73a91004abd9e17ae4",
+          "trace_depHash": "910f1b55675dff08",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "2d5c81220f67834d001d26c6afdacb384ae329cd5b249a73a91004abd9e17ae4",
+          "trace_depHash": "910f1b55675dff08",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Lowering.StockCheckedWith",
+      "key": "de02e1c493df6399",
+      "current_source_sha256": "a91ff193edac1a5096a85096331020e6bf3125aca1dd3f92bc9996b1a012d0db",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "5070ea4c54e099945c5cde9757195568c4cb14e79b9d6a7d76fa05a9a83cb184",
+          "trace_depHash": "8aad7dc1e567955d",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "5070ea4c54e099945c5cde9757195568c4cb14e79b9d6a7d76fa05a9a83cb184",
+          "trace_depHash": "8aad7dc1e567955d",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockParameterInput",
+      "key": "85fa7c0a79b77612",
+      "current_source_sha256": "4172120228d516c2529b84ad6edec479b1e4269e96e5e029045668b3a2614e3e",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "e25cfe204732bc50eba0982bdc6b33ffa35b3ce7c13df892dea09c87072150ec",
+          "trace_depHash": "42319f97aa6183cb",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockConditionalEmptyFixture",
+      "key": "b29a6ec37ab568f0",
+      "current_source_sha256": "330202870729e61b91a91b8220522fc3914137eb58a3cd2967dae4cd8d79046c",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "11edc0472f042cf3b803c2079f0fffd931f78612d6ae0c0770ba12890afe9dc8",
+          "trace_depHash": "53a307a23c3bd875",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockConditionalEmptyTrapSource",
+      "key": "14cf5b5bb857e37f",
+      "current_source_sha256": "63b24901ed421f1ee3cb7da8b91b42e986121150fea8a21c487518db58e6f1ea",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "4dd177a3174d6d2ff20deeb0c2effbd6a6e84a3e55aa29a75e23866bcab06e2a",
+          "trace_depHash": "f7d7834b2fa6abc2",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockConditionalArgsClass",
+      "key": "401480a6f916c65a",
+      "current_source_sha256": "52400184e34f4cc4c55e3424da0aed1e1c1e2933ab73c8e5d9f452a098ec9ea2",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "6d30398510d1a057c13dd748c498741b160723b5965d979f80186236e1f0c332",
+          "trace_depHash": "1c883bad91766c05",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockConditionalSelectedAt",
+      "key": "d6c952073caa6b7c",
+      "current_source_sha256": "c169e4f101e3c108770560a1fbdc0c66c9c739a40a9f703fced01fb9d18ad62c",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "377df50a9d0c9b69179d0b5e057314a1e11909b54c318ea09ca564501648fff1",
+          "trace_depHash": "d6c952073caa6b7c",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockParameterLoopCheck",
+      "key": "6fab0e70f861702a",
+      "current_source_sha256": "7f835bbb6060902d3e1c749eb800bf0708c4477ca11d08069632034426784474",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "bbfe34701d997ea8ffd43bf3906bf843c6fda44abfef217b851991684a2282e0",
+          "trace_depHash": "897e3837a62e8929",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.BinCheck",
+      "key": "a6cb6393395ac032",
+      "current_source_sha256": "ad38c433944b82a0e3a51a7991dcdcb475ee0e512f9c81f68c33d7a81e1d2f7a",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "1cc434a4627fb58d10898abfb672b83a4d60b044a74453540c2ed25bf83fc4f8",
+          "trace_depHash": "efbbe530f03cdf0f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "1cc434a4627fb58d10898abfb672b83a4d60b044a74453540c2ed25bf83fc4f8",
+          "trace_depHash": "efbbe530f03cdf0f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselTermIntPos",
+      "key": "37107560b5d454db",
+      "current_source_sha256": "4470c9fd2ca0237f72d6edabd2d56358d964313281519dcea770f7f11f2a2f01",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "188c2787390f6c39e8549206789785dd75dea227abb005639aaa75d8e4596bcb",
+          "trace_depHash": "37107560b5d454db",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "188c2787390f6c39e8549206789785dd75dea227abb005639aaa75d8e4596bcb",
+          "trace_depHash": "37107560b5d454db",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.GuardedFP",
+      "key": "0dc56fe963b56def",
+      "current_source_sha256": "de3ea0f6d1134019b6bfaacbc09b7ee07165dd1d343ae9bbc200723d89212754",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "40b1618e7910d26f6af760c61cbbefd8da8bf00c9e6700f3d9a66d5685bac514",
+          "trace_depHash": "cdbeccaa3b9916ff",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselFloatMem",
+      "key": "ca214238cffd154c",
+      "current_source_sha256": "382eb9d29078002a2bd300ad81b7dbdc9b593d5c85eef11f9240f618b1a48b64",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "fdeaaff03f992e05313af53fefdbca80a79b33f67e96a40becd4bb6402121cb8",
+          "trace_depHash": "cb6057bf8cb9cae9",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselCmpEmitTI",
+      "key": "96498070c53ee2d2",
+      "current_source_sha256": "67c732abb4ff703893b8d610f3da0146b541dcad8ece449338b9b7fef2559c6b",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "c52178f666139a43d37f25a4487f198c2a7cfdfa032287aefff7157bb113124f",
+          "trace_depHash": "96498070c53ee2d2",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselTermsShiftTI",
+      "key": "e90813572312226b",
+      "current_source_sha256": "c850e121b77c7257069025520dfcd483867aa045bf9afb98c1c5bf69c84e3f58",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "b59850063a4b4200d98058f59d7440776010815af5475945602453d09b8dc3a4",
+          "trace_depHash": "e90813572312226b",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.SpillEdgesIsel",
+      "key": "80e01bf90ec16b9a",
+      "current_source_sha256": "9b8e515522827a6928d6ba1663baa9d429ed1fec9724dcfb24e168ed7ab6981e",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "b35dbbf0f36427ce5030e400adab11c5c964dc885c482f0d675f2825c26190f3",
+          "trace_depHash": "80e01bf90ec16b9a",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "b35dbbf0f36427ce5030e400adab11c5c964dc885c482f0d675f2825c26190f3",
+          "trace_depHash": "80e01bf90ec16b9a",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselTermFactsCallT",
+      "key": "9a5fdfa2a9859945",
+      "current_source_sha256": "ea4b6f2656503930e27cd74f33557322c65dffe6d8b43975165f65032edea503",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "443d929274ab984e0aaf81e505e5c4b4355ebc1524ef0ec12e841713bf87bc81",
+          "trace_depHash": "9a5fdfa2a9859945",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "443d929274ab984e0aaf81e505e5c4b4355ebc1524ef0ec12e841713bf87bc81",
+          "trace_depHash": "9a5fdfa2a9859945",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.SretStable",
+      "key": "12d958eeee95d33d",
+      "current_source_sha256": "3595255c0be63a9ec282940b13c5c7aacbb99a2b7ff1b8f97bb27086e363c90b",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "f70ae7a76815d9db394fbb335e95a05b285d224b6741b3c2c74b7e3141663bae",
+          "trace_depHash": "12d958eeee95d33d",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "f70ae7a76815d9db394fbb335e95a05b285d224b6741b3c2c74b7e3141663bae",
+          "trace_depHash": "12d958eeee95d33d",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.StackBound",
+      "key": "f65bdd8581bf810d",
+      "current_source_sha256": "f23bfac3c4eb90eb8bf2b4f86d32b55b3b83c24dc988a5aec013186ef24c43e0",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "8aaf13587537887c72331772b3fd2fe7985e03ffced34ddb0ec7d1b754d4bc34",
+          "trace_depHash": "b8aebead2379f731",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "8aaf13587537887c72331772b3fd2fe7985e03ffced34ddb0ec7d1b754d4bc34",
+          "trace_depHash": "b8aebead2379f731",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.PipelineCheck",
+      "key": "3f2e6d5e0844ba80",
+      "current_source_sha256": "8eebfe1985474a3b70eb74f5e9397570436329d491cae055c5f78721725fa087",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "fc702ca2514e77b78ecbbeac33b4b767e096c776965763e9eb23d9424695cb8e",
+          "trace_depHash": "0dd42aae34fbf494",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "fc702ca2514e77b78ecbbeac33b4b767e096c776965763e9eb23d9424695cb8e",
+          "trace_depHash": "0dd42aae34fbf494",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.LinkProduction",
+      "key": "4db83e63e37abba2",
+      "current_source_sha256": "a86989b8995ae90d80f4be9269a6c1fe199dbe29687bd2a6ccbef4a736845e33",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "79b0866e054d527e2fc882608968ede4669af53c2156376f5204d379dced78fa",
+          "trace_depHash": "726baa07096fda67",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "79b0866e054d527e2fc882608968ede4669af53c2156376f5204d379dced78fa",
+          "trace_depHash": "726baa07096fda67",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.LoweringProvenance",
+      "key": "438716ce4404e914",
+      "current_source_sha256": "1915cbc946c97be410a77ec9906c47cef8742dbb78bc15f08037852a2c4de5e4",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "51c305864f3352269a2beb0beaba152c155e501457e6aa00004f94016e21d13e",
+          "trace_depHash": "5b236bb0e433a5cd",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "51c305864f3352269a2beb0beaba152c155e501457e6aa00004f94016e21d13e",
+          "trace_depHash": "5b236bb0e433a5cd",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.CallReturnPins",
+      "key": "5284fcd6b08eef3d",
+      "current_source_sha256": "d60d3f89fa7e8e6119342a78b844c422eb8de3e25c2c7f352bc530231435d65b",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "1617b79c43f0ed778ed826a3c62c4239c5c0c979393c5af12949f56df40b80ab",
+          "trace_depHash": "5284fcd6b08eef3d",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "1617b79c43f0ed778ed826a3c62c4239c5c0c979393c5af12949f56df40b80ab",
+          "trace_depHash": "5284fcd6b08eef3d",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryABIContract",
+      "key": "3d717253114c2860",
+      "current_source_sha256": "3e73797280bbcd0892401e7dab747869944e100b21517605e36d090e31c15a9f",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "70a0d0795de669267463c155d177c2efe25465ddee8f291d6c6d614b22f2c150",
+          "trace_depHash": "3d717253114c2860",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "70a0d0795de669267463c155d177c2efe25465ddee8f291d6c6d614b22f2c150",
+          "trace_depHash": "3d717253114c2860",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemorySretCopyClass",
+      "key": "ebe6699fdbc95ca4",
+      "current_source_sha256": "93a2504eb3378d8c0b2936491083cf385eb15659f32d2aa61bc39142484d9eff",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "2d32c0be893e1206109d79e5d3ff72fe0ea308eccb1eb8e33ac0f5cf599ae009",
+          "trace_depHash": "c97b769d9d445023",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "2d32c0be893e1206109d79e5d3ff72fe0ea308eccb1eb8e33ac0f5cf599ae009",
+          "trace_depHash": "c97b769d9d445023",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.StockMemoryOrdinaryPairedJump",
+      "key": "ecefa9ee089f4855",
+      "current_source_sha256": "1c68caa5f888ebdb2941e387e498922aaa138fab7a5baa9b88900d1039c0f7a5",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "06363836e13474d4ee8927ae951a9e627f2fdf0abe7afe1ef958acefb6a2f26b",
+          "trace_depHash": "352c0ee546d4a741",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "06363836e13474d4ee8927ae951a9e627f2fdf0abe7afe1ef958acefb6a2f26b",
+          "trace_depHash": "352c0ee546d4a741",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryStoreDemandTransport",
+      "key": "35d860da4e5d2323",
+      "current_source_sha256": "f0b6aaf57ad6f992626ef25a800866794e4226a40ec8921dbbbbb72696fe613d",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "47940a86d5b269b0dc5cd3ee064e217bf314e6177d3d85a14fc3cf2fa8b51e6d",
+          "trace_depHash": "732405f43d798e9f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "47940a86d5b269b0dc5cd3ee064e217bf314e6177d3d85a14fc3cf2fa8b51e6d",
+          "trace_depHash": "732405f43d798e9f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryOffsetEightStore",
+      "key": "ebe25be87286443c",
+      "current_source_sha256": "af99c232362e230b2c0445b3cfd301d88659048b3d46e8ef421d045ad37b2d8b",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "ae9fe3fc7348631ee2a108c48319383646744e006057022757cc55313431453b",
+          "trace_depHash": "ebe25be87286443c",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "924603e648f313633b6d426cf151fd1f9d8a50ae93f9375a87870876ec9c9471",
+          "trace_depHash": "5ff272cf2d47d296",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockBodySplitUnique",
+      "key": "30a8216636beb20f",
+      "current_source_sha256": "2ad03f2c9bb688e4906b3589c8a66456e9b9b56e564e67d29ea21685389b5720",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "19f12482abde663e7c52a5120b4563bb3b88128f1da228756439f61e16ab7998",
+          "trace_depHash": "30a8216636beb20f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "19f12482abde663e7c52a5120b4563bb3b88128f1da228756439f61e16ab7998",
+          "trace_depHash": "30a8216636beb20f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.StockMemoryNopNonentryPairedReturn",
+      "key": "63f98422bb885812",
+      "current_source_sha256": "983a0c85555343e993d9056ae5ca051d60b67cd35119d6ba5f9bd18b462f0ffe",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "1463698f8f41725fcc5b03acbd8bba4093d49f754152862a96f57d101baca7da",
+          "trace_depHash": "dcd8eb106acab7ee",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "1463698f8f41725fcc5b03acbd8bba4093d49f754152862a96f57d101baca7da",
+          "trace_depHash": "dcd8eb106acab7ee",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryOrdinarySourceTrap",
+      "key": "02a155b9c6f4eb55",
+      "current_source_sha256": "7d713f6b00f11ff3b2d8b595f6249238a9c279d2f5b54f373e0eec3902d69849",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "34e15b779d4d81c9cb3cb51233781089bf0a55dddca9439d5f51c0341bf087da",
+          "trace_depHash": "02a155b9c6f4eb55",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "a6f8d4818ac40e7aa09b6e9e0894e25f3292f60f18091f04118c72bb4e9eeb50",
+          "trace_depHash": "fd1afa5789aa082f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryBodyNotrap",
+      "key": "b16c32ac4de69136",
+      "current_source_sha256": "7a1f18a23d6ae6eb93b18b3c9a62a5daeb3e98969cd44c497d1150e599feda21",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "a4458e2caddc295038f3c06af86e3dae901da4ee9d62d1aeeeaa7be08a58a859",
+          "trace_depHash": "b16c32ac4de69136",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "a4458e2caddc295038f3c06af86e3dae901da4ee9d62d1aeeeaa7be08a58a859",
+          "trace_depHash": "b16c32ac4de69136",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryNopNonentryReturn",
+      "key": "6a13462f16701e6b",
+      "current_source_sha256": "fd34fdcbcff2dd210b2fe62fa3bffeb3ffbd7b1a04834cf5fbd2fdd036d245eb",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "406c59644620f79531ee54293e978b1f4580ff68ddaecabc9cb8b9ab87aaeffc",
+          "trace_depHash": "6a13462f16701e6b",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "8e2771d81272b41c4d4b119c4781a7dd785f1323b199fb1be7dc6ec22aca2d8c",
+          "trace_depHash": "1aabbd5b5c86c940",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryOrdinaryJumpDefined",
+      "key": "b1f80e2ba7e76971",
+      "current_source_sha256": "0cf5afffc63df7f62001f5c76fa5432aef440f041b0c04d6d45538b1c8cd9f49",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "bec46d7dd942e5607257d641cec68a2796c8bdd397e899452c345fe3494e693f",
+          "trace_depHash": "b1f80e2ba7e76971",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "8ee1d7855a82fd846861913cff3f22e22a7d265bb4e86b0a4258ceab4ed656fd",
+          "trace_depHash": "c5b3ea8a1000f9f8",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.SemanticPipelineCheckWith",
+      "key": "92f83c921d74cd16",
+      "current_source_sha256": "a1f5a373c0b1b75d96fdf04e87493c2868caea3a399c40b594854d2cf08cf38e",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "15fd8e58d1433dc73303a2a29389238fad8281e703732688c19f6c7de4213e98",
+          "trace_depHash": "a5b867691f081fa7",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.LinkGood",
+      "key": "811bc34fbe742ef0",
+      "current_source_sha256": "ec6dcc3ad3622c439e1234ce997f972470ded1d8666d6c4941051bb093b4e6f5",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "cc6e7ed9b49627306ce941576f57c4ac3cdb7b2af468e4ec4b0b2b843dffca2f",
+          "trace_depHash": "ba46fe7e5af93348",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "cc6e7ed9b49627306ce941576f57c4ac3cdb7b2af468e4ec4b0b2b843dffca2f",
+          "trace_depHash": "ba46fe7e5af93348",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockMemoryComputedStoreRecordWitness",
+      "key": "7b4751297026741c",
+      "current_source_sha256": "474dcfbb302f0c84240a4c627dcc381edc58ab6677990a14f3a42795baea1691",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "b98930615e7414bc83901dd00a99fc77ace27885d07b33e5042ff37185dd792b",
+          "trace_depHash": "551617b16b835fd9",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Link.Layout",
+      "key": "72eb1ccaafb84572",
+      "current_source_sha256": "148b3f2f63a28093d422540155198a7205c77f6207141e082d64da7a7e581d17",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "fc4b352bb080aa8ba512ea4715f81cc8475af94237499c425e9821ae31a824e5",
+          "trace_depHash": "6cc6b1f8a0499901",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "fc4b352bb080aa8ba512ea4715f81cc8475af94237499c425e9821ae31a824e5",
+          "trace_depHash": "6cc6b1f8a0499901",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.CodeMap",
+      "key": "1366a5327ab15944",
+      "current_source_sha256": "32854f7a587fce3fa411e4f7fe09e8f5ffd0b01254fc8a3af50cdd893b52841f",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "6ba6e9dba905f879a700504da0ee6a029bf47c6dfbb2102025c4bef23d92f3d4",
+          "trace_depHash": "d8e7b77334504f90",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "6ba6e9dba905f879a700504da0ee6a029bf47c6dfbb2102025c4bef23d92f3d4",
+          "trace_depHash": "d8e7b77334504f90",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.CalleeWith",
+      "key": "efbe04d3ca1db78f",
+      "current_source_sha256": "7f66b4b51f08da68387765cf45323a69b764c1b4b81b4e2506d51492ad9fc9dd",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "671cbbda741a6454e850b17cda8aac4083cdac884b2ca0e33153c16c5107aed3",
+          "trace_depHash": "f02eb4ca6529b827",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.SpillClsTab",
+      "key": "6d3c6eb9550cfe90",
+      "current_source_sha256": "2c2f149722c101a87de5196cea42396939df57004a6489a62cae5deda58eac2c",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "944728ba9dc5b87c03332ab0743b1866c515696c1af2970cfc14bb54bcbf3b59",
+          "trace_depHash": "d1358f62b7ed155f",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "944728ba9dc5b87c03332ab0743b1866c515696c1af2970cfc14bb54bcbf3b59",
+          "trace_depHash": "d1358f62b7ed155f",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.SpillClsExt",
+      "key": "7fcc2630e63a2d0b",
+      "current_source_sha256": "086852636293d13762933988775ac16a723fe50fae71cd15c4b485f7ddd03a04",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "ec9adbd504e67cad4d85ddf51a5bfbe6e65585118fc0ef3b9298e4ec3371bd1c",
+          "trace_depHash": "0418d828efe17884",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "ec9adbd504e67cad4d85ddf51a5bfbe6e65585118fc0ef3b9298e4ec3371bd1c",
+          "trace_depHash": "0418d828efe17884",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.FormsCoverComplete",
+      "key": "9dabf218c47a9fee",
+      "current_source_sha256": "aff36f9ffa5f704cf81b42a19345af78cbcaf5b7cd91087b74fd89fcf7d9dcf3",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "7812bbc87beb82905ed1a4d0475883242ea1e2feb22d60cb85a8b011f0543d9a",
+          "trace_depHash": "9dabf218c47a9fee",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "28c05d35c8f60cffbd5860ad67e18b6640db505f6242f2e520aa04b94186cba1",
+          "trace_depHash": "70d782aa5baee18d",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.SpillInstCheck",
+      "key": "f6829e3bac7b9328",
+      "current_source_sha256": "86021ed3071ee509bdcc07b7bba52614eb5095265fb8022da688e95a96d1f0ab",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "adc3171aff72c8b396f10a432455e5039c5d8f044f9b6fcca6a7467c145933c4",
+          "trace_depHash": "1b7c15cc47b3c154",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.KillBase",
+      "key": "4189ac46817d6b78",
+      "current_source_sha256": "1de0d11dd3e0d0ac552c7e8af6da49e92952d24a243511c901d2f268cdac89b5",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "3adde6c5f226109c75816edd20c48473dac2f25bf9a9602049c8dfe49106173d",
+          "trace_depHash": "4189ac46817d6b78",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "95456daf38dd23ec16038565f079cd7fc17bca0144b3ebc72b4fe2f9e463e2a3",
+          "trace_depHash": "bbb635906c805ec6",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.PrepareDirect",
+      "key": "712b43459322abf5",
+      "current_source_sha256": "a64051b3ef0af56568d2c140662f03d808809ab956857a199da71b41cc800856",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "c830819df5d100fe95089a4ece7283a2a08918674afde23eae4bf61b15e45283",
+          "trace_depHash": "712b43459322abf5",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "f9e4e3ec4df1ee849477b30bfc6d5e6ea5cc39baed37654c3df30523caa8767c",
+          "trace_depHash": "8e677dfe3b758919",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselShpTab",
+      "key": "fe64faecfa19dff1",
+      "current_source_sha256": "3db08d004ed357598a38115bcbf577b32f3082bbdddc10bc8f435097f47cb428",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "403ad13ffacaae6eee45d0804e23eaa9b52906284f553287845ab75ab651fc61",
+          "trace_depHash": "fe64faecfa19dff1",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "4d76af217818b3506537b22c26f7879f0e458863c8ebbad9bca996a18229ffc9",
+          "trace_depHash": "9218f87d8303977a",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselShpCtor",
+      "key": "e97c9aa54563053a",
+      "current_source_sha256": "0ff32f0500a0af92f5ca71d4b479843e40239bb3aec70e8822585fe84ab2b922",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "5693763af93f1e2e3c4f02426c34e30677306edb1af71879208acc7459fdc695",
+          "trace_depHash": "e97c9aa54563053a",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "714c5a3aeb02775b986b74823dd294abb50bcec280d0aad59fe84ef00aad1346",
+          "trace_depHash": "c3e54f306f54f8fb",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselShpCall",
+      "key": "d6565c28455ad158",
+      "current_source_sha256": "b6b1aea27fbc52353805a34965544ca2e7b863d320051f4b227f587a422b4994",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "79621c75ac8c2744ff3a3eeea4535026096453e1ffe9d2d6a5160c6fcac53b8c",
+          "trace_depHash": "d6565c28455ad158",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "2a9fa96942ca69ddf5e87f068cdb9b0f51b9227f787bcdb800c7d8e7c1eb20c3",
+          "trace_depHash": "2d3b78d35a6135f5",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselShpTry",
+      "key": "01dee632670c0091",
+      "current_source_sha256": "b4be49bfd275ac911fa12ca0d6eb49599df75307dee8d7e0c2e19464a33478d3",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "705bf004d016dd14d1d748771f936e30a4d088506d3ecd1fd89b70c25002ccfb",
+          "trace_depHash": "01dee632670c0091",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "597493362c712b3ce95fc3efccd6c1b494d709d3646ea245084515ffc787855a",
+          "trace_depHash": "9fb775d913a00dea",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselShpBrTable",
+      "key": "a80e7f9dccbb9b04",
+      "current_source_sha256": "81681dbe625b9425148a1b41169e45a8e36c31e1559398e9dc43907b3ffd143d",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "43d9c7e31f1df4a2711f4c2a8b17cdd7d6f8a6cdad15f805c0bf369173918b82",
+          "trace_depHash": "a80e7f9dccbb9b04",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "0f3e2eb715b1871a3a4de871b834c679103f8833792baa269b518b834fc33cf2",
+          "trace_depHash": "ebc0fd7b946cf9b2",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.EmitReady",
+      "key": "5e03a1c8499d9da5",
+      "current_source_sha256": "97f8008aa761895a890e9ad92bf20064eb9ec9ded6442bf0b963deb132c89d5b",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "d38bb1ff74b521a2cf2b717c0f477ae5de4c15f3000aaf754a48d7a068fdc506",
+          "trace_depHash": "5e03a1c8499d9da5",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "d38bb1ff74b521a2cf2b717c0f477ae5de4c15f3000aaf754a48d7a068fdc506",
+          "trace_depHash": "5e03a1c8499d9da5",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.EmitCondsDefs",
+      "key": "6254141ded7a65f7",
+      "current_source_sha256": "7220f4bec65e1abddb49e80c5ba0804d0126fc885fb47b336464aa6af42a1db5",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "403419891f937720212a728a60a7a9f2f5ca7aaf880948b11e6f8c543497fb15",
+          "trace_depHash": "6254141ded7a65f7",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "403419891f937720212a728a60a7a9f2f5ca7aaf880948b11e6f8c543497fb15",
+          "trace_depHash": "6254141ded7a65f7",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.LinkOwnCalls",
+      "key": "2d9aa3676ca8bc4d",
+      "current_source_sha256": "1f81e8ad0febd03c570c562fa5405e9d59d67385ad2b22266d64f16700ed90ab",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "4974327058a9c986071b0596bf8d6a7a0e0543fb60536022849b447a7939518f",
+          "trace_depHash": "7593de921f89b570",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "a82e2944c12d4e5014924090fe282f2c155e66825050c50519cd8ad3ac0b6ab0",
+          "trace_depHash": "5fab3b7a205bee71",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.LinkOwnFrames",
+      "key": "f8045e0e00906d03",
+      "current_source_sha256": "de743f14e77aef3afbdd628734a8f67cab6c284f54cc185b8c3b1b899cbdaa34",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "f4cd831096cc1f4a542bb5015bd392a209812a88ebb810538953f3cdd3086efa",
+          "trace_depHash": "ab88a950e31bacf9",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "f4cd831096cc1f4a542bb5015bd392a209812a88ebb810538953f3cdd3086efa",
+          "trace_depHash": "ab88a950e31bacf9",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.SpillCheckAllocFix",
+      "key": "0b1120dc3f0d5930",
+      "current_source_sha256": "43819224daa5208d2276db223bfcedd166198ff09ec0fc8d4e30010e83d811c6",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "0d30c48c5ac7a555fe6672830e0d123f320939991058c11875fa283396da5e61",
+          "trace_depHash": "234f2da7d6c4f2a2",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "0d30c48c5ac7a555fe6672830e0d123f320939991058c11875fa283396da5e61",
+          "trace_depHash": "234f2da7d6c4f2a2",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.DeadCleanupSpillWords",
+      "key": "7b5e81689b119c7a",
+      "current_source_sha256": "78f492f013c687c2a3aa89af83d440c92fd453a7dd61c2edaa9fccd241ed8ca7",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "cce6275173c44e17662b6d68ae1aecb8f7a9d3482effee32111d540340c14ae5",
+          "trace_depHash": "7b5e81689b119c7a",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.DeadCleanupPrepareMap",
+      "key": "75ec12e4d8a6a74e",
+      "current_source_sha256": "bcd5912d577386d661c6a481deb82f74f566eeeef5aaae2ddad1372ce463e35e",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "071ed663e62c5310bcb2b6a3ef646fc72bdf4b6e81baebe419747c437530cc88",
+          "trace_depHash": "75ec12e4d8a6a74e",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.DeadCleanupCover",
+      "key": "0ddfb4074748d699",
+      "current_source_sha256": "2a35fbc07d920224054d175ba1f0c1a684c8ee144ac8d7fa211bd19c91826428",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "72805fd7ff079d286f9e20b9804b5087638cd56bd3403ae08b5851efdda4f858",
+          "trace_depHash": "ef9ed447752ad58d",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.DeadCleanupDirect",
+      "key": "8e3d9c4f8f23438d",
+      "current_source_sha256": "67e9bc5e415f8e62a7cb791122e07622ab73bdfaef1f1131783b59d4b36d108c",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "bea68040a51ce8be2a3e6fdf1048edd2e42bff4df9a41a0270ba99ba78d5ce40",
+          "trace_depHash": "638e8e86fd75a26d",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.Legal",
+      "key": "92a1decba0c904c7",
+      "current_source_sha256": "c6941f9ed7a8f3d690e680243225ef622eb0feae06e7beeeee11e1eecfce4b84",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "ad697c6507af53e4d818e3b6274028361a7c9f7e0309cfb899e9736fdf2c3a67",
+          "trace_depHash": "1d2cd2604cbb03cd",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.SizeVC",
+      "key": "2bbfeb1f88a7586e",
+      "current_source_sha256": "0c69a024faf75418bec64fa89bd40431c2ab69aa00af8dc803310462b3267485",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "52c0e1ca04ab6e4e394d86984a1f0e55fcfa750f0bdb31ea8dfd44643e639fc0",
+          "trace_depHash": "34735865b45d77e2",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "52c0e1ca04ab6e4e394d86984a1f0e55fcfa750f0bdb31ea8dfd44643e639fc0",
+          "trace_depHash": "34735865b45d77e2",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.SizeLower",
+      "key": "684fb1a211fe51f3",
+      "current_source_sha256": "6247a77673fbdf56e2a2dab43e379c9bca4780977b94344df87f7ac15f64aae0",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "ee98cb8fe0125e3fb42ea33174e034cdf0cccd447e7a36202fd9c3fff0f41f57",
+          "trace_depHash": "5fb463b03b60b529",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "ee98cb8fe0125e3fb42ea33174e034cdf0cccd447e7a36202fd9c3fff0f41f57",
+          "trace_depHash": "5fb463b03b60b529",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselSzSound",
+      "key": "0eb7ba23dd6aac8c",
+      "current_source_sha256": "0a3caef27c84bbdf140eae6975452f47ec5227177992c10e4ae744dc857afaee",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "c0fdacfdc578e345d869f3ea1826e49d712c8271c707fdf11ae1cf2c367dff64",
+          "trace_depHash": "a2109d1c36605d1e",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "c0fdacfdc578e345d869f3ea1826e49d712c8271c707fdf11ae1cf2c367dff64",
+          "trace_depHash": "a2109d1c36605d1e",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselSzExt",
+      "key": "748def178345faf3",
+      "current_source_sha256": "fd12bd2c2d088ff3ce4ba341618a32ab8c49943833aee769a522b4fcfccd4e7a",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "cc1825c65dce263ebcad632666ae2e938ab10b9e945bbd00a64bc1faa64a2c9b",
+          "trace_depHash": "bb31f22b6d605137",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "cc1825c65dce263ebcad632666ae2e938ab10b9e945bbd00a64bc1faa64a2c9b",
+          "trace_depHash": "bb31f22b6d605137",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselSzTab",
+      "key": "b432743ae192420b",
+      "current_source_sha256": "a0db2345a8c68b9ac2ca2333eaf7eda175b33e493be5a7841629ed5feb72f9fb",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "d0fe9670f50983ad6c51cf0bdb20785134aee64ace742a29a42844052320b49c",
+          "trace_depHash": "b432743ae192420b",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "134ef64085147431c138ba6c6a1fe16200357bbd8a1ab0d11ea73cedcfeca493",
+          "trace_depHash": "6ada1e33990a5ba1",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgTab",
+      "key": "0ff8eaf72d0e7a6e",
+      "current_source_sha256": "a2192061bc05544fbed64e05042f34df1cfa1276be4c27e3e0ab46dfeeec5f21",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "3c0be8f07a39eadb02fedfbf4fc3419fdb0111cd446615ee838958dd0eae6f52",
+          "trace_depHash": "0ff8eaf72d0e7a6e",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "9a649c697ee5b9b8320cde5a12ffd3dd082f643ff0f8a02e4c2755eda9de0307",
+          "trace_depHash": "d055405d7449018f",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgCover",
+      "key": "c8ec0e594123a790",
+      "current_source_sha256": "6d07b92fe1a0aa472e1419682c729ad107c2e4ff572c0c001725a517d01c4787",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "64be2fec13cd89f12d3867c4711d83319faf1c154a54976c764ecdf80a359a7f",
+          "trace_depHash": "4a52da6a685eba9f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "64be2fec13cd89f12d3867c4711d83319faf1c154a54976c764ecdf80a359a7f",
+          "trace_depHash": "4a52da6a685eba9f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgExtSound",
+      "key": "14441c0b4dd19c76",
+      "current_source_sha256": "c49b18ed02eeb3028f0a2718ef9988bedfafb096e54a7fa8e451c95bfe9544d5",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "a2c866d0392ad90d2bbabdfd061bee5d1830385780d88ca82710c6554e99401a",
+          "trace_depHash": "a4ddafc7a37549cb",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "a2c866d0392ad90d2bbabdfd061bee5d1830385780d88ca82710c6554e99401a",
+          "trace_depHash": "a4ddafc7a37549cb",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgOfvSound",
+      "key": "cbd1dca527870551",
+      "current_source_sha256": "a8133854b222362003813ea13c07d3dad806dfeb445c55a928a6dbfe8f24585f",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "651c170707569916c20b5f08587aa7074c7b5edee886c09625be031db7d22047",
+          "trace_depHash": "cbd1dca527870551",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "700721c708bb8290233981d6842c7a6be0be7f35379b1fef725ec444bf01cad3",
+          "trace_depHash": "c2ffe79880569c1c",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgHand",
+      "key": "02c9a11cfa4417f7",
+      "current_source_sha256": "66fd69e5c31b0e9216955e85a5e1346e3588d4b3a4849791859a5e89a9cac5d9",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "cd513ac4fd11def3007d68c963aac2764b31d2c6866133b2c6214c915894f752",
+          "trace_depHash": "b2099cc68c1e909c",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "cd513ac4fd11def3007d68c963aac2764b31d2c6866133b2c6214c915894f752",
+          "trace_depHash": "b2099cc68c1e909c",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgTryLast",
+      "key": "8298d529014ff494",
+      "current_source_sha256": "c685a505b6b07336b2d39c7fbae02197418363b1162b6aa53b82fa0bb06aa162",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "f860a67a4cc6cede8c98e837e117719c702a10d3b4d3b0e289cdf1948b9d3d89",
+          "trace_depHash": "3468fc650f00672e",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "f860a67a4cc6cede8c98e837e117719c702a10d3b4d3b0e289cdf1948b9d3d89",
+          "trace_depHash": "3468fc650f00672e",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.PrepareTotalIsel",
+      "key": "5aaa9399c6f360b7",
+      "current_source_sha256": "9b986cecf60b1910c9fa5409d7e403a2e5ebe85936b597307317948a6c707cfd",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "7a949037898b52ec8a0c54a15f7c04e6920bf8f731020a0c465b81acaa30590a",
+          "trace_depHash": "7e10ac1c2dc332ce",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "7a949037898b52ec8a0c54a15f7c04e6920bf8f731020a0c465b81acaa30590a",
+          "trace_depHash": "7e10ac1c2dc332ce",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselCovTDom",
+      "key": "30d0c399cf16b8d2",
+      "current_source_sha256": "f85e628ace7b6f4ffed18db83581b529e8f972d6e9acfb82b18147004c0baf1a",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "f402a5aebd6ad693c43bba69a30ee1c203146c8341fe33f95bb62bd82226f428",
+          "trace_depHash": "30d0c399cf16b8d2",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.SpillCtlFormsT",
+      "key": "e86ee9ef27181207",
+      "current_source_sha256": "6beb9fada5936b57884edeb1dd501701d5438d2de4fc0d350ff8ef960fd585f0",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "2d8e9b9c814ef9043a2b9588d16555d7718f35857d704097dfec25144b5d3a53",
+          "trace_depHash": "23ce0293d3ea42f6",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgExtT",
+      "key": "18806f2d8a588bf9",
+      "current_source_sha256": "9320ac2bd2b7e60e6e78c33a282d09341ecd914633f0a6da839bc6193ec660b8",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "1f719c58e6dcc0e25b90d48f16c8b4f495c7ef539c7e06f4dd9c0473cd0726a8",
+          "trace_depHash": "18806f2d8a588bf9",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.IselPrgInvT",
+      "key": "0d9b67f8fb9566e8",
+      "current_source_sha256": "99b6f077bceb9bfe4e2aac970ba49663cc3e7c4c87127b4c00bccc9bd58b2740",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "ee8c8bb9e01bd2ae53a0d2e4229afb7dc4abb6eadef28da0a8c12cd640178c26",
+          "trace_depHash": "0d9b67f8fb9566e8",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.LinkImageExtension",
+      "key": "2d3390a8d13179a3",
+      "current_source_sha256": "7efb7374210c47c14be1953acbccaff9da6416bb5a61a657d3bd003d083bfd66",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "62970c097a685af3f0a34885873e58e24c01e90d611238c007601c047dc11b5c",
+          "trace_depHash": "a1456c2da6c76009",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.LinkClifRev",
+      "key": "21fa2494640756a3",
+      "current_source_sha256": "90b7791fe36c6792c624e46e8817ee9f2f2223fd2fd91c6a287dea91a2aadadd",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "67f4cc0ccbe66a84b71c8304b1814a722ee1e0f375c10fbd7be5039f572e1ab9",
+          "trace_depHash": "86c9e55c3c1a298a",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.SrcScopeDefs",
+      "key": "37294a4cb789b906",
+      "current_source_sha256": "d171715ad110f8acde11288184ef982eed88711a5f7d9822d7f5656f97715e54",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "0cc41ea7f9027e89f675de4f4587d44538f2815a49e48108f565aefa163098dc",
+          "trace_depHash": "69d2208bf44b6304",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.SretCopyHeapBoundary",
+      "key": "ec3376fbdd49b163",
+      "current_source_sha256": "9cb86124f3c7d4d745783cbe7161a9fa70d86266e0a6a681d2c5e7629b7a961d",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "251f82a77d2fca90083b8b278b8a67b110a16ebef1ddd01a9dcfe2553c370078",
+          "trace_depHash": "ec3376fbdd49b163",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockCallStoreAddress",
+      "key": "0d9ced152d5fb0d4",
+      "current_source_sha256": "393acd3fb92b0272f17e5d4d4b4021f75f4fd2771e1e27a6ec5c52fd9a81da56",
+      "donors": {
+        "P": {
+          "classification": "missing source or trace"
+        },
+        "R": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "e1c023d10fc15f33cebf8b39faa068410ba0f986d995e564c1c11ce3d17916f1",
+          "trace_depHash": "5518c0cdbfd173ec",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.StockCodeWorldX",
+      "key": "93cf8d0b314a985a",
+      "current_source_sha256": "fa7d6039000b02074370b7eea1d4c77e9d1085dd3f3aac99b925fdab903b6007",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "9e386232b29323527cf6b197da5b6e75ba2909767ce96f55357593ef30e2c56b",
+          "trace_depHash": "45090009699c995f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.StockMaskChecks",
+      "key": "fc7831efd665b671",
+      "current_source_sha256": "ed987de647d58b5ba9b0bd115be63d9176446b1bf2753b1a84bc1f194e7df6ad",
+      "donors": {
+        "P": {
+          "classification": "missing source or trace"
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.StockMixedDivChecks",
+      "key": "4cc2bba6d56f14d3",
+      "current_source_sha256": "aca0daa7fac1bcfb9f480a2b20f04285b15ce32fdec8c2c19f431ac44141fd25",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "40fec174e756bdbfd40a451696ff59e408a841010950a78a82d14ca3b2b3f020",
+          "trace_depHash": "fd3f95a40427f4c4",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.StockNarrowRootsWitness",
+      "key": "a4a7b408f7a6d739",
+      "current_source_sha256": "779d1b0673694d3926cb8ff6d791e6fa6362409d2087a66ac2dc3306317ff9e2",
+      "donors": {
+        "P": {
+          "classification": "missing source or trace"
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.StockReturnedDivChecks",
+      "key": "aa172a331c1d7d7f",
+      "current_source_sha256": "47d79ef37958eec715059df3618917c0d9fcec162ac2de55d209b475a8408cb8",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "ed850d0204e4de7b6ba29aa90a5ec91c7b1407923fd13f97cabe1656581b3ad2",
+          "trace_depHash": "706bc575b9849a8c",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockSourceReachability",
+      "key": "05e5db9b5c558842",
+      "current_source_sha256": "42af066e95acf56c8425eda112f9d47141bff37e6a64ddac71c2bb689adf1dda",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "5f72887818bd105ba40f6807d4290b2271402926e9dcb648c0c7dbe2b7abf340",
+          "trace_depHash": "05e5db9b5c558842",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.StockReturnFullValues",
+      "key": "f5a24de31702a287",
+      "current_source_sha256": "5b81e01b6dfc6b3596ac34270cfacad592b0600b9d1fa31ea14e73ae7b376044",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "a50e512144cab8e976bea9189b39647b6d52652a3ea09f4815f4f0d1a46a039b",
+          "trace_depHash": "d9e96ed274283de7",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.StockTrapWitness",
+      "key": "73901fd683c6b0f1",
+      "current_source_sha256": "a175c905b2ccaf200be165a47caeb8e0a405edfa95b31c169944e0e025965fd6",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "66d0b020532fcb7c5643c1848e8e3efe90b4e917cca5bae01e9a298f15e742cf",
+          "trace_depHash": "8d50d79498bd12e0",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.RelocProvModel",
+      "key": "3df660de75e5f72e",
+      "current_source_sha256": "b4939109c3ed555099e00cb271a8ecc54be22b82f22a160f428ac021dd3d4b89",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "81d1a93635283d6de2a183ae15c1161db72cc2f4cbad639e70c3621bf8306cdd",
+          "trace_depHash": "9e1b7bd323fe185b",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.RelocProvRoot",
+      "key": "765a0a99d7555d43",
+      "current_source_sha256": "f94587cf319e7b05db7a0b80a1224ca38efc357885d0f93da332e9ac4f56d81f",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "aaf33dd2554c343f3473652822f63f3b8c654ad0ba72d6d2ae6b3774c2c4f092",
+          "trace_depHash": "ace0ff94e2f654df",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Lowering.StockI128",
+      "key": "5ec8326353eb250e",
+      "current_source_sha256": "7bb2ade4577f14ef33d05b39fe26db579915fb3576b0a708dab21d25142859c2",
+      "donors": {
+        "P": {
+          "classification": "missing source or trace"
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.E2E.RegLevelUnwind",
+      "key": "577287509cd5ca7f",
+      "current_source_sha256": "b69a9d703517fe9d872d08b853defb0e8d601ab10c78bf9ae5c909d54f1fe883",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "4bd4f4a1637b08e7a60cee75ef519e8bf714953a0388789658f195ebf4c984cd",
+          "trace_depHash": "577287509cd5ca7f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "source_match": true,
+          "key_match": true,
+          "trace_sha256": "4bd4f4a1637b08e7a60cee75ef519e8bf714953a0388789658f195ebf4c984cd",
+          "trace_depHash": "577287509cd5ca7f",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Unw.EhFrame",
+      "key": "1cfaa87330283fb9",
+      "current_source_sha256": "922ebe16b4aa8657fba3110902001e54f29208e67e6abd7ad497eb820b979294",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "ae0e14a9dfbe82558b2709e51d2fe8131b2825cb3b1715580c282d0575b9a090",
+          "trace_depHash": "d02a1a567ea95e82",
+          "full_normal_record": true,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    },
+    {
+      "target": "FV.Backend.Proof.UnwCallStmt",
+      "key": "261f8d73dc018864",
+      "current_source_sha256": "ebe6cc612af3845617d2cf2b7e3274d3e5972b4b882a0d681ed609f3d3f2cda3",
+      "donors": {
+        "P": {
+          "source_match": true,
+          "key_match": false,
+          "trace_sha256": "61df1fb66910e6a113b104c3b268dcf5f4e53f9db3fc2b78c85338e5d52265f2",
+          "trace_depHash": "096c45522feade4a",
+          "full_normal_record": false,
+          "compact_record_requires_exact_approved_origin": false,
+          "olean_exists": true,
+          "native_ir_exists": true
+        },
+        "R": {
+          "classification": "missing source or trace"
+        }
+      },
+      "rejected_ancestors": []
+    }
+  ],
+  "minimal_roots": [
+    "FV.Backend.Lowering.StockCheckedWith",
+    "FV.Backend.Lowering.StockI128",
+    "FV.Backend.Proof.DeadCleanupPrepareMap",
+    "FV.Backend.Proof.DriverCheckT",
+    "FV.Backend.Proof.FormsCoverComplete",
+    "FV.Backend.Proof.IselCmpEmitTI",
+    "FV.Backend.Proof.IselCovTDom",
+    "FV.Backend.Proof.IselFloatMem",
+    "FV.Backend.Proof.IselPrgCover",
+    "FV.Backend.Proof.IselPrgExtSound",
+    "FV.Backend.Proof.IselPrgExtT",
+    "FV.Backend.Proof.IselPrgHand",
+    "FV.Backend.Proof.IselPrgInvT",
+    "FV.Backend.Proof.IselPrgOfvSound",
+    "FV.Backend.Proof.IselPrgTab",
+    "FV.Backend.Proof.IselPrgTryLast",
+    "FV.Backend.Proof.IselShpBrTable",
+    "FV.Backend.Proof.IselShpCall",
+    "FV.Backend.Proof.IselShpCtor",
+    "FV.Backend.Proof.IselShpTab",
+    "FV.Backend.Proof.IselShpTry",
+    "FV.Backend.Proof.IselSzExt",
+    "FV.Backend.Proof.IselSzSound",
+    "FV.Backend.Proof.IselSzTab",
+    "FV.Backend.Proof.IselTermFactsCallT",
+    "FV.Backend.Proof.IselTermIntPos",
+    "FV.Backend.Proof.IselTermsShiftTI",
+    "FV.Backend.Proof.KillBase",
+    "FV.Backend.Proof.PrepareDirect",
+    "FV.Backend.Proof.PrepareTotalIsel",
+    "FV.Backend.Proof.RelocProvModel",
+    "FV.Backend.Proof.RelocProvRoot",
+    "FV.Backend.Proof.SpillClsExt",
+    "FV.Backend.Proof.SpillClsTab",
+    "FV.Backend.Proof.SpillCtlFormsT",
+    "FV.Backend.Proof.SpillEdgesIsel",
+    "FV.Backend.Proof.SpillInstCheck",
+    "FV.Backend.Proof.SretStable",
+    "FV.Backend.Proof.StockBodySplitUnique",
+    "FV.Backend.Proof.StockCallStoreAddress",
+    "FV.Backend.Proof.StockConditionalArgsClass",
+    "FV.Backend.Proof.StockConditionalEmptyFixture",
+    "FV.Backend.Proof.StockConditionalEmptyTrapSource",
+    "FV.Backend.Proof.StockConditionalSelectedAt",
+    "FV.Backend.Proof.StockMemoryABIContract",
+    "FV.Backend.Proof.StockMemoryBodyNotrap",
+    "FV.Backend.Proof.StockMemoryComputedStoreRecordWitness",
+    "FV.Backend.Proof.StockMemoryNopNonentryReturn",
+    "FV.Backend.Proof.StockMemoryOffsetEightStore",
+    "FV.Backend.Proof.StockMemoryOrdinaryJumpDefined",
+    "FV.Backend.Proof.StockMemoryOrdinarySourceTrap",
+    "FV.Backend.Proof.StockMemorySretCopyClass",
+    "FV.Backend.Proof.StockMemoryStoreDemandTransport",
+    "FV.Backend.Proof.StockParameterInput",
+    "FV.Backend.Proof.StockParameterLoopCheck",
+    "FV.Backend.Proof.StockReturnFullValues",
+    "FV.Backend.Proof.StockSourceReachability",
+    "FV.Backend.Proof.StockSourceResults",
+    "FV.Backend.Proof.UnwCallStmt",
+    "FV.Backend.StockResultCallCheck",
+    "FV.E2E.BinCheck",
+    "FV.E2E.CallReturnPins",
+    "FV.E2E.CalleeWith",
+    "FV.E2E.CodeMap",
+    "FV.E2E.DeadCleanupCover",
+    "FV.E2E.DeadCleanupDirect",
+    "FV.E2E.DeadCleanupSpillWords",
+    "FV.E2E.EmitCondsDefs",
+    "FV.E2E.EmitReady",
+    "FV.E2E.ExtSemGuard",
+    "FV.E2E.GuardedFP",
+    "FV.E2E.Legal",
+    "FV.E2E.LinkClifRev",
+    "FV.E2E.LinkGood",
+    "FV.E2E.LinkImageExtension",
+    "FV.E2E.LinkOwnCalls",
+    "FV.E2E.LinkOwnFrames",
+    "FV.E2E.LinkProduction",
+    "FV.E2E.LoweringProvenance",
+    "FV.E2E.PipelineCheck",
+    "FV.E2E.RegLevelUnwind",
+    "FV.E2E.SemanticPipelineCheckWith",
+    "FV.E2E.SizeLower",
+    "FV.E2E.SizeVC",
+    "FV.E2E.SpillCheckAllocFix",
+    "FV.E2E.SrcScopeDefs",
+    "FV.E2E.SretCopyHeapBoundary",
+    "FV.E2E.StackBound",
+    "FV.E2E.StockCodeWorldX",
+    "FV.E2E.StockMaskChecks",
+    "FV.E2E.StockMemoryNopNonentryPairedReturn",
+    "FV.E2E.StockMemoryOrdinaryPairedJump",
+    "FV.E2E.StockMixedDivChecks",
+    "FV.E2E.StockNarrowRootsWitness",
+    "FV.E2E.StockReturnedDivChecks",
+    "FV.E2E.StockTrapWitness",
+    "FV.Link.Layout",
+    "FV.Unw.EhFrame"
+  ],
+  "conditional_descendants": [],
+  "matching_donor_union": 40
+}

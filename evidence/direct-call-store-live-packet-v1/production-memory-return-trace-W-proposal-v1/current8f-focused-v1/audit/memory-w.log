@@ -1,0 +1,4 @@
+'E2E.StockMemory.machine_returnW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_worldX_stock_memoryW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_memoryW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.worldReturnTraceProvider_memory' depends on axioms: [propext, Classical.choice, Quot.sound]

@@ -1,0 +1,12 @@
+{
+  "status": "HARNESS_FAILURE_BEFORE_ANY_COPY_OR_NORMAL_COMMAND",
+  "watcher": 527888,
+  "diagnostic": "NameError: source_path is not defined in writers",
+  "source_v1_sha256": "849788c930693c40bbfbb837a60bfef9c767b9386e690d876a58e4eefb8b6c13",
+  "preserved_log_sha256": "720b4c61a584996c0436d6106f71ce8600343851800ac57854690da4c22094a6",
+  "source_v2_sha256": "ecbe24a0fda170fe77d4f14cee9b5a3e02ff9397ea44c08565a34e465f29c94b",
+  "correction": "Add only source_path path helper; use a separate evidence output directory",
+  "payload_changes": [],
+  "guard_exception_changes": [],
+  "next_execution": "Only after phase5 guard restoration and coordinator confirmation"
+}

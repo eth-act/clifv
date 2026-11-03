@@ -1,0 +1,5 @@
+{
+  "status": "canonical_bytes_restored",
+  "sha256": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+  "reason": "phase5 owner all-exit finally after all consumers and scopes exit"
+}

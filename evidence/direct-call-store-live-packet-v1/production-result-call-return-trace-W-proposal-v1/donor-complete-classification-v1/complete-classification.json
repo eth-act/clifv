@@ -1,0 +1,193 @@
+{
+  "records": [
+    {
+      "label": "P-target0",
+      "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.E2E.StockResultCallSource"
+      ],
+      "exit": 0,
+      "log_sha256": "e3354c731b670973f74df9fddf83faa0a753e90ee0e67fdbef9d8935badbd28c",
+      "memory": "peak 30097408\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "P-target1",
+      "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.E2E.StockResultCallRun"
+      ],
+      "exit": 3,
+      "log_sha256": "a13a590b4144e86eba0107d17d293a590a4c75e492d6ef2aca5e37b9e3f5c9e4",
+      "memory": "peak 53874688\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "P-target2",
+      "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.E2E.StockResultCallPair"
+      ],
+      "exit": 0,
+      "log_sha256": "2ff2963cc37708de8cf644852b90a4f47b0b38f8ffb336290664840ed1a4918a",
+      "memory": "peak 41009152\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "P-target3",
+      "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.E2E.StockResultCallLayout"
+      ],
+      "exit": 0,
+      "log_sha256": "bff64ae4cf112ac76645f7d5d8a8c89b872e4eb7bc2a92f878c3814c035dacf7",
+      "memory": "peak 55754752\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "P-target4",
+      "cwd": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.E2E.StockResultCallDomain"
+      ],
+      "exit": 3,
+      "log_sha256": "40226cb75e478590d4eeeaf1db42418c97a6498d8a85db28bb3d3f7eb6879ea0",
+      "memory": "peak 53182464\noom 0\noom_kill 0\n"
+    }
+  ],
+  "targets": {
+    "FV.E2E.StockResultCallSource": {
+      "P_target_exit": 0,
+      "closure": 523,
+      "different_trace_keys": [
+        {
+          "module": "FV.E2E.StockResultCallSource",
+          "Pkey": "717a34a67ea22f5c",
+          "Rkey": "307b9f2f5ef2251e",
+          "P_synthetic": false,
+          "R_synthetic": true
+        }
+      ]
+    },
+    "FV.E2E.StockResultCallRun": {
+      "P_target_exit": 3,
+      "closure": 732,
+      "different_trace_keys": [
+        {
+          "module": "FV.E2E.ABIReadOnlyMachine",
+          "Pkey": "3a0213c5dd6f3ff8",
+          "Rkey": "cac5abeeef3e22cf",
+          "P_synthetic": false,
+          "R_synthetic": false
+        },
+        {
+          "module": "FV.E2E.StockResultCallLayout",
+          "Pkey": "ee35e79a450a9c9b",
+          "Rkey": "0b7c1be967de13a7",
+          "P_synthetic": false,
+          "R_synthetic": true
+        },
+        {
+          "module": "FV.E2E.StockResultCallPair",
+          "Pkey": "7652e47443ffa0de",
+          "Rkey": "604aca512e337ec2",
+          "P_synthetic": false,
+          "R_synthetic": true
+        },
+        {
+          "module": "FV.E2E.StockResultCallSource",
+          "Pkey": "717a34a67ea22f5c",
+          "Rkey": "307b9f2f5ef2251e",
+          "P_synthetic": false,
+          "R_synthetic": true
+        }
+      ]
+    },
+    "FV.E2E.StockResultCallPair": {
+      "P_target_exit": 0,
+      "closure": 690,
+      "different_trace_keys": [
+        {
+          "module": "FV.E2E.StockResultCallPair",
+          "Pkey": "7652e47443ffa0de",
+          "Rkey": "604aca512e337ec2",
+          "P_synthetic": false,
+          "R_synthetic": true
+        },
+        {
+          "module": "FV.E2E.StockResultCallSource",
+          "Pkey": "717a34a67ea22f5c",
+          "Rkey": "307b9f2f5ef2251e",
+          "P_synthetic": false,
+          "R_synthetic": true
+        }
+      ]
+    },
+    "FV.E2E.StockResultCallLayout": {
+      "P_target_exit": 0,
+      "closure": 543,
+      "different_trace_keys": [
+        {
+          "module": "FV.E2E.StockResultCallLayout",
+          "Pkey": "ee35e79a450a9c9b",
+          "Rkey": "0b7c1be967de13a7",
+          "P_synthetic": false,
+          "R_synthetic": true
+        },
+        {
+          "module": "FV.E2E.StockResultCallSource",
+          "Pkey": "717a34a67ea22f5c",
+          "Rkey": "307b9f2f5ef2251e",
+          "P_synthetic": false,
+          "R_synthetic": true
+        }
+      ]
+    },
+    "FV.E2E.StockResultCallDomain": {
+      "P_target_exit": 3,
+      "closure": 733,
+      "different_trace_keys": [
+        {
+          "module": "FV.E2E.ABIReadOnlyMachine",
+          "Pkey": "3a0213c5dd6f3ff8",
+          "Rkey": "cac5abeeef3e22cf",
+          "P_synthetic": false,
+          "R_synthetic": false
+        },
+        {
+          "module": "FV.E2E.StockResultCallLayout",
+          "Pkey": "ee35e79a450a9c9b",
+          "Rkey": "0b7c1be967de13a7",
+          "P_synthetic": false,
+          "R_synthetic": true
+        },
+        {
+          "module": "FV.E2E.StockResultCallPair",
+          "Pkey": "7652e47443ffa0de",
+          "Rkey": "604aca512e337ec2",
+          "P_synthetic": false,
+          "R_synthetic": true
+        },
+        {
+          "module": "FV.E2E.StockResultCallSource",
+          "Pkey": "717a34a67ea22f5c",
+          "Rkey": "307b9f2f5ef2251e",
+          "P_synthetic": false,
+          "R_synthetic": true
+        }
+      ]
+    }
+  },
+  "no_outputs_changed": true
+}

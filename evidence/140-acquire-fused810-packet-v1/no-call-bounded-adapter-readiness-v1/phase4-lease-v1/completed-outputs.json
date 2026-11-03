@@ -1,0 +1,91 @@
+{
+  "FV.E2E.CompiledEitherW": {
+    "source_sha256": "a0c4418a9c6738b0ab3ab5e3f5b9789ed443b486b2082bb811b6599e980753c9",
+    "normal_input_key": "d5e7fd26cd02855c",
+    "outputs": {
+      "o": [
+        "35e5b07bd02da6d1.olean"
+      ],
+      "m": false,
+      "i": "b361ba334c7e53db.ilean",
+      "c": "22fa5ca7f3680a19.c"
+    },
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/CompiledEitherW.olean": "f2d47080a61fd00fd7755753e1102428e147cec9105907bc19af1ff03168a40b",
+      ".lake/build/lib/lean/FV/E2E/CompiledEitherW.ilean": "6d4c401165ff051c9daf7d0d42ba13eb3e4acb2adc95d797d865a6be949f091a",
+      ".lake/build/lib/lean/FV/E2E/CompiledEitherW.olean.hash": "6ab3dd0685fa95e40eb704faf87636ba9128558182419d2224bf4b27bba8aa05",
+      ".lake/build/lib/lean/FV/E2E/CompiledEitherW.ilean.hash": "3179b5073a42f4bfb3a2dfd9d117ff8869ded57caf0a7c91eeebacb1849a87ab",
+      ".lake/build/lib/lean/FV/E2E/CompiledEitherW.trace": "a350e373aed85e6649ca658f2274b6639341b9f7f1379a6e3c9fcc2d144ead44",
+      ".lake/build/ir/FV/E2E/CompiledEitherW.setup.json": "dcfd7cf03e82c90d0019f1fbf7fc8859e4ecc6ea70b5e332b3d30a85567ba027",
+      ".lake/build/ir/FV/E2E/CompiledEitherW.c": "2cfadb00152d6b81fe0d3a19662599c104c270cfadc9061b5566ce89c897f7af",
+      ".lake/build/ir/FV/E2E/CompiledEitherW.c.hash": "09ecb012232333bdebc7af86d076411e05b4190250633c8ad59f0285d1a46ca4"
+    },
+    "origin": {
+      "approved_retained_coherence_sha256": "27565fc1e92021100ea924e549c609741ff6959508bc0125c91c23fd82dd1600",
+      "approved_C_native_content_binding_sha256": "6ea54535f2b5fb06df9d2b3e0a97e06d7eca7d44567b7fe555d70fb979ac5d88",
+      "creator_receipt_sha256": "aa086ee540a6db1d7f6159197b9c68b76e49e3883c2e3bc7af275c61964d376b"
+    }
+  },
+  "FV.E2E.LinkArm": {
+    "source_sha256": "a428bcf397ee0141ee42ab7ccf5b5f997907172578d734bda0acfe4c89bc628d",
+    "normal_input_key": "5b69d2172986191e",
+    "outputs": {
+      "o": [
+        "f9bd23a17a1873ce.olean"
+      ],
+      "m": false,
+      "i": "b355c8479026ca9f.ilean",
+      "c": "3e34c33299794460.c"
+    },
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/LinkArm.olean": "c3d0054d28b5c6d9690797d512f0b58dc97992f5fc653610aab7f4599ca20872",
+      ".lake/build/lib/lean/FV/E2E/LinkArm.ilean": "b1f8c92b016932e54b7f54ea491664c3393a6dbe3acbf8b43837233b6fc5d261",
+      ".lake/build/lib/lean/FV/E2E/LinkArm.olean.hash": "a1a27aa4981888087fbdc666793ada0819e161a11a74b00ad178ef277f5f1d90",
+      ".lake/build/lib/lean/FV/E2E/LinkArm.ilean.hash": "f2e8b3d5af57dc0dacf21faeb6e9e307bb78c786ba9fb058eca2d2b65715af02",
+      ".lake/build/lib/lean/FV/E2E/LinkArm.trace": "05a54978f78bb6f124b26ee1bc75d54bd63c9ea3bea7b4da35da5085b9951599",
+      ".lake/build/ir/FV/E2E/LinkArm.setup.json": "7edddac14493c7728dd05dbbabe5d9d7932db2507497bbb4326e1ec1297246ad",
+      ".lake/build/ir/FV/E2E/LinkArm.c": "b579de1978e429a1d1b209baddddafaee6a449374a084d34c2b41af3a78cc449",
+      ".lake/build/ir/FV/E2E/LinkArm.c.hash": "619bdebec4f039bf470025ab9ac84fffa0afa971d2270200aaca04ce27d1d770"
+    },
+    "origin": {
+      "actual_leaf_record": {
+        "label": "leaf-0",
+        "argv": [
+          "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake",
+          "-v",
+          "build",
+          "+FV.E2E.LinkArm:leanArts"
+        ],
+        "exit": 0,
+        "stats": "peak 689934336\noom 0\noom_kill 0\n",
+        "effective_Lean_observations": [
+          {
+            "pid": 520572,
+            "birth": 1793733280.5,
+            "argv": [
+              "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+              "-j1",
+              "-Dlinter.unusedSimpArgs=false",
+              "-Dlinter.unusedVariables=false",
+              "-Dlinter.unnecessarySimpa=false",
+              "-Dlinter.unusedSectionVars=false",
+              "-Dlinter.defProp=false",
+              "-Dlinter.constructorNameAsVariable=false",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/E2E/LinkArm.lean",
+              "-o",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/E2E/LinkArm.olean",
+              "-i",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/E2E/LinkArm.ilean",
+              "-c",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/ir/FV/E2E/LinkArm.c",
+              "--setup",
+              "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/ir/FV/E2E/LinkArm.setup.json",
+              "--json"
+            ]
+          }
+        ],
+        "unexpected_compilers": []
+      }
+    }
+  }
+}

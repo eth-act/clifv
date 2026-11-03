@@ -1,0 +1,7 @@
+{
+  "status": "restored",
+  "source_GiB": 2,
+  "acquire_GiB": 1,
+  "reason": "independent all-exit guard after owner and all consumers exit",
+  "utc": "2026-11-03T18:47:09.682380+00:00"
+}

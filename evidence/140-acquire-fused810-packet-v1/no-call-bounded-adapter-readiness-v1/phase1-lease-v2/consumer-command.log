@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/no-call-bounded-adapter-readiness-v1/phase1-lease-v2/gate.py", line 105, in <module>
+    cap('LinkClif-normal',[str(tool/'lake'),'build','--no-build','FV.E2E.LinkClif']);output_record('FV.E2E.LinkClif',{'approved_native_origin_sha256':sha(origin)})
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/no-call-bounded-adapter-readiness-v1/phase1-lease-v2/gate.py", line 48, in cap
+    assert rc==0,('First failure; preserve diagnostics',label,rc)
+           ^^^^^
+AssertionError: ('First failure; preserve diagnostics', 'LinkClif-normal', 3)

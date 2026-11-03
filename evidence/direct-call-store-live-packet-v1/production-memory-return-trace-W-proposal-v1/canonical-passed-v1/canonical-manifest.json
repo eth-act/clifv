@@ -1,0 +1,12 @@
+{
+  "status": "PASSED_CURRENT8F_MEMORY_W4;OLD_TLS_SPLIT_INTERNAL",
+  "files": {
+    "manifest.json": "82cf5783ec41a94bb6d95d9c993fc9d51e1f4fbc6343e22394eadc5a092e80a1",
+    "current8f-kernel-manifest.json": "e5e054cf3746e49736849d98e93acbc0df16ff66801ee08aa3233a90d431ed21",
+    "receipt.json": "6d66f52e534d7c4e2ad2d86dfafad96eed470efa2b6a323635e7754420784712",
+    "current-source-context.json": "05fe952875323d0b13ddc0145803ee9ded994c2db96142ba98d87f82e236376d",
+    "StockMemoryMachineW.lean": "0104e13832354401c4ca956682ead9021bc8fec0e48fb78dc233919a5f6f9985",
+    "StockMemoryWorldXW.lean": "b83f4df005aeee6012eaf473a83e296ea6ea9f45759b2bb64e631186e5f75cfb",
+    "StockMemoryNIW.lean": "17e1bca5cce3b60c331343b697aaee0edd26d890133447b6477bb63cb45782b7"
+  }
+}

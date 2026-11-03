@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "owner": 518579,
+  "owner_birth": 1793733260.57,
+  "scope_parent": "/sys/fs/cgroup/user.slice/user-30034.slice/user@30034.service/clifv.slice",
+  "allocation": "broad12/phase1_3/orchestration1",
+  "signals_to_compilers": [],
+  "config_projection_planned": true,
+  "config_projection_active": true,
+  "consumer": {
+    "pid": 518943,
+    "birth": 1793733266.35
+  },
+  "exit": 0
+}

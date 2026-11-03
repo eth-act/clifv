@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/recover-two-P-descendants-v1.py", line 61, in <module>
+    full=closure(n);deps=sorted(full-{n});assert not writers(P,full),writers(P,full)
+                                                     ~~~~~~~^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/recover-two-P-descendants-v1.py", line 49, in writers
+    if any(str(prefix/source_path(n)) in args or str(source_path(n)) in args for n in names):found.append({'pid':proc.pid,'cwd':cwd,'argv':args})
+       ^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/recover-two-P-descendants-v1.py", line 49, in <genexpr>
+    if any(str(prefix/source_path(n)) in args or str(source_path(n)) in args for n in names):found.append({'pid':proc.pid,'cwd':cwd,'argv':args})
+                      ^^^^^^^^^^^
+NameError: name 'source_path' is not defined

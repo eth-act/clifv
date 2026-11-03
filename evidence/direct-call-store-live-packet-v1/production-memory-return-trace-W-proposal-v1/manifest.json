@@ -1,0 +1,43 @@
+{
+  "status": "SOURCE_ONLY;NO_KERNEL_CLAIM",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "modules": {
+    "StockMemoryMachineW": {
+      "source_sha256": "0104e13832354401c4ca956682ead9021bc8fec0e48fb78dc233919a5f6f9985",
+      "old_source_sha256": "51310e35d736550a764c9243196430a2a62dda6c5ce62d4ad85202a205640d03",
+      "exact_original_input_and_conclusion_after_W_names": true
+    },
+    "StockMemoryWorldXW": {
+      "source_sha256": "b83f4df005aeee6012eaf473a83e296ea6ea9f45759b2bb64e631186e5f75cfb",
+      "old_source_sha256": "69c5a5462eae305c786c781cd9e865a5f944daf7b7a216b472a4342fc3215afb",
+      "exact_original_input_and_conclusion_after_W_names": true
+    },
+    "StockMemoryNIW": {
+      "source_sha256": "17e1bca5cce3b60c331343b697aaee0edd26d890133447b6477bb63cb45782b7",
+      "old_source_sha256": "bdc955e3da2daac19874ba839f600d7fea7ae71e49bb4e065420f1e950e53515",
+      "exact_original_input_and_conclusion_after_W_names": true
+    }
+  },
+  "shared_edits": [],
+  "import_cycle_check": {
+    "acyclic": true,
+    "modules": 798
+  },
+  "new_caller_premises": [],
+  "ordinary_TLS_split": "exact old internal by_cases; ordinary non-TLS return derives from original Domain",
+  "trap_variant": "old explicit trap and ERR guarantee retained with stronger W prefix",
+  "roots": [
+    "E2E.StockMemory.machine_returnW",
+    "E2E.backend_correct_worldX_stock_memoryW",
+    "E2E.backend_correct_world_niX_stock_memoryW",
+    "E2E.worldReturnTraceProvider_memory"
+  ],
+  "open": [
+    "proper current dependencies",
+    "four focused roots and real audit",
+    "remaining memory classes",
+    "full dispatcher",
+    "first hardware memory fault and caught-handler transfer",
+    "production activation"
+  ]
+}

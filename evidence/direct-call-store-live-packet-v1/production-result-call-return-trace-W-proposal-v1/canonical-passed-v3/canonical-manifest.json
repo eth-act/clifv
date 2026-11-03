@@ -1,0 +1,11 @@
+{
+  "status": "PASSED_CURRENT8F_RESULT_CALL_W2;TWO_FRESH_BASELINE_KERNELS",
+  "files": {
+    "manifest.json": "62d892ee373b606e7a28a427c7fd3b922c580b2b6a0c940a99f1b33190cc74a6",
+    "current8f-kernel-manifest.json": "48c9e596dedc944d7df34034f5588f2216b478b38300fc9917f3c379d8d0da42",
+    "receipt.json": "64a9e57c1062391c0b75a7a49bf50948050f561229ec5de3e851efef77228a81",
+    "current-source-context.json": "e59811ce127f9394fb0642c37d604a6b71b26aeb9d19c72c8db5e3584dcc85c3",
+    "StockResultCallNIW.lean": "c1b13c85d94369985d5e9fd83f519626aba5cce984abe310c1d0136117e19c92",
+    "partial-receipt.json": "117f0e4be37b62d89845f2bf3addda6a1cd6efc69a77f6b835c3e165b0dc0315"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "status": "SOURCE_ONLY;NO_KERNEL_CLAIM",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "modules": {
+    "StockMemoryABIWorldXW": {
+      "sha256": "29598a06ed0a2e25b38d981109cd7d70384fd9c12aa92014be6c8c5c7a852e02",
+      "old_sha256": "af9247d2d5907ceac88f1a0b8649c977eb538b5ea652ff96bf6c5170a8d145b3",
+      "original_input_header_exact": true
+    },
+    "CompiledSemanticReturnTraceW": {
+      "sha256": "019481d2b77db5b982a4366f9004898129ab9572ac2c08599ffcc36ad9e98857",
+      "old_sha256": "e0776f2b3189d634c82f463955912537d70d725ed528178e20b2666f4d5c818b",
+      "original_input_header_exact": true,
+      "all_memory_TLS_splits_retained": true
+    },
+    "CompiledReturnPinReturnTraceW": {
+      "sha256": "f3f1e8e157f8b0cf8c7ebfc0d83db2ffa99c9fa6da02ab7674c1746c93115217",
+      "staged_constructor_source_sha256": "a2057bb8d98d51eab9ec2f314a2a8b6d5bdec3e74b87a315e523c5e1be039f2f",
+      "original_input_header_exact": true,
+      "outer_cases": [
+        "compatible",
+        "memorySretCopy",
+        "voidCall",
+        "resultCall",
+        "liveCall",
+        "callStore"
+      ],
+      "return_conventions": [
+        "ordinary",
+        "stockABI"
+      ]
+    },
+    "CompiledProductionReturnTraceW": {
+      "sha256": "33362e863a8442c27ee18faadf037da6f09e984b66b58b20ae15c25955b52b61",
+      "cases": [
+        "legacy",
+        "stock",
+        "stockCleanup"
+      ]
+    }
+  },
+  "old_files_changed": [],
+  "new_caller_premises": [],
+  "provider_instances": "Every accepted constructor derives its provider internally",
+  "memory_TLS_splits": "Retained including ordinary and ABI sret non-TLS branches",
+  "ordinary_classes": [
+    "arithmetic",
+    "mixed",
+    "logical",
+    "scalar",
+    "scalarDiv",
+    "cfg",
+    "memory",
+    "memoryCfg",
+    "memoryUnsigned",
+    "memoryExtending",
+    "memoryStore",
+    "memoryStoreCfg",
+    "memoryLoadStore",
+    "memoryCapturedCopy"
+  ],
+  "open": [
+    "source/import and old-header checks",
+    "proper kernel dependencies",
+    "focused kernels and real audit",
+    "full first-fault provider",
+    "actual Main facade and production matrices"
+  ],
+  "import_cycle_check": {
+    "acyclic": true,
+    "modules": 1673
+  },
+  "old_header_checks": [
+    {
+      "module": "StockMemoryABIWorldXW",
+      "old_input_and_conclusion_exact_after_W_normalization": true
+    },
+    {
+      "module": "CompiledSemanticReturnTraceW",
+      "old_input_and_conclusion_exact_after_W_normalization": true
+    },
+    {
+      "module": "CompiledReturnPinReturnTraceW",
+      "old_input_and_conclusion_exact_after_W_normalization": true
+    }
+  ],
+  "missing_main_sources_staged_separately": [
+    "FV.E2E.StockLiveCallNI",
+    "FV.E2E.StockLiveCallDomain",
+    "FV.E2E.StockLiveCallFunction",
+    "FV.E2E.StockLiveCallSourceResult",
+    "FV.E2E.StockLiveCallTail",
+    "FV.E2E.StockLiveCallRun",
+    "FV.E2E.StockLiveCallReady",
+    "FV.E2E.StockResultCallNI"
+  ]
+}
