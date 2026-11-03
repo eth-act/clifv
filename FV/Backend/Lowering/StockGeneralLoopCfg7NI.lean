@@ -1,8 +1,8 @@
 import FV.Backend.Lowering.StockParameterArgsCfgNI
-import FV.Backend.Lowering.StockGeneralLoopCfg6
+import FV.Backend.Lowering.StockGeneralLoopCfg7
 import FV.Backend.ABIReadCfg
 
-namespace Backend.Stock.GeneralLoopCfg6.NI
+namespace Backend.Stock.GeneralLoopCfg7.NI
 set_option autoImplicit false
 
 /-- Publish the proved legacy loop class with `br_table` terminators as its actual unsplit Stock
@@ -27,4 +27,4 @@ def lowerWithRoutes (choices : List (String × Nat)) (f : Clif.Function) : Excep
   | none => lowerValidated f
   | some index => ((lowerRoutes[index]?).getD ScalarAdd.lower) f
 
-end Backend.Stock.GeneralLoopCfg6.NI
+end Backend.Stock.GeneralLoopCfg7.NI

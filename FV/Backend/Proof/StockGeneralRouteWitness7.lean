@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockGeneralLoopCfg6NI
+import FV.Backend.Lowering.StockGeneralLoopCfg7NI
 import FV.Backend.Proof.StockGeneralLoopWitness6
 
 /-! Non-vacuity of the loop route with jump tables: on the fixed `%f` of `jumptable.clif` (a
@@ -6,7 +6,7 @@ import FV.Backend.Proof.StockGeneralLoopWitness6
 23 selects it, every published route before it is retained, and the previous provider does not
 publish that code. -/
 
-namespace Backend.Stock.GeneralLoopCfg6.NI.RouteFixture
+namespace Backend.Stock.GeneralLoopCfg7.NI.RouteFixture
 open Backend
 set_option autoImplicit false
 
@@ -57,4 +57,4 @@ theorem general_route_witness : lowerRoutes.length = 24 ∧ ParameterArgsCfg.NI.
       rw [same] at different
       simp at different
 
-end Backend.Stock.GeneralLoopCfg6.NI.RouteFixture
+end Backend.Stock.GeneralLoopCfg7.NI.RouteFixture
