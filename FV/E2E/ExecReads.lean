@@ -446,6 +446,7 @@ which the model's register-offset class reads as a load). -/
 def _root_.Backend.MInst.memRd : MInst → Bool
   | .load .. | .loadAcquire .. | .jtSequence .. | .atomicRmwLoop .. | .atomicCasLoop ..
   | .loadExtNameGot .. | .elfTlsGetAddr .. | .store .fpuStore128 .. | .fpuLoad .. => true
+  | .loadP64 .. => true
   | _ => false
 
 /-- A line without a load. -/

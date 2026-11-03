@@ -490,6 +490,11 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
   | .fpuRound op rd rn => one (.fpuRound op rd rn)
   | .fpuToInt op rd rn => one (.fpuToInt op rd rn)
   | .intToFpu op rd rn => one (.intToFpu op rd rn)
+  -- `emit.rs` `LoadP64`/`StoreP64` with `PairAMode::SignedOffset`: one `ldp`/`stp` (the trap
+  -- code of the flags; the offset is the byte offset, a multiple of 8 in `-512..504`, which the
+  -- encoder checks)
+  | .loadP64 rt rt2 rn off fl => pure ([.ins (.ldp rt rt2 (.unscaled rn off)) fl.trapCode], ps)
+  | .storeP64 rt rt2 rn off fl => pure ([.ins (.stp rt rt2 (.unscaled rn off)) fl.trapCode], ps)
 where
   /-- `LoadAddr` with an immediate offset (`emit.rs`). -/
   addOff (rd rn : Reg) (off : Int) : List Line :=

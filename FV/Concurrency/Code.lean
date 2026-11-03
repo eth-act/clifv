@@ -62,6 +62,9 @@ def akinds : MInst → List AKind
   | .storeRelease .. => [.relW]
   | .atomicRmwLoop .. | .atomicCasLoop .. => [.acqXR, .relXW]
   | .fence => [.dmb]
+  -- `ldp`/`stp` (`loadP64`/`storeP64`): one 16-byte access (`ArmInstFoot.pairEvs`)
+  | .loadP64 .. => [.plainR]
+  | .storeP64 .. => [.plainW]
   | _ => []
 
 theorem kinds_append (a b : List Line) : kinds (a ++ b) = kinds a ++ kinds b :=

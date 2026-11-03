@@ -325,8 +325,9 @@ def ldstForms : List Spec :=
        ldstForm s!"fpuStore {short s}" k bytes (some (bytes == 8)) fun am => do
          return .fpuStore s (← gV).2 am])
 
-/-- `ldp`/`stp` (SP pre/post-indexed, the encoder's only pair modes): `scale` bytes per
-register, `mk rt rt2 am`; loads need distinct registers. -/
+/-- `ldp`/`stp` (SP pre/post-indexed; the signed-offset form `[xn, #off]` of `MInst.loadP64`/
+`storeP64` is checked against `llvm-mc` in `FVTest/Backend/Encode/Examples.lean` and the random
+encoder test): `scale` bytes per register, `mk rt rt2 am`; loads need distinct registers. -/
 def pairForm (key : String) (scale : Nat) (load : Bool) (fp : Option Bool) (pre : Bool)
     (mk : Nat → AMode → GenM (Option Insn)) : Spec :=
   let key := s!"{key} {if pre then "pre" else "post"}"

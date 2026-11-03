@@ -198,6 +198,9 @@ theorem straightEvs_common {ctx : FnCtx} {i : MInst} {uses : List CV} {w : ArmSt
     simp only [SegShape.memBytes, Option.some.injEq] at hn; subst hn; exact fpuStore_common hfo hal M
   | atomicRmwLoop => simp [FormOk] at hfo
   | atomicCasLoop => simp [FormOk] at hfo
+  -- `ldp`/`stp` (`lower128` only) are not covered forms
+  | loadP64 => simp [FormOk] at hfo
+  | storeP64 => simp [FormOk] at hfo
   | _ => simp [SegShape.memBytes] at hn
 
 /-! ## The LL/SC loops: every event at the address use -/

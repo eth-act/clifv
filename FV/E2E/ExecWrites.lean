@@ -444,6 +444,7 @@ theorem loadConst64_noStores (rd : Reg) (v : Nat) :
 /-- The allocated instructions whose lines may hold a store. -/
 def _root_.Backend.MInst.memWr : MInst → Bool
   | .store .. | .storeRelease .. | .atomicRmwLoop .. | .atomicCasLoop .. | .fpuStore .. => true
+  | .storeP64 .. => true
   | _ => false
 
 /-- A line without a store. -/
