@@ -1,0 +1,6 @@
+{
+  "from_attempt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v2",
+  "source_config_dependency_artifact_equality": true,
+  "normal_log_sha256": "ceb4d8690c56519c3188203ada76e3d83bd8995adc4dcd7df02512e0791fbf88",
+  "old_audit_log_sha256": "340e7efd844077d442f318c38185d9203988a831e41639f137fad256a08dc972"
+}

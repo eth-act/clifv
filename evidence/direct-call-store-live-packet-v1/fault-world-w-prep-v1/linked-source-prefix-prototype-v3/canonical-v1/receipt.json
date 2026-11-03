@@ -1,0 +1,394 @@
+{
+  "status": "passed-prototype",
+  "source_hashes": {
+    "FV.E2E.LinkClifN": {
+      "source_sha256": "1e2efb07839ec401bbb5509dbbff998c7bc1966328ad04b798eedcdc9b9c79ac",
+      "artifacts": {
+        ".lake/build/ir/FV/E2E/LinkClifN.c": "b38b344e02109af0f5170099e50c3acf826585d6ea15798192468754f284f943",
+        ".lake/build/ir/FV/E2E/LinkClifN.c.hash": "d4ae3d2a82783581ddea342650740d8f58bef863b30f7153b27b2b5bc411f11b",
+        ".lake/build/lib/lean/FV/E2E/LinkClifN.olean": "3e0ed84b579ab25941805dfcbfd2ed3dd52736343f98da8a93245da473e128c6",
+        ".lake/build/lib/lean/FV/E2E/LinkClifN.ilean": "18ce689638881db86fee46235ed0c056fd82c95aaad95f88bd65a956adf638df",
+        ".lake/build/lib/lean/FV/E2E/LinkClifN.trace": "ecc27b64dc8c76656dd9ba8f0b7fc8cd98b9a71137fbfe76d7363d6a5cee6950",
+        ".lake/build/lib/lean/FV/E2E/LinkClifN.olean.hash": "8915aef4b144521e188f47d1ea01340213d7366e350dd1b2fe55c91eaea4f676",
+        ".lake/build/lib/lean/FV/E2E/LinkClifN.ilean.hash": "8a7a42a3ec75dbfdc5c8ee4bd259d8ef5483785a664ab1f0b9924c9f3b4cd584"
+      }
+    },
+    "FV.E2E.LinkClif": {
+      "source_sha256": "78a5c92ac0aaceebc472571abd43504a86b556fc93c531b925af9299a9ecd862",
+      "artifacts": {
+        ".lake/build/ir/FV/E2E/LinkClif.c": "defa7fce868958a9a8f207df3f0a9097e95a9bfcc6cb8f030d2f2574f7e55b27",
+        ".lake/build/ir/FV/E2E/LinkClif.c.hash": "6ef32b40bf42bb41c87793437d87f6a134eef30567503464d294d2ba106c79d5",
+        ".lake/build/lib/lean/FV/E2E/LinkClif.olean": "65e77a79dbc570298e07110692e02a3a1700c19c90e0af9f2ac796e4d9e248f4",
+        ".lake/build/lib/lean/FV/E2E/LinkClif.ilean": "596cc10e5c11ae21194f88a17194627a94215eb1351ea3f0fdf4023976bf6884",
+        ".lake/build/lib/lean/FV/E2E/LinkClif.trace": "c6eafebd758a097a256925ae183a20393e246668a55c36f59baaf21d1678be98",
+        ".lake/build/lib/lean/FV/E2E/LinkClif.olean.hash": "b4dcaccd52182497589fc6099c85dff18a01a62a7c66316ea629498246461989",
+        ".lake/build/lib/lean/FV/E2E/LinkClif.ilean.hash": "801c2abd7337bac007bf32483aca0d75d5b79fad6580b3a2a0f9a3c072f4cc98"
+      }
+    },
+    "FV.Clif.Run": {
+      "source_sha256": "b0eb7e63b6d57a3f6bc1d2a0bb16f16937c53dd5d3122590cb85de0df174f05f",
+      "artifacts": {
+        ".lake/build/ir/FV/Clif/Run.c": "809ed7860f1bcf2f6f323ed031396690edd73d730e5bc825f0439d61096e55a5",
+        ".lake/build/ir/FV/Clif/Run.c.hash": "bed45d2134de234c69fbf07c634407dfd65914f4b2c9bcb1f5bbbeb336aaab45",
+        ".lake/build/lib/lean/FV/Clif/Run.olean": "e85297ca1b19165095b860edda4278b50081869f210ff365d636e0c4849ec89e",
+        ".lake/build/lib/lean/FV/Clif/Run.ilean": "6a991167ad5d6003b62c697dd72fd51db98b475aa69a288d09653d7d6ff9e068",
+        ".lake/build/lib/lean/FV/Clif/Run.trace": "2b027cef5c9a4167c3a72523be4369583b73925cd2b8204be2d6a7b48ca6120a",
+        ".lake/build/lib/lean/FV/Clif/Run.olean.hash": "b96a338ca96964378150c3b98f3943d55ea1fe2d149fbbf84fb764d7d564615f",
+        ".lake/build/lib/lean/FV/Clif/Run.ilean.hash": "73d57f53c6f64e5dcb3d99582b0b106e098e249e421816881998a5c02db816e2"
+      }
+    },
+    "FV.Clif.Sem": {
+      "source_sha256": "164b58992f3c92bba9030021d3706d7c7dc50179a299ba869d2196d2a70dd87a",
+      "artifacts": {
+        ".lake/build/ir/FV/Clif/Sem.c": "f52ebc265f7d5a46b3c235d540da55efc60ec618c411bb03ddee0a1dcda617ab",
+        ".lake/build/ir/FV/Clif/Sem.c.hash": "20cc6253a94ec3441312fda482895406deade8f389978a89d6e5a844e028bcd7",
+        ".lake/build/lib/lean/FV/Clif/Sem.olean": "b8facb3ef5f39229e960208a232568158e14314491de42a89ce82b6318484a9e",
+        ".lake/build/lib/lean/FV/Clif/Sem.ilean": "762341e878262496173feb810bb52e748969cd67cfe4c58aba2a4fc59b9a1ac0",
+        ".lake/build/lib/lean/FV/Clif/Sem.trace": "24a272b97be457d0d6b51b3d3c3b002aada0c508a1e5ff1ed469f4b1937289db",
+        ".lake/build/lib/lean/FV/Clif/Sem.olean.hash": "66550feabea682cdb256c388adc49233a82d1dba84fb3080ac5a3df23455cf62",
+        ".lake/build/lib/lean/FV/Clif/Sem.ilean.hash": "d19c290cce1c76e3504a66c848e92e8d70cc7e3c8fa97b0bfc1e35ea03c955df"
+      }
+    },
+    "FV.Clif.Syntax": {
+      "source_sha256": "c253dae51602c3ea9ebef6df4d4c1651bd3b4d62dad74fabba372025e0c1010f",
+      "artifacts": {
+        ".lake/build/ir/FV/Clif/Syntax.c": "abd0a88db51f508bf8e56c98bc34fd5848ebe2052b0058b171d5f775a1718936",
+        ".lake/build/ir/FV/Clif/Syntax.c.hash": "07e079aff1b056df91f312026d93c7944a5d7c7e5842040216cb0602bd87bcd3",
+        ".lake/build/lib/lean/FV/Clif/Syntax.olean": "b9d806433095a8dbe1fdb0df9bb596ba9c426e337870936450aa0c19e9390b13",
+        ".lake/build/lib/lean/FV/Clif/Syntax.ilean": "2714e52fda56ce08b8528cd1908f4a2a036a43466a9d39eba6f635ec9e9538aa",
+        ".lake/build/lib/lean/FV/Clif/Syntax.trace": "75ca6f461ec1ad511e760fdf14e161d22de8a8c345032d8c7f23249f46e50607",
+        ".lake/build/lib/lean/FV/Clif/Syntax.olean.hash": "a9a0cdbebc1062b29081579b8c981f6c4512cada997d9e6a59b46017d0dc3629",
+        ".lake/build/lib/lean/FV/Clif/Syntax.ilean.hash": "2100c506e007432924c07144e5e30459c83509b718322b6a297b71b9633e2503"
+      }
+    },
+    "FV.Clif.Mem": {
+      "source_sha256": "c6435ce9f98d74e9ba2e8b8d6ee6d916adc19ffc7f192721c53a5a0f24bdca98",
+      "artifacts": {
+        ".lake/build/ir/FV/Clif/Mem.c": "6ca622a289a85ef614670e998e08a1984911b442ce2cf07b499b91b8055379d5",
+        ".lake/build/ir/FV/Clif/Mem.c.hash": "718e836ae7975e356e9cfc0833a0fc0e70d34eceb998cd2af30f2227f6c86553",
+        ".lake/build/lib/lean/FV/Clif/Mem.olean": "127875cb0277490684b097ba90031ac74762aeb833855051cbf90e992b431e64",
+        ".lake/build/lib/lean/FV/Clif/Mem.ilean": "f74ba7c69debd36339ecba0de3dcd6ec19b8cfa76b28b5e63b01e89324007222",
+        ".lake/build/lib/lean/FV/Clif/Mem.trace": "f29f1f5560e1e6e6ef54b40f5493d0e8e11eee14c631f85fca623a05301e95eb",
+        ".lake/build/lib/lean/FV/Clif/Mem.olean.hash": "f03270d70511ae0175c316938cd273c56fe3b66bb9b6f1b094e442f89cf6d2a0",
+        ".lake/build/lib/lean/FV/Clif/Mem.ilean.hash": "4e14a7ef1a1a2a7f4489a8c3edec60b4c7877d46809f8ee39e251468abf58b6f"
+      }
+    },
+    "FV.Clif.FSem": {
+      "source_sha256": "1db282b8fac9e46a49a58351f41e35b58d84954ce6b76c9d71241d922f798a9e",
+      "artifacts": {
+        ".lake/build/ir/FV/Clif/FSem.c": "e0a801970bcc2ee639762a4d8b41ddc65e2de2cf6dad22b09efd1aff58b7af48",
+        ".lake/build/ir/FV/Clif/FSem.c.hash": "7b86ed85c44c9b0b1d2942969907cc77c750bb6ad8769613554f48e9648bfd1e",
+        ".lake/build/lib/lean/FV/Clif/FSem.olean": "2244f4a5c64aaa589c5d5a0bdeb5ef2cd0ccc4d6ca9f19bcddd81510beeaa514",
+        ".lake/build/lib/lean/FV/Clif/FSem.ilean": "d61c9d4a99850a8fa81f8cf3d025d6d77b1e57148515865b2c5427358d5c19b2",
+        ".lake/build/lib/lean/FV/Clif/FSem.trace": "f4977cea0847ca0575bd3492d41a967c7a4b971d0fc04ca187987b2c53496fd0",
+        ".lake/build/lib/lean/FV/Clif/FSem.olean.hash": "a0b312c34f09be8a0758b2d0a202930f513006e536ca878f8b407a739b449a70",
+        ".lake/build/lib/lean/FV/Clif/FSem.ilean.hash": "563a4d348535094ca08b14f312c4769be9dde8a69258846c96bcfabc3c399aa1"
+      }
+    },
+    "FV.Float": {
+      "source_sha256": "8447f3b693714aa928c09b729e9d2ace271be72bd9ec5310dcd3eb2a9abf6791",
+      "artifacts": {
+        ".lake/build/ir/FV/Float.c": "02926000e402a8c0268420268c1b77879695c8e5ba62f14e9d0fc792fec72a3e",
+        ".lake/build/ir/FV/Float.c.hash": "a65d8439d1f31856b5fe57619cf20122a1dc146359585947fb30d43bf7bd67da",
+        ".lake/build/lib/lean/FV/Float.olean": "61910e0d80899297b31b2193b95e200e2216e3eb7f0d26659c33e3e376c4f8fd",
+        ".lake/build/lib/lean/FV/Float.ilean": "8d1d5829ad180e28d75f064e72c96d22f40c5ac2a3b967b203d92d816f13f13a",
+        ".lake/build/lib/lean/FV/Float.trace": "0a1d50b4a1aee6b46a7c2b214c10ad70b5a36ab7db12773ead61cf23ed045067",
+        ".lake/build/lib/lean/FV/Float.olean.hash": "3c30128a90874e3cbdd8b8d33eb9826d45de50cd794f062b057cf2ddeb0d0560",
+        ".lake/build/lib/lean/FV/Float.ilean.hash": "dffa33c3ca625efc475caa1472a1af48e7b3eaeff56ade1f9c98267a5bd33f04"
+      }
+    },
+    "FV.Float.Basic": {
+      "source_sha256": "d1b14ce396ebfa7ec1de27e3c5e364eda9ef336b0a996cdb7b3c469880facdf7",
+      "artifacts": {
+        ".lake/build/ir/FV/Float/Basic.c": "7216f7702ac3599b54fffaef8dda44be5d2b3daccd2d274f54a65c7876e4ae7c",
+        ".lake/build/ir/FV/Float/Basic.c.hash": "30ce59d55ea42ad983f6513a3dd82fdf2a9237927994027594b77454d90ff288",
+        ".lake/build/lib/lean/FV/Float/Basic.olean": "f0d1c5df8a87ee8f8abfc61a24875eaa142d878b0f172a99341f4585efcc4ca7",
+        ".lake/build/lib/lean/FV/Float/Basic.ilean": "c63508a53153e33b0efd1ed868a7bd109048bf17987cb96b5943e04549f54301",
+        ".lake/build/lib/lean/FV/Float/Basic.trace": "510c3c47f3b6e213264b2332245eb96e8a2cbe31ec860ff9e1e702a7aa565b3f",
+        ".lake/build/lib/lean/FV/Float/Basic.olean.hash": "be386189fd44bbf372c0ce30c49c5566becda01b4b2634f1c0b081c904b19933",
+        ".lake/build/lib/lean/FV/Float/Basic.ilean.hash": "95874bc2adedd1e4dcf28892fc81033840bb20b7728d6067f8e6af46d992b735"
+      }
+    },
+    "FV.Float.Round": {
+      "source_sha256": "db9fbde3e2a0e4160edcf8fffdbc22fa6f4c982b193ece2dd47e1c6e89b5af25",
+      "artifacts": {
+        ".lake/build/ir/FV/Float/Round.c": "72ff38d8e195892866d8ff370f1772fef0589016e28997cc566526a8e8ede397",
+        ".lake/build/ir/FV/Float/Round.c.hash": "0090323879e2bb13daa96d25dd37c9d06f20120ea0dcd4f671a1159caa9a305b",
+        ".lake/build/lib/lean/FV/Float/Round.olean": "3c1617b552bfadcdaf34ea746225e73234dcd494f1a94b5cdc4a42b580da326c",
+        ".lake/build/lib/lean/FV/Float/Round.ilean": "470a46430731083427902e0e32619750d6bc7fd14f43576ebd3c6874b1ab8b53",
+        ".lake/build/lib/lean/FV/Float/Round.trace": "8841fd7f6f50d1f556a6e545b586af15769512e703d7c8497bbd1120085aacef",
+        ".lake/build/lib/lean/FV/Float/Round.olean.hash": "a16311ced08a1432bdc9c92742b6427ed2bfaaf7ba4edeb7281baf81287e9118",
+        ".lake/build/lib/lean/FV/Float/Round.ilean.hash": "08b035879cfcbaf13ab5945768527b92e71195c176cb62ffce0a40c21d4b453c"
+      }
+    },
+    "FV.Float.Arith": {
+      "source_sha256": "e673c55dcd1bf7eee46bd9462196d0a439deae0b1ca3916234ec3292ec2d95dd",
+      "artifacts": {
+        ".lake/build/ir/FV/Float/Arith.c": "0e72c9ff71e87bcbe981412f4fd733ae0d112341f404ed692d77cf86248857f0",
+        ".lake/build/ir/FV/Float/Arith.c.hash": "65d30973dea9b9d21a2b01c683f3bebfc18617e8fa08e5eadec4db3ce0a29dde",
+        ".lake/build/lib/lean/FV/Float/Arith.olean": "063f3737e26ceed95253d634dc30cfcb9b2ffbcaffdceb0d48ae674ddd939227",
+        ".lake/build/lib/lean/FV/Float/Arith.ilean": "4a478cb3bbc9316a5fca835eb271bb2d9d66ad0754e8961df19f85e6eafe8d68",
+        ".lake/build/lib/lean/FV/Float/Arith.trace": "2114416bb5b848ca07e67cea0530b568a10f23687081519cdfa6ac7dfd573da6",
+        ".lake/build/lib/lean/FV/Float/Arith.olean.hash": "a2c7a2464e30a28b296c24e2575eca8321d1bf95dcba1ea19fce0f576fffc407",
+        ".lake/build/lib/lean/FV/Float/Arith.ilean.hash": "1bdc7d7d6907f7136aaf2bf83754f4019f02f41066e579452c69026042339b58"
+      }
+    },
+    "FV.Float.Convert": {
+      "source_sha256": "051ce61f637f65052581d63e0c39e8c3c901dce56adbae431f049233b942327d",
+      "artifacts": {
+        ".lake/build/ir/FV/Float/Convert.c": "4d2a5617b78f997afc87d0fecebdbd6bfa26d5d81cd5595e3fddc5aa4b33ed1e",
+        ".lake/build/ir/FV/Float/Convert.c.hash": "bbbda33a66fd28ba80b1887b477655db95d5f075d4e8923528dac51b4643411c",
+        ".lake/build/lib/lean/FV/Float/Convert.olean": "1e7b81a713c22c4fc34c6fad9de3c06f7e03ef7749798437053614a23e6032e4",
+        ".lake/build/lib/lean/FV/Float/Convert.ilean": "95e6d31e0e0381c690611d86f1a19debbf81cc25a82692daa5f9a467956016f4",
+        ".lake/build/lib/lean/FV/Float/Convert.trace": "dae5fa05c49b8428a60bac8b26b50012b2384273d56977adeb5366793adc87cc",
+        ".lake/build/lib/lean/FV/Float/Convert.olean.hash": "a1001ed508973c53b74c8c690310d05755411b350fb289babc8aa5572f7dbe62",
+        ".lake/build/lib/lean/FV/Float/Convert.ilean.hash": "c5b19ac4ad9e02eb4bc857b49489c42321749162a9886c7b892dde7c1eff8f62"
+      }
+    },
+    "FV.Opt.Proof.SemSim": {
+      "source_sha256": "219ad1fc4e8e4206bd2c3acd7d24d58af9b09ae5e7dd384ac995b2875fb63f68",
+      "artifacts": {
+        ".lake/build/ir/FV/Opt/Proof/SemSim.c": "b55dd22289a64bcaa38dfe8d4f7a1556d46f4903264631e497b033ffc9f7fecd",
+        ".lake/build/ir/FV/Opt/Proof/SemSim.c.hash": "b53a8300f0234cdfff9c88fc7832640059c1465e98bd6967c1c31c771395d2db",
+        ".lake/build/lib/lean/FV/Opt/Proof/SemSim.olean": "72b47a313829a0ef6adbeccc027be9ef2a8d34f7b027ca7babb10037571c353c",
+        ".lake/build/lib/lean/FV/Opt/Proof/SemSim.ilean": "04cde6998cc6036a026da41c9de319fdf42456ee418e8d8755f476f1992f767f",
+        ".lake/build/lib/lean/FV/Opt/Proof/SemSim.trace": "4d0ea46260d11330fe08f4a1544a0a51d458bd2a9fe1e0b43536c5e8c542d900",
+        ".lake/build/lib/lean/FV/Opt/Proof/SemSim.olean.hash": "6722d8186ceb8e272ef8ea35a9489209bce5e345a0a1b60a4d67ed16afca8307",
+        ".lake/build/lib/lean/FV/Opt/Proof/SemSim.ilean.hash": "bea8cdcf08751caee9b618f69fc1fcf539fa8684027329d6c14d43292d021bb2"
+      }
+    }
+  },
+  "config_hashes": {
+    "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b"
+  },
+  "old_headers_exact": 30,
+  "old_source_sha256": "1e2efb07839ec401bbb5509dbbff998c7bc1966328ad04b798eedcdc9b9c79ac",
+  "candidate_source_sha256": "e9c657ec04c1a8a18b3a515ac4fadbb8be1164dbae9682fece5f43b9d9e6b22d",
+  "coordination": "https://github.com/eth-act/clifv/issues/140#issuecomment-6598082840",
+  "scope": "isolated prototype;not current-main publication validation",
+  "records": [
+    {
+      "label": "kernel",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "-R",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/source",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/outputs/FV/E2E/LinkClifN.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/outputs/FV/E2E/LinkClifN.ilean",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/source/FV/E2E/LinkClifN.lean"
+      ],
+      "exit": 0,
+      "stats": "peak 161394688\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "repository-audit",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/new-audit.lean"
+      ],
+      "exit": 0,
+      "stats": "peak 77598720\noom 0\noom_kill 0\n"
+    }
+  ],
+  "old_axiom_sets_exact": 30,
+  "axiom_sets": {
+    "Clif.linkEnvR_none": [
+      "propext"
+    ],
+    "Clif.linkEnvR_some": [
+      "propext"
+    ],
+    "Clif.linkEnvN_none": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.linkEnvN_some": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.enterFunc_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.callCont_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.indCont_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.step_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.initState_symbols": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.runsOf_runLoop": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.linkEnvR_keeps": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.linkEnvN_keeps": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.names_func": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.names_extern": [],
+    "Clif.callExternAt_alias": [
+      "propext"
+    ],
+    "Clif.bareNames_iff": [
+      "propext"
+    ],
+    "Clif.callExternAt_eq": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Clif.lookup_name_mem": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.callExternAt_congr": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.Reaches.snoc": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.Reaches.trans": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.Reaches.under": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_returned_reaches": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.DepthLe.callee": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.depthLe_of_depthB": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Clif.runsOf_runD": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_linkR": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_linkN": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_linkD": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Clif.runLoop_linkR_reaches": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "outputs": {
+    "outputs/FV/Float.olean": "61910e0d80899297b31b2193b95e200e2216e3eb7f0d26659c33e3e376c4f8fd",
+    "outputs/FV/Float.ilean": "8d1d5829ad180e28d75f064e72c96d22f40c5ac2a3b967b203d92d816f13f13a",
+    "outputs/FV/Float.trace": "0a1d50b4a1aee6b46a7c2b214c10ad70b5a36ab7db12773ead61cf23ed045067",
+    "outputs/FV/Float.olean.hash": "3c30128a90874e3cbdd8b8d33eb9826d45de50cd794f062b057cf2ddeb0d0560",
+    "outputs/FV/Float.ilean.hash": "dffa33c3ca625efc475caa1472a1af48e7b3eaeff56ade1f9c98267a5bd33f04",
+    "outputs/FV/E2E/LinkClif.olean": "65e77a79dbc570298e07110692e02a3a1700c19c90e0af9f2ac796e4d9e248f4",
+    "outputs/FV/E2E/LinkClif.ilean": "596cc10e5c11ae21194f88a17194627a94215eb1351ea3f0fdf4023976bf6884",
+    "outputs/FV/E2E/LinkClif.trace": "c6eafebd758a097a256925ae183a20393e246668a55c36f59baaf21d1678be98",
+    "outputs/FV/E2E/LinkClif.olean.hash": "b4dcaccd52182497589fc6099c85dff18a01a62a7c66316ea629498246461989",
+    "outputs/FV/E2E/LinkClif.ilean.hash": "801c2abd7337bac007bf32483aca0d75d5b79fad6580b3a2a0f9a3c072f4cc98",
+    "outputs/FV/E2E/LinkClifN.olean": "ccd496123ebf8c91b360b96473642e0cfc9537a8f67362e52255fd2f68c08838",
+    "outputs/FV/E2E/LinkClifN.ilean": "e033be6e284f73e770b04589ff77c87ea048409467a10ba0d5bc212feb13f18d",
+    "outputs/FV/Clif/Run.olean": "e85297ca1b19165095b860edda4278b50081869f210ff365d636e0c4849ec89e",
+    "outputs/FV/Clif/Run.ilean": "6a991167ad5d6003b62c697dd72fd51db98b475aa69a288d09653d7d6ff9e068",
+    "outputs/FV/Clif/Run.trace": "2b027cef5c9a4167c3a72523be4369583b73925cd2b8204be2d6a7b48ca6120a",
+    "outputs/FV/Clif/Run.olean.hash": "b96a338ca96964378150c3b98f3943d55ea1fe2d149fbbf84fb764d7d564615f",
+    "outputs/FV/Clif/Run.ilean.hash": "73d57f53c6f64e5dcb3d99582b0b106e098e249e421816881998a5c02db816e2",
+    "outputs/FV/Clif/Sem.olean": "b8facb3ef5f39229e960208a232568158e14314491de42a89ce82b6318484a9e",
+    "outputs/FV/Clif/Sem.ilean": "762341e878262496173feb810bb52e748969cd67cfe4c58aba2a4fc59b9a1ac0",
+    "outputs/FV/Clif/Sem.trace": "24a272b97be457d0d6b51b3d3c3b002aada0c508a1e5ff1ed469f4b1937289db",
+    "outputs/FV/Clif/Sem.olean.hash": "66550feabea682cdb256c388adc49233a82d1dba84fb3080ac5a3df23455cf62",
+    "outputs/FV/Clif/Sem.ilean.hash": "d19c290cce1c76e3504a66c848e92e8d70cc7e3c8fa97b0bfc1e35ea03c955df",
+    "outputs/FV/Clif/Syntax.olean": "b9d806433095a8dbe1fdb0df9bb596ba9c426e337870936450aa0c19e9390b13",
+    "outputs/FV/Clif/Syntax.ilean": "2714e52fda56ce08b8528cd1908f4a2a036a43466a9d39eba6f635ec9e9538aa",
+    "outputs/FV/Clif/Syntax.trace": "75ca6f461ec1ad511e760fdf14e161d22de8a8c345032d8c7f23249f46e50607",
+    "outputs/FV/Clif/Syntax.olean.hash": "a9a0cdbebc1062b29081579b8c981f6c4512cada997d9e6a59b46017d0dc3629",
+    "outputs/FV/Clif/Syntax.ilean.hash": "2100c506e007432924c07144e5e30459c83509b718322b6a297b71b9633e2503",
+    "outputs/FV/Clif/Mem.olean": "127875cb0277490684b097ba90031ac74762aeb833855051cbf90e992b431e64",
+    "outputs/FV/Clif/Mem.ilean": "f74ba7c69debd36339ecba0de3dcd6ec19b8cfa76b28b5e63b01e89324007222",
+    "outputs/FV/Clif/Mem.trace": "f29f1f5560e1e6e6ef54b40f5493d0e8e11eee14c631f85fca623a05301e95eb",
+    "outputs/FV/Clif/Mem.olean.hash": "f03270d70511ae0175c316938cd273c56fe3b66bb9b6f1b094e442f89cf6d2a0",
+    "outputs/FV/Clif/Mem.ilean.hash": "4e14a7ef1a1a2a7f4489a8c3edec60b4c7877d46809f8ee39e251468abf58b6f",
+    "outputs/FV/Clif/FSem.olean": "2244f4a5c64aaa589c5d5a0bdeb5ef2cd0ccc4d6ca9f19bcddd81510beeaa514",
+    "outputs/FV/Clif/FSem.ilean": "d61c9d4a99850a8fa81f8cf3d025d6d77b1e57148515865b2c5427358d5c19b2",
+    "outputs/FV/Clif/FSem.trace": "f4977cea0847ca0575bd3492d41a967c7a4b971d0fc04ca187987b2c53496fd0",
+    "outputs/FV/Clif/FSem.olean.hash": "a0b312c34f09be8a0758b2d0a202930f513006e536ca878f8b407a739b449a70",
+    "outputs/FV/Clif/FSem.ilean.hash": "563a4d348535094ca08b14f312c4769be9dde8a69258846c96bcfabc3c399aa1",
+    "outputs/FV/Float/Basic.olean": "f0d1c5df8a87ee8f8abfc61a24875eaa142d878b0f172a99341f4585efcc4ca7",
+    "outputs/FV/Float/Basic.ilean": "c63508a53153e33b0efd1ed868a7bd109048bf17987cb96b5943e04549f54301",
+    "outputs/FV/Float/Basic.trace": "510c3c47f3b6e213264b2332245eb96e8a2cbe31ec860ff9e1e702a7aa565b3f",
+    "outputs/FV/Float/Basic.olean.hash": "be386189fd44bbf372c0ce30c49c5566becda01b4b2634f1c0b081c904b19933",
+    "outputs/FV/Float/Basic.ilean.hash": "95874bc2adedd1e4dcf28892fc81033840bb20b7728d6067f8e6af46d992b735",
+    "outputs/FV/Float/Round.olean": "3c1617b552bfadcdaf34ea746225e73234dcd494f1a94b5cdc4a42b580da326c",
+    "outputs/FV/Float/Round.ilean": "470a46430731083427902e0e32619750d6bc7fd14f43576ebd3c6874b1ab8b53",
+    "outputs/FV/Float/Round.trace": "8841fd7f6f50d1f556a6e545b586af15769512e703d7c8497bbd1120085aacef",
+    "outputs/FV/Float/Round.olean.hash": "a16311ced08a1432bdc9c92742b6427ed2bfaaf7ba4edeb7281baf81287e9118",
+    "outputs/FV/Float/Round.ilean.hash": "08b035879cfcbaf13ab5945768527b92e71195c176cb62ffce0a40c21d4b453c",
+    "outputs/FV/Float/Arith.olean": "063f3737e26ceed95253d634dc30cfcb9b2ffbcaffdceb0d48ae674ddd939227",
+    "outputs/FV/Float/Arith.ilean": "4a478cb3bbc9316a5fca835eb271bb2d9d66ad0754e8961df19f85e6eafe8d68",
+    "outputs/FV/Float/Arith.trace": "2114416bb5b848ca07e67cea0530b568a10f23687081519cdfa6ac7dfd573da6",
+    "outputs/FV/Float/Arith.olean.hash": "a2c7a2464e30a28b296c24e2575eca8321d1bf95dcba1ea19fce0f576fffc407",
+    "outputs/FV/Float/Arith.ilean.hash": "1bdc7d7d6907f7136aaf2bf83754f4019f02f41066e579452c69026042339b58",
+    "outputs/FV/Float/Convert.olean": "1e7b81a713c22c4fc34c6fad9de3c06f7e03ef7749798437053614a23e6032e4",
+    "outputs/FV/Float/Convert.ilean": "95e6d31e0e0381c690611d86f1a19debbf81cc25a82692daa5f9a467956016f4",
+    "outputs/FV/Float/Convert.trace": "dae5fa05c49b8428a60bac8b26b50012b2384273d56977adeb5366793adc87cc",
+    "outputs/FV/Float/Convert.olean.hash": "a1001ed508973c53b74c8c690310d05755411b350fb289babc8aa5572f7dbe62",
+    "outputs/FV/Float/Convert.ilean.hash": "c5b19ac4ad9e02eb4bc857b49489c42321749162a9886c7b892dde7c1eff8f62",
+    "outputs/FV/Opt/Proof/SemSim.olean": "72b47a313829a0ef6adbeccc027be9ef2a8d34f7b027ca7babb10037571c353c",
+    "outputs/FV/Opt/Proof/SemSim.ilean": "04cde6998cc6036a026da41c9de319fdf42456ee418e8d8755f476f1992f767f",
+    "outputs/FV/Opt/Proof/SemSim.trace": "4d0ea46260d11330fe08f4a1544a0a51d458bd2a9fe1e0b43536c5e8c542d900",
+    "outputs/FV/Opt/Proof/SemSim.olean.hash": "6722d8186ceb8e272ef8ea35a9489209bce5e345a0a1b60a4d67ed16afca8307",
+    "outputs/FV/Opt/Proof/SemSim.ilean.hash": "bea8cdcf08751caee9b618f69fc1fcf539fa8684027329d6c14d43292d021bb2"
+  },
+  "utc": "2026-11-03T07:45:39.916279+00:00"
+}

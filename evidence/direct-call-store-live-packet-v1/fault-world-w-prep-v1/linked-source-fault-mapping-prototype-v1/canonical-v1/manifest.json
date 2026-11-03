@@ -1,0 +1,16 @@
+{
+  "status": "passed-focused-prototype",
+  "hashes": {
+    "source/FV/E2E/LinkMemoryFaultSource.lean": "840aefb6e97171f3f603ab7ecbb3af58c60b682525ce589fedbb85663a11db87",
+    "source/FV/E2E/MemoryFaultCallersTransport.lean": "ab84dcb5dd17c2600351e749c6651dea85b820109afdd0afc89d8bcd8570a1c2",
+    "receipt.json": "b4e5770502f8b78a06d0bb09281706beb5e3ac2af3502d7b3b00d1a5b20aa7b8",
+    "context.json": "a9f2d21992d91f8d69f637bf93e7971a88324da9ae1c1067c597199bbb04101d",
+    "linked-fault-source.lean": "ca380962be5c0930d04126fc992ae8ac86bf5a0f4826347a2ddc63727f3184e5",
+    "audit/linked-fault-source.log": "dbab57d84655b458beeb5e22847e1fc659255682e501b67428cadac8eb02e724",
+    "repository-audit.log": "55249fe1aeccb67d7719f0b359aff655ef2a93e25cdf62ed37ec42e2764c8361",
+    "progress.json": "17493d39b37746276c4fa46bf1172cdeee02c9eb4a986a059d068bc95a3b7f5b"
+  },
+  "new_standard_roots": 2,
+  "prefix_manifest": "61aff4230a137944e9ae21c0aa8f9d42e6007d321fa96e863082625ba3efb51f",
+  "scope": "Full-source mapping derives bare linked mapping and mapping at an actual entered callee. All original source conditions remain. No final complete recursive fault driver or executable claim."
+}

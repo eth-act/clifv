@@ -1,0 +1,32 @@
+[
+  {
+    "label": "kernel",
+    "argv": [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+      "-j1",
+      "-R",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/source",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/outputs/FV/E2E/LinkClifN.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/outputs/FV/E2E/LinkClifN.ilean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/source/FV/E2E/LinkClifN.lean"
+    ],
+    "exit": 0,
+    "stats": "peak 161394688\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "repository-audit",
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-prefix-prototype-v3/new-audit.lean"
+    ],
+    "exit": 0,
+    "stats": "peak 77598720\noom 0\noom_kill 0\n"
+  }
+]

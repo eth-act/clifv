@@ -1,0 +1,24 @@
+{
+  "status": "passed-isolated-prototype",
+  "hashes": {
+    "source/FV/E2E/LinkClifN.lean": "e9c657ec04c1a8a18b3a515ac4fadbb8be1164dbae9682fece5f43b9d9e6b22d",
+    "new-audit.lean": "23511a198d59a95269fc9d0bd7c0ce11e5ce24c002cdfbd152c3bf8b1f914322",
+    "old-audit.lean": "73785ff64acdfa9641fb2eaebdb2e03a8042a8fd80ab890414d63d4667eaf75e",
+    "receipt.json": "1a84dcd9ef46899a282f0663535fab44a5ca8f8c72cdcbe5e3c25a9e2bdda4b5",
+    "reuse.json": "8ffd3c4929d2bc9fff6594a8074cd2a7d9966e6a3bf5eb28ff4e89b7003d3735",
+    "context.json": "9fe17a636acc14aa8362cd2528ae581f5a96fd9fd8e148326a72308bcdc1404d",
+    "progress.json": "cfd52a0859e77a196886066288a4bd5bcd671ee1483cc99c3675f14cbc1dc126",
+    "kernel.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "kernel.mem": "4c0a891a3103c446f9a7278048837d5d66a98ec172d1a1abd74bbd59bd6ef239",
+    "repository-audit.log": "45b88fce3952574587e0ee6f9c971d40d0ff2bed949bef6bf61506c54f5ff2c8",
+    "repository-audit.mem": "3f466a75955b47ed806f2ee13092a0307c5bf4cda06f3dd462343e0ca36b2da8",
+    "audit/new-audit.log": "0dd26533ec8b74ffcdb517ce0b0a14793e717a061eba6179f45b54b0025b2db0",
+    "audit-commands.jsonl": "bbcc2b5e0f0dcaa085c83c87e7e89edd9c08e5ed02efa84cf2b046fca16d148f"
+  },
+  "scope": "Original whole-program reachability for each continuing bare linked state;all original runLoop_linkR input conditions retained",
+  "old_headers_exact": 30,
+  "old_axiom_sets_exact": 30,
+  "audited_standard_roots": 31,
+  "remaining": "Final global fault mapping, nested callee entries, current-main affected consumers and production integration remain open",
+  "frozen_R_shared_source_unchanged": true
+}

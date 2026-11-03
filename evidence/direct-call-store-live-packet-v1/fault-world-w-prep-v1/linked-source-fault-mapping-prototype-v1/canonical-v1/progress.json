@@ -1,0 +1,59 @@
+[
+  {
+    "label": "proper-mapping-dependencies",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.E2E.MemoryFaultCallersTransport"
+    ],
+    "exit": 0,
+    "stats": "peak 44675072\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "kernel-MemoryFaultCallersTransport",
+    "argv": [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+      "-j1",
+      "-R",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/source",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/outputs/FV/E2E/MemoryFaultCallersTransport.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/outputs/FV/E2E/MemoryFaultCallersTransport.ilean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/source/FV/E2E/MemoryFaultCallersTransport.lean"
+    ],
+    "exit": 0,
+    "stats": "peak 335859712\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "kernel-LinkMemoryFaultSource",
+    "argv": [
+      "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+      "-j1",
+      "-R",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/source",
+      "-o",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/outputs/FV/E2E/LinkMemoryFaultSource.olean",
+      "-i",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/outputs/FV/E2E/LinkMemoryFaultSource.ilean",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/source/FV/E2E/LinkMemoryFaultSource.lean"
+    ],
+    "exit": 0,
+    "stats": "peak 189767680\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "repository-audit",
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+      "--cwd",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/linked-fault-source.lean"
+    ],
+    "exit": 0,
+    "stats": "peak 187285504\noom 0\noom_kill 0\n"
+  }
+]

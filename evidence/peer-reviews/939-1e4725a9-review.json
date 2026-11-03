@@ -1,0 +1,10 @@
+{
+  "pr": 939,
+  "head": "1e4725a9b7b85c6b1ac9272f2a2dd02128d78624",
+  "diff_sha256": "3f5ceabed913b131752b720152267bea5d87d118685c21d80bacd77b5aab5529",
+  "verdict": "approved;no blocking defect",
+  "method": "one direct QUICK DIRTY CHEAP pass;no builds;no review agents",
+  "coord_message": 6229,
+  "scope": "unverified StockI128 shift and rotate expansion;no Main or proved-route changes",
+  "utc": "2026-11-03T07:40:17.908314+00:00"
+}

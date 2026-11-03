@@ -1,0 +1,8 @@
+{
+  "head": "2f13bf6de379e73f6618dc0b938bd5c5cd1fd220",
+  "verdict": "approved;no blocking defect",
+  "method": "one direct QUICK DIRTY CHEAP review;no builds;no agents",
+  "diff_sha256": "b8834cdcddfecb56a34dfdd7619e76d3a819441e15cfb288045b73a5db514253",
+  "scope": "unverified native StockI128 icmp only",
+  "utc": "2026-11-03T07:47:08.145402+00:00"
+}
