@@ -5,7 +5,8 @@ import FV.Backend.Lowering.StockI128
 * The `#guard`s below check that `lower128` lowers the 16 foundation shapes, 13 `i128` shift
   and rotate shapes (`shifts`), 15 `i128` comparison shapes (`compares`), 14 `select`,
   `select_spectre_guard`, `bmask` and `bitselect` shapes (`selects`), 10 arithmetic shapes
-  (`ariths`) and 14 bit-operation shapes (`bitops`), that the instructions it selects have the
+  (`ariths`), 14 bit-operation shapes (`bitops`), 4 minimum and maximum shapes (`minmaxes`)
+  and 4 overflow shapes (`overflows`), that the instructions it selects have the
   shape of stock Cranelift's (the expected VCode of the filetests, with registers abstracted,
   and without regalloc moves and the frame), and they pin its exact pre-allocation VCode.
 * Further `#guard`s check that `lower128` gives the result of `Stock.lower` on functions without
@@ -40,7 +41,8 @@ def aluName : ALUOp → String
   | .orr => "orr" | .and => "and" | .eor => "eor" | .add => "add" | .sub => "sub"
   | .addS => "adds" | .subS => "subs" | .andS => "ands"
   | .asr => "asr" | .lsr => "lsr" | .lsl => "lsl" | .orrNot => "orn" | .extr => "extr"
-  | .sbcS => "sbcs" | .andNot => "bic" | .adc => "adc" | .sbc => "sbc" | .uMulH => "umulh"
+  | .sbcS => "sbcs" | .andNot => "bic" | .adc => "adc" | .adcS => "adcs" | .sbc => "sbc"
+  | .uMulH => "umulh"
   | .sMulH => "smulh" | .eorNot => "eon"
   | op => s!"?{lastName op}"
 
@@ -65,8 +67,9 @@ def amode : AMode → String
 
 /-- One instruction in the syntax of Cranelift's VCode printing (`isa/aarch64/inst/mod.rs`),
 for the instructions of the foundation, the shifts and rotates, the comparisons, the
-selects, the arithmetic and the bit operations; `?` and the representation for every other
-one. `args` and `rets` show their (vreg, physical register) pairs. -/
+selects, the arithmetic, the bit operations, the minimum and maximum and the overflow
+operations; `?` and the representation for every other one. `args` and `rets` show their
+(vreg, physical register) pairs. -/
 def inst : MInst → String
   | .args ps => " ".intercalate ("args" :: ps.map fun (a, p) => s!"{reg a}={reg p}")
   | .rets ps => " ".intercalate ("rets" :: ps.map fun (a, p) => s!"{reg a}={reg p}")
@@ -1196,6 +1199,93 @@ block0:
       "movz %2, #32768, LSL #48", "movz %1, #0", "subs xzr, %4, %2", "ccmp %3, %1, #nzcv, eq",
       "cset %0, eq", "rets %0=x0"] }]
 
+/-- `i128` minimum and maximum (rule 2 of `umin`, `umax`, `smin`, `smax`): `lower_select` at
+`$I128` of the `emit_icmp` of the operands, that is `subs` of the low halves and `sbcs` of the
+high halves (the operands swapped for a maximum), then one `csel` per half. -/
+def minmaxes : List Shape := [
+  { name := "umin_i128", source := "isa/aarch64/i128.clif"
+    clif := "function %umin_i128(i128, i128) -> i128 {
+block0(v0: i128, v1: i128):
+    v2 = umin v0, v1
+    return v2
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "sbcs xzr, x1, x3", "csel x0, x0, x2, lo",
+      "csel x1, x1, x3, lo", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2", "sbcs xzr, %1, %3",
+      "csel %4, %0, %2, lo", "csel %5, %1, %3, lo", "rets %4=x0 %5=x1"] },
+  { name := "umax_i128", source := "isa/aarch64/i128.clif"
+    clif := "function %umax_i128(i128, i128) -> i128 {
+block0(v0: i128, v1: i128):
+    v2 = umax v0, v1
+    return v2
+}"
+    stock := ["block0:", "subs xzr, x2, x0", "sbcs xzr, x3, x1", "csel x0, x0, x2, lo",
+      "csel x1, x1, x3, lo", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %2, %0", "sbcs xzr, %3, %1",
+      "csel %4, %0, %2, lo", "csel %5, %1, %3, lo", "rets %4=x0 %5=x1"] },
+  { name := "smin_i128", source := "isa/aarch64/i128.clif"
+    clif := "function %smin_i128(i128, i128) -> i128 {
+block0(v0: i128, v1: i128):
+    v2 = smin v0, v1
+    return v2
+}"
+    stock := ["block0:", "subs xzr, x0, x2", "sbcs xzr, x1, x3", "csel x0, x0, x2, lt",
+      "csel x1, x1, x3, lt", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %0, %2", "sbcs xzr, %1, %3",
+      "csel %4, %0, %2, lt", "csel %5, %1, %3, lt", "rets %4=x0 %5=x1"] },
+  { name := "smax_i128", source := "isa/aarch64/i128.clif"
+    clif := "function %smax_i128(i128, i128) -> i128 {
+block0(v0: i128, v1: i128):
+    v2 = smax v0, v1
+    return v2
+}"
+    stock := ["block0:", "subs xzr, x2, x0", "sbcs xzr, x3, x1", "csel x0, x0, x2, lt",
+      "csel x1, x1, x3, lt", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs xzr, %2, %0", "sbcs xzr, %3, %1",
+      "csel %4, %0, %2, lt", "csel %5, %1, %3, lt", "rets %4=x0 %5=x1"] }]
+
+/-- `i128` overflow operations (`overflow_op_128`): `adds` and `adcs`, or `subs` and `sbcs`, of
+the halves, then the `cset` of the overflow condition; the `i8` flag is the third return
+register. No filetest has expected VCode for them: `stock` is the stock code of the CI
+comparison snapshot. -/
+def overflows : List Shape := [
+  { name := "saddof_i128", source := "runtests/sadd_overflow.clif (CI snapshot stock code)"
+    clif := "function %saddof_i128(i128, i128) -> i128, i8 {
+block0(v0: i128, v1: i128):
+    v2, v3 = sadd_overflow v0, v1
+    return v2, v3
+}"
+    stock := ["block0:", "adds x0, x0, x2", "adcs x1, x1, x3", "cset x2, vs", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "adds %4, %0, %2", "adcs %5, %1, %3",
+      "cset %6, vs", "rets %4=x0 %5=x1 %6=x2"] },
+  { name := "ssubof_i128", source := "runtests/ssub_overflow.clif (CI snapshot stock code)"
+    clif := "function %ssubof_i128(i128, i128) -> i128, i8 {
+block0(v0: i128, v1: i128):
+    v2, v3 = ssub_overflow v0, v1
+    return v2, v3
+}"
+    stock := ["block0:", "subs x0, x0, x2", "sbcs x1, x1, x3", "cset x2, vs", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs %4, %0, %2", "sbcs %5, %1, %3",
+      "cset %6, vs", "rets %4=x0 %5=x1 %6=x2"] },
+  { name := "uaddof_i128", source := "runtests/uadd_overflow_128.clif (CI snapshot stock code)"
+    clif := "function %uaddof_i128(i128, i128) -> i128, i8 {
+block0(v0: i128, v1: i128):
+    v2, v3 = uadd_overflow v0, v1
+    return v2, v3
+}"
+    stock := ["block0:", "adds x0, x0, x2", "adcs x1, x1, x3", "cset x2, hs", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "adds %4, %0, %2", "adcs %5, %1, %3",
+      "cset %6, hs", "rets %4=x0 %5=x1 %6=x2"] },
+  { name := "usubof_i128", source := "runtests/usub_overflow.clif (CI snapshot stock code)"
+    clif := "function %usubof_i128(i128, i128) -> i128, i8 {
+block0(v0: i128, v1: i128):
+    v2, v3 = usub_overflow v0, v1
+    return v2, v3
+}"
+    stock := ["block0:", "subs x0, x0, x2", "sbcs x1, x1, x3", "cset x2, lo", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "subs %4, %0, %2", "sbcs %5, %1, %3",
+      "cset %6, lo", "rets %4=x0 %5=x1 %6=x2"] }]
+
 /-- `lower128` lowers the shape, its instruction shape is stock's, and its exact VCode is the
 pinned one. -/
 def shapeOk (s : Shape) : Bool :=
@@ -1286,18 +1376,19 @@ block0(v0: i64):
 /-! ## Rejections -/
 
 /-- `i128` instructions outside the foundation (`popcnt`, whose rule needs `MInst.MovToVec`,
-and others), and the `isplit` of a widening `imul` (its `lower.isle` rule needs the extern
-`value_is_unused`, which `externCtor128` does not model): `lower128` fails on each. -/
+`umul_overflow`, which has no `$I128` rule, and others), and the `isplit` of a widening
+`imul` (its `lower.isle` rule needs the extern `value_is_unused`, which `externCtor128` does
+not model): `lower128` fails on each. -/
 def outside : List String := [
   "function %popcnt(i128) -> i128 {
 block0(v0: i128):
     v1 = popcnt v0
     return v1
 }",
-  "function %umin(i128, i128) -> i128 {
+  "function %umul_overflow(i128, i128) -> i128, i8 {
 block0(v0: i128, v1: i128):
-    v2 = umin v0, v1
-    return v2
+    v2, v3 = umul_overflow v0, v1
+    return v2, v3
 }",
   "function %umul_high_i64_isplit(i64, i64) -> i64 {
 block0(v0: i64, v1: i64):
@@ -1344,6 +1435,10 @@ def rejected (src : String) : Bool :=
 #guard ariths.all shapeOk
 #guard bitops.length == 14
 #guard bitops.all shapeOk
+#guard minmaxes.length == 4
+#guard minmaxes.all shapeOk
+#guard overflows.length == 4
+#guard overflows.all shapeOk
 #guard i128Free.all fun s => (function? s).any fun f => !has128 f && agrees f
 #guard outside.all rejected
 
@@ -1382,7 +1477,8 @@ partial def clifFiles (p : System.FilePath) : IO (Array System.FilePath) := do
 
 /-- Print each shape: whether it lowers, its shape against stock's, its exact VCode. -/
 def printShapes : IO Unit := do
-  for s in shapes ++ extras ++ shifts ++ compares ++ selects ++ ariths ++ bitops do
+  for s in shapes ++ extras ++ shifts ++ compares ++ selects ++ ariths ++ bitops ++ minmaxes ++
+      overflows do
     match function? s.clif with
     | none => IO.println s!"{s.name}: parse error"
     | some f => match lower128 f with
