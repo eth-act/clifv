@@ -1,0 +1,45 @@
+[
+  {
+    "label": "G-proper-roots",
+    "root": "/home/lee/clifv/.worktrees/loop-20261102",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.E2E.CompiledSemanticNI",
+      "FV.E2E.ABIReadCfgTableWitness",
+      "FV.Backend.Proof.StockGeneralRouteWitness7"
+    ],
+    "exit": 0,
+    "memory": "peak 62898176\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "G-real-auditor",
+    "root": "/home/lee/clifv/.worktrees/loop-20261102",
+    "argv": [
+      "python3",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+      "--cwd",
+      "/home/lee/clifv/.worktrees/loop-20261102",
+      "--log-dir",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/actual-axiom-audit-v2/G-audit",
+      "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/actual-axiom-audit-v2/general7-standard.lean",
+      "/home/lee/clifv/.worktrees/loop-20261102/scripts/audit/general-route7.lean"
+    ],
+    "exit": 0,
+    "memory": "peak 257888256\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "R-old-baseline-proper",
+    "root": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.E2E.ABIReadCfg",
+      "FV.E2E.CompiledSemanticNI"
+    ],
+    "exit": 3,
+    "memory": "peak 56647680\noom 0\noom_kill 0\n"
+  }
+]

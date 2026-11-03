@@ -1,0 +1,171 @@
+{
+  "status": "CANDIDATE18_REAL_AUDITOR_AND_13_PRIOR_AX_SETS_EXACT",
+  "axiom_sets": {
+    "E2E.CfgBoundary.refines": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.driver": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.checked_step_frame": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.checked_step_transport": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.Realize.step_realize": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.return_transport": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.return_realize": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.machine_return": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CfgBoundary.checked_instruction": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticNI.toSemantic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.CompiledSemanticNI.of_checks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_world_niX_semantic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ABIReadCfgTableWitness.testBit_admitted": [
+      "propext"
+    ],
+    "E2E.ABIReadCfgTableWitness.island_admitted": [
+      "propext"
+    ],
+    "E2E.ABIReadCfgTableWitness.table_admitted": [
+      "propext"
+    ],
+    "E2E.ABIReadCfgTableWitness.testBit_physical_rejected": [
+      "propext"
+    ],
+    "Backend.Stock.GeneralLoopCfg7.NI.RouteFixture.general_route_witness": [
+      "Backend.Stock.GeneralLoopCfg7.NI.RouteFixture.checks_true._native.native_decide.ax_1_1\u271d",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "roots": [
+    "E2E.CfgBoundary.refines",
+    "E2E.CfgBoundary.driver",
+    "E2E.CfgBoundary.memory",
+    "E2E.CfgBoundary.checked_step_frame",
+    "E2E.CfgBoundary.checked_step_transport",
+    "E2E.CfgBoundary.Realize.step_realize",
+    "E2E.CfgBoundary.return_transport",
+    "E2E.CfgBoundary.return_realize",
+    "E2E.CfgBoundary.machine_return",
+    "E2E.CfgBoundary.checked_instruction",
+    "E2E.CompiledSemanticNI.toSemantic",
+    "E2E.CompiledSemanticNI.of_checks",
+    "E2E.backend_correct_world_niX_semantic",
+    "E2E.ABIReadCfgTableWitness.testBit_admitted",
+    "E2E.ABIReadCfgTableWitness.island_admitted",
+    "E2E.ABIReadCfgTableWitness.table_admitted",
+    "E2E.ABIReadCfgTableWitness.testBit_physical_rejected",
+    "Backend.Stock.GeneralLoopCfg7.NI.RouteFixture.general_route_witness"
+  ],
+  "old_sets_exact": 13,
+  "current_unchanged_R_baseline_ready": false,
+  "current_unchanged_R_baseline_AX": null,
+  "old_expected_inventory_sha256": "da50a6b141f9747336b0cb7059e5d503ef880e40cb7b40d2edcd205bf6b41495",
+  "actual_auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "safe_collector_sha256": "99784a39722b5a0101233c5c09679ebd1a3a050f061160a308f46317b9946b68",
+  "records": [
+    {
+      "label": "G-proper-roots",
+      "root": "/home/lee/clifv/.worktrees/loop-20261102",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.E2E.CompiledSemanticNI",
+        "FV.E2E.ABIReadCfgTableWitness",
+        "FV.Backend.Proof.StockGeneralRouteWitness7"
+      ],
+      "exit": 0,
+      "memory": "peak 62898176\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "G-real-auditor",
+      "root": "/home/lee/clifv/.worktrees/loop-20261102",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.worktrees/loop-20261102",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/actual-axiom-audit-v2/G-audit",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/actual-axiom-audit-v2/general7-standard.lean",
+        "/home/lee/clifv/.worktrees/loop-20261102/scripts/audit/general-route7.lean"
+      ],
+      "exit": 0,
+      "memory": "peak 257888256\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "R-old-baseline-proper",
+      "root": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.E2E.ABIReadCfg",
+        "FV.E2E.CompiledSemanticNI"
+      ],
+      "exit": 3,
+      "memory": "peak 56647680\noom 0\noom_kill 0\n"
+    }
+  ],
+  "fixed_native_marker": "unchanged scripts/audit/general-route7.lean witness marker",
+  "all8_source_hashes": {
+    "FV/Backend/ABIReadCfg.lean": "ae78852b20529c5a367010ea3b55266f5bcdbdf78011d0b24d56d410038091ad",
+    "FV/Backend/Lowering/StockGeneralLoopCfg7NI.lean": "e050bf694c476656859be35095289715a15be534f8d0ce63cf1a0c200f72b46f",
+    "FV/Backend/Proof/StockGeneralRouteWitness7.lean": "5c4102020483805a179bfd9732ad0a950f5aa46043fe7dc6171ed9573827336f",
+    "FV/Backend/SemanticNICheck.lean": "ea7714a42da26019326b0c93fd827e9c2c143b2b3ffc5487335cdd6087ce32a4",
+    "FV/E2E/ABIReadCfg.lean": "69000ce30bbc5a33bdee756b7e34618cedcd1beb83f3fb020b174a536518ad95",
+    "FV/E2E/ABIReadCfgTableWitness.lean": "64f03f2566c8a7e5301f3ee9aaad995e064ecdfccb3c9115d07b46dd7a141ec1",
+    "FV/E2E/CompiledSemanticNI.lean": "fdbd172e5a4f0cbd795fc23ad0d34903260bfd3d682b19dbc92655e9a4611cf1",
+    "scripts/audit/general-route7.lean": "2760c7126a506884bd448bdd37f4c11264928775c7dc233206532a8effd0dd04"
+  },
+  "main_source_projection": "2c6008540ece15aa8e2ae2813322247f0d67e48b"
+}

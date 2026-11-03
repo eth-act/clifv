@@ -1,0 +1,4325 @@
+{
+  "status": "FROZEN_PROPOSAL_TEXT_INVENTORY_ONLY;NO_CURRENT_READINESS_CLAIM",
+  "source_proposal_sha256": "64840f96902c88957a8e07c26b8d5808db57e10dfa37dc081bf2b75ee9e1fa27",
+  "counts": {
+    "full input trace": 236,
+    "absent frozen trace": 71,
+    "unknown frozen archive origin": 1
+  },
+  "records": {
+    "FV.Backend.Proof.StockArithmeticEntryRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c5112c3d21ab156de8b6ff73ae1aa0f31647cc6c7110d65703a69620a963eb91",
+        "stored_key": "90545dd6296217ae",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "a15e260a97cdaa6e.olean"
+          ],
+          "m": false,
+          "i": "0e058a61f44df2a4.ilean",
+          "c": "ace8f5ae6fa5a352.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockArithmeticReturnRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "6ad112177d859a1923340e07e02143e161ecd768840213c1fb1bab419340618c",
+        "stored_key": "7b0d96b31c5e4dab",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "d85b243f51895706.olean"
+          ],
+          "m": false,
+          "i": "ec1627684f1b3bf1.ilean",
+          "c": "ba2630a2407884a0.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockBranchCond5Carry": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockBranchCond7Carry": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockCfgReturnEdgeAt": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "74b54ddb0f9036fe32504dc31a96d1dc8617670d5f419d90d4790619aface4b5",
+        "stored_key": "aa8ec2eaa24a1bbc",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "5c4f8083c27f4a3c.olean"
+          ],
+          "m": false,
+          "i": "2b92b8c81ede3b53.ilean",
+          "c": "ae273d7cbe326579.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockCfgReturnTrapEdgeAt": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "fc7c09a352d10d495b32bc79a1a7de16e81f1b767cb0adc8ad50233a94cc86b9",
+        "stored_key": "f16fd52562ea0390",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "4f3c740dfa909410.olean"
+          ],
+          "m": false,
+          "i": "bdc8a12575dfe01d.ilean",
+          "c": "fd19ac4c6e1f12ec.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockComparisonArgsLoopClass": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonArgsLoopDomain": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonArgsLoopReturn": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonArgsLoopTrap": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonComputedArgsLoopClass": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonComputedArgsLoopDomain": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonComputedArgsLoopReturn": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonComputedArgsLoopTrap": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonComputedLoopClass": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonComputedLoopCompatibility": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonComputedLoopDomain": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonComputedLoopReturn": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonComputedLoopTrap": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonLoopClass": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonLoopCompatibility": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonLoopDomain": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonLoopReturn": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockComparisonLoopTrap": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockConditionalCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "f7ffae309030b4fa48238190aefdc6bf97fd64838e404e338fc67e7f65150dbc",
+        "stored_key": "f5fe57c9ac72de98",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "e73293bfe5734e3b.olean"
+          ],
+          "m": false,
+          "i": "71db5fa2c5242ed8.ilean",
+          "c": "d167fcf72853ea15.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockConditionalClass": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "899e685a81191048804d5a41e31088a04bf07a594953fd21fe5fc3d818bd2015",
+        "stored_key": "a47b756157f6bfc2",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "36747db02c53e7e3.olean"
+          ],
+          "m": false,
+          "i": "39ab0d19996ef2af.ilean",
+          "c": "2fed672200c14d73.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockConditionalCompatibility": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "5db73425812622250be18d35a7081e6c57bf99b09e8e1c86a6e159b724dc9b1d",
+        "stored_key": "d939baa37b5e1e0b",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "bca6d4b90149ea4d.olean"
+          ],
+          "m": false,
+          "i": "68ab5c06b0b4e00e.ilean",
+          "c": "81fc068c495daa4d.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockConditionalDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "e838a18ae6e682b31ea7267a24b2969267ac3a9896c0fbbae7f1df88817a5e49",
+        "stored_key": "ed7306361faa1769",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "441b4eea95e2377e.olean"
+          ],
+          "m": false,
+          "i": "6292b9c67ecaceba.ilean",
+          "c": "0611b2e2a6e9156a.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockConditionalOriginalLabels": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockConditionalRankedCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c236709bc5ddfd7bb842ee6ef6b1d853cbb5811ee72b622f7723d15ba95a0062",
+        "stored_key": "46d9687315c8f553",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "1060245217647dcf.olean"
+          ],
+          "m": false,
+          "i": "4d3609f1a1cec425.ilean",
+          "c": "04c371e8873b41ab.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockConditionalRankedCompatibility": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "47d24fcecc1f8f41df7d2bf7fec2496ab81bb0a9f9dc88c7bddef571507011e7",
+        "stored_key": "f27fb8c19554e145",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "f3c8f19d1a164b70.olean"
+          ],
+          "m": false,
+          "i": "175bd831fde97986.ilean",
+          "c": "ff28338bdf01efa5.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockConditionalRankedDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "fdd738982992577bc8e6b9cca059f684e7402441ef03f1d12d5d9d5357478f99",
+        "stored_key": "5a3547adf3cde42c",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "78728d719d6833ab.olean"
+          ],
+          "m": false,
+          "i": "fd4565503e203355.ilean",
+          "c": "bda8449342cbad17.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockConditionalRankedShape": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "ca6f2ef369a05d1801ad862026b49b117b2570dfb8ee13c4bb352ba8c544841a",
+        "stored_key": "4835004789316479",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "69b898e18a7e6a51.olean"
+          ],
+          "m": false,
+          "i": "f26496adcb2f6d9c.ilean",
+          "c": "6ca9e2e8fa8f21fa.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockConditionalRankedSuccessor": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "8fba88ef35ce4efadb99acc16286a678a1b2f68f61bfdb4f60a8dae6ff0fc41b",
+        "stored_key": "50dda55e00bab78c",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ae31073dc2f819a9.olean"
+          ],
+          "m": false,
+          "i": "b1ed70181ccb35d1.ilean",
+          "c": "fd72c3e1ab87d6a8.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockConditionalTrapLeaf": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "1e903acf58ae4277ba0fc3cb355c9dc866de09934bf723a55d49b488d05779b3",
+        "stored_key": "962ab72a30b517e7",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "811642af760da91b.olean"
+          ],
+          "m": false,
+          "i": "af5b48b20d293e32.ilean",
+          "c": "f8dfd796313632af.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockDivReturnRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "b59efbdf994b13572f3c6264cc5d8986bbbd303a5a3628e56b9ca83ca5047a4c",
+        "stored_key": "5cc460cdca5f632d",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "1cb85986103ad5da.olean"
+          ],
+          "m": false,
+          "i": "a575be62fccdb893.ilean",
+          "c": "94f17dfa1914d787.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockForwardCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "6d6b5cf8973c631e2724e3d08fbf430eb5a946c1fd05329b672f9e97052a3a6f",
+        "stored_key": "1af6dc9149d6a7eb",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "116317a165a84f5b.olean"
+          ],
+          "m": false,
+          "i": "161ce9ccc5a9ebc9.ilean",
+          "c": "9dba913436b915f3.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockForwardCompatibility": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "28330a074ed88cef8120c036e421c938be393083ff979ca95cddae1cdcb04c05",
+        "stored_key": "13c679e824e457a1",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "d6a793d90404d9e4.olean"
+          ],
+          "m": false,
+          "i": "5ba51e7376d19cab.ilean",
+          "c": "8c4846d0ebe53966.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockForwardDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "4124ff80e350e95e0e2a9853e873992df0e02943d9016fc0856a43ebacd183e7",
+        "stored_key": "40124e4210089721",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "cd1963e7d93eb202.olean"
+          ],
+          "m": false,
+          "i": "d245468c6cd6df97.ilean",
+          "c": "a3aadbfbe49cda86.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockForwardEntry": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "f4c9c4689eddb9ba5f2e5580f4cc9f0496b0a02170cc21990daea9d11aa6a6ff",
+        "stored_key": "92987d19a12f3af6",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "de7a35dc5367c8a6.olean"
+          ],
+          "m": false,
+          "i": "5b885d0d7983bede.ilean",
+          "c": "2cfb05071d6dcb66.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockForwardLeaf": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "43bf575142f067785540e9adf1adf389ce9c34e69ba7c4746b586f5ffd7968f4",
+        "stored_key": "c2136fa2bd375a3c",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "36a17706903283f5.olean"
+          ],
+          "m": false,
+          "i": "a0e4098e2dc0a3b6.ilean",
+          "c": "d1675a83e08292c0.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopClass2": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopClass3": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopClass4": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopClass5": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopClass6": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopClass7": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopDomain2": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopDomain3": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopDomain4": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopDomain5": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopDomain6": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralArgsLoopDomain7": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopCheck2": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopCheck3": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopCheck4": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopCheck5": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopCheck6": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopCheck7": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopDomain2": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopDomain3": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopDomain4": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopDomain5": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopDomain6": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopDomain7": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockGeneralLoopWitness6": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockLinearCfgCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "0364a8ca9bb238fb52b505224f09c23db949af154bbcf8b0c3ec2d36ce570c21",
+        "stored_key": "4903451d5a0213d5",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "b8faf5a5ca7219d1.olean"
+          ],
+          "m": false,
+          "i": "b1d8cdfaca89a19f.ilean",
+          "c": "58dbc11c9b183980.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockLinearCfgDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "f02cabb3dccb474247e81c97a248ad1ced9d2e4baab8af8fff29a33625bc3f86",
+        "stored_key": "9e19338c0db51704",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "15c8d372bd2f07ab.olean"
+          ],
+          "m": false,
+          "i": "9b1be34cbca6d54f.ilean",
+          "c": "7cabddb01cfabb57.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockLinearCfgReturn": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "136447fee557a2a3109f34f9c20e6b46ffef9b118c114726af3c059ebff10d3c",
+        "stored_key": "d5ad48ddda61408e",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "d8b35494e165870d.olean"
+          ],
+          "m": false,
+          "i": "ba261d6c27271752.ilean",
+          "c": "4dbcc3f80697ef3b.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockLinearCfgTrap": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "6bf89f47fbc9b70f5634a757d2fa502b417c108293f78e405b1c7da4d57d7ffc",
+        "stored_key": "4f8ffd9ab71197af",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "27af7fcc59942d70.olean"
+          ],
+          "m": false,
+          "i": "f7b32c451dac6d1f.ilean",
+          "c": "f76be181c896c5a6.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockLogicalReturnRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "f8d9c7e9cf89d2b3507cb778417da8d5e5ce851c1d952de6722522a38a74ccb1",
+        "stored_key": "f0556dee037a463f",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "c66cd719aec1300c.olean"
+          ],
+          "m": false,
+          "i": "81f72776b58718f1.ilean",
+          "c": "2000658ebab9026a.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockLoopDefBefore": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockMemoryAutoScan": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "5146b132b585dc16fc00cb187f0346980f12aa8ccd612d473badc71d6412198e",
+        "stored_key": "f750b7e7a998411c",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "a7051c93cb4a9043.olean"
+          ],
+          "m": false,
+          "i": "3ebe6d280c18aa2d.ilean",
+          "c": "476409ef879be922.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryCapturedCopyBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "03a45aa93e74acd2fb373036885869067650c6d2113885dfd3370f84fe296aa0",
+        "stored_key": "23d917d461152961",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "033afc4c377ccc90.olean"
+          ],
+          "m": false,
+          "i": "490685c959935cab.ilean",
+          "c": "a2b0f2cb1e12010c.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryCapturedCopyCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "636c22b069421739b8c31bf52b726967a7c3f97ca99cf3a4ab78fcb544307af5",
+        "stored_key": "6b3ffd380b275db5",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "2d39993f14a14818.olean"
+          ],
+          "m": false,
+          "i": "c8a74b71e048a83c.ilean",
+          "c": "19cea3f827bc1dd6.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryCapturedCopyClass": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "6d977a48d016851403565a3d34b2e4f0f2f2e5263c6b04542a8a3b114c1b2e25",
+        "stored_key": "8b9525658dbb4baa",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "69a38e5e98488ec5.olean"
+          ],
+          "m": false,
+          "i": "a08303987fbac9d7.ilean",
+          "c": "82de8065ef9f508d.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryCapturedCopyDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "372e67449165eea730d087d1202fe1243dc00071015726a0b550a1201e9f192d",
+        "stored_key": "b0b6cbc265f8264d",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "9705aa1d0262ccba.olean"
+          ],
+          "m": false,
+          "i": "042d0552bfdaa3ae.ilean",
+          "c": "f320f0c476b77fe4.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryCapturedCopyFunction": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "1907b4090df060ff095cf3db6736213ac5f1e7fbc5da24974285bfd16b0ba792",
+        "stored_key": "84afd2f7b47dd718",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "a7f1d26c2fb42ce5.olean"
+          ],
+          "m": false,
+          "i": "baa44af9ad198c28.ilean",
+          "c": "a6657f47fbc20c53.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryCapturedCopyNonentry": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "0a3fd14ba80fbfd7b104ca86ef4af23082c0c72a1ea600c220a108b456bc5b11",
+        "stored_key": "e893faa322567f89",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "d20b3809bf3ab85d.olean"
+          ],
+          "m": false,
+          "i": "5bb078c70b11c805.ilean",
+          "c": "75196fb190ddc90a.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryCfgNotrap": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "bc7ffbb1460a132ed22863929144cf4da1fc3fe06ea97dc4a8747b9feec95cea",
+        "stored_key": "2221c2e9c052d458",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "83f4946ebc55d924.olean"
+          ],
+          "m": false,
+          "i": "10f2855b301b459c.ilean",
+          "c": "53eb2feead7a2fc8.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "307711e2837b125c3bcf60693302be132e7b61a5f0099092e3ba57ef0a1061a0",
+        "stored_key": "6c22a2ed85e98b4d",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "9799f5e2aa2b581f.olean"
+          ],
+          "m": false,
+          "i": "7ac2ace720431e17.ilean",
+          "c": "a537bf1e9c8fa32f.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryClass": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c2b409932e55978b04b11f6559bc447e8fc2cfe8bc4d2df3a1e3bb81466aeb90",
+        "stored_key": "b67e82ed9faa1e3d",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "43c8099f0d259e4e.olean"
+          ],
+          "m": false,
+          "i": "dd3d9d1e8096653a.ilean",
+          "c": "3a7ddc18a9e96dfc.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryComputedStoreRecordSpec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "42abd9da5a9c925e5eba21046cc55021652b477bb6b7060479abace90afe10e0",
+        "stored_key": "d16e73c0afcbf2d3",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ba176019ecd7634c.olean"
+          ],
+          "m": false,
+          "i": "cf0f80e824d31988.ilean",
+          "c": "712df0d0c3cbf2b2.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "d1b806154086128dcb80db5c56d3b0ed676b622e1c363646b8b46062e1d03f52",
+        "stored_key": "57bc70a64e8808a2",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "bd1e30597ec3484f.olean"
+          ],
+          "m": false,
+          "i": "85bbe5c2211e4c90.ilean",
+          "c": "704033c8e2786318.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadClass": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3c4d6f5f36fd0ebbac06f813c9220799d9574549a58ceb1d71c5ed9dec1f08c2",
+        "stored_key": "71c389615f4a6a47",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "f15dabbdd651d870.olean"
+          ],
+          "m": false,
+          "i": "7fbe2c234f6f1a9e.ilean",
+          "c": "32b133c9835ef7a6.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadMatch": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2266a5852614e2d4bb5d1a27ce429a9be8d9b06e200eb2564cf9e43b50747aef",
+        "stored_key": "518b64d055144193",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "cf888635760d23ad.olean"
+          ],
+          "m": false,
+          "i": "7663742a4841c16a.ilean",
+          "c": "c11c3cc88984c724.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadPairedRecord": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "674d45e268617a3f851f17a6136cb3948dc43f1314bcf24b025c4917e6f1ba6d",
+        "stored_key": "08cef3da838f6381",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "5a3b04d2bdd271d1.olean"
+          ],
+          "m": false,
+          "i": "f166a8d9d5b2f9ca.ilean",
+          "c": "08935877718bfdfa.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadRecordValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "eb5c11d6f054fb6e08b7cdb9f5cd532e231f451844d7cd56e5721b3accbcb0dc",
+        "stored_key": "8ec64813c2aaa7e3",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "5b1bd9c70044791a.olean"
+          ],
+          "m": false,
+          "i": "4ee1ed0eb9b06a5e.ilean",
+          "c": "29078ad6d0baf4eb.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadReturnBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3d7d5c7970a267a918d34bd2ce392ac9848694e68614a5f489f9f4d14afb6bd0",
+        "stored_key": "5ba7faf638e5e20b",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "e5de55666fb608ef.olean"
+          ],
+          "m": false,
+          "i": "401b38fecb4b6316.ilean",
+          "c": "49d3c828dc5e7b26.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadReturnSpec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "cbe2d0089541543376fd08d4687e96e0828b300f44362f7c533788e4324c185e",
+        "stored_key": "1916d49ddc2fd220",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "f80e035df0853de8.olean"
+          ],
+          "m": false,
+          "i": "8531fee70dcce037.ilean",
+          "c": "f915e1ef18fd17fc.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadScanRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "6478493fcc2e0bdde3ab4c0462bdd5d7aba1cd9335e1bc57986ad2175cc7e0c4",
+        "stored_key": "e6c45b5b74f623b1",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "359ca63429a383d4.olean"
+          ],
+          "m": false,
+          "i": "1f0afac5553963dc.ilean",
+          "c": "930c1b45178c22be.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadSelected": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "88d40033dcc89bad328df5fecb2ec3d0c1a3b6a530c71203d9f04db2dc43e93f",
+        "stored_key": "6871795ad02c0a04",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "1b06f23a15c1349b.olean"
+          ],
+          "m": false,
+          "i": "776d6767ed55a6d6.ilean",
+          "c": "4f767c99b07a8382.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadSelectedValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9717805b784d7c433ae8ef94d70e264dfff68518679a2e8910d3e219bb065483",
+        "stored_key": "d20dabb3e6c77a52",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "2fdcd88ae85456a7.olean"
+          ],
+          "m": false,
+          "i": "278ddecf48f8ceaa.ilean",
+          "c": "6365a257ab0d1d9f.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadSelection": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "f65890bbc19d7a835e58eafda9309f769c86df257ba381d70d88d393b5d8d1c2",
+        "stored_key": "a4b89e87904a64de",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "8b0c5c95a70980c9.olean"
+          ],
+          "m": false,
+          "i": "790ffd3b51969399.ilean",
+          "c": "ee078c91794c8924.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadSingleDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3be1e5ab14dff9767e0e3b1ed744b5a51e00f178e76307b4f1ab79c3f49f16aa",
+        "stored_key": "c74cc2e752276b53",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "14117e0ebf3b1f0a.olean"
+          ],
+          "m": false,
+          "i": "7dfc2d9420b65bb8.ilean",
+          "c": "dd2e2adbe66fcbd8.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadSource": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "86b7f5852b558394f10ce947a3eb82a2d9de6ef44f0d1a18a1d3e7e8ee6a4318",
+        "stored_key": "04b5c999d20b7e79",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "9830d00ffcbd6172.olean"
+          ],
+          "m": false,
+          "i": "1fd250cdd52e8d00.ilean",
+          "c": "7f539eb4da7ebaac.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryExtLoadSourceValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2b82ab0752aee35efc54743f48a3259baf1cfb6f36c27b93d7d89176f306c9a9",
+        "stored_key": "c06664d5293d7efc",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "91a26c7e021ae34b.olean"
+          ],
+          "m": false,
+          "i": "2d6caadc7bb2a914.ilean",
+          "c": "59dc35a98ead6dde.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryHelperForward": {
+      "frozen_state": "unknown frozen archive origin",
+      "stored_trace": {
+        "sha256": "06d38ea32a6ba830ce46abc2f387498f3a436aada971474f0482810c52607dbc",
+        "stored_key": "0e9a33fd9d3e1b37",
+        "synthetic": null,
+        "inputs": false,
+        "outputs": {
+          "m": false,
+          "o": [
+            "6b3e7b8e45cea882.olean"
+          ],
+          "i": "b6b03b6f0eacd425.ilean",
+          "c": "88844e8674d7a57f.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "0594885902e7d9070469f8b9c0c41e06ae9bbf4c872b33e39dddb0086fd41629",
+        "stored_key": "45f4b992fcb92f32",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "8fd14800b96c98c1.olean"
+          ],
+          "m": false,
+          "i": "64c2dcf5d28e2c5e.ilean",
+          "c": "b086a7acaa82dfc4.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerClass": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "121d52eb300181c3bfe8cc536fced1e621b45926d0d48d259f6533a4bb87ef9d",
+        "stored_key": "3846846617cafffc",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "04f61a2e735fc753.olean"
+          ],
+          "m": false,
+          "i": "70b4a31aa6e163af.ilean",
+          "c": "bf0963f607eeece7.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerDispatch": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "6c0eb79667e5c182151eff096a9878b3e2f5d05ef2fa98b4fcc49915ef56b830",
+        "stored_key": "f46553879801dabb",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "662c4e746891c35a.olean"
+          ],
+          "m": false,
+          "i": "e04e0d0575b98670.ilean",
+          "c": "c3d82d58a1d8eade.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerLoadSelection": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "d661a9597f5597adcd1ca6a746fc8b40c603819038fbe77576de40ed0ef22c6e",
+        "stored_key": "5b709bfb6c5b6129",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "93684e2034c78149.olean"
+          ],
+          "m": false,
+          "i": "9c1af9b4562c55cf.ilean",
+          "c": "f4ac6a9bc84edf72.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerPairedRecord": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2335add2454fb236f3b49de5d3a3be0c85adc5a0db65c5b1b2aee10a03017472",
+        "stored_key": "93fe4f1b69841d14",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "2d2bd42646882c97.olean"
+          ],
+          "m": false,
+          "i": "5d688f01aa5a7059.ilean",
+          "c": "96dd98f3819d3c9f.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerRecordValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "cdf8bc6416ecdf5a944b0d67b44d73e2b2eb2e8e236a056711bc592a5a28591f",
+        "stored_key": "7e053fc1143703c6",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "b76167af341b25d5.olean"
+          ],
+          "m": false,
+          "i": "99f184d9f626e4c4.ilean",
+          "c": "71d927fafc35b0a5.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerRetainedReturnSpec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "fbf4f0ff84df2618bf0bc985c8e55187f505a4b7994dfb27931d633fb31284a3",
+        "stored_key": "9f34f4f2ad6f6ee8",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "e298ef09a73b8a71.olean"
+          ],
+          "m": false,
+          "i": "7601b5583b2adf30.ilean",
+          "c": "7eea679dff5166c2.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerReturnBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "4ec3ab751e8ec2f4cfc07f03ac63a98df230452b4dd4e9df39694e020ce064c2",
+        "stored_key": "0a2743aa45ab85d5",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "a678366b64086c42.olean"
+          ],
+          "m": false,
+          "i": "1ae5da92e29ebdab.ilean",
+          "c": "27c9741041e47d62.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerReturnSpec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "6c49984aaa73f10506f74de4e161f4061f1c8af7a6b43066e15ceea16428f607",
+        "stored_key": "f266c45966d84f59",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "eb9e86be9ae0e47a.olean"
+          ],
+          "m": false,
+          "i": "b9043e7093e24dae.ilean",
+          "c": "77287fcfb92998d3.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerScanRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "fce0520b4166e4e6d04ee260f4de4c226184c1aa5290817f2fb8a124fa0b8aac",
+        "stored_key": "3c7ac32d9232bef7",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "b8cbfea98c88ea98.olean"
+          ],
+          "m": false,
+          "i": "21c719c6aa020b4d.ilean",
+          "c": "8964c2200e7c1057.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerSelected": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "8348ba30fa11a7aafdc2464048ded45a5f237b51fe044049e0f2a2df564e674c",
+        "stored_key": "0b66753d15368d36",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ccbed68dc869e0b3.olean"
+          ],
+          "m": false,
+          "i": "cd11716966bc4d25.ilean",
+          "c": "698572b5935deb7a.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerSelectedValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "efd94dcae790257c9bde3c20236b10aa6e5b2b3686463142ffdd848fa645829a",
+        "stored_key": "d43ba6f936e6b7c5",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "0ac1efbcb0063850.olean"
+          ],
+          "m": false,
+          "i": "d33d00253646d96f.ilean",
+          "c": "a2adb5b58045e50c.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerSingleDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2a14638d56c6ef8934e7657e53b94cd4de9032415bc79266314bd658d24bb4b4",
+        "stored_key": "75dd94208a4ef0fb",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "738ae6360e3c1e35.olean"
+          ],
+          "m": false,
+          "i": "28c7dec6f05c44f5.ilean",
+          "c": "7a44eacef802e6f0.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryIntegerSourceValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "e2794e0d02e6941cacf8fc7f10bfb2bcbc7a274f0ed90610ddf895d4f61ef37f",
+        "stored_key": "771aa8bf1ad5d4ea",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "829a2734cf51aef3.olean"
+          ],
+          "m": false,
+          "i": "ebb04416cbf76bcb.ilean",
+          "c": "6f58ee6491812032.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadSelection": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "a225c75cfb934086e78f350c5e0242313c871d478e8f251ca446ce806327da83",
+        "stored_key": "b95488bae105d590",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ef157185fa2048af.olean"
+          ],
+          "m": false,
+          "i": "bcf1d85fd4db5d10.ilean",
+          "c": "a2333ffdd5ec45d8.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadStoreCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "35f28c3a3ccc9bc0f439f8aba6011c04a27f99fe86edc82643a090705403434f",
+        "stored_key": "4aff46cd90a4103f",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "dab258d1dc95f77b.olean"
+          ],
+          "m": false,
+          "i": "2c005a7b2982826d.ilean",
+          "c": "b33e3c19c9b0a8bf.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadStoreClass": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "8ee4917a5be62663a3eaeae696bd0c350f2c74c73a188600ea00acbfd7aa8bd8",
+        "stored_key": "8e19779ca981edfc",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "bbf70061f204329f.olean"
+          ],
+          "m": false,
+          "i": "7e759cfa6686b972.ilean",
+          "c": "0fa53be387a58b6d.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadStoreDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "82eeb017f0a9a601574b76484492501106f9e854ee95060d78ba176f4437b753",
+        "stored_key": "45988644ae61e588",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ac45774f33eb950e.olean"
+          ],
+          "m": false,
+          "i": "731571247d45a3ba.ilean",
+          "c": "8d6ca941ddd56d83.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadStoreReturnBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3a10ad34bbc37a0d31d11ea3ab4728a208dd9249fecd97fe1a7787acf47c03e8",
+        "stored_key": "87efdb00e4c6a6c9",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "03721c2be2cc428f.olean"
+          ],
+          "m": false,
+          "i": "a1e71be758cd48b8.ilean",
+          "c": "9b4c1c794d7f0cff.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadStoreReturnSpec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9977bf8400287c9423bdc3ab3e0496fa612cb0c5a838dfc5284a72f76d09f226",
+        "stored_key": "84c4fde2986fd132",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "830a5b96070ece4c.olean"
+          ],
+          "m": false,
+          "i": "8afe8c785db8240e.ilean",
+          "c": "9de6ac9b3d7020a6.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadedPointerAddress": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "11a927d3328d3e6835bb9a8f3aaa4edbc8a2b7b99f0dcc60e7732ecc8502f8e4",
+        "stored_key": "6ceedad0a411400a",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "80da0d097b132e3c.olean"
+          ],
+          "m": false,
+          "i": "999446e19cdc2793.ilean",
+          "c": "e91638eb1f3cf381.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadedPointerScanRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c1c146129b06bf53ad78f5018580ae5d23e5890adf49c117beca7cc0a56eded3",
+        "stored_key": "efd8a2c7745b0381",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "c3ce4e33f2ff5172.olean"
+          ],
+          "m": false,
+          "i": "dcf6e062450d20dd.ilean",
+          "c": "aef0cce3c510ca89.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadedPointerSourceValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "dfe7141a1dbab64c3f135d06ba741f90a40c3df28d48438f0c09bd971a5b36d3",
+        "stored_key": "9d5437d1544179f6",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "235c9d96cb01def0.olean"
+          ],
+          "m": false,
+          "i": "878009f5c54e6084.ilean",
+          "c": "6346ae7da978072c.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadedPointerStoreCoverage": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "dc686a81be377bc39e11b3371a08e158a6caaeb904423020f656145adbe282d1",
+        "stored_key": "385ef961d5a088ff",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "5aaae1c93970d8b1.olean"
+          ],
+          "m": false,
+          "i": "27187858fdda6945.ilean",
+          "c": "846f8139669f8cc6.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadedPointerStoreEvaluation": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "b068b87cfa2df9bc8e4601881e5ac87d0d8b7d3ff1d711e4c6f645725f108a53",
+        "stored_key": "2c051e8bbf2b3010",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "8914522e88703278.olean"
+          ],
+          "m": false,
+          "i": "d07479a76f8666fd.ilean",
+          "c": "f6df8e3eeb4784db.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadedPointerStoreExec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "90567386e7d7a1a20418a3066907b5bd9c90d73db518ce0df77911bf1e8e9522",
+        "stored_key": "ab682497b62889f6",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "308dc08232dd1072.olean"
+          ],
+          "m": false,
+          "i": "64e9ea4af9a339b6.ilean",
+          "c": "f6d88bd773965b64.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadedPointerStoreRecord": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "98025e503599bfa880b5aeef7f1495142dca30226645d3d3850f3b44d109818e",
+        "stored_key": "21531aded70ec723",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "7a1400ba3475860c.olean"
+          ],
+          "m": false,
+          "i": "0a11cc08ebb9c477.ilean",
+          "c": "793fc444312bd320.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadedPointerStoreRetention": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9bb822a2ffcfdeb8c8bdff7f4ab404b86106c86ce059fe0771cc6d3971e2ab0d",
+        "stored_key": "253731642cfda4b7",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "601d096f7dcdc2c0.olean"
+          ],
+          "m": false,
+          "i": "29e2db0ac39bcf5d.ilean",
+          "c": "a1d4753361a35347.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryLoadedPointerStoreSelection": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "ac9204f4e2dc17f84909ffdab4601b8e21b78d31d2f1f83507fb34bea17e63e6",
+        "stored_key": "bbe73dc9ea7f4804",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "205b83b2055cb05b.olean"
+          ],
+          "m": false,
+          "i": "7caa527a60a040c5.ilean",
+          "c": "8089630d8da4801d.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryMixedStoreRecordSpec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3895e4ebdc58e5d39842a25f29670fdc98a1facb622a62913085d90a954f224f",
+        "stored_key": "56c9881df9bcd8bc",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "f76963fd994fb108.olean"
+          ],
+          "m": false,
+          "i": "6e6dbba664d0c16b.ilean",
+          "c": "3bc729e4edad53ff.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightAddress": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "23da26a3d1bcf9e80a59a244e3102390d2eb48d7938b17accc1579b53e546d05",
+        "stored_key": "85c6195b722a09d2",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "8a913119dd2c68c8.olean"
+          ],
+          "m": false,
+          "i": "79a81c395756cb23.ilean",
+          "c": "47acc942201c213a.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightLoad": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "d6c364c6b82db97472efc40680661662ac5367fd3428d7a29d424f753c49b9e9",
+        "stored_key": "3914b7e086af253b",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "1c9f93b5651af361.olean"
+          ],
+          "m": false,
+          "i": "1e5386a2da9934ab.ilean",
+          "c": "c11350bad7ea823c.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightLoadRecord": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "43befa3513c31a54f30e0dd34d6c2aa0ee2fd040af2883549f3d4dec7caba607",
+        "stored_key": "7101d848f2adfe4c",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "eeb85512526de8ac.olean"
+          ],
+          "m": false,
+          "i": "0e47d9a3b9ce4961.ilean",
+          "c": "2e6e91770f73988a.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightPairedRecord": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "10c8e8c154e68b54694f427197fde48a62cff11e92e668c696b017bdefa29ea9",
+        "stored_key": "8f23d81015463ab0",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "7f710504897774a1.olean"
+          ],
+          "m": false,
+          "i": "0b2c93b4049c65b7.ilean",
+          "c": "975142dbd16355ca.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightScanRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "31b759b17e3a92fe164f7986cc75b400d796ce8077b61613d2679d39a3b0bd02",
+        "stored_key": "3ce4cb9e35ce6228",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "3e9c280be66e879e.olean"
+          ],
+          "m": false,
+          "i": "090a69baac284e5d.ilean",
+          "c": "595adad9c4dcbccc.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightSourceValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3bf2a5eb3b4c163e5697b759d502299154b0dfb7571efb17d99260fa00aa5173",
+        "stored_key": "01e8dcdbb4289c73",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "7a038a5394529de4.olean"
+          ],
+          "m": false,
+          "i": "cd556f4d0926b005.ilean",
+          "c": "c630c05aa596b0fc.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryOffsetEightValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2e0310ed50dbe2969e725fa753dd7052fbe13664c3fc7682ff046557f449db31",
+        "stored_key": "ad7303a7bf02723c",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "600c7ad5efea4d55.olean"
+          ],
+          "m": false,
+          "i": "d49fd8dc55d7a5aa.ilean",
+          "c": "ac287e0a58f72f40.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryPairedRecord": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "d6b1f2a1ac6ea18a3147ab77bbef37b61d111bf3b68c52ebee990d192297727b",
+        "stored_key": "bc8bfcde3e2cadaf",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "f88f47c14c0c915b.olean"
+          ],
+          "m": false,
+          "i": "c02b031f1d0859fa.ilean",
+          "c": "bb9c3b7d1b30705a.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryRecordValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "aede158c43a238984eb1eb80e627fec8c45877f829455677eed33e7190555225",
+        "stored_key": "948a080468c486ff",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "e383fd0ae58a1498.olean"
+          ],
+          "m": false,
+          "i": "bfe9d29d738e69cd.ilean",
+          "c": "6c47604641f679b3.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryRetainedReturnSpec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2b888f2c545ce2b7a1fcc4883f6e8cfba4d64425cf1928536fdc74391267a8e3",
+        "stored_key": "9d95e7063c0ce25f",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "1907a7f1436611f2.olean"
+          ],
+          "m": false,
+          "i": "8d65474fd98f8670.ilean",
+          "c": "20317c480eb32c0d.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryRetainedStoreReturnSpec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "aaeaa27ce5a14e2b2b3cc687f30e95a07c0a8062c3dacaa6c97470156ea7fdf8",
+        "stored_key": "0f01725c950e3889",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "172d85872d76c5f8.olean"
+          ],
+          "m": false,
+          "i": "d9499d9f34a41624.ilean",
+          "c": "0f9878a6b32ddb42.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryReturnBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "55bfb17b5f6921be4008e5d1cb8fb35cf4372644a556e691598e913462254cc5",
+        "stored_key": "ed11cbce1a1a7774",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "da6e28b848e0ac2c.olean"
+          ],
+          "m": false,
+          "i": "040171d3e3b6bacd.ilean",
+          "c": "00ba0cf193920df4.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryReturnSpec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "14fe968a4720c2784aa13e8c9453ce3d09c10645692b6e3b50a148f355305af1",
+        "stored_key": "bb8e38da86f8d253",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "45ad9d6e1018f7f3.olean"
+          ],
+          "m": false,
+          "i": "758db54896756df8.ilean",
+          "c": "b097b6745d2ddc45.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryScanRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "f783136f87fc1064247980d634d7c8462331a2eac85115cd9ebec987fe4fe864",
+        "stored_key": "5acf0793e60f321a",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ae72d80c2d7805ad.olean"
+          ],
+          "m": false,
+          "i": "fd1700f5919baa97.ilean",
+          "c": "b21c3002c7c4fa3b.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemorySelectedValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "dd11b7104745d23bf5226c46483f99160cd9254355d99380ac85d2b3c2856122",
+        "stored_key": "11ed49609bf4fb41",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "960984f33647c27a.olean"
+          ],
+          "m": false,
+          "i": "10afbff969ff38b2.ilean",
+          "c": "5e83c5a838e2c8a0.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemorySingleDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "f645b822702d70ccc16070b9fd700d8ff7d8647c43a0885916216e86310a9382",
+        "stored_key": "646afaa37036fee2",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "57067cca7a606545.olean"
+          ],
+          "m": false,
+          "i": "0cac0619915a0162.ilean",
+          "c": "d38374e6ddc1365d.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemorySourceValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "ed6ec522826c9bbfd69ff0f90c4da1ece48633321df4cc16a9f45c0a29876e68",
+        "stored_key": "11d2c9ad0acf351b",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "a82ab714fce64556.olean"
+          ],
+          "m": false,
+          "i": "0f9d56f69aa39a5a.ilean",
+          "c": "9bc02f1c62376b24.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreCfgCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "66cd97732fa1657b72197684abad467d89c5c98aabe93d8195ec8e198de25f90",
+        "stored_key": "6a7b224517a7e924",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "e542e2564d4be299.olean"
+          ],
+          "m": false,
+          "i": "f0b79cba8b9c995b.ilean",
+          "c": "cda70f2b9cea5c53.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreCfgClass": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "1046c7a764d2702622774c00bd4ed38604e50bd0788865b32f07d762afb1f29e",
+        "stored_key": "9171d919550fdd39",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "2f00b4c4b8b82c46.olean"
+          ],
+          "m": false,
+          "i": "8aefe51e9b55e480.ilean",
+          "c": "aa247acfb29d9645.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3961b2f2060ab4b5e001405377d7d881ea2409a99fbc90239b70e415f2cdc5df",
+        "stored_key": "796254e7dba266df",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "52403e7aeef45c88.olean"
+          ],
+          "m": false,
+          "i": "523ea721381c080e.ilean",
+          "c": "4e55109342901484.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreClass": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "572c0da4c793e9d2d071a640d7e07fe80e7f1dc9e62cb9fbabaf5a9a7a782e72",
+        "stored_key": "16fa9c3849c304a3",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "80021008b5e662c3.olean"
+          ],
+          "m": false,
+          "i": "e83fa941589da875.ilean",
+          "c": "cb94f29e1add0cae.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreCoverage": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "249e211ed2e11222f764939d831759d7ee5094020d124d63ced17e92fb43db52",
+        "stored_key": "b672ac9aafc352e6",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "89c71f03a37587e5.olean"
+          ],
+          "m": false,
+          "i": "9ae9dca96234e18c.ilean",
+          "c": "c657447354d868e4.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreDispatch": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "108889c409863a48a5a349b3517516022fd594a5178e1e7eea4aea83a6f9c285",
+        "stored_key": "97c4f9f4ab55e1b4",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "f4006da45cdffd84.olean"
+          ],
+          "m": false,
+          "i": "828851c241a73b23.ilean",
+          "c": "0adb4d3c39414a8b.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreEvaluation": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "33ee7aaa21c351a1f9ffd5e3a75dd5b14cd421d20760aae9b3c12326bdce025c",
+        "stored_key": "e5f45bba72bd4d30",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "bf571a86b676047c.olean"
+          ],
+          "m": false,
+          "i": "db13e14dfd88cab5.ilean",
+          "c": "4ac5eb8941f981c4.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreMatch": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "1a47f779f564b56a9a4d83706bf3d74f45e701858d9021e819740d8afa149a39",
+        "stored_key": "5410e22498a174d9",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "3722f98c0b505ca3.olean"
+          ],
+          "m": false,
+          "i": "b0d690cc6c92796f.ilean",
+          "c": "08d4ba1e6eaad7fe.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreNopNonentryReturn": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "7672f1dc0382d1c3e1b7b9fa4d7a34b8d647c2a7b2ff001ec75555065486a5a5",
+        "stored_key": "dc05ae9ea4f0ee7c",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ada536cc5b28eac9.olean"
+          ],
+          "m": false,
+          "i": "8b777aa8880111c9.ilean",
+          "c": "9ef4ce76934a8a40.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreNopReturnBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "7d066008d50114ccf048daec089d235f733f0a17af3365ebc4804aa165772d96",
+        "stored_key": "c143a605a5e7323a",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "f49da74d84a09f72.olean"
+          ],
+          "m": false,
+          "i": "4d8b4e057492e0d4.ilean",
+          "c": "c06cb11e89b428c8.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreNopTwoBlockDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "fd37ca73497acf96903f8c2e06ec7b68f287022f6f4e0163227ef4df1ef7f043",
+        "stored_key": "d357b392ae26d676",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ad714b30ca475f17.olean"
+          ],
+          "m": false,
+          "i": "151576079360d626.ilean",
+          "c": "e9cd9e4d45668a0a.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreNopTwoBlockReturn": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "e1c32c2b2bf397b78efdf4108a967d1e2a1132869bfe78b91681e9e766f52b01",
+        "stored_key": "ce3fdaa1b1eea001",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "9da43d918ca6fde7.olean"
+          ],
+          "m": false,
+          "i": "124b507b0432c872.ilean",
+          "c": "22c6f6379b9ad0c7.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreRecordExec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c87c6e6f6bce592fd3e78a707427d385df8cdcdb34c0d571e1fc2dda03309b32",
+        "stored_key": "bb09235244911ad5",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "04030ac4bdee8296.olean"
+          ],
+          "m": false,
+          "i": "e0f379c063129987.ilean",
+          "c": "31557504c8aeb79c.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreRecordValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "b26b700b08d1fef037b7ee3e951a8c076f410fa85258773bc93058df89b1d272",
+        "stored_key": "4277ebf160ac0a85",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "864cfa2d7f8a5848.olean"
+          ],
+          "m": false,
+          "i": "305a6ced77849c90.ilean",
+          "c": "bebed320cd3142cf.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreReturnBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "a4561bc5973e69ac461747015d68b64166f34edb354801887dd1e915447df80c",
+        "stored_key": "23a5221b7ad1dbfe",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "224ed63dc9fb61aa.olean"
+          ],
+          "m": false,
+          "i": "052a3ed377997acb.ilean",
+          "c": "19bbaa37e53aed02.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreReturnSpec": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "f80e62df427a1cd8e8783381bec32912e2be70251bf57a2f1c0dfafbce6de0af",
+        "stored_key": "867386627e887d1f",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "2e6b2e5cf3b53a6a.olean"
+          ],
+          "m": false,
+          "i": "32e3aeb24c80ace5.ilean",
+          "c": "6720a109978907d8.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreScanRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "d99d7b33dade42eaa59eb193684a976cb130d57c45230457d0ee5fdd3a9c9c6b",
+        "stored_key": "3084a1c5730159f4",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "be0c0cfd6d260611.olean"
+          ],
+          "m": false,
+          "i": "c2d7aecbac30cb13.ilean",
+          "c": "26b42f4ba15a60ed.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreSelected": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "ff0781c0bc2df32a7746927cca18ead637d16f6f0973773272f9b8d649a174c4",
+        "stored_key": "eba4ef281453cac8",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "70545d8711006392.olean"
+          ],
+          "m": false,
+          "i": "78966e68295422e1.ilean",
+          "c": "ab5afd29b0f73fd1.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreSelection": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "4898e647a6ca82af0fc30f569eef52a7aade666578675cbb3a1e003df744026a",
+        "stored_key": "839137b40f0c3ad0",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "546d3e65307ffc68.olean"
+          ],
+          "m": false,
+          "i": "44b6a7a5e8b84356.ilean",
+          "c": "5f9df1436259d69a.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreSingleDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "b032954b75957c5b1b5da0373c3e17837549ecc7c49424493522f19c0d3495b2",
+        "stored_key": "e5f564ca938942af",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "befb7752bba2bcfc.olean"
+          ],
+          "m": false,
+          "i": "efedbc180f78de82.ilean",
+          "c": "7bb426957be4bba6.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryStoreSourceValues": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "64d40dd08664c166a7c500baab71e1cee4b361a4ebf5af2539c8d0a3f198d5f6",
+        "stored_key": "cdb812a7b8e08513",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "0507b1685727e4d0.olean"
+          ],
+          "m": false,
+          "i": "4475464d9157b035.ilean",
+          "c": "8295629e8a75bdae.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMixedBodyRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "5ae60e146f57845336105315d4755b85668a0221c56ff2a6895da8119660d4b8",
+        "stored_key": "14d0e2c312114677",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "15d1b471795bc28d.olean"
+          ],
+          "m": false,
+          "i": "d2b5804bc4fe85a2.ilean",
+          "c": "ff71eb9234c02225.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMixedCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "73358562d964ba314c5f7acf97c36676a7596a8e921f1aa3fbce4e93abd4a2c2",
+        "stored_key": "a15c6486eec050a2",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "cbe5ac44612c0834.olean"
+          ],
+          "m": false,
+          "i": "f045f1d9cd0bee00.ilean",
+          "c": "0e73c32f20ecd49f.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockNarrow16CondCarry": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockNarrow16ConditionCores": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockNarrowCondCarry": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockParameterArgsDomain": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockParameterArgsLeaf": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockParameterArgsLoopDomain": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockParameterArgsLoopReturn": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockParameterArgsLoopTrap": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockParameterCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "800e86d656a782d2b47c511915a9644cd20ffb9826f4460d7552d80de7956bb1",
+        "stored_key": "eea86de00d0ef7d0",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "e6d5977316b02494.olean"
+          ],
+          "m": false,
+          "i": "48f88d285e0ec33f.ilean",
+          "c": "917c5c947b52f390.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockParameterCompatibility": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "0f0a2a8871821cdf97b213c2beac289b43c2fceeeced4d979502dd635700ec6f",
+        "stored_key": "a03992842e0ac369",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "a5d6d60a7781384f.olean"
+          ],
+          "m": false,
+          "i": "78683b1b86a1953f.ilean",
+          "c": "165c498fb5b473d1.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockParameterConditionalDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "65342e0a1711efc287fa5ca9d3f55ab749434dd74d86be68f271dec195fb1d51",
+        "stored_key": "b1e7a593e98cdaac",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "e55be92a02261aa8.olean"
+          ],
+          "m": false,
+          "i": "8b2a5b94b8366039.ilean",
+          "c": "078e7d5aa5bffe62.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockParameterDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3aa11b502799929120cace0f36e70b7f721d945de011c3a7f41cdbe5510e11a4",
+        "stored_key": "a73941fbc9eecc85",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "4f55164c5a0b4bc0.olean"
+          ],
+          "m": false,
+          "i": "b52dfe4cbccab582.ilean",
+          "c": "9314ee935c4debdf.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockParameterEntry": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "de628be13389d824054b691bcebb968a703b950a192a09d4da227e24a4f30810",
+        "stored_key": "c5ca2f2727949455",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "26de0d3f93ea85d8.olean"
+          ],
+          "m": false,
+          "i": "f49eee7f58975964.ilean",
+          "c": "4f0e74c2ff48ee25.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockParameterJumpDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "8b2886b721eb0a6e2533f1ef93eb72a899cacfa13aa2a2d40c319d37fb5eb42f",
+        "stored_key": "6cc2b0a604e80154",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "52ab761a544f025d.olean"
+          ],
+          "m": false,
+          "i": "65b4f5e61babd383.ilean",
+          "c": "48ac74fb31b86869.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockParameterLeaf": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "4e5ae813f590b999c0bfd0c8d56775095360a3c82c488dcd38d676e40a7e34fa",
+        "stored_key": "54b83854d0032107",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "210803a872a6cf37.olean"
+          ],
+          "m": false,
+          "i": "fce265d01644342e.ilean",
+          "c": "db35d0d113b60ed7.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockParameterLoopDomain": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockParameterLoopReturn": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockParameterLoopTrap": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockParameterReturn": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "aee7e274ce1e889aa67f082cec21e793feb0516fe0fe36f006425e84d6108edc",
+        "stored_key": "35321e8e7a714518",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "5e3090292062d5ca.olean"
+          ],
+          "m": false,
+          "i": "0ec5f327af5e14e1.ilean",
+          "c": "1f50e772658a5d6b.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockParameterReturnEntry": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "280ab265d62a78e74ac3f5e501fe1c5750418cf9f1c30a787c15af59cec95a9c",
+        "stored_key": "c111f8891be68996",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "33a779d2dab454f3.olean"
+          ],
+          "m": false,
+          "i": "b60be52c918bec38.ilean",
+          "c": "2f06b34a4d3751ce.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockParameterSuccessor": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "4dcea15a1f81d9dbe1b258a47f8c204a35f242d4d3a9b7176270c74d1fae8929",
+        "stored_key": "c5444c5119d012e0",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "98c163980e13bab4.olean"
+          ],
+          "m": false,
+          "i": "e01c3f2f408689b5.ilean",
+          "c": "1e8cd2c6427251ac.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockParameterTrap": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c5cce45b73355ade646a7d983d6cd59e47babfb4cad5a6b0aa6d21096f2803b1",
+        "stored_key": "a2ed6f57021cea23",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "56c2af9823964b0b.olean"
+          ],
+          "m": false,
+          "i": "4736556820e4a1dc.ilean",
+          "c": "dcf00065def6e274.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockPlainBandCores": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockPlainBandSelection": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockPlainBandValues": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockReturnedDefinitionRetention": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9eb8c8c7ba8e21f6f32516f68a2570fa488cd401d29b19651f41241a4aa9c2e5",
+        "stored_key": "fa38b222877169b5",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ac30f1360867e3a8.olean"
+          ],
+          "m": false,
+          "i": "90267b6f62a89333.ilean",
+          "c": "0513a67fd888f76c.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockReturnedDivBodyRecords": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "b9675436841b46538d0e47c50999bb46456715bfa5878cc8176e2f88e2fad8bd",
+        "stored_key": "08991387c210a783",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "1a43ba495e4499ef.olean"
+          ],
+          "m": false,
+          "i": "54f3bb07972493f3.ilean",
+          "c": "af02d4a710cb0352.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockReturnedDivBodyRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "702532d988e147ee866b89999f89228a38a902c2147ee6fefa7d9f87e151758a",
+        "stored_key": "183426f633d7c6d7",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "115b4a0da691f62f.olean"
+          ],
+          "m": false,
+          "i": "7ba2646d5270b87c.ilean",
+          "c": "30abcfa4a1e855d6.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockReturnedSourceRetention": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c13873a020f217cdaf2f4ba73949cb503dd879c239d6c4cedba05655fc08e88e",
+        "stored_key": "d0c9a1a49f1a969e",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "9a4aa66eb82fc664.olean"
+          ],
+          "m": false,
+          "i": "478a78261a000434.ilean",
+          "c": "6f5bfd84ea8415a8.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockScalarCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2c96aa32765f0548ea03b5e2de0f7ac476bdece2828213f0c9d67fb30b0bc358",
+        "stored_key": "8895fc4a43be114a",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "34dea4158c4df2b1.olean"
+          ],
+          "m": false,
+          "i": "00f7172ce69123bf.ilean",
+          "c": "f2de94c9feb6b55f.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockScalarCodeDomain": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockScalarDivDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "97a26da3d241319beeb5226234abdc5351b17fa7dc920ec15efcace690d36e1c",
+        "stored_key": "8f2277c0a1c7f3b0",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "2486f89f4cda245a.olean"
+          ],
+          "m": false,
+          "i": "76edb489303b8880.ilean",
+          "c": "baca5d0c3d276768.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockScalarDomainAt": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockScalarGeneralDivDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "30e42d337eca51786b552c63107266da703746c8296d4691f78dc80d8664262f",
+        "stored_key": "0516d427e9d38b8e",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "1dfc2726b274fa02.olean"
+          ],
+          "m": false,
+          "i": "2969391345f4ed0a.ilean",
+          "c": "03408c532a7817f4.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockScalarHighMulDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "84c78e8058f7e325241e97072ad68db02f04e99033fbfe04662cb1258e3f540c",
+        "stored_key": "4b89304471d93f49",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "58b7ae63038b11eb.olean"
+          ],
+          "m": false,
+          "i": "22b3716839627022.ilean",
+          "c": "3162faf776fa80d7.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockScalarMaskDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "d2a7cea51105426c3188305ddc4966a2ea2b2a7efa965a9dcf92f58a48984688",
+        "stored_key": "f4409ed24557bac6",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "fe9463aa2f23d0c2.olean"
+          ],
+          "m": false,
+          "i": "06d85fad9c390f0b.ilean",
+          "c": "88c912281706f9b1.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockScalarReturnedDivDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "de80d632fa8339df5e2b48c063cf039f81eba38b8d8b517c6ec0830b49b8fc30",
+        "stored_key": "3c5de34e7aebc47f",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "cfe5034e7d616969.olean"
+          ],
+          "m": false,
+          "i": "617b5054934a0ddb.ilean",
+          "c": "ff19d291123f2e14.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockTableBranchValues": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockTableCarry": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockTableLoop": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockTestBitCondCarry": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockTestBitConditionCores": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockTestBitConditionValues": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockTestBitSelection": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.Backend.Proof.StockTrapRefines": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "1684fd922e2aa83d388857934e8901ba17063fde5ab2ebff8c205559c568def8",
+        "stored_key": "5b4ea405ffecc7bb",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "7dbdb973448dea04.olean"
+          ],
+          "m": false,
+          "i": "d1bef1ddb8dbe19a.ilean",
+          "c": "c7898f6f4aa4ac4a.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockTwoBlockCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c008416cb03c05d081eafd05edb6cb23d0c410a3f1f63cf214ba453e34deea49",
+        "stored_key": "078883ed4d8a687a",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "fc5efc685b2ca802.olean"
+          ],
+          "m": false,
+          "i": "cae74146062540e8.ilean",
+          "c": "f444002b1083febd.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockTwoBlockCompatibility": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "aa2f582ff752907b9860ba44d308d509ed1e43bea84216cafb0c48296047de2b",
+        "stored_key": "d15ea6e043b45a5d",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "3e0ca0649b92b9c7.olean"
+          ],
+          "m": false,
+          "i": "5edda65a58a0ccde.ilean",
+          "c": "bc244c3b8d49fafe.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockTwoBlockDomain": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "f27858dd724e16455ca6edfd2ac36e317ff3f1f5ed7163944b1e7db4dd8ae2f4",
+        "stored_key": "49fb68a7b204ef90",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "06c9862e93689b48.olean"
+          ],
+          "m": false,
+          "i": "b44d4893ed96d0d8.ilean",
+          "c": "8023d717c64adb65.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockTwoBlockEntryCheck": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9273e3ef377638880d51558514b86995d1b25ebe8193abc7f14ab91cca2e2eb6",
+        "stored_key": "9a04862010ee8e16",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "a0178cba1368ba8c.olean"
+          ],
+          "m": false,
+          "i": "ec5b7c92a6041589.ilean",
+          "c": "9b3b3815d481d9c1.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockTwoBlockReturn": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "83eeb0b39a0f2da9d0dadc84340a123791ed018f5ef5ab00d21eee55f8ee577d",
+        "stored_key": "77b09479dce5a2bf",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ffb24840dcfeafba.olean"
+          ],
+          "m": false,
+          "i": "7041b0b5336ade66.ilean",
+          "c": "9c964b2a4a5c8db2.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockTwoBlockTrap": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "87dd60dbe28450eaf76528fa2dba87c764f3693302af8cbbb2c3340c235f228c",
+        "stored_key": "022e6a8bd951bfcd",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "35e9bdf8c46e7431.olean"
+          ],
+          "m": false,
+          "i": "e44a18c6d167bed8.ilean",
+          "c": "87bc6931f62137c4.c"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockUextComparisonCores": {
+      "frozen_state": "absent frozen trace",
+      "stored_trace": null
+    },
+    "FV.E2E.ABIReadBitSteps": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "fdfdfb5a0dd6c952b43233cba9cff64f96049b3a0d33bda21999b1707ba7eac4",
+        "stored_key": "6ed71cf1d6dd35d9",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "7f60f51f6cba46f7.olean"
+          ],
+          "m": false,
+          "i": "650ca6fc926b16fa.ilean",
+          "c": "f0255b71be811eda.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadBooleanSteps": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "40e77d6025f5bbed7e03d461232c3b20941d8ab8f750ca9d739f0595a4cde9f8",
+        "stored_key": "7ca78ca8e76737bf",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "4aa84c1ee6bf3286.olean"
+          ],
+          "m": false,
+          "i": "c2f9657b98ce32d2.ilean",
+          "c": "1ee4cf74d46f3132.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadBoundary": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "1cd5137c14337268dc588fe896308ea59d8e8595bdc22c41dd0acd851c09dcd6",
+        "stored_key": "988cad8de1cbfc8a",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "59c63a3c08fd6606.olean"
+          ],
+          "m": false,
+          "i": "6ddb947bc332e3a7.ilean",
+          "c": "a6bf153933bfd68d.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadCastSteps": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "771158ed4597fdf0150cc24c43bff83ab52eb12ec63bddd54199b7d051665000",
+        "stored_key": "e8ab6f176da603fc",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "b510fe78d0af3a7d.olean"
+          ],
+          "m": false,
+          "i": "2c02d86746600d51.ilean",
+          "c": "0d56b5346d8afd4c.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadCfgBoundary": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3c467f8195d35da26c5b382e8dd1f5c47b956b155937694e012a99910d0036af",
+        "stored_key": "3363d95e021a09d8",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "9ca10946f423c08d.olean"
+          ],
+          "m": false,
+          "i": "57e1d9a2de974342.ilean",
+          "c": "816a48b7b550de79.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadComparisonSteps": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "5c15213090de82e0b0c46eb4ea570104a52c352c6a7386d00ebf141009c44c1c",
+        "stored_key": "e67ea315a1179c56",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "d3aaf642ddf486e5.olean"
+          ],
+          "m": false,
+          "i": "cd2aa89db1d809a8.ilean",
+          "c": "6e47e590e2235545.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadDiv": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "7f12c7800fe0b0cf3f2b0df1f787aa8111300281908e6930e77bb760a3f12b4e",
+        "stored_key": "6bb5e78450bfe655",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "3b6aea7cf49fbfe0.olean"
+          ],
+          "m": false,
+          "i": "b1f9f249884e72d7.ilean",
+          "c": "d0631383ec5c6b7f.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadDivSteps": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "81e25d85d14eaf5c04ce8742daac545e5852e283a2b4266716d5e2e850798db2",
+        "stored_key": "8f20868f75bc4ff7",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "03fe48d200b705c7.olean"
+          ],
+          "m": false,
+          "i": "272e0ffb0a1fa70c.ilean",
+          "c": "d738c111a1ec792f.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadExtendedComparisonSteps": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "31bc0aad07c7265c24148e17d2c54b38fdfc69cc12447f5409cc2cc64b495b5d",
+        "stored_key": "691a4d9591327901",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "4c9d462a86097829.olean"
+          ],
+          "m": false,
+          "i": "6c8a52e527ab7927.ilean",
+          "c": "3583421eae684df9.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadFlags": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "21469e61997ab1135fd7db7efe54df1e1278a6396d06a434d8b0000acf243b25",
+        "stored_key": "1f9b70f56881e76b",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "4b43d81839f55e74.olean"
+          ],
+          "m": false,
+          "i": "bf74961feb9da563.ilean",
+          "c": "793b838d5bd91fb3.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadHighMulSteps": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "121e01494dda188c96c9d1fec864a62edc8a607e7ecacdadbe3df20d7698d958",
+        "stored_key": "068d2e56ea5bda9e",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "2207ba4700b9ba40.olean"
+          ],
+          "m": false,
+          "i": "7e563c8a7d018a07.ilean",
+          "c": "d08f532e13b90453.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadMaskSteps": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "715a41b31f61e8bef5653c515e53c6c7a5f674982475ebf8397c43d294142079",
+        "stored_key": "e3a156bc7cc19bcf",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "39682f419b53ac78.olean"
+          ],
+          "m": false,
+          "i": "2c2bac3d6a8e9965.ilean",
+          "c": "bd311167a1aad70c.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadOnlyMachine": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "5b4399abe940cc3383c8367fbdcd34b36af419ad54f21acc4ee5e005f3330514",
+        "stored_key": "3a0213c5dd6f3ff8",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "321a08aca237d276.olean"
+          ],
+          "m": false,
+          "i": "d44f1c3a93b05d7f.ilean",
+          "c": "0bbd2d762e967ecb.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadPopcountSteps": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c04d1da62b1d36f5f58288a428b0da20dae5d23b499dd34dae1c041f2a5e65e5",
+        "stored_key": "8bf3e8b014e94235",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ad76bd770c0bbbba.olean"
+          ],
+          "m": false,
+          "i": "f862c2b66aba256e.ilean",
+          "c": "50fb43bb6abe636f.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadScalar": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "fd3acec024d282eec23d18f52859c6095cbcb9085dff23699dfebe91894bfb92",
+        "stored_key": "70385cb8efda904b",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "d4e39cc60370e809.olean"
+          ],
+          "m": false,
+          "i": "bb6e09a3cc46d705.ilean",
+          "c": "3b8f623c70a40b1a.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadShiftSteps": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3a94807a3977559e27230af9e4073c326ba281502b864e3df39cf226e0d9033c",
+        "stored_key": "ac24979218586a1e",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "73b549a28bc98a93.olean"
+          ],
+          "m": false,
+          "i": "3fe41573b5e3e06f.ilean",
+          "c": "9ea66264b9d537e5.c"
+        }
+      }
+    },
+    "FV.E2E.ABIReadTrapBoundary": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "0769a0012c2d61c7c50962a6f17ed716dd0c90c49b2485ffbf4364d980a9bccc",
+        "stored_key": "55db4bbcfb0a7ead",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "1ac03fc15905400c.olean"
+          ],
+          "m": false,
+          "i": "4170193685b5327a.ilean",
+          "c": "739005f5098bc682.c"
+        }
+      }
+    },
+    "FV.E2E.CompiledProduction": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "153231fde5aefe7d33c45cabe8a711a09d3c622ff8d004758bd4ad7ba64f2629",
+        "stored_key": "53e267f93a2da4fc",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "0ae7df4d66fbbb81.olean"
+          ],
+          "m": false,
+          "i": "e0fdf9651df10faa.ilean",
+          "c": "2b283f9c57ecadc3.c"
+        }
+      }
+    },
+    "FV.E2E.CompiledSemantic": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "8587e0c2b2c5afb72008ef83275289575d14e97c8dd787331aef28584315fdf7",
+        "stored_key": "838e7e027e3e118d",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "9871da5222764dca.olean"
+          ],
+          "m": false,
+          "i": "b54cf48415de482e.ilean",
+          "c": "8723892eb818b574.c"
+        }
+      }
+    },
+    "FV.E2E.PairDriverU": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "6d2b9e052bbf266b2d3e47f7dae593ddc9f07ba2af741a86a3de5bf5b4f81652",
+        "stored_key": "ee1cef49119e3a71",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "53593291698aee6b.olean"
+          ],
+          "m": false,
+          "i": "865b109c4aa158a3.ilean",
+          "c": "9f34af0cbf6c174a.c"
+        }
+      }
+    },
+    "FV.E2E.PairRaise": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3f088fd26abb3abd5698a244f9c05945e25459c85ee89df0ebb43b3233c72551",
+        "stored_key": "a5c37444bb38ce27",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "0ee6391e15698b80.olean"
+          ],
+          "m": false,
+          "i": "1aabc44802928a97.ilean",
+          "c": "b890660f24c861a8.c"
+        }
+      }
+    },
+    "FV.E2E.StockArithmeticArtifact": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c50d4b14052504f2b3e536001c7861557f01f545fdb6cc0b33401442a76d64bb",
+        "stored_key": "fff9cffa13e358ef",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "c27aad135a40a378.olean"
+          ],
+          "m": false,
+          "i": "3c3b886bb0b91795.ilean",
+          "c": "d2b474b159a93dbc.c"
+        }
+      }
+    },
+    "FV.E2E.StockArithmeticNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2841b7e239a3358a6be07dc74e44eed4ea8a451a27d9ee19a72a66a4b3796976",
+        "stored_key": "c6df62c90858b831",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "182ab4a8af06dced.olean"
+          ],
+          "m": false,
+          "i": "fb9ffc6026241b15.ilean",
+          "c": "d06f9aa224239380.c"
+        }
+      }
+    },
+    "FV.E2E.StockArithmeticSemantics": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3834fb7c87ce69fdc56988ad8931d14ea40b3dabd4df563e32a4d41023e3665a",
+        "stored_key": "95768f8e28f3119e",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "e23d2088b62ba718.olean"
+          ],
+          "m": false,
+          "i": "8301b9768d6c8881.ilean",
+          "c": "c8d2572b050e39fc.c"
+        }
+      }
+    },
+    "FV.E2E.StockArithmeticStage": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "7a5f7263236c2d53715ef754927b88b520a0fd4fcf77883806b0959830e15d49",
+        "stored_key": "bff716cf0e38688e",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "a64ca84b72da272c.olean"
+          ],
+          "m": false,
+          "i": "c211484d0a2c7717.ilean",
+          "c": "0c2bb8aa4b42f806.c"
+        }
+      }
+    },
+    "FV.E2E.StockArithmeticWorldX": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "e2336c58d7b584e5911fb7c0a43d7b3afedd12a5cc28c60309c264c0dca09385",
+        "stored_key": "66ca1bca718749b9",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "569a58f495f35a1c.olean"
+          ],
+          "m": false,
+          "i": "ab932c5e10381a02.ilean",
+          "c": "822a6e572b66a659.c"
+        }
+      }
+    },
+    "FV.E2E.StockDivNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "205ecc30b6d77abf5fc59049807e77ad09626e5cc70ad74a05d3e73cd6359633",
+        "stored_key": "57b002b6b3f7d37b",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "6ef6f02785e0881a.olean"
+          ],
+          "m": false,
+          "i": "2e5f4d0156c5df4d.ilean",
+          "c": "3fef7e832d7b8637.c"
+        }
+      }
+    },
+    "FV.E2E.StockLogicalNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "884b9f2c808bded4545e96122971328bc462247890cee9a2322f3cf20a432400",
+        "stored_key": "bdc5943a4aa76272",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "cd2bd4fcbcce0a3f.olean"
+          ],
+          "m": false,
+          "i": "5fe08446841c6369.ilean",
+          "c": "7c0c5145c7c890ec.c"
+        }
+      }
+    },
+    "FV.E2E.StockLogicalWorldX": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "49c1a28c0d5c6759ec0af58716ba890ecfb04f5cab83e5a276ae5b09446954bd",
+        "stored_key": "6e48a893108c8db3",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "e9b602ea665a83d8.olean"
+          ],
+          "m": false,
+          "i": "716c1cde9f160bb1.ilean",
+          "c": "59d2bd9980336095.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryCapturedCopyNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "fcbff6ec914e6df8854e3af893a04fc0f393f15f8e9d1a3ff7ebab09951cad62",
+        "stored_key": "bf22a2a6c705ec64",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "64c7f109fa51530e.olean"
+          ],
+          "m": false,
+          "i": "317f45a583a4ef7b.ilean",
+          "c": "ed581540b4ea81e7.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryCapturedCopyPairedBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9cf00414009e32379d0753d82d7fbe18e499eea3204bcdc9d7a681cd5786c574",
+        "stored_key": "3fb8e763ab171e7a",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "647a6576c04814c8.olean"
+          ],
+          "m": false,
+          "i": "1562cbc9be500b7d.ilean",
+          "c": "08be2a146fbe754d.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryCapturedCopyPairedFunction": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "ae06c1687c3748eca7b86a66b48f42b60986b1d2bd3a31bb1ddc75b95af3251a",
+        "stored_key": "65eada01af858e9a",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "be595f06dd0ba6f3.olean"
+          ],
+          "m": false,
+          "i": "dcb9681ffc69ccc3.ilean",
+          "c": "756b88c288e943d4.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryCapturedCopyPairedNonentry": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "f8c2aefcb5ca1062dc32a8b43e1eaad55822cd39bce3a3b6c69ce4b75a2c2a2b",
+        "stored_key": "f166f3784d6ea070",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "5881380dd01ddbfe.olean"
+          ],
+          "m": false,
+          "i": "a6a8e4c798eb0047.ilean",
+          "c": "1c6431e708843b68.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryCfgMachine": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "6f17960d4c5e1a69e31146163a9dbdced0390ec7fa68e39e838dd029c4779da9",
+        "stored_key": "d811fd179e73a157",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "a52f4f0b77754403.olean"
+          ],
+          "m": false,
+          "i": "2e90c439f203c02e.ilean",
+          "c": "1c11137d9f8ce866.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryCfgNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "75ac7b77ce7e1a230e0649a70646e26473216488669030d908a439499b276862",
+        "stored_key": "f822259a3c3df814",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "2f9673f67da957d5.olean"
+          ],
+          "m": false,
+          "i": "b856c2b9353084c9.ilean",
+          "c": "d78f390e8725afd4.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryCfgPairedFunction": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "fd7cf4473b2dcfcfac911dd1b147842782aeb13b1e479ab91b577ce78de38ea1",
+        "stored_key": "eb02181549364650",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "d309f6080319830d.olean"
+          ],
+          "m": false,
+          "i": "650fab5ae2a09167.ilean",
+          "c": "6be51a3696da9790.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryCfgWorldX": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2e717cc16db17c032562c0cdfd40dfa33244974b045d74c394a50442c98ba9e4",
+        "stored_key": "18a8240f46381ba8",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "63b8f39d7c5e8042.olean"
+          ],
+          "m": false,
+          "i": "9bf1449cb6f09c8a.ilean",
+          "c": "a6ad1796379ed8c7.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryExtLoadNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "07c3a255697ea9b868447bd13d0818612923df59664df24647a329e855302c46",
+        "stored_key": "b624f159d30a045d",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "4dae4d8646dfaf1b.olean"
+          ],
+          "m": false,
+          "i": "e2879d74fbbe0156.ilean",
+          "c": "20e4f41dce96eede.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryExtLoadPairedBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "01515a04a728cb5055c16ebc2f885f3d102bbffd9d5e8794b73cae9c51b694a3",
+        "stored_key": "cf529ee285144a31",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "4258c416b41038bd.olean"
+          ],
+          "m": false,
+          "i": "b9680e3bb82cd96a.ilean",
+          "c": "9919dafb50dd18ae.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryExtLoadPairedFunction": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "fe360f30bdfde49548a0254c7d220a4926edfd683320cb12bf01af1394bec2d9",
+        "stored_key": "c6bc7bed5da37143",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "90253798ea6e34fa.olean"
+          ],
+          "m": false,
+          "i": "ce8214f89a4858cf.ilean",
+          "c": "3912e68144d336b9.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryExtLoadPairedScan": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "4ab5dae7f956109625c6cb9ecf9288b7f0907921af3f6304c9c9a85ad7607d72",
+        "stored_key": "b4858a1bf17f6d95",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "cfae0b8ce1ff9ec6.olean"
+          ],
+          "m": false,
+          "i": "e72a043d6dfa3241.ilean",
+          "c": "bf0060663e81c38a.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryExtLoadPairedSource": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2272f46d0e91e93291b6d86a42b230cb6891d3f13dd3c1c226491306074690ae",
+        "stored_key": "25dd7b86060da215",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "2dc6522e319cd683.olean"
+          ],
+          "m": false,
+          "i": "f0d18897181cc662.ilean",
+          "c": "c3f20ba97b8211d8.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryIntegerNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "11a9fce4055aeb1c840d1fac498bc5b6919f97892dbfc35ce202fd03c2cf6aef",
+        "stored_key": "b5efea5fce1eb252",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "eed3da4ba2f0297a.olean"
+          ],
+          "m": false,
+          "i": "0109448ecdbc7a20.ilean",
+          "c": "552159827aac310a.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryIntegerPairedBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2e20e6768411094f69fe6a9be69b492cd1a8e49ccdce5eb0c260fa2ce5bc46cb",
+        "stored_key": "d9e389f52c2ab6f7",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "bdf20f7d21a5f98a.olean"
+          ],
+          "m": false,
+          "i": "fc534d1a440f5f7b.ilean",
+          "c": "5404839ec7719fdc.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryIntegerPairedFunction": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "1f43bf92a46c7d4fef6e8e698b6ba67c6eab70ca411dca623aa9753f2f7edbaa",
+        "stored_key": "1132f3e0ff85c0c5",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "d52e541c085fa16f.olean"
+          ],
+          "m": false,
+          "i": "72aa1cf4016ee46b.ilean",
+          "c": "a306498a0ecd704e.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryIntegerPairedScan": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "06185ad3ea57e5faa8476ad7fda18248457c9c904b83302d692c0328b4172ca8",
+        "stored_key": "00fc94ffa9ed0097",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "cbdaa55e62559bfd.olean"
+          ],
+          "m": false,
+          "i": "f7508a507f560412.ilean",
+          "c": "c25e0e59be9439ab.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryIntegerPairedSource": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "7528b1aeb26cdc29719c7e3c2f5613ba5a7af786cbaec6faca4fb47c09a11dbd",
+        "stored_key": "73d4212a7c783ce3",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "bb95dce9872a9d56.olean"
+          ],
+          "m": false,
+          "i": "6bc2fe23bbb7b526.ilean",
+          "c": "b892295de7d67c7d.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryLoadStoreNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9ea19414a1b8e21f85af8349f0ed8be35e7cbd30d2d0677ddf35a30ae3a4b066",
+        "stored_key": "75103e3a70627ea4",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "b7df2b004e1ccf24.olean"
+          ],
+          "m": false,
+          "i": "30c4a55c61e5468d.ilean",
+          "c": "9b83a66a2d06873b.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryLoadStorePairedBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9733d2ef351ddaa2df5f51272546d5d8a0cfa2d6bb2bdedfac8a7e31c4054ec3",
+        "stored_key": "46b1cfb06e366ab6",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "19de229743afd1c2.olean"
+          ],
+          "m": false,
+          "i": "7c66997f671bf44a.ilean",
+          "c": "0f0e75eb96d1e989.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryLoadStorePairedFunction": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "d5d90d40d71bb40df91120f78f1ba4835bb4bef6ff6b2d67b7cdab4ba85d2350",
+        "stored_key": "5d19c4ab09d22c21",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "4305202bacaf5cd1.olean"
+          ],
+          "m": false,
+          "i": "3751472aa7971eb7.ilean",
+          "c": "4224f64271c7a944.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryLoadedPointerPairedScan": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "178dac26fcd7d826e8fdab069a58de4f79e0d3f95d9034c65af3ffd3a953e66a",
+        "stored_key": "819b6261ff2dea84",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "52aadbbfdacc90a3.olean"
+          ],
+          "m": false,
+          "i": "aae0bcea44f630e5.ilean",
+          "c": "cfa0173f95472c83.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryMachine": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "d1dd7c67ce3637cc8a84034d759d04ea2012b5fd8f61fa1c0f30b8ef73c718dd",
+        "stored_key": "75ba998477689d9f",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "3c223ff30e394d63.olean"
+          ],
+          "m": false,
+          "i": "7b3ca84b8d534756.ilean",
+          "c": "40198eb8c6cb6b5d.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "389f1f2340767aed5a41f023c3c9a6b66bf0627af138ee45894c0e2e7d6e788f",
+        "stored_key": "1322b2a752183a75",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "69c06db07ed71f18.olean"
+          ],
+          "m": false,
+          "i": "f092a1ff79ac3c44.ilean",
+          "c": "ed04050218b32198.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryNonentryPairedReturn": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "8abb0024526233fef4ddb2e532e5db117382dec2fc5e1bd4bf3abca0ec0ebae3",
+        "stored_key": "9a12277257f60aaa",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "1a4258eea5307803.olean"
+          ],
+          "m": false,
+          "i": "c4d48f637bf08cea.ilean",
+          "c": "88edfe464e99f28a.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryNopPairedBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "5d44484c5dd2cc1c76da91818e447639e32d13ac5f8e72b6fe8f6f64f3a42ce4",
+        "stored_key": "0f758ba8fb0b51d0",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ea210b048abcc2d5.olean"
+          ],
+          "m": false,
+          "i": "294032caa5e8baee.ilean",
+          "c": "9dfe4c4a0eaaa956.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryNopPairedPrelude": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c4a3d2583e140ea51d8bd310467fac493dbb71facf359bb3a616fa94a58ca983",
+        "stored_key": "14fe83821c3f4811",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "07485cacd763ad1f.olean"
+          ],
+          "m": false,
+          "i": "bd3fa67822737fc2.ilean",
+          "c": "a3f7e56f471e458a.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryOffsetEightPairedScan": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "3426970899ecea0aa5d8e9ba6a79ee55d6488015634f05abdddf8f885e38938e",
+        "stored_key": "b3058f1f8dec73b9",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "64e99fefded24a17.olean"
+          ],
+          "m": false,
+          "i": "09e8be5460908abc.ilean",
+          "c": "da3a54ea9c57d573.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryOffsetEightPairedSource": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "5a4cdfdec6a585b1fbd6f1b2cb1c3ca87bdaab688beea57b92ad08a41319d5d6",
+        "stored_key": "31fee3b5eb6e4762",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "5b27cbf049f65f8d.olean"
+          ],
+          "m": false,
+          "i": "1f376c44bc415b96.ilean",
+          "c": "9f1adf960048f56f.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryOmittedPairedScan": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9c34a6400669c1f02f95fa9e2342bfc05012e6c60a41e6dd25c6d97f2d4a8fcf",
+        "stored_key": "96adf7042da4d356",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "0e72989868dec3d9.olean"
+          ],
+          "m": false,
+          "i": "94f3199f3f869743.ilean",
+          "c": "8a274d68d96e5d20.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryOriginalEntryPaired": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "6ae56894275a43367e62adabdce33eebdd7dc43c4f10cdfe279a77edd5c40108",
+        "stored_key": "bf89e3f63eb8583e",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "ee849dfca6b7398f.olean"
+          ],
+          "m": false,
+          "i": "bd9e81d2829061e6.ilean",
+          "c": "aaed2bf84ec99d7e.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryPairedBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "ac08b99096cbcfc54aef97b7d987cd6bc542b7f809290f48bd8fa521a1083ad6",
+        "stored_key": "9c012a28df59b8c7",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "1ee3069734fdb18d.olean"
+          ],
+          "m": false,
+          "i": "7a07943ac5a80629.ilean",
+          "c": "af6f914c823a8ac1.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryPairedEntry": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "45783a55638f70a381f24e2fd1aec01ee945445a8a48357f4090fd7de0064d82",
+        "stored_key": "ae56503f40f0bb58",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "b8fecae93e17c448.olean"
+          ],
+          "m": false,
+          "i": "0c8d42e2af307114.ilean",
+          "c": "9837dbef9a1c9762.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryPairedEntryReturn": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "cbe42553a10866214ca8e53174b5a9b6a12025c6dd2cfb6b3158b2e5bd023332",
+        "stored_key": "9c1cb4dca98d82cd",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "c1f1cb789ae94e2d.olean"
+          ],
+          "m": false,
+          "i": "d4c66a73bfec8b87.ilean",
+          "c": "39d8896e96b7cdc6.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryPairedFunction": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "a8063fe29d335b8d04b226b09bb0b1d03685921d1df145f796b89565882d4856",
+        "stored_key": "0c4b13fc97875b14",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "95065d87a6db5418.olean"
+          ],
+          "m": false,
+          "i": "8e7dc0757caa5508.ilean",
+          "c": "b6451276bc2d425a.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryPairedJump": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "1b1f0b4c8102beb1466a4dbd029934d0526367130c1ffb9503d256bf5f6f5808",
+        "stored_key": "4d2f459985645598",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "22fe38195962e189.olean"
+          ],
+          "m": false,
+          "i": "29223dc913bc92b0.ilean",
+          "c": "c40835933df17909.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryPairedNopJump": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "b6e5cd71e3e04ec36f4a50d14f773ea76486c6c1210b9fb4bb10b51996a9042f",
+        "stored_key": "7a952428fd6672e8",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "eab8942b9bf40a9b.olean"
+          ],
+          "m": false,
+          "i": "48642fa4523eda2f.ilean",
+          "c": "af5b9dca463f55cc.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryPairedReturnAt": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9bd75a040d21337db0efca6ae36cf4738f89471417d36d6682ad9034b19c52c0",
+        "stored_key": "38b6ca5b464a361b",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "7a207d7966adbb97.olean"
+          ],
+          "m": false,
+          "i": "9ec67b32ec13a132.ilean",
+          "c": "e3004d613bdf268a.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryPairedReturnEdgeBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "ad926baf0df49035a79cfb824dcf1a459e6652200cda37f49e6d3c4976479aaa",
+        "stored_key": "0b5eadd58664a133",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "f9aefb6d1778f2e3.olean"
+          ],
+          "m": false,
+          "i": "ded36bd92e6f1fc8.ilean",
+          "c": "67a488654d9a251a.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryPairedScan": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "25cdd7ab6958083ba27eb83cdcdf5891b51959d161a8a7656681d7ed45cbe423",
+        "stored_key": "9fd11ef9c77207cf",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "9fcd68a7b09316c5.olean"
+          ],
+          "m": false,
+          "i": "90aacced69c0a2b2.ilean",
+          "c": "8b7967f021cf232b.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryPairedSource": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9f6ce14ca0423ca8d9290d439a1a06aea8c4ee2e478507a047034448537b80dc",
+        "stored_key": "0ec7521a16e56d9e",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "fc547058fba14930.olean"
+          ],
+          "m": false,
+          "i": "9eb8a23a82f0b839.ilean",
+          "c": "8fe5bba9599af61b.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryStoreCfgMachine": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "8d803a6621d9b95edf9e6b1437f701a70fbd7c109c47c86ddc0f97ccaee40dae",
+        "stored_key": "0b7541567d52f176",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "da34add3b1c952c3.olean"
+          ],
+          "m": false,
+          "i": "419bc81f8759f455.ilean",
+          "c": "2517da759343443b.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryStoreCfgNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "9193f5316b7952759dd19d7eaf4a613c879fc5ac267eb5c03eabe9dc88d4e36d",
+        "stored_key": "64d548aedc3c6d62",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "63a37b32fe573e89.olean"
+          ],
+          "m": false,
+          "i": "b5ac4fbf460322a9.ilean",
+          "c": "9940b8ad8f5ec5c5.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryStoreMachine": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "df2fea565f61e596b53ec9a62b30a941cb248b878288367ece22544f65ea7862",
+        "stored_key": "8463915776c0f5f0",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "98487184fff9f244.olean"
+          ],
+          "m": false,
+          "i": "8cbf3bec51d60918.ilean",
+          "c": "f59464ba02b63cc9.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryStoreNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "40f4518814c9c5f053dbcad31ae2c7ec71f579a69992c93026e36544051112a5",
+        "stored_key": "9b0c81b62f5a44cd",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "858eafda5a3a6d7c.olean"
+          ],
+          "m": false,
+          "i": "3d8f1b5ed704dc63.ilean",
+          "c": "18acd36693e1b42c.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryStoreNopNonentryPairedReturn": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2c9bfa21d005bce66ff056564d33c6de6e417b0f588de45e41879d14121125c6",
+        "stored_key": "4d73517c3fd14b87",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "6554dae6176f9df7.olean"
+          ],
+          "m": false,
+          "i": "0fb80fbd2a5b5f81.ilean",
+          "c": "13ed2ee64cd96a95.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryStoreNopPairedBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "85b6eabf811ed6baefc096f2a0fcdd42bfd06403df288e65ea872eba3ff11892",
+        "stored_key": "f802822767a1f8a1",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "8274750bd942be6d.olean"
+          ],
+          "m": false,
+          "i": "572e49a755a342b1.ilean",
+          "c": "0e3f63152ac9fd20.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryStoreNopTwoBlockPaired": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "454febbf79577078dfccd992623e082a5c4298333bd73b7f43710bdfd8935464",
+        "stored_key": "3e4fcb7d0432fd55",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "96afe3cc9e3ec4de.olean"
+          ],
+          "m": false,
+          "i": "5a834b88eba0011c.ilean",
+          "c": "81bbb4f942620fa3.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryStorePairedBody": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2a82d72c322934035bc558f5614d09502878a1dbea2a735853d9d7c66c75e1b8",
+        "stored_key": "1b1c5ac0498f5a5c",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "bac764a628e8f7da.olean"
+          ],
+          "m": false,
+          "i": "46a935faf5af2c20.ilean",
+          "c": "361261beaaecb30b.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryStorePairedFunction": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "0ea639e4f72862f2d828a76113163bfb34392888d01e05e531ace37b93cccb07",
+        "stored_key": "06059022e3d12440",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "7cb4a65ef4dfaf99.olean"
+          ],
+          "m": false,
+          "i": "b1f47441efea5b3d.ilean",
+          "c": "936aed7b34ba1a9a.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryStorePairedScan": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "547d49d7d7bd0b74c1fb0ed6be3d652db7f486cb2ca6ea5148dfbcc7670a6a59",
+        "stored_key": "d511a5c6136c56ba",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "94fefa645a90c78a.olean"
+          ],
+          "m": false,
+          "i": "0096a6813960508a.ilean",
+          "c": "ac51a5503925584b.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryTwoBlockPaired": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "e6307bc3a529565d98815ca2187b62777b5f95bb0ab9663910f7de73e41635e0",
+        "stored_key": "95cf16e9b99ffe44",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "aca4ff4981816046.olean"
+          ],
+          "m": false,
+          "i": "d03e6991d62fb039.ilean",
+          "c": "d77db83854fdad80.c"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryWorldX": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "c75fc05acfb9dede2a76d5782bd0ebe077ea6754346625aafc8a2c729c325f82",
+        "stored_key": "3fbed39454d4e389",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "7b8ea23612e883cd.olean"
+          ],
+          "m": false,
+          "i": "bd31e728d2f1e22e.ilean",
+          "c": "e964f321d3d4093d.c"
+        }
+      }
+    },
+    "FV.E2E.StockMixedNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "550b25c73cb20c0987673cd6565d8a89e7914b8cefa02b758c7f7d63aebb3aef",
+        "stored_key": "88565bb49f6ace4a",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "83ecec1704360abd.olean"
+          ],
+          "m": false,
+          "i": "249ed2b2fa67f7c1.ilean",
+          "c": "5d19029ebbca0be7.c"
+        }
+      }
+    },
+    "FV.E2E.StockMixedWorldX": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "21d1b10010e7f49cfa73cc34816f13952644cfeff8bf6b40f885e57fac6207e3",
+        "stored_key": "fc4bbb9f0fe715e6",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "8977dc0a161fd91d.olean"
+          ],
+          "m": false,
+          "i": "404719ca57e446f6.ilean",
+          "c": "0e120b1c42a33635.c"
+        }
+      }
+    },
+    "FV.E2E.StockScalarNI": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "811ae8339db57dad2d302aaa3622aef220755b9f9feac76f4017e010bdddc515",
+        "stored_key": "e7199f4e40a34341",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "7a0e4b9c2dcf1c2c.olean"
+          ],
+          "m": false,
+          "i": "ac38bd8144614910.ilean",
+          "c": "787f2ef626526166.c"
+        }
+      }
+    },
+    "FV.E2E.StockScalarWorldX": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "679b77d62e4def62e4cc2cc930d350b24c15463be484552a8aeaa2fe8936dd1e",
+        "stored_key": "7bf31e8d1e98886e",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "b313437e8f78d455.olean"
+          ],
+          "m": false,
+          "i": "d843824f0b06d3e5.ilean",
+          "c": "8a409846d757ca22.c"
+        }
+      }
+    },
+    "FV.E2E.ValidatedNoninterference": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "a3d0f6fb78d5891b0270a2fdefe1f5886d8260dd59cbba653cddd4a92a40312c",
+        "stored_key": "6bda3a110d2d9d9a",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "370639b4ea0d5b50.olean"
+          ],
+          "m": false,
+          "i": "f96d32f0814e29ca.ilean",
+          "c": "8184149e18b65386.c"
+        }
+      }
+    },
+    "FV.E2E.ValidatedWorld": {
+      "frozen_state": "full input trace",
+      "stored_trace": {
+        "sha256": "2a52e4fbd701c2a15c44e61286a326142a15d4c025adf7c435c2dd189dd5fbc9",
+        "stored_key": "12dd6c3e3f3be68b",
+        "synthetic": false,
+        "inputs": true,
+        "outputs": {
+          "o": [
+            "0637620965e9d2c2.olean"
+          ],
+          "m": false,
+          "i": "15610f3c364bf45e.ilean",
+          "c": "453d84bd6cc9e8a4.c"
+        }
+      }
+    }
+  },
+  "no_R_G_or_cache_access": true
+}

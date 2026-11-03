@@ -1,0 +1,14 @@
+{
+  "status": "HISTORICAL_UNIT_PROVEN_FROM_EXACT_PRODUCER",
+  "proposal_sha256": "64840f96902c88957a8e07c26b8d5808db57e10dfa37dc081bf2b75ee9e1fa27",
+  "producer_commit": "8a70f34",
+  "producer_path": "scripts/lake-serial-build.py",
+  "producer_source_sha256": "8d0fb32bec67963525d9fdab962e11ccdff6c89e4d0e1779cdd5aa3f5e28b985",
+  "unit": "MiB",
+  "bytes_per_unit": 1048576,
+  "writer_line721": "                        rec.write(f\"{m}\\t{(peak or rss) // 2 ** 20}\\t{dt:.0f}\\n\"); rec.flush()",
+  "reader_line200": "                prof[f[0]] = (int(f[1]) * 1024 ** 2, float(f[2]))",
+  "time_RSS_conversion_line697": "                    rss = int(re.search(r\"Maximum resident set size \\(kbytes\\): (\\d+)\", t).group(1)) * 1024",
+  "header_note": "The table labels MB, but the exact producer writes bytes divided by2^20 and reads values multiplied by1024^2. The records correctly label MiB.",
+  "fit_status": "Historical measurements only. Current-key fit remains unknown."
+}

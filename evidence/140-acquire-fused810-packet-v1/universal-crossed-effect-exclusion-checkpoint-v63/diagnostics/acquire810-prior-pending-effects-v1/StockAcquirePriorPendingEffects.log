@@ -1,0 +1,40 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquirePriorPendingEffects.lean:28:50: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  (?m.201 :: ?m.202).flatten
+in the target expression
+  List.Pairwise (fun first second => second < first) (later.flatten ++ ([R.producer] ++ earlier.flatten))
+
+f : Clif.Function
+result : Result
+run : lower f = Except.ok result
+scope : LowerScope f
+dominated : Dominated f
+event : BlockScanEvent
+record : ScanRecord
+events : event ∈ result.blockScans.toList
+records : record ∈ event.output.records
+step : Step
+recorded : record.output.step = some step
+emitted : step.decision = Decision.emitted
+selectedId : step.rules.getLast? = some 810
+R : SourceEndpointReceipt f event record
+groups : List (List Nat)
+frontiers : ExecutedRecordFrontiers f event.ctx event.output.records groups
+marks :
+  event.output.state.sunk = List.foldl (fun bits producer => bits.set! producer true) event.input.sunk groups.flatten
+actual :
+  ScansSpec (fun i => scanInstruction event.ctx event.block i event.termInst event.isBranch) event.indices event.input
+    event.output
+later : List (List Nat)
+pending : List Nat
+earlier : List (List Nat)
+ordered : List.Pairwise (fun first second => second < first) (later.flatten ++ ([R.producer] ++ earlier.flatten))
+parts : groups = later ++ [R.producer] :: earlier
+frontier : ExecutedRecordFrontier f event.ctx record pending
+inputMarks :
+  record.input.sunk = List.foldl (fun bits producer => bits.set! producer true) event.input.sunk later.flatten
+singleton : pending = [R.producer]
+⊢ ∃ R groups later earlier,
+    ExecutedRecordFrontiers f event.ctx event.output.records groups ∧
+      groups = later ++ [R.producer] :: earlier ∧
+        (∀ (producer : Nat), producer ∈ earlier.flatten → producer < R.producer) ∧
+          ∀ (producer : Nat), producer ∈ later.flatten → R.producer < producer

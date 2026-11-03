@@ -1,0 +1,190 @@
+((true, true, true),
+ Except.ok ([[(0,
+     some (Backend.Stock.Decision.emitted, some 983),
+     [Backend.MInst.loadAcquire
+        (Backend.CTy.int 8)
+        (Backend.Reg.vreg 199 (Backend.RegClass.int))
+        (Backend.Reg.vreg 192 (Backend.RegClass.int))
+        { trapCode := some (Clif.TrapCode.heapOob),
+          aligned := false,
+          readonly := false,
+          canMove := false,
+          endianness := none }]),
+    (1,
+     some (Backend.Stock.Decision.emitted, some 786),
+     [Backend.MInst.trapIf
+        (Backend.CondBrKind.zero (Backend.Reg.vreg 193 (Backend.RegClass.int)) (Backend.OperandSize.size64))
+        (Clif.TrapCode.intDivz),
+      Backend.MInst.aluRRR
+        (Backend.ALUOp.uDiv)
+        (Backend.OperandSize.size64)
+        (Backend.Reg.vreg 198 (Backend.RegClass.int))
+        (Backend.Reg.vreg 192 (Backend.RegClass.int))
+        (Backend.Reg.vreg 193 (Backend.RegClass.int))]),
+    (2,
+     some (Backend.Stock.Decision.emitted, some 808),
+     [Backend.MInst.extend
+        (Backend.Reg.vreg 197 (Backend.RegClass.int))
+        (Backend.Reg.vreg 194 (Backend.RegClass.int))
+        false
+        8
+        64]),
+    (3,
+     some (Backend.Stock.Decision.emitted, some 1037),
+     [Backend.MInst.rets
+        [(Backend.Reg.vreg 196 (Backend.RegClass.int), Backend.Reg.x 0),
+         (Backend.Reg.vreg 195 (Backend.RegClass.int), Backend.Reg.x 1)]])]],
+  [[Backend.MInst.args
+      [(Backend.Reg.vreg 192 (Backend.RegClass.int), Backend.Reg.x 0),
+       (Backend.Reg.vreg 193 (Backend.RegClass.int), Backend.Reg.x 1)],
+    Backend.MInst.loadAcquire
+      (Backend.CTy.int 8)
+      (Backend.Reg.vreg 199 (Backend.RegClass.int))
+      (Backend.Reg.vreg 192 (Backend.RegClass.int))
+      { trapCode := some (Clif.TrapCode.heapOob),
+        aligned := false,
+        readonly := false,
+        canMove := false,
+        endianness := none },
+    Backend.MInst.trapIf
+      (Backend.CondBrKind.zero (Backend.Reg.vreg 193 (Backend.RegClass.int)) (Backend.OperandSize.size64))
+      (Clif.TrapCode.intDivz),
+    Backend.MInst.aluRRR
+      (Backend.ALUOp.uDiv)
+      (Backend.OperandSize.size64)
+      (Backend.Reg.vreg 198 (Backend.RegClass.int))
+      (Backend.Reg.vreg 192 (Backend.RegClass.int))
+      (Backend.Reg.vreg 193 (Backend.RegClass.int)),
+    Backend.MInst.extend
+      (Backend.Reg.vreg 197 (Backend.RegClass.int))
+      (Backend.Reg.vreg 199 (Backend.RegClass.int))
+      false
+      8
+      64,
+    Backend.MInst.rets
+      [(Backend.Reg.vreg 197 (Backend.RegClass.int), Backend.Reg.x 0),
+       (Backend.Reg.vreg 198 (Backend.RegClass.int), Backend.Reg.x 1)]]]))
+((true, true, true),
+ Except.ok ([[(0,
+     some (Backend.Stock.Decision.emitted, some 983),
+     [Backend.MInst.loadAcquire
+        (Backend.CTy.int 8)
+        (Backend.Reg.vreg 199 (Backend.RegClass.int))
+        (Backend.Reg.vreg 192 (Backend.RegClass.int))
+        { trapCode := some (Clif.TrapCode.heapOob),
+          aligned := false,
+          readonly := false,
+          canMove := false,
+          endianness := none }]),
+    (1,
+     some (Backend.Stock.Decision.emitted, some 1044),
+     [Backend.MInst.load
+        (Backend.LoadOp.uload64)
+        (Backend.Reg.vreg 198 (Backend.RegClass.int))
+        (Backend.AMode.unsignedOffset (Backend.Reg.vreg 193 (Backend.RegClass.int)) 0)
+        { trapCode := some (Clif.TrapCode.heapOob),
+          aligned := false,
+          readonly := false,
+          canMove := false,
+          endianness := none }]),
+    (2,
+     some (Backend.Stock.Decision.emitted, some 808),
+     [Backend.MInst.extend
+        (Backend.Reg.vreg 197 (Backend.RegClass.int))
+        (Backend.Reg.vreg 194 (Backend.RegClass.int))
+        false
+        8
+        64]),
+    (3,
+     some (Backend.Stock.Decision.emitted, some 1037),
+     [Backend.MInst.rets
+        [(Backend.Reg.vreg 196 (Backend.RegClass.int), Backend.Reg.x 0),
+         (Backend.Reg.vreg 195 (Backend.RegClass.int), Backend.Reg.x 1)]])]],
+  [[Backend.MInst.args
+      [(Backend.Reg.vreg 192 (Backend.RegClass.int), Backend.Reg.x 0),
+       (Backend.Reg.vreg 193 (Backend.RegClass.int), Backend.Reg.x 1)],
+    Backend.MInst.loadAcquire
+      (Backend.CTy.int 8)
+      (Backend.Reg.vreg 199 (Backend.RegClass.int))
+      (Backend.Reg.vreg 192 (Backend.RegClass.int))
+      { trapCode := some (Clif.TrapCode.heapOob),
+        aligned := false,
+        readonly := false,
+        canMove := false,
+        endianness := none },
+    Backend.MInst.load
+      (Backend.LoadOp.uload64)
+      (Backend.Reg.vreg 198 (Backend.RegClass.int))
+      (Backend.AMode.unsignedOffset (Backend.Reg.vreg 193 (Backend.RegClass.int)) 0)
+      { trapCode := some (Clif.TrapCode.heapOob),
+        aligned := false,
+        readonly := false,
+        canMove := false,
+        endianness := none },
+    Backend.MInst.extend
+      (Backend.Reg.vreg 197 (Backend.RegClass.int))
+      (Backend.Reg.vreg 199 (Backend.RegClass.int))
+      false
+      8
+      64,
+    Backend.MInst.rets
+      [(Backend.Reg.vreg 197 (Backend.RegClass.int), Backend.Reg.x 0),
+       (Backend.Reg.vreg 198 (Backend.RegClass.int), Backend.Reg.x 1)]]]))
+((true, true, true),
+ Except.ok ([[(0,
+     some (Backend.Stock.Decision.emitted, some 983),
+     [Backend.MInst.loadAcquire
+        (Backend.CTy.int 8)
+        (Backend.Reg.vreg 199 (Backend.RegClass.int))
+        (Backend.Reg.vreg 192 (Backend.RegClass.int))
+        { trapCode := some (Clif.TrapCode.heapOob),
+          aligned := false,
+          readonly := false,
+          canMove := false,
+          endianness := none }]),
+    (1,
+     some (Backend.Stock.Decision.emitted, some 1044),
+     [Backend.MInst.load
+        (Backend.LoadOp.uload64)
+        (Backend.Reg.vreg 198 (Backend.RegClass.int))
+        (Backend.AMode.unsignedOffset (Backend.Reg.vreg 193 (Backend.RegClass.int)) 0)
+        { trapCode := none, aligned := false, readonly := false, canMove := false, endianness := none }]),
+    (2,
+     some (Backend.Stock.Decision.emitted, some 808),
+     [Backend.MInst.extend
+        (Backend.Reg.vreg 197 (Backend.RegClass.int))
+        (Backend.Reg.vreg 194 (Backend.RegClass.int))
+        false
+        8
+        64]),
+    (3,
+     some (Backend.Stock.Decision.emitted, some 1037),
+     [Backend.MInst.rets
+        [(Backend.Reg.vreg 196 (Backend.RegClass.int), Backend.Reg.x 0),
+         (Backend.Reg.vreg 195 (Backend.RegClass.int), Backend.Reg.x 1)]])]],
+  [[Backend.MInst.args
+      [(Backend.Reg.vreg 192 (Backend.RegClass.int), Backend.Reg.x 0),
+       (Backend.Reg.vreg 193 (Backend.RegClass.int), Backend.Reg.x 1)],
+    Backend.MInst.loadAcquire
+      (Backend.CTy.int 8)
+      (Backend.Reg.vreg 199 (Backend.RegClass.int))
+      (Backend.Reg.vreg 192 (Backend.RegClass.int))
+      { trapCode := some (Clif.TrapCode.heapOob),
+        aligned := false,
+        readonly := false,
+        canMove := false,
+        endianness := none },
+    Backend.MInst.load
+      (Backend.LoadOp.uload64)
+      (Backend.Reg.vreg 198 (Backend.RegClass.int))
+      (Backend.AMode.unsignedOffset (Backend.Reg.vreg 193 (Backend.RegClass.int)) 0)
+      { trapCode := none, aligned := false, readonly := false, canMove := false, endianness := none },
+    Backend.MInst.extend
+      (Backend.Reg.vreg 197 (Backend.RegClass.int))
+      (Backend.Reg.vreg 199 (Backend.RegClass.int))
+      false
+      8
+      64,
+    Backend.MInst.rets
+      [(Backend.Reg.vreg 197 (Backend.RegClass.int), Backend.Reg.x 0),
+       (Backend.Reg.vreg 198 (Backend.RegClass.int), Backend.Reg.x 1)]]]))

@@ -1,0 +1,16 @@
+[
+  {
+    "label": "G-proper-roots",
+    "root": "/home/lee/clifv/.worktrees/loop-20261102",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.E2E.CompiledSemanticNI",
+      "FV.E2E.ABIReadCfgTableWitness",
+      "FV.Backend.Proof.StockGeneralRouteWitness7"
+    ],
+    "exit": 1,
+    "memory": "peak 8900608\noom 0\noom_kill 0\n"
+  }
+]

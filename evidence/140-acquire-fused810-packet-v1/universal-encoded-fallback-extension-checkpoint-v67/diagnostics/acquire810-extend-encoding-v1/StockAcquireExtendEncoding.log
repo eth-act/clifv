@@ -1,0 +1,45 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireExtendEncoding.lean:28:85: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  (lines, next).fst
+in the target expression
+  Line.ins (Insn.bfm BfmOp.uBfm false dest pointer 0 63) ∈ lines
+
+toB : Nat
+targetWidth : toB = 8 ∨ toB = 16 ∨ toB = 32 ∨ toB = 64
+ctx : FnCtx
+env : Env
+dest pointer : Reg
+state next : PState
+lines : List Line
+encoded :
+  ∀ (instruction : Insn) (trap : Option Clif.TrapCode),
+    Line.ins instruction trap ∈ lines → ∃ arm, Insn.armFields env instruction = Except.ok arm
+sourceWidth : 64 = 8 ∨ 64 = 16 ∨ 64 = 32 ∨ 64 = 64
+small : ¬64 ≤ 32
+expanded : MInst.lines ctx (MInst.extend dest pointer false 64 toB) state = Except.ok (lines, next)
+actual : Except.ok ([Line.ins (Insn.bfm BfmOp.uBfm false dest pointer 0 63)], state) = Except.ok (lines, next)
+exactLines : ([Line.ins (Insn.bfm BfmOp.uBfm false dest pointer 0 63)], state).fst = (lines, next).fst
+⊢ Line.ins (Insn.bfm BfmOp.uBfm false dest pointer 0 63) ∈ lines
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireExtendEncoding.lean:36:12: error(lean.unknownIdentifier): Unknown constant `Bool.true_eq_true`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireExtendEncoding.lean:38:87: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  (lines, next).fst
+in the target expression
+  Line.ins (Insn.bfm BfmOp.sBfm false dest pointer 0 63) ∈ lines
+
+toB : Nat
+targetWidth : toB = 8 ∨ toB = 16 ∨ toB = 32 ∨ toB = 64
+ctx : FnCtx
+env : Env
+dest pointer : Reg
+state next : PState
+lines : List Line
+encoded :
+  ∀ (instruction : Insn) (trap : Option Clif.TrapCode),
+    Line.ins instruction trap ∈ lines → ∃ arm, Insn.armFields env instruction = Except.ok arm
+sourceWidth : 64 = 8 ∨ 64 = 16 ∨ 64 = 32 ∨ 64 = 64
+small : ¬64 ≤ 32
+expanded : MInst.lines ctx (MInst.extend dest pointer true 64 toB) state = Except.ok (lines, next)
+wide : ¬toB = 64
+targetSmall : ¬toB > 32
+actual : Except.ok ([Line.ins (Insn.bfm BfmOp.sBfm false dest pointer 0 63)], state) = Except.ok (lines, next)
+exactLines : ([Line.ins (Insn.bfm BfmOp.sBfm false dest pointer 0 63)], state).fst = (lines, next).fst
+⊢ Line.ins (Insn.bfm BfmOp.sBfm false dest pointer 0 63) ∈ lines

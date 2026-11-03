@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockAcquireFallbackExtendShape",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFallbackExtendShape.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireFallbackExtendShape.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireFallbackExtendShape.ilean"
+      ],
+      "exit": 0,
+      "seconds": 1.5842065811157227,
+      "memstats": "peak 288575488\noom 0\noom_kill 0\n",
+      "source_sha256": "acd18f129e04114cc8525b089cf34685c2c242435df76c6051f464acfb8cce02",
+      "olean_sha256": "a51df2ca6d9bc200770111256d8aee3c6a631c4a09060baa7ef01fcdb3d26433"
+    }
+  ]
+}

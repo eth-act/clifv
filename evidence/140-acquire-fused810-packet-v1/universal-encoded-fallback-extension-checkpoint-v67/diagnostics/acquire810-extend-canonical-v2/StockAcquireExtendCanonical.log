@@ -1,0 +1,6 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireExtendCanonical.lean:37:20: error: don't know how to synthesize placeholder for argument `w`
+context:
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ CV

@@ -1,0 +1,14 @@
+{
+  "status": "R_AND_G_WRITERS_RELEASED;NO_ACTIVE_SAME_USER_LEAN_OR_LAKE",
+  "utc": "2026-11-03T14:05:33.706362+00:00",
+  "prefixes": [
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+    "/home/lee/clifv/.worktrees/loop-20261102"
+  ],
+  "active_compilers": [],
+  "proposal_sha256": "64840f96902c88957a8e07c26b8d5808db57e10dfa37dc081bf2b75ee9e1fa27",
+  "profile_unit_proof_sha256": "23ca722964ee5bf755efc13e13fae66e36bbbfe380d94964f6bb97833856ea05",
+  "G_original_config_sha256": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+  "eight_candidate_sources_exact": true,
+  "restriction": "No R/G edit, copy, compiler or verifier until coordinator returns prefixes. Source preparation outside R/G only."
+}

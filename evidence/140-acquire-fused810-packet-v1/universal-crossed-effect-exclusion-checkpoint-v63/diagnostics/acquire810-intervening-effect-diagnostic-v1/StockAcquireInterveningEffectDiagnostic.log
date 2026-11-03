@@ -1,0 +1,6 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireInterveningEffectDiagnostic.lean:20:48: error: `notrap` is not a field of structure `Clif.MemFlags`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireInterveningEffectDiagnostic.lean:28:5: error(lean.unknownIdentifier): Unknown identifier `result.code.blocks.toList.map`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireInterveningEffectDiagnostic.lean:28:67: error: unexpected token ')'; expected command
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireInterveningEffectDiagnostic.lean:30:6: error(lean.unknownIdentifier): Unknown identifier `report`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireInterveningEffectDiagnostic.lean:31:6: error(lean.unknownIdentifier): Unknown identifier `report`
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireInterveningEffectDiagnostic.lean:32:6: error(lean.unknownIdentifier): Unknown identifier `report`

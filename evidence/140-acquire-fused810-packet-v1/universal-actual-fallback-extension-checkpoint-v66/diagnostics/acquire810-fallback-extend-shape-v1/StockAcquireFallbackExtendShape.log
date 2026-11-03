@@ -1,0 +1,64 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFallbackExtendShape.lean:29:111: error: Tactic `rfl` failed: The left-hand side
+  pure
+    (instDataV "Unary"
+      [opcodeV
+          (if
+              ((if false = true then Clif.ExtendOp.sextend else Clif.ExtendOp.uextend) == Clif.ExtendOp.uextend) =
+                true then
+            "Uextend"
+          else "Sextend"),
+        V.value x])
+is not definitionally equal to the right-hand side
+  Except.ok (V.data 152 29 [V.data 151 (if false = true then 142 else 141) [], V.value x])
+
+case false
+f : Clif.Function
+ctx : Ctx
+inv : MappedCtxInv f ctx
+i x : Nat
+info : IInfo
+target : Clif.Ty
+installed : ctx.insts[i]? = some info
+supported : eTy target = true
+typed : info.resTys = List.map CTy.ofClif [target]
+len : info.results.length = [target].length
+source : info.clif = some (Clif.Inst.extend (ScalarCast.extendOp false) target x)
+accepted : Compile.instE (Clif.Inst.extend (ScalarCast.extendOp false) target x) = true
+raw : instData f (Clif.Inst.extend (ScalarCast.extendOp false) target x) = Except.ok info.data
+⊢ pure
+      (instDataV "Unary"
+        [opcodeV
+            (if
+                ((if false = true then Clif.ExtendOp.sextend else Clif.ExtendOp.uextend) == Clif.ExtendOp.uextend) =
+                  true then
+              "Uextend"
+            else "Sextend"),
+          V.value x]) =
+    Except.ok (V.data 152 29 [V.data 151 (if false = true then 142 else 141) [], V.value x])
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFallbackExtendShape.lean:29:111: error: Tactic `rfl` failed: The left-hand side
+  pure
+    (instDataV "Unary"
+      [opcodeV (if (Clif.ExtendOp.sextend == Clif.ExtendOp.uextend) = true then "Uextend" else "Sextend"), V.value x])
+is not definitionally equal to the right-hand side
+  Except.ok (V.data 152 29 [V.data 151 142 [], V.value x])
+
+case true
+f : Clif.Function
+ctx : Ctx
+inv : MappedCtxInv f ctx
+i x : Nat
+info : IInfo
+target : Clif.Ty
+installed : ctx.insts[i]? = some info
+supported : eTy target = true
+typed : info.resTys = List.map CTy.ofClif [target]
+len : info.results.length = [target].length
+source : info.clif = some (Clif.Inst.extend (ScalarCast.extendOp true) target x)
+accepted : Compile.instE (Clif.Inst.extend (ScalarCast.extendOp true) target x) = true
+raw : instData f (Clif.Inst.extend (ScalarCast.extendOp true) target x) = Except.ok info.data
+⊢ pure
+      (instDataV "Unary"
+        [opcodeV (if (Clif.ExtendOp.sextend == Clif.ExtendOp.uextend) = true then "Uextend" else "Sextend"),
+          V.value x]) =
+    Except.ok (V.data 152 29 [V.data 151 142 [], V.value x])
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFallbackExtendShape.lean:45:64: error: unexpected token '('; expected '}'

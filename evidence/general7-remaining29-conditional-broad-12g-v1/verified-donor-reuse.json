@@ -1,0 +1,1910 @@
+{
+  "FV.Backend.Proof.StockArithmeticReturnRefines": {
+    "owner": "P",
+    "key": "ced3aaabf75620cf",
+    "trace_sha256": "9ffd80601a6b788e85e29a477e2de56184b75fa4c94af6f62b00f8189749ae84",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticReturnRefines.ilean": "c0feb57410b7fefe13a25aca6549878d3c15f30a0716c89d0adc247503c5a66f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticReturnRefines.olean": "fcacfdfb00a637c33ede318176a81b035e64eb9c417f01e133cd442035d98843",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticReturnRefines.olean.hash": "43cf4450c10887bd0cd7f4f52ec5670841ffb9f09feb053d301604c19a0429e7",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticReturnRefines.ilean.hash": "9a1edc4305bff4d250a787ba65efc7ab844cd9b26895cf56c8d8b7a32ce32c7b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticReturnRefines.trace": "9ffd80601a6b788e85e29a477e2de56184b75fa4c94af6f62b00f8189749ae84",
+      ".lake/build/ir/FV/Backend/Proof/StockArithmeticReturnRefines.setup.json": "16d8e95ee2d64acd1c171469fe53e87ce09542a1a7122d0b108279b05dc4ae59",
+      ".lake/build/ir/FV/Backend/Proof/StockArithmeticReturnRefines.c": "c26f6f692a1170d7f5033c6d88cf4ad34a9b3a2f9cd2453264adb63100acb704",
+      ".lake/build/ir/FV/Backend/Proof/StockArithmeticReturnRefines.c.hash": "44c6c1a9692300e7c9ba80923e675a4919b661a696d0af34b27940dc39e63d43"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockArithmeticEntryRefines": {
+    "owner": "P",
+    "key": "499f701c22f88cc0",
+    "trace_sha256": "ae13313cda57571356086b57ea906043a1acfed84d9830b2a8ab68a8753eaa57",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticEntryRefines.olean": "3fdde24f7cf9c0e4718aadd59f3bc7ae3a68f7caddc0789a0046bab7983bffde",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticEntryRefines.ilean": "94470ccd24d92a600b980ed42013bdec6af883285682be9736069988f3e78623",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticEntryRefines.olean.hash": "24a7a93baf0ab184d527402a7b9d0795b460127a55541a560bd257eb68f29ed4",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticEntryRefines.ilean.hash": "f33cd316437cfa165341169a0e4e44a697a8cbf408a2d4903938a1838691eff4",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockArithmeticEntryRefines.trace": "ae13313cda57571356086b57ea906043a1acfed84d9830b2a8ab68a8753eaa57",
+      ".lake/build/ir/FV/Backend/Proof/StockArithmeticEntryRefines.setup.json": "031257e2b6eaed0a6a499a31a8b8740226e9d2c6c33ffcb8ad5e7b6da1a0c64e",
+      ".lake/build/ir/FV/Backend/Proof/StockArithmeticEntryRefines.c": "b1f01328fff6ca910c05a7c8d9b402413d0ee4fd53ade39794e5fd272ba5082e",
+      ".lake/build/ir/FV/Backend/Proof/StockArithmeticEntryRefines.c.hash": "7f58cb55ddcfba737b8fbb98aeadefd37d9ecc18ff68e035ccc696d8ffc15e68"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockNarrow16ConditionCores": {
+    "owner": "P",
+    "key": "d7064404b95ecee8",
+    "trace_sha256": "6b2011ae3a3d911792afad8a72c7c3acff6361f3692b131eda13798bd7dd9c83",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrow16ConditionCores.olean": "12e5d4064b22b66ebbb96a0f042f3a6e9a60080ee143f99a3052ac1658fd8ea7",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrow16ConditionCores.ilean": "60d1927a786981c5eb1019f082ff85c9150f9f51d8cfeddcb073eaa58e6daf8f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrow16ConditionCores.olean.hash": "e3c780d43ec61d814ba5e1e3759025042539638df7fbaa86234e189eb4a1fbaa",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrow16ConditionCores.ilean.hash": "9f0b578d6c460003a2ccfe4a693d51aba6b9fb5b6c9bf7acc65b7648ed48070e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrow16ConditionCores.trace": "6b2011ae3a3d911792afad8a72c7c3acff6361f3692b131eda13798bd7dd9c83",
+      ".lake/build/ir/FV/Backend/Proof/StockNarrow16ConditionCores.setup.json": "39022ce08c70dfafa9142c10fdf2001a779ef30077cc6cc5184fee12d97e1051",
+      ".lake/build/ir/FV/Backend/Proof/StockNarrow16ConditionCores.c": "f202340495f415e873f352349740628245b856ee418f25cb5ce45ea34eb43643",
+      ".lake/build/ir/FV/Backend/Proof/StockNarrow16ConditionCores.c.hash": "10b64aea1360dcb8150a398856b3c6fb9c75085c30e1a0087fed868fdcfb7c3a"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockNarrowCondCarry": {
+    "owner": "P",
+    "key": "7f21d69035d60464",
+    "trace_sha256": "eba54ddacfa3b96078c2186b9c61d970243db39cea408a9f14744cce0cf0e202",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrowCondCarry.olean": "15908a269c519104dffc89affe53107f1dd9c0950d261fc275a8b2122d45c05f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrowCondCarry.ilean": "3d0785d650466762e1874153a2023683d4d15b7a57ba85d6c3e435cfed06176d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrowCondCarry.olean.hash": "3a1504904367ccda674a078fd9303b35c275e05605a586c14a1fb0496d2e3859",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrowCondCarry.ilean.hash": "6861cee6bcbe601ccbcbfc8f9cf2c3e47f936b7cb16032ebf97c26a4a6657cfe",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrowCondCarry.trace": "eba54ddacfa3b96078c2186b9c61d970243db39cea408a9f14744cce0cf0e202",
+      ".lake/build/ir/FV/Backend/Proof/StockNarrowCondCarry.setup.json": "537964c458cd13726ac3efb4b1b5d01a2c38bc9b6487efd8fe04a3064de756b4",
+      ".lake/build/ir/FV/Backend/Proof/StockNarrowCondCarry.c": "f64aa6a514e2a121b6a4338e1677a72678be418f63ed78dc638e7f412613cd2f",
+      ".lake/build/ir/FV/Backend/Proof/StockNarrowCondCarry.c.hash": "aacdb541dad8f0624e41c81bc8abb5188af0f541fb833daabc3108e8007a640b"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockNarrow16CondCarry": {
+    "owner": "P",
+    "key": "153dc64197e81ffa",
+    "trace_sha256": "69eb1268c90c8329382d18ba4165d5fa6f576601eae040d70a0ee0b4b3cf252e",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrow16CondCarry.trace": "69eb1268c90c8329382d18ba4165d5fa6f576601eae040d70a0ee0b4b3cf252e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrow16CondCarry.ilean.hash": "7819f893f41df84e9efdf162f5426cd089bd2b7689dd003fe8d03dbd9ca8d242",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrow16CondCarry.olean.hash": "a8d39be30677bd327a246a0c59060732c2a0228c1ac082e472fd34cc4231e9f3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrow16CondCarry.ilean": "a7749a1b0b22a9a2d31b95c6aa7c81255433bbc969850f0d5a7f4b16fd022273",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockNarrow16CondCarry.olean": "ac04e0004c130188e1d6ea2e5ee2713a1fd59df2a7f19a16b76ce5f4564867dd",
+      ".lake/build/ir/FV/Backend/Proof/StockNarrow16CondCarry.setup.json": "06deacdf99fd677b07122589a95cf1d9c666e132ab632d2149093896ed04a1ee",
+      ".lake/build/ir/FV/Backend/Proof/StockNarrow16CondCarry.c": "012f4f68039377a2603c6afaba8014f03a64502a04014fd3f26f8a29312a3389",
+      ".lake/build/ir/FV/Backend/Proof/StockNarrow16CondCarry.c.hash": "d41d89855827e5efefdaac8feded2a96b3ade36486eb4659c68165ef2de9f3ae"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockTestBitSelection": {
+    "owner": "P",
+    "key": "021e98496f5c8712",
+    "trace_sha256": "4a06c8c7274576bfa9244d5d4d00fabfd070924c952cd45a379b276edbd409fe",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTestBitSelection.ilean.hash": "ea73b5fd2c9029bf21f60c4301b45299b243a8028a2ae8d38d409e8de49b690e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTestBitSelection.olean.hash": "cc55d4ab485802e8b4d116e9e38db05be5048faea2f03ae40940bbfa3c4074eb",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTestBitSelection.trace": "4a06c8c7274576bfa9244d5d4d00fabfd070924c952cd45a379b276edbd409fe",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTestBitSelection.olean": "131f0c1abde19ac93c79500fedaa8ee69f3f28dd6febbf124176c28b10281534",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTestBitSelection.ilean": "07a9c0a3f3eb659a405e48f783afe92b03bffe59c4289f6d9c49367289092dab",
+      ".lake/build/ir/FV/Backend/Proof/StockTestBitSelection.setup.json": "04bb6d2ee8597c1cb262a0c88079f8b8b974019b2cf003f0f46884a68928fcf3",
+      ".lake/build/ir/FV/Backend/Proof/StockTestBitSelection.c": "a8773cf4ee85ea0a0a87ff50dae58fae5f6456221c7682cceecd3709c953b327",
+      ".lake/build/ir/FV/Backend/Proof/StockTestBitSelection.c.hash": "afc85f4f9d3054299d9ade83ab545ac546d1c3541b45625a5b45c912987b1eba"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockTestBitConditionValues": {
+    "owner": "P",
+    "key": "c53020a4be44ee30",
+    "trace_sha256": "1c1680be6b782e92e90fbc6e49068e7849b8963857f7e22e0361305b0d63d642",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTestBitConditionValues.olean": "10c1686abc9de08c5c2fde729c6e4cc818c8239967ada8fe4eb579f2b488e1e1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTestBitConditionValues.ilean": "d67bc06edf6b5818a427edc98ce9ce2d2abdb33b085c794ef80b93453e9edfa4",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTestBitConditionValues.olean.hash": "05260728752181a3a6244761e232a5afc1440b3a48548d36d51b91e679737271",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTestBitConditionValues.ilean.hash": "33bd7b22cf2fa90791d34d192a8d1ab4e7e60ebfd882c07faa5d2c5e9c52068a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTestBitConditionValues.trace": "1c1680be6b782e92e90fbc6e49068e7849b8963857f7e22e0361305b0d63d642",
+      ".lake/build/ir/FV/Backend/Proof/StockTestBitConditionValues.c.hash": "6f510db12a62b6c96f4ce95b4e81e38d3a048f811da04c299d3cb59780c6e9ff",
+      ".lake/build/ir/FV/Backend/Proof/StockTestBitConditionValues.setup.json": "f07ab562ba3111d0517a7994219d8a4d4629e913c3efb24561a3ea7c4ee347a0",
+      ".lake/build/ir/FV/Backend/Proof/StockTestBitConditionValues.c": "bd91940388a8936a69ed87b2832ee9ca83535dc27fe2c3137582a794336483f5"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockLogicalCheck": {
+    "owner": "P",
+    "key": "eac01c7a88356a1f",
+    "trace_sha256": "7d9a37a8a8d06d312f37b40e9205e1ef09c5aaf6e9c25beb7f08af4c1e0a2c4a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockLogicalCheck.trace": "7d9a37a8a8d06d312f37b40e9205e1ef09c5aaf6e9c25beb7f08af4c1e0a2c4a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockLogicalCheck.olean": "9ba8440ef38231e27b21e851da5dd0c45daf8ee8bd418ed0d1df38c10c731b8c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockLogicalCheck.ilean": "87fcee0164ac209e562fc824ea31489d0edcb5e1aaaca810bd3d3ad711f5b8e8",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockLogicalCheck.olean.hash": "1565cd2b963b1c4939f9aaefee2f612f1a37b62bb5c7f3c408b6daa846e6a461",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockLogicalCheck.ilean.hash": "d76ecfc2c1fbfbdd0e29e364d9ea95ff5c9c3d93a7ad3ac4cdbae0be2165555e",
+      ".lake/build/ir/FV/Backend/Proof/StockLogicalCheck.setup.json": "113c2435e708e344ddf09935f82c6ef204fdd07caaef92ab5b773946d71c3467",
+      ".lake/build/ir/FV/Backend/Proof/StockLogicalCheck.c": "32c84ee62577af3db94ff36ff2391a5c0f93578bbb3549dcd12fc89e9d952257",
+      ".lake/build/ir/FV/Backend/Proof/StockLogicalCheck.c.hash": "a0b429ad2d542ae05fd76a2574ebb19ceafca9e68e1aae5a80f2941fef125fd1"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockHighMulReturnRefines": {
+    "owner": "P",
+    "key": "19fcb425b0de427e",
+    "trace_sha256": "9e94ca9475d10818d0a309c60084e344203e67e6cd5fbb1cf5f1d8f04c9c1425",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockHighMulReturnRefines.trace": "9e94ca9475d10818d0a309c60084e344203e67e6cd5fbb1cf5f1d8f04c9c1425",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockHighMulReturnRefines.olean": "c4926ad17cb76a6e05008b7c731414b582deaa912608d8a7a1a47faa53f7e9c1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockHighMulReturnRefines.ilean": "9ca8b2945f144250d8eef1d9c30952a3a61430319d7bd9f63ba16647902b845f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockHighMulReturnRefines.olean.hash": "0d122b8bff6f9a0c314f0b42fd1fa5428641b1f6f5bc465a558317b076ba017d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockHighMulReturnRefines.ilean.hash": "d830c918b008811da47e8208e8864ece9f77c1b8eccaf54b5b3c665363be8e43",
+      ".lake/build/ir/FV/Backend/Proof/StockHighMulReturnRefines.setup.json": "eaa7abd13b6dc38953567389e39d14c0a7e3d6787ec1d614720080b9966d2526",
+      ".lake/build/ir/FV/Backend/Proof/StockHighMulReturnRefines.c": "56fd9f6c1f126574a15c20597f1ad49e951124c1532c48a57bd60021fedeacce",
+      ".lake/build/ir/FV/Backend/Proof/StockHighMulReturnRefines.c.hash": "e38beeea0796dd0f9c91293d22469a20579fd56afe891e0c2ac6dbbd76e7f7ca"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockScalarHighMulDomain": {
+    "owner": "P",
+    "key": "edb660128a2be4c6",
+    "trace_sha256": "385137c9eb510114eadbb15951aec30d4c19b08e49a14b87e03e18e10d4c5d9a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarHighMulDomain.trace": "385137c9eb510114eadbb15951aec30d4c19b08e49a14b87e03e18e10d4c5d9a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarHighMulDomain.ilean.hash": "38dbb7afa0b4e499204bc798776d478a0787954da44d5c797d9740242b0e7b78",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarHighMulDomain.olean": "1870e9e1c48d4d954059d55e75669e63cb25560c46bf7d0817e78dff42def11e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarHighMulDomain.olean.hash": "517c1b10aa61530d429aa8d638a582fd8adf1b3105bddf2b34eed340a1c0e297",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarHighMulDomain.ilean": "fab8341da10b47206a168784796189a575eb4c70c759473e7d07e25dc5a1aa05",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarHighMulDomain.setup.json": "efa69398a61acb61207fcc2e2dd4322f961f5d1c10869b9c96a9f62340277575",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarHighMulDomain.c": "6e45e2529782de0114093c5ce54e21d750379a50d3cc3230fa716c50981a5237",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarHighMulDomain.c.hash": "b20c4ed8e0fa5c702000673d738d3a108225491a20ed73141ab5bdefca24a57a"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockDivReturnRefines": {
+    "owner": "P",
+    "key": "f185ba5ef4d60c50",
+    "trace_sha256": "14a418ba2560a5555a77e46586811375ed270733ec18e1c58fd2e7685491e86f",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockDivReturnRefines.ilean": "ad679881400ba140885032d55aa90d7481149f81fb5d259e03e01889ca076461",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockDivReturnRefines.olean": "f8c1247a1ab2b2341ab1d7348d299a3a3719195d084e0886645e371adf44c8db",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockDivReturnRefines.olean.hash": "e14dfa6baad23123623043e4186d9f38debb1b4ca17b965118ef45ab4a86743d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockDivReturnRefines.ilean.hash": "4764f67f90e444b52dec64d64b957143fbacbaaeb9dbbb36491281ef89c9f666",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockDivReturnRefines.trace": "14a418ba2560a5555a77e46586811375ed270733ec18e1c58fd2e7685491e86f",
+      ".lake/build/ir/FV/Backend/Proof/StockDivReturnRefines.setup.json": "65891785b7a2c8ec0d20d242c3354e04fa134f3dd2a2eccd4c548e989e1398f5",
+      ".lake/build/ir/FV/Backend/Proof/StockDivReturnRefines.c": "3fe93b5e2db5ffbecb3f38b19588bed1d3c5bcbbffaf77ea609c46ef70afa412",
+      ".lake/build/ir/FV/Backend/Proof/StockDivReturnRefines.c.hash": "ea029ae3560293634cd09a32b0e15ef6bc1e712dadace79663ca6c43a23efedd"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockScalarDivDomain": {
+    "owner": "P",
+    "key": "58ed4a5e6c15b5b0",
+    "trace_sha256": "b046aa6e671569b497a22caa5390d5bca49a9af61396e84ec449b1246b71cadb",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDivDomain.trace": "b046aa6e671569b497a22caa5390d5bca49a9af61396e84ec449b1246b71cadb",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDivDomain.olean.hash": "edc3cda4ff0eb9bbb53b87b688d0cb4ef922e3e0e736b86cc5337e405ab83e9a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDivDomain.ilean.hash": "1ae34cd6838d7d84b5425b4cd5d44a60a963010b2c5195c88ab69e5978c5b29c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDivDomain.olean": "d0b6dd983cf0694859b6bd1f2c6f137cb54612481fe6b5d3302faf878cfb5be8",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDivDomain.ilean": "4e620f3ffd38b49e03bee517c923f7c92f5a9356d82082494f2135ec105223db",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarDivDomain.setup.json": "6d9bf0d7f11c9305b4433f3a6dc2b34782d147febe30bda71fb9a8ea3f33d84c",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarDivDomain.c": "738a27245b40b230bafbc5d3f698f8a7ce864684de059196c8d3b0556740da30",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarDivDomain.c.hash": "f31a1ca729305fed365da4eb966e135bcdf46c982535c80a4f3f16d9b206535e"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockScalarMixedDivDomain": {
+    "owner": "P",
+    "key": "8394c3025e4a0122",
+    "trace_sha256": "57a2464a19d8abb0b84e083fa52e69c3dff461afa1834d40567c43f7273cfb4d",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarMixedDivDomain.trace": "57a2464a19d8abb0b84e083fa52e69c3dff461afa1834d40567c43f7273cfb4d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarMixedDivDomain.ilean.hash": "803032ba09f0dcc93a79d399ef9b92ce4966325e211720f812e2c4c105694ae3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarMixedDivDomain.olean.hash": "de98bf4df405af5c87ea4d0212a4aeb23f1e291853002390f96e804a25283e2e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarMixedDivDomain.olean": "05192fb64b309f9f0754da8dadb34e91de094815535180cc33270e3ffbda421e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarMixedDivDomain.ilean": "4207a1e361d52c51c14e5d4b7622e0689c1cdfb8a2a56a1583b0d4f7bb81178c",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarMixedDivDomain.setup.json": "75a635fc3e4622ed24a68338c1684b2a404fb85b87944a48cfa29d8ddd883816",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarMixedDivDomain.c": "3c8a833c567c152a786f0fa9d8e073359fdfffccc4e860fb33ab086d2bb654f8",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarMixedDivDomain.c.hash": "347e1569824c7ca1cd80bef3caff14bf246a816dc8a085aee94628fb9daa06ee"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockDemandedScan": {
+    "owner": "P",
+    "key": "6e311e9a1927dda7",
+    "trace_sha256": "75de2b3f289717f2ae3e50b0776ea801470395dcf9f98e0890172212d480e6ea",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockDemandedScan.trace": "75de2b3f289717f2ae3e50b0776ea801470395dcf9f98e0890172212d480e6ea",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockDemandedScan.olean": "82a6a278006fd0b75a03bbeb6ca00d5642c0162f4b23514e5548fecfbd453da9",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockDemandedScan.ilean": "0d6cc67715a5a7eb4df218b1e9bdbb54051c376ef51ce966c8a5d496799519ce",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockDemandedScan.olean.hash": "faa1c733eb200fdbc847224876766d39157290a62474dddbf1ddcecaa9e45752",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockDemandedScan.ilean.hash": "969a3eb79f780747b1efb105497b76974e780fedcdac203e82121386894b5261",
+      ".lake/build/ir/FV/Backend/Proof/StockDemandedScan.setup.json": "b42db3952b9fdbff4f8e73d436604547ffb34341d486b46476d074c198f3a7ac",
+      ".lake/build/ir/FV/Backend/Proof/StockDemandedScan.c": "84b2a11701558f07727aa178bff5a57f2b77fb4bd26992009c6516defa00a571",
+      ".lake/build/ir/FV/Backend/Proof/StockDemandedScan.c.hash": "d09f6cc33dc635f240b8aae7dae1372b19bf3d7ac463db047047e3648ac6c23d"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockReturnedDefinitionRetention": {
+    "owner": "P",
+    "key": "9899977b3a7af5ef",
+    "trace_sha256": "4916879115cffd85324e9ed89f71ff275d45771c8f5aac9d346c5d03c7b7fb10",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDefinitionRetention.trace": "4916879115cffd85324e9ed89f71ff275d45771c8f5aac9d346c5d03c7b7fb10",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDefinitionRetention.olean": "fd6d6bb5239d7823476402537337d9970859d4451dbf72fe6abc2e23bc0d8508",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDefinitionRetention.ilean": "93cd29b1c193f64df9bebaa22d3308e0eccb8fc9d12a48c1264f876b01789d96",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDefinitionRetention.olean.hash": "d78819fa8e0f6f46248b144dd7328c0f4bcbc1cd2547c72d26291f15445c7712",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDefinitionRetention.ilean.hash": "bccb1bd5c18a637af5d093b5da6b0286be8f5b74712083a214d6a2c8ca1ed900",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedDefinitionRetention.c": "6583e11e967a006c24da65432504eb61b80c7878fafdda862445f3e0138938cf",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedDefinitionRetention.setup.json": "5e16a3d53f6cbdc2b1a0eaf57bd1acb6a67bdf7673fc6c762bb691946e968cc9",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedDefinitionRetention.c.hash": "458e576d281629eca0f75518ad9c43ed58e94486457e04902719ff79d92bf6cf"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockReturnedDivBodyRecords": {
+    "owner": "P",
+    "key": "647b0aa492a1d31b",
+    "trace_sha256": "b7701a41c5649b804eb28d581ad20b3700dd1f32a2487cefac195d60ab76d5cb",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDivBodyRecords.trace": "b7701a41c5649b804eb28d581ad20b3700dd1f32a2487cefac195d60ab76d5cb",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDivBodyRecords.olean": "9ca86a2cbae604ad440de90b5502cf1b2bfbedc8594c9436abd84ba6a2ccc8ba",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDivBodyRecords.ilean": "c31433df4fd0e06761f7663d54e90caa88578b89759d16b54b07990fa9871594",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDivBodyRecords.olean.hash": "f6bf0998a6c30b62a8f4fb7a7739ccc31ba5f03d0763a58aa39ad666969887ca",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDivBodyRecords.ilean.hash": "4144ef6fbe82c0729968f978d54f74ad68438d8d542c3aab2191e773ac15d8c4",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedDivBodyRecords.setup.json": "9fda33652ccd119f1661cf96e334f9744730fcfbe26ceb24bc928f16259e30fb",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedDivBodyRecords.c": "14775af8f4314d4ee2a24045677e585260520f57a80195d79ee964117b0a4bc2",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedDivBodyRecords.c.hash": "31e7afe77c6ba85bde724134c2c59b1cfede1baec8870b1c1d3663105efb0753"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockReturnedDivBodyRefines": {
+    "owner": "P",
+    "key": "abe7a70c0a138f9c",
+    "trace_sha256": "fce857677287fb0a023e8189184b9e59edbb2a315d62520a273b5b51d3e86f47",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDivBodyRefines.trace": "fce857677287fb0a023e8189184b9e59edbb2a315d62520a273b5b51d3e86f47",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDivBodyRefines.olean": "52b59f0c6949801d502cb431a4478b3c62d49b219056fc23d21ab48d1dcde3f3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDivBodyRefines.ilean": "18dba54e509d29860cabe2496f2c777b56b8b651c405651c5c8da252391074e0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDivBodyRefines.olean.hash": "d73527cec0d0be005e095d904c6f30756e896a6143ad0df422c6bc09550ec061",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedDivBodyRefines.ilean.hash": "baf7f91c9a279e2c4ecc03ca461f9e8ddf3cb5e6a8f75b41db73788ca29f24f5",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedDivBodyRefines.setup.json": "fbfde1752c0a6ca3cbc8efa4751b724524fa9c46fba485ab096b38748e9b6d7f",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedDivBodyRefines.c": "bd3b335664eb9085e7d18233a3a6331e56535014d310d170bfb419d49b7aecc1",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedDivBodyRefines.c.hash": "0744633e87985810a3cc4e4445b1d5751c3baa7a7bc9d74ce8a2f35186a09ba4"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockScalarReturnedDivDomain": {
+    "owner": "P",
+    "key": "6cabd5eee82c179e",
+    "trace_sha256": "c35a895a04e33f4879b83b45427a7467b169387c364eb2f05a91ff0b38deba63",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarReturnedDivDomain.trace": "c35a895a04e33f4879b83b45427a7467b169387c364eb2f05a91ff0b38deba63",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarReturnedDivDomain.ilean.hash": "77a50bd27876e525f61a43aaa9c69d950f6316e5e5e1bddb23d64492f68de94f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarReturnedDivDomain.olean.hash": "c5a65d770bf1e5f1c07eeed0ea3c205908266f597254956bbc1d6e90929395bb",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarReturnedDivDomain.olean": "dcc26b35a3e173392ad34febe8e0b1c417fc6b746bf08d0429e3393c4a553455",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarReturnedDivDomain.ilean": "66a661757c8cf6773ef663f8e678ac3ad8fbbcb6cf5a34a800f0432cbb9727cd",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarReturnedDivDomain.setup.json": "c03abadd1206aa5e76b4f3952d09b53ad5d29913c44e488350279f4b5844d030",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarReturnedDivDomain.c": "5883437ce32a33951ba46bba227e6da310e2a453cb44fa155ed8b0a74f388d05",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarReturnedDivDomain.c.hash": "b8fa025cfede1a5a27a794cbebe30ce48b0d622e3ddf6025c320ddd11b1ee8a9"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockScalarDivBodyRefines": {
+    "owner": "P",
+    "key": "2fafdb4f31acfbb1",
+    "trace_sha256": "3330514c42336cc2789812821dc8ad47d4a8ed575a450612010e85bbbf2889b7",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDivBodyRefines.trace": "3330514c42336cc2789812821dc8ad47d4a8ed575a450612010e85bbbf2889b7",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDivBodyRefines.olean": "75584dfe0e79175f78e86f549e88c1ef7ca3f5ce10f2c7b89e89402fe390d02c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDivBodyRefines.ilean": "7753e267becb90d397cb26d9eddd6bc19eb605dbd3df10f7db79cbaa5638b660",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDivBodyRefines.olean.hash": "1a98444e789919b0fcce0b32d011115ef2b46363b8ccdb022b316cb8cd09b6c6",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDivBodyRefines.ilean.hash": "3d49349a1f46f2fcbe86b58afce24c87fcc34fb61374e83a3f527231b0a6bc3b",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarDivBodyRefines.setup.json": "cfa66d806af73b1776ced697cd5fdcaca3c341992c50ce84b445fbc85ff31fa6",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarDivBodyRefines.c": "47c3f1adc55de9b4d39c55ff6957a2692a2c737c5d0ffe28ad8c991d4874a47d",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarDivBodyRefines.c.hash": "d5f2bf398de5bb9c63c1e9149edb7914f8efbb06d95f154a2c622db046b69b0a"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockScalarGeneralDivDomain": {
+    "owner": "P",
+    "key": "a3ba96c6248e43c3",
+    "trace_sha256": "4542ed1df7e82d2d3ee212b4a78bd4c59a5e060f81e42912b018137e0bd13cea",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarGeneralDivDomain.trace": "4542ed1df7e82d2d3ee212b4a78bd4c59a5e060f81e42912b018137e0bd13cea",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarGeneralDivDomain.olean.hash": "a26ba9d8cd908cf53e10973312113518cf62a44dcaddd97fe7c8b652b9a6ebe9",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarGeneralDivDomain.ilean": "16d2f7a6c3fc113454ed69285960ce15ade9bca64d3f2a184a64d9a55ae93a3b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarGeneralDivDomain.ilean.hash": "215fe5bd9aef52e0c949c77a99d9c5600be8c4579773f41e52cd4d11f5bc2854",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarGeneralDivDomain.olean": "163b6c5b31290f617110b99dbf9401089baf77064b75062e56fd4751df4922a5",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarGeneralDivDomain.setup.json": "ad03eb4c59b16f6da104f283b1226b93e23fee43eab73d22179225b14d9a58d1",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarGeneralDivDomain.c": "f231258a9c9000d54cd27854d947f62bb2bdef9e48f6e8deabc63262477cef14",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarGeneralDivDomain.c.hash": "2c8455c165c1dba35d0fe4c1f70efb8b9be1ffbc4336d36c896076c9d475f398"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMaskBodyRefines": {
+    "owner": "P",
+    "key": "0daddde7d792d07f",
+    "trace_sha256": "79f88171dbee5860338a23c95e715f0cba1d86d91aa76254312db4193ea8ad63",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMaskBodyRefines.trace": "79f88171dbee5860338a23c95e715f0cba1d86d91aa76254312db4193ea8ad63",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMaskBodyRefines.olean": "91e5812e90c9354ac53177e92179115b5755ab1f9f9190019aaff4a7fb1d895e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMaskBodyRefines.ilean": "aca84fb48129d74001bbe7be7ecc75e55e51f2be2fb75f5e64edb38ae93c433a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMaskBodyRefines.olean.hash": "f9e1e4aa161d2e3859120fdc49e8b91c219118097f4db9a01ff0e3d67b3c78b8",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMaskBodyRefines.ilean.hash": "55e227555e65a5cbba8992035b027a3481d93d8b78d662149a17ede1a8cf42ba",
+      ".lake/build/ir/FV/Backend/Proof/StockMaskBodyRefines.setup.json": "5d02565e649da3b84f0a2a1b21ec4580fe925163d9d46f5e6a8980ba2fe18c64",
+      ".lake/build/ir/FV/Backend/Proof/StockMaskBodyRefines.c": "63564a0e00afc2a43826859a1fe9420b60f8e81180c80c28465d0d5d84c8af32",
+      ".lake/build/ir/FV/Backend/Proof/StockMaskBodyRefines.c.hash": "24bd68079eaf68323ecf2a3e0f005a18173893b46b497840384e08afe6f7ba51"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockScalarMaskDomain": {
+    "owner": "P",
+    "key": "41233f56bc2d13e1",
+    "trace_sha256": "3c925164427f4bfac5ed47103d32046b0651109228f07601efb63fce92aa64c1",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarMaskDomain.trace": "3c925164427f4bfac5ed47103d32046b0651109228f07601efb63fce92aa64c1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarMaskDomain.olean": "e4bc93f5f39f136a269a3fcd2fbbd8bb195b5164fd203fdb3463f20a4e8aa425",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarMaskDomain.ilean": "1c9fcc4b04c2e8a08257207336255eaf54f3d334b441e833a3e75243e70945bf",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarMaskDomain.olean.hash": "d8f02a7a1c54afbfb62152b7070c08bafa7ba73d8749623d93d544a934f57482",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarMaskDomain.ilean.hash": "99bd37bb8616c8fba078fe865c65607cec82504a6290f056fad9481432a3d797",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarMaskDomain.setup.json": "c8bbf8e66f52bf2d4390c87b086cda5e59d38a4443665ad4afd8576b75ab2b21",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarMaskDomain.c": "58353a7daf195b8f565c1d1b1c3458e63eea4fb95d899f6dd775b882cecc25c5",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarMaskDomain.c.hash": "4ef0808cb35b6b63d9a9ef78f7d70537f86e37693d52ca4a57b0adae5a908a00"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockTrapRefines": {
+    "owner": "P",
+    "key": "9ac259548a37df33",
+    "trace_sha256": "4b89ffc793433f1d520b41f8981b1640467094dfa1fd19428c6c992c20426734",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTrapRefines.trace": "4b89ffc793433f1d520b41f8981b1640467094dfa1fd19428c6c992c20426734",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTrapRefines.ilean.hash": "cdb32fb05af2ac795112d228516035b66b5b8d52bb7d21a1ed5e710e46ec3b8a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTrapRefines.olean": "a719bdaa2b516475cfa1bf62a78dd882854b8399b4a3aae017fa4d5d60a68835",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTrapRefines.olean.hash": "cc5d6e725bd6382b5804c253f2664356898ea605beae022d4bca7879c0579686",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTrapRefines.ilean": "8a8ea6438eabb1fa58503b7bbe3e911e2f363516f950e2b251027a9b40aad954",
+      ".lake/build/ir/FV/Backend/Proof/StockTrapRefines.setup.json": "e2a3eb4af5620ad40789eaceefb073f2c563780462dbe6d2c803f16acd1adead",
+      ".lake/build/ir/FV/Backend/Proof/StockTrapRefines.c": "73bde86506e1cfe99a1b2c4cf3c982e27c7f8e1e674caefdff1069639112422b",
+      ".lake/build/ir/FV/Backend/Proof/StockTrapRefines.c.hash": "f1d9f8ea8ab4474e7961cfb164a0c332c3fb459c44dc2af37ee48b3f2f4eac47"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockScalarCheck": {
+    "owner": "P",
+    "key": "1e69a1dfc35aaf8d",
+    "trace_sha256": "2a8e93d4c481d977fdc66d95ceffee7b0b01ef6753c0d8f381c03274ab86c279",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarCheck.ilean.hash": "d78c710fd55cf864b754bbe83bbf55af04eeb9ebb97d19edbcd6cb282fcb536a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarCheck.trace": "2a8e93d4c481d977fdc66d95ceffee7b0b01ef6753c0d8f381c03274ab86c279",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarCheck.olean.hash": "7cca8962c29e16e9bb082cba0ef3b682eefaf949d9ee4da797e6e19bd01da493",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarCheck.ilean": "3ad8603c3dd6baa0a7bc862efa0d39fa118a5e2e13793a0186a9f888b9c23bcc",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarCheck.olean": "a8bd8c3df5ca48e2c2d514d048a1f0e084f8194b82677629a1c2c12ece24c466",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarCheck.setup.json": "2e3e8ac3b37c5b7a30dfa1244aa4e829750b921810d5a54f259100a57736ff12",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarCheck.c": "2cbdd2746c0e2b8bb0bf448ab9588e80b0bbce5f51368822aafb65297a4a95d7",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarCheck.c.hash": "edbe0047acda2a854f60e18722256672c999a8b41ba06d4c897d821410d22d33"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonLoopClass": {
+    "owner": "P",
+    "key": "0dac755e712ae185",
+    "trace_sha256": "4a08d111ae32bff67b2e522cfefd3642ff83a5505217858d8bc851f0502cd918",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopClass.ilean": "11c003ded3d91f50235c5bfc22544a25c4d7bce9761edce42150d8ffd65e0831",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopClass.olean": "c21fb88a29ab65fc8ed33e4f04947c7ddbebf332306ff5ce53e1133c9be11d2d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopClass.olean.hash": "2ef764476b0f748f45f8219799aff5efbfcf3a766a25778a26cb1d3ff5f384c8",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopClass.ilean.hash": "5f2f9798be78d88179658c7b8079033e7f1dab61d453cb698c3cc90153c78651",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopClass.trace": "4a08d111ae32bff67b2e522cfefd3642ff83a5505217858d8bc851f0502cd918",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopClass.setup.json": "8e40916edf1aaeb2fb358bddd29fa464fe7f4b79a0af4ba32171fd964e6e3a85",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopClass.c": "4b1995d02d9619081f6d204275503901ab8da8a7c54bcc0081d963f5d6153184",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopClass.c.hash": "8baea31418f615499c1a95e67a8e96fbb2da3281e123789b33069d2fcbc03367"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonArgsLoopClass": {
+    "owner": "P",
+    "key": "fa34f0250d87431d",
+    "trace_sha256": "3434e8077c346f29fb419d7e8cab73b12a2088f05afce34a76c3f9c013bb7205",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopClass.ilean": "0247ad49541a6ba6ffda4e4afc789a25aafc6d999609ba303e532e6181a65034",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopClass.olean": "115d13655cbd9fd1bbba963db7bdbe39a2441168de0e6f6765d7db0abb7b6fe5",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopClass.olean.hash": "9c8db441eec1803a3362928a0528dd4807ec63ad9ab2aa208caab45468a641fb",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopClass.ilean.hash": "eb25311a50c22861709adf3eecab59c4b8f92c39635675bb8e905f6c643b465e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopClass.trace": "3434e8077c346f29fb419d7e8cab73b12a2088f05afce34a76c3f9c013bb7205",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopClass.setup.json": "8e077d92879066ebcc7f20e8eeb3085d8125ee801814f31fc021e8708d466c04",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopClass.c": "73b3c0ed8c90222d0791a3bde4299440202959c8960ac20146525e788e32d466",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopClass.c.hash": "5a457c4d486f1db52a0102d5df05a34bfaef50ee36abbce0670d7353705e6bc4"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockLoopDefBefore": {
+    "owner": "P",
+    "key": "aa7dcdf6dc59d61d",
+    "trace_sha256": "26de8d91d4229ab60626492508005dfb4a718fb89564a21ea5a829e5d74cedbb",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockLoopDefBefore.olean.hash": "a2514257fb84d9d0c30b2acf2fd1649078d1d8321f14ba9e2581f99783873ca9",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockLoopDefBefore.ilean.hash": "42852d338cb949cdf0b34f80c79a5b35c807b0ae9a7be1ea9d22173411d69ab0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockLoopDefBefore.trace": "26de8d91d4229ab60626492508005dfb4a718fb89564a21ea5a829e5d74cedbb",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockLoopDefBefore.olean": "d134518b92af9bbf1ad829c371ec0efff648f2166080e31e4a30cb38bd5eac01",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockLoopDefBefore.ilean": "69129dcb3e93afa15cb1bb415a709cdd09562b69afa975f8d0185109d117508b",
+      ".lake/build/ir/FV/Backend/Proof/StockLoopDefBefore.setup.json": "2b4c8f5274112c3eccb7c7fcb12a792396ae47813cacefd48f6ab049ad75977b",
+      ".lake/build/ir/FV/Backend/Proof/StockLoopDefBefore.c": "60f1136dfef08fbed068f29ec59b972d09c1d11ecfd1e8320ca9828effe90528",
+      ".lake/build/ir/FV/Backend/Proof/StockLoopDefBefore.c.hash": "d31238a98efb0481d5f2e0b63bbf55fa8b16f8c7dcb58abb15f1f2aa936a948e"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterPrelude": {
+    "owner": "P",
+    "key": "dfe0904681d966e2",
+    "trace_sha256": "f2210412532aec27205a896fb42e805e544f9b45bcacb52d2d039354ebedc0bc",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterPrelude.trace": "f2210412532aec27205a896fb42e805e544f9b45bcacb52d2d039354ebedc0bc",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterPrelude.ilean.hash": "9a1627cb6783b7f7689a31a8cd2a410758b1c1c3b96706ba4d087cc0ddd58255",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterPrelude.olean": "8460d8c1884e9e0ef71d6ee78de6ac61a89f59ab6c3e5b482d2cafbf78a8a3b6",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterPrelude.olean.hash": "c23a1e08ec2bbc1371706acf1b0cdfd7ece4c69f58bcc24e62cb2a2b5b2e43c2",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterPrelude.ilean": "973671f9eed7d2e1ac5d7ea9afea07aca0759cdc75613f7558938f03da831ca5",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterPrelude.setup.json": "d394922d22432d401127c53ebadae63da6d1f81e161b237fe244438eca7f48b7",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterPrelude.c": "e8346648ff4db6d90e7ed4165ddf52a205ac2ed3216a6c0349575d5285555b50",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterPrelude.c.hash": "c04e9f3b98abc8bc2e5852fb2fa98c02068651d01ed4fafae1330b6f2e62e0a6"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockConditionalTrapLeaf": {
+    "owner": "P",
+    "key": "3df8d860a92f920a",
+    "trace_sha256": "7d14b568b16b998df8769568ce8e4ab338ab322436fdf4c6b6f5ee4dbba61ebf",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalTrapLeaf.trace": "7d14b568b16b998df8769568ce8e4ab338ab322436fdf4c6b6f5ee4dbba61ebf",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalTrapLeaf.olean": "d6a623ce503a377ddaffe05d4981b6f90bdd3754a198b7c251f04f98f4484920",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalTrapLeaf.ilean.hash": "123ad9d232fd5b36e4768fb7408473198941edadfb1343c74076785eb882cbfe",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalTrapLeaf.olean.hash": "c4221826d1c2b6fa5199e7a188e5d398fe7fa331bf8144b945c6d8c9eacc2c90",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalTrapLeaf.ilean": "551e425f120bcb1de12a3cfaf5373af7b1f7293ce70168c92c84e88dd369929a",
+      ".lake/build/ir/FV/Backend/Proof/StockConditionalTrapLeaf.setup.json": "319678ee615795bfe9150e5a1b09deca3d96380d705c18339c623db91ebfafa2",
+      ".lake/build/ir/FV/Backend/Proof/StockConditionalTrapLeaf.c": "8ed2e24b42b01a2c74e67f35f8c2b053febca95998eef176f636813e0ba1e0ff",
+      ".lake/build/ir/FV/Backend/Proof/StockConditionalTrapLeaf.c.hash": "76b1a4cd82df452c6d9920da8dab42a67bc44a4d876122769e9eaee230b9bcfc"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterLeaf": {
+    "owner": "P",
+    "key": "b339661af57e5b38",
+    "trace_sha256": "bec6df42a6e82821b049115a178c5cb869d9c56f62d77aa8563528563b243664",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLeaf.trace": "bec6df42a6e82821b049115a178c5cb869d9c56f62d77aa8563528563b243664",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLeaf.olean": "db3c8e084bb44176a1f1f28064deeab22ac26092581467e6e54a5f748f658cd0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLeaf.olean.hash": "bef8788288463102d5b8d3154401143c50fd12be2431ca060c0951f1f5e0b294",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLeaf.ilean.hash": "c67a56528b1c8cdc431bfb66a70c1c875b5257e85e603bedcc145950d0765ac2",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLeaf.ilean": "b4d299326880b25763c44c5ab4f2e2dc2cc134e50c991324d1625690804b2ed8",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLeaf.setup.json": "42e3c5ae51afaf1b7aef5e8aa2e0fc4fe30a99861960937e5e942861bada2f02",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLeaf.c": "5e01259528cb159abb83c8d5f9f64880eda85fda9bdb3b3bef7b2458970b181b",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLeaf.c.hash": "fed50480fc00e2f64c96e4c22a54f34417ddd6eb382ed9de8023c9854afbea0e"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterLoopReturn": {
+    "owner": "P",
+    "key": "96769345a76adc20",
+    "trace_sha256": "e36473485b5259f98261641e69f9d11f485d9f6e757bd9a156e3d04200b6ec77",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopReturn.ilean": "6eeed9a1b8cb6a68c65383b2b816a8fb105a87b959cdaf7ef63e9b1d3e55857e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopReturn.olean": "edf2830026f5f32fcb5c7d29a5abf789aba1b8fec2abb0ba9ae97448f21075d3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopReturn.olean.hash": "35c617c9a3bce0abbf582e71d75b1feeff2ca5ed3e016ab54d28e87e15c6c6f3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopReturn.ilean.hash": "c83066f52dce5dfb08fbf642a5e40222f024b90ecb8ee1dd1b1fadc2bdebf505",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopReturn.trace": "e36473485b5259f98261641e69f9d11f485d9f6e757bd9a156e3d04200b6ec77",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLoopReturn.setup.json": "b882702ad53095f2b6121a097388eb420cc0547e4e248fde3b8202e99ffa9784",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLoopReturn.c": "1ed9b19d80118026b2c0c21d83eb4627583daade39bceb25a9b50f5689059a19",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLoopReturn.c.hash": "bef743741f23e7b94f60c558cc347493d35ffb0dcddd088a18529d5f811f91e9"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterLoopTrap": {
+    "owner": "P",
+    "key": "77d7f73fca2c2795",
+    "trace_sha256": "6e61531cdde6571d511cd90ae0f3d08f6bf4bdb3eb9e26e9f39602e3394b1e2d",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopTrap.olean": "bc169411d9dfa2185feb946b3ef89e799c66a176f464bb51e3ad7899659fc515",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopTrap.ilean": "afe6a078a66b045740cf4ad9bb3f919c934249f170d80a3147e4f7229a8bae9c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopTrap.olean.hash": "0090c0acc5b2467b29a8c13573bcab6a83787f1a7a8c499bda7b34236da2c4a0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopTrap.ilean.hash": "1b19f6c5c5e6281c3347bc1b03ad802f7003563aa2e73c87347e99ebfef8a525",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopTrap.trace": "6e61531cdde6571d511cd90ae0f3d08f6bf4bdb3eb9e26e9f39602e3394b1e2d",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLoopTrap.setup.json": "5f4ed0d96c1e462f7cfd53531697197d5eb07a863f9656ce42a6cb1d952fc9e2",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLoopTrap.c": "6808433721188c9b69b59f2fd4cc8e03e4f883d4a7b0aec95ae3a363abb2723e",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLoopTrap.c.hash": "e6a7ef111caf0aecb41a6bf2379b9459660984ec98e1dfdd650e0a801fd04a7a"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterReturn": {
+    "owner": "P",
+    "key": "947c4f6b5205ad02",
+    "trace_sha256": "96822a1e8a1c179d6a1c77dd6e492e0302e15782fdb039478a75462e878aab5d",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturn.olean": "b1d5c6d91f35a85dd3135bc22709f12ab622ed19530e2d3e07126ee2301ed8ee",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturn.ilean": "1c278db556e2b37b78318baeb2a5659ddc32bf023f607993ce1c59974b4d301d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturn.olean.hash": "d477a44c9eac5fdd95fcae8cc4999b1ffd3647f6a1665284d1b089fa131d018d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturn.ilean.hash": "cc3955dbe9a250d51e92fe75d9403954353b92a7eea505833915da6b49613bab",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturn.trace": "96822a1e8a1c179d6a1c77dd6e492e0302e15782fdb039478a75462e878aab5d",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterReturn.setup.json": "9f5987c091524ed21da1d7abf17bea5ebeac0fb5bb705b0630adbd1cbdc1376c",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterReturn.c": "c9bedc55634adf2997a1de06988fe4d73e5ec7b3ca20ac8aa53cdc6955aef0d5",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterReturn.c.hash": "08c44fa5bb3b54bbd14a91d97bf4316eac9712285513635e6c02b0e35652fb67"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterTrap": {
+    "owner": "P",
+    "key": "a97036560f102fc3",
+    "trace_sha256": "c9a57c14de1d91875767f6b866ea78b6cd0de020eefdad4d5ef9d5bee3c8fd8b",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterTrap.olean": "bc5e973c958d4eef708b7ddd6db7616c9b86f9e8117ba6947b5aa56100843e07",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterTrap.ilean": "26c224b2bcf8e9de9ef919cff09a52196dc3307532010f1785d8be6ffc373aff",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterTrap.olean.hash": "87a07235bf849c55de53fad84a46f63999a227d0300ac62d7e6632e74ec82deb",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterTrap.ilean.hash": "f43d5daa164ce0b58d958fb24ba1450de793b4c474126931bf63c38875e48444",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterTrap.trace": "c9a57c14de1d91875767f6b866ea78b6cd0de020eefdad4d5ef9d5bee3c8fd8b",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterTrap.setup.json": "0186574d0476e1a9c857f929259156d970cd3b405b3f80d79ad824eecc5fd845",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterTrap.c": "d2a49c9379c1b0d6022213233707aa8aea65d905def417254f754b138d96f0be",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterTrap.c.hash": "54df0b03225bf7068c38fc168a2e38277915c8f31a3d24000d05ee449eeced9c"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterSuccessor": {
+    "owner": "P",
+    "key": "ef60f9a204aa7bbd",
+    "trace_sha256": "4d3e49366ded1ed55b50c69329a6f8beb78b379de48dd703eb0c8a71e3514321",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterSuccessor.ilean": "8b40248f833528fb8aff41e72474729ed49edb3c6be665beb8e20668016d25e8",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterSuccessor.olean": "4f007fce3d0ec05dd7e0ae06ceefc2b2051e032e9684d00074938b12a5163369",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterSuccessor.olean.hash": "54a5814e73845e05c0be493c6da6f2992f1731b89c6f95afed396b18f4ba6d3e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterSuccessor.ilean.hash": "9d456e0090d8c8c8440377a43b757e4ba7d92330efcbab368f6a3310ce99cf9f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterSuccessor.trace": "4d3e49366ded1ed55b50c69329a6f8beb78b379de48dd703eb0c8a71e3514321",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterSuccessor.setup.json": "39898783bbcb4000f1a3cce42553390d848501e19c9f399f5e0e1c0c78bdfcd9",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterSuccessor.c": "becdbfee391f5b01edbef02f0fa160372d1e07d45a84add9131ae93c4250c1bc",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterSuccessor.c.hash": "39483d37ad7d8ffa73091192eaf05cf3bbc0e487eddce410be90c7d0226461de"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockJumpEntryPrelude": {
+    "owner": "P",
+    "key": "cc6cbea49759173a",
+    "trace_sha256": "2ecb65bacbf18860a06966a8c00009394bd1e574c0e534f4bae26e2e5b74a5b0",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockJumpEntryPrelude.trace": "2ecb65bacbf18860a06966a8c00009394bd1e574c0e534f4bae26e2e5b74a5b0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockJumpEntryPrelude.ilean.hash": "374b867da3b7ede9a75594398348c1cfc93ba146468d82ccbee90072792890e1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockJumpEntryPrelude.olean.hash": "c2fa3b89d58bc638f95643eb30ea579ce3106b8dc66a1bf663e7b48c3b7bc60d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockJumpEntryPrelude.ilean": "c729ce2b81765088cecdd9b4949d148db09633d2318a96823a44ab414ae67bfd",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockJumpEntryPrelude.olean": "3fddd2dd98ad279713f37f361dc64b930b3ee7ade71e28e11b3a4fd5833d6cc7",
+      ".lake/build/ir/FV/Backend/Proof/StockJumpEntryPrelude.setup.json": "2f28e400892179f72adeb6e4d528ce01f4e20ec0765f847aeef1a072d122356a",
+      ".lake/build/ir/FV/Backend/Proof/StockJumpEntryPrelude.c": "6525978939c3c7dbaddf92ea0f010141a71284d7b64a35a37e12b898e680b2e4",
+      ".lake/build/ir/FV/Backend/Proof/StockJumpEntryPrelude.c.hash": "c082fc54d35cb56deb40ddc3f45c06658515dc0556554d7774d1e7d6cb355558"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterEntry": {
+    "owner": "P",
+    "key": "b9e0bb137de96c2f",
+    "trace_sha256": "b91635a00acc6f62b1af1aaa9e51d48d4a151f2256f57907d90924dbb17b2691",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterEntry.olean": "8749517e274e2327c6ad7e6726400256adfbdeabd0b5efbfb6d2a4fca65985dd",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterEntry.olean.hash": "86cb60d171c7ad93bf3a0af72d16167fbd625c25e2506482d2c362aedf1ddfe9",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterEntry.ilean.hash": "06564e3d338a5902ecc940c81c6262bec30a066e74df64544f7b23e945b28f4b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterEntry.trace": "b91635a00acc6f62b1af1aaa9e51d48d4a151f2256f57907d90924dbb17b2691",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterEntry.ilean": "65266dd4a39b2fbe28b9ab375d941ca523b6b6771ebff599f143a7d99dab1666",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterEntry.setup.json": "2b894cd82be28ba8b058082b9a8a31ad1b2ac46f316fcdcb91052f086eb9ec81",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterEntry.c": "51203d1339a9aa731a24a0496c0c2d9f26d3a1ba8ae51ec1f4996ea6e4384890",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterEntry.c.hash": "2b97fc86f04c88bc29867413ca082ef166c3f60b1ac6667d36b50797e43a49a3"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockConditionalOriginalLabels": {
+    "owner": "P",
+    "key": "8d6a36a7c435e638",
+    "trace_sha256": "c77a547034212514142062124e5cba41a481506bbe838b0b0ab1c95819b3f4c3",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalOriginalLabels.olean": "bdd1f8ed9fa0b08820c9b2d76cfdd5ebd2c9a0e1d65541faa0696aacfe171d47",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalOriginalLabels.ilean": "0ddf1faa2fcc60a6851f6a1ad91face3f7ae0c36c3d6559a8a0f03fd133bd299",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalOriginalLabels.olean.hash": "495a60ef485b398b2109c78f46364fc58b789889134f091e4ed635897c06c754",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalOriginalLabels.ilean.hash": "5c8adcf2a362fd3ed52f6ea2895b6fe61bd41a64f50564a5148f539d629cdb6b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalOriginalLabels.trace": "c77a547034212514142062124e5cba41a481506bbe838b0b0ab1c95819b3f4c3",
+      ".lake/build/ir/FV/Backend/Proof/StockConditionalOriginalLabels.setup.json": "ffada7f0bc5d963dd04ddec2b8d8fefa0ffaae4095997721513d678b2196a0e8",
+      ".lake/build/ir/FV/Backend/Proof/StockConditionalOriginalLabels.c": "4f95016c056578a238d93de169627380fcd4072e027275e5525e5075e1ed2c7d",
+      ".lake/build/ir/FV/Backend/Proof/StockConditionalOriginalLabels.c.hash": "7589e1b04241a26905b3d169122fb5b3b31d36bc03294de5396cc728824e89cc"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterArgsLeaf": {
+    "owner": "P",
+    "key": "2003f1d19bba8175",
+    "trace_sha256": "990e9c936963e32204c0e8113fb41700003a64a26d00b5df5d53f8d64486d81a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLeaf.olean": "3bf6b467ad7d80e42eec513778787ee98cfc9d7cda3fee335c95467ddd095123",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLeaf.ilean": "10c9036ca04ebd14a6cafa39974ca8af2ee1b7d810af2a61607d08c451cedc2d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLeaf.olean.hash": "169dbd17ddf67a33936af04ed8b2813eb31c6ae7294f42d6bf3a2adb7c0b8326",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLeaf.ilean.hash": "775d7bbd6c74b32e3ed20e794b6b89556d55af01ea87672bd965a66d6865cd00",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLeaf.trace": "990e9c936963e32204c0e8113fb41700003a64a26d00b5df5d53f8d64486d81a",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLeaf.setup.json": "04697afff7074e833efb5545f3a04853b9ca78cf40a6037e12444da742d03539",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLeaf.c": "01a0e9f48b0cf7437ddf61eb989de8140556e1d3927ca01298f965657f90233a",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLeaf.c.hash": "ccc675d6c897d709e600e85e28effdfeb086aea3a22bb1a51963435a502cff54"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterArgsLoopReturn": {
+    "owner": "P",
+    "key": "e5a4ac03afe1cfb8",
+    "trace_sha256": "939c2ee05d1441f6992c0cf2c4aa16212b103eca0fda488c6a01488c683ed317",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopReturn.ilean": "bfc46739de530e59e3cf2151c366b307f97ecfdfdd3d7be60efca394be94168b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopReturn.olean": "c66de2f8d3b410084406783f6d3116b9d4d18ea4146f218d38a651ff3df90d38",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopReturn.olean.hash": "8fdbb18b4cfbdc3738597294e98b234eae5c40d936e9cfb3d7fb653d6e8f968d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopReturn.ilean.hash": "89f31dda431fe92be6b07bf5a175f1eb43f5d13ac0c15e419d4eb92096485626",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopReturn.trace": "939c2ee05d1441f6992c0cf2c4aa16212b103eca0fda488c6a01488c683ed317",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLoopReturn.setup.json": "3f7045768edb8632f37cce184c693b294b5a687bbc19ff7799d5ef2ff7c1c288",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLoopReturn.c": "f82ab43c27ca254cab945dbd670a6ac8af1793960bbde5b7772c3316c25f1b13",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLoopReturn.c.hash": "6cd6b4e34462cc83feb2427bb0b3ff2c0024d2ecc5bbd2c06e4eb87e7d4e6884"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterArgsLoopTrap": {
+    "owner": "P",
+    "key": "34858a221fd14282",
+    "trace_sha256": "9f655e64120e6a784e53897ea5d73367d965628fdded2952e2a72454a827a48c",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopTrap.ilean": "7797fe040d7750ecd1a0d07bb53ed5201706113d2fad04493618fe95b454db6b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopTrap.olean": "65af3122dd0519cc765e40f16304df2f6a5e8e1b5d07305580ceed3d5d6b60da",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopTrap.olean.hash": "22b016eb877b53b30cc1891b32c1f10d06c21f1f22b9a40fe01413b8fe3dd634",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopTrap.ilean.hash": "c60b494f9fe8345960bff5ffa313d18d5fe72405e547000513387b3998fec114",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopTrap.trace": "9f655e64120e6a784e53897ea5d73367d965628fdded2952e2a72454a827a48c",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLoopTrap.setup.json": "dc32b2ef6af10fde90e53e6f7537550e6069a7a506a9c4078870cf5ce5fb0131",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLoopTrap.c": "cfe9c1bb26baea27d81ac55a323db322b669f985a9945e692530f94ddc7ccc11",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLoopTrap.c.hash": "cc9a8c61563dde9ec65874ea108c37b31db28bc087343d48702b0f81920fece8"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonArgsLoopReturn": {
+    "owner": "P",
+    "key": "97ff8f26412a2449",
+    "trace_sha256": "ceadbe8b0714b4eb9d549b2e5a910de12b901c65c4a38e3c407d3744b568fc18",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopReturn.ilean": "7394e72117b8fc869d5fca96ca72359c41eaf6ea10f6df6504fee5f2638d8534",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopReturn.olean": "bdb0a2286d88a3a392511a0bd3e290b087f7875d13c22c25cc15b8e740d2b382",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopReturn.olean.hash": "b362676bd4a3d0403429685ea44f29ad73460e80b29dc2b5769e6a35fa4bb6e1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopReturn.ilean.hash": "02af85cb2ccd4349fed0d13220189d9087cb978a956adec9b5cfbf85b409162b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopReturn.trace": "ceadbe8b0714b4eb9d549b2e5a910de12b901c65c4a38e3c407d3744b568fc18",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopReturn.setup.json": "94bf649244219a1ad333c4a405f6585155cea574450edd1c28da40de0edde5a8",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopReturn.c": "96f97a955a22adff73cff66a64b155a60337c9c6ae411067fd201e50fbd62983",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopReturn.c.hash": "12730d685385fe0b200fd8568667db15c6a2ff9766d9bc4a7fdb4f88e2dcc007"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonArgsLoopTrap": {
+    "owner": "P",
+    "key": "c035bdb8e269178e",
+    "trace_sha256": "cca5e934924ae2f64c88e9c4e212490c7758eb622dd1c1cd0ad27e37e1011504",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopTrap.ilean": "83c09c092ddd177b7455d3e039b482787e6f86d7d43c39b0bed184f5576da720",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopTrap.olean": "601cb66b89e2bca4c756c9758feea350878d683e2e058962c0b2caad2694d7d7",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopTrap.olean.hash": "ef8f4fac1aa7f100a6f2066567c687cf25aa41c81741f9984d52631e728653b2",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopTrap.ilean.hash": "40b9a216a1f21bd8384a5266ea6a680660fe121649444154b20543b8fd72f65c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopTrap.trace": "cca5e934924ae2f64c88e9c4e212490c7758eb622dd1c1cd0ad27e37e1011504",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopTrap.setup.json": "8b8ec1bbaae6cdbc0f4a2c513426e780e6053cf7c2a7cb3c07b4643428e277d6",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopTrap.c": "709b792b8f2c684fbee21d6323ae7ca329386bc81fcacfdaa94be9d246c27e28",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopTrap.c.hash": "29b32cba33495b4eec166789b6dcfb8131f0b788e884b43712a7efb4e1fd253b"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonLoopReturn": {
+    "owner": "P",
+    "key": "5d88a50927fdc782",
+    "trace_sha256": "7168ba4b655790f2812729e86925fd37db15e3e513020fcc7b5f2df908df2f6a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopReturn.ilean": "6e355ec4536fbd2727ac637f5e84c58cfa3074efd0b383b63764107f328eb567",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopReturn.olean": "e3f0772b25069e5b4d3b3aa6328b4e0dcbfcb678e30a2cfca7aee106eb7659e7",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopReturn.olean.hash": "776c5e3dd76d4c7e89a4e80f3f4507cfdc3d14a3b3b3ef162ac97f42c8c7d189",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopReturn.ilean.hash": "03afcd945d3bbd605e5f936e5827a6b3c4cb93c49ba99f1873775f2abc58fcd7",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopReturn.trace": "7168ba4b655790f2812729e86925fd37db15e3e513020fcc7b5f2df908df2f6a",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopReturn.setup.json": "c41d7cf0d2ac43689d7b328ece0d3a22b634b9e6e3830204f89acd248f9d1480",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopReturn.c": "bcdae956a22f3fe25dcb8d94f1491e652e37f10ba9f9d7218efc3774a14e7cbd",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopReturn.c.hash": "47550f9eb4434ddba7f7162f9483bc20f912b2c101b1c5e181ecbceb1480356a"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonLoopTrap": {
+    "owner": "P",
+    "key": "825734ba650aa0d3",
+    "trace_sha256": "71ca84cde0d8a184e74d50ea8a85f89263dfaf69b2754d19179b4b16d4614135",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopTrap.ilean": "03efe5fdd3325939b856ca1af0f84a4a4c6532f34ec5776340be17b79f2547a0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopTrap.olean": "76a62d48ab0b39fe3a90e0c1ca61403a80e90568e72a5349062147aa50326789",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopTrap.olean.hash": "093ec60845bc5613c1c5213652af5a19feaa7ac3e8bfdf27e38aa9a815af5ff6",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopTrap.ilean.hash": "909379188d01d20ab7dc420890955d810ec3b36d2515a6653927c840e78a498f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopTrap.trace": "71ca84cde0d8a184e74d50ea8a85f89263dfaf69b2754d19179b4b16d4614135",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopTrap.setup.json": "a56e7c1aebd8a581db6a7066640a1094ad01fcfaa509634a9269bd55eefd9be5",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopTrap.c": "d289d3e782e601bed53ce85eae73296e137ec38a3dde7d44f4bef3c6f3a4d91f",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopTrap.c.hash": "94f224a5571003de3ff84e7f1e566c529ee5cf19f82700af936bceb8d27259a4"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterCompatibility": {
+    "owner": "P",
+    "key": "0c13ee73835f9cda",
+    "trace_sha256": "5ac0a6ff0a88210e76eb1e4e2a6dae014d2e5c6ccf496f5b28fb9aa5e8630261",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterCompatibility.ilean": "75ae280e99f20b3e069dbe01a17ee9bfaa37e7b257eeb2fad35fd30a1473f133",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterCompatibility.olean": "d127896a8a339f98873f1a9518dd795d52ab7686477eff428d594a5af90a406b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterCompatibility.olean.hash": "f0875815063ccef61a86a70caf35f3c39c3488fb8516871c6cca76c96bd5078e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterCompatibility.ilean.hash": "b21340870697359965a0bbd3952e8af7e1d56013658c66e01c02aefd1a1505a0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterCompatibility.trace": "5ac0a6ff0a88210e76eb1e4e2a6dae014d2e5c6ccf496f5b28fb9aa5e8630261",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterCompatibility.setup.json": "979c7e432a297e2c0e2eef160f9e7996dde8c56de7552936b44e40c8bcfae99f",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterCompatibility.c": "ac70239194fea2218335bb1f2e9b998d81967db12b7c4797e30c9d2c16bcad20",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterCompatibility.c.hash": "c1ce2f76008d2a2ce3d2017e57954484dd48b5c76cec388da79732a279ea2118"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonLoopCompatibility": {
+    "owner": "P",
+    "key": "7ce289c61b2651a6",
+    "trace_sha256": "620f7263af40da811ce36ff8f90f68b737d00463fc8a436ed6cda076fc3a8a7a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopCompatibility.ilean": "2e60b32a72d73ebbcf953b9bd29bc9117bc6b65941fe148b5f2b4a0fcdef7af9",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopCompatibility.olean": "52b1e5db657305c1a4204e61923e6f581fe45b23100f3391b2b1c5b928997b5d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopCompatibility.olean.hash": "4493142f8923bd469e91ebc0d15f8487ee9d4161c772f52b5aa3376a3db9eb05",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopCompatibility.ilean.hash": "4e43978444a1dc959d6edce1224e34dc9f2335f5c071616d3b525b141fdbe2e1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopCompatibility.trace": "620f7263af40da811ce36ff8f90f68b737d00463fc8a436ed6cda076fc3a8a7a",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopCompatibility.setup.json": "284bda81dd6704d0ddccf4b516136940d62aa4681833552f0b741bcca30d83f5",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopCompatibility.c": "cecd89cd36cc31c0e324d30189844eb5a2692efbd3036b44e5a9521c590379a2",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopCompatibility.c.hash": "124fdb0f50d248fc152224addafa3ac05a95051a8c18fb2e27949c31c850432b"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockConditionalEntryPrelude": {
+    "owner": "P",
+    "key": "a777ec15978a6fb7",
+    "trace_sha256": "49874e0cd856d53d7ca3b15daf17342be0fc516860f6b713d43a5ffcbc9e2737",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalEntryPrelude.olean": "f4c5a2c4c49f5a4bbf6da6e5c31271e61607bbf463e9771ca7d823a8975ffe4e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalEntryPrelude.ilean": "e0af3cda5f3815f32f2c9a91d56ed02b86f983f5058f571df907b4f5fbb41ddd",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalEntryPrelude.olean.hash": "849219e20f6f4c115303f32526b0b18ddc4b04146774c2b4397a25f55abce369",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalEntryPrelude.ilean.hash": "74c03e0c358c965f0bb6d47637deccf228ebac937e26e3029bae32b9865d96ac",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockConditionalEntryPrelude.trace": "49874e0cd856d53d7ca3b15daf17342be0fc516860f6b713d43a5ffcbc9e2737",
+      ".lake/build/ir/FV/Backend/Proof/StockConditionalEntryPrelude.setup.json": "f67152ca60d263516cdc359070323c777b82d71b80e8ff20daa8ae4a265a680e",
+      ".lake/build/ir/FV/Backend/Proof/StockConditionalEntryPrelude.c": "9ffa82e37310166bd48f7c2b8b5d4242aafabe447ff2235e4aac768f2feacfd6",
+      ".lake/build/ir/FV/Backend/Proof/StockConditionalEntryPrelude.c.hash": "1a3b327ec401a1a70d217266a6e694532af8bc9a8ab48329031fb0c66e805a61"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterReturnPrelude": {
+    "owner": "P",
+    "key": "438def1ae40a4f68",
+    "trace_sha256": "5fd0d8f8a74e4a6bcab781f98f0ae3cd72a333e7b71a3f75a8dfd1934bc0dc4a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturnPrelude.ilean": "50760925663e39808f64d87052e075874f4c2fcc949e600c737cdf04057b239c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturnPrelude.olean": "e955bbf29d760878d60ee3f07771ec7a0ce3ba4559c469b8a00a5428122fe9f0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturnPrelude.olean.hash": "2c47d861e3cf68e9663d0b03d4b313d41957ddf4db3630ce7dd0f5f7b5bca2ff",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturnPrelude.ilean.hash": "17890fc3a3586295319a800770540d505b84897de5426879dba190233aa7d177",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturnPrelude.trace": "5fd0d8f8a74e4a6bcab781f98f0ae3cd72a333e7b71a3f75a8dfd1934bc0dc4a",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterReturnPrelude.setup.json": "5ab6dcc4a4667967cf050e724493ddf341837e4d70c3613511e00e14b5411a89",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterReturnPrelude.c": "5efb410f0ad6cad455eac447ae4c3f03ece7f0c29aa44b73902e22e7d1358d30",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterReturnPrelude.c.hash": "24b367175ce8bf7ebe8cbec292046fb9c4428817f35d3e7632c397cd80176b59"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterReturnEntry": {
+    "owner": "P",
+    "key": "1201fc975efbed33",
+    "trace_sha256": "afc83badb87f15962090f7ebad93f220c6fe62fc93fd4b050c0a60b02888ada5",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturnEntry.ilean": "f08200c53fcbd92dbeb1771f2fafd8f6ddd218867e3279a42cfa9c649d436a4a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturnEntry.olean.hash": "0584d3b0f01973dcc0d00289744846acd3fdf4d18cf760a4d3691f42ad4181c8",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturnEntry.ilean.hash": "b085ac2436ea836c446cd5287d72a70abf6acb2b342f276149797207ca272477",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturnEntry.trace": "afc83badb87f15962090f7ebad93f220c6fe62fc93fd4b050c0a60b02888ada5",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterReturnEntry.olean": "226d7ebcc1d7d282300e93f912b9534efd856122aadcd722ba728e12ddb504ed",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterReturnEntry.setup.json": "e53394dbdd0bb69d25e7e573e520d20989960574e5d9f830ecba74902374c1d9",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterReturnEntry.c": "f98a85d7f4d36132c1d2087cd88d6df2b7d3750f9b32031a6a08a8420f0dd675",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterReturnEntry.c.hash": "78a33e9751aa73eb7cbb91e81ecda0da0c3c658ade93aacc38ad26bab74fb4ad"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterLoopDomain": {
+    "owner": "P",
+    "key": "48ab415c0062cefd",
+    "trace_sha256": "fd7e144ee87b6ea5feccfb29af222063f5dd664f3f08db34473d2135d0757fb7",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopDomain.ilean": "3ad0e8b82e84dbbbbb33899f6a35ac6241699d3b4f07072f8a57c3c6db4ec2ed",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopDomain.olean": "ec475c5079e2422f99bf94a803028fe6c11ffdb602995cdcfd3a99862b24c566",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopDomain.olean.hash": "0405470e777e5b53c6b2b4433dcc61c330c7b488b207ced797c763de8e49c226",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopDomain.ilean.hash": "ef1e933b732ef0f36736d80e736fbe3681a9ee91f388506fbdeef6d2281d39fc",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterLoopDomain.trace": "fd7e144ee87b6ea5feccfb29af222063f5dd664f3f08db34473d2135d0757fb7",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLoopDomain.setup.json": "dc9c6653dfe6d84fd65ca242dd7a1cd85b60db6d90160c4c4cf41a0065959a39",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLoopDomain.c": "11277789358dbb17c730238a2ffd52822d903300dfa8e14fb125d8f00f424c9b",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterLoopDomain.c.hash": "863fff0535b59493a74f9ad75adc77777259336597f33a935c08a689df4fe537"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonLoopDomain": {
+    "owner": "P",
+    "key": "2fc9babbc03772db",
+    "trace_sha256": "c203185529d558bd4420b4d62321fc449ecea5125e213d3b44f517a6399711ba",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopDomain.ilean": "d85d2d82b945557c98d47a4ba07d97091b4628052d4710334055a8b8db641bed",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopDomain.olean": "21da9979c7af4cf5318550957b5293111de615703484b8e34994e3ce5ee229e0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopDomain.olean.hash": "e1b1b8876ae6f4f88c1d8af1643b411796e110ef25ef079b79071627f6c8274b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopDomain.ilean.hash": "4862fd233d3cdf12dcdfb72c68e107740466ad5e4208a638fe1ee5f2e4edbd04",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonLoopDomain.trace": "c203185529d558bd4420b4d62321fc449ecea5125e213d3b44f517a6399711ba",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopDomain.setup.json": "ae575722ec13bf2c09b5ad8c1f37dc066406a96d1a4466d428439cc4f0ba362b",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopDomain.c": "7e19f2c5a3482f05c82b2569fd0a2eed940783bb94809a58aa0446102478fd64",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonLoopDomain.c.hash": "2d973aae0680d2ce1caa15bd251b06ce34f2b58a99b20f2fded260b88f1e0349"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterJumpDomain": {
+    "owner": "P",
+    "key": "ef582fb7b1b66a64",
+    "trace_sha256": "1542eef52a81c60463ec9b90ff7f9a10faf67d0870d5cf35e868c5e4d847d846",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterJumpDomain.ilean": "708975748ed5135d34a7b40af090656f28e8d3c330ec3e3530a249a53d007496",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterJumpDomain.olean.hash": "c2310213db10e2aa093b927dc8117bf19f0cfff4e4bb59b9da06a99819366df1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterJumpDomain.ilean.hash": "95f8b922cdabe90942421cfd621bc6258641d2b5b0ea564723707df772793e15",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterJumpDomain.trace": "1542eef52a81c60463ec9b90ff7f9a10faf67d0870d5cf35e868c5e4d847d846",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterJumpDomain.olean": "ded74631862ceabb48cabfc6695dbd8d70dfce26cde8ca435a007d786d8102e9",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterJumpDomain.setup.json": "46a3d3f06adb4a5b8aec94733d0bd0c9b34d32fe98ce8883e44ed934e3060685",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterJumpDomain.c": "c301b5dfcd3f08e1286642fd9405416b0c34e80e8e3c9baee33fa0b6f56e77d9",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterJumpDomain.c.hash": "0c5526fae58d6f005f74d9d8b7ab091ce40a27155730aed94a3a7353ac35b4d0"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterConditionalDomain": {
+    "owner": "P",
+    "key": "c0fa407fcbe6e74f",
+    "trace_sha256": "f2aa6dcf71c03d22685bafd5e4eea499200fe1e26b00a225b4653d3a7e9642e1",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterConditionalDomain.ilean": "d889d0a29e19e5f67da9c7f2c1b0c30fd2f3f359c1b5229b36dc20e6ee1b99e3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterConditionalDomain.olean": "cd85867ca8f4899a2d77918baf5bfdd612d41b045f6f46df9b8e0e6cdfe525e9",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterConditionalDomain.olean.hash": "5395c2096cc5c82f1d6c40099e13e5d1c2cfbd82bcaa6a5db325ca0c381650a0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterConditionalDomain.ilean.hash": "bd00a4660e7d9ce98f53737fd5b031a5ec5ff0d8abe017503dc5b636439c5aa8",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterConditionalDomain.trace": "f2aa6dcf71c03d22685bafd5e4eea499200fe1e26b00a225b4653d3a7e9642e1",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterConditionalDomain.setup.json": "d7b4519fe373913d36549b98d7209a0b4841d7a7721691626316776a68de9906",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterConditionalDomain.c": "fcd81e9fbd218cb2971db16460b79e69b3581216404de0dd9c2e5bbcc4a3df2d",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterConditionalDomain.c.hash": "c97bc8f76e9030474d543812d94d6fe207d4b2566e79584a4964f1987deebcbf"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterDomain": {
+    "owner": "P",
+    "key": "f3a71debf6ac147a",
+    "trace_sha256": "be08103d867108836a3eb9e7ed14edc9fa37482adab8cd9eb35705e96b8e8227",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterDomain.ilean.hash": "8866527b993a10fcee77b425e506dd2bad133f8ae88ab6be3f78c35f2c227dc4",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterDomain.olean.hash": "01040dd3bbaf330c235f11761ff9014f7ad66c1892546971db3a8292e9818cc1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterDomain.trace": "be08103d867108836a3eb9e7ed14edc9fa37482adab8cd9eb35705e96b8e8227",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterDomain.olean": "cec625448b8a636f7e4b76d02eeadbe616eb3e89a45b320b8e57ac29aec519a5",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterDomain.ilean": "66cc18e203fb9f9c8e1f52d713ad06b0664308e9a7bff1de8e637a310150d6c0",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterDomain.setup.json": "016087d964ff86c80900af4d64ea961149eddd4252be6449dbb69d1af81b8913",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterDomain.c": "da913259ce5e8b9b29f5ab9468bb7e49e79a4fd3643f2f2699a005784cbf38e5",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterDomain.c.hash": "99d06f1a40448e5c9e5ffe659930fe97edb12735b3e8bac536bf875f67a67c5c"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockScalarDomainAt": {
+    "owner": "P",
+    "key": "69a855b3bbf8cebe",
+    "trace_sha256": "7f7e64e156c22c0b534f01d80681bbf23a1605a214fe65b394e1e67b18955122",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDomainAt.olean.hash": "a1a520914de35b8492ff7dc13db3f8ddf2cf64abd566a4004be9882e6d756d69",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDomainAt.ilean": "de4c62f14c270a24ac22a9289e8c449022a6c54d359c1134c7aebe793a03d2b9",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDomainAt.olean": "4d668728d0eef3aba48027dae613eae9e220e7d76e22c9cb8153e1147ef1f482",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDomainAt.ilean.hash": "e097e866cf65532412ea710e1457f32ed30b6b4d620dbc1387773f375e7e55f7",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarDomainAt.trace": "7f7e64e156c22c0b534f01d80681bbf23a1605a214fe65b394e1e67b18955122",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarDomainAt.setup.json": "e3044e76ecd9f6c241e0725eb4a883131053274518ce0432e4c8d30edc1fe0a9",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarDomainAt.c": "4c7c097cb5c42549de15278443b9d0069fcf4406655c61dcbac41fc13a825372",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarDomainAt.c.hash": "c9b068d158e076e02ca2a46646818d5f9320bc6b411a3e89c25f951d3d41f304"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterArgsDomain": {
+    "owner": "P",
+    "key": "e2da50f5216d36fe",
+    "trace_sha256": "e7f842e33ab8c2b3f00e0803dbf3b717b941d9550ceb50ea1c2eaceaddb6184c",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsDomain.ilean": "7ff691fdbe9e6a5a4175e47b5559354d26babc0c29eaca654a5bbb13f598ce7e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsDomain.olean": "17c77fecd46e61b77886aba5f85cf11d925914cb533fbe81226017ae02d6ad52",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsDomain.olean.hash": "c5fa11806268e2563b753f90c4f83a03e217ab7d04155e83144b3f670ea0d8bd",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsDomain.ilean.hash": "69d346e340b81b10dcb64b88d4821e945bec70c57c76b2b47a3137bbb9ca82cd",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsDomain.trace": "e7f842e33ab8c2b3f00e0803dbf3b717b941d9550ceb50ea1c2eaceaddb6184c",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsDomain.setup.json": "7b6d1a04862c36291734d36ce53521dae2d3e3650876c869a9a642f80b1a09d9",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsDomain.c": "b9f3135a8cb626a83688be54defc8bdff84d7e920b06fa6e3b1a051c21d7e118",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsDomain.c.hash": "e655c0429ced4c47852d37f5c96818c27e8d160aa3c8731fae54f11f2d6ba331"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockParameterArgsLoopDomain": {
+    "owner": "P",
+    "key": "d6cab878afd3611d",
+    "trace_sha256": "bfb5e6bf9d34e2259ee6f319fc24d9ce759cda1e6a75f841799d7966e2b7a9fe",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopDomain.olean.hash": "44ca0f2e9e4e892860abd4a886d04c49a56d16ecb119d2737aa6ebf572f58ba1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopDomain.ilean": "7bb62102f4413a8593d201911629b617244f5dc8fec8cecdadf0697f80f6b26d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopDomain.olean": "61dff812676235f28c6a09de6ff2369f6fb2cfeca83200fe1629f4fa6ac8e287",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopDomain.ilean.hash": "82c94b220529bbd2d76c70323b7890bbf42f40d831ac2200a2cf0209f73a020f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockParameterArgsLoopDomain.trace": "bfb5e6bf9d34e2259ee6f319fc24d9ce759cda1e6a75f841799d7966e2b7a9fe",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLoopDomain.setup.json": "414519bfc97e482101cbba54ef6c9fc0088da837252eb5e199fce2d3d0efff2a",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLoopDomain.c": "5803ccfc1a44935793f0de9e049ce2d0683e80b9f5433cd41da2e76e3498d08c",
+      ".lake/build/ir/FV/Backend/Proof/StockParameterArgsLoopDomain.c.hash": "f9f8ba522119b6c16b5572d191b0fedbafb8c6fbbb41452bd390f4983d425a59"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonArgsLoopDomain": {
+    "owner": "P",
+    "key": "247c7c7c72ad28f9",
+    "trace_sha256": "fa5784fabbea87d4fa2582d90fb4580915a9345ca9be7fbc948272b72a468213",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopDomain.ilean": "344ef5ab6ca6eed158f717daf7a6d40c7ebfce3f6e02bcd9440539a831c1654b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopDomain.olean": "bbeddb22a0c98291ec18c60cb380e8335d377e1faba9e775ed75df48b925be27",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopDomain.olean.hash": "12b348079e987249dce64616121cc0c9b118aaace3e2f92ff9c2ffc4c089fc6d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopDomain.ilean.hash": "3e40f82bd2564ea572e3125f3596d7878a93afa48360915d23b7a665a4ec647b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonArgsLoopDomain.trace": "fa5784fabbea87d4fa2582d90fb4580915a9345ca9be7fbc948272b72a468213",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopDomain.setup.json": "e945e7860102622c1676a027bd683b498654a86ef44f5c872c087742de7e3ea6",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopDomain.c": "62832a0791fed7d5b33b31a38ce63dab5a2704b39f2e8d32c984cd184909c684",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonArgsLoopDomain.c.hash": "739420527b2ea55804669e9be0978a61e20b9ad0a5b5c081f2c5b3dfda0db2fb"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonComputedLoopClass": {
+    "owner": "P",
+    "key": "ef3ff11165f788c6",
+    "trace_sha256": "5567d67b74ecd4aed472a8a344db4f106838c2f180d97e9157f945d124882b19",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopClass.ilean": "53ceb908183fd9221c88ee07c2f2e995dc34d6f9242403aae89e503e58185665",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopClass.olean": "4ce8c53c1413d111bc1dd5133bc3636a968f6b1e47e0a1dbe487db98d6234b13",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopClass.olean.hash": "a0f2d5ba4c2be52f5ca15ae3697baeb760d062e0980fa0cb12ab39205b408798",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopClass.ilean.hash": "36f3419c6916d6d2dd274367ef60c343e17a58941ac18b46cd4000ae5f4c4b84",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopClass.trace": "5567d67b74ecd4aed472a8a344db4f106838c2f180d97e9157f945d124882b19",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopClass.setup.json": "c3c2320d83078af16896a34954c2e39b16df0ceae00c9cb52a9119b71f8a3f2d",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopClass.c": "1c752e59f73b56d9a09109e6eb9c3b62404cba76108bc8601111e2a8697c77a4",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopClass.c.hash": "49d6cc6d4b24427cb3374d7659629e1d62a4af2c232779fdce137c6bddf864cb"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonComputedArgsLoopClass": {
+    "owner": "P",
+    "key": "f683dbc922ae1623",
+    "trace_sha256": "7af6d7d9c754d5587b40f9042822406ac09de6cde8def45d12d55cc03bffb61f",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopClass.olean": "ddaec31afa98d98c327be8481015c47de2a028859e95e0bc3d0390878019e50a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopClass.ilean": "bc5326e503609443666d811bae706f92bd469938b0236e68292124b13ebb1adc",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopClass.olean.hash": "16509b8024e795d32ce16f4eac3d17c898cbd6c7dfeb4da17ee0d432d93bf526",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopClass.ilean.hash": "11e055f2ae80ccfa8a1b968a2e9f5af971ba731246e03f48584be95e09279bbc",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopClass.trace": "7af6d7d9c754d5587b40f9042822406ac09de6cde8def45d12d55cc03bffb61f",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopClass.setup.json": "565dff6d772441d4cf877de04fb3c032c675af431805d3ca4ade88ddbedb5c02",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopClass.c": "b46e0dbc72a5dfa394eeb931937baba0a01f645f23795708d4780114304d1a51",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopClass.c.hash": "85d995998faf093b2c60f3443a76a44e73df070c856aac5e6bea41ba44816b69"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonComputedArgsLoopReturn": {
+    "owner": "P",
+    "key": "586b227199c0eac2",
+    "trace_sha256": "57e22da01f9f428dadb9e3c0e13fd2305d813363fff22ab1a2f8c79c247f01b5",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopReturn.ilean": "335542a23bff13f4a28717a1d1e59a4a4bb3f21a65f7f9d50f17bfb7bed34cc2",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopReturn.olean": "fecc071e0dec49b7548eb874311d9cbe4c3a6ef8296fdf948a9cb23a7fd2644a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopReturn.olean.hash": "6b631aebb6fccebb84b94bd8c8b390d8ba4a9f5c9cf0b6b77b9bbb66023acd05",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopReturn.ilean.hash": "5fee963efd79b68637da94325719d2a467e1edaf87b11fe07ee20fc3515663da",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopReturn.trace": "57e22da01f9f428dadb9e3c0e13fd2305d813363fff22ab1a2f8c79c247f01b5",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopReturn.setup.json": "e5fb65385834372a065e57d65d6bddace393d206b6d44b4b57d53bbc0b79fc33",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopReturn.c": "a53d16acbcaf22887da91970643db0af67213a071872fa4d193f3498b34a06ee",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopReturn.c.hash": "cf64c7316549bad046b085d29767bdc08777ff1b1cfb6a439435852711336c7a"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonComputedArgsLoopTrap": {
+    "owner": "P",
+    "key": "d3dc92b0b1d9cab6",
+    "trace_sha256": "ed488e8c1ad69881b1bbd83c396c4b1a7ba739bfedb22632e3f48096c761c14a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopTrap.ilean": "12e8b62f8264666d5f1225a1fe29d97f86f81ee124ae21058ecddab82bbbda63",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopTrap.olean": "afe67cb35acf88ebe0c18298cd7faa4b671d628027d7081dbafa80fd7d432936",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopTrap.olean.hash": "8565ffb65a1bca9121830bd8b8a6a4842935c222b48f3808f07cf82dd3d2ece7",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopTrap.ilean.hash": "2a59a1144c08d96e4487967bbe054d4ec07c64f02f1b6afcfc041af621b76652",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopTrap.trace": "ed488e8c1ad69881b1bbd83c396c4b1a7ba739bfedb22632e3f48096c761c14a",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopTrap.setup.json": "39b7135c4a7b80325c6920015e847805a883c2680599309a2c6ace4ca9a45d5d",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopTrap.c": "bb84e2e03ab640c937bce52497e15c7acf87bfb37f1882c4c4f3d7e57c8d5103",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopTrap.c.hash": "40962d92a328617209d23a1a06ec5dea9750ea767d775c682d400d557f24e669"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonComputedLoopReturn": {
+    "owner": "P",
+    "key": "e7cbc25ca86ac41d",
+    "trace_sha256": "4165f4e92e544bca8c28456c22d0e344cf0c2c15e9fdad7221faf9f541eea61a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopReturn.ilean": "54644614cf4e1ae850aba009da948e7237f47194ff3cf79101c1cc65c5e8dad1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopReturn.olean": "ff8f7aade377dd6c524aa6f6def38b1fe30a03ee470fb1d2f285051ab3933e45",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopReturn.olean.hash": "4fd14adc76f645fe7726165e4ad227ad1b9a6c01b886deadf920ad3f99e96308",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopReturn.ilean.hash": "36ca6e86fdbd2209d4c2d8f8f854b4ae8516cea5f32fb1aae89899d972eaf01a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopReturn.trace": "4165f4e92e544bca8c28456c22d0e344cf0c2c15e9fdad7221faf9f541eea61a",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopReturn.setup.json": "79e6147d972cbaa59f4a06a031c29bf4d21dac315c612ec5f41c34527db326d9",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopReturn.c": "02bccb3117eba6effe8ffe5c225e623684ea0c5f5248f35d70db03035a805ef7",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopReturn.c.hash": "85aca37919e0adcdd7003c2226b2ea755d35ab0610d0ce71d7be1dce67db7246"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonComputedLoopTrap": {
+    "owner": "P",
+    "key": "bcdcbf6b2dc73fce",
+    "trace_sha256": "48b156e58a4f8b4e2c092ca6dbd3810809a829b9aa81d6f24973113d6c52ef9a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopTrap.ilean": "003211bce8d37d651275a691f47973c4ef5834662c82c223e8f805ff2c1fbbf1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopTrap.olean": "820e0e8cb8b9e2520025ba382b178f711d6130023d63abeaac05c244febbc370",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopTrap.olean.hash": "8673c4d1e0dfdaca16730aee400c50b439ae37f12d8cf6e3b8f481a10194e633",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopTrap.ilean.hash": "763bfc868d4890d8481dba4d71c2e13a4c934c4a9ed87cd475d0561f659e528a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopTrap.trace": "48b156e58a4f8b4e2c092ca6dbd3810809a829b9aa81d6f24973113d6c52ef9a",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopTrap.setup.json": "9626eb9f39535e1c4892fb096eaa253068b2840d63aa1a99b3dadeaf71b98016",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopTrap.c": "a2fca131404344ad5d5ff222d39589921d0ba2cd3ea9a968ea39b92a44981a84",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopTrap.c.hash": "2b8ae8d7c5451cd11d5a2ce10a34caa99e77367c02ad80be250f6ec3ccbbff07"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonComputedLoopCompatibility": {
+    "owner": "P",
+    "key": "386f5e2c37846a3a",
+    "trace_sha256": "746e7a863623978abb6bc4acfb068b8f07e34dc74815df4fe588c2a192285b13",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopCompatibility.ilean": "7943c123598c2d1a56dacf821e7af9b922a7b4797b32d1194ddc707a84ece048",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopCompatibility.olean": "9530353bb0723896058a50a2a367e0f376b79c39f9e5d5bd693d9affe873529b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopCompatibility.olean.hash": "6082e9b847323c011d3ff38b7e245b31bd378cc4a921f0c52e47064e8780ffc3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopCompatibility.ilean.hash": "6f4aa232634ad04ef77c8ed221d5cc33cc029214878727fcda1bf3f555380eba",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopCompatibility.trace": "746e7a863623978abb6bc4acfb068b8f07e34dc74815df4fe588c2a192285b13",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopCompatibility.setup.json": "4a2b0085273476e184dd4f55f7000edf83b98e50bfe93302045e735eb6186acf",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopCompatibility.c": "262579397fee44a035e968611c2f40e820c111b248f78c05656636afe89d4f4f",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopCompatibility.c.hash": "ffbdea3aa5e4a6c21d859bf75de2ca54258ceec58c9a1886591769816df7a70c"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonComputedLoopDomain": {
+    "owner": "P",
+    "key": "3686f4ab7aab06c9",
+    "trace_sha256": "89e2e2155a2ad79681dbe63caf6ac2204a6a143a28dd99e1631274d389965010",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopDomain.ilean": "0629652a8b9abccd57aa0b48f98a7d6bf3e18ed1affebbd8fe8bc0b8cb81f192",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopDomain.olean": "bd71dedcbef24808c99eaa9ab566b1b5152caa593bd368bcf94257ee7c5e8918",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopDomain.olean.hash": "e85ef0e4daa3ca51c6e7592ae9c32e10111981044c6cb2497b8e6a7c9200071e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopDomain.ilean.hash": "5f0a3d518fb9d41699ae6f205d882c2943996120d16ff70028e7932841cd4d7c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedLoopDomain.trace": "89e2e2155a2ad79681dbe63caf6ac2204a6a143a28dd99e1631274d389965010",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopDomain.setup.json": "15c3c78b8ff6496c0393ac6fad8943a264b4ec3ad228c63d624c6e955044b490",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopDomain.c": "c25a3284c9458ea64434ce9ab5d8329d571340d2bedd6dc8a6d7316d74c1dad3",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedLoopDomain.c.hash": "895796429ed4b2b5c9e1abbaf8690a81973e66f195ef113271e0382e87a030ce"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockComparisonComputedArgsLoopDomain": {
+    "owner": "P",
+    "key": "5f440d91d3f897dc",
+    "trace_sha256": "fc09c1898e914d749a01bb47294fc7462f0bae7d2a41ea85699debf529ed917c",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopDomain.ilean": "670d44496529dc31ef5692de72212fe5423da6da55963d0f084d770bac2e6f88",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopDomain.olean": "ad2d9e23673ee91c16dd9da1a7f4643b1b75f299a9ac26537372e32fdcdcd3cb",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopDomain.olean.hash": "9125028e74640028f5ac06daf0c10b10ed73150f617e32c0519e457001f4177d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopDomain.ilean.hash": "37a60c89c956969e19af490c76d22957b122053b2f38ff583d10c417f6f2d70f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockComparisonComputedArgsLoopDomain.trace": "fc09c1898e914d749a01bb47294fc7462f0bae7d2a41ea85699debf529ed917c",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopDomain.setup.json": "82abc20e0c1d37636e845a4518152cad22a452eb1325d467b156567627b62b4d",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopDomain.c": "8aecff07dbaabca22025ceea66f5f08ba8f728c3e928a653271afa00d175ff53",
+      ".lake/build/ir/FV/Backend/Proof/StockComparisonComputedArgsLoopDomain.c.hash": "b49f3d6708846b31ef1ea73613e7737ed66fff517a7cd3cfbf7a6bd4fe489c11"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockScalarCodeDomain": {
+    "owner": "P",
+    "key": "948b42b30c20805f",
+    "trace_sha256": "8cbfc23e3158ac84b979b0683a7cc34a0ee5654b2a75eebedd6d5cc72721dd9c",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarCodeDomain.olean": "049fb59ea6a3ff1c13a1e85c35cb7c7516cd121503573c6640a1ce3f3f309f4d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarCodeDomain.ilean": "d23e3bb0b28fc9298263c965863d43e596239fa068381f0c8b1efd6b885ac183",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarCodeDomain.olean.hash": "7fced6c23175d89b830ced9892f5154d7c4778beb27595e5d8df0f43bfb5a75f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarCodeDomain.ilean.hash": "05689d88ebaa570f30aa2daa2de60821895bb9cbffe93a5fb3a950937037b9a9",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockScalarCodeDomain.trace": "8cbfc23e3158ac84b979b0683a7cc34a0ee5654b2a75eebedd6d5cc72721dd9c",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarCodeDomain.setup.json": "c237640585d1576f32f96486c2da5b213e55cbbc1cc70bfe8a69138889755b67",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarCodeDomain.c": "c40fbe5801cb65f7b390d9105343a9bdb63821b50ba7cb103473032c9b042487",
+      ".lake/build/ir/FV/Backend/Proof/StockScalarCodeDomain.c.hash": "b700fa10582edbf3da468eb7627c0ca8c65d64178849c86289a4b33c5ddfce18"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryHelperForward": {
+    "owner": "P",
+    "key": "0b16c07c8538f467",
+    "trace_sha256": "e5208f89ceb339c8faeae197081b21dfe8b1fb5ae46d360deb68773fa3f5e55a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryHelperForward.trace": "e5208f89ceb339c8faeae197081b21dfe8b1fb5ae46d360deb68773fa3f5e55a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryHelperForward.olean": "cf22baea32adca96e399e52c85489d1e765a0994cb219a831169bba2dd2c9b3f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryHelperForward.ilean": "589a4302049d66207dc45522c7621f18c9356b1984df5aba4b5213f11f4b21c3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryHelperForward.olean.hash": "9acb3820204a30d14af5aa6c0056164a81325ef1fb8b04d125c71356fded3281",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryHelperForward.ilean.hash": "136e6b787b8f65245965bae9191a1016e94b856ed3ca320e15ed0e87f304de5e",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryHelperForward.setup.json": "7abf9c8126b0cf917e888b32a1dd93a74c8b7820afce1a70ffa266b203832eef",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryHelperForward.c": "78b383edc4e457e839cd98004f1775dbf8a5137e459a7331420e1aacbf315c7f",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryHelperForward.c.hash": "64bc96536d175b292ce66f04d46fd916474e436374bab533b861e50842daa8c5"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryStoreSelection": {
+    "owner": "P",
+    "key": "96628302d6500d70",
+    "trace_sha256": "0a0163333a93348e0902a7fe01185ccfea0b89fdb7d25fb1e53b885c6a0642ff",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreSelection.trace": "0a0163333a93348e0902a7fe01185ccfea0b89fdb7d25fb1e53b885c6a0642ff",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreSelection.olean": "7e8edcf2cc0a74ce471602377b289154e1b4813d96b77f8c3533454417a141b3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreSelection.ilean": "0669570602d198c1bb111888d939fbd3b2cb86d0087b55a99cc3abff506bf14e",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreSelection.olean.hash": "b0775e865e8f08d035e7ec2a17542aea59038276e09830960c6ffab8d314310c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreSelection.ilean.hash": "71e3249bd642ca943ae66bb60b82da1f085535354849d901020a4f9e2f3dd6f3",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreSelection.setup.json": "7422320f7ca3e30177c6ffe82a74efc89b6809c676f06879e306154f67e4461a",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreSelection.c": "80bec2a5bdb7ebd0275ffce6d3843d536f9488ca2b5d2ef08eb3931cfc07bc5b",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreSelection.c.hash": "4f6cab71e82df85a94ff8d65e74ebf7352ff9f09f050814ce0529046b00c98dc"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryStoreMatch": {
+    "owner": "P",
+    "key": "7459b158e590ad0a",
+    "trace_sha256": "a038ee87cd5c8a81dcb1ee525c8924d8525a47e6bfbf88eb18b90b457727bf76",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreMatch.trace": "a038ee87cd5c8a81dcb1ee525c8924d8525a47e6bfbf88eb18b90b457727bf76",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreMatch.ilean.hash": "8d92ed90f4921a389477eb0bf7b04f09ce388d13635962d92914c006bf6ac20d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreMatch.olean.hash": "4defe9a89bc23bd9728da7848d45314ad01896010de7d5d051601c7f3b74899f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreMatch.ilean": "997725b91bc19678933bbeda7b8f346bd15acbdc244816e0ec59038aa4a6abd3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreMatch.olean": "712bd6ac0b49e90ccde48262674955b976e5d855732c754e4e6e781fe4ddc260",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreMatch.setup.json": "ef9a6b540888e25df0ade3371c5886c6ecb1bacd02cc9edc742912203c7ca7db",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreMatch.c": "28c3745bf9bd2f30af85c126f3eab42e48868d2d4a2f135bb4e90650068f796c",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreMatch.c.hash": "4cd6ba13b93f2dd6c07701dfb482e2f41f56551866d0bf48474ce37dc75fc768"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryLoadedPointerAddress": {
+    "owner": "P",
+    "key": "9de55f36b4d1bf6f",
+    "trace_sha256": "2c35381f4231952ac50660ee091d6ba7f66f256f229672e3daf599754330189b",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerAddress.trace": "2c35381f4231952ac50660ee091d6ba7f66f256f229672e3daf599754330189b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerAddress.ilean.hash": "f12c2b8c9b69c578dc0b689cd39d3061a8ccac4333579631457174fd4db24675",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerAddress.ilean": "166a6f37a8eed9e6788feae4eb7a6b5f4b77fe48d9bcb765ae7e6895d198f4d6",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerAddress.olean.hash": "f02d87c2a0e9bb96de050be01a78d9a3d9e9aa8219f1687df459af98d8b169a0",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerAddress.olean": "6ea4294255c6304b73984758e4644a35ba4ce2c1ad5a9dd2a340a53064fcc2ac",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerAddress.setup.json": "3e1635186b219cb59181a25e8e90b5c04f37e073241fd167e761b928766e19a0",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerAddress.c": "604a7e24e81923b5127d9b6b44579ea9c0e990f69150842a9531e83063b8457d",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerAddress.c.hash": "6b6960fe85d38f87ec54e024d4a229e34d59361ecbc2da45634a77637b8a50b1"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryLoadedPointerStoreSelection": {
+    "owner": "P",
+    "key": "ceaaa42afb72db37",
+    "trace_sha256": "cfd7d7725379923c953dc248b1c7429d6dc1c283d8112a9d300e7adecbdf83cf",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerStoreSelection.olean": "73dcce2656861f362a4c3b194319737bbe226d5fcf561dbdbfc89d3686fc565a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerStoreSelection.ilean": "aaa47f38db9819f75ba363bb9bd613c78d2d0e23af18de286d817a97b79670a1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerStoreSelection.olean.hash": "7d028c9280745db2eab66379855f7955ce9dc313779331167bfb1b13a8120e6d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerStoreSelection.ilean.hash": "4ed38b355f2b92c9d75fa16bfdb91595b3e02c110263e1a736455822803d2290",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerStoreSelection.trace": "cfd7d7725379923c953dc248b1c7429d6dc1c283d8112a9d300e7adecbdf83cf",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerStoreSelection.setup.json": "1036789e2df414495347aebb0662ccfffadd169487fca30d2cec8578067df38c",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerStoreSelection.c.hash": "6cb7a3027668766461701ed3a33e4ccad7222f1ab9ef46025b6a80bc574fa213",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerStoreSelection.c": "9fcb2359543dd59b09e9a91a9bab68cfff8ec11e4798b2d3f546ab30b4192bad"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryLoadedPointerStoreEvaluation": {
+    "owner": "P",
+    "key": "216dbd542cc3a3cd",
+    "trace_sha256": "b4e06f3ee187a179f26ad3bc4054d55b4abc71f5546b352715382607ada500a9",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerStoreEvaluation.ilean": "87e29d0a8ce93e9b7269028e52c948c25279194ae9bead64a23e393b4c5df4bf",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerStoreEvaluation.olean.hash": "ef990ca2c6977ad8da26d8c2014e737f99c7068557321f1b041cf7d0e16ec00b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerStoreEvaluation.ilean.hash": "bc55270b915280f1c60c7652676b732f70889eb79ad74220d34be8779f5a27d3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerStoreEvaluation.trace": "b4e06f3ee187a179f26ad3bc4054d55b4abc71f5546b352715382607ada500a9",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryLoadedPointerStoreEvaluation.olean": "f060f4430018f5a5d71251de409459f5f2a4dcc11107e32caf62560228d973c7",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerStoreEvaluation.setup.json": "7f5fff593a11015b054df4e663b58a67a45225f248141ae324a2f20ad73725d1",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerStoreEvaluation.c": "9aef7a863ea43dd87586f03d3fc23b5c2d2f86e995eab901a5afe6ae4deb24cf",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryLoadedPointerStoreEvaluation.c.hash": "972a1e4d71064c29f94a90ca6592eaa73623f6765204046eabb0c4e941bcbd05"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockReturnedSourceRetention": {
+    "owner": "P",
+    "key": "8a50d734306aeb66",
+    "trace_sha256": "fa7ece5602e986f58b952047b7a4e7a3e6dde405e77e62099ae26e6d19a936c1",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedSourceRetention.trace": "fa7ece5602e986f58b952047b7a4e7a3e6dde405e77e62099ae26e6d19a936c1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedSourceRetention.ilean": "e9461723577817dff1da20a3406e050c47ead491a44c0ce0962b137a32b842a7",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedSourceRetention.olean.hash": "16832d313b1167c3f60150027d79e868d8f04bcaa196fc646e6d915eb62ddbda",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedSourceRetention.olean": "7b2bfd580dde99b2ea9b7a38386e912c8ccd4e75d67bf4cd8d6630122be9a41b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockReturnedSourceRetention.ilean.hash": "360633f96abc24c6b982c8602b3ec54acaa221436377037f37d1cf63f6413319",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedSourceRetention.setup.json": "c0eba01fb74792a97c5edeb92adc39c0473a0ba89a1b6662159f583ba6cf65df",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedSourceRetention.c": "094fd238f8440a58c565679c123d8142dbace3f65494cbe6ddcb68414f4129d6",
+      ".lake/build/ir/FV/Backend/Proof/StockReturnedSourceRetention.c.hash": "2d10167ff6ad2e4f6c41ad7564da183e91082323e9f6716ba24cb81ff3edea47"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryIntegerLoadSelection": {
+    "owner": "P",
+    "key": "e2baefaefd61c4d5",
+    "trace_sha256": "bb95ff382eae0740c7bd024fee08dbc2456ff11b6a4247976f6a00473092a4bd",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerLoadSelection.trace": "bb95ff382eae0740c7bd024fee08dbc2456ff11b6a4247976f6a00473092a4bd",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerLoadSelection.olean": "026205d76fe782b0e04281cc50acaa2cd02c5bf54098b9075367a28dc9d06f76",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerLoadSelection.ilean": "d780d533f2f17c027d037be67531e3c8afca46ab18098679d7725c20ca93db92",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerLoadSelection.olean.hash": "da5d999cfbef0230490d5cb76e77b0e439a6b1fce2c045e06165d4495b0d90a7",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerLoadSelection.ilean.hash": "2c8af0ed0b15966be2f99dddb98208e6bcd42d1d6283f4b192a0d4b45a597e6a",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerLoadSelection.setup.json": "16ec4ddeaa3560b852ea936c4e6e5e715548d31187c339bec90d35a5d8551641",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerLoadSelection.c": "bfeed9a34dd59aea3b7686a3a93f5933aa898c603702213717f0e47dd3beba45",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerLoadSelection.c.hash": "bed7d166e5a7d4217c08a1d76d10b3495f82f186195bc4eabde25b19a8ccaec8"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryIntegerSelected": {
+    "owner": "P",
+    "key": "02dc4abbd2b2165f",
+    "trace_sha256": "74435b33aaf7c29657d189a7edc653638e34b226068be6f395a24de2aff9bd28",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerSelected.trace": "74435b33aaf7c29657d189a7edc653638e34b226068be6f395a24de2aff9bd28",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerSelected.olean": "0f2965d3fe765673a874a12afa6bca8256abe6c11ea7d9b42ef91f3c36e4d80a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerSelected.olean.hash": "f6bbe1a6d715e603ccb177c78bc956878e4493921c8a925379340fb175256bcc",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerSelected.ilean": "15c1f27ae7dc59ddcc74a77a746a17dc0e1498bd514e6bf9d6d98cdd1c3817cb",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerSelected.ilean.hash": "cbcd92775c1d180cc1e53b454de46bcae8e709fda8bd04bc0591e75863839da6",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerSelected.setup.json": "0286c60572b09cb91b706514005ddf11b7ef409cd8934e19cb877cf9d049845b",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerSelected.c": "3e8f18901ecf61bf24760a4878409f80498a8ffcc0c52ab8139bfc6108745fab",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerSelected.c.hash": "62ec55b8f64c0d7a558c70fdd590e69f2e868cd66bbc1b1fa29d5912067c4ca7"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryIntegerDispatch": {
+    "owner": "P",
+    "key": "c55a46b4741d9a97",
+    "trace_sha256": "88bc036c7466689a43392b2e2662362bfc2c86e81cb77fdebd9cfa3106b1e24a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerDispatch.trace": "88bc036c7466689a43392b2e2662362bfc2c86e81cb77fdebd9cfa3106b1e24a",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerDispatch.olean": "a599d0b4660f3b26f9a222eb61e187c0d2cbc31645af28afbc6ec1c9bdacdf76",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerDispatch.olean.hash": "7ce1f0f999cfb503f739a44e67ba82b5601f586e645de82ae238ffcc820ea9be",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerDispatch.ilean.hash": "e8006fd94f27d2c56e6cc34278fc5d7abfaf9942259c3e149d5e7195fbe17931",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerDispatch.ilean": "13203c62b604e6f858afcd55fb6db3c43e4eca17d3a0ea8b65b0b9c1b8911421",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerDispatch.setup.json": "5b560a9281af7f0fd0e1a5a2e92dc3df8c5cf779fd3a9a889d4842e76787a97c",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerDispatch.c": "58856690447ed1acb81b47082ca0705366e5ebcfbaf163c70d86a6160cd22673",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerDispatch.c.hash": "e607f07fe2d961c654078816247c82b7c4e7f57305e385e359ee824cb314b939"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryOffsetEightAddress": {
+    "owner": "P",
+    "key": "5c2f1d03c117c01f",
+    "trace_sha256": "1b9fd4939590d228ee241c1cb1d0b1e913b6b7e47e0576a0537a9d9cb9d620c3",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightAddress.trace": "1b9fd4939590d228ee241c1cb1d0b1e913b6b7e47e0576a0537a9d9cb9d620c3",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightAddress.olean": "814dc882b82c5d252aee0b25aaeff75095edb65dd13e56b8b3fbeab5ff8e1aea",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightAddress.ilean": "39e0cfecd56c3cd9970b8534d732ec56c2eae0d77d4719cf8a509ae020f88605",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightAddress.olean.hash": "d6d474ebf980f1e7ef8b7f9cc6f71872758447b6ba2cf80f1766fedce459ed23",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightAddress.ilean.hash": "5e2a0bbe602dd7da8dd81063c54d32044bcfe814a618ec9bc8917142418150aa",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightAddress.setup.json": "a67fc66593390db7b975d87dff4f7513471c8b5fa13d4a2da8c46ac16bdfd57a",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightAddress.c": "feb9a630734321b95c2679fbbcced23cface233d105cfe252dee78e86d000aaa",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightAddress.c.hash": "22fd4b81152058ef32cd00762ff6dacea19683421f818b7a0c8aead2c0f977f6"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryOffsetEightLoad": {
+    "owner": "P",
+    "key": "f2c46efc6b752d50",
+    "trace_sha256": "16aed0e4603fe0ca675e3464b60d343a9ce8b448e928d7862472a2f4243ec8ff",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightLoad.olean": "2f25fedc21c74e1e74557a11e052f78df0ff5839a7320f1bcd37d9a04a221794",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightLoad.olean.hash": "416a322a72854b6527a0868603481326d1172da6a0e3af5353a434f61914f2d4",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightLoad.ilean.hash": "a306eb260e6cdff9d5d4e2698ed04811fac496294707fb65e911932e8d7855cc",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightLoad.trace": "16aed0e4603fe0ca675e3464b60d343a9ce8b448e928d7862472a2f4243ec8ff",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOffsetEightLoad.ilean": "1f76c293914796ad5cfa4c91a4db810835af5ca1bfed18d48093215dc2b6b6c8",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightLoad.setup.json": "f9d460f1e6ef71856ecf768aefb4f4508db1879dfa111c7f1a1fb9f716ee8149",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightLoad.c": "8b028f228fc621aac56a42c75bb46af6df66a7ae4355cead7ad9f8bc6ea61e5e",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightLoad.c.hash": "3cbb938432f5d7d191d5e7a46a2cb3cdce357f939b34d7d1b696334eff3c569d"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryIntegerRecordValues": {
+    "owner": "P",
+    "key": "73ebebbcc2ca9e36",
+    "trace_sha256": "d1e60aff19aacebe2dc909592c653e4ba8b6b66405c03989b5770302b58a6dfe",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerRecordValues.ilean": "88fc95acf7d676a87c7ea6a2e1bac4c9ebee79365c9c908190855096e84c3e47",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerRecordValues.olean.hash": "c3b1099ee1fa83f55c41fe21d2290f2f5f709563084e648c146176914252217b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerRecordValues.ilean.hash": "2932974905bff09afa35b40da5da7fc181794369c37cff9f7cd5c29c1f8074d6",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerRecordValues.trace": "d1e60aff19aacebe2dc909592c653e4ba8b6b66405c03989b5770302b58a6dfe",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryIntegerRecordValues.olean": "b04cebd6b49247316ad83ade631bbf00a607582076ff305f515e1ae9ef56f0e4",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerRecordValues.setup.json": "8c782fbd4a9e236c5d95554e90d116b2450a0a3a82fb81595922f82e63dc4935",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerRecordValues.c.hash": "3d69c7aa3946bb4ed6b5ae7587bb07bb6ce97c72134e2f8d005a092482a085c0",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerRecordValues.c": "2ec8806bcc9b407661af751d2e58133897bf72964eb4e42fad3f602f6abdec5d"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryStoreContract": {
+    "owner": "P",
+    "key": "d2cfc8df0a7a9afe",
+    "trace_sha256": "259c7b54375f67133e7577fc9b72415315777910763b2ea997756959a12c03e1",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreContract.olean": "72b2fa04b9b098e6913c06ec1dde34d51365858ffd4976cc9c218c2fa3cb2a62",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreContract.trace": "259c7b54375f67133e7577fc9b72415315777910763b2ea997756959a12c03e1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreContract.ilean": "733f2dad7da3e0d60817e11015a9907c92db9a82a0371fc33fc34908a7540663",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreContract.olean.hash": "8bfff3cdafac5cb5a011bf536dcb010eb135251c423f6ae094833a535ea22c4f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreContract.ilean.hash": "3865948a607feb57458bf46acaf7408dc47219a49920de7bcb4486327f2aca54",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreContract.c": "7e30cfcf27c9adbb262a69207ef8750eaa94f67901e23b4f7fa193fcc2439c54",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreContract.setup.json": "7c1d114dbbff2b88868500ce05f0135f0476c9c2887eaa8dded78024356bf44c",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreContract.c.hash": "821aeacaa162ccd6b87f4af1352e647aeaf64fb43995836d2fff24438b840c72"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryReturnRefines": {
+    "owner": "P",
+    "key": "7b8684c25ca93a7a",
+    "trace_sha256": "4d8ea45e6a936b47b4bc27b471450cb0ee95e7464d5152f87559a7234977069f",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryReturnRefines.trace": "4d8ea45e6a936b47b4bc27b471450cb0ee95e7464d5152f87559a7234977069f",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryReturnRefines.olean.hash": "b5fef7845f7be4ceb81f66827d90592bc41f066a54c2d88a96b7353fe49f2eb8",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryReturnRefines.olean": "cbc3a4e83f4e04e3635f86fd351361fe877df9976e4a982e89686f1ec9893b2d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryReturnRefines.ilean": "96b8b4022f3cfa07782c4575c08f1f454feed8a4c9c6bee1c95d329f74e3a269",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryReturnRefines.ilean.hash": "9fa48e17e826a187c2de380ef18df4cabe7b0b4c465812e0e7d685aeb45b761c",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryReturnRefines.setup.json": "6acd87905ca790273f900ab2f53689eb228c1cbad3aa29a77380ecd0b724e5ce",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryReturnRefines.c": "75737ef9fd6dc7edc055863bea36117f4c4c29d6185bcbe74669485252de438a",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryReturnRefines.c.hash": "60b80ea6dfd151546962db8b3ff6c9b92f112b96b9cfdc3f188d8fab69f3f339"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryExtLoadSelection": {
+    "owner": "P",
+    "key": "91764ea8e7d48a3a",
+    "trace_sha256": "16990dd3db43f9d8708d368e92c767143b1aca695a2ce22c5aa748252e2ed269",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadSelection.ilean.hash": "23fa5b16d26922b883e7717f5211b6cd379513642976a3ff2c4a101d2e1d5d74",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadSelection.trace": "16990dd3db43f9d8708d368e92c767143b1aca695a2ce22c5aa748252e2ed269",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadSelection.ilean": "f6faa1e06fd79e777221227b939153a3408ee602ea145f41acb5d6513e3f4c94",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadSelection.olean.hash": "274a0effdcf5f2ed28a6889c0bea8da96229de7aa496aa07b2492637cb67740d",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadSelection.olean": "d3c95ad863353c683959630fa9cc42216f888861459ca19271ab1154b0236dd5",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryExtLoadSelection.setup.json": "7372fa622ed23146dd89f86f196f59f78749a59ffc5a445e51e4989a44791322",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryExtLoadSelection.c.hash": "0c3c9027b94e88c43eb13823d3fadba2653dc25627d88b5e5d1b0590334e15cf",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryExtLoadSelection.c": "0340bab1f90aea6bef892310edc801c98d4f7a05a466208b728c72dc26f65015"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryExtLoadMatch": {
+    "owner": "P",
+    "key": "a678420d3283f342",
+    "trace_sha256": "cb7eaa2c5205a2c6be95e5bcb9cbd6e8fc7e49049f015c9c77f5a130a648c5b5",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadMatch.olean": "61c17996d31e9151f9b87e6c9af597ebaf9dedfafa7be79bd6407fa1640be1d1",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadMatch.ilean": "3130fe6aef430f508a4696f9f04f75fb80ffc9c4ac3958bc7e9b3c8967a0cc65",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadMatch.olean.hash": "7019f4cc77daa16ef362eae9d896c62001d19280a1a43907609e8ce9eab3dece",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadMatch.ilean.hash": "8c7a701cee09700e3656cc404b5797f20c4b610213221b72f9feeda9a3151b4c",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadMatch.trace": "cb7eaa2c5205a2c6be95e5bcb9cbd6e8fc7e49049f015c9c77f5a130a648c5b5",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryExtLoadMatch.setup.json": "aad065c9921c80767cebec3c160e4b99bae2250d2db8fbca42a04f0dfa8cc04b",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryExtLoadMatch.c.hash": "7c3134583841ebb59ef8bd394275c1125703a2f500faea3587a633099cc3d965",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryExtLoadMatch.c": "2c54258036581ac41fdbde469527afa1610f49515b2a75ea32763f19e19de2e3"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryExtLoadRecordValues": {
+    "owner": "P",
+    "key": "458f3d59c5216cf9",
+    "trace_sha256": "64832ecdfc25025ed05a90cfacbe6060f0e0f117577211bf3acd639de8cf4a77",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadRecordValues.ilean": "2f426caf5ccce045c66e7146f1c2f0f6be970811ee21d7cb175a895492654b08",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadRecordValues.olean.hash": "cda17a0d77c1cf48b29983784e6874c06bd4be76b0c7cc711e8d22b46ed95676",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadRecordValues.ilean.hash": "1aea27d67e1ecabbf9a221d65aca4e24a34ea77539fbbfcc3d74abb22202e809",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadRecordValues.trace": "64832ecdfc25025ed05a90cfacbe6060f0e0f117577211bf3acd639de8cf4a77",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryExtLoadRecordValues.olean": "800e85de1cefb9abbaf9f17dc999e7fbb24f86138604129921f5c90d9794ec59",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryExtLoadRecordValues.setup.json": "efb697b5f7f34898d0611646bb4df27ab06a84dd3af199f7f6eb5cc182016fb6",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryExtLoadRecordValues.c": "c152dadadd0f0064d7d4d48fd263d4d7a6cc120b2b00fe00c7707196e2396157",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryExtLoadRecordValues.c.hash": "bb2f6746e27c762144d147a3552b9af4080f2cf742b2b9121d7d6ae4b3a9e829"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.Backend.Proof.StockMemoryStoreEvaluation": {
+    "owner": "P",
+    "key": "ec89f919ce090773",
+    "trace_sha256": "6a0b9242a18c6b56d3fe6f3441931fd0fda78e8c2b2c50ec591893e5beb936ac",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreEvaluation.olean": "bc4190b78579bb12fbdff28b807273818a735a68c0235c7a86270418c1c05eff",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreEvaluation.ilean": "3f0f128f479fdc49e13f0236797349c06fd913e9a77ade5614fb907c0f33b2e4",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreEvaluation.olean.hash": "4d0459a398f50763e9f8f8925a2380bbd1fd01e7d2191d97302dccc5b50ff24b",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreEvaluation.ilean.hash": "d310b6a483a68ca693403ed962f93e32677ed0adcc04b5792fad1160cd8f2e22",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryStoreEvaluation.trace": "6a0b9242a18c6b56d3fe6f3441931fd0fda78e8c2b2c50ec591893e5beb936ac",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreEvaluation.setup.json": "23bb1160267318cf2ffa4babd02b33cfb6bc3b0ccb521f3bd841656e47191dc2",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreEvaluation.c.hash": "eb4998ec872df259f67bf02419b34537eb59f9802603a734bd7755fa1e315a6d",
+      ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreEvaluation.c": "ed9ae3b3d5d2b2f21af9ca36c1e9e3964ca2ebd1201b362f2565e29ea0c98f94"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadBitSteps": {
+    "owner": "P",
+    "key": "843301114f022c3e",
+    "trace_sha256": "73897781b4cf570e9e0f419a518a204e6a666bdfe5bf48f65f3194222379cc05",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadBitSteps.trace": "73897781b4cf570e9e0f419a518a204e6a666bdfe5bf48f65f3194222379cc05",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBitSteps.ilean.hash": "71fae83590de7c516c345427d83ee2a1f30308fa4ce8ae2e907cd8ae770956f7",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBitSteps.olean.hash": "c13836fab8237e65a9a0916d65e9cce64560150b2eb8a1f31c4501203bd9c563",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBitSteps.ilean": "f299c7a23e814ff81b4877308f67b0efa5ed2f2f60959fbe677581712fe1edc5",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBitSteps.olean": "324d1b7af8de3146277652e945306e46e5738f63904111e11bd13509d42b2688",
+      ".lake/build/ir/FV/E2E/ABIReadBitSteps.setup.json": "7069331e1fdc882dec336430715cf8fafcc28374a9bf21e958e16acaac9b6fbb",
+      ".lake/build/ir/FV/E2E/ABIReadBitSteps.c.hash": "bf2bbc5b64134373048721b1df573c374d3c3b6df0e4546e49b22f5caa95e88a",
+      ".lake/build/ir/FV/E2E/ABIReadBitSteps.c": "f2c156e163eef50dd6595f18c8affd6d5d003d4ee03ddc4ed8b62de4a4dc505d"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadBooleanSteps": {
+    "owner": "P",
+    "key": "fc7522b05d3c8960",
+    "trace_sha256": "6b0251a9b6942855ec71f281afc9a97511db74e6d8f0251c31f67e7167546e10",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadBooleanSteps.trace": "6b0251a9b6942855ec71f281afc9a97511db74e6d8f0251c31f67e7167546e10",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBooleanSteps.olean": "2f37c80864c948002713ab801fb7c968a96c8f363f8ada4608429b2e5b27f317",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBooleanSteps.ilean.hash": "39ee2438b44bb674df59ae893be543057cd51450505e7018f855f79b00e10bec",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBooleanSteps.ilean": "959a0c9be2a49de54bf698d635877053398f84b1633fa1aecb485e8b5b409830",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBooleanSteps.olean.hash": "e577883ae7276109d3d280225068467c3d0d4512fdfb8e7477de4d58089482f5",
+      ".lake/build/ir/FV/E2E/ABIReadBooleanSteps.setup.json": "74bdb65fa875e06f4f89fee627537279653c709f40b1210cb94eb2b13001f819",
+      ".lake/build/ir/FV/E2E/ABIReadBooleanSteps.c": "c348a868af09112d7341d415e363e958a909c0eb3e95feff64fa676749e4cb96",
+      ".lake/build/ir/FV/E2E/ABIReadBooleanSteps.c.hash": "f3025ad15d54563a80421689485e92c6a1c134c0c2e3d358bd17b9aa58529e16"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.StockArithmeticSemantics": {
+    "owner": "P",
+    "key": "b694f166251ec746",
+    "trace_sha256": "6da42542283a50addaa3f9e9d8df72c6d3ac61c49dbb2dd8bc884f090057139b",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticSemantics.trace": "6da42542283a50addaa3f9e9d8df72c6d3ac61c49dbb2dd8bc884f090057139b",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticSemantics.olean": "ea2100aac16cae40f2679707d35d01a68cbe3375c181824e61adbd095c560738",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticSemantics.olean.hash": "4210f57b4e33ab2d38313808c32220cf83ac96cdbcfaf5248f74e5a4a5e4d971",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticSemantics.ilean.hash": "42229eb8d923d02f27ec461290feade71314c0963378c12684b9b49755a5bcda",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticSemantics.ilean": "eb910df7326281e521491950ee11bd569ac9ff045bd900ba47e3ae08deeeaca0",
+      ".lake/build/ir/FV/E2E/StockArithmeticSemantics.setup.json": "5466b025f4243ff694fd95ebac24a76c55803def81b9dab24549958b97922ec6",
+      ".lake/build/ir/FV/E2E/StockArithmeticSemantics.c.hash": "d0a38f5b9a8c4962975e9c348556c46a564a353b63fd7eb4696fafb78764224d",
+      ".lake/build/ir/FV/E2E/StockArithmeticSemantics.c": "d2478af5db2328e4be8834106fc6d134f4ef2a21577867bd85a9ba89a5e85ff2"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.StockArithmeticArtifact": {
+    "owner": "P",
+    "key": "e20a90461c67c4ac",
+    "trace_sha256": "ef03b1561fd26f83d8282e13746c886a73ad95108856a0b401b6617db56e186e",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticArtifact.trace": "ef03b1561fd26f83d8282e13746c886a73ad95108856a0b401b6617db56e186e",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticArtifact.ilean": "2bbd7635cd6607ae469ac995b41f77d702471dee3d1f3218cfe6038ae91ff5a4",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticArtifact.olean.hash": "6b589ba55201a6ec5ee1a23916afbdd6ce37d2124a5bc0060124e7bd80dc34e7",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticArtifact.ilean.hash": "cb12468123c38160840196c483bcb9101e5a1b141e4bc5c3d143bfd97f523738",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticArtifact.olean": "109e27504ff262ae30e919cfc6004eef1d579db08b84465ee4ba657021ca77d1",
+      ".lake/build/ir/FV/E2E/StockArithmeticArtifact.setup.json": "718cfaf753d7cd549e3e2984094b9c73f00b1a6de44243864336d4d8bba6d526",
+      ".lake/build/ir/FV/E2E/StockArithmeticArtifact.c": "3d4b40c8365f8ba0a30b380abf69cd3a8c70d57d6ece9a6b59155db011391cfa",
+      ".lake/build/ir/FV/E2E/StockArithmeticArtifact.c.hash": "da7e264d84313fb930ff16a7950e2dad61bc884328d6b9fe69119624355651f4"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.StockArithmeticStage": {
+    "owner": "P",
+    "key": "5a13df36869e0a75",
+    "trace_sha256": "1da64f402b981877d8739bbcda7a88a2c95812d12c836f5f3eaac2a474dd5fac",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticStage.trace": "1da64f402b981877d8739bbcda7a88a2c95812d12c836f5f3eaac2a474dd5fac",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticStage.ilean": "9b1c771423f68e26e8dab192babf17c25719d82da9b2a4be44494f6444ff8954",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticStage.olean.hash": "8b7d2e3ada5f1460e21a249a5b46cdac23931a950c3e3a797586b7a0d5da200b",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticStage.ilean.hash": "f7ca5742a6247d3ca3e680083161339abc11ec5d91df6fd007348253087e3a3e",
+      ".lake/build/lib/lean/FV/E2E/StockArithmeticStage.olean": "6aff26be6a20ec89e3a44c196b4d55055bcf7b5b745383d77ec4b3e170fd919c",
+      ".lake/build/ir/FV/E2E/StockArithmeticStage.setup.json": "3065ee77b63be97f2f510a96bc4a49fd0766b30fa0f562a1d294d01f7c3f1738",
+      ".lake/build/ir/FV/E2E/StockArithmeticStage.c": "1ecf90b1f7961549364b918083b2964a164adba2989d6a74135f034d50f470d6",
+      ".lake/build/ir/FV/E2E/StockArithmeticStage.c.hash": "792e8f89ee805e60dc97539f6d10029c9313a7ce98ce2062056f8a6e79ef12f1"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadBoundary": {
+    "owner": "P",
+    "key": "533c68bf6db064a7",
+    "trace_sha256": "5c43d589a4e390bf1650a0a29e8c3ba49c26bcc35fbc378c4e6eb1e15cdc35a3",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadBoundary.trace": "5c43d589a4e390bf1650a0a29e8c3ba49c26bcc35fbc378c4e6eb1e15cdc35a3",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBoundary.ilean": "4c7bab3da0ab54dd1056306119644525a8b9fa1f3e1d32e0726e5a92b5bc6e0f",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBoundary.olean.hash": "5b22b937e231a2581e5e69a22ce27ed1da671cfec26d08391cb4509eb2d90755",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBoundary.ilean.hash": "e708a6234a564d4690a7b67e7eda3b636d299ed98c36f9865c4e3d959e67b880",
+      ".lake/build/lib/lean/FV/E2E/ABIReadBoundary.olean": "1763f2c5e38761745ff290ebf3c2e8f7cec5e436efcfef3bbb3c971d67c3ddd0",
+      ".lake/build/ir/FV/E2E/ABIReadBoundary.setup.json": "cb33d3c26ffc17f47679acc454173bdc4aa9ec207705eac5ef263dc4ca97123c",
+      ".lake/build/ir/FV/E2E/ABIReadBoundary.c.hash": "6ca6f7ba5a93b8d02a349c4aa6eb5c8ada0809a837155abb71cec9e40ab79785",
+      ".lake/build/ir/FV/E2E/ABIReadBoundary.c": "1fb2cc789dd60af2eb99aa2b3aaf5aa2f53e4badefa49174827c472c3ac847b9"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadCastSteps": {
+    "owner": "P",
+    "key": "b8dc587d4ac1123b",
+    "trace_sha256": "8a81a59e6b76a0369d486a1ca95bd5c34c5feb7ead3f5bc52ceb17104dedfe55",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadCastSteps.trace": "8a81a59e6b76a0369d486a1ca95bd5c34c5feb7ead3f5bc52ceb17104dedfe55",
+      ".lake/build/lib/lean/FV/E2E/ABIReadCastSteps.olean": "5e0bcf1243e76a47a4bb7243741d7934f24435f8df5fda1d55b15b6adff328c0",
+      ".lake/build/lib/lean/FV/E2E/ABIReadCastSteps.olean.hash": "89ed1364fab9f9273226a71185aba11db0c9607353cad1f7c7c56bf3d3ca4d51",
+      ".lake/build/lib/lean/FV/E2E/ABIReadCastSteps.ilean.hash": "69323b99367b1754fa0fa4cfc1682673f51b0f5848622ec0170008c736deac32",
+      ".lake/build/lib/lean/FV/E2E/ABIReadCastSteps.ilean": "ae6fc35b717b0f126dbd88ac846c6f94ce011c23f699dc55485044810c88976c",
+      ".lake/build/ir/FV/E2E/ABIReadCastSteps.setup.json": "7718ad89fe7b33d6f529cbbd94f8a0b898f9f1cf96f80f689f03cd516c5b5dcb",
+      ".lake/build/ir/FV/E2E/ABIReadCastSteps.c.hash": "279076ee618deb6f089b0fddcb34d50174f3ee8d3792e709161ccd876fc77e45",
+      ".lake/build/ir/FV/E2E/ABIReadCastSteps.c": "8458ea95ecee426b775715c616911897a5b84fd8aa86dff1b9eb4481c49fb6d5"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadCfgBoundary": {
+    "owner": "P",
+    "key": "f2ad55fd8a3a1ced",
+    "trace_sha256": "1a2c859f560df63830cb4a0952db26b254de71e99cbacc89da10352517aa848e",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadCfgBoundary.ilean": "bd5d33b6c6bb306cfab3781927e74490078bf80d59304e48354a9dbbd3064694",
+      ".lake/build/lib/lean/FV/E2E/ABIReadCfgBoundary.olean": "0e5ecd4beb615de4066dac7d95da6327dc5e7e2ba48e969ce67978aa843646c3",
+      ".lake/build/lib/lean/FV/E2E/ABIReadCfgBoundary.olean.hash": "be723fb4234608402b6a01917a4b6b596ba02967d046b1964641683df6381179",
+      ".lake/build/lib/lean/FV/E2E/ABIReadCfgBoundary.ilean.hash": "fbe78b14f2d258f170992738643fc3304df7dfa0ba56ac4929c999e74ac47ac0",
+      ".lake/build/lib/lean/FV/E2E/ABIReadCfgBoundary.trace": "1a2c859f560df63830cb4a0952db26b254de71e99cbacc89da10352517aa848e",
+      ".lake/build/ir/FV/E2E/ABIReadCfgBoundary.setup.json": "021d8d860aab1121abad49056db9858b80f068b28356c4eb739c074c572f6769",
+      ".lake/build/ir/FV/E2E/ABIReadCfgBoundary.c": "a9b55ead35c38d77aef45e75fcbe0c9b7b7b0ecc7ea8314b81268727299b0717",
+      ".lake/build/ir/FV/E2E/ABIReadCfgBoundary.c.hash": "4f757789cc72163be581170bc26d570272607f0eefe98ab15bdaf64af2768c85"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadComparisonSteps": {
+    "owner": "P",
+    "key": "5d01b296be000419",
+    "trace_sha256": "d29c0293bcbae10c916a7a8d2137d411407ee4cd60d2c5a7264d51599db34122",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadComparisonSteps.ilean.hash": "2fa1ce8604e4a55b6dd9d8a0fac57d20ec8f95836ef035021a78f483ee3e1810",
+      ".lake/build/lib/lean/FV/E2E/ABIReadComparisonSteps.ilean": "21d103494ab18413a01b69df6f79d9cea8373f8845e4f62f9caf185ab55fb407",
+      ".lake/build/lib/lean/FV/E2E/ABIReadComparisonSteps.olean": "545dad7507314d2633f902a726e3c10c8a175f921ec2c0941f945275fae246f5",
+      ".lake/build/lib/lean/FV/E2E/ABIReadComparisonSteps.olean.hash": "17258e7f0be1650a54bc14edc6415cc0e16aa4553eb797135c3ac80cc3a13746",
+      ".lake/build/lib/lean/FV/E2E/ABIReadComparisonSteps.trace": "d29c0293bcbae10c916a7a8d2137d411407ee4cd60d2c5a7264d51599db34122",
+      ".lake/build/ir/FV/E2E/ABIReadComparisonSteps.setup.json": "139b2f930a200170c5bdbfb9cca0bc4dd53208b4abfaeeaedf2634f30c35e2c7",
+      ".lake/build/ir/FV/E2E/ABIReadComparisonSteps.c": "1c81554dcf5bdab223154ca960a845a38e0ff0f05541e2c9061a9bd2b9fcb4b8",
+      ".lake/build/ir/FV/E2E/ABIReadComparisonSteps.c.hash": "095aee732c5873d6ea6b106ba878097c69b15cc0d2d9d7deeb0d46f0bc8adfad"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadTrapBoundary": {
+    "owner": "P",
+    "key": "1b4ae4c7825d5147",
+    "trace_sha256": "648fff75aa38176ce239c860270cb08f235b4a3973ca2068a2f380849e010ef4",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadTrapBoundary.trace": "648fff75aa38176ce239c860270cb08f235b4a3973ca2068a2f380849e010ef4",
+      ".lake/build/lib/lean/FV/E2E/ABIReadTrapBoundary.olean": "f79dc4caf89789f7f8a1b3e46c761d1db85afa04fc1562ce3561652f6428bc6b",
+      ".lake/build/lib/lean/FV/E2E/ABIReadTrapBoundary.olean.hash": "f24c63f647514f4d0c2d77ee0342fdd362d2d1d5fe8fd8141f308b4612bf6e64",
+      ".lake/build/lib/lean/FV/E2E/ABIReadTrapBoundary.ilean": "b2663d09165b6aee3a2d7f176136b62b6a88ae02a1120e09a0e2f17c1ba4bf7c",
+      ".lake/build/lib/lean/FV/E2E/ABIReadTrapBoundary.ilean.hash": "ac593383e0168a01a8098c9c618e25c231c98fa3ae657b8029db558accc5bd2a",
+      ".lake/build/ir/FV/E2E/ABIReadTrapBoundary.setup.json": "302740b0c8a03386f385fd39a0d8e2ac74e51e4ebfa83a7948047691b78e74de",
+      ".lake/build/ir/FV/E2E/ABIReadTrapBoundary.c": "109767b2efe4fc9372ed7a86bb0296814c271223c2367c7bab88bbe9dfc154a0",
+      ".lake/build/ir/FV/E2E/ABIReadTrapBoundary.c.hash": "3f02d476466a2e0e291f9d1104fda50e553397f3f572e7f4215d885bf3c288e2"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadDivSteps": {
+    "owner": "P",
+    "key": "902457ea011e5051",
+    "trace_sha256": "a725f16df7124664092f1dae43a7bd4f052d26225f4fac07e829dbb40e48d329",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadDivSteps.olean": "a7ddb02c5852d6a0662370919c51a845e731ea36019afd77692dc5d109ee54d4",
+      ".lake/build/lib/lean/FV/E2E/ABIReadDivSteps.ilean": "cedcf0da0fdc3abab9c1edef16104d6de2587ca0920c28d94a7d88476c1b9ce4",
+      ".lake/build/lib/lean/FV/E2E/ABIReadDivSteps.olean.hash": "de993b3a4698dff67022ef6ff2f763050822c5423dafc5b215eb4b489e5ec117",
+      ".lake/build/lib/lean/FV/E2E/ABIReadDivSteps.ilean.hash": "1e3878a46ac228dc2adf3e63a2523a4a411bcd3d035917c8f7435558e048cdde",
+      ".lake/build/lib/lean/FV/E2E/ABIReadDivSteps.trace": "a725f16df7124664092f1dae43a7bd4f052d26225f4fac07e829dbb40e48d329",
+      ".lake/build/ir/FV/E2E/ABIReadDivSteps.setup.json": "1fb9980a08550722232ce896120a6c79eea1e3c1d340bdbdf6e78db2ddabeb2f",
+      ".lake/build/ir/FV/E2E/ABIReadDivSteps.c": "4361cad8d3b177612daa6a545d382a3844c8f171a963a2084bcb4802a811231a",
+      ".lake/build/ir/FV/E2E/ABIReadDivSteps.c.hash": "1b4741f5055dcfe990b633371d02fb3d23bd885650850c5a2c6bb728a8fa70eb"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadShiftSteps": {
+    "owner": "P",
+    "key": "0eee014f1e8458b9",
+    "trace_sha256": "392bd964a9cff1d4415f5b92a7b37ce22d5b70fddf3daf87818a1026ce7219aa",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadShiftSteps.olean": "0cdbe48bec8f6a6203a56a5a7ba72a70eff86347c80a13c9d4d7d39fab683066",
+      ".lake/build/lib/lean/FV/E2E/ABIReadShiftSteps.olean.hash": "d6281708e9b81df418cc9a02de0a4f4191e9be0acf64c874551df3d5ebe2ef55",
+      ".lake/build/lib/lean/FV/E2E/ABIReadShiftSteps.ilean.hash": "43f15cf61771b15b49aa94c228a971d4b23f4bf90e4763adf4215f654b5eed63",
+      ".lake/build/lib/lean/FV/E2E/ABIReadShiftSteps.trace": "392bd964a9cff1d4415f5b92a7b37ce22d5b70fddf3daf87818a1026ce7219aa",
+      ".lake/build/lib/lean/FV/E2E/ABIReadShiftSteps.ilean": "6df0e33205beaa8486ac864a6226a49c5fd7a87e58ad9db01bd9383628deb9b6",
+      ".lake/build/ir/FV/E2E/ABIReadShiftSteps.setup.json": "cd3a5aa5ae3227b9d5e107f8551af044ce261c5b2724000caede129c3be19f16",
+      ".lake/build/ir/FV/E2E/ABIReadShiftSteps.c.hash": "c626db99384b7d69b1fc017b078180d602b15453c274abd6459797f92f480c0f",
+      ".lake/build/ir/FV/E2E/ABIReadShiftSteps.c": "66c944b72e16cc4f3a5fb96560cbd8458bc12ed5238bab4132d21a63a9679041"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadPopcountSteps": {
+    "owner": "P",
+    "key": "097e017f43eecc52",
+    "trace_sha256": "5b6c539a47902b137b2781cb295d77ef6632d6122b8be119c974f089c1337240",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadPopcountSteps.olean": "46873a5a2db2dc350597670f4c98002cb6e9fdb10d997d3124e2faa1e9cabebd",
+      ".lake/build/lib/lean/FV/E2E/ABIReadPopcountSteps.ilean": "8762eaa98d97faba8f3849456f51b8632954ea419ca19ec0730227acd77d94d5",
+      ".lake/build/lib/lean/FV/E2E/ABIReadPopcountSteps.olean.hash": "ce4adc6fd7695478a6387ce2d851f3c00026ac090321f770e9a703b469122333",
+      ".lake/build/lib/lean/FV/E2E/ABIReadPopcountSteps.ilean.hash": "4df99ddb108128302219c8f340ee7d21d4dcb75af81647c9135f8f67b55f8925",
+      ".lake/build/lib/lean/FV/E2E/ABIReadPopcountSteps.trace": "5b6c539a47902b137b2781cb295d77ef6632d6122b8be119c974f089c1337240",
+      ".lake/build/ir/FV/E2E/ABIReadPopcountSteps.setup.json": "08b3ffbefabfb85ca1fa6b764b69c90373f2135c2be62b406b55e6de08a267d9",
+      ".lake/build/ir/FV/E2E/ABIReadPopcountSteps.c.hash": "aa64d3e1e043a6d2fe1e94b8915e667c092da02431faee395d7c8eaf7a4ebbbc",
+      ".lake/build/ir/FV/E2E/ABIReadPopcountSteps.c": "715752042c96b58e08729b8cb772464f9ac8312df4819ef13809ea86c7bdbab2"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadHighMulSteps": {
+    "owner": "P",
+    "key": "67e6656f47a7a249",
+    "trace_sha256": "02246aa9037a9e6a014ef2f2c2b5ab0400992b06955d3c8e6c57b550494a0852",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadHighMulSteps.olean": "5700e6a587a1abcf005e67a6092b3f52b41e912e9ab38941cbd257c7126072ca",
+      ".lake/build/lib/lean/FV/E2E/ABIReadHighMulSteps.olean.hash": "1c01f3c4e24fca70876eb0d6ca6aa97807aab4595368ce040621d97a03cec48c",
+      ".lake/build/lib/lean/FV/E2E/ABIReadHighMulSteps.ilean.hash": "aa16de75e68285c2ebc31004e9c4d6392c2a3844b5285fb9e6b0edb6bfc2c626",
+      ".lake/build/lib/lean/FV/E2E/ABIReadHighMulSteps.trace": "02246aa9037a9e6a014ef2f2c2b5ab0400992b06955d3c8e6c57b550494a0852",
+      ".lake/build/lib/lean/FV/E2E/ABIReadHighMulSteps.ilean": "0d1b033abcf2be8ee3e0ea44ada5adba25e820048c8b2e5d4ff20d6ebb9077ac",
+      ".lake/build/ir/FV/E2E/ABIReadHighMulSteps.c.hash": "5e244a4fb5f686c6d295cd901cde779b5c9b812d8296c13656a8e6113466a404",
+      ".lake/build/ir/FV/E2E/ABIReadHighMulSteps.setup.json": "a6ebcca0d47370f216242b98507a2f13c7e6ab90088ec12bb36d73ea3a74ef37",
+      ".lake/build/ir/FV/E2E/ABIReadHighMulSteps.c": "6ef0bc78c459f39563882c37656b1103ae7e255a1ad7ec229c202a0c511eb898"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadExtendedComparisonSteps": {
+    "owner": "P",
+    "key": "7b7cf338c445caf5",
+    "trace_sha256": "fa3f40ecb61b3d8d5ebdf0dc2995ba91cf07ef5e3c773d5c62b0af53c5fef072",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadExtendedComparisonSteps.ilean": "77ca261769935c8fc0ef71c74e701dee613077491c9a36a576391f45d39b742c",
+      ".lake/build/lib/lean/FV/E2E/ABIReadExtendedComparisonSteps.olean": "cfdad94bde748322cef196e3a4309c0ac06f0f0080821e3f8d36b6ee3c8bb3ba",
+      ".lake/build/lib/lean/FV/E2E/ABIReadExtendedComparisonSteps.olean.hash": "b3760a0e3c20945ede8e39b53860e8fac11e989ca86e686612ccb241745adc41",
+      ".lake/build/lib/lean/FV/E2E/ABIReadExtendedComparisonSteps.ilean.hash": "b17991bc90a949ca58f63e80a33661ea1a35764dabe1b8ed9328840ddc08d8b6",
+      ".lake/build/lib/lean/FV/E2E/ABIReadExtendedComparisonSteps.trace": "fa3f40ecb61b3d8d5ebdf0dc2995ba91cf07ef5e3c773d5c62b0af53c5fef072",
+      ".lake/build/ir/FV/E2E/ABIReadExtendedComparisonSteps.c": "65a0dad19986c741db08ea7fe54d3b9893c0544bf624f6a74e9a391eae6c8fd2",
+      ".lake/build/ir/FV/E2E/ABIReadExtendedComparisonSteps.setup.json": "75fe176870152ca14aa24fd1a2d56ef547327342963502dca084d94be452eb30",
+      ".lake/build/ir/FV/E2E/ABIReadExtendedComparisonSteps.c.hash": "646bab764acfa55b856d334c4f38dee1fa51931764da188860dcd2625312df8e"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadMaskSteps": {
+    "owner": "P",
+    "key": "1cfe0e185bb8ea18",
+    "trace_sha256": "82ca205238afe038a58c8c380eba6195565b9bdea39a6d4c7880a597063a79cf",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadMaskSteps.ilean": "cd6c087d360b344849b957dfe6af19d2090eaa61f835c8c46e4fb33cc06fa60e",
+      ".lake/build/lib/lean/FV/E2E/ABIReadMaskSteps.olean": "46cb51eca74aa3296deb6b6f40c2fb4ed0ad2e593d351b2ce341427013488a99",
+      ".lake/build/lib/lean/FV/E2E/ABIReadMaskSteps.olean.hash": "8308a2b69c5f538f80feeac2da41398bdc29ca6838b1b5d9edd1a9055b204b98",
+      ".lake/build/lib/lean/FV/E2E/ABIReadMaskSteps.trace": "82ca205238afe038a58c8c380eba6195565b9bdea39a6d4c7880a597063a79cf",
+      ".lake/build/lib/lean/FV/E2E/ABIReadMaskSteps.ilean.hash": "14a5e1fa69614f1bd4c4ab888e392cb5dbed091caa1cb783683546ac58a7694b",
+      ".lake/build/ir/FV/E2E/ABIReadMaskSteps.c.hash": "ab13ee2d3fefbe306b4af83dc5af3abd068d920f107a4f2db2c0cfc7478af688",
+      ".lake/build/ir/FV/E2E/ABIReadMaskSteps.setup.json": "e1740a784d3c050273634e6e7169796189efc4ccd6968d8e6d70fe60a673a5a7",
+      ".lake/build/ir/FV/E2E/ABIReadMaskSteps.c": "be5ec6a1b796a31dfb76821fa3fd5ec4d6e20adde27813bba61d469ecdf365c2"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadScalar": {
+    "owner": "P",
+    "key": "7916bb8f67addd5e",
+    "trace_sha256": "c1ed90739ded7e70b2ad35a56b8e09b474dd9440afa10118a3acf1effae41d68",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadScalar.olean.hash": "70290f06f98c82b2cfb60110c887ce83f1db3c8b9d1cd7988e36e14ff9d593cb",
+      ".lake/build/lib/lean/FV/E2E/ABIReadScalar.ilean.hash": "38672055d51630d56c19762d53a946387d86d0d3be733f53919340e6e95f0aed",
+      ".lake/build/lib/lean/FV/E2E/ABIReadScalar.trace": "c1ed90739ded7e70b2ad35a56b8e09b474dd9440afa10118a3acf1effae41d68",
+      ".lake/build/lib/lean/FV/E2E/ABIReadScalar.ilean": "8e3f337c08306837ef501c6126c2026719489276cd59cd0c2f12f1603e826a22",
+      ".lake/build/lib/lean/FV/E2E/ABIReadScalar.olean": "d600b7534151275c54109fb8c5df9d4c87109febefb992fc8f4c1674a5a4fff0",
+      ".lake/build/ir/FV/E2E/ABIReadScalar.setup.json": "9bb2d7e8d720b3792e8d4dd5d94e72b5fbe9a8f8f20320003b6a40c78d808c13",
+      ".lake/build/ir/FV/E2E/ABIReadScalar.c.hash": "1f8682a2af14a230be1d783b652a6e55892cfaa4e4d17d9235bf3ab2e214880a",
+      ".lake/build/ir/FV/E2E/ABIReadScalar.c": "75397d0c519fb427f6e3cc3f532fc09216770c146d8c485e8d9dbe664147fe28"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  },
+  "FV.E2E.ABIReadDiv": {
+    "owner": "P",
+    "key": "e14a521fad5ffdff",
+    "trace_sha256": "dc8915661dfadd8c7e5312208f2e49e2b6dcbe1787f563bf221f866f41b8d919",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/ABIReadDiv.olean.hash": "a1304e1645ce6c6c0895b663757ff6e6676222ca3fbea2fcefa8bf6d9d05866b",
+      ".lake/build/lib/lean/FV/E2E/ABIReadDiv.ilean.hash": "9691b1650114800d00693b0a1eaebbafc5161f94a509970b4c928bd7268859bb",
+      ".lake/build/lib/lean/FV/E2E/ABIReadDiv.trace": "dc8915661dfadd8c7e5312208f2e49e2b6dcbe1787f563bf221f866f41b8d919",
+      ".lake/build/lib/lean/FV/E2E/ABIReadDiv.ilean": "5c826af1b6b5b876ae91869ed77fc6878a240db4587105203482b80557af0e89",
+      ".lake/build/lib/lean/FV/E2E/ABIReadDiv.olean": "bc8964a2149d61113b671b351102b0cd9a888db73f9fac873078279a6bab2793",
+      ".lake/build/ir/FV/E2E/ABIReadDiv.setup.json": "5888e5535b748aec31f161ff34aacfb10c2d48482a35446c5d1afc5ae9865b8c",
+      ".lake/build/ir/FV/E2E/ABIReadDiv.c.hash": "324d7f4bd75c84e0c27eb4ac71b19d12b557b42eb27e6b05206df6d83d0f0c58",
+      ".lake/build/ir/FV/E2E/ABIReadDiv.c": "62a1771e2dfc9c74091d02a7dcd85d44a9b839fc61d377bc91349cac544f30f1"
+    },
+    "normal_exit": 0,
+    "config_relation": "identical except weakLeanArgs",
+    "provenance": "fresh normal inputs"
+  }
+}

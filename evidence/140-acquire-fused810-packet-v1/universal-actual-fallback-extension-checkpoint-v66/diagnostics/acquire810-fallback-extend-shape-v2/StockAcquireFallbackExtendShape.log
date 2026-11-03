@@ -1,0 +1,12 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFallbackExtendShape.lean:32:111: error: maximum recursion depth has been reached
+use `set_option maxRecDepth <num>` to increase limit
+use `set_option diagnostics true` to get diagnostic information
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFallbackExtendShape.lean:65:97: warning: `if_pos` has been deprecated: Use `ite_eq_left` instead
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFallbackExtendShape.lean:79:30: error: Application type mismatch: The argument
+  typed
+has type
+  ctx.valueType? x = some sourceType
+but is expected to have type
+  some sourceType = some sourceType
+in the application
+  And.intro typed

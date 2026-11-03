@@ -1,0 +1,22 @@
+{
+  "status": "SOURCE_ONLY;NEW_FILE_PROPOSAL;NO_KERNEL_CLAIM",
+  "source_sha256": "c1b13c85d94369985d5e9fd83f519626aba5cce984abe310c1d0136117e19c92",
+  "old_source_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-production-class-packet-v1/reviewed-production-complete-v1/FV/E2E/StockResultCallNI.lean",
+  "old_source_sha256": "10f8a4427ec678c07272617817b414959dc2e4e2596e03940987fbcbf12ec61a",
+  "actual_main_old_source_equal": true,
+  "shared_modified_paths": [],
+  "original_input_header_exact": true,
+  "machine_export": "StockMemory.machine_return_valueW; unchanged passed generic kernel",
+  "paired_argument_transport": "ABIReadOnly.arguments_transport derives other ArgsAtEntry from the original world/register/stack premises",
+  "original_source_and_paired_composition_preserved": true,
+  "new_roots": [
+    "E2E.backend_correct_world_niX_stock_result_callW",
+    "E2E.worldReturnTraceProvider_resultCall"
+  ],
+  "open": [
+    "Proper current dependencies",
+    "Focused kernel and real audit",
+    "Complete artifact dispatcher and actual compiler/executable matrix"
+  ],
+  "no_R_G_access": true
+}

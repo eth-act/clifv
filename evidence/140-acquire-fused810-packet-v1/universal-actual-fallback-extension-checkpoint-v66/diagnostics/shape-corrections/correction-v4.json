@@ -1,0 +1,19 @@
+{
+  "original_source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockCastBaseValues.lean",
+  "source_sha256": "58ef7abd61f28913077c4949f7f5016be25d37634b60629514e7a1d5fdadf1b0",
+  "legacy_maxRecDepth": 20000,
+  "legacy_bound_lines": [
+    10,
+    189,
+    234
+  ],
+  "copied_fact": "fallback_extend_source_data",
+  "scope": "one declaration only",
+  "interpreter_fuel_unchanged": true,
+  "memory_cap": "1GiB",
+  "old_diagnostics_preserved": [
+    "source-v1.lean",
+    "source-v2.lean",
+    "source-v3.lean"
+  ]
+}

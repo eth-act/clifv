@@ -1,0 +1,200 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireExtendCanonical.lean:33:37: error: unsolved goals
+case inl.inl.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 8 8 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inl.inl.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 8 8 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inl.inr.inl.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 8 16 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inl.inr.inl.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 8 16 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inl.inr.inr.inl.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 8 32 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inl.inr.inr.inl.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 8 32 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inl.inr.inr.inr.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 8 64 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inl.inr.inr.inr.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 8 64 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inl.inl.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 16 8 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inl.inl.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 16 8 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inl.inr.inl.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 16 16 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inl.inr.inl.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 16 16 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inl.inr.inr.inl.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 16 32 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inl.inr.inr.inl.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 16 32 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inl.inr.inr.inr.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 16 64 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inl.inr.inr.inr.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 16 64 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inr.inl.inl.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 32 8 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inr.inl.inl.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 32 8 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inr.inl.inr.inl.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 32 16 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inr.inl.inr.inl.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 32 16 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inr.inl.inr.inr.inl.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 32 32 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inr.inl.inr.inr.inl.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 32 32 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inr.inl.inr.inr.inr.false
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical false 32 64 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inr.inl.inr.inr.inr.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 32 64 dest pointer) [value] world = some ([output], world, Ctl.next)
+
+case inr.inr.inr.inr.inr.inr.true
+dest pointer : Nat
+value : CV
+encoded : True
+⊢ ∃ output,
+    ∀ (world : Arm.ArmState),
+      ispec (concreteExtendCanonical true 64 64 dest pointer) [value] world = some ([output], world, Ctl.next)

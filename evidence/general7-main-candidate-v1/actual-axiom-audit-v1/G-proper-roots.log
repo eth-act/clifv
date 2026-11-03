@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/callee-trap-prep-v1/tool-bin/lake", line 5, in <module>
+    assert args[:2]==['env','lean'],args
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['build', '--no-build', 'FV.E2E.CompiledSemanticNI', 'FV.E2E.ABIReadCfgTableWitness', 'FV.Backend.Proof.StockGeneralRouteWitness7']

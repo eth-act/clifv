@@ -1,0 +1,13 @@
+some [(1, some 3, none, some (some 808))]
+some [(1, some 3, none, some (some 808))]
+some [(1, some 3, none, some (some 808))]
+some [["args", "acquire", "trapIf", "alu", "extend", "rets"]]
+some [["args", "acquire", "load", "extend", "rets"]]
+some [["args", "acquire", "load", "extend", "rets"]]
+some (Clif.TrapCode.heapOob)
+some (Clif.TrapCode.heapOob)
+some (Clif.TrapCode.heapOob)
+some [(1, some 2, some (0, true), some (some 810))]
+some [(2, some 3, some (1, true), some (some 810))]
+some [["args", "acquire", "acquire", "rets"]]
+some (Clif.TrapCode.heapOob)

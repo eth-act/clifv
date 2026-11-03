@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "records": [
+    {
+      "label": "StockAcquireFirstFaultOrderDiagnostic",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireFirstFaultOrderDiagnostic.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireFirstFaultOrderDiagnostic.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireFirstFaultOrderDiagnostic.ilean"
+      ],
+      "exit": 0,
+      "seconds": 3.63533353805542,
+      "memstats": "peak 200560640\noom 0\noom_kill 0\n",
+      "source_sha256": "c926ffe26ceeda02958f602d658abf6eddb5ba4658e54d48500d06e1132a80ca",
+      "olean_sha256": "79913dbbe4e7df8b896fcba4788e9c2612801c27ac771c1045bb585568fdb22e"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "approved": false,
+  "allocation": "2G",
+  "prefix_returned_by_coordinator": false,
+  "script_sha256": "41a939b87b14af531275dbbae7172445c041def3b80b7a60f296309a65d631b2",
+  "proposal_sha256": "a805cf85381005a5330bd16e68dda18308e19bfe7010bd16002fec87a9eaff9f",
+  "note": "Template only. Write the real release after explicit R/G return. No verifier may run during the active conditional-cone lease."
+}

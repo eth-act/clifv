@@ -1,0 +1,48 @@
+/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireCrossedEffectRecord.lean:50:4: error: unsolved goals
+case inl
+f : Clif.Function
+result : Result
+run : Stock.lower f = Except.ok result
+scope : LowerScope f
+dominated : Dominated f
+event : BlockScanEvent
+record : ScanRecord
+events : event ∈ result.blockScans.toList
+records : record ∈ event.output.records
+step : Step
+recorded : record.output.step = some step
+emitted : step.decision = Decision.emitted
+selectedId : step.rules.getLast? = some 810
+R : SourceEndpointReceipt f event record
+crossed : ScanRecord
+crossedMem : crossed ∈ event.output.records
+bi j : Nat
+block : Clif.Block
+stm : Clif.Stmt
+blockAt : f.blocks[bi]? = some block
+statement : block.body[j]? = some stm
+current : crossed.inst = blockStart f bi + j
+colored : Stock.colored stm.inst = true
+lower : R.producer ≤ crossed.inst
+upper : crossed.inst < record.inst
+positive : record.input.entryColor[R.producer]! ≠ 0
+color : record.output.state.color = some record.input.entryColor[R.producer]!
+original : Ctx
+ranges : Array (Nat × Nat)
+initial : LState
+built : Backend.buildCtx f = Except.ok (original, ranges, initial)
+metadata : record.input.entryColor = (sourceMetadata original ranges).entryColor
+marked :
+  ∀ (producer : Nat),
+    some producer ∈ sourceColorEvents original ranges →
+      producer < record.inst →
+        record.input.entryColor[R.producer]! ≤ (sourceMetadata original ranges).entryColor[producer]! →
+          record.output.state.sunk[producer]! = true
+buildEq : (R.original, R.ranges, R.initial) = (original, ranges, initial)
+ctxEq : R.original = original
+rangesEq : R.ranges = ranges
+sourceEvent : some crossed.inst ∈ sourceColorEvents original ranges
+producerEvent : some R.producer ∈ sourceColorEvents original ranges
+same : R.producer = crossed.inst
+⊢ (sourceMetadata original ranges).entryColor[crossed.inst]! ≤
+    (sourceMetadata original ranges).entryColor[crossed.inst]!

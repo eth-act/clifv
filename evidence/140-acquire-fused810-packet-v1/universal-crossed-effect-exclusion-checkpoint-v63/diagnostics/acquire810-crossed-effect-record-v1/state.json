@@ -1,0 +1,21 @@
+{
+  "status": "failed",
+  "records": [
+    {
+      "label": "StockAcquireCrossedEffectRecord",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/FV/Backend/Proof/StockAcquireCrossedEffectRecord.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireCrossedEffectRecord.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-fence-packet-v1/package/.lake/build/lib/lean/FV/Backend/Proof/StockAcquireCrossedEffectRecord.ilean"
+      ],
+      "exit": 1,
+      "seconds": 0.8811390399932861,
+      "memstats": "peak 217329664\noom 0\noom_kill 0\n"
+    }
+  ]
+}

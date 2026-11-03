@@ -1,0 +1,9 @@
+{
+  "approved": true,
+  "allocation": "12G",
+  "broad_controller_pid": 1723571,
+  "manifest_sha256": "64840f96902c88957a8e07c26b8d5808db57e10dfa37dc081bf2b75ee9e1fa27",
+  "script_sha256": "a74f059187cc2d865aac9720b41fdb3bcedde6eaa878993dd744919ced612eb6",
+  "scheduler_birth": 1793694108.91,
+  "source_share_release": "source2GiB and acquire1GiB remain active;priority replaces broad12GiB"
+}

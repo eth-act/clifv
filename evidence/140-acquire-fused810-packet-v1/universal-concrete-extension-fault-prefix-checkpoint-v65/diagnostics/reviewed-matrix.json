@@ -1,0 +1,260 @@
+{
+  "status": "passed_fixed_diagnostic_matrix",
+  "rows": [
+    {
+      "signed": false,
+      "source": "i8",
+      "target": "i8",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i8",
+      "target": "i16",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i8",
+      "target": "i32",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i8",
+      "target": "i64",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i16",
+      "target": "i8",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i16",
+      "target": "i16",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i16",
+      "target": "i32",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i16",
+      "target": "i64",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i32",
+      "target": "i8",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i32",
+      "target": "i16",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i32",
+      "target": "i32",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i32",
+      "target": "i64",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": false,
+      "source": "i64",
+      "target": "i8",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": false
+    },
+    {
+      "signed": false,
+      "source": "i64",
+      "target": "i16",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": false
+    },
+    {
+      "signed": false,
+      "source": "i64",
+      "target": "i32",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": false
+    },
+    {
+      "signed": false,
+      "source": "i64",
+      "target": "i64",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": false
+    },
+    {
+      "signed": true,
+      "source": "i8",
+      "target": "i8",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i8",
+      "target": "i16",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i8",
+      "target": "i32",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i8",
+      "target": "i64",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i16",
+      "target": "i8",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i16",
+      "target": "i16",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i16",
+      "target": "i32",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i16",
+      "target": "i64",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i32",
+      "target": "i8",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i32",
+      "target": "i16",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i32",
+      "target": "i32",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i32",
+      "target": "i64",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    },
+    {
+      "signed": true,
+      "source": "i64",
+      "target": "i8",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": false
+    },
+    {
+      "signed": true,
+      "source": "i64",
+      "target": "i16",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": false
+    },
+    {
+      "signed": true,
+      "source": "i64",
+      "target": "i32",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": false
+    },
+    {
+      "signed": true,
+      "source": "i64",
+      "target": "i64",
+      "scope_dominated_abi_stock_lower_and_form_coverage": true,
+      "assembly_accepted": true
+    }
+  ],
+  "raw_cases": 32,
+  "assembly_accepted": 25,
+  "assembly_rejected": 7,
+  "claim": "These fixed diagnostics identify a missing proof-semantics case. They do not establish a hardware fault-order defect or complete production admission.",
+  "interface_gap": {
+    "FormOk_extension": "register shape only; no width bound",
+    "ispec_none": "unsigned8_to8",
+    "physical_line": "uBfm32 0 7",
+    "source_first_fault": "heapOob at the original first atomic load",
+    "unreached_source_instruction": "extend must widen",
+    "old_valueSem_ispec_preserved": true
+  },
+  "files_sha256": {
+    "StockAcquirePostFaultExtendDiagnostic.lean": "c920b0694d54965c71385d7d37bfd2f48184d71ec3374849cd8454234a7cd9bb",
+    "StockAcquireFallbackWidthDiagnostic.lean": "0793fe3e95919af6711315a48f294ee430a503e65338dbf6d65e257ea5ed5195",
+    "StockAcquireFirstFaultOrderDiagnostic.lean": "c926ffe26ceeda02958f602d658abf6eddb5ba4658e54d48500d06e1132a80ca",
+    "StockAcquireInterveningEffectDiagnostic.lean": "baf27031683c4db5f11d529f2d1b216936ea0c3173197cd414aaf4f396a7900d",
+    "StockAcquireTwoDeferredDiagnostic.lean": "83aaf9898f1a0aac13411156be20fbc1411218aa68a970e2a575d968361f5109",
+    "acquire810-post-fault-extend-diagnostic-v1/StockAcquirePostFaultExtendDiagnostic.log": "4ec9b3202a5e2c09fa0c68b250641ae771bc3298f84eb6be17d0acccc8ffff46",
+    "acquire810-post-fault-extend-diagnostic-v1/StockAcquirePostFaultExtendDiagnostic.mem": "5e7ae463761aa7ac82e8d5cd106416062f49b430d765b93b445f5ebbe4146189",
+    "acquire810-post-fault-extend-diagnostic-v1/state.json": "d533f8dae75d17582be07df280e9ae412ac239568682355128b993c551905861",
+    "acquire810-fallback-width-diagnostic-v1/StockAcquireFallbackWidthDiagnostic.log": "9f235e517f7a1b623bec0e4fe5fb6121a4138e0b9f6574a34e3a3c3518b1611b",
+    "acquire810-fallback-width-diagnostic-v1/StockAcquireFallbackWidthDiagnostic.mem": "70aea108597bf43ddfbfc69dd9b2ce49fcff6ddb2e431cee59ceb48aff25608b",
+    "acquire810-fallback-width-diagnostic-v1/state.json": "0cfa097273d7a518b24b2ce5aa6335c19e02de712e2835469c005d94c57d7856",
+    "acquire810-concrete-extend-total-v1/StockAcquireConcreteExtendTotal.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "acquire810-concrete-extend-total-v1/StockAcquireConcreteExtendTotal.mem": "81e6e34d36de8aa43046ed663637db88f08cd9cb27d50178da7fa2c4e690f1dd",
+    "acquire810-concrete-extend-total-v1/state.json": "47819d5fc263e571cc8fa5d657d71a234bb74e87205598126d80ee624a3d031b",
+    "acquire810-concrete-extend-prefix-v1/StockAcquireConcreteExtendPrefix.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "acquire810-concrete-extend-prefix-v1/StockAcquireConcreteExtendPrefix.mem": "89e2dfa1125d850756b9c7a01955d7f2f95e80aed5d65d7c002dbb82f40aef6b",
+    "acquire810-concrete-extend-prefix-v1/state.json": "74fd2ed64c90e6fc6cc8edb6af0f35a98277f02c89902eac14382de8e58cfc77"
+  }
+}
