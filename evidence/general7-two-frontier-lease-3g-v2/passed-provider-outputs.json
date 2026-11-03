@@ -1,0 +1,28 @@
+{
+  "FV.Backend.Proof.StockTableValues": {
+    "native_key": "ebdee51de196a0cb",
+    "outputs": {
+      "o": [
+        "71c3842a81425b8a.olean"
+      ],
+      "m": false,
+      "i": "a817288fa21ae325.ilean",
+      "c": "00003d9d0acc820a.c"
+    },
+    "trace_sha256": "c3cb5326aa8dcf1d6f29602d14a3f1d5e10dc4689537a29f9c5dd52d34b8da76",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTableValues.trace": "c3cb5326aa8dcf1d6f29602d14a3f1d5e10dc4689537a29f9c5dd52d34b8da76",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTableValues.olean": "7a8b648c34b8184181eecd02e10ad7a58030a383357ec898be1df08c8b131c86",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTableValues.ilean": "7cb9aebaea16e566160e0b44461409771fbe3ca409be56cc878df5a2fc12d505",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTableValues.olean.hash": "30f63b29c1d8f316dc909e98674e7526dd4a390980a679e7887bf4b1d8dd3e50",
+      ".lake/build/lib/lean/FV/Backend/Proof/StockTableValues.ilean.hash": "449a917f686c27e0a9c67bc38fdc21a34e5d0f3cefd3ea44144ec813c2cf50b2",
+      ".lake/build/ir/FV/Backend/Proof/StockTableValues.setup.json": "6db77adef96481639ed862644e8f7c5ebd8f7e14184c68ae26bc28ea363b3fc9",
+      ".lake/build/ir/FV/Backend/Proof/StockTableValues.c.o.export": "0beb307403d8eaa449a2bf5e8c1c1dd363592e428c44f3653f2ead3918d3286d",
+      ".lake/build/ir/FV/Backend/Proof/StockTableValues.c.o.export.hash": "7b847e565eb0af31df37059136c7efb800498ec1c2e5f1ad4bc51075765b3d07",
+      ".lake/build/ir/FV/Backend/Proof/StockTableValues.c.o.export.trace": "48d974978e95d1ec8fc769a8e0fa6f786135aafb1e608f710d4dc90ee291dd21",
+      ".lake/build/ir/FV/Backend/Proof/StockTableValues.c": "3873484a234d95711b13f997ab5ba4a0c207cba04c9e582f210c7e0f2d3bbc1b",
+      ".lake/build/ir/FV/Backend/Proof/StockTableValues.c.hash": "b0565bbfe3d548274b5f2306bb4070a8e0c43660c3efc5c0f28facca9e8663a9"
+    },
+    "reused_completed_output": false
+  }
+}

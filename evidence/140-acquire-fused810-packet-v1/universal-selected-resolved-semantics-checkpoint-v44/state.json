@@ -1,0 +1,2177 @@
+{
+  "status": "passed_actual_final_alias_segment_value_and_fault_bindings",
+  "roots": 356,
+  "standard_roots": 356,
+  "axioms": {
+    "Backend.Stock.Proof.Acquire810.body_color_count": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_unchanged_color_quiet": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_widened_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_iflet_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_match_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.output_reg_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_call_receipt": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_sink_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_inputs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rule_sink_provenance": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_match_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.mapped_atomic_producer": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_call_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rule_original_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_pair_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_emission_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_record_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_record_final_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_output": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_selected_rule": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_selected_final_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_quiet_source_outcome": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_quiet_source_step": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_color_interval_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.entryColors": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.color_distance": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.member_color_bounds": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.ordered": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.distinct": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_ctor_color_without_sink": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.append": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_ctor_pending_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_apply_pending_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_runTerm_pending_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.finalColor": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_atomic_rhs_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_atomic_call_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rhs_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rule_pending_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_singleton": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_color_size": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_color_keeps_slot": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_colored_exact": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_colored_pair_order": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_color_events_fold": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.block_color_events_fold": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_events_fold": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sourceMetadata_color_events": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_color_events": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.color_events_count": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.color_events_size": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.color_events_keeps_slot": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.color_event_exact": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.color_event_pair_order": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_color_events_member": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_color_events_bounds": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_color_events_order": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.block_color_events_member": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.block_layout_before": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_blocks_index_order": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.block_color_event_bounds": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.block_color_event_order": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_event_order": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_event_inside": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_event_no_overwrite": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_event_exact": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_event_pair_exact": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.member_positive": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_positive_member": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_order_reflects_slots": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.source_members": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.source_order": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_pending_source_members": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_source_order": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_match_target_width": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_source_target_width": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_target_width": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_selected_pair_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_atomic_match_address": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_atomic_rhs_request": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_atomic_call_request": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.mapped_atomic_original_fields": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_atomic_original_request": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pointer_request": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pointer_demanded": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pointer_held": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_original_definition": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_original_statement": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_args_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_args_value_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_original_extension_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_match_original_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rule_original_extension_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pointer_available": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_original_pointer_request": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_original_pointer_demanded": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_guarded_pointer_held": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_inst_pointer_frame": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_steps_pointer_frame": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.available_pointer_unwritten": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.available_source_prefix_pointer": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_original_prefix_pointer": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.forget": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.append": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.entryColors": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.sunk_exact": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.sunk_size": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.marked_mono": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.ordered": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_ctor_sunk_without_sink_shape": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_ctor_pending_marks_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_apply_pending_marks_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_runTerm_pending_marks_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarksExecution.forget": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.bindResults_mark_fields": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_pending_marks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_pending_mark_sources": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.opportunisticValues_sunk": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.opportunistic_sunk": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scans_forward_chunks": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scanBlock_forward_chunks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_scan_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_all_sunk_updates": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_sunk_updates": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_all_source_sunk_updates": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_source_sunk_updates": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_source_queue": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_frontier": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_record_frontiers": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.RecordFrontiers.append": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.RecordFrontiers.reverse": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.RecordFrontiers.source_members": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_forward_frontiers": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.atomic_source_step_read": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_source_read": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.atomic_source_eval_trap": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.indexed_source_atomic_trap": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.color_some": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.nonempty_color_some": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_pending_marks_order": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_event_lookup": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.color_at_split": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.source_event_at_split": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_pending_source_interval": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.instData_read_format": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.buildCtx_sink_format_sources": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.SinkFormatSources.termCtx": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.SinkFormatSources.withTryRegs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.blockCore_scan_sink_format_sources": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_format_eval_memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_format_source_step_memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.lowerNode_sink_format_sources": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_sink_format_sources": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_sink_format_source_memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_pattern_sink_source_memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.deferred_load_bound_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.deferred_load_root_args": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.deferred_load_rule_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_eligibility_sink_source_memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadPendingMarks.forget": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadPendingMarks.append": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadPendingMarks.source_memory": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadPendingExecution.refl": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadPendingExecution.trans": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_ctor_free_read_frame": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.pattern_sink_read_target": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.eligibility_sink_read_target": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_expr_read_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_let_read_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.pattern_sink_rule_read_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.eligibility_sink_rule_read_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.read_pending_interpreter_frames": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_helper_read_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_branch_helper_read_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_read_pending_marks": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_read_pending_interval": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_read_frontier": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_read_frontiers": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.record_prefix": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.read_frontier_groups": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_prior_read_frontier": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sunk_fold_absent": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sunk_fold_marked": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_marked_read_provenance": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_marked_read_or_entry": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.color_covered": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_equal_slots": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.source_interval_member": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadPendingMarks.source_interval_frame": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.SourceReadFrame.of_source_view": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_slots_termCtx": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.buildCtx_read_marked": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadMarked.of_sunk_eq": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadPendingMarks.preserves_read_marked": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingMarks.none_empty": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_runTerm_none_sunk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.emitBranch_sunk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.outgoingStep_sunk": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.collectOutgoing_sunk": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.blockCore_scan_input_sunk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_original_slots": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadMarked.of_read_fold": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_scan_read_marked": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_actual_core_read_marked": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.lowerNode_mark_origin": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.lowerNode_blockScans_keep": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.lowerNodes_blockScans_keep": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_actual_node_read_marked": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_actual_nodes_read_marked": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_all_read_marked": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_marked_source_read": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadQueueCut.zero": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadQueueCut.of_color_eq": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadQueueCut.shrink": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadQueueCut.append_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadQueueCut.reset_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ReadQueueCut.source_read": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_slot_colors_order": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_metadata_positive_order": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.referenceCut_tail_bound": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_event_tail_bound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scan_indices_head": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scan_indices_bounds": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scan_indices_reverse_order": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.opportunisticValues_color_fields": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.opportunistic_color_fields": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scanState_color_zero": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scanState_color_positive": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scan_no_emission_color": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.record_run": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_read_queue_step": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_cut_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.read_queue_progress": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.read_queue_from_term": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_scan_prefix_read_queue_cut": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_read_queue_cut": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.record_indices": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.record_output_prefix": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_output_read_queue_cut": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_reference_fold_above": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_indices_reverse": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_prefix_cut_above": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_crossed_source_reads": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_output_color": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.SourceColorGap.zero": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.SourceColorGap.at_color": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.SourceColorGap.of_color_eq": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.SourceColorGap.shrink": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.SourceColorGap.append_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.SourceColorGap.reset_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_source_color_gap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.source_color_gap_progress": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.source_color_gap_from_term": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_scan_prefix_source_color_gap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_output_source_color_gap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.uncolored_source_read_frame": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_steps_read_memory": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_output_source_color": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_between_source_read_frames": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_build_source_slots": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.original_colored_statement_event": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_between_statement_read_frames": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_successful_interval_memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.bare_source_statement_step": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.bare_source_next_result": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.bare_returned_source_slice": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_actual_successful_slice_memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_first_trap_read_memory": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.bare_trapped_source_slice": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_actual_trapped_slice_memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_event_nonzero": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ColorUpperBound.at_color": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.color_upper_bound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scanState_color_upper_bound": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_color_upper_bound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.color_upper_progress": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.color_upper_from_term": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_nonempty_prefix_color_upper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_output_color_upper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_block_event_split": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_block_boundary_lookup": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_block_terminal_color": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_block_prefix_slots": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_slot_color_above_block_boundary": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.SourceColorGap.above_block_boundary": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_reference_fold_above_block_boundary": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_prefix_cut_above_boundary": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_output_block_colors": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_event_same_block_of_color": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.termCtx_source_none": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_term_source_none": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_producer_block": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_args_unary_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ret_trap_data_not_unary": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lowerNode_newBlockScan_prepared": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lowerNodes_newBlockScan_prepared": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_blockScanOrigin_prepared": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.blockCore_source_branch": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_source_slot": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scan_emitted_nonbranch": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_consumer_unary_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_consumer_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_consumer_body_position": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_block_terminal_unique": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_block_positions": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_args_original_operand_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_args_original_extension": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_original_pair": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_atomic_color_position": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_source_endpoints": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_original_definition_color": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_original_interval_frames": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_positioned_source_memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_positioned_source_trap": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.ssa_value_unwritten_after_definition": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_steps_slots_frame": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.mapped_atomic_result_singleton": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_atomic_result_value": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_atomic_loaded_prefix": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_source_endpoint_receipt": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_positioned_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_deferred_pair_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_argument_fields": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_sink_iflet_environment": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_event_result_type": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_source_type": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_match_argument_fields": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_emission": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_chunk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_endpoint_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.bare_returned_uextend": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_chunk_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_endpoint_atomic_fault": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_chunk_fault": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_all_widths_line": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.instFaults_acquire_all_widths": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_all_widths_encoding": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.encoded_acquire_all_widths_fault": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_all_widths_line_fault": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_all_widths_fault_site": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_all_widths_register_level_boundary": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_all_widths_register_level_boundary_from_trace": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.regLevel_acquire_all_widths_fault_boundary_world_valueW": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_resolved_segment": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_resolved_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_resolved_fault": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.scanState_sunk": [],
+    "Backend.Stock.Proof.Acquire810.SourceSlotsPreserved.withTryRegs": [],
+    "Backend.Stock.Proof.Acquire810.scanState_entry_colors": [],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.cons_inv": [],
+    "Backend.Stock.Proof.Acquire810.ScansSpec.nil_inv": [],
+    "Backend.Stock.Proof.Acquire810.referenceCut_fold_above": [],
+    "Backend.Stock.Proof.Acquire810.ColorUpperBound.of_color_eq": []
+  },
+  "all_353_prior_ax_exact": true,
+  "source_hashes": {
+    "FV/Backend/Proof/StockAcquireColorSegment.lean": "437248d5d9214398d96c089c0a6f978f3ad7a53270ccd189a054bc963c88e458",
+    "FV/Backend/Proof/StockAcquireValueAllWidths.lean": "a81ba96a06236efb2df4756d25e1d6145f63093e4088bbe22c0117d9069ff371",
+    "FV/Backend/Proof/StockAcquireMatchSource.lean": "0a68e2a351306b5964337f001c9751972e62ea69956b8c5cc7947a0615ea30a8",
+    "FV/Backend/Proof/StockAcquireSinkForward.lean": "c9914059b8b41151e06d8295e39d7e70f85a3b2424716bdd3577ceb6dfc721ce",
+    "FV/Backend/Proof/StockAcquireRootForward.lean": "094e57194981235cd3eed4b3097bdcb4a3de35f41f36689cf9f8dff9f13a9468",
+    "FV/Backend/Proof/StockAcquireSinkReceipts.lean": "26ac17e50dfca4936e4648eb996a8f22272cf3e1fa7234ebe492170d2ae465b6",
+    "FV/Backend/Proof/StockAcquireRhsReceipts.lean": "9642c1a6379c0dde9a77c69a99dddf0ee8df69658bcab61cbeb53c406fdf245e",
+    "FV/Backend/Proof/StockAcquireRuleProvenance.lean": "5d09e80b993591145952f5bee1d129fa5a0b42228ecd9b0588b97a58995c3d9c",
+    "FV/Backend/Proof/StockAcquirePatternData.lean": "e68f455709b011bd9853a54f85b93b0fc36f8d3d7485e3570f08bec83ba9722d",
+    "FV/Backend/Proof/StockAcquireRuleSource.lean": "111359d5907773d7bca72b832798b2a14497416cc2e8c3b98d1e7e5c00c4179b",
+    "FV/Backend/Proof/StockAcquireAllWidthsBinding.lean": "cad324f16c293554e0dbab030edf6026b6b3698636bb722180637e55ef244834",
+    "FV/Backend/Proof/StockAcquireRhsOutput.lean": "f550949053e9eb8fafe1c81b83827dc2d71cca36c652d22b116f4c186db86c9f",
+    "FV/Backend/Proof/StockAcquireSelectedBinding.lean": "90e0b110f59b9aa3dac58a42b28c73eb4ef7f66ed6f19267436e8186718d1bdf",
+    "FV/Backend/Proof/StockAcquireDeferredSource.lean": "aa8622277e9a4214baa8275b58ff88ed620b4a8657a95025338ddd652d19c91e",
+    "FV/Backend/Proof/StockAcquirePendingOrder.lean": "8f5efc54a820ab0f9ff8b1d27f9b53ff3ffb9e06c8efd45548a4cadcb397b449",
+    "FV/Backend/Proof/StockAcquirePendingFrame.lean": "3c5cbfacb007be7a844afd43b38a32a56b75946a724f79f8380de8b0bb285767",
+    "FV/Backend/Proof/StockAcquirePendingTrace.lean": "0c36de10dbf29fe27c64381bcba782b578dd6e7b7ad72e0c45143427193e9028",
+    "FV/Backend/Proof/StockAcquireSelectedPending.lean": "665a0d6d2e214709f63c346c4239c785b11e77639059a241f5f64fe591ce49e7",
+    "FV/Backend/Proof/StockAcquireSinkPending.lean": "a3542bb543700865ac187a0467c4d606dcdf3662b00299715c4f100841c7cba4",
+    "FV/Backend/Proof/StockAcquireSinkCallPending.lean": "2d7289a6e6dd230268f0b6106cf8cd4d62a724a0a38ee0fa7a46870ae97a96a1",
+    "FV/Backend/Proof/StockAcquireRhsPending.lean": "dd1595c5f143fc0bdca8ef3d20601a55194131ba29d9e059bc465137693b5ed6",
+    "FV/Backend/Proof/StockAcquireRulePendingSource.lean": "491c2dc3c3622fbe02968f5e3e0fc05b8399becc9b49a53536c66dc03699f9fb",
+    "FV/Backend/Proof/StockAcquireSelectedSingleton.lean": "f1e387339eaa57f279f5e73a4671013846d6ae07bf2cb3d8225d435737a20d70",
+    "FV/Backend/Proof/StockAcquireMetadataOrder.lean": "2339d6b240e5649ac28a553eaed220138e99506a13b7e4db22275f110bd42621",
+    "FV/Backend/Proof/StockAcquireMetadataEvents.lean": "a7b9ed113ad938399dd8ffbafc9ecb96a73d9f7ed4ec003a80ced4e1f8c5fbd5",
+    "FV/Backend/Proof/StockAcquireEventOrder.lean": "8096bb36b28aca66f7ee35d2fe87e8e299bf2b33ecaf26b26015bb60224a61ad",
+    "FV/Backend/Proof/StockAcquireSourceEvents.lean": "eb10323eaabc7b295082270b1a9670b6e8168ce006cb712929a460de038908d2",
+    "FV/Backend/Proof/StockAcquireGlobalEventOrder.lean": "952c305f747bc95c1d813d9804642c096cefa66c092d57b6ddadccf8bd9b73e7",
+    "FV/Backend/Proof/StockAcquireSourceEventIdentity.lean": "a92fc48a20f67f6278829cd76c77f6c31a4bed712cc1f30b31b9f0d73003adc8",
+    "FV/Backend/Proof/StockAcquirePendingSourceOrder.lean": "18f1f0ac8644c373fbf9da07125d5a789d43645da29996a6a7a78250e5289688",
+    "FV/Backend/Proof/StockAcquireRecordSourceOrder.lean": "af5d3ba8458b65036f25a52584960072ed78cf9f3f864ea72448424712713304",
+    "FV/Backend/Proof/StockAcquireTargetWidth.lean": "744c863c91333caeccda03d5648706af054d1caafbe6347d45d15803059c936e",
+    "FV/Backend/Proof/StockAcquireSelectedTargetWidth.lean": "b7693df45acbe4fbd9b37e742cbb0f43a144306180d1700c31903ea087b5a726",
+    "FV/Backend/Proof/StockAcquireSelectedPairValue.lean": "9c74f018da288280cb6c806e5c9600bf313b320f5b8969a4a1699800d6753d7b",
+    "FV/Backend/Proof/StockAcquireSinkAddress.lean": "79a561af9da0d403b937f6d4f074b87f2cea047bda88d5c8d7d155cc9ef94cf8",
+    "FV/Backend/Proof/StockAcquireSinkRequest.lean": "f8345b6337df43b41edd16c1573d431ebe64b417c4a09342606c7146891f9482",
+    "FV/Backend/Proof/StockAcquireSinkCallRequest.lean": "e9c99ce9722d35f0d7d242ac59376e8c6f26263dd4a04de8dcde6149adb3d571",
+    "FV/Backend/Proof/StockAcquireOriginalPointer.lean": "6e989f152165280af95edac168b06bf044e52c397e06d23fc85ffe1a88b3dae6",
+    "FV/Backend/Proof/StockAcquireOriginalRequest.lean": "e99e3ff8b795d53851fe3f4806322222ef408c0ac08b9e94ff661956da78ba74",
+    "FV/Backend/Proof/StockAcquireSelectedPointerRequest.lean": "17818d6a73b37cf4690d88b88799ecd363addfa9855de8bed9a0ca4ee218ea0e",
+    "FV/Backend/Proof/StockAcquireSelectedPointerValue.lean": "d68d2db0e62d960683224d16ad701f8a297e713006b954dabf7d6c385100c8ee",
+    "FV/Backend/Proof/StockAcquireOriginalStatement.lean": "360c9d0676d769b83ec9b1775e4803832eaee5d3e8f6acbfc0070ce942f84c4a",
+    "FV/Backend/Proof/StockAcquireRootSourceValue.lean": "85544e7689f69118ccefc22bae8d68accac8fbc23efa4f03c8ba4e65b5d42c51",
+    "FV/Backend/Proof/StockAcquireOriginalProducer.lean": "d7ea5fc460b09ff0a9d819e119e7691547e76373460ea6cb574e28a380d18e61",
+    "FV/Backend/Proof/StockAcquirePointerAvailable.lean": "a393d015921be3547d0d7cd5d7afaf2af3402a09e92a4163f0f4a3dbac7a50b3",
+    "FV/Backend/Proof/StockAcquireSelectedOriginalPointerRequest.lean": "1bcfc77547a5bcf776ad3a97b44f38017868e3d6f6c2690948faaf9d23988159",
+    "FV/Backend/Proof/StockAcquireGuardedPointerValue.lean": "981592c0ebd1ce89796209af4a5b6bdbab7d553241ebe6945aeb040d014fd21c",
+    "FV/Backend/Proof/StockAcquireSourcePointerFrame.lean": "1feb49a17386400bc4d9992a51f05bbfd812f7f7d6d55ec5783eea565f115dde",
+    "FV/Backend/Proof/StockAcquireOriginalPrefixPointer.lean": "777ba4323e8748ed618a1a3c7f2e687626254f890300fe9acbaf33ff62fc3077",
+    "FV/Backend/Proof/StockAcquirePendingMarks.lean": "1e7ffce70e9d8fb04c0ec77dbc336e109e7b7fb055d09fcbc3488875c30f612f",
+    "FV/Backend/Proof/StockAcquirePendingMarksFrame.lean": "3bba908e7629a0d115bd1ea3d40829a2264d9e7f2db9ec983e8a8e07547e1a4e",
+    "FV/Backend/Proof/StockAcquirePendingMarksTrace.lean": "af6b743cd94b325942ecb217636f3d545266dbd733936c71cdf85e04c446da5a",
+    "FV/Backend/Proof/StockAcquirePendingBindFrame.lean": "9774623747242ae272d4c018a75c1aa7a302dd6a04b8df3f196a2961f379f047",
+    "FV/Backend/Proof/StockAcquirePendingRecordMarks.lean": "cfa800c66f766526ccf54fec81ebc2dacb7cdf09dd85c02c9aa28dc0ebf2eabc",
+    "FV/Backend/Proof/StockAcquireOpportunisticMarks.lean": "db87658c6710567a71ad2f6ca5d7c674fae287952d463c05bdb3bcaf68e9efca",
+    "FV/Backend/Proof/StockAcquireScanAssembly.lean": "f034954cbae454ecd83ba36cd12ae684f0a94c66628cca255614fbd2c8d5e315",
+    "FV/Backend/Proof/StockAcquireActualScanMarks.lean": "8efcc19b7ff91407b99d3d1ee3d25aab818d28b45ff11aaa037524cf2d309de6",
+    "FV/Backend/Proof/StockAcquireActualScanSources.lean": "0457015ee8ed16ebd8333db13225dc528ed3ce3b80874ca87f6be143b0c36e78",
+    "FV/Backend/Proof/StockAcquireWholeScanQueue.lean": "1f573922e7b0f9d0d8a327fca46266961feb8a23e38643416a7a3b37e031f3d2",
+    "FV/Backend/Proof/StockAcquireRecordFrontier.lean": "10f8571cf7173ccf94d0b2faecdbd24551cc7bb3f69faf4051308fa778433a3a",
+    "FV/Backend/Proof/StockAcquireScanFrontiers.lean": "9bfe6abb929d319109d492ca18980300fcedd24c58fa8bd28128755036ad3a96",
+    "FV/Backend/Proof/StockAcquireForwardFrontiers.lean": "9b42cdc85f03ae670441640fe5ed514d62fade71a38d78d88ff79a31399310d0",
+    "FV/Backend/Proof/StockAcquireSourceRead.lean": "6b469ec2e4e0eef7de8f6df9d5c45456bd9a1687be7407d6e5b834f420a93fc2",
+    "FV/Backend/Proof/StockAcquireSourceFault.lean": "b3f2fa475a4b134910a647a345655de53d94abe70d550e06e8869972004b34d0",
+    "FV/Backend/Proof/StockAcquireRecordPendingOrder.lean": "00c4f6faa20dc4b383b0b8068dea6ed55d7c21fbb5f2f43b45650eed6834247e",
+    "FV/Backend/Proof/StockAcquirePendingSourcePositions.lean": "2f8218d808d7505fd6c3167e7632987684a965d488e0ae6264e538a3f9d1906a",
+    "FV/Backend/Proof/StockAcquireRecordSourceInterval.lean": "cbf23642f8cb9e506b766f4b04312db6d71bfdedddee9923836612533670a38f",
+    "FV/Backend/Proof/StockAcquireReadFormats.lean": "fdb698de3a5d2bac3742a7289f7879c2bbbe693e3326c5d5f316de780ca74c8d",
+    "FV/Backend/Proof/StockAcquireSinkFormatSources.lean": "d8c8844d9aac9b5a073f7acfa0149ac463c4b951af2300a9fbde67554f959a17",
+    "FV/Backend/Proof/StockAcquireSinkFormatContext.lean": "8ba54d1c1077f0a0ea7be77f714170f206aa32ea3592c68036cfb813117ac068",
+    "FV/Backend/Proof/StockAcquireSinkSourceMemory.lean": "7eaf81df6d4bfa52bd22b0b2438c4773bd63b33c1065d548e525fa59dc6042d0",
+    "FV/Backend/Proof/StockAcquireSinkFormatNode.lean": "fc53e206a0a8fdaa85c03bbde548c32d838da232fa94e18e3354847a292eb74d",
+    "FV/Backend/Proof/StockAcquireSinkFormatDriver.lean": "da1e2a5404c149f1349e314ca24e1f9386317e3ce515c9f01ca794ca04fc328e",
+    "FV/Backend/Proof/StockAcquireMatchedSinkSources.lean": "0f392ede50a0e519819b3483fc686c36d020c66ad06e58f326458beab062643b",
+    "FV/Backend/Proof/StockAcquireDeferredLoadPattern.lean": "3fb132c1ebc783868b26757625fe5a910848f02581424a93619f7daae4dc4040",
+    "FV/Backend/Proof/StockAcquireDeferredLoadRootPattern.lean": "e0d3ac5c523e39edcbdd10304ca4280397db798b8149d98996266cb03cd29dca",
+    "FV/Backend/Proof/StockAcquireEligibilityReadSources.lean": "5d9012edf5f19a48ac0ec248e7278a1b1adb4a79a15f481567f8a746eda4b7db",
+    "FV/Backend/Proof/StockAcquireReadPendingMarks.lean": "04bfcc7f6bc5bf9aa53ac8b84c2f9edc1b2888a9a293e180f23cd51486aea1a5",
+    "FV/Backend/Proof/StockAcquireReadPendingCtor.lean": "3e33c04024929fa3f74c68699e394d5fad4ffeb32f1574c21f2d807454209db7",
+    "FV/Backend/Proof/StockAcquireReadPendingRhs.lean": "107a98f1ba9a090de55480038c0d6c7c778e07e98cd0b8125b71be33cdea9fe9",
+    "FV/Backend/Proof/StockAcquireReadPendingInterpreter.lean": "c5cd2bf45436d218d2b57e0ff827cb68745827dd30ad3c8fcedbe144a5b8c272",
+    "FV/Backend/Proof/StockAcquireReadPendingNamed.lean": "9f1b50e6d9f12ce998a5f735de578897a0e27dce6eaf22cbe61f332d021a3abc",
+    "FV/Backend/Proof/StockAcquireReadPendingRecord.lean": "26d586245f1657f8131b5f080a76f417774964a8b2104e2c1eb70f202cb6f914",
+    "FV/Backend/Proof/StockAcquireReadScanFrontiers.lean": "f9f33b1e856f7a96a038cab754fbcd738096c73c6db9c289e6e91a35c2ee514b",
+    "FV/Backend/Proof/StockAcquirePriorReadFrontier.lean": "482fdd77000d376f7ee066b46cf1cacbf1b0c0727fa14b5aaeb372169a2d492e",
+    "FV/Backend/Proof/StockAcquireMarkReadProvenance.lean": "3fbf127e45c8dc6041c3ebc73ac1a74ab1e3ea652497d60f98746b0af1cdc9ad",
+    "FV/Backend/Proof/StockAcquireReadIntervalCoverage.lean": "8869f5f76a6372b320adeb556895b5ac30d015d51ba76f608ea99dcc81b6bbc0",
+    "FV/Backend/Proof/StockAcquireReadMarked.lean": "1b1ba11d015d2a8e6a3412fc6b4144d4ee1c7ff679753b023ae02153b5d13008",
+    "FV/Backend/Proof/StockAcquireBranchMarkFrame.lean": "362a10a2849a89b46e3cd8087f2e09c1f45fe3194ba4fba66684bdab1e9b49e7",
+    "FV/Backend/Proof/StockAcquireOutgoingMarkFrame.lean": "4f6f0156ee666a25cf84c2ef03f8f4752a0924093db0f6d720e5ea4bc18f6806",
+    "FV/Backend/Proof/StockAcquireCoreMarkFrame.lean": "aedca262b8276336be5e574c4667a88e8bedef9c16a7fb6f4e5d17f9a22f1855",
+    "FV/Backend/Proof/StockAcquireActualSourceView.lean": "4a8c9bf412aa93fd4648f3016cf923383c0795955210328f846ce9d3f660e8f2",
+    "FV/Backend/Proof/StockAcquireActualCoreReadMarked.lean": "bab8915a71c97de074e3b7165c537618f8d3fef6bedc4dedc550e04419104a5e",
+    "FV/Backend/Proof/StockAcquireNodeMarkOrigin.lean": "29d7afce60ab4c3c1153517616205945299c575cf7f190ba58047fc7b9515412",
+    "FV/Backend/Proof/StockAcquireDriverReadMarked.lean": "af63abe09f8fb80d202f80c1fcb4ac0170d83f60928bef91d804ca6162daa220",
+    "FV/Backend/Proof/StockAcquireAllReadMarked.lean": "1ae9c77cd1793a2071f7126f42731675d8f2c11615a7a3665350deb8ee1ebdec",
+    "FV/Backend/Proof/StockAcquireReadQueueCut.lean": "1bbfa97f300dd05a14e5025c99f763a5d666848abdb9fea159e547ef3ebbd1fd",
+    "FV/Backend/Proof/StockAcquireReferenceCutOrder.lean": "9b886a7828a8683aae29e86851dd8b5990f4f55e9333d6386a6b516ff4a32f9f",
+    "FV/Backend/Proof/StockAcquireScanIndexOrder.lean": "5ec6811b0083b1f528dadf6d276afbd47accde18a81bf7ffe3e094e06febe9c8",
+    "FV/Backend/Proof/StockAcquireOpportunisticColors.lean": "c6b4ac0070fb1bd97b4294f74db79529556f93f959dff0ddf9652fb69df016e6",
+    "FV/Backend/Proof/StockAcquireScanColorFrame.lean": "39e1769eac2717ca5a8f75198176e4bb788b6efa275b235d65c30dd0ef762ec2",
+    "FV/Backend/Proof/StockAcquireReadQueueRecord.lean": "dce42d06baec6249f33e7d989e82e1945ea4a4a0a61f08c41d73d7af6e394d80",
+    "FV/Backend/Proof/StockAcquireActualCutSource.lean": "c50b5b03d651a50518320d1b38e5b9f46a6ba86d7c09b459ad2bb7b316b71c4a",
+    "FV/Backend/Proof/StockAcquireReadQueueScans.lean": "314924d6ea32925103ac5876e0eb037cf4146858018527fabee903c19122bcf1",
+    "FV/Backend/Proof/StockAcquireActualReadQueueCut.lean": "b34e4060f399e2120b80cdd4abad495a7a5e0a7d1aaf0f35a32ad2a7e2faa602",
+    "FV/Backend/Proof/StockAcquireRecordOutputCut.lean": "e28986be4b339079b46b003b2bc07d9f9c498251f15ad723f48318481d52d748",
+    "FV/Backend/Proof/StockAcquireCutSourceBound.lean": "5b9b14d20864efdb5622e3dbea0d53bc4651055a5e83b74ed5f859c5785dc5a8",
+    "FV/Backend/Proof/StockAcquireCrossedReadSources.lean": "40844108ea0ad29150aa91d27baeb9581065212736963f205d7f794fcb37d627",
+    "FV/Backend/Proof/StockAcquireSelectedOutputColor.lean": "80ffa26895b2c6e5c02a80511d93dec278dc175b0ba71b9a71258223a0ffdb04",
+    "FV/Backend/Proof/StockAcquireSourceColorGap.lean": "8cf3842704f093bb5eb37f7cee274c5269f16d0cdc6a82269fa35529b1f672f9",
+    "FV/Backend/Proof/StockAcquireRecordColorGap.lean": "217ffdfa41dd598e43d12a58adbc46e05d514549ad754eed056cb84cad890bf7",
+    "FV/Backend/Proof/StockAcquireScanColorGap.lean": "9ae24f1dbaff07677aca62987707253881e73397c187a5aeeca9d6aedf753a06",
+    "FV/Backend/Proof/StockAcquireSourceMemoryComposition.lean": "ab479d86def0b6b4c87765826ee2576a8cffe183494bb6c4c58651cd9d933e41",
+    "FV/Backend/Proof/StockAcquireSelectedCrossedReads.lean": "d2868fdefde41e6f49fec669be310c16c7eec55c8818e3d56db01caf310004d1",
+    "FV/Backend/Proof/StockAcquireOriginalStatementView.lean": "cbd909fa0810e89509e5a822af725549f9f66708b00bd958e2123c4715d8ba44",
+    "FV/Backend/Proof/StockAcquireSelectedStatementFrames.lean": "f36893044bf36ed2ccd937d83cf2ddcbe497bacd7c3f20d0c9e84d83adf6cad9",
+    "FV/Backend/Proof/StockAcquireSelectedIntervalMemory.lean": "aa6af7b952ddc33190e265b5124e790a105b801cc20d640e907eb7cdc9704ff2",
+    "FV/Backend/Proof/StockAcquireBareSourceStep.lean": "c8c0a42c9478126b7a0234dde60858e813037f0cdcecac5d9725770dde027ed4",
+    "FV/Backend/Proof/StockAcquireBareSourceSlice.lean": "f882a2abfb4a3705161a965cee00c163ff9490600cc57854944844924ec898ee",
+    "FV/Backend/Proof/StockAcquireActualSourceSliceMemory.lean": "bf3747a09031937b9012bd68070f22fe0737fa634dd5112ad12393a02b0520cb",
+    "FV/Backend/Proof/StockAcquireSourceFaultPrefix.lean": "e9a0e747e0fa55028663d86fc005e03e4e804b6449ec7190dd40f7cb7570be57",
+    "FV/Backend/Proof/StockAcquireBareTrappedSlice.lean": "81e952abe22d389b3bb21942f506e6345cdaa9e89f48787616c136ad454c8fc1",
+    "FV/Backend/Proof/StockAcquireActualTrappedSliceMemory.lean": "9a242666d9bd303354d38e7a095d34d5d7bc552ac0f53a3f2df6491eb81ff5b1",
+    "FV/Backend/Proof/StockAcquireSourceColorPositive.lean": "3fee7da3c49f23a45713db5d89fb885b081f20c365d1f98d22c1af9c194444a6",
+    "FV/Backend/Proof/StockAcquireColorUpperBound.lean": "8a738f51934ed44cc77aa32b5d9cbd56e0e09ba092aed91dc6a69adece185e62",
+    "FV/Backend/Proof/StockAcquireScanColorUpper.lean": "a28ac918fd33c30cd3ddc07f2d7c4fa98bd3f80ad077af66eceb0a116ecabb04",
+    "FV/Backend/Proof/StockAcquireBlockBoundary.lean": "9b3712aef561d3dd81b21dd546567521c297dc9967fa8ade13610fdef9fbfea8",
+    "FV/Backend/Proof/StockAcquireBlockColorLower.lean": "8e6ff847ed07e55a69158c9ed6e2c2e9e229daf9f833736a7cb554c6058102e7",
+    "FV/Backend/Proof/StockAcquireBlockColorInterval.lean": "9f4ef771de933093b59ce1c020f25f91e02d865c7e172720ce278352556777f6",
+    "FV/Backend/Proof/StockAcquireActualBlockColors.lean": "90679bc8fd756a54a762d0712ab9fdaea48e199fb1555642d1e926e8657ebd77",
+    "FV/Backend/Proof/StockAcquireTermSourceBoundary.lean": "c3a9e9cdf80866c7559b0bceb3ba79d3ac66ce683010eaf16765c1dc3d2cf7c1",
+    "FV/Backend/Proof/StockAcquireSelectedSameBlock.lean": "3fb71da9883a5b5acaeaa9512ba44c1a70bc4c1a9d090043b37c1dc35f1669d7",
+    "FV/Backend/Proof/StockAcquireConsumerUnaryData.lean": "72cf10566194f82d2866d5c7f8898598626158814cdb6ee7eabc4a71eb044169",
+    "FV/Backend/Proof/StockAcquirePreparedRecordOrigin.lean": "9e46d02319384cfd9ee727c7ae5e4a5f8e6624a26089188ce4151c25dde8c570",
+    "FV/Backend/Proof/StockAcquireCoreSourceBranch.lean": "73164002340d3822983a5ac72af44215283d83fba8e89547acbd36f5c937f4f7",
+    "FV/Backend/Proof/StockAcquireActualRecordSlot.lean": "99c314b9c36c818d759e5fccb756739378d2a13f58ddc1605380013a4587aeb1",
+    "FV/Backend/Proof/StockAcquireConsumerSourceSlot.lean": "3706fc3b73e86f8a88ce4f1a5cb5ab7a051e507987944410470eb4858adcffd1",
+    "FV/Backend/Proof/StockAcquireConsumerBodyPosition.lean": "edf97b309d8a3c151a41590c17763e5c08f533de0398402ff33f2fb90121c7b5",
+    "FV/Backend/Proof/StockAcquireSelectedBlockPositions.lean": "7a5631bb1802284c5bf764b2304199d17d5c301d617171dc2864d32fa387033c",
+    "FV/Backend/Proof/StockAcquireConsumerOperandData.lean": "9fa4e9ebe533ba4b5c3c85cefc75ad39ecdcee9e786fe760b5ec6c7ca82bcb31",
+    "FV/Backend/Proof/StockAcquireSelectedOriginalPair.lean": "443a2f0cf100f3a9c8e0c1668eee0e87b6ec69c82f9fcd2c1a071eb4fad20c57",
+    "FV/Backend/Proof/StockAcquireSelectedSourceEndpoints.lean": "d47af4001652138fe2185f9cda6b6516bfbc279d7c01cf3e0bcaa93a95e19209",
+    "FV/Backend/Proof/StockAcquireOriginalIntervalFrames.lean": "7dfc5411d2de395a7815e16facbfbdda2e398a9b2dfe9fb5cc55d15c1e7e4c9c",
+    "FV/Backend/Proof/StockAcquirePositionedSourceMemory.lean": "d790882810dd137aade28ef7d3b47e383c99a42c30b39c78d31a2fc3295e801c",
+    "FV/Backend/Proof/StockAcquirePositionedSourceTrap.lean": "8510cdbfcb7f0539a6bedbbe345fd0d9579be746da3ab1f3a73c8dd5c6e7cbb4",
+    "FV/Backend/Proof/StockAcquireSourceValuePersistence.lean": "5dbcb76f7de3a109ed9373aecf21735ad32b1b26cd0e19449e6ae56ac44c7297",
+    "FV/Backend/Proof/StockAcquireSourceLoadedPrefix.lean": "92df7a6d6c660d7d1622ba853cebdf682917e6105416a202159abf531702796f",
+    "FV/Backend/Proof/StockAcquireSourceEndpointReceipt.lean": "4d09b5d80f30b2529f9d01317c95822f6ab5d66658db0a59c8063040a2fb962d",
+    "FV/Backend/Proof/StockAcquirePositionedSourceValues.lean": "e17fe0382d51f55058a4a4aab5c46aa1b73806cd81a803c9fe97fd8effbde423",
+    "FV/Backend/Proof/StockAcquireDeferredPairValue.lean": "e5e7302a356ea561303fb2b257395e2a634154bd911a19ffa4b1020dd995c643",
+    "FV/Backend/Proof/StockAcquireRootArgumentFields.lean": "a44cedf84e6a29e2fc3a27a80d1e87c3a4914435eb7b6e9c568c9631dcf21770",
+    "FV/Backend/Proof/StockAcquireIfletEnvironment.lean": "29ae833689f3e6a647f9d51448ad6f9f722d38e510dfda8c651c85b34af84e4f",
+    "FV/Backend/Proof/StockAcquireOriginalValueType.lean": "6f5c7068a422bd8098bfc2d2aff82685a20732a5ae10a7dec89c4cc33f5f66fd",
+    "FV/Backend/Proof/StockAcquireMatchArgumentFields.lean": "6bf9eda625af4756a89cbb22e2a3cfef21e7115f0e423280221e413fcdcc756b",
+    "FV/Backend/Proof/StockAcquireSelectedEmission.lean": "764a726061142967165121fd7ce5a1ff30a913df9822910407d936b3a4fb26df",
+    "FV/Backend/Proof/StockAcquireSelectedChunk.lean": "53670d401300634c13f40fb6aad85cb394deb501582709d71f661ae0b0724eca",
+    "FV/Backend/Proof/StockAcquireSourceEndpointValues.lean": "1ab87ea25c8666980d82aa43ed4ff473ea8889e6c3d02c3bdb2d026233709087",
+    "FV/Backend/Proof/StockAcquireSourceConsumerResult.lean": "4fa04329140b25d3bd3140fa8d4da9939f1f6438a06924071ebb61e3a3d418f4",
+    "FV/Backend/Proof/StockAcquireSelectedChunkValue.lean": "776c4e067c2cda482fb819fbd56591c7720cc46aa123961dc144ccfb91d237e1",
+    "FV/Backend/Proof/StockAcquireSelectedChunkFault.lean": "7a1440848aed5ed7bd20e04e81959e53f744cf1a118e307e54349a24635e22f5",
+    "FV/Backend/Proof/StockAcquireAllocatedLineAllWidths.lean": "e449f4c8ed40b1ded4c111b4e363f7605634a952dee45c3512b6bae7b93ad8dc",
+    "FV/Backend/Proof/StockAcquireArmFaultAllWidths.lean": "aaa479d27d8bad078648271616e91bff58ca5498238753b8cdb13ca9a14ed226",
+    "FV/Backend/Proof/StockAcquireEncodingFaultAllWidths.lean": "728ae0e3aadd65264efa56dda2847913cb13a4e73bc3b2e038429ce22afb19f3",
+    "FV/Backend/Proof/StockAcquireFaultSiteAllWidths.lean": "c7cbdcfdd0a9096cf5f27a026ebcfabc4d621d10b710051fcffbd4f37738242d",
+    "FV/Backend/Proof/StockAcquireRegisterLevelAllWidths.lean": "bc15a97bae4e5b5db522b097fbbdda03ce4120d84c9616ef05df2ee74c862125",
+    "FV/Backend/Proof/StockAcquireTraceAllWidths.lean": "6858c2ea46da375ee57533bb4750241bc6407ec68292134990815ced3491fb0c",
+    "FV/Backend/Proof/StockAcquireMachineBoundaryAllWidthsW.lean": "623e1d7511c13f7a5aed77e1ad52441c47bd85b893d573f9d0e9a2190e9ba7c5",
+    "FV/Backend/Proof/StockAcquireSelectedResolvedSegment.lean": "e97c2d7269887c7a50de8451fdb70eb126503aff146530d85b033bbb7b7d3b0b",
+    "FV/Backend/Proof/StockAcquireSelectedResolvedValue.lean": "5af5dd44fc24dd4a104e14d49ef361bb5b5015976fc89e70f6c05f8b2495cf39",
+    "FV/Backend/Proof/StockAcquireSelectedResolvedFault.lean": "a5f66c4be5e449fbb3853c84ee058c3cd9f5a1304425759cd965ad93b614fe08",
+    "scripts/audit/stock-acquire-metadata.lean": "b89e85fec06c634d728a87a431b89bc95f49059a12e39803ac6ad59548f73998"
+  },
+  "artifact_hashes": {
+    "FV/Backend/Proof/StockAcquireColorSegment": "4b4b09bd4a56dfc6c7210a8d93829b56d7e6a4bb8a1b08cf02305980837f5a8f",
+    "FV/Backend/Proof/StockAcquireValueAllWidths": "4b6f223ade10712b8e5d4fc787921c55235f3997b44cccb22780f430e5d0222d",
+    "FV/Backend/Proof/StockAcquireMatchSource": "efe48babda5ee6abd9eaa967eec5084ed41055acdb08417946f0efc715232382",
+    "FV/Backend/Proof/StockAcquireSinkForward": "a4f94f598b4fa0da0f2d04eab818b6dd3b6fc9f55fbb90717ba054a3b6e53af1",
+    "FV/Backend/Proof/StockAcquireRootForward": "1442f1077bfffefac9f52a638a4260a6c57b5bcac1f80778b307f742f996f706",
+    "FV/Backend/Proof/StockAcquireSinkReceipts": "0b6072a2ecf71c481d7a12449486c7ab599f7d1fb87b2316fac33ee6900b7f63",
+    "FV/Backend/Proof/StockAcquireRhsReceipts": "cba8c97da22598a0b388a513b7aebfda679bf08fc75a8d6a9e22de569fd856b3",
+    "FV/Backend/Proof/StockAcquireRuleProvenance": "812dbb60fbe2c1dec9861b970f0207cef81476f51e8cdd4979ea2c6d4aab428c",
+    "FV/Backend/Proof/StockAcquirePatternData": "5e25098ef7525a3c581124251c5bb3cf8267851d551db1c8f5e2f09e4e20397a",
+    "FV/Backend/Proof/StockAcquireRuleSource": "16e9f3a0bb314bd899dd7bc3eab6047a7236a0c79ebc3e6aaf1e6b95553c0832",
+    "FV/Backend/Proof/StockAcquireAllWidthsBinding": "36a755df73cab57b333aa1ead9a4694a3771e5b2e14b7c7fe9b11d4164853b97",
+    "FV/Backend/Proof/StockAcquireRhsOutput": "8f157287709225680f054de3d4e8cbd5097d8729aab380d35c5d5912ffb3a7aa",
+    "FV/Backend/Proof/StockAcquireSelectedBinding": "ff10495238831a8e141187e2ce3408ba7081894e87028e9a4c8adc6843ba19ea",
+    "FV/Backend/Proof/StockAcquireDeferredSource": "a0dc155588b882a27f73dade97b068e7f69e05ff623dfd27d545ab22fc08650d",
+    "FV/Backend/Proof/StockAcquirePendingOrder": "838435009007f934cbad35a70140f84b6f33a6dcfb58d30a7362e08e06bdac50",
+    "FV/Backend/Proof/StockAcquirePendingFrame": "68fa4cf10657a7575c88ca74aa4a9a4e89a855e951991d644c6b4d1fc7abdbda",
+    "FV/Backend/Proof/StockAcquirePendingTrace": "fc91d024fcd8d59e72f45e4c6fbb65218509fd6f53cd544eeccbc1bbd91249a1",
+    "FV/Backend/Proof/StockAcquireSelectedPending": "8003714ff56c7e52a449b9b0dc386afafdebb6f2d23eaf12158848e88eab9597",
+    "FV/Backend/Proof/StockAcquireSinkPending": "d1b7f3ad8e244a16b769b85a586c83f2a56d2273a69bfa3b1bc951f1ca1fd183",
+    "FV/Backend/Proof/StockAcquireSinkCallPending": "614656014d8b2b1b4cbe6c6976ef1d8bcaabe2aaed1932ca8d5df598bd05e33b",
+    "FV/Backend/Proof/StockAcquireRhsPending": "f4cde1394674db6e8a79b0c83b85617242b446b64a7586642540451075efe600",
+    "FV/Backend/Proof/StockAcquireRulePendingSource": "5c5970004696653ad79fc03a6da35d82c44922bbe10e76991c48a3ce25e7f5b8",
+    "FV/Backend/Proof/StockAcquireSelectedSingleton": "5fc7eeb97c2ac05eb3399fe5b6e6aed7ec24f14f9801e38b9baf8c325cfe7ed0",
+    "FV/Backend/Proof/StockAcquireMetadataOrder": "49200617ac8f270397cfe881e7699b21657ee441c1216b796ff5d6e72ae5493b",
+    "FV/Backend/Proof/StockAcquireMetadataEvents": "3783d6c31b86357305640271ca80248e94d578da7be28dd90f9026a44a13e1b0",
+    "FV/Backend/Proof/StockAcquireEventOrder": "57fe398005954b68ae73bb0e9f40ea1385ac60b4dce9c67474be185476718d47",
+    "FV/Backend/Proof/StockAcquireSourceEvents": "378eed41f4ccf351fbbb57cb73d62113a9ee4f87a6084714dfacbec7a8b7ba9c",
+    "FV/Backend/Proof/StockAcquireGlobalEventOrder": "8fcfe9ef717df73cd41f7419408efff56411a9685a16c87b784e404e21516159",
+    "FV/Backend/Proof/StockAcquireSourceEventIdentity": "2fa5e0d9247b7df150ffa63972827a9c0f8d67928845cfaeeba4819bb6d04d3f",
+    "FV/Backend/Proof/StockAcquirePendingSourceOrder": "d90c449bbb19b9f8877f1f73252849860b2fea67da8d64c814ed92201e63d304",
+    "FV/Backend/Proof/StockAcquireRecordSourceOrder": "7f55c6bf3476e8feadca084eb8311a336303789cacc1cec0e4fff7038d8f7686",
+    "FV/Backend/Proof/StockAcquireTargetWidth": "7b8f4275ee3bf8c1c85a3e72f58b6a29897e19a05d64606f0f0c827b12196c9d",
+    "FV/Backend/Proof/StockAcquireSelectedTargetWidth": "b3aa2a0c04620e939dd1ce104db91eda74bc2c41d4d5baf09e94982d3183177c",
+    "FV/Backend/Proof/StockAcquireSelectedPairValue": "b088cee642a2657f4d01a5078be7b1627183c0c4537f90bf6066abc5d31535b8",
+    "FV/Backend/Proof/StockAcquireSinkAddress": "5d72ccdf481b2cddf7e2e13d0c7da556fa3a23265fd69cc37d4b5d7807e686c3",
+    "FV/Backend/Proof/StockAcquireSinkRequest": "0c6709ad868e1a0418213eccc250349551712cc3e4f9e654485d6048313b4f3a",
+    "FV/Backend/Proof/StockAcquireSinkCallRequest": "21bf7aacef26277dea08d2b6b44ca8e924e30e879888a5b97a302cb3936dae62",
+    "FV/Backend/Proof/StockAcquireOriginalPointer": "48a3da6d2a3370ce9c2dfd810c313b36fd5994f7b781f4d2fd1bee6a2a861d7d",
+    "FV/Backend/Proof/StockAcquireOriginalRequest": "6256a298df39fbd556d468942ed868e11c026d17576790171392b04c82a4591c",
+    "FV/Backend/Proof/StockAcquireSelectedPointerRequest": "c87a7e17d41b6243577c05190b84542c337aaf6d814ac294c228c89b5dcd0d2e",
+    "FV/Backend/Proof/StockAcquireSelectedPointerValue": "c15d838821f6c767eebd030390f4ec1304cdc9f396bb439317f55ca44eecaec7",
+    "FV/Backend/Proof/StockAcquireOriginalStatement": "b58100faf8d4c644d04e0172a8f0d2ad6b0c36f1d21cda36850f95d46937733a",
+    "FV/Backend/Proof/StockAcquireRootSourceValue": "0ef86eb5bb45a7ace3692faab81c6917475cb63ce68f9a2b8f6ebe9aa76ea01b",
+    "FV/Backend/Proof/StockAcquireOriginalProducer": "d9f8c688199a746c73574bc42c4cccdf2e8e0fb249a116f2f52c0ab98096487e",
+    "FV/Backend/Proof/StockAcquirePointerAvailable": "7e2dc4f22c22fae0da7bc72d8f2880be8de4dea14eea6aa73a43a565d2384df2",
+    "FV/Backend/Proof/StockAcquireSelectedOriginalPointerRequest": "f3713a6ac2aff5ffd115652a55e02b28493e5d826c33a5c32609260a385217e1",
+    "FV/Backend/Proof/StockAcquireGuardedPointerValue": "aeae9c200fd95f9d41b650d7e3477b608f06fc15b1e464eb907a72ac43b79c0b",
+    "FV/Backend/Proof/StockAcquireSourcePointerFrame": "c66be35d1b7078f1aec60e0d4d1ff9b192e6b4f596ecaf38cb17e196384e8cc2",
+    "FV/Backend/Proof/StockAcquireOriginalPrefixPointer": "a33c19948b2754de8e7e8c6bf0cae90d3c95a152d4d79fe98d150b4e88458226",
+    "FV/Backend/Proof/StockAcquirePendingMarks": "cfce041a3c69198b5e5aeb25184dbd871bc08a631e8a689d00d6bc53cf450e35",
+    "FV/Backend/Proof/StockAcquirePendingMarksFrame": "3482f02e180d96c7b37866c565ae2658286c0825ec06ef5ae41f3486ff3ae44f",
+    "FV/Backend/Proof/StockAcquirePendingMarksTrace": "a29c38148b7237057702dd70661ade66d68dc405c3777ccfd6943ce784c5ec16",
+    "FV/Backend/Proof/StockAcquirePendingBindFrame": "e444ee309fa78af6979bcff0111cccc5668f3db3fc8b7dc046ecc5006032c4a8",
+    "FV/Backend/Proof/StockAcquirePendingRecordMarks": "0db6d72730af30e938fb6c4ae691fdc95382dda87534192ce33d08b01971a2fd",
+    "FV/Backend/Proof/StockAcquireOpportunisticMarks": "3f8c477f0f49d18c48d458dffe71aba5bda6ecb491501624ccf30f2007f01ace",
+    "FV/Backend/Proof/StockAcquireScanAssembly": "6c34dfe7854ae2c36f03811d20f00b80eb87e13dae324ac350c8416093b714e4",
+    "FV/Backend/Proof/StockAcquireActualScanMarks": "c11b1bb54b306bb686e62ff697fa25c3228f632af473ff562fa8d6b20882dad7",
+    "FV/Backend/Proof/StockAcquireActualScanSources": "4cbf92e6148904490744778c1eb590d472edd0251650fbe7721f66207348dc7a",
+    "FV/Backend/Proof/StockAcquireWholeScanQueue": "276872ee1804d14b898f9eaa9043b2f97c5f9db88d43810328d421c6009d40dd",
+    "FV/Backend/Proof/StockAcquireRecordFrontier": "7ca18be1ca845c1e46cbb2e1afbcfbdff885d10fc54be50db44d2ad59f73abaf",
+    "FV/Backend/Proof/StockAcquireScanFrontiers": "f77eea969af08d9c364eb71651b8183c47269dc2e7ef55133c74486cbdb5ab71",
+    "FV/Backend/Proof/StockAcquireForwardFrontiers": "666acad763920f9db46209cd4385c8c19cb32d194f16d4772311f83003bcef00",
+    "FV/Backend/Proof/StockAcquireSourceRead": "6860d079eb4d1bf6b4fb5d59c0b47e3f29b5c3ecad236837ab792d2223950d5d",
+    "FV/Backend/Proof/StockAcquireSourceFault": "8b3189871c1f4d2becf7cd672ac744153ca8ea06a4bc2d4275223c6d42853b65",
+    "FV/Backend/Proof/StockAcquireRecordPendingOrder": "6b677afa8e303bac5786bfa34374fd70a6cb2527c61f218e4c7c30af21b0d4f9",
+    "FV/Backend/Proof/StockAcquirePendingSourcePositions": "9544197f4f070e40e8c1f0ca381980e9e72aa032d92575d30bda80b0a2ebe901",
+    "FV/Backend/Proof/StockAcquireRecordSourceInterval": "ad7640ad6f4fa8e410f20a77b1a0a24961b7a41093f22dcdd8341e3f9827c300",
+    "FV/Backend/Proof/StockAcquireReadFormats": "3b9b3e4aad367b8b32f648adbfb93ff8c95cef107458c155dca8cc5e2c812087",
+    "FV/Backend/Proof/StockAcquireSinkFormatSources": "c1d00b72405dc327285768dc9feb259f4e71fd3130dfb3699b500ae57ca9c951",
+    "FV/Backend/Proof/StockAcquireSinkFormatContext": "92a43140f9a9b497eb6bf87b371e3b9b663d6d58a4b5b4a4e4ea42711030ecb6",
+    "FV/Backend/Proof/StockAcquireSinkSourceMemory": "d2dd5230a1ffd8b635e554405eb97a1762b09a1d7064e5f5b75662f505cca6f6",
+    "FV/Backend/Proof/StockAcquireSinkFormatNode": "399c93c0d758a571f7c03223f94e5a8795075c867d6e33d3f8bedc9b57ad552e",
+    "FV/Backend/Proof/StockAcquireSinkFormatDriver": "417166b3f142c1899748d1991df7857ec17dc4eded618b3adef9b342168ffb36",
+    "FV/Backend/Proof/StockAcquireMatchedSinkSources": "74a099f4eae3a2a76c2c37e0dfec302396796a785d05a008767bf5f3a7c5cb59",
+    "FV/Backend/Proof/StockAcquireDeferredLoadPattern": "c6ccd0963c3c9179a009d2cf6e54b961734fe99a1a2f743519c9ef977c5e8e52",
+    "FV/Backend/Proof/StockAcquireDeferredLoadRootPattern": "9bdc45049bf5b85d5ee43bd1d367afbd68238f43c81626f41ce79dc74dc96298",
+    "FV/Backend/Proof/StockAcquireEligibilityReadSources": "5afd2ce6d18b2fae80ddcf1ac9b49058ecfd4eed2c0d00cf8b6957ccbb705cba",
+    "FV/Backend/Proof/StockAcquireReadPendingMarks": "d8a7bbcbaa0e91142ce962aa1d09d3b287be7fdeb85e53f0cdbadd730c4e8be2",
+    "FV/Backend/Proof/StockAcquireReadPendingCtor": "64892472f6398bbcfad9541315ebed3be993133f6c80126c6a4291ece0932a74",
+    "FV/Backend/Proof/StockAcquireReadPendingRhs": "b9e57be94f92cb338368f58d587b8c2ccef39771c78ac549207ff46feae9da04",
+    "FV/Backend/Proof/StockAcquireReadPendingInterpreter": "97d9cc5cce3222fe554cf2d7594e285378010e1a58859b31222275cec821f340",
+    "FV/Backend/Proof/StockAcquireReadPendingNamed": "d99a7dcccb1144248703c02373cd67c0bc874a81df252dbbb6844b979271a4cd",
+    "FV/Backend/Proof/StockAcquireReadPendingRecord": "d7d958c3285c9e7dd695b52678232495a433c31bde57b4d743cb800a5ee66969",
+    "FV/Backend/Proof/StockAcquireReadScanFrontiers": "f71679aa7d380e3c433bf11d211ab0ae6677fc2e11174982bd25ad4f0acc47b3",
+    "FV/Backend/Proof/StockAcquirePriorReadFrontier": "87a0c83df964c4cd10c7fda0bf6bf51b61e8e68416bf09a308aba75661226008",
+    "FV/Backend/Proof/StockAcquireMarkReadProvenance": "5e053f2af515733abc0a2a613da1bc93119ba765218e2edbbd048ac0317cb1bc",
+    "FV/Backend/Proof/StockAcquireReadIntervalCoverage": "f6f15dc03a31bcbf70d009bc784bdb01395bd9effa6893369df8aa6cf26d7e95",
+    "FV/Backend/Proof/StockAcquireReadMarked": "91f40df002fbb7379a7ee5a22a21871c5b64c8db6ac79c8eb0282c57da10e7a8",
+    "FV/Backend/Proof/StockAcquireBranchMarkFrame": "6cbf949a76d2f30fa457b6d3d987291c5a64b3342358f83477d11ea1f74f4ff6",
+    "FV/Backend/Proof/StockAcquireOutgoingMarkFrame": "4f8e4495c5fcc61fc10e0cb37e9d89b32f2ef38a4e232d793589275fed04088f",
+    "FV/Backend/Proof/StockAcquireCoreMarkFrame": "82fb3a43df51116b5e8037cf37a9a06d55850844cd4aafa7fdc421fdd6725b2a",
+    "FV/Backend/Proof/StockAcquireActualSourceView": "ed23fed64eda586ec8fc6a4658dd1c77954acd003fbea270741826508a6f1b3c",
+    "FV/Backend/Proof/StockAcquireActualCoreReadMarked": "d2082d33ad6a2039febc3f83930845b64be189a03651e9aaa5591e131625f046",
+    "FV/Backend/Proof/StockAcquireNodeMarkOrigin": "af634f441059c33fa7a5a2c8ea412c618f9c2703b564ae220086761a94589300",
+    "FV/Backend/Proof/StockAcquireDriverReadMarked": "665d841cc8c5921d0b26b838c0cfbcdf6b429cbab53ce260a960d7194b2f30cf",
+    "FV/Backend/Proof/StockAcquireAllReadMarked": "66a7dabeb3441526dea5dd016e9642308026646736213936ef42f6f31f251f66",
+    "FV/Backend/Proof/StockAcquireReadQueueCut": "1cd6c5e9ec64e929553177f17bc917f8dea0cd3b573b21af10d05ff440447a82",
+    "FV/Backend/Proof/StockAcquireReferenceCutOrder": "f6d23331f001443992e65738b7fefafeae204050e6d4a6962b8a8249d7b72411",
+    "FV/Backend/Proof/StockAcquireScanIndexOrder": "9ce68b697270f75802bdb19eb4edab72ff85e894ce3a8144bf36a9b84599adc2",
+    "FV/Backend/Proof/StockAcquireOpportunisticColors": "5b45ad7a9798fe8369920491a857bad4e212bad84b95765f9967780cbc6c00fd",
+    "FV/Backend/Proof/StockAcquireScanColorFrame": "862de0954f30b1386559bd2e77b07b745286553caba929b6a88386d6faa14ca6",
+    "FV/Backend/Proof/StockAcquireReadQueueRecord": "c63a620ad6fd083bb010111ceca610ab5f9217acf4bd29e5bb0e78937bdb2e83",
+    "FV/Backend/Proof/StockAcquireActualCutSource": "6909d483ab0fceeca19dc1956d1f698d50df89be2edd87300a8340d655f0cc17",
+    "FV/Backend/Proof/StockAcquireReadQueueScans": "0bb128d65d05ba228f443eb24b4082fc927ae6d087445afeab4545f991702581",
+    "FV/Backend/Proof/StockAcquireActualReadQueueCut": "86a7eccd37f8bf994c006f9db3cdb96deb92715887e5076c306352fcaaf6af71",
+    "FV/Backend/Proof/StockAcquireRecordOutputCut": "d19a52525647f414246097767dae286236d19b197e42b75bf15cc87caadbf07e",
+    "FV/Backend/Proof/StockAcquireCutSourceBound": "1ab1ffeaac6f48807dc2ccf08e4b150aa9b5f5bb34e161c8ef025cb67ff942b7",
+    "FV/Backend/Proof/StockAcquireCrossedReadSources": "c4008a3da2dcc37bf9a09570abf5342ae682c5b5866387c121f936ecfd6fcc7a",
+    "FV/Backend/Proof/StockAcquireSelectedOutputColor": "575be262f3cdd92bd24188d497ad0b344e852f3b81917d61b89e5011cfe2b452",
+    "FV/Backend/Proof/StockAcquireSourceColorGap": "f1cad4013d6f6c9131c6d6a63778b0c8a3ccc480facfe708b0c7bdd410183fbe",
+    "FV/Backend/Proof/StockAcquireRecordColorGap": "3e2c41678398e24fab2d9d9661b355f12ca3cae26691fd6ffb27125e8efe107c",
+    "FV/Backend/Proof/StockAcquireScanColorGap": "cc52a674863397eb21dc7dda602162b1cd6331877ded47b8981503c812cf8be9",
+    "FV/Backend/Proof/StockAcquireSourceMemoryComposition": "7edb660c7d53e642554c9b4fc7c76c3796649611d1983af0bdfb2c347c70e6cf",
+    "FV/Backend/Proof/StockAcquireSelectedCrossedReads": "c4be81ce1d8b30722d06f5d31401ea342080fa37cad6d2850228e1263ee886aa",
+    "FV/Backend/Proof/StockAcquireOriginalStatementView": "b7b6ae5312f7770a2ac022e853b0efae49f18f18257f7fb7cc9c2ef8a033a2f0",
+    "FV/Backend/Proof/StockAcquireSelectedStatementFrames": "eb47d3a3cb68b33063f133c2a512e11d2f228a2bbdad505c216b720a06c28cd1",
+    "FV/Backend/Proof/StockAcquireSelectedIntervalMemory": "6581ec9477f6dcec2b927231950bea2d539507d30e229da93fb44df1d4d781e8",
+    "FV/Backend/Proof/StockAcquireBareSourceStep": "f7b60b97ff049bba69272b21fa928aa5d134623ecf3640c60b2c76ff147b5480",
+    "FV/Backend/Proof/StockAcquireBareSourceSlice": "b781a360aa94eef223350eda4c03a346c554a37f4ba78912d6e80d6e839759b0",
+    "FV/Backend/Proof/StockAcquireActualSourceSliceMemory": "c94be05c4e66cd89c759dd2e993c40039cfbcc6f8c29eaaa549f409c13f51e53",
+    "FV/Backend/Proof/StockAcquireSourceFaultPrefix": "c6ab89416c0ccb0bb2e473e37e079d7f43c20a3511e420d83b62b10d940b6561",
+    "FV/Backend/Proof/StockAcquireBareTrappedSlice": "635a9779720ceb7b4bcfa60ed7d0db6ce3cead44335b1a26cd222b9079e74d36",
+    "FV/Backend/Proof/StockAcquireActualTrappedSliceMemory": "62d2b5947bd0d9ed9688bdd72c66b148f936203c928d2564bd505fb0c36444e8",
+    "FV/Backend/Proof/StockAcquireSourceColorPositive": "c62b62fbc777534545e80b2e648eabaf8c121d7f0e2e0e31e3da4bce89abd00a",
+    "FV/Backend/Proof/StockAcquireColorUpperBound": "af13a3881b50120fd7f788e61284bdb0fcc9be2f4dac74c1e1514fe9afc0dd79",
+    "FV/Backend/Proof/StockAcquireScanColorUpper": "2a1c4ca446cdd3901f01938f0ae76691f5411c03f34ec3272f6cb30b9918f552",
+    "FV/Backend/Proof/StockAcquireBlockBoundary": "878edafbbfb75a05b0b5144d4f5f695f249b32bb2056708e724ea50bc3938d3f",
+    "FV/Backend/Proof/StockAcquireBlockColorLower": "6ceb6c872122b11bdc7abfd45ee76f4bf0f382775944d72a7ea4194ef633a352",
+    "FV/Backend/Proof/StockAcquireBlockColorInterval": "b2db96a09eb377c3ca30f60bcdb809ad7fe66ff72deb9ce85e5c62b3c19e1532",
+    "FV/Backend/Proof/StockAcquireActualBlockColors": "956aa4c31a420f4eeb4368e373e753e77c085e97e556aef7b9d979058e7f9917",
+    "FV/Backend/Proof/StockAcquireTermSourceBoundary": "8d861c61176b3e66e0c5499f75ca26dd95412a44e8abe55f2f1cddc920af46b0",
+    "FV/Backend/Proof/StockAcquireSelectedSameBlock": "a16894271a89a5a814ee1ce17ec7a8fbe3d88341c086d51315171239c290652a",
+    "FV/Backend/Proof/StockAcquireConsumerUnaryData": "f0e673bccde0e845a90827f7073eeef722950e49167167477c1f8ce849f603a1",
+    "FV/Backend/Proof/StockAcquirePreparedRecordOrigin": "67d0dd692b33cdd65316a29bca70f969034f66b934a864b5fd7b9a858e29837f",
+    "FV/Backend/Proof/StockAcquireCoreSourceBranch": "36471b17e8956e6a9d6e9d959c0c849654e2094ac454896ac408137e84cd8735",
+    "FV/Backend/Proof/StockAcquireActualRecordSlot": "530997e3084c1869e414bb5aeba1d4a8b9eb879844ad5e52730023b24ee8172e",
+    "FV/Backend/Proof/StockAcquireConsumerSourceSlot": "04d166bc93188b35c983a2abd1031c9b4bd356c6cff61d563a0696d29e5d053f",
+    "FV/Backend/Proof/StockAcquireConsumerBodyPosition": "507bf3456283f08aa838846eae98d498b768a269490d0c9bc9f1c87ed0e1723d",
+    "FV/Backend/Proof/StockAcquireSelectedBlockPositions": "f2c764caaa0ee6c66e359611dc5fca0eafd99850f18d234fa8cd094390771bbb",
+    "FV/Backend/Proof/StockAcquireConsumerOperandData": "43861c52aea74c85675ebc6d0911d412f415835db9ba5fd4994b16b5a4d05e3b",
+    "FV/Backend/Proof/StockAcquireSelectedOriginalPair": "eb1af1309a26ca6f5f3207f1776941a8c07376b8524ad9ee0f757cbf029c380b",
+    "FV/Backend/Proof/StockAcquireSelectedSourceEndpoints": "d660fbd5b6f6eb08312604f1584663a1c3a91827f3d3f78e489e96b0366eacce",
+    "FV/Backend/Proof/StockAcquireOriginalIntervalFrames": "5bd047e752df2de3bb6c5384d6d6af98cd52d65435c0c4840f6c4da103663625",
+    "FV/Backend/Proof/StockAcquirePositionedSourceMemory": "e1ddae772deaa92237d69acfb517dd5f33afca4c1be4c13c80326fe223162e18",
+    "FV/Backend/Proof/StockAcquirePositionedSourceTrap": "4aacd719091be055e6e1f1ed7e5fa7fbdf781ed1a3334aa206df5f1f70f666b4",
+    "FV/Backend/Proof/StockAcquireSourceValuePersistence": "1a7adfd83aec34ea8e642ed945dda385871e52a8efb16603bcd336a46057539d",
+    "FV/Backend/Proof/StockAcquireSourceLoadedPrefix": "910a8c4744e90ed108f1e793546ee2bb71e5eb339c9d3fd6125f09a4f3237c4b",
+    "FV/Backend/Proof/StockAcquireSourceEndpointReceipt": "b301aa91655217c2e3e477a10176c634fab58986e31eec56bf707cdcb14d2ed8",
+    "FV/Backend/Proof/StockAcquirePositionedSourceValues": "871e5db2943aabbf82dcedf367d64b8adae5bc1e97edac79cc65436385db6ae3",
+    "FV/Backend/Proof/StockAcquireDeferredPairValue": "ee1ff82c0243f793257b22a6acb6e111b2427998b2fd0b887590bace3cf90163",
+    "FV/Backend/Proof/StockAcquireRootArgumentFields": "f5b294a37582a327ed02e3437a0b5e7212c0a2c5ee03baa028859294c52dbd62",
+    "FV/Backend/Proof/StockAcquireIfletEnvironment": "0548fea8a1c9e59ebe7ff000da5fc5ff1ef91e948aebb9d4df8cd6ecf5682d97",
+    "FV/Backend/Proof/StockAcquireOriginalValueType": "ba7927d302c11ea0971ea1beb89b552bc6d02e429b5180fdfd4570378a4716a7",
+    "FV/Backend/Proof/StockAcquireMatchArgumentFields": "fef775f1b28707aa8901ef0dd75e8428238706a0d95393050c761e4686a55102",
+    "FV/Backend/Proof/StockAcquireSelectedEmission": "d08bbfaa2f386c0533cceb3ae12be4de79a9b39f8bfadb2f62b1270b37c5771d",
+    "FV/Backend/Proof/StockAcquireSelectedChunk": "5bfb84e49ef58fad757177a9c19a5b5abb8e9991ef10c754857ee83bec1e96c1",
+    "FV/Backend/Proof/StockAcquireSourceEndpointValues": "992ddaa32216da900139db8f91e5ee06b7726de71961289b8ca3f16a825de00c",
+    "FV/Backend/Proof/StockAcquireSourceConsumerResult": "666c25f7c9c8ebfc1099b9cde722c00b3f00facdb9319a5c91adcc1142bd6ad6",
+    "FV/Backend/Proof/StockAcquireSelectedChunkValue": "6fee14df912046b95606bcfb1b43fd19a0e39a053635db652d6729e708ecc366",
+    "FV/Backend/Proof/StockAcquireSelectedChunkFault": "434485c088adc4184303d4764590bdc40eed07b6585a0b10509e739df8c4e7b4",
+    "FV/Backend/Proof/StockAcquireAllocatedLineAllWidths": "2c985ce9ee5792f8ed743a29f029c4bda0f8c4fe0787c1df61a560745c6f65bf",
+    "FV/Backend/Proof/StockAcquireArmFaultAllWidths": "5cf2884e067a62e37420d12e8523eda1cda567b4a12de21e4cf46f264a828516",
+    "FV/Backend/Proof/StockAcquireEncodingFaultAllWidths": "d1020c97d8b73aff6ed24ed0e9f18d67d03d948b0f129e0a3e7f82e8c1b20acc",
+    "FV/Backend/Proof/StockAcquireFaultSiteAllWidths": "3f238b69e4707efa3541a433eaffa0b4be070aa8e7fb84bd0e30ba794ec81195",
+    "FV/Backend/Proof/StockAcquireRegisterLevelAllWidths": "fd264d288ecf44f45c31e3059fa098158b8bde83c2910fe16ba6c1b070636cf4",
+    "FV/Backend/Proof/StockAcquireTraceAllWidths": "f1d9925e7ccbf26fce474f3cc2304280797b731155238eb284ad8e21d2000f55",
+    "FV/Backend/Proof/StockAcquireMachineBoundaryAllWidthsW": "00e49a337e982be5195f7785a91eb0df250b25ed18b4d3ec10b08d8536253753",
+    "FV/Backend/Proof/StockAcquireSelectedResolvedSegment": "9146d61f210a8db15f5b69ad998a722ebe17873d72687304323b4fd4c445b4d9",
+    "FV/Backend/Proof/StockAcquireSelectedResolvedValue": "7e26e5c5fc7a728f6ea665f67e48afe92ee567623a8d2aa05493754be8ad0461",
+    "FV/Backend/Proof/StockAcquireSelectedResolvedFault": "ad2a610febe7daae7efd9dd15a1a9da80db73ee5a8f97e19f6c6251e49dd4733"
+  },
+  "real_auditor_exit": 0,
+  "real_auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "real_stdout_sha256": "10805825f67c89fedb7d14b1d921076c26f45b0e6d7ede6383f6578be5d4b367",
+  "real_audit_log_sha256": "47d39aed5767c16baad42edd9a4d70c4ddf7bbe022ae0cb1cfcc9462afb530d0",
+  "memstats": "peak 240726016\noom 0\noom_kill 0\n",
+  "normal_snapshot_sha256": "b3c5cca44a459da4ef261939b2766efe59b5ad96d733326a8f217f0e58cfb863",
+  "normal_no_build_sha256": "fe80c5ab3025dfeb1707f64ebb5a7a5e095f3c4af32eccdc381e76561c958af5",
+  "previous_checkpoint_sha256": "23dd93d3c0a0cfa65bc102678f944acf930d4d91c7b3c1e6e645baf21bc563d7",
+  "claims": {
+    "all_admitted_widths_value_relation": true,
+    "actual_root_match_derives_eligible_source": true,
+    "actual_rhs_derives_sink_receipt": true,
+    "actual_mapped_producer_is_original_admitted_atomic_load": true,
+    "unique_use_adjacent_color_and_no_result_demand_derived": true,
+    "complete_rhs_forward_given_internal_constructor_receipts": true,
+    "metadata_color_count": true,
+    "internal_color_interval_preserves_source_memory_and_excludes_earlier_source_traps": true,
+    "universal_quiet_interval_is_false_counterexample_preserved": true,
+    "actual_named_interpreter_derives_pending_frontier": true,
+    "actual_retained_root810_derives_ordered_distinct_frontier": true,
+    "exact_sink_helper_and_rhs_singleton_derived": true,
+    "helper_calls_are_evaluator_calls_not_CLIF_call_coverage": true,
+    "selected_root_singleton_source_membership": true,
+    "exact_local_metadata_color_values_and_order": true,
+    "actual_record_original_buildCtx_event_fold": true,
+    "actual_buildCtx_global_metadata_order_transfer": true,
+    "actual_source_bounds_and_no_overwrite_derived": true,
+    "every_emitted_record_general_pending_source_membership": true,
+    "selected810_pending_reverse_source_slot_order": true,
+    "stronger_trace_keeps_complete_sunk_array_in_frames": true,
+    "stronger_trace_from_actual_named_interpreter_runs": true,
+    "all_actual_emitted_record_sink_folds_and_mark_persistence_derived": true,
+    "whole_scan_sunk_persistence": true,
+    "whole_scan_pending_queue_source_membership": true,
+    "deferred_source_effect_composition": false,
+    "all_widths_pair_seqrun": true,
+    "actual_selected_record_derives_original_target_width": true,
+    "local_pair_value_discharges_target_width_from_actual_selection": true,
+    "actual_selected_original_pointer_and_flags_derived": true,
+    "actual_selected_pointer_demand_and_register_request_derived": true,
+    "original_pointer_held_from_existing_demanded_value_relation": true,
+    "actual_original_definition_statement_position_derived": true,
+    "actual_original_extension_operand_derived_from_matching": true,
+    "actual_original_operand_to_atomic_producer_derived": true,
+    "original_dominance_derives_pointer_availability_at_extension": true,
+    "original_guarded_demanded_relation_supplies_pointer_binding": true,
+    "actual_original_source_prefix_pointer_getter_equal": true,
+    "source_prefix_allows_other_memory_effects": true,
+    "source_memory_equality_not_claimed": true,
+    "delayed_pointer_binding_and_full_deferred_source_frame": false,
+    "actual_emitter_and_record_binding": true,
+    "actual_fresh_root_result_survives_final_alias_resolution": true,
+    "root_run_and_result_shape_derived_from_actual_record_selection": true,
+    "universal_root_record_refinement": false,
+    "universal_deferred_first_fault_composition": false,
+    "full_goal_complete": false,
+    "whole_scan_exact_sink_updates": true,
+    "actual_reverse_chunk_assembly": true,
+    "actual_record_indexed_pending_interpreter_frontiers": true,
+    "actual_forward_record_pending_group_association": true,
+    "relative_memory_effect_execution_order": false,
+    "actual_atomic_source_success_preserves_memory": true,
+    "actual_selected_atomic_source_read_contract": true,
+    "actual_original_atomic_fault_shape": true,
+    "all_actual_emitted_record_pending_reverse_source_order": true,
+    "all_actual_emitted_record_pending_exact_source_event_positions": true,
+    "actual_driver_derives_sink_format_original_source_existence": true,
+    "actual_helper_matched_source_success_memory_preserved": true,
+    "bitcast_format_alternative_preserved": true,
+    "whole_pending_read_classification": false,
+    "whole_pending_memory_simulation": false,
+    "current_main_gate_passed": false,
+    "all_four_direct_sink_rule_matches_derive_original_source_targets": true,
+    "all_four_direct_sink_rule_matches_source_success_memory_preserved": true,
+    "real_generated_interpreter_restricted_terms_read_classification": true,
+    "all_actual_emitted_scan_pending_reads_classified": true,
+    "actual_scan_forward_group_reads_memory_neutral_on_success": true,
+    "read_trace_forgets_to_all_old_exact_mark_contracts": true,
+    "nested_helper_calls_are_evaluator_calls_not_CLIF_source_calls": true,
+    "actual_prior_scan_sunk_frontier_derived": true,
+    "new_marks_before_actual_record_are_reads_or_inherited_entry_marks": true,
+    "all_crossed_effects_in_actual_read_queue": false,
+    "inherited_block_entry_marks_classified": true,
+    "actual_global_initial_marks_derived_from_successful_buildCtx": true,
+    "actual_all_driver_state_and_block_entry_marks_classified": true,
+    "actual_all_record_input_marks_classified_including_inherited_entries": true,
+    "unconditional_branch_and_outgoing_sunk_frames": true,
+    "block_entry_marks_not_assumed_empty": true,
+    "actual_scan_source_cut_derived_internally": true,
+    "actual_scan_prefix_read_queue_derived_from_original_scope": true,
+    "external_color_cut_certificate": false,
+    "delayed_memory_equality": false,
+    "emitted_first_fault_execution": false,
+    "actual_record_inclusive_prefix_queue_derived": true,
+    "actual_record_source_cut_above_every_earlier_effect": true,
+    "actual_record_crossed_original_effects_derive_source_success_frames": true,
+    "actual_root810_output_color_preserved_through_result_binding": true,
+    "actual_scan_prefix_source_color_gap_derived_internally": true,
+    "actual_record_output_source_color_gap_derived_internally": true,
+    "boundary_none_excluded_inside_derived_color_interval": true,
+    "same_block_producer_binding": false,
+    "selected_acquire_output_original_source_color_derived": true,
+    "selected_acquire_all_intervening_original_statement_success_frames_derived": true,
+    "selected_acquire_successful_contiguous_original_source_slice_preserves_memory": true,
+    "actual_source_execution_slice_shape_derived": false,
+    "delayed_source_machine_memory_correspondence": false,
+    "actual_successful_bare_source_execution_slice_derived": true,
+    "actual_successful_bare_source_slice_memory_derived": true,
+    "bare_calls_use_arbitrary_original_environment": true,
+    "full_program_source_mapping_derived": false,
+    "full_source_first_fault_prefix_derived": false,
+    "actual_bare_trapped_source_slice_derived": true,
+    "actual_selected_source_first_trap_prefix_memory_derived": true,
+    "source_first_fault_or_exact_residual_trap_partition": true,
+    "actual_record_output_runtime_color_above_original_block_boundary": true,
+    "actual_record_output_runtime_color_bounded_by_original_terminator": true,
+    "original_source_event_same_block_from_derived_color_bounds": true,
+    "selected_producer_body_position_derived": false,
+    "selected_producer_original_body_position_in_consumer_block_derived": true,
+    "selected_producer_terminator_case_excluded_internally": true,
+    "selected_source_slice_endpoint_order_derived": false,
+    "actual_whole_driver_prepared_data_origin_derived": true,
+    "actual_all_retained_record_slot_classification_derived": true,
+    "actual_selected_unary_consumer_terminal_cases_excluded": true,
+    "actual_selected_consumer_original_body_position_derived": true,
+    "selected_consumer_original_uextend_operand_derived": true,
+    "selected_original_source_endpoint_same_block_derived": true,
+    "selected_source_slice_endpoint_order_derived_from_original_Dominated": true,
+    "original_Dominated_not_derived_from_LowerScope": true,
+    "current_root810_production_admission": false,
+    "positioned_source_execution_memory_bridge": false,
+    "positioned_successful_bare_source_execution_memory_bridge": true,
+    "source_slice_endpoints_derived_from_actual_selection_and_original_dominance": true,
+    "initial_block_prefix_arbitrary_effects_preserved": true,
+    "no_external_color_or_slice_or_memory_certificate": true,
+    "positioned_source_first_fault_bridge": false,
+    "positioned_source_first_trap_partition_from_actual_bare_execution": true,
+    "prior_source_faults_preserved_as_separate_case": true,
+    "inside_deferred_slice_first_fault_has_exact_prefix_and_memory": true,
+    "late_source_faults_preserved_in_exact_residual_continuation": true,
+    "whole_program_entry_mapping": false,
+    "actual_atomic_single_result_binding_derived": true,
+    "source_loaded_value_persists_to_actual_consumer_from_original_SSA": true,
+    "original_pointer_persists_to_actual_consumer_from_original_availability": true,
+    "original_slots_and_source_memory_preserved_to_consumer": true,
+    "public_source_wrapper_constructs_endpoint_receipt_internally": true,
+    "source_pointer_width_from_original_entry": false,
+    "actual_emitted_chunk_value_execution": true,
+    "actual_selected_rhs_type_and_flags_derived_from_original_source": true,
+    "actual_selected_rhs_emitted_instruction_derived": true,
+    "actual_selected_result_binding_and_copies_preserved": true,
+    "generic_nonadjacent_acquire_value_transport": true,
+    "physical_first_fault_execution": false,
+    "actual_selected_record_chunk_exact_single_acquire": true,
+    "actual_selected_chunk_result_final_alias_derived": true,
+    "successful_bare_block_execution_premise_explicit": true,
+    "internal_machine_relation_FrameTyped_ValueHeld_MR_explicit": true,
+    "whole_driver_simulation": false,
+    "actual_selected_source_fault_original_code_and_access_mapping": true,
+    "actual_selected_fault_chunk_head_is_original_acquire": true,
+    "all_original_atomic_widths_exact_allocated_line": true,
+    "all_original_atomic_widths_exact_ARM_fault_footprint": true,
+    "all_original_atomic_widths_physical_trap_site_from_checked_Q": true,
+    "all_original_atomic_widths_W_prefix_from_virtual_boundary": true,
+    "old_byte_fault_variants_preserved": true,
+    "virtual_boundary_and_shape_obligations_still_internal": true,
+    "whole_source_to_virtual_boundary_first_fault_order": false,
+    "actual_whole_driver_VCode_selected_acquire_segment_derived": true,
+    "actual_selected_fresh_destination_final_alias_terminal": true,
+    "actual_final_pointer_alias_kept_in_value_and_fault_transfer": true,
+    "actual_final_alias_segment_virtual_value_execution": true,
+    "actual_final_alias_segment_source_fault_address_and_code": true,
+    "whole_prefix_virtual_reachability": false
+  },
+  "utc": "2026-11-03T11:37:32.811645+00:00"
+}

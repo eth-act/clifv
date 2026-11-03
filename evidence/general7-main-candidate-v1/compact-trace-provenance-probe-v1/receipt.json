@@ -1,0 +1,82 @@
+{
+  "status": "PINNED_LEANTAR_SCHEMA_PROBE",
+  "tool": "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/leantar",
+  "tool_sha256": "06d613dffd2a6fd996b095bfd835c2bb720886f9eb7e13ed2adddd7df4507bf3",
+  "tool_version": "leantar 0.1.20",
+  "module": "FV/Backend/Proof/StockFenceMetadataModel",
+  "source_trace_sha256": "d5363143160236ca88ff25686d40e17fb75497a9cee21e20bb06e475043bfe6e",
+  "source_trace_keys": [
+    "synthetic",
+    "schemaVersion",
+    "outputs",
+    "log",
+    "inputs",
+    "depHash"
+  ],
+  "result_trace_keys": [
+    "schemaVersion",
+    "depHash",
+    "outputs"
+  ],
+  "result_trace": {
+    "schemaVersion": "2025-09-10",
+    "depHash": "9337a75a910fc361",
+    "outputs": {
+      "m": false,
+      "o": [
+        "69b3024402bb1679.olean"
+      ],
+      "i": "e90940be5547a963.ilean",
+      "c": "ce8ac34b85cda179.c"
+    }
+  },
+  "result_trace_sha256": "bb91b61c25ed902be6ce26a27c5568f1224839eebd89f6067ef40fb2c224d9bf",
+  "artifact_payloads_exact": {
+    ".olean": true,
+    ".ilean": true,
+    ".c": true
+  },
+  "original_files_unchanged": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockFenceMetadataModel.trace": true,
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockFenceMetadataModel.olean": true,
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof/StockFenceMetadataModel.ilean": true,
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof/StockFenceMetadataModel.c": true
+  },
+  "pack_argv": [
+    "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/leantar",
+    "--jobs",
+    "1",
+    "-s",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/compact-trace-provenance-probe-v1/probe.ltar",
+    "FV/Backend/Proof/StockFenceMetadataModel.trace",
+    "-i",
+    "0",
+    "FV/Backend/Proof/StockFenceMetadataModel.olean",
+    "-i",
+    "0",
+    "FV/Backend/Proof/StockFenceMetadataModel.ilean",
+    "-i",
+    "1",
+    "FV/Backend/Proof/StockFenceMetadataModel.c"
+  ],
+  "unpack_argv": [
+    "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/leantar",
+    "--jobs",
+    "1",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/compact-trace-provenance-probe-v1/unpacked/lib",
+    "-C",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/compact-trace-provenance-probe-v1/unpacked/ir",
+    "-x",
+    "-j",
+    "-"
+  ],
+  "unpack_stdin": "[{\"file\": \"/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/compact-trace-provenance-probe-v1/probe.ltar\", \"hash\": \"9337a75a910fc361\"}]",
+  "source_preserved": true,
+  "no_project_build": true,
+  "no_cache_write": true
+}

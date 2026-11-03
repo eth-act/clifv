@@ -1,0 +1,18 @@
+{
+  "status": "running",
+  "owner": 3429209,
+  "owner_birth": 1793707981.84,
+  "scope_parent": "/sys/fs/cgroup/user.slice/user-30034.slice/user@30034.service/clifv.slice",
+  "allocation": "broad12/source3/acquire0/orchestration1",
+  "release_hashes": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-main-candidate-v1/complete-two-frontier-repair-proposal-v1/source-share-release-v2.json": "6a11567c521db2ef068367230608b5ace1e3e4f29f3a6202d13658206a35863d",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/share-release-for-three-leaves-v2.json": "3fa1bd2fe12c001b3f5135287b7a05c1e22883395e4cf8dec918da793b18ffc6"
+  },
+  "signals_to_compilers": [],
+  "full_goal_complete": false,
+  "consumer": {
+    "pid": 3429222,
+    "birth": 1793707982.11
+  },
+  "exit": 1
+}

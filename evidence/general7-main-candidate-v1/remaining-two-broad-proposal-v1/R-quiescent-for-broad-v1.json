@@ -1,0 +1,9 @@
+{
+  "status": "R_QUIESCENT_FOR_TWO_TARGET_12G_GATE",
+  "prefix": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1",
+  "active_compilers_verifiers_copiers": [],
+  "source_commands_finished_naturally": true,
+  "no_signal_sent": true,
+  "policy": "No R copier,compiler,source edit or verifier until coordinator releases it. Ordinary2GiB remains available for independent Loop work.",
+  "utc": "2026-11-03T12:23:37.649220+00:00"
+}

@@ -1,0 +1,7 @@
+{
+  "status": "restored",
+  "source_GiB": 2,
+  "acquire_GiB": 1,
+  "reason": "owner finalizer after compiler exit",
+  "utc": "2026-11-03T12:09:35.866898+00:00"
+}

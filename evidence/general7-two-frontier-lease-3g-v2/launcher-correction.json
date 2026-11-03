@@ -1,0 +1,8 @@
+{
+  "prior_failure": "R/scripts/memcap.sh absent;no compiler ran",
+  "canonical_helper": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/scripts/memcap.sh",
+  "helper_sha256": "9e9adcac1cfc595cb420e0ea2bf6815e643f5a7e508f559c0b2055600804a9a5",
+  "same_manifest": "fd78ff23a58abafa1da1fbfc043b6ec4c2ebdf3a6fa215442c215080aa8e6b13",
+  "same_cap": "3G",
+  "prior_share_guard_passed": true
+}

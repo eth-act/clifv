@@ -1,0 +1,18 @@
+unaffected1063 0
+deps0 0
+key0 0
+ready0 3
+kernel0 0
+normal0 0
+deps1 0
+key1 0
+ready1 3
+kernel1 1
+Traceback (most recent call last):
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-two-frontier-lease-3g-v2/gate.py", line 84, in <module>
+    run('kernel' + str(index), ['-v', 'build', '+' + name + ':leanArts'])
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/general7-two-frontier-lease-3g-v2/gate.py", line 39, in run
+    assert rc in allowed, (label, rc, 'Inspect exact diagnostic; no unchanged retry')
+           ^^^^^^^^^^^^^
+AssertionError: ('kernel1', 1, 'Inspect exact diagnostic; no unchanged retry')
