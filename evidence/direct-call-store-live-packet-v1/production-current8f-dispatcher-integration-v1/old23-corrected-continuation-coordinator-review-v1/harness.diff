@@ -1,0 +1,28 @@
+--- v1/gate.py
++++ v2/gate.py
+@@ -70,7 +70,13 @@
+   if target.is_symlink() or target.stat().st_nlink!=1 or not target.stat().st_mode&0o200:
+    fd,tmp=tempfile.mkstemp(prefix='.old23-detach-',dir=parent);os.close(fd);shutil.copyfile(target,tmp);assert sha(Path(tmp))==h;os.replace(tmp,target)
+ 
+-guards(True);unaffected=sorted(set(g)-set(names));assert len(unaffected)==1730;run('unaffected1730',['lake','build','--no-build',*unaffected]);origins={n:origin(n) for n in unaffected};(D/'unaffected-creators.json').write_text(json.dumps(origins,indent=2)+'\n')
++guards(True);unaffected=sorted(set(g)-set(names));assert len(unaffected)==1730
++assert sha(D/'continuation-input.json')==prepared['continuation_sha256'];continuation=json.loads((D/'continuation-input.json').read_text());prior=Path(continuation['complete_creator_classification']);assert sha(prior)==continuation['complete_creator_classification_sha256'];old_classification=json.loads(prior.read_text());origins={n:origin(n) for n in unaffected}
++for n,e in origins.items():
++ previous=old_classification['unaffected1730_records'][n]
++ assert e['native_key']==previous['native_key'] and e['trace_sha256']==previous['trace_sha256'] and e['payload_sha256']==previous['payload_sha256'],n
++(D/'reused-unaffected1730-normal.json').write_text(json.dumps({'original_normal_exit':0,'original_normal_log_sha256':old_classification['passed_stage_commands'][0]['log_sha256'],'all_current_source_config_trace_key_payload_bindings_match':True,'complete_creator_classification_sha256':sha(prior)}))
++(D/'unaffected-creators.json').write_text(json.dumps(origins,indent=2)+'\n')
+ for index,entry in enumerate(I['topological_nodes']):
+  n=entry['target'];deps=closure(n);assert deps
+  run('deps'+str(index),['lake','build','--no-build',*sorted(deps)]);run('key'+str(index),['lake','query','--no-build','+'+n+':depHash']);keys=re.findall(r'^[0-9a-f]{16}$',(D/('key'+str(index)+'.log')).read_text(),re.M);assert len(keys)==1
+--- v1/run.py
++++ v2/run.py
+@@ -28,7 +28,7 @@
+         select.select([fd], [], [])
+     finally:
+         os.close(fd)
+-allowed={'run.py','gate.py','guard.py','launch.py','restore_config.py','prepared-inputs.json','named-approved-origins.json','R-writer-release.json','mixed-restoration-permit.json','owner.lock','__pycache__','prepared-v1','coordinator-review-v2.json'}
++allowed={'run.py','gate.py','guard.py','launch.py','restore_config.py','prepared-inputs.json','named-approved-origins.json','R-writer-release.json','mixed-restoration-permit.json','owner.lock','__pycache__','prepared-v1','coordinator-review-v2.json','continuation-input.json'}
+ assert {p.name for p in D.iterdir()}<=allowed, ('Stale or unknown owner state', sorted({p.name for p in D.iterdir()}-allowed))
+ if (D/'__pycache__').exists():assert all(p.is_file() and p.suffix=='.pyc' for p in (D/'__pycache__').iterdir())
+ global_lock=(E/'broad-priority-exclusive.lock').open('a+');fcntl.flock(global_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)

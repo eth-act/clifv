@@ -1,0 +1,4 @@
+'E2E.actGoodXW_of_voidCalls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.stock_void_call_machine_returnW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_void_callW' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.worldReturnTraceProvider_voidCall' depends on axioms: [propext, Classical.choice, Quot.sound]

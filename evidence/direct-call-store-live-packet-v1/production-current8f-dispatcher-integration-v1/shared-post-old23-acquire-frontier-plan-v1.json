@@ -1,0 +1,213 @@
+{
+  "status": "FROZEN_POST_LEASE_JOINT_INVENTORY_PLAN;NO_R_G_QUERY_OR_READINESS_CLAIM",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "acquire_frozen_graph": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/outside-avoids-extraction-proposal-v1/R394-readiness-v1/frozen-graph-v1.json",
+  "acquire_frozen_graph_sha256": "3700411d9ed0ee7cf82484ab5a8fbc5826828fdd2f2a892519e4d74ec803d99b",
+  "old23_pre_lease_graph_sha256": "75868f9b328ade1822f4748c463d91e7bc638a3fba6ed67a4bb6360d395cb403",
+  "seven_acquire_roots": [
+    "FV.E2E.BinCheck",
+    "FV.E2E.CodeMap",
+    "FV.E2E.LinkGood",
+    "FV.E2E.LinkProduction",
+    "FV.E2E.LoweringProvenance",
+    "FV.E2E.PipelineCheck",
+    "FV.E2E.StackBound"
+  ],
+  "retained_acquire_18_conditional": [
+    "FV.E2E.Binary",
+    "FV.E2E.BinaryGood",
+    "FV.E2E.DeadCleanupBinCheck",
+    "FV.E2E.DeadCleanupBinary",
+    "FV.E2E.DeadCleanupBinaryGood",
+    "FV.E2E.DeadCleanupExecBytes",
+    "FV.E2E.DeadCleanupExecGoodRun",
+    "FV.E2E.DeadCleanupExecGot",
+    "FV.E2E.DeadCleanupExecRunN",
+    "FV.E2E.DeadCleanupExecStatic",
+    "FV.E2E.DeadCleanupLinkCheck",
+    "FV.E2E.DeadCleanupStackBound",
+    "FV.E2E.ExecBytes",
+    "FV.E2E.ExecGoodRun",
+    "FV.E2E.ExecGot",
+    "FV.E2E.ExecRunN",
+    "FV.E2E.ExecStatic",
+    "FV.E2E.ExecWords"
+  ],
+  "retained_ELF_conditional": [
+    "FV.E2E.ActualPipelineCheck",
+    "FV.E2E.ActualBinCheck"
+  ],
+  "shared_LinkGood_owner": "source_guarantees; one current inventory and one reviewed repair only",
+  "current_pre_lease_LinkGood_key": "811bc34fbe742ef0",
+  "retained_other_own_roots": [
+    "FV.E2E.StockLiveCallSourceResult",
+    "FV.E2E.StockLiveCallTail",
+    "FV.E2E.StockResultCallMachine"
+  ],
+  "common_frozen_source_count": 369,
+  "source_conflicts": {},
+  "import_conflicts": {
+    "FV.Backend.Proof.IselAttr": {
+      "acquire": [
+        "Lean"
+      ],
+      "old23": []
+    },
+    "FV.Backend.Proof.StockD0Code": {
+      "acquire": [
+        "Lean",
+        "FV.Backend.Lowering.StockD0",
+        "FV.Arm.MinTheory",
+        "FV.Backend.Proof.LowerLoopCode"
+      ],
+      "old23": [
+        "FV.Backend.Lowering.StockD0",
+        "FV.Arm.MinTheory",
+        "FV.Backend.Proof.LowerLoopCode"
+      ]
+    },
+    "FV.Backend.Proof.DriverCheck": {
+      "acquire": [
+        "FV.Backend.Isel",
+        "FV.Compile.Subset",
+        "Std.Data.HashMap.Basic",
+        "Std.Data.HashSet.Basic"
+      ],
+      "old23": [
+        "FV.Backend.Isel",
+        "FV.Compile.Subset"
+      ]
+    },
+    "FV.Backend.Proof.DriverCheckSound": {
+      "acquire": [
+        "FV.Backend.Proof.LowerShape",
+        "Std.Data.HashSet.Lemmas"
+      ],
+      "old23": [
+        "FV.Backend.Proof.LowerShape"
+      ]
+    },
+    "FV.Backend.Regalloc": {
+      "acquire": [
+        "FV.Backend.StackAlloc",
+        "FV.Backend.SpillAlloc",
+        "Lean.Data.Json",
+        "FV.Backend.Proof.PrepareCheck"
+      ],
+      "old23": [
+        "FV.Backend.StackAlloc",
+        "FV.Backend.SpillAlloc",
+        "FV.Backend.Proof.PrepareCheck"
+      ]
+    },
+    "FV.Arm.Map": {
+      "acquire": [
+        "Lean"
+      ],
+      "old23": []
+    },
+    "FV.Arm.State": {
+      "acquire": [
+        "Lean.Data.Format",
+        "FV.Arm.BitVec",
+        "FV.Arm.Map",
+        "FV.Arm.Attr",
+        "FV.Arm.MinTheory"
+      ],
+      "old23": [
+        "FV.Arm.BitVec",
+        "FV.Arm.Map",
+        "FV.Arm.Attr",
+        "FV.Arm.MinTheory"
+      ]
+    },
+    "FV.Arm.Attr": {
+      "acquire": [
+        "Lean"
+      ],
+      "old23": []
+    },
+    "FV.Backend.Proof.FastSubst": {
+      "acquire": [
+        "Lean"
+      ],
+      "old23": []
+    },
+    "FV.Backend.SpillAlloc": {
+      "acquire": [
+        "FV.Backend.RegallocCheck",
+        "Std.Data.HashMap"
+      ],
+      "old23": [
+        "FV.Backend.RegallocCheck"
+      ]
+    },
+    "FV.Arm.Tactics.Attr": {
+      "acquire": [
+        "Lean"
+      ],
+      "old23": []
+    },
+    "FV.Opt.Legalize128": {
+      "acquire": [
+        "FV.Clif.Run",
+        "Std.Data.HashMap"
+      ],
+      "old23": [
+        "FV.Clif.Run"
+      ]
+    },
+    "FV.Arm.Memory.SeparateProofs": {
+      "acquire": [
+        "FV.Arm.State",
+        "FV.Arm.Memory.Separate",
+        "Std.Tactic.BVDecide",
+        "FV.Arm.Tactics.BvOmegaBench"
+      ],
+      "old23": [
+        "FV.Arm.State",
+        "FV.Arm.Memory.Separate",
+        "FV.Arm.Tactics.BvOmegaBench"
+      ]
+    },
+    "FV.Backend.Asm": {
+      "acquire": [
+        "FV.Backend.StackAlloc",
+        "Std.Data.HashMap",
+        "Std.Data.HashSet"
+      ],
+      "old23": [
+        "FV.Backend.StackAlloc"
+      ]
+    },
+    "FV.Arm.Tactics.BvOmegaBench": {
+      "acquire": [
+        "FV.Arm.Tactics.Attr",
+        "Lean",
+        "Lean.Elab.Tactic.Omega.Frontend",
+        "Lean.Elab.Tactic.Omega"
+      ],
+      "old23": [
+        "FV.Arm.Tactics.Attr"
+      ]
+    }
+  },
+  "after_guard_restoration_steps": [
+    "verify canonical source/config and complete graph for the root union",
+    "run one actual complete no-build boundary; classify the full transitive rejected cone",
+    "query each earliest key only after its complete dependencies pass",
+    "verify full donor closure, source/config/creator and all native outputs before reuse",
+    "bind conditional keys after predecessors pass; propose only unresolved targets"
+  ],
+  "separate_final_gates": [
+    "acquire host394",
+    "acquire host382 ELF",
+    "complete artifact dispatcher and checked-input consumers"
+  ],
+  "explicit_nonclaims": [
+    "no current key inferred from stored keys",
+    "no kernel authorized by this plan",
+    "no duplicate LinkGood kernel",
+    "no P/G mutation"
+  ]
+}

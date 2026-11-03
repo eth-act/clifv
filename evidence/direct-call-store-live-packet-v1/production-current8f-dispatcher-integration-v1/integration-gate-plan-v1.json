@@ -1,0 +1,65 @@
+{
+  "status": "SOURCE_ONLY_INTEGRATION_GATE_PLAN;NO_NEW_KERNEL_OR_CLI_ACTIVATION",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "dispatcher_source_manifest_sha256": "4d0135138c6e52e24d0b028e147f4195a3d9659f3dfc0703a78e508672428c34",
+  "ten_source_reconciliation_sha256": "6c3596ae565ccd24bc6ebb6b6862bd99ba95e0ce4379165224cb102a8daaca92",
+  "existing_gate_lists_sha256": "8824f999d33b32d75c34e5a01c74d50602b9280ea041b20aacaf77d55f41cc1a",
+  "sequence": [
+    {
+      "unit": "twelve memory W exports",
+      "condition": "fresh eight-target repair, actual affected22 and baseline1357 pass",
+      "action": "original reviewed focused owned kernels and real twelve-root audit; preserve four-root real audit"
+    },
+    {
+      "unit": "void/live W exports and memory ABI adapter",
+      "condition": "complete exact8f source/config/provenance baseline ready",
+      "action": "focused owned kernels and real audit; keep original internal TLS split"
+    },
+    {
+      "unit": "published current-main baseline",
+      "condition": "all four exact8f source blobs and full proper native closure match",
+      "action": "real old23 audit with pins_of_valid empty set; preserve all old182 and381 requirements"
+    },
+    {
+      "unit": "current8f validation source reconciliation",
+      "condition": "parent approves exact ten-source projection and output preservation",
+      "action": "restore eight missing official files and rebind two actual changed NI sources; verify affected closure"
+    },
+    {
+      "unit": "complete ordinary dispatcher",
+      "condition": "all class exports and actual current CompiledSemanticNI are proper",
+      "action": "verify CompiledSemanticReturnTraceW with all fourteen ordinary classes and compatible production branch"
+    },
+    {
+      "unit": "additive constructor candidates",
+      "condition": "reviewed exact bytes and source-base bridge; old23 and prior182 checks remain mandatory",
+      "action": "apply only approved validation candidates; check all old headers/AX and affected consumers"
+    },
+    {
+      "unit": "complete artifact dispatcher",
+      "condition": "all six staged constructor branches have internal providers",
+      "action": "verify CompiledReturnPinReturnTraceW; preserve both return conventions and all ordinary/paired fields"
+    },
+    {
+      "unit": "internal program driver",
+      "condition": "artifact dispatcher and existing linked W driver proper",
+      "action": "verify three LinkReturnPinGoodWInternal roots with original OkReturnPins/CrunOk/Budget inputs"
+    },
+    {
+      "unit": "production CLI facade",
+      "condition": "complete providers/checkers/linker, old identities, routes, typed emitters, retries and actual runtime gates pass",
+      "action": "separate reviewed current-Main activation packet; preserve I128 and stock configuration replacement"
+    }
+  ],
+  "tracked_sources_changed": [],
+  "frozen_sources_changed": [],
+  "new_caller_requirements": [],
+  "separate_open_obligations": [
+    "generic callee and caught-handler faults",
+    "actual-results fault bridge and executable first-fault order",
+    "complete runtime matrix and default integration",
+    "reverse326",
+    "reverse1095",
+    "affected93"
+  ]
+}

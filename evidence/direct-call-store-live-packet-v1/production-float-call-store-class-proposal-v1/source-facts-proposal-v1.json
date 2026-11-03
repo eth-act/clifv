@@ -1,0 +1,29 @@
+{
+  "status": "SOURCE_ONLY_FLOAT_CHECKER_FACT_PROOFS;UNVERIFIED",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-float-call-store-class-proposal-v1/source/FV/Backend/Proof/StockFloatCallStoreSource.lean",
+  "source_sha256": "4ec507c41494f029a97a2945faabc8ca08885929e9b0957871d997095240b39a",
+  "checker_source_sha256": "bbac56095de9e6d85b6c0931bbfb7cbba5404667dc9ac1b9fe79bab559e473d1",
+  "roots": [
+    "Backend.Stock.FloatCallStore.sourceFacts_of_sourceB",
+    "Backend.Stock.FloatCallStore.sourceFacts_of_check",
+    "Backend.Stock.FloatCallStore.check_returnPins",
+    "Backend.Stock.FloatCallStore.check_default_flags",
+    "Backend.Stock.FloatCallStore.check_parameter_types"
+  ],
+  "import_closure_count": 257,
+  "import_cycles": [],
+  "missing_imports": [],
+  "new_caller_requirements": [],
+  "old_files_changed": [],
+  "R_G_access": [],
+  "separate_pending_evidence": [
+    "actual lower/scan output and cross-bank numeric alias inequality",
+    "actual checker inhabitation and acceptance",
+    "allocation/pointer preservation and all saved registers",
+    "ordinary/paired W execution",
+    "arbitrary callee memory and first-fault execution",
+    "internal dispatcher and production activation"
+  ],
+  "kernel_and_actual_audit": "NOT_RUN"
+}

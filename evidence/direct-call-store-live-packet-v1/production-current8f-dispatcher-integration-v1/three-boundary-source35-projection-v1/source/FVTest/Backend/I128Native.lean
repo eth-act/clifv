@@ -1,0 +1,132 @@
+import FV.Backend.Lowering.StockI128
+import FV.Backend.Lowering.StockArithmetic
+import FV.Backend.EdgeSplit
+import FV.Opt.Legalize128Pass
+
+/-!
+# Native `i128` functions in the stock-configured driver (#554, AG-2a)
+
+`lean-backend --stock-config` compiles the file that `Opt.Legalize128` gives (every `i128`
+value split into two `i64` values). This module gives that driver the native lowering
+`Stock.lower128` (an `i128` value in a register pair, as stock Cranelift does) for each function
+that it lowers. The driver's allocation callback replaces the legalized VCode of such a function
+by the native VCode (`replace`) before `StockConfig.allocateWith`. Every other VCode stays.
+The callback sees only the functions whose legalization the driver lowered, so a function that
+the driver cannot lower after legalization stays unsupported.
+
+The native VCode is prepared as the stock routes prepare `Stock.lower`'s code: the per-successor
+branch arguments are split into edge blocks (`splitEdgesChecked`, the general stock routes,
+for example `GeneralArgsLoopCfg7.check`), then `Stock.Arithmetic.stage` (dead cleanup).
+
+The other functions of the file stay legalized, so they call a native function through its
+legalized signature (`Opt.Legalize128.expandSig`). A function is native only when the native
+locations of its parameters and returns are the legalized locations without the pad slots
+(`abiAgrees`). `lower128` rejects calls with `i128` arguments or returns, so a native function
+calls only signatures that legalization does not change.
+
+Nothing here is verified: the stock-configured driver reports every function as outside
+`backend_correct`.
+-/
+
+namespace I128Native
+
+open Backend
+
+/-- A source function for the native route: it mentions `i128` (the functions that
+`Opt.Legalize128` rewrites), and `lower128` lowers it (every `i128` instruction is in the
+foundation scope). -/
+def eligible (f : Clif.Function) : Bool :=
+  Opt.Legalize128.mentions128 f && (Stock.lower128 f).toBool
+
+/-- The legalized locations `xs` (one per legalized parameter or return) grouped by the
+original parameters or returns (`Opt.Legalize128.expandGroups`), without the pad slots. The
+`x7` placement group `[q, lo, hi]` gives `[lo, hi]` to the `i128` value and `[q]` to the next
+parameter (its own group is empty). `none` if the counts differ. -/
+def regroup {α : Type} : List (List Opt.Legalize128.SlotEl) → List α → Option (List (List α))
+  | [], [] => some []
+  | [], _ :: _ => none
+  | [.val _, .lo, .hi] :: [] :: gs, q :: l :: h :: xs =>
+    ([l, h] :: [q] :: ·) <$> regroup gs xs
+  | g :: gs, xs =>
+    if xs.length < g.length then none
+    else
+      let keep := (g.zip (xs.take g.length)).filterMap fun
+        | (.pad, _) => none
+        | (_, x) => some x
+      (keep :: ·) <$> regroup gs (xs.drop g.length)
+
+/-- Do the native parameter and return locations of `f` (`Stock.sigArgLocs128`,
+`Stock.retLocs128`) equal the locations of its legalization `g` without the pad slots? A
+legalized caller in the same file then passes and reads the same registers and stack slots. -/
+def abiAgrees (f g : Clif.Function) : Bool :=
+  match Opt.Legalize128.expandGroups f.sig.params, Opt.Legalize128.expandGroups f.sig.returns,
+      Stock.sigArgLocs128 f.sig, Stock.sigArgLocs128 g.sig,
+      Stock.retLocs128 f.sig, Stock.retLocs128 g.sig with
+  | .ok pg, .ok rg, .ok (np, _), .ok (lp, _), .ok nr, .ok lr =>
+    regroup pg lp.flatten == some np && regroup rg lr.flatten == some nr
+  | _, _, _, _, _, _ => false
+
+/-- The VCode that the allocator gets for the native lowering of `f`: the edge split of
+`lower128`'s code, then the dead cleanup of the stock routes (`cleanup`). -/
+def code (cleanup : Bool) (f : Clif.Function) : Except String VCode := do
+  let r ← Stock.lower128 f
+  let split ← splitEdgesChecked r.code r.edgeArgs
+  pure (Stock.Arithmetic.stage cleanup split.code)
+
+/-- The native VCodes of a file, by function name. `source` is the parsed file before
+`Opt.Legalize128`, `legalized` the file the driver compiles. A function is native when it is
+`eligible`, its name is unique in `source`, `legalized` has its legalization, `abiAgrees` holds,
+and `code` succeeds. -/
+def nativeSet (source legalized : Clif.ParsedFile) (cleanup : Bool) : List (String × VCode) :=
+  source.funcs.filterMap fun p => do
+    let f ← p.func.toOption
+    guard (eligible f)
+    guard ((source.funcs.filter (·.name == p.name)).length == 1)
+    let q ← legalized.funcs.find? (·.name == p.name)
+    let g ← q.func.toOption
+    guard (g != f && abiAgrees f g)
+    let vc ← (code cleanup f).toOption
+    pure (p.name, vc)
+
+/-- Replace each VCode whose name is in `native` by the native VCode. -/
+def replace (native : List (String × VCode)) (vcs : Array VCode) : Array VCode :=
+  if native.isEmpty then vcs else vcs.map fun vc => (native.lookup vc.name).getD vc
+
+/-! ## Checks of `abiAgrees` -/
+
+/-- `abiAgrees` on the one function of `src` and its legalization. -/
+def abiAgreesOn (src : String) : Bool :=
+  match (Clif.parseFile src).funcs with
+  | [p] => match p.func.toOption with
+    | some f => match Opt.Legalize128.function128 f with
+      | .ok g => g != f && abiAgrees f g
+      | .error _ => false
+    | none => false
+  | _ => false
+
+-- a pair that starts at an odd register: the legalization pads x1
+#guard abiAgreesOn "function %a(i64, i128) -> i128 {
+block0(v0: i64, v1: i128):
+    return v1
+}"
+
+-- pairs on the stack after a pair in registers (`isa/aarch64/call.clif` `%f14`)
+#guard abiAgreesOn "function %f14(i128, i128, i128, i64, i128) -> i128 {
+block0(v0: i128, v1: i128, v2: i128, v3: i64, v4: i128):
+    return v4
+}"
+
+-- only x7 is free: the pair goes on the stack and the next `i64` takes x7 (`x7` placement)
+#guard abiAgreesOn "function %b(i64, i64, i64, i64, i64, i64, i64, i128, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i128, v8: i64):
+    return v8
+}"
+
+-- a return pair that starts at an odd register
+#guard abiAgreesOn "function %c(i64) -> i64, i128 {
+block0(v0: i64):
+    v1 = uextend.i128 v0
+    return v0, v1
+}"
+
+end I128Native

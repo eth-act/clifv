@@ -1,0 +1,18 @@
+--- gate.py.before
++++ gate.py.after
+@@ -90,7 +90,14 @@
+   if tr.exists() and json.loads(tr.read_text()).get('depHash')==keys[0] and n!='FV.Backend.Proof.StockMemorySretCopyBodySplit':candidates.append({'owner':'P','trace':str(tr),'sha256':sha(tr)})
+   for label,cache in [('A',Path('/home/lee/clifv/.worktrees/driver-proof-resume/.lake/artifact-cache')),('C',E/'892-current-main-context-v1/package/.lake/ci-cache')]:
+    f=cache/'outputs/fv'/(keys[0]+'.json')
+-   if f.exists():candidates.append({'owner':label,'descriptor':str(f),'sha256':sha(f)})
++   if f.exists():
++    item={'owner':label,'descriptor':str(f),'sha256':sha(f)}
++    exact_held=(n=='FV.Backend.Proof.StockMemorySretCopyBodySplit' and label=='C' and str(f)==str(E/'892-current-main-context-v1/package/.lake/ci-cache/outputs/fv/63903f5e5fce0ef6.json') and item['sha256']=='9728c487f8408c97286861a791fb7813fa9c1fcb4f83b34dc0c161df274500aa')
++    if exact_held:
++     item.update(action='matched held descriptor;no artifact consumed;fresh R compilation approved',setup_differences_held=21)
++     (D/('held-BodySplit-descriptor'+str(index)+'.json')).write_text(json.dumps(item,indent=2)+'\n')
++     preserved=D/('held-BodySplit-descriptor'+str(index)+'.raw.json');shutil.copyfile(f,preserved);assert sha(preserved)==item['sha256'] and sha(f)==item['sha256']
++    else:candidates.append(item)
+   (D/('matching-candidates'+str(index)+'.json')).write_text(json.dumps(candidates,indent=2)+'\n');assert not candidates,(n,'matching donor/cache needs exact review before a duplicate build')
+   preserve_and_detach(n);run('kernel'+str(index),['lake','-v','build','+'+n+':leanArts'])
+  run('normal'+str(index),['lake','build','--no-build',n]);e=origin(n);assert e['native_key']==keys[0];e['artifacts']=artifacts(n);e['existing_normal_reused']=ready;passed[n]=e;(D/'passed-targets.json').write_text(json.dumps(passed,indent=2)+'\n')

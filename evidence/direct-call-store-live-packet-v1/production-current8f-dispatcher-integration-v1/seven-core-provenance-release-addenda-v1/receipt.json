@@ -1,0 +1,355 @@
+{
+  "status": "ONLY_SEVEN_APPROVED_CURRENT_CORE_ORIGINS_RELEASED",
+  "authorization": "Coordinator reported root approval for exact4ce80786 four entries; prior3001d193 three concurrency approvals remain exact",
+  "approved_entries": {
+    "FV.ArmFault.Step": {
+      "binding_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/four-core-creator-current-R-v1/receipt.json",
+      "binding_sha256": "4ce80786963309e2ec9db793e35b07a655f652fb31b27050f28b35495b12c4eb",
+      "key": "6e6b2a21c4b20245",
+      "trace_sha256": "0bd8020d6e3426f7c1015fa72ad8ea17868530551e63fcf99a8a99d6b45d57ff",
+      "origin": {
+        "artifact_id": "13134695192",
+        "stage": "stage-w1-2",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "4cceb4ff8ad532e9.ltar",
+        "archive_sha256": "5538c5182917876c14f9e3f2e31ef84232f6455da8823f87c201c9d772b8024c",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-stages/stage-w1-2/outputs.jsonl",
+        "mapping_sha256": "0830e76bfa00c308faad53fb5c6bf60a34d2501fe2dc7fc045573ab104323d8c",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "4f80b4174534a3280eeb464fb776d56cf6068a4e1a34bda4b04697fd2c38201a",
+            "R_sha256": "4f80b4174534a3280eeb464fb776d56cf6068a4e1a34bda4b04697fd2c38201a",
+            "exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "802045242735de3d15d677edd9f73eb5f672203a80042bbdc396fa4c5a58626b",
+            "R_sha256": "802045242735de3d15d677edd9f73eb5f672203a80042bbdc396fa4c5a58626b",
+            "exact": true
+          },
+          "c": {
+            "extracted_sha256": "86900f08134509a7aacb2b5a7fb750ef4345c860eb53a3a4da2bf9f20a884ec4",
+            "R_sha256": "86900f08134509a7aacb2b5a7fb750ef4345c860eb53a3a4da2bf9f20a884ec4",
+            "exact": true
+          }
+        }
+      }
+    },
+    "FV.Concurrency.ArmFootprint": {
+      "binding_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/four-core-creator-current-R-v1/receipt.json",
+      "binding_sha256": "4ce80786963309e2ec9db793e35b07a655f652fb31b27050f28b35495b12c4eb",
+      "key": "ed1a7520f24ffb27",
+      "trace_sha256": "82c1105bd468c034c62f8ef5447cfb7514232ecc322d06590876443802ed5e3c",
+      "origin": {
+        "artifact_id": "13129493971",
+        "stage": "stage-w1-6",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "2b7538b43065f9b8.ltar",
+        "archive_sha256": "4cd7d005ba4d0da32c6dbcc4c77cc792e5320ee4ac18f3eea4650834a77eb862",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-6-outputs-0.jsonl",
+        "mapping_sha256": "1d39b4bf99b5817037fb294d68051b3ad02bbd2aead3092c1e7ceb69e808a193",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "3a3ecc65fc8259b42b6b24f82eaac5e48f2fda46a8c1f7306953771354bfe5e7",
+            "R_sha256": "3a3ecc65fc8259b42b6b24f82eaac5e48f2fda46a8c1f7306953771354bfe5e7",
+            "exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "910a272a86807f34cfee2ee18004b0c2dd4f20943c80c9fb523e6fb1be3976ec",
+            "R_sha256": "910a272a86807f34cfee2ee18004b0c2dd4f20943c80c9fb523e6fb1be3976ec",
+            "exact": true
+          },
+          "c": {
+            "extracted_sha256": "b24871ee9e8e5c2a26811e8f155d637a7fe7b22858307fc3712b01b73430e53e",
+            "R_sha256": "b24871ee9e8e5c2a26811e8f155d637a7fe7b22858307fc3712b01b73430e53e",
+            "exact": true
+          }
+        }
+      }
+    },
+    "FV.Concurrency.ArmInstFoot": {
+      "binding_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/four-core-creator-current-R-v1/receipt.json",
+      "binding_sha256": "4ce80786963309e2ec9db793e35b07a655f652fb31b27050f28b35495b12c4eb",
+      "key": "8835e879273af216",
+      "trace_sha256": "45a936fba2bf01fd0badc81ea5b1f78cc3dde2218a52c59eaed2285c20ebae35",
+      "origin": {
+        "artifact_id": "13129493971",
+        "stage": "stage-w1-6",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "2a12a666821bc924.ltar",
+        "archive_sha256": "6e30dfd7461433f41963ab6de7d25fa30629c9cfd172a5b508129c046e8e6eb4",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-6-outputs-0.jsonl",
+        "mapping_sha256": "1d39b4bf99b5817037fb294d68051b3ad02bbd2aead3092c1e7ceb69e808a193",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "a8280ac64f7cd679342a141cb7656243ca5e352473f985a3d26f83d30bb52edd",
+            "R_sha256": "a8280ac64f7cd679342a141cb7656243ca5e352473f985a3d26f83d30bb52edd",
+            "exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "bb17d07ef6192a213373fa1f632e359986b0ed8e82306c442568abfc08b6d5e3",
+            "R_sha256": "bb17d07ef6192a213373fa1f632e359986b0ed8e82306c442568abfc08b6d5e3",
+            "exact": true
+          },
+          "c": {
+            "extracted_sha256": "94b874e2906b373fdf21ca6b0a55010bb9ba7cf4b9dd902d4b42fc9799458499",
+            "R_sha256": "94b874e2906b373fdf21ca6b0a55010bb9ba7cf4b9dd902d4b42fc9799458499",
+            "exact": true
+          }
+        }
+      }
+    },
+    "FV.Concurrency.ArmThread": {
+      "binding_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/four-core-creator-current-R-v1/receipt.json",
+      "binding_sha256": "4ce80786963309e2ec9db793e35b07a655f652fb31b27050f28b35495b12c4eb",
+      "key": "1121d56f54c613fd",
+      "trace_sha256": "d8542ab6db52457bd83958e08ed6046aca3762407b41b7cfbd158b18f643b00d",
+      "origin": {
+        "artifact_id": "13129493971",
+        "stage": "stage-w1-6",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "1902b4a7684ab878.ltar",
+        "archive_sha256": "99733525fc1b04555de4f387bca91a2df9009803284c16e106e68c7251474aad",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-6-outputs-0.jsonl",
+        "mapping_sha256": "1d39b4bf99b5817037fb294d68051b3ad02bbd2aead3092c1e7ceb69e808a193",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "6c3f9919504c399f303da7b62dc8bec6264f55b99bee7d75fcd04e9ce1d7f2f4",
+            "R_sha256": "6c3f9919504c399f303da7b62dc8bec6264f55b99bee7d75fcd04e9ce1d7f2f4",
+            "exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "857474f4c6afdfcc3595e3979e1ee76373c8fd6263e2542f64109fc31786555a",
+            "R_sha256": "857474f4c6afdfcc3595e3979e1ee76373c8fd6263e2542f64109fc31786555a",
+            "exact": true
+          },
+          "c": {
+            "extracted_sha256": "8db41550f787131959baa9f9336ec6e8d4f1ce76cf44cce27d82ba4988d84975",
+            "R_sha256": "8db41550f787131959baa9f9336ec6e8d4f1ce76cf44cce27d82ba4988d84975",
+            "exact": true
+          }
+        }
+      }
+    },
+    "FV.Concurrency.Armv8": {
+      "binding_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/five-existing-origin-releases-v1/receipt.json",
+      "binding_sha256": "14195addaed7c12929458560acefa48edef162e64ea7f2ab8ad84b494f8dc62a",
+      "key": "5d059b7b7b2d9137",
+      "trace_sha256": "66c9d0b77e7b044134984c7e6a4fb7fa7d1a2cb9cf1b43f6619601904aa29e71",
+      "origin": {
+        "artifact_id": "13129493971",
+        "stage": "stage-w1-6",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "77c6cde00f0123d8.ltar",
+        "archive_sha256": "b81cde8f3143d227da82add1c5f2ef4d2e9b9bb026c5cdfe7a2b2a2a66e28402",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-6-outputs-0.jsonl",
+        "mapping_sha256": "1d39b4bf99b5817037fb294d68051b3ad02bbd2aead3092c1e7ceb69e808a193",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "1d11f66d0dc6da56994c6d36a4f124198226a8aafadec0696bda9650ce2fca45",
+            "P_sha256": "1d11f66d0dc6da56994c6d36a4f124198226a8aafadec0696bda9650ce2fca45",
+            "exact": true,
+            "F_sha256": "1d11f66d0dc6da56994c6d36a4f124198226a8aafadec0696bda9650ce2fca45",
+            "F_exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "fd8f27b7b6f477c9c7b7a1a6e7521e5fbb9caa2bd4cdf15d4e99b50eb37bd4a5",
+            "P_sha256": "fd8f27b7b6f477c9c7b7a1a6e7521e5fbb9caa2bd4cdf15d4e99b50eb37bd4a5",
+            "exact": true,
+            "F_sha256": "fd8f27b7b6f477c9c7b7a1a6e7521e5fbb9caa2bd4cdf15d4e99b50eb37bd4a5",
+            "F_exact": true
+          },
+          "c": {
+            "extracted_sha256": "8aed50819b6276d8769875b8e2c539c5a6f8434f38cefdcf8a770b589866b5b4",
+            "P_sha256": "8aed50819b6276d8769875b8e2c539c5a6f8434f38cefdcf8a770b589866b5b4",
+            "exact": true,
+            "F_sha256": "8aed50819b6276d8769875b8e2c539c5a6f8434f38cefdcf8a770b589866b5b4",
+            "F_exact": true
+          }
+        }
+      }
+    },
+    "FV.Concurrency.Exec": {
+      "binding_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/five-existing-origin-releases-v1/receipt.json",
+      "binding_sha256": "14195addaed7c12929458560acefa48edef162e64ea7f2ab8ad84b494f8dc62a",
+      "key": "2ad84aa350d9fd9c",
+      "trace_sha256": "4bf99acbd276860d8c806ae27d2823132d5adbe4dfb43c80e8d68aa7724c5d2e",
+      "origin": {
+        "artifact_id": "13129493971",
+        "stage": "stage-w1-6",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "ba2c7db360e8171d.ltar",
+        "archive_sha256": "f125109b7afcaa6ec3c03ae16e952162cbca8f11a0c9b5f44d94b54154b0bcd4",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-6-outputs-0.jsonl",
+        "mapping_sha256": "1d39b4bf99b5817037fb294d68051b3ad02bbd2aead3092c1e7ceb69e808a193",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "c07c44625ae0fcef622b598a62af8f615351d017d01ff0ec067245421ecb9002",
+            "P_sha256": "c07c44625ae0fcef622b598a62af8f615351d017d01ff0ec067245421ecb9002",
+            "exact": true,
+            "F_sha256": "c07c44625ae0fcef622b598a62af8f615351d017d01ff0ec067245421ecb9002",
+            "F_exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "22aed4674e4f97944d4d949cae6fbdde887e7f8a7c87390a8015dbe4e8bd87f4",
+            "P_sha256": "22aed4674e4f97944d4d949cae6fbdde887e7f8a7c87390a8015dbe4e8bd87f4",
+            "exact": true,
+            "F_sha256": "22aed4674e4f97944d4d949cae6fbdde887e7f8a7c87390a8015dbe4e8bd87f4",
+            "F_exact": true
+          },
+          "c": {
+            "extracted_sha256": "8127076eb9c51ae89602a15a1c35b15edbdacfe79968f314fdc432edaa9d93f2",
+            "P_sha256": "8127076eb9c51ae89602a15a1c35b15edbdacfe79968f314fdc432edaa9d93f2",
+            "exact": true,
+            "F_sha256": "8127076eb9c51ae89602a15a1c35b15edbdacfe79968f314fdc432edaa9d93f2",
+            "F_exact": true
+          }
+        }
+      }
+    },
+    "FV.Concurrency.Rel": {
+      "binding_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/five-existing-origin-releases-v1/receipt.json",
+      "binding_sha256": "14195addaed7c12929458560acefa48edef162e64ea7f2ab8ad84b494f8dc62a",
+      "key": "c14e73e5830b5d37",
+      "trace_sha256": "322be4f65c945fcf3f4e0b3dcc978e1befbf58f34eaaf24eb66c6e02eb9b4476",
+      "origin": {
+        "artifact_id": "13129493971",
+        "stage": "stage-w1-6",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "9a4a6c9d00d0c8ac.ltar",
+        "archive_sha256": "5caa22dd3c963fa5d227aa4326c6ad5560cfab5781ebd5b1299957b29b227532",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-6-outputs-0.jsonl",
+        "mapping_sha256": "1d39b4bf99b5817037fb294d68051b3ad02bbd2aead3092c1e7ceb69e808a193",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "b712288737c6f8c7fa7a6e7680352f970c2207387841cc1949eb2f58ae26e03c",
+            "P_sha256": "b712288737c6f8c7fa7a6e7680352f970c2207387841cc1949eb2f58ae26e03c",
+            "exact": true,
+            "F_sha256": "b712288737c6f8c7fa7a6e7680352f970c2207387841cc1949eb2f58ae26e03c",
+            "F_exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "e9ce9734c1adc0a5d56e69a2baa8f57c1e89a62fef4863dc7e1b24e9ccefd091",
+            "P_sha256": "e9ce9734c1adc0a5d56e69a2baa8f57c1e89a62fef4863dc7e1b24e9ccefd091",
+            "exact": true,
+            "F_sha256": "e9ce9734c1adc0a5d56e69a2baa8f57c1e89a62fef4863dc7e1b24e9ccefd091",
+            "F_exact": true
+          },
+          "c": {
+            "extracted_sha256": "4717c39cb93d422fa5e1085a9d95d6c7b66b376f392bb7f2399cc10ceaf9e8d9",
+            "P_sha256": "4717c39cb93d422fa5e1085a9d95d6c7b66b376f392bb7f2399cc10ceaf9e8d9",
+            "exact": true,
+            "F_sha256": "4717c39cb93d422fa5e1085a9d95d6c7b66b376f392bb7f2399cc10ceaf9e8d9",
+            "F_exact": true
+          }
+        }
+      }
+    }
+  },
+  "packet_addenda": {
+    "validated": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/seven-core-provenance-release-addenda-v1/validated.json",
+      "sha256": "6c1b632ec104495ba8565a9ad4ebd9214cf4c76718fabff5eea230f08069136c",
+      "cleared_current_entries": []
+    },
+    "arithmetic": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/seven-core-provenance-release-addenda-v1/arithmetic.json",
+      "sha256": "dad461d578a29af8dcf6b4969f664ef06eab97e439adb2478b42a0aa3c785458",
+      "cleared_current_entries": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ]
+    },
+    "scalar": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/seven-core-provenance-release-addenda-v1/scalar.json",
+      "sha256": "c88987e19c2c97b5bc474b3e3c6747b5396f127b7f46393f3878022586eaf9d2",
+      "cleared_current_entries": []
+    },
+    "pure": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/seven-core-provenance-release-addenda-v1/pure.json",
+      "sha256": "91da206717e58d345e9962683fed6c972344aa03e8f6f7b22e3d1ad319e60012",
+      "cleared_current_entries": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ]
+    },
+    "resultCall": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/seven-core-provenance-release-addenda-v1/resultCall.json",
+      "sha256": "f703d0588cbf4e387d8d73bc8a1707b1be1604d7b1bae27a940b2213b122f095",
+      "cleared_current_entries": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ]
+    },
+    "memorySingle": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/seven-core-provenance-release-addenda-v1/memorySingle.json",
+      "sha256": "f02443167cc98fe2ddcd6334056ef3fff52779284eae44363bfb450ab3dc8a35",
+      "cleared_current_entries": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ]
+    },
+    "memoryClass12": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/seven-core-provenance-release-addenda-v1/memoryClass12.json",
+      "sha256": "3d179b4519b44c824638c829647609fd7d36508871807507c84c3d7f16c2053e",
+      "cleared_current_entries": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ]
+    },
+    "production391": {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-current8f-dispatcher-integration-v1/seven-core-provenance-release-addenda-v1/production391.json",
+      "sha256": "a54af4278b0d40a0e404b6b3e8caca8a97ba1040a4a945e4ce01e8efd246105a",
+      "cleared_current_entries": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ]
+    }
+  },
+  "old_receipts_and_files_modified": [],
+  "new_kernels": [],
+  "remaining_production_closure": "OPEN"
+}

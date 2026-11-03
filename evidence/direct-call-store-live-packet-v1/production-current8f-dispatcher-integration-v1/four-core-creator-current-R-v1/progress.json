@@ -1,0 +1,65 @@
+[
+  {
+    "label": "actual-normal4",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.ArmFault.Step",
+      "FV.Concurrency.ArmFootprint",
+      "FV.Concurrency.ArmInstFoot",
+      "FV.Concurrency.ArmThread"
+    ],
+    "exit": 0,
+    "log_sha256": "8d9354d6f2d89b49bae628e77578859d24a077848b9b8dad09381720e9878ea0",
+    "memory": "peak 17485824\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "actual-key0",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.ArmFault.Step:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "b16fd663ba6d38a656a9ce07a42b7c42636842e05d3fea8c5bc4cf0f3521917d",
+    "memory": "peak 18145280\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "actual-key1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Concurrency.ArmFootprint:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "70e47a199239a356fecd04920839d0a3d424ac533830f8899c9aa6d0af146b16",
+    "memory": "peak 16756736\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "actual-key2",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Concurrency.ArmInstFoot:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "72afc51189a1713d255f46bdc9236b77104f56dd6e68536b8fe296473ac620c6",
+    "memory": "peak 25677824\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "actual-key3",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Concurrency.ArmThread:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "b2f047527d898132236c95f972209490aec4e87aa80397398f1c53c20285b7fc",
+    "memory": "peak 24961024\noom 0\noom_kill 0\n"
+  }
+]

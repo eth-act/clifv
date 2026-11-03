@@ -1,0 +1,224 @@
+{
+  "status": "FOUR_EXACT_CORE_CREATORS_BOUND_TO_CURRENT8F_R;RELEASE_STILL_PENDING",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "origin_receipt_sha256": "edf3f7424892b5b0aa08f86f14c9d6984e06392960cb0638c5be151858ebf536",
+  "configs": {
+    "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+  },
+  "records": {
+    "FV.ArmFault.Step": {
+      "source_sha256": "f1bc77ec2e3c213f4445f88ff15f3554907a060a9d5d2c2ba461967eb3208473",
+      "native_key": "6e6b2a21c4b20245",
+      "R_trace_sha256": "0bd8020d6e3426f7c1015fa72ad8ea17868530551e63fcf99a8a99d6b45d57ff",
+      "origin": {
+        "artifact_id": "13134695192",
+        "stage": "stage-w1-2",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "4cceb4ff8ad532e9.ltar",
+        "archive_sha256": "5538c5182917876c14f9e3f2e31ef84232f6455da8823f87c201c9d772b8024c",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-stages/stage-w1-2/outputs.jsonl",
+        "mapping_sha256": "0830e76bfa00c308faad53fb5c6bf60a34d2501fe2dc7fc045573ab104323d8c",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "4f80b4174534a3280eeb464fb776d56cf6068a4e1a34bda4b04697fd2c38201a",
+            "R_sha256": "4f80b4174534a3280eeb464fb776d56cf6068a4e1a34bda4b04697fd2c38201a",
+            "exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "802045242735de3d15d677edd9f73eb5f672203a80042bbdc396fa4c5a58626b",
+            "R_sha256": "802045242735de3d15d677edd9f73eb5f672203a80042bbdc396fa4c5a58626b",
+            "exact": true
+          },
+          "c": {
+            "extracted_sha256": "86900f08134509a7aacb2b5a7fb750ef4345c860eb53a3a4da2bf9f20a884ec4",
+            "R_sha256": "86900f08134509a7aacb2b5a7fb750ef4345c860eb53a3a4da2bf9f20a884ec4",
+            "exact": true
+          }
+        }
+      },
+      "current_key_query": "6e6b2a21c4b20245",
+      "actual_normal": 0
+    },
+    "FV.Concurrency.ArmFootprint": {
+      "source_sha256": "b26136b32d4d8184787249da052097402716e3c9711b10b3b219a2a339b8c6c6",
+      "native_key": "ed1a7520f24ffb27",
+      "R_trace_sha256": "82c1105bd468c034c62f8ef5447cfb7514232ecc322d06590876443802ed5e3c",
+      "origin": {
+        "artifact_id": "13129493971",
+        "stage": "stage-w1-6",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "2b7538b43065f9b8.ltar",
+        "archive_sha256": "4cd7d005ba4d0da32c6dbcc4c77cc792e5320ee4ac18f3eea4650834a77eb862",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-6-outputs-0.jsonl",
+        "mapping_sha256": "1d39b4bf99b5817037fb294d68051b3ad02bbd2aead3092c1e7ceb69e808a193",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "3a3ecc65fc8259b42b6b24f82eaac5e48f2fda46a8c1f7306953771354bfe5e7",
+            "R_sha256": "3a3ecc65fc8259b42b6b24f82eaac5e48f2fda46a8c1f7306953771354bfe5e7",
+            "exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "910a272a86807f34cfee2ee18004b0c2dd4f20943c80c9fb523e6fb1be3976ec",
+            "R_sha256": "910a272a86807f34cfee2ee18004b0c2dd4f20943c80c9fb523e6fb1be3976ec",
+            "exact": true
+          },
+          "c": {
+            "extracted_sha256": "b24871ee9e8e5c2a26811e8f155d637a7fe7b22858307fc3712b01b73430e53e",
+            "R_sha256": "b24871ee9e8e5c2a26811e8f155d637a7fe7b22858307fc3712b01b73430e53e",
+            "exact": true
+          }
+        }
+      },
+      "current_key_query": "ed1a7520f24ffb27",
+      "actual_normal": 0
+    },
+    "FV.Concurrency.ArmInstFoot": {
+      "source_sha256": "4aed5c33781737604799dcd2b449b8ccde1ff3f684ac99ba7783a91ed263f9e2",
+      "native_key": "8835e879273af216",
+      "R_trace_sha256": "45a936fba2bf01fd0badc81ea5b1f78cc3dde2218a52c59eaed2285c20ebae35",
+      "origin": {
+        "artifact_id": "13129493971",
+        "stage": "stage-w1-6",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "2a12a666821bc924.ltar",
+        "archive_sha256": "6e30dfd7461433f41963ab6de7d25fa30629c9cfd172a5b508129c046e8e6eb4",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-6-outputs-0.jsonl",
+        "mapping_sha256": "1d39b4bf99b5817037fb294d68051b3ad02bbd2aead3092c1e7ceb69e808a193",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "a8280ac64f7cd679342a141cb7656243ca5e352473f985a3d26f83d30bb52edd",
+            "R_sha256": "a8280ac64f7cd679342a141cb7656243ca5e352473f985a3d26f83d30bb52edd",
+            "exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "bb17d07ef6192a213373fa1f632e359986b0ed8e82306c442568abfc08b6d5e3",
+            "R_sha256": "bb17d07ef6192a213373fa1f632e359986b0ed8e82306c442568abfc08b6d5e3",
+            "exact": true
+          },
+          "c": {
+            "extracted_sha256": "94b874e2906b373fdf21ca6b0a55010bb9ba7cf4b9dd902d4b42fc9799458499",
+            "R_sha256": "94b874e2906b373fdf21ca6b0a55010bb9ba7cf4b9dd902d4b42fc9799458499",
+            "exact": true
+          }
+        }
+      },
+      "current_key_query": "8835e879273af216",
+      "actual_normal": 0
+    },
+    "FV.Concurrency.ArmThread": {
+      "source_sha256": "9fe32bf5309fcff84ce8b0284aec7f6182619c335bca055abbb82224ee40c11a",
+      "native_key": "1121d56f54c613fd",
+      "R_trace_sha256": "d8542ab6db52457bd83958e08ed6046aca3762407b41b7cfbd158b18f643b00d",
+      "origin": {
+        "artifact_id": "13129493971",
+        "stage": "stage-w1-6",
+        "producer_head": "3a6719b44b0e6b38e24cd0de82655f93b78272a9",
+        "producer_conclusion": "success",
+        "archive": "1902b4a7684ab878.ltar",
+        "archive_sha256": "99733525fc1b04555de4f387bca91a2df9009803284c16e106e68c7251474aad",
+        "mapping": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/stage-w1-6-outputs-0.jsonl",
+        "mapping_sha256": "1d39b4bf99b5817037fb294d68051b3ad02bbd2aead3092c1e7ceb69e808a193",
+        "trace_bytes_exact": true,
+        "payloads": {
+          "olean": {
+            "extracted_sha256": "6c3f9919504c399f303da7b62dc8bec6264f55b99bee7d75fcd04e9ce1d7f2f4",
+            "R_sha256": "6c3f9919504c399f303da7b62dc8bec6264f55b99bee7d75fcd04e9ce1d7f2f4",
+            "exact": true
+          },
+          "ilean": {
+            "extracted_sha256": "857474f4c6afdfcc3595e3979e1ee76373c8fd6263e2542f64109fc31786555a",
+            "R_sha256": "857474f4c6afdfcc3595e3979e1ee76373c8fd6263e2542f64109fc31786555a",
+            "exact": true
+          },
+          "c": {
+            "extracted_sha256": "8db41550f787131959baa9f9336ec6e8d4f1ce76cf44cce27d82ba4988d84975",
+            "R_sha256": "8db41550f787131959baa9f9336ec6e8d4f1ce76cf44cce27d82ba4988d84975",
+            "exact": true
+          }
+        }
+      },
+      "current_key_query": "1121d56f54c613fd",
+      "actual_normal": 0
+    }
+  },
+  "commands": [
+    {
+      "label": "actual-normal4",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread"
+      ],
+      "exit": 0,
+      "log_sha256": "8d9354d6f2d89b49bae628e77578859d24a077848b9b8dad09381720e9878ea0",
+      "memory": "peak 17485824\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "actual-key0",
+      "argv": [
+        "lake",
+        "query",
+        "--no-build",
+        "+FV.ArmFault.Step:depHash"
+      ],
+      "exit": 0,
+      "log_sha256": "b16fd663ba6d38a656a9ce07a42b7c42636842e05d3fea8c5bc4cf0f3521917d",
+      "memory": "peak 18145280\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "actual-key1",
+      "argv": [
+        "lake",
+        "query",
+        "--no-build",
+        "+FV.Concurrency.ArmFootprint:depHash"
+      ],
+      "exit": 0,
+      "log_sha256": "70e47a199239a356fecd04920839d0a3d424ac533830f8899c9aa6d0af146b16",
+      "memory": "peak 16756736\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "actual-key2",
+      "argv": [
+        "lake",
+        "query",
+        "--no-build",
+        "+FV.Concurrency.ArmInstFoot:depHash"
+      ],
+      "exit": 0,
+      "log_sha256": "72afc51189a1713d255f46bdc9236b77104f56dd6e68536b8fe296473ac620c6",
+      "memory": "peak 25677824\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "actual-key3",
+      "argv": [
+        "lake",
+        "query",
+        "--no-build",
+        "+FV.Concurrency.ArmThread:depHash"
+      ],
+      "exit": 0,
+      "log_sha256": "b2f047527d898132236c95f972209490aec4e87aa80397398f1c53c20285b7fc",
+      "memory": "peak 24961024\noom 0\noom_kill 0\n"
+    }
+  ],
+  "stale_checker_entries_excluded": [
+    "FV.Backend.Proof.StockMemorySretCopyCheck",
+    "FV.Backend.ReturnPinCheck"
+  ],
+  "new_kernels": [],
+  "P_G_writes": [],
+  "new_approvals": []
+}

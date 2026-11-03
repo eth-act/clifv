@@ -1,0 +1,20 @@
+{
+  "status": "CURRENT_R_PROVENANCE_ADDENDUM_ONLY;IMMUTABLE_KERNEL_RECEIPT_UNCHANGED",
+  "packet": "validated",
+  "kernel_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-validated-return-trace-W-proposal-v3/focused-kernel-v4/receipt.json",
+  "kernel_receipt_sha256": "3669c47724573728d0d460b7969598c5f6a716d544c39737279ad86a8894ff2b",
+  "kernel_status": "PASSED_STAGED_W_EXPORT;NOT_PRODUCTION_COMPLETION",
+  "approved_current_core_entries": {},
+  "saved_historical_trace_hashes_equal_current": [],
+  "historical_variant_scope": "current R consumer provenance repaired; no additional historical variant inferred",
+  "source_context": null,
+  "source_context_sha256": null,
+  "passed_kernel_normals_and_audits_preserved": true,
+  "new_kernel_or_audit_runs": [],
+  "other_production_holds": [
+    "FV.Backend.Proof.StockMemorySretCopyCheck stale key",
+    "FV.Backend.ReturnPinCheck stale key",
+    "FV.E2E.StockResultCallMachine synthetic trace",
+    "remaining complete1840 frontier and conditional consumers"
+  ]
+}

@@ -1,0 +1,259 @@
+{
+  "status": "V1_STOPPED_AT_OWNED_HARDLINK_GUARD",
+  "partial_copy": "only target0 trace copied before guard",
+  "rows": {
+    ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreAddress.trace": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "514c965c994cdcb9d53ece477c07c717bab57217435cef2f5e23d7dae390d2ec",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": true
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreAddress.olean": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 2,
+      "current_sha256": "0acf29d53a310fcaf50325e0d6ae41c621149ee72c1e18c9c65942d88523fb36",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreAddress.ilean": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 2,
+      "current_sha256": "b02bc4673b5feda237bbc00037ff523c5eb44e027c30c40425b1105342c03993",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreAddress.olean.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "40bd7ba6598ea43f88e9bdddc2808df574d51bef94ca73c2df5a500f02659203",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreAddress.ilean.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "ddd9f015c50c9c1eaff8a733a26dd082ba02c0d2bdba021daa0f88a8a9a4a4a1",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockCallStoreAddress.c": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 2,
+      "current_sha256": "75c0e07f66f05f59b66ee191004812fd33ea26e199b0b506cbba4b7c318e78b1",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockCallStoreAddress.c.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "ef27f9dc7a4c03ccdc670940136a2f97b1331b0a1b691fdd3a0f6331be8b328b",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.trace": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "8e2771d81272b41c4d4b119c4781a7dd785f1323b199fb1be7dc6ec22aca2d8c",
+      "matches_approved_donor": false,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.olean": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "caf1b86f02d25043f85262be0cc1afac70102b054814ace8777902ddc1192444",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.ilean": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "9c52566409340fecee044d2cb3fc0f81ba59e64925f32883220074ce7378f18b",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.olean.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "b44f6f6494680c2772bbf8d662c100b58079583e67b1f55a29cb8844618da595",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.ilean.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "2fa41b9b7293bcf296c0f6588534ee19521acb3dfe5b630baf0d53816fb4b545",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryNopNonentryReturn.c": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "d4b613e9d3eca7203526712cb8f59288354f0c98c8a7069d4b3009d01b050ef1",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryNopNonentryReturn.c.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "c2b6c83b127bbcdf73dff8393e509b87fa85345cca31b78986bdb3afc02d4930",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.trace": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "8ee1d7855a82fd846861913cff3f22e22a7d265bb4e86b0a4258ceab4ed656fd",
+      "matches_approved_donor": false,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.olean": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "78e64558f42d5f19ee6a0ae9c732b2d4b77c7e57458b9a99c13e8da19f6a3cdc",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.ilean": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "589d4b53044eb205223c884b6ad7349e02a9c4725ef7f04b1d60e4e16527f8df",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.olean.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "203f33f97866cc8752d9872443e544d73b715338530d5e4f076919abc0e17853",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.ilean.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "92c38574213bece955718fa833b06c5adb15676f3ea643d7fa2d6c7e73c5a847",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.c": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "8845e1e25ed82ba79381eb34f99bc0e50a39cae5248a88934ed66a4970fb5c0c",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.c.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/Backend/Proof",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "d2440f6472aa96680dcc8b8c9063857417a5157e4a3fbd2184ae78286e0608c8",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/E2E/StockMemoryABIWorldX.trace": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "e6c79d412d306dfce7709ecd01eecf53a53dd03dad8d726291f6dba44536cf7c",
+      "matches_approved_donor": false,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/E2E/StockMemoryABIWorldX.olean": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "d9b35b7a4e994398405cf5e270fb7cb9bea846aa54ddd6e55bc28b9f280a7091",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/E2E/StockMemoryABIWorldX.ilean": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "0e60c647e25761a5e796027962cc40f4844a036f4a62c47e1ef0ee36b7b46cb7",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/E2E/StockMemoryABIWorldX.olean.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "73817cc64bc49a3daec7116bf484a44fa5b9b051909a933aad054663a23b0d41",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/lib/lean/FV/E2E/StockMemoryABIWorldX.ilean.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/lib/lean/FV/E2E",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "18313126cc9fba5b094010132c6ab729509d8ff5a4968cbecd678bb9420c09a9",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/ir/FV/E2E/StockMemoryABIWorldX.c": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/E2E",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "13acac643a894f7cd2eba1c17c02ad5844a05806c96fba31fb86f49ef2e9849c",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    },
+    ".lake/build/ir/FV/E2E/StockMemoryABIWorldX.c.hash": {
+      "parent_resolved": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/validation-package-v1/.lake/build/ir/FV/E2E",
+      "parent_uid": 30034,
+      "final_is_symlink": false,
+      "final_link_count": 1,
+      "current_sha256": "1aed1f69da686d9513ec12d4554177b7b5be46aff70876f9f573a9aa12266669",
+      "matches_approved_donor": true,
+      "V1_preserved_old_bytes": false
+    }
+  },
+  "shared_permissions_changed": false
+}

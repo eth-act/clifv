@@ -1,0 +1,1360 @@
+{
+  "status": "COMPLETE_DONOR_AND_HELD_ORIGIN_CANDIDATE_INVENTORY;NO_REUSE_OR_NORMAL_CLAIM",
+  "baseline_classification_sha256": "eae832058e06dd2ded6e75366a03810775e32854820a7ea0ca7623d4531fbec0",
+  "nodes": {
+    "FV.ArmFault.Step": {
+      "source_sha256": "f1bc77ec2e3c213f4445f88ff15f3554907a060a9d5d2c2ba461967eb3208473",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "f1bc77ec2e3c213f4445f88ff15f3554907a060a9d5d2c2ba461967eb3208473",
+        "stored_native_key": "6e6b2a21c4b20245",
+        "trace_sha256": "0bd8020d6e3426f7c1015fa72ad8ea17868530551e63fcf99a8a99d6b45d57ff",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": null,
+      "key_scope": "current key still requires proper dependencies; no stored-key inference",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "6e6b2a21c4b20245",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "0bd8020d6e3426f7c1015fa72ad8ea17868530551e63fcf99a8a99d6b45d57ff",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/ArmFault/Step.trace": "0bd8020d6e3426f7c1015fa72ad8ea17868530551e63fcf99a8a99d6b45d57ff",
+            ".lake/build/lib/lean/FV/ArmFault/Step.olean": "4f80b4174534a3280eeb464fb776d56cf6068a4e1a34bda4b04697fd2c38201a",
+            ".lake/build/lib/lean/FV/ArmFault/Step.ilean": "802045242735de3d15d677edd9f73eb5f672203a80042bbdc396fa4c5a58626b",
+            ".lake/build/lib/lean/FV/ArmFault/Step.olean.hash": "7191c0fc5bbee39ff0fd3accfb48faad66570254b51ac8d62a7f9b4ce77a1306",
+            ".lake/build/lib/lean/FV/ArmFault/Step.ilean.hash": "97758ca923c8c46b5a6d7833086df93b6a8b6f7754c591dcc8b2b519166d13b9",
+            ".lake/build/ir/FV/ArmFault/Step.c": "86900f08134509a7aacb2b5a7fb750ef4345c860eb53a3a4da2bf9f20a884ec4",
+            ".lake/build/ir/FV/ArmFault/Step.c.hash": "b9b19b7de5f22a63b0bc0409fd2d69bd661366c95f1a4c717a6ea3d095e166ab"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "8ba9272999baf5e3",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "8b104ddfd031836d4e931179a0c0c17dc3453758f5926dc78561ce63bda37ced",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [
+            "FV.Concurrency.ArmInstFoot",
+            "FV.Concurrency.ArmFootprint",
+            "FV.Concurrency.ArmThread"
+          ],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/ArmFault/Step.trace": "8b104ddfd031836d4e931179a0c0c17dc3453758f5926dc78561ce63bda37ced",
+            ".lake/build/lib/lean/FV/ArmFault/Step.olean": "4f80b4174534a3280eeb464fb776d56cf6068a4e1a34bda4b04697fd2c38201a",
+            ".lake/build/lib/lean/FV/ArmFault/Step.olean.hash": "7191c0fc5bbee39ff0fd3accfb48faad66570254b51ac8d62a7f9b4ce77a1306",
+            ".lake/build/lib/lean/FV/ArmFault/Step.ilean": "802045242735de3d15d677edd9f73eb5f672203a80042bbdc396fa4c5a58626b",
+            ".lake/build/lib/lean/FV/ArmFault/Step.ilean.hash": "97758ca923c8c46b5a6d7833086df93b6a8b6f7754c591dcc8b2b519166d13b9",
+            ".lake/build/ir/FV/ArmFault/Step.c": "86900f08134509a7aacb2b5a7fb750ef4345c860eb53a3a4da2bf9f20a884ec4",
+            ".lake/build/ir/FV/ArmFault/Step.c.hash": "b9b19b7de5f22a63b0bc0409fd2d69bd661366c95f1a4c717a6ea3d095e166ab"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockCallStoreAddress": {
+      "source_sha256": "393acd3fb92b0272f17e5d4d4b4021f75f4fd2771e1e27a6ec5c52fd9a81da56",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "393acd3fb92b0272f17e5d4d4b4021f75f4fd2771e1e27a6ec5c52fd9a81da56",
+        "stored_native_key": "5518c0cdbfd173ec",
+        "trace_sha256": "e1c023d10fc15f33cebf8b39faa068410ba0f986d995e564c1c11ce3d17916f1",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "0d9ced152d5fb0d4",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "0d9ced152d5fb0d4",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "514c965c994cdcb9d53ece477c07c717bab57217435cef2f5e23d7dae390d2ec",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreAddress.trace": "514c965c994cdcb9d53ece477c07c717bab57217435cef2f5e23d7dae390d2ec",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreAddress.ilean": "b02bc4673b5feda237bbc00037ff523c5eb44e027c30c40425b1105342c03993",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreAddress.olean": "0acf29d53a310fcaf50325e0d6ae41c621149ee72c1e18c9c65942d88523fb36",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreAddress.olean.hash": "40bd7ba6598ea43f88e9bdddc2808df574d51bef94ca73c2df5a500f02659203",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreAddress.ilean.hash": "ddd9f015c50c9c1eaff8a733a26dd082ba02c0d2bdba021daa0f88a8a9a4a4a1",
+            ".lake/build/ir/FV/Backend/Proof/StockCallStoreAddress.setup.json": "20de7c159c098d41b0160f3bec79857b977bcf94eb6758d3fc64cb463df5494a",
+            ".lake/build/ir/FV/Backend/Proof/StockCallStoreAddress.c": "75c0e07f66f05f59b66ee191004812fd33ea26e199b0b506cbba4b7c318e78b1",
+            ".lake/build/ir/FV/Backend/Proof/StockCallStoreAddress.c.hash": "ef27f9dc7a4c03ccdc670940136a2f97b1331b0a1b691fdd3a0f6331be8b328b"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "4dc61e66d36f4a68",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "871633fa5292fa860a6ff83e7d9a45f77f9c9b9c786fe537177aaf76f7134e85",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockCallStoreResult": {
+      "source_sha256": "6031740667cd1e25dbfc1d74bff642e34e0fd059d673b283429a1695de495171",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "6031740667cd1e25dbfc1d74bff642e34e0fd059d673b283429a1695de495171",
+        "stored_native_key": "230e3860c5a468df",
+        "trace_sha256": "d7676989daad5f124037ec8c586f386e355904f4561431f62044d5654dded930",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "b5117b08a178a4b9",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "b5117b08a178a4b9",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "329fb2f6c2dcb567db1bea7f33dc1233e6d831f0d152a4edcba3bddae55b8fb0",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreResult.ilean.hash": "e58567add2d2fabfba7449ab45551bdad9d22409a69dcde49c72deb38d0ac420",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreResult.ilean": "ce291fd75d7e3359f433c8db79cf0716368a528ca5bd8c6c99079c3f0d86d88b",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreResult.olean.hash": "936855552c6574c4686b573665e3071b807ab0f23626c6e72c754107df8d4092",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreResult.trace": "329fb2f6c2dcb567db1bea7f33dc1233e6d831f0d152a4edcba3bddae55b8fb0",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockCallStoreResult.olean": "37be5c1700c058595485edce374e56fbaf261e6656cf3bd7d1e514f3bcef7a99",
+            ".lake/build/ir/FV/Backend/Proof/StockCallStoreResult.setup.json": "3013e3584916e005f20dd8719411fd6c871ecd9c8847619db4889028d50dba66",
+            ".lake/build/ir/FV/Backend/Proof/StockCallStoreResult.c": "5c8b0d94feb8d1c6587cb1bb7722353a8bf9a7a83171177c468204bb91ab0321",
+            ".lake/build/ir/FV/Backend/Proof/StockCallStoreResult.c.hash": "4052bcfe61fa8e64c82ede4dbb1bb34c7570179eeaa1c59c76becd7e7424b8ac"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "fdaa223fdd8a31c1",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "144c817dea839c2ddca447e2d5a42710dfdda7d4e6e721e618c38e1ddb770541",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryNopNonentryReturn": {
+      "source_sha256": "fd34fdcbcff2dd210b2fe62fa3bffeb3ffbd7b1a04834cf5fbd2fdd036d245eb",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "fd34fdcbcff2dd210b2fe62fa3bffeb3ffbd7b1a04834cf5fbd2fdd036d245eb",
+        "stored_native_key": "1aabbd5b5c86c940",
+        "trace_sha256": "8e2771d81272b41c4d4b119c4781a7dd785f1323b199fb1be7dc6ec22aca2d8c",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "6a13462f16701e6b",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "6a13462f16701e6b",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "406c59644620f79531ee54293e978b1f4580ff68ddaecabc9cb8b9ab87aaeffc",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.ilean": "9c52566409340fecee044d2cb3fc0f81ba59e64925f32883220074ce7378f18b",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.olean": "caf1b86f02d25043f85262be0cc1afac70102b054814ace8777902ddc1192444",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.olean.hash": "b44f6f6494680c2772bbf8d662c100b58079583e67b1f55a29cb8844618da595",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.ilean.hash": "2fa41b9b7293bcf296c0f6588534ee19521acb3dfe5b630baf0d53816fb4b545",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.trace": "406c59644620f79531ee54293e978b1f4580ff68ddaecabc9cb8b9ab87aaeffc",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryNopNonentryReturn.setup.json": "49eaff132b38593f0a4de7f94509ae5ec0c495bf55ea8a1f007bcaf8b89e06c8",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryNopNonentryReturn.c": "d4b613e9d3eca7203526712cb8f59288354f0c98c8a7069d4b3009d01b050ef1",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryNopNonentryReturn.c.hash": "c2b6c83b127bbcdf73dff8393e509b87fa85345cca31b78986bdb3afc02d4930"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "6a13462f16701e6b",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "406c59644620f79531ee54293e978b1f4580ff68ddaecabc9cb8b9ab87aaeffc",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.trace.nobuild": "c1a83deb80111256385bbcd59feafea412c89c5ada17d9a1cd0cfafe7d4a8289",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.olean": "caf1b86f02d25043f85262be0cc1afac70102b054814ace8777902ddc1192444",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.ilean": "9c52566409340fecee044d2cb3fc0f81ba59e64925f32883220074ce7378f18b",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.olean.hash": "b44f6f6494680c2772bbf8d662c100b58079583e67b1f55a29cb8844618da595",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.ilean.hash": "2fa41b9b7293bcf296c0f6588534ee19521acb3dfe5b630baf0d53816fb4b545",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryNopNonentryReturn.trace": "406c59644620f79531ee54293e978b1f4580ff68ddaecabc9cb8b9ab87aaeffc",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryNopNonentryReturn.setup.json": "49eaff132b38593f0a4de7f94509ae5ec0c495bf55ea8a1f007bcaf8b89e06c8",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryNopNonentryReturn.c": "d4b613e9d3eca7203526712cb8f59288354f0c98c8a7069d4b3009d01b050ef1",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryNopNonentryReturn.c.hash": "c2b6c83b127bbcdf73dff8393e509b87fa85345cca31b78986bdb3afc02d4930"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemoryOrdinaryJumpDefined": {
+      "source_sha256": "0cf5afffc63df7f62001f5c76fa5432aef440f041b0c04d6d45538b1c8cd9f49",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "0cf5afffc63df7f62001f5c76fa5432aef440f041b0c04d6d45538b1c8cd9f49",
+        "stored_native_key": "c5b3ea8a1000f9f8",
+        "trace_sha256": "8ee1d7855a82fd846861913cff3f22e22a7d265bb4e86b0a4258ceab4ed656fd",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "b1f80e2ba7e76971",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "b1f80e2ba7e76971",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "bec46d7dd942e5607257d641cec68a2796c8bdd397e899452c345fe3494e693f",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.olean": "78e64558f42d5f19ee6a0ae9c732b2d4b77c7e57458b9a99c13e8da19f6a3cdc",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.ilean": "589d4b53044eb205223c884b6ad7349e02a9c4725ef7f04b1d60e4e16527f8df",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.olean.hash": "203f33f97866cc8752d9872443e544d73b715338530d5e4f076919abc0e17853",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.ilean.hash": "92c38574213bece955718fa833b06c5adb15676f3ea643d7fa2d6c7e73c5a847",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.trace": "bec46d7dd942e5607257d641cec68a2796c8bdd397e899452c345fe3494e693f",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.setup.json": "c74bc87ba20f30e2c12f6d4679ceb194fa9377eb7fba931f76551d66da462320",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.c": "8845e1e25ed82ba79381eb34f99bc0e50a39cae5248a88934ed66a4970fb5c0c",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.c.hash": "d2440f6472aa96680dcc8b8c9063857417a5157e4a3fbd2184ae78286e0608c8"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "b1f80e2ba7e76971",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "bec46d7dd942e5607257d641cec68a2796c8bdd397e899452c345fe3494e693f",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.olean": "78e64558f42d5f19ee6a0ae9c732b2d4b77c7e57458b9a99c13e8da19f6a3cdc",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.ilean": "589d4b53044eb205223c884b6ad7349e02a9c4725ef7f04b1d60e4e16527f8df",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.olean.hash": "203f33f97866cc8752d9872443e544d73b715338530d5e4f076919abc0e17853",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.ilean.hash": "92c38574213bece955718fa833b06c5adb15676f3ea643d7fa2d6c7e73c5a847",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.trace": "bec46d7dd942e5607257d641cec68a2796c8bdd397e899452c345fe3494e693f",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.trace.nobuild": "508ded43c11edb8faf822cefd6a02287dc8bd31ff73bf49ece0a6dec6c45f20d",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.setup.json": "c74bc87ba20f30e2c12f6d4679ceb194fa9377eb7fba931f76551d66da462320",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.c": "8845e1e25ed82ba79381eb34f99bc0e50a39cae5248a88934ed66a4970fb5c0c",
+            ".lake/build/ir/FV/Backend/Proof/StockMemoryOrdinaryJumpDefined.c.hash": "d2440f6472aa96680dcc8b8c9063857417a5157e4a3fbd2184ae78286e0608c8"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemorySretCopyBodySplit": {
+      "source_sha256": "47468f5df03363cbc4c8ee076dcad8dc7d1ae212df418c1d995f4687bcfc39bf",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "47468f5df03363cbc4c8ee076dcad8dc7d1ae212df418c1d995f4687bcfc39bf",
+        "stored_native_key": "1e34b364ec411fec",
+        "trace_sha256": "3c40fbe22e6e3903c0dff158d384f4b93c7acf4daf512904a124a0d0948d4e2c",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "63903f5e5fce0ef6",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "63903f5e5fce0ef6",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "21542381f355a525bd1dcb2af331135607888a882a3c5bfdabd909b83a40ab61",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.ilean": "a478fd9bc70c818fc8d41cec48f45dd22873f648240bdf37659512076ad521c2",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.olean": "9992633acb876defe7f92dbc7c4cb73b948f22c3baaadd6faf1604fb3b25c563",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.olean.hash": "a43e7387e964d7caccd003b4cee881c31873be71702f5ffc56d8dfc4e406b2e7",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.ilean.hash": "607613af68a757ab455aae2f6fd082cd8ee1eadad9d6261325a97a2da44ef126",
+            ".lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.trace": "21542381f355a525bd1dcb2af331135607888a882a3c5bfdabd909b83a40ab61",
+            ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBodySplit.setup.json": "e8669ff7de92117497cd902b98e61dd8ebeaa5645a52d34bb010b4cb474f55eb",
+            ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBodySplit.c": "bc935d116ba55392f7d11118bb156f639a85d074365294d23e912ea9513949ee",
+            ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBodySplit.c.hash": "6389ab9ba0f17169af7c522d1892db1ea665a7b5dfc4086d77c6639c72ca531a"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "b1e94da701ff9f55",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "f1d3275bcdf58cf3d7108999cae559a775aae4b6ae582aa9115511c9bdacd519",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Backend.Proof.StockMemorySretCopyCheck": {
+      "source_sha256": "547bbb173a4d168e7148e0885a6ba146334de78f686e26b6d0166a7218ceb666",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "547bbb173a4d168e7148e0885a6ba146334de78f686e26b6d0166a7218ceb666",
+        "stored_native_key": "67843ff8196083f6",
+        "trace_sha256": "f5273f043a5f33357c5f36f065ab12af9b9e420ce590c2f9858356089b7febaf",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "7081b4a4d3efcfad",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "67843ff8196083f6",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "f5273f043a5f33357c5f36f065ab12af9b9e420ce590c2f9858356089b7febaf",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "2a4b7f2fb2430f18",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "1f25a1a979d7424e92889c7f3c529e366f4a0c5bff1a8e31f601754cc82cb59c",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Backend.ReturnPinCheck": {
+      "source_sha256": "65da5bd10d1837aeb7e3e438e5cda64b7c9721acc34fbc6eb59f6ea32088ab14",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "65da5bd10d1837aeb7e3e438e5cda64b7c9721acc34fbc6eb59f6ea32088ab14",
+        "stored_native_key": "214e519346a352d4",
+        "trace_sha256": "1908e54dbb007d1fc938b250131c383226d89e7ef45df035d0271c4c47b8a5d9",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": null,
+      "key_scope": "current key still requires proper dependencies; no stored-key inference",
+      "conditional_on_frontier": [
+        "FV.Backend.SemanticNICheck"
+      ],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "214e519346a352d4",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "1908e54dbb007d1fc938b250131c383226d89e7ef45df035d0271c4c47b8a5d9",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [
+            "FV.Backend.ABIReadCfg",
+            "FV.Backend.SemanticNICheck"
+          ],
+          "dependency_native_key_mismatch": [
+            "FV.Backend.ABIReadCfg"
+          ],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.trace": "1908e54dbb007d1fc938b250131c383226d89e7ef45df035d0271c4c47b8a5d9",
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.olean": "810797555c7d2be9cd60dfb3ef58483d202ccf34a3cd4930c29f5c76eb376664",
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.ilean": "6c50ff3db9c1c1c0a15dfd6b7b495bfae8be71ff92b3d3ba0d764edffaab9b03",
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.olean.hash": "7c7edd1d70a8d94b5a1f38123578be644f2d14653bb75743cb37251fac5b74ce",
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.ilean.hash": "c3b169c249a6b2ace41ac364c06fba6812dab1764d4f74e89419617333151cb8",
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.trace.nobuild": "6f01695f5aff7911a10f96496d04fc0b0ee7f443e2e11e7c661ba9aa6e5dcc53",
+            ".lake/build/ir/FV/Backend/ReturnPinCheck.c": "6cb39ea21fc9f49819556f447a2eaa71fd3a3721d09eb6858dced083fd19f422",
+            ".lake/build/ir/FV/Backend/ReturnPinCheck.c.hash": "43d2e8bed753c30c5ee9809395ed6e25ca251ae34b67d7c1909bdce7bc908416"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "a57b4b94b2fe6b65",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "aabb652921a06dafee16a1e9bde7c292453fef3562a8da11d1f6c9c73a7cc202",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [
+            "FV.Backend.SemanticNICheck"
+          ],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.olean": "810797555c7d2be9cd60dfb3ef58483d202ccf34a3cd4930c29f5c76eb376664",
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.ilean": "6c50ff3db9c1c1c0a15dfd6b7b495bfae8be71ff92b3d3ba0d764edffaab9b03",
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.olean.hash": "7c7edd1d70a8d94b5a1f38123578be644f2d14653bb75743cb37251fac5b74ce",
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.ilean.hash": "c3b169c249a6b2ace41ac364c06fba6812dab1764d4f74e89419617333151cb8",
+            ".lake/build/lib/lean/FV/Backend/ReturnPinCheck.trace": "aabb652921a06dafee16a1e9bde7c292453fef3562a8da11d1f6c9c73a7cc202",
+            ".lake/build/ir/FV/Backend/ReturnPinCheck.setup.json": "b81683178a1dd878563a2d33a7f45524a966037e9554d414721fdb287775a73d",
+            ".lake/build/ir/FV/Backend/ReturnPinCheck.c": "6cb39ea21fc9f49819556f447a2eaa71fd3a3721d09eb6858dced083fd19f422",
+            ".lake/build/ir/FV/Backend/ReturnPinCheck.c.hash": "43d2e8bed753c30c5ee9809395ed6e25ca251ae34b67d7c1909bdce7bc908416"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Backend.SemanticNICheck": {
+      "source_sha256": "ea7714a42da26019326b0c93fd827e9c2c143b2b3ffc5487335cdd6087ce32a4",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "ea7714a42da26019326b0c93fd827e9c2c143b2b3ffc5487335cdd6087ce32a4",
+        "stored_native_key": "620eb7b970f1feae",
+        "trace_sha256": "2039e52da53b30362509fe9a7921471357f9487f0ce4820b12cfe20d50b55b7d",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "32231943f72010c4",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": false,
+          "native_key": "620eb7b970f1feae",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "2039e52da53b30362509fe9a7921471357f9487f0ce4820b12cfe20d50b55b7d",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "32231943f72010c4",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "3c040a874d6acd966137ccbd143ebd99df6152a2db4d8bda8722e497f50562cc",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/SemanticNICheck.trace": "3c040a874d6acd966137ccbd143ebd99df6152a2db4d8bda8722e497f50562cc",
+            ".lake/build/lib/lean/FV/Backend/SemanticNICheck.olean.hash": "05766a7c48056bea86c1fdc29852d3f2f946255e35e16befcb1a1402c103fa9c",
+            ".lake/build/lib/lean/FV/Backend/SemanticNICheck.ilean.hash": "dccd87a32e849eb31e2f574e5b94fe08ba2b910388651ef85cf5785e581db186",
+            ".lake/build/lib/lean/FV/Backend/SemanticNICheck.olean": "51d6a56abf51a5ddf722f75faf5ba517402107441463150e8c71043176fc80b0",
+            ".lake/build/lib/lean/FV/Backend/SemanticNICheck.ilean": "ce2e1ec9af164de465c1acc42bb444b8be09f993799b6676994dd7ead10790cc",
+            ".lake/build/ir/FV/Backend/SemanticNICheck.setup.json": "0220576297bcd2fcdad87eb49b9caa07bd8bd30762f97badb8ea64be96e98f0e",
+            ".lake/build/ir/FV/Backend/SemanticNICheck.c": "3e733c6f1a5ea27d86b7962873c329b3c602704c375b8aee88b7eed123be5105",
+            ".lake/build/ir/FV/Backend/SemanticNICheck.c.hash": "145387db7f98e6219f3f2fc5715443ac0c25552cc032c8eb56797cdddcc991d6"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Backend.StockCallStoreCheck": {
+      "source_sha256": "fb00acd24163d1abba13e795beadb57826b1476d165b8ad82ec1e20997ff8e7e",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "fb00acd24163d1abba13e795beadb57826b1476d165b8ad82ec1e20997ff8e7e",
+        "stored_native_key": "0b46746370c2eeb5",
+        "trace_sha256": "0c7b3fe43a1fce14218bc0429d5288bfcc15358bf257dd7db8bd3e4d8e62967a",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "2ad79f2fda6fff1f",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "2ad79f2fda6fff1f",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "758f5bff4b5e583dd10c27d5bc6e153bfa5044abe2a7ec550eee26039de2df47",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Backend/StockCallStoreCheck.ilean": "1b81bd60c3df94fe514ddef7b587b0a7f23e1f98d69236869f2b0b661266b914",
+            ".lake/build/lib/lean/FV/Backend/StockCallStoreCheck.olean": "03ee92ca89a297faff5256b91419f3904372d4d505ffcc3803a7ce87e8a98233",
+            ".lake/build/lib/lean/FV/Backend/StockCallStoreCheck.olean.hash": "5ee006fc0bda7340fe8c9f4e42568f4a778139524f81b479a39a7f195c51e820",
+            ".lake/build/lib/lean/FV/Backend/StockCallStoreCheck.ilean.hash": "375e94ca0591ede3d3e07ea445f80b5251f1683c256da6d30328e7449446df66",
+            ".lake/build/lib/lean/FV/Backend/StockCallStoreCheck.trace": "758f5bff4b5e583dd10c27d5bc6e153bfa5044abe2a7ec550eee26039de2df47",
+            ".lake/build/ir/FV/Backend/StockCallStoreCheck.c": "008a608657d1a895381047c4d51cfb68082954306c0eb3c63946e520870b97dc",
+            ".lake/build/ir/FV/Backend/StockCallStoreCheck.c.hash": "56c2332655106fb9f8c02a961088b20b53458c283976f9279525adb183e68f4d",
+            ".lake/build/ir/FV/Backend/StockCallStoreCheck.setup.json": "7bdffcebf33b344bcf799ee5023d886afdd16dfec0873df8b6d6195d199c803c"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "652473e75061d0b9",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "91539120c967034926080536a8e000b3a2bec5b7f1acf6ee199b0e768de8b4b2",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Compile.SubsetTC": {
+      "source_sha256": "bcbff37d8224c3065aa7d537f66d37d1b924c212dacda43e15d6b2fbb3e05005",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "bcbff37d8224c3065aa7d537f66d37d1b924c212dacda43e15d6b2fbb3e05005",
+        "stored_native_key": "7032174b4e7ac5d3",
+        "trace_sha256": "c01f5b3db560913bda8652f2b795e765706c891df414399e0578486a444a610d",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": null,
+      "key_scope": "current key still requires proper dependencies; no stored-key inference",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "7032174b4e7ac5d3",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "c01f5b3db560913bda8652f2b795e765706c891df414399e0578486a444a610d",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Compile/SubsetTC.olean": "0b18c48a66c8a520584ed57ac2bd7c0a2816ee7d3c32c92c21ba4e9e06c1ec6a",
+            ".lake/build/lib/lean/FV/Compile/SubsetTC.ilean": "7b7da4f4a229b96177af58c4127d95da0ccf9d0ba9d2d7c43039d2b9f78352e9",
+            ".lake/build/lib/lean/FV/Compile/SubsetTC.trace": "c01f5b3db560913bda8652f2b795e765706c891df414399e0578486a444a610d",
+            ".lake/build/lib/lean/FV/Compile/SubsetTC.olean.hash": "1ceb23643cc0fa8e51d0f60f98e8bf93cba52af0bd4d82d0e9e5d371058a070d",
+            ".lake/build/lib/lean/FV/Compile/SubsetTC.ilean.hash": "e460a43d27681586229d977f4672ea1c651da4638af08d4a09dabc40ac2f12b2",
+            ".lake/build/ir/FV/Compile/SubsetTC.c": "b4d97cce1d4a2328fc245de7aeeedd0f6882d7466c2b00faa26d827ce07a58d3",
+            ".lake/build/ir/FV/Compile/SubsetTC.c.hash": "6a78fb41d3fbbc25fb77ac53b3c0a37fa43ece5edc8f9698fbdcd72f39092e3c"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "7032174b4e7ac5d3",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "0a52288e74647af9b9d9ec40a325721256fe92063a70966f165c0eb18da3defa",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Compile/SubsetTC.trace": "0a52288e74647af9b9d9ec40a325721256fe92063a70966f165c0eb18da3defa",
+            ".lake/build/lib/lean/FV/Compile/SubsetTC.olean": "0b18c48a66c8a520584ed57ac2bd7c0a2816ee7d3c32c92c21ba4e9e06c1ec6a",
+            ".lake/build/lib/lean/FV/Compile/SubsetTC.olean.hash": "1ceb23643cc0fa8e51d0f60f98e8bf93cba52af0bd4d82d0e9e5d371058a070d",
+            ".lake/build/lib/lean/FV/Compile/SubsetTC.ilean": "7b7da4f4a229b96177af58c4127d95da0ccf9d0ba9d2d7c43039d2b9f78352e9",
+            ".lake/build/lib/lean/FV/Compile/SubsetTC.ilean.hash": "e460a43d27681586229d977f4672ea1c651da4638af08d4a09dabc40ac2f12b2",
+            ".lake/build/ir/FV/Compile/SubsetTC.c": "b4d97cce1d4a2328fc245de7aeeedd0f6882d7466c2b00faa26d827ce07a58d3",
+            ".lake/build/ir/FV/Compile/SubsetTC.c.hash": "6a78fb41d3fbbc25fb77ac53b3c0a37fa43ece5edc8f9698fbdcd72f39092e3c"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Compile.SubsetTF": {
+      "source_sha256": "4e79b7e10161e25d29b5ff5af89dc800ba7c4c5ebd86db1c53df9e3ca2ce96d2",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "4e79b7e10161e25d29b5ff5af89dc800ba7c4c5ebd86db1c53df9e3ca2ce96d2",
+        "stored_native_key": "81a271d1ee32fdb1",
+        "trace_sha256": "49f001d1578025757464365231a53b1502f975197312872cd9e9da111a3f6c1f",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": null,
+      "key_scope": "current key still requires proper dependencies; no stored-key inference",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "81a271d1ee32fdb1",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "49f001d1578025757464365231a53b1502f975197312872cd9e9da111a3f6c1f",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Compile/SubsetTF.olean": "20771496c18aef868882dd22b2701a7c32ed77e33c7cbc7e0e19c427e7425c8a",
+            ".lake/build/lib/lean/FV/Compile/SubsetTF.ilean": "bf1d55ebe2dd442d936307629138ecdb78c3caf1e5c6b4b08846adaf4da83503",
+            ".lake/build/lib/lean/FV/Compile/SubsetTF.trace": "49f001d1578025757464365231a53b1502f975197312872cd9e9da111a3f6c1f",
+            ".lake/build/lib/lean/FV/Compile/SubsetTF.olean.hash": "2fd38b830c00cc1a19816a32652a723fa26fd70e2ee175ace3b2554d5354e0ba",
+            ".lake/build/lib/lean/FV/Compile/SubsetTF.ilean.hash": "62ab25d59c29d759ceaa8d12363387fe88dcb4f6c3fdcc9f9fb1a17c0e19e3db",
+            ".lake/build/ir/FV/Compile/SubsetTF.c": "6e6093efde24dcd2b1bb531b48defaae1b9c1ffd5c50c3595f3be6ffbe1080ca",
+            ".lake/build/ir/FV/Compile/SubsetTF.c.hash": "49bffc053f2d9cc2e9bcb086cbb3d3920874e6e994456a1848c98dcf592689ce"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "81a271d1ee32fdb1",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "f0dd7311a44b621b41e960fbad0bdd297331ea987e42ba8f2ab7cf0376829580",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Compile/SubsetTF.trace": "f0dd7311a44b621b41e960fbad0bdd297331ea987e42ba8f2ab7cf0376829580",
+            ".lake/build/lib/lean/FV/Compile/SubsetTF.olean": "20771496c18aef868882dd22b2701a7c32ed77e33c7cbc7e0e19c427e7425c8a",
+            ".lake/build/lib/lean/FV/Compile/SubsetTF.olean.hash": "2fd38b830c00cc1a19816a32652a723fa26fd70e2ee175ace3b2554d5354e0ba",
+            ".lake/build/lib/lean/FV/Compile/SubsetTF.ilean": "bf1d55ebe2dd442d936307629138ecdb78c3caf1e5c6b4b08846adaf4da83503",
+            ".lake/build/lib/lean/FV/Compile/SubsetTF.ilean.hash": "62ab25d59c29d759ceaa8d12363387fe88dcb4f6c3fdcc9f9fb1a17c0e19e3db",
+            ".lake/build/ir/FV/Compile/SubsetTF.c": "6e6093efde24dcd2b1bb531b48defaae1b9c1ffd5c50c3595f3be6ffbe1080ca",
+            ".lake/build/ir/FV/Compile/SubsetTF.c.hash": "49bffc053f2d9cc2e9bcb086cbb3d3920874e6e994456a1848c98dcf592689ce"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Concurrency.ArmFootprint": {
+      "source_sha256": "b26136b32d4d8184787249da052097402716e3c9711b10b3b219a2a339b8c6c6",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "b26136b32d4d8184787249da052097402716e3c9711b10b3b219a2a339b8c6c6",
+        "stored_native_key": "ed1a7520f24ffb27",
+        "trace_sha256": "82c1105bd468c034c62f8ef5447cfb7514232ecc322d06590876443802ed5e3c",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": null,
+      "key_scope": "current key still requires proper dependencies; no stored-key inference",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "ed1a7520f24ffb27",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "82c1105bd468c034c62f8ef5447cfb7514232ecc322d06590876443802ed5e3c",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.trace": "82c1105bd468c034c62f8ef5447cfb7514232ecc322d06590876443802ed5e3c",
+            ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.olean": "3a3ecc65fc8259b42b6b24f82eaac5e48f2fda46a8c1f7306953771354bfe5e7",
+            ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.ilean": "910a272a86807f34cfee2ee18004b0c2dd4f20943c80c9fb523e6fb1be3976ec",
+            ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.olean.hash": "b7338c230e41ea462e0f021dd8a1087be00fdcddf2519c0ff7b2ecce2cf88e24",
+            ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.ilean.hash": "10237394a3a2bb75b803155249b71039c4005013fb1ec2d45f02a50023c0f362",
+            ".lake/build/ir/FV/Concurrency/ArmFootprint.c": "b24871ee9e8e5c2a26811e8f155d637a7fe7b22858307fc3712b01b73430e53e",
+            ".lake/build/ir/FV/Concurrency/ArmFootprint.c.hash": "3f56fc379c1e87b53d43438f0afd36e6a60034d41d05dae04a2871a07ed16918"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "4c5ec12f7611a390",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "d86bacbcb67ac3b352bfe95dd3522ddfd3bcff7a1c6e06d507bb65aeb5bbdfe2",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.trace": "d86bacbcb67ac3b352bfe95dd3522ddfd3bcff7a1c6e06d507bb65aeb5bbdfe2",
+            ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.olean": "3a3ecc65fc8259b42b6b24f82eaac5e48f2fda46a8c1f7306953771354bfe5e7",
+            ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.olean.hash": "b7338c230e41ea462e0f021dd8a1087be00fdcddf2519c0ff7b2ecce2cf88e24",
+            ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.ilean": "910a272a86807f34cfee2ee18004b0c2dd4f20943c80c9fb523e6fb1be3976ec",
+            ".lake/build/lib/lean/FV/Concurrency/ArmFootprint.ilean.hash": "10237394a3a2bb75b803155249b71039c4005013fb1ec2d45f02a50023c0f362",
+            ".lake/build/ir/FV/Concurrency/ArmFootprint.c": "b24871ee9e8e5c2a26811e8f155d637a7fe7b22858307fc3712b01b73430e53e",
+            ".lake/build/ir/FV/Concurrency/ArmFootprint.c.hash": "3f56fc379c1e87b53d43438f0afd36e6a60034d41d05dae04a2871a07ed16918"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Concurrency.ArmInstFoot": {
+      "source_sha256": "4aed5c33781737604799dcd2b449b8ccde1ff3f684ac99ba7783a91ed263f9e2",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "4aed5c33781737604799dcd2b449b8ccde1ff3f684ac99ba7783a91ed263f9e2",
+        "stored_native_key": "8835e879273af216",
+        "trace_sha256": "45a936fba2bf01fd0badc81ea5b1f78cc3dde2218a52c59eaed2285c20ebae35",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": null,
+      "key_scope": "current key still requires proper dependencies; no stored-key inference",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "8835e879273af216",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "45a936fba2bf01fd0badc81ea5b1f78cc3dde2218a52c59eaed2285c20ebae35",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.trace": "45a936fba2bf01fd0badc81ea5b1f78cc3dde2218a52c59eaed2285c20ebae35",
+            ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.olean": "a8280ac64f7cd679342a141cb7656243ca5e352473f985a3d26f83d30bb52edd",
+            ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.ilean": "bb17d07ef6192a213373fa1f632e359986b0ed8e82306c442568abfc08b6d5e3",
+            ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.olean.hash": "eac80141dfde34860c5e23b57965fd6a03cb0f7e78f9f7edd74256228790226a",
+            ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.ilean.hash": "ba85cda9f817e3313ee5bddd755a0320cc66be702a7ebbae8aef70601a99baef",
+            ".lake/build/ir/FV/Concurrency/ArmInstFoot.c": "94b874e2906b373fdf21ca6b0a55010bb9ba7cf4b9dd902d4b42fc9799458499",
+            ".lake/build/ir/FV/Concurrency/ArmInstFoot.c.hash": "53f9bb3800ac85f9e67d279fd08f2bc230edf48a72d6f11ef5f447039df0d62b"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "ff6d653522bd92ae",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "32d3ecc0281d8bf0c4bd459a9dcd9ef0959a69c8204ba544fc37bb4816dfa14b",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [
+            "FV.Concurrency.ArmFootprint",
+            "FV.Concurrency.ArmThread"
+          ],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.trace": "32d3ecc0281d8bf0c4bd459a9dcd9ef0959a69c8204ba544fc37bb4816dfa14b",
+            ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.olean": "a8280ac64f7cd679342a141cb7656243ca5e352473f985a3d26f83d30bb52edd",
+            ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.olean.hash": "eac80141dfde34860c5e23b57965fd6a03cb0f7e78f9f7edd74256228790226a",
+            ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.ilean": "bb17d07ef6192a213373fa1f632e359986b0ed8e82306c442568abfc08b6d5e3",
+            ".lake/build/lib/lean/FV/Concurrency/ArmInstFoot.ilean.hash": "ba85cda9f817e3313ee5bddd755a0320cc66be702a7ebbae8aef70601a99baef",
+            ".lake/build/ir/FV/Concurrency/ArmInstFoot.c": "94b874e2906b373fdf21ca6b0a55010bb9ba7cf4b9dd902d4b42fc9799458499",
+            ".lake/build/ir/FV/Concurrency/ArmInstFoot.c.hash": "53f9bb3800ac85f9e67d279fd08f2bc230edf48a72d6f11ef5f447039df0d62b"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Concurrency.ArmThread": {
+      "source_sha256": "9fe32bf5309fcff84ce8b0284aec7f6182619c335bca055abbb82224ee40c11a",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "9fe32bf5309fcff84ce8b0284aec7f6182619c335bca055abbb82224ee40c11a",
+        "stored_native_key": "1121d56f54c613fd",
+        "trace_sha256": "d8542ab6db52457bd83958e08ed6046aca3762407b41b7cfbd158b18f643b00d",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": null,
+      "key_scope": "current key still requires proper dependencies; no stored-key inference",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "1121d56f54c613fd",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "d8542ab6db52457bd83958e08ed6046aca3762407b41b7cfbd158b18f643b00d",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/ArmThread.trace": "d8542ab6db52457bd83958e08ed6046aca3762407b41b7cfbd158b18f643b00d",
+            ".lake/build/lib/lean/FV/Concurrency/ArmThread.olean": "6c3f9919504c399f303da7b62dc8bec6264f55b99bee7d75fcd04e9ce1d7f2f4",
+            ".lake/build/lib/lean/FV/Concurrency/ArmThread.ilean": "857474f4c6afdfcc3595e3979e1ee76373c8fd6263e2542f64109fc31786555a",
+            ".lake/build/lib/lean/FV/Concurrency/ArmThread.olean.hash": "92fa589ecdb1093059c07c4b364ef7072233ee665ed4460cf573467a1daf84ca",
+            ".lake/build/lib/lean/FV/Concurrency/ArmThread.ilean.hash": "49bbc8c1c1219fdb87bf923cae90e87e026f43df81a4b0908f12670d24b764de",
+            ".lake/build/ir/FV/Concurrency/ArmThread.c": "8db41550f787131959baa9f9336ec6e8d4f1ce76cf44cce27d82ba4988d84975",
+            ".lake/build/ir/FV/Concurrency/ArmThread.c.hash": "28145d5dd94fcc830d1b1740699af575e631800e671a080eb1214515f2d2753d"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "ae1422e3f69ed7a7",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "77f705f4c447d47da64ffb6812ae5ff33c4c33ed05559c42af7caf489da749d5",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [
+            "FV.Concurrency.ArmFootprint"
+          ],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/ArmThread.trace": "77f705f4c447d47da64ffb6812ae5ff33c4c33ed05559c42af7caf489da749d5",
+            ".lake/build/lib/lean/FV/Concurrency/ArmThread.olean": "6c3f9919504c399f303da7b62dc8bec6264f55b99bee7d75fcd04e9ce1d7f2f4",
+            ".lake/build/lib/lean/FV/Concurrency/ArmThread.olean.hash": "92fa589ecdb1093059c07c4b364ef7072233ee665ed4460cf573467a1daf84ca",
+            ".lake/build/lib/lean/FV/Concurrency/ArmThread.ilean": "857474f4c6afdfcc3595e3979e1ee76373c8fd6263e2542f64109fc31786555a",
+            ".lake/build/lib/lean/FV/Concurrency/ArmThread.ilean.hash": "49bbc8c1c1219fdb87bf923cae90e87e026f43df81a4b0908f12670d24b764de",
+            ".lake/build/ir/FV/Concurrency/ArmThread.c": "8db41550f787131959baa9f9336ec6e8d4f1ce76cf44cce27d82ba4988d84975",
+            ".lake/build/ir/FV/Concurrency/ArmThread.c.hash": "28145d5dd94fcc830d1b1740699af575e631800e671a080eb1214515f2d2753d"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Concurrency.Armv8": {
+      "source_sha256": "72f6218046dcdc6ed572b027d83de66836b6e0b078fa1c0b59c8d5cbdb7e53d8",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "72f6218046dcdc6ed572b027d83de66836b6e0b078fa1c0b59c8d5cbdb7e53d8",
+        "stored_native_key": "5d059b7b7b2d9137",
+        "trace_sha256": "66c9d0b77e7b044134984c7e6a4fb7fa7d1a2cb9cf1b43f6619601904aa29e71",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": null,
+      "key_scope": "current key still requires proper dependencies; no stored-key inference",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "5d059b7b7b2d9137",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "66c9d0b77e7b044134984c7e6a4fb7fa7d1a2cb9cf1b43f6619601904aa29e71",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/Armv8.trace": "66c9d0b77e7b044134984c7e6a4fb7fa7d1a2cb9cf1b43f6619601904aa29e71",
+            ".lake/build/lib/lean/FV/Concurrency/Armv8.olean": "1d11f66d0dc6da56994c6d36a4f124198226a8aafadec0696bda9650ce2fca45",
+            ".lake/build/lib/lean/FV/Concurrency/Armv8.ilean": "fd8f27b7b6f477c9c7b7a1a6e7521e5fbb9caa2bd4cdf15d4e99b50eb37bd4a5",
+            ".lake/build/lib/lean/FV/Concurrency/Armv8.olean.hash": "b30d22b67a3c023c7dae19ab841d6a10e5cd9861f62dbb7d6bf1bf8b524d8c57",
+            ".lake/build/lib/lean/FV/Concurrency/Armv8.ilean.hash": "e36316d6ca4d9ef4cc63a5f06fcc574efdbecb05fb9df5ff4cc209c9670bae89",
+            ".lake/build/ir/FV/Concurrency/Armv8.c": "8aed50819b6276d8769875b8e2c539c5a6f8434f38cefdcf8a770b589866b5b4",
+            ".lake/build/ir/FV/Concurrency/Armv8.c.hash": "ff4f540fc8d83c91aedfaa59d2b2dd6cf914b1dcff1d575fd9554e1a4cd1b248"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "5d059b7b7b2d9137",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "2a0efbc84d40bc0c8f4c21b0cc6607cdbcb252178c01848f965a88711d6e869b",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/Armv8.trace": "2a0efbc84d40bc0c8f4c21b0cc6607cdbcb252178c01848f965a88711d6e869b",
+            ".lake/build/lib/lean/FV/Concurrency/Armv8.olean": "1d11f66d0dc6da56994c6d36a4f124198226a8aafadec0696bda9650ce2fca45",
+            ".lake/build/lib/lean/FV/Concurrency/Armv8.olean.hash": "b30d22b67a3c023c7dae19ab841d6a10e5cd9861f62dbb7d6bf1bf8b524d8c57",
+            ".lake/build/lib/lean/FV/Concurrency/Armv8.ilean": "fd8f27b7b6f477c9c7b7a1a6e7521e5fbb9caa2bd4cdf15d4e99b50eb37bd4a5",
+            ".lake/build/lib/lean/FV/Concurrency/Armv8.ilean.hash": "e36316d6ca4d9ef4cc63a5f06fcc574efdbecb05fb9df5ff4cc209c9670bae89",
+            ".lake/build/ir/FV/Concurrency/Armv8.c": "8aed50819b6276d8769875b8e2c539c5a6f8434f38cefdcf8a770b589866b5b4",
+            ".lake/build/ir/FV/Concurrency/Armv8.c.hash": "ff4f540fc8d83c91aedfaa59d2b2dd6cf914b1dcff1d575fd9554e1a4cd1b248"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Concurrency.Exec": {
+      "source_sha256": "2075de9493c600490c838ee277b1acfc6586c20d979a76167e97667adbee48a7",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "2075de9493c600490c838ee277b1acfc6586c20d979a76167e97667adbee48a7",
+        "stored_native_key": "2ad84aa350d9fd9c",
+        "trace_sha256": "4bf99acbd276860d8c806ae27d2823132d5adbe4dfb43c80e8d68aa7724c5d2e",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": null,
+      "key_scope": "current key still requires proper dependencies; no stored-key inference",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "2ad84aa350d9fd9c",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "4bf99acbd276860d8c806ae27d2823132d5adbe4dfb43c80e8d68aa7724c5d2e",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/Exec.trace": "4bf99acbd276860d8c806ae27d2823132d5adbe4dfb43c80e8d68aa7724c5d2e",
+            ".lake/build/lib/lean/FV/Concurrency/Exec.olean": "c07c44625ae0fcef622b598a62af8f615351d017d01ff0ec067245421ecb9002",
+            ".lake/build/lib/lean/FV/Concurrency/Exec.ilean": "22aed4674e4f97944d4d949cae6fbdde887e7f8a7c87390a8015dbe4e8bd87f4",
+            ".lake/build/lib/lean/FV/Concurrency/Exec.olean.hash": "a3ccf8e17b2f2aee1f3560881a4cd73b309a3ce7a81555de47ab22ed164a2850",
+            ".lake/build/lib/lean/FV/Concurrency/Exec.ilean.hash": "1c864b882eeb5f970c17b9f27ce0c7041971b1c52ade543a57d9a632849c8bb1",
+            ".lake/build/ir/FV/Concurrency/Exec.c": "8127076eb9c51ae89602a15a1c35b15edbdacfe79968f314fdc432edaa9d93f2",
+            ".lake/build/ir/FV/Concurrency/Exec.c.hash": "42139531512f0d5110a9fb6eb470372e214e03f00ebc83ae7dfd6399dbd9a2da"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "2ad84aa350d9fd9c",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "2185203c338bfc5b7535ce0b47cdf66c745b235017e3885150e1cb72f7603721",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/Exec.trace": "2185203c338bfc5b7535ce0b47cdf66c745b235017e3885150e1cb72f7603721",
+            ".lake/build/lib/lean/FV/Concurrency/Exec.olean": "c07c44625ae0fcef622b598a62af8f615351d017d01ff0ec067245421ecb9002",
+            ".lake/build/lib/lean/FV/Concurrency/Exec.olean.hash": "a3ccf8e17b2f2aee1f3560881a4cd73b309a3ce7a81555de47ab22ed164a2850",
+            ".lake/build/lib/lean/FV/Concurrency/Exec.ilean": "22aed4674e4f97944d4d949cae6fbdde887e7f8a7c87390a8015dbe4e8bd87f4",
+            ".lake/build/lib/lean/FV/Concurrency/Exec.ilean.hash": "1c864b882eeb5f970c17b9f27ce0c7041971b1c52ade543a57d9a632849c8bb1",
+            ".lake/build/ir/FV/Concurrency/Exec.c": "8127076eb9c51ae89602a15a1c35b15edbdacfe79968f314fdc432edaa9d93f2",
+            ".lake/build/ir/FV/Concurrency/Exec.c.hash": "42139531512f0d5110a9fb6eb470372e214e03f00ebc83ae7dfd6399dbd9a2da"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.Concurrency.Rel": {
+      "source_sha256": "b28bfe32a77374cbd10ff166f04af26b666a1bc8ac99f5a18bf5b82664fa7902",
+      "R_origin": {
+        "kind": "unsupported compact origin",
+        "source_sha256": "b28bfe32a77374cbd10ff166f04af26b666a1bc8ac99f5a18bf5b82664fa7902",
+        "stored_native_key": "c14e73e5830b5d37",
+        "trace_sha256": "322be4f65c945fcf3f4e0b3dcc978e1befbf58f34eaaf24eb66c6e02eb9b4476",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": null,
+      "key_scope": "current key still requires proper dependencies; no stored-key inference",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "c14e73e5830b5d37",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "322be4f65c945fcf3f4e0b3dcc978e1befbf58f34eaaf24eb66c6e02eb9b4476",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/Rel.trace": "322be4f65c945fcf3f4e0b3dcc978e1befbf58f34eaaf24eb66c6e02eb9b4476",
+            ".lake/build/lib/lean/FV/Concurrency/Rel.olean": "b712288737c6f8c7fa7a6e7680352f970c2207387841cc1949eb2f58ae26e03c",
+            ".lake/build/lib/lean/FV/Concurrency/Rel.ilean": "e9ce9734c1adc0a5d56e69a2baa8f57c1e89a62fef4863dc7e1b24e9ccefd091",
+            ".lake/build/lib/lean/FV/Concurrency/Rel.olean.hash": "c70f7a85aad141fa47fb1ecd4e5f767b1c6963210dc0709e227494ef9e5450c1",
+            ".lake/build/lib/lean/FV/Concurrency/Rel.ilean.hash": "8c3202297aebd557f2968178705085f20470c0b4de624745ed12cd3abeea74fc",
+            ".lake/build/ir/FV/Concurrency/Rel.c": "4717c39cb93d422fa5e1085a9d95d6c7b66b376f392bb7f2399cc10ceaf9e8d9",
+            ".lake/build/ir/FV/Concurrency/Rel.c.hash": "01bf835d8935e3cf443a9cf2ff7c2a40b0bc351b5838ff9bf97d65e0dec3b830"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "c14e73e5830b5d37",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "6e8e7c477b3e8edb8da6a6abbba387a1836acaf995542cf2267d9fda20d35830",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/Concurrency/Rel.trace": "6e8e7c477b3e8edb8da6a6abbba387a1836acaf995542cf2267d9fda20d35830",
+            ".lake/build/lib/lean/FV/Concurrency/Rel.olean": "b712288737c6f8c7fa7a6e7680352f970c2207387841cc1949eb2f58ae26e03c",
+            ".lake/build/lib/lean/FV/Concurrency/Rel.olean.hash": "c70f7a85aad141fa47fb1ecd4e5f767b1c6963210dc0709e227494ef9e5450c1",
+            ".lake/build/lib/lean/FV/Concurrency/Rel.ilean": "e9ce9734c1adc0a5d56e69a2baa8f57c1e89a62fef4863dc7e1b24e9ccefd091",
+            ".lake/build/lib/lean/FV/Concurrency/Rel.ilean.hash": "8c3202297aebd557f2968178705085f20470c0b4de624745ed12cd3abeea74fc",
+            ".lake/build/ir/FV/Concurrency/Rel.c": "4717c39cb93d422fa5e1085a9d95d6c7b66b376f392bb7f2399cc10ceaf9e8d9",
+            ".lake/build/ir/FV/Concurrency/Rel.c.hash": "01bf835d8935e3cf443a9cf2ff7c2a40b0bc351b5838ff9bf97d65e0dec3b830"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.E2E.LinkGood": {
+      "source_sha256": "ec6dcc3ad3622c439e1234ce997f972470ded1d8666d6c4941051bb093b4e6f5",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "ec6dcc3ad3622c439e1234ce997f972470ded1d8666d6c4941051bb093b4e6f5",
+        "stored_native_key": "ba46fe7e5af93348",
+        "trace_sha256": "cc6e7ed9b49627306ce941576f57c4ac3cdb7b2af468e4ec4b0b2b843dffca2f",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "811bc34fbe742ef0",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "ba46fe7e5af93348",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "cc6e7ed9b49627306ce941576f57c4ac3cdb7b2af468e4ec4b0b2b843dffca2f",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "cabbb14bda447550",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "ef8506cf155df42bc85b3973cfbf0e4b63b60ffa07e8572a70ad4a0b1061fb88",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.E2E.StockCfgNI": {
+      "source_sha256": "d2affc4488558b3d17af6041c09332eba761200b9d2e386df9831712471c9fbe",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "d2affc4488558b3d17af6041c09332eba761200b9d2e386df9831712471c9fbe",
+        "stored_native_key": "0c50dae19322927d",
+        "trace_sha256": "6b51629b21770b794ee51ab9f7e81dbb00cbdb2ee05b2d4c18c10142d91e2b04",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "af307bd1097e2187",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "37cbd308e350a641",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "d8dc4464c01537498858519e9a24e55b9b66eaf762f837752b6645bbbba3b741",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "af307bd1097e2187",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "c0353837d2b1617eee6439986918ce5ac081f6a2b6bbc51a2154242da1d015bb",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/E2E/StockCfgNI.trace": "c0353837d2b1617eee6439986918ce5ac081f6a2b6bbc51a2154242da1d015bb",
+            ".lake/build/lib/lean/FV/E2E/StockCfgNI.ilean": "6f27bc32949083dca937a886d4a194dc69521ca3d6d2aaf570a4d7bc98605938",
+            ".lake/build/lib/lean/FV/E2E/StockCfgNI.olean.hash": "0b4ed6c807d075c35bada72e282a81a6cec38a9865f8c842079955e7b02ae1c0",
+            ".lake/build/lib/lean/FV/E2E/StockCfgNI.ilean.hash": "37686e642ba949c071e171f145a76214ae4a588c19db81e3ba6bf90b61c38926",
+            ".lake/build/lib/lean/FV/E2E/StockCfgNI.olean": "22a019ce94e98c4318f80c547932e126fddb6144b7d7cb08b9c63eae3d4d1c08",
+            ".lake/build/ir/FV/E2E/StockCfgNI.setup.json": "753c1d6c443eae06943b40bcf804a2817af75d90d8d906ae6b90702b4e79926e",
+            ".lake/build/ir/FV/E2E/StockCfgNI.c.hash": "823c8f1116715706f266349416582fc9744328f168ced781926d29e5c67e5aa7",
+            ".lake/build/ir/FV/E2E/StockCfgNI.c": "e86aafc30d0b0ca13d9946f040c9f197d60d8a6c51c27b12e72071c2efa051e8"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.E2E.StockLiveCallSourceResult": {
+      "source_sha256": "498b41219ed5fe852fff2bca822c7566151e073d1df118472c654e47ee1a8708",
+      "R_origin": {
+        "kind": "missing",
+        "source_sha256": "498b41219ed5fe852fff2bca822c7566151e073d1df118472c654e47ee1a8708",
+        "stored_native_key": null,
+        "trace_sha256": null,
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "beda1827bfade38a",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "50fc5f89410b62b4",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "27f085c1d5d611ef1d9649d667d8d1812bfcd1660783ce7cbf6523ba84c70067",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "a682ed6b62c8fe22",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "491ec8c55944d9cbea1bedbd5b22aff7891c0c2944dd99dc8ebbf9b640c5aa7f",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.E2E.StockLiveCallTail": {
+      "source_sha256": "9cee0610702e71167dbbb7beb2be93f5ce8edb559711d1c631526cea41f18284",
+      "R_origin": {
+        "kind": "missing",
+        "source_sha256": "9cee0610702e71167dbbb7beb2be93f5ce8edb559711d1c631526cea41f18284",
+        "stored_native_key": null,
+        "trace_sha256": null,
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "7857ab1a49d97ae1",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "da3efd25af352340",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "9ac123d1a9d8aca782b48d0b2a723d8a45439be392eb281be2c69688403277c1",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "9d99f3f69bfbe06b",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "fe73cc9b3d73dd03fedd4c591112d61ca82c35c7714623a715b75c6ade70d149",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.E2E.StockMemoryABIWorldX": {
+      "source_sha256": "af9247d2d5907ceac88f1a0b8649c977eb538b5ea652ff96bf6c5170a8d145b3",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "af9247d2d5907ceac88f1a0b8649c977eb538b5ea652ff96bf6c5170a8d145b3",
+        "stored_native_key": "bed36d0106e0d0ae",
+        "trace_sha256": "e6c79d412d306dfce7709ecd01eecf53a53dd03dad8d726291f6dba44536cf7c",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "baf1bcdcb77e687b",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "baf1bcdcb77e687b",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "c8dfe8170cc5070ddc16df6ba42bcc185429f5acdd68abafba9fc69394b8c66b",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/E2E/StockMemoryABIWorldX.olean.hash": "73817cc64bc49a3daec7116bf484a44fa5b9b051909a933aad054663a23b0d41",
+            ".lake/build/lib/lean/FV/E2E/StockMemoryABIWorldX.ilean.hash": "18313126cc9fba5b094010132c6ab729509d8ff5a4968cbecd678bb9420c09a9",
+            ".lake/build/lib/lean/FV/E2E/StockMemoryABIWorldX.trace": "c8dfe8170cc5070ddc16df6ba42bcc185429f5acdd68abafba9fc69394b8c66b",
+            ".lake/build/lib/lean/FV/E2E/StockMemoryABIWorldX.ilean": "0e60c647e25761a5e796027962cc40f4844a036f4a62c47e1ef0ee36b7b46cb7",
+            ".lake/build/lib/lean/FV/E2E/StockMemoryABIWorldX.olean": "d9b35b7a4e994398405cf5e270fb7cb9bea846aa54ddd6e55bc28b9f280a7091",
+            ".lake/build/ir/FV/E2E/StockMemoryABIWorldX.setup.json": "a4d399f1e10396a145453bef3139da05e9ce2f843e9d30cb3f9ff74879e7a1dc",
+            ".lake/build/ir/FV/E2E/StockMemoryABIWorldX.c": "13acac643a894f7cd2eba1c17c02ad5844a05806c96fba31fb86f49ef2e9849c",
+            ".lake/build/ir/FV/E2E/StockMemoryABIWorldX.c.hash": "1aed1f69da686d9513ec12d4554177b7b5be46aff70876f9f573a9aa12266669"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "eafa0dc789fb5a3e",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "4128b7bb9ade78c30d5e9f890ec2ab51e581d0108bf1f16520d9cd2932e9fb10",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.E2E.StockMemorySretCopyNI": {
+      "source_sha256": "b2ab65487f6ca61da488ffb70cc4dac16f10787311f1fb788ce6a883489eae7f",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "b2ab65487f6ca61da488ffb70cc4dac16f10787311f1fb788ce6a883489eae7f",
+        "stored_native_key": "c24a651fc7549428",
+        "trace_sha256": "32c5e50429a5a3a4127efa83e41f03fb6265e718c0906a42f6620eb7fb125f00",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "09372cefe5e66c97",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "c24a651fc7549428",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "32c5e50429a5a3a4127efa83e41f03fb6265e718c0906a42f6620eb7fb125f00",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "7d1eeec6f79d6e3f",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "cfb160f48513a449f2b3f653e16a31b5c9144b8398114170f432808de18df15a",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.E2E.StockResultCallMachine": {
+      "source_sha256": "bdb19a43946259701f79d5bd83ee2cb78478f0a319667333c1b6a9b8970036db",
+      "R_origin": {
+        "kind": "synthetic",
+        "source_sha256": "bdb19a43946259701f79d5bd83ee2cb78478f0a319667333c1b6a9b8970036db",
+        "stored_native_key": "691c9742c248ad80",
+        "trace_sha256": "dc7b40a33d0c387349fcf1ca9dc78e52a4505a1a27e332b3293fd6efd792202d",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "9d9e39549d6c800a",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "691c9742c248ad80",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": false,
+          "trace_sha256": "dc7b40a33d0c387349fcf1ca9dc78e52a4505a1a27e332b3293fd6efd792202d",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "6207cb3287c54961",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "ee6dd5fc569edd5bd25fc03b5823bf5aa7a8f6311a812f2428cd2cf6c1fa6e32",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    },
+    "FV.E2E.StockVoidCallNI": {
+      "source_sha256": "524a0d15588c33c863ee80d6e96a6b3c0b7261833c1a07e2ef6298ddee74de46",
+      "R_origin": {
+        "kind": "full-input native record",
+        "source_sha256": "524a0d15588c33c863ee80d6e96a6b3c0b7261833c1a07e2ef6298ddee74de46",
+        "stored_native_key": "72a0b7064eabbb5f",
+        "trace_sha256": "fb6ba30f5301c879cc4478caa74492944161398dbb0eeac1557822109b1f316b",
+        "approved_exact_origin_matches": [],
+        "actual_current_key": "not inferred from stored key; normal/query classification follows"
+      },
+      "queried_current_key": "6ec0bf48250792bc",
+      "key_scope": "actual current R query",
+      "conditional_on_frontier": [],
+      "donors": {
+        "P": {
+          "source_matches": true,
+          "native_key": "6ec0bf48250792bc",
+          "matches_actual_R_key": true,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "5902633644bfac6a7435a4ff3a7ee0ccf85b9ab87413c5a59f1a24cc1aec3cd4",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {
+            ".lake/build/lib/lean/FV/E2E/StockVoidCallNI.ilean.hash": "e891192c6572b19200153d37cde6dae2b1368c319c57ffc542a0865739b98ad9",
+            ".lake/build/lib/lean/FV/E2E/StockVoidCallNI.ilean": "84533f894a292528729b23ed821a64d0bb0403f7cf6abe9d750bc3cba4d2c8ac",
+            ".lake/build/lib/lean/FV/E2E/StockVoidCallNI.olean": "ec1c7767b8824b5387856f735cf43fe4dc2ccc5912217eb0085922f2d097c037",
+            ".lake/build/lib/lean/FV/E2E/StockVoidCallNI.olean.hash": "29d74de5fbf462652c2f499df87f38c95b475b42fd11bffe3fde14df65cae8d9",
+            ".lake/build/lib/lean/FV/E2E/StockVoidCallNI.trace": "5902633644bfac6a7435a4ff3a7ee0ccf85b9ab87413c5a59f1a24cc1aec3cd4",
+            ".lake/build/ir/FV/E2E/StockVoidCallNI.setup.json": "36ffc7c398a657b3b94cee03f7238ba3c96fd9c39799b65e0597897ce642c8a8",
+            ".lake/build/ir/FV/E2E/StockVoidCallNI.c.hash": "ce9735d8c2406901176ab18cd486dbf9f798761bf60930eaf51e1f78cb679d31",
+            ".lake/build/ir/FV/E2E/StockVoidCallNI.c": "9d2f12754a43caba8362d380a4db72d644e68ecdb47583e65c8776968d31dad1"
+          },
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        },
+        "G": {
+          "source_matches": true,
+          "native_key": "43e7e63fc531ccc1",
+          "matches_actual_R_key": false,
+          "full_input_nonsynthetic": true,
+          "trace_sha256": "c349fe22a638b93d0629e2eb105c6c50a5eda17100c5a0ddb3695630faaedda9",
+          "config_matches_except_j": true,
+          "complete_source_mismatch": [],
+          "dependency_native_key_mismatch": [],
+          "target_artifacts": {},
+          "full_normal_exit": "NOT_RUN; candidate inventory only"
+        }
+      }
+    }
+  },
+  "configs": {
+    "P": {
+      "hashes": {
+        "lakefile.toml": "e2e5235e7fbec9f185941be9d46808defd6245ef6e7377130d1377e356493a3a",
+        "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+        "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+      },
+      "exact_except_weak_j1_j2": true
+    },
+    "G": {
+      "hashes": {
+        "lakefile.toml": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+        "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+        "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+      },
+      "exact_except_weak_j1_j2": true
+    }
+  },
+  "active_affected_writers": [],
+  "frontier_count": 16,
+  "held_origin_count": 12,
+  "union_count": 26,
+  "new_kernels": [],
+  "P_G_R_mutations": []
+}

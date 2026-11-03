@@ -1,0 +1,29 @@
+{
+  "status": "NEW_FILE_SOURCE_ONLY;NO_KERNEL_OR_CLOSURE_READINESS_CLAIM",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "source_sha256": "7bb65bee8304b9d0208eb1a11922c7d6c706d736059f6615434ada01ea28e089",
+  "current_source_bindings": {
+    "FV/E2E/BinaryBoundaryFacts.lean": "ab2848b4e20edb08913edd3df035ca9fa91b2a29f0cd9feaa0e41ca8503ece6e",
+    "FV/E2E/BinaryBoundaryDefs.lean": "59d6354666dc9af6b3d6c5e5c6f490d422b4c9b3f25e17ff77010028b9765cf2",
+    "FV/E2E/SemanticStackBound.lean": "b220c7951409f000a33ad2651b02eee74902e010273281d1b4b98d1e51b19e5d",
+    "FV/E2E/LinkCheck.lean": "2d7dad93c41a36219160336a8453b1e02a45e286de2504a8b93dfdf641d715ea"
+  },
+  "actual_artifact_identity": "SemanticStackBound.ofInput I B F = ofRes I.toLinkInput I.results; A f and SemanticBinary.art I f both reduce to artOf I.results f",
+  "roots": [
+    "E2E.SemanticBinary.worldReturnTraceProvider_of_checked_input",
+    "E2E.SemanticBinary.returnTraceProvider_and_imageFacts",
+    "E2E.SemanticBinary.image_of_checked_codeAddr"
+  ],
+  "original_input": "same existing OkReturnPins modes and program membership",
+  "new_caller_premises": [],
+  "public_shared_files_changed": [],
+  "provider_certificate": "none; derived internally from checked.compiled.artifact",
+  "legacy_resultsCleanup_equality_used": false,
+  "open": [
+    "full dispatcher kernels",
+    "import-cycle/current proper closure",
+    "three-root actual audit",
+    "actual-results executable fault bridge",
+    "full runtime and CLI activation"
+  ]
+}

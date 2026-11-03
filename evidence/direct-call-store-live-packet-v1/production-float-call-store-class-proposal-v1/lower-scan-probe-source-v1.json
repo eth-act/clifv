@@ -1,0 +1,23 @@
+{
+  "status": "SOURCE_ONLY_PROBE;NOT_RUN",
+  "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-float-call-store-class-proposal-v1/probe-source/FloatLowerScan.lean",
+  "source_sha256": "a8f00e30f351d02ccbb8161b95daadd6e4195ad95c51b216adba915f0ae448e1",
+  "imports": [
+    "FV.Clif.Parse",
+    "FV.Backend.Proof.StockAliasSemantics"
+  ],
+  "fixture_hashes": {
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/original-caller.clif": "dd3a48bed0088809a32af0e148db48046ca403b990b702ec753f0083e54cca83",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/original-callee.clif": "97277383ff351de032d121fdcde17db75d67ccf2faccddb9ff8a88ea67bbb33a",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/float-call-store-fixture-source-v1/caller.clif": "3ce61a939d2f8c0230e9845fd6045cff826db5528a171d90228f7996a59d7c56",
+    "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/float-call-store-fixture-source-v1/callee.clif": "144a904b5b6614452f5084e82d0a34916fa716a7703e08c6ee30aeb095d6cb1a"
+  },
+  "after_R_returns": [
+    "check exact proper source/config/key/creator closure for both imports",
+    "run only this bounded probe; no missing provider build",
+    "inspect actual call registers, fpuStore, final aliases and numeric inequality",
+    "compile/check the new float class only after separate focused approval"
+  ],
+  "evidence_scope": "actual parsing and raw Stock.lower output only; no proof, class acceptance, allocation or hardware claim",
+  "R_G_access": []
+}

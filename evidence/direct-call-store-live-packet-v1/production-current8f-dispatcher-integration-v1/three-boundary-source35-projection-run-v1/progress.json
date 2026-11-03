@@ -1,0 +1,183 @@
+{
+  "created_sources": {
+    "FV.Backend.Lowering.StockI128": {
+      "path": "FV/Backend/Lowering/StockI128.lean",
+      "sha256": "7bb2ade4577f14ef33d05b39fe26db579915fb3576b0a708dab21d25142859c2",
+      "Git_blob_oid": "3921115a4b5ee1eb434970923ee4ab833d16a8f2"
+    },
+    "FV.Backend.Proof.DriverCheckTyC": {
+      "path": "FV/Backend/Proof/DriverCheckTyC.lean",
+      "sha256": "798f67de86ea0d1b4bb2b4054c2f745898041967dd169b52fb4184389ceff3ad",
+      "Git_blob_oid": "7b10d90cc1b2f28bf65b2edc343bf32abaed0276"
+    },
+    "FV.Backend.Proof.LowerSimUCheckTC": {
+      "path": "FV/Backend/Proof/LowerSimUCheckTC.lean",
+      "sha256": "6ecee5d96b10c21d3f2b116941f6eaf26a4219f58c9ffc1ac4d4d7f13b7ade5c",
+      "Git_blob_oid": "0da4a5dc5dcb777df8308c806fa261065cb2c450"
+    },
+    "FV.Backend.RegallocPerEdge": {
+      "path": "FV/Backend/RegallocPerEdge.lean",
+      "sha256": "24d3704d6b5c4b66d767fdd3a0e0f93ee76e08c0c119a07f8630a661a42f542e",
+      "Git_blob_oid": "2b22204e84751b8963d29716c71d58ebb8585076"
+    },
+    "FV.Backend.RegallocPerEdgeDriver": {
+      "path": "FV/Backend/RegallocPerEdgeDriver.lean",
+      "sha256": "9860cb4daeaee9a5bb8e2d74996567d470183353d7d37bd47734fa3918fd1413",
+      "Git_blob_oid": "efe421648d8809896231794bfaa7957419a50ac7"
+    },
+    "FV.Backend.RegallocPerEdgeSpill": {
+      "path": "FV/Backend/RegallocPerEdgeSpill.lean",
+      "sha256": "200864da9838dbe338826ff4f87f97cb3508d79632025f13913ddb20720343b9",
+      "Git_blob_oid": "fd5a31dd2222aba0eedbc8a57d8d7481b814482b"
+    },
+    "FV.Backend.ReturnPinProduction": {
+      "path": "FV/Backend/ReturnPinProduction.lean",
+      "sha256": "070955a00765b28cb3a810152cb00b20e1a1da179ecc5a74d0d627d2f43e29f8",
+      "Git_blob_oid": "574b6c2efd2fed4e37781de6d349de67b098a4fd"
+    },
+    "FV.E2E.BinaryBoundaryDefs": {
+      "path": "FV/E2E/BinaryBoundaryDefs.lean",
+      "sha256": "59d6354666dc9af6b3d6c5e5c6f490d422b4c9b3f25e17ff77010028b9765cf2",
+      "Git_blob_oid": "a4bfa221b225de7bcc1aed6691eaf345ce589075"
+    },
+    "FV.E2E.BinaryBoundaryFacts": {
+      "path": "FV/E2E/BinaryBoundaryFacts.lean",
+      "sha256": "ab2848b4e20edb08913edd3df035ca9fa91b2a29f0cd9feaa0e41ca8503ece6e",
+      "Git_blob_oid": "f4e81575c329a197f9c7b72d35c438610edae814"
+    },
+    "FV.E2E.LinkSemanticNI": {
+      "path": "FV/E2E/LinkSemanticNI.lean",
+      "sha256": "eb9b37e9ae7ffdbeae54d86cae1998040b53b915b1226dacde92668322ce18ce",
+      "Git_blob_oid": "3e673cef47b99bbef0129d7b02ae7f4077dc301d"
+    },
+    "FV.E2E.ProductionCheck": {
+      "path": "FV/E2E/ProductionCheck.lean",
+      "sha256": "0be19ec8d53670589c3d4011f8412ac6c940b8eaec44bc5d39842381e6bc829b",
+      "Git_blob_oid": "19f208963afab0e33cd904f208d161fa4be765a6"
+    },
+    "FV.E2E.ProductionChecksWith": {
+      "path": "FV/E2E/ProductionChecksWith.lean",
+      "sha256": "1f6fd47f2b21f94c3912d53e7651fb2034df458e2fa1411d6910132084c2b7fc",
+      "Git_blob_oid": "c6d2c30f3aca5527082b0d46e9885fae282c7bab"
+    },
+    "FV.E2E.ProductionStackBound": {
+      "path": "FV/E2E/ProductionStackBound.lean",
+      "sha256": "262d60dfd270c45eb05982ea36a114757fc0d60182c356b2de9bf123d15b2ff6",
+      "Git_blob_oid": "294eaf2793e7af1648c3a5b003f0257e73cebc2f"
+    },
+    "FV.E2E.SemanticPipelineCheck": {
+      "path": "FV/E2E/SemanticPipelineCheck.lean",
+      "sha256": "da525d249e9dea62a3edcdcc1adca03527b219d362481a73f83bfd3e3313149f",
+      "Git_blob_oid": "590dba9cfc855bb7894c2aee928ccab728affb2d"
+    },
+    "FV.E2E.SemanticPipelineCheckWith": {
+      "path": "FV/E2E/SemanticPipelineCheckWith.lean",
+      "sha256": "a1f5a373c0b1b75d96fdf04e87493c2868caea3a399c40b594854d2cf08cf38e",
+      "Git_blob_oid": "3ed4d0fc66b8fe88bae4bd608f17c0ce6b69e726"
+    },
+    "FV.E2E.SemanticPreparedMetadata": {
+      "path": "FV/E2E/SemanticPreparedMetadata.lean",
+      "sha256": "a5699cf7e84fd40736a87fe64c3289ee6cb946926337a6f36179b78fc2f7c173",
+      "Git_blob_oid": "769ba76e01d2ae7f90890721b3df1b8133894211"
+    },
+    "FV.E2E.SemanticPreparedPipeline": {
+      "path": "FV/E2E/SemanticPreparedPipeline.lean",
+      "sha256": "731810f2684cf2aef5488de19a070fedf424e183942d5c91fe63be94224ffbc2",
+      "Git_blob_oid": "cf21d5e39d5ae9aa9256562efb3aa8b5e6316f77"
+    },
+    "FV.E2E.SemanticStackBound": {
+      "path": "FV/E2E/SemanticStackBound.lean",
+      "sha256": "b220c7951409f000a33ad2651b02eee74902e010273281d1b4b98d1e51b19e5d",
+      "Git_blob_oid": "dc66ad5cc1877af1343b55aadbc7c12a1db236af"
+    },
+    "FV.Opt.Cost": {
+      "path": "FV/Opt/Cost.lean",
+      "sha256": "66935e64182bdfac8613029880dfd190818d465b941377c7908ea22533c936dd",
+      "Git_blob_oid": "29c4d14fdf088cb2de1736fa84b1474f9f6af806"
+    },
+    "FV.Opt.Dce": {
+      "path": "FV/Opt/Dce.lean",
+      "sha256": "f6cb0b2cc9fc2c656df44ebb222eadd36fdc3b05a4a0e0926f4dd526f714ea58",
+      "Git_blob_oid": "95d6f41b6d9ed3f8780b12c3901a518e7b903df5"
+    },
+    "FV.Opt.Gvn": {
+      "path": "FV/Opt/Gvn.lean",
+      "sha256": "2cc56e725169ee205a47fbb4f432413c3e383642dd3bf6212e512801e268ddde",
+      "Git_blob_oid": "2172ad96341d2f06171384a38c51a2c22fd84269"
+    },
+    "FV.Opt.HandRules": {
+      "path": "FV/Opt/HandRules.lean",
+      "sha256": "58ebab4dc40831b3060bd5b766410f453b21f115f3ab7d2fa38a606bc2dc6626",
+      "Git_blob_oid": "a69a6494cf56448106df66b3e57227c2f8be87a7"
+    },
+    "FV.Opt.LegalExn": {
+      "path": "FV/Opt/LegalExn.lean",
+      "sha256": "abae1fd5618696790b63c3e78e013345a0c60b9013980b43478e89b794c02204",
+      "Git_blob_oid": "1a3778266ceffc8429f31808dc3f84d4af320c0b"
+    },
+    "FV.Opt.Licm": {
+      "path": "FV/Opt/Licm.lean",
+      "sha256": "a481f90fedd0223886aa8e263e8869a1e041daca84b223c2967bd6a2c46b6147",
+      "Git_blob_oid": "48fc7458c9fe8082485b1300e9f050ed4665eaf0"
+    },
+    "FV.Opt.Optimize": {
+      "path": "FV/Opt/Optimize.lean",
+      "sha256": "630e4b4103d46b06d787cc23fbb5b5f4ff02d5a4321da1b579bd58e0b9859897",
+      "Git_blob_oid": "7c52c47c01856d8ba36bae3d1461a3329011a90d"
+    },
+    "FV.Opt.OptimizeX": {
+      "path": "FV/Opt/OptimizeX.lean",
+      "sha256": "c35e19d971d2dbdde5a3d59dd7878956784d939233b5993f769cf8a3a94030de",
+      "Git_blob_oid": "ffb7b115dce46fb3f4f13555c6bd9587e98607db"
+    },
+    "FV.Opt.RuleAllow": {
+      "path": "FV/Opt/RuleAllow.lean",
+      "sha256": "9c710fe9e3106b478aebc2721c3bef35276cedb96fd0801e957d9a8cd771a615",
+      "Git_blob_oid": "83ea7685ec0fc86c520dbebbcaf97df402bcbb73"
+    },
+    "FV.Opt.Simplify": {
+      "path": "FV/Opt/Simplify.lean",
+      "sha256": "ce979c8ce6ab680b4c8b50e424d9de16936cf7f6c880e146745ab20f86ae7831",
+      "Git_blob_oid": "94f202c8a4caa1c715e03764c21592718fd5f6b3"
+    },
+    "FV.Opt.Validate": {
+      "path": "FV/Opt/Validate.lean",
+      "sha256": "f80395d3952d1f32deea7fd12053b6a87e931fe4fd95d7718d97b2d338dfcf37",
+      "Git_blob_oid": "e299b0d78cb5d20bf4c660bbd6a2fe9b8d25b638"
+    },
+    "FVTest.Backend.AllocChoice": {
+      "path": "FVTest/Backend/AllocChoice.lean",
+      "sha256": "efe920f9beb6f8f17bb076c53873f7fec4931c200d5fb7b64324650ac3af2534",
+      "Git_blob_oid": "2cb17b77e1b861ae408de5836ede2a9121b8259d"
+    },
+    "FVTest.Backend.CraneliftInput": {
+      "path": "FVTest/Backend/CraneliftInput.lean",
+      "sha256": "a2829b609e62afe398304ea7bf98e81c10954e272ad23e3e2066e8b36199c6f4",
+      "Git_blob_oid": "241c2485375ae46afb8d5a7e016ec803a9620a23"
+    },
+    "FVTest.Backend.I128Native": {
+      "path": "FVTest/Backend/I128Native.lean",
+      "sha256": "ab60a8d51b6a1418dc1979b6595049a6c443934cb2b0c25594c37404e551d8ac",
+      "Git_blob_oid": "4d45d0c9d14f2d8e03992fb4a8b0cf93149199ab"
+    },
+    "FVTest.Backend.Main": {
+      "path": "FVTest/Backend/Main.lean",
+      "sha256": "56e793373a81d00b2df7ea4f57f245f91fd359b17bf0500f4afb037fa4683566",
+      "Git_blob_oid": "67a883d607c3abdac86f216a33c9ec4c65765300"
+    },
+    "FVTest.Backend.StockConfig": {
+      "path": "FVTest/Backend/StockConfig.lean",
+      "sha256": "dd2377dcea00a7931969a828b0b06640cc8fbe916c4281f2711cdaca6c06c266",
+      "Git_blob_oid": "a5c63295551584ab30d960e790ff50e0ecbf3c9c"
+    },
+    "FVTest.Opt.Common": {
+      "path": "FVTest/Opt/Common.lean",
+      "sha256": "2622493e89bfe2de2c1dababf15a1802882025542e42c904541406f1c2312a96",
+      "Git_blob_oid": "626e16d362528fef43887fc5a88ee0f23d73f495"
+    }
+  },
+  "created_directories": [
+    "FVTest/Backend",
+    "FVTest/Opt"
+  ]
+}

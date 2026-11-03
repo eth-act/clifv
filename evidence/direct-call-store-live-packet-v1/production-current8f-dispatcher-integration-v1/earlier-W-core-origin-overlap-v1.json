@@ -1,0 +1,961 @@
+{
+  "status": "EARLIER_W_DEPENDENCY_OVERLAP_INVENTORY;NO_KERNEL_RERUN",
+  "records": [
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-w-four-providers-v1/context.json",
+      "context_sha256": "6ae3a8ff447ceae5e2edf528b8035da7dbd673dad1e20218a311bcc44956e12d",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-w-four-providers-v1/receipt.json",
+      "adjacent_status": "passed",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/bounded-W-extraction-kernels-v1/context.json",
+      "context_sha256": "8ce807bb21e0444fbab51df0f29e466a99c4b0bc2df90a700e8329498a0c9130",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-w-light-imports-v1/context.json",
+      "context_sha256": "4b34948ddc4a992f6e66bc8a16ca9d813ba6a6008ab8a5f7ab64f9bc99324157",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/source-mapping-transport-v1/context.json",
+      "context_sha256": "965ea1399487895d88cb2bf34a1d94b23ce0681eb81acd5a100b5d4affd75260",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/source-callee-mapping-v1/context.json",
+      "context_sha256": "43ab1e45abbbb7a6f217bc7cd4a5b2f5a3339027b9e01b64e92679630e886ec2",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/context.json",
+      "context_sha256": "a9f2d21992d91f8d69f637bf93e7971a88324da9ae1c1067c597199bbb04101d",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/receipt.json",
+      "adjacent_status": "passed-prototype",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/canonical-v1/context.json",
+      "context_sha256": "a9f2d21992d91f8d69f637bf93e7971a88324da9ae1c1067c597199bbb04101d",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v1/canonical-v1/receipt.json",
+      "adjacent_status": "passed-prototype",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v2/context.json",
+      "context_sha256": "a9f2d21992d91f8d69f637bf93e7971a88324da9ae1c1067c597199bbb04101d",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v3/context.json",
+      "context_sha256": "a9f2d21992d91f8d69f637bf93e7971a88324da9ae1c1067c597199bbb04101d",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v4/context.json",
+      "context_sha256": "a9f2d21992d91f8d69f637bf93e7971a88324da9ae1c1067c597199bbb04101d",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v4/receipt.json",
+      "adjacent_status": "passed-prototype",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v4/canonical-v1/context.json",
+      "context_sha256": "a9f2d21992d91f8d69f637bf93e7971a88324da9ae1c1067c597199bbb04101d",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/fault-world-w-prep-v1/linked-source-fault-mapping-prototype-v4/canonical-v1/receipt.json",
+      "adjacent_status": "passed-prototype",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/current8f-kernel-manifest.json",
+      "context_sha256": "48c9e596dedc944d7df34034f5588f2216b478b38300fc9917f3c379d8d0da42",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/current8f-focused-v1/current-source-context.json",
+      "context_sha256": "e59811ce127f9394fb0642c37d604a6b71b26aeb9d19c72c8db5e3584dcc85c3",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/current8f-frontier-v1/current-source-context.json",
+      "context_sha256": "e59811ce127f9394fb0642c37d604a6b71b26aeb9d19c72c8db5e3584dcc85c3",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/current8f-focused-v2/current-source-context.json",
+      "context_sha256": "e59811ce127f9394fb0642c37d604a6b71b26aeb9d19c72c8db5e3584dcc85c3",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/donor-complete-classification-v1/current-source-context.json",
+      "context_sha256": "e59811ce127f9394fb0642c37d604a6b71b26aeb9d19c72c8db5e3584dcc85c3",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/current8f-three-donor-reuse-v1/current-source-context.json",
+      "context_sha256": "e59811ce127f9394fb0642c37d604a6b71b26aeb9d19c72c8db5e3584dcc85c3",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/current8f-focused-v3/current-source-context.json",
+      "context_sha256": "e59811ce127f9394fb0642c37d604a6b71b26aeb9d19c72c8db5e3584dcc85c3",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/current8f-focused-v3/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_RESULT_CALL_W2;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/canonical-passed-v3/current8f-kernel-manifest.json",
+      "context_sha256": "48c9e596dedc944d7df34034f5588f2216b478b38300fc9917f3c379d8d0da42",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/canonical-passed-v3/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_RESULT_CALL_W2;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/canonical-passed-v3/current-source-context.json",
+      "context_sha256": "e59811ce127f9394fb0642c37d604a6b71b26aeb9d19c72c8db5e3584dcc85c3",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-result-call-return-trace-W-proposal-v1/canonical-passed-v3/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_RESULT_CALL_W2;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-arithmetic-return-trace-W-proposal-v1/current8f-focused-v1/current-source-context.json",
+      "context_sha256": "fcbd993b0e595ae3f467e3caf26473d542b2255c6e62b1787ad28652c045f556",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-arithmetic-return-trace-W-proposal-v1/current8f-focused-v1/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_ARITHMETIC_W3;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-scalar-return-trace-W-proposal-v1/source-context.json",
+      "context_sha256": "b52d55bb07a2e001de996e65ef3997b2612ca2d53821ad108abf2fd8ba91160c",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-scalar-return-trace-W-proposal-v2/source-context.json",
+      "context_sha256": "08ba24558b48ed216813dc9518b5e81e8a1940a699fa2dd3ef93f7d6f54650bb",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-pure-return-trace-W-proposal-v1/current8f-kernel-manifest.json",
+      "context_sha256": "471163f1495b724e4a7c21db533e5d2d87780742f0703d6593916318d9f0f426",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-pure-return-trace-W-proposal-v1/current8f-focused-v1/current-source-context.json",
+      "context_sha256": "28a1fb33bd43e439304cedb063551e54e2b29489cd4b8fa13b6210ca77c67ef0",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-pure-return-trace-W-proposal-v1/current8f-focused-v1/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_PURE_W8;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-pure-return-trace-W-proposal-v1/canonical-passed-v1/current8f-kernel-manifest.json",
+      "context_sha256": "471163f1495b724e4a7c21db533e5d2d87780742f0703d6593916318d9f0f426",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-pure-return-trace-W-proposal-v1/canonical-passed-v1/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_PURE_W8;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-pure-return-trace-W-proposal-v1/canonical-passed-v1/current-source-context.json",
+      "context_sha256": "28a1fb33bd43e439304cedb063551e54e2b29489cd4b8fa13b6210ca77c67ef0",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-pure-return-trace-W-proposal-v1/canonical-passed-v1/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_PURE_W8;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-return-trace-W-proposal-v1/current8f-kernel-manifest.json",
+      "context_sha256": "e5e054cf3746e49736849d98e93acbc0df16ff66801ee08aa3233a90d431ed21",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-return-trace-W-proposal-v1/current8f-focused-v1/current-source-context.json",
+      "context_sha256": "05fe952875323d0b13ddc0145803ee9ded994c2db96142ba98d87f82e236376d",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-return-trace-W-proposal-v1/current8f-focused-v1/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_MEMORY_W4;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-return-trace-W-proposal-v1/canonical-passed-v1/current8f-kernel-manifest.json",
+      "context_sha256": "e5e054cf3746e49736849d98e93acbc0df16ff66801ee08aa3233a90d431ed21",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-return-trace-W-proposal-v1/canonical-passed-v1/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_MEMORY_W4;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-return-trace-W-proposal-v1/canonical-passed-v1/current-source-context.json",
+      "context_sha256": "05fe952875323d0b13ddc0145803ee9ded994c2db96142ba98d87f82e236376d",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-return-trace-W-proposal-v1/canonical-passed-v1/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_MEMORY_W4;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/source-context.json",
+      "context_sha256": "6ae3042ff20aab7475f750bbfccace72abe19206ce7f1aac058d32dd41e07632",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/current8f-kernel-manifest.json",
+      "context_sha256": "3c92e1b8f0b2dc1b036964eaaf99c4c6b206b7154479ead774b87d573c20f435",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/current8f-proper-dependencies-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/complete-frontier-classification-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/complete-frontier-classification-v1/receipt.json",
+      "adjacent_status": "CLASSIFICATION_ONLY;NO_COMPILER_OR_COPY",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/two-proper-donor-reuse-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/two-proper-donor-reuse-v1/receipt.json",
+      "adjacent_status": "PASSED_TWO_COHERENT_PROPER_P_DONORS;FOUR_SHARED_ROOTS_PENDING_LOOP",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/remaining-two-current-donor-checks-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/remaining-two-current-donor-checks-v1/receipt.json",
+      "adjacent_status": "CLASSIFICATION_COMPLETE;NO_COPY_OR_COMPILER",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/P-two-descendant-recovery-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/P-two-descendant-recovery-v2/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/remaining-fourteen-classification-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/remaining-fourteen-classification-v1/receipt.json",
+      "adjacent_status": "COMPLETE_FOURTEEN_NODE_CLASSIFICATION_ONLY;NO_COPY_OR_KERNEL",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/P-three-descendant-recovery-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/remaining-eleven-classification-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/remaining-eleven-classification-v1/receipt.json",
+      "adjacent_status": "COMPLETE_ELEVEN_NODE_CLASSIFICATION_ONLY;NO_COPY_OR_KERNEL",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/P-eleven-descendant-recovery-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v2/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v3/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/R-P-complete-thirty-key-classification-v3/receipt.json",
+      "adjacent_status": "COMPLETE_CURRENT_KEYS_AND_NORMAL_CLASSIFICATION_ONLY;NO_COPY_OR_KERNEL",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/remaining-eight-R-readiness-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/remaining-eight-R-readiness-v1/receipt.json",
+      "adjacent_status": "COMPLETE_EIGHT_TARGET_R_READINESS;NO_COPY_OR_KERNEL",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/remaining-eight-fresh-R-run-v1/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/remaining-eight-fresh-R-run-v1/receipt.json",
+      "adjacent_status": "PASSED_EXACT_CURRENT8F_FRESH_R_REPAIR_AFFECTED22_BASELINE1357",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/current8f-focused-v2/current-source-context.json",
+      "context_sha256": "6713c12a1023fd3fa5d791ca9ecc60a1618e34f1ab32a1c6308cddede4f678bc",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-memory-class-return-trace-W-proposal-v1/current8f-focused-v2/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_SOURCE_PROJECTION_MEMORY_CLASS_W12;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-call-return-trace-W-proposal-v1/source-context.json",
+      "context_sha256": "b04203918215bcf413f18a06d2692b35a74b08b3d8c61e57ef5830f5a93033a0",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/source-context.json",
+      "context_sha256": "f24a7352b283252cf003fdfe0b71a396a5b1438188e85ebd2f31bf2f30f322f4",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/production391-focused-v1/current-source-context.json",
+      "context_sha256": "dc15fcd5c685559e260151561ccc37a9b899a3d737fd36dd36db190591160358",
+      "adjacent_receipt": null,
+      "adjacent_status": null,
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/Legacy-current-key-query-v1/current-source-context.json",
+      "context_sha256": "dc15fcd5c685559e260151561ccc37a9b899a3d737fd36dd36db190591160358",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/Legacy-current-key-query-v1/receipt.json",
+      "adjacent_status": "DEPENDENCY_AND_CURRENT_KEY_QUERY_ONLY;NO_COPY_OR_KERNEL",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/Legacy-fresh-current8f-v1/current-source-context.json",
+      "context_sha256": "dc15fcd5c685559e260151561ccc37a9b899a3d737fd36dd36db190591160358",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/Legacy-fresh-current8f-v1/receipt.json",
+      "adjacent_status": "PASSED_FRESH_EXACT_CURRENT8F_LEGACY_LEAF",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    },
+    {
+      "context": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/production391-focused-v2/current-source-context.json",
+      "context_sha256": "dc15fcd5c685559e260151561ccc37a9b899a3d737fd36dd36db190591160358",
+      "adjacent_receipt": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-complete-return-trace-dispatcher-proposal-v1/production391-focused-v2/receipt.json",
+      "adjacent_status": "PASSED_CURRENT8F_PRODUCTION391_AND_INTERNAL_THREE_CASE_PROVIDER;STAGED_HELPERS_EXPLICIT",
+      "overlap": [
+        "FV.ArmFault.Step",
+        "FV.Concurrency.ArmFootprint",
+        "FV.Concurrency.ArmInstFoot",
+        "FV.Concurrency.ArmThread",
+        "FV.Concurrency.Armv8",
+        "FV.Concurrency.Exec",
+        "FV.Concurrency.Rel"
+      ],
+      "saved_trace_hash_matches_current": [],
+      "scope": "dependency overlap only; no historical variant claim unless saved trace hashes match"
+    }
+  ],
+  "contexts_with_overlap": 55,
+  "current_R_trace_hashes": {
+    "FV.Concurrency.ArmFootprint": "82c1105bd468c034c62f8ef5447cfb7514232ecc322d06590876443802ed5e3c",
+    "FV.ArmFault.Step": "0bd8020d6e3426f7c1015fa72ad8ea17868530551e63fcf99a8a99d6b45d57ff",
+    "FV.Concurrency.Exec": "4bf99acbd276860d8c806ae27d2823132d5adbe4dfb43c80e8d68aa7724c5d2e",
+    "FV.Concurrency.Armv8": "66c9d0b77e7b044134984c7e6a4fb7fa7d1a2cb9cf1b43f6619601904aa29e71",
+    "FV.Concurrency.ArmInstFoot": "45a936fba2bf01fd0badc81ea5b1f78cc3dde2218a52c59eaed2285c20ebae35",
+    "FV.Concurrency.Rel": "322be4f65c945fcf3f4e0b3dcc978e1befbf58f34eaaf24eb66c6e02eb9b4476",
+    "FV.Concurrency.ArmThread": "d8542ab6db52457bd83958e08ed6046aca3762407b41b7cfbd158b18f643b00d"
+  },
+  "five_specific_origins": "3001d193 three entries plus archive76 SubsetTC/TF only",
+  "four_shared_core_origins": "reproduced edf3f742; current binding/release remains separate",
+  "passed_kernel_and_audit_results_preserved": true
+}

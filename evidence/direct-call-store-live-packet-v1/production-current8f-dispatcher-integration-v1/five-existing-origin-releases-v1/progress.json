@@ -1,0 +1,78 @@
+[
+  {
+    "label": "actual-normal5",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Concurrency.Armv8",
+      "FV.Concurrency.Exec",
+      "FV.Concurrency.Rel",
+      "FV.Compile.SubsetTC",
+      "FV.Compile.SubsetTF"
+    ],
+    "exit": 0,
+    "log_sha256": "91e35b363a1eccd0062c9a1ab15714e5f2a4c1bfedf3716debcc15b2b18235db",
+    "memory": "peak 17002496\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "current-key0",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Concurrency.Armv8:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "a443865f128c08ffbe0c94fb6ff804fc28ff3e36534eec7c997a9ffab8ce83c8",
+    "memory": "peak 20733952\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "current-key1",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Concurrency.Exec:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "b1a8220952329c40e0760eeffcda6f01726d3546d467583510c1bbf838a64cf0",
+    "memory": "peak 14196736\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "current-key2",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Concurrency.Rel:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "b517d9a55e1ae2bf5cde9d44c110a40bfef60c669a764294eab6cf0292175f7a",
+    "memory": "peak 14241792\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "current-key3",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Compile.SubsetTC:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "2ab862d761d80b7eb466b2b91226465611c0d745c57fc3bd2ae9c1a6c46a940e",
+    "memory": "peak 28467200\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "current-key4",
+    "argv": [
+      "lake",
+      "query",
+      "--no-build",
+      "+FV.Compile.SubsetTF:depHash"
+    ],
+    "exit": 0,
+    "log_sha256": "1e1f5a03f69d605c52f7072b6ca38b47581f1f1366fdda5fc8051c2a1856fb85",
+    "memory": "peak 18030592\noom 0\noom_kill 0\n"
+  }
+]

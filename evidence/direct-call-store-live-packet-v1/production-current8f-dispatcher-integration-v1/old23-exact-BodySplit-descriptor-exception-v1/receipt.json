@@ -1,0 +1,16 @@
+{
+  "status": "PREPARED_ROOT_APPROVED_EXACT_DESCRIPTOR_EXCEPTION;NO_LAUNCH",
+  "old_gate_sha256": "485ee22c581517a16b2d8f5de585d05633e2f6b1d6da1f15671d658f1f37c932",
+  "new_gate_sha256": "2e86d2a1b47be43cb4f105c90e2055a0c9ff81bb80169e6ebff510df2db3a67a",
+  "prepared_sha256": "21e9e808dfa5f36225f0ff648d99239deba482738838d9e66825abb1c65df983",
+  "diff_sha256": "420258c5d781edbc14a06ff0411162f173be697b2f058209b265c34c2a2aeca2",
+  "exact_exception": {
+    "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/outputs/fv/63903f5e5fce0ef6.json",
+    "sha256": "9728c487f8408c97286861a791fb7813fa9c1fcb4f83b34dc0c161df274500aa",
+    "action": "ignore only this held candidate for already approved fresh R leaf",
+    "no_P_or_cache_payload_consumed": true,
+    "all21_setup_holds_retained": true,
+    "all_other_candidates_stop": true
+  },
+  "all_other_owner_guard_registry_target_final_gates": "unchanged"
+}

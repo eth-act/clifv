@@ -1,0 +1,865 @@
+{
+  "status": "COMPLETE_SIX_DONOR_AUXILIARY_REVIEW;ALL_EXISTING_HOLDS_RETAINED",
+  "donor_checks_sha256": "d167609709db62f935cc13e86e2236f8ddfd32c80670c46acf0610923f8a4d22",
+  "P_setup_pairs": {
+    ".lake/build/ir/FV/Backend/Proof/StockDirectCallResult.setup.json": {
+      "R_sha256": "0470557d8f177cbe039aab57036ebed5da4b066b9ac2a197cb37e8d1f218b7a0",
+      "P_sha256": "3a78492a51b9885dd16d184b89b75d7d0e1882cf3ea7ee7828e4e1f7b5c4ee29",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockCallStoreResult@P",
+        "FV.Backend.StockCallStoreCheck@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockLiveCallArithmetic.setup.json": {
+      "R_sha256": "ffa856c3fb5efa912fe9da0dc30648ae8e5556f79ebe3955430c7c70258b66ba",
+      "P_sha256": "a342e0bf68bad736bb6bd2be57836621423567ea608c55b029d0785df6c39281",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockCallStoreResult@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockSourceResults.setup.json": {
+      "R_sha256": "662789a4cc010256143415a8e98436f5f74780950d2599d98701b8bddc7a250d",
+      "P_sha256": "fa06ade49d0634c4fad2730a71b572dcd82d03ccd8152f51eff3f45fd7051f0e",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockCallStoreResult@P",
+        "FV.Backend.StockCallStoreCheck@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryComputedStoreRecordSpec.setup.json": {
+      "R_sha256": "8f22954b24f3d131cbaeaadf2c1a0876587aabf61839529fb93d2c01bdf079bc",
+      "P_sha256": "27d08e4c8fc012cd547aec05bdea4ad3262a3d52b3cf2a309018e2d2818cfbdd",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerScanRefines.setup.json": {
+      "R_sha256": "a444e47f3d6fc47c0b809d47b65dab873d6043493d5171d5990fa5177a2e0ab4",
+      "P_sha256": "b467f83d40bd3789745930ab28f148d77264ea07f56ea426226f81ed679cad92",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerSelectedValues.setup.json": {
+      "R_sha256": "7cc0f11310533f9250966f09450f8897c53eb33fd408cafa1026c7a3f89f0887",
+      "P_sha256": "63084832b4cd4689f948793a69e36778ca336b5e8bfb646f8b403edd9af62188",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryIntegerSourceValues.setup.json": {
+      "R_sha256": "b84718e970a876de26f498fc14aa680f1483145b4e45cdf29f3c389989909b91",
+      "P_sha256": "51ab31f351284d18a4224e08d4b0e2d52cf966d7d38b7692f7654ea7fed07b8f",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightLoadRecord.setup.json": {
+      "R_sha256": "157b710c228ace5cf61f103ac1d1c023cf23086131f250fa3d7fab8429b45c13",
+      "P_sha256": "0119ff6d6b195634c1d4a6ae5a1877b1bd516eabb532163b7b6b2e97a65182f7",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightScanRefines.setup.json": {
+      "R_sha256": "c938a9a7a2cdeaf384de2eb91cf22c928ad35d6a7bb828c126333b4647a8e80c",
+      "P_sha256": "6ce5fae4554c36ed429f424d91a8b752f874b00a569f72c40a952245944e035f",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightSourceValues.setup.json": {
+      "R_sha256": "b2cb1de3ff44767281869713bcdaa455b35ed2fe7d5c6b99de8ad3ebdb62e655",
+      "P_sha256": "b1828cd65f9b5b9696641e0a25a59600df42b29ef6ae8bee2a6a0575e7ab21b0",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryOffsetEightValues.setup.json": {
+      "R_sha256": "1898a47614c01c2cfb8e9dbfa0b58555633560ab66f3d9493583cd30689d84b4",
+      "P_sha256": "51bb58e5c78d65caa8f9df018648ec836a7694d6893ffac815c5b61936d9e443",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryRetainedStoreReturnSpec.setup.json": {
+      "R_sha256": "8a42d8e1bc3c64629d271a4afb4364ffa286990e1710b3481e92fe0e7c817173",
+      "P_sha256": "968eb64f3ca0da68d941c365a24eb45b6e37e17762bb0902ea0a09fc7e20af82",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryReturnSpec.setup.json": {
+      "R_sha256": "6765231a944aab6f39cde41fb3da822a40487f967e22df65bc6f324b23c799bb",
+      "P_sha256": "af8f8e63a2053e9391a306fe1921abbba02999f9d1d21bdef950a06fcbf37ddf",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBody.setup.json": {
+      "R_sha256": "c1730aa2ae17544e76abe8979bcb484958ee82a252e929a26d8a487db1e681f9",
+      "P_sha256": "10735e50d4ee558c1a56a39d1f4341c2c5033bf3e04d64a30a174d082fa2f786",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemorySretCopyBodySpec.setup.json": {
+      "R_sha256": "8e467fc0fa5ada9f887cb01460a7617fbaabc8117b87df99ea1094039bbfe382",
+      "P_sha256": "fb796b5edac282484c44e395827d0accb6181780b52b2b008b127987f70258ea",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreCoverage.setup.json": {
+      "R_sha256": "d0bde23f88fbe633a790a8acc963328b0eb8151ecdf4097ee7dfeb2dd4d528e1",
+      "P_sha256": "9a840041e153313fe54c3fa9988ccfd081e9c81a0b0d7cc923a57cfad2167cea",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreDemandTransport.setup.json": {
+      "R_sha256": "23c35270aebf4cb733c008bb4cc2216130553b4a533d2ee3c73bb93eb96d2f00",
+      "P_sha256": "cd032abba3a9a61705d77b2b7082b52a5a6617db9ebc705f1784df80a6504f97",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreDispatch.setup.json": {
+      "R_sha256": "25897d00817771fe95af2acae644428af79c75b0141aca779ecf0193e4710fb8",
+      "P_sha256": "0a7692066d7fd8e93a2df87491f861aa9e1d02d7e8903d7e5d14e220d281fa10",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": true,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreRecordExec.setup.json": {
+      "R_sha256": "e8bdc9a99f6d307b5b9d4a5ff6ebae2bc764cec06b153e73c384ae4947265b26",
+      "P_sha256": "b4e8d8c0061163d1f3f2a1234920e63d42d34509c89235d78fb29e01d616f3b1",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreRecordValues.setup.json": {
+      "R_sha256": "186cbbaf3d68588098510a375de6946a214d9139994ae42de2fa948ecfbc73d9",
+      "P_sha256": "589007a4f1095cffa8863c5eb1d307d2a32f8e1c6c33d7392ab62ca988847e91",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreReturnSpec.setup.json": {
+      "R_sha256": "1648dba38cd4a2657fcb21a2ae1bd2140610df4acc079c8d6254e81b76a5bbe5",
+      "P_sha256": "c7c016481cf0144f114189968e3064dae3bdcc1d5a72297ec313dfbe18f89498",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreScanRefines.setup.json": {
+      "R_sha256": "f2355b7efe93ee7c9cbd67a9123c1c6a5bbc6d7dabcc73dfae1bbd94c78d4498",
+      "P_sha256": "e062bed8dd1ed0f449d1a7b2600daf2ed1c494462ae10563014a8cb27c9fce4d",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreSelected.setup.json": {
+      "R_sha256": "dbb15bb76145e6f9659200a84f0dec59fc879294da88f9272ccab3770e437f51",
+      "P_sha256": "67f7bcfeca924b4fb801771720217cd99f8d4d2a94a0b09be77a76fef2bd860b",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": true,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/Proof/StockMemoryStoreSourceValues.setup.json": {
+      "R_sha256": "fc0627afe469936068ab3574ec0bdf98f268d716bbc49af485a65802bebd74e7",
+      "P_sha256": "671d8cb254b363576168cfbcf067a046c2a9f41bf8c98d5d35a08683318c3cde",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.Proof.StockMemorySretCopyBodySplit@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/StockLiveCallCheck.setup.json": {
+      "R_sha256": "415ba03fb0f5215f140779ac0729b8a04c7b5e8dee42543259ed70d9bd7f070a",
+      "P_sha256": "3ae612ad70567aae32e7760684becfd5f9900f060d27d1da21a7d9f840f69bad",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.StockCallStoreCheck@P"
+      ]
+    },
+    ".lake/build/ir/FV/Backend/StockResultCallCheck.setup.json": {
+      "R_sha256": "0ac3d975b9803d468975b555a03c6f8376b38e7281a11fb4d9c6c1c685ffe950",
+      "P_sha256": "9eba6c6bdb0fae67807c09245e0b31a795fb5afef690b043e305edf06985924c",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.Backend.StockCallStoreCheck@P"
+      ]
+    },
+    ".lake/build/ir/FV/E2E/ABIReadOnlyMachine.setup.json": {
+      "R_sha256": "b30a1e8e9a7828086db7a4ee577d2161aeb8426c9461086e20822e7a139ac331",
+      "P_sha256": "e0c7f85fc7ce2cc042c700975a796f69038db2974a6e58743ea47d49a7d234fb",
+      "all_fields_equal_after_only_exact_prefix_substitution": true,
+      "R_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "P_keys": [
+        "plugins",
+        "package",
+        "options",
+        "name",
+        "isModule",
+        "importArts",
+        "dynlibs"
+      ],
+      "existing_named_exception": false,
+      "used_by": [
+        "FV.E2E.StockVoidCallNI@P"
+      ]
+    }
+  },
+  "G_diagnostic_only_candidates": {
+    "FV.Backend.SemanticNICheck@G": {
+      "full_normal_exit": 0,
+      "declared_payload_differences": [],
+      "auxiliary_differences": [
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Lowering/StockConditionalArgsCfg.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Lowering/StockConditionalCfg.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Lowering/StockForwardCfg.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Lowering/StockLinearCfg.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Lowering/StockParameterCfg.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Lowering/StockTwoBlock.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Lowering/StockTwoBlockEntry.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/StockArithmeticCheck.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/StockLogicalCheck.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/StockMemoryCheck.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/StockMixedCheck.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/StockScalarCheck.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        }
+      ],
+      "classification": "diagnostic .trace.nobuild / optional ltar presence only; no acceptance rule changed"
+    },
+    "FV.E2E.StockCfgNI@G": {
+      "full_normal_exit": 0,
+      "declared_payload_differences": [],
+      "auxiliary_differences": [
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Proof/StockNoOpportunityCtor.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Proof/StockReturnArity.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Proof/StockReturnHelpers.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Proof/StockScalarContract.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Proof/StockScanFrontiers.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Proof/StockSinkFrame.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/Backend/Proof/StockSourceSinkTable.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/lib/lean/FV/E2E/ABIReadOnlyMachine.trace.nobuild",
+          "kind": "R missing",
+          "approved_exception": false
+        },
+        {
+          "path": ".lake/build/ir/FV/Opt/Proof/SemSim.ltar",
+          "kind": "R missing",
+          "approved_exception": false
+        }
+      ],
+      "classification": "diagnostic .trace.nobuild / optional ltar presence only; no acceptance rule changed"
+    }
+  },
+  "pinned_Lake_Module_sha256": "4a84a2896dedea36679a15515043860e28b95e596b28552f56bad1ff1eade27e",
+  "pinned_checkArtifactsExist_lines": "824\u2013836",
+  "setup_pair_count": 27,
+  "new_setup_exceptions": [],
+  "new_comparison_exceptions": [],
+  "copies_into_R": [],
+  "new_kernels": []
+}

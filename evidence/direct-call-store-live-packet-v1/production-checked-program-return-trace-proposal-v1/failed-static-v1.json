@@ -1,0 +1,8 @@
+{
+  "status": "FAILED_SOURCE_INVENTORY_ONLY",
+  "missing_from_prior_graph": [
+    "FV.E2E.BinaryBoundaryFacts"
+  ],
+  "source_sha256": "065a590364ce68b500b77f1a1995bdbe3c2fb6c49289e59a76c849769a49a28c",
+  "no_compiler": true
+}

@@ -1,0 +1,28 @@
+{
+  "FV.E2E.StockVoidCallNI": {
+    "native_key": "6ec0bf48250792bc",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockVoidCallNI.trace": "f2bde3c8737b1da667574be252759dad00fcfe00f0f8ab6e5d2074f09250a5fc",
+      ".lake/build/lib/lean/FV/E2E/StockVoidCallNI.olean": "ec1c7767b8824b5387856f735cf43fe4dc2ccc5912217eb0085922f2d097c037",
+      ".lake/build/lib/lean/FV/E2E/StockVoidCallNI.ilean": "84533f894a292528729b23ed821a64d0bb0403f7cf6abe9d750bc3cba4d2c8ac",
+      ".lake/build/lib/lean/FV/E2E/StockVoidCallNI.olean.hash": "29d74de5fbf462652c2f499df87f38c95b475b42fd11bffe3fde14df65cae8d9",
+      ".lake/build/lib/lean/FV/E2E/StockVoidCallNI.ilean.hash": "e891192c6572b19200153d37cde6dae2b1368c319c57ffc542a0865739b98ad9",
+      ".lake/build/ir/FV/E2E/StockVoidCallNI.setup.json": "8a18332de47e062dc43ce7b635f24154740b24a7834514448237f55d8bb4a28e",
+      ".lake/build/ir/FV/E2E/StockVoidCallNI.c": "9d2f12754a43caba8362d380a4db72d644e68ecdb47583e65c8776968d31dad1",
+      ".lake/build/ir/FV/E2E/StockVoidCallNI.c.hash": "ce9735d8c2406901176ab18cd486dbf9f798761bf60930eaf51e1f78cb679d31"
+    }
+  },
+  "FV.E2E.StockVoidCallNIW": {
+    "native_key": "dc770f6e919df64a",
+    "artifacts": {
+      ".lake/build/lib/lean/FV/E2E/StockVoidCallNIW.olean": "4ddc6096c16479406943e429ef5c3243b53a1f104d24157e68d1f35d6c5a6e04",
+      ".lake/build/lib/lean/FV/E2E/StockVoidCallNIW.ilean": "51150f6bc25ffe0fd3a82a40fb689dae1db6fd489fae6a22ff12899183b15007",
+      ".lake/build/lib/lean/FV/E2E/StockVoidCallNIW.olean.hash": "46a82418e3a23e1f824a5c79af0459ef1601d61455c43fc1be80fbfa2389d673",
+      ".lake/build/lib/lean/FV/E2E/StockVoidCallNIW.ilean.hash": "c0dda9abec4656eaaaed0ff8cc1f9e5f0877da79129c1abbb5e8dbc8142dc4b8",
+      ".lake/build/lib/lean/FV/E2E/StockVoidCallNIW.trace": "9794ae52476234a6bc7bb174b0b4efc998488b83aa08f92e082b40b685ec5066",
+      ".lake/build/ir/FV/E2E/StockVoidCallNIW.setup.json": "4fab05c55d2016a2e6f205c48740c007d0b9ec5dfc984318a0b85e0b5044d60c",
+      ".lake/build/ir/FV/E2E/StockVoidCallNIW.c": "cb28913b1fc908540399adff086f583c4fb83e5fbbf1cfc8570ce79666b954f9",
+      ".lake/build/ir/FV/E2E/StockVoidCallNIW.c.hash": "e521e805b7331a723963bf215b1c75254cbf23375d6d851098433e036f6131ae"
+    }
+  }
+}

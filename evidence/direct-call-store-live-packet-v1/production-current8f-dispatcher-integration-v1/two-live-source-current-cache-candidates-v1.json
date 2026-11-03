@@ -1,0 +1,64 @@
+{
+  "beda1827bfade38a": {
+    "descriptor": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/outputs/fv/beda1827bfade38a.json",
+    "descriptor_sha256": "0f91f66a85b62fd481d119bdfe5a880c081f97d7843f92dd5d3378ce9ef91c9c",
+    "data": {
+      "service": null,
+      "schemaVersion": "2026-02-25",
+      "data": {
+        "o": [
+          "0e2b5ea33cc41bee.olean"
+        ],
+        "m": false,
+        "i": "3f8062a2d776ac37.ilean",
+        "c": "08b9037eda7147c8.c"
+      }
+    },
+    "payloads": {
+      "0e2b5ea33cc41bee.olean": {
+        "exists": true,
+        "sha256": "02439265273e0e61344de7f41fc7a49557bbd9cbf87ed076174e323890f9da6b"
+      },
+      "3f8062a2d776ac37.ilean": {
+        "exists": true,
+        "sha256": "83b4e96a23ee96c523b0ce19affbbf518548779e8b88d7f581c0810367e0d236"
+      },
+      "08b9037eda7147c8.c": {
+        "exists": true,
+        "sha256": "9bb3e27f3380ca68e9a62354ab5ec28f24e5e5b997d2e12460c9c5a36a02f5a9"
+      }
+    },
+    "CI_mappings": []
+  },
+  "7857ab1a49d97ae1": {
+    "descriptor": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/outputs/fv/7857ab1a49d97ae1.json",
+    "descriptor_sha256": "03368368746a6611bba824fca16fe66fe58833adb8a161bbe6f87bfaffb082d6",
+    "data": {
+      "service": null,
+      "schemaVersion": "2026-02-25",
+      "data": {
+        "o": [
+          "4af9c648d1c507af.olean"
+        ],
+        "m": false,
+        "i": "0c55dfdaac2e3699.ilean",
+        "c": "9e1519c91a02ea57.c"
+      }
+    },
+    "payloads": {
+      "4af9c648d1c507af.olean": {
+        "exists": true,
+        "sha256": "cfcd8b1886182c515449883902ac0ec95a5998a8246ca77b774bc1bbbbe1f5cf"
+      },
+      "0c55dfdaac2e3699.ilean": {
+        "exists": true,
+        "sha256": "92e32569bf67b40917111b4bbcea6d370fdcc90eb77975abb76325f3cb74f35e"
+      },
+      "9e1519c91a02ea57.c": {
+        "exists": true,
+        "sha256": "c2e2471f8fecdac8317e0d6bd44a9d774ebd99c88cd644680aa64d48793b2ede"
+      }
+    },
+    "CI_mappings": []
+  }
+}

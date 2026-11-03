@@ -1,0 +1,210 @@
+{
+  "status": "COMPLETE_SIX_ROOT_MATCHING_CANDIDATE_METADATA_ONLY",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "approved_proposal_sha256": "5e1544450469f3f7efc89db54914d98ef5b36c002a68b1ee0b538a7f92a3d8e5",
+  "records": {
+    "FV.Backend.Proof.StockMemorySretCopyBodySplit": {
+      "expected_current_R_key": "63903f5e5fce0ef6",
+      "expected_source_sha256": "47468f5df03363cbc4c8ee076dcad8dc7d1ae212df418c1d995f4687bcfc39bf",
+      "key_origin": "approved current R query from1aff2f89;must recheck before any target action",
+      "P_exact_writer_observation": [],
+      "P_trace": {
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyBodySplit.trace",
+        "sha256": "21542381f355a525bd1dcb2af331135607888a882a3c5bfdabd909b83a40ab61",
+        "stored_native_key": "63903f5e5fce0ef6",
+        "matches_expected_key": true,
+        "source_sha256": "47468f5df03363cbc4c8ee076dcad8dc7d1ae212df418c1d995f4687bcfc39bf",
+        "source_matches_expected": true,
+        "inputs_present": true,
+        "synthetic": false,
+        "outputs_metadata": {
+          "o": [
+            "6e7d3b956d140c93.olean"
+          ],
+          "m": false,
+          "i": "bbef048ab064c440.ilean",
+          "c": "3e63ef896794ad50.c"
+        },
+        "readiness": "NOT_CHECKED;metadata only",
+        "excluded_from_recovery_by_existing_hold": true
+      },
+      "cache_descriptors": [
+        {
+          "owner": "C",
+          "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache/outputs/fv/63903f5e5fce0ef6.json",
+          "sha256": "9728c487f8408c97286861a791fb7813fa9c1fcb4f83b34dc0c161df274500aa",
+          "descriptor_metadata": {
+            "service": null,
+            "schemaVersion": "2026-02-25",
+            "data": {
+              "o": [
+                "6e7d3b956d140c93.olean"
+              ],
+              "m": false,
+              "i": "bbef048ab064c440.ilean",
+              "c": "3e63ef896794ad50.c"
+            }
+          },
+          "readiness": "NOT_CHECKED;no producer/archive/payload acceptance follows"
+        }
+      ],
+      "BodySplit_P_donor_hold_retained": true
+    },
+    "FV.Backend.Proof.StockMemorySretCopyCheck": {
+      "expected_current_R_key": "7081b4a4d3efcfad",
+      "expected_source_sha256": "547bbb173a4d168e7148e0885a6ba146334de78f686e26b6d0166a7218ceb666",
+      "key_origin": "approved current R query from1aff2f89;must recheck before any target action",
+      "P_exact_writer_observation": [],
+      "P_trace": {
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/Proof/StockMemorySretCopyCheck.trace",
+        "sha256": "f5273f043a5f33357c5f36f065ab12af9b9e420ce590c2f9858356089b7febaf",
+        "stored_native_key": "67843ff8196083f6",
+        "matches_expected_key": false,
+        "source_sha256": "547bbb173a4d168e7148e0885a6ba146334de78f686e26b6d0166a7218ceb666",
+        "source_matches_expected": true,
+        "inputs_present": false,
+        "synthetic": false,
+        "outputs_metadata": {
+          "m": false,
+          "o": [
+            "37217d4943e56a9f.olean"
+          ],
+          "i": "dff55a00f05fe8b2.ilean",
+          "c": "4605933bb3da0739.c"
+        },
+        "readiness": "NOT_CHECKED;metadata only",
+        "excluded_from_recovery_by_existing_hold": false
+      },
+      "cache_descriptors": [],
+      "BodySplit_P_donor_hold_retained": false
+    },
+    "FV.Backend.ReturnPinCheck": {
+      "expected_current_R_key": "a57b4b94b2fe6b65",
+      "expected_source_sha256": "65da5bd10d1837aeb7e3e438e5cda64b7c9721acc34fbc6eb59f6ea32088ab14",
+      "key_origin": "approved current R query from1aff2f89;must recheck before any target action",
+      "P_exact_writer_observation": [],
+      "P_trace": {
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/ReturnPinCheck.trace",
+        "sha256": "1908e54dbb007d1fc938b250131c383226d89e7ef45df035d0271c4c47b8a5d9",
+        "stored_native_key": "214e519346a352d4",
+        "matches_expected_key": false,
+        "source_sha256": "65da5bd10d1837aeb7e3e438e5cda64b7c9721acc34fbc6eb59f6ea32088ab14",
+        "source_matches_expected": true,
+        "inputs_present": false,
+        "synthetic": false,
+        "outputs_metadata": {
+          "m": false,
+          "o": [
+            "032a68840a58bcd1.olean"
+          ],
+          "i": "8c1d57498df7daa0.ilean",
+          "c": "c75ecedf3bb7299d.c"
+        },
+        "readiness": "NOT_CHECKED;metadata only",
+        "excluded_from_recovery_by_existing_hold": false
+      },
+      "cache_descriptors": [],
+      "BodySplit_P_donor_hold_retained": false
+    },
+    "FV.Backend.SemanticABICheck": {
+      "expected_current_R_key": "fc7ed5c3a04e5f2e",
+      "expected_source_sha256": "82ea22a6a7594723b1f2ef818dd9c098af48c145d1c72638ec96b4b1dca60dde",
+      "key_origin": "approved current R query from1aff2f89;must recheck before any target action",
+      "P_exact_writer_observation": [],
+      "P_trace": {
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/Backend/SemanticABICheck.trace",
+        "sha256": "be18370368f7ca8a8abbc7506edb337ed1a0d9310bea1c6b4e9d860107cec24c",
+        "stored_native_key": "5bad3f5efa0a4033",
+        "matches_expected_key": false,
+        "source_sha256": "82ea22a6a7594723b1f2ef818dd9c098af48c145d1c72638ec96b4b1dca60dde",
+        "source_matches_expected": true,
+        "inputs_present": false,
+        "synthetic": false,
+        "outputs_metadata": {
+          "m": false,
+          "o": [
+            "906e15dd227fa509.olean"
+          ],
+          "i": "f793d4ac6791abb1.ilean",
+          "c": "e97043cceb8d2a2b.c"
+        },
+        "readiness": "NOT_CHECKED;metadata only",
+        "excluded_from_recovery_by_existing_hold": false
+      },
+      "cache_descriptors": [],
+      "BodySplit_P_donor_hold_retained": false
+    },
+    "FV.E2E.SemanticNIBoundary": {
+      "expected_current_R_key": "8133c4a55eb02c52",
+      "expected_source_sha256": "e3b64850e24e5b08212bcde0bf14e9cd5a031a0787a41a095a668d4e65df9613",
+      "key_origin": "approved current R query from1aff2f89;must recheck before any target action",
+      "P_exact_writer_observation": [],
+      "P_trace": {
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/SemanticNIBoundary.trace",
+        "sha256": "c3638293613474e7ae40d016767deba9a1530e4ed68513ddc698c27387185c6d",
+        "stored_native_key": "fd94fcf895bdc799",
+        "matches_expected_key": false,
+        "source_sha256": "e3b64850e24e5b08212bcde0bf14e9cd5a031a0787a41a095a668d4e65df9613",
+        "source_matches_expected": true,
+        "inputs_present": true,
+        "synthetic": false,
+        "outputs_metadata": {
+          "o": [
+            "141cc6594ea29b1d.olean"
+          ],
+          "m": false,
+          "i": "9e84f24f72935bd8.ilean",
+          "c": "93c4ceca9414046b.c"
+        },
+        "readiness": "NOT_CHECKED;metadata only",
+        "excluded_from_recovery_by_existing_hold": false
+      },
+      "cache_descriptors": [],
+      "BodySplit_P_donor_hold_retained": false
+    },
+    "FV.E2E.StockMemorySretCopyNI": {
+      "expected_current_R_key": "09372cefe5e66c97",
+      "expected_source_sha256": "b2ab65487f6ca61da488ffb70cc4dac16f10787311f1fb788ce6a883489eae7f",
+      "key_origin": "approved current R query from1aff2f89;must recheck before any target action",
+      "P_exact_writer_observation": [],
+      "P_trace": {
+        "path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-joint-current-context-v2/package/.lake/build/lib/lean/FV/E2E/StockMemorySretCopyNI.trace",
+        "sha256": "32c5e50429a5a3a4127efa83e41f03fb6265e718c0906a42f6620eb7fb125f00",
+        "stored_native_key": "c24a651fc7549428",
+        "matches_expected_key": false,
+        "source_sha256": "b2ab65487f6ca61da488ffb70cc4dac16f10787311f1fb788ce6a883489eae7f",
+        "source_matches_expected": true,
+        "inputs_present": true,
+        "synthetic": false,
+        "outputs_metadata": {
+          "o": [
+            "846216fddcbc9af7.olean"
+          ],
+          "m": false,
+          "i": "8ce769c043fe82ac.ilean",
+          "c": "a28a4e4d397ea0c1.c"
+        },
+        "readiness": "NOT_CHECKED;metadata only",
+        "excluded_from_recovery_by_existing_hold": false
+      },
+      "cache_descriptors": [],
+      "BodySplit_P_donor_hold_retained": false
+    }
+  },
+  "P_writer_observations": [],
+  "cache_roots": {
+    "A": "/home/lee/clifv/.worktrees/driver-proof-resume/.lake/artifact-cache",
+    "C": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/892-current-main-context-v1/package/.lake/ci-cache"
+  },
+  "P_matching_targets": [
+    "FV.Backend.Proof.StockMemorySretCopyBodySplit"
+  ],
+  "cache_matching_targets": [
+    "FV.Backend.Proof.StockMemorySretCopyBodySplit"
+  ],
+  "BodySplit_P_donor": "still held;excluded from recovery;no comparison exception",
+  "G_access": [],
+  "copies_or_extractions_or_builds": [],
+  "conditional_keys": "not queried;bind only after predecessor normality",
+  "no_readiness_claim": true
+}

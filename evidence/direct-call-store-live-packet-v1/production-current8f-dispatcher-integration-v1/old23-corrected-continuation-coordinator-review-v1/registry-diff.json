@@ -1,0 +1,17 @@
+{
+  "added": [
+    "FV.Compile.SubsetTC",
+    "FV.Compile.SubsetTF"
+  ],
+  "removed_out_of_scope": [
+    "FV.ArmFault.Step",
+    "FV.Concurrency.ArmFootprint",
+    "FV.Concurrency.ArmInstFoot",
+    "FV.Concurrency.ArmThread",
+    "FV.Concurrency.Armv8",
+    "FV.Concurrency.Exec",
+    "FV.Concurrency.Rel"
+  ],
+  "changed_retained": [],
+  "new_registry_sha256": "49e5d97593e748f2238b00db41b8cbab330ef8768744499bea0d3f912040e754"
+}

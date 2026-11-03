@@ -1,0 +1,15 @@
+{
+  "status": "EXACT_ONE_ENTRY_PRESENCE_PROPOSAL;NOT_RELEASED_OR_COPIED",
+  "blocked_target": "FV.E2E.StockCfgNI",
+  "path": ".lake/build/ir/FV/Opt/Proof/SemSim.ltar.hash",
+  "G_sha256": "35df6e9a3f1a36fbd6894bfa71ae1cf84fc104288f23cc709f6e970d116c6cb9",
+  "G_raw_text": "4f2ec3c0aad9f3b4",
+  "G_owner": 30034,
+  "R_exists": false,
+  "paired_optional_archive_sha256": "47cd727758dbbb83b164678983979444814a7c2f9e01f23c8a3f3cb648afcf5c",
+  "already_approved_paired_archive_path": ".lake/build/ir/FV/Opt/Proof/SemSim.ltar",
+  "existing21_review_sha256": "ee14114dc144e41b11cf5f1079b8c48c1b0758f8ccbe0ec6ae970b842596a651",
+  "V1_partial_receipt_sha256": "4efb212d18c44719f9fc8f25fe95ed81765f64d1362cc44f3abcba3c454aae72",
+  "requested_scope": "ignore presence only; copy neither sidecar nor archive; retain every native output/source/config/key/creator/full-normal/setup guard",
+  "all_semanticNICheck_recovered_files_retained": true
+}

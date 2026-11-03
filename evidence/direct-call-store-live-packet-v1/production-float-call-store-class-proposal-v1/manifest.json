@@ -1,0 +1,58 @@
+{
+  "status": "SOURCE_ONLY_ADDITIVE_F64_CLASS_PROPOSAL;NO_ACCEPTANCE_OR_PROOF_CLAIM",
+  "main": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "source": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/direct-call-store-live-packet-v1/production-float-call-store-class-proposal-v1/source/FV/Backend/StockFloatCallStoreCheck.lean",
+  "source_sha256": "bbac56095de9e6d85b6c0931bbfb7cbba5404667dc9ac1b9fe79bab559e473d1",
+  "integer_checker_source_sha256_unchanged": "fb00acd24163d1abba13e795beadb57826b1476d165b8ad82ec1e20997ff8e7e",
+  "source_fields": [
+    "original i64 pointer",
+    "f64 call argument and result",
+    "default trapping f64 store at pointer+8",
+    "same returned call result"
+  ],
+  "actual_ABI_placement": {
+    "argument": "v0",
+    "return": "v0",
+    "pointer": "original integer argument x0; allocation must preserve it across the call"
+  },
+  "actual_scan_shape": [
+    "call with float argument/result registers",
+    "fpuStore size64 from the actual call result",
+    "return through v0"
+  ],
+  "caller_clobber_obligations": [
+    "derive the saved pointer from the actual allocation",
+    "allow caller-saved integer registers including x0 to change",
+    "preserve all required callee-saved registers",
+    "retain original generic callee memory and CallTrapAt branch"
+  ],
+  "fault_obligations": [
+    "derive actGoodXW before the first trap",
+    "default store access may fault",
+    "preserve explicit traps, memory faults and callee traps separately",
+    "derive paired memory result under original world premises"
+  ],
+  "existing_integer_fixtures": {
+    "original-caller.clif": "dd3a48bed0088809a32af0e148db48046ca403b990b702ec753f0083e54cca83",
+    "original-callee.clif": "97277383ff351de032d121fdcde17db75d67ccf2faccddb9ff8a88ea67bbb33a"
+  },
+  "floating_fixture": {
+    "caller.clif": "3ce61a939d2f8c0230e9845fd6045cff826db5528a171d90228f7996a59d7c56",
+    "callee.clif": "144a904b5b6614452f5084e82d0a34916fa716a7703e08c6ee30aeb095d6cb1a"
+  },
+  "import_closure_count": 256,
+  "import_cycles": [],
+  "missing_imports": [],
+  "old_files_changed": [],
+  "new_route_indices": [],
+  "new_caller_memory_execution_or_provider_conditions": [],
+  "pending_gates": [
+    "actual parse",
+    "actual lower/check acceptance in raw and cleanup modes",
+    "source/function/ordinary/paired W proofs",
+    "concrete provider and compiled constructor additions",
+    "allocation, emitted bytes, ARM return and all fault branches",
+    "actual CLIs, identities, fallback and receipts"
+  ],
+  "activation": "NONE;this new checker is not connected to any current acceptance path"
+}

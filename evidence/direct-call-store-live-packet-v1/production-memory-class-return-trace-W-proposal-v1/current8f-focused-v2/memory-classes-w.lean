@@ -1,0 +1,25 @@
+import FV.E2E.StockMemoryStoreCfgMachineW
+import FV.E2E.StockMemoryCapturedCopyNIW
+import FV.E2E.StockMemoryCfgMachineW
+import FV.E2E.StockMemoryCfgNIW
+import FV.E2E.StockMemoryCfgWorldXW
+import FV.E2E.StockMemoryExtLoadNIW
+import FV.E2E.StockMemoryIntegerNIW
+import FV.E2E.StockMemoryStoreMachineW
+import FV.E2E.StockMemoryLoadStoreNIW
+import FV.E2E.StockMemorySretCopyNIW
+import FV.E2E.StockMemoryStoreCfgNIW
+import FV.E2E.StockMemoryStoreNIW
+
+#print axioms E2E.StockMemoryCfg.machine_returnW
+#print axioms E2E.StockMemory.StoreRoots.machine_returnW
+#print axioms E2E.StockMemoryStoreCfg.machine_returnW
+#print axioms E2E.backend_correct_worldX_stock_memory_cfgW
+#print axioms E2E.backend_correct_world_niX_stock_memory_cfgW
+#print axioms E2E.backend_correct_world_niX_stock_integer_memoryW
+#print axioms E2E.backend_correct_world_niX_stock_extending_memoryW
+#print axioms E2E.backend_correct_world_niX_stock_store_memoryW
+#print axioms E2E.backend_correct_world_niX_stock_store_cfg_memoryW
+#print axioms E2E.backend_correct_world_niX_stock_load_store_memoryW
+#print axioms E2E.backend_correct_world_niX_stock_captured_copy_memoryW
+#print axioms E2E.backend_correct_world_niX_stock_sret_copy_memoryW
