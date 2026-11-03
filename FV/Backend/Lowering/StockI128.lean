@@ -35,7 +35,16 @@ is that native route for a small foundation scope:
   extern of these three items is `use_csdb` (false). Their helpers (`with_flags` of the two
   `CSel` of `ConsumesFlagsTwiceReturnsValueRegs`, `with_flags_reg`, `csetm`, `cmp_imm`,
   `and_imm`, `and_reg`, `bic`, `orr`) are ISLE rules, and `temp_writable_reg`, `value_reg`,
-  `value_regs` and `value_regs_get` are `Backend.externCtor`'s.
+  `value_regs` and `value_regs_get` are `Backend.externCtor`'s;
+* `iadd`, `isub`, `imul`, `ineg`, `iabs` and `bnot` at `i128` (`arith128`, `unary128`):
+  `adds`/`adc` (`iadd_i128`), `subs`/`sbc` (`isub_i128`, `sub_i128`; `ineg` subtracts from
+  `value_regs_zero`), `umulh` and three `madd` (`imul_i128`), or one `madd` and `umulh`/`smulh`
+  for an `imul` of two `uextend`s or two `sextend`s; `iabs` is `asr`, two `eor`, `subs` and
+  `sbc`; `bnot` is `orn` from `xzr` per half. No new extern: the flag pairs
+  (`add_with_flags_paired`, `adc_paired`, `sub_with_flags_paired`, `sbc_paired`, `with_flags`)
+  and `madd`, `umulh`, `smulh`, `put_in_reg_zext64`, `put_in_reg_sext64` are ISLE rules. The
+  `isplit` of such a widening `imul` needs `value_is_unused` (`lower.isle` rule 1 of `isplit`),
+  which is not modeled, so `lower128` fails on it.
 
 Any other instruction with an `i128` operand or result makes `lower128` fail, so that a caller
 can keep the legalized lowering. `FVTest.Backend.I128Native` routes the functions that
@@ -72,19 +81,40 @@ def shift128 : Clif.BinaryOp → Bool
   | .ishl | .ushr | .sshr | .rotl | .rotr => true
   | _ => false
 
+/-- The arithmetic that `lower128` lowers at `i128`: `iadd` (`iadd_i128`: `adds` and `adc`),
+`isub` (`isub_i128`, `sub_i128`: `subs` and `sbc`) and `imul` (`imul_i128`: `umulh` and three
+`madd`; of two `uextend`s or two `sextend`s from `i64` or narrower, one `madd` and `umulh` or
+`smulh`). -/
+def arith128 : Clif.BinaryOp → Bool
+  | .iadd | .isub | .imul => true
+  | _ => false
+
+/-- The unary operations that `lower128` lowers at `i128`: `ineg` (`sub_i128` from
+`value_regs_zero`), `iabs` (`asr`, two `eor`, `subs` and `sbc`) and `bnot` (`orn` of each
+half). -/
+def unary128 : Clif.UnaryOp → Option String
+  | .ineg => some "Ineg"
+  | .iabs => some "Iabs"
+  | .bnot => some "Bnot"
+  | _ => none
+
 /-- `InstructionData` with the `i128` forms of the foundation: `isplit` of an `i128`,
 `iconcat` of two `i64`, an extension to `i128`, `bitcast.i128`, an `i128` shift or rotate
-(`shift128`), an `icmp` of two `i128` values (`IntCompare`), `select`,
-`select_spectre_guard` and `bitselect` at `i128` (`Ternary`), `bmask` to `i128` (`Unary`).
-Every other instruction is `instData` (which accepts `ireduce` from `i128`, a narrow shift by
-an `i128` amount, a narrow `select` on an `i128` condition and a narrow `bmask` of an `i128`
-value, because it checks the result type). -/
+(`shift128`) or arithmetic (`arith128`, `Binary`; `unary128`, `Unary`), an `icmp` of two
+`i128` values (`IntCompare`), `select`, `select_spectre_guard` and `bitselect` at `i128`
+(`Ternary`), `bmask` to `i128` (`Unary`). Every other instruction is `instData` (which
+accepts `ireduce` from `i128`, a narrow shift by an `i128` amount, a narrow `select` on an
+`i128` condition and a narrow `bmask` of an `i128` value, because it checks the result type). -/
 def instData128 (f : Clif.Function) : Clif.Inst → Except String V
   | .isplit .i128 x => pure (instDataV "Unary" [opcodeV "Isplit", .value x])
   | .binary op .i128 x y =>
-    match shift128 op, binaryOpcode op with
+    match shift128 op || arith128 op, binaryOpcode op with
     | true, some n => pure (instDataV "Binary" [opcodeV n, .values [x, y]])
     | _, _ => instData f (.binary op .i128 x y)
+  | .unary op .i128 x =>
+    match unary128 op with
+    | some n => pure (instDataV "Unary" [opcodeV n, .value x])
+    | none => instData f (.unary op .i128 x)
   | .iconcat .i64 x y => pure (instDataV "Binary" [opcodeV "Iconcat", .values [x, y]])
   | .extend op .i128 x =>
     pure (instDataV "Unary" [opcodeV (if op == .uextend then "Uextend" else "Sextend"), .value x])
@@ -101,16 +131,18 @@ def instData128 (f : Clif.Function) : Clif.Inst → Except String V
 
 /-- The instructions of the foundation that may have an `i128` operand or result (`wide`: the
 `i128` values). A shift or rotate (`shift128`) is in it at `i128`, and at a narrower type when
-only its amount is an `i128` value. An `icmp` is in it at `i128`. A `select` is in it at `i128`
-and on an `i128` condition, `select_spectre_guard` and `bitselect` at `i128`, and `bmask` at
-`i128` and of an `i128` value. -/
+only its amount is an `i128` value. The arithmetic (`arith128`, `unary128`) and an `icmp` are
+in it at `i128`. A `select` is in it at `i128` and on an `i128` condition,
+`select_spectre_guard` and `bitselect` at `i128`, and `bmask` at `i128` and of an `i128`
+value. -/
 def foundation128 (wide : Nat → Bool) : Clif.Inst → Bool
   | .isplit .i128 _ | .iconcat .i64 _ _ | .extend _ .i128 _ | .icmp _ .i128 _ _ => true
   | .selectSpectreGuard .i128 .. | .bitselect .i128 .. => true
   | .select ty c _ _ => ty == .i128 || wide c
   | .bmask ty x => ty == .i128 || wide x
   | .ireduce _ x | .bitcast .i128 _ x => wide x
-  | .binary op ty x _ => shift128 op && (ty == .i128 || !wide x)
+  | .binary op ty x _ => shift128 op && (ty == .i128 || !wide x) || arith128 op && ty == .i128
+  | .unary op ty _ => ty == .i128 && (unary128 op).isSome
   | _ => false
 
 /-- The terminators that may have an `i128` operand: branches and `return`. The calls of
