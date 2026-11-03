@@ -1,0 +1,100 @@
+{
+  "status": "preserved_candidates_and_historical_creator_evidence_only_no_current_tool_release",
+  "proposal_sha256": "234781cd51524ee86b06281aeb994f4f6d37614215e516a9acb16c444b4b2b13",
+  "candidate_binaries": [
+    {
+      "path": "/home/lee/clifv/.git/agent-evidence/stock-vector-measure-20261030/compiler/lean-regalloc",
+      "sha256": "c99a1392f174706a1372b3d9884dcb8d70aa20757d19ffe56e7903e5fe5e0403",
+      "bytes": 1054560,
+      "executed": false,
+      "creator_release": "not_requested_or_granted"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume/rust/target/release/lean-regalloc",
+      "sha256": "c99a1392f174706a1372b3d9884dcb8d70aa20757d19ffe56e7903e5fe5e0403",
+      "bytes": 1054560,
+      "executed": false,
+      "creator_release": "not_requested_or_granted"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/loop-20261102/rust/target/release/lean-regalloc",
+      "sha256": "9107093cdc7ca71a1692dbdccca104a12d00b930869298242d2d59922c254070",
+      "bytes": 1053928,
+      "executed": false,
+      "creator_release": "not_requested_or_granted"
+    }
+  ],
+  "historical_creator_head": "e9a91e8a84861c34f3e3c67ca053f280d2f9c921",
+  "current_head": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "all_crate_and_lock_bytes_equal": true,
+  "source_bindings": {
+    "rust/crates/lean-regalloc/Cargo.toml": {
+      "current8f_sha256": "eb70c24e809da2708394d55d9114aaab61efe3955a7b65d8e834401d35fce696",
+      "historical_creator_head_sha256": "eb70c24e809da2708394d55d9114aaab61efe3955a7b65d8e834401d35fce696",
+      "bytes_equal": true
+    },
+    "rust/crates/lean-regalloc/src/main.rs": {
+      "current8f_sha256": "fa4f5997ef78a472df746e1cf2bc24b8c1a1907ab5deaf4c0536e7f75c027779",
+      "historical_creator_head_sha256": "fa4f5997ef78a472df746e1cf2bc24b8c1a1907ab5deaf4c0536e7f75c027779",
+      "bytes_equal": true
+    },
+    "rust/Cargo.toml": {
+      "current8f_sha256": "d545793ec33f01d1d3278531ba5436d2efa8acfa80a4de9adbbaa806d29b0236",
+      "historical_creator_head_sha256": "d545793ec33f01d1d3278531ba5436d2efa8acfa80a4de9adbbaa806d29b0236",
+      "bytes_equal": true
+    },
+    "rust/Cargo.lock": {
+      "current8f_sha256": "aedef1bf93f278f20447f6d336fef82d15cd2287c7519717d9ac2a3c0b1a57f5",
+      "historical_creator_head_sha256": "aedef1bf93f278f20447f6d336fef82d15cd2287c7519717d9ac2a3c0b1a57f5",
+      "bytes_equal": true
+    }
+  },
+  "creator_command_and_success_logs": {
+    "comparison.build-logs/allocator.command": {
+      "sha256": "53b6202cac12ee79cd2965356990138ea3c8b32c84da1fb70ed1dce9cba244f0",
+      "bound_in_manifest": true,
+      "text": "guard rustup run 1.96.0 cargo build --locked --release --manifest-path rust/Cargo.toml -p lean-regalloc \n"
+    },
+    "comparison.build-logs/allocator.log": {
+      "sha256": "d0b60bebc89345d1137c297baec2ffb6a17dc4e3718498513896e04be41e270d",
+      "bound_in_manifest": true,
+      "text": "   Compiling lean-regalloc v0.1.0 (/home/lee/clifv/.worktrees/stock-vector-measure-20261030/rust/crates/lean-regalloc)\n    Finished `release` profile [optimized] target(s) in 3.09s\n"
+    },
+    "comparison-v2.build-logs/allocator.command": {
+      "sha256": "53b6202cac12ee79cd2965356990138ea3c8b32c84da1fb70ed1dce9cba244f0",
+      "bound_in_manifest": true,
+      "text": "guard rustup run 1.96.0 cargo build --locked --release --manifest-path rust/Cargo.toml -p lean-regalloc \n"
+    },
+    "comparison-v2.build-logs/allocator.log": {
+      "sha256": "7a7bb64a28cdda9b91e6e27f41be455104d929b5d7ad6dd5beca75fc5a47f1f4",
+      "bound_in_manifest": true,
+      "text": "    Finished `release` profile [optimized] target(s) in 0.07s\n"
+    },
+    "comparison-entrypoint.build-logs/allocator.command": {
+      "sha256": "53b6202cac12ee79cd2965356990138ea3c8b32c84da1fb70ed1dce9cba244f0",
+      "bound_in_manifest": true,
+      "text": "guard rustup run 1.96.0 cargo build --locked --release --manifest-path rust/Cargo.toml -p lean-regalloc \n"
+    },
+    "comparison-entrypoint.build-logs/allocator.log": {
+      "sha256": "b65d97c967cb13bb2fd061b2f5b86011ef366acea387375a92a9808f93395384",
+      "bound_in_manifest": true,
+      "text": "    Finished `release` profile [optimized] target(s) in 0.15s\n"
+    }
+  },
+  "historical_manifest_sha256": "9bf88afd1d2d641c66d704759ac8bd9689f604de45bbee4b6363e70d7c4b921b",
+  "historical_binary_binding": "c99a1392f174706a1372b3d9884dcb8d70aa20757d19ffe56e7903e5fe5e0403",
+  "historical_measurement_results_sha256": "56083b34eae7a4522f7f7b4eb2c50d7088d67e101a422064aa6fd1ca1d03aedf",
+  "matching_binary_paths": [
+    "/home/lee/clifv/.git/agent-evidence/stock-vector-measure-20261030/compiler/lean-regalloc",
+    "/home/lee/clifv/.worktrees/driver-proof-resume/rust/target/release/lean-regalloc"
+  ],
+  "loop_candidate_creator_unestablished": true,
+  "limits": [
+    "historical cargo logs report successful release build; some used existing Rust build outputs",
+    "full current binary creator/configuration acceptance still requires review",
+    "source equality alone does not authorize tool execution",
+    "exact prepared input and oracle answer remain absent"
+  ],
+  "no_binary_execution_or_build": true,
+  "utc": "2026-11-03T23:17:38.501321+00:00"
+}

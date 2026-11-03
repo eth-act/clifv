@@ -1,0 +1,17 @@
+import FV.E2E.StockAcquireKeptWorld
+import FV.E2E.StockAcquireLayoutImage
+import FV.E2E.StockAcquireMapRelRWWithResults
+import FV.E2E.StockAcquireMapRelEntryWithResults
+#print axioms E2E.StockAcquirePending.relW_keep_of_avoids
+#print axioms E2E.StockAcquirePending.bodyEntryW_keep
+#print axioms E2E.StockAcquirePending.machEntry_keep_of_stack_avoids
+#print axioms E2E.StockAcquirePending.outgoing_avoids_of_original_stack
+#print axioms E2E.StockAcquirePending.argsAtEntry_keep_of_original_stack
+#print axioms E2E.StockAcquirePending.linked_entry_keep_fields
+#print axioms E2E.StockAcquirePending.layout_line_byte_bound
+#print axioms E2E.StockAcquirePending.layout_table_image
+#print axioms E2E.StockAcquirePending.layout_line_codeAddr
+#print axioms E2E.StockAcquirePending.layout_table_image_of_codeAddr
+#print axioms E2E.StockAcquirePending.mapRelRW_actual_code_readable
+#print axioms E2E.StockAcquirePending.mapRelRW_linked_entry
+#print axioms E2E.StockAcquirePending.mapRelRW_actual_tables_readable

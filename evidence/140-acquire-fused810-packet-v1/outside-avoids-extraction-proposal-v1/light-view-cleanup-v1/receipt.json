@@ -1,0 +1,22 @@
+{
+  "status": "temporary_metadata_and_source_view_removed_after_preservation",
+  "removed_path": "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/outside-avoids-extraction-proposal-v1/light-current8f-query-v1/package",
+  "entries": 1563,
+  "preserved_leaf_outputs": {
+    ".lake/build/lib/lean/FV/E2E/OutsideAvoids.olean": "86a81af1484c46dd353a51f67fd8023063732288ef1717f3833c3109ef5adabe",
+    ".lake/build/lib/lean/FV/E2E/OutsideAvoids.ilean": "2d5cf77e2963732ea1449228aad47396bf0bdc3aabaa9f8e07ac3d9f5cc861e0",
+    ".lake/build/lib/lean/FV/E2E/OutsideAvoids.olean.hash": "faf16ffa350220b0eae084d60838045b044f35485527602be0f78cb62cd3f623",
+    ".lake/build/lib/lean/FV/E2E/OutsideAvoids.ilean.hash": "134072848c53aba009c5e3d6144f97965dd81d7a8a071cb247721816f57c59cd",
+    ".lake/build/lib/lean/FV/E2E/OutsideAvoids.trace": "a700ceb94f68c19fcf6f63f990f0002ea32fa64b2297d5b98c2282f18b855953",
+    ".lake/build/ir/FV/E2E/OutsideAvoids.setup.json": "2c3eb5119900e6e11afdd456313e28c6725c51e92ad13a5cf123e33486a4e8c5",
+    ".lake/build/ir/FV/E2E/OutsideAvoids.c": "2042be092f12f017723e2f61ee86d93892f7948546003c9e9205d1b9efb13f53",
+    ".lake/build/ir/FV/E2E/OutsideAvoids.c.hash": "2d29192593d1602ed3c4bd36c3a8a7e826ef3688d24ae306d5fc1ecc2f0d0d9d"
+  },
+  "leaf_source_sha256": "f0a4be9dbd35137ed0d094e262861ca34b9614453f3eedfb381b4b7e19e20633",
+  "final_leaf_receipt_sha256": "305d8ffca149dd82443a4a3083657104bc453d725c97a4c92894a6031287395a",
+  "prerequisite_origin_receipt_sha256": "a827234361fcaba7eebe84e9e61ea28dee6e7719097ea3e977ff97d351135f7a",
+  "shared_symlink_targets_removed": false,
+  "old_source_patch_and23gates_preserved": true,
+  "F_warm_context_unchanged": true,
+  "utc": "2026-11-03T21:31:16.602442+00:00"
+}

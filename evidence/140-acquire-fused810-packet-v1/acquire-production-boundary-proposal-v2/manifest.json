@@ -1,0 +1,59 @@
+{
+  "status": "source_only_additive_checker_candidate_unverified_not_integrated",
+  "git_head": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "sources": {
+    "source/FV/Backend/StockAcquireCheck.lean": "6465efbee8edad56f6f337697751d55cc80351ae520ca652d672f835267b6d04",
+    "source/FV/Backend/Proof/StockAcquireTwoLoadCurrentChecks.lean": "a03c4d0152480930ae4cce160afdcf8a627e369f3080c3ca00fe449944f0775d"
+  },
+  "no_execution_performed": true,
+  "current_checker_result": "unknown_until_exact_current_host_gate_and_probe",
+  "existing_Branches": "Preserve SemanticNI.check, SemanticABI.check/checkCalls, constructors, signatures and all accepted verdicts exactly. Add a separate acquire checker/constructor only after its source class and correctness proof pass.",
+  "proposed_additive_boundary": [
+    "Accept actual Stock.lower provenance through an executable source check, not a caller theorem.",
+    "Retain actual stage, prepare, prepCheck, checkAlloc, lowerRFunc, emission and layout fields.",
+    "Retain the full ordinary/paired return guarantees and original MapRelRW fault conditions.",
+    "Derive the original source scope and SSA/dominance from existing source-check fields.",
+    "Keep the fixed two-load consumer witness and generic acquire simulation as separate required gates.",
+    "Prove previous accepted verdicts remain accepted and absent-acquire verdicts remain exact.",
+    "Connect the new source branch to the existing default allocator; preserve raw answers and every old fallback."
+  ],
+  "blocked_design_decision": "The exact executable source class follows the current-check observation. Do not install a fixed-fixture equality as a generic acceptance condition.",
+  "resources": {
+    "probe_cap_bytes": 1073741824,
+    "compiler_threads": 1,
+    "new_provider_builds_authorized": false,
+    "probe_peak_bytes": null
+  },
+  "requires": [
+    "R lease restoration",
+    "complete exact current probe closure/creator/normal checks",
+    "coordinator approval before the new probe kernel",
+    "exact source-class review before shared integration"
+  ],
+  "pipeline_inhabitation": false,
+  "generic_acquire_complete": false,
+  "full_goal_complete": false,
+  "previous_proposal_sha256": "6c31a7250bb110b28aad573e69c81b2b500704b49d1d207f22da2303b9d07590",
+  "class_scope": {
+    "blocks": "one return block for this additive class; full generic control-flow acquire remains required",
+    "body": "arbitrary finite atomicLoad/extend sequence containing at least one atomicLoad",
+    "widths": "all original LowerScope widths; actual matcher and emission derive internal bounds",
+    "flags": "unchanged original flags; no additional flag or endian guard",
+    "ABI": "original sigAbiOk; no register-only restriction",
+    "fixtures": "no fixed-function equality or exact load-count requirement"
+  },
+  "predecessor_preservation": "Every prior SemanticNI accepted output retains the same predecessor output. Existing semantic declarations and branches remain unchanged.",
+  "proof_and_integration_gates": [
+    "exact current checker observation",
+    "executable source-check soundness",
+    "generic whole-return paired proof for the source class",
+    "generic first-fault proof from original mapping/entry facts",
+    "actual default regalloc2 answer and pipeline inhabitant",
+    "additive compiled-artifact constructor and every original OkReturnPins field",
+    "both preparation modes and predecessor exactness gates",
+    "generic acquire/control-flow/callee extension remains open"
+  ],
+  "candidate_kernel_verified": false,
+  "candidate_integrated": false,
+  "no_new_caller_certificates": true
+}

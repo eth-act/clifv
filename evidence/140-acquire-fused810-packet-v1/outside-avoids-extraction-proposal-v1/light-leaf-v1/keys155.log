@@ -1,0 +1,375 @@
+⚠ [5/310] Replayed FV.Arm.BitVec
+warning: FV/Arm/BitVec.lean:318:41: This simp argument is unused:
+  setWidth_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [partInstall, truncate_eq_setWidth, getLsbD_or, getLsbD_and, getLsbD_not, getLsbD_shiftLeft, hi,
+    decide_true, Bool.true_and, getLsbD_setWidth, getLsbD_allOnes, Bool.not_and, Bool.not_not, getLsbD_cast,
+    BitVec.getLsbD_append, zeroExtend_eq_setWidth]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:318:54: This simp argument is unused:
+  zeroExtend_eq_setWidth
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [partInstall, truncate_eq_setWidth, getLsbD_or, getLsbD_and, getLsbD_not, getLsbD_shiftLeft, hi,
+    decide_true, Bool.true_and, getLsbD_setWidth, getLsbD_allOnes, Bool.not_and, Bool.not_not, getLsbD_cast,
+    BitVec.getLsbD_append, setWidth_eq]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:342:56: This simp argument is unused:
+  Nat.succ_eq_one_add
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [List.length_cons, Nat.mul_one, Nat.mul_add]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:661:43: This simp argument is unused:
+  cast_heq_iff
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [append_zero_width, heq_eq_eq, Nat.sub_zero]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:689:13: This simp argument is unused:
+  cast
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [zero_width_append, toNat_ofNatLT]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:689:38: This simp argument is unused:
+  toNat_ofNatLT
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [cast, zero_width_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:731:16: This simp argument is unused:
+  Nat.add_sub_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:739:12: This simp argument is unused:
+  h5
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [h6]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:746:14: This simp argument is unused:
+  Nat.testBit_mod_two_pow
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:759:28: This simp argument is unused:
+  Nat.sub_add_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth, low_le]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:759:48: This simp argument is unused:
+  low_le
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth, Nat.sub_add_cancel]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:772:39: This simp argument is unused:
+  Nat.sub_zero
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all only
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:773:13: This simp argument is unused:
+  h_vlt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [forall_prop_of_true] at this
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:774:28: This simp argument is unused:
+  Nat.sub_add_cancel
+
+Hint: Omit it from the simp argument list.
+  [apply] simp_all [toNat_setWidth]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:843:8: This simp argument is unused:
+  BitVec.lt_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:847:8: This simp argument is unused:
+  BitVec.lt_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:908:89: This simp argument is unused:
+  cast_ofNat
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, BitVec.extractLsb'_ofNat, Nat.zero_mod, Nat.zero_shiftRight]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:922:28: This simp argument is unused:
+  getLsbD_cast
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, getLsbD_extract]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:922:42: This simp argument is unused:
+  getLsbD_extract
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [extractLsByte, getLsbD_cast]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:927:4: This simp argument is unused:
+  and_iff_right_iff_imp
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show (i : Nat) ≤ 7 by omega, decide_true, Bool.true_and, decide_eq_true_eq, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:927:27: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show (i : Nat) ≤ 7 by omega, decide_true, Bool.true_and, and_iff_right_iff_imp, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:929:4: This simp argument is unused:
+  Bool.and_eq_false_imp
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show ¬(i : Nat) ≤ 7 by omega, decide_false, Bool.false_and, decide_eq_true_eq, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:929:27: This simp argument is unused:
+  decide_eq_true_eq
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [show ¬(i : Nat) ≤ 7 by omega, decide_false, Bool.false_and, Bool.and_eq_false_imp, h]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:988:37: This simp argument is unused:
+  Fin.is_lt
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getLsbD_extractLsBytes, decide_true, getLsbD_zero, Bool.and_false, implies_true]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:988:48: This simp argument is unused:
+  decide_true
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getLsbD_extractLsBytes, Fin.is_lt, getLsbD_zero, Bool.and_false, implies_true]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Arm/BitVec.lean:1026:2: `[deprecated]` attribute should specify the date or library version at which the deprecation was introduced, using `(since := "...")`
+⚠ [137/310] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+⚠ [140/310] Replayed FV.Clif.Parse
+warning: FV/Clif/Parse.lean:663:8: Variable name `t` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _t
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [212/310] Replayed FV.Backend.Proof.RegallocOperands
+warning: FV/Backend/Proof/RegallocOperands.lean:438:74: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:440:23: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:457:27: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocOperands.lean:458:27: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [213/310] Replayed FV.Backend.Proof.AbiClass
+warning: FV/Backend/Proof/AbiClass.lean:373:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:375:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:375:23: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:377:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:377:23: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:378:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:378:20: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/AbiClass.lean:393:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/AbiClass.lean:397:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [222/310] Replayed FV.Backend.Proof.LowerContract
+warning: FV/Backend/Proof/LowerContract.lean:98:55: The syntax is now `structure S : Type extends P` rather than `structure S extends P : Type`
+
+Note: The purpose of this change is to accommodate `structure S extends toP : P` syntax for naming parent projections.
+⚠ [241/310] Replayed FV.Backend.Proof.RegallocSound
+warning: FV/Backend/Proof/RegallocSound.lean:124:18: `dif_pos` has been deprecated: Use `dite_eq_left` instead
+⚠ [277/310] Replayed FV.E2E.RegLevelMachine
+warning: FV/E2E/RegLevelMachine.lean:121:6: `dite_cond_eq_true` has been deprecated: Use `dite_eq_left_of_eq_true` instead
+⚠ [278/310] Replayed FV.Backend.Proof.RegallocFrame
+warning: FV/Backend/Proof/RegallocFrame.lean:127:29: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocFrame.lean:128:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocFrame.lean:197:71: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocFrame.lean:197:71: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocFrame.lean:204:68: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocFrame.lean:204:68: `if_true` has been deprecated: Use `ite_true` instead
+0a8c183ea1d24788
+17435b7f573a5b9f
+045d908ccd950849
+7379d7950ea7b27a
+0897cecd62bb64d2
+4913cd9fd77b7c09
+e4b0afedf42f6aa3
+093fb597d8e14fea
+888f22e577088e37
+26c60870263abb1d
+cdb74bed9d0058ec
+f950f6c7b10ede23
+7edd4e2b309891fc
+68e2a78be6904dec
+589bab5a9676fc5f
+f200f0cd2be3df77
+595ff1b7e7cb1f2d
+3beb73c62f48331a
+0eb2baebf1cc3680
+f814eaa2a64e5e94
+82eb5e53ecb979e9
+a855e5d3dd52e5cf
+82cae0540ebdc29b
+5b481e046d7a7740
+ff3c09a9170bc029
+0f594559499e2176
+fb3555f822af2c38
+c19d2204110e47a1
+10872e3fc32d95f4
+c354cabfef238ba2
+182c9cecdd81c89b
+3d1169b608f52161
+73ea7bf0912f2c01
+10d7dc5e667b027c
+d01396c4c88f9d87
+f350e169aeeb111c
+83cee2c5fc079fa5
+dcbfb779cf5ccba5
+2bd5943e3319dedc
+60bd39de4b6abc01
+67648a3b4720067c
+f026170b4b2a934e
+747ea888287ccc59
+bed4a8700dc24be3
+84db538dc0a9b6a4
+8a601975a807a3df
+ed247b8e9dd15254
+78f1be23a2cfb0e5
+990a98b4753b6171
+a436a06b67cac77b
+a64ed135eab33b97
+ccb7b4d2e1ed7887
+935456544d7d5138
+e955637cf93e713a
+706d8dd9898a9a01
+46ad8c51e9f014dc
+7f9ea7420e546ac1
+1dd9d79f669a4c20
+dd1cd503884565e0
+f95fbd5042876f17
+520f9671c3429ea6
+6c31593b491fb2aa
+017e8bd4f7d8d0ed
+fe257903ddaecdfc
+908aeba532cc2116
+b83656d743745e49
+9370a3e46d5a60e8
+67b952c965359f09
+1d65406b296a6c0e
+e8b70cfc9ffd5495
+021564000cf16a9d
+6605fbefc4cf724c
+e6c7fdba0f17672f
+a2818613d22b0515
+0ce6814115a30be2
+1395cc42cde8a071
+5079f27e2e8c458a
+7a9954ff85f86624
+3f1f1b9939890797
+bbaa4d6d5ae902b0
+5b907fb96a321b05
+24964bab4b35f25e
+6c306131870c7b7c
+ebf3f11c4e574307
+d2b80109616bfbb1
+5600090dd954783e
+b0c2a475cd98c496
+c45f168b5063b434
+87b82a5c96df01ce
+00c41182c48c077f
+97de441136e67339
+b099d957a647d108
+0d8e5ffc5dd4c3e2
+4ffe99ee8957b06c
+5779656db9033a3e
+7bd73bb3928d5c9c
+0834c4ea23c1c924
+f44419afed531d1f
+a49733d187d8808d
+9e527cc250514da0
+25cfd27882589ab4
+b3a64b4d660b64ef
+9ccc5dc1e0c5be52
+f7888097d8b535a6
+10586ba1586460f7
+ca3890e8ce336997
+843cc87bae39b0a0
+7cd18e536c1e81f8
+8b2031d4ced9cf0f
+e9403f09e5fb0073
+30dfcccc96b70662
+ab3307b60bfe0b45
+051751cac2d94d3b
+8356734cc56283ce
+f6992fb3ccb3cda1
+823072e970f3b645
+3a19e6b4d531b11f
+822660348f51ff0b
+45921755df93d174
+4767eda1b3d1509b
+1156fbe8724be0c9
+a02c4875423bd70d
+06885b6f2466da3e
+8fd6d74c4c9a4844
+23617fe7a8175c5e
+b97c3b2719523d48
+bea3b8ab07b863b5
+e588802fa9d6e995
+1db3a7f726880449
+4a28911f585098da
+67def3ae154443bf
+6d8e3601d3af2df9
+468b35dc8686d7a3
+8685c3833453ab92
+bf93dc425a626075
+a76fd692b0fa382d
+fcab69adb769a818
+21f726d1b57ec4bc
+e9bb6e8710908044
+275424901e29b27d
+3cb90e515a677142
+5e66e5db5bb5b724
+a565f00d586f2718
+fdd97a1bbce9e83a
+9e34955fc29c7ed8
+e768fa226c6c033a
+0ff8bd9b48535ba3
+0eb0e96b8a906c81
+8c06c187c02dcef8
+d6e3aac72f63e608
+8da21b3a4a6a731f
+661dac7f48adb1a8
+507387b537d252c4
+8ed46c1b5e2f2ae6
+0062837d91043322

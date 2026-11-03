@@ -1,0 +1,73 @@
+{
+  "status": "source_only_proposal_no_exporter_or_oracle_executed",
+  "git_head": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "owner": "investigate_513",
+  "target": "same unchanged two-load function; raw and cleanup modes",
+  "R_access": "held until explicit old23 restoration; this proposal reads only Git blobs and owned drafts",
+  "current_source_closure_count": 394,
+  "closure_sha256": "721ca17a0b44a9e5524d1b8776df6a07026e4eee4ebc7afc02f058640016dbc3",
+  "required_stages": [
+    "Bind current source/configuration/import keys/output hashes and creators for complete exporter closure.",
+    "Bind current lean-regalloc Rust source, Cargo.lock, executable creator, executable SHA256 and command.",
+    "Run export only under reviewed cap. Save Stock.lower, raw/cleanup stage, prepareChecked and exact CraneliftInput.shape payload.",
+    "Review exact exported payload and approved oracle binding before capture.",
+    "Use unchanged allocRecordingNamed regalloc2 callback with default environment and transparent raw stdout/stderr capture.",
+    "Save FV_RA_OUT and FV_RA_DIAG. Require actual callback verdict regalloc2 before claiming the raw answer inhabits the stage.",
+    "Save actual prepared code, rebuilt RFunc, checkAlloc, lowerRFunc, emitFunc and layout results.",
+    "Construct CompiledStockArithmeticStage from actual evaluations and derive layout/image facts from the same output."
+  ],
+  "preserved": {
+    "allocator": "regalloc2",
+    "machine_environment": "default aarch64Env",
+    "shape": "CraneliftInput.shape (some originalFunction) cleanup prepared",
+    "raw_answer": "unaltered oracle stdout; original supplied answer remains separately recorded",
+    "cleanup_modes": [
+      false,
+      true
+    ]
+  },
+  "fallback_boundary": "The actual default callback can select its existing fallback. A fallback result cannot establish raw-regalloc2 inhabitation. Preserve and report that branch without replacing the answer.",
+  "resource_proposal": {
+    "export_and_capture_aggregate_bytes": 1073741824,
+    "concurrent_jobs": 1,
+    "lean_threads": 1,
+    "OMP_NUM_THREADS": 1,
+    "OMP_THREAD_LIMIT": 1,
+    "new_provider_builds_authorized": false,
+    "executable_builds_authorized": false,
+    "measured_export_peak_bytes": null,
+    "measured_oracle_peak_bytes": null,
+    "unknown_peak_policy": "Stop on cap failure. Request a bound lease before any larger retry."
+  },
+  "open": [
+    "complete current exporter native readiness and creator classification",
+    "current oracle creator and dependency readiness",
+    "actual exported prepared payload",
+    "actual raw answer",
+    "allocation/emission/layout inhabitant",
+    "ELF object image",
+    "generic source/callee simulation"
+  ],
+  "no_new_compiler_admission_condition": true,
+  "full_goal_complete": false,
+  "draft_adapter": "CurrentSourceCaptureV3.lean",
+  "draft_adapter_verified": false,
+  "previous_draft_preserved": "CurrentSourceCaptureV2.lean",
+  "oracle_source_hashes": {
+    "rust/crates/lean-regalloc/Cargo.toml": "eb70c24e809da2708394d55d9114aaab61efe3955a7b65d8e834401d35fce696",
+    "rust/crates/lean-regalloc/src/main.rs": "fa4f5997ef78a472df746e1cf2bc24b8c1a1907ab5deaf4c0536e7f75c027779",
+    "rust/Cargo.toml": "d545793ec33f01d1d3278531ba5436d2efa8acfa80a4de9adbbaa806d29b0236",
+    "rust/Cargo.lock": "aedef1bf93f278f20447f6d336fef82d15cd2287c7519717d9ac2a3c0b1a57f5",
+    "rust/rust-toolchain.toml": "f376819be3903231f8160ca36d11b38105b144950f3d75e1455c22ef6564ade1",
+    "FVTest/Backend/CraneliftInput.lean": "a2829b609e62afe398304ea7bf98e81c10954e272ad23e3e2066e8b36199c6f4"
+  },
+  "owned_draft_hashes": {
+    "CurrentSourceCaptureV2.lean": "4afbe35569a99c83b4031a9aa01f24c37529c2e822ed28f964c30580c3a91231",
+    "CurrentSourceCaptureV3.lean": "e72a8184d0e5832d83df2eb3d81b95921643416342545779396598907d81c88f",
+    "RunCurrentSourceCaptureV2.lean": "47f20aabe5b174236a6470ded1fa60fb92680a5c94fc4e63ffcd3d27dfd9b1bf",
+    "oracle-capture-proxy.py": "7cb8fdaa2a4a27507f59ff1d72688611c1ed7a711e2dd5f97e5f0c9e7754bc34",
+    "RunCurrentSourceCaptureV3.lean": "f7becaa5bdb6b3cb71eee5080c6b9d52cdc39ae8ad1b3c455fc580a019fdaf38"
+  },
+  "launcher_update_required_before_verification": false,
+  "draft_launcher": "RunCurrentSourceCaptureV3.lean"
+}

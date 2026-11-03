@@ -1,0 +1,35 @@
+{
+  "status": "source_only_unverified",
+  "git_head": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "sources": {
+    "source/FV/E2E/StockAcquireActualPublicEntry.lean": "b05e701cc7af32a6439b325bd594bbe4e11c72e256565ad05bac3c731ea1bd4e",
+    "source/FV/E2E/StockAcquireActualMapModel.lean": "fd3e8a6e08ea99bde581af35ef3cde526b19fe104774bf99e9eb2ec8de310f5c"
+  },
+  "observed_original_sources": {
+    "FV/E2E/BinaryBoundaryFacts.lean": "ab2848b4e20edb08913edd3df035ca9fa91b2a29f0cd9feaa0e41ca8503ece6e",
+    "FV/E2E/BinaryBoundaryDefs.lean": "59d6354666dc9af6b3d6c5e5c6f490d422b4c9b3f25e17ff77010028b9765cf2",
+    "FV/E2E/SemanticStackBound.lean": "b220c7951409f000a33ad2651b02eee74902e010273281d1b4b98d1e51b19e5d",
+    "FV/E2E/StackBound.lean": "f23bfac3c4eb90eb8bf2b4f86d32b55b3b83c24dc988a5aec013186ef24c43e0",
+    "FV/E2E/LinkReturnPinContract.lean": "175a94b1397fbac4012fb0c498d3d9ce71fd448e6372972daebd5e8fc987aa67",
+    "FV/E2E/RegLevelSim.lean": "b915702798c8ca050af63518a71e9f87068df6afb0cae4a0bf1364b1fb1bc4b2"
+  },
+  "R_consumers_stopped": true,
+  "claims": {
+    "original_goodN_fixes_hybrid_budget_at_all_depths": "draft",
+    "same_actual_input_OutsideCall_derives_MachEntry": "draft",
+    "arbitrary_original_N_preserved": true,
+    "new_admission_guard_added": false,
+    "public_MapRelRW_bridge_complete": false,
+    "kernel_verified": false,
+    "original_goodN_removes_internal_budget_equality": "draft",
+    "model_image_update_preserves_all_original_mapping_fields": "draft"
+  },
+  "remaining": [
+    "complete current readiness and approval before focused raw kernels",
+    "derive RelW and ArgsAtEntry from the same original boundary",
+    "nonvacuous root810 checker branch and default pipeline inhabitant",
+    "combine kept-world entry and actual ELF image",
+    "generic acquire/callee simulation"
+  ],
+  "previous_proposal_sha256": "71388dfa9e972dd52460b735e1318898a2e6e89697358cc520e66ebbb861871c"
+}

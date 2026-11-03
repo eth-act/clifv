@@ -1,0 +1,25 @@
+E2E.DeadCleanupExecBytes.OutsideAvoids (S : BitVec 64 → Prop) (f : Clif.Function) (N : Nat) (r : Arm.ArmState)
+  (args : List Clif.Val) (cm : Clif.Mem) : Prop
+'E2E.DeadCleanupExecBytes.OutsideAvoids' depends on axioms: [propext]
+E2E.DeadCleanupExecBytes.OutsideAvoids.mk {S : BitVec 64 → Prop} {f : Clif.Function} {N : Nat} {r : Arm.ArmState}
+  {args : List Clif.Val} {cm : Clif.Mem} (stack : ∀ (a : BitVec 64), S a → ¬Backend.Proof.StackBelow N (E2E.spv r) a) :
+  (∀ (off : Nat) (v : Clif.Val),
+      (Backend.ArgLoc.stack off, v) ∈ (Backend.locsOf f.sig).zip args →
+        Backend.Proof.Avoids S v.ty.bytes (E2E.spv r + BitVec.ofNat 64 off)) →
+    ∀ (valid : ∀ (a n : Nat), cm.valid a n = true → ∀ (k : Nat), k < n → ¬S (BitVec.ofNat 64 (a + k))),
+      E2E.DeadCleanupExecBytes.OutsideAvoids S f N r args cm
+'E2E.DeadCleanupExecBytes.OutsideAvoids.mk' depends on axioms: [propext]
+E2E.DeadCleanupExecBytes.OutsideAvoids.stack {S : BitVec 64 → Prop} {f : Clif.Function} {N : Nat} {r : Arm.ArmState}
+  {args : List Clif.Val} {cm : Clif.Mem} (self : E2E.DeadCleanupExecBytes.OutsideAvoids S f N r args cm)
+  (a : BitVec 64) : S a → ¬Backend.Proof.StackBelow N (E2E.spv r) a
+'E2E.DeadCleanupExecBytes.OutsideAvoids.stack' depends on axioms: [propext]
+E2E.DeadCleanupExecBytes.OutsideAvoids.args {S : BitVec 64 → Prop} {f : Clif.Function} {N : Nat} {r : Arm.ArmState}
+  {args : List Clif.Val} {cm : Clif.Mem} (self : E2E.DeadCleanupExecBytes.OutsideAvoids S f N r args cm) (off : Nat)
+  (v : Clif.Val) :
+  (Backend.ArgLoc.stack off, v) ∈ (Backend.locsOf f.sig).zip args →
+    Backend.Proof.Avoids S v.ty.bytes (E2E.spv r + BitVec.ofNat 64 off)
+'E2E.DeadCleanupExecBytes.OutsideAvoids.args' depends on axioms: [propext]
+E2E.DeadCleanupExecBytes.OutsideAvoids.valid {S : BitVec 64 → Prop} {f : Clif.Function} {N : Nat} {r : Arm.ArmState}
+  {args : List Clif.Val} {cm : Clif.Mem} (self : E2E.DeadCleanupExecBytes.OutsideAvoids S f N r args cm) (a n : Nat) :
+  cm.valid a n = true → ∀ (k : Nat), k < n → ¬S (BitVec.ofNat 64 (a + k))
+'E2E.DeadCleanupExecBytes.OutsideAvoids.valid' depends on axioms: [propext]

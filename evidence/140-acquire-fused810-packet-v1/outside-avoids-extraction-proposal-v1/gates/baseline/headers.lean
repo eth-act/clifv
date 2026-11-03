@@ -1,0 +1,25 @@
+import FV.E2E.DeadCleanupExecGot
+
+#check @E2E.DeadCleanupExecBytes.GotSlot
+#check @E2E.DeadCleanupExecBytes.GotOk
+#check @E2E.DeadCleanupExecBytes.relocAtB
+#check @E2E.DeadCleanupExecBytes.not_relocAt_of
+#check @E2E.DeadCleanupExecBytes.gotB
+#check @E2E.DeadCleanupExecBytes.ldr_imm
+#check @E2E.DeadCleanupExecBytes.adrp_imm
+#check @E2E.DeadCleanupExecBytes.gotOf_pair
+#check @E2E.DeadCleanupExecBytes.gotB_sound
+#check @E2E.DeadCleanupExecBytes.OutsideAvoids
+#check @E2E.DeadCleanupExecBytes.worldFS
+#check @E2E.DeadCleanupExecBytes.not_worldFS
+#check @E2E.DeadCleanupExecBytes.sysS
+#check @E2E.DeadCleanupExecBytes.mach_sysS
+#check @E2E.DeadCleanupExecBytes.runGood_sysS
+#check @E2E.DeadCleanupExecBytes.got_of_good
+#check @E2E.DeadCleanupExecBytes.StepOkI
+#check @E2E.DeadCleanupExecBytes.RunInsnN
+#check @E2E.DeadCleanupExecBytes.binary_correct_exec_of_insn
+#check @E2E.DeadCleanupExecBytes.OutsideAvoids.mk
+#check @E2E.DeadCleanupExecBytes.OutsideAvoids.stack
+#check @E2E.DeadCleanupExecBytes.OutsideAvoids.args
+#check @E2E.DeadCleanupExecBytes.OutsideAvoids.valid

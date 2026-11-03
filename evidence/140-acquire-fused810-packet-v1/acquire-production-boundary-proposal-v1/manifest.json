@@ -1,0 +1,35 @@
+{
+  "status": "source_only_diagnostic_and_boundary_proposal",
+  "git_head": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "sources": {
+    "source/FV/Backend/Proof/StockAcquireTwoLoadCurrentChecks.lean": "a03c4d0152480930ae4cce160afdcf8a627e369f3080c3ca00fe449944f0775d"
+  },
+  "no_execution_performed": true,
+  "current_checker_result": "unknown_until_exact_current_host_gate_and_probe",
+  "existing_Branches": "Preserve SemanticNI.check, SemanticABI.check/checkCalls, constructors, signatures and all accepted verdicts exactly. Add a separate acquire checker/constructor only after its source class and correctness proof pass.",
+  "proposed_additive_boundary": [
+    "Accept actual Stock.lower provenance through an executable source check, not a caller theorem.",
+    "Retain actual stage, prepare, prepCheck, checkAlloc, lowerRFunc, emission and layout fields.",
+    "Retain the full ordinary/paired return guarantees and original MapRelRW fault conditions.",
+    "Derive the original source scope and SSA/dominance from existing source-check fields.",
+    "Keep the fixed two-load consumer witness and generic acquire simulation as separate required gates.",
+    "Prove previous accepted verdicts remain accepted and absent-acquire verdicts remain exact.",
+    "Connect the new source branch to the existing default allocator; preserve raw answers and every old fallback."
+  ],
+  "blocked_design_decision": "The exact executable source class follows the current-check observation. Do not install a fixed-fixture equality as a generic acceptance condition.",
+  "resources": {
+    "probe_cap_bytes": 1073741824,
+    "compiler_threads": 1,
+    "new_provider_builds_authorized": false,
+    "probe_peak_bytes": null
+  },
+  "requires": [
+    "R lease restoration",
+    "complete exact current probe closure/creator/normal checks",
+    "coordinator approval before the new probe kernel",
+    "exact source-class review before shared integration"
+  ],
+  "pipeline_inhabitation": false,
+  "generic_acquire_complete": false,
+  "full_goal_complete": false
+}

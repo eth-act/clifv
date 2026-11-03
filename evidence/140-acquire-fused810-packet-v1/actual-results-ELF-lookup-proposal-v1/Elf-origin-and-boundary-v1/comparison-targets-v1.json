@@ -1,0 +1,19 @@
+{
+  "status": "comparison_targets_clarified_no_reparse_or_build",
+  "bound_receipt_sha256": "13644680ead25b0561bafeffb9a0da1e7ec92c7b76b227833bf0f6232eeef8b4",
+  "older_nested_false": {
+    "field": "creator.trace_bytes_exact",
+    "comparison": "archived proper compact trace versus registry76/P retained synthetic trace",
+    "target_trace_sha256": "503fee4ad514f82b24e1ca16103146c85ab35d9fe06d6e889ffb955a8212a962",
+    "target_label": "synthetic, unchanged"
+  },
+  "new_true": {
+    "field": "archive_compact_trace_bytes_exact_to_R",
+    "comparison": "archived proper compact trace versus current R proper compact trace",
+    "archive_trace_sha256": "be5d650abf5b9d5b0dfd33d89d0773bc1d8ad32a57b0ab2052e7daf420e179bd",
+    "R_trace_sha256": "be5d650abf5b9d5b0dfd33d89d0773bc1d8ad32a57b0ab2052e7daf420e179bd",
+    "target_label": "compact archive-derived, not full-input"
+  },
+  "old_false_field_retained": true,
+  "new_acceptance_inferred": false
+}

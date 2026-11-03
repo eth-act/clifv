@@ -1,0 +1,7 @@
+{
+  "status": "passed_exact155_source_key_output_comparison",
+  "mismatches": [],
+  "old155_receipt_sha256": "a827234361fcaba7eebe84e9e61ea28dee6e7719097ea3e977ff97d351135f7a",
+  "new376_receipt_sha256": "a300104c0c8332492cd6ad6b458ce318dd41155ea240d91059a918671ed20d72",
+  "OutsideAvoids_creator_receipt_sha256": "305d8ffca149dd82443a4a3083657104bc453d725c97a4c92894a6031287395a"
+}

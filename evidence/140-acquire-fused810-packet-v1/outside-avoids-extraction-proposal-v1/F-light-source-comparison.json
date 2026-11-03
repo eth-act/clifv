@@ -1,0 +1,12 @@
+{
+  "proposal_manifest_sha256": "f539e16aa33586281432d61a3dc2c37c115c8e2d9d637e07119db135258d9356",
+  "new_module_current8f_source_closure": 155,
+  "F_missing_sources": [],
+  "F_different_sources": [
+    "FV.Backend.Proof.IselContract"
+  ],
+  "source_comparison_only": true,
+  "current8f_configuration_and_normal_keys_not_verified": true,
+  "Lean_compilers_started": 0,
+  "memory": "peak 263098368\noom 0\noom_kill 0\n"
+}

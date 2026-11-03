@@ -1,0 +1,142 @@
+{
+  "status": "passed_raw_mapping_entry_and_table_image_unit",
+  "manifest_sha256": "5b7ea96a863d9df08036622cf4e0f1fbc57c23d074a6a398a980b031bede8d19",
+  "host376_receipt_sha256": "a300104c0c8332492cd6ad6b458ce318dd41155ea240d91059a918671ed20d72",
+  "OutsideAvoids155_reuse_receipt_sha256": "7e46de3e3696b830b199f6c0d8f90df88466f6cbbb11b31cdba1d2920e74af2d",
+  "image_raw_receipt_sha256": "d2b6e4cc2e5cb2e2828d2c07d5db76d4f8c42712c6ab90d892cf2cade1158d68",
+  "commands": [
+    {
+      "label": "StockAcquireMapRelEntryWithResults",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "-Dlinter.unusedSimpArgs=false",
+        "-Dlinter.unusedVariables=false",
+        "-Dlinter.unnecessarySimpa=false",
+        "-Dlinter.unusedSectionVars=false",
+        "-Dlinter.defProp=false",
+        "-Dlinter.constructorNameAsVariable=false",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-map-rel-rw-proposal-v6/source",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-map-rel-rw-proposal-v6/source/FV/E2E/StockAcquireMapRelEntryWithResults.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-map-rel-rw-proposal-v6/raw-entry-v1/outputs/FV/E2E/StockAcquireMapRelEntryWithResults.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-map-rel-rw-proposal-v6/raw-entry-v1/outputs/FV/E2E/StockAcquireMapRelEntryWithResults.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-map-rel-rw-proposal-v6/raw-entry-v1/outputs/FV/E2E/StockAcquireMapRelEntryWithResults.c"
+      ],
+      "exit": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "real-auditor",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-map-rel-rw-proposal-v6/raw-entry-v1/tools/scripts/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-map-rel-rw-proposal-v6/raw-entry-v1/audit-env",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-map-rel-rw-proposal-v6/raw-entry-v1/audit-logs",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-map-rel-rw-proposal-v6/raw-entry-v1/actual-map-rel.lean"
+      ],
+      "exit": 0,
+      "stdout_sha256": "9f5dd1bad869c5ba7be203bef02ba45ecb01051f13c4fafff4759929e52fce3a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "roots": 13,
+  "axioms": {
+    "E2E.StockAcquirePending.relW_keep_of_avoids": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.bodyEntryW_keep": [
+      "propext"
+    ],
+    "E2E.StockAcquirePending.machEntry_keep_of_stack_avoids": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.outgoing_avoids_of_original_stack": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.argsAtEntry_keep_of_original_stack": [
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.linked_entry_keep_fields": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.layout_line_byte_bound": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.layout_table_image": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.layout_line_codeAddr": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.layout_table_image_of_codeAddr": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.mapRelRW_actual_code_readable": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.mapRelRW_linked_entry": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.StockAcquirePending.mapRelRW_actual_tables_readable": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "all_ten_old_KepWorld_LayoutImage_AX_sets_exact": true,
+  "prior_v100_receipt_sha256": "4a1e26bba161d93ea71007d4a22389a6b5324dd3c9aa4d291c496e529c4624f8",
+  "artifact_hashes_including_three_reused_prerequisites": {
+    "outputs/FV/E2E/StockAcquireKeptWorld.olean": "a4558ca621edfa140166c66ca4b060e3c8153704ab856e02957ea90471ae1fca",
+    "outputs/FV/E2E/StockAcquireKeptWorld.ilean": "29a37a2d6590ee6a737d6fbfa7dff8d8e12026901c8d53fa940446b3e84f6f43",
+    "outputs/FV/E2E/StockAcquireKeptWorld.c": "6baf4dc71b020ee33f741ee7a734fe9efe5c56a9cab885b87b9b16d8c2a52dae",
+    "outputs/FV/E2E/StockAcquireLayoutImage.olean": "06578ae92909cc120be677735f83949b7e0256e128a8f2a1ab97f92139044bd4",
+    "outputs/FV/E2E/StockAcquireLayoutImage.ilean": "eceeb84ce21ed56b5458c3656803c1c57bffca47b69a6cc2748250c8a9fb6c3c",
+    "outputs/FV/E2E/StockAcquireLayoutImage.c": "b5b49484c5867eb8515452537e06ad58d79e93f35c7d074a3903fbf9b423a8e3",
+    "outputs/FV/E2E/StockAcquireMapRelRWWithResults.olean": "736a34e67962fc0bb6538126bbdffc168f10e69827991fbe91376c4a167e102d",
+    "outputs/FV/E2E/StockAcquireMapRelRWWithResults.ilean": "32e7a7f1928d3d1e7f424db70226b51ec0410833f7d446ce150bfdcab454bd7c",
+    "outputs/FV/E2E/StockAcquireMapRelRWWithResults.c": "2d3c3c86c2bcee8f49149688cacb9c89b644f6dec9f9fc88401fb983bca90814",
+    "outputs/FV/E2E/StockAcquireMapRelEntryWithResults.olean": "e4f433e52672a4f6b16ab72a8c3677773b9fa28d541eb05a21bde0d8e6120de3",
+    "outputs/FV/E2E/StockAcquireMapRelEntryWithResults.ilean": "fd8890dfb9dd7020f1bf98ee6a41635766a2d60218619ca08025199261d4007a",
+    "outputs/FV/E2E/StockAcquireMapRelEntryWithResults.c": "38dfa43fd69daeecb44740e6ae27a1c343c269d6d6d33f7072045eb110241062"
+  },
+  "three_passed_kernels_reused": true,
+  "old_failed_run_source_sha256": "ef1ba05974a1a9085c6f7b6cbb6dfd4217103095949c60a3dd58ca9e533d82e2",
+  "old_OutsideAvoids_key_log_sha256": "dbb859cc8b8b5f429670eb406a23e837c0090fae2f0df878033d4b2dfa89000a",
+  "old_OutsideAvoids_normal_log_sha256": "5e720a154922ccc52e90d77acc0c64b724b925a6a21facdc8ef4232dc21cca51",
+  "real_auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "audit_source_sha256": "edd9ab35099fed91932255851edbb1f27025cde4cfcdb2e06445660a9717bccd",
+  "shared_source_config_or_provider_outputs_changed": false,
+  "actual_original_public_MapRelRW_bridge": "open",
+  "original_budget_discharge": "open",
+  "ELF_and_pipeline_inhabitation": "open",
+  "utc": "2026-11-03T22:09:49.926579+00:00",
+  "raw_receipt_sha256": "125648d3f8ab612bd7dd4b38fa63a8ca80955647243cbf26d7d471d4d59993fb",
+  "kernel_audit_memstats": "peak 323678208\noom 0\noom_kill 0\n",
+  "origin_ref": "8f073980e9630c8d3cd9d6f6f77ab462474c7bcb",
+  "PR950_rebind": false
+}

@@ -1,0 +1,72 @@
+{
+  "status": "passed_raw_actual_results_image_leaf_and_real_current_auditor",
+  "source_sha256": "51a3ca2dd6392b26fbe019dbf3ef02961e40b593ae5a99918c6e3ac7e1e3f1fd",
+  "host_receipt_sha256": "a2f00c678b48b0c612f17efafa1d6d78e254e665a73284f8546d951b7ca83441",
+  "commands": [
+    {
+      "label": "raw-image-kernel",
+      "argv": [
+        "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean",
+        "-j1",
+        "-Dlinter.unusedSimpArgs=false",
+        "-Dlinter.unusedVariables=false",
+        "-Dlinter.unnecessarySimpa=false",
+        "-Dlinter.unusedSectionVars=false",
+        "-Dlinter.defProp=false",
+        "-Dlinter.constructorNameAsVariable=false",
+        "--root=/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-result-image-bridge-v2/source",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-result-image-bridge-v2/source/FV/E2E/StockAcquireActualResultImage.lean",
+        "-o",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-result-image-bridge-v2/raw-leaf-v2/outputs/FV/E2E/StockAcquireActualResultImage.olean",
+        "-i",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-result-image-bridge-v2/raw-leaf-v2/outputs/FV/E2E/StockAcquireActualResultImage.ilean",
+        "-c",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-result-image-bridge-v2/raw-leaf-v2/outputs/FV/E2E/StockAcquireActualResultImage.c"
+      ],
+      "exit": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "real-auditor",
+      "argv": [
+        "python3",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-result-image-bridge-v2/raw-leaf-v2/tools/scripts/axiom-audit.py",
+        "--cwd",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-result-image-bridge-v2/raw-leaf-v2/audit-env",
+        "--log-dir",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-result-image-bridge-v2/raw-leaf-v2/audit-logs",
+        "/home/lee/clifv/.git/agent-evidence/stock-memory-20261029/140-acquire-fused810-packet-v1/actual-result-image-bridge-v2/raw-leaf-v2/actual-result-image.lean"
+      ],
+      "exit": 0,
+      "stdout_sha256": "0de8864e470bb627e5dc00e20ca7758f388d05897dfafd7c6969919c73e52dbe",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "axioms": {
+    "E2E.LinkCheck.actual_results_code_image": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "raw_outputs": {
+    "outputs/FV/E2E/StockAcquireActualResultImage.olean": "a0d07691be2e410403affa8a181620221ded34eef7d906adc1f0d55052d7cc22",
+    "outputs/FV/E2E/StockAcquireActualResultImage.ilean": "b7c28cc4a9ae3cc967b94a9aec0237f2e85698458f23ca6932b086720c114022",
+    "outputs/FV/E2E/StockAcquireActualResultImage.c": "c520768353babd8432295b21cc722c8b6d4b843e942270916c2644ad78123601"
+  },
+  "real_auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "audit_source_sha256": "2ed9f80a4db67a189fb45698d21a48b5768a97df45d25b4f4131ead655db1a73",
+  "audit_environment": "owned tool-only Lake environment; no project normal key claimed for raw output",
+  "R_configuration_hashes": {
+    "lakefile.toml": "9f661bdcd8321a61210e3e3994640e4120a746062ca9086bf361bd61cfd000cf",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b"
+  },
+  "all369_context_bytes_unchanged": true,
+  "all_new_outputs_under_A": true,
+  "shared_writes_or_provider_builds": false,
+  "utc": "2026-11-03T21:52:12.757833+00:00",
+  "kernel_and_audit_memstats": "peak 271732736\noom 0\noom_kill 0\n",
+  "raw_receipt_sha256": "8e104e879578b03c0700246054d916d969cd3655113d8977a96a5113eb49317f"
+}
