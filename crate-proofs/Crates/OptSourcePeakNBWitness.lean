@@ -284,7 +284,9 @@ theorem compileExeOpt_source_peak_nobnd_witness :
     exact ⟨⟨3#64, 1#64, rfl, rfl, rfl⟩, rfl, trivial⟩
   have hoc := outsideCall (memOf file) (BinCheck.roByte J spec.opt.data) hstack
   have h := (compileExeOpt_correct_source_peak_nobnd compile_eq hsrc helperBase hBase (hooksSim_helper _) envKeepsSymbols_helper hlegal hsig
-    hfs hf d (intact file) hoc (clifRun _) clifEntry hexp rfl rfl depth M).1 _ _ run_eq
+    -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
+    hfs hf d (intact file) (by rw [show pbMax J = 0 by native_decide]; exact hoc) (clifRun _)
+    clifEntry hexp rfl rfl depth M).1 _ _ run_eq
   rw [x30_r] at h
   obtain ⟨vals', hrel, k, hret, hx, -⟩ := h
   have hgr : Opt.Legal.groups fsS.sig.returns = some [[.lo, .hi]] :=
@@ -574,7 +576,9 @@ theorem cleanup_opt_source_peak_nobnd_witness :
     exact ⟨⟨3#64, 1#64, rfl, rfl, rfl⟩, rfl, trivial⟩
   have hoc := outsideCall (memOf file) (BinCheck.roByte J spec.opt.data) hstack
   have h := (Link.DeadCleanup.compileExeOpt_correct_source_peak_nobnd compile_eq hsrc helperBase hBase (Link.DeadCleanup.SourceWitness.hooksSim_helper _) envKeepsSymbols_helper hlegal hsig
-    hfs hf d (intact file) hoc (clifRun _) clifEntry hexp rfl rfl depth M).1 _ _ run_eq
+    -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
+    hfs hf d (intact file) (by rw [show pbMax J = 0 by native_decide]; exact hoc) (clifRun _)
+    clifEntry hexp rfl rfl depth M).1 _ _ run_eq
   rw [x30_r] at h
   obtain ⟨vals', hrel, k, hret, hx, -⟩ := h
   have hgr : Opt.Legal.groups fsS.sig.returns = some [[.lo, .hi]] :=

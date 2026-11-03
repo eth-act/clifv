@@ -76,6 +76,8 @@ theorem bundle_source_peak_witness :
     rw [hsig0, gp, Option.getD_some]
     exact ⟨⟨3#64, 1#64, rfl, rfl, rfl⟩, ⟨5#64, 0#64, rfl, rfl, rfl⟩, trivial⟩
   have hoc := outsideCall (memOf file) (BinCheck.roByte J S.data) stack_le
+  -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
+  have hpb : pbMax J = 0 := by native_decide
   have hd := pre_depth hP depth
   have H := Front.bundle_correct_source_peak (r := r (memOf file)) (args := args)
     (args' := args') (cs := cs.ren σ.symm) (cs' := cs') buildSpec_eq compile_eq hsrc hus hσ
@@ -86,7 +88,7 @@ theorem bundle_source_peak_witness :
     (fun _ => ⟨Link.SourceWitness.helperOk, Link.SourceWitness.extLegal,
       Link.SourceWitness.keepsBounded⟩)
     (fun ⟨g, hg, hn⟩ => absurd (hind g hg) hn) hf0 d
-    (intact file) (by rw [hfs]; exact hoc) (by rw [hfs]; exact clifRun _)
+    (intact file) (by rw [hfs, hpb]; exact hoc) (by rw [hfs]; exact clifRun _)
     (pre_entry hfs clifEntry) hexp rfl (Front.Mem.ren_symm_ren σ cm).symm
     (pre_bnd hP (Link.SourceWitness.srcBounded hsrc hslots (Clif.Program.func?_some hf).1
       clifEntry cm_bounded)) hd M
