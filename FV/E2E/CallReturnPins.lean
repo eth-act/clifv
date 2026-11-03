@@ -17,6 +17,15 @@ theorem CallReturnPins.ordinary {definitions : List (Reg × Nat)} {count : Nat}
   simpa only [CallReturnPins,List.length_map,List.length_range,← List.map_take,List.take_range,Nat.min_comm]
     using ordered
 
+/-- Agreement with the callee's return pins gives agreement with any prefix of them (#587: the
+call results are the first `sig.returns.length` pins). -/
+theorem CallReturnPins.take {definitions : List (Reg × Nat)} {pins : List Reg}
+    (matched : CallReturnPins definitions pins) (n : Nat) :
+    CallReturnPins definitions (pins.take n) := by
+  have prefixed := congrArg (List.take n) matched
+  rw [List.take_take,List.take_take] at prefixed
+  rw [CallReturnPins,List.length_take,List.take_take,prefixed,Nat.min_comm]
+
 /-- Equal return values agree in every actual return pin, including x8. -/
 theorem ActRet.pins_agree {ra ra' : BitVec 64} {F G F' G' : BitVec 64 → Prop}
     {us : List (Reg × Reg)} {outs : List CV} {w s t w' s' t' : Arm.ArmState}
