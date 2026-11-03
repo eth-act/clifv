@@ -1,0 +1,52 @@
+'Backend.Stock.Proof.LoopCarry.EdgeCover.of_demand' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.EdgeCover.of_header' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.headerCarry_available' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.headerCarry_covers' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.headerCarry_entry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.cover_held' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.selected_successor_carry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.selected_successor_guarded_of_carry' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.parameter_branch_no_defs' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_parameter_carry_core' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_parameter_carry_core' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Control.jump_successor_carry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Control.jump_successor_guarded_of_carry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Control.jump_body_carry_returns_below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Control.jump_body_carry_traps_below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.successor_returns_carry_below' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.successor_traps_carry_below' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_empty_parameter_carry_below' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_empty_parameter_carry_below' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.LoopCarry.defCarry_available' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.defCarry_entry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.defCarry_entry_rel' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.defCarry_cover' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.Witness.back_edge_carry_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.ParameterLoopCfg.Probe.selects_while_loop._native.native_decide.ax_1_1,
+ Backend.Stock.Proof.LoopCarry.Witness.observed._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.LoopCarry.Witness.def_carry_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.ParameterLoopCfg.Probe.selects_while_loop._native.native_decide.ax_1_1,
+ Backend.Stock.Proof.LoopCarry.Witness.observed._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.LoopCarry.Witness.observed_order._native.native_decide.ax_1✝]

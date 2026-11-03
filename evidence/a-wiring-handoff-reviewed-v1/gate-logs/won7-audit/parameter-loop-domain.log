@@ -1,0 +1,47 @@
+'Backend.Stock.Proof.ParameterLoopCfg.original_event' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.selected_loop_target' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.selected_succIdx' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.jump_succIdx' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.local_family' depends on axioms: [propext]
+'Backend.Stock.Proof.ParameterLoopCfg.jump_carry_returns' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.conditional_carry_successors' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.conditional_carry_returns' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.loop_returns_below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.loop_returns' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.jump_carry_traps' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.conditional_carry_trap_successors' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.conditional_carry_traps' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.loop_traps_below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.loop_traps' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.entry_carry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.loop_jump_entry_returns' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.loop_jump_entry_traps' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.loop_conditional_entry_returns' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.loop_conditional_entry_traps' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterLoopCfg.domain_of_parameter_loop_cfg' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.ParameterLoopCfg.source_leaf_eligible_facts' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.ParameterLoopCfg.domain_of_source_leaf_eligible' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.ParameterLoopCfg.source_ok_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ParameterLoopCfg.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ParameterLoopCfg.Probe.while_loop_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.ParameterLoopCfg.Probe.checks_true._native.native_decide.ax_1_1✝]

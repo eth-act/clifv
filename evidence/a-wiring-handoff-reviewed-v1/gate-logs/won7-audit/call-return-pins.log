@@ -1,0 +1,5 @@
+'E2E.CallReturnPins.ordinary' depends on axioms: [propext, Quot.sound]
+'E2E.ActRet.pins_agree' depends on axioms: [propext, Quot.sound]
+'E2E.CallReturnPins.defRegs' depends on axioms: [propext, Quot.sound]
+'E2E.CallReturnPinsWitness.x8_call_result_witness' depends on axioms: [propext, Quot.sound]
+'E2E.LinkSys.progOsCore_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]

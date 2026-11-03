@@ -1,0 +1,58 @@
+'Backend.Stock.Proof.MinMaxBody.family_pure' depends on axioms: [propext]
+'Backend.Stock.Proof.MinMaxBody.family_quiet' depends on axioms: [propext]
+'Backend.Stock.Proof.MinMaxBody.family_single' depends on axioms: [propext]
+'Backend.Stock.Proof.MinMaxBody.family_formats' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MinMaxBody.minmax_inst_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MinMaxBody.minmax_source_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.stock_lower_minmax_scan_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_minmax_record_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_minmax_body_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MinMaxBody.emitted_record_family' depends on axioms: [propext]
+'Backend.Stock.Proof.MinMaxBody.actual_minmax_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MinMaxBody.actual_minmax_body_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MinMaxBody.actual_minmax_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Scalar.domain_of_minmax' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ComparisonRead.no_mem' depends on axioms: [propext]
+'E2E.ComparisonRead.spec_eq' depends on axioms: [propext, Quot.sound]
+'E2E.ComparisonRead.step_frame' depends on axioms: [propext, Quot.sound]
+'E2E.StockMinMaxNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMinMaxNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockMinMaxNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMinMaxNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockMinMaxNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockMinMaxNIWitness.source_returns' depends on axioms: [propext, Quot.sound]
+'E2E.StockMinMaxNIWitness.source_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMinMaxNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockMinMaxNIWitness.classifier_accepts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMinMaxNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockMinMaxNIWitness.selected_roots_present' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMinMaxNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockMinMaxNIWitness.compiled_semantic_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMinMaxNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockMinMaxNIWitness.source_family' depends on axioms: [propext]
+'Backend.Stock.Scalar.minmaxBodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_actual_source_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_source_operands' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.stock_lower_available_getAs_type' depends on axioms: [propext, Classical.choice, Quot.sound]

@@ -1,0 +1,66 @@
+'Backend.Stock.Proof.CastComplete.opcode_inventory' depends on axioms: [propext]
+'Backend.Stock.Proof.CastComplete.stock_lower_cast_selected_rule' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.CastComplete.stock_reduce_selected_rule' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.CastBody.family_pure' depends on axioms: [propext]
+'Backend.Stock.Proof.CastBody.family_quiet' depends on axioms: [propext]
+'Backend.Stock.Proof.CastBody.family_single' depends on axioms: [propext]
+'Backend.Stock.Proof.CastBody.family_formats' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.CastComplete.extend_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.CastComplete.reduce_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_extend_scan_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_reduce_scan_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_cast_record_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_cast_body_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.CastBody.emitted_record_family' depends on axioms: [propext]
+'Backend.Stock.Proof.CastBody.actual_cast_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.CastBody.actual_cast_body_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.CastBody.cast_inst_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.CastBody.cast_source_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.CastBody.actual_cast_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Scalar.domain_of_cast' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_source_statement_family' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CastRead.step_frame' depends on axioms: [propext, Quot.sound]
+'E2E.CastRead.no_mem' depends on axioms: [propext]
+'E2E.CastRead.spec_eq' depends on axioms: [propext, Quot.sound]
+'E2E.StockCastNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockCastNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockCastNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockCastNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockCastNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockCastNIWitness.source_returns' depends on axioms: [propext, Quot.sound]
+'E2E.StockCastNIWitness.source_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockCastNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockCastNIWitness.classifier_accepts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockCastNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockCastNIWitness.selected_roots_present' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockCastNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockCastNIWitness.compiled_semantic_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockCastNIWitness.checks_true._native.native_decide.ax_1]
+'Backend.Stock.Proof.stock_lower_mixed_shift_record_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftBody.emitted_record_family' depends on axioms: [propext]
+'Backend.Stock.Scalar.castBodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockShiftNIWitness.source_family' depends on axioms: [propext]

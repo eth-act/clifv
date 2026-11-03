@@ -1,0 +1,10 @@
+⚠ [623/772] Replayed FV.E2E.Main
+warning: FV/E2E/Main.lean:81:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Main.lean:87:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [698/772] Replayed FV.E2E.Pair
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:165:16: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [1202/1202] Built FV.E2E.StockCfgWitness (1.0s)
+Build completed successfully (1202 jobs).

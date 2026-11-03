@@ -1,0 +1,4872 @@
+[
+  {
+    "file": "won7-build/FV.Backend.LinearCfgNIProduction.mem",
+    "sha256": "b56d44afc9e584b63cd519cff866bc2fdb98542e20726b0a64a67df1ac1bd9d0",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyCapturedExec.log",
+    "sha256": "ec2b4427ea13a16e73f494faa6f993455fd118a5fc8a3f3345448ae409a38d3c",
+    "bytes": 12238
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeT.time",
+    "sha256": "06556eb9ccea3addc11a31a45be90b709de95bbfbc3f0c60f5a646facc3e14fe",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecGoodReads.time",
+    "sha256": "f0c72bcca4fad61cdba2aef3646538d752bd84d05c40cbd17ed2e35bf2bd4884",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.MixedNIProduction.log",
+    "sha256": "352d2fb1219c34eb8f66a3b572fd27a26297f289c1199e227e478d70e512f5f8",
+    "bytes": 98
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPreparedPipeline.log",
+    "sha256": "d19283ab3d26cd00acc46acbe4f51faaaf95ba6dd7da3c89aed43b3449b834a6",
+    "bytes": 9142
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinChecksWith.log",
+    "sha256": "93d6202480a64af91ef31117d0286e75d8af380fed3b6ed4da5b1d2b6e3cdabe",
+    "bytes": 9387
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinaryGood.time",
+    "sha256": "4be7d5e12f8aa6340f5031d01dd4fc63905475112750e7d9916b7c5005e57478",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinContract.mem",
+    "sha256": "e64ad88fbc23f67859cabcafde959f9516c31732b2976affada64c420b5a581f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMulProductionRuntime.log",
+    "sha256": "baec4d3c8ebe291f9967ae101aaaa385d55d39968aca3fcb2c52e91bb88bf6dc",
+    "bytes": 119
+  },
+  {
+    "file": "won7-build/FV.E2E.StockArithmeticNIWitness.mem",
+    "sha256": "82c5165e3ac25f064d704c137a9ac78ada44385524120738ae874842141f3cc9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedRuntime.time",
+    "sha256": "f9d70f64c255b2921fd3f329a40d91f0d8fc1f6fd7434b9fa8e24e4723e1d4c2",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.ReturnPinProduction.time",
+    "sha256": "9a2a7e8f44171ec0b8f801aa8eec57f13c565988b59a365f630ed1a22f4751de",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinRetryWitness.mem",
+    "sha256": "889bef65bef6b90ca9f7ff66b3e2433321e30b503f384a726bd5528e46bc811f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticMixedCompilerWitness.log",
+    "sha256": "7770aa6537c4ef5814d2868bb3538c52bc28f512ab58d7db6f24ad4a164f8dfa",
+    "bytes": 10739
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryBoundaryFacts.mem",
+    "sha256": "36bf7e08437f770a554af2577d1698905fd1c513afcd222ca03f4093a4582b12",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryIntegerNIProduction.log",
+    "sha256": "58e4b6a9efbfc076da3717c7c575e54cc5d1d1f295b0fa9d6838c3cc82b1a503",
+    "bytes": 106
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledProgramReturnPins.log",
+    "sha256": "852f0709174e981f5bf6f02b4307d1e0066f2572d7628dbcd4f7b365becb5a58",
+    "bytes": 5790
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryStoreNIProduction.log",
+    "sha256": "e9469809350b6ba561ebc1e1637801ad253b378db9204beef97c868a9c5b1a89",
+    "bytes": 104
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinChecksWithWitness.time",
+    "sha256": "a68c4dadf025ed25a27f63f9941561be0ade7555328ccc5d243b48ea656c775e",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatLinkCallsT.mem",
+    "sha256": "facc0412459b40055d338ba8563dcf33bc7b1183b54d7dad54c177bee66c3970",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupCompileT3.time",
+    "sha256": "736f723a90e80280cb354bd2b6bd135fd3c47a0c7db8b1d1e660a06ae0be714e",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.ConditionalCfgNIProduction.time",
+    "sha256": "71986a654b860decac2e609b8ed1608e70d1822825c9136b3bcb51f885a95a3d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinExeSourceWith.mem",
+    "sha256": "1f2b06a3fc94b81a14d4ae65cfef519a6f9d55d336985c481e879da8a5596f62",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockGeneralDivProductionRuntime.log",
+    "sha256": "a6c76af02b237e114ac608daacb193eccf3c159765475cedefb0d359a7de4431",
+    "bytes": 126
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterLoopProbe.time",
+    "sha256": "e6bd233b78d9bd3bf2ebb6c468cd9d97e3fc5d73d3124c1952e1227b46537eaf",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryLoadStoreCompatibility.log",
+    "sha256": "ca9cfc57017cf14be6dcdf49fc9aba58f873c6e09405fbb487a0d2f634bc0848",
+    "bytes": 120
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupCompileT.mem",
+    "sha256": "fb6e491fe594f2849bd7da8af846141dd86164876db2a48637dd83a55913b3a7",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockShiftProductionLinked.log",
+    "sha256": "dae7e65208a8ee3c15715e9c049aeac29e34d0480ab755496292f774ce45d005",
+    "bytes": 10999
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatTryCompileExeT.mem",
+    "sha256": "6e6c2dd7615f98d9e2dd69efc9857241d4046dcc6a908b72cdeeceeb1f273307",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticLogicalCompilerWitness.time",
+    "sha256": "cbc01ab7b1d7da720632ce709738be91312928371ac40c973859b0e1bd7f3fc3",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.LogicalNIProduction.time",
+    "sha256": "28b70e55c27e0aaeda530d4b8622c003abc9241c7ce5250713dd252a16074c14",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecRunNT.time",
+    "sha256": "3f8518d73e034aa6b0e5356d1bbf717fdf781efad59c3553114533e76df66eb9",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinSretWitness.time",
+    "sha256": "aefb93024de10834120025c02ccc0ada6d75406cc7476d06c14ca710293a1033",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinPipelineRetryWitness.time",
+    "sha256": "db5919918369b9d9d3c94d57feae432e7b603f5561c0beb8620ba6999b481dc7",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileDefs.log",
+    "sha256": "95c1e8b410d6bb9e652f7289473008fab8429d8cda44d36ef5f0c49bffc54991",
+    "bytes": 9519
+  },
+  {
+    "file": "won7-build/FV.E2E.TypedProductionChecks.mem",
+    "sha256": "c97d85d0512da38253de19b1a83fb76dcd5e508196dbbf20269d4092c809732b",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMinMaxProductionRuntime.mem",
+    "sha256": "12289e88dd2c931f22b5b31f72a4068017a3e2396873de79decc072a501af5ae",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledSemanticReturnPins.log",
+    "sha256": "915d484df0e88684d8e2f19d0420f57e5ac39d65185f879a3d219df524475ca2",
+    "bytes": 3030
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterArgsRouteWitness.log",
+    "sha256": "afd4d3b8d5fe3f5cab199ccd64fee1ae6b6596d9cbbbc55a11d80ab27826116d",
+    "bytes": 118
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPreparedMetadata.mem",
+    "sha256": "aac7a7008d1775fcb3f49db4cd1f2ba02e1c5405233b4b02ab7d31e179deaf2d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemorySretCopyProductionObject.log",
+    "sha256": "4d413c4c06fcadab77e3ef9338612e117fed24575eb008eac8a3844a5ce5b130",
+    "bytes": 129
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecGot.mem",
+    "sha256": "ba882e10dcdea71f31be751d1890068e2a5ccbb51af9c8ebf4ae988691a82214",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyExecBoundary.time",
+    "sha256": "9b8bd3d40ab856f414ab3f0f0d4fb09e1ceb521fe8574c4c5ea050960e20af53",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockShiftWitness.mem",
+    "sha256": "e28dd1edf9d34f1fd024591cfff3dd78238dd55ca0f05a25cd348860e7916fe4",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemorySretCopyCompatibility.mem",
+    "sha256": "2f0e91ee1ec0dd2199d41e4acc6ee8d65c22a903ad49686e538e3e358ce19a61",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockGeneralDivChecks.log",
+    "sha256": "81aedda8d1266e77acab18c5703eb39ed1362d6db926482f5132959db7fba7d0",
+    "bytes": 98
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticExeSourceT.mem",
+    "sha256": "4c11c33f680b8e80bdbcca615e2cd9a0da4da7cd190f8496eee9b734c0ffd82e",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkOutCleanupT.mem",
+    "sha256": "4aa3ca449cd2e32d37dc266961ea926ddd9d96fe51318b7a8e8cb2cdd0b6c7de",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinProgram.log",
+    "sha256": "757d1dbef7390fa7290a3abf71a5bf591a7ff25ccbf9cb9e976113c7d88dfdb0",
+    "bytes": 7578
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinChecksWithWitness.mem",
+    "sha256": "a5524386f7d9f4cb42aea00321e788df1f3ecdf0fd991b7796628a15cd0a1623",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatLinkCallsT.time",
+    "sha256": "3eda0d62a8d32cc7bf859388d1c9c916f7199bbdf1c3c99d0cdbaba3bfcff24d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecGot.time",
+    "sha256": "56dbae263b8d719cbfac5d2690ea7af92a4e4b0dc6a526f3524a9aab28f86c70",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.ConditionalCfgNIProduction.log",
+    "sha256": "2f7eb7a0017443c212043e5a61c532583886665022fe2815b5af88081868ca70",
+    "bytes": 107
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledSemanticReturnPinsWitness.mem",
+    "sha256": "711799c0432f0b56262d1866d7a9a65dd2f900ef71594945003e26d116605bda",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkArmT.mem",
+    "sha256": "48aae374015570c8198a3ee5289e4f17c4195c134b29d630e260fe2914675378",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileSourceModes.log",
+    "sha256": "c0761576d282a03a4e53fe68fe4fbfc2642cef8c9881440035361c856d107a3b",
+    "bytes": 14163
+  },
+  {
+    "file": "won7-build/FV.Backend.ConditionalCfgNIProduction.mem",
+    "sha256": "d19c2f945a8400df00af250a8c2e7d7fc931877ba0e1747e82a83a3bbbfcf233",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockLogicalLinked.mem",
+    "sha256": "ec11568ab8db7110b3d7efd92bbc5aaba674491fd598947af8f34af39612bf24",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryStoreCfgNIProduction.log",
+    "sha256": "ba832a00b8a461767f8c78094da505ead3b2e2056c162dc898fb93e4f98d331b",
+    "bytes": 107
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeChecksT2.mem",
+    "sha256": "ae22136e476bd5a6ee513e7bbbcccdf4d254702ebc56a98e228e3ea5c395b726",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Lowering.StockResultCallRoutes.time",
+    "sha256": "bd3e1fce4b7c1b20c9b002eaadbe9544ddd0d4d209af4b6c83e0bb1d4e593752",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticExeWith.mem",
+    "sha256": "a3bf597ecb72905d0cebbaa8a660804cae1934cde24aaa57b9d7be43d8a1eeda",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticNIBoundary.time",
+    "sha256": "ae51794fd982ba71b692ca4ccaf017a336c65786bb98c35d4314954a31a797b0",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinChecksWith.time",
+    "sha256": "a5fc52e41ed63abf5bec0d4450025c5d895640951fcba0d200a3fe6c149793cd",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTS.mem",
+    "sha256": "b6c4a3c3c007ba3ed3f1849ac5c046e68aa6135405960225cc88d7ec7a976d68",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupStackBoundT.time",
+    "sha256": "535020c77e0c83a03998a1a46bba39b573239c1d80400f132cd75638dd05a434",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPipelineCheckWith.time",
+    "sha256": "70de788fb845610ac0187065f577ae906ba4769ba275092c5f8b0945ba4b371f",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryExtLoadNIProduction.mem",
+    "sha256": "8cacf598630c60e78725d19c8efb3d9afafb2606df22e5f2443c18947cd8a768",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCastProductionLinked.mem",
+    "sha256": "58ffe9d556715b25f16d2a9efc4317d51c40fca358fcabb66e14c8c53b4ba063",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupExePeakT.mem",
+    "sha256": "3d3fd1f9b13d1aff4f1190d364858b68b7abeefe41753d5ed13fc17108ea9c38",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkSemanticNI.mem",
+    "sha256": "b304401e814c708c81621ca4046e14b38fa4b097aedf0e0e299014618040d017",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockSretPointerPairedWitness.log",
+    "sha256": "7b76c1d5ff841093409a768a343a6cfb19d93ce17a4b914f361f2160cf5752d3",
+    "bytes": 3034
+  },
+  {
+    "file": "won7-build/FV.Backend.MemorySretCopyABIProduction.time",
+    "sha256": "8f8ab7c7a8d2a194900ef430a3bfd013351ba7b35f8fc6b9146300fcb3c87747",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeTotalTF.log",
+    "sha256": "5b9bbc8035552f698e8ac858589c57dc01d9dcf06126cb0834befb09dba1e98b",
+    "bytes": 9089
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecProven.log",
+    "sha256": "0524c6721fce126277b9154a759d3acfb5eda7cac1fdbae8c459cd520731d00a",
+    "bytes": 10861
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Main.log",
+    "sha256": "aad38e5140f7da639ad7ca61f845c5e6599122277ae591d0c6cdbd926c140be0",
+    "bytes": 255
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkCheckT.log",
+    "sha256": "c5a052e0d91d315f77d7e4bc051956784edde4d4cf0aa8856317b79542ddd1ba",
+    "bytes": 8487
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMemoryActivationWitness.time",
+    "sha256": "cf14583e7215cfb3a92dceaf81a04bfbe691ab0c767711ab3a958903bffc0fc4",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPipelineCheck.time",
+    "sha256": "77f0e2858413b9dfbd24907c56d400a3c0302c76e3f8d0dc15e3ab1208f7a3b7",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinGood.time",
+    "sha256": "aed03f37c5acb5882e79836e42b68aca6735925d5c2ec843f12b1fd669d7f69d",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinCall.log",
+    "sha256": "e57068c3df575e31bf18345dc03734123186911e8c6170887c631b4472058e92",
+    "bytes": 6606
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeTPeak.time",
+    "sha256": "ac06be395bf2dde48fd03c4ca1767f97ec23578f4de06eeae34e29d4dc7fad5a",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTlsSim.log",
+    "sha256": "b07e8ed5905f313e7f6fc8934de446b4c6ed565b65fd83d6995371819f79cc21",
+    "bytes": 10753
+  },
+  {
+    "file": "won7-build/FV.E2E.StockDivWitness.log",
+    "sha256": "85313f5afd097421b113e4b6f8940df9104740c3a40d0d0d45d0c9bb0cf51011",
+    "bytes": 3019
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPreparedPipeline.mem",
+    "sha256": "8f1d07bc68aba91d4b172c4c5a586ad5b44643170c5a1c7b8726bb7585c7bbfd",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryGoodT.time",
+    "sha256": "c54c45cc670a9be9c8faec6f80d37f398d6c07f7e1e1a3d1cda464c79c003c92",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNarrowRootsWitness.mem",
+    "sha256": "2086934caed1bb3778d2b7f251ec2543afb7053eeed9ef51ade04bb88079a302",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryCompatibility.mem",
+    "sha256": "d430cd8012850e7149a376e1b04d049ce0c2cc2bcd3c94a3488a51c58d7198f6",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockReturnedDivProductionRuntime.mem",
+    "sha256": "5977f140b6637047e6d040597b2bd19bfeb654aaf3d90164a14c3ddb754d9900",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryStoreProductionLinked.time",
+    "sha256": "764eec9a25b485d4b6aa0bbf4e3c18166bd4698109561aca8cffc400b3166052",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockScalarProductionLinked.time",
+    "sha256": "954cd59f1786cbe8419979337d3cfe29a09ce143b038d5cfd9c562219be71886",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockBitProductionRuntime.log",
+    "sha256": "82b4703490b85fb60170ebeb717f92688d0d945034a90c74edb0a3ba3a66180a",
+    "bytes": 119
+  },
+  {
+    "file": "won7-build/FV.E2E.VoidCallFileWitness.time",
+    "sha256": "f7f9a647ab8093292a55ce873bfd1d6c64d252fcacfc1d043e4772296c200674",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryIntegerNIProduction.mem",
+    "sha256": "3dcb23858681444b20fd0d5aa0f5b69ffac3007f2be43add268d21bcadd2872e",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticStackBoundTS.time",
+    "sha256": "b242ba42af1ede0cbb8d15da7ca2c3441aff64fc3ba561d06c3552f116ff2073",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinProgramWitness.time",
+    "sha256": "b7102146e6b41d559ad50496d42079ce4bfcba7e0201c5375a43803aaaa86f9e",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.LogicalNIProduction.log",
+    "sha256": "dc196d77c1104d6a1c9b98538a0e326ffd178f2d37ab2298577704a3c50df5e6",
+    "bytes": 100
+  },
+  {
+    "file": "won7-build/FVTest.E2E.TypedLinkProofWith.mem",
+    "sha256": "136c49e2d0c98aee85004ed286c516f77041048e341ffdb6d8d39a081135be37",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecGot.mem",
+    "sha256": "0b38a7da8074e77796505f994a6d3631a32f9b092f75b1524ad88a1532ca43bb",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinBinaryWitness.time",
+    "sha256": "76dbbe57d3e7cec039c381e6cf240a58b6f49addb928e8e1ce5aada25f51bdb5",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryStoreCfgCompatibility.mem",
+    "sha256": "a83bb3b24e3b7ba85f006719c0f2a104d1aa782e8ab11ee12e6b1047eebf617b",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeIntT.time",
+    "sha256": "8954806014308b8d44c0e053d6b84ec1da654fbebc136dba827ed52bff540374",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCastProductionLinked.log",
+    "sha256": "9d0e22e22d62a32c1e11766e0554caf2dbdf1475b67d94a6da9e31dc5de989dd",
+    "bytes": 10998
+  },
+  {
+    "file": "won7-build/FV.E2E.StockAluRootsWitness.time",
+    "sha256": "fb3756b89d2315bc321867a95f43c20d71ec6b6f35c03740b4d1f6b07f8d9585",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkProgramReturnPinsModel.log",
+    "sha256": "c7831b2b0201d702cc396a2912b3ca89c728c07920aeda37811d828e9fbe24ca",
+    "bytes": 5791
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecProvenT.time",
+    "sha256": "90e2afa4e5278207d721b6cdd053c22406f768ab6c5d098fbc1da5d36595e11c",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyExecBoundary.mem",
+    "sha256": "58fdb89a06137f55f2d013dfef2311bb31dde8aff2e0b948869c5c5b1d333a2f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNarrowChecks.log",
+    "sha256": "62be589ed83737d76e6e7beb99e121e92d0a42ba95107b9c24baf41f7c8a840e",
+    "bytes": 92
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryLoadStoreCompatibility.time",
+    "sha256": "81f8c0f93e4b3e0f5c220fbb4139d82d8c10df25253ea4cf5413b3dee7b2080d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecStaticT.time",
+    "sha256": "bf22321620358480d34ea184731b98915e502bb201def5e8d0685b541862314e",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockDivProductionRuntime.time",
+    "sha256": "32bf45fa30b9343bd026a0c79ccf15a7365e2f6f3b6ae2ebe627bc9b6ef40a21",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupCompileTFast.time",
+    "sha256": "af43489b62397709ea74ee5bb2089444c74f20dd5f6efa26ee884471b7204c61",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCmpProductionLinked.log",
+    "sha256": "7e097ff4b847e8b1a27154c979e8e3b3efa60e1098498f473defa2f67d19d50d",
+    "bytes": 10997
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeTSource.log",
+    "sha256": "32e43b160ccd16499f5d667bf326adc123344486a0676efcb2d45263eb3bb1fc",
+    "bytes": 10746
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinCallsWitness.log",
+    "sha256": "da9ebdd680d76749557f172108b1fed15ef577dc1b79a1a0d72fa8f8810fa0c3",
+    "bytes": 9397
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMixedDivChecks.time",
+    "sha256": "5071268121b0860a96f8c2d93080e7fcf207457dfd901dbc9997124d12724d34",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockLogicalRuntime.log",
+    "sha256": "2c66d295fa106722a53b90baa0706a89f450259e344dfbefe295a03382cfd241",
+    "bytes": 113
+  },
+  {
+    "file": "won7-build/FV.E2E.StockResultCallWitness.time",
+    "sha256": "7c673ba115eff0a13201d5a8de15a202ec36aaa2db86adca721f1f125b828493",
+    "bytes": 92
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupCompileT3.mem",
+    "sha256": "cad21dec3148a5613c6b4c16cf1f6f3a88fc6b62c8eca0081e43f001fc147f58",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCallStoreProviderWitness.mem",
+    "sha256": "4e31be5ffc0819a10f8a7109ba8285b1da83a064d29e22b61a7e200a3240abc0",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecRunNT.mem",
+    "sha256": "130c25c9581b1dae6fa192f412d3ec9b384a26552aa82714eb0549e3887710ad",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockLogicalRuntime.time",
+    "sha256": "e8ef3b0b24b34ec0ac81633ec79295fa1f7779cd18e366ba2f9bcc2d95139738",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryCapturedCopyCompatibility.log",
+    "sha256": "24d1a1984c3cd3889c8c12c8f47139b9885fdfd236a538e50a3e14b5e3b11e1f",
+    "bytes": 123
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryRetainedRuntime.time",
+    "sha256": "88159e1676549edeca9bdb57e230a5feae5ba824f990a2a065980926f428050d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMixedWitness.time",
+    "sha256": "ccd3bb95006c3cba2883f6bce2b634faf58436e89eef9446e639f5c8343c8931",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinGoodWitness.time",
+    "sha256": "db77309760cd288378c9eb85616be3d196c075c885c0b06a07c8719ce0a63a15",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkGoodT.mem",
+    "sha256": "adc55209098aaedfd20e690d7c55718bfe82b32c9decc1b3a065f430cde9aa37",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecGoodRun.mem",
+    "sha256": "40d4962e8b8cb231bfc3ff6f1194baf0d83f7908e20d992d4fe1dc03086ad0a5",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupBinCheckT.log",
+    "sha256": "527e6177567dcf405edd106cf2ba014cf83ac7b6be03f759264915f1a159e7e0",
+    "bytes": 8497
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNotWitness.mem",
+    "sha256": "aa67c07cc0d28ff0805107d3ae40181fa970e69b19cedf048c069cc534859aae",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecGoodReadsT.log",
+    "sha256": "8a0f32834b04c9c01c130a9862f2cd31fea1c17e08db839919b9a408f8ad8fd2",
+    "bytes": 9201
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecProven.time",
+    "sha256": "9e9fbd85304b07e1b5f75f292e7ee11b6f68ac86265f3152ff109887551829cd",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticCompileDefs.time",
+    "sha256": "c67e6ba07dbb93b56132f933cc6a20b33a5fd57083a0f0d6eec684f6cb4740a9",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatStockSretT.time",
+    "sha256": "f60bae6dab1cd632b08cae9f403fcb19f4f245f3c9fff5400200535f50e7fbea",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMinMaxWitness.log",
+    "sha256": "edfd0c5cdc8d9806a9b7dbe58a9508de9aa1fdc7a09540ccef85b065818793b3",
+    "bytes": 3021
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinsWitness.mem",
+    "sha256": "1d41fffeec3b6710f25bad3a49e4048765ce13ff11dfe3337729da981181e799",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockArithmeticNIWitness.time",
+    "sha256": "98098575546a22f4cb1031cb89e9a42abd91dfd23b8860ce4204cdd0df2f690d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryExtLoadCompatibility.mem",
+    "sha256": "29a6982633f1a92c8f578a42c198785a04fe4e03460b61a658d8f436ca5a72d8",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockShiftProductionLinked.mem",
+    "sha256": "46dc6a04bab38252f317ccc3b6e9ae9ad10cb808e84a56303012cee630771a7e",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecBytes.time",
+    "sha256": "f8b46b083297ece49945395cf616c2e3041ec55518060dfa301967baa8adbef4",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockParameterTrapWitness.mem",
+    "sha256": "935aff99d598deb2bd42ec0a400d7f2e9c1efa813ea4e5368b71aa74718da615",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledProgramReturnPins.mem",
+    "sha256": "8dfe0863f100003c77364590676fec0377e96e2d8405dbf8385c23e391f9b5da",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatStockCompileT.mem",
+    "sha256": "695d90fc2d84015ceadf02c88e24db9fa895bb72452185f8f9703ef4ce441a3f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockSretPointerPairedWitness.mem",
+    "sha256": "9fbe38e6240a1dc58e36804fbef9044c1a47b68a32d5259de23e6743e16d920b",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.PipelineCheckT.time",
+    "sha256": "c3ede80868f7771f5813bc6f9df472abad5a6c8d8f8bd99755d61c51bb4dfc2e",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockBitWitness.mem",
+    "sha256": "4c2db4fc79c8bae4437c1d513d2d1894d44ae6afadb80ae7d2953d3086b945a2",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkSemanticNIContract.time",
+    "sha256": "061712882bdd53301327425618b92c4d89bc16d3901900d23ff98bb1aadf9912",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockTwoBlockProductionRuntime.log",
+    "sha256": "b6ea131ad48833c7ce336ffc295938d4e6ccd0b3e31ac39351ee6cb689b64dd4",
+    "bytes": 123
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinCall.mem",
+    "sha256": "b9dbd17fd02926234952b2d05045e627942d8e26ff0ec2061b2fecf79f124129",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecGotT.log",
+    "sha256": "54d4ea0d5f2de79b247e8fb961e154b2ef22ff66f1bae1685fdd19bcf866494d",
+    "bytes": 9904
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedRuntime.log",
+    "sha256": "f66a23b3bf3cb68f568f2cd3595c5400ccffcb591b735ff86dac9f34a4028048",
+    "bytes": 111
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupBinaryT.time",
+    "sha256": "9fa22e22dba91a88d4724f6d7f60a4b09bca7b8e9c1c8c2e87417b06b5716092",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryStoreCfgProductionLinked.time",
+    "sha256": "0c4cf24984729a5386babe57f1950fee95081ef99fb4be213849b8b67c067067",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockAluRootsWitness.mem",
+    "sha256": "da1e72aa8cf687903dcc3932a1cd994fd6a8c00bcd2c6db84380afa87f0e2c65",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeT.log",
+    "sha256": "70b788e79e544bffe0054b3b309930ff9f8c009bf38029c03b7a4ce9e9c2fd36",
+    "bytes": 10740
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledSemanticReturnPins.mem",
+    "sha256": "ab4d3365c1372f569448da4ea4c9aa5e2e2fc6edcc35e0a2f5641418324289c8",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticRoutesWitness.time",
+    "sha256": "439ec899212ff2feaf631f5806d999dc495e38a84416652843ee9e36db54dc45",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinPipelineRetryWitness.log",
+    "sha256": "f8386a8b9007c606f69eaf7b580e54f85ef80e2d9f664bbd71c763d579228ddf",
+    "bytes": 9397
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeChecksTF.log",
+    "sha256": "7f68ba98e8de3b1b3e0d2260c6e887011f87887b4f6498c64ac1ed6a6d8a9b46",
+    "bytes": 9090
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticStackBound.log",
+    "sha256": "c52660b302eec98ef4cd789c942ef3da1a325cfca38cb0e589896f0302a0c6ba",
+    "bytes": 9134
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCallStoreProviderWitness.log",
+    "sha256": "78957c97143d0b8f606cddfbf316a58244f5489808f2322e5c2f1d1121b5de43",
+    "bytes": 715
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkOutCleanupT.time",
+    "sha256": "9503c99f47067f73737c715b0439c79659d21185187035a8d93cc670607a00c1",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.ConditionalForwardCfgNIProduction.log",
+    "sha256": "23c452ea6aafc9df70822eead4c4bb57ae54c2be89dd5bc168d78a32eed08a07",
+    "bytes": 114
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCastWitness.time",
+    "sha256": "d430ceffbc822866a7da8e253d4c44ea279e035af654f9137c3aaf639019c3a1",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinPipelineRetry.log",
+    "sha256": "1cd7678919f688f2bf29193557acc9bd38e37dfaf20ed2a9220afb7c00d7590d",
+    "bytes": 9390
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticCompileDefs.log",
+    "sha256": "3539f0205dcc0e8f0c3d0b71ca29d31eafc7178133d61fa24d0fcb3bf3696186",
+    "bytes": 6543
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecGotT.time",
+    "sha256": "245db2d718c0c61b77cf3101ee41f814ac93e24decb216051249b8b912769c01",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupCompileTFast.mem",
+    "sha256": "2156ee517dba6d3d474d5be1f99b397d8cc16a1812a99bc7ff8800a03a6c1635",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryStoreCompatibility.log",
+    "sha256": "1115ca0e263ea4f4c37ddc8a371e71a38a169b76d808ccfed2104bb14fec74fe",
+    "bytes": 116
+  },
+  {
+    "file": "won7-build/FV.Backend.ArithmeticNIProduction.log",
+    "sha256": "1336ac64f294dddd0e435d16227ad349a7249802c48c801c239865f5ae2dc65b",
+    "bytes": 103
+  },
+  {
+    "file": "won7-build/FV.E2E.WorldReturnPinBoundary.mem",
+    "sha256": "e806b950cad600e03068a1939de3e21070b4a073ba076fee6a1a9902b7681506",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecGoodRunT.time",
+    "sha256": "e0b426c51f8e8e231a6796be186518aa80c6de9c58c6dae4badd5a79e3f24beb",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileRoutesWitness.mem",
+    "sha256": "83b9f03437ac25d4280c9600106fe006075aed18d3198ba147a6f45273a40cbf",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.MemorySretCopyABIProduction.log",
+    "sha256": "53cd62082e9a4933302976973da9613a4b8b3f168981dcf276ff23ad2c983424",
+    "bytes": 108
+  },
+  {
+    "file": "won7-build/FV.E2E.TypedProductionChecks.time",
+    "sha256": "c2e542ac8ddfe047a08e328529d89d9347e26d31cafa0dfac8d82a8ab14eedef",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecStaticT.mem",
+    "sha256": "4f7941270aba63e43712070179d10a76b4708af6ec7d23c2df63f92f3b53147b",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockGeneralDivChecks.time",
+    "sha256": "3708fbdbde14631c7555b4072b82741238656447ff86db7db1cceb1048c20fec",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecGoodRunT.log",
+    "sha256": "c489ea6ffd0fc93a4dcb7c9df6ba121f55f1466014b953a73aa539852e1db7ae",
+    "bytes": 9188
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupCompileT.log",
+    "sha256": "b465fe6025efb7ea85d55a4164587dc93c55a8a435ae8ec25fe715d66e0654b4",
+    "bytes": 10684
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryStoreNIProduction.time",
+    "sha256": "baf412bdaea5a9673cf64d364518b3c570e4281fdd742aee5df344e43701bf94",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryLoadStoreProductionLinked.time",
+    "sha256": "db1625eea179455b973ef5c9fb92f93540a3665c995dd1ca26c847dcbacb1aa1",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockHighMulWitness.time",
+    "sha256": "6732540a51daa3c75b4ead0c10a7e41a15af73928172a6c76adc121e14024e9e",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryLoadStoreCompatibility.mem",
+    "sha256": "f3f26af59d6d6a0922261efe13616fc70353798be8c7198c0277a614cb51cdf6",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCmpWitness.time",
+    "sha256": "5f02104d5a392963491bc75a25a673a2927989ff01eac2f8b747be57827c1ae7",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkSemanticNIContract.mem",
+    "sha256": "3ab89c8c33b30bde4e71eb7d4b3757417bafd81d1f1f87a99ac8805ccee4323c",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinProgram.mem",
+    "sha256": "d8f231a7d6dd85a4fe3dfd78ac2e89503134bb2be74da69321951c241e9cd8d9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryExtLoadCompatibility.time",
+    "sha256": "3dc929dfe504cd1cab0f40fc7431a3db4f3d9265b982f88092a8b677cdeb2c17",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Main.time",
+    "sha256": "3ed62b10b48e40d949500f9d0e36f8337e2f19be44f941dd30c77c171d7eb322",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockShiftProductionRuntime.log",
+    "sha256": "f8dfe4d4f304620c9c1ddffc63f761a2db9aa87a4946bb2e1589e4c6b57bd264",
+    "bytes": 121
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinary.mem",
+    "sha256": "904a0adcd7122cbd80bb545f3ee7e2261e4e27eef0d7a23c0483c83cfd96c8a4",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkSemanticNI.time",
+    "sha256": "5cf8efa10090925c399382e714e45cfd9bb2374ac3498eea15db6b10e4c91efd",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMaskWitness.mem",
+    "sha256": "c5091dce42dad89508c1a5a646886e34b6e29a3cbe42b2a6b5d68d22e18c5c00",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatScopeTotalT3F.mem",
+    "sha256": "fafe68adc5a9d3228131d34bfc54012e4bda8caef2fca6b75c7efadc916d33c9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryLoadStoreProductionLinked.mem",
+    "sha256": "1dfc0440044e3554ccae77608f1ce6716db6f4108c8ceea0279fbb3b69071e8d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockScalarProductionLinked.log",
+    "sha256": "5109ec17daffda122c8ffce0e83e24eb161edb32414bbbf8764e6f970be699ae",
+    "bytes": 11000
+  },
+  {
+    "file": "won7-build/FV.Backend.ForwardCfgNIProduction.time",
+    "sha256": "aa306027e51249c56e45aa9a18b7ca423da2b3f83772c8e154c0805049b339f3",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.MemorySretCopyABIProduction.mem",
+    "sha256": "0dc35d55a9ff3a1bd571ae0a7e5135d06d8e58d485da54fb12d8a62c1819b477",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCmpProductionLinked.time",
+    "sha256": "74da1a003cac80041ed608650ee11b696a68d95aa6471c81df2c89e7a605c938",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkOutCleanupT.log",
+    "sha256": "8cc2b1e57020bab965e257b3d5fa5eebef1fdc167312c0c2426e64bcd10e65c4",
+    "bytes": 9070
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinProgram.time",
+    "sha256": "0daede4e98fca72403630a70d2438352502952948c2e5fee76044d75a95e2bca",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticNIBoundary.mem",
+    "sha256": "69fdd16492a13dd752e8056a2011f8c322b8b9ffddf9733ed9180d093cb7fdae",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockShiftProductionLinked.time",
+    "sha256": "0560392b92d19c794c8725568e305dcb1df822d008bd182f66875282a9dfb7ba",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkOutT.mem",
+    "sha256": "2f8994166d54eca443815d70ec88fb7dfa2d00be729a8f488dd35393e9c47489",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeIntT.mem",
+    "sha256": "42815a889e73fdb80db5f262eedeb9646c18609d18cd27cc23640f29d0ac74b9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinCalls.log",
+    "sha256": "620ed56a5cc7ca5438177b41a1cc0fc640314736ba59847cb155e2c943b0f17c",
+    "bytes": 9390
+  },
+  {
+    "file": "won7-build/FV.E2E.StockVoidCallWitness.log",
+    "sha256": "bd40e939a814494dfde1f49a90db553dd87a791a489fcff9231144a00c70ed74",
+    "bytes": 9389
+  },
+  {
+    "file": "won7-build/FVTest.E2E.LinkCheckMain.mem",
+    "sha256": "cd0fca848a4ae5c58e9ca0db214c1e0bbd841dedfb020ee3fff07ecbb10b78e9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockNarrowProductionRuntime.mem",
+    "sha256": "4676ed4e68974098d313dd44b585e3fbfa15a9c837f351078e1bd270440070c8",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatStockCompileT.log",
+    "sha256": "4ee6c71dc4a2aba26d6d5d2c4477f20c052c9c4bb9cbd439f2baa94d2ab224ea",
+    "bytes": 14609
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeTotalTF.mem",
+    "sha256": "4ec0e747b5c2951e2835986725bf5f20d7d5f78a9a3b77d3ecdd80a786656179",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockReturnedDivChecks.time",
+    "sha256": "ff9678519b342b64284048cdb63a6dd133e54a450f0f98c06206edc3cb21956f",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticLinkGood.time",
+    "sha256": "e3f2611ed03af435537480f21aa1e71cfba1641bdf489c5da006c31a6dc3ec3c",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeT3.time",
+    "sha256": "8ad587e85e8e308fc8e829f196e5d013d65c0587583eaa975453e1bfc03c9db6",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCfgWitness.mem",
+    "sha256": "eb4fd54edd9c6ba97fcb2d1d066268644ac80869c55e58c2bc9b62abc17337d8",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockGeneralDivProductionLinked.log",
+    "sha256": "eb493db6be9b8f047d5a55e04dc97478e46ebe8e44e17b3c1f72938838643faf",
+    "bytes": 11004
+  },
+  {
+    "file": "won7-build/FV.E2E.StockForwardTrapWitness.time",
+    "sha256": "5e58fde16bf70d6982f8a3c012e17363adc48755022307273e856d81490148ab",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCastProductionRuntime.mem",
+    "sha256": "c9f453fc983badc9aee7562975be3e5d1eeb8c122fe1681ef7756bdfc6aea796",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockReturnedDivWitness.log",
+    "sha256": "c7e4b2169f23d464b36abd18b2ae39d74d399315f4491b5873f7f14d24f8fcf6",
+    "bytes": 3133
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryStoreProductionLinked.log",
+    "sha256": "efba0968cf150db0b676e9fadf0303b1ea2f3bd15166258d9cbdc877e248cf6e",
+    "bytes": 11005
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledSemanticReturnPinsWitness.time",
+    "sha256": "4dc01d8030ec98251db34aef9f7c4c53fb33d5ed96bd55a2304fd550c9615593",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatTryCompileExeT.log",
+    "sha256": "abed07be26d1482d677160112feb8c5aa90c58d0095e10236d2804e43343bf72",
+    "bytes": 10740
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinContract.log",
+    "sha256": "0a440761626a70d9633a57dd6c69c00d838e2075880121cc9fe6aacf1a2c536b",
+    "bytes": 5786
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinProgram.log",
+    "sha256": "1478277405dc026434164493395e8847ab49c43260b148dbbf8817c3c731db0e",
+    "bytes": 9392
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinsWitness.log",
+    "sha256": "b6f334a0da8ffff829e3fbad444a09b51bd7e2f35abd7b00607a5cb7fea49428",
+    "bytes": 7828
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinChecksWithWitness.log",
+    "sha256": "8f3177038598dc203cdded180b7cf23cb7085c58d312f818f7986fbfeb3bb6a7",
+    "bytes": 11007
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTlsCf.log",
+    "sha256": "c9cfe6e951550690bf320c83fa1495a849022a19bb1681013924b8d9fc1d805d",
+    "bytes": 10602
+  },
+  {
+    "file": "won7-build/FV.Backend.SemanticABICheck.mem",
+    "sha256": "52bfc439e1706dd4a888353333569beda981f203a5cc982abf6349b0db20dc97",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticMixedCompilerWitness.mem",
+    "sha256": "04a7338a71da7d6d817e20f20a425a7d968f8b4e5ed2c4d3f18678cb4ad75d11",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedDivProductionRuntime.time",
+    "sha256": "33e1a8d38df45f7d7341182b5f27b2026b7a23818b1523309ae988d9e28f82b6",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTls.time",
+    "sha256": "8ac3ed10caabedfb125469aa2c87aab303f5992e0ce5d59ea031a1a36bffd0c1",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecStatic.log",
+    "sha256": "6bc5bfb78683635dcff380f43cccca329c73a041947aed37ff429da69b246640",
+    "bytes": 10861
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinCheckFastWitness.mem",
+    "sha256": "9d05c1e05f89832ae953567e86edc8db3134164857239874463eb1d785f59e3e",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.E2E.FloatScopeT3.log",
+    "sha256": "d1b958fad2364441c6fda89340cff0dfd4d81a0c5d098a12dc5c1cbe71ecdb68",
+    "bytes": 9069
+  },
+  {
+    "file": "won7-build/FVTest.E2E.SemanticLinkProofWith.mem",
+    "sha256": "d861e0881978e1166de26298c6cff0057af08869aff6a2d315b4c7e9dfa8d290",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterArgsRouteWitness.mem",
+    "sha256": "e503c35c9fff51a7859ac77535ec1eb3c7b697c4e61beff25cc7707ffeb1ba55",
+    "bytes": 33
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockTwoBlockProductionRuntime.mem",
+    "sha256": "be0a5584ea33b14eec481e018d595a2a41369209efb68b47965b2e83d8b6d86d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticChecksWith.time",
+    "sha256": "4e1566b972e8edd3ac741bf30128c3a537f097f76d1ce543d196460e92b87812",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPreparedPipeline.time",
+    "sha256": "09df822cfbe2de31317077418c5bceeafdac263029ea2518b0c4830017ede163",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockArithmeticRuntime.time",
+    "sha256": "466f64a4f2ce9584c5efcc8dd04fae8494e4455e27ad9f874aefc4ebb421b7cc",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeT3.mem",
+    "sha256": "303331f598f531497a6100937bc32c27daa21d9a7eee5953008759f4ded98880",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryCapturedCopyCompatibility.time",
+    "sha256": "299b69a16fdcdf0a1adc99b4de0c5bc714536d20c09ae299acc43e3819bfbbc0",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockVoidCallNIWitness.log",
+    "sha256": "4de33728166e29984b9f3d0ba726abf44c4b29c1552ecc9027444a0ce77a3fd7",
+    "bytes": 9392
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNarrowWitness.log",
+    "sha256": "978f32baba2815e13bbbffe37d8a1e81d82ca3d0027ff5f4bed26d985502b0d6",
+    "bytes": 3022
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMulProductionLinked.time",
+    "sha256": "4b07eb87e2cd7bbaf314ef7e9a053512f1458427122eceb65ae665916f55973d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileDefs.time",
+    "sha256": "0b499a91c5b88e07fd3231d6aad6b7161f4168b73638ee1fb659c6840b8740d9",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMixedDivChecks.log",
+    "sha256": "a98b4cfe93a738304c0000f340287552e123a0ee2758b7d21183ebd14ed26ace",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupCompileT.time",
+    "sha256": "5f63ede75a9b7d7525fe95f5c6e59f67d59d3847ff160f59479700f10c1ccbe9",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.E2E.TypedLinkProofWith.log",
+    "sha256": "0107644a13a087e014230c749005770202c4c733c9af56548a6457e4c569f86a",
+    "bytes": 12859
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecGoodReadsT.mem",
+    "sha256": "b38595bb1a2e851ffb25a90358fcc2cf1ca995c8a959579c132aaa7eddbc04ff",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockLogicalWitness.time",
+    "sha256": "173a4c8a028e4edbbf563414d2d512a04a4f8286a60bfd27c72167a4e1ecc369",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockHighMulWitness.mem",
+    "sha256": "1bb857113dfb6e5dc176b9b618c16d036a489fa75ea2c1ce5c4be5a820140b6d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinWorldX.time",
+    "sha256": "459f8e0e4f9865233a33f2275e308e76a581daa1aab2dd09d7e7ef84ed1066ef",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupExePeakT.time",
+    "sha256": "a474e19269596217fb02fda6e406c25307351b4a3dc876bfc199899eba7cfb23",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMaskChecks.log",
+    "sha256": "cbb9a4fcd9914d8a262e0376afee8b6e8ee0a24f14c066ace2b321503f7c09a7",
+    "bytes": 90
+  },
+  {
+    "file": "won7-build/FV.Backend.ScalarNIProduction.log",
+    "sha256": "8c7c593815ff68f0b1891017c70b2a8ea7d762c09a2cf2c890795a752a35ebb2",
+    "bytes": 99
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecProvenT.log",
+    "sha256": "deebeecd44797f8b8c8b010d31e7e4a97d6b0c6e8a65eb03347423254a6e9d45",
+    "bytes": 9896
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinary.time",
+    "sha256": "5bb542698d96fcf14d6b7bba1dbcdc93bbda82f9822c3aa0e2c071776664723c",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockResultCallWitness.log",
+    "sha256": "57ccf69c8074499b9c0125ae2795c5e53c7ed0ff56d39b17ad80a9d2cb93757c",
+    "bytes": 708
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatTryCompileExeT.time",
+    "sha256": "3a3a4692d605e29d397d360d5698c7d31da06cf88bc86250aa3c1c33b9f02fe0",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.LinearCfgNIProduction.time",
+    "sha256": "e7ecaf323a7b98fe85fa92e2ccfd034b5d176d7ddfa70c333ce840938489381f",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticExeSourceT.time",
+    "sha256": "0892b3e9ce233f3ff791348516eb727ad39385ee8cdd4023faec9ec33da4926c",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockSretPointerWorldWitness.log",
+    "sha256": "b62086bfd59a2041ca8e79b6b324be88052d930b52dced28c57433141f9331d7",
+    "bytes": 3032
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinRetryWitness.time",
+    "sha256": "1a5d940f5efd9a42ef8d86212ab36c28d0833802df7a875e8889f937d3773429",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryLoadStoreNIProduction.mem",
+    "sha256": "3f9f095ef6867000292c14e1044a3f8768a30de495da67e45ab7adab7f78c62b",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkCheckT.mem",
+    "sha256": "4c8942b7843640e90269bce637c6b449864e0258fe3e2248da6c927a5d571ad4",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockArithmeticNIWitness.log",
+    "sha256": "97b037e379d51af930f67b9546c6c98ed0b83db8eb2bbaf8bdc8f591ad12bf8a",
+    "bytes": 3028
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticLinkGood.mem",
+    "sha256": "fa0d3217c5bb6cfbc8f3e79df9b67075c3c26a0415189fa806cb9a81269b0c79",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryLoadStoreNIProduction.log",
+    "sha256": "0d918a645cd922345fcd5944130f6d8a2f4f7178959fc17b989a414713d26b70",
+    "bytes": 108
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCastProductionRuntime.log",
+    "sha256": "b8d50f41af8a5d54cea94a7fe0e8ac755d587d735cc03363712f6cb05eceee82",
+    "bytes": 120
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupBinCheckT.mem",
+    "sha256": "f3bd20b5bace605d4ecdaed025a5b4ff403383c2a07c8ce18f49d0c9a4ed9cd6",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedDivProductionLinked.log",
+    "sha256": "2245542a4d481d9bdb758faea80da59e49c3e5ff04ed527caf19bc9c2b744cf3",
+    "bytes": 11002
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryT.log",
+    "sha256": "021620900155a557d87551c06296bcbc8a2fa8b9f1d5bb014be111e80093e662",
+    "bytes": 8484
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemorySretCopyProductionObject.time",
+    "sha256": "21d3c7bde49630b2de195130db6519b9cea08db809b2c7e8ea98be4945f4e6f6",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPins.log",
+    "sha256": "eb3e2f4f53ca645d9fc3691d66c46ad0004814f17b0a72220775cb8c2f1823d9",
+    "bytes": 5779
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPipelineCheckT.time",
+    "sha256": "a033e34bdb39700b7e1c288d4b78f8f2d5487ebc6a0ee9166819704061ddacef",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecBytes.log",
+    "sha256": "76e064f380407dfaf4b479edebdf1bb3fc2b636973d94556d8926d9cf66ac021",
+    "bytes": 9128
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecGot.log",
+    "sha256": "c558af8f933789199736a60443370fa2a35b5c596ea3c502043ce440b42e0a85",
+    "bytes": 10858
+  },
+  {
+    "file": "won7-build/FVTest.E2E.FloatChecksT2.log",
+    "sha256": "76f73010d489ea30bf713da5a0fc52ffc4eceadc363069b4a05e0bd812d5e4e1",
+    "bytes": 9070
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTlsProven.log",
+    "sha256": "4fe2aad52f710e645c568ab17a6644d6d867929beed74387577e2ce20e7f37d5",
+    "bytes": 10756
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinCallerBoundaryWitness.mem",
+    "sha256": "f3646a55c400ea7b5d8a89c260aa7de6c21102010d016094c6d5efddf2a27ce5",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMulWitness.log",
+    "sha256": "6853770d73ef415404d8edc13a986209f39edb9132ca9abb8dfe74b87e51644d",
+    "bytes": 3017
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeInputT3.log",
+    "sha256": "be570550f3db4b81be037ebe5f9cc1521ee5b0169818d9b036501d60149ccfd5",
+    "bytes": 9072
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockLogicalRuntime.mem",
+    "sha256": "529ce11e4b56c919005453aec05e834b91395762a1a388f1f899ebc43fdfe4be",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecGot.time",
+    "sha256": "2d3469e83c18ed1823548034929a40850ff4aace4185500e3428c68c7826eab0",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedRuntime.mem",
+    "sha256": "7631d8019ffdc8f6e64ecc4ef1c4d6420a75b5073597e546812b46146374f6f9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.VoidCallFileWitness.log",
+    "sha256": "a99144c243926727f778cdac7a404ee8ebab4f57a34b37822f8d828310a6ce33",
+    "bytes": 9553
+  },
+  {
+    "file": "won7-build/FV.E2E.StockReturnedDivChecks.mem",
+    "sha256": "a60e8f3d22b01ed8733ce2c7c761ff0310b4dcfdce876020e7fbfcdaa47be0a4",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinBinary.mem",
+    "sha256": "600d1e8cd5eca46499fd3adc38489496ec01b849678d221fb17676c02b24b027",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockLiveCallWitness.mem",
+    "sha256": "7a355e01552c49eb93f1813ac9ff59c2554c1d16099af14fe45a0df66425fa6c",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinWorldX.log",
+    "sha256": "c2a0b6af6f063fe25ca0176d77f911bce03483df6923b2768dd0378455a9e566",
+    "bytes": 7577
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMulProductionLinked.log",
+    "sha256": "bbf3df5916a9b4afdfda5d088319a9d3ad614351eec4eae5a5496fba2b6945c5",
+    "bytes": 10997
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNarrowRootsWitness.time",
+    "sha256": "b1c95bc7576189db1df74fc649a7c203ac24be629c0be6235128f32441fd14ed",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryStoreCfgProductionLinked.log",
+    "sha256": "53da5c6966b85b5e99328661ae0867da0913fd5574c330939b9bc0072f2f75e7",
+    "bytes": 11008
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryCfgNIProduction.log",
+    "sha256": "5f60ea8f2a2812e6c63d1b7b57e8003d517999564dd8acfa6c49027599dbfe3b",
+    "bytes": 102
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMaskWitness.log",
+    "sha256": "2f51ba0b6cbf31276857d2295b90e88d898c2188092172144927e088b6bbfe6f",
+    "bytes": 3020
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockBitProductionLinked.mem",
+    "sha256": "c609066c043960c25148adbd8e3dda8ba7921c52362fd4f558ffe4b32d0b0e15",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterCheckedWitness.time",
+    "sha256": "725440bd9e19a5ad6719652bc1ce41890ae4fb62460be67339e8a15ce08bc8d2",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatStockSretT.log",
+    "sha256": "4a31960ab153bd8a01f6ee48c88ac93b3a0a12ca35bed8d9dca126392a4727dc",
+    "bytes": 14606
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryCfgCompatibility.log",
+    "sha256": "48daaf418bea0c41be578f0064ded027427a0ac0e7894ccad49c04c67a6d46f3",
+    "bytes": 114
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinExeSourceWitness.log",
+    "sha256": "ba572789202a9c1322ced064aaafbe6f0161740760694c93492fa9db973309fb",
+    "bytes": 12240
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyHeapBoundaryWitness.time",
+    "sha256": "8274c8778c527236077cb5d9c4da17a3eca884b05dbe5acbf230bf40a37bcd7f",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCmpProductionRuntime.log",
+    "sha256": "64b5d3b3f005e48f5dfebb7b0cbf613b61f44f499cfbae01c7c58ca41bbf45a1",
+    "bytes": 119
+  },
+  {
+    "file": "won7-build/FV.Backend.TwoBlockEntryNIProduction.mem",
+    "sha256": "b593c646cd8b1f0dba2a0a7a37d36ad4dd7426db721f3ea4c9cabc5906333b15",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockDivWitness.time",
+    "sha256": "720a4d7a18e6c01ca4c560ad800497450bee047177d69af2aeb95ccda7bad843",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMemorySretCopyCompiledWitness.log",
+    "sha256": "332cc8abe24a60cfcc24cb195d36b553b79e1a4fcf35195fcf25095e6f98bfae",
+    "bytes": 3038
+  },
+  {
+    "file": "won7-build/FV.Backend.ForwardCfgNIProduction.mem",
+    "sha256": "522277998b835e05a49e7dfa4222f84ffb95bc7989eb5cc31c92e4b1235672e3",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinCallbacks.time",
+    "sha256": "d798dc5fef14a5a2703a66697492f404afc2948fe0ea01fc3236ad5f08c01376",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecGotT.log",
+    "sha256": "93dfdba75a5f8ff84ab261ce76f029dae038bcb46f8ec73352bef33adcd67d8f",
+    "bytes": 9893
+  },
+  {
+    "file": "won7-build/FV.Link.ExeT.log",
+    "sha256": "6918b5ba49860634b036b10a123056d751874f21cdc1a999189b66d25dc8e7bb",
+    "bytes": 10469
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticABIBoundary.time",
+    "sha256": "511a75e743bef744f3345e56771908f94bc5ee4f5c3d38a5f0b0f10661bbcfd4",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockResultCallWitness.mem",
+    "sha256": "10efa14d0ec202d5be14a42f3890c5db9ffe289056f281aee2af39ea82b858cd",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockPopcountProductionRuntime.mem",
+    "sha256": "4357890729c5063044d129ae72f2000d0d2510d85e3d8197730b1a5601d1efd1",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinExeWith.time",
+    "sha256": "1960408c706027380f2e1a596a12051acb37b6b5c7da4e9e211cd51350024028",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockScalarProductionLinked.mem",
+    "sha256": "1c7e9f29f42e3ac379ffc33b030a4931fb2fdc9bf54e650bbc3da8e38ec54cd1",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinBinaryWitness.mem",
+    "sha256": "fd668e7dc6422ede4a3e6fe2357b98ce83ee6625bfafcc9454f6d52dd09d21f9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.VoidCallFileWitness.mem",
+    "sha256": "a309a6053c1fa8e451c4dfe6542f2bdb4f0ce3880b0b701a511ea1f291f33bc9",
+    "bytes": 33
+  },
+  {
+    "file": "won7-build/FVTest.Link.LeanLinkMain.log",
+    "sha256": "740d0f89591ed1df44853f49b5f3f4de4873b98b582d8ca899c46f60828beb3f",
+    "bytes": 18206
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecGoodReadsT.time",
+    "sha256": "88302e183cbd1b93c5dbd81278879e57e162d55203e315303f10048c2692e9d9",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticCompilerWitness.mem",
+    "sha256": "8130cdd55f286e9dd79af1957e53fbb22cd38f0cd25b6253faa718eb11543aa9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinRetryWitness.log",
+    "sha256": "1448f7b42da2d47ea4f2bbdf20bb45f8b5585e1dd5173a4b433d173a3128f12e",
+    "bytes": 11000
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecStatic.mem",
+    "sha256": "1662fa39774e8705cfdd2c971792c1a5acb724ec6431db4368ff2049b200aa21",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.MixedNIProduction.mem",
+    "sha256": "20b307931006b5c2ed797d016d9d9efeb317353623b3106ef4b7ad88a5124140",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticStackBound.mem",
+    "sha256": "60bc8184548a751a3a3f525380eb0cacdde7efa4514f37e48d6a6fc9a990904a",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileWith.log",
+    "sha256": "cb1b59f087112d2367a12d307e535e7db744f5078890bddfcdf5cd109e39e68b",
+    "bytes": 9518
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMulProductionRuntime.mem",
+    "sha256": "d430cd8012850e7149a376e1b04d049ce0c2cc2bcd3c94a3488a51c58d7198f6",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryStoreNIProduction.mem",
+    "sha256": "57807f40e84a493b736ded8fc4d50d3d01ae64f229ce33ed587b4bcec689df85",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryCfgCompatibility.mem",
+    "sha256": "6aa579e75062a9b27e4e6203cc0b7ab7182bdae757a677ed32df322eb2206e39",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.E2E.LinkCheckMain.log",
+    "sha256": "303ff9f1685857dcda7053a5b970f36704d90a7ec31b0ea1ed372dd2ac7d2dd4",
+    "bytes": 15491
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileDefs.mem",
+    "sha256": "9b46d74c148d3d0331276483639c2d6f24efe7f708b0609dbce03641134a90eb",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryCfgCompatibility.time",
+    "sha256": "6217bbd1765ea6c017a84fb479e3b0da9e74be351a6c0125c36c26e2c831f900",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockLogicalWitness.log",
+    "sha256": "761c616e2f577c268b0d81e29294f550cecb85f651309ad1ed0b29643959e18c",
+    "bytes": 3021
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockNotProductionLinked.time",
+    "sha256": "2f434ec591712a5e1d4817e00c69dee92d46b872663b99c8a96f72a61e520b4e",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledAnyTS.time",
+    "sha256": "f221a20d19768c51e9955069149c9c4d0f07ba9069f2cbdf4f65fd5c8d553075",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecBytesT.mem",
+    "sha256": "e8afff3ead5e41e1b3f1838ddd0194aecc6a7ccd1f8576a1294446deee0f9abe",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryCfgNIProduction.time",
+    "sha256": "c3227fa6be9e1e786a2f7d365de5c8b64995fec77879c2eb5bdc2ab2f551c843",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNarrowRootsWitness.log",
+    "sha256": "9105728f0f56d2f381ce0b7e34dbd52a33de9d3185a825938d1946c22ab6aac5",
+    "bytes": 3026
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockDivProductionLinked.log",
+    "sha256": "7c77a21000cc62d65b05437191582759b413e86979760c6681ad5b0e95b7d1d8",
+    "bytes": 10997
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryCapturedCopyCompatibility.mem",
+    "sha256": "f57a7cd0af9590143e41d8833fad006948d551ca91dee2cec84d966a6bdce427",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.VoidCallABIProduction.time",
+    "sha256": "ad74e2489f3fe92bd2868037ce36f7a64d43a044e52af04b099aa284fd7ff279",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMinMaxProductionLinked.time",
+    "sha256": "fc914ff956cf0cb546a82b9c3153a6ef41e7ebd5b315c4e9f3e7b4a7ffdcb5d2",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticChecksWith.mem",
+    "sha256": "18efbd1981584a5099f1c59beb4081686d64a41c38c4044c0ddfd2b5c45a3d92",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinaryGoodTS.time",
+    "sha256": "b9a8929d2cc54b427299a9847e19c509ce95a75e2600385e78dc0328af42894d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticExeSourceWith.log",
+    "sha256": "1ee10db604b11f1336d911e0bbeb2f3810bd171a9c345b840f23afc6902e86b4",
+    "bytes": 10734
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupBinaryGoodT.mem",
+    "sha256": "cbf5f9e36c60a58811aa6566c0b9e27cb1e963b03e1ea1951e50f249814b4a29",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileSourceModes.time",
+    "sha256": "da7117d22f940fc23b822ceb3ca99a00e0f4e06830d8d14e1ed9701194db60f8",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedDivProductionRuntime.mem",
+    "sha256": "cfcbc9203954fe9ff5af11dec34c359c6ebd0766ff5f548f6d2b67873e80ec2f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMinMaxProductionRuntime.log",
+    "sha256": "84a2528f6dcfa78246799fb06ad1b80b8636faa6b5f32eac036a8f05bf18552c",
+    "bytes": 122
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecStatic.time",
+    "sha256": "5572b58f6354610d7b3134c511bd9d4689a6901f6a550223ad041517f48573c9",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.E2E.SemanticLinkProofWith.time",
+    "sha256": "09b00706e67c5ac3b5ddb3858c2072f3b4f58b3a07eba56b79509ff7bb864149",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockGeneralDivProductionLinked.mem",
+    "sha256": "0216dc1758d2fdb15731dbb65f40df38de727eb7eb515bac381a2eb5f1bbadeb",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockNotProductionLinked.mem",
+    "sha256": "da2afec7a719df0d1add3da3052802fea62d96e939b0960ca29a09df7dc86890",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedDivProductionLinked.mem",
+    "sha256": "b4ee32cddfa053754b2aec88b509d559b3e8a602788596e277465fb1b61f6f7c",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.BinCheckT.time",
+    "sha256": "1ea9fa35db2caca1f127555cbaaad8fb77902302c93d3dc0b3530bc8e8c38f8d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockArithmeticRuntime.log",
+    "sha256": "3bffb69d0b2547b05b9588bdd24c11da778b00c8ba778b00251c547286cca483",
+    "bytes": 116
+  },
+  {
+    "file": "won7-build/FV.Backend.Lowering.StockLiveCallRoutes.log",
+    "sha256": "e36097c788f8f4c57717617db4dfc0ebd263f50519abb358347747ffbd1d4a5b",
+    "bytes": 109
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMixedDivWitness.time",
+    "sha256": "e26c3fb978e48a93302e7ea4b766ef5ab1e75739aa25a1d30c7580be9257dd83",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.ReturnPinCheck.log",
+    "sha256": "ec88ba6ab85add38ba197e831e55becdc4b614dbc7e03a1d2f03a959586ac2fa",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMaskWitness.time",
+    "sha256": "eb103ee61a330a42e835e713fb96092d63f3083b2688b60cc11f5e0c17b3f813",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupExeT.time",
+    "sha256": "da1344c8c342b2880266193103a6cfb934a68cbc84379920630b3aad202ba742",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkCheckT.time",
+    "sha256": "fbced4a28ad0b6e7fe7ccba518cec1b224c54321eeecd2baa098d7cfe5776507",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterLoopWitness.mem",
+    "sha256": "d9f1d3314a5d75acfd45de6fe494a06fd1609ed769851fa5db667324feb48962",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockNotProductionRuntime.time",
+    "sha256": "9bcdf6f9da78e4412b0c33ea7e45e746dfd3cde0a546d21c02e1daab9877f55e",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupExeSourceT.time",
+    "sha256": "0ff58172ddd4deb390ca580ed834760905c97923212deeb5a2bcf1c24ec5a298",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedDivProductionRuntime.log",
+    "sha256": "001d1a73f7a0c9f406622c9aa8c0025b14bfe537f2cf3c19db1adce22fe5ca5a",
+    "bytes": 124
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTlsCf.mem",
+    "sha256": "a80a108a3acb41e43dd78c148f42887ef392957d620ac4dacb41363057ce27f5",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinGood.mem",
+    "sha256": "b05d1fbc2085b24e10e4a1b5ae870d9b8f39710f05fa287ba1ebb674abb7126f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecBytesT.log",
+    "sha256": "59fb0bd6713b7b10aa59224389ee5d15cfe2635d129703da7b13c9d76373a4e0",
+    "bytes": 8487
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatExeT.mem",
+    "sha256": "fb7754227117be3f230fad689f452ba3eb44606bd3cb3da73cc6d0640fe03b50",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileModes.mem",
+    "sha256": "eb15c267b8830edb18888252e4862b17a74cc6562a602ded778d2b40462c658d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinExeWith.log",
+    "sha256": "22222519a913ab4d4f5703fe7999eee17876cca1fa2fc8e3e2ab57194b06b294",
+    "bytes": 11400
+  },
+  {
+    "file": "won7-build/FV.E2E.StockVoidCallWitness.time",
+    "sha256": "8b4ca2d93e714277c739621526638fdd6fcf705dd661a018d07ca7a68f393a71",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinLinkerWitness.time",
+    "sha256": "780e2f5ec3debeef28abc36293d2f5ad98e1352023ec9f3d08ee05dbe3374b6b",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.TwoBlockEntryNIProduction.log",
+    "sha256": "585904376e9bf810adf94388c7097e89b252809f9488072264652264b5de2d25",
+    "bytes": 106
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecFrameSim.mem",
+    "sha256": "fec9ae1e8ca77aea4bfa1ba42be990279e99784c0116452f05dd4fb0f34ab16b",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockArithmeticLinked.time",
+    "sha256": "7c059e24bf4d59cd627c192877f40da91cde5797889367584e181beee82e5aa4",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPins.mem",
+    "sha256": "b34d30330e46c321a92de666a2d5c3b9ebf7141fc5915e7a412651929ace8fe6",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeTSource.mem",
+    "sha256": "9cb1cdc621022f464a8dd9f9e748c9517e8dd48035fecfdb4bfeecab35636f83",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeT.mem",
+    "sha256": "bb656d5e62fb9f8772e2f299373bdadc3bf44207e08fa520db9b545b648dbe8d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMaskProductionRuntime.log",
+    "sha256": "f985fc2e41ce9f103658d5307cdf3e2e21654128246e35876da683a81cafaf35",
+    "bytes": 120
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecRunN.time",
+    "sha256": "edc1d7ca81138d5fd05f90070f4bda73f79822228f6e9e8e139bd1c140693f48",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinCheckFast.log",
+    "sha256": "c9ebea3b16cefb97183775b0a2a16450c86d8b9e7ce133c62210a7bce91c91b9",
+    "bytes": 5989
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecStatic.time",
+    "sha256": "7d8ffee8c827dc42083a5e4dc28b3a8ff9834bad7d982ff8634810c7922d0d27",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecRunNT.mem",
+    "sha256": "6073e7c541ffe374844c8a71c585e9e044f26678b205b9ed61830addc40a66fe",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockNotProductionRuntime.log",
+    "sha256": "ae524c91fbab30850343b35d1aaedb57acddadca8902415706136c60e8b6ba7b",
+    "bytes": 119
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockLogicalLinked.time",
+    "sha256": "2892565d9c2f378b77e37aabaa0f8b285e799a9a07466e38dfc5e8f121594a73",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockPopcountProductionLinked.time",
+    "sha256": "8ef2fbde0e958428d8740889468c9e812e22dc1d739d4df6a72a44fb954ccad9",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.ArithmeticNIProduction.mem",
+    "sha256": "66211892e1e4c51f18ac3806cfd66efd159ea5e9a7b6c6baad76caf9fcf82458",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockVoidCallNIWitness.time",
+    "sha256": "a929b920030ca3142c9b82d4a5118da90fac48c3ebf415d8f57407dd98a227c2",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.E2E.ReturnPinLinkProofWith.log",
+    "sha256": "bb99ea404db7ea55a6aa4047e7b661b5e437e0445c86ae736b28737e5959b1d3",
+    "bytes": 11878
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticRoutesWitness.mem",
+    "sha256": "84ba8cf23a5ec91f96f21964041481ce2823eaeaf3c02a06d3e5154da75247d9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Front.ExeT.mem",
+    "sha256": "55c93a7a5655e599f6c11f8d4132b5d8631291587c3eaad6c54f0b9beebad1d4",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockBitWitness.log",
+    "sha256": "7f604dd6cb094035822bbcdd39d573ff80bfb0aa74f69f6bff6709af3738a891",
+    "bytes": 3019
+  },
+  {
+    "file": "won7-build/FV.Backend.Lowering.StockLiveCallRoutes.time",
+    "sha256": "bfed25f2801f05ad8d303ba0b60a8024a5f7e80515db14ea48b1fd74703a367a",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockGeneralDivWitness.time",
+    "sha256": "87f4e4c7075f2ec3dc81bf12fa4f72aae40cbd3ebf06cc0f86f7e90ddb2684b4",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecProvenT.mem",
+    "sha256": "94072fadcc8335952e817fd16065b1fc547d83907478bb9278dc3fc42357d7bb",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedLinked.mem",
+    "sha256": "068d700ee207ffd74e5017cbefb028ef80b0cd7fa0210d333585dab65973d486",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockReturnedDivWitness.time",
+    "sha256": "95ce493203db49d7647eccae82eb4f08175e1c7a5a70c45cb07e4c9ed21c8317",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterArgsRouteWitness.time",
+    "sha256": "73d7233e35c47b2c38132d2e6bb451c0f450239046ae0aade520dbf305c14e5f",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinCheckSound.time",
+    "sha256": "643d06403d67c3ddf2cb905325a412ac1f6808b696bfaae5a8e1a58c8ef94da7",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecGoodRunT.time",
+    "sha256": "c3074ffc8cd1298e0aeef1b808a281152b1b5f8a83a0ae01e74b3bfac53c276a",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPreparedMetadata.log",
+    "sha256": "fbb71d43d622a5cd8bee257ffccd233c78b509bed24ebec7634ee8ee7b84cc36",
+    "bytes": 7342
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryT.mem",
+    "sha256": "a33155087ac67004b2b6f37eaedb09bde7f21c00c83b529327a683e21cb7ad56",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyCapturedExec.time",
+    "sha256": "a234ce65e291ba45cfd8538c20637138d34614aa7fc04ad6be15ae3c1fb7eb04",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.E2E.SemanticLinkProofWith.log",
+    "sha256": "088b753c75f04ba06600ad8f6e0c9dd0a756b878a0530e5ec19ad0d2606a3398",
+    "bytes": 5874
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinExeSourceWitness.time",
+    "sha256": "97998be30e9c7006d0d06d3276af21051883354a032f4f706210595c70f8b3a6",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticCompileT.log",
+    "sha256": "c13e7f84a88e17984ce3ffc85b38cc9dd8f4ad35be8ab1859078579b81f669d5",
+    "bytes": 14156
+  },
+  {
+    "file": "won7-build/FV.Backend.ReturnPinProduction.mem",
+    "sha256": "b42b5dba931e6a4c350e6c0ffd670c92c078de236b276fa450eaf2ffbe5030e0",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecFrameSim.time",
+    "sha256": "299480a7c0e40c4b726f4f8642cb99dfd7d99cb27018c635fe92457eecf9d34b",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.Trace.time",
+    "sha256": "865ea5ce4db669239ad69772e88ab77504c22369f53557424b148591d24c68f7",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMulWitness.time",
+    "sha256": "ec5af3287e509240ce6cc4dcab8670a5a869a675c839fc069dac5bcc039dc5a4",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryExtLoadNIProduction.log",
+    "sha256": "d46dc5703f2dbb8964baf9f912d8efd466c77c76ce3bacaca8e6823bfa107bca",
+    "bytes": 106
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticExeSourceWith.time",
+    "sha256": "d3d7520648875b2b6918f828abacac1429b3c2ac0108bc4db47171da1ea07b1f",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticLinkGood.log",
+    "sha256": "2f9738831865a520de058daecadb06aa1fdf110ad0f3dcfca2856fc94de8fe44",
+    "bytes": 9046
+  },
+  {
+    "file": "won7-build/FV.Backend.LogicalNIProduction.mem",
+    "sha256": "4c3d8e6e38104b040f2a9d0531c69532fdfa1cd31addfb937414e9cf3627d73e",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.E2E.TypedLinkProofWith.time",
+    "sha256": "2d2b2b2b3815cc73b512ea1c2071f058c1246fef5a177b5be762e421dfc0d056",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCallStoreProviderWitness.time",
+    "sha256": "6ae22f9a5705ed3aa57121b1e3e594aa453dea62c6614669d0fc28133c9e1f50",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.E2E.FloatCtlT2.mem",
+    "sha256": "254625f727df9f3e8f58c5246fcdd37fe92e378f9f09deddcc34412e3760f9d4",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCastWitness.log",
+    "sha256": "4441b4946805a03c23253f3ce55b33365f5cdcd98bbb369e64bae06320cf486d",
+    "bytes": 3020
+  },
+  {
+    "file": "won7-build/FVTest.Link.LeanLinkMain.mem",
+    "sha256": "5ac0935250d2d5ee97de9806a03d1547d4ea6606436867e70dadbb61e209fe19",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatScopeTotalT3F.time",
+    "sha256": "d0eb7c1ab31a25d49b831f7db03f2e3cfdca817f68cf24883defa0b7344a5b2d",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryCapturedCopyNIProduction.mem",
+    "sha256": "6b85184c99220df03c323f502b07614d5ba6dfa38cbbf24f3be5eac70a4ba66f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockLoopCarryWitness.time",
+    "sha256": "f3c32961bca1b504a96dc5ce1c99274a7ba825aeca38530ce68d7f0ac0dfbf73",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockBitProductionRuntime.time",
+    "sha256": "4f6c76e7beaaa6ad13dbe40634acc101c857c53fff9072013fd6502c27a5c576",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockReturnedDivWitness.mem",
+    "sha256": "50c780736e95652aabf3d16788fa929d0b5d3701457181f842f4b06de85d8ffa",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinaryTS.mem",
+    "sha256": "c04712f507e8b43f86a655af6806359bb0830bbf439e806278b42c5ca33334a7",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCastProductionRuntime.time",
+    "sha256": "ede6bd7efeb342211321622df4da6c85a3b007d0b05fa817624c0575eddf1911",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTlsCf.time",
+    "sha256": "378c8717b7a0ac010fecdda2a576b0ad5f5423b18ae3393665c0be699970cc69",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMinMaxWitness.mem",
+    "sha256": "af55e25e86f16174761150e89e9d7d383e8874b6ab4dd72fb6c6c8018cd4bf05",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCmpWitness.mem",
+    "sha256": "1d2929492d00eeb6bb80470067b816fbd537fe8beda650d8ae0f9999412d5e20",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPipelineCheckT.log",
+    "sha256": "28ba56766b8293cf12e45c318d2dc33acfd8f3ec85be31a28cf3fa94d04cab18",
+    "bytes": 10054
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMinMaxWitness.time",
+    "sha256": "32e49859d309bce1aa6b7dd2ae20d101efcbdbd1cfac525bb8210d80facc544f",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatExeT.time",
+    "sha256": "7914e309f6f3a89e60dd98b8d3b96c1b18708db8aed890dced900af07b5b2598",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterLoopProbe.mem",
+    "sha256": "0ce09c551f2b6ea8b8f337359627b4cdff66222e675373bd1aa9b3cab1404dc9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupBinaryGoodT.time",
+    "sha256": "6aed60229ef636a5608b523c08a1f6773c56b5bea1573f8cf6bf5c4cd5ec5bc8",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTls.log",
+    "sha256": "83b6f4335af0979b86da9c3d49ba937a4818f049ecf88078ec7b4d0751eebccd",
+    "bytes": 10702
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupBinCheckT.time",
+    "sha256": "4ccbe2c4aeb50dc30786e0e0049585695afb20fbd9c7583581255fb442020fd2",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinsWitness.time",
+    "sha256": "70179922524b9a67859badcd2242a33d0bbdafb00aa39b9fd95945d9308176e3",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPipelineCheckWith.log",
+    "sha256": "8bfa2416c9e47a56f1303b63ca5335fb4690a642d941f1711c904f65a0194f49",
+    "bytes": 4865
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeInputT3.mem",
+    "sha256": "72dd7ec1d2368022d4f72d09bf303d5bed7b4aff2ceda1ae2900ab0e9a4a31da",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockScalarProductionRuntime.mem",
+    "sha256": "1fe825749617b5e369a1985e570024c663b17a0bf23babf0f58eddf10d275734",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockArithmeticRuntime.mem",
+    "sha256": "47fbcabf810cab01619c62836785165e65be7f63d5430c6b1e945e3c77207f08",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockHighMulProductionRuntime.time",
+    "sha256": "732575323368ae09874ec53690c16bfdc4f600ee5074e80de0e6837b6b7e4c94",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinProgramWitness.log",
+    "sha256": "8120e020c276e084fafa100b382aa8333185ac76cd875dd549abbb4dbce271e8",
+    "bytes": 7834
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryCapturedCopyNIProduction.log",
+    "sha256": "08c4a1375bb0e0122895529cea2ae2a731a017d114469faf72ddc4d769a5111e",
+    "bytes": 111
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinaryGood.log",
+    "sha256": "dd7ac8174d2370733580569245f5390576a87405595236fb7ac5794b6d71d1e0",
+    "bytes": 10603
+  },
+  {
+    "file": "won7-build/FV.E2E.StockTrapWitness.mem",
+    "sha256": "51edd1dad8da162ca318582e09c7d47db3236efec7850c841679df140ef1dd05",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCfgWitness.time",
+    "sha256": "facb50d3772faf2c6d9660ff4cf09669686ef6a4ce0b842a96259fa7fc1e39e0",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupExeSourceT.mem",
+    "sha256": "d8234ecfa61355d69537ab02b82e2db628bdfeb40d022e5bae792c05825924cd",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMaskChecks.mem",
+    "sha256": "c07776bd1338a4de3bf2ea4cecabeb5a62407dc03b268ab5d492e85b954cf3b1",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryCapturedCopyProductionLinked.time",
+    "sha256": "ae0c3cce534668e8963b35bbab3b885ac200203a4952e9cdfa9c15bc27509d23",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticLogicalCompilerWitness.mem",
+    "sha256": "eec52a97e598d14f3e0e24cc20a664646efad18b1a26210bd1de13a26641b454",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterLoopProbe.log",
+    "sha256": "042d9b69a2a8b0a2cfcab3ce5f862367a76d789620eb80d45ec098d0b3121837",
+    "bytes": 112
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticNIBoundary.log",
+    "sha256": "c66cf7a3f5074b665cb43d52022855d361f46eba18c97852a00dd8a00a256c86",
+    "bytes": 3021
+  },
+  {
+    "file": "won7-build/FV.E2E.StockTrapWitness.log",
+    "sha256": "632871a58a4507703d8b6ed881ce83226b8762c83c7a692028b87a966a6ffcdb",
+    "bytes": 3020
+  },
+  {
+    "file": "won7-build/FV.Backend.ReturnPinCheck.time",
+    "sha256": "684e2e23069c505d08619f9476ff47f72711f16272e794ba422c6680ebada59f",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinCallbacks.mem",
+    "sha256": "52bfb1d77d177777fc3f22716c0e80d263b7ae57b79c14c7539b27510545ac7d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkGoodT.log",
+    "sha256": "ab5c28f2ca74fae2e0f0ee50e162c055577605347502328b330cb1afeb9d336a",
+    "bytes": 9852
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticCompileDefs.mem",
+    "sha256": "f575d1742a8ca66d2dd4e3f7dc2042afe63a145fd14ae99d9474c2201b416a08",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockGeneralDivProductionRuntime.mem",
+    "sha256": "a63a4480fdc1679dbe07bbb450155d52a1ba1a3a0202a6392806bd40b3443da8",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinGeneratedStack.log",
+    "sha256": "7ba60dec1cb797ad7fcad790126502e8575b0944139cab0a36147b8dbee240ca",
+    "bytes": 10865
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockLoopCarryWitness.mem",
+    "sha256": "13522d6281663535cd59605fdaca9ae9ea25d640c4c48bf01ba73aa04551cef9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupStackBoundT.mem",
+    "sha256": "a943ed3431ef89e67cbccd269086c6f07386b0954ad4eefc1c26f0df5c91f637",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyHeapBoundaryWitness.mem",
+    "sha256": "5d9b2df53383a3f721c0d5114ecb89d468847dd2581107920f1ac1059d39da27",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeChecksT2.time",
+    "sha256": "70d231b7e891a6f4b1074cc5eb38ebc9548b4fdb4a5bcd965015735565f3e17e",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinProductionWitness.time",
+    "sha256": "0e64fcffa43a9506eaace130b144ea8f052aec9a0a51de962f6148266204783a",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupCompileTFast.log",
+    "sha256": "9aa120c78f69ae6e665938b1d06eeab4afdc1850a080f42c415068a3b66c0b03",
+    "bytes": 9079
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupCompileT3.log",
+    "sha256": "194e51180a895342ac8451bf7dc235b8f7b0cead0a22944928cb7b9220845953",
+    "bytes": 10948
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPreparedMetadata.time",
+    "sha256": "aed246ec2211b9d91ac4f48f2829269e488fc689678c0c18e476fb25e374a51c",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockHighMulProductionLinked.time",
+    "sha256": "6d6209dcadd9477feb030a2c3dc146fd6f618c128ab8f3f661d49663fffdd3a8",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockScalarWitness.log",
+    "sha256": "2cf8cbc06ee668f06fbf4ede4a8aadfb168d692ddc07bbace52badd4aa719e6d",
+    "bytes": 3020
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryGoodT.mem",
+    "sha256": "fed45803ff0bc10f1149ffe61cecbe265dd9bede4c6424b1e9dcce4273758780",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMemorySretCopyCompiledWitness.mem",
+    "sha256": "917b7497fb95b0a5cca0d6c12e1ae44b297e2dc352530cc2cc20de57bfe40fa6",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTlsProven.time",
+    "sha256": "0326278f6c9b8ebd580e7fb48ee6dce183aecdf531f3e7610efc440fa0ea784d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StackBoundT.log",
+    "sha256": "520a1ace4911cb992a21549d1c0467f4548e5ee40de814aef9ec4f85b486089e",
+    "bytes": 8488
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockGeneralDivProductionLinked.time",
+    "sha256": "d14b7bd253d2b26db27f97532c5a5942399515b2ae548b31626f458848e212b6",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeInputT3.time",
+    "sha256": "efe820459cbce98c4a378f1477e27ada0beb04cd9fadd00bbc0b1a560146ecb2",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyExecResultBytes.mem",
+    "sha256": "b995900bf76605f237a20997162e7de7a4327b95b36e2d71d651200717cca9ac",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMinMaxProductionLinked.log",
+    "sha256": "7d573c6f31ba565c3f70148fc620aa994daf53654aac38383afc851b7df032d6",
+    "bytes": 11000
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockShiftProductionRuntime.time",
+    "sha256": "761bff26e916efebc92fafc435e1d452574ec0a803d07f40639811b2f88324d6",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockReturnedDivChecks.log",
+    "sha256": "c0281e4a33b23021dbc67b94c54dc354885f7ea6bd53285a1613fb50536e5da2",
+    "bytes": 98
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecStatic.log",
+    "sha256": "c5c2565124e1bd31d4b5c1078da2b19e91a1036111742665a0179985586d0e06",
+    "bytes": 9129
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockPopcountProductionLinked.mem",
+    "sha256": "3caed46c246999b488340afc5fdc6f6b95f780f9f71c3f59788e3d8ed09f4c5a",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileModesWitness.mem",
+    "sha256": "82522be702aef79c858dabfd6fae638e6e9ebc8f7a6a1d55c0c458a742e6075f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockNarrowProductionRuntime.time",
+    "sha256": "c91850cf4d6014a23fbdf736fd8b82715e34c0e1aab521f73c0cdc3055a53e34",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Front.ExeT.time",
+    "sha256": "2ccae92077858b415da7874a91204c48cc5faaef17dfb4c6846fd0cff6f4e38b",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockRankedTrapWitness.log",
+    "sha256": "19d39dfd3ec7d39e5a82ba61b1d54cff0a3609c6c176d42e10b67da397e94652",
+    "bytes": 3025
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecStaticT.mem",
+    "sha256": "441ce04f62d9e1655dcf1bc4a238e7dba0f60bf50333b8f20fc464a50b666092",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatArithCompileExeT.time",
+    "sha256": "9b41cc6a30c98d0a63709cfff614111af827f8d6ffe48c0f3b319085084a1383",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryBoundaryDefs.log",
+    "sha256": "cfeb04c2fc59b51e1bf525c4a47970e8cf34e03d286b4cf811e49c21fbd0b595",
+    "bytes": 9129
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterLoopWitness.time",
+    "sha256": "180a965e121be95f02d3ab46e43390d2edf77dcef48975d8707a293d65093307",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledSemanticABI.time",
+    "sha256": "25ac139a5b89e89ac494f1847f02a6c38276d54d59e8f88546592c8f7a175092",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinBinary.time",
+    "sha256": "4ac6e7cb6d50d191d4b58c14c0224605b900dc601e78e6c88db1696996056c02",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockAluRootsWitness.log",
+    "sha256": "b2bbd68d5c071fe84d34e718ee05d401753effdcfb5eb28cf403075931f1dc4f",
+    "bytes": 3023
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticExeWith.log",
+    "sha256": "719eb7624e53731d52a2d3cec2560841db220f07fff81660d0e2352624150d4f",
+    "bytes": 10728
+  },
+  {
+    "file": "won7-build/FV.Backend.SemanticABICheck.time",
+    "sha256": "95c72f874af5bc8efe62b6a02fd431ee39d09efa87b6d2bf6bffd30ebc81acdf",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockBitProductionRuntime.mem",
+    "sha256": "4fde507f841151e2d2d4178f1ef6261e35cdd89448e7e57a5f43aeb8224416db",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockRankedTrapWitness.time",
+    "sha256": "2aee82e89ebee55cea27d261558947bd98686c95e7f28594dab4ee27637c4dec",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileRoutes.time",
+    "sha256": "e81f8690ca625812c655fdac47ae2b82cc3754fa4dabd2272b1c57d4730b0410",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryExtLoadCompatibility.log",
+    "sha256": "9de334eb576cc23dc9e7e0297794edbb52c43b09c614ccc4773e8f2218ae55b0",
+    "bytes": 118
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCastWitness.mem",
+    "sha256": "9847264dd7a27a8a83b89269b9fd57b2b02d810eeb925620a5e2001382d39e37",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockForwardTrapWitness.mem",
+    "sha256": "10e87286de3c29a082dcec385d9d29d6f996c995c13fe004f394125efef60167",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPins.time",
+    "sha256": "3ac86a6f2a93afc4e1658cb127174f8bded63b9514671cbd71c65d638c23468d",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.PipelineCheckT.mem",
+    "sha256": "ae37c43fc1f323977a4df3053b2ab6ec8d677aa8dc69c0a03a6e594b6d2901f0",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockBitWitness.time",
+    "sha256": "e99d8f2caf6de5ea6b7fe8cc30881cb7f1fa9fe9f5410ae7bcde7882de76ab23",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticCompileT.mem",
+    "sha256": "822b2169e26a01ced313989622b56edf53ff3d505f0f22c781c3861c51322a70",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinGeneratedStack.time",
+    "sha256": "952449e11c61c7e646d4e464a9496a198ca73cc83533e8712ae17232b8bce3a8",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecRunNT.time",
+    "sha256": "6d290f726ea3ccc1182aaefc798d2cb85cc40da2163022344ddf401362c64f7f",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticExeSourceT.log",
+    "sha256": "0c46d314f014cb017199f80ba998ad067113cfb6c406982890d42e5f1cbe184c",
+    "bytes": 14159
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryRetainedRuntime.log",
+    "sha256": "add8dced6a8853a75cb9d254605d9cf174fb92313d45e22a3ebca40e04f85234",
+    "bytes": 120
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryBoundaryDefs.mem",
+    "sha256": "dc5a5eb204a9f379aca1a5b9b2e3fb2809177f68461fcc5f56ba5df30117c41b",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryExtLoadNIProduction.time",
+    "sha256": "e42ad6f75f95a5f776d313c626fa16648cdf75719e4d504ee1b7ac7f28f962fb",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryT.time",
+    "sha256": "c2be7190e16603e14ecf4e4ca249e2f4bead0d4fa477ee35e33c4d4d9af4b9a1",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockLoopDefBeforeWitness.time",
+    "sha256": "65b30588d51c2b72ed6296a7473c80a9baecfd3ac5a40e32bef411c12a06dc43",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.ConditionalForwardCfgNIProduction.mem",
+    "sha256": "6981078d58b6491472c523ba82f194677976ada1e86f739e7c4475fb91566517",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinSretWitness.mem",
+    "sha256": "7c64831b0c199c90c80f244c897ccd6d14b4a94fc21e78fb5186f75790d2646c",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockScalarProductionRuntime.log",
+    "sha256": "85d3efade975751a819dfbde277cadbf9c9f9fff575a7fe68a37b2e0e9d8ef8e",
+    "bytes": 122
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockBitProductionLinked.log",
+    "sha256": "932c2f7fb04549fae276872269e1387d5d2a1998c07040f10a9005f34042ad72",
+    "bytes": 10997
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockLoopDefBeforeWitness.mem",
+    "sha256": "a3d2a678339d75cf57ed1b05a4406cc202c8be9e78911ad0621f317643de235c",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTS.time",
+    "sha256": "07c7dea8ee04260670b96cfb5ffee7b2cedb78b7c765c1198142d12d1c851578",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMixedWitness.log",
+    "sha256": "df9d59c127077e29839285910735de32db5cda7ef07c2948baee8ceb15cec3a4",
+    "bytes": 3019
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryBoundaryFacts.log",
+    "sha256": "8b5db687b7c0e2a55a8186457086e520dd28607abcfb97f8dad431b0146fef89",
+    "bytes": 9130
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkSemanticNIContract.log",
+    "sha256": "67ffd6a0442e82b158582dc27b072cccbe1b20f96d95332c283178fc61d00244",
+    "bytes": 5787
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecProven.time",
+    "sha256": "cdc55998d95db01cb7898e3dde9dd3797c9b1e7fe2842918a35dbdd97a29b5a0",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupExeSourceT.log",
+    "sha256": "1694843849a44e08824d790c0f39d7852e9d0aef937d0c090b038f2463802161",
+    "bytes": 10741
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecProvenT.time",
+    "sha256": "112595449a922a03e07691c0bfb55ade25bec30fca41495c7e4304280368fec4",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticABIBoundary.log",
+    "sha256": "be397b543daa3dffe685d984d777fb921aa70767fcc423503d61ee4c18d2e997",
+    "bytes": 3024
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileRoutesWitness.time",
+    "sha256": "99d833873e61ea1f48b8cd348694ada1b99de23771cc57eb138b06d046ce5972",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockPopcountWitness.time",
+    "sha256": "61b69d12ee88921e763ec0cad08271d71b2384c18963a3db726583e64d70b22b",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticCompileT.time",
+    "sha256": "66590e2dea075a6e09cdb066d257a10e3ed6af96e91f098f0dcbe88b869a020b",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockPopcountProductionRuntime.log",
+    "sha256": "2b95ec1862de2b48d7b4c53ecacc5bf88e49f820d350358736b3311fd37b8846",
+    "bytes": 124
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMixedWitness.mem",
+    "sha256": "97eeda9f8fb04171036d46cd1d61be9d31f71d2df6a0751697c3ea5e97f7dcd3",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinCheckSound.log",
+    "sha256": "bdbd5c4ff5bd3209defba846c9d3e4533f6fd631da8501990bab6206abb11117",
+    "bytes": 5784
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMaskChecks.time",
+    "sha256": "04b5574151f8cc1fef58709766198fa91fe5e145e2a318eea5a7ea4eeda6f72b",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinCheckFastWitness.time",
+    "sha256": "0ca3e7b562cf56343c792e5461ff8ba72799f9e93bb266fbfc3181d8f7c9f5e0",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinExeSourceWith.log",
+    "sha256": "3989dabc989bda103e7df6a4323770d89b00740a5d35230fd0276bc2557b150d",
+    "bytes": 11457
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.Trace.mem",
+    "sha256": "e7372a6bedad5466a4b318a00a7f55dcf85fbded030d130424752b3f7e075b96",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryCompatibility.time",
+    "sha256": "0679f08dd5344ed6bffd0a03f93270bf7a6603744926a02afbe34112c55cab0b",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinProductionWitness.log",
+    "sha256": "7e96fc829d0fd872e48aad583296034fe31ddfa4d74cfa91bcce7430c457369c",
+    "bytes": 9561
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCfgWitness.log",
+    "sha256": "69a130d7e0c125cfecf2485197229e803ddda7e8296452e2c0f19b3e5c7d1b62",
+    "bytes": 704
+  },
+  {
+    "file": "won7-build/FV.Backend.ParameterCfgNIProduction.time",
+    "sha256": "77326998579f8d1f1d3065785c730cd8f00ea113d3d0a23c6b0dc952c13dcede",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileModes.log",
+    "sha256": "45419c080eab137a984234345769c8a9aa01c82e6405066273375bef747ba746",
+    "bytes": 14157
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecRunNT.log",
+    "sha256": "995c02e392b703f474590a9e399ddf7b735c47bdd2c34e44c1dde46dd842dc3d",
+    "bytes": 8497
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkArmT.time",
+    "sha256": "3fd58b07bc8cdca7ca9bf8b4b9d242f22b441512665d73e8bac6954bb81b24fa",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeChecksT2.log",
+    "sha256": "48eb8b956eb8ca34e3a60f2ea6728a9b38d07127ac40ced7d236b1796695adf7",
+    "bytes": 9073
+  },
+  {
+    "file": "won7-build/FV.E2E.StockGeneralDivWitness.mem",
+    "sha256": "9806637aca262c3fe6f65ba283215a6caf4276190cda8c96f28637b8f52f7066",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMemoryActivationWitness.mem",
+    "sha256": "7ab6fa874e963f8747732f7c6148c7c9ddfeabcd3a5a5a1271c0d12eee371d9b",
+    "bytes": 33
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryStoreCompatibility.mem",
+    "sha256": "b70b56f41fdc39b4e209b99e1cf8ffa40d1ae2a4620ec4c008a80117804eb88d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockReturnedDivProductionLinked.log",
+    "sha256": "5692a96001db7ff080dafeed8fef94515888c99a9cbe2a480e94567b13644c6b",
+    "bytes": 11005
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecGoodRunT.mem",
+    "sha256": "504b2d10d5a27143f3f58c1e3a90fde897e8bd741e495c48f82a29fc2357d110",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemorySretCopyCompatibility.log",
+    "sha256": "e1034730c71e1f3a9f48bac813fefd662d9971011e65cec2388f9dc7ff585702",
+    "bytes": 119
+  },
+  {
+    "file": "won7-build/sched.log",
+    "sha256": "001772664b51d9c627ee0187d2ef51c3e878eb17b91395917e41960305523e6a",
+    "bytes": 60793
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeTPeak.mem",
+    "sha256": "4c5018f40d2ab2a8983a14c39949c1f1bf0b5d141d0916133bb9cb30dff4762d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCmpProductionRuntime.time",
+    "sha256": "a9d50e432c7ef6e71a027645197708fdd678e20d1919745a7cf84c53f29ce6ce",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecProvenT.log",
+    "sha256": "b9d0512b36f5542668dd0360696a27429d0da93f78fe5982e0b3abc33f9750f1",
+    "bytes": 9907
+  },
+  {
+    "file": "won7-build/FV.E2E.StockScalarWitness.time",
+    "sha256": "c7bec47e7eee84633c364707558a6268b443c391e16aa574192fec87557c69e5",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterLoopWitness.log",
+    "sha256": "873acd915add5b324e6f06312d5ddaa2f3f037c3f0e1c9c5ed8eb149d1b3806d",
+    "bytes": 114
+  },
+  {
+    "file": "won7-build/FVTest.E2E.LinkCheckMain.time",
+    "sha256": "d8be3a82c224ee21c4eec2fbf0f3eb7da28dd1f4bf7dda276d08363739843867",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinGeneratedStack.mem",
+    "sha256": "882649f27d859405821748a5458d32413b23e20a97dbb127091efa492acf917f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.TwoBlockNIProduction.log",
+    "sha256": "6febf115d66b3b3459a5dd42e2f6253a614f720b2bc3676659ff0e838e31f0e0",
+    "bytes": 101
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCmpProductionLinked.mem",
+    "sha256": "f4453457dc73c867c98101d8594ff455dfd647d685a25bf6ec72c76b4206a32f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.BinCheckT.log",
+    "sha256": "f6551217434fb0dc92aed51462cbfb1e4e9f29945f75c3c3d9cabae64e370e3c",
+    "bytes": 8486
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupLinkCheckT.log",
+    "sha256": "8041adbfd3dc1aa70cc221cf65e5bb028a7a74fd3c93980473d9749d149ceffb",
+    "bytes": 8498
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileRoutesWitness.log",
+    "sha256": "04d1a81367fe4dfb19b8a3d4e1a0016ffde42b5afd5d9df0b0bd1cd3b6820e5c",
+    "bytes": 11781
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryIntegerNIProduction.time",
+    "sha256": "366ee04e97aa4d88310547f06102da8d47f3514dfcfb2ebadaa5b5f22d219bc0",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinCallerBoundaryWitness.time",
+    "sha256": "92fc7691a92a1676afa2e20b8d4d6712afefd626b7d5bd71de3dce43e776e310",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticStackBoundTS.mem",
+    "sha256": "20720c5105a9b0fd07f48c0e921f4a5381f5624c2501db61c2728d938b6c65b0",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecBytesT.mem",
+    "sha256": "e464f899c2277351de0f986b3fb4e798a82ba91209cfc4f1507cf6fc1e204e51",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyExecResultBytes.time",
+    "sha256": "8afc80858189a1e4f44a161c8d1548c0c28c1f27540bc343aa0a8868a3741c17",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecPeakT.mem",
+    "sha256": "52b888531de4667850dc6eed756fa20b5f8692e71ac8d7bebc73b2a814ee2a8f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecWitness.mem",
+    "sha256": "e388c335002bf3a7636a68a41c69739be4c33a60a692470e3bb8358d6e4575bf",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockScalarProductionRuntime.time",
+    "sha256": "c32f0fe4eb83d484273f1760438c19d2cf96b9b180d1e0d5082354b2d89bcbab",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMemoryActivationWitness.log",
+    "sha256": "0c19d11b33bab003f478809e610f9b49da257bc4d5a5860ca904c40cf4b8eb5a",
+    "bytes": 2612
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryNIProduction.time",
+    "sha256": "3a3f0bfaa5642ea27bd5adc6f9a5ccc5cc6cdc1e5180a9f57e908aae3c34f109",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockDivProductionRuntime.log",
+    "sha256": "9d70f899eb42900636c442f7a69dc5ce25b28a547040292c6c4fd0a7c094a793",
+    "bytes": 119
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileSourceModes.mem",
+    "sha256": "3f154687528d36f2c02802578e549bc8bbf4fb4bc639059460e226013eb88624",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinPipeline.log",
+    "sha256": "9d7760d8079bb5e0764cc5745762a0ca998a11d08838a728d841a2eb4be3c245",
+    "bytes": 7601
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNarrowChecks.mem",
+    "sha256": "d4ba3feca1059144546145bd046768e29a13f9878af15c00d0d5a5af1fa43000",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StackBoundT.mem",
+    "sha256": "9ed2ed77876ffddf145768b6a66f5865e71d6095c039faddf404865e8c8e3476",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedLinked.log",
+    "sha256": "2d30bcba7cb5f7464841510155b1edb2678dcbfa20a34546d703de1be6f38b36",
+    "bytes": 10989
+  },
+  {
+    "file": "won7-build/FV.E2E.StockPopcountWitness.log",
+    "sha256": "0704274b1f127e68cb525f4d120ab1468e7b9aec181eb19bd0053fc89b2ceb56",
+    "bytes": 3022
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockDivProductionLinked.mem",
+    "sha256": "1ee68c8292dbf5467b1e25709f56ae5c17b5ba8f0d12dd9730c2ab57f9ff56c2",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.E2E.FloatCtlT2.log",
+    "sha256": "8085aac35288cd44628e89bf861c07a4e7e4e5444a07c854f27589e0903a371b",
+    "bytes": 9067
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticStackBoundTS.log",
+    "sha256": "65b7e3dfaefd77e868c09f73366656149505882f7887ae805692b85cfb382387",
+    "bytes": 11849
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeT3.log",
+    "sha256": "ef44316a60c6cdef6e8a73f94c09133fee7244aaffae5aca423a7688059089af",
+    "bytes": 11004
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryLoadStoreProductionLinked.log",
+    "sha256": "7b5cc000816fa9c3e1c81b077fb61626308e334d2aa7856fd2b8c07a457b8fb3",
+    "bytes": 11009
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockGeneralDivProductionRuntime.time",
+    "sha256": "ea98844e39cdfa4459f5f129cb046cc993882fd8206eb8247b591eea4ee0624b",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTlsSim.time",
+    "sha256": "c84ce13c7b3b04a1890ea2ed3c16ff76ec14d6ceab951dd8d5ae38fcdedc99b7",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.E2E.ReturnPinLinkProofWith.time",
+    "sha256": "7e10cf72c6a98e31009cc4101a9fa7d53fc3919025cfc1f425872682d82ab6ea",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.PipelineCheckT.log",
+    "sha256": "540185aa1891e0462ec1a200652807361b310e72bd18dc1ad4213f3cf67aa818",
+    "bytes": 8491
+  },
+  {
+    "file": "won7-build/FV.E2E.StockRankedTrapWitness.mem",
+    "sha256": "d25cc8c6cfc72428ed9706d4ca6286932d4b3411065fe041be0cd53fdde84a5a",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileModes.time",
+    "sha256": "d3637638d485b40f3dde7582325a28998114f7cc3bf21aed81199d5b843844ad",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockShiftWitness.log",
+    "sha256": "c8fc84f323d7539b6f952322417906ba7bf414421cfa98c6053e94fb4bb58edb",
+    "bytes": 3021
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinSretWitness.log",
+    "sha256": "bc6aae38aadb20ab2c339e88152c93cd127075df4e636c76b2a26e423e95fcb5",
+    "bytes": 9396
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecGoodRunT.mem",
+    "sha256": "77a5f5cce4110ea5caa46d6d30470c37832d7733dd6465f1108a206f45bfcc03",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockReturnedDivProductionLinked.time",
+    "sha256": "16518e46ef5beb6628a8f56727112af67401c1ad4de21c5b05dae2c3da6ab976",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedDivProductionLinked.time",
+    "sha256": "db81a41136809a58adc7a4b46dd526b70718099d7a789819a976355c5adcde0c",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPipelineCheck.mem",
+    "sha256": "1b2516a3b0c7b283b67513661cd002108dce9418130e65ebcee8090c022d09b2",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.ScalarNIProduction.time",
+    "sha256": "21b4df7c44c84b0224e4beb4c062d34e94fa50fddb47a29477a15ba4fa7ca68c",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockPopcountProductionLinked.log",
+    "sha256": "46e376e51ea563735bd78abb14998c92680731b95c1d2b53b973c4a66d17e504",
+    "bytes": 11002
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTS.log",
+    "sha256": "a259cc36c57f8758598ddd397383ff5b55e99622c044cd82787aca1b38fb3d9c",
+    "bytes": 14026
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecStaticT.time",
+    "sha256": "c2445b70cfe6b1d27b323bd3fba9a0ed825d9b10bc069e66a6dacf1c16756703",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecGoodReads.log",
+    "sha256": "e1dbf482ecb671eeff0d1f7f319942f64bb2e0aad002d121b34da292835f105b",
+    "bytes": 10606
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinBinaryWitness.log",
+    "sha256": "856f9e6fbd5654eb8fe7a832a397be3cb5cda1c1b12ace939ab6d85936c8389f",
+    "bytes": 11776
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecGoodRunT.log",
+    "sha256": "fc277ccdb5701d2c6cf12a5c99ded9f28318225d0e296ac8d19a06a465ca03cb",
+    "bytes": 9908
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockNotProductionLinked.log",
+    "sha256": "892499eca8befc20e5e874d253e983aabada73054f0c4e5edd715d5be34083e6",
+    "bytes": 10997
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTlsSim.mem",
+    "sha256": "518ebb2ad62c51696092e9961d3c0d93c82e2976ed4574a24f3512c426a59fc1",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinExeWith.mem",
+    "sha256": "0c80ca0387fbdd048f85d94c6383deb236564927c922562b68aa13979d702c24",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.E2E.FloatChecksT2.time",
+    "sha256": "1744c9a105dab9a2a01b1f25719f9eb940c2d4dacacbea7e6bd6b209595da063",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecGotT.mem",
+    "sha256": "438e2ebaae4f565e121c3dc9cd26a13fc0f36255c5906bfd838a8495ddf8d2bf",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkProgramReturnPinsModel.mem",
+    "sha256": "abf6b3a5e87b9af9a32337ecbd39fe4726f718967441826cd2c49af1a9fefd90",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.E2E.FloatChecksT2.mem",
+    "sha256": "8c5f1d4d3f4a43c282658c63978e777777df61dacea4248ffb75cfe6a9043973",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecGoodReads.mem",
+    "sha256": "4c11c33f680b8e80bdbcca615e2cd9a0da4da7cd190f8496eee9b734c0ffd82e",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinLinkerWitness.log",
+    "sha256": "a24775449269dc4bb665abc0e1326fc11224b684eb97e452723819810a511e1e",
+    "bytes": 12236
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMaskProductionRuntime.mem",
+    "sha256": "e3de14b918f489b04e4785089d1827d5c418440e7752d8b1c04f80140758b9f1",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecRunNT.log",
+    "sha256": "d449d756ea6faeb36d1df5aac519fcd56f4ba6e2a0f72485819d7e630ac5065f",
+    "bytes": 8486
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticChecksWith.log",
+    "sha256": "b94483d6105cc4f4c20c14ab6438111f6c8337f064a250978d474e7efeaba447",
+    "bytes": 9129
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeChecksTF.mem",
+    "sha256": "97a00cce9b0543a74384bf3a2deabd91d5c17c5fb2a5307afebab350fd7fae47",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMulProductionLinked.mem",
+    "sha256": "ac3150ac0914cd840f435bb58908d4365c7f7d28e01e36dd6952c2b7135a1a07",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.ForwardCfgNIProduction.log",
+    "sha256": "a196208d4db5340a05abd097a9516aef418dc42f056199510a7b0690dbe398b5",
+    "bytes": 103
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinPipelineRetry.time",
+    "sha256": "68536b8ed4974dc907891b6d27b29754581bcd34f5d289433400040e1a3f3c68",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinaryTS.time",
+    "sha256": "ea1ca3c5b49fcc9498392c312680d98304373d3a82c8d5cf09ab4b744c52a919",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeIntT.log",
+    "sha256": "80be0097574703251a41635558d860130b29572b1d9eac49c5f8e87905d50697",
+    "bytes": 9068
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockPopcountProductionRuntime.time",
+    "sha256": "90a23ae71eccc9142919df7a0a4d9f37373cc8b84f8ee4d7784a69f056a26f0b",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecProvenT.mem",
+    "sha256": "89d9a8c686368f4e7ec64b82991ae70bf3998b453122c654d9d9f0d32a219c6b",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinChecksWith.mem",
+    "sha256": "14bfe192d82ea44e4f6169515bde99b9ed44908cd7c74c1c9b431485393a5c17",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockVoidCallNIWitness.mem",
+    "sha256": "111c0e4acf932a3d4af8ded37ba735611c6b3d62378b48552325732e9dfa9d99",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Front.ExeT.log",
+    "sha256": "51ea10bf6c9417abb5c3555fb46cb04977742b182c5bfb87b50a7e23d02694ee",
+    "bytes": 10725
+  },
+  {
+    "file": "won7-build/FV.E2E.StockParameterTrapWitness.log",
+    "sha256": "b36eb9a80a97ee0095f65048c0d384650d700c0940ad5dce70d2fa49d46ac2e2",
+    "bytes": 3028
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinCallerBoundaryWitness.log",
+    "sha256": "b304518985cc866dd76e6d190a8d2a9a1acd90f33ff35026d73f98c9f96863a7",
+    "bytes": 9406
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Main.mem",
+    "sha256": "ff1d3c6576ee0831afb9820926717b1c8c82e7968cbcd906520358e76997bb0e",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockForwardTrapWitness.log",
+    "sha256": "79f545bd7069b27a7418f0d929a69b45ece014d80042bec36c0f56fc6e0fcb1a",
+    "bytes": 3026
+  },
+  {
+    "file": "won7-build/FV.E2E.StockSretPointerPairedWitness.time",
+    "sha256": "e79fceb39f8cec947e4013f9294b5a897fdd3dababa7341f3c6dd4297e22e8ea",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinContract.time",
+    "sha256": "3c7f3a47de81229b0a68e085e10221ff742b5810cf0a357799e3f74061c63694",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkArmT.log",
+    "sha256": "778d6242186476db60ac581432ecce537a578cf7257aa97f4ab035c15cebff75",
+    "bytes": 8444
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupLinkCheckT.time",
+    "sha256": "f61d8f94b2bbf3b6bafd3adb554b5cb8f945fabc85c2d98d2fe57cffbbf08b91",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinCalls.time",
+    "sha256": "4e673689ae93e6517aa4cbf1402f147619cc99a92470acbb8574db46bce4d1b3",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticFallbackWitness.log",
+    "sha256": "6ff54b092d86b4c542312de85c69adfc689a921b2786dabb9b348acae00dad62",
+    "bytes": 10734
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryProductionLinked.time",
+    "sha256": "d5840032ba54aa8d9668667ebc5459175e680507291ebaf2f71b3f7f92bf3a67",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatExeT.log",
+    "sha256": "d0fa32396e70c7a32dc961d33d5688d67ed6566a2e53bc9cbe3c42739cbdf89c",
+    "bytes": 10478
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinWorldX.mem",
+    "sha256": "b4840fc3fb6a27fc029d6157bf565423a66597470da252d92cc78b8f5a73186d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatArithCompileExeT.log",
+    "sha256": "06f73911cec3c325792ba060d17f11de9d2d609d88ae5c2c2864c922f63fa0d0",
+    "bytes": 10745
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockBitProductionLinked.time",
+    "sha256": "972b59494027d51188f7d4c7c9237c6586dec7be581ce6dfff8413ba6f5b8397",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinCheckFast.mem",
+    "sha256": "5e47b31ae183d83c519c22ac5dff640894272457c4d66b45ec8594c3282497bc",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatScopeTotalT3F.log",
+    "sha256": "f5454a1e9e8650197ff429db85ed6742cbff41673e9059b6871ba565076f91c3",
+    "bytes": 9096
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatArithCompileExeT.mem",
+    "sha256": "b7b87d079b7fead1b75add1f6dc972afc6eaa6fdde872372e5cceb1bd2150d80",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinCallsWitness.mem",
+    "sha256": "f10ff9a1ebe486204c789551431b2ae327e8e383bbaf4b192911153febd620a4",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryStoreCfgCompatibility.log",
+    "sha256": "6c7caa5e6d5f694d8c22a4f017617f6b952b1aba8fc31bb5146dcfff9f0f18ba",
+    "bytes": 119
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticRoutesWitness.log",
+    "sha256": "a27bb19c110dd87e889f61a892ff8a9d1838c54b5d68dded4b11827650e0cb44",
+    "bytes": 10732
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterCheckedWitness.log",
+    "sha256": "2eef25cb90b8b3f23bd558f583baeb1e9b44048d6a08fbb5f7d57bbc30815ac3",
+    "bytes": 117
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinGood.log",
+    "sha256": "5fe53f57101b1c8791f12f8f4f7e1fc74ef861562e432acc79129d9b7a6f76d6",
+    "bytes": 8997
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecRunN.log",
+    "sha256": "05cf6aa9f79ec38dc0d5c743e8dda03725833e6666f30d33ad2bc8a833bda41b",
+    "bytes": 9127
+  },
+  {
+    "file": "won7-build/FV.E2E.BinCheckT.mem",
+    "sha256": "ef2df771f527b722a7c91871dd93985b31a3124f0d9c9dd68ac6584766aea62d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkSemanticNI.log",
+    "sha256": "47d07b7aa6f075725e08d2ac35c187bbd23f98de9ac07073f7a590235e743731",
+    "bytes": 7572
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.Trace.log",
+    "sha256": "ce108ffb977fd215fae8466c960f0a6e57d241c301962540791c256739a489bb",
+    "bytes": 99
+  },
+  {
+    "file": "won7-build/FV.E2E.StockCmpWitness.log",
+    "sha256": "205b7bb06cc1a76c6894d73576b3fe665ce61b2499b080bf1df22febcc08abeb",
+    "bytes": 3018
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryStoreCfgNIProduction.time",
+    "sha256": "72468724511a476ce0e1a71901bc67eade53d0e35a051c9bba5c733dcb2d4349",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecPeakT.time",
+    "sha256": "64ba782230fa3a605cd0f5662ee1a2d53db023d936ecebd45243038e14d1c18b",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockReturnedDivProductionRuntime.log",
+    "sha256": "424f0f3b200929a28db7f547eece50e743e52705d75177f66971b2479d31ab20",
+    "bytes": 127
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinCheckFast.time",
+    "sha256": "cb7781365bd134165fcd0f17a9d613fe95304be9114d8dee0ceca5fafd45e5cb",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinCheckSound.mem",
+    "sha256": "d73273270b823ebdef73107b09db0371db7a887ef1fa669d4275d0911cd7c3ef",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockHighMulProductionLinked.mem",
+    "sha256": "7755609f5b11b73b337fce1b48e4e058de049ac4f1f6fea3e2fd422931f42b7f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinCall.time",
+    "sha256": "5bb16c1cc61f0cef4be0566a9a38175d968fc02f843a8c02e7838e7fe6653aa2",
+    "bytes": 93
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledAnyTS.log",
+    "sha256": "fb29362ec4e9830262f05480ac5357c9af334d6caafdec9f6f9c8f7e31a6bfce",
+    "bytes": 3745
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinary.log",
+    "sha256": "58b021be1f925c31506e50ed0ba8ba3a1584b0f72f48b9c88ca7828235910fae",
+    "bytes": 9125
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecStatic.mem",
+    "sha256": "ba23e86a081427bb055b2444fcaaae6104ba08246bfb37d2b217eb0f42177366",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecGoodReadsT.mem",
+    "sha256": "7852a9a102d12c69c4cbe6554fc51cabff2cb2425e37a4fe5b4d2cb5cd05b7aa",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockHighMulProductionRuntime.mem",
+    "sha256": "4bd2b6b8d43e143fc4d70e5aafa6b06e46633701f3c57b216d6f5a4846c321aa",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledSemanticABI.mem",
+    "sha256": "96a546a2d1af079fbaf01a2599b451ad84e22c9ec212d8bee8cc8082671fe66c",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryNIProduction.mem",
+    "sha256": "6c2db87d7cb383ebf14107cad8fcdc53e516a1b13aaa7996279a151dbdb12892",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Link.LeanLinkMain.time",
+    "sha256": "6661b93a85854b75b3893d547eac5b0789f754733d3799824592079b6e7a7cde",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockLogicalWitness.mem",
+    "sha256": "ae031e2772889f1bdf7ed9a7f34e701092e15de28598b652aa25897b62b34753",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileRoutes.mem",
+    "sha256": "7a1b1126efb5051d062a6d69a7e3546ae5c577a5cb0f2fcda8e46d6a43c69825",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockReturnedDivProductionLinked.mem",
+    "sha256": "3b7dc28b51d18a53dd881507dfdabfd3ff410a090abc900481d7fe81ee9f3b82",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeChecksTF.time",
+    "sha256": "33d23f1321813ce71c45e51837b134eb62c5241e15b1ec964636c17a8b634c9d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCmpProductionRuntime.mem",
+    "sha256": "0da9d9f22111d5973f269965416b0284b074a123c09b3142de1f1d5856667d75",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledSemanticABI.log",
+    "sha256": "df7f3dbb366b0b06374271041b28d23709a3aae40c62ebc356e42a43d5c62675",
+    "bytes": 3024
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinProgram.time",
+    "sha256": "2eda2ff284c148df4a6d656119f7d63b8b2032c2bcbf3cec28faddb62bf8da06",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileRoutes.log",
+    "sha256": "8d0bee0bae42c099db2af0489f873335da9d3e281cd13b0701fe38be9f68aafa",
+    "bytes": 9520
+  },
+  {
+    "file": "won7-build/FV.E2E.WorldReturnPinBoundary.log",
+    "sha256": "ed89f0f14f9f1c3b79ab60fd64e0540915f65e8587decd08d69d4d0c4c30fd6a",
+    "bytes": 5787
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockHighMulProductionLinked.log",
+    "sha256": "2f5421c8fd2f001cb069e4d9a47b3fd11bebc044aa1bbe3485b094947c714ea9",
+    "bytes": 11001
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryProductionLinked.log",
+    "sha256": "0f0e7b0a1782c9a7d0472cf14ab6425917e1e57a6c1440c6bc4927ee573fd277",
+    "bytes": 11000
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPipelineCheck.log",
+    "sha256": "e1c6af6365fb3ec7bb42b9338fbc056e0fe5d8cfa2283415ed2d166d8d7d38d2",
+    "bytes": 4861
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinProgramWitness.mem",
+    "sha256": "82d63e8c657a625ad9b470050b4a7062382b20fcb7fd7704de9e1ca57682a677",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticLogicalCompilerWitness.log",
+    "sha256": "da9ac307fdbe948a9d43398b8a4ea32b3d25a4d38e0f3868201634da134c31a0",
+    "bytes": 10741
+  },
+  {
+    "file": "won7-build/FV.E2E.StockDivWitness.mem",
+    "sha256": "ba1a552d8731d9944e8a4e736a3f2bae6b0d52b089b67c294092b0d75b507b16",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryProductionLinked.mem",
+    "sha256": "732604d7f05ae98d02491734a1e682802bc2cc234b6ff02d1b89b1d7dc79fc48",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileWith.time",
+    "sha256": "480f8052becd916a119f2ce275345d8a5bd4592f2adc18ad6c6600fdc63bcca9",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockShiftProductionRuntime.mem",
+    "sha256": "b79e81f274300dd2a7b9a06ea01d5f5b012c134d8f27e244cbe447edda86856e",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.E2E.FloatCtlT2.time",
+    "sha256": "21f3c2880442dad7b5fdfc77ea15a94d8c43374e4ffe4a44423cc15f4b7ce127",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.TwoBlockNIProduction.mem",
+    "sha256": "0b3ca139bb4765cc3293e535e88acfbda704ceba7f8e91fc4c1d2946b2e14c82",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMemorySretCopyCompiledWitness.time",
+    "sha256": "fd0f5c30fea082be00ca73c9e43b8987b657ad9a3b442cfacb3433a3cb3a4a58",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockConditionalTrapWitness.log",
+    "sha256": "589d26ddbaa1c35f1cf49d4a94e4ac475a35eb3e0ccd753d2e7c3246aa02831a",
+    "bytes": 3030
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeTSource.time",
+    "sha256": "3c82f667d3bf70c69f6cd57b9359d942d93334eaa1848e3f87fd0520090781ad",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecGoodRun.log",
+    "sha256": "bf363f74672c3bc5eae84786b0147eea84debf82124616c6e73bcd8678393bb2",
+    "bytes": 10604
+  },
+  {
+    "file": "won7-build/FV.E2E.StockSretPointerWorldWitness.time",
+    "sha256": "632b0f220be319d1bc4a0b349fb31944e82e7ce2b39db49bd71efe38010d263d",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.ReturnPinProduction.log",
+    "sha256": "5af44976eb1e98c4e6087089b6a1fad04047510281708486145499dff37e353b",
+    "bytes": 267
+  },
+  {
+    "file": "won7-build/FV.E2E.StockScalarWitness.mem",
+    "sha256": "10c682cee3861619770cd7cf01fc3812daa55d9554ab6011b3a5fb12e603a70e",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockTwoBlockProductionRuntime.time",
+    "sha256": "e178778f495323240ccd136a9814c2cda237ac912a5571c2a643a8ae5c6ae7a4",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinCalls.mem",
+    "sha256": "377b6d0bc166c1d68a38e7600d829a90e0eccba7ebf2ecddcb79d4422b92f6fd",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecGot.log",
+    "sha256": "00b863002189eb4fd9590772545fdfcdcb42d838c8353ba0673092fc8791d5e6",
+    "bytes": 10600
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPipelineCheckWith.mem",
+    "sha256": "f8f2f421d2f0891ab912513be4f4200bff2e678c6ba838ee45d6cb810744cedc",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.TwoBlockNIProduction.time",
+    "sha256": "b2b5f357a30a9d26cfb1201869674872587238bb1c4888fcc09770c263b1d379",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkScopeTotalTF.time",
+    "sha256": "c1786d86cf074792e6d8fb53cdb8f71b5c896d2648b0467989b027eaedbff230",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecGoodRun.time",
+    "sha256": "e126ae7d8c89d940299e5e30c69e2a3976176982964e1431f8b5094e376aa25b",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockGeneralDivWitness.log",
+    "sha256": "473faa3fd030f5b9b75f4b05700849ab3ab77e9344930a8b300df9dc6d963519",
+    "bytes": 3026
+  },
+  {
+    "file": "won7-build/FV.Backend.VoidCallABIProduction.mem",
+    "sha256": "fe3d701a82ad2ec7d7951e311f2dbaac067245aedb1ddf79743073a827a2c869",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockLoopDefBeforeWitness.log",
+    "sha256": "26c806061e66ad2fdffc21dd1e4650135b465ff551bd810dfaa848baef315ad8",
+    "bytes": 114
+  },
+  {
+    "file": "won7-build/FV.E2E.WorldReturnPinBoundary.time",
+    "sha256": "cc58488d070ee07d8c6b21fd19325d680aecd2b0176d9264e55cbd8af68dd7f4",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecStaticT.log",
+    "sha256": "5cbbb97d3424335519f8a5f29c884e52c350243a9f511178c0fab570a99e69c5",
+    "bytes": 8488
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinaryTS.log",
+    "sha256": "0812b6c88e71aa09bec2bae70a8ae7d508fad51ea004d544587b4e25d645560f",
+    "bytes": 11845
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinCallbacks.log",
+    "sha256": "2f119db11d4dd1c4b35c4ea29eb3ae778b234db303273386ebef3057de12eee6",
+    "bytes": 7525
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecBytesT.time",
+    "sha256": "438559bcb62c1ef6abe53e001f36e0820ab076fa140c3f0417d2ba415f712197",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockHighMulWitness.log",
+    "sha256": "147fb414cab2272dd0b729cf16972a5805bd9ee1ff8bcc8a0a7ea884be2808d3",
+    "bytes": 3022
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockReturnedDivProductionRuntime.time",
+    "sha256": "6b5a461880cbf3fd61d7d1903e32aeba2cc29780cf1db1dcb40b21bfdd8de58a",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecProven.log",
+    "sha256": "036a4ac31a223741fc543cac15866e4a337139921489fbf2c1a98332e4f28ff1",
+    "bytes": 10603
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticExeWith.time",
+    "sha256": "93fc46122a7fd60dba46b2c1bf209073b8e1464fafb5be8612637bc92a85c44d",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkGoodT.time",
+    "sha256": "10f3c7c90b21cf5d91d1ee52e660e21405dea1cca723ea2a68b096570ca83f5f",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMinMaxProductionLinked.mem",
+    "sha256": "e447f77513d21810baefe8887715bd9d273d19b1bc9272f3ac62907bd69527a8",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticFallbackWitness.time",
+    "sha256": "65a02394667efca9a634f38e1825ebcda59ffaaeab1810e692495da899a66d52",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockPopcountWitness.mem",
+    "sha256": "65b5d76e10af0dedb6947a51153d77a2fdfa0e37689be480d682654087891e16",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockDivProductionRuntime.mem",
+    "sha256": "e7ce858c8b16ab4750de075e238f369f22f6fbf036a6320c6b97cfb133f54f2e",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecGoodReadsT.log",
+    "sha256": "7ada5b817a85cb30bc5ecc615956f84040a4da431f21fe9423a971cb00193eab",
+    "bytes": 9190
+  },
+  {
+    "file": "won7-build/FV.Backend.Lowering.StockResultCallRoutes.log",
+    "sha256": "3722f3b1606ab8c27fa5ce8abfe7a50acb5c293ac9a6921f85ffab530baaab58",
+    "bytes": 111
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecStaticT.log",
+    "sha256": "1acea3ca4772079c64f3d6815c9f504caf6bd910044b016dae62cb9d9af372f4",
+    "bytes": 8499
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticFallbackWitness.mem",
+    "sha256": "5513279c3ca64aa3f966e804cb2c4faf37f96a1438e0ad14fb8b7b992f34111d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.VoidCallFilePipeline.time",
+    "sha256": "506af0c98a40161f936b523739a8c2946929322349cd82acdb237eb4e479a32f",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.SemanticABICheck.log",
+    "sha256": "df8bb4a336b3539dba6e6be4420c3ce14ef5014ab37a5c298659beb8763e9d25",
+    "bytes": 96
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinBinary.log",
+    "sha256": "ea8a8c36524b33a543b28a67bac0ba210d21e07365d2528f2706cef6b7b11b47",
+    "bytes": 10857
+  },
+  {
+    "file": "won7-build/FV.Backend.ParameterCfgNIProduction.log",
+    "sha256": "34dc4f4f9c9ce0674354a65542922a91f0e7ae6a6ec7a0f5d2e157e416207ca7",
+    "bytes": 105
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticABIBoundary.mem",
+    "sha256": "4c8c614927079d673ac4a7b892eae14c77bb22befe86d4d44ebeb9bfd475ee30",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticCompilerWitness.time",
+    "sha256": "0283ac36d47f1ee663893fad543722cd54a93480027cfe486b2a8b3ff8bb1151",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupLinkCheckT.mem",
+    "sha256": "cd1d4a9baa2de0c3bf1ca560052b734cda18d74e87b509f0c7317e3fd8ac13f6",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockConditionalTrapWitness.time",
+    "sha256": "a99f42db0a6cf8849ff426fc11cfd122b974f2e51b7adbed54ea5267b08983a5",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTls.mem",
+    "sha256": "6967e66e9a3e33f88c8f30c4d444a963cb851ded70495076a8a7d93b77fd1ae3",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupBinaryT.mem",
+    "sha256": "6c60efcfca42901aa7899d10715bcd52f8c969cdd53478f1258e110b55df12cb",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinaryGood.mem",
+    "sha256": "f61a50f2a94b704e7738631d2da155d1f6376b9640e84c63694ad4fb1663f9ce",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkOutT.log",
+    "sha256": "05e823f412234a451f0f4d768c2b3075e6fc18763eeefc115c0e5a33b642536a",
+    "bytes": 8616
+  },
+  {
+    "file": "won7-build/FV.E2E.StockGeneralDivChecks.mem",
+    "sha256": "c0200ef8853b47dac1d29528a9ef923866676ff0d2bf60ab39d88f8bce843eec",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticCompileWith.time",
+    "sha256": "f9554372f68f9fe41d200ad932510903b3fd2226eb8dd78ad1de8c83c71dc154",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockLoopCarryWitness.log",
+    "sha256": "088750795a048173af0c0f0a79f0ddb784a7f717b66bbba1107ed098ab5617d6",
+    "bytes": 110
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileModesWitness.time",
+    "sha256": "c95828b4b0334dc2c69f0adbf82dc697b43aea66cf26c53bada030b24c1bc5bd",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.ExeT.time",
+    "sha256": "355fb80c885067c6268df9e4d3dd79775dd8692b3ba8f1504a2da074b007fdf7",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMulWitness.mem",
+    "sha256": "712022159114ed1a4684a81960271e2aa80a8bd73ee3197ee5bea589957b43e5",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockParameterCheckedWitness.mem",
+    "sha256": "23fd524c1fee340ea95f4171764c7ace591abfc63971158051e460fe4d410cd0",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileSourceModesWitness.log",
+    "sha256": "8347098ccd4d97413af44aab01766b871661aa2b1328362e99ea74bffaf8ad92",
+    "bytes": 15208
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatLinkCallsT.log",
+    "sha256": "ef1350a43c3d46af33dccb85f4a2be52169b42da168571610036469106d3697d",
+    "bytes": 14607
+  },
+  {
+    "file": "won7-build/FV.E2E.VoidCallFilePipeline.mem",
+    "sha256": "0164e6f7ea1ef438d229e64f1620659beb9585d3934e7c63b5c0a35158d89539",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemorySretCopyCompatibility.time",
+    "sha256": "defc4444e9dd7460da6fe8edda3a77fb2928ff3aa93136a7e289707de135a080",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMixedDivChecks.mem",
+    "sha256": "1d960eefd807c2094d1ef54e49dc98afbf3cfd99aa5a0763e7720445c8ca80b9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryRetainedRuntime.mem",
+    "sha256": "b7c002baf27e0af3d0e95a0fffa02fc9a706a3d4be44b7fc0dde7c4dc7f1b528",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkOutT.time",
+    "sha256": "d7a7eb92c9f2ed65956388522c225ca5238ac847387dd4cade2b9328d4163382",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockNotProductionRuntime.mem",
+    "sha256": "f731d1f0cc0512b0169a37d36725b25fda7bc9c5cdbd8b11d70916b7539e2e40",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMixedDivWitness.mem",
+    "sha256": "0408b3b694058ddd51fc15e4b4a231edc64c6807f66bcd44f41a0bee72836f57",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryStoreCfgProductionLinked.mem",
+    "sha256": "71b8ee9cd5eb6e148ac11033bdb49193831215368f677e34230c277cad49691a",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileSourceModesWitness.mem",
+    "sha256": "ef49adacea4213eb33fa3eb983879f32695b6cc6fb373ee440a03bf19592315b",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinPipeline.time",
+    "sha256": "4d60782d34181477caf4ac80156634f734b1effbfbf7a99802ca53448b50a993",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMaskProductionRuntime.time",
+    "sha256": "1cade19ecfeee26b0c559831c9cd7c8580e6897535baef978854231f45c87c44",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecBytesT.log",
+    "sha256": "4778538982b3c40be7586216d6824a0ac01a3cb1f3fb03401687195c85e7616f",
+    "bytes": 8498
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryBoundaryFacts.time",
+    "sha256": "ac589a18e133809bfadc217335683446c595b878972a405a8259cf2cbcea3363",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecWitness.time",
+    "sha256": "b5b3b2f451e7ae0fedce1f56ed34ba805a03f49ee2bb998c64cdf1e9458f0525",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticCompileWith.mem",
+    "sha256": "e5f82e40c97649611db9c17b444cae410911b6b339c76adb2d06cb4d55b0b7d6",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.MixedNIProduction.time",
+    "sha256": "afd1c6458ea0081fdb6d9ae4d7f2b54cc8436ef0c8dcf686a95f8e9ef51682fb",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticCompileWith.log",
+    "sha256": "d6ce92743761b3bc4001046af802144874837b33804b3da9da3a62fb4d35a4df",
+    "bytes": 6543
+  },
+  {
+    "file": "won7-build/FV.Backend.ScalarNIProduction.mem",
+    "sha256": "790664ecfb7869de07ed251235b5a008e70c0a7cc60ba669409d3e6ac07f03e8",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryStoreCfgCompatibility.time",
+    "sha256": "42a206084d91830e7e5ac0cc90f461a5b398d1151e377942c310919ae91a0d5c",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinCompileWith.mem",
+    "sha256": "96b6a70b1f6af697fcca3fd964591633040e3d92a1e8bb79b4f03dee6ecd461f",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockDivProductionLinked.time",
+    "sha256": "3dbb0f38264d71b9cb8cca6891e874df1e76e47fee8eb603665f18f3ad822ae6",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.LinearCfgNIProduction.log",
+    "sha256": "6f1266d881db7f08b6bbaeb3fce860374c2dfc0a1179c3de63cbfd91a506ff10",
+    "bytes": 102
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyExecBoundary.log",
+    "sha256": "cf37e04a86337e46c7eeea3b124816f636854f4ee55b3d526a39f090bd658937",
+    "bytes": 9131
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockLogicalLinked.log",
+    "sha256": "b180c9687036e75e799f86cc452b3fb111be6163defbe0bbca56bf11ec3d29dc",
+    "bytes": 10991
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupStackBoundT.log",
+    "sha256": "06e3204e73d40426d1a7f7d80b04163b9cfbe13b8d972b136c7109c0ab1ec426",
+    "bytes": 8499
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyHeapBoundaryWitness.log",
+    "sha256": "e8751465ea54adc28e69f533223d0173228872ceedba4b1480a9cf3feea467fe",
+    "bytes": 9395
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupExeT.mem",
+    "sha256": "435859a793dc057e0f8b547673989c3146883acc48922941f8eabf7ef1386b25",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNarrowChecks.time",
+    "sha256": "4a8d9003541ea574d54a146b3f8a5359b01ccbf54d6cba7ce54c5f4601418582",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatCompileExeTPeak.log",
+    "sha256": "59c1a9b10d5eab415dde2440220c8e23fff4ad2baa0f6faa7d6b8303c4594436",
+    "bytes": 10741
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockHighMulProductionRuntime.log",
+    "sha256": "fa119f05a33d7cfd293f6dff9bcb76e430e6006044a681716ca1a91f4ebcb6b2",
+    "bytes": 123
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinProductionWitness.mem",
+    "sha256": "00475e780fa9dd3688f923e07ce7253925957e1d56618b8ed044c9bc72e00712",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupBinaryGoodT.log",
+    "sha256": "de96981fc7b173553e38d958d364927d36bd1701e312d53f8419cf2078ba8918",
+    "bytes": 9907
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileSourceModesWitness.time",
+    "sha256": "7c73d09b61ce86087534e88ab8a749f2a9a2c529165e8148c8d153329d0e6276",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryBoundaryDefs.time",
+    "sha256": "a4cf696c22d55c6030bcdb94201cbfce2fa02407b340396aae52d55c9a4584c0",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.VoidCallABIProduction.log",
+    "sha256": "f8aaf1f10baf6061abf7fec002c406371759b12854478a1dcc58a549c5aa9ceb",
+    "bytes": 213
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatStockSretT.mem",
+    "sha256": "550c6cdcf453e973b2e11b4e3b0170cc518d9b0a70791ae74c40d4734d78306c",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockArithmeticLinked.log",
+    "sha256": "0ab9bd5765d18b282a82bc06d521d7cbb971e9ad24d0d8a25b9c8b298143b662",
+    "bytes": 10994
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinCheckFastWitness.log",
+    "sha256": "26cb8affebcd6cba7963c519fef682b2d170ac690cb75cdb28f5be3ad340661e",
+    "bytes": 9393
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinPipelineRetry.mem",
+    "sha256": "d9285270585ab12dd28c5602598dc3e5b09d2cf1aafc8417b9d15093a4be1778",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinExeSourceWitness.mem",
+    "sha256": "c4a2167d68e1d14d60a01893882c23b930568d3c8c44c4a6f01adf1f5cf164cd",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinPipeline.mem",
+    "sha256": "fe271bce845b4d29f58cfd57f9a05ae119222d0f80f698164c5059470cd52d71",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemorySretCopyProductionObject.mem",
+    "sha256": "68f234cf3b2188f99387aa5c4254a1df38d95ad2c680c92687f4d08cd9c6fd68",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMinMaxProductionRuntime.time",
+    "sha256": "f7d6b389b0c111d6c89e3af2eeccb9ee3f581e4f08ce6e45204eaf8313c65fab",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryLoadStoreNIProduction.time",
+    "sha256": "9ffb89c59d6ac2c102e518c17eb91ad8f076a87f9b8187844550b5ddd83040b8",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNarrowWitness.time",
+    "sha256": "2cefab3cd444043c522176fa9ca708620dd726aa62f075e422d58464b5fe3d05",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryStoreCfgNIProduction.mem",
+    "sha256": "dff4c22764a4748140ad13fed23f644d378aeb75cfb27bd6e3da8185bcb63605",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecBytes.mem",
+    "sha256": "edfe754924d873f49f3ae70ef86a90c9d2c498a9d16f55611a52621d58992dda",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkProgramReturnPinsModel.time",
+    "sha256": "4afeb1313616a570b54548b120f986b2f9a10c7160179aa66aa7f23c334cb9ac",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecProven.mem",
+    "sha256": "d5977767ca94af7da49ed4e7235985c23f16983524badaec23e5666248697b9d",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StackBoundT.time",
+    "sha256": "ce0375b5695268865e3f27007702e71ecb60bc469879f673e79610ebc6067dd6",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockShiftWitness.time",
+    "sha256": "7d954fa14ff6804cc93f88c089175f255d6e56c87c4636d9e82c7546e8d98eaf",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryCapturedCopyProductionLinked.log",
+    "sha256": "2b174c09a5940cbc5bea3b1a69663cb5f28d295ebf210a747c5706f5cedcb6f4",
+    "bytes": 11012
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinCallsWitness.time",
+    "sha256": "d633a0aa6ebd0c835815e3f53ad504f4a78b13c947363b341369784ba4f9c7a0",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyCapturedExec.mem",
+    "sha256": "a7a7baaa0d7c7c0e86c1145095978886e35284903957eb74156060960720633c",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinPipelineRetryWitness.mem",
+    "sha256": "c5a1aaa5224b362e6532e1ae93b91197ed788eace37004fe31f87f4224c69dec",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryCapturedCopyProductionLinked.mem",
+    "sha256": "8e48ac1e420e47e0eee61babfe7969f1ca7e2183b8f68864e6087aa65d237e34",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledSemanticReturnPins.time",
+    "sha256": "0ef250162580aa34105b0bea3d58d1c3e3826f0dd2739b0a53d635e6019078ff",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.E2E.FloatScopeT3.mem",
+    "sha256": "24f05193d364c0b07a50f8bf7ec33633b51b7d6084b5479deedd01f790863d2a",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinLinkerWitness.mem",
+    "sha256": "8f4dc32bf2106e1092626e6dca63d22b0d2fceca536ffa5ad10b39be4224a015",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SretCopyExecResultBytes.log",
+    "sha256": "1533376a575ff75dffc6cc085413c5d2e1f6e0bd4a001fef2837e64ed0f075a6",
+    "bytes": 9134
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecWitness.log",
+    "sha256": "f532a39c817312a323ef5f806d361d299166716e2e81752808ac796d4d4e467b",
+    "bytes": 11774
+  },
+  {
+    "file": "won7-build/FV.Backend.Lowering.StockLiveCallRoutes.mem",
+    "sha256": "29642406315a3cc7617322660f62eb9ef4a3e811154fb1ad85a73e48dbcbfb1a",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.TwoBlockEntryNIProduction.time",
+    "sha256": "34276d9ce676ca252232de4704b2d61ebd029a66121592d7daff6d7e526266e1",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecGotT.time",
+    "sha256": "3edaf8429a95855b878df7956b9f25c2d98dbb09aa20384c32de461c614008b0",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledProgramReturnPins.time",
+    "sha256": "696b229c9d5678ee05b45c785d09d30a2cb254f27fc22bbbdeffbdc79da2dc23",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.StockLiveCallWitness.time",
+    "sha256": "c48ad323c9c23fabacdc260db319cc556e68b0932d8c69707e02d34f4308342b",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryCfgNIProduction.mem",
+    "sha256": "5513563021aef8a1e42fe8c5c00edaaed6a9cf4b1336431dec470436b5d51662",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockLiveCallWitness.log",
+    "sha256": "c433b6fe259acbbcbe754f0c1b1795ecb8c15544a44ccafd60be167e3e365cd9",
+    "bytes": 706
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticMixedCompilerWitness.time",
+    "sha256": "308b4ff6a4ac4d5864f241c7623ff8bf9ad1dab037713cff2bca779cacfbcb0c",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.TypedCompileModesWitness.log",
+    "sha256": "fc5ff4d188539a0984fd0355d199c56433b0a369ff80b37b2056e8d590ebef50",
+    "bytes": 14945
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNotWitness.time",
+    "sha256": "c13ef8b4975ff7e904cae4e701d72c70ac8d8e1d0f389782331eed06b115c1ac",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryCompatibility.log",
+    "sha256": "37b34977b833721f99fd85ad51c0e49fe916ca4af02689dfef92eab121f44194",
+    "bytes": 111
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecGoodReadsT.time",
+    "sha256": "09d0afefbe9ada6b57ec8f6d1b12765be7b8c718753b52a67e90605e13bdf4c3",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.Link.FloatStockCompileT.time",
+    "sha256": "14ff1944e13dba328d671c499998d9106731d7dba0bab8ccc7273c6776847563",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryCapturedCopyNIProduction.time",
+    "sha256": "e5af218273e28e3176eb160e907c88e53c59cfbaa50e67343995b40f6ba6e3be",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockCastProductionLinked.time",
+    "sha256": "31fe5c8347c19dcfd159e90a202a2d0b31b4745125f1b570db8802bcefcbc3ff",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockTrapWitness.time",
+    "sha256": "0dee9ad1023189ec5cf6c29803a096b27c1951e518c9fe8896827ffb10155972",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledSemanticReturnPinsWitness.log",
+    "sha256": "78a8e1f61cf2c99dcccb6d73ddb6f81e05b097cbdd1c6a5520d02376fd581bee",
+    "bytes": 3037
+  },
+  {
+    "file": "won7-build/FV.E2E.BinaryGoodT.log",
+    "sha256": "970376bd135fd313172a4cbfec16102298c089572e81267fe713cd40320234ff",
+    "bytes": 9896
+  },
+  {
+    "file": "won7-build/FVTest.E2E.ReturnPinLinkProofWith.mem",
+    "sha256": "79facda5f650c962050ca0ba5eb5ad5a04b2d5bcb749d0eb9a125dbbdd4062f5",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Lowering.StockResultCallRoutes.mem",
+    "sha256": "05837fd79f2621d54ab2058dcd4c72bbffcc90769679898b766c77db2221886c",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinGoodWitness.log",
+    "sha256": "7a5bc26aaa3e1f35df65ad774d92cd145b4de90cca22eb885c9b9615c1397fcf",
+    "bytes": 9304
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecTlsProven.mem",
+    "sha256": "85f550c1be54cf92dc8b09aaf545c4c1a64ffaa0a10b4512bd0ebb7f9642a633",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Link.ExeT.mem",
+    "sha256": "dbd719a22e69e9ffa98b4a832c278bd9aa64ff4a77d7117201ec0d22c1d85ef3",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.Proof.StockMemoryStoreCompatibility.time",
+    "sha256": "3ac84e4b176e4eb670a6b8a8cf87d051c20b8d07ab25b0234f3ae0fc16d66fd8",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Backend.ReturnPinCheck.mem",
+    "sha256": "7a106583bea026912f7e73c6ac0e41f7188e0c6620926abeaf35ad580d39da08",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMemoryStoreProductionLinked.mem",
+    "sha256": "1badbc87211f1aff036efc8cdd0dfd5a780c921dfdf79481ddda16f3fe80face",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecFrameSim.log",
+    "sha256": "7f038a559abf827d78a3bcdc068a7478641ed507436fc7d3a35e0a07a836c9ff",
+    "bytes": 9131
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupExeT.log",
+    "sha256": "b85deeefd65814a99b1f4e478376a22244ab791514c7338c5a59232779fd570b",
+    "bytes": 10476
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMixedLinked.time",
+    "sha256": "622fcbccaa7941568154f628c20c785199d39b4406b1e43b94de03950ab45144",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.E2E.CompiledAnyTS.mem",
+    "sha256": "35c0ef91842cd63a10b2a3f06da01211b7d179615fd263379501d02314e75e13",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticExecRunN.mem",
+    "sha256": "10a6c8aa055bc27fc0162b1b01c57d63f04b7c645f9e360f2e4a617bc27e4ca9",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockMulProductionRuntime.time",
+    "sha256": "72e8317f498d4c3ab2ee4d25e869fe839bdcab56f94443cd543ffa584ce479ef",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FVTest.E2E.FloatScopeT3.time",
+    "sha256": "c08c3646f29ef3a77ed82df092f02a3db5b635bd1e8ae7698d163025ba075fb4",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.ReturnPinExecProven.mem",
+    "sha256": "9bb40f5e65b275a4bc4abd730dbdec07448a6549f80758a51736135a20213350",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNarrowWitness.mem",
+    "sha256": "cbd1905a794677b3476c4cdea2dc9991b11f52a9152e5f9324a8679d9ed87e25",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockMixedDivWitness.log",
+    "sha256": "efb99ff8451db52d45878b74cefb0fffd1012d86ae37cd2c4d4343fb4f120734",
+    "bytes": 3127
+  },
+  {
+    "file": "won7-build/FV.E2E.StockConditionalTrapWitness.mem",
+    "sha256": "2d15f550e108ddf8b4b58040c326b67f5b43cc833af6ece4b6012001ffbc19a2",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.StockSretPointerWorldWitness.mem",
+    "sha256": "ad8fd92ab72e9c3a59aa638c1f2cc1dc81a0469a056297ee7b6c24fbc1dec222",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.LinkReturnPinGoodWitness.mem",
+    "sha256": "15c5b30c18b66cf8dcf878c0e94e846ff8d0e2e39a644e9f2bf3c8118a0fddcd",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticCompilerWitness.log",
+    "sha256": "d3fa684f6299b50fb9a4f42f87c7a4ce23928f9b2053f1dfc8853213913c532e",
+    "bytes": 10734
+  },
+  {
+    "file": "won7-build/FV.Backend.ConditionalForwardCfgNIProduction.time",
+    "sha256": "167fa468e1871d8c5ef43233060ea463eec900619db0f83fc5ab0bd6fc7af0b5",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticPipelineCheckT.mem",
+    "sha256": "4c8863551d65684577bfd70e8120ec9b56e377914ca9d070ebd54f8ed4c882c4",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupExecPeakT.log",
+    "sha256": "258a5bada952011c797567e869923b3e4ab3ddd87374d662b43f8b78e4212ee3",
+    "bytes": 9905
+  },
+  {
+    "file": "won7-build/FV.Backend.MemoryNIProduction.log",
+    "sha256": "6749215d1afba8fc54f0264330e402d1c219968056f79ae23399e519e2f5c3b8",
+    "bytes": 99
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockArithmeticLinked.mem",
+    "sha256": "8c86074613d4547064bd990e94b0e9dad604b9f9ad50868cff40ae3d34401ed0",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FVTest.Backend.Lowering.StockNarrowProductionRuntime.log",
+    "sha256": "5889ba7ae317c52e0801ad4fff8dd7a7c0b25d71ce4e280c7274e04b40361a17",
+    "bytes": 122
+  },
+  {
+    "file": "won7-build/FV.Link.ReturnPinExeSourceWith.time",
+    "sha256": "d19fd13e0d410b298d7141f7f920b38fbb1f0f0f2c01232f7597826cb90907d5",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.TypedProductionChecks.log",
+    "sha256": "b623b7cba5a259066ce86ff82494b09688eeb1a2b01362d11dcfe0657b54c0bf",
+    "bytes": 11850
+  },
+  {
+    "file": "won7-build/FV.E2E.StockVoidCallWitness.mem",
+    "sha256": "a0135605f44caad9586fa6da86a12b2f1a8ea247efdaf6b195ae4dc93740799a",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.DeadCleanupBinaryT.log",
+    "sha256": "dc7045664bf03cecb7f1c49d70643e7caa33e1d4db550852a10b7c7c2683a422",
+    "bytes": 8495
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecBytesT.time",
+    "sha256": "3917bc3e98dfca5b10be781dfbff89943aa5035d7ceaf3fa32950d938df95bc9",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockNotWitness.log",
+    "sha256": "8d8d2d0bed7f22f5ef06bd068af033aa1f5ac69aa2f212f2f7c28bff16f8e9ba",
+    "bytes": 3019
+  },
+  {
+    "file": "won7-build/FV.E2E.VoidCallFilePipeline.log",
+    "sha256": "3df00d47a1fbc001ea8aa726c06cd78416f5b31bf1dd14edbdeb609efac56747",
+    "bytes": 9555
+  },
+  {
+    "file": "won7-build/FV.Link.SemanticExeSourceWith.mem",
+    "sha256": "5a9748adb19b7fb1c129086f97c874af0822a9548dfc404029dbd495c7781029",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinaryGoodTS.log",
+    "sha256": "24ae35b9c5a0f6acecd17222457b80ccf6737f734df1af1726f2dbb5b656530c",
+    "bytes": 14032
+  },
+  {
+    "file": "won7-build/FV.E2E.ExecGotT.mem",
+    "sha256": "dea66bb27bec02a1c9ab5da8cb7554987d29d98e0422cc9ad84e5b23a60e25af",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.PreparedReturnPinProgram.mem",
+    "sha256": "83d45b0252d358eaded9f6845af62f421edfeb2394c467d241f5cbb789fae3f4",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.Backend.ParameterCfgNIProduction.mem",
+    "sha256": "445b55dd9ab7a0e877a4883ddcade24d199062467599d8d642f48aa14db06174",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticBinaryGoodTS.mem",
+    "sha256": "d1783359999bbf5986b78dd702a43a2b4c710d83d02d80e4e83084847a7d7b83",
+    "bytes": 32
+  },
+  {
+    "file": "won7-build/FV.E2E.SemanticStackBound.time",
+    "sha256": "83422d2e9b1e31eb035f777174f0d29bc7cf2bdd4e3069167ad36069b9122cd0",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.E2E.StockParameterTrapWitness.time",
+    "sha256": "70e008acf02393f5fedd809e51d42463e9780671353a5cda1acfa3c5431b38a9",
+    "bytes": 94
+  },
+  {
+    "file": "won7-build/FV.Backend.ArithmeticNIProduction.time",
+    "sha256": "482358294ce0f717d9a400fd496ba3edc91c69599c77dc1e00741f6bcadf47e0",
+    "bytes": 95
+  },
+  {
+    "file": "won7-build/FV.Link.DeadCleanupExePeakT.log",
+    "sha256": "24320a4af69a542473b5ffe547134573ea821459a78030e52fb960600e405a67",
+    "bytes": 10739
+  },
+  {
+    "file": "won7-ab/sched.log",
+    "sha256": "788166114e876ce43aa713d726ee8481c5701529d5a00756cdc5eeeaea77d425",
+    "bytes": 300
+  },
+  {
+    "file": "won7-audit/stock-general-div-production.log",
+    "sha256": "15d3795900119876b72447a922a46aacadc9b65fd90cd80e0b1ac8c15ee72dc0",
+    "bytes": 1040
+  },
+  {
+    "file": "won7-audit/sret-copy-exec-boundary.log",
+    "sha256": "a414b3c2bb2c09918f6558bebfc776d65e2e74640b32c2145273e2c90f7f572b",
+    "bytes": 882
+  },
+  {
+    "file": "won7-audit/stock-void-call-ni.log",
+    "sha256": "ec55c5b808fab95475e9f43dd71788f35d7c9947b0ed47e94b7df52d624904b9",
+    "bytes": 1743
+  },
+  {
+    "file": "won7-audit/typed-compiler-old-variants.log",
+    "sha256": "ca0bffc564e755ded19497046a5ace9e817f14575e3b99137d3edac36a5ab276",
+    "bytes": 1278
+  },
+  {
+    "file": "won7-audit/stock-narrow-production.log",
+    "sha256": "5d76c2365cc35b3deeb96eb3016d8063c73049fb427d52249146878090e4c0b1",
+    "bytes": 2617
+  },
+  {
+    "file": "won7-audit/stock-memory-cfg-production.log",
+    "sha256": "52c3404db1d94d53c5576768a888f85d723ccef5e0df9ba43fdad1411ba12624",
+    "bytes": 1766
+  },
+  {
+    "file": "won7-audit/loop-bounded.log",
+    "sha256": "f26b8329f8b619667deb05b1599b9344944db5fa0cf7dc4862532287a19a0f5f",
+    "bytes": 2300
+  },
+  {
+    "file": "won7-audit/general-route7.log",
+    "sha256": "1463e22186b40df4da3e1e82a7b1c54774995045977661053565aeb82d4aca26",
+    "bytes": 223
+  },
+  {
+    "file": "won7-audit/stock-void-call.log",
+    "sha256": "2543671771dbac65c9d5d8720640ecebdd5d8fa933194aa1f99abaeac639cbf1",
+    "bytes": 2511
+  },
+  {
+    "file": "won7-audit/return-pin-production.log",
+    "sha256": "09f17a26b981987fd6f54f80b15e475d8cef02354026dfb342c44d5404247652",
+    "bytes": 306
+  },
+  {
+    "file": "won7-audit/floats-typed.log",
+    "sha256": "34bb2f68eec061aab8c548f51f467ac2e8f6fd1d939161967ac849e63967e1bd",
+    "bytes": 36062
+  },
+  {
+    "file": "won7-audit/stock-popcount-production.log",
+    "sha256": "a1cf0f64c0489572ce41419eddbb2f0d58d421e665121877bbd3561eb5956cff",
+    "bytes": 3510
+  },
+  {
+    "file": "won7-audit/return-pin-binary.log",
+    "sha256": "8a87f5b6fcf1ead20a2e62be66cce8ca0356b695c6cf704686de1e9a3c4ab7aa",
+    "bytes": 7202
+  },
+  {
+    "file": "won7-audit/stock-mixed-div-production.log",
+    "sha256": "aba5a731967baaf4837c6aac0d6d2216a450e2a94a11682b8dd65d1c1d989836",
+    "bytes": 3162
+  },
+  {
+    "file": "won7-audit/stock-trap-production.log",
+    "sha256": "e5618971fd4fd090e2c07c964726afaa5e2ea27f6c662b73e0fc8e1ca293f9ea",
+    "bytes": 627
+  },
+  {
+    "file": "won7-audit/link-return-pin-program.log",
+    "sha256": "4feabb1c65e10452c2290bc26e21335bd9fb64c4304960c528147fdedbbee81a",
+    "bytes": 7252
+  },
+  {
+    "file": "won7-audit/call-return-pins.log",
+    "sha256": "cd88c91bafd542d7e5c48ba9e48d93a7036b5583ddbf7e14bc85e475cab4edd7",
+    "bytes": 391
+  },
+  {
+    "file": "won7-audit/stock-not-production.log",
+    "sha256": "fcefd7edeb4cb0aaf5f674896ea815780d582436452d6661a7492334be7b387e",
+    "bytes": 2756
+  },
+  {
+    "file": "won7-audit/stock-scalar-production.log",
+    "sha256": "dcf323267828ebef4f6c83e7bcca3a53a670ecb8db4818e30a1a887383065007",
+    "bytes": 5144
+  },
+  {
+    "file": "won7-audit/sret-copy-heap-boundary.log",
+    "sha256": "3a182147b546e403106b25d9d0d6980c3cb019a9e222d1e249664cd143a3a549",
+    "bytes": 2951
+  },
+  {
+    "file": "won7-audit/link-return-pins.log",
+    "sha256": "18669bc1b2924bc9952fcd90f6b1b1fade925db89ec964fec5fe79f78240cf51",
+    "bytes": 1577
+  },
+  {
+    "file": "won7-audit/void-call-file-production.log",
+    "sha256": "9974c661ed3fd2698c8abb9a3d5a72b7502e6c1608bbbd384f5da7521e80e765",
+    "bytes": 2609
+  },
+  {
+    "file": "won7-audit/return-pin-call-consumers.log",
+    "sha256": "78b939caa092f08d23ff13df14f8ce99a3512b29aad3f4372247bdd17dc03fdc",
+    "bytes": 2935
+  },
+  {
+    "file": "won7-audit/parameter-loop-domain.log",
+    "sha256": "84ea4bde781e130a0df23dfa8a570c33ca9520744130be3de576ef29aeff5138",
+    "bytes": 3083
+  },
+  {
+    "file": "won7-audit/stock-div-production.log",
+    "sha256": "4f1ddd71c1ebbd10babad25a76a48a5ef9c355b5b6ac13deb4cc5fa19fca600a",
+    "bytes": 4949
+  },
+  {
+    "file": "won7-audit/stock-minmax-production.log",
+    "sha256": "fe77a8c31466c978e9be2e56355766f2711fbd2037c79675c199da0515913493",
+    "bytes": 3389
+  },
+  {
+    "file": "won7-audit/stock-cmp-production.log",
+    "sha256": "cbd2983b145569ae1def789c695e8cf4f38bc4b713a249c77cb2c43aed20f50f",
+    "bytes": 5022
+  },
+  {
+    "file": "won7-audit/stock-parameter-source.log",
+    "sha256": "6c0fef664cf5333af3fb9d9e060bcf29ed53150312270b0a5bd8570433f1e232",
+    "bytes": 6771
+  },
+  {
+    "file": "won7-audit/loop-defbefore.log",
+    "sha256": "06132d11fe81501ce50f4ca0384eed2c193cefc987e2fd0a5901e7066fe24af6",
+    "bytes": 1994
+  },
+  {
+    "file": "won7-audit/stock-memory-captured-production.log",
+    "sha256": "66d39886bbdf7d2a9008cc5300c4a32c4d613afe544af104131e0fe5d6bf1bb2",
+    "bytes": 1145
+  },
+  {
+    "file": "won7-audit/stock-logical-production.log",
+    "sha256": "1dc41ab4a929bc4fc9c28b46162f8477e8571fa60d8086030b022688c404e580",
+    "bytes": 2378
+  },
+  {
+    "file": "won7-audit/stock-mul-production.log",
+    "sha256": "624c810b42ca09df032b07f357f62333b109d6ff114836db4977d70a557444e9",
+    "bytes": 3331
+  },
+  {
+    "file": "won7-audit/stock-memory-integer-production.log",
+    "sha256": "d8bf2fd13cd7460092d0b0ba15f647afc3d4dff5dd42bb8a69c065a247a19409",
+    "bytes": 2180
+  },
+  {
+    "file": "won7-audit/stock-memory-store-cfg-machine.log",
+    "sha256": "b5156b85051ac32d372f7a02e13d4722b17fbd5ff993a77575529d81c1d9ba5f",
+    "bytes": 15240
+  },
+  {
+    "file": "won7-audit/return-pin-generated-stack.log",
+    "sha256": "e734e1288223757c62ba6fb9c0c41ce9cc91d9dbedbec6544caf405794caef54",
+    "bytes": 219
+  },
+  {
+    "file": "won7-audit/return-pin-executable-source.log",
+    "sha256": "287bb777e6635a6729857a9eb87f232554d329b2b1dbe5533fcec8b27c514288",
+    "bytes": 227
+  },
+  {
+    "file": "won7-audit/stock-highmul-production.log",
+    "sha256": "eee27da75fbd8735ee3fb02860632d609c3bdda627f291b826ae256b2292bead",
+    "bytes": 3185
+  },
+  {
+    "file": "won7-audit/stock-shift-production.log",
+    "sha256": "1a3a81ab0012eeea990b5dc5904c792e06d7a46aa1a25c877e74d236091b230d",
+    "bytes": 4975
+  },
+  {
+    "file": "won7-audit/return-pin-executable.log",
+    "sha256": "1b708be04c3cf99e26c128edbcc858f31a8f5c0a8323b70987fe0a76382c7300",
+    "bytes": 9589
+  },
+  {
+    "file": "won7-audit/stock-call-store-class-final.log",
+    "sha256": "33262870c60a23420c9d1a3398662ca47cc01622029c9ff5d1bfab62e5709859",
+    "bytes": 5753
+  },
+  {
+    "file": "won7-audit/return-pin-check-fast.log",
+    "sha256": "7897f63391b4d87a8aed918400257b9b08fd97ad08850babf65a1b70bed3680e",
+    "bytes": 1477
+  },
+  {
+    "file": "won7-audit/stock-sret-entry-value.log",
+    "sha256": "8b25f857c08f99c5e5357fdfa02968bf98f386c57f631553eb6b0ef57dc5112a",
+    "bytes": 4416
+  },
+  {
+    "file": "won7-audit/stock-live-call-class.log",
+    "sha256": "febc58d7dd048b64a9894b24c697deab641b345ab4990d47b746645c400f33a9",
+    "bytes": 5111
+  },
+  {
+    "file": "won7-audit/return-pin-checks-with.log",
+    "sha256": "6dfcd8743af1fcc743aabef9ee34d8631fe4899f0bc073097482a1de47050846",
+    "bytes": 1046
+  },
+  {
+    "file": "won7-audit/return-pin-routed-compile.log",
+    "sha256": "eca0d11307a3721349dd2c5cceb382c89958afee1ea90dde34f00c17ffeb08a1",
+    "bytes": 1224
+  },
+  {
+    "file": "won7-audit/stock-result-call-witness.log",
+    "sha256": "94182d9df1860e396d659b88c3eb6582dc0168d8ecfd53ecbf8b68cde7d1a9cd",
+    "bytes": 972
+  },
+  {
+    "file": "won7-audit/return-pin-compile.log",
+    "sha256": "96fcf68fc164ab7fc8c64e43fd67424d7fcb965cd4430fb734a736ccf8130973",
+    "bytes": 2382
+  },
+  {
+    "file": "won7-audit/loop-carry.log",
+    "sha256": "3292d40746347f94b3272ba4414228bfd230cb8187f8e8fb1e831c7ad1da4ed5",
+    "bytes": 3585
+  },
+  {
+    "file": "won7-audit/stock-alu-roots.log",
+    "sha256": "aaecca5726be2dc99c763ca9206686a23a2d00d268102b064a4491a3ed809d5f",
+    "bytes": 1567
+  },
+  {
+    "file": "won7-audit/link-return-pin-good.log",
+    "sha256": "cb40a3878e4f176cc78b641f64f878298f8425b580f1a6305424b85b5533d6e5",
+    "bytes": 2220
+  },
+  {
+    "file": "won7-audit/stock-result-call.log",
+    "sha256": "f15d027c0c752aad6fac8ed308a669cc59e3f414befce1a8e8b22b16da62ed0d",
+    "bytes": 2701
+  },
+  {
+    "file": "won7-audit/return-pin-pipeline-retry.log",
+    "sha256": "cb88ea2962232a2ccf394d5e7149919f3eeaf09c3f989440f5f8e8b949fdd313",
+    "bytes": 2199
+  },
+  {
+    "file": "won7-audit/semantic-return-pins.log",
+    "sha256": "87fc528089b27eaeda9623ac12e7c7a5e01a532984c854280f67380193352b06",
+    "bytes": 1104
+  },
+  {
+    "file": "won7-audit/stock-cfg-production.log",
+    "sha256": "5ebdc241d8feeab5eece8f8f3a78250a5fd1e221717b31b595454d89972f4777",
+    "bytes": 2426
+  },
+  {
+    "file": "won7-audit/return-pin-production-witness.log",
+    "sha256": "2b9a5588aaf2e26985175b5215488dac41725b3d0577eb3cc5b14876ee011901",
+    "bytes": 382
+  },
+  {
+    "file": "won7-audit/typed-compiler-modes.log",
+    "sha256": "3ad61271dbd500038de8009a261ecf6507634ef0adb89567615e96b2a4aa245c",
+    "bytes": 1062
+  },
+  {
+    "file": "won7-audit/stock-conditional-source.log",
+    "sha256": "52ce5ac02ddd5b852a296f4696081913aff8bd3926c5aee8b180f3a0b73ae5a6",
+    "bytes": 14562
+  },
+  {
+    "file": "won7-audit/stock-code-domain.log",
+    "sha256": "95ba049117a51f1ceaa641e6cba16d8d458653cc773d29b9ae534f1717c8b5c6",
+    "bytes": 764
+  },
+  {
+    "file": "won7-audit/parameter-args-route.log",
+    "sha256": "d09579e0eb0664767af2d10af77a2aebfaa4628cc047ea5ffdf083c7e035830b",
+    "bytes": 465
+  },
+  {
+    "file": "won7-audit/stock-arithmetic-ni.log",
+    "sha256": "80fb222227131dd10c4e04a25eeb55617755a97baa61e80fbdcca1d65aeae312",
+    "bytes": 4010
+  },
+  {
+    "file": "won7-audit/typed-compiler-modes-witness.log",
+    "sha256": "fd5c58c01415a7f93c8e483ccffe0736ba0b81ff609ad1bbd8040ecd7e34b97c",
+    "bytes": 1511
+  },
+  {
+    "file": "won7-audit/stock-parameter-trap-production.log",
+    "sha256": "7566b74eae264ee4c04d8b5bf73ea719223ece2f66885a937d3499cbfc84bd8b",
+    "bytes": 2317
+  },
+  {
+    "file": "won7-audit/stock-memory-extending-production.log",
+    "sha256": "c79bdf9deaf8327bfa490f5f7544465ef82fba71f39d9bf317143191a1110918",
+    "bytes": 1338
+  },
+  {
+    "file": "won7-audit/return-pin-executable-source-witness.log",
+    "sha256": "b5d791376a5c48676873ab92a8fceb84c1bfc3712bb6db83df73b55854a42173",
+    "bytes": 1101
+  },
+  {
+    "file": "won7-audit/stock-narrow-roots.log",
+    "sha256": "bbcb33641d75327b6372a2a5d3e437f36519f5986263be192019ce1e41ee480b",
+    "bytes": 1010
+  },
+  {
+    "file": "won7-audit/return-pin-prepared-program.log",
+    "sha256": "cc34339a60584b2ccc516ea360697288678289c39c1cf31e4f17dd6a8307b883",
+    "bytes": 2622
+  },
+  {
+    "file": "won7-audit/stock-memory-store-production.log",
+    "sha256": "c3818d29bdcb9a7ab58592ff904d3e7b8c0e637bed979c7818887f9c4b7c514e",
+    "bytes": 7194
+  },
+  {
+    "file": "won7-audit/stock-memory-sret-consumers.log",
+    "sha256": "214356883c90880629a438c5e56f9885af28104fe67f18df0930e3add7efe76e",
+    "bytes": 1818
+  },
+  {
+    "file": "won7-audit/stock-bit-production.log",
+    "sha256": "dba71453f250ab400401aa70a56286aa5f326b78f470df247a844495ea44c444",
+    "bytes": 3993
+  },
+  {
+    "file": "won7-audit/stock-forward-trap-production.log",
+    "sha256": "74779886d4dc09cace1d87d8bb7485538848ec853e50f12777bb45334a48e615",
+    "bytes": 1689
+  },
+  {
+    "file": "won7-audit/stock-conditional-forward-source.log",
+    "sha256": "b5a378acd692af17ff8881cb8abc66c812fff8dfc14d72da6fabb63c8b43eb2f",
+    "bytes": 2644
+  },
+  {
+    "file": "won7-audit/stock-mask-production.log",
+    "sha256": "ddddde82b2a6efe516e45a8b7bb5ccd38b691e3b42b19f7dd78253fa0d2f6714",
+    "bytes": 2279
+  },
+  {
+    "file": "won7-audit/stock-memory-source.log",
+    "sha256": "fcee59f5c10a593337039ce031122cd0d147661b0b1f2631ccb99f9a045595ac",
+    "bytes": 11950
+  },
+  {
+    "file": "won7-audit/floats-prog.log",
+    "sha256": "ebebd0d3823b052953b51927e4fc938ecb57961e469cd728be0ff782e118b143",
+    "bytes": 6328
+  },
+  {
+    "file": "won7-audit/sret-copy-exec-result-bytes.log",
+    "sha256": "a62f5bbe674772d32268c2e7762e49e3a01b8c37f384c3938cd625e97e9945ca",
+    "bytes": 197
+  },
+  {
+    "file": "won7-audit/skip-wiring.log",
+    "sha256": "03c9c6e30d4c85824f06053b0c809b5d50d5b71c4aaaef738d204ab56b9ac199",
+    "bytes": 19960
+  },
+  {
+    "file": "won7-audit/stock-returned-div-production.log",
+    "sha256": "7b1640297c5fea6cba95fb942fbc8b48f2c5992d405b3ab8d081ee2fb09d8dab",
+    "bytes": 1884
+  },
+  {
+    "file": "won7-audit/stock-call-store-callee-complete.log",
+    "sha256": "3a69e13250c45127cc3405c5c78a195069255591b662da1a76f473abfd1a6bee",
+    "bytes": 8193
+  },
+  {
+    "file": "won7-audit/stock-conditional-trap-production.log",
+    "sha256": "c153f98663448f6c48cc5173a02fdc0112949921b0f3c6f729cfa22760e15dda",
+    "bytes": 1536
+  },
+  {
+    "file": "won7-audit/sret-captured-exec.log",
+    "sha256": "a53526ebf6c161898efc2e90be1b8ab1c08c170a693681325d608e2017cdd1ff",
+    "bytes": 623
+  },
+  {
+    "file": "won7-audit/stock-cast-production.log",
+    "sha256": "10e839065b621ef4aa4352feaaea60d0b53d0e992ba2da425ea813d46c2fde4c",
+    "bytes": 4104
+  },
+  {
+    "file": "won7-audit/stock-ranked-trap-production.log",
+    "sha256": "0056dbc25c4cbce8833b030e03f0d49366dcbb304a51c7788c6d638975533e81",
+    "bytes": 1957
+  },
+  {
+    "file": "won7-audit/stock-memory-load-store-production.log",
+    "sha256": "a89781def8eca78c2a0ff9925fa50a0af958b794335c9a448f5dced0c67dd4cd",
+    "bytes": 2917
+  },
+  {
+    "file": "won7-audit/typed-production.log",
+    "sha256": "04c15f48b8034617c136df0f51abe27ba68125a1263b70b0bc09fc8f107a0031",
+    "bytes": 439
+  },
+  {
+    "file": "won7-audit/stock-mixed.log",
+    "sha256": "59898a47bd61405f33da6e44874f1c81ae35baf5f57541fb116bec4712c47388",
+    "bytes": 2176
+  },
+  {
+    "file": "won7-audit/parameter-loop-class.log",
+    "sha256": "fa829e052c0f95b9f524edffee03769cceff3bbeb591090db0cdbe0f315467a2",
+    "bytes": 672
+  },
+  {
+    "file": "runtime/run-won7-stock-popcount-runtime.log",
+    "sha256": "cd15a1fa638f337f38f8b35302bdef6685ecc021cc882098aceaccb60fbd8417",
+    "bytes": 1920
+  },
+  {
+    "file": "runtime/run-won7-stock-minmax-runtime.log",
+    "sha256": "c1f75210c79a50b0618768d81038731df1d0b634ce974e472fb4363f4c2166ef",
+    "bytes": 1894
+  },
+  {
+    "file": "runtime/run-won7-stock-cmp-runtime.log",
+    "sha256": "baff33741713b125ca678708745a259a92be141ca4298229d59f627b30a3b52f",
+    "bytes": 1855
+  },
+  {
+    "file": "runtime/run-won7-stock-highmul-runtime.log",
+    "sha256": "42f1321b2829c3066f67c6220cbf749bd9c9e586ad1a84e820d9c7216f81f361",
+    "bytes": 1907
+  },
+  {
+    "file": "runtime/run-won7-stock-div-runtime.log",
+    "sha256": "9774a739048a677063431c0953de5edca567d95b24c3b3cc0c317854cb5b3ff0",
+    "bytes": 1855
+  },
+  {
+    "file": "runtime/run-won7-stock-mixed-div-runtime.log",
+    "sha256": "a61358cb86c6bf7eb75f4c20bb51a51d3a5917bfc6a4be1381275245ddc84234",
+    "bytes": 1920
+  },
+  {
+    "file": "runtime/run-won7-stock-returned-div-runtime.log",
+    "sha256": "e4c31d01ad4a2ab56198188c50358283135934ae14826b8c71a2509f1acd217f",
+    "bytes": 1959
+  },
+  {
+    "file": "runtime/run-won7-stock-general-div-runtime.log",
+    "sha256": "23fe827c921ed30c70d2f4fd4df8f8aefa57c69b315792f3426ff447f0001371",
+    "bytes": 1946
+  },
+  {
+    "file": "runtime/run-won7-memret-parameter.log",
+    "sha256": "5e236aa0db5156325813c5b492ef8dd37493bfbdf24aa0ff9244eee5a53d81e3",
+    "bytes": 130
+  },
+  {
+    "file": "runtime/run-won7-memret-conditional-forward.log",
+    "sha256": "7232f6203d30c5b3b69d99b6e685f25ba665e7b3facb3d1065e6f0b3293e0545",
+    "bytes": 140
+  },
+  {
+    "file": "runtime/run-won7-memret-conditional.log",
+    "sha256": "46d8b6538cd60bd821d8d2bb4d7e04e31cba38c355dd24d67d61b928c3d5e8cc",
+    "bytes": 132
+  },
+  {
+    "file": "runtime/run-won7-memret-forward.log",
+    "sha256": "78c1099e9e886fb1fd3dea1bbe0bde1b20caff3f0e57a90cc556376b05508614",
+    "bytes": 128
+  },
+  {
+    "file": "runtime/run-won7-memret-linear.log",
+    "sha256": "d29afffd1b8aa9cf4a025af26a7edb8f755852935fe16005529d9a155c279f29",
+    "bytes": 127
+  },
+  {
+    "file": "runtime/run-won7-memret-scalar-entry.log",
+    "sha256": "779321c9d94d41c48308d4206180283d7b92e3cfe34498e4db1f36a9f8db9f2f",
+    "bytes": 133
+  },
+  {
+    "file": "runtime/run-won7-memret-entry.log",
+    "sha256": "4b0bbac23a36ed834def223dd6210d4722cf0e1648c1882d6df8161e6828c0ed",
+    "bytes": 125
+  },
+  {
+    "file": "runtime/run-won7-memret-cfg.log",
+    "sha256": "ec82668965079f3a4564c91dfe2f497d0e5722eab76f879d7e4fbcc08ad06147",
+    "bytes": 123
+  }
+]

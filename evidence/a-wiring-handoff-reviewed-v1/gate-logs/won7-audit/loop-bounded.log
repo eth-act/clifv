@@ -1,0 +1,36 @@
+'Backend.Stock.Proof.ForwardSource.ReturnsAt.below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.returnsAt_of_below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.ReturnsBelow.mono' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.TrapsAt.below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.trapsAt_of_below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.TrapsBelow.mono' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Control.jump_body_returns_below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Control.jump_body_traps_below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.successor_returns_below' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.successor_traps_below' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_empty_parameter_below' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_empty_parameter_below' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.jump_body_returns_below_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.returns_below_recovers_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.jump_body_traps_below_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.traps_below_recovers_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.BelowWitness.returning_empty_parameter_below_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.BelowWitness.trapping_empty_parameter_below_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]

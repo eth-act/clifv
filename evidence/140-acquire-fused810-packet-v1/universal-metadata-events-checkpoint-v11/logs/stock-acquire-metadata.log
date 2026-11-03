@@ -1,0 +1,70 @@
+'Backend.Stock.Proof.Acquire810.body_color_count' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_unchanged_color_quiet' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_widened_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_iflet_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_root_match_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.sink_atomic_forward' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.output_reg_forward' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_rhs_forward' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.sink_atomic_call_receipt' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_rhs_sink_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_rhs_inputs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_rule_sink_provenance' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.sink_atomic_match_data' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.mapped_atomic_producer' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.sink_atomic_call_data' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_rule_original_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_pair_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_emission_binding' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_record_binding' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_record_final_binding' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.AcquireHelpers.acquire_rhs_output' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_selected_rule' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_selected_final_binding' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_quiet_source_outcome' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_quiet_source_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_color_interval_source' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.entryColors' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.color_distance' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.member_color_bounds' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.ordered' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.distinct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_ctor_color_without_sink' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.PendingSinks.append' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.stock_ctor_pending_execution' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_apply_pending_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_runTerm_pending_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.PendingSinks.finalColor' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pending' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_atomic_rhs_pending' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.sink_atomic_call_pending' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_rhs_pending' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.acquire_rule_pending_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_singleton' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_color_size' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.body_color_keeps_slot' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.body_colored_exact' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_colored_pair_order' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.body_color_events_fold' depends on axioms: [propext]
+'Backend.Stock.Proof.Acquire810.block_color_events_fold' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.source_color_events_fold' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.sourceMetadata_color_events' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Acquire810.stock_lower_record_color_events' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]

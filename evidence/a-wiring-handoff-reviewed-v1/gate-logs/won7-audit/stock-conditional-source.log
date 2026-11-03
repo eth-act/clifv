@@ -1,0 +1,259 @@
+'Backend.Stock.Proof.BranchHelpers.stock_emit_side_effect_projects' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Sequence.append_fall_inv' depends on axioms: [propext]
+'Backend.Stock.Proof.Sequence.append_fall_inv_witness' depends on axioms: [propext]
+'Backend.Stock.Proof.ConditionalCalls.selected_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalCalls.Calls.source_of_slot' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalCalls.calls_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalCalls.source_calls_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.branch_of_boolean_companion' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.branch_companion_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.zero_branch_of_boolean_companion' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.zero_branch_companion_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.descriptor_shape' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.descriptor_emitter_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.descriptor_emits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.emission_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.nonzero_boolean_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.original_boolean_companion' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SourceWitness.original_source_companion_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SourceWitness.nonzero_source_companion_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.flag_branch_resolved' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.zero_branch_resolved' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ResolvedWitness.flag_resolved_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ResolvedWitness.zero_resolved_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_prefix' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_prefix_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarSelect.stock_select_zero_rhs_prefix' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarSelect.stock_select_zero_prefix_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarSelect.stock_select_wide_comparison_prefix' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarSelect.stock_select_narrow_comparison_prefix' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarSelect.stock_select_comparison_prefix_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.comparison_prefix' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.original_prefix' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SourceWitness.original_prefix_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Resolved.renamed_defs' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Resolved.fragment_defs' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Resolved.fragment_frame' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Resolved.renamed_defs_witness' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Resolved.fragment_endpoint_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Sequence.stop_frame' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.Sequence.stop_frame_witness' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.original_source_branch_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalCalls.source_calls_fixture_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SourceWitness.named_source_branch_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.conditional_core_origin' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.conditional_core_origin_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalCalls.Calls.source_values' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.nonzero_source_branch_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.parameter_source_branch_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalCalls.Calls.parameter_source_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SourceWitness.parameter_frontier_branch_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.conditional_core_calls' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.stock_lower_conditional_body_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.BodyWitness.executable_conditional_body_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.conditional_core_emission_demand' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.BodyWitness.conditional_core_demand_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.nonzero_wide_no_defs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalCalls.Calls.parameter_wide_no_defs' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalCalls.Calls.parameter_wide_source_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SourceWitness.parameter_wide_full_frame_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterBranch.parameter_selected' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterBranch.named_calls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.outgoing_base_extent' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.BodyWitness.conditional_outgoing_frame_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.nonzero_wide_allocation' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalCalls.Calls.parameter_wide_bounds' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.parameter_branch_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.GuardedWitness.executable_parameter_branch_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.buildCtx_term_available' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.parameter_calls' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.nonzero_wide_emitted_size' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalCalls.Calls.parameter_wide_emitted_size' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.parameter_branch_values_last' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_parameter_core' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ReturnWitness.returning_parameter_core_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_parameter_core' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.TrapFixture.driver_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.TrapWitness.trapping_parameter_core_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.selected_successor_guarded_of_demand' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.selected_successor_guarded' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SuccessorWitness.selected_successor_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.SelectedCopyRoute.execute' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.RouteWitness.selected_route_execution_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Control.original_entry_prelude' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.conditional_entry_prelude' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.returning_empty_parameter_at' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.EmptyFixture.driver_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ReturnAtWitness.returning_empty_parameter_at_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ReturnAtWitness.returning_empty_parameter_entry_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Control.jump_entry_prelude' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Control.source_defined_entry_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.ConditionalBodySpec.trapping_empty_parameter_at' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.EmptyTrapFixture.lower_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.EmptyTrapFixture.driver_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.TrapAtWitness.trapping_empty_parameter_at_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.TrapAtWitness.trapping_empty_parameter_entry_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SuccessorReturn.of_return_block' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SuccessorTrap.of_return_block' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.compatible_conditional_sources_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.ConditionalCfg.eligible_shape' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.ConditionalCfg.Shape.condition_metadata' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.Shape.legacy_compatible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.compatible_conditional_code_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_shape' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_eligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.conditional_source_checks_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.ConditionalValues.conditional_source_checks_witness._native.native_decide.ax_1,
+ Backend.Stock.Proof.ConditionalValues.conditional_source_checks_witness._native.native_decide.ax_2]
+'Backend.Stock.Proof.ConditionalValues.checked_conditional_driver_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.ConditionalValues.conditional_source_checks_witness._native.native_decide.ax_1,
+ Backend.Stock.Proof.ConditionalValues.conditional_source_checks_witness._native.native_decide.ax_2]
+'E2E.CfgBoundary.checked_step_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.checked_step_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.Realize.step_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.noTlsCfg' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]

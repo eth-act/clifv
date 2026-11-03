@@ -1,0 +1,18 @@
+'Backend.Stock.Scalar.divisionBodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Scalar.generalDivBodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.domain_of_scalar_div' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockGeneralDivNIWitness.outcomeAgrees_sound' depends on axioms: [propext]
+'E2E.StockGeneralDivNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockGeneralDivNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockGeneralDivNIWitness.source_cases' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockGeneralDivNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockGeneralDivNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockGeneralDivNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockGeneralDivNIWitness.source_entry' depends on axioms: [propext]

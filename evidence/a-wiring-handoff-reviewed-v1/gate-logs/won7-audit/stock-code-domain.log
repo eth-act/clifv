@@ -1,0 +1,10 @@
+'Backend.Stock.Scalar.Domain.code' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.DomainAt.code' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledStockArithmeticStage.code' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_worldX_stock_code' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_code_cfg' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockCodeSplitWitness.split_code_stage_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockCodeSplitWitness.checks_true._native.native_decide.ax_1_1,
+ Backend.Stock.ConditionalArgsCfg.Fixture.checks_true._native.native_decide.ax_1_1✝]

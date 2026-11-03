@@ -1,0 +1,59 @@
+'Backend.Stock.Proof.source_reach_trans' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ReturnFromAt.runOkABIAt' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ReturnFromAt.prefix' depends on axioms: [propext]
+'Backend.Stock.Proof.ReturnFromAt.source_prefix' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.OrdinaryBody.actual_ordinary_return_reachable_at_block' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Inherited.ordinary_jump_carry_returns_reachable_of_body' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Control.ordinary_jump_body_reachable_at_of_body' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.Control.nop_jump_body_reachable_at' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.actual_nonentry_nop_reachable_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.SretCopy.sret_copy_reachable_return_frame_canonical' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.SretCopy.sret_copy_reachable_return_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ordinary_cfg_sret_step' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ordinary_cfg_sret_reach' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ordinary_cfg_sret_argument' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ReturnFromAt.original_sret_arguments' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.SretCopy.CfgClass.reachable_returns' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.SretCopy.CfgClass.sret_arguments' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.SretCopy.EntryValueFixture.original_captured_sret_argument_domain' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.MemorySretCopy.Fixture.observed_true._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.original_argument_x8_projection' depends on axioms: [propext]
+'Backend.Stock.Memory.SretCopy.CfgClass.x8_return_arguments' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.SretCopy.EntryValueFixture.original_captured_x8_argument_domain' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.MemorySretCopy.Fixture.observed_true._native.native_decide.ax_1✝,
+ Backend.Stock.Memory.SretCopy.Fixture.captured_sret_source_shape_witness._native.native_decide.ax_1]
+'Backend.Stock.Proof.sret_entry_parameter' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.sret_stable_of_original_scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.sret_stableB_of_stable' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.sret_stableXB_of_stable' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.sret_stableXB_of_original_scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ordinary_source_result_step' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ordinary_source_steps_reach' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_worldX_stock_sret_original_pointer' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.sret_original_pointer_world_of_stage' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemorySretCopyCompiledWitness.compiled_sret_original_x8_world_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMemorySretCopyCompiledWitness.candidates_ok._native.native_decide.ax_1✝,
+ Backend.Stock.Memory.SretCopy.Fixture.captured_sret_source_shape_witness._native.native_decide.ax_1]
+'E2E.backend_correct_world_niX_stock_sret_original_pointer' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.sret_original_pointer_paired_of_stage' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemorySretCopyCompiledWitness.compiled_sret_original_x8_paired_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMemorySretCopyCompiledWitness.candidates_ok._native.native_decide.ax_1✝,
+ Backend.Stock.Memory.SretCopy.Fixture.captured_sret_source_shape_witness._native.native_decide.ax_1]

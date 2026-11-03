@@ -1,0 +1,84 @@
+'Backend.Stock.Proof.ShiftComplete.opcode_inventory' depends on axioms: [propext]
+'Backend.Stock.Proof.ShiftComplete.selected_rule_ids' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ShiftComplete.base_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_bitfield_pure_helper' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_bitfield_projects' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_bitfield_move_observed' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_bitfield_match_sources' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_bitfield_match_receipts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_bitfield_helper_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_bitfield_rhs_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_bitfield_rhs_observed' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_bitfield_resolved' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_bitfield_selected_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_lower_bitfield_record_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftBitfield.stock_lower_bitfield_available_values' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftComplete.fused_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ShiftComplete.record_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_shift_scan_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_mul_record_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_shift_body_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftBody.family_pure' depends on axioms: [propext]
+'Backend.Stock.Proof.ShiftBody.family_quiet' depends on axioms: [propext]
+'Backend.Stock.Proof.ShiftBody.family_single' depends on axioms: [propext]
+'Backend.Stock.Proof.ShiftBody.actual_shift_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ShiftBody.actual_shift_body_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ShiftBody.actual_shift_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ShiftBody.shift_inst_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ShiftBody.shift_source_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Scalar.domain_of_shift' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ShiftRead.step_frame' depends on axioms: [propext, Quot.sound]
+'E2E.ShiftRead.no_mem' depends on axioms: [propext]
+'E2E.ShiftRead.spec_eq' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Scalar.shiftBodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMulNIWitness.source_family' depends on axioms: [propext]
+'E2E.StockShiftNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockShiftNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockShiftNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockShiftNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockShiftNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockShiftNIWitness.source_returns' depends on axioms: [propext, Quot.sound]
+'E2E.StockShiftNIWitness.source_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockShiftNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockShiftNIWitness.classifier_accepts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockShiftNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockShiftNIWitness.selected_roots_present' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockShiftNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockShiftNIWitness.compiled_semantic_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockShiftNIWitness.checks_true._native.native_decide.ax_1]

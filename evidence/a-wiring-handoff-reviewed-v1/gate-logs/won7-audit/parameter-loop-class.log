@@ -1,0 +1,12 @@
+'Backend.Stock.ParameterLoopCfg.sourceOk_of_parameter' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ParameterLoopCfg.Probe.sourceOk_of_parameter_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.ParameterCfg.Fixture.original_input_checks._native.native_decide.ax_1✝]
+'Backend.Stock.ParameterLoopCfg.Probe.forward_rejects_while_loop' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.ParameterLoopCfg.Probe.selects_while_loop' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.ParameterLoopCfg.Probe.selects_while_loop._native.native_decide.ax_1_1]

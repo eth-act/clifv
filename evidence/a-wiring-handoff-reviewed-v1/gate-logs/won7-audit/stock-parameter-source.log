@@ -1,0 +1,103 @@
+'Backend.Stock.ParameterCfg.source_eligible_facts' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.ParameterCfg.domain_of_source_eligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ParameterCfg.source_ok_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ParameterCfg.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_legacy_compatible' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.domain_of_parameter_conditional_cfg' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.domain_of_parameter_return_cfg' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.domain_of_parameter_cfg' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_jump_return_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_jump_trap_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.domain_of_parameter_jump_cfg' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_condition_metadata_ssa' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_condition_metadata' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.conditional_nonentry_prelude' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.nonentry_parameter_returns' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_return_entry_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_return_entry_trap_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.entry_frame_parts' depends on axioms: [propext]
+'Backend.Stock.Proof.ParameterCfg.return_entry_prelude' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.selected_source_edge' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.selected_ranked_target' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_return_successor' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_trap_successor' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_metadata' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_terms_nonentry' depends on axioms: [propext]
+'Backend.Stock.Proof.ParameterCfg.nonentry_parameter_traps' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.snapshot_success' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.lowered' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.snapshot_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.lowered' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.dominated' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.source_cases' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.family' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.selector_witness' depends on axioms: [propext]
+'Backend.Stock.Proof.ParameterCfg.Fixture.ranked' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.all_parameter_terms' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.nonentry_terms' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.original_domain_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.source_cases' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.dominated' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.selector_witness' depends on axioms: [propext]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.ranked' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.all_parameter_terms' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.nonentry_terms' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.family' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.original_domain_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.nonentry_condition_metadata' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.nonentry_prelude_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.selected_ranked_target_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.actual_return_continuation_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.actual_trap_continuation_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.parameter_cfg_machine_return_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.Trap.parameter_cfg_machine_trap_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.Fixture.checked_returning_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.ParameterCfg.Fixture.original_input_checks._native.native_decide.ax_1✝]
+'Backend.Stock.Proof.ParameterCfg.Fixture.checked_trapping_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.ParameterCfg.Fixture.original_input_checks._native.native_decide.ax_1✝]

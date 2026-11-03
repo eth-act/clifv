@@ -1,0 +1,44 @@
+'E2E.ExtendedComparisonRead.cases_of_check' depends on axioms: [propext]
+'E2E.ExtendedComparisonRead.no_mem' depends on axioms: [propext]
+'E2E.ExtendedComparisonRead.spec_eq' depends on axioms: [propext, Quot.sound]
+'E2E.ExtendedComparisonRead.step_frame' depends on axioms: [propext, Quot.sound]
+'E2E.ScalarBoundary.checked_step_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.checked_step_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.Realize.step_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockNarrowNIWitness.bswap8_original_scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockNarrowNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockNarrowNIWitness.compiled_of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockNarrowNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockNarrowNIWitness.compiled_mixed_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockNarrowNIWitness.source_outcomes' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockNarrowNIWitness.source_return' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockNarrowNIWitness.division_zero' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockNarrowNIWitness.division_overflow' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockNarrowNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockNarrowNIWitness.mixed_source_entry' depends on axioms: [propext]
+'Backend.Stock.Scalar.narrowBodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Scalar.domain_of_narrowEligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.noTlsScalar' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.noTlsDiv' depends on axioms: [propext, Classical.choice, Quot.sound]

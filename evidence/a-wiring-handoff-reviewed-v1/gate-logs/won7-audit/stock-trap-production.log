@@ -1,0 +1,11 @@
+'Backend.Stock.Scalar.domain_of_maskTrapEligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockTrapNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockTrapNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockTrapNIWitness.compiled_cases' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockTrapNIWitness.checks_true._native.native_decide.ax_1]

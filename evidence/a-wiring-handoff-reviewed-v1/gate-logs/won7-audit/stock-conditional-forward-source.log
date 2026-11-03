@@ -1,0 +1,40 @@
+'Backend.Stock.Proof.ForwardSource.nonentry_returns_of_termsAt' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ForwardSource.nonentry_traps_of_termsAt' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.nonentry_returns' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.nonentry_traps' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.RankedShape.condition_metadata' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.RankedShape.legacy_compatible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SuccessorReturn.of_ranked_tail' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SuccessorTrap.of_ranked_tail' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_ranked_shape' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.ranked_eligible_shape' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_ranked_eligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.ranked_sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.ranked_check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.RankedFixture.lower_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.RankedFixture.ranked_input_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.RankedFixture.source_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.RankedFixture.ranked_domain_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.RankedFixture.ranked_selector_witness' depends on axioms: [propext]
+'Backend.Stock.Proof.ConditionalValues.RankedFixture.checked_ranked_driver_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.ConditionalValues.RankedFixture.ranked_input_checks._native.native_decide.ax_1_1✝]
+'Backend.Stock.Proof.ConditionalValues.RankedFixture.ranked_machine_return_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.CompiledSemanticNI.of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]

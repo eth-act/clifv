@@ -1,0 +1,30 @@
+'Backend.Stock.ConditionalCfg.RankedShape.toLeaf' depends on axioms: [propext]
+'Backend.Stock.ConditionalCfg.RankedLeafShape.condition_metadata' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SuccessorReturn.of_ranked_leaf_tail' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConditionalValues.SuccessorTrap.of_ranked_leaf_tail' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.ConditionalCfg.RankedLeafShape.legacy_compatible' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.ConditionalCfg.RankedShape.legacy_compatible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_ranked_leaf_shape' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_ranked_shape' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.ranked_leaf_eligible_shape' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.ConditionalCfg.ranked_eligible_shape' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_ranked_leaf_eligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_ranked_eligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.ranked_sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.ranked_check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockRankedTrapNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockRankedTrapNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockRankedTrapNIWitness.compiled_cases' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockRankedTrapNIWitness.checks_true._native.native_decide.ax_1]

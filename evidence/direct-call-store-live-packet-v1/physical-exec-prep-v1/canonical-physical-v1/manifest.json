@@ -1,0 +1,49 @@
+{
+  "status": "passed-preserved-context-fixed-entry-witness",
+  "source_hashes": {
+    "FV/E2E/CallStorePhysicalImage.lean": "2c14761b7389db7d508d24586f185751929d9e760dcf0c0a02f884ad8cd7f085",
+    "FV/E2E/CallStorePhysicalProgram.lean": "3960d46240a9e9b85fcdf70aa6b57e7705d483ce23e35a71371ce6fb43fe607d",
+    "FV/E2E/CallStorePhysicalExec.lean": "7441c36421fa6dad54ecb81dc42935a8966007ba74e54114c05a97414c05f743",
+    "FV/E2E/CallStorePhysicalLinked.lean": "68881cd550145ff78fc590402dbffb42a421195f90d32744fd9ef272175cd5f1",
+    "scripts/audit/stock-call-store-physical-exec.lean": "fa6ba375f2de69d9eed9ded144048db1737b7af0e65884f750646526c1238f20",
+    "FVTest/E2E/CallStorePhysicalExport.lean": "516c932a1c5901ded0968a7274b417b9b5d49572a15a528e7b7c3312a59ecf88"
+  },
+  "receipts": {
+    "linked-v3/receipt.json": "69a466684c2ef7e734cfc74761c36e79448ddd22b20dee79f3c7373b98de9f08",
+    "symbolic-v15/receipt.json": "590b9c8585eafdd355634e435291c577d828c9a50b947b8ae8ad55e81b9844d4",
+    "export-v2/receipt.json": "3830e5a16e6fc0f8b01eee6d1627068c7c1b88fb6e0651fd24cc6ac3e20a7b0e",
+    "physical-image-state-v1.json": "d9f16337ba362e38c8f58847c8a99446f4c179e1c4f49a0ab8d0d79c4b300dc9",
+    "real-physical-audit-v1/receipt.json": "d922a0f0a926fc068f8ca833d0392c0e3bf536f9d4b2236dd001596ac392adfd",
+    "real-physical-audit-v1/axiom-sets.json": "3833fcf36c8a50e9aba7b80296f99aa1e88bdad901d57309cc218a29e8a7028e"
+  },
+  "scope": "originalcaller/callee;originalserializedleanAllocanswers;actual15relocatedinstructions;bothcleanupmodes;fullArmRet;x0andstore=word+13;fixedPC/SP/pointer,arbitraryremainingstate",
+  "audit_roots": 6,
+  "standard_roots": 3,
+  "fixed_roots": 3,
+  "image_files": {
+    "actual-images-v1/cleanup.callee.ra.json": "f86284a75fee92acc5cfc2ddbc93a5488487021468328f3eb3b62222b26414e5",
+    "actual-images-v1/cleanup.caller.ra.json": "4db97253cc4b58d7902f8917780deed47949ab0d971ee139147850876cf3709d",
+    "actual-images-v1/cleanup.elf": "a4300ee065ffaaf691078e8f06cff811895b76efab80676c6142fb29768024df",
+    "actual-images-v1/cleanup.linked-words.json": "5e718cf9c35b34cf31deca19cabd76c51395c73766cdaea9a2d718bcc585b078",
+    "actual-images-v1/cleanup.stock_call_store_live.object.bin": "a8b9a15dfd81b4775a52f4383300446a09326d0da41f33a58770c31479ab209d",
+    "actual-images-v1/cleanup.stock_call_store_live.relocations.txt": "7ac28cc36824a5706127209189d5728d1fca8761be0b8d2ce3ee38ae423c53ad",
+    "actual-images-v1/cleanup.stock_store_clobber.object.bin": "669cde847748922de76401f02f1f6a533420b7ee1eeebc0e9f7fae727e6608ba",
+    "actual-images-v1/cleanup.stock_store_clobber.relocations.txt": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "actual-images-v1/original-callee.clif": "97277383ff351de032d121fdcde17db75d67ccf2faccddb9ff8a88ea67bbb33a",
+    "actual-images-v1/original-caller.clif": "dd3a48bed0088809a32af0e148db48046ca403b990b702ec753f0083e54cca83",
+    "actual-images-v1/raw.callee.ra.json": "f86284a75fee92acc5cfc2ddbc93a5488487021468328f3eb3b62222b26414e5",
+    "actual-images-v1/raw.caller.ra.json": "4db97253cc4b58d7902f8917780deed47949ab0d971ee139147850876cf3709d",
+    "actual-images-v1/raw.elf": "a4300ee065ffaaf691078e8f06cff811895b76efab80676c6142fb29768024df",
+    "actual-images-v1/raw.linked-words.json": "5e718cf9c35b34cf31deca19cabd76c51395c73766cdaea9a2d718bcc585b078",
+    "actual-images-v1/raw.stock_call_store_live.object.bin": "a8b9a15dfd81b4775a52f4383300446a09326d0da41f33a58770c31479ab209d",
+    "actual-images-v1/raw.stock_call_store_live.relocations.txt": "7ac28cc36824a5706127209189d5728d1fca8761be0b8d2ce3ee38ae423c53ad",
+    "actual-images-v1/raw.stock_store_clobber.object.bin": "669cde847748922de76401f02f1f6a533420b7ee1eeebc0e9f7fae727e6608ba",
+    "actual-images-v1/raw.stock_store_clobber.relocations.txt": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "open": [
+    "genericMapFaults/TrapAtF and callee-trap executable transfer",
+    "full3CLI/generated matrix with distinctfloatvariant",
+    "defaultproductionadmission aroundthreefrozenconstructors",
+    "actual-current-main proofgate"
+  ]
+}

@@ -1,0 +1,53 @@
+'Backend.Stock.Proof.MulComplete.selected_rule' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MulComplete.record_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_mul_scan_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_mul_body_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MulBody.family_pure' depends on axioms: [propext]
+'Backend.Stock.Proof.MulBody.family_quiet' depends on axioms: [propext]
+'Backend.Stock.Proof.MulBody.family_single' depends on axioms: [propext]
+'Backend.Stock.Proof.MulBody.actual_mul_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MulBody.actual_mul_body_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MulBody.actual_mul_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MulBody.mul_inst_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MulBody.mul_source_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Scalar.domain_of_mul' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.mulBodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_bnot_record_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.BnotBody.family_quiet' depends on axioms: [propext]
+'Backend.Stock.Proof.BnotBody.family_single' depends on axioms: [propext]
+'Backend.Stock.Proof.BnotBody.emitted_record_family' depends on axioms: [propext]
+'Backend.Stock.Proof.BnotBody.bnot_inst_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.PureBody.frame_getAs_notrap' depends on axioms: [propext, Quot.sound]
+'E2E.StockNotNIWitness.source_family' depends on axioms: [propext]
+'E2E.StockMulNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMulNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockMulNIWitness.source_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMulNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockMulNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMulNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockMulNIWitness.classifier_accepts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMulNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockMulNIWitness.compiled_semantic_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMulNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockMulNIWitness.selected_roots_present' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMulNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockMulNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockMulNIWitness.source_returns' depends on axioms: [propext, Quot.sound]

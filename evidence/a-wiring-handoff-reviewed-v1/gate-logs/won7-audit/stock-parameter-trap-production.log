@@ -1,0 +1,44 @@
+'Backend.Stock.Proof.ParameterCfg.parameter_legacy_compatible_of_leaf' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_legacy_compatible' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_return_successor_of_leaf' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_trap_successor_of_leaf' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_jump_return_frame_of_leaf' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.parameter_jump_trap_frame_of_leaf' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.domain_of_parameter_jump_leaf_cfg' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.domain_of_parameter_conditional_leaf_cfg' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.domain_of_parameter_return_leaf_cfg' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.domain_of_parameter_leaf_cfg' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ParameterCfg.domain_of_parameter_cfg' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ParameterCfg.source_leaf_eligible_facts' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.ParameterCfg.domain_of_source_leaf_eligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ParameterCfg.domain_of_source_eligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ParameterCfg.source_ok_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ParameterCfg.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockParameterTrapNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockParameterTrapNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockParameterTrapNIWitness.compiled_cases' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockParameterTrapNIWitness.checks_true._native.native_decide.ax_1]

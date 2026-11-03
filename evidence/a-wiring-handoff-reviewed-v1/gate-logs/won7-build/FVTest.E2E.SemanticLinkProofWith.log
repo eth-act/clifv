@@ -1,0 +1,76 @@
+⚠ [162/540] Replayed FV.E2E.Main
+warning: FV/E2E/Main.lean:81:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Main.lean:87:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [331/540] Replayed FV.E2E.Pair
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:165:16: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [350/540] Replayed FV.Backend.Proof.SretStable
+warning: FV/Backend/Proof/SretStable.lean:245:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:248:58: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:254:60: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:261:63: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:268:56: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/SretStable.lean:269:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [357/540] Replayed FV.Backend.Proof.SkipDeadPrepare
+warning: FV/Backend/Proof/SkipDeadPrepare.lean:104:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SkipDeadPrepare.lean:104:21: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SkipDeadPrepare.lean:114:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/SkipDeadPrepare.lean:114:21: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [359/540] Replayed FV.Backend.Proof.CleanupStageFacts
+warning: FV/Backend/Proof/CleanupStageFacts.lean:128:24: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+⚠ [374/540] Replayed FV.E2E.LinkArm
+warning: FV/E2E/LinkArm.lean:112:27: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:114:27: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:148:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:166:6: `dif_neg` has been deprecated: Use `dite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:264:6: `dif_pos` has been deprecated: Use `dite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:821:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:1464:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:1469:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:1947:34: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:1948:34: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2287:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:2297:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2305:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:2419:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2461:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2461:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2715:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:2716:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3250:30: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3309:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3312:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3323:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3324:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3336:47: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3429:22: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3488:22: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3557:32: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3603:36: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3728:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [389/540] Replayed FVTest.E2E.LinkProof
+warning: FVTest/E2E/LinkProof.lean:52:65: `List.asString` has been deprecated: Use `String.ofList` instead
+
+Note: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.asString` to `String.ofList x`).
+warning: FVTest/E2E/LinkProof.lean:452:17: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+warning: FVTest/E2E/LinkProof.lean:652:17: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+⚠ [540/540] Built FVTest.E2E.SemanticLinkProofWith (1.1s)
+warning: FVTest/E2E/SemanticLinkProofWith.lean:231:17: `String.dropRight` has been deprecated: Use `String.dropEnd` instead
+
+Note: The updated constant has a different type:
+  String → Nat → String.Slice
+instead of
+  String → Nat → String
+Build completed successfully (540 jobs).

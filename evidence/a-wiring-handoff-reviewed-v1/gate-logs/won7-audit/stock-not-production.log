@@ -1,0 +1,43 @@
+'Backend.Stock.Proof.BnotComplete.selected_rule_ids' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.BnotComplete.record_selected_rule_ids' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.BnotComplete.source_operands' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.BnotComplete.available_source' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.BnotComplete.source_from_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_bnot_scan_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_bnot_body_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.BnotBody.family_pure' depends on axioms: [propext]
+'Backend.Stock.Proof.BnotBody.actual_bnot_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.BnotBody.actual_bnot_body_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.BnotBody.actual_bnot_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.BnotBody.bnot_source_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Scalar.domain_of_bnot' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.extendedBodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Scalar.bodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockNotNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNotNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockNotNIWitness.source_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNotNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockNotNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNotNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockNotNIWitness.classifier_accepts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNotNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockNotNIWitness.compiled_semantic_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNotNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockNotNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockNotNIWitness.source_returns' depends on axioms: [propext, Quot.sound]

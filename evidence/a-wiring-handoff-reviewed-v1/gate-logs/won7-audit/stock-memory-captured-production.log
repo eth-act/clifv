@@ -1,0 +1,14 @@
+'Backend.Stock.Memory.CapturedCopy.CfgClass.domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryCapturedCopy.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryCapturedCopy.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_captured_copy_memory' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryCapturedCopy.previous_file_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryCapturedCopy.previous_file_exact_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.MemoryCapturedCopy.previous_routes_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryCapturedCopy.previous_lower_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.CapturedCopy.Fixture.complete_checked_captured_copy_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.CapturedCopy.Fixture.observed_true._native.native_decide.ax_1✝]

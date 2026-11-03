@@ -1,0 +1,342 @@
+{
+  "status": "passed_actual_record_global_source_metadata_event_fold",
+  "source_hashes": {
+    "FV/Backend/Proof/StockAcquireColorSegment.lean": "437248d5d9214398d96c089c0a6f978f3ad7a53270ccd189a054bc963c88e458",
+    "FV/Backend/Proof/StockAcquireValueAllWidths.lean": "a81ba96a06236efb2df4756d25e1d6145f63093e4088bbe22c0117d9069ff371",
+    "FV/Backend/Proof/StockAcquireMatchSource.lean": "0a68e2a351306b5964337f001c9751972e62ea69956b8c5cc7947a0615ea30a8",
+    "FV/Backend/Proof/StockAcquireSinkForward.lean": "c9914059b8b41151e06d8295e39d7e70f85a3b2424716bdd3577ceb6dfc721ce",
+    "FV/Backend/Proof/StockAcquireRootForward.lean": "094e57194981235cd3eed4b3097bdcb4a3de35f41f36689cf9f8dff9f13a9468",
+    "FV/Backend/Proof/StockAcquireSinkReceipts.lean": "26ac17e50dfca4936e4648eb996a8f22272cf3e1fa7234ebe492170d2ae465b6",
+    "FV/Backend/Proof/StockAcquireRhsReceipts.lean": "9642c1a6379c0dde9a77c69a99dddf0ee8df69658bcab61cbeb53c406fdf245e",
+    "FV/Backend/Proof/StockAcquireRuleProvenance.lean": "5d09e80b993591145952f5bee1d129fa5a0b42228ecd9b0588b97a58995c3d9c",
+    "FV/Backend/Proof/StockAcquirePatternData.lean": "e68f455709b011bd9853a54f85b93b0fc36f8d3d7485e3570f08bec83ba9722d",
+    "FV/Backend/Proof/StockAcquireRuleSource.lean": "111359d5907773d7bca72b832798b2a14497416cc2e8c3b98d1e7e5c00c4179b",
+    "FV/Backend/Proof/StockAcquireAllWidthsBinding.lean": "cad324f16c293554e0dbab030edf6026b6b3698636bb722180637e55ef244834",
+    "FV/Backend/Proof/StockAcquireRhsOutput.lean": "f550949053e9eb8fafe1c81b83827dc2d71cca36c652d22b116f4c186db86c9f",
+    "FV/Backend/Proof/StockAcquireSelectedBinding.lean": "90e0b110f59b9aa3dac58a42b28c73eb4ef7f66ed6f19267436e8186718d1bdf",
+    "FV/Backend/Proof/StockAcquireDeferredSource.lean": "aa8622277e9a4214baa8275b58ff88ed620b4a8657a95025338ddd652d19c91e",
+    "FV/Backend/Proof/StockAcquirePendingOrder.lean": "8f5efc54a820ab0f9ff8b1d27f9b53ff3ffb9e06c8efd45548a4cadcb397b449",
+    "FV/Backend/Proof/StockAcquirePendingFrame.lean": "3c5cbfacb007be7a844afd43b38a32a56b75946a724f79f8380de8b0bb285767",
+    "FV/Backend/Proof/StockAcquirePendingTrace.lean": "0c36de10dbf29fe27c64381bcba782b578dd6e7b7ad72e0c45143427193e9028",
+    "FV/Backend/Proof/StockAcquireSelectedPending.lean": "665a0d6d2e214709f63c346c4239c785b11e77639059a241f5f64fe591ce49e7",
+    "FV/Backend/Proof/StockAcquireSinkPending.lean": "a3542bb543700865ac187a0467c4d606dcdf3662b00299715c4f100841c7cba4",
+    "FV/Backend/Proof/StockAcquireSinkCallPending.lean": "2d7289a6e6dd230268f0b6106cf8cd4d62a724a0a38ee0fa7a46870ae97a96a1",
+    "FV/Backend/Proof/StockAcquireRhsPending.lean": "dd1595c5f143fc0bdca8ef3d20601a55194131ba29d9e059bc465137693b5ed6",
+    "FV/Backend/Proof/StockAcquireRulePendingSource.lean": "491c2dc3c3622fbe02968f5e3e0fc05b8399becc9b49a53536c66dc03699f9fb",
+    "FV/Backend/Proof/StockAcquireSelectedSingleton.lean": "f1e387339eaa57f279f5e73a4671013846d6ae07bf2cb3d8225d435737a20d70",
+    "FV/Backend/Proof/StockAcquireMetadataOrder.lean": "2339d6b240e5649ac28a553eaed220138e99506a13b7e4db22275f110bd42621",
+    "FV/Backend/Proof/StockAcquireMetadataEvents.lean": "a7b9ed113ad938399dd8ffbafc9ecb96a73d9f7ed4ec003a80ced4e1f8c5fbd5",
+    "scripts/audit/stock-acquire-metadata.lean": "fcb6c45ea8fdc55cc4c4e496c28e9efd88cc94ee908fa73fb987884b0dd60f4a"
+  },
+  "artifact_hashes": {
+    "StockAcquireColorSegment": "4b4b09bd4a56dfc6c7210a8d93829b56d7e6a4bb8a1b08cf02305980837f5a8f",
+    "StockAcquireValueAllWidths": "4b6f223ade10712b8e5d4fc787921c55235f3997b44cccb22780f430e5d0222d",
+    "StockAcquireMatchSource": "efe48babda5ee6abd9eaa967eec5084ed41055acdb08417946f0efc715232382",
+    "StockAcquireSinkForward": "a4f94f598b4fa0da0f2d04eab818b6dd3b6fc9f55fbb90717ba054a3b6e53af1",
+    "StockAcquireRootForward": "1442f1077bfffefac9f52a638a4260a6c57b5bcac1f80778b307f742f996f706",
+    "StockAcquireSinkReceipts": "0b6072a2ecf71c481d7a12449486c7ab599f7d1fb87b2316fac33ee6900b7f63",
+    "StockAcquireRhsReceipts": "cba8c97da22598a0b388a513b7aebfda679bf08fc75a8d6a9e22de569fd856b3",
+    "StockAcquireRuleProvenance": "812dbb60fbe2c1dec9861b970f0207cef81476f51e8cdd4979ea2c6d4aab428c",
+    "StockAcquirePatternData": "5e25098ef7525a3c581124251c5bb3cf8267851d551db1c8f5e2f09e4e20397a",
+    "StockAcquireRuleSource": "16e9f3a0bb314bd899dd7bc3eab6047a7236a0c79ebc3e6aaf1e6b95553c0832",
+    "StockAcquireAllWidthsBinding": "36a755df73cab57b333aa1ead9a4694a3771e5b2e14b7c7fe9b11d4164853b97",
+    "StockAcquireRhsOutput": "8f157287709225680f054de3d4e8cbd5097d8729aab380d35c5d5912ffb3a7aa",
+    "StockAcquireSelectedBinding": "ff10495238831a8e141187e2ce3408ba7081894e87028e9a4c8adc6843ba19ea",
+    "StockAcquireDeferredSource": "a0dc155588b882a27f73dade97b068e7f69e05ff623dfd27d545ab22fc08650d",
+    "StockAcquirePendingOrder": "838435009007f934cbad35a70140f84b6f33a6dcfb58d30a7362e08e06bdac50",
+    "StockAcquirePendingFrame": "68fa4cf10657a7575c88ca74aa4a9a4e89a855e951991d644c6b4d1fc7abdbda",
+    "StockAcquirePendingTrace": "fc91d024fcd8d59e72f45e4c6fbb65218509fd6f53cd544eeccbc1bbd91249a1",
+    "StockAcquireSelectedPending": "8003714ff56c7e52a449b9b0dc386afafdebb6f2d23eaf12158848e88eab9597",
+    "StockAcquireSinkPending": "d1b7f3ad8e244a16b769b85a586c83f2a56d2273a69bfa3b1bc951f1ca1fd183",
+    "StockAcquireSinkCallPending": "614656014d8b2b1b4cbe6c6976ef1d8bcaabe2aaed1932ca8d5df598bd05e33b",
+    "StockAcquireRhsPending": "f4cde1394674db6e8a79b0c83b85617242b446b64a7586642540451075efe600",
+    "StockAcquireRulePendingSource": "5c5970004696653ad79fc03a6da35d82c44922bbe10e76991c48a3ce25e7f5b8",
+    "StockAcquireSelectedSingleton": "5fc7eeb97c2ac05eb3399fe5b6e6aed7ec24f14f9801e38b9baf8c325cfe7ed0",
+    "StockAcquireMetadataOrder": "49200617ac8f270397cfe881e7699b21657ee441c1216b796ff5d6e72ae5493b",
+    "StockAcquireMetadataEvents": "3783d6c31b86357305640271ca80248e94d578da7be28dd90f9026a44a13e1b0"
+  },
+  "axioms": {
+    "Backend.Stock.Proof.Acquire810.body_color_count": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_unchanged_color_quiet": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_widened_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_iflet_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_root_match_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.output_reg_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_forward": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_call_receipt": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_sink_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_inputs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rule_sink_provenance": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_match_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.mapped_atomic_producer": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.sink_atomic_call_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rule_original_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_pair_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_emission_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_record_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_record_final_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.AcquireHelpers.acquire_rhs_output": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_selected_rule": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_selected_final_binding": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_quiet_source_outcome": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_quiet_source_step": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_color_interval_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.entryColors": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.color_distance": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.member_color_bounds": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.ordered": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.distinct": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_ctor_color_without_sink": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.append": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_ctor_pending_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_apply_pending_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_runTerm_pending_execution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.PendingSinks.finalColor": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_atomic_rhs_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sink_atomic_call_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rhs_pending": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.acquire_rule_pending_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_acquire_selected_singleton": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_color_size": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_color_keeps_slot": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_colored_exact": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_colored_pair_order": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.body_color_events_fold": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.block_color_events_fold": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.source_color_events_fold": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.sourceMetadata_color_events": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Acquire810.stock_lower_record_color_events": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "roots": 52,
+  "standard_roots": 52,
+  "old_forty_seven_ax_exact": true,
+  "real_auditor_exit": 0,
+  "real_auditor_sha256": "f1804ba6f520a9b52a1a0686bb427443f1fb368ba9258870ed2bc7bd56bcc79a",
+  "real_stdout_sha256": "159676ea0deb1958377f68abba34026b0ee583cb1576e77b7eef6e2d05698ad0",
+  "real_audit_log_sha256": "f9ce9dbc86c277e9956884aea6e362889d6cf26551c62f4a3c2655850d75ea2e",
+  "memstats": "peak 232448000\noom 0\noom_kill 0\n",
+  "normal_snapshot_sha256": "b3c5cca44a459da4ef261939b2766efe59b5ad96d733326a8f217f0e58cfb863",
+  "context_check_sha256": "60d9401f375ee9397646719f403cc509f68c45eea736843f3af064a6b96d049c",
+  "claims": {
+    "all_admitted_widths_value_relation": true,
+    "actual_root_match_derives_eligible_source": true,
+    "actual_rhs_derives_sink_receipt": true,
+    "actual_mapped_producer_is_original_admitted_atomic_load": true,
+    "unique_use_adjacent_color_and_no_result_demand_derived": true,
+    "complete_rhs_forward_given_internal_constructor_receipts": true,
+    "metadata_color_count": true,
+    "internal_color_interval_preserves_source_memory_and_excludes_earlier_source_traps": true,
+    "universal_quiet_interval_is_false_counterexample_preserved": true,
+    "actual_named_interpreter_derives_pending_frontier": true,
+    "actual_retained_root810_derives_ordered_distinct_frontier": true,
+    "exact_sink_helper_and_rhs_singleton_derived": true,
+    "helper_calls_are_evaluator_calls_not_CLIF_call_coverage": true,
+    "selected_root_singleton_source_membership": true,
+    "exact_local_metadata_color_values_and_order": true,
+    "actual_record_original_buildCtx_event_fold": true,
+    "actual_buildCtx_global_metadata_order_transfer": false,
+    "whole_scan_pending_queue_source_membership": false,
+    "deferred_source_effect_composition": false,
+    "all_widths_pair_seqrun": true,
+    "actual_emitter_and_record_binding": true,
+    "actual_fresh_root_result_survives_final_alias_resolution": true,
+    "root_run_and_result_shape_derived_from_actual_record_selection": true,
+    "universal_root_record_refinement": false,
+    "universal_deferred_first_fault_composition": false,
+    "full_goal_complete": false
+  },
+  "utc": "2026-11-03T05:08:49.189370+00:00"
+}

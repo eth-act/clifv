@@ -1,0 +1,23 @@
+'Backend.Stock.Proof.LoopCarry.pair_sublist_of_getElem?' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.not_pair_both_orders' depends on axioms: [propext]
+'Backend.Stock.Proof.LoopCarry.index_lt_of_filterMap_sublist' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.label_lt_of_sublist' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.parentList_insert' depends on axioms: [propext]
+'Backend.Stock.Proof.LoopCarry.dStep_parent' depends on axioms: [propext]
+'Backend.Stock.Proof.LoopCarry.iterD_parent' depends on axioms: [propext]
+'Backend.Stock.Proof.LoopCarry.rpo_parent' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.stock_sourceTable_succIdx' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.stock_blockOrder_parent' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.stock_lower_parent' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.def_block_unique' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.stock_lower_defBefore_ssa' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.stock_lower_defBefore' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.stock_lower_not_inherit_own' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.stock_defCarry_cover' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LoopCarry.DefBeforeWitness.while_loop_defBefore' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.LoopCarry.DefBeforeWitness.while_loop_defBefore_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.LoopCarry.DefBeforeWitness.observed._native.native_decide.ax_1_1✝]

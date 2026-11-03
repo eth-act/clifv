@@ -1,0 +1,77 @@
+'Backend.Proof.Driver.buildCtx_okT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Driver.lowerFunction_okT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.aextT_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.actorT_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.aidata_soundT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.pinv_buildT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.pinv_termCtxT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.pinv_tryCtxT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.stmt_rootT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.term_rootT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.try_rootT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.handRules_okT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.f64Tab_ok' depends on axioms: [propext]
+'Backend.Proof.Prg.constant_f64_hi' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.hand_585T' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.handOkT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.tryCall_lastT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.prgTabT_ok' depends on axioms: [propext]
+'Backend.Proof.Prg.prgTabT_f64Safe' depends on axioms: [propext]
+'Backend.Proof.Prg.iselProgT_of_input' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.lowerFunction_ok_inputT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Driver.buildCtx_okT_witness' depends on axioms: [propext]
+'FloatProgT.lowerFunction_ok_inputT_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ FloatProgT.lowerFunction_ok_inputT_witness._native.native_decide.ax_1_1,
+ FloatProgT.lowerFunction_ok_inputT_witness._native.native_decide.ax_1_2,
+ FloatProgT.lowerFunction_ok_inputT_witness._native.native_decide.ax_1_3,
+ FloatProgT.lowerFunction_ok_inputT_witness._native.native_decide.ax_1_4,
+ FloatProgT.lowerFunction_ok_inputT_witness._native.native_decide.ax_1_5,
+ FloatProgT.lowerFunction_ok_inputT_witness._native.native_decide.ax_1_6,
+ FloatProgT.lowerFunction_ok_inputT_witness._native.native_decide.ax_1_7,
+ FloatProgT.lowerFunction_ok_inputT_witness._native.native_decide.ax_1_8,
+ FloatProgT.lowerFunction_ok_inputT_witness._native.native_decide.ax_1_9]
+'Backend.Proof.Prg.aextTF_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.stmt_rootTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.pinv_buildTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.prgTabTF_ok' depends on axioms: [propext]
+'Backend.Proof.Prg.f64TabF_ok' depends on axioms: [propext]
+'Backend.Proof.Prg.iselProgTF_of_input' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Driver.lowerFunction_okTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prg.lowerFunction_ok_inputTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.lowerFunction_ok_inT3F' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.FloatScopeInputT3FWitness.lowers' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.FloatScopeInputT3FWitness.premises_ok._native.native_decide.ax_1_1]
+'Backend.Proof.Driver.lowerCheck_partsTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Driver.lowerCheckTCF_complete' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Driver.lowBlocksC_of_lowBlocks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Driver.certOk_completeTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Driver.alias_factsTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Driver.shapeOkTS_completeI' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Prep.prepare_okTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Spill.classesOkM_lowerTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Kill.killRunsHypTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Kill.tryDefsExactTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Kill.killFreeB_lowerTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.spillKillFreeTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_total_emit_cleanupTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Driver.formsCoveredB_completeTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ctlSpillB_of_TF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ctlInsts_pipelineTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.emitConds_lowerTF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.resClassOkB_of_TF' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.lowersTCB_of_T3F' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.fnScopeInTCB_of_T3F' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.pipeCleanupT_okT3F' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.resultsCleanupT_ok_inT3F' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Driver.lowerCheckT_complete' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Kill.killRunsHypT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Proof.Kill.tryDefsExactT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.LinkCheck.pipeCleanupT_okT' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.FloatScopeTotalT3FWitness.pipeline_ok' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.FloatScopeTotalT3FWitness.scope3F_ok._native.native_decide.ax_1_1]

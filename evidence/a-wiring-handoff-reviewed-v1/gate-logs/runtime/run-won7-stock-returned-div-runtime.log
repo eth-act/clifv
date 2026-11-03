@@ -1,0 +1,13 @@
+Stock returneddiv lean Backend.Stock.D0.Configuration.defaultI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv lean Backend.Stock.D0.Configuration.systemVI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv lean Backend.Stock.D0.Configuration.fastI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv lean Backend.Stock.D0.Configuration.defaultI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv lean Backend.Stock.D0.Configuration.systemVI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv lean Backend.Stock.D0.Configuration.fastI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv regalloc2 Backend.Stock.D0.Configuration.defaultI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv regalloc2 Backend.Stock.D0.Configuration.systemVI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv regalloc2 Backend.Stock.D0.Configuration.fastI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv regalloc2 Backend.Stock.D0.Configuration.defaultI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv regalloc2 Backend.Stock.D0.Configuration.systemVI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv regalloc2 Backend.Stock.D0.Configuration.fastI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed
+Stock returneddiv missing-binary negative control passed

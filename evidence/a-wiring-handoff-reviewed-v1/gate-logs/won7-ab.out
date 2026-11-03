@@ -1,0 +1,5 @@
+3611 modules (14 heavy, 119 without a record); critical path 0.91 h, serial 22.91 h (recorded)
+23:38:20 want 3611 modules (0 assumed built) budget=12G max_jobs=3 heavy>12G
+23:38:21 check (all) 3611 modules in 0.7s: 3611 up-to-date, 0 out of date, 0 wait for those
+23:38:21 2 batch checks, 1s; 0 modules restored after another worktree built them
+23:38:21 END 3611/3611 ok, 0 built, wall 0.0 min

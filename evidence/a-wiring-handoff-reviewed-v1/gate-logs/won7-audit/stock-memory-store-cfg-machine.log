@@ -1,0 +1,243 @@
+'Backend.Stock.Memory.StoreRoots.stock_store_side_effect' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_parameter_integer_store_rhs' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.store_source_result' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.store_source_seqRun' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.integer_store_root_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.integer_store_rhs_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.integer_store_lowering_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_match_integer_store' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.integer_store_source_data' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.integer_store_source_match_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.store_source_result_pairR' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_selected_integer_store_rule' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_selected_id' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_store_rhs_sunk' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_store_rhs_result' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_selected_receipts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_record_full' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_record_run' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_operand_coverage' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_source_step' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.Fixture.record_input' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.Fixture.integer_store_record_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.store_refines_of_mem' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.store_refines_of_memR' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.store_source_result_of_store' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.store_source_seqRun_of_store' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_record_run_of_store' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_source_step_of_store' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.Fixture.integer_store_guarded_source_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.stock_lower_store_emitted' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_source_parameter_type' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_single_store_return_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_scan_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_lower_integer_store_paired_source_step' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_single_store_return_body' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.StoreRoots.stock_lower_integer_store_paired_scan' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.StoreRoots.stock_single_store_return_paired_body' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.StoreRoots.single_store_return_paired_function_seeded' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.StoreRoots.single_store_return_paired_function' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemoryStoreFunctionWitness.complete_paired_integer_store_function_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.domain_of_single_store_return' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.SingleClass.domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryStoreFunctionWitness.source_class_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryStoreUninitializedWitness.complete_paired_uninitialized_store_function_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.StoreRoots.actual_nonentry_paired_store_return' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.StoreRoots.two_block_store_return_paired' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.StoreRoots.two_block_store_return_paired_function' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreCfgFixture.scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreCfgFixture.dominated' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreCfgFixture.lowered' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_1,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_2,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_3,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_4,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_5,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_6,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_7]
+'E2E.StockMemoryStoreCfgFunctionWitness.complete_paired_integer_store_cfg_function_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_1,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_2,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_3,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_4,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_5,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_6,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_7]
+'Backend.Stock.Memory.stock_nop_body_of_split' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.Control.nop_jump_body_returns_at' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.actual_nonentry_store_return' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.two_block_store_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.two_block_store_return_function' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.domain_of_two_block_store_return' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreCfgFixture.domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreCfgFixture.domain_and_lower_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_1,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_2,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_3,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_4,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_5,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_6,
+ Backend.Stock.Memory.StoreCfgFixture.lowered._native.native_decide.ax_7]
+'Backend.Stock.Memory.StoreRoots.stock_retained_store_return_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.RetainedStoreReturnSpec.nop_records' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_nop_store_return_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.actual_nonentry_nop_store_return' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.two_block_nop_store_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreRoots.two_block_nop_store_return_function' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.domain_of_two_block_nop_store_return' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.StoreRoots.stock_nop_store_return_paired_body' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.StoreRoots.actual_nonentry_paired_nop_store_return' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.StoreRoots.two_block_nop_store_return_paired' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.StoreRoots.two_block_nop_store_return_paired_function' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreNopCfgFixture.scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreNopCfgFixture.dominated' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreNopCfgFixture.lowered' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_1,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_2,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_3,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_4,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_5,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_6,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_7]
+'Backend.Stock.Memory.StoreNopCfgFixture.domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreNopCfgFixture.domain_and_lower_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_1,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_2,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_3,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_4,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_5,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_6,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_7]
+'E2E.StockMemoryStoreNopCfgFunctionWitness.complete_paired_integer_store_nop_cfg_function_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_1,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_2,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_3,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_4,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_5,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_6,
+ Backend.Stock.Memory.StoreNopCfgFixture.lowered._native.native_decide.ax_7]
+'Backend.Stock.Memory.StoreRoots.CfgClass.domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryStoreCfg.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryStoreCfg.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryStoreCfg.effectsOnly_instruction' depends on axioms: [propext, Quot.sound]
+'E2E.StockMemoryStoreCfg.return_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryStoreCfg.machine_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_store_cfg_memory' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreNopCfgFixture.family' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.StoreNopCfgFixture.source_checked' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.StoreNopCfgFixture.source_checked._native.native_decide.ax_1,
+ Backend.Stock.Memory.StoreNopCfgFixture.source_checked._native.native_decide.ax_2,
+ Backend.Stock.Memory.StoreNopCfgFixture.source_checked._native.native_decide.ax_3,
+ Backend.Stock.Memory.StoreNopCfgFixture.source_checked._native.native_decide.ax_4,
+ Backend.Stock.Memory.StoreNopCfgFixture.source_checked._native.native_decide.ax_5,
+ Backend.Stock.Memory.StoreNopCfgFixture.source_checked._native.native_decide.ax_6,
+ Backend.Stock.Memory.StoreNopCfgFixture.source_checked._native.native_decide.ax_7]
+'Backend.Stock.Memory.StoreNopCfgFixture.actual_checked' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.StoreNopCfgFixture.actual_checked._native.native_decide.ax_1,
+ Backend.Stock.Memory.StoreNopCfgFixture.actual_checked._native.native_decide.ax_2,
+ Backend.Stock.Memory.StoreNopCfgFixture.actual_checked._native.native_decide.ax_3,
+ Backend.Stock.Memory.StoreNopCfgFixture.actual_checked._native.native_decide.ax_4,
+ Backend.Stock.Memory.StoreNopCfgFixture.actual_checked._native.native_decide.ax_5,
+ Backend.Stock.Memory.StoreNopCfgFixture.actual_checked._native.native_decide.ax_6,
+ Backend.Stock.Memory.StoreNopCfgFixture.actual_checked._native.native_decide.ax_7]
+'Backend.Stock.MemoryStoreCfg.previous_file_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryStoreCfg.previous_file_exact_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryStoreCfg.previous_routes_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryStoreCfg.previous_lower_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryStoreCfg.effectsOnly_noTls' depends on axioms: [propext, Quot.sound]

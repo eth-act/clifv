@@ -1,0 +1,2 @@
+'E2E.SretHeapBoundary.copied_live_not_relocated' depends on axioms: [propext, Quot.sound]
+'E2E.SretHeapBoundary.copied_exec_return_bytes' depends on axioms: [propext, Classical.choice, Quot.sound]

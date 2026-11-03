@@ -1,0 +1,18 @@
+{
+  "loop_worktree": {
+    "head": "21eb36fa1978d0f08b1339e5460390ff738c3076",
+    "lake_size": "11 GiB",
+    "owner": "worker-O",
+    "purpose": "incoming General7 wiring context; coherent reuse after reconciliation"
+  },
+  "split_worktree": {
+    "head": "2490b54fed9be8c26f9287a6b92c5e6235e0e345",
+    "lake_size": "9.6 GiB",
+    "source_pushed": true,
+    "regalloc_preserved": ".git/agent-evidence/stock-memory-20261029/a-wiring-handoff-reviewed-v1/lean-regalloc-3b",
+    "regalloc_sha256": "9107093cdc7ca71a1692dbdccca104a12d00b930869298242d2d59922c254070",
+    "release_after_unique_ignored_inventory": true
+  },
+  "shared_cache": "driver-proof-resume/.lake/artifact-cache",
+  "duplicate_cache_created": false
+}

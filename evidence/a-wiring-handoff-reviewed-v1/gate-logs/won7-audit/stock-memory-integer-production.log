@@ -1,0 +1,41 @@
+'Backend.Stock.Memory.IntegerRoots.stock_lower_integer_load_scan_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.stock_single_integer_load_return_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.stock_single_integer_load_return_body' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.domain_of_single_integer_load_return' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.IntegerRoots.SingleClass.domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryUnsigned.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryUnsigned.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.IntegerRoots.stock_lower_integer_load_paired_source_step' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.IntegerRoots.stock_lower_integer_load_scan_pair' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.IntegerRoots.stock_lower_integer_load_paired_scan' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.IntegerRoots.stock_single_integer_load_return_paired_body' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.IntegerRoots.single_integer_load_return_paired_function_seeded' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.IntegerRoots.single_integer_load_return_paired_function' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.backend_correct_world_niX_stock_integer_memory' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryIntegerFunctionWitness.source_class_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryIntegerFunctionWitness.checked_source_class_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemoryIntegerFunctionWitness.complete_paired_integer_load_function_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]

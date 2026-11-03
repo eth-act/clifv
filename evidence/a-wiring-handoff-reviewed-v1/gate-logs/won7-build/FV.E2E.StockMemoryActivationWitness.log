@@ -1,0 +1,30 @@
+⚠ [224/658] Replayed FV.E2E.Main
+warning: FV/E2E/Main.lean:81:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Main.lean:87:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [657/658] Replayed FV.E2E.Pair
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:151:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:165:16: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [686/824] Replayed FV.Backend.Proof.SretStable
+warning: FV/Backend/Proof/SretStable.lean:245:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:248:58: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:254:60: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:261:63: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SretStable.lean:268:56: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/SretStable.lean:269:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [693/824] Replayed FV.Backend.Proof.SkipDeadPrepare
+warning: FV/Backend/Proof/SkipDeadPrepare.lean:104:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SkipDeadPrepare.lean:104:21: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/SkipDeadPrepare.lean:114:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/SkipDeadPrepare.lean:114:21: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [695/824] Replayed FV.Backend.Proof.CleanupStageFacts
+warning: FV/Backend/Proof/CleanupStageFacts.lean:128:24: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+⚠ [716/824] Replayed FV.Backend.Proof.CleanupStageU
+warning: FV/Backend/Proof/CleanupStageU.lean:60:12: `ite_cond_eq_true` has been deprecated: Use `ite_eq_left_of_eq_true` instead
+⚠ [718/824] Replayed FV.E2E.PairDriverU
+warning: FV/E2E/PairDriverU.lean:51:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/PairDriverU.lean:51:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/PairDriverU.lean:62:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [824/824] Built FV.E2E.StockMemoryActivationWitness (25s)
+Build completed successfully (824 jobs).

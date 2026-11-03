@@ -1,0 +1,62 @@
+'Backend.Stock.Proof.PopcountBody.emitted_record_family' depends on axioms: [propext]
+'Backend.Stock.Proof.PopcountBody.actual_popcount_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.PopcountBody.actual_popcount_body_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.PopcountBody.family_pure' depends on axioms: [propext]
+'Backend.Stock.Proof.PopcountBody.family_quiet' depends on axioms: [propext]
+'Backend.Stock.Proof.PopcountBody.family_single' depends on axioms: [propext]
+'Backend.Stock.Proof.PopcountBody.family_formats' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.PopcountBody.popcount_inst_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.PopcountBody.popcount_source_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.PopcountBody.actual_popcount_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.stock_lower_popcount_scan_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_popcount_record_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.stock_lower_mixed_popcount_body_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Scalar.domain_of_popcount' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.PopcountRead.step_frame' depends on axioms: [propext, Quot.sound]
+'E2E.PopcountRead.no_mem' depends on axioms: [propext]
+'E2E.PopcountRead.spec_eq' depends on axioms: [propext, Quot.sound]
+'E2E.StockPopcountNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockPopcountNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockPopcountNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockPopcountNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockPopcountNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockPopcountNIWitness.source_returns' depends on axioms: [propext, Quot.sound]
+'E2E.StockPopcountNIWitness.source_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockPopcountNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockPopcountNIWitness.classifier_accepts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockPopcountNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockPopcountNIWitness.selected_roots_present' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockPopcountNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockPopcountNIWitness.compiled_semantic_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockPopcountNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockPopcountNIWitness.source_family' depends on axioms: [propext]
+'Backend.Stock.Scalar.popcountBodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_source_by_instruction' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]

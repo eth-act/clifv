@@ -1,0 +1,715 @@
+3400 modules (12 heavy, 105 without a record); critical path 0.91 h, serial 22.09 h (recorded)
+23:15:40 want 3400 modules (0 assumed built) budget=12G max_jobs=3 heavy>12G
+23:15:41 check (all) 3400 modules in 0.9s: 3110 up-to-date, 22 out of date, 268 wait for those
+23:15:41 start FV.E2E.StockGeneralDivChecks cap=3G running=1 avail=194.0G
+23:15:41 start FV.E2E.StockMixedDivChecks cap=3G running=2 avail=194.0G
+23:15:41 start FV.E2E.StockReturnedDivChecks cap=3G running=3 avail=194.0G
+23:24:04 done FV.E2E.StockMixedDivChecks rc=0 503s maxrss=1.7G cgpeak=0.2G built -> ok
+23:24:04 start FV.E2E.SemanticNIBoundary cap=3G running=3 avail=190.2G
+23:24:14 done FV.E2E.StockReturnedDivChecks rc=0 513s maxrss=1.7G cgpeak=0.2G built -> ok
+23:24:14 start FV.E2E.StockNotWitness cap=3G running=3 avail=190.0G
+23:24:16 done FV.E2E.SemanticNIBoundary rc=0 12s maxrss=2.7G cgpeak=0.4G built -> ok
+23:24:16 check (ready) 1 modules in 0.8s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:16 start FV.Backend.SemanticABICheck cap=3G running=3 avail=190.1G
+23:24:18 done FV.E2E.StockNotWitness rc=0 5s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:18 done FV.Backend.SemanticABICheck rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:24:19 check (ready) 2 modules in 0.5s: 0 up-to-date, 2 out of date, 0 wait for those
+23:24:19 start FV.E2E.StockMulWitness cap=3G running=2 avail=190.4G
+23:24:19 start FV.E2E.CompiledSemanticABI cap=3G running=3 avail=190.4G
+23:24:22 done FV.E2E.CompiledSemanticABI rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:23 check (ready) 3 modules in 0.6s: 0 up-to-date, 3 out of date, 0 wait for those
+23:24:23 start FV.E2E.CompiledSemanticReturnPins cap=3G running=3 avail=190.1G
+23:24:25 done FV.E2E.StockMulWitness rc=0 6s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:25 check (ready) 1 modules in 0.6s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:25 start FV.E2E.StockShiftWitness cap=3G running=3 avail=190.2G
+23:24:26 done FV.E2E.CompiledSemanticReturnPins rc=0 4s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:27 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:27 start FV.E2E.LinkReturnPins cap=3G running=3 avail=190.2G
+23:24:30 done FV.E2E.LinkReturnPins rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:30 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:30 start FV.Backend.ReturnPinCheck cap=3G running=3 avail=190.1G
+23:24:32 done FV.Backend.ReturnPinCheck rc=0 2s maxrss=1.5G cgpeak=0.2G built -> ok
+23:24:33 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:33 done FV.E2E.StockShiftWitness rc=0 7s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:33 check (ready) 1 modules in 0.6s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:33 start FV.E2E.ReturnPinCheckSound cap=3G running=2 avail=190.4G
+23:24:33 start FV.E2E.LinkSemanticNIContract cap=3G running=3 avail=190.4G
+23:24:36 done FV.E2E.ReturnPinCheckSound rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:36 done FV.E2E.LinkSemanticNIContract rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:37 check (ready) 1 modules in 0.6s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:37 start FV.E2E.CompiledProgramReturnPins cap=3G running=2 avail=190.3G
+23:24:37 start FV.E2E.StockCastWitness cap=3G running=3 avail=190.3G
+23:24:40 done FV.E2E.CompiledProgramReturnPins rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:41 check (ready) 2 modules in 0.7s: 0 up-to-date, 2 out of date, 0 wait for those
+23:24:41 start FV.E2E.LinkProgramReturnPinsModel cap=3G running=3 avail=190.7G
+23:24:44 done FV.E2E.LinkProgramReturnPinsModel rc=0 3s maxrss=2.6G cgpeak=0.2G built -> ok
+23:24:44 start FV.E2E.LinkReturnPinContract cap=3G running=3 avail=191.6G
+23:24:46 done FV.E2E.StockCastWitness rc=0 9s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:46 check (ready) 1 modules in 0.6s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:46 done FV.E2E.LinkReturnPinContract rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:47 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:47 start FV.E2E.LinkReturnPinCall cap=3G running=2 avail=192.2G
+23:24:47 start FV.E2E.StockBitWitness cap=3G running=3 avail=192.2G
+23:24:52 done FV.E2E.LinkReturnPinCall rc=0 5s maxrss=2.7G cgpeak=0.3G built -> ok
+23:24:52 check (ready) 1 modules in 0.6s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:52 start FV.E2E.LinkReturnPinCallbacks cap=3G running=3 avail=191.4G
+23:24:57 done FV.E2E.StockBitWitness rc=0 11s maxrss=2.6G cgpeak=0.3G built -> ok
+23:24:57 done FV.E2E.LinkReturnPinCallbacks rc=0 5s maxrss=2.7G cgpeak=0.3G built -> ok
+23:24:58 check (ready) 1 modules in 0.8s: 0 up-to-date, 1 out of date, 0 wait for those
+23:24:58 start FV.E2E.SemanticABIBoundary cap=3G running=2 avail=190.7G
+23:24:58 start FV.E2E.SemanticPipelineCheck cap=3G running=3 avail=190.7G
+23:25:01 done FV.E2E.SemanticABIBoundary rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:25:01 done FV.E2E.SemanticPipelineCheck rc=0 3s maxrss=2.1G cgpeak=0.2G built -> ok
+23:25:02 check (ready) 3 modules in 0.4s: 0 up-to-date, 3 out of date, 0 wait for those
+23:25:02 start FV.E2E.WorldReturnPinBoundary cap=3G running=2 avail=190.7G
+23:25:02 start FV.E2E.SemanticPipelineCheckWith cap=3G running=3 avail=190.6G
+23:25:05 done FV.E2E.WorldReturnPinBoundary rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:25:05 done FV.E2E.SemanticPipelineCheckWith rc=0 3s maxrss=2.1G cgpeak=0.2G built -> ok
+23:25:05 check (ready) 2 modules in 0.5s: 0 up-to-date, 2 out of date, 0 wait for those
+23:25:05 start FV.E2E.LinkReturnPinProgram cap=3G running=2 avail=190.7G
+23:25:05 start FV.E2E.SemanticPreparedMetadata cap=3G running=3 avail=190.7G
+23:25:09 done FV.E2E.LinkReturnPinProgram rc=0 4s maxrss=2.6G cgpeak=0.3G built -> ok
+23:25:09 done FV.E2E.SemanticPreparedMetadata rc=0 4s maxrss=2.7G cgpeak=0.3G built -> ok
+23:25:10 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:25:10 start FV.E2E.LinkSemanticNI cap=3G running=2 avail=190.7G
+23:25:10 start FV.E2E.StockPopcountWitness cap=3G running=3 avail=190.6G
+23:25:13 done FV.E2E.LinkSemanticNI rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:25:13 check (ready) 1 modules in 0.6s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:13 start FV.E2E.SemanticPreparedPipeline cap=3G running=3 avail=190.3G
+23:25:16 done FV.E2E.SemanticPreparedPipeline rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+23:25:17 check (ready) 2 modules in 0.5s: 0 up-to-date, 2 out of date, 0 wait for those
+23:25:17 start FV.E2E.SemanticStackBound cap=3G running=3 avail=190.2G
+23:25:20 done FV.E2E.SemanticStackBound rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+23:25:20 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:20 done FV.E2E.StockPopcountWitness rc=0 11s maxrss=2.6G cgpeak=0.3G built -> ok
+23:25:21 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:21 start FV.E2E.BinaryBoundaryDefs cap=3G running=2 avail=191.9G
+23:25:21 start FV.E2E.StockMinMaxWitness cap=3G running=3 avail=191.9G
+23:25:24 done FV.E2E.BinaryBoundaryDefs rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+23:25:24 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:24 start FV.E2E.BinaryBoundaryFacts cap=3G running=3 avail=192.4G
+23:25:27 done FV.E2E.BinaryBoundaryFacts rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+23:25:28 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:28 start FV.E2E.SemanticBinary cap=3G running=3 avail=192.4G
+23:25:30 done FV.E2E.SemanticBinary rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:25:30 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:25:30 start FV.E2E.SemanticExecBytes cap=3G running=3 avail=192.5G
+23:25:34 done FV.E2E.StockMinMaxWitness rc=0 13s maxrss=2.6G cgpeak=0.4G built -> ok
+23:25:34 done FV.E2E.SemanticExecBytes rc=0 4s maxrss=2.9G cgpeak=0.5G built -> ok
+23:25:34 check (ready) 4 modules in 0.4s: 0 up-to-date, 4 out of date, 0 wait for those
+23:25:34 start FV.E2E.SemanticExecStatic cap=3G running=2 avail=192.4G
+23:25:34 start FV.E2E.LinkReturnPinWorldX cap=3G running=3 avail=192.3G
+23:25:36 done FV.E2E.LinkReturnPinWorldX rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+23:25:37 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:37 start FV.Backend.ArithmeticNIProduction cap=3G running=3 avail=191.3G
+23:25:38 done FV.Backend.ArithmeticNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:25:38 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+23:25:38 start FV.E2E.LinkReturnPinGood cap=3G running=3 avail=190.5G
+23:25:43 done FV.E2E.LinkReturnPinGood rc=0 5s maxrss=2.7G cgpeak=0.4G built -> ok
+23:25:43 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:43 start FV.Backend.MixedNIProduction cap=3G running=3 avail=189.8G
+23:25:44 done FV.E2E.SemanticExecStatic rc=0 10s maxrss=3.2G cgpeak=0.9G built -> ok
+23:25:44 done FV.Backend.MixedNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:25:45 check (ready) 3 modules in 0.4s: 0 up-to-date, 3 out of date, 0 wait for those
+23:25:45 start FV.Backend.LogicalNIProduction cap=3G running=2 avail=189.1G
+23:25:45 start FV.E2E.StockCmpWitness cap=3G running=3 avail=189.1G
+23:25:46 done FV.Backend.LogicalNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:25:46 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+23:25:46 start FV.Backend.ScalarNIProduction cap=3G running=3 avail=189.5G
+23:25:47 done FV.Backend.ScalarNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:25:47 check (ready) 16 modules in 0.2s: 0 up-to-date, 16 out of date, 0 wait for those
+23:25:47 start FV.Backend.TwoBlockNIProduction cap=3G running=3 avail=189.7G
+23:25:48 done FV.Backend.TwoBlockNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:25:48 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:48 start FV.Backend.TwoBlockEntryNIProduction cap=3G running=3 avail=189.3G
+23:25:49 done FV.Backend.TwoBlockEntryNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:25:50 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:50 start FV.E2E.SemanticLinkGood cap=3G running=3 avail=189.2G
+23:25:52 done FV.E2E.SemanticLinkGood rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:25:52 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:52 start FV.Backend.LinearCfgNIProduction cap=3G running=3 avail=190.0G
+23:25:53 done FV.Backend.LinearCfgNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:25:53 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:53 start FV.E2E.ReturnPinCheckFast cap=3G running=3 avail=189.8G
+23:25:55 done FV.E2E.ReturnPinCheckFast rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:25:56 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:56 start FV.Backend.ForwardCfgNIProduction cap=3G running=3 avail=191.0G
+23:25:57 done FV.Backend.ForwardCfgNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:25:57 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+23:25:57 start FV.E2E.SemanticBinaryGood cap=3G running=3 avail=191.0G
+23:25:59 done FV.E2E.SemanticBinaryGood rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:25:59 start FV.E2E.SemanticExecRunN cap=3G running=3 avail=192.6G
+23:26:01 done FV.E2E.SemanticExecRunN rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:01 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:01 start FV.Backend.ConditionalCfgNIProduction cap=3G running=3 avail=192.8G
+23:26:02 done FV.Backend.ConditionalCfgNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:02 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:02 start FV.E2E.PreparedReturnPinPipeline cap=3G running=3 avail=192.9G
+23:26:04 done FV.E2E.PreparedReturnPinPipeline rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:05 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:05 start FV.Backend.ConditionalForwardCfgNIProduction cap=3G running=3 avail=193.3G
+23:26:06 done FV.Backend.ConditionalForwardCfgNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:06 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:06 start FV.E2E.SemanticExecGoodRun cap=3G running=3 avail=193.4G
+23:26:08 done FV.E2E.SemanticExecGoodRun rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:08 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:26:08 start FV.Backend.ParameterCfgNIProduction cap=3G running=3 avail=193.4G
+23:26:09 done FV.Backend.ParameterCfgNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:10 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+23:26:10 start FV.E2E.PreparedReturnPinProgram cap=3G running=3 avail=192.7G
+23:26:12 done FV.E2E.PreparedReturnPinProgram rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:12 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:26:12 start FV.E2E.SemanticExecFrameSim cap=3G running=3 avail=192.0G
+23:26:14 done FV.E2E.SemanticExecFrameSim rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:15 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:15 done FV.E2E.StockCmpWitness rc=0 30s maxrss=2.8G cgpeak=0.6G built -> ok
+23:26:15 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:15 start FV.Backend.MemoryNIProduction cap=3G running=2 avail=191.7G
+23:26:15 start FV.E2E.SemanticExecGot cap=3G running=3 avail=191.8G
+23:26:16 done FV.Backend.MemoryNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:16 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+23:26:16 start FV.Backend.MemoryCfgNIProduction cap=3G running=3 avail=191.6G
+23:26:17 done FV.Backend.MemoryCfgNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:17 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+23:26:17 done FV.E2E.SemanticExecGot rc=0 2s maxrss=2.8G cgpeak=0.4G built -> ok
+23:26:17 start FV.E2E.PreparedReturnPinSretWitness cap=3G running=2 avail=192.3G
+23:26:17 start FV.E2E.SemanticExecGoodReads cap=3G running=3 avail=192.3G
+23:26:19 done FV.E2E.SemanticExecGoodReads rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:20 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:20 done FV.E2E.PreparedReturnPinSretWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:20 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:20 start FV.Link.SemanticCompileDefs cap=3G running=2 avail=192.1G
+23:26:20 start FV.Backend.MemoryIntegerNIProduction cap=3G running=3 avail=192.2G
+23:26:21 done FV.Backend.MemoryIntegerNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:21 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:21 start FV.Backend.MemoryExtLoadNIProduction cap=3G running=3 avail=192.1G
+23:26:22 done FV.Link.SemanticCompileDefs rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+23:26:22 done FV.Backend.MemoryExtLoadNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:23 check (ready) 3 modules in 0.3s: 0 up-to-date, 3 out of date, 0 wait for those
+23:26:23 start FV.E2E.ReturnPinPipelineRetry cap=3G running=2 avail=192.1G
+23:26:23 start FV.E2E.SemanticExecProven cap=3G running=3 avail=192.1G
+23:26:25 done FV.E2E.ReturnPinPipelineRetry rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:25 done FV.E2E.SemanticExecProven rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:25 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:25 start FV.Link.SemanticCompileWith cap=3G running=2 avail=191.9G
+23:26:25 start FV.Backend.MemoryStoreNIProduction cap=3G running=3 avail=191.9G
+23:26:26 done FV.Backend.MemoryStoreNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:26 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+23:26:26 start FV.E2E.PreparedReturnPinCallerBoundaryWitness cap=3G running=3 avail=192.1G
+23:26:27 done FV.Link.SemanticCompileWith rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+23:26:28 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:28 start FV.Backend.MemoryStoreCfgNIProduction cap=3G running=3 avail=192.0G
+23:26:29 done FV.E2E.PreparedReturnPinCallerBoundaryWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:29 done FV.Backend.MemoryStoreCfgNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:29 check (ready) 4 modules in 0.4s: 0 up-to-date, 4 out of date, 0 wait for those
+23:26:29 start FV.E2E.PreparedReturnPinCalls cap=3G running=2 avail=192.2G
+23:26:29 start FV.Link.SemanticExeWith cap=3G running=3 avail=192.2G
+23:26:31 done FV.E2E.PreparedReturnPinCalls rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:31 done FV.Link.SemanticExeWith rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+23:26:32 check (ready) 6 modules in 0.5s: 0 up-to-date, 6 out of date, 0 wait for those
+23:26:32 start FV.Backend.MemoryLoadStoreNIProduction cap=3G running=2 avail=192.2G
+23:26:32 start FV.E2E.StockArithmeticNIWitness cap=3G running=3 avail=192.2G
+23:26:33 done FV.Backend.MemoryLoadStoreNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:33 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+23:26:33 start FV.Backend.MemoryCapturedCopyNIProduction cap=3G running=3 avail=191.9G
+23:26:34 done FV.Backend.MemoryCapturedCopyNIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:34 check (ready) 4 modules in 0.2s: 0 up-to-date, 4 out of date, 0 wait for those
+23:26:34 start FV.E2E.PreparedReturnPinCallsWitness cap=3G running=3 avail=191.9G
+23:26:35 done FV.E2E.StockArithmeticNIWitness rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:26:35 start FV.E2E.SemanticLogicalCompilerWitness cap=3G running=3 avail=192.8G
+23:26:38 done FV.E2E.PreparedReturnPinCallsWitness rc=0 4s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:38 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:38 start FV.Link.SemanticExeSourceWith cap=3G running=3 avail=193.6G
+23:26:40 done FV.Link.SemanticExeSourceWith rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+23:26:41 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:41 start FV.Backend.VoidCallABIProduction cap=3G running=3 avail=193.5G
+23:26:43 done FV.Backend.VoidCallABIProduction rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:26:43 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:26:43 start FV.E2E.SemanticCompilerWitness cap=3G running=3 avail=193.6G
+23:26:49 done FV.E2E.SemanticLogicalCompilerWitness rc=0 14s maxrss=3.0G cgpeak=0.3G built -> ok
+23:26:49 start FV.E2E.VoidCallFilePipeline cap=3G running=3 avail=193.1G
+23:26:51 done FV.E2E.VoidCallFilePipeline rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:26:52 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:26:52 start FV.E2E.SemanticMixedCompilerWitness cap=3G running=3 avail=191.9G
+23:26:55 done FV.E2E.SemanticCompilerWitness rc=0 11s maxrss=3.0G cgpeak=0.4G built -> ok
+23:26:55 start FV.E2E.VoidCallFileWitness cap=3G running=3 avail=191.9G
+23:27:03 done FV.E2E.SemanticMixedCompilerWitness rc=0 11s maxrss=3.0G cgpeak=0.4G built -> ok
+23:27:03 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:27:03 start FV.E2E.SemanticRoutesWitness cap=3G running=3 avail=191.3G
+23:28:04 done FV.E2E.SemanticRoutesWitness rc=0 61s maxrss=3.0G cgpeak=0.4G built -> ok
+23:28:04 start FV.E2E.StockHighMulWitness cap=3G running=3 avail=196.3G
+23:28:07 done FV.E2E.VoidCallFileWitness rc=0 73s maxrss=3.4G cgpeak=1.0G built -> ok
+23:28:07 start FV.E2E.SemanticFallbackWitness cap=3G running=3 avail=196.5G
+23:28:36 done FV.E2E.StockHighMulWitness rc=0 32s maxrss=2.8G cgpeak=0.6G built -> ok
+23:28:37 check (ready) 3 modules in 0.4s: 0 up-to-date, 3 out of date, 0 wait for those
+23:28:37 start FV.Link.ReturnPinCompileDefs cap=3G running=3 avail=195.4G
+23:28:39 done FV.Link.ReturnPinCompileDefs rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:28:39 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:28:39 start FV.Link.ReturnPinCompileWith cap=3G running=3 avail=195.4G
+23:28:41 done FV.Link.ReturnPinCompileWith rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+23:28:42 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:28:42 start FV.Link.ReturnPinRetryWitness cap=3G running=3 avail=196.9G
+23:28:54 done FV.Link.ReturnPinRetryWitness rc=0 12s maxrss=3.0G cgpeak=0.4G built -> ok
+23:28:54 start FV.E2E.StockNarrowChecks cap=3G running=3 avail=197.0G
+23:29:04 done FV.E2E.SemanticFallbackWitness rc=0 56s maxrss=3.0G cgpeak=0.4G built -> ok
+23:29:04 start FV.E2E.CompiledAnyTS cap=3G running=3 avail=197.2G
+23:29:06 done FV.E2E.CompiledAnyTS rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:29:06 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:29:06 start FV.E2E.LinkArmT cap=3G running=3 avail=197.2G
+23:29:10 done FV.E2E.LinkArmT rc=0 4s maxrss=3.0G cgpeak=0.6G built -> ok
+23:29:10 check (ready) 3 modules in 0.4s: 0 up-to-date, 3 out of date, 0 wait for those
+23:29:10 start FV.Link.ReturnPinCompileRoutes cap=3G running=3 avail=197.3G
+23:29:12 done FV.Link.ReturnPinCompileRoutes rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+23:29:13 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:29:13 start FV.Link.ReturnPinCompileRoutesWitness cap=3G running=3 avail=197.3G
+23:29:18 done FV.E2E.StockNarrowChecks rc=0 24s maxrss=1.7G cgpeak=0.2G built -> ok
+23:29:18 check (ready) 6 modules in 0.4s: 0 up-to-date, 6 out of date, 0 wait for those
+23:29:18 start FV.E2E.LinkCheckT cap=3G running=3 avail=197.1G
+23:29:21 done FV.E2E.LinkCheckT rc=0 3s maxrss=2.8G cgpeak=0.3G built -> ok
+23:29:22 check (ready) 6 modules in 0.4s: 0 up-to-date, 6 out of date, 0 wait for those
+23:29:22 start FV.E2E.StockAluRootsWitness cap=3G running=3 avail=198.6G
+23:29:45 done FV.Link.ReturnPinCompileRoutesWitness rc=0 32s maxrss=3.0G cgpeak=0.4G built -> ok
+23:29:45 start FV.E2E.PipelineCheckT cap=3G running=3 avail=197.2G
+23:29:48 done FV.E2E.PipelineCheckT rc=0 3s maxrss=2.8G cgpeak=0.3G built -> ok
+23:29:48 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:29:48 start FV.E2E.BinCheckT cap=3G running=3 avail=197.3G
+23:29:50 done FV.E2E.BinCheckT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:29:50 start FV.E2E.DeadCleanupLinkCheckT cap=3G running=3 avail=197.3G
+23:29:52 done FV.E2E.StockAluRootsWitness rc=0 30s maxrss=2.7G cgpeak=0.4G built -> ok
+23:29:52 done FV.E2E.DeadCleanupLinkCheckT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:29:53 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:29:53 start FV.E2E.StockMemoryActivationWitness cap=8G running=2 avail=197.8G
+23:30:20 done FV.E2E.StockMemoryActivationWitness rc=0 27s maxrss=7.7G cgpeak=5.8G built -> ok
+23:30:20 start FV.E2E.StackBoundT cap=3G running=2 avail=197.0G
+23:30:20 start FV.E2E.LinkGoodT cap=3G running=3 avail=197.0G
+23:30:22 done FV.E2E.StackBoundT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:30:22 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:30:22 start FV.E2E.BinaryT cap=3G running=3 avail=196.0G
+23:30:23 done FV.E2E.LinkGoodT rc=0 3s maxrss=2.8G cgpeak=0.4G built -> ok
+23:30:23 start FV.E2E.DeadCleanupBinCheckT cap=3G running=3 avail=196.1G
+23:30:24 done FV.E2E.BinaryT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:30:24 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:30:24 start FV.E2E.DeadCleanupStackBoundT cap=3G running=3 avail=196.5G
+23:30:25 done FV.E2E.DeadCleanupBinCheckT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:30:26 start FV.E2E.ExecBytesT cap=3G running=3 avail=196.4G
+23:30:27 done FV.E2E.DeadCleanupStackBoundT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:30:27 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:30:27 start FV.E2E.SemanticPipelineCheckT cap=3G running=3 avail=196.4G
+23:30:28 done FV.E2E.ExecBytesT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:30:28 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:30:28 start FV.E2E.BinaryGoodT cap=3G running=3 avail=195.6G
+23:30:29 done FV.E2E.SemanticPipelineCheckT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:30:30 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:30:30 start FV.E2E.DeadCleanupBinaryT cap=3G running=3 avail=196.3G
+23:30:31 done FV.E2E.BinaryGoodT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:30:31 start FV.E2E.DeadCleanupExecBytesT cap=3G running=3 avail=196.3G
+23:30:33 done FV.E2E.DeadCleanupBinaryT rc=0 3s maxrss=2.8G cgpeak=0.3G built -> ok
+23:30:33 done FV.E2E.DeadCleanupExecBytesT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:30:33 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:30:33 start FV.E2E.DeadCleanupExecStaticT cap=3G running=2 avail=196.4G
+23:30:33 start FV.E2E.ReturnPinBinary cap=3G running=3 avail=196.4G
+23:30:35 done FV.E2E.DeadCleanupExecStaticT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:30:35 done FV.E2E.ReturnPinBinary rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:30:36 check (ready) 5 modules in 0.5s: 0 up-to-date, 5 out of date, 0 wait for those
+23:30:36 start FV.E2E.StockMaskChecks cap=3G running=2 avail=196.1G
+23:30:36 start FV.E2E.StockParameterTrapWitness cap=3G running=3 avail=196.1G
+23:30:54 done FV.E2E.StockMaskChecks rc=0 18s maxrss=1.7G cgpeak=0.2G built -> ok
+23:30:54 start FV.E2E.DeadCleanupBinaryGoodT cap=3G running=3 avail=196.8G
+23:30:55 done FV.E2E.StockParameterTrapWitness rc=0 19s maxrss=2.6G cgpeak=0.3G built -> ok
+23:30:55 start FV.E2E.DeadCleanupExecRunNT cap=3G running=3 avail=196.5G
+23:30:56 done FV.E2E.DeadCleanupBinaryGoodT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:30:56 start FV.E2E.ReturnPinExecStatic cap=3G running=3 avail=196.2G
+23:30:57 done FV.E2E.DeadCleanupExecRunNT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:30:57 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:30:57 start FV.E2E.SemanticStackBoundTS cap=3G running=3 avail=196.3G
+23:30:59 done FV.E2E.ReturnPinExecStatic rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+23:30:59 done FV.E2E.SemanticStackBoundTS rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:31:00 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:31:00 start FV.E2E.DeadCleanupExecGoodRunT cap=3G running=2 avail=196.9G
+23:31:00 start FV.E2E.ExecGotT cap=3G running=3 avail=196.9G
+23:31:02 done FV.E2E.DeadCleanupExecGoodRunT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:31:02 done FV.E2E.ExecGotT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:31:02 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:31:02 start FV.E2E.ExecStaticT cap=3G running=2 avail=196.7G
+23:31:02 start FV.E2E.LinkOutT cap=3G running=3 avail=196.6G
+23:31:04 done FV.E2E.ExecStaticT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:31:04 check (ready) 3 modules in 0.3s: 0 up-to-date, 3 out of date, 0 wait for those
+23:31:04 done FV.E2E.LinkOutT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:31:05 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:31:05 start FV.E2E.SemanticBinaryTS cap=3G running=2 avail=195.7G
+23:31:05 start FV.E2E.ReturnPinExecGot cap=3G running=3 avail=195.7G
+23:31:07 done FV.E2E.ReturnPinExecGot rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:31:07 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:31:07 done FV.E2E.SemanticBinaryTS rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:31:08 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:31:08 start FV.E2E.DeadCleanupExecGoodReadsT cap=3G running=2 avail=194.4G
+23:31:08 start FV.E2E.DeadCleanupExecGotT cap=3G running=3 avail=194.4G
+23:31:10 done FV.E2E.DeadCleanupExecGoodReadsT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:31:10 done FV.E2E.DeadCleanupExecGotT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:31:10 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:31:10 start FV.E2E.ExecGoodReadsT cap=3G running=2 avail=194.9G
+23:31:10 start FV.E2E.ExecGoodRunT cap=3G running=3 avail=194.9G
+23:31:12 done FV.E2E.ExecGoodReadsT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:31:12 done FV.E2E.ExecGoodRunT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:31:12 start FV.E2E.ExecRunNT cap=3G running=2 avail=196.2G
+23:31:12 start FV.E2E.LinkOutCleanupT cap=3G running=3 avail=196.2G
+23:31:14 done FV.E2E.ExecRunNT rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:31:15 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:31:15 done FV.E2E.LinkOutCleanupT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:31:15 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:31:15 start FV.E2E.ReturnPinBinaryWitness cap=3G running=2 avail=196.5G
+23:31:15 start FV.E2E.SemanticBinaryGoodTS cap=3G running=3 avail=196.5G
+23:31:17 done FV.E2E.SemanticBinaryGoodTS rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:31:17 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:31:17 start FV.E2E.StockNarrowWitness cap=3G running=3 avail=196.3G
+23:31:19 done FV.E2E.ReturnPinBinaryWitness rc=0 4s maxrss=2.9G cgpeak=0.3G built -> ok
+23:31:19 done FV.E2E.StockNarrowWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+23:31:20 check (ready) 3 modules in 0.4s: 0 up-to-date, 3 out of date, 0 wait for those
+23:31:20 start FV.E2E.DeadCleanupExecProvenT cap=3G running=2 avail=196.9G
+23:31:20 start FV.E2E.ExecProvenT cap=3G running=3 avail=196.9G
+23:31:22 done FV.E2E.DeadCleanupExecProvenT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+23:31:22 done FV.E2E.ExecProvenT rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+23:31:22 start FV.E2E.LinkScopeIntT cap=3G running=2 avail=197.1G
+23:31:22 start FV.E2E.ReturnPinExecProven cap=3G running=3 avail=197.1G
+23:31:24 done FV.E2E.LinkScopeIntT rc=0 2s maxrss=2.9G cgpeak=0.4G built -> ok
+23:31:24 done FV.E2E.ReturnPinExecProven rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:31:24 check (ready) 6 modules in 0.5s: 0 up-to-date, 6 out of date, 0 wait for those
+23:31:24 start FV.E2E.StockForwardTrapWitness cap=3G running=2 avail=197.1G
+23:31:24 start FV.E2E.SemanticExecTS cap=3G running=3 avail=197.1G
+23:31:27 done FV.E2E.SemanticExecTS rc=0 3s maxrss=2.9G cgpeak=0.4G built -> ok
+23:31:28 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:31:28 start FV.E2E.StockConditionalTrapWitness cap=3G running=3 avail=197.1G
+23:31:37 done FV.E2E.StockForwardTrapWitness rc=0 12s maxrss=2.6G cgpeak=0.3G built -> ok
+23:31:37 start FV.E2E.StockNarrowRootsWitness cap=3G running=3 avail=197.4G
+23:31:39 done FV.E2E.StockConditionalTrapWitness rc=0 11s maxrss=2.6G cgpeak=0.3G built -> ok
+23:31:39 start FV.E2E.StockRankedTrapWitness cap=3G running=3 avail=198.1G
+23:31:49 done FV.E2E.StockNarrowRootsWitness rc=0 12s maxrss=2.6G cgpeak=0.3G built -> ok
+23:31:49 start FV.E2E.ReturnPinExecWitness cap=3G running=3 avail=198.1G
+23:31:51 done FV.E2E.StockRankedTrapWitness rc=0 12s maxrss=2.6G cgpeak=0.3G built -> ok
+23:31:51 start FV.Link.DeadCleanupExeT cap=3G running=3 avail=198.4G
+23:31:52 done FV.E2E.ReturnPinExecWitness rc=0 3s maxrss=2.9G cgpeak=0.3G built -> ok
+23:31:52 start FV.Link.ExeT cap=3G running=3 avail=198.2G
+23:31:53 done FV.Link.DeadCleanupExeT rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+23:31:53 start FV.E2E.SemanticChecksWith cap=3G running=3 avail=198.1G
+23:31:54 done FV.Link.ExeT rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+23:31:54 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:31:54 start FV.E2E.SemanticExecTlsCf cap=3G running=3 avail=198.2G
+23:31:55 done FV.E2E.SemanticChecksWith rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:31:56 check (ready) 3 modules in 0.4s: 0 up-to-date, 3 out of date, 0 wait for those
+23:31:56 start FV.Link.DeadCleanupCompileTFast cap=3G running=3 avail=198.1G
+23:31:57 done FV.E2E.SemanticExecTlsCf rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:31:57 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:31:57 start FV.Link.ReturnPinExeWith cap=3G running=3 avail=198.2G
+23:31:58 done FV.Link.DeadCleanupCompileTFast rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:31:59 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+23:31:59 start FV.Link.SemanticCompileT cap=3G running=3 avail=198.0G
+23:32:00 done FV.Link.ReturnPinExeWith rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+23:32:00 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:32:00 start FV.E2E.LinkScopeChecksT2 cap=3G running=3 avail=198.3G
+23:32:01 done FV.Link.SemanticCompileT rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+23:32:02 check (ready) 5 modules in 0.5s: 0 up-to-date, 5 out of date, 0 wait for those
+23:32:02 start FV.E2E.StockMemorySretCopyCompiledWitness cap=3G running=3 avail=198.2G
+23:32:03 done FV.E2E.LinkScopeChecksT2 rc=0 3s maxrss=2.9G cgpeak=0.3G built -> ok
+23:32:03 check (ready) 2 modules in 0.5s: 0 up-to-date, 2 out of date, 0 wait for those
+23:32:03 start FVTest.Link.FloatExeT cap=3G running=3 avail=198.1G
+23:32:04 done FV.E2E.StockMemorySretCopyCompiledWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:04 check (ready) 3 modules in 0.4s: 0 up-to-date, 3 out of date, 0 wait for those
+23:32:04 start FV.E2E.ReturnPinChecksWith cap=3G running=3 avail=198.2G
+23:32:06 done FVTest.Link.FloatExeT rc=0 3s maxrss=3.0G cgpeak=0.4G built -> ok
+23:32:06 done FV.E2E.ReturnPinChecksWith rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:07 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:32:07 start FV.E2E.ReturnPinGeneratedStack cap=3G running=2 avail=198.4G
+23:32:07 start FV.E2E.ReturnPinLinkerWitness cap=3G running=3 avail=198.4G
+23:32:09 done FV.E2E.ReturnPinGeneratedStack rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:09 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:32:09 start FV.E2E.SemanticExecTls cap=3G running=3 avail=198.0G
+23:32:12 done FV.E2E.SemanticExecTls rc=0 3s maxrss=2.8G cgpeak=0.4G built -> ok
+23:32:13 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:32:13 start FV.E2E.SretCopyExecBoundary cap=3G running=3 avail=197.9G
+23:32:15 done FV.E2E.ReturnPinLinkerWitness rc=0 8s maxrss=3.0G cgpeak=0.4G built -> ok
+23:32:15 done FV.E2E.SretCopyExecBoundary rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:15 start FV.E2E.SretCopyExecResultBytes cap=3G running=2 avail=198.2G
+23:32:15 start FV.E2E.TypedProductionChecks cap=3G running=3 avail=198.2G
+23:32:17 done FV.E2E.SretCopyExecResultBytes rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:17 done FV.E2E.TypedProductionChecks rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:17 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:32:17 start FV.Link.DeadCleanupCompileT cap=3G running=2 avail=198.2G
+23:32:17 start FV.Link.ReturnPinExeSourceWith cap=3G running=3 avail=198.2G
+23:32:19 done FV.Link.DeadCleanupCompileT rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+23:32:19 done FV.Link.ReturnPinExeSourceWith rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+23:32:20 check (ready) 4 modules in 0.5s: 0 up-to-date, 4 out of date, 0 wait for those
+23:32:20 start FV.Link.SemanticExeSourceT cap=3G running=2 avail=198.2G
+23:32:20 start FV.Link.TypedCompileModes cap=3G running=3 avail=198.2G
+23:32:22 done FV.Link.SemanticExeSourceT rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+23:32:22 done FV.Link.TypedCompileModes rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:32:22 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:32:22 start FV.E2E.CompiledSemanticReturnPinsWitness cap=3G running=2 avail=198.1G
+23:32:22 start FV.E2E.DeadCleanupExecPeakT cap=3G running=3 avail=198.1G
+23:32:24 done FV.E2E.CompiledSemanticReturnPinsWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:24 done FV.E2E.DeadCleanupExecPeakT rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:32:25 check (ready) 3 modules in 0.5s: 0 up-to-date, 3 out of date, 0 wait for those
+23:32:25 start FV.E2E.LinkScopeInputT3 cap=3G running=2 avail=198.4G
+23:32:25 start FV.Backend.Proof.StockParameterCheckedWitness cap=3G running=3 avail=198.4G
+23:32:27 done FV.E2E.LinkScopeInputT3 rc=0 2s maxrss=3.0G cgpeak=0.4G built -> ok
+23:32:27 done FV.Backend.Proof.StockParameterCheckedWitness rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+23:32:27 check (ready) 3 modules in 0.5s: 0 up-to-date, 3 out of date, 0 wait for those
+23:32:27 start FV.Backend.ReturnPinProduction cap=3G running=2 avail=198.2G
+23:32:27 start FV.E2E.LinkScopeChecksTF cap=3G running=3 avail=198.2G
+23:32:28 done FV.Backend.ReturnPinProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:32:29 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:32:29 start FV.E2E.SretCopyCapturedExec cap=3G running=3 avail=197.8G
+23:32:30 done FV.E2E.LinkScopeChecksTF rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+23:32:30 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+23:32:30 start FV.E2E.StockTrapWitness cap=3G running=3 avail=197.9G
+23:32:35 done FV.E2E.SretCopyCapturedExec rc=0 7s maxrss=3.0G cgpeak=0.4G built -> ok
+23:32:35 start FV.Link.TypedCompileSourceModes cap=3G running=3 avail=197.6G
+23:32:36 done FV.E2E.StockTrapWitness rc=0 6s maxrss=2.6G cgpeak=0.3G built -> ok
+23:32:36 start FVTest.E2E.ReturnPinLinkProofWith cap=3G running=3 avail=197.9G
+23:32:37 done FV.Link.TypedCompileSourceModes rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+23:32:37 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:32:38 start FVTest.E2E.SemanticLinkProofWith cap=3G running=3 avail=197.9G
+23:32:39 done FVTest.E2E.ReturnPinLinkProofWith rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:39 start FVTest.E2E.TypedLinkProofWith cap=3G running=3 avail=198.1G
+23:32:40 done FVTest.E2E.SemanticLinkProofWith rc=0 2s maxrss=2.1G cgpeak=0.3G built -> ok
+23:32:40 check (ready) 21 modules in 0.4s: 0 up-to-date, 21 out of date, 0 wait for those
+23:32:40 start FVTest.Link.FloatArithCompileExeT cap=3G running=3 avail=198.1G
+23:32:41 done FVTest.E2E.TypedLinkProofWith rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:41 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:32:41 start FVTest.Link.FloatCompileExeT cap=3G running=3 avail=198.0G
+23:32:44 done FVTest.Link.FloatCompileExeT rc=0 3s maxrss=3.0G cgpeak=0.4G built -> ok
+23:32:44 start FV.E2E.LinkReturnPinsWitness cap=3G running=3 avail=198.9G
+23:32:45 done FVTest.Link.FloatArithCompileExeT rc=0 5s maxrss=3.0G cgpeak=0.4G built -> ok
+23:32:45 start FV.E2E.ReturnPinProductionWitness cap=3G running=3 avail=198.5G
+23:32:47 done FV.E2E.LinkReturnPinsWitness rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:48 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:32:48 start FV.E2E.SemanticExecTlsSim cap=3G running=3 avail=198.8G
+23:32:50 done FV.E2E.ReturnPinProductionWitness rc=0 4s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:50 start FV.E2E.StockVoidCallWitness cap=3G running=3 avail=197.9G
+23:32:51 done FV.E2E.SemanticExecTlsSim rc=0 3s maxrss=2.8G cgpeak=0.4G built -> ok
+23:32:51 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:32:51 start FV.Link.DeadCleanupCompileT3 cap=3G running=3 avail=197.3G
+23:32:52 done FV.E2E.StockVoidCallWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:32:53 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:32:53 start FV.Link.DeadCleanupExeSourceT cap=3G running=3 avail=196.9G
+23:32:54 done FV.Link.DeadCleanupCompileT3 rc=0 2s maxrss=3.1G cgpeak=0.3G built -> ok
+23:32:54 check (ready) 2 modules in 0.6s: 0 up-to-date, 2 out of date, 0 wait for those
+23:32:54 start FVTest.Backend.Lowering.StockTwoBlockProductionRuntime cap=3G running=3 avail=196.9G
+23:32:55 done FV.Link.DeadCleanupExeSourceT rc=0 3s maxrss=3.0G cgpeak=0.3G built -> ok
+23:32:56 check (ready) 2 modules in 0.5s: 0 up-to-date, 2 out of date, 0 wait for those
+23:32:56 done FVTest.Backend.Lowering.StockTwoBlockProductionRuntime rc=0 1s maxrss=1.6G cgpeak=0.3G built -> ok
+23:32:56 start FV.Backend.Proof.StockParameterLoopProbe cap=3G running=2 avail=197.4G
+23:32:56 start FV.E2E.LinkScopeTotalTF cap=3G running=3 avail=197.4G
+23:32:58 done FV.Backend.Proof.StockParameterLoopProbe rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+23:32:58 done FV.E2E.LinkScopeTotalTF rc=0 2s maxrss=3.0G cgpeak=0.4G built -> ok
+23:32:58 check (ready) 4 modules in 0.5s: 0 up-to-date, 4 out of date, 0 wait for those
+23:32:58 start FV.E2E.ReturnPinCheckFastWitness cap=3G running=2 avail=197.3G
+23:32:58 start FV.E2E.StockDivWitness cap=3G running=3 avail=197.3G
+23:33:00 done FV.E2E.ReturnPinCheckFastWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:33:01 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:33:01 start FV.E2E.StockReturnedDivWitness cap=3G running=3 avail=197.2G
+23:33:03 done FV.E2E.StockDivWitness rc=0 4s maxrss=2.6G cgpeak=0.3G built -> ok
+23:33:03 start FV.E2E.StockScalarWitness cap=3G running=3 avail=197.2G
+23:33:05 done FV.E2E.StockReturnedDivWitness rc=0 4s maxrss=2.7G cgpeak=0.4G built -> ok
+23:33:05 start FV.Link.DeadCleanupExePeakT cap=3G running=3 avail=197.3G
+23:33:07 done FV.E2E.StockScalarWitness rc=0 4s maxrss=2.6G cgpeak=0.3G built -> ok
+23:33:07 done FV.Link.DeadCleanupExePeakT rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+23:33:07 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+23:33:07 start FV.Link.ReturnPinExeSourceWitness cap=3G running=2 avail=197.5G
+23:33:07 start FV.Link.TypedCompileModesWitness cap=3G running=3 avail=197.5G
+23:33:11 done FV.Link.ReturnPinExeSourceWitness rc=0 4s maxrss=3.0G cgpeak=0.4G built -> ok
+23:33:11 done FV.Link.TypedCompileModesWitness rc=0 4s maxrss=3.1G cgpeak=0.4G built -> ok
+23:33:11 start FV.Link.TypedCompileSourceModesWitness cap=3G running=2 avail=197.5G
+23:33:11 start FVTest.Backend.Lowering.StockMaskProductionRuntime cap=3G running=3 avail=197.5G
+23:33:13 done FVTest.Backend.Lowering.StockMaskProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:33:13 start FVTest.Backend.Lowering.StockNarrowProductionRuntime cap=3G running=3 avail=197.1G
+23:33:15 done FV.Link.TypedCompileSourceModesWitness rc=0 4s maxrss=3.1G cgpeak=0.4G built -> ok
+23:33:15 done FVTest.Backend.Lowering.StockNarrowProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:33:16 check (ready) 2 modules in 0.4s: 0 up-to-date, 2 out of date, 0 wait for those
+23:33:16 start FVTest.E2E.FloatChecksT2 cap=3G running=2 avail=197.5G
+23:33:16 start FVTest.E2E.LinkCheckMain cap=3G running=3 avail=197.5G
+23:33:18 done FVTest.E2E.FloatChecksT2 rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+23:33:18 check (ready) 1 modules in 0.5s: 0 up-to-date, 1 out of date, 0 wait for those
+23:33:18 start FVTest.Link.FloatStockCompileT cap=3G running=3 avail=196.8G
+23:33:19 done FVTest.E2E.LinkCheckMain rc=0 3s maxrss=2.8G cgpeak=0.4G built -> ok
+23:33:19 start FV.Backend.Lowering.StockResultCallRoutes cap=3G running=3 avail=196.9G
+23:33:20 done FV.Backend.Lowering.StockResultCallRoutes rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:33:20 check (ready) 3 modules in 0.3s: 0 up-to-date, 3 out of date, 0 wait for those
+23:33:20 start FV.Backend.MemorySretCopyABIProduction cap=3G running=3 avail=196.9G
+23:33:21 done FVTest.Link.FloatStockCompileT rc=0 3s maxrss=3.1G cgpeak=0.4G built -> ok
+23:33:21 done FV.Backend.MemorySretCopyABIProduction rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:33:22 check (ready) 2 modules in 0.2s: 0 up-to-date, 2 out of date, 0 wait for those
+23:33:22 start FV.Backend.Proof.StockMemoryCompatibility cap=3G running=2 avail=197.5G
+23:33:22 start FV.E2E.ReturnPinChecksWithWitness cap=3G running=3 avail=197.5G
+23:33:23 done FV.Backend.Proof.StockMemoryCompatibility rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:33:23 check (ready) 1 modules in 0.2s: 0 up-to-date, 1 out of date, 0 wait for those
+23:33:23 start FV.E2E.StockLogicalWitness cap=3G running=3 avail=198.0G
+23:33:25 done FV.E2E.ReturnPinChecksWithWitness rc=0 3s maxrss=2.9G cgpeak=0.3G built -> ok
+23:33:25 start FV.E2E.StockMixedWitness cap=3G running=3 avail=197.9G
+23:33:26 done FV.E2E.StockLogicalWitness rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:33:26 start FVTest.Link.FloatCompileExeT3 cap=3G running=3 avail=197.9G
+23:33:28 done FV.E2E.StockMixedWitness rc=0 3s maxrss=2.6G cgpeak=0.3G built -> ok
+23:33:28 start FVTest.Link.FloatCompileExeTSource cap=3G running=3 avail=197.8G
+23:33:29 done FVTest.Link.FloatCompileExeT3 rc=0 3s maxrss=3.2G cgpeak=0.4G built -> ok
+23:33:29 start FVTest.Link.FloatLinkCallsT cap=3G running=3 avail=197.8G
+23:33:31 done FVTest.Link.FloatCompileExeTSource rc=0 3s maxrss=3.1G cgpeak=0.3G built -> ok
+23:33:31 start FVTest.Link.FloatStockSretT cap=3G running=3 avail=197.8G
+23:33:33 done FVTest.Link.FloatLinkCallsT rc=0 4s maxrss=3.1G cgpeak=0.4G built -> ok
+23:33:33 start FVTest.Link.FloatTryCompileExeT cap=3G running=3 avail=198.0G
+23:33:34 done FVTest.Link.FloatStockSretT rc=0 3s maxrss=3.1G cgpeak=0.4G built -> ok
+23:33:34 start FVTest.Link.LeanLinkMain cap=3G running=3 avail=198.1G
+23:33:36 done FVTest.Link.FloatTryCompileExeT rc=0 3s maxrss=3.0G cgpeak=0.4G built -> ok
+23:33:36 start FV.Backend.Proof.StockLoopCarryWitness cap=3G running=3 avail=198.0G
+23:33:37 done FVTest.Link.LeanLinkMain rc=0 3s maxrss=3.2G cgpeak=0.4G built -> ok
+23:33:37 start FV.Backend.Proof.StockLoopDefBeforeWitness cap=3G running=3 avail=198.1G
+23:33:39 done FV.Backend.Proof.StockLoopCarryWitness rc=0 3s maxrss=2.3G cgpeak=0.3G built -> ok
+23:33:39 done FV.Backend.Proof.StockLoopDefBeforeWitness rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+23:33:39 start FV.Backend.Proof.StockParameterLoopWitness cap=3G running=2 avail=198.4G
+23:33:39 start FV.E2E.LinkReturnPinGoodWitness cap=3G running=3 avail=198.4G
+23:33:41 done FV.Backend.Proof.StockParameterLoopWitness rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+23:33:41 done FV.E2E.LinkReturnPinGoodWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:33:41 start FV.E2E.LinkReturnPinProgramWitness cap=3G running=2 avail=198.4G
+23:33:41 start FV.E2E.ReturnPinPipelineRetryWitness cap=3G running=3 avail=198.4G
+23:33:43 done FV.E2E.LinkReturnPinProgramWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+23:33:43 done FV.E2E.ReturnPinPipelineRetryWitness rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:33:43 start FV.E2E.SemanticExecTlsProven cap=3G running=2 avail=198.4G
+23:33:43 start FV.E2E.SretCopyHeapBoundaryWitness cap=3G running=3 avail=198.4G
+23:33:45 done FV.E2E.SemanticExecTlsProven rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:33:45 done FV.E2E.SretCopyHeapBoundaryWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+23:33:45 start FV.E2E.StockCallStoreProviderWitness cap=3G running=2 avail=198.5G
+23:33:45 start FV.E2E.StockCfgWitness cap=3G running=3 avail=198.5G
+23:33:47 done FV.E2E.StockCallStoreProviderWitness rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+23:33:47 done FV.E2E.StockCfgWitness rc=0 2s maxrss=2.4G cgpeak=0.3G built -> ok
+23:33:47 start FV.E2E.StockLiveCallWitness cap=3G running=2 avail=198.4G
+23:33:47 start FV.E2E.StockMaskWitness cap=3G running=3 avail=198.4G
+23:33:49 done FV.E2E.StockLiveCallWitness rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+23:33:49 done FV.E2E.StockMaskWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+23:33:49 start FV.E2E.StockMixedDivWitness cap=3G running=2 avail=198.4G
+23:33:49 start FV.E2E.StockResultCallWitness cap=3G running=3 avail=198.4G
+23:33:51 done FV.E2E.StockMixedDivWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+23:33:51 done FV.E2E.StockResultCallWitness rc=0 2s maxrss=2.3G cgpeak=0.3G built -> ok
+23:33:51 start FV.E2E.StockSretPointerPairedWitness cap=3G running=2 avail=198.4G
+23:33:51 start FV.E2E.StockSretPointerWorldWitness cap=3G running=3 avail=198.4G
+23:33:53 done FV.E2E.StockSretPointerPairedWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+23:33:53 done FV.E2E.StockSretPointerWorldWitness rc=0 2s maxrss=2.6G cgpeak=0.3G built -> ok
+23:33:53 start FV.E2E.StockVoidCallNIWitness cap=3G running=2 avail=198.4G
+23:33:53 start FV.Front.ExeT cap=3G running=3 avail=198.4G
+23:33:55 done FV.Front.ExeT rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+23:33:55 start FVTest.Backend.Lowering.StockArithmeticLinked cap=3G running=3 avail=198.4G
+23:33:56 done FV.E2E.StockVoidCallNIWitness rc=0 3s maxrss=2.7G cgpeak=0.3G built -> ok
+23:33:56 start FVTest.Backend.Lowering.StockArithmeticRuntime cap=3G running=3 avail=198.1G
+23:33:57 done FVTest.Backend.Lowering.StockArithmeticLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:33:57 start FVTest.Backend.Lowering.StockBitProductionLinked cap=3G running=3 avail=198.4G
+23:33:58 done FVTest.Backend.Lowering.StockArithmeticRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:33:58 start FVTest.Backend.Lowering.StockBitProductionRuntime cap=3G running=3 avail=198.2G
+23:33:59 done FVTest.Backend.Lowering.StockBitProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:33:59 start FVTest.Backend.Lowering.StockCastProductionLinked cap=3G running=3 avail=198.3G
+23:34:00 done FVTest.Backend.Lowering.StockBitProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:00 start FVTest.Backend.Lowering.StockCastProductionRuntime cap=3G running=3 avail=198.2G
+23:34:01 done FVTest.Backend.Lowering.StockCastProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:01 start FVTest.Backend.Lowering.StockCmpProductionLinked cap=3G running=3 avail=198.1G
+23:34:02 done FVTest.Backend.Lowering.StockCastProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:02 start FVTest.Backend.Lowering.StockCmpProductionRuntime cap=3G running=3 avail=197.4G
+23:34:03 done FVTest.Backend.Lowering.StockCmpProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:03 start FVTest.Backend.Lowering.StockDivProductionLinked cap=3G running=3 avail=198.1G
+23:34:04 done FVTest.Backend.Lowering.StockCmpProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:04 start FVTest.Backend.Lowering.StockDivProductionRuntime cap=3G running=3 avail=197.8G
+23:34:05 done FVTest.Backend.Lowering.StockDivProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:06 start FVTest.Backend.Lowering.StockGeneralDivProductionLinked cap=3G running=3 avail=197.9G
+23:34:07 done FVTest.Backend.Lowering.StockDivProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:07 start FVTest.Backend.Lowering.StockGeneralDivProductionRuntime cap=3G running=3 avail=197.8G
+23:34:09 done FVTest.Backend.Lowering.StockGeneralDivProductionLinked rc=0 3s maxrss=2.9G cgpeak=0.3G built -> ok
+23:34:09 done FVTest.Backend.Lowering.StockGeneralDivProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:09 start FVTest.Backend.Lowering.StockHighMulProductionLinked cap=3G running=2 avail=198.3G
+23:34:09 start FVTest.Backend.Lowering.StockHighMulProductionRuntime cap=3G running=3 avail=198.3G
+23:34:11 done FVTest.Backend.Lowering.StockHighMulProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:11 done FVTest.Backend.Lowering.StockHighMulProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:11 start FVTest.Backend.Lowering.StockLogicalLinked cap=3G running=2 avail=198.4G
+23:34:11 start FVTest.Backend.Lowering.StockMemoryCapturedCopyProductionLinked cap=3G running=3 avail=198.5G
+23:34:13 done FVTest.Backend.Lowering.StockLogicalLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:34:13 done FVTest.Backend.Lowering.StockMemoryCapturedCopyProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:34:13 start FVTest.Backend.Lowering.StockMemoryLoadStoreProductionLinked cap=3G running=2 avail=198.3G
+23:34:13 start FVTest.Backend.Lowering.StockMemoryProductionLinked cap=3G running=3 avail=198.3G
+23:34:15 done FVTest.Backend.Lowering.StockMemoryLoadStoreProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:15 done FVTest.Backend.Lowering.StockMemoryProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:15 start FVTest.Backend.Lowering.StockMemoryRetainedRuntime cap=3G running=2 avail=198.3G
+23:34:15 start FVTest.Backend.Lowering.StockMemorySretCopyProductionObject cap=3G running=3 avail=198.3G
+23:34:17 done FVTest.Backend.Lowering.StockMemoryRetainedRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:17 done FVTest.Backend.Lowering.StockMemorySretCopyProductionObject rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:17 start FVTest.Backend.Lowering.StockMemoryStoreCfgProductionLinked cap=3G running=2 avail=198.2G
+23:34:17 start FVTest.Backend.Lowering.StockMemoryStoreProductionLinked cap=3G running=3 avail=198.2G
+23:34:19 done FVTest.Backend.Lowering.StockMemoryStoreCfgProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:34:19 done FVTest.Backend.Lowering.StockMemoryStoreProductionLinked rc=0 2s maxrss=2.7G cgpeak=0.3G built -> ok
+23:34:19 start FVTest.Backend.Lowering.StockMinMaxProductionLinked cap=3G running=2 avail=198.2G
+23:34:19 start FVTest.Backend.Lowering.StockMinMaxProductionRuntime cap=3G running=3 avail=198.2G
+23:34:21 done FVTest.Backend.Lowering.StockMinMaxProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:21 done FVTest.Backend.Lowering.StockMinMaxProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:21 start FVTest.Backend.Lowering.StockMixedDivProductionLinked cap=3G running=2 avail=198.3G
+23:34:21 start FVTest.Backend.Lowering.StockMixedDivProductionRuntime cap=3G running=3 avail=198.3G
+23:34:23 done FVTest.Backend.Lowering.StockMixedDivProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:23 done FVTest.Backend.Lowering.StockMixedDivProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:23 start FVTest.Backend.Lowering.StockMixedLinked cap=3G running=2 avail=198.0G
+23:34:23 start FVTest.Backend.Lowering.StockMixedRuntime cap=3G running=3 avail=198.0G
+23:34:25 done FVTest.Backend.Lowering.StockMixedLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:25 done FVTest.Backend.Lowering.StockMixedRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:25 start FVTest.Backend.Lowering.StockMulProductionLinked cap=3G running=2 avail=198.2G
+23:34:25 start FVTest.Backend.Lowering.StockMulProductionRuntime cap=3G running=3 avail=198.2G
+23:34:27 done FVTest.Backend.Lowering.StockMulProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:27 done FVTest.Backend.Lowering.StockMulProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:27 start FVTest.Backend.Lowering.StockNotProductionLinked cap=3G running=2 avail=198.2G
+23:34:27 start FVTest.Backend.Lowering.StockNotProductionRuntime cap=3G running=3 avail=198.2G
+23:34:29 done FVTest.Backend.Lowering.StockNotProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:29 done FVTest.Backend.Lowering.StockNotProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:29 start FVTest.Backend.Lowering.StockPopcountProductionLinked cap=3G running=2 avail=198.3G
+23:34:29 start FVTest.Backend.Lowering.StockPopcountProductionRuntime cap=3G running=3 avail=198.3G
+23:34:31 done FVTest.Backend.Lowering.StockPopcountProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:31 done FVTest.Backend.Lowering.StockPopcountProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:31 start FVTest.Backend.Lowering.StockReturnedDivProductionLinked cap=3G running=2 avail=198.3G
+23:34:31 start FVTest.Backend.Lowering.StockReturnedDivProductionRuntime cap=3G running=3 avail=198.3G
+23:34:33 done FVTest.Backend.Lowering.StockReturnedDivProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:33 done FVTest.Backend.Lowering.StockReturnedDivProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+23:34:33 start FVTest.Backend.Lowering.StockScalarProductionLinked cap=3G running=2 avail=199.1G
+23:34:33 start FVTest.Backend.Lowering.StockScalarProductionRuntime cap=3G running=3 avail=199.1G
+23:34:35 done FVTest.Backend.Lowering.StockScalarProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:35 done FVTest.Backend.Lowering.StockScalarProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:35 start FVTest.Backend.Lowering.StockShiftProductionLinked cap=3G running=2 avail=199.2G
+23:34:35 start FVTest.Backend.Lowering.StockShiftProductionRuntime cap=3G running=3 avail=199.2G
+23:34:37 done FVTest.Backend.Lowering.StockShiftProductionLinked rc=0 2s maxrss=2.8G cgpeak=0.3G built -> ok
+23:34:37 done FVTest.Backend.Lowering.StockShiftProductionRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:37 start FVTest.Backend.Lowering.Trace cap=3G running=2 avail=199.1G
+23:34:37 start FVTest.Backend.Main cap=3G running=3 avail=199.1G
+23:34:39 done FVTest.Backend.Lowering.Trace rc=0 2s maxrss=1.6G cgpeak=0.3G built -> ok
+23:34:39 done FVTest.Backend.Main rc=0 2s maxrss=1.8G cgpeak=0.3G built -> ok
+23:34:39 start FVTest.E2E.FloatCtlT2 cap=3G running=2 avail=199.1G
+23:34:39 start FVTest.E2E.FloatScopeT3 cap=3G running=3 avail=199.1G
+23:34:41 done FVTest.E2E.FloatCtlT2 rc=0 2s maxrss=2.9G cgpeak=0.3G built -> ok
+23:34:41 start FVTest.Link.FloatCompileExeTPeak cap=3G running=3 avail=199.0G
+23:34:42 done FVTest.E2E.FloatScopeT3 rc=0 3s maxrss=3.1G cgpeak=0.4G built -> ok
+23:34:42 start FVTest.Link.FloatScopeTotalT3F cap=3G running=3 avail=198.1G
+23:34:43 done FVTest.Link.FloatCompileExeTPeak rc=0 2s maxrss=3.0G cgpeak=0.3G built -> ok
+23:34:43 start FV.Backend.Lowering.StockLiveCallRoutes cap=3G running=3 avail=196.8G
+23:34:44 done FVTest.Link.FloatScopeTotalT3F rc=0 2s maxrss=3.1G cgpeak=0.3G built -> ok
+23:34:44 done FV.Backend.Lowering.StockLiveCallRoutes rc=0 1s maxrss=1.7G cgpeak=0.3G built -> ok
+23:34:44 start FV.Backend.Proof.StockMemoryCapturedCopyCompatibility cap=3G running=2 avail=196.0G
+23:34:44 start FV.Backend.Proof.StockMemoryCfgCompatibility cap=3G running=3 avail=195.9G
+23:34:45 done FV.Backend.Proof.StockMemoryCapturedCopyCompatibility rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:45 done FV.Backend.Proof.StockMemoryCfgCompatibility rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:45 start FV.Backend.Proof.StockMemoryExtLoadCompatibility cap=3G running=2 avail=195.4G
+23:34:45 start FV.Backend.Proof.StockMemoryLoadStoreCompatibility cap=3G running=3 avail=195.4G
+23:34:46 done FV.Backend.Proof.StockMemoryExtLoadCompatibility rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:46 done FV.Backend.Proof.StockMemoryLoadStoreCompatibility rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:46 start FV.Backend.Proof.StockMemorySretCopyCompatibility cap=3G running=2 avail=194.5G
+23:34:46 start FV.Backend.Proof.StockMemoryStoreCfgCompatibility cap=3G running=3 avail=194.4G
+23:34:47 done FV.Backend.Proof.StockMemorySretCopyCompatibility rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:47 done FV.Backend.Proof.StockMemoryStoreCfgCompatibility rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:47 start FV.Backend.Proof.StockMemoryStoreCompatibility cap=3G running=2 avail=193.7G
+23:34:47 start FVTest.Backend.Lowering.StockLogicalRuntime cap=3G running=3 avail=193.7G
+23:34:48 done FV.Backend.Proof.StockMemoryStoreCompatibility rc=0 1s maxrss=1.6G cgpeak=0.2G built -> ok
+23:34:49 done FVTest.Backend.Lowering.StockLogicalRuntime rc=0 2s maxrss=1.6G cgpeak=0.2G built -> ok
+23:37:16 done FV.E2E.StockGeneralDivChecks rc=0 1295s maxrss=1.8G cgpeak=0.3G built -> ok
+23:37:17 check (ready) 1 modules in 0.4s: 0 up-to-date, 1 out of date, 0 wait for those
+23:37:17 start FV.Backend.Proof.StockParameterArgsRouteWitness cap=11G running=1 avail=196.0G
+23:38:10 done FV.Backend.Proof.StockParameterArgsRouteWitness rc=0 53s maxrss=10.3G cgpeak=8.4G built -> ok
+23:38:10 start FV.E2E.StockGeneralDivWitness cap=3G running=1 avail=194.5G
+23:38:19 done FV.E2E.StockGeneralDivWitness rc=0 9s maxrss=2.9G cgpeak=0.6G built -> ok
+23:38:19 132 batch checks, 54s; 0 modules restored after another worktree built them
+23:38:19 END 3400/3400 ok, 290 built, wall 22.7 min

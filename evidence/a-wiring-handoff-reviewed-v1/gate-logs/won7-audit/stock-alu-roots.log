@@ -1,0 +1,31 @@
+'Backend.Stock.Proof.ScalarAddSub.stock_addsub_selected_rule_ids' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.LogicalComplete.selected_rule_ids' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.domain_of_highmul' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.highmulBodyEligible_sound' depends on axioms: [propext]
+'E2E.StockAluRootsWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockAluRootsWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockAluRootsWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockAluRootsWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockAluRootsWitness.source_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockAluRootsWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockAluRootsWitness.classifier_accepts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockAluRootsWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockAluRootsWitness.selected_roots_present' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockAluRootsWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockAluRootsWitness.compiled_semantic_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockAluRootsWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockAluRootsWitness.source_family' depends on axioms: [propext, Quot.sound]

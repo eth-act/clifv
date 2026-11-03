@@ -1,0 +1,21 @@
+'E2E.StockNarrowNIWitness.compiled_of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockNarrowRootsWitness.grid_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowRootsWitness.grid_true._native.native_decide.ax_1]
+'E2E.StockNarrowRootsWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowRootsWitness.grid_true._native.native_decide.ax_1]
+'E2E.StockNarrowRootsWitness.selected_roots_present' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowRootsWitness.grid_true._native.native_decide.ax_1]
+'E2E.StockNarrowRootsWitness.control_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowRootsWitness.control_checks_true._native.native_decide.ax_1_1]
+'E2E.StockNarrowRootsWitness.control_roots_present' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockNarrowRootsWitness.control_checks_true._native.native_decide.ax_1_1]

@@ -1,0 +1,19 @@
+'Backend.Stock.ConditionalCfg.Shape.toLeafShape' depends on axioms: [propext]
+'Backend.Stock.ConditionalCfg.leafEligible_shape' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.ConditionalCfg.LeafShape.condition_metadata' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.LeafShape.legacy_compatible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.Shape.legacy_compatible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_leafShape' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_shape' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_leafEligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.domain_of_eligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ConditionalCfg.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockConditionalTrapNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockConditionalTrapNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockConditionalTrapNIWitness.compiled_cases' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockConditionalTrapNIWitness.checks_true._native.native_decide.ax_1]

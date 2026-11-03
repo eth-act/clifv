@@ -1,0 +1,72 @@
+'Backend.Stock.Proof.PureBody.actual_source_records' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.PureBody.actual_pure_source_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.PureBody.actual_pure_source_execution_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.PureBody.actual_pure_return_refines_at' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.PureBody.actual_pure_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.PureBody.pure_source_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Logical.bodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Proof.LogicalBody.logical_inst_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ConstantBody.family_pure' depends on axioms: [propext]
+'Backend.Stock.Proof.ConstantBody.actual_constant_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ConstantBody.actual_constant_body_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConstantBody.actual_constant_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ConstantBody.constant_source_notrap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Scalar.domain_of_constant' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.bodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_worldX_stock_scalar' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_scalar' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockScalarNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockScalarNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockScalarNIWitness.source_checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockScalarNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockScalarNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockScalarNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockScalarNIWitness.classifier_accepts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockScalarNIWitness.source_checks_true._native.native_decide.ax_1_1]
+'E2E.StockScalarNIWitness.compiled_semantic_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockScalarNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockScalarNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockScalarNIWitness.source_returns' depends on axioms: [propext, Quot.sound]
+'E2E.ABIReadBoundary.checked_step_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadBoundary.checked_step_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadBoundary.star_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadBoundary.return_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadBoundary.Realize.step_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadBoundary.Realize.star_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadBoundary.Realize.return_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadBoundary.machine_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.MixedFlagBoundary.FlagFrame.refl' does not depend on any axioms
+'E2E.MixedFlagBoundary.FlagFrame.write_pstate' depends on axioms: [propext]
+'E2E.MixedFlagBoundary.FlagFrame.trans' does not depend on any axioms
+'E2E.MixedFlagBoundary.FlagFrame.regVal' depends on axioms: [propext]
+'E2E.MixedFlagBoundary.FlagFrame.arguments' depends on axioms: [propext, Quot.sound]
+'E2E.ScalarBoundary.refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.memory' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.driver' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.checked_step_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.checked_step_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.Realize.step_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.return_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.machine_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ScalarBoundary.checked_instruction' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.noTlsScalar' depends on axioms: [propext, Classical.choice, Quot.sound]

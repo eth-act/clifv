@@ -1,0 +1,26 @@
+'Link.TypedCompilerModesWitness.Raw.compiler_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Link.TypedCompilerModesWitness.Raw.compiler_success._native.native_decide.ax_1_1]
+'Link.TypedCompilerModesWitness.Cleanup.compiler_success' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Link.TypedCompilerModesWitness.Cleanup.compiler_success._native.native_decide.ax_1_1]
+'Link.TypedSourceModesWitness.original_source_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ E2E.ReturnPinBinaryWitness.old_checked._native.native_decide.ax_1,
+ E2E.ReturnPinBinaryWitness.old_checked._native.native_decide.ax_2,
+ Link.TypedSourceModesWitness.checks_true._native.native_decide.ax_1✝,
+ Link.TypedSourceModesWitness.checks_true._native.native_decide.ax_2✝]
+'Link.TypedSourceModesWitness.original_source_peak_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_1,
+ E2E.ProductionBoundaryWitness.concrete_facts._native.native_decide.ax_1_2,
+ E2E.ReturnPinBinaryWitness.depth_budget._native.native_decide.ax_1,
+ E2E.ReturnPinBinaryWitness.depth_budget._native.native_decide.ax_2,
+ Link.TypedSourceModesWitness.checks_true._native.native_decide.ax_1✝,
+ Link.TypedSourceModesWitness.checks_true._native.native_decide.ax_2✝]

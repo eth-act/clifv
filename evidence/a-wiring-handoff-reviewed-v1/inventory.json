@@ -1,0 +1,32 @@
+{
+  "utc": "2026-11-03T05:04:10.832271+00:00",
+  "branches": [
+    {
+      "commit": "21eb36fa1978d0f08b1339e5460390ff738c3076",
+      "sources": {
+        "FV/Backend/ABIReadCfg.lean": "ae78852b20529c5a367010ea3b55266f5bcdbdf78011d0b24d56d410038091ad",
+        "FV/E2E/ABIReadCfg.lean": "69000ce30bbc5a33bdee756b7e34618cedcd1beb83f3fb020b174a536518ad95",
+        "FV/E2E/ABIReadCfgTableWitness.lean": "64f03f2566c8a7e5301f3ee9aaad995e064ecdfccb3c9115d07b46dd7a141ec1",
+        "FV/Backend/SemanticNICheck.lean": "ea7714a42da26019326b0c93fd827e9c2c143b2b3ffc5487335cdd6087ce32a4",
+        "FV/E2E/CompiledSemanticNI.lean": "3825e451146810633311c811d0fef6f1b6cc14ae6a3bc7605817256ae9d87ded",
+        "FV/Backend/Lowering/StockGeneralLoopCfg7NI.lean": "e050bf694c476656859be35095289715a15be534f8d0ce63cf1a0c200f72b46f",
+        "FV/Backend/Proof/StockGeneralRouteWitness7.lean": "5c4102020483805a179bfd9732ad0a950f5aa46043fe7dc6171ed9573827336f",
+        "scripts/audit/general-route7.lean": "2760c7126a506884bd448bdd37f4c11264928775c7dc233206532a8effd0dd04"
+      }
+    },
+    {
+      "commit": "2490b54fed9be8c26f9287a6b92c5e6235e0e345",
+      "sources": {
+        "FV/Backend/SemanticNICheck.lean": "5f08ff199cd3381295ce8f79b91eb15e1306affca2508a17bfe312d327475cc8",
+        "FV/E2E/CompiledSemantic.lean": "9b0f3d8b33ceb81c20ac632f1362fd465eb35151f7f129e7d1e8f3abcd7f9ebb",
+        "FV/E2E/CompiledSemanticNI.lean": "a55b3b0fd48fc41d3684877a2738ccadb6e738e427481d6926873ec6b611c592",
+        "FV/E2E/SemanticNIBoundary.lean": "5d24bb12e6b0dcf7435ff8085a97d62e65594d9af12aa96018b003e8d1f96e7e"
+      }
+    }
+  ],
+  "worktrees_clean": true,
+  "gate_still_owned_by_A": true,
+  "current_main_validation": false,
+  "old_variants_required": true,
+  "full_goal_complete": false
+}

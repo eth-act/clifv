@@ -1,0 +1,17 @@
+'Link.ReturnPinCompilerWith.unshift_shift' does not depend on any axioms
+'Link.ReturnPinCompilerWith.shift_file' does not depend on any axioms
+'Link.ReturnPinCompilerWith.routes_current' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.routes_retry' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.routes_accepts_previous' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.routes_retry_erases' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.routes_previous_error' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinCompilerWith.routes_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.ReturnPinRoutedWitness.current_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_1,
+ Link.ReturnPinRetryWitness.compiler_success._native.native_decide.ax_2]
+'Link.ReturnPinRoutedWitness.retained_route_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Link.ReturnPinRoutedWitness.retained_route_witness._native.native_decide.ax_1]

@@ -1,0 +1,27 @@
+'E2E.ABIReadCfgBoundary.checked_step_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadCfgBoundary.checked_step_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadCfgBoundary.checked_instruction' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadCfgBoundary.star_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadCfgBoundary.return_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadCfgBoundary.Realize.step_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadCfgBoundary.Realize.star_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadCfgBoundary.Realize.return_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.ABIReadCfgBoundary.machine_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.driver' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.memory' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.checked_step_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.checked_step_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.Realize.step_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.return_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.return_realize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.machine_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CfgBoundary.checked_instruction' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockCfgReadFixture.actual_read_check' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_cfg' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.noTlsCfg' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockCfgNIWitness.actual_cfg_return_realization' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Proof.CfgEntryAtWitness.input_checks._native.native_decide.ax_1✝,
+ Backend.Stock.Proof.InheritedWitness.dominated._native.native_decide.ax_1✝]

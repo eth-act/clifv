@@ -1,0 +1,22 @@
+'Backend.Stock.Proof.ForwardSource.legacy_compatible_of_leaf' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.legacy_compatible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.scalar_return_frame_of_leaf' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ForwardSource.scalar_return_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.scalar_trap_frame_of_leaf' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ForwardSource.scalar_trap_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.domain_of_forward_leaf_cfg' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.domain_of_forward_cfg' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ForwardCfg.domain_of_leafEligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ForwardCfg.domain_of_eligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ForwardCfg.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.ForwardCfg.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockForwardTrapNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockForwardTrapNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockForwardTrapNIWitness.compiled_cases' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockForwardTrapNIWitness.checks_true._native.native_decide.ax_1]

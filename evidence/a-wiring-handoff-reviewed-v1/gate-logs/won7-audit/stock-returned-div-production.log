@@ -1,0 +1,31 @@
+'Backend.Stock.Proof.DivBody.actual_returned_div_record' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_returned_div_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_returned_div_body_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_returned_div_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_returned_div_entry_trap_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Scalar.domain_of_returned_div' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.returnedDivAt_sound' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Scalar.returnedDivBodyEligible_sound' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Scalar.returnedDivEligible_sound' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockReturnedDivNIWitness.outcomeAgrees_sound' depends on axioms: [propext]
+'E2E.StockReturnedDivNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockReturnedDivNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockReturnedDivNIWitness.source_cases' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockReturnedDivNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockReturnedDivNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockReturnedDivNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockReturnedDivNIWitness.source_entry' depends on axioms: [propext]

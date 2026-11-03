@@ -1,0 +1,67 @@
+'Backend.Stock.Proof.stock_lower_source_result_definition' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_return_demand_unsunk' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_mandatory_unsunk_emitted' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_single_div_return_emitted' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LocalBody.actual_local_source_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LocalBody.actual_local_source_execution_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.PureBody.actual_local_return_refines_at' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.PureBody.actual_local_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.PureBody.actual_pure_return_refines_at' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.PureBody.actual_pure_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarDiv.stock_lower_div_source_by_instruction' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.ScalarDiv.stock_lower_div_source_trap' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_div_scan_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_single_div_record' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_single_div_body_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.DivBody.single_div_source_trap' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.DivBody.trapRun_at' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_single_div_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_single_div_entry_trap_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Scalar.domain_of_single_div' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.singleDivEligible_sound' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.DivBoundary.checked_step_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.DivBoundary.checked_step_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.DivBoundary.return_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.DivBoundary.machine_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.DivBoundary.zero_guard_halts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.DivBoundary.nonzero_guard_continues' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_stock_div' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.toSemantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.backend_correct_world_niX_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.entryRegs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.CompiledSemanticNI.noTlsDiv' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.hasTls_of_vcode_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockDivNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockDivNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockDivNIWitness.compiled_exists' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockDivNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockDivNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockDivNIWitness.source_runs' depends on axioms: [propext, Quot.sound]
+'E2E.StockDivNIWitness.zero_traps' depends on axioms: [propext, Quot.sound]
+'E2E.StockDivNIWitness.signed_minimum_overflow' depends on axioms: [propext, Quot.sound]
+'E2E.StockDivNIWitness.signed_minimum_remainder' depends on axioms: [propext, Quot.sound]
+'Link.LinkSpec.reachOkMap_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.LinkSpec.reachOkMap_empty' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Link.LinkSpec.reachOkMap_duplicates' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Link.LinkSpec.reachOkMap_duplicates._native.native_decide.ax_1_1]
+'Link.DeadCleanup.placedPar_eq' depends on axioms: [propext, Classical.choice, Quot.sound]

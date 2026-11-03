@@ -1,0 +1,65 @@
+{
+  "branch": "21eb36fa1978d0f08b1339e5460390ff738c3076",
+  "base_843": "49885783ccec65f0940d9714b9a2a23163167543",
+  "files": [
+    {
+      "source": "/tmp/claude-30034/-home-lee-clifv/799a31dc-4444-481b-be40-4377830da9cf/scratchpad/won7-ab.out",
+      "file": "won7-ab.out",
+      "bytes": 395,
+      "sha256": "b49b6228d5491a88f4778097cbd43a311cd056a8dfbeca1d62a1ef2469472742"
+    },
+    {
+      "source": "/tmp/claude-30034/-home-lee-clifv/799a31dc-4444-481b-be40-4377830da9cf/scratchpad/won7-audit-imports.txt",
+      "file": "won7-audit-imports.txt",
+      "bytes": 12209,
+      "sha256": "69b1cde322af34ce7d6f3f98e78bdff5b6bb188ce5e205e28bacb29acdec7a39"
+    },
+    {
+      "source": "/tmp/claude-30034/-home-lee-clifv/799a31dc-4444-481b-be40-4377830da9cf/scratchpad/won7-audit.out",
+      "file": "won7-audit.out",
+      "bytes": 6833,
+      "sha256": "1aa2652120f25de2fb10ce0b167e00f26ad3a71a7251f4b2d902bf903fd04587"
+    },
+    {
+      "source": "/tmp/claude-30034/-home-lee-clifv/799a31dc-4444-481b-be40-4377830da9cf/scratchpad/won7-audits.txt",
+      "file": "won7-audits.txt",
+      "bytes": 3657,
+      "sha256": "2d8d4f819eba77ccddb26170a36b68a0bc042cc666b1587e59acc31e30c043ae"
+    },
+    {
+      "source": "/tmp/claude-30034/-home-lee-clifv/799a31dc-4444-481b-be40-4377830da9cf/scratchpad/won7-build.out",
+      "file": "won7-build.out",
+      "bytes": 60888,
+      "sha256": "d79100d281b4f4f61342a965432a57425411777eb453819467acb494890c355e"
+    },
+    {
+      "source": "/tmp/claude-30034/-home-lee-clifv/799a31dc-4444-481b-be40-4377830da9cf/scratchpad/won7-closure.txt",
+      "file": "won7-closure.txt",
+      "bytes": 10859,
+      "sha256": "8ff5b1a83ee83368fc68bbfd688875266e811034d5a59a4bddac9380aaaa2fd5"
+    },
+    {
+      "source": "/tmp/claude-30034/-home-lee-clifv/799a31dc-4444-481b-be40-4377830da9cf/scratchpad/won7-exes.txt",
+      "file": "won7-exes.txt",
+      "bytes": 575,
+      "sha256": "cbd4c48a872cca63c58a4d11cee4c29dfc8d00ff73f63ea9e027e3be05777b8e"
+    },
+    {
+      "source": "/tmp/claude-30034/-home-lee-clifv/799a31dc-4444-481b-be40-4377830da9cf/scratchpad/won7-gate.sh",
+      "file": "won7-gate.sh",
+      "bytes": 2456,
+      "sha256": "383f8e5c9212431f9e3f312bfdc6bf9bac279303f14d4ab492f2a5e13cce215e"
+    },
+    {
+      "source": "/tmp/claude-30034/-home-lee-clifv/799a31dc-4444-481b-be40-4377830da9cf/scratchpad/won7-link.out",
+      "file": "won7-link.out",
+      "bytes": 22694,
+      "sha256": "edde20e75f2ccc32ec1cd6b0d490625b2a5d0cb3ed46548300d8a44fa707b8d8"
+    }
+  ],
+  "claimed_modules": 3400,
+  "claimed_audits": 86,
+  "claimed_executables": 26,
+  "claimed_runtime_fixtures": 16,
+  "current_main_gate": false
+}

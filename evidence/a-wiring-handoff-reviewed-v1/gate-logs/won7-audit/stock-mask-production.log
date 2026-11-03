@@ -1,0 +1,32 @@
+'Backend.Stock.Proof.scan_zero_results' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.scan_zero_results_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.stock_lower_bmask_scan_fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MaskBody.family_formats' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MaskBody.actual_nop_record' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MaskBody.actual_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MaskBody.Record.fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MaskBody.Record.trap_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MaskBody.actual_body_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MaskBody.actual_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.MaskBody.actual_entry_trap_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Scalar.domain_of_mask' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.maskMixedBodyEligible_sound' depends on axioms: [propext]
+'Backend.Stock.Scalar.domain_of_maskEligible' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.MaskRead.no_mem' depends on axioms: [propext]
+'E2E.MaskRead.spec_eq' depends on axioms: [propext, Quot.sound]
+'E2E.MaskRead.step_frame' depends on axioms: [propext, Quot.sound]
+'E2E.MaskRead.step_frame_witness' depends on axioms: [propext, Quot.sound]
+'E2E.StockMaskNIWitness.checks_true' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMaskNIWitness.checks_true._native.native_decide.ax_1]
+'E2E.StockMaskNIWitness.compiled_cases' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ E2E.StockMaskNIWitness.checks_true._native.native_decide.ax_1]

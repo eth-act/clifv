@@ -1,0 +1,39 @@
+'Backend.Stock.Memory.IntegerRoots.stock_retained_integer_load_return_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.MemoryLoadStore.sourceOk_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryLoadStore.check_sound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadStore.Fixture.complete_checked_function_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.LoadStore.Fixture.matrix_checked._native.native_decide.ax_1✝]
+'Backend.Stock.Memory.LoadStore.SingleClass.domain' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryLoadStore.previous_file_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryLoadStore.previous_file_exact_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryLoadStore.previous_routes_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.MemoryLoadStore.previous_lower_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadStore.domain_of_load_store_return' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadStore.Fixture.scope' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadStore.Fixture.dominated' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadStore.Fixture.source_class_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadStore.Fixture.domain_witness' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadStore.Fixture.source_selector_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.LoadStore.load_store_return_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Memory.LoadStore.stock_mixed_load_store_return_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Memory.StoreRoots.stock_mixed_store_record_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.backend_correct_world_niX_stock_load_store_memory' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.LoadStore.load_store_return_paired_body' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemory.LoadStore.load_store_return_paired_function_seeded' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'E2E.StockMemory.LoadStore.load_store_return_paired_function' depends on axioms: [propext, Classical.choice, Quot.sound]
+'E2E.StockMemoryLoadStoreFunctionWitness.complete_paired_load_store_function_witness' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound,
+ Backend.Stock.Memory.LoadStore.Fixture.matrix_checked._native.native_decide.ax_1✝]
