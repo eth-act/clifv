@@ -1,0 +1,11 @@
+{
+  "pr": 938,
+  "head": "245572cae5a54a726a7d0d01957e77d69e3ae7d9",
+  "verdict": "no blocking defect",
+  "method": "ONE QUICK, DIRTY, CHEAP direct pass; no builds or review agents",
+  "diff_sha256": "23d04be10fddd1e26fa84e53896fb5f078a94ffc3af42d8a36811ee265942be4",
+  "checked_boundary": "Main import and stock-config allocator wrapper only; facade/guards/markers/receipt/retry/none branch exact",
+  "checked_helpers": "eligible; ABI pad regroup including x7 case; ABI agreement; prepared edge splitting/stage; unique-name replacement; typed-mode exclusion",
+  "full_i128_proof": "not claimed;tracked by937",
+  "utc": "2026-11-03T07:28:29.704715+00:00"
+}

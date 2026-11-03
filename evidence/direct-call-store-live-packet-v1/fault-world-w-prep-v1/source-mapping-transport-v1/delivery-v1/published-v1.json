@@ -1,0 +1,15 @@
+{
+  "status": "published-awaiting-review-and-CI",
+  "base": "c4f310c56d43c054ab14ea1d8f0a92bf26e470be",
+  "branch": "agent/source-memory-fault-transport-20261103",
+  "head": "6a4c7fcb1f6098ca432bf9e2e6b89d05fa6aa9da",
+  "tree": "59a3677a880fac68a8aaffca4d9c2e23d57d09e3",
+  "pr": "https://github.com/eth-act/clifv/pull/935",
+  "manifest_sha256": "2165f4f1e05f05dd95129ede15757eaf28dcbdb27e3e35f242fdb52cc0ea6834",
+  "source_hashes": {
+    "FV/E2E/MemoryFaultSourceTransport.lean": "7d8fddd45d7d3dba284ebcd9b8a895c8f72fee423cb9671e589017d1b04b9a0e",
+    "scripts/audit/memory-fault-source-transport.lean": "a7e0671cd1e166cf1e0000d42560aa8547966fcdb6fccd30304d90613225332c"
+  },
+  "publication_owner": "stock_driver_delivery",
+  "utc": "2026-11-03T07:08:38.253527+00:00"
+}

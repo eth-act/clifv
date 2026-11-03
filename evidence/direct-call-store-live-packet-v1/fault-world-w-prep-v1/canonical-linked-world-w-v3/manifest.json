@@ -1,0 +1,31 @@
+{
+  "status": "frozen-passed-historical-context",
+  "sources": {
+    "FV/E2E/RegLevelCalleeTrapW.lean": "c4745640a996e9339d4160a4567f82c569cffdfdb10e2100058add25ab588ff8",
+    "FV/E2E/StockCallStoreFirstTrapFullW.lean": "5cde33a13f38ad2d025b7c8cebd9fb9f9041080440a7963d812a76ff6e7ca4f7",
+    "FV/E2E/StockCallStoreFirstTrapW.lean": "57cbb3f605e769de4f7f162b1ad0dee396db119dfc4a778e1246c37151f30652",
+    "FV/E2E/StockCallStoreNIW.lean": "61db7ca61c048ad3c4a74ee22accd0fd3edc5946d0dbb5bc75429bc9fa54e2d0",
+    "FV/E2E/StockCallStoreTrapMachineW.lean": "34875895a838f9d0c12d7a798302902f4bb386ac55d04fd663b048336f03d507",
+    "FV/E2E/WorldCalleeTrapW.lean": "940aa51e1c21981c0249759aeddce81691481219f8b9361fd8453a20caaf16ab",
+    "FV/E2E/StockMemoryMachineReturnValueW.lean": "16de4b145d2b067f2936b590b4b2957b71ee32fcc25c498cda01f9e4134cede0",
+    "FV/E2E/WorldReturnTraceProvider.lean": "6be3c3b87aef2ac6eddc2f8d133f0d1df3dff1432c3c8090a5da88cc7f5a092d",
+    "FV/E2E/WorldReturnTraceLegacy.lean": "7c5f892e9ba26c87c9faeeb460c05a0fc37dce41b4144ac5eaf038b4ce4bb593",
+    "FV/E2E/LinkReturnPinGoodW.lean": "114d01a5c0594196b2fc5e8d94a13ec790e8324f29dc06421d0fb6fb495180ee",
+    "FV/E2E/LinkReturnPinGoodWProgram.lean": "df4c5959281a6384719481d56e9e3e064bdc0c972d066ce6761e3c3b09555dac",
+    "FV/Backend/Proof/StockMemoryAccessTrace.lean": "e11a833742211ce3a9b4d99f471d07733e05c72e48af9fecffd7bb75d00c9b4d",
+    "FV/Backend/Proof/StockMemoryAccessMachineW.lean": "e84184ccb11586a00b6672ed20cdab6d94c7743b6e8bed5b3f59b4d2bb842edc",
+    "FV/Backend/Proof/StockMemoryAccessMachineCheckW.lean": "2b7aee75ef19dad1bc7b594f6ba55e49b80ac27118d2f168003fe5b9093586fe"
+  },
+  "source_closure": 1789,
+  "real_audit_roots": 147,
+  "new_standard_roots": 22,
+  "prior_class_callee_sets_exact": 114,
+  "old_linked_sets_exact_across_new_imports": 11,
+  "receipt_sha256": "24ffb234fd839591ba8b5580168c81e215de93780584553dc0fb980e3b887990",
+  "old_linked_comparison_sha256": "a8f4218132f940f3bbcbb0f36acdc1399f5b459edb005d5c521ac1f96f8b13ec",
+  "production_instances": "legacy and actual call-store derive internally;all remaining accepted classes remain a production integration obligation",
+  "frozen_constructors_edited": false,
+  "bounded_adapter": "source-only;10 baseline providers pending authorized coherent reuse",
+  "MapRelRW_exec_transfer": "open;coordinated with fence peer",
+  "context": "historical R;not current-main"
+}

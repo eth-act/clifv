@@ -1,0 +1,120 @@
+{
+  "status": "passed",
+  "source_sha256": "ae78852b20529c5a367010ea3b55266f5bcdbdf78011d0b24d56d410038091ad",
+  "branch": "agent/stock-general7-main-20261103",
+  "configs": {
+    "lakefile.toml": "3ce79410e1ea993cdc54cd09f694bd53696ab3cab647b10cc493de0890d4e801",
+    "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+    "lake-manifest.json": "5b8186b9271caeff344ff17ba3cae09528658ec30d25cb79cc171661de78b7ab"
+  },
+  "native_key": "fd7fc6c3dfbaacba",
+  "outputs": {
+    "o": [
+      "a7ba0ed0ec392223.olean"
+    ],
+    "m": false,
+    "i": "415b876f489eda23.ilean",
+    "c": "3a75de34e4bdc57d.c"
+  },
+  "artifact_hashes": {
+    ".lake/build/lib/lean/FV/Backend/ABIReadCfg.trace": "9ee9c1a023d414310e2a8cd7cb1eb91dedd752e8c75cc07ce36db8e334377e7a",
+    ".lake/build/lib/lean/FV/Backend/ABIReadCfg.ilean": "ebefd320bc20f6c053099fb458e631e51a21d9332a6788ee2add0473fc777bc2",
+    ".lake/build/lib/lean/FV/Backend/ABIReadCfg.olean": "3e2fdfac34fe4cbe1628f67839e5d8d52208190713b21745d5c1d139b8c94fd0",
+    ".lake/build/lib/lean/FV/Backend/ABIReadCfg.olean.hash": "659665f0f50d029d659449e7da6b364bb691fd07db3716d7cc732ed3237657d3",
+    ".lake/build/lib/lean/FV/Backend/ABIReadCfg.ilean.hash": "3407e80b78f27f0e1495de1f44b83a9e946ccc3b7c1389b1c8d9d7b168232951"
+  },
+  "records": [
+    {
+      "label": "original-config-dependencies",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.ABIReadDiv",
+        "FV.Backend.ABIReadScalar",
+        "FV.Backend.ABIReadFlags",
+        "FV.Backend.ABIReadOnly",
+        "FV.Backend.DeadCleanup",
+        "FV.Backend.RegallocOps",
+        "FV.Backend.Isel",
+        "FV.Backend.MInst",
+        "FV.Isle.Generated.Program",
+        "FV.Isle.Generated.Specs06",
+        "FV.Isle.Syntax",
+        "FV.Isle.Generated.Specs05",
+        "FV.Isle.Generated.Specs04",
+        "FV.Isle.Generated.Specs03",
+        "FV.Isle.Generated.Specs02",
+        "FV.Isle.Generated.Specs01",
+        "FV.Isle.Generated.Specs00",
+        "FV.Isle.Generated.RuleTable",
+        "FV.Isle.Generated.RuleLists00",
+        "FV.Isle.Generated.Rules03",
+        "FV.Isle.Generated.Rules02",
+        "FV.Isle.Generated.Rules01",
+        "FV.Isle.Generated.Rules00",
+        "FV.Isle.Generated.RuleArray",
+        "FV.Isle.Generated.TermTable",
+        "FV.Isle.Generated.Terms02",
+        "FV.Isle.Generated.Terms01",
+        "FV.Isle.Generated.Terms00",
+        "FV.Isle.Generated.TypeArray",
+        "FV.Isle.Generated.Types00",
+        "FV.Isle.Generated.Ids",
+        "FV.Clif",
+        "FV.Clif.Rust",
+        "FV.Clif.Run",
+        "FV.Clif.FSem",
+        "FV.Float",
+        "FV.Float.Convert",
+        "FV.Float.Round",
+        "FV.Float.Basic",
+        "FV.Float.Arith",
+        "FV.Clif.Syntax",
+        "FV.Clif.Mem",
+        "FV.Clif.Sem",
+        "FV.Clif.Parse",
+        "FV.Clif.FloatLit",
+        "FV.Clif.Print",
+        "FV.Isle.Interp"
+      ],
+      "exit": 0,
+      "stats": "peak 42369024\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "candidate-kernel",
+      "argv": [
+        "lake",
+        "-v",
+        "build",
+        "+FV.Backend.ABIReadCfg:leanArts"
+      ],
+      "exit": 0,
+      "stats": "peak 110583808\noom 0\noom_kill 0\n"
+    },
+    {
+      "label": "original-config-final-normal",
+      "argv": [
+        "lake",
+        "build",
+        "--no-build",
+        "FV.Backend.ABIReadCfg"
+      ],
+      "exit": 0,
+      "stats": "peak 31358976\noom 0\noom_kill 0\n"
+    }
+  ],
+  "proper47_copy_manifest_sha256": "5e2e9c718869d67f4ef549b892210476c95c7f31ee7ef727ffb470892a80f0cc",
+  "staged_source_hashes_unchanged": {
+    "FV/Backend/ABIReadCfg.lean": "ae78852b20529c5a367010ea3b55266f5bcdbdf78011d0b24d56d410038091ad",
+    "FV/Backend/Lowering/StockGeneralLoopCfg7NI.lean": "e050bf694c476656859be35095289715a15be534f8d0ce63cf1a0c200f72b46f",
+    "FV/Backend/Proof/StockGeneralRouteWitness7.lean": "5c4102020483805a179bfd9732ad0a950f5aa46043fe7dc6171ed9573827336f",
+    "FV/Backend/SemanticNICheck.lean": "ea7714a42da26019326b0c93fd827e9c2c143b2b3ffc5487335cdd6087ce32a4",
+    "FV/E2E/ABIReadCfg.lean": "69000ce30bbc5a33bdee756b7e34618cedcd1beb83f3fb020b174a536518ad95",
+    "FV/E2E/ABIReadCfgTableWitness.lean": "64f03f2566c8a7e5301f3ee9aaad995e064ecdfccb3c9115d07b46dd7a141ec1",
+    "FV/E2E/CompiledSemanticNI.lean": "fdbd172e5a4f0cbd795fc23ad0d34903260bfd3d682b19dbc92655e9a4611cf1",
+    "scripts/audit/general-route7.lean": "2760c7126a506884bd448bdd37f4c11264928775c7dc233206532a8effd0dd04"
+  },
+  "config_restored": true,
+  "utc": "2026-11-03T06:26:04.793658+00:00"
+}

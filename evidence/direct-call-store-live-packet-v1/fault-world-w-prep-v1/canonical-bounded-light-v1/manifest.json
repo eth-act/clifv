@@ -1,0 +1,40 @@
+{
+  "status": "passed-new-kernels-and-real-audit;legacy-consumer-gates-open",
+  "sources": {
+    "FV/E2E/LinkMemTrap.lean": "00d4043b1d76479ca3e421896868cb9ee6d3f09c7a66059a9808f11b1df358bd",
+    "FV/E2E/LinkMemTrapW.lean": "fde2bf0e103faa16a8b44641295aad529ab2b89de7d66175520f52795757834c",
+    "FV/E2E/LinkGoodBounded.lean": "7e6734c4e8ff12d8e6c4fedca6c627ead62dfe54aad20f3c1623f636a2ea07b9",
+    "FV/E2E/LinkGoodBoundedW.lean": "632c428e0a7f0e19ad4febae3ae958e7c18100feed36cf5e6d8561dfdafd3ed9",
+    "FV/E2E/WorldReturnTraceCore.lean": "caa7f7403b10b3aefb8df087ddf16f0b27884a0180fda924ac3a974d0c68a20d",
+    "FV/E2E/WorldReturnTraceCallStore.lean": "0a2174bfb44a57615be04ced6c270cb92de2f6c91d769f8189dd288c9286856f",
+    "FV/E2E/WorldReturnTraceProvider.lean": "f8deb2c6e3c1bb0566fa1763ab9691a24f7ec288d5a9eb078ef28d56ab2890cf",
+    "FV/E2E/WorldReturnTraceLegacy.lean": "34475e27f907953dc5479d490da27ec50e016c1a345fa3b66d126fbc2465c8fe",
+    "FV/E2E/LinkReturnPinGoodW.lean": "b04d5a9442f6fa16f520b3ac899e0c4c02a7b575153205b9427b2bef5af51cef",
+    "FV/E2E/LinkReturnPinGoodWProgram.lean": "df4c5959281a6384719481d56e9e3e064bdc0c972d066ce6761e3c3b09555dac",
+    "FV/E2E/LinkReturnPinGoodWBounded.lean": "6b1d15544fedab3ce600727941a379b71a5dc0a1a5f3a5d2ba626f6dec7248b0",
+    "FV/E2E/LinkTrapFaultW.lean": "b6de0db055a1f18bf356260ee7a5f2a8a02b62a5431027a8f0d5cf3fa23d5e5a"
+  },
+  "verified_new_kernel_sources": [
+    "FV/E2E/LinkGoodBounded.lean",
+    "FV/E2E/LinkGoodBoundedW.lean",
+    "FV/E2E/WorldReturnTraceCore.lean",
+    "FV/E2E/WorldReturnTraceLegacy.lean",
+    "FV/E2E/LinkReturnPinGoodW.lean",
+    "FV/E2E/LinkReturnPinGoodWProgram.lean",
+    "FV/E2E/LinkReturnPinGoodWBounded.lean",
+    "FV/E2E/LinkTrapFaultW.lean"
+  ],
+  "new_standard_roots": 13,
+  "old_linked_AXIOM_sets_exact": 11,
+  "real_auditor_receipt_sha256": "79a1fc63436725fbb7f6437265805465cba86868afdab468f921c14145a474b6",
+  "cycle_receipt_sha256": "8ce807bb21e0444fbab51df0f29e466a99c4b0bc2df90a700e8329498a0c9130",
+  "old_header_count": 15,
+  "legacy15_AXIOM_gate": "pending;no waiver",
+  "source_context_count": 1659,
+  "source_context": "historical R;not current-main",
+  "complete1659_final_no_build": "pending;pre-kernel proper baseline and all six roots passed",
+  "actual_callStore_instance": "same qualified declaration and proof preserved in separate source;new module import layout awaits trusted helper repair",
+  "original_export_API": "aggregate module reexports both original qualified declarations",
+  "production_fault_ordering": "open",
+  "proof_share_released": true
+}

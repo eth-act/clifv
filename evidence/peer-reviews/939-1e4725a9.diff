@@ -1,0 +1,308 @@
+diff --git a/FV/Backend/Lowering/StockI128.lean b/FV/Backend/Lowering/StockI128.lean
+index a08461d29..b93e33459 100644
+--- a/FV/Backend/Lowering/StockI128.lean
++++ b/FV/Backend/Lowering/StockI128.lean
+@@ -1,7 +1,7 @@
+ import FV.Backend.Lowering.Stock
+ 
+ /-!
+-# Native `i128` lowering for the stock driver (foundation, not wired)
++# Native `i128` lowering for the stock driver (unverified)
+ 
+ `Opt.Legalize128` splits every `i128` value into two `i64` values before the lowering. Stock
+ Cranelift keeps an `i128` value in a register pair instead (`ValueRegs` with two vregs,
+@@ -10,10 +10,17 @@ is that native route for a small foundation scope:
+ 
+ * `i128` block parameters, branch arguments, function parameters and returns;
+ * `isplit`, `iconcat`, `uextend`/`sextend` to `i128`, `ireduce` from `i128`, `bitcast.i128`;
+-* `brif` on an `i128` value (`orr` of the two halves, then `cbnz`).
++* `brif` on an `i128` value (`orr` of the two halves, then `cbnz`);
++* `ishl`, `ushr`, `sshr`, `rotl`, `rotr` of an `i128` value (`lower.isle` `lower_shl128`,
++  `lower_ushr128`, `lower_sshr128` and the `rotl`/`rotr` `$I128` rules), and these shifts and
++  rotates of a narrower value by an `i128` amount (the narrow rules use the amount's low
++  register, `value_regs_get y 0`). These rules need no new extern: the externs `value_regs`
++  and `value_regs_get` are `Backend.externCtor`'s, and the helpers (`lsl`, `orr_not`,
++  `tst_imm`, `csel`, `imm`, `with_flags`, `consumes_flags_concat`) are ISLE rules.
+ 
+ Any other instruction with an `i128` operand or result makes `lower128` fail, so that a caller
+-can keep the legalized lowering. Nothing calls `lower128` yet, and nothing proves it.
++can keep the legalized lowering. `FVTest.Backend.I128Native` routes the functions that
++`lower128` lowers in the stock-configured driver. Nothing proves `lower128`.
+ 
+ `lower128` is a copy of `Stock.lower`, because `Stock.runTerm` is fixed to `Stock.sem`. The
+ copies of result binding, opportunistic definitions, branch arguments and block assembly use
+@@ -40,11 +47,22 @@ def valueRegs128? (ctx : Ctx) (hi : HiRegs) (v : Nat) : Option (List Reg) :=
+ 
+ /-! ## Instruction data and scope -/
+ 
++/-- The shifts and rotates that `lower128` lowers with an `i128` operand: at `i128` (the
++`$I128` rules of `lower.isle`), and at a narrower type by an `i128` amount. -/
++def shift128 : Clif.BinaryOp → Bool
++  | .ishl | .ushr | .sshr | .rotl | .rotr => true
++  | _ => false
++
+ /-- `InstructionData` with the `i128` forms of the foundation: `isplit` of an `i128`,
+-`iconcat` of two `i64`, an extension to `i128`, `bitcast.i128`. Every other instruction is
+-`instData` (which accepts `ireduce` from `i128`, because it checks the result type). -/
++`iconcat` of two `i64`, an extension to `i128`, `bitcast.i128`, an `i128` shift or rotate
++(`shift128`). Every other instruction is `instData` (which accepts `ireduce` from `i128` and a
++narrow shift by an `i128` amount, because it checks the result type). -/
+ def instData128 (f : Clif.Function) : Clif.Inst → Except String V
+   | .isplit .i128 x => pure (instDataV "Unary" [opcodeV "Isplit", .value x])
++  | .binary op .i128 x y =>
++    match shift128 op, binaryOpcode op with
++    | true, some n => pure (instDataV "Binary" [opcodeV n, .values [x, y]])
++    | _, _ => instData f (.binary op .i128 x y)
+   | .iconcat .i64 x y => pure (instDataV "Binary" [opcodeV "Iconcat", .values [x, y]])
+   | .extend op .i128 x =>
+     pure (instDataV "Unary" [opcodeV (if op == .uextend then "Uextend" else "Sextend"), .value x])
+@@ -53,10 +71,12 @@ def instData128 (f : Clif.Function) : Clif.Inst → Except String V
+   | i => instData f i
+ 
+ /-- The instructions of the foundation that may have an `i128` operand or result (`wide`: the
+-`i128` values). -/
++`i128` values). A shift or rotate (`shift128`) is in it at `i128`, and at a narrower type when
++only its amount is an `i128` value. -/
+ def foundation128 (wide : Nat → Bool) : Clif.Inst → Bool
+   | .isplit .i128 _ | .iconcat .i64 _ _ | .extend _ .i128 _ => true
+   | .ireduce _ x | .bitcast .i128 _ x => wide x
++  | .binary op ty x _ => shift128 op && (ty == .i128 || !wide x)
+   | _ => false
+ 
+ /-- The terminators that may have an `i128` operand: branches and `return`. The calls of
+diff --git a/FVTest/Backend/Lowering/StockI128Test.lean b/FVTest/Backend/Lowering/StockI128Test.lean
+index 2f432bff3..1d39531e7 100644
+--- a/FVTest/Backend/Lowering/StockI128Test.lean
++++ b/FVTest/Backend/Lowering/StockI128Test.lean
+@@ -1,11 +1,11 @@
+ import FV.Backend.Lowering.StockI128
+ 
+-/-! Probes for the native `i128` stock lowering `Backend.Stock.lower128` (not wired, no proof).
++/-! Probes for the native `i128` stock lowering `Backend.Stock.lower128` (no proof).
+ 
+-* The `#guard`s below check that `lower128` lowers the 16 foundation shapes, that the
+-  instructions it selects have the shape of stock Cranelift's (the expected VCode of the
+-  filetests, with registers abstracted, and without regalloc moves and the frame), and they pin
+-  its exact pre-allocation VCode.
++* The `#guard`s below check that `lower128` lowers the 16 foundation shapes and 13 `i128` shift
++  and rotate shapes (`shifts`), that the instructions it selects have the shape of stock
++  Cranelift's (the expected VCode of the filetests, with registers abstracted, and without
++  regalloc moves and the frame), and they pin its exact pre-allocation VCode.
+ * Further `#guard`s check that `lower128` gives the result of `Stock.lower` on functions without
+   `i128` values, and that it rejects `i128` instructions outside the foundation.
+ * `main` does the two checks over Cranelift's filetests (the build does not run it):
+@@ -35,7 +35,7 @@ def lastName {α : Type} [Repr α] (a : α) : String :=
+ def aluName : ALUOp → String
+   | .orr => "orr" | .and => "and" | .eor => "eor" | .add => "add" | .sub => "sub"
+   | .addS => "adds" | .subS => "subs" | .andS => "ands"
+-  | .asr => "asr" | .lsr => "lsr" | .lsl => "lsl"
++  | .asr => "asr" | .lsr => "lsr" | .lsl => "lsl" | .orrNot => "orn" | .extr => "extr"
+   | op => s!"?{lastName op}"
+ 
+ def amode : AMode → String
+@@ -44,7 +44,7 @@ def amode : AMode → String
+   | m => s!"?{(repr m).pretty}"
+ 
+ /-- One instruction in the syntax of Cranelift's VCode printing (`isa/aarch64/inst/mod.rs`),
+-for the instructions of the foundation; `?` and the representation for every other one. `args`
++for the instructions of the foundation and of the shifts and rotates; `?` and the representation for every other one. `args`
+ and `rets` show their (vreg, physical register) pairs. -/
+ def inst : MInst → String
+   | .args ps => " ".intercalate ("args" :: ps.map fun (a, p) => s!"{reg a}={reg p}")
+@@ -59,7 +59,10 @@ def inst : MInst → String
+     if imm.shift == 0 then s!"movz {reg rd}, #{imm.bits}"
+     else s!"movz {reg rd}, #{imm.bits}, LSL #{imm.shift}"
+   | .aluRRR op _ rd rn rm => s!"{aluName op} {reg rd}, {reg rn}, {reg rm}"
++  | .aluRRImm12 op _ rd rn imm => s!"{aluName op} {reg rd}, {reg rn}, #{imm.value}"
+   | .aluRRImmShift op _ rd rn imm => s!"{aluName op} {reg rd}, {reg rn}, #{imm}"
++  | .aluRRImmLogic op _ rd rn imm => s!"{aluName op} {reg rd}, {reg rn}, #{imm.value}"
++  | .csel rd rn rm c => s!"csel {reg rd}, {reg rn}, {reg rm}, {lastName c}"
+   | .cset rd c => s!"cset {reg rd}, {lastName c}"
+   | .condBr t e (.notZero r _) => s!"cbnz {reg r}, label{t} ; b label{e}"
+   | .condBr t e (.zero r _) => s!"cbz {reg r}, label{t} ; b label{e}"
+@@ -395,6 +398,167 @@ block1(v3: i128):
+       "block1 -> [%0, %1]:", "b label3", "block2 -> [%2, %5]:", "b label3", "block3(%3, %4):",
+       "rets %3=x0 %4=x1"] }]
+ 
++/-- `i128` shifts and rotates (`lower.isle` `lower_shl128`, `lower_ushr128`, `lower_sshr128`,
++the `rotl`/`rotr` `$I128` rules), and narrow shifts and rotates by an `i128` amount, which use
++the amount's low register. The narrow shapes have no filetest with expected VCode: `stock` is
++the stock code of the CI comparison snapshot (`runtests/i128-shifts.clif`,
++`runtests/i128-rotate.clif`) in the syntax of the VCode printing (`neg` is `sub` from `wzr`,
++`ror` is `extr`). -/
++def shifts : List Shape := [
++  { name := "ishl_i128_i8", source := "isa/aarch64/bitops.clif"
++    clif := "function %ishl_i128_i8(i128, i8) -> i128 {
++block0(v0: i128, v1: i8):
++    v2 = ishl.i128 v0, v1
++    return v2
++}"
++    stock := ["block0:", "lsl x4, x0, x2", "lsl x6, x1, x2", "orn w8, wzr, w2", "lsr x10, x0, #1",
++      "lsr x12, x10, x8", "orr x14, x6, x12", "ands xzr, x2, #64", "csel x0, xzr, x4, ne",
++      "csel x1, x4, x14, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2", "lsl %3, %0, %2", "lsl %4, %1, %2",
++      "orn %5, xzr, %2", "lsr %6, %0, #1", "lsr %7, %6, %5", "orr %8, %4, %7",
++      "ands xzr, %2, #64", "csel %9, xzr, %3, ne", "csel %10, %3, %8, ne", "rets %9=x0 %10=x1"] },
++  { name := "ishl_i128_i128", source := "isa/aarch64/bitops.clif"
++    clif := "function %ishl_i128_i128(i128, i128) -> i128 {
++block0(v0: i128, v1: i128):
++    v2 = ishl.i128 v0, v1
++    return v2
++}"
++    stock := ["block0:", "lsl x5, x0, x2", "lsl x7, x1, x2", "orn w9, wzr, w2", "lsr x11, x0, #1",
++      "lsr x13, x11, x9", "orr x15, x7, x13", "ands xzr, x2, #64", "csel x0, xzr, x5, ne",
++      "csel x1, x5, x15, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "lsl %4, %0, %2", "lsl %5, %1, %2",
++      "orn %6, xzr, %2", "lsr %7, %0, #1", "lsr %8, %7, %6", "orr %9, %5, %8",
++      "ands xzr, %2, #64", "csel %10, xzr, %4, ne", "csel %11, %4, %9, ne", "rets %10=x0 %11=x1"] },
++  { name := "ushr_i128_i8", source := "isa/aarch64/bitops.clif"
++    clif := "function %ushr_i128_i8(i128, i8) -> i128 {
++block0(v0: i128, v1: i8):
++    v2 = ushr.i128 v0, v1
++    return v2
++}"
++    stock := ["block0:", "lsr x4, x0, x2", "lsr x6, x1, x2", "orn w8, wzr, w2", "lsl x10, x1, #1",
++      "lsl x12, x10, x8", "orr x14, x4, x12", "ands xzr, x2, #64", "csel x0, x6, x14, ne",
++      "csel x1, xzr, x6, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2", "lsr %3, %0, %2", "lsr %4, %1, %2",
++      "orn %5, xzr, %2", "lsl %6, %1, #1", "lsl %7, %6, %5", "orr %8, %3, %7",
++      "ands xzr, %2, #64", "csel %9, %4, %8, ne", "csel %10, xzr, %4, ne", "rets %9=x0 %10=x1"] },
++  { name := "ushr_i128_i128", source := "isa/aarch64/bitops.clif"
++    clif := "function %ushr_i128_i128(i128, i128) -> i128 {
++block0(v0: i128, v1: i128):
++    v2 = ushr.i128 v0, v1
++    return v2
++}"
++    stock := ["block0:", "lsr x5, x0, x2", "lsr x7, x1, x2", "orn w9, wzr, w2", "lsl x11, x1, #1",
++      "lsl x13, x11, x9", "orr x15, x5, x13", "ands xzr, x2, #64", "csel x0, x7, x15, ne",
++      "csel x1, xzr, x7, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "lsr %4, %0, %2", "lsr %5, %1, %2",
++      "orn %6, xzr, %2", "lsl %7, %1, #1", "lsl %8, %7, %6", "orr %9, %4, %8",
++      "ands xzr, %2, #64", "csel %10, %5, %9, ne", "csel %11, xzr, %5, ne", "rets %10=x0 %11=x1"] },
++  { name := "sshr_i128_i8", source := "isa/aarch64/bitops.clif"
++    clif := "function %sshr_i128_i8(i128, i8) -> i128 {
++block0(v0: i128, v1: i8):
++    v2 = sshr.i128 v0, v1
++    return v2
++}"
++    stock := ["block0:", "lsr x4, x0, x2", "asr x6, x1, x2", "orn w8, wzr, w2", "lsl x10, x1, #1",
++      "lsl x12, x10, x8", "asr x14, x1, #63", "orr x0, x4, x12", "ands xzr, x2, #64",
++      "csel x0, x6, x0, ne", "csel x1, x14, x6, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2", "lsr %3, %0, %2", "asr %4, %1, %2",
++      "orn %5, xzr, %2", "lsl %6, %1, #1", "lsl %7, %6, %5", "asr %8, %1, #63", "orr %9, %3, %7",
++      "ands xzr, %2, #64", "csel %10, %4, %9, ne", "csel %11, %8, %4, ne", "rets %10=x0 %11=x1"] },
++  { name := "sshr_i128_i128", source := "isa/aarch64/bitops.clif"
++    clif := "function %sshr_i128_i128(i128, i128) -> i128 {
++block0(v0: i128, v1: i128):
++    v2 = sshr.i128 v0, v1
++    return v2
++}"
++    stock := ["block0:", "lsr x5, x0, x2", "asr x7, x1, x2", "orn w9, wzr, w2", "lsl x11, x1, #1",
++      "lsl x13, x11, x9", "asr x15, x1, #63", "orr x0, x5, x13", "ands xzr, x2, #64",
++      "csel x0, x7, x0, ne", "csel x1, x15, x7, ne", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "lsr %4, %0, %2", "asr %5, %1, %2",
++      "orn %6, xzr, %2", "lsl %7, %1, #1", "lsl %8, %7, %6", "asr %9, %1, #63", "orr %10, %4, %8",
++      "ands xzr, %2, #64", "csel %11, %5, %10, ne", "csel %12, %9, %5, ne", "rets %11=x0 %12=x1"] },
++  { name := "i128_rotr", source := "isa/aarch64/shift-rotate.clif"
++    clif := "function %i128_rotr(i128, i128) -> i128 {
++block0(v0: i128, v1: i128):
++  v2 = rotr.i128 v0, v1
++  return v2
++}"
++    stock := ["block0:", "movz x5, #128", "sub x7, x5, x2", "lsr x9, x0, x2", "lsr x11, x1, x2",
++      "orn w13, wzr, w2", "lsl x15, x1, #1", "lsl x3, x15, x13", "orr x3, x9, x3",
++      "ands xzr, x2, #64", "csel x2, x11, x3, ne", "csel x3, xzr, x11, ne", "lsl x4, x0, x7",
++      "lsl x1, x1, x7", "orn w5, wzr, w7", "lsr x0, x0, #1", "lsr x0, x0, x5", "orr x1, x1, x0",
++      "ands xzr, x7, #64", "csel x0, xzr, x4, ne", "csel x1, x4, x1, ne", "orr x1, x3, x1",
++      "orr x0, x2, x0", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "movz %4, #128", "sub %5, %4, %2",
++      "lsr %6, %0, %2", "lsr %7, %1, %2", "orn %8, xzr, %2", "lsl %9, %1, #1", "lsl %10, %9, %8",
++      "orr %11, %6, %10", "ands xzr, %2, #64", "csel %12, %7, %11, ne", "csel %13, xzr, %7, ne",
++      "lsl %14, %0, %5", "lsl %15, %1, %5", "orn %16, xzr, %5", "lsr %17, %0, #1",
++      "lsr %18, %17, %16", "orr %19, %15, %18", "ands xzr, %5, #64", "csel %20, xzr, %14, ne",
++      "csel %21, %14, %19, ne", "orr %22, %13, %21", "orr %23, %12, %20", "rets %23=x0 %22=x1"] },
++  { name := "i128_rotl", source := "isa/aarch64/shift-rotate.clif"
++    clif := "function %i128_rotl(i128, i128) -> i128 {
++block0(v0: i128, v1: i128):
++  v2 = rotl.i128 v0, v1
++  return v2
++}"
++    stock := ["block0:", "movz x5, #128", "sub x7, x5, x2", "lsl x9, x0, x2", "lsl x11, x1, x2",
++      "orn w13, wzr, w2", "lsr x15, x0, #1", "lsr x3, x15, x13", "orr x4, x11, x3",
++      "ands xzr, x2, #64", "csel x3, xzr, x9, ne", "csel x2, x9, x4, ne", "lsr x4, x0, x7",
++      "lsr x0, x1, x7", "orn w5, wzr, w7", "lsl x1, x1, #1", "lsl x1, x1, x5", "orr x1, x4, x1",
++      "ands xzr, x7, #64", "csel x4, x0, x1, ne", "csel x1, xzr, x0, ne", "orr x0, x3, x4",
++      "orr x1, x2, x1", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x1 %2=x2 %3=x3", "movz %4, #128", "sub %5, %4, %2",
++      "lsl %6, %0, %2", "lsl %7, %1, %2", "orn %8, xzr, %2", "lsr %9, %0, #1", "lsr %10, %9, %8",
++      "orr %11, %7, %10", "ands xzr, %2, #64", "csel %12, xzr, %6, ne", "csel %13, %6, %11, ne",
++      "lsr %14, %0, %5", "lsr %15, %1, %5", "orn %16, xzr, %5", "lsl %17, %1, #1",
++      "lsl %18, %17, %16", "orr %19, %14, %18", "ands xzr, %5, #64", "csel %20, %15, %19, ne",
++      "csel %21, xzr, %15, ne", "orr %22, %12, %20", "orr %23, %13, %21", "rets %22=x0 %23=x1"] },
++  { name := "ishl_i64_i128", source := "runtests/i128-shifts.clif (CI snapshot stock code)"
++    clif := "function %ishl_i64_i128(i64, i128) -> i64 {
++block0(v0: i64, v1: i128):
++    v2 = ishl v0, v1
++    return v2
++}"
++    stock := ["block0:", "lsl x0, x0, x2", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x2 %2=x3", "lsl %3, %0, %1", "rets %3=x0"] },
++  { name := "ushr_i8_i128", source := "runtests/i128-shifts.clif (CI snapshot stock code)"
++    clif := "function %ushr_i8_i128(i8, i128) -> i8 {
++block0(v0: i8, v1: i128):
++    v2 = ushr v0, v1
++    return v2
++}"
++    stock := ["block0:", "uxtb w4, w0", "and w6, w2, #7", "lsr w0, w4, w6", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x2 %2=x3", "uxtb %3, %0", "and %4, %1, #7",
++      "lsr %5, %3, %4", "rets %5=x0"] },
++  { name := "sshr_i32_i128", source := "runtests/i128-shifts.clif (CI snapshot stock code)"
++    clif := "function %sshr_i32_i128(i32, i128) -> i32 {
++block0(v0: i32, v1: i128):
++    v2 = sshr v0, v1
++    return v2
++}"
++    stock := ["block0:", "asr w0, w0, w2", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x2 %2=x3", "asr %3, %0, %1", "rets %3=x0"] },
++  { name := "rotl_i32_i128", source := "runtests/i128-rotate.clif (CI snapshot stock code)"
++    clif := "function %rotl_i32_i128(i32, i128) -> i32 {
++block0(v0: i32, v1: i128):
++    v2 = rotl v0, v1
++    return v2
++}"
++    stock := ["block0:", "sub w4, wzr, w2", "extr w0, w0, w4", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x2 %2=x3", "sub %3, xzr, %1", "extr %4, %0, %3",
++      "rets %4=x0"] },
++  { name := "rotr_i16_i128", source := "runtests/i128-rotate.clif (CI snapshot stock code)"
++    clif := "function %rotr_i16_i128(i16, i128) -> i16 {
++block0(v0: i16, v1: i128):
++    v2 = rotr v0, v1
++    return v2
++}"
++    stock := ["block0:", "uxth w4, w0", "and w6, w2, #15", "sub w8, w6, #16", "sub w10, wzr, w8",
++      "lsr w12, w4, w6", "lsl w14, w4, w10", "orr w0, w14, w12", "ret"]
++    pinned := ["block0:", "args %0=x0 %1=x2 %2=x3", "uxth %3, %0", "and %4, %1, #15",
++      "sub %5, %4, #16", "sub %6, xzr, %5", "lsr %7, %3, %4", "lsl %8, %3, %6", "orr %9, %8, %7",
++      "rets %9=x0"] }]
++
+ /-- `lower128` lowers the shape, its instruction shape is stock's, and its exact VCode is the
+ pinned one. -/
+ def shapeOk (s : Shape) : Bool :=
+@@ -523,6 +687,8 @@ def rejected (src : String) : Bool :=
+ #guard shapes.length == 16
+ #guard shapes.all shapeOk
+ #guard extras.all shapeOk
++#guard shifts.length == 13
++#guard shifts.all shapeOk
+ #guard i128Free.all fun s => (function? s).any fun f => !has128 f && agrees f
+ #guard outside.all rejected
+ 
+@@ -561,7 +727,7 @@ partial def clifFiles (p : System.FilePath) : IO (Array System.FilePath) := do
+ 
+ /-- Print each shape: whether it lowers, its shape against stock's, its exact VCode. -/
+ def printShapes : IO Unit := do
+-  for s in shapes ++ extras do
++  for s in shapes ++ extras ++ shifts do
+     match function? s.clif with
+     | none => IO.println s!"{s.name}: parse error"
+     | some f => match lower128 f with

@@ -1,0 +1,11 @@
+{
+  "pr": 919,
+  "head": "8174ee66691ab45a83d6a5227c2532ccc38bf4ff",
+  "verdict": "no blocking defect",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents",
+  "files": 13,
+  "new_unwired_only": true,
+  "diff_sha256": "cdefd5628bace4e327fca37bce25a8ba92572ffc97689c611bf1a04635f92110",
+  "native_scope": "single fixed checks witness with marked audit root",
+  "utc": "2026-11-02T17:22:41.356888+00:00"
+}

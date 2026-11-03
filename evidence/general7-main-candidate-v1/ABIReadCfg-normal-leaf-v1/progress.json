@@ -1,0 +1,81 @@
+[
+  {
+    "label": "original-config-dependencies",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.ABIReadDiv",
+      "FV.Backend.ABIReadScalar",
+      "FV.Backend.ABIReadFlags",
+      "FV.Backend.ABIReadOnly",
+      "FV.Backend.DeadCleanup",
+      "FV.Backend.RegallocOps",
+      "FV.Backend.Isel",
+      "FV.Backend.MInst",
+      "FV.Isle.Generated.Program",
+      "FV.Isle.Generated.Specs06",
+      "FV.Isle.Syntax",
+      "FV.Isle.Generated.Specs05",
+      "FV.Isle.Generated.Specs04",
+      "FV.Isle.Generated.Specs03",
+      "FV.Isle.Generated.Specs02",
+      "FV.Isle.Generated.Specs01",
+      "FV.Isle.Generated.Specs00",
+      "FV.Isle.Generated.RuleTable",
+      "FV.Isle.Generated.RuleLists00",
+      "FV.Isle.Generated.Rules03",
+      "FV.Isle.Generated.Rules02",
+      "FV.Isle.Generated.Rules01",
+      "FV.Isle.Generated.Rules00",
+      "FV.Isle.Generated.RuleArray",
+      "FV.Isle.Generated.TermTable",
+      "FV.Isle.Generated.Terms02",
+      "FV.Isle.Generated.Terms01",
+      "FV.Isle.Generated.Terms00",
+      "FV.Isle.Generated.TypeArray",
+      "FV.Isle.Generated.Types00",
+      "FV.Isle.Generated.Ids",
+      "FV.Clif",
+      "FV.Clif.Rust",
+      "FV.Clif.Run",
+      "FV.Clif.FSem",
+      "FV.Float",
+      "FV.Float.Convert",
+      "FV.Float.Round",
+      "FV.Float.Basic",
+      "FV.Float.Arith",
+      "FV.Clif.Syntax",
+      "FV.Clif.Mem",
+      "FV.Clif.Sem",
+      "FV.Clif.Parse",
+      "FV.Clif.FloatLit",
+      "FV.Clif.Print",
+      "FV.Isle.Interp"
+    ],
+    "exit": 0,
+    "stats": "peak 42369024\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "candidate-kernel",
+    "argv": [
+      "lake",
+      "-v",
+      "build",
+      "+FV.Backend.ABIReadCfg:leanArts"
+    ],
+    "exit": 0,
+    "stats": "peak 110583808\noom 0\noom_kill 0\n"
+  },
+  {
+    "label": "original-config-final-normal",
+    "argv": [
+      "lake",
+      "build",
+      "--no-build",
+      "FV.Backend.ABIReadCfg"
+    ],
+    "exit": 0,
+    "stats": "peak 31358976\noom 0\noom_kill 0\n"
+  }
+]

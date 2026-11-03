@@ -1,0 +1,15 @@
+{
+  "pr": 923,
+  "head": "a65effd08a9966c003c7c273d4153fa211a5ff24",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents",
+  "verdict": "no blocking defect",
+  "inspected": [
+    "i8condition selector exclusions and source/type metadata",
+    "actual TST8 plus branch emission and no-def frame facts",
+    "legacy/split source domain and checker provenance",
+    "subsumption of prior classes",
+    "fixed native witness and recognized audit marker"
+  ],
+  "diff_sha256": "5b7f03d7f531755880958e0224040e3f66884ec6df35f7ce3e8692a099a98f36",
+  "utc": "2026-11-02T18:28:27.877684+00:00"
+}

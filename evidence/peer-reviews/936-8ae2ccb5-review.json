@@ -1,0 +1,10 @@
+{
+  "pr": 936,
+  "head": "8ae2ccb57b8b504717253f99715f190d924eb0c6",
+  "verdict": "no blocking defect",
+  "method": "ONE QUICK, DIRTY, CHEAP direct pass; no builds or review agents",
+  "diff_sha256": "3364343ac4f6afd19f508921c5e26f444f60274527aec4acef1c9f4a91db3daa",
+  "scope": "two new unwired files; pair allocation/ABI, complete old non-i128 fallback semantics, unsupported i128 rejection, guards and differential sweep",
+  "note": "The wide sweep reports mismatches; fixed #guard fixtures are the asserted regression coverage.",
+  "utc": "2026-11-03T07:19:44.786413+00:00"
+}

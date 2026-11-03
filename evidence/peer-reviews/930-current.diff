@@ -1,0 +1,1353 @@
+diff --git a/FV/Backend/Proof/StockTableCore.lean b/FV/Backend/Proof/StockTableCore.lean
+new file mode 100644
+index 000000000..1a9c17c59
+--- /dev/null
++++ b/FV/Backend/Proof/StockTableCore.lean
+@@ -0,0 +1,236 @@
++import FV.Backend.Proof.StockTableValues
++import FV.Backend.Proof.StockConditionalCoreOrigin
++import FV.Backend.Proof.StockOriginalBlockOrigin
++import FV.Backend.Proof.StockRecordContext
++import FV.Backend.Proof.StockSelectScanRefines
++
++/-! The retained `br_table` emission of a real Stock lowering (#140, CB-14a).
++
++The core of an original block whose terminator is `br_table x` retains the branch emission of its
++named `lower_branch` run (`table_core_calls`, `table_core_origin`, the `br_table` forms of
++`conditional_core_calls` and `conditional_core_origin`). In the actual terminator context the slot
++holds `tableData x`, so for an `i32` index and at most 4096 successors the retained emission is
++exactly `tableCode d ts r n`, with `n` the frontier of the core input, and the core output frontier
++is `n + 2` (`stock_lower_table_core`). From values held at the emission output, the resolved
++retained code stops at its `jt_sequence` on the `branchIdx` edge of the source index
++(`CoreOrigin.table_values`), with the initial register file, so the guarded frame holds at the stop
++world (`LastTableExecution.guarded`). -/
++
++namespace Backend.Stock.Proof.TableBranch
++open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64 ConditionalValues
++set_option autoImplicit false
++set_option Elab.async false
++set_option maxRecDepth 20000
++set_option linter.unusedSimpArgs false
++attribute [local irreducible] Isle.Aarch64.program Stock.runTerm emitBranch collectOutgoing scanBlock
++
++private theorem emission_origin {ctx : Ctx} {f : Clif.Function} {x : Nat}
++    {dc : Clif.BlockCall} {tbl : List Clif.BlockCall} {bi ti : Nat} {targets : Array Nat}
++    {input : State} {emission : BranchEmission}
++    (run : emitBranch ctx f (.brTable x dc tbl) bi ti targets input = .ok emission) :
++    ∃ out trace,Stock.runTerm ctx "lower_branch" [.inst ti,.labels targets.toList]
++        {input with current := some ti,color := none,base.emitted := #[]} =
++        .ok (some out,emission.state,trace) ∧
++      emission.code = emission.state.base.emitted := by
++  unfold emitBranch at run
++  dsimp only at run
++  cases call : Stock.runTerm ctx "lower_branch" [.inst ti,.labels targets.toList]
++      {input with current := some ti,color := none,base.emitted := #[]} with
++  | error message => simp only [call,bind,Except.bind] at run; cases run
++  | ok q =>
++    obtain ⟨out,next,trace⟩ := q
++    simp only [call,bind,Except.bind] at run
++    cases out with
++    | none => simp at run
++    | some out =>
++      simp only [Option.isNone_some,Bool.false_eq_true,ite_false,branchCode,
++        pure,Except.pure,bind,Except.bind] at run
++      cases run
++      exact ⟨out,trace,rfl,rfl⟩
++
++/-- Invert the actual core of a `br_table` block once: its retained branch emission, outgoing
++argument call and backward scan boundary. -/
++theorem table_core_calls {ctx : Ctx} {order : Order} {f : Clif.Function}
++    {b : Clif.Block} {bi start stop : Nat} {data : V} {targets : Array Nat}
++    {input : State} {core : LoweredBlockCore} {x : Nat} {dc : Clif.BlockCall} {tbl : List Clif.BlockCall}
++    (term : b.term = .brTable x dc tbl)
++    (run : lowerBlockCore ctx order f b bi start stop data targets input = .ok core) :
++    ∃ (emission : BranchEmission) (afterEdges : State),
++      core.branch = some emission ∧
++      emitBranch {Driver.termCtx ctx (stop-1) data with tryRegs := input.tryRegs[stop-1]!}
++        f (.brTable x dc tbl) bi (stop-1) targets input = .ok emission ∧
++      collectOutgoing ctx order bi targets emission.state = .ok (afterEdges,core.outgoing) ∧
++      core.scan.input = {afterEdges with color := some afterEdges.endColor[bi]!} ∧
++      core.scan.ctx = {Driver.termCtx ctx (stop-1) data with tryRegs := input.tryRegs[stop-1]!} ∧
++      core.scan.isBranch = true ∧ core.code = core.scan.output.code ++ emission.code := by
++  let actualCtx : Ctx := {Driver.termCtx ctx (stop-1) data with tryRegs := input.tryRegs[stop-1]!}
++  unfold lowerBlockCore at run
++  dsimp only at run
++  simp only [term] at run
++  cases branchCall : emitBranch actualCtx f (.brTable x dc tbl) bi (stop-1) targets input with
++  | error message =>
++    dsimp only [actualCtx,Driver.termCtx] at branchCall
++    simp only [branchCall,Functor.map,Except.map,bind,Except.bind] at run
++    cases run
++  | ok emission =>
++    dsimp only [actualCtx,Driver.termCtx] at branchCall
++    simp only [branchCall,Functor.map,Except.map,bind,Except.bind,Option.map_some,Option.getD_some] at run
++    cases outgoing : collectOutgoing ctx order bi targets emission.state with
++    | error message => simp only [outgoing,bind,Except.bind] at run; cases run
++    | ok pair =>
++      obtain ⟨next,args⟩ := pair
++      simp only [outgoing,bind,Except.bind] at run
++      cases scanned : scanBlock actualCtx bi (stop-1) true
++          (((Array.range (stop-start)).map (start+·)).reverse.toList)
++          {next with color := some next.endColor[bi]!} with
++      | error message =>
++        dsimp only [actualCtx,Driver.termCtx] at scanned
++        simp only [scanned,bind,Except.bind] at run
++        cases run
++      | ok scan =>
++        dsimp only [actualCtx,Driver.termCtx] at scanned
++        simp only [scanned,bind,Except.bind,pure,Except.pure,Except.ok.injEq] at run
++        cases run
++        exact ⟨emission,next,rfl,rfl,outgoing,rfl,rfl,rfl,rfl⟩
++
++/-- The retained branch of the actual core of a `br_table` block is its named branch run, with the
++first-match selection derived. -/
++theorem table_core_origin {ctx : Ctx} {order : Order} {f : Clif.Function}
++    {b : Clif.Block} {bi start stop : Nat} {data : V} {targets : Array Nat}
++    {input : State} {core : LoweredBlockCore} {x : Nat} {dc : Clif.BlockCall} {tbl : List Clif.BlockCall}
++    (term : b.term = .brTable x dc tbl)
++    (run : lowerBlockCore ctx order f b bi start stop data targets input = .ok core) :
++    Nonempty (CoreOrigin
++      {Driver.termCtx ctx (stop-1) data with tryRegs := input.tryRegs[stop-1]!}
++      f bi (stop-1) targets input core) := by
++  obtain ⟨emission,afterEdges,retained,branchCall,outgoing,scanInput,scanCtx,branchScan,combined⟩ :=
++    table_core_calls term run
++  obtain ⟨out,trace,call,emitted⟩ := emission_origin branchCall
++  obtain ⟨selected⟩ := stock_named_branch_selection call
++  exact ⟨⟨emission,out,trace,call,selected,retained,emitted,combined,branchScan⟩⟩
++
++/-- **The retained emission of a real `br_table` block.** For an original block of a real Stock
++lowering whose terminator is `br_table x` on an `i32` index with at most 4096 successors, the actual
++core retains its named branch run in the actual terminator context, whose slot holds `tableData x`
++and which satisfies `MappedCtxInv`. The retained code is exactly `tableCode d ts r n`, with the
++successors `d :: ts`, `r` the register of `x` and `n` the frontier of the core input, and the
++emission output frontier is `n + 2`. -/
++theorem stock_lower_table_core {f : Clif.Function} {result : Result}
++    (run : Stock.lower f = .ok result) (scope : LowerScope f) {label bi : Nat}
++    (tag : result.order.nodes[label]? = some (.original bi)) {b : Clif.Block}
++    (block : f.blocks[bi]? = some b) {x : Nat} {dc : Clif.BlockCall} {tbl : List Clif.BlockCall}
++    (termShape : b.term = .brTable x dc tbl) (typeX : result.ctx.valueType? x = some (.int 32))
++    (small : result.order.successors[label]!.size ≤ 4096) :
++    ∃ (ranges : Array (Nat × Nat)) (input : State) (core : LoweredBlockCore)
++      (origin : CoreOrigin {Driver.termCtx result.ctx (ranges[bi]!.2-1) (tableData x) with
++          tryRegs := input.tryRegs[ranges[bi]!.2-1]!}
++        f bi (ranges[bi]!.2-1) result.order.successors[label]! input core),
++      Stock.buildCtx f = .ok (result.ctx,ranges,result.initial) ∧
++      lowerBlockCore result.ctx result.order f b bi ranges[bi]!.1 ranges[bi]!.2 (tableData x)
++        result.order.successors[label]! input = .ok core ∧
++      core.scan ∈ result.blockScans.toList ∧ core.scan.block = bi ∧
++      core.scan.ctx = {Driver.termCtx result.ctx (ranges[bi]!.2-1) (tableData x) with
++        tryRegs := input.tryRegs[ranges[bi]!.2-1]!} ∧
++      MappedCtxInv f core.scan.ctx ∧
++      core.scan.ctx.insts[ranges[bi]!.2-1]? = some ⟨tableData x,[],[],none⟩ ∧
++      core.scan.ctx.valueType? x = some (.int 32) ∧
++      ∃ d ts r,result.order.successors[label]!.toList = d :: ts ∧ result.ctx.valueReg? x = some r ∧
++        origin.emission.code = (tableCode d ts r input.base.nextVreg).toArray ∧
++        origin.emission.state.base.nextVreg = input.base.nextVreg+2 := by
++  obtain ⟨ranges,params,input,data,core,raw,preludeCode,coreRun,assembled,build,sizes,prepared,
++    events,atBlock,rawCode,placed⟩ := stock_lower_original_block_scan_assembly run tag
++  have sourceValue : f.blocks[bi]! = b := by rw [List.getElem!_eq_getElem?_getD,block]; rfl
++  rw [sourceValue] at coreRun prepared
++  have expected : Coverage.blockData f b.term = .ok (tableData x) := by
++    rw [termShape]
++    with_unfolding_all rfl
++  have dataEq := Except.ok.inj (prepared.symm.trans expected)
++  subst dataEq
++  obtain ⟨origin⟩ := table_core_origin termShape coreRun
++  obtain ⟨emission,afterEdges,retained,branchCall,outgoing,scanInput,scanCtx,branchScan,combined⟩ :=
++    table_core_calls termShape coreRun
++  have inv := (stock_lower_record_context run scope events).1
++  obtain ⟨original,st0,oldBuild,ctxSpec,view⟩ := buildCtx_source build
++  have range : ranges[bi]! = (blockStart f bi,blockStart f bi+b.body.length+1) := by
++    simp only [getElem!_def,ctxSpec.ranges bi b block]
++  have placeholder : result.ctx.insts[blockStart f bi+b.body.length]? = some ⟨.op .unit,[],[],none⟩ := by
++    rw [view.insts]
++    exact ctxSpec.facts.term bi b block
++  have bound : ranges[bi]!.2-1 < result.ctx.insts.size := by
++    have inside := (Array.getElem?_eq_some_iff.mp placeholder).1
++    rw [range]
++    dsimp only
++    omega
++  have slot : core.scan.ctx.insts[ranges[bi]!.2-1]? = some ⟨tableData x,[],[],none⟩ := by
++    rw [scanCtx]
++    change (result.ctx.insts.set! (ranges[bi]!.2-1) ⟨tableData x,[],[],none⟩)[ranges[bi]!.2-1]? = _
++    simp only [Array.set!_eq_setIfInBounds,Array.getElem?_setIfInBounds_self_of_lt bound]
++  have typeHere : core.scan.ctx.valueType? x = some (.int 32) := by rw [scanCtx]; exact typeX
++  have slotActual := slot
++  rw [scanCtx] at slotActual
++  have typeActual := typeHere
++  rw [scanCtx] at typeActual
++  have labelsSmall : result.order.successors[label]!.toList.length ≤ 4096 := by
++    simpa only [Array.length_toList] using small
++  obtain ⟨d,ts,r,labelsEq,mapped,_,_,emitted,frontier⟩ := table_named_code slotActual typeActual labelsSmall origin.call
++  refine ⟨ranges,input,core,origin,build,coreRun,events,atBlock,scanCtx,inv,slot,typeHere,
++    d,ts,r,labelsEq,mapped,?_,frontier⟩
++  rw [origin.emitted,emitted]
++  simp
++
++/-- **A table execution keeps the guarded frame.** The register file at the stop is the initial one
++and the world differs only in the flags, so a guarded relation of the initial register file and
++world holds at the stop world. -/
++theorem LastTableExecution.guarded {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem}
++    {labels : List Label} {code : List MInst} {target : Nat} {ρ : Nat → CV} {world : Arm.ArmState}
++    (execution : LastTableExecution F isem labels code target ρ world) {MR : MemRelT}
++    (stable : MRStable F MR) {f : Clif.Function} {result : Result} {ctx : Ctx} {bi : Nat}
++    {st : State} {s : SourcePoint} (post : GuardedScanRel f result ctx bi MR st s ρ world) :
++    ∃ index inst ops prefixWorld outs endWorld,
++      seqRun isem code ρ world = some (.stop index inst ops ρ prefixWorld outs endWorld (.goto target)) ∧
++      index+1 = code.length ∧ GuardedScanRel f result ctx bi MR st s ρ endWorld ∧
++      inst.targets = labels ∧ inst.isTerminator = true := by
++  obtain ⟨index,inst,ops,prefixWorld,outs,endWorld,machine,last,nf,targets,terminal⟩ := execution
++  exact ⟨index,inst,ops,prefixWorld,outs,endWorld,machine,last,
++    ⟨post.1,post.2.1,stable _ _ _ _ nf post.2.2.1,post.2.2.2⟩,targets,terminal⟩
++
++end Backend.Stock.Proof.TableBranch
++
++namespace Backend.Stock.Proof.ConditionalValues
++open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64 TableBranch
++set_option autoImplicit false
++
++/-- **The retained `br_table` emission takes the edge of the source index.** For a core origin in a
++context with `MappedCtxInv` whose slot holds `tableData x`, an `i32` index and at most 4096
++successors, values held for the values demanded at the emission output make the resolved retained
++code stop at its last instruction, the `jt_sequence` with the successors as targets, on the
++`branchIdx` edge `tableTarget bits.toNat ts.length`, with the initial register file and the same
++world but for the flags. This is the core form of `comparison_branch_values_last`. -/
++theorem CoreOrigin.table_values {ctx : Ctx} {f : Clif.Function} {bi ti : Nat} {targets : Array Nat}
++    {input : State} {core : LoweredBlockCore} (origin : CoreOrigin ctx f bi ti targets input core)
++    (inv : MappedCtxInv f ctx) {x : Nat} (slot : ctx.insts[ti]? = some ⟨tableData x,[],[],none⟩)
++    (typeX : ctx.valueType? x = some (.int 32)) (small : targets.size ≤ 4096)
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    {fr : Clif.Frame} {bits : BitVec 32} (getX : fr.getAs x .i32 = .ok bits)
++    {aliases : Array (Option Nat)} {ρ : Nat → CV} (bounded : aliases.size ≤ input.base.nextVreg)
++    (extent : ∀ value r,ctx.valueReg? value = some r → value < input.demand.size)
++    (held : ValuesHeld (Demanded origin.emission.state) ctx fr (fun key => ρ (aliasNum aliases key))) :
++    ∃ d ts,targets.toList = d :: ts ∧
++      origin.emission.state.base.nextVreg = input.base.nextVreg+2 ∧
++      (∀ m ∈ origin.emission.code.toList,∀ k ∈ vdefs m,
++        input.base.nextVreg ≤ k ∧ k < origin.emission.state.base.nextVreg) ∧
++      ∀ world,LastTableExecution F isem targets.toList (origin.emission.code.toList.map
++        (·.mapRegs (Backend.lowerFunction.resolve aliases (aliases.size+1))))
++        (tableTarget bits.toNat ts.length) ρ world := by
++  have labelsSmall : targets.toList.length ≤ 4096 := by simpa only [Array.length_toList] using small
++  obtain ⟨d,ts,code,labelsEq,emitted,frontier,defs,execution⟩ :=
++    table_named_values inv slot typeX labelsSmall origin.call refines getX bounded extent held
++  have actual : origin.emission.code.toList = code := by
++    rw [origin.emitted]
++    have buffers := congrArg Array.toList emitted
++    simpa only [Array.toList_append,Array.toList_empty,List.toList_toArray,List.nil_append] using buffers
++  refine ⟨d,ts,labelsEq,frontier,?_,?_⟩
++  · rw [actual]; exact defs
++  · rw [actual]; exact execution
++
++end Backend.Stock.Proof.ConditionalValues
+diff --git a/FV/Backend/Proof/StockTableSelection.lean b/FV/Backend/Proof/StockTableSelection.lean
+new file mode 100644
+index 000000000..dc4715c61
+--- /dev/null
++++ b/FV/Backend/Proof/StockTableSelection.lean
+@@ -0,0 +1,530 @@
++import FV.Backend.Proof.StockConditionalParameterSelection
++import FV.Backend.Proof.StockBranchHelperTargets
++import FV.Backend.Proof.StockPureHelperTransport
++import FV.Backend.Proof.StockExtendRequests
++
++/-! The Stock `br_table` terminator: rule selection and emission (#140, CB-14a).
++
++A `br_table x, default, [targets]` terminator slot holds `tableData x`. Every `lower_branch` rule
++before the table rule 3277 has another root format, so first-match selection derives 3277
++(`table_selected`). Its right-hand side makes four helper calls (`TableCalls`,
++`table_selected_calls`):
++
++* `side_effect` (243) of `emit_island` (669) on `targets_jt_space targets` emits
++  `emit_island (4 * (8 + n))`, with `n` the number of table targets;
++* `put_in_reg_zext32 x` gives the index register `ridx`;
++* `br_table_impl n ridx default targets` (helper 670) checks the bound and emits the dispatch.
++
++The helpers 669 and 243 are in a checked closure of unchanged constructors (`PureHelper`), so they
++change only the code-generation state. Helper 670 reaches `opportunistic_def`; a checked scope
++projects its actual Stock run onto the original helper semantics (`impl_call`). For an `i32` index
++and a table of fewer than 4096 targets, the emission is exactly
++`emit_island (4 * (8 + n)); subs wzr, ridx, #n; jt_sequence default targets ridx t1 t2`, with `ridx`
++the register of `x` and `t1`, `t2` the next two fresh registers (`TableCalls.code`,
++`table_named_code`). -/
++
++namespace Backend.Stock.Proof.TableBranch
++open Backend.Proof Backend.Proof.Driver Backend.Proof.Cov Isle Isle.Interp Isle.Aarch64
++set_option autoImplicit false
++set_option maxRecDepth 20000
++set_option maxHeartbeats 8000000
++attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
++
++/-- The prepared data of a `br_table x` terminator slot (`termData_brTable`). -/
++def tableData (x : Nat) : V := .data 152 4 [.data 151 2 [],.value x,.op (.jumpTable 0)]
++
++theorem termData_tableData (x : Nat) (d : Clif.BlockCall) (tbl : List Clif.BlockCall) :
++    termData (.brTable x d tbl) = .ok (tableData x) := termData_brTable x d tbl
++
++private theorem branch_ruleFmt_match {ctx : Ctx} {r : Rule} {fT : Nat}
++    (format : ruleFmt r = some fT) (lo : 2447 ≤ fT) (hi : fT < 2447 + 36)
++    {fuel ti : Nat} {rest : List V} {st next : State × Array RuleId} {env : Isle.Interp.Env V}
++    (matched : (matchRule program (Stock.sem ctx) {} fuel r (.inst ti :: rest)).run st =
++      .ok (some env, next)) :
++    ∃ info fs, ctx.insts[ti]? = some info ∧ info.data = .data 152 (fT - 2447) fs := by
++  have bound : fT - 2447 < 36 := by omega
++  obtain ⟨term, lookup, kind⟩ := fmtKinds_program (fT - 2447) bound
++  rw [show 2447 + (fT - 2447) = fT by omega] at lookup
++  cases fuel with
++  | zero => rw [matchRule.eq_1] at matched; cases matched
++  | succ fuel =>
++    obtain ⟨env0, args, _⟩ := matchRule_some_inv matched
++    rw [stock_matchArgs] at args
++    unfold ruleFmt at format
++    split at format
++    · rename_i q qs shape
++      rw [shape] at args
++      obtain ⟨env1, head, _⟩ := matchArgs_cons_inv args
++      exact rootFmt_match_k data_program format lookup kind head
++    · cases format
++
++private theorem other_format {ctx : Ctx} {i fT tag : Nat} {fields : List V}
++    (slot : ctx.insts[i]? = some ⟨.data 152 tag fields,[],[],none⟩) {r : Rule}
++    (format : ruleFmt r = some fT) (lo : 2447 ≤ fT) (hi : fT < 2447+36) (different : fT ≠ 2447+tag)
++    {fuel : Nat} {st next : State × Array RuleId} {labels : List Label} {env : Isle.Interp.Env V}
++    (matched : (matchRule program (Stock.sem ctx) {} fuel r [.inst i,.labels labels]).run st =
++      .ok (some env,next)) : False := by
++  obtain ⟨info,fs,source,shape⟩ := branch_ruleFmt_match format lo hi matched
++  rw [slot] at source
++  cases source
++  simp only [V.data.injEq] at shape
++  omega
++
++/-- **The actual first matching rule of a `br_table` terminator is the table rule (3277).** Every
++earlier `lower_branch` rule has another root format: 2542 and 2551 (format 2474), the three `brif`
++rules 3251, 3257 and 3231 (2452), 2561 (2475) and 3270 (2462). -/
++theorem table_selected {ctx : Ctx} {i x : Nat} {labels : List Label}
++    (slot : ctx.insts[i]? = some ⟨tableData x,[],[],none⟩)
++    {before next : State} {out : V} {trace : List RuleId}
++    (selected : BranchSelection ctx i labels before out next trace) :
++    selected.rule = rule_lower_3277 := by
++  have member : selected.rule ∈ program.rulesOf T.lower_branch.id := by rw [selected.candidates]; simp
++  rw [show T.lower_branch.id = 687 from rfl,data_program.r687] at member
++  simp only [List.mem_cons,List.not_mem_nil,or_false] at member
++  rcases member with root | root | root | root | root | root | root | root
++  all_goals try exact root
++  all_goals
++    have matched := selected.matchedRun
++    rw [root] at matched
++  · exact False.elim (other_format slot (fT := 2474) rfl (by decide) (by decide) (by decide) matched)
++  · exact False.elim (other_format slot (fT := 2452) rfl (by decide) (by decide) (by decide) matched)
++  · exact False.elim (other_format slot (fT := 2452) rfl (by decide) (by decide) (by decide) matched)
++  · exact False.elim (other_format slot (fT := 2474) rfl (by decide) (by decide) (by decide) matched)
++  · exact False.elim (other_format slot (fT := 2475) rfl (by decide) (by decide) (by decide) matched)
++  · exact False.elim (other_format slot (fT := 2452) rfl (by decide) (by decide) (by decide) matched)
++  · exact False.elim (other_format slot (fT := 2462) rfl (by decide) (by decide) (by decide) matched)
++
++/-! ## Helper projections -/
++
++/-- The closure of `side_effect` (243) and `emit_island` (669). -/
++private def pureIds : List Nat := [169, 235, 242, 243, 669, 1787, 1954]
++
++section Certificate
++attribute [local semireducible] Isle.Aarch64.program
++private theorem pure_checked : pureIds.all (PureHelper.checkTerm program pureIds) = true := by
++  decide +kernel
++end Certificate
++
++/-- An actual Stock call of a helper of `pureIds` is the original call on the code-generation
++state, and it keeps every other field. -/
++private theorem pure_call {ctx : Ctx} {fuel ty t : Nat} (member : t ∈ pureIds) {args : List V}
++    {st next : State × Array RuleId} {out : V}
++    (run : ApplyInternal program (Stock.sem ctx) {} fuel ty t args st out next) :
++    ApplyInternal program (Backend.sem ctx) {} fuel ty t args (st.1.base,st.2) out (next.1.base,next.2) ∧
++      next.1 = {st.1 with base := next.1.base} := by
++  have projected := PureHelper.projects pure_checked ctx (cfg := {}) rfl (fuel+1) ty t member args st.1 st.2
++  unfold ApplyInternal at run ⊢
++  rw [run] at projected
++  exact ⟨projected.symm,PureHelper.preserves pure_checked ctx rfl member args run⟩
++
++/-- The actual `emit_island` builder keeps the state. -/
++theorem island_builder {ctx : Ctx} {fuel : Nat} (enough : 30 ≤ fuel) {k : V}
++    {st next : State × Array RuleId} {out : V}
++    (run : ApplyInternal program (Stock.sem ctx) {} fuel 46 669 [k] st out next) :
++    next.1 = st.1 ∧ out = .data 46 0 [.data 58 136 [k]] := by
++  obtain ⟨legacy,frame⟩ := pure_call (by decide) run
++  obtain ⟨same,rfl⟩ := emit_island_ok data_program rfl enough legacy
++  refine ⟨?_,rfl⟩
++  rw [frame]
++  simp only at same
++  rw [same]
++
++/-- The actual `side_effect` of one instruction emits it and keeps every other field. -/
++theorem side_effect_emits {ctx : Ctx} {fuel : Nat} (enough : 60 ≤ fuel) {i : V}
++    {st next : State × Array RuleId} {out : V}
++    (run : ApplyInternal program (Stock.sem ctx) {} fuel 25 243 [.data 46 0 [i]] st out next) :
++    ∃ m,MInst.ofV i = some m ∧ next.1 = {st.1 with base := st.1.base.emit m} ∧ out = .regsVec [] := by
++  obtain ⟨legacy,frame⟩ := pure_call (by decide) run
++  obtain ⟨m,decoded,same,rfl⟩ := side_effect_inst_ok data_program rfl enough legacy
++  refine ⟨m,decoded,?_,rfl⟩
++  rw [frame]
++  simp only at same
++  rw [same]
++
++/-- The closure of `br_table_impl` (670); it contains `opportunistic_def` (181). -/
++private def implIds : List Nat := [164, 175, 181, 201, 235, 242, 256, 305, 318, 319, 320, 321, 352, 356,
++  358, 359, 360, 390, 391, 498, 553, 554, 662, 670, 1787, 1788, 1789, 1791, 1799, 1820, 1822, 1823, 1844,
++  1946, 1964, 1972, 1989, 1990, 2028, 2029, 2235]
++private def ruleCalls (r : Rule) : List Nat := r.iflets.flatMap (fun il => exprCalls il.rhs) ++ exprCalls r.rhs
++private def checkTerm (ids : List Nat) (id : Nat) : Bool :=
++  match termOf program id with
++  | .error _ => false
++  | .ok term => (!(revisedCtors.contains term.id) || term.id == TId.opportunistic_def) &&
++      (program.rulesOf id).all (fun r => (ruleCalls r).all (ids.contains ·))
++
++section Certificate
++attribute [local semireducible] Isle.Aarch64.program
++private theorem impl_checked : implIds.all (checkTerm implIds) = true := by decide +kernel
++end Certificate
++
++private theorem delegate_project (st : State) (result : ExtResult (V × LState)) :
++    projectCtor State.base (match result with
++      | .ok (v,base) => .ok (v,{st with base})
++      | .fail => .fail
++      | .unmodeled e => .unmodeled e) = result := by
++  cases result with
++  | ok pair => cases pair; rfl
++  | fail => rfl
++  | unmodeled e => rfl
++
++private def opportunityResult (ctx : Ctx) (st : State) (v : Nat) (rs : List Reg) : ExtResult (V × State) :=
++  let block? := st.current.map (fun i => st.instBlock[i]!)
++  let defBlock? := (ctx.defInst? v).map (fun i => st.instBlock[i]!)
++  if st.demand[v]! == 0 || block?.isNone || block? != defBlock? then .ok (.op .unit,st)
++  else .ok (.op .unit,{st with opportunistic := st.opportunistic.set! v (some ⟨block?.getD 0,rs,st.demand[v]!⟩)})
++
++private theorem opportunity_eq (ctx : Ctx) (term : Term) (args : List V) (st : State)
++    (id : term.id = TId.opportunistic_def) :
++    Stock.externCtor ctx term args st = match args with
++      | [.value v,.regs rs] => opportunityResult ctx st v rs
++      | _ => match Backend.externCtor ctx term args st.base with
++        | .ok (v,base) => .ok (v,{st with base})
++        | .fail => .fail
++        | .unmodeled e => .unmodeled e := by
++  cases term with
++  | mk tid name inputs ret kind pos =>
++    change tid = 181 at id
++    subst tid
++    cases args with
++    | nil => rfl
++    | cons a rest =>
++      cases rest with
++      | nil => cases a <;> rfl
++      | cons b rest =>
++        cases rest with
++        | cons c rest => cases a <;> cases b <;> rfl
++        | nil => cases a <;> first | rfl | (cases b <;> rfl)
++
++private theorem opportunity_project (ctx : Ctx) (term : Term) (args : List V) (st : State)
++    (id : term.id = TId.opportunistic_def) :
++    projectCtor State.base (Stock.externCtor ctx term args st) = Backend.externCtor ctx term args st.base := by
++  rw [opportunity_eq ctx term args st id]
++  split
++  · rename_i v rs
++    have legacy : Backend.externCtor ctx term [.value v,.regs rs] st.base = .ok (.op .unit,st.base) := by
++      cases term with
++      | mk tid name inputs ret kind pos =>
++        change tid = 181 at id
++        subst tid
++        rfl
++    rw [legacy]
++    unfold opportunityResult
++    dsimp only
++    split <;> rfl
++  · exact delegate_project st (Backend.externCtor ctx term args st.base)
++
++private theorem impl_scope (ctx : Ctx) :
++    ProjectionScope program (Backend.sem ctx) State.base (Stock.externCtor ctx) (fun t => t ∈ implIds) := by
++  have valid : ∀ t ∈ implIds,∀ term,termOf program t = .ok term →
++      (!(revisedCtors.contains term.id) || term.id == TId.opportunistic_def) = true ∧
++      (program.rulesOf t).all (fun r => (ruleCalls r).all (implIds.contains ·)) = true := by
++    intro t member term lookup
++    have fact := List.all_eq_true.mp impl_checked t member
++    simpa only [checkTerm,lookup,Bool.and_eq_true] using fact
++  constructor
++  · intro t term member lookup args st
++    have constructors := (valid t member term lookup).1
++    simp only [Bool.or_eq_true] at constructors
++    rcases constructors with ordinary | opportunity
++    · apply stock_ctor_unchanged
++      simpa using ordinary
++    · exact opportunity_project ctx term args st (beq_iff_eq.mp opportunity)
++  · intro t term member lookup flags ex kind r recorded
++    have calls := List.all_eq_true.mp (valid t member term lookup).2 r recorded
++    have contains : ∀ u ∈ ruleCalls r,u ∈ implIds := by
++      intro u inside
++      have yes := List.all_eq_true.mp calls u inside
++      simpa using yes
++    constructor
++    · intro il inside u called
++      exact contains u (List.mem_append_left _ (List.mem_flatMap.mpr ⟨il,inside,called⟩))
++    · intro u called
++      exact contains u (List.mem_append_right _ called)
++
++/-- An actual Stock call of `br_table_impl` is the original call on the code-generation state. -/
++theorem impl_call {ctx : Ctx} {fuel : Nat} {args : List V}
++    {st next : State × Array RuleId} {out : V}
++    (run : ApplyInternal program (Stock.sem ctx) {} fuel 13 670 args st out next) :
++    ApplyInternal program (Backend.sem ctx) {} fuel 13 670 args (st.1.base,st.2) out (next.1.base,next.2) := by
++  have projected := (evaluation_scoped_restate program (Backend.sem ctx) {} rfl State.base
++    (Stock.externCtor ctx) (fun t v st => Backend.externExtract ctx t v st.base)
++    (fun t => t ∈ implIds) (impl_scope ctx) (fun _ _ _ => rfl) (fuel+1)).term
++      13 670 args (by decide) st.1 st.2
++  change projectResult State.base ((applyTerm program (Stock.sem ctx) {} (fuel+1) 13 670 args).run st) =
++    (applyTerm program (Backend.sem ctx) {} (fuel+1) 13 670 args).run (st.1.base,st.2) at projected
++  unfold ApplyInternal at run ⊢
++  rw [run] at projected
++  exact projected.symm
++
++/-! ## The original dispatch helper on a small table -/
++
++private theorem ofV_jtSequence (d : Label) (ts : List Label) (r a b : Reg) :
++    MInst.ofV (.data 58 128 [.label d,.labels ts,.reg r,.reg a,.reg b]) =
++      some (.jtSequence d ts r a b) := rfl
++
++private theorem small_imm12 {k : Nat} (small : k < 4096) :
++    Imm12.ofNat? (u64 (k : Int)) = some ⟨k,false⟩ := by
++  rw [u64_natCast (by omega)]
++  unfold Imm12.ofNat?
++  have masked : mask64 k = k := by unfold mask64; omega
++  simp only [masked]
++  rw [ite_eq_left_iff.mpr (fun h => absurd small h)]
++
++set_option maxHeartbeats 4000000 in
++/-- **The original `br_table_impl` on a table of fewer than 4096 targets** compares the index
++register with the immediate table size (rule 5450): it allocates two fresh registers and emits
++`subs wzr, ridx, #n` and `jt_sequence default targets ridx t1 t2`. The register-operand rule 5454
++is not reached, because rule 5450 matches. -/
++theorem legacy_impl_small {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config}
++    (hc : cfg.checkOverlap = false) {fuel : Nat} (enough : 300 ≤ fuel) {k : Nat} (small : k < 4096)
++    {r : Reg} {d : Label} {ts : List Label} {s s' : LState × Array RuleId} {v : V}
++    (h : ApplyInternal p (Backend.sem ctx) cfg fuel 13 670 [.int k,.reg r,.label d,.labels ts] s v s') :
++    s'.1 = ((((s.1.fresh .int).2.fresh .int).2.emit (.aluRRImm12 .subS .size32 .xzr r ⟨k,false⟩)).emit
++      (.jtSequence d ts r (s.1.fresh .int).1 ((s.1.fresh .int).2.fresh .int).1)) := by
++  have kJ := fun n (hn : 30 ≤ n) r d ts s v s' h => jt_sequence_ok hp (ctx := ctx) hc (n := n)
++    (r := r) (d := d) (ts := ts) (s := s) (v := v) (s' := s') hn h
++  have kW := fun n (hn : 40 ≤ n) mi ci s v s' h => with_flags_side_effect_ok hp (ctx := ctx) hc
++    (n := n) (mi := mi) (ci := ci) (s := s) (v := v) (s' := s') hn h
++  have kE2 := fun n (hn : 30 ≤ n) i j s v s' h => emit_side_effect_inst2_ok hp (ctx := ctx) hc
++    (n := n) (i := i) (j := j) (s := s) (v := v) (s' := s') hn h
++  have kCI := fun n (hn : 30 ≤ n) a b c s v s' h => cmp_imm_ok hp (ctx := ctx) hc (n := n)
++    (a := a) (b := b) (c := c) (s := s) (v := v) (s' := s') hn h
++  have immediate := small_imm12 small
++  have hp' := hp
++  isel_split hp hc h 670
++  · brif_inv [*, rule_inst_5450, ext_imm12_from_u64_iff] at hm he
++    obtain ⟨himm⟩ : Nonempty (Imm12.ofNat? (u64 (k : Int)) = some _) := ⟨‹_›⟩
++    rw [immediate] at himm
++    cases himm
++    have h391 := ‹ApplyInternal _ _ _ _ 47 391 _ _ _ _›
++    obtain ⟨hs1, rfl⟩ := kCI _ (by omega) _ _ _ _ _ _ h391
++    have h662 := ‹ApplyInternal _ _ _ _ 49 662 _ _ _ _›
++    obtain ⟨hs2, rfl⟩ := kJ _ (by omega) _ _ _ _ _ _ h662
++    have h256 := ‹ApplyInternal _ _ _ _ 46 256 _ _ _ _›
++    obtain ⟨hs3, rfl⟩ := kW _ (by omega) _ _ _ _ _ h256
++    have h242 := ‹ApplyInternal _ _ _ _ 13 242 _ _ _ _›
++    obtain ⟨m1, m2, hs4, hm1, hm2⟩ := kE2 _ (by omega) _ _ _ _ _ h242
++    rw [ofV_cmpImm32] at hm1
++    rw [ofV_jtSequence] at hm2
++    cases hm1; cases hm2
++    simp only at hs1 hs2 hs3 hs4
++    rw [hs4, hs3, hs2, hs1]
++  · obtain ⟨m, s2, failed⟩ := hpre _ (List.mem_cons_self ..)
++    revert failed
++    isel_eval [*, rule_inst_5450, ext_imm12_from_u64]
++    simp
++
++/-! ## The calls of the table rule -/
++
++private theorem sem_ctor (ctx : Ctx) (t : Term) (vs : List V) (st : State) :
++    (Stock.sem ctx).ctor t vs st = Stock.externCtor ctx t vs st := rfl
++private theorem sem_mkData (ctx : Ctx) (ty k : Nat) (vs : List V) :
++    (Stock.sem ctx).mkData ty k vs = .data ty k vs := rfl
++private theorem sem_unData (ctx : Ctx) (ty : Nat) (v : V) :
++    (Stock.sem ctx).unData ty v = (Backend.sem ctx).unData ty v := rfl
++private theorem sem_extract (ctx : Ctx) (t : Term) (v : V) (st : State) :
++    (Stock.sem ctx).extract t v st = Backend.externExtract ctx t v st.base := rfl
++
++private theorem jump_table_size (ctx : Ctx) (st : State) (ls : List Label) (v : V) (st' : State) :
++    Stock.externCtor ctx T.jump_table_size [.labels ls] st = .ok (v,st') ↔ v = .int ls.length ∧ st' = st := by
++  have actual : Stock.externCtor ctx T.jump_table_size [.labels ls] st = .ok (.int ls.length,st) := rfl
++  rw [actual]; simp [eq_comm]
++private theorem targets_jt_space (ctx : Ctx) (st : State) (ls : List Label) (v : V) (st' : State) :
++    Stock.externCtor ctx T.targets_jt_space [.labels ls] st = .ok (v,st') ↔
++      v = .int (4 * (8 + ls.length)) ∧ st' = st := by
++  have actual : Stock.externCtor ctx T.targets_jt_space [.labels ls] st =
++    .ok (.int (4 * (8 + ls.length)),st) := rfl
++  rw [actual]; simp [eq_comm]
++private theorem u32_into_u64 (ctx : Ctx) (st : State) (a : Int) (v : V) (st' : State) :
++    Stock.externCtor ctx T.u32_into_u64 [.int a] st = .ok (v,st') ↔ v = .int a ∧ st' = st := by
++  have actual : Stock.externCtor ctx T.u32_into_u64 [.int a] st = .ok (.int a,st) := rfl
++  rw [actual]; simp [eq_comm]
++
++/-- The internal calls of the selected table rule (3277), derived from its actual match and
++right-hand side: the labels are the default and the table, the island is emitted first, then the
++index is put in a register and the dispatch helper runs on the table size. -/
++structure TableCalls (ctx : Ctx) (i : Nat) (labels : List Label) (before : State) (out : V)
++    (next : State) where
++  source : V
++  sourceData : ∃ info tableOp,ctx.insts[i]? = some info ∧
++    info.data = .data 152 4 [.data 151 2 [],source,tableOp]
++  default : Label
++  table : List Label
++  labels_eq : labels = default :: table
++  island : State × Array RuleId
++  islandEq : island.1 = {before with base := before.base.emit (.emitIsland (4*(8+table.length)))}
++  extended : State × Array RuleId
++  ridx : V
++  extendFuel : Nat
++  implFuel : Nat
++  finalTrace : Array RuleId
++  extendEnough : 60 ≤ extendFuel
++  implEnough : 300 ≤ implFuel
++  extendRun : ApplyInternal program (Stock.sem ctx) {} extendFuel 27 556 [source] island ridx extended
++  implRun : ApplyInternal program (Stock.sem ctx) {} implFuel 13 670
++    [.int table.length,ridx,.label default,.labels table] extended out (next,finalTrace)
++
++private theorem space_cast (n : Nat) : (4 * (8 + (n : Int))) = ((4 * (8 + n) : Nat) : Int) := by
++  push_cast; omega
++
++private theorem ofV_emitIsland (k : Nat) :
++    MInst.ofV (.data 58 136 [.int (k : Int)]) = some (.emitIsland k) := rfl
++
++/-- **The selected table rule makes exactly the island, index and dispatch calls.** -/
++theorem table_selected_calls {ctx : Ctx} {i : Nat} {labels : List Label}
++    {before next : State} {out : V} {trace : List RuleId}
++    (selected : BranchSelection ctx i labels before out next trace)
++    (root : selected.rule = rule_lower_3277) :
++    Nonempty (TableCalls ctx i labels before out next) := by
++  have count : (program.rulesOf T.lower_branch.id).length = 8 := by
++    rw [show T.lower_branch.id = 687 from rfl,data_program.r687]; rfl
++  have bound := selected.fuelBound
++  obtain ⟨m,fuelEq⟩ : ∃ m,selected.matchFuel = m+20 := ⟨selected.matchFuel-20,by omega⟩
++  have matched := selected.matchedRun
++  have rhs := selected.rhsRun
++  rw [root,fuelEq] at matched
++  rw [root] at rhs
++  have hp := data_program
++  cases hp
++  isel_inv [*,rule_lower_3277,sem_ctor,sem_extract,sem_unData,ext_jump_table_targets_iff,
++    jump_table_size,targets_jt_space,u32_into_u64] at matched rhs
++  isel_destruct
++  subst_vars
++  repeat (isel_inv_simp [ext_jump_table_targets_iff,jump_table_size,targets_jt_space,u32_into_u64] at * <;>
++    isel_destruct <;> subst_vars)
++  obtain ⟨envEq⟩ : Nonempty (selected.env = _) := ⟨‹_›⟩
++  generalize selected.env = env at *
++  subst envEq
++  simp only [Array.getElem?_setIfInBounds,Array.size_setIfInBounds,Array.size_replicate,
++    Array.getElem?_replicate] at *
++  simp only [Nat.reduceLT,Nat.reduceEqDiff,ite_true,ite_false,Option.some.injEq,reduceCtorEq] at *
++  isel_destruct
++  subst_vars
++  simp only [jump_table_size,targets_jt_space] at *
++  isel_destruct
++  subst_vars
++  simp only [u32_into_u64] at *
++  isel_destruct
++  subst_vars
++  have islandCall := ‹ApplyInternal _ _ _ _ 46 669 _ _ _ _›
++  obtain ⟨islandState,rfl⟩ := island_builder (by omega) islandCall
++  have sideCall := ‹ApplyInternal _ _ _ _ 25 243 _ _ _ _›
++  rw [space_cast] at sideCall
++  obtain ⟨mi,decoded,sideState,_⟩ := side_effect_emits (by omega) sideCall
++  rw [ofV_emitIsland] at decoded
++  cases decoded
++  have extendCall := ‹ApplyInternal _ _ _ _ 27 556 _ _ _ _›
++  have implCall := ‹ApplyInternal _ _ _ _ 13 670 _ _ _ _›
++  have matchedEq := ‹selected.matched = before›
++  simp only [Prod.eta] at implCall
++  exact ⟨{
++    source := _
++    sourceData := ⟨_,_,‹ctx.insts[i]? = some _›,(‹V.data 152 4 _ = _›).symm⟩
++    default := _
++    table := _
++    labels_eq := rfl
++    island := _
++    islandEq := by rw [sideState]; simp only [islandState,matchedEq]
++    extended := _
++    ridx := _
++    extendFuel := _
++    implFuel := _
++    finalTrace := _
++    extendEnough := by omega
++    implEnough := by omega
++    extendRun := extendCall
++    implRun := implCall }⟩
++
++/-- The source of the calls of a real `br_table x` slot is `x`. -/
++theorem TableCalls.source_of_slot {ctx : Ctx} {i : Nat} {labels : List Label}
++    {before next : State} {out : V} (calls : TableCalls ctx i labels before out next) {x : Nat}
++    (slot : ctx.insts[i]? = some ⟨tableData x,[],[],none⟩) : calls.source = .value x := by
++  obtain ⟨info,tableOp,found,data⟩ := calls.sourceData
++  rw [slot] at found
++  cases found
++  simp only [tableData,V.data.injEq,List.cons.injEq,true_and] at data
++  exact data.1.symm
++
++/-- **A real named `br_table` terminator derives its table calls.** The rule is derived
++(`table_selected`) and the source of the calls is the index `x`. -/
++theorem table_named_calls {ctx : Ctx} {i x : Nat} {labels : List Label}
++    (slot : ctx.insts[i]? = some ⟨tableData x,[],[],none⟩)
++    {before next : State} {out : V} {trace : List RuleId}
++    (run : Stock.runTerm ctx "lower_branch" [.inst i,.labels labels] before = .ok (some out,next,trace)) :
++    ∃ calls : TableCalls ctx i labels before out next,calls.source = .value x := by
++  obtain ⟨selected⟩ := stock_named_branch_selection run
++  obtain ⟨calls⟩ := table_selected_calls selected (table_selected slot selected)
++  exact ⟨calls,calls.source_of_slot slot⟩
++
++/-- The exact code of a `br_table` on the index register `r` with default `d` and table `ts`,
++whose two temporaries are the fresh registers `n` and `n+1`: the island, the bound check and the
++dispatch. -/
++def tableCode (d : Label) (ts : List Label) (r : Reg) (n : Nat) : List MInst :=
++  [.emitIsland (4*(8+ts.length)),.aluRRImm12 .subS .size32 .xzr r ⟨ts.length,false⟩,
++    .jtSequence d ts r (.vreg n .int) (.vreg (n+1) .int)]
++
++/-- The code-generation state after the code `tableCode d ts r st.nextVreg` from `st`. -/
++def tableState (st : LState) (d : Label) (ts : List Label) (r : Reg) : LState :=
++  ((((st.emit (.emitIsland (4*(8+ts.length)))).fresh .int).2.fresh .int).2.emit
++    (.aluRRImm12 .subS .size32 .xzr r ⟨ts.length,false⟩)).emit
++    (.jtSequence d ts r (.vreg st.nextVreg .int) (.vreg (st.nextVreg+1) .int))
++
++theorem tableState_emitted (st : LState) (d : Label) (ts : List Label) (r : Reg) :
++    (tableState st d ts r).emitted = st.emitted ++ (tableCode d ts r st.nextVreg).toArray := by
++  simp only [tableState,tableCode,LState.emit,LState.fresh]
++  apply Array.ext'
++  simp
++
++theorem tableState_nextVreg (st : LState) (d : Label) (ts : List Label) (r : Reg) :
++    (tableState st d ts r).nextVreg = st.nextVreg+2 := by
++  simp only [tableState,LState.emit,LState.fresh]
++
++/-- **The emission of a `br_table` on an `i32` index with fewer than 4096 targets.** The index
++passes through `put_in_reg_zext32` as the register `r` of `x` (`x` is marked demanded), and the
++dispatch helper takes its immediate rule: the code is exactly `tableCode`, with the next two fresh
++registers as temporaries. -/
++theorem TableCalls.code {ctx : Ctx} {i : Nat} {labels : List Label} {before next : State} {out : V}
++    (calls : TableCalls ctx i labels before out next) {x : Nat} (source : calls.source = .value x)
++    (typeX : ctx.valueType? x = some (.int 32)) (small : calls.table.length < 4096) :
++    ∃ r,ctx.valueReg? x = some r ∧ DemandAllowed ctx before x ∧
++      calls.extended.1 = {before.mark x with
++        base := before.base.emit (.emitIsland (4*(8+calls.table.length)))} ∧
++      next.base = tableState before.base calls.default calls.table r := by
++  have extendRun := calls.extendRun
++  rw [source] at extendRun
++  obtain ⟨t,typed,safe,rx,mapped,form⟩ := ScalarShift.stock_zext32_out data_program rfl calls.extendEnough extendRun
++  rw [typeX] at typed
++  cases typed
++  rcases form with ⟨_,output,state⟩ | ⟨notPass,_⟩
++  · have implRun := calls.implRun
++    rw [output] at implRun
++    have legacy := impl_call implRun
++    have code := legacy_impl_small data_program rfl calls.implEnough small legacy
++    rw [state,calls.islandEq] at code
++    rw [calls.islandEq] at state safe
++    exact ⟨rx,mapped,safe,state,code⟩
++  · exact absurd (by simp) notPass
++
++/-- **A real named `br_table` on an `i32` index with fewer than 4096 targets emits exactly
++`tableCode`.** The labels are the default followed by the table, `r` is the register of `x`, `x` is
++marked demanded, and the frontier grows by the two temporaries. -/
++theorem table_named_code {ctx : Ctx} {i x : Nat} {labels : List Label}
++    (slot : ctx.insts[i]? = some ⟨tableData x,[],[],none⟩)
++    (typeX : ctx.valueType? x = some (.int 32)) (small : labels.length ≤ 4096)
++    {before next : State} {out : V} {trace : List RuleId}
++    (run : Stock.runTerm ctx "lower_branch" [.inst i,.labels labels] before = .ok (some out,next,trace)) :
++    ∃ d ts r,labels = d :: ts ∧ ctx.valueReg? x = some r ∧ DemandAllowed ctx before x ∧
++      next.base = tableState before.base d ts r ∧
++      next.base.emitted = before.base.emitted ++ (tableCode d ts r before.base.nextVreg).toArray ∧
++      next.base.nextVreg = before.base.nextVreg+2 := by
++  obtain ⟨calls,source⟩ := table_named_calls slot run
++  have short : calls.table.length < 4096 := by
++    have equal := congrArg List.length calls.labels_eq
++    simp only [List.length_cons] at equal
++    omega
++  obtain ⟨r,mapped,safe,_,code⟩ := calls.code source typeX short
++  refine ⟨calls.default,calls.table,r,calls.labels_eq,mapped,safe,code,?_,?_⟩
++  · rw [code]; exact tableState_emitted _ _ _ _
++  · rw [code]; exact tableState_nextVreg _ _ _ _
++
++end Backend.Stock.Proof.TableBranch
+diff --git a/FV/Backend/Proof/StockTableValues.lean b/FV/Backend/Proof/StockTableValues.lean
+new file mode 100644
+index 000000000..dd357b612
+--- /dev/null
++++ b/FV/Backend/Proof/StockTableValues.lean
+@@ -0,0 +1,232 @@
++import FV.Backend.Proof.StockTableSelection
++import FV.Backend.Proof.StockConditionalResolved
++import FV.Backend.Proof.StockDemandMono
++import FV.Backend.Proof.StockDemandExtent
++
++/-! The Stock `br_table` terminator: branch values (#140, CB-14a).
++
++The actual code of a `br_table` on an `i32` index with fewer than 4096 targets is `tableCode`
++(`table_named_code`). Through the final aliases, it reads the resolved register of the index;
++its two temporaries are fresh, so the resolver keeps them. If that register holds the source
++index, the resolved code stops at the `jt_sequence` (its last instruction) on the edge of
++`branchIdx`: the table entry `x + 1` when `x` is less than the table size, else the default `0`
++(`table_code_runs`). The stop is before the `jt_sequence` writes its temporaries, so the register
++file at the stop is the initial one, and the world differs only in the flags
++(`TableCalls.values`, `table_named_values`). This is the table analog of
++`comparison_branch_values_last`, stated on the actual named branch call. -/
++
++namespace Backend.Stock.Proof.TableBranch
++open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
++set_option autoImplicit false
++set_option maxRecDepth 20000
++
++/-- The branch index of a table of `n` targets on index `v`: the entry `v + 1` in range, else the
++default `0` (`branchIdx`). -/
++def tableTarget (v n : Nat) : Nat := if v < n then v+1 else 0
++
++/-- A run of `code` that stops at its last instruction, a terminator with targets `labels`, on the
++edge `target`, with the initial register file and the same world but for the flags. -/
++def LastTableExecution (F : BitVec 64 → Prop) (isem : Backend.Proof.Sem) (labels : List Label)
++    (code : List MInst) (target : Nat) (ρ : Nat → CV) (world : Arm.ArmState) : Prop :=
++  ∃ index inst ops prefixWorld outs endWorld,
++    seqRun isem code ρ world = some (.stop index inst ops ρ prefixWorld outs endWorld (.goto target)) ∧
++    index+1 = code.length ∧ SameWorldNF F endWorld world ∧
++    inst.targets = labels ∧ inst.isTerminator = true
++
++/-- The resolved `tableCode`: the index register is resolved through the aliases, and the two
++temporaries, at or above the alias extent, are kept. -/
++theorem tableCode_resolved {aliases : Array (Option Nat)} {n : Nat} (bounded : aliases.size ≤ n)
++    (d : Label) (ts : List Label) (key : Nat) :
++    (tableCode d ts (.vreg key .int) n).map (·.mapRegs (Backend.lowerFunction.resolve aliases (aliases.size+1))) =
++      tableCode d ts (.vreg (aliasNum aliases key) .int) n := by
++  have first : aliasNum aliases n = n := by
++    apply chaseF_none
++    rw [Array.getElem?_eq_none bounded]
++    rfl
++  have second : aliasNum aliases (n+1) = n+1 := by
++    apply chaseF_none
++    rw [Array.getElem?_eq_none (by omega)]
++    rfl
++  simp only [tableCode,List.map_cons,List.map_nil,MInst.mapRegs,resolve_vreg]
++  change [MInst.emitIsland (4*(8+ts.length)),
++    MInst.aluRRImm12 .subS .size32 (Backend.lowerFunction.resolve aliases (aliases.size+1) .xzr)
++      (.vreg (aliasNum aliases key) .int) ⟨ts.length,false⟩,
++    MInst.jtSequence d ts (.vreg (aliasNum aliases key) .int) (.vreg (aliasNum aliases n) .int)
++      (.vreg (aliasNum aliases (n+1)) .int)] = _
++  rw [first,second]
++  rfl
++
++/-- **`tableCode` takes the edge of the index.** If the low 32 bits of the index register are `v`
++and the table has fewer than 4096 targets, the code stops at its `jt_sequence` on the edge
++`tableTarget v ts.length`, with the initial register file. -/
++theorem table_code_runs {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    (d : Label) {ts : List Label} (small : ts.length < 4096) (key n : Nat) {ρ : Nat → CV} {v : Nat}
++    (index : ((lo64 (ρ key)).setWidth 32).toNat = v) (world : Arm.ArmState) :
++    LastTableExecution F isem (d :: ts) (tableCode d ts (.vreg key .int) n) (tableTarget v ts.length) ρ world := by
++  have island : Runs F isem [MInst.emitIsland (4*(8+ts.length))] ρ world (fun ρ1 _ => ρ1 = ρ) :=
++    Runs.one refines (operands_emitIsland _) (by rfl) rfl (SameWorldNF.refl F world)
++      fun _ _ => vdefUpd_nil _ _
++  have compare : ∀ ρ1 w1,ρ1 = ρ → Runs F isem [MInst.aluRRImm12 .subS .size32 .xzr (.vreg key .int) ⟨ts.length,false⟩]
++      ρ1 w1 (fun ρ2 w2 => ρ2 = ρ ∧
++        Arm.ConditionHolds Cond.hs.bits w2 = decide (ts.length ≤ v)) := by
++    rintro ρ1 w1 rfl
++    have bits : (⟨ts.length,false⟩ : Imm12).bits < 4096 := small
++    refine (Runs.flags refines ⟨_,rfl,rfl,fun w => ispec_cmpImm32 key bits (ρ1 key) w⟩ w1).imp ?_
++    rintro ρ2 w2 - ⟨rfl,condition⟩
++    refine ⟨rfl,?_⟩
++    rw [condition]
++    refine (hs_cmp32 (opnd .size32 (ρ2 key)) (BitVec.ofNat 32 (⟨ts.length,false⟩ : Imm12).value)).trans ?_
++    have size : (BitVec.ofNat 32 (⟨ts.length,false⟩ : Imm12).value).toNat = ts.length := by
++      simp only [Imm12.value,Bool.false_eq_true,ite_false,BitVec.toNat_ofNat]
++      omega
++    rw [size]
++    change decide (ts.length ≤ ((lo64 (ρ2 key)).setWidth 32).toNat) = _
++    rw [index]
++  obtain ⟨ρ2,w2,prefixRun,prefixWorld,rfl,condition⟩ := island.append compare
++  have dispatch : ispec (MInst.jtSequence d ts (.vreg key .int) (.vreg n .int) (.vreg (n+1) .int)) [ρ2 key] w2 =
++      some ([ofX 0,ofX 0],w2,.goto (tableTarget v ts.length)) := by
++    simp only [ispec,condition,index,tableTarget]
++    by_cases inside : v < ts.length
++    · have outside : ¬ ts.length ≤ v := by omega
++      simp [inside,outside]
++    · have above : ts.length ≤ v := by omega
++      simp [inside,above]
++  obtain ⟨endWorld,stopRun,same⟩ := seqRun_one_stop refines (operands_jtSeq d ts key n (n+1))
++    (by unfold tableTarget; split <;> simp) dispatch rfl
++  have joined := seqRun_append_fall_stop isem prefixRun stopRun
++  simp only [List.cons_append,List.nil_append,List.length_cons,List.length_nil] at joined
++  exact ⟨_,_,_,_,_,endWorld,joined,rfl,(SameWorld.nf same).trans prefixWorld,rfl,rfl⟩
++
++/-- The selected table code defines only its two temporaries, the next two fresh registers. -/
++theorem tableCode_defs (d : Label) (ts : List Label) (key n : Nat) :
++    ∀ m ∈ tableCode d ts (.vreg key .int) n,∀ k ∈ vdefs m,n ≤ k ∧ k < n+2 := by
++  intro m member k defined
++  simp only [tableCode,List.mem_cons,List.not_mem_nil,or_false] at member
++  rcases member with rfl | rfl | rfl
++  · simp [vdefs,operands_emitIsland] at defined
++  · have none : vdefs (MInst.aluRRImm12 .subS .size32 .xzr (.vreg key .int) ⟨ts.length,false⟩) = [] := rfl
++    rw [none] at defined
++    simp at defined
++  · have actual : vdefs (MInst.jtSequence d ts (.vreg key .int) (.vreg n .int) (.vreg (n+1) .int)) = [n,n+1] := by
++      simp [vdefs,operands_jtSeq,Operand.isDef]
++    rw [actual] at defined
++    simp only [List.mem_cons,List.not_mem_nil,or_false] at defined
++    omega
++
++/-- **The selected calls of a `br_table` on an `i32` index take the edge of the source index.**
++From values held for the values demanded at the output state, the resolved actual code stops at
++its `jt_sequence` on the edge `tableTarget bits.toNat n` of the source index `bits`, with the
++initial register file and the same world but for the flags. -/
++theorem TableCalls.values {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
++    {i : Nat} {labels : List Label} {before next : State} {out : V}
++    (calls : TableCalls ctx i labels before out next) {x : Nat} (source : calls.source = .value x)
++    (typeX : ctx.valueType? x = some (.int 32)) (small : calls.table.length < 4096)
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    {fr : Clif.Frame} {bits : BitVec 32} (getX : fr.getAs x .i32 = .ok bits)
++    {aliases : Array (Option Nat)} {ρ : Nat → CV} (bounded : aliases.size ≤ before.base.nextVreg)
++    (extent : ∀ value r,ctx.valueReg? value = some r → value < before.demand.size)
++    (held : ValuesHeld (Demanded next) ctx fr (fun key => ρ (aliasNum aliases key))) :
++    ∃ code : List MInst,next.base.emitted = before.base.emitted ++ code.toArray ∧
++      (∀ m ∈ code,∀ k ∈ vdefs m,before.base.nextVreg ≤ k ∧ k < next.base.nextVreg) ∧
++      ∀ world,LastTableExecution F isem labels (code.map
++        (·.mapRegs (Backend.lowerFunction.resolve aliases (aliases.size+1))))
++        (tableTarget bits.toNat calls.table.length) ρ world := by
++  obtain ⟨r,mapped,_,extended,code⟩ := calls.code source typeX small
++  obtain ⟨key,rfl⟩ := inv.valueReg x r mapped
++  have marked : Demanded next x := by
++    have implRun := calls.implRun
++    unfold ApplyInternal at implRun
++    have mono := stock_apply_demand_mono implRun x
++    rw [extended] at mono
++    change (before.mark x).demand[x]! ≤ next.demand[x]! at mono
++    rw [(mark_demand before x (extent x _ mapped)).1] at mono
++    unfold Demanded
++    omega
++  have holds := held.read marked (getAs_ok getX) mapped
++  have index : ((lo64 (ρ (aliasNum aliases key))).setWidth 32).toNat = bits.toNat := by
++    change (ρ (aliasNum aliases key)).setWidth 32 = bits at holds
++    rw [lo64,BitVec.setWidth_setWidth_of_le _ (by decide),holds]
++  refine ⟨tableCode calls.default calls.table (.vreg key .int) before.base.nextVreg,?_,?_,fun world => ?_⟩
++  · rw [code]; exact tableState_emitted _ _ _ _
++  · rw [code,tableState_nextVreg]
++    exact tableCode_defs _ _ _ _
++  · rw [tableCode_resolved bounded]
++    have execution := table_code_runs refines calls.default small (aliasNum aliases key) before.base.nextVreg index world
++    rw [← calls.labels_eq] at execution
++    exact execution
++
++/-- **A real named `br_table` on an `i32` index with fewer than 4096 targets takes the edge of the
++source index.** The rule, its calls and its exact code are derived from the actual named call; the
++resolved code stops at its last instruction, the `jt_sequence` with targets `labels`, on the edge
++`tableTarget bits.toNat ts.length` (`branchIdx`), with the initial register file and the same world
++but for the flags. -/
++theorem table_named_values {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
++    {i x : Nat} {labels : List Label} (slot : ctx.insts[i]? = some ⟨tableData x,[],[],none⟩)
++    (typeX : ctx.valueType? x = some (.int 32)) (small : labels.length ≤ 4096)
++    {before next : State} {out : V} {trace : List RuleId}
++    (run : Stock.runTerm ctx "lower_branch" [.inst i,.labels labels] before = .ok (some out,next,trace))
++    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
++    {fr : Clif.Frame} {bits : BitVec 32} (getX : fr.getAs x .i32 = .ok bits)
++    {aliases : Array (Option Nat)} {ρ : Nat → CV} (bounded : aliases.size ≤ before.base.nextVreg)
++    (extent : ∀ value r,ctx.valueReg? value = some r → value < before.demand.size)
++    (held : ValuesHeld (Demanded next) ctx fr (fun key => ρ (aliasNum aliases key))) :
++    ∃ (d : Label) (ts : List Label) (code : List MInst),labels = d :: ts ∧ next.base.emitted = before.base.emitted ++ code.toArray ∧
++      next.base.nextVreg = before.base.nextVreg+2 ∧
++      (∀ m ∈ code,∀ k ∈ vdefs m,before.base.nextVreg ≤ k ∧ k < next.base.nextVreg) ∧
++      ∀ world,LastTableExecution F isem labels (code.map
++        (·.mapRegs (Backend.lowerFunction.resolve aliases (aliases.size+1))))
++        (tableTarget bits.toNat ts.length) ρ world := by
++  obtain ⟨calls,source⟩ := table_named_calls slot run
++  have short : calls.table.length < 4096 := by
++    have equal := congrArg List.length calls.labels_eq
++    simp only [List.length_cons] at equal
++    omega
++  obtain ⟨_,_,_,_,code⟩ := calls.code source typeX short
++  obtain ⟨actual,emitted,defs,execution⟩ := calls.values inv source typeX short refines getX bounded extent held
++  refine ⟨calls.default,calls.table,actual,calls.labels_eq,emitted,?_,defs,execution⟩
++  rw [code]
++  exact tableState_nextVreg _ _ _ _
++
++/-- **The bounds of a real named `br_table` on an `i32` index with fewer than 4096 targets.** The
++frontier grows by the two temporaries, the demand array keeps its extent, and the index is
++demanded at the output state. -/
++theorem table_named_bounds {ctx : Ctx} {i x : Nat} {labels : List Label}
++    (slot : ctx.insts[i]? = some ⟨tableData x,[],[],none⟩)
++    (typeX : ctx.valueType? x = some (.int 32)) (small : labels.length ≤ 4096)
++    {before next : State} {out : V} {trace : List RuleId}
++    (run : Stock.runTerm ctx "lower_branch" [.inst i,.labels labels] before = .ok (some out,next,trace))
++    (extent : x < before.demand.size) :
++    next.base.nextVreg = before.base.nextVreg+2 ∧ next.demand.size = before.demand.size ∧
++      Demanded next x := by
++  obtain ⟨calls,source⟩ := table_named_calls slot run
++  have short : calls.table.length < 4096 := by
++    have equal := congrArg List.length calls.labels_eq
++    simp only [List.length_cons] at equal
++    omega
++  obtain ⟨_,_,_,extended,code⟩ := calls.code source typeX short
++  refine ⟨by rw [code]; exact tableState_nextVreg _ _ _ _,Extent.named_demand_size run,?_⟩
++  have implRun := calls.implRun
++  unfold ApplyInternal at implRun
++  have mono := stock_apply_demand_mono implRun x
++  rw [extended] at mono
++  change (before.mark x).demand[x]! ≤ next.demand[x]! at mono
++  rw [(mark_demand before x extent).1] at mono
++  unfold Demanded
++  omega
++
++/-- **A `br_table` on an `i32` index with fewer than 4096 targets has a fixed allocation**: any two
++real named runs at the same slot, from any inputs and with any such labels, allocate the same
++number of registers (the form of `ConditionalBodySpec.FixedAllocation`). -/
++theorem table_fixed_allocation {ctx : Ctx} {i x : Nat}
++    (slot : ctx.insts[i]? = some ⟨tableData x,[],[],none⟩)
++    (typeX : ctx.valueType? x = some (.int 32)) {labels labels' : List Label}
++    (small : labels.length ≤ 4096) (small' : labels'.length ≤ 4096)
++    {before before' next next' : State} {out out' : V} {trace trace' : List RuleId}
++    (run : Stock.runTerm ctx "lower_branch" [.inst i,.labels labels] before = .ok (some out,next,trace))
++    (run' : Stock.runTerm ctx "lower_branch" [.inst i,.labels labels'] before' = .ok (some out',next',trace')) :
++    next'.base.nextVreg + before.base.nextVreg = before'.base.nextVreg + next.base.nextVreg := by
++  obtain ⟨_,_,_,_,_,_,_,frontier⟩ := table_named_code slot typeX small run
++  obtain ⟨_,_,_,_,_,_,_,frontier'⟩ := table_named_code slot typeX small' run'
++  omega
++
++end Backend.Stock.Proof.TableBranch
+diff --git a/FV/Backend/Proof/StockTableWitness.lean b/FV/Backend/Proof/StockTableWitness.lean
+new file mode 100644
+index 000000000..580173cab
+--- /dev/null
++++ b/FV/Backend/Proof/StockTableWitness.lean
+@@ -0,0 +1,294 @@
++import FV.Clif.Parse
++import FV.Backend.Proof.StockTableCore
++import FV.Backend.Proof.LowerDecide
++
++/-! Non-vacuity of the Stock `br_table` theorems on the real `%f` of
++`third_party/wasmtime/cranelift/filetests/filetests/isa/aarch64/jumptable.clif` (#140, CB-14a).
++
++```
++function %f(i32) -> i32 {
++block0(v0: i32):
++  br_table v0, block4, [block1, block2, block3]
++...
++```
++
++The text of `%f` parses to `function`. Its Stock lowering gives block 0 the successors
++`[4, 3, 2, 1]` (the default, then the table in layout labels), and the final code of block 0 is the
++entry argument move followed by `tableCode 4 [3, 2, 1] v192 204`: `emit_island 44`,
++`subs wzr, v192, #3` and `jt_sequence` with the temporaries `v204`, `v205`, as in the filetest's
++expected VCode (`jumptable_lowered`). In the real built context, the terminator slot of block 0
++with its prepared data satisfies every premise of `table_named_code` and `table_named_values`, and
++the actual named branch run succeeds (`jumptable_table_values`). The actual retained core of
++block 0 satisfies the premises of `stock_lower_table_core` and `CoreOrigin.table_values`: its
++retained emission is `tableCode 4 [3, 2, 1] r n` at the frontier `n` of its actual input, and it
++takes the `branchIdx` edge of the source index (`jumptable_core`). One marked `native_decide`
++evaluates the parse, the scope check, the context build, the named branch run and the lowering of
++this fixed function. -/
++
++namespace Backend.Stock.Proof.TableBranch.Witness
++open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64 ConditionalValues
++set_option autoImplicit false
++set_option maxRecDepth 20000
++attribute [local irreducible] Isle.Aarch64.program
++
++/-- The text of `%f` in `jumptable.clif`. -/
++def source : String := "function %f(i32) -> i32 {
++block0(v0: i32):
++  br_table v0, block4, [block1, block2, block3]
++
++block1:
++  v1 = iconst.i32 1
++  jump block5(v1)
++
++block2:
++  v2 = iconst.i32 2
++  jump block5(v2)
++
++block3:
++  v3 = iconst.i32 3
++  jump block5(v3)
++
++block4:
++  v4 = iconst.i32 4
++  jump block5(v4)
++
++block5(v5: i32):
++  v6 = iadd.i32 v0, v5
++  return v6
++}
++"
++
++/-- `%f` as a `Clif.Function` literal. -/
++def function : Clif.Function := {
++  name := "f"
++  sig := { params := [⟨.i32,.none,.normal⟩], returns := [⟨.i32,.none,.normal⟩] }
++  blocks := [
++    { id := 0, params := [(0,.i32)], body := [], term := .brTable 0 ⟨4,[]⟩ [⟨1,[]⟩,⟨2,[]⟩,⟨3,[]⟩] },
++    { id := 1, params := [], body := [⟨[1],.iconst .i32 1⟩], term := .jump ⟨5,[1]⟩ },
++    { id := 2, params := [], body := [⟨[2],.iconst .i32 2⟩], term := .jump ⟨5,[2]⟩ },
++    { id := 3, params := [], body := [⟨[3],.iconst .i32 3⟩], term := .jump ⟨5,[3]⟩ },
++    { id := 4, params := [], body := [⟨[4],.iconst .i32 4⟩], term := .jump ⟨5,[4]⟩ },
++    { id := 5, params := [(5,.i32)], body := [⟨[6],.binary .iadd .i32 0 5⟩], term := .ret [6] }] }
++
++/-- The successor labels of block 0: the default, then the table. -/
++def labels : List Label := [4,3,2,1]
++
++/-- The final code of block 0: the entry argument move, then the resolved table code. -/
++def blockCode : Array MInst :=
++  #[.args [(.vreg 192 .int,.x 0)]] ++ (tableCode 4 [3,2,1] (.vreg 192 .int) 204).toArray
++
++@[irreducible] private def built : Ctx × Array (Nat × Nat) × State :=
++  (Stock.buildCtx function).toOption.getD (sinkCtx,#[],sinkState)
++private def ctx : Ctx := Driver.termCtx built.1 0 (tableData 0)
++
++/-- The executable facts of the witness. -/
++private def checks : Bool :=
++  decide ((Clif.parseFile source).funcs.map (·.func.toOption) = [some function]) &&
++  lowerScopeB function &&
++  (Stock.buildCtx function).toOption.isSome &&
++  decide (built.1.valueType? 0 = some (.int 32)) &&
++  (match Stock.runTerm ctx "lower_branch" [.inst 0,.labels labels] built.2.2 with
++    | .ok (some _,_,_) => true
++    | _ => false) &&
++  match Stock.lower function with
++  | .ok result => decide (result.order.successors[0]? = some labels.toArray) &&
++      decide (result.code.blocks[0]?.map (·.insts) = some blockCode) &&
++      decide (result.order.nodes[0]? = some (.original 0))
++  | .error _ => false
++
++-- witness: native_decide (the parse, scope check, context build, named branch run and lowering of the fixed function %f only)
++private theorem checks_true : checks = true := by native_decide -- witness: native_decide
++
++private theorem parts :
++    decide ((Clif.parseFile source).funcs.map (·.func.toOption) = [some function]) = true ∧
++    lowerScopeB function = true ∧ (Stock.buildCtx function).toOption.isSome = true ∧
++    decide (built.1.valueType? 0 = some (.int 32)) = true ∧
++    (match Stock.runTerm ctx "lower_branch" [.inst 0,.labels labels] built.2.2 with
++      | .ok (some _,_,_) => true
++      | _ => false) = true ∧
++    (match Stock.lower function with
++      | .ok result => decide (result.order.successors[0]? = some labels.toArray) &&
++          decide (result.code.blocks[0]?.map (·.insts) = some blockCode) &&
++          decide (result.order.nodes[0]? = some (.original 0))
++      | .error _ => false) = true := by
++  have h := checks_true
++  unfold checks at h
++  simp only [Bool.and_eq_true] at h
++  obtain ⟨⟨⟨⟨⟨parse,scope⟩,build⟩,typed⟩,branch⟩,lowered⟩ := h
++  exact ⟨parse,scope,build,typed,branch,lowered⟩
++
++private theorem scope : LowerScope function := lowerScope_of parts.2.1
++
++private theorem build : Stock.buildCtx function = .ok (built.1,built.2.1,built.2.2) := by
++  have present := parts.2.2.1
++  unfold built
++  cases actual : Stock.buildCtx function with
++  | error message => rw [actual] at present; cases present
++  | ok value => rfl
++
++private theorem placeholder : built.1.insts[0]? = some ⟨.op .unit,[],[],none⟩ := by
++  obtain ⟨original,st0,_,ctxSpec,view⟩ := buildCtx_source build
++  rw [view.insts]
++  exact ctxSpec.facts.term 0 _ rfl
++
++private theorem inv : MappedCtxInv function ctx := (buildCtx_mappedInv scope build).termCtx placeholder _
++
++private theorem slot : ctx.insts[0]? = some ⟨tableData 0,[],[],none⟩ := by
++  have inside := (Array.getElem?_eq_some_iff.mp placeholder).1
++  change (built.1.insts.set! 0 ⟨tableData 0,[],[],none⟩)[0]? = _
++  simp only [Array.set!_eq_setIfInBounds,Array.getElem?_setIfInBounds_self_of_lt inside]
++
++private theorem typed : ctx.valueType? 0 = some (.int 32) := of_decide_eq_true parts.2.2.2.1
++
++private theorem lower_build {f : Clif.Function} {result : Result} (run : Stock.lower f = .ok result) :
++    ∃ ranges,Stock.buildCtx f = .ok (result.ctx,ranges,result.initial) := by
++  unfold Stock.lower at run
++  dsimp only at run
++  repeat' first
++    | (solve | cases run)
++    | simp only [bind,Except.bind,pure,Except.pure] at run
++    | split at run
++  cases run
++  exact ⟨_,by assumption⟩
++
++/-- The prepared data of the terminator of block 0 is `tableData 0`. -/
++theorem prepared : Coverage.blockData function (function.blocks[0]!.term) = .ok (tableData 0) := by
++  with_unfolding_all rfl
++
++/-- **The real `%f` of `jumptable.clif` lowers to the table code.** The text parses to `function`,
++which is in the lowering scope; Stock lowering succeeds, block 0 has the successors `[4, 3, 2, 1]`,
++and its final code is the entry argument move followed by `tableCode 4 [3, 2, 1] v192 204`. -/
++theorem jumptable_lowered :
++    (Clif.parseFile source).funcs.map (·.func.toOption) = [some function] ∧ LowerScope function ∧
++    ∃ result,Stock.lower function = .ok result ∧ result.order.successors[0]? = some labels.toArray ∧
++      result.code.blocks[0]?.map (·.insts) = some blockCode := by
++  have lowered := parts.2.2.2.2.2
++  refine ⟨of_decide_eq_true parts.1,scope,?_⟩
++  cases run : Stock.lower function with
++  | error message => rw [run] at lowered; cases lowered
++  | ok result =>
++    rw [run] at lowered
++    simp only [Bool.and_eq_true,decide_eq_true_eq] at lowered
++    exact ⟨result,rfl,lowered.1.1,lowered.1.2⟩
++
++/-- **The table theorems apply to the real terminator of `%f`.** In the built context of the real
++lowering, the slot of the `br_table` of block 0 with its prepared data `tableData 0` satisfies the
++premises of `table_named_code` and `table_named_values`, and the actual named branch run from the
++initial state succeeds. Its code is exactly `tableCode 4 [3, 2, 1] r` at the initial frontier, and
++from values held at its output it stops at the `jt_sequence` on the `branchIdx` edge of the source
++index `bits` (`tableTarget bits.toNat 3`). -/
++theorem jumptable_table_values :
++    ∃ result,Stock.lower function = .ok result ∧ result.order.successors[0]? = some labels.toArray ∧
++      MappedCtxInv function (Driver.termCtx result.ctx 0 (tableData 0)) ∧
++      (Driver.termCtx result.ctx 0 (tableData 0)).insts[0]? = some ⟨tableData 0,[],[],none⟩ ∧
++      (Driver.termCtx result.ctx 0 (tableData 0)).valueType? 0 = some (.int 32) ∧
++      ∃ out next trace r,
++        Stock.runTerm (Driver.termCtx result.ctx 0 (tableData 0)) "lower_branch"
++          [.inst 0,.labels labels] result.initial = .ok (some out,next,trace) ∧
++        (Driver.termCtx result.ctx 0 (tableData 0)).valueReg? 0 = some r ∧
++        next.base = tableState result.initial.base 4 [3,2,1] r ∧
++        next.base.emitted = result.initial.base.emitted ++
++          (tableCode 4 [3,2,1] r result.initial.base.nextVreg).toArray ∧
++        ∀ {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem},Refines F isem →
++          ∀ {fr : Clif.Frame} {bits : BitVec 32},fr.getAs 0 .i32 = .ok bits →
++          ∀ {aliases : Array (Option Nat)} {ρ : Nat → CV},aliases.size ≤ result.initial.base.nextVreg →
++          (∀ value r,(Driver.termCtx result.ctx 0 (tableData 0)).valueReg? value = some r →
++            value < result.initial.demand.size) →
++          ValuesHeld (Demanded next) (Driver.termCtx result.ctx 0 (tableData 0)) fr
++            (fun key => ρ (aliasNum aliases key)) →
++          ∃ code : List MInst,next.base.emitted = result.initial.base.emitted ++ code.toArray ∧
++            ∀ world,LastTableExecution F isem labels (code.map
++              (·.mapRegs (Backend.lowerFunction.resolve aliases (aliases.size+1))))
++              (tableTarget bits.toNat 3) ρ world := by
++  have lowered := parts.2.2.2.2.2
++  have success := parts.2.2.2.2.1
++  cases run : Stock.lower function with
++  | error message => rw [run] at lowered; cases lowered
++  | ok result =>
++    rw [run] at lowered
++    simp only [Bool.and_eq_true,decide_eq_true_eq] at lowered
++    obtain ⟨ranges,created⟩ := lower_build run
++    have same := Except.ok.inj (created.symm.trans build)
++    have context : result.ctx = built.1 := congrArg Prod.fst same
++    have initial : result.initial = built.2.2 := congrArg (fun p => p.2.2) same
++    cases branch : Stock.runTerm ctx "lower_branch" [.inst 0,.labels labels] built.2.2 with
++    | error e => rw [branch] at success; cases success
++    | ok q =>
++      obtain ⟨out,next,trace⟩ := q
++      cases out with
++      | none => rw [branch] at success; cases success
++      | some out =>
++        obtain ⟨d,ts,r,labelsEq,mapped,_,state,emitted,_⟩ := table_named_code slot typed (by decide) branch
++        simp only [labels,List.cons.injEq] at labelsEq
++        obtain ⟨rfl,rfl⟩ := labelsEq
++        refine ⟨result,rfl,lowered.1.1,?_⟩
++        rw [context,initial]
++        refine ⟨inv,slot,typed,out,next,trace,r,branch,mapped,state,emitted,?_⟩
++        intro F isem refines fr bits getX aliases ρ bounded extent held
++        obtain ⟨d',ts',code,labelsEq',codeEq,_,_,execution⟩ :=
++          table_named_values inv slot typed (by decide) branch refines getX bounded extent held
++        simp only [labels,List.cons.injEq] at labelsEq'
++        obtain ⟨rfl,rfl⟩ := labelsEq'
++        exact ⟨code,codeEq,execution⟩
++
++/-- **The table theorems apply to the actual retained core of `%f`.** Block 0 is the original
++block at label 0 of the real lowering. Its actual core retains its named branch run in the actual
++terminator context, which satisfies `MappedCtxInv`; the retained code is exactly
++`tableCode 4 [3, 2, 1] r n` at the frontier `n` of the actual core input, with `r` the register of
++`v0`; and from values held at the emission output, the resolved retained code stops at its
++`jt_sequence` on the `branchIdx` edge `tableTarget bits.toNat 3` of the source index `bits`. -/
++theorem jumptable_core :
++    ∃ result,Stock.lower function = .ok result ∧ result.order.nodes[0]? = some (.original 0) ∧
++      result.code.blocks[0]?.map (·.insts) = some blockCode ∧
++      ∃ (ranges : Array (Nat × Nat)) (input : State) (core : LoweredBlockCore)
++        (origin : CoreOrigin {Driver.termCtx result.ctx (ranges[0]!.2-1) (tableData 0) with
++            tryRegs := input.tryRegs[ranges[0]!.2-1]!}
++          function 0 (ranges[0]!.2-1) result.order.successors[0]! input core),
++        lowerBlockCore result.ctx result.order function function.blocks[0]! 0 ranges[0]!.1 ranges[0]!.2
++          (tableData 0) result.order.successors[0]! input = .ok core ∧
++        core.scan ∈ result.blockScans.toList ∧ MappedCtxInv function core.scan.ctx ∧
++        ∃ r,result.ctx.valueReg? 0 = some r ∧
++          origin.emission.code = (tableCode 4 [3,2,1] r input.base.nextVreg).toArray ∧
++          origin.emission.state.base.nextVreg = input.base.nextVreg+2 ∧
++          ∀ {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem},Refines F isem →
++            ∀ {fr : Clif.Frame} {bits : BitVec 32},fr.getAs 0 .i32 = .ok bits →
++            ∀ {aliases : Array (Option Nat)} {ρ : Nat → CV},aliases.size ≤ input.base.nextVreg →
++            (∀ value r,core.scan.ctx.valueReg? value = some r → value < input.demand.size) →
++            ValuesHeld (Demanded origin.emission.state) core.scan.ctx fr
++              (fun key => ρ (aliasNum aliases key)) →
++            ∀ world,LastTableExecution F isem labels (origin.emission.code.toList.map
++              (·.mapRegs (Backend.lowerFunction.resolve aliases (aliases.size+1))))
++              (tableTarget bits.toNat 3) ρ world := by
++  have lowered := parts.2.2.2.2.2
++  cases run : Stock.lower function with
++  | error message => rw [run] at lowered; cases lowered
++  | ok result =>
++    rw [run] at lowered
++    simp only [Bool.and_eq_true,decide_eq_true_eq] at lowered
++    obtain ⟨⟨successors,code⟩,tag⟩ := lowered
++    obtain ⟨ranges,created⟩ := lower_build run
++    have same := Except.ok.inj (created.symm.trans build)
++    have context : result.ctx = built.1 := congrArg Prod.fst same
++    have typeX : result.ctx.valueType? 0 = some (.int 32) := by rw [context]; exact typed
++    have successorsEq : result.order.successors[0]! = labels.toArray := by
++      rw [getElem!_def,successors]
++    have small : result.order.successors[0]!.size ≤ 4096 := by rw [successorsEq]; decide
++    obtain ⟨ranges',input,core,origin,_,coreRun,events,_,scanCtx,inv',slot',typeHere,d,ts,r,labelsEq,
++      mapped,emitted,frontier⟩ :=
++      stock_lower_table_core run scope tag rfl rfl typeX small
++    rw [successorsEq] at labelsEq
++    simp only [labels,List.cons.injEq] at labelsEq
++    obtain ⟨rfl,rfl⟩ := labelsEq
++    refine ⟨result,rfl,tag,code,ranges',input,core,origin,coreRun,events,inv',r,mapped,emitted,frontier,?_⟩
++    intro F isem refines fr bits getX aliases ρ bounded extent held world
++    rw [scanCtx] at inv' slot' typeHere extent held
++    obtain ⟨d,ts,labelsEq,_,_,execution⟩ :=
++      origin.table_values inv' slot' typeHere small refines getX bounded extent held
++    have labelsActual : labels = result.order.successors[0]!.toList := by rw [successorsEq]
++    rw [successorsEq] at labelsEq
++    simp only [labels,List.cons.injEq] at labelsEq
++    obtain ⟨rfl,rfl⟩ := labelsEq
++    rw [labelsActual]
++    exact execution world
++
++end Backend.Stock.Proof.TableBranch.Witness
+diff --git a/scripts/audit/table-term.lean b/scripts/audit/table-term.lean
+new file mode 100644
+index 000000000..557189820
+--- /dev/null
++++ b/scripts/audit/table-term.lean
+@@ -0,0 +1,31 @@
++import FV.Backend.Proof.StockTableWitness
++
++#print axioms Backend.Stock.Proof.TableBranch.termData_tableData
++#print axioms Backend.Stock.Proof.TableBranch.table_selected
++#print axioms Backend.Stock.Proof.TableBranch.island_builder
++#print axioms Backend.Stock.Proof.TableBranch.side_effect_emits
++#print axioms Backend.Stock.Proof.TableBranch.impl_call
++#print axioms Backend.Stock.Proof.TableBranch.legacy_impl_small
++#print axioms Backend.Stock.Proof.TableBranch.table_selected_calls
++#print axioms Backend.Stock.Proof.TableBranch.TableCalls.source_of_slot
++#print axioms Backend.Stock.Proof.TableBranch.table_named_calls
++#print axioms Backend.Stock.Proof.TableBranch.tableState_emitted
++#print axioms Backend.Stock.Proof.TableBranch.tableState_nextVreg
++#print axioms Backend.Stock.Proof.TableBranch.TableCalls.code
++#print axioms Backend.Stock.Proof.TableBranch.table_named_code
++#print axioms Backend.Stock.Proof.TableBranch.tableCode_resolved
++#print axioms Backend.Stock.Proof.TableBranch.table_code_runs
++#print axioms Backend.Stock.Proof.TableBranch.tableCode_defs
++#print axioms Backend.Stock.Proof.TableBranch.TableCalls.values
++#print axioms Backend.Stock.Proof.TableBranch.table_named_values
++#print axioms Backend.Stock.Proof.TableBranch.table_named_bounds
++#print axioms Backend.Stock.Proof.TableBranch.table_fixed_allocation
++#print axioms Backend.Stock.Proof.TableBranch.table_core_calls
++#print axioms Backend.Stock.Proof.TableBranch.table_core_origin
++#print axioms Backend.Stock.Proof.TableBranch.stock_lower_table_core
++#print axioms Backend.Stock.Proof.TableBranch.LastTableExecution.guarded
++#print axioms Backend.Stock.Proof.ConditionalValues.CoreOrigin.table_values
++#print axioms Backend.Stock.Proof.TableBranch.Witness.prepared
++#print axioms Backend.Stock.Proof.TableBranch.Witness.jumptable_lowered -- witness: native_decide
++#print axioms Backend.Stock.Proof.TableBranch.Witness.jumptable_table_values -- witness: native_decide
++#print axioms Backend.Stock.Proof.TableBranch.Witness.jumptable_core -- witness: native_decide

@@ -1,0 +1,9 @@
+{
+  "pr": 932,
+  "head": "4d9ccf720324df8c76bd4f20dc4d19a49f7fc315",
+  "verdict": "no blocking defect",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents",
+  "diff_sha256": "084915a37599416465e2fce5424fe302d19a810bb5cdef2dc96bd8f72c9e2f9e",
+  "source": "Direct review of actual current head and diff; explicit verdict sent through ai-coord",
+  "utc": "2026-11-03T04:14:15.584897+00:00"
+}

@@ -1,0 +1,59 @@
+✔ [0/22] Ran fv:extraDep
+✔ [1/22] Replayed FV.Isle.Syntax
+✔ [2/22] Replayed FV.Isle.Interp
+✔ [3/22] Replayed FV.Clif.Syntax
+✔ [4/22] Replayed FV.Clif.Sem
+✔ [5/22] Replayed FV.Clif.Mem
+✔ [6/22] Replayed FV.Float.Basic
+✔ [7/22] Replayed FV.Float.Round
+✔ [8/22] Replayed FV.Float.Arith
+✔ [9/22] Replayed FV.Float.Convert
+✔ [10/22] Replayed FV.Float
+✔ [11/22] Replayed FV.Clif.FSem
+⚠ [12/22] Replayed FV.Clif.Run
+warning: FV/Clif/Run.lean:475:64: `if_true` has been deprecated: Use `ite_true` instead
+✔ [13/22] Replayed FV.Clif.FloatLit
+✔ [14/22] Replayed FV.Clif.Print
+⚠ [15/22] Replayed FV.Clif.Parse
+warning: FV/Clif/Parse.lean:663:8: Variable name `t` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _t
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+✔ [16/22] Replayed FV.Clif.Rust
+✔ [17/22] Replayed FV.Clif
+✔ [18/22] Replayed FV.Isle.Generated.Ids
+✔ [19/22] Replayed FV.Isle.Generated.Types00
+✔ [20/22] Replayed FV.Isle.Generated.TypeArray
+✔ [21/49] Ran job computation
+✔ [22/49] Replayed FV.Isle.Generated.Terms00
+✔ [23/49] Replayed FV.Isle.Generated.Terms01
+✔ [24/49] Replayed FV.Isle.Generated.Terms02
+✔ [25/49] Replayed FV.Isle.Generated.TermTable
+✔ [26/49] Replayed FV.Isle.Generated.Rules00
+✔ [27/49] Replayed FV.Isle.Generated.Rules01
+✔ [28/49] Replayed FV.Isle.Generated.Rules02
+✔ [29/49] Replayed FV.Isle.Generated.Rules03
+✔ [30/49] Replayed FV.Isle.Generated.RuleArray
+✔ [31/49] Replayed FV.Isle.Generated.RuleLists00
+✔ [32/49] Replayed FV.Isle.Generated.RuleTable
+✔ [33/49] Replayed FV.Isle.Generated.Specs00
+✔ [34/49] Replayed FV.Isle.Generated.Specs01
+✔ [35/49] Replayed FV.Isle.Generated.Specs02
+✔ [36/49] Replayed FV.Isle.Generated.Specs03
+✔ [37/49] Replayed FV.Isle.Generated.Specs04
+✔ [38/49] Replayed FV.Isle.Generated.Specs05
+✔ [39/49] Replayed FV.Isle.Generated.Specs06
+✔ [40/49] Replayed FV.Isle.Generated.Program
+✔ [41/49] Replayed FV.Backend.MInst
+✔ [42/49] Replayed FV.Backend.Isel
+✔ [43/49] Replayed FV.Backend.RegallocOps
+✔ [44/49] Replayed FV.Backend.DeadCleanup
+✔ [45/49] Replayed FV.Backend.ABIReadOnly
+✔ [46/49] Replayed FV.Backend.ABIReadFlags
+✔ [47/49] Replayed FV.Backend.ABIReadScalar
+✔ [48/49] Replayed FV.Backend.ABIReadDiv
+ℹ [49/49] Built FV.Backend.ABIReadCfg (432ms)
+trace: .> LEAN_PATH=/home/lee/clifv/.worktrees/loop-20261102/.lake/packages/repl/.lake/build/lib/lean:/home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lean -j1 -Dlinter.unusedSimpArgs=false -Dlinter.unusedVariables=false -Dlinter.unnecessarySimpa=false -Dlinter.unusedSectionVars=false -Dlinter.defProp=false -Dlinter.constructorNameAsVariable=false /home/lee/clifv/.worktrees/loop-20261102/FV/Backend/ABIReadCfg.lean -o /home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/ABIReadCfg.olean -i /home/lee/clifv/.worktrees/loop-20261102/.lake/build/lib/lean/FV/Backend/ABIReadCfg.ilean -c /home/lee/clifv/.worktrees/loop-20261102/.lake/build/ir/FV/Backend/ABIReadCfg.c --setup /home/lee/clifv/.worktrees/loop-20261102/.lake/build/ir/FV/Backend/ABIReadCfg.setup.json --json
+Build completed successfully (49 jobs).

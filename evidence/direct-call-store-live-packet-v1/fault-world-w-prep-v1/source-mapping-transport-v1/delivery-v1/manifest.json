@@ -1,0 +1,36 @@
+{
+  "status": "reviewable-two-file-delivery",
+  "source_hashes": {
+    "FV/E2E/MemoryFaultSourceTransport.lean": "7d8fddd45d7d3dba284ebcd9b8a895c8f72fee423cb9671e589017d1b04b9a0e",
+    "scripts/audit/memory-fault-source-transport.lean": "a7e0671cd1e166cf1e0000d42560aa8547966fcdb6fccd30304d90613225332c"
+  },
+  "canonical_checkpoint_sha256": "13194d78f6cbd15b6a6afd4934e59d3a25b971ab33404f8edb2ff8022ab67e5b",
+  "current_main_observed_ref": "origin/main",
+  "current_main_observed_commit": "c4f310c56d43c054ab14ea1d8f0a92bf26e470be",
+  "current_main_observed_tree": "9b462e046c84606819a711b3453761bc33a1f6ae",
+  "dependency_source_delta": [],
+  "dependency_count_compared": 155,
+  "current_main_gate": "156-source normal/audit checkpoint at c4f;coordinator must bind latest remote head before publication",
+  "new_standard_roots": 4,
+  "axiom_sets": {
+    "E2E.MemoryFaultSource.reach_append": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_of_reach": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.memTrapAt_transport": [
+      "propext",
+      "Quot.sound"
+    ],
+    "E2E.MemoryFaultSource.mapFaults_of_reach_simulation": [
+      "propext",
+      "Quot.sound"
+    ]
+  },
+  "proof_scope": "source event and mapping transport;full-program simulation/production still open",
+  "cleanup_owner": "source_guarantees;existing R prefix only",
+  "publication_owner": "stock_driver_delivery"
+}

@@ -1,0 +1,63 @@
+{
+  "pr": 915,
+  "head": "f2de6d71ad86bd5d904cfdc180d40dc68c65b13d",
+  "verdict": "no blocking defect",
+  "method": "ONE QUICK, DIRTY, CHEAP direct review; no builds or review agents",
+  "files": [
+    {
+      "path": "FV/Backend/Lowering/StockComparisonGeneralLoopCfg.lean",
+      "additions": 53,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopCarry.lean",
+      "additions": 85,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopCheck.lean",
+      "additions": 52,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopClass.lean",
+      "additions": 93,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopCompatibility.lean",
+      "additions": 160,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopDomain.lean",
+      "additions": 48,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralLoopWitness.lean",
+      "additions": 142,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "FV/Backend/Proof/StockComparisonGeneralSubsumption.lean",
+      "additions": 927,
+      "deletions": 0,
+      "changeType": "ADDED"
+    },
+    {
+      "path": "scripts/audit/comparison-general.lean",
+      "additions": 88,
+      "deletions": 0,
+      "changeType": "ADDED"
+    }
+  ],
+  "utc": "2026-11-02T15:16:02.022453+00:00"
+}

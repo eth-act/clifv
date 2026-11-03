@@ -1,0 +1,70 @@
+{
+  "status": "landed",
+  "pr": 935,
+  "source": "6a4c7fcb1f6098ca432bf9e2e6b89d05fa6aa9da",
+  "base": "c4f310c56d43c054ab14ea1d8f0a92bf26e470be",
+  "merged": "d5550d7d7ec3a128e6a21caf8c868176a2393780",
+  "tested_merge": "d2ba16ea75199c104d8747ba1d7e921a45ed3797",
+  "tested_tree": "59a3677a880fac68a8aaffca4d9c2e23d57d09e3",
+  "tree_equal": true,
+  "import_source_count": 156,
+  "source_hashes": {
+    "FV/E2E/MemoryFaultSourceTransport.lean": "7d8fddd45d7d3dba284ebcd9b8a895c8f72fee423cb9671e589017d1b04b9a0e",
+    "scripts/audit/memory-fault-source-transport.lean": "a7e0671cd1e166cf1e0000d42560aa8547966fcdb6fccd30304d90613225332c"
+  },
+  "canonical_sha256": "13194d78f6cbd15b6a6afd4934e59d3a25b971ab33404f8edb2ff8022ab67e5b",
+  "checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T07:08:56Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41594359600/job/125778122165",
+      "name": "Quick checks",
+      "startedAt": "2026-11-03T07:08:45Z",
+      "status": "COMPLETED",
+      "workflowName": "Quick checks"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T07:14:14Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41594359662/job/125778121416",
+      "name": "Build and compare",
+      "startedAt": "2026-11-03T07:08:45Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T07:14:27Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41594359662/job/125780094143",
+      "name": "Check lost matches",
+      "startedAt": "2026-11-03T07:14:17Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-03T07:14:35Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/41594359662/job/125780094240",
+      "name": "Publish PR result",
+      "startedAt": "2026-11-03T07:14:17Z",
+      "status": "COMPLETED",
+      "workflowName": "Stock compiler comparison"
+    }
+  ],
+  "direct_review": {
+    "head": "6a4c7fcb1f6098ca432bf9e2e6b89d05fa6aa9da",
+    "verdict": "no blocking defect",
+    "method": "ONE QUICK, DIRTY, CHEAP direct peer review; no builds or review agents",
+    "peer": "worker-A",
+    "coord_message": 6133,
+    "utc": "2026-11-03T07:14:28.952389+00:00"
+  },
+  "complete_full_program_mapping": false,
+  "production_activation": false,
+  "full_goal_complete": false,
+  "utc": "2026-11-03T07:14:52.177085+00:00"
+}
