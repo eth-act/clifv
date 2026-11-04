@@ -455,7 +455,7 @@ theorem canonEntry (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) {n : Strin
   have herrc : Arm.r .ERR cn = .None := by rw [hcOk.world.1 _ (by simp [Masked])]; exact herr
   have hbw0 : BodyEntryW Fh (L.A h).vcp.EntryArg (L.A h).af (enterAt (L.A h) cn) w₀ :=
     ⟨spv_bodyOf _ _, x29_bodyOf _ _, fun r hr => regVal_bodyOf _ _
-      (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf _ _ h29 h31,
+      (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf_probeR _ _ h29 h31,
       fun a _ => by simp [w₀], by simp [w₀]⟩
   have hME0 : L.MachEntryPR κ (M - 1) h Fh G (Arm.r .PC cn + 4) (enterAt (L.A h) cn) w₀
       (prophOf (L.mach (M - 1) h) (L.A h).fa (L.A h).base (enterAt (L.A h) cn))
