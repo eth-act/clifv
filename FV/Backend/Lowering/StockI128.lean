@@ -78,7 +78,15 @@ is that native route for a small foundation scope:
   the offset and offset 0. `MInst.ofV` does not model the two instructions, so `externCtor128`
   builds them at `emit` (`pairOfV?`). A big-endian access stays outside
   (`little_or_native_endian`). A `stack_load` or `stack_store` is a `stack_addr` and a `load` or
-  `store` (Cranelift's legalization; the filetests are written so).
+  `store` (Cranelift's legalization; the filetests are written so);
+* `f32` and `f64` values in a function with an `i128` value: each takes one float vreg
+  (`VRegAllocator::alloc` at the class of its type), a float parameter or return the next V
+  register (`sigArgLocs128`, `retLocs128`), and the float rules of `lower.isle` run unchanged,
+  for example `lower_select_cond` at a scalar float type (`fpu_csel`) and `emit_fcmp` (`fcmp`
+  flags for an `i128` `select`). A float operation that cannot trap is lowered only when its
+  result is used (`mustLower128`), a stack-passed float parameter is an `ldr s`/`ldr d`
+  (`stackArgLoad`), and calls and `try_call`s with a float return are unmodeled. A function
+  without an `i128` value keeps `Stock.lower`'s rejection of `f32`/`f64` values.
 
 Any other instruction with an `i128` operand or result makes `lower128` fail, so that a caller
 can keep the legalized lowering. `FVTest.Backend.I128Native` routes the functions that
@@ -293,14 +301,15 @@ def sigArgLocs128 (s : Clif.Signature) : Except String (List (List (ArgLoc × Na
 /-- The return registers of `s`, one list per ABI return (two for an `i128`, an even-aligned X
 pair as for the parameters). Without an `i128` return these are the registers of
 `Stock.externCtor`'s `gen_return`: x8 for the struct pointer of an `sret` signature, otherwise
-`retRegs`. More returns than registers is an error (Cranelift's error without
-`enable_multi_ret_implicit_sret`). -/
+the next register of each return's class (`retRegsC`: x0.. for an integer, v0.. for an `f32` or
+`f64`), with `Stock.lower`'s bound of 8 returns (`retRegs`). More returns than registers is an
+error (Cranelift's error without `enable_multi_ret_implicit_sret`). -/
 def retLocs128 (s : Clif.Signature) : Except String (List (List Reg)) := do
   if !s.returns.any (·.ty == .i128) then
     if (sigRets s).any (·.purpose == .sret) then return [[.x 8]]
-    match retRegs (sigRets s).length with
-    | some ps => return ps.map ([·])
-    | none => throw "more than 8 return values"
+    match retRegs (sigRets s).length, retRegsC ((sigRets s).map retClass) 0 0 with
+    | some _, some ps => return ps.map ([·])
+    | _, _ => throw "more than 8 return values"
   let mut out : Array (List Reg) := #[]
   let mut nx := 0
   let mut nv := 0
@@ -329,7 +338,9 @@ def sigHas128 (s : Clif.Signature) : Bool :=
 /-! ## Context and register allocation -/
 
 /-- One allocation request: as `Allocation.step`, but an `i128` value takes two consecutive
-integer vregs, low then high (`VRegAllocator::alloc`, `vcode.rs:1736-1738`). -/
+integer vregs, low then high, and an `f32` or `f64` value one float vreg
+(`VRegAllocator::alloc`, `vcode.rs:1736-1738`: the vregs of the class of the type, from the one
+counter of all classes). -/
 def allocate128Step (valTy : Array (Option CTy)) (q : Allocation × HiRegs) :
     AllocationRequest → Allocation × HiRegs
   | .value x =>
@@ -337,6 +348,9 @@ def allocate128Step (valTy : Array (Option CTy)) (q : Allocation × HiRegs) :
       let (lo, base) := q.1.base.fresh .int
       let (h, base) := base.fresh .int
       ({ q.1 with valReg := q.1.valReg.set! x (some lo), base }, q.2.set! x (some h))
+    else if ((valTy[x]?).join.map CTy.valClass) == some .float then
+      let (r, base) := q.1.base.fresh .float
+      ({ q.1 with valReg := q.1.valReg.set! x (some r), base }, q.2)
     else (q.1.step (.value x), q.2)
   | r => (q.1.step r, q.2)
 
@@ -348,7 +362,8 @@ def allocate128 (valTy : Array (Option CTy)) (instructions : Nat)
 
 /-- `Stock.buildCtx` (with the body of `Backend.buildCtx`) that accepts `i128` values in the
 foundation scope (`foundation128`, `termFoundation128`) and allocates a register pair to each
-of them (`allocate128`). -/
+of them (`allocate128`). It accepts `f32`/`f64` values only in a function with an `i128`
+value; without one it fails on them as `Stock.buildCtx` does. -/
 def buildCtx128 (f : Clif.Function) :
     Except String (Ctx × Array (Nat × Nat) × State × HiRegs) := do
   let sigOf (r : Nat) : Option Clif.Signature := (f.extern? r).map (·.sig)
@@ -394,7 +409,8 @@ def buildCtx128 (f : Clif.Function) :
         throw s!"`{instText s.inst}`: i128 instruction outside the native foundation"
     if (termArgs b.term).any wide && !termFoundation128 b.term then
       throw "i128 operand of a call terminator"
-  if valTy.toList.any (fun o => o.any (·.valClass != .int)) then throw "f32/f64 value"
+  if !valTy.toList.any (· == some (.int 128)) &&
+      valTy.toList.any (fun o => o.any (·.valClass != .int)) then throw "f32/f64 value"
   let valReg : Array (Option Reg) := (Array.range maxV).map fun v =>
     ((valTy[v]?).join).map fun t => .vreg v t.valClass
   let (slotOff, _) := slotLayout f.slots
@@ -439,13 +455,16 @@ def movToVecOfV? (v : V) : Option MInst := do
 /-- `Stock.externCtor` with register pairs. `put_in_regs` and `put_in_regs_vec` of an `i128`
 value give both registers, with the demand and sunk-instruction checks of `Stock.externCtor`;
 `output_pair` (`machinst/isle.rs`) makes a two-value output; `gen_return` of a signature with
-an `i128` return places the registers at `retLocs128`; `use_csdb` is false (the stock setting
+an `i128`, `f32` or `f64` return places the registers at `retLocs128` (`Stock.externCtor`'s
+places every return in an X register); `use_csdb` is false (the stock setting
 `use_csdb=false`; the stock-configured driver rejects `select_spectre_guard` under
 `use_csdb=true`); `simm7_scaled_from_i64` gives the byte offset of a `SImm7Scaled` at `$I64`;
 `emit` of `MInst.LoadP64`/`StoreP64` with a `PairAMode::SignedOffset` emits `MInst.loadP64`/
 `storeP64` (`pairOfV?`), and `emit` of `MInst.MovToVec` emits `MInst.movToVec`
-(`movToVecOfV?`). `put_in_reg` of an `i128` value and calls with `i128` arguments or
-returns are unmodeled. Everything else is `Stock.externCtor`. -/
+(`movToVecOfV?`). `put_in_reg` of an `i128` value, calls with `i128` arguments or returns,
+and in a function with an `i128` value calls and `try_call`s with an `f32` or `f64` return
+(`Stock.externCtor` gives each return an integer vreg) are unmodeled. Everything else is
+`Stock.externCtor`. -/
 def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : State) :
     ExtResult (V × State) :=
   let wide (v : Nat) : Bool := (hiReg? hi v).isSome
@@ -479,7 +498,7 @@ def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : Sta
     | some m => .ok (.op .unit, { st with base := st.base.emit m })
     | none => externCtor ctx t args st
   | TId.gen_return, [.regsVec rss] =>
-    if ctx.func.sig.returns.any (·.ty == .i128) then
+    if ctx.func.sig.returns.any (fun p => p.ty == .i128 || p.ty.isFloat) then
       match retLocs128 ctx.func.sig with
       | .error e => .unmodeled e
       | .ok ps =>
@@ -489,6 +508,8 @@ def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : Sta
     else externCtor ctx t args st
   | TId.gen_call_output, [.op (.sig s)] | TId.gen_try_call_rets, [.op (.sig s)] =>
     if sigHas128 s then .unmodeled "call with an i128 parameter or return"
+    else if hi.any (·.isSome) && s.returns.any (·.ty.isFloat) then
+      .unmodeled "call with an f32/f64 return"
     else externCtor ctx t args st
   | TId.gen_call_rets, [.op (.sig s), _] =>
     if sigHas128 s then .unmodeled "call with an i128 parameter or return"
@@ -511,7 +532,8 @@ def runTerm128 (ctx : Ctx) (hi : HiRegs) (term : String) (args : List V) (st : S
 
 /-- `bindResults` for all registers of each result: each register of the value gets an alias
 of the corresponding output register (`lower.rs` `set_vreg_alias` per register), or a copy for
-a physical output register. -/
+a physical output register. The copy is an integer `mov`, so a float value in a physical
+output register fails. -/
 def bindResults128 (ctx : Ctx) (hi : HiRegs) (pairs : List (Nat × List Reg)) (next : State) :
     Except String (State × Array MInst) :=
   pairs.foldlM (fun (st, extra) (v, rs) => do
@@ -520,7 +542,9 @@ def bindResults128 (ctx : Ctx) (hi : HiRegs) (pairs : List (Nat × List Reg)) (n
     (dsts.zip rs).foldlM (fun (st, extra) (vr, r) =>
       match r with
       | .vreg .. => return (← st.setAlias vr r, extra)
-      | _ => return (st, extra.push (.mov .size64 vr r))) (st, extra)) (next, #[])
+      | _ =>
+        if vr.homeCls == .float then throw s!"f32/f64 value v{v} in a physical register"
+        else return (st, extra.push (.mov .size64 vr r))) (st, extra)) (next, #[])
 
 def emitInstruction128 (ctx : Ctx) (hi : HiRegs) (i : Nat) (before : State) :
     Except String Emission := do
@@ -582,6 +606,17 @@ def branchArgs128 (ctx : Ctx) (hi : HiRegs) (st : State) (block index : Nat) :
       regs := regs.push r
   pure (regs, s)
 
+/-- The instructions lowered even when no result is used (`must_lower_even_if_unused`,
+`inst_predicates.rs:113`): `Stock.mustLower`, but of the float operations only those that can
+trap (`fcvt_to_uint`, `fcvt_to_sint`). An unused `fcmp` whose `select` user compares again is
+not lowered. On a function without `f32`/`f64` values it is `Stock.mustLower`, since every
+float operation has a float operand or result. -/
+def mustLower128 : Clif.Inst → Bool
+  | .float op _ _ => match op with
+    | .fcvtToUint | .fcvtToSint => true
+    | _ => false
+  | i => mustLower i
+
 def scanInstruction128 (ctx : Ctx) (hi : HiRegs) (block i ti : Nat) (isBranch : Bool)
     (input : State) : Except String Scan := do
   if input.sunk[i]! then
@@ -589,7 +624,7 @@ def scanInstruction128 (ctx : Ctx) (hi : HiRegs) (block i ti : Nat) (isBranch : 
   let before := scanState input i
   if i == ti && isBranch then return ⟨before, none, #[]⟩
   let info := ctx.insts[i]!
-  let mandatory := if i == ti then true else info.clif.any mustLower
+  let mandatory := if i == ti then true else info.clif.any mustLower128
   if !mandatory && !info.results.any (fun v => before.demand[v]! != 0) then
     return ⟨before, some ⟨block, i, .omitted, before, before, [], [], #[]⟩, #[]⟩
   if before.entryColor[i]! == 0 && !mandatory then
@@ -642,8 +677,9 @@ def lowerBlockCore128 (ctx : Ctx) (hi : HiRegs) (order : Order) (f : Clif.Functi
     branch, ⟨termCtx, bi, ti, isBranch, indices, beforeScan, bodyScan⟩⟩
 
 /-- `assembleOriginalBlock` with register pairs: an entry parameter gets one `args` pair or
-stack load per location (`sigArgLocs128`, `gen_copy_arg_to_regs`), and a block parameter one
-VCode parameter per register (`add_block_params`). -/
+stack load per location (`sigArgLocs128`, `gen_copy_arg_to_regs`; `stackArgLoad`: `ldr s`/
+`ldr d` into a float register), and a block parameter one VCode parameter per register
+(`add_block_params`). -/
 def assembleOriginalBlock128 (ctx : Ctx) (hi : HiRegs) (b : Clif.Block)
     (bi label : Nat) (targets : Array Nat) (outgoing : Array (Array Reg))
     (locs : List (List (ArgLoc × Nat))) (uses : Array UseState) (bodyCode : Array MInst) :
@@ -660,7 +696,7 @@ def assembleOriginalBlock128 (ctx : Ctx) (hi : HiRegs) (b : Clif.Block)
         match loc with
         | .reg p => pairs := pairs ++ [(r, p)]
         | .stack off =>
-          loads := loads.push (.load (loadOpOfBytes bytes) r (.fpOffset (16 + off)) trustedFlags)
+          loads := loads.push (stackArgLoad r bytes (.fpOffset (16 + off)))
     if !pairs.isEmpty then code := #[.args pairs] ++ loads ++ code
     else code := loads ++ code
   let params ← if bi == 0 then pure #[] else do
