@@ -25,10 +25,15 @@ theorem stack_reserved (contents : Nat → BitVec 8) (base : BitVec 64)
   right
   omega
 
-/-- The symbolic heap supplies the existing executable entry contract, including its live bytes. -/
+/-- The symbolic heap supplies the existing executable entry contract, including its live bytes.
+(#581: `probes` is new: with Cranelift's stack-probe loop a frame of 16 KiB or more probes
+arbitrarily far below `sp`, into the heap; the unrolled probes, at most three pages, stay above
+it.) -/
 theorem outside_call {I : SemanticStackBound.CompilerInput} {f : Clif.Function} {N : Nat}
     {readOnly : BitVec 64 → Option (BitVec 8)}
     (signature : f.sig = Caller.signature) (budget : N ≤ 4096)
+    (probes : (art I f).af.frame = true →
+      probeCount (probeTotal (art I f).af.frameSize (art I f).af.isCaller) ≤ 3)
     (imageBound : ∀ a,img I a → a.toNat < 0x300000)
     (readOnlyFree : ∀ a,0x400000 ≤ a.toNat ∧ a.toNat < 0x500010 → readOnly a = none)
     (contents : Nat → BitVec 8) (memory : BitVec 64 → BitVec 8) :
@@ -53,18 +58,18 @@ theorem outside_call {I : SemanticStackBound.CompilerInput} {f : Clif.Function} 
   args := by rw [signature]; exact arguments_out contents _ memory _
   bytes := by
     intro a value valid initialized
-    -- the heap lies far below the stack probes (#581: at most three probes below `sp - 16`)
+    -- the heap lies far below the stack probes (at most three probes below `sp - 16`)
     have bounds := valid_bounds contents (fun name => I.syms.lookup name) valid
     have small : a < 2^64 := by rcases bounds with bounds | bounds <;> omega
     have range : a < 0x500010 := by rcases bounds with bounds | bounds <;> omega
     have hsp : (spv (machine contents (art I f).base memory)).toNat = 0x1000000 := by
       rw [stack_pointer]; rfl
-    have hc := probeCount_le_three (probeTotal (art I f).af.frameSize (art I f).af.isCaller)
     rw [probeMem_of_not]
     · exact (memory_relation contents (art I f).base memory _).bytes a value valid initialized
     · cases hp : probeHit (art I f).af (spv (machine contents (art I f).base memory)) (BitVec.ofNat 64 a) with
       | false => rfl
       | true =>
+        have hc := probes (by simp only [probeHit, Bool.and_eq_true] at hp; exact hp.1)
         obtain ⟨-, i, hi, k, hk, e⟩ := probeHit_toNat hp (by rw [hsp]; omega)
         rw [hsp, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small] at e
         omega
