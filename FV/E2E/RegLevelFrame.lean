@@ -782,13 +782,10 @@ theorem epilogueLines_noTarget (saves : List Reg) (size : Nat) :
       · split at h
         · simp only [List.mem_singleton] at h
           subst h; rfl
-        · rw [List.mem_append, loadConst64_eq] at h
+        · rw [List.mem_append] at h
           rcases h with h | h
-          · simp only [List.mem_cons] at h
-            rcases h with rfl | h
-            · rfl
-            · obtain ⟨c, i, rfl⟩ := movkLines_mem h
-              rfl
+          · obtain ⟨i, rfl, hf⟩ := loadConst64_form h
+            rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
           · simp only [List.mem_singleton] at h
             subst h; rfl
     · obtain ⟨x, rfl, r, r', hx⟩ := popLines_mem h

@@ -32,12 +32,8 @@ theorem prologueLines_target (saves : List Reg) (size : Nat) :
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> rfl
   · rcases mem_spAdjLines hl with ⟨i, -, rfl⟩ | hl | rfl
     · rfl
-    · simp only [loadConst64, List.mem_cons, List.mem_filterMap] at hl
-      rcases hl with rfl | ⟨j, _, hj⟩
-      · rfl
-      · split at hj
-        · simp only [Option.some.injEq] at hj; subst hj; rfl
-        · cases hj
+    · obtain ⟨i, rfl, hf⟩ := loadConst64_form hl
+      rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
     · rfl
 
 /-- The entry block never forwards (`fwd?` finds the entry block's label at index 0). -/
