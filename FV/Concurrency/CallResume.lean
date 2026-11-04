@@ -432,6 +432,16 @@ theorem noRet_prologue (saves : List Reg) (size : Nat) (calls : Bool) :
   · exact noRet_pushLines _ _ x t h
   · exact noRet_spAdj true _ x t h
 
+/-- **Through the prologue's run** (`ProRun` from the ABI entry), every state before its last
+step is at a line other than `ret` (#581: `linesAt_nonRet` for the prologue, whose stack-probe
+loop is no straight-line run). -/
+theorem prologue_nonRet {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+    {s' : ArmState} (hpr : ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0 s') :
+    ∀ i < prologueSteps R.af.saves R.af.frameSize R.af.isCaller, AtNonRet R (iterN R.step i R.s0) := by
+  intro i hi
+  obtain ⟨k, x, -, hj, hmem, hxh, -, hpck, -⟩ := (ArmAllocThread.prologue_states hR hent hpr).2 i hi
+  exact ⟨1 + k, x, none, hj, noRet_prologue _ _ _ x none hmem, hxh, hpck⟩
+
 theorem noRet_epiLines (saves : List Reg) (size : Nat) : NoRet (epiLines saves size) := by
   intro x t hln
   simp only [epiLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln

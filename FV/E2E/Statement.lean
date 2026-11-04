@@ -581,6 +581,13 @@ theorem probeR_of_ne {af : AFunc} {f : Arm.StateField} (h : ∀ fl, f ≠ .FLAG 
 theorem probeR_flag (af : AFunc) (s : Arm.ArmState) (fl : Arm.PFlag) :
     probeR af s (.FLAG fl) = probeFlag af s fl := rfl
 
+/-- A field after the probes depends only on that field at entry. -/
+theorem probeR_congr {af : AFunc} {s t : Arm.ArmState} {f : Arm.StateField}
+    (h : Arm.r f s = Arm.r f t) : probeR af s f = probeR af t f := by
+  cases f with
+  | FLAG fl => simp only [probeR, probeFlag, probeFlagT]; rw [h]
+  | _ => exact h
+
 /-- The state the function body starts in, relative to the ABI entry state `s`: the prologue
 (when `af.frame`) pushed fp/lr and set up the frame: `sp` lowered by `16 + frameSize`, `x29` the
 frame pointer `sp_entry - 16`; x0–x8 and v0–v7 (arguments; x8 is preserved by the

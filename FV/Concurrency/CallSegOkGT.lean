@@ -168,8 +168,8 @@ theorem r0_saves {L : Link} {env : Clif.Env} {p : Clif.Program} {g : Act}
   intro r hr
   have hcs := hsv.1 r hr
   simp only [Act.r0, locVal]
-  exact congrArg (ckeep r) (regVal_calleeSaved_congr
-    (fun f h1 h2 h3 h4 h5 => prologue_fields hS.wf hS.abi f h1 h3 h5 h2) r hcs)
+  exact congrArg (ckeep r) (regVal_calleeSaved_congrX
+    (fun f h1 h2 h3 h4 h5 h6 h7 => prologue_fields hS.wf hS.abi f h1 h3 h5 h2 h6 h7) r hcs)
 
 /-- **The activations of a link with externals**: compiled program functions and externals
 (`CallSegExt.XAct`). -/

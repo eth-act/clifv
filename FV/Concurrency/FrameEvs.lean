@@ -803,11 +803,12 @@ theorem prologue_fields {R : RL} (hR : R.Wf) {ra : BitVec 64}
   rw [hiter]
   exact ho'
 
-/-- A callee-saved register's value depends on fields other than the pc, x16, x29, x30 and
-`sp`. -/
-theorem regVal_calleeSaved_congr {s t : ArmState}
+/-- A callee-saved register's value depends on fields other than the pc, x16, x17, x29, x30, `sp`
+and the flags (#581: the variant of `regVal_calleeSaved_congr` for the probed prologue, which
+also sets x17 and the flags). -/
+theorem regVal_calleeSaved_congrX {s t : ArmState}
     (h : ∀ f, f ≠ .PC → f ≠ .GPR 16#5 → f ≠ .GPR 29#5 → f ≠ .GPR 30#5 → f ≠ .GPR 31#5 →
-      Arm.r f s = Arm.r f t) :
+      f ≠ .GPR 17#5 → (∀ fl, f ≠ .FLAG fl) → Arm.r f s = Arm.r f t) :
     ∀ r ∈ calleeSaved, regVal s r = regVal t r := by
   intro r hr
   simp only [calleeSaved, List.mem_append, List.mem_map, List.mem_range] at hr
@@ -821,8 +822,17 @@ theorem regVal_calleeSaved_congr {s t : ArmState}
       omega
     simp only [regVal]
     rw [h _ (by simp) (hne 16 (by omega) (by omega)) (hne 29 (by omega) (by omega))
-      (hne 30 (by omega) (by omega)) (hne 31 (by omega) (by omega))]
+      (hne 30 (by omega) (by omega)) (hne 31 (by omega) (by omega))
+      (hne 17 (by omega) (by omega)) (fun _ => by simp)]
   · simp only [regVal]
-    exact h _ (by simp) (by simp) (by simp) (by simp) (by simp)
+    exact h _ (by simp) (by simp) (by simp) (by simp) (by simp) (by simp) (fun _ => by simp)
+
+/-- A callee-saved register's value depends on fields other than the pc, x16, x29, x30 and
+`sp`. -/
+theorem regVal_calleeSaved_congr {s t : ArmState}
+    (h : ∀ f, f ≠ .PC → f ≠ .GPR 16#5 → f ≠ .GPR 29#5 → f ≠ .GPR 30#5 → f ≠ .GPR 31#5 →
+      Arm.r f s = Arm.r f t) :
+    ∀ r ∈ calleeSaved, regVal s r = regVal t r :=
+  regVal_calleeSaved_congrX fun f h1 h2 h3 h4 h5 _ _ => h f h1 h2 h3 h4 h5
 
 end Concurrency.ArmAllocThread

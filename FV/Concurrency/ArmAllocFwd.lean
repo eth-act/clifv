@@ -114,6 +114,32 @@ theorem prun_fwd {R : RL} (hR : R.Wf) :
           exact .cons hs hp ho r2
     · cases hrun
 
+/-- **The precise run through `n` steps at unhooked instruction lines** (no store exclusive),
+reading the thread's own memory: the single-core run, its labels the single-core events.
+`prun_fwd` without straight-line lines: the steps may jump back (Cranelift's stack-probe loop,
+#581). -/
+theorem prun_fwdN {R : RL} (hR : R.Wf) :
+    ∀ (n : Nat) (s : ArmState), (∀ i < n, ∃ j x t, R.fa.lines.toList[j]? = some (.ins x t) ∧
+        x.hooked = false ∧ (iterN R.step i s).program = R.fb.program R.base ∧
+        Arm.r .PC (iterN R.step i s) = R.pcOf j ∧ Arm.r .ERR (iterN R.step i s) = .None ∧
+        NoStx (iterN R.step i s)) →
+      ∀ mon, ∃ t' : ArmState × Mon, PRun Policy.arm R.step (OkPriv R) (s, mon)
+        ((segEvs R.step n s).map fun e => ⟨e, false⟩) t' ∧ t'.1 = iterN R.step n s
+  | 0, s, _, mon => ⟨(s, mon), .nil, rfl⟩
+  | n + 1, s, h, mon => by
+    obtain ⟨j, x, t, hj, hh, hprog, hpc, herr, hns⟩ := h 0 (by omega)
+    obtain ⟨⟨s1, mon1⟩, r1, hs1⟩ := step_fwd hR hj hh hprog hpc herr hns mon
+    simp only at hs1
+    subst hs1
+    obtain ⟨t', r2, ht'⟩ := prun_fwdN hR n (R.step s) (fun i hi => by
+      simpa only [iterN] using h (i + 1) (by omega)) mon1
+    refine ⟨t', ?_, ht'⟩
+    simp only [segEvs, List.map_cons]
+    cases r1 with
+    | cons hs hp ho r1' =>
+      cases r1'
+      exact .cons hs hp ho r2
+
 /-- The events of a segment of single-core steps, as precise labels. -/
 theorem evTr_seg (f : ArmState → ArmState) (n : Nat) (s : ArmState) :
     evTr ((segEvs f n s).map fun e => (⟨e, false⟩ : Lab)) = segEvs f n s := by

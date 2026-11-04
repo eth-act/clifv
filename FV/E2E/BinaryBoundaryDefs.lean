@@ -183,7 +183,7 @@ theorem bodyEntry_bodyOf (af : AFunc) (s : Arm.ArmState) : BodyEntry af s (bodyO
       have := congrArg (fun f => match f with | Arm.StateField.GPR j => j.toNat | _ => 0) e
       simp at this; omega)
   argsV := fun i _ => r_bodyOf af s (by simp) (by simp)
-  other := fun _ _ h29 h31 => r_bodyOf af s h29 h31
+  other := fun _ _ h29 h31 => r_bodyOf_probeR af s h29 h31
   mem := mem_bodyOf af s
   program := program_bodyOf af s
 

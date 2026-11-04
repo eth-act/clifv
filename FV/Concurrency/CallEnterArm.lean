@@ -40,15 +40,13 @@ structure LFn.Static (F : LFn) : Prop where
   entryArg : ∀ r, F.vc.EntryArg r → r.isArgReg = true
 
 /-- **The state after the prologue does not depend on the activation's hooks**: the prologue's
-lines are not hooked, and from the ABI entry both machines run them as `execLines`
-(`prologue_linesAt`). -/
+lines are not hooked, and from the ABI entry both machines make the prologue's run (`ProRun`,
+`prologue_linesAt`), which is deterministic (`ProRun.det`). -/
 theorem _root_.Backend.Proof.RL.sP_hooks {R : RL} (hR : R.Wf) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (H : ArmHooks) : ({ R with H := H } : RL).sP = R.sP := by
   have hR' : ({ R with H := H } : RL).Wf :=
     ⟨hR.check, hR.alloc, hR.emit, hR.layout, hR.lm, hR.fit, hR.stack, hR.psF, hR.prog0, hR.gfree⟩
-  have h1 := (prologue_linesAt hR hent).run
-  have h2 := (prologue_linesAt hR' hent).run
-  exact Option.some.inj (h2.symm.trans h1)
+  exact ProRun.det (prologue_linesAt hR' hent) (prologue_linesAt hR hent)
 
 /-- `StRel` does not depend on the activation's hooks, given that the state after the prologue
 does not (`RL.sP_hooks`; `StRel.fplr` compares with the prologue's image `R.topImg`, read after
@@ -121,14 +119,14 @@ theorem enter_call (hL : L.Ok) {nB : String} {FB : LFn} (hB : (nB, FB) ∈ L.fns
       (∀ f, f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f (enter FB x) = Arm.r f x) ∧
       xreg 30 (enter FB x) = Arm.r .PC x + 4#64 ∧ (enter FB x).mem = x.mem ∧
       Q (L.act FB (enter FB x) KB GB)
-        (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize FB.af.isCaller).length
+        (iterN (L.act FB (enter FB x) KB GB).step (prologueSteps FB.af.saves FB.af.frameSize FB.af.isCaller)
           (enter FB x))
         (MConf.init FB.rf (locVal (L.act FB (enter FB x) KB GB).fr
-          (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize FB.af.isCaller).length
+          (iterN (L.act FB (enter FB x) KB GB).step (prologueSteps FB.af.saves FB.af.frameSize FB.af.isCaller)
             (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
       AInv (L.act FB (enter FB x) KB GB)
         (MConf.init FB.rf (locVal (L.act FB (enter FB x) KB GB).fr
-          (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize FB.af.isCaller).length
+          (iterN (L.act FB (enter FB x) KB GB).step (prologueSteps FB.af.saves FB.af.frameSize FB.af.isCaller)
             (enter FB x))) (bodyOf FB.af (enter FB x))) := by
   have hRB : (L.act FB (enter FB x) KB GB).Wf := act_wf hFB hstB (enter_program FB x) hgB
   have hent : AbiCall FB.fb FB.base (Arm.r .PC x + 4#64) (enter FB x) := {
