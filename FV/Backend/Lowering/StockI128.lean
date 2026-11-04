@@ -54,8 +54,11 @@ is that native route for a small foundation scope:
   `rbit` of each half with the halves swapped, and `bswap` is `rev` (`a64_rev64`) of each half
   with the halves swapped. No new extern: `i128_alu_bitop`, `lower_clz128`, `a64_clz`,
   `a64_cls`, `rbit`, `a64_rev64`, `eon`, `madd`, `cmp64_imm` and `with_flags_reg` are ISLE
-  rules. `popcnt` at `i128` stays outside: its rule (`popcnt_i128`) moves the high half into
-  the vector register with `mov_to_vec` (`MInst.MovToVec`), which `MInst` does not model;
+  rules;
+* `popcnt` at `i128` (`unary128`, `popcnt_i128`): `fmov` of the low half into a vector register,
+  `mov v.d[1]` of the high half (`mov_to_vec`: `MInst.MovToVec`), `cnt` and `addv` of the 16
+  bytes, `umov` of the sum as the low half and 0 as the high half. `MInst.ofV` does not model
+  `MovToVec`, so `externCtor128` builds `MInst.movToVec` at `emit` (`movToVecOfV?`);
 * `umin`, `umax`, `smin` and `smax` at `i128` (`minmax128`, rule 2 of each): `lower_select` at
   `$I128` of the `emit_icmp` of the operands, that is `cmp` and `sbcs` as for an `icmp`, then
   one `csel` per half;
@@ -150,8 +153,9 @@ def overflow128 : Clif.OverflowOp → Option String
 /-- The unary operations that `lower128` lowers at `i128`: `ineg` (`sub_i128` from
 `value_regs_zero`), `iabs` (`asr`, two `eor`, `subs` and `sbc`), `bnot` (`orn` of each half),
 `clz` (`lower_clz128`), `ctz` (`rbit` of each half, then `lower_clz128`), `cls` (the `$I128`
-rule), `bitrev` (`rbit` of each half, swapped) and `bswap` (`rev` of each half, swapped). Not
-`popcnt`: its rule needs `MInst.MovToVec`, which `MInst` does not model. -/
+rule), `bitrev` (`rbit` of each half, swapped), `bswap` (`rev` of each half, swapped) and
+`popcnt` (`popcnt_i128`: `fmov`, `mov v.d[1]`, `cnt`, `addv`, `umov`, and 0 as the high
+half). -/
 def unary128 : Clif.UnaryOp → Option String
   | .ineg => some "Ineg"
   | .iabs => some "Iabs"
@@ -161,7 +165,7 @@ def unary128 : Clif.UnaryOp → Option String
   | .cls => some "Cls"
   | .bitrev => some "Bitrev"
   | .bswap => some "Bswap"
-  | _ => none
+  | .popcnt => some "Popcnt"
 
 /-- `InstructionData` with the `i128` forms of the foundation: `isplit` of an `i128`,
 `iconcat` of two `i64`, an extension to `i128`, `bitcast.i128`, an `i128` shift or rotate
@@ -423,6 +427,15 @@ def pairOfV? (v : V) : Option MInst := do
     return .storeP64 (← rt.reg?) (← rt2.reg?) rn off (← fl.memFlags?)
   | _, _ => none
 
+/-- The `MInst.MovToVec` of an ISLE `MInst` value (`mov_to_vec`, the high half of
+`popcnt_i128`), which `MInst.ofV` does not model. -/
+def movToVecOfV? (v : V) : Option MInst := do
+  let (k, fs) ← v.enumOf? tyMInst
+  match k, fs with
+  | VIdx.MInst.MovToVec, [rd, ri, rn, idx, s] =>
+    return .movToVec (← rd.reg?) (← ri.reg?) (← rn.reg?) (← idx.nat?) (← s.vectorSize?)
+  | _, _ => none
+
 /-- `Stock.externCtor` with register pairs. `put_in_regs` and `put_in_regs_vec` of an `i128`
 value give both registers, with the demand and sunk-instruction checks of `Stock.externCtor`;
 `output_pair` (`machinst/isle.rs`) makes a two-value output; `gen_return` of a signature with
@@ -430,7 +443,8 @@ an `i128` return places the registers at `retLocs128`; `use_csdb` is false (the 
 `use_csdb=false`; the stock-configured driver rejects `select_spectre_guard` under
 `use_csdb=true`); `simm7_scaled_from_i64` gives the byte offset of a `SImm7Scaled` at `$I64`;
 `emit` of `MInst.LoadP64`/`StoreP64` with a `PairAMode::SignedOffset` emits `MInst.loadP64`/
-`storeP64` (`pairOfV?`). `put_in_reg` of an `i128` value and calls with `i128` arguments or
+`storeP64` (`pairOfV?`), and `emit` of `MInst.MovToVec` emits `MInst.movToVec`
+(`movToVecOfV?`). `put_in_reg` of an `i128` value and calls with `i128` arguments or
 returns are unmodeled. Everything else is `Stock.externCtor`. -/
 def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : State) :
     ExtResult (V × State) :=
@@ -461,7 +475,7 @@ def externCtor128 (ctx : Ctx) (hi : HiRegs) (t : Term) (args : List V) (st : Sta
   | TId.simm7_scaled_from_i64, [.int v, .ty ty] =>
     if ty == .int 64 && v % 8 == 0 && -512 ≤ v && v ≤ 504 then .ok (.int v, st) else .fail
   | TId.emit, [i] =>
-    match pairOfV? i with
+    match pairOfV? i <|> movToVecOfV? i with
     | some m => .ok (.op .unit, { st with base := st.base.emit m })
     | none => externCtor ctx t args st
   | TId.gen_return, [.regsVec rss] =>

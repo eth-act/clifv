@@ -303,6 +303,10 @@ def MInst.visitOperands : MInst → m MInst
   | .storeP64 rt rt2 rn off fl => do
     let rt ← f .use rt; let rt2 ← f .use rt2; let rn ← f .use rn
     pure (.storeP64 rt rt2 rn off fl)
+  -- `mod.rs:740`: `MovToVec`: `reg_reuse_def(rd, 1); reg_use(ri); reg_use(rn)` (`rd` == `ri`)
+  | .movToVec rd ri rn idx s => do
+    let rd ← f (.reuseDef 1) rd; let ri ← f .use ri; let rn ← f .use rn
+    pure (.movToVec rd ri rn idx s)
 
 end
 

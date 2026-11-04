@@ -37,6 +37,8 @@ def GuardR (F Rd : BitVec 64 → Prop) (sb : Nat) : MInst → List CV → Arm.Ar
   | .fpuLoad .., _, _ | .fpuStore .., _, _ => False
   -- `ldp`/`stp` (`lower128` only): outside the memory rules, as the uncovered forms above
   | .loadP64 .., _, _ | .storeP64 .., _, _ => False
+  -- `mov vd.d[idx], xn` (`lower128` only): not a covered form
+  | .movToVec .., _, _ => False
   | _, _, _ => True
 
 /-- The callee name `csem` passes the external semantics (`bl name`; `none` for `blr`). -/

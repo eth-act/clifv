@@ -5,7 +5,7 @@ import FV.Backend.Lowering.StockI128
 * The `#guard`s below check that `lower128` lowers the 16 foundation shapes, 13 `i128` shift
   and rotate shapes (`shifts`), 15 `i128` comparison shapes (`compares`), 14 `select`,
   `select_spectre_guard`, `bmask` and `bitselect` shapes (`selects`), 10 arithmetic shapes
-  (`ariths`), 14 bit-operation shapes (`bitops`), 4 minimum and maximum shapes (`minmaxes`),
+  (`ariths`), 16 bit-operation shapes (`bitops`), 4 minimum and maximum shapes (`minmaxes`),
   4 overflow shapes (`overflows`) and 18 load and store shapes (`mems`), that the instructions
   it selects have the shape of stock Cranelift's (the expected VCode of the filetests, with
   registers abstracted, and without regalloc moves and the frame), and they pin its exact
@@ -65,6 +65,20 @@ def nzcv (f : NZCV) : String :=
 def pairAMode (rn : Reg) (off : Int) : String :=
   if off == 0 then s!"[{reg rn}]" else s!"[{reg rn}, #{off}]"
 
+/-- A vector arrangement as Cranelift prints it (`16b`, `2d`). -/
+def arr : VectorSize → String
+  | .size8x8 => "8b" | .size8x16 => "16b" | .size16x4 => "4h" | .size16x8 => "8h"
+  | .size32x2 => "2s" | .size32x4 => "4s" | .size64x2 => "2d"
+
+/-- The lane letter of a vector arrangement (`b` of `16b`, `d` of `2d`). -/
+def lane : VectorSize → String
+  | .size8x8 | .size8x16 => "b" | .size16x4 | .size16x8 => "h"
+  | .size32x2 | .size32x4 => "s" | .size64x2 => "d"
+
+/-- The lane letter of a scalar size (`b` for 8 bits). -/
+def scalarLane : ScalarSize → String
+  | .size8 => "b" | .size16 => "h" | .size32 => "s" | .size64 => "d" | .size128 => "q"
+
 def amode : AMode → String
   | .fpOffset off => s!"[fp, #{off}]"
   | .spOffset off => s!"[sp, #{off}]"
@@ -72,8 +86,9 @@ def amode : AMode → String
 
 /-- One instruction in the syntax of Cranelift's VCode printing (`isa/aarch64/inst/mod.rs`),
 for the instructions of the foundation, the shifts and rotates, the comparisons, the
-selects, the arithmetic, the bit operations, the minimum and maximum and the overflow
-operations; `?` and the representation for every other one. `args` and `rets` show their
+selects, the arithmetic, the bit operations (with the vector instructions of `popcnt`), the
+minimum and maximum and the overflow operations; `?` and the representation for every other
+one. `args` and `rets` show their
 (vreg, physical register) pairs. -/
 def inst : MInst → String
   | .args ps => " ".intercalate ("args" :: ps.map fun (a, p) => s!"{reg a}={reg p}")
@@ -108,6 +123,14 @@ def inst : MInst → String
   | .storeP64 rt rt2 rn off _ => s!"stp {reg rt}, {reg rt2}, {pairAMode rn off}"
   | .loadAddr rd (.slotOffset off) =>
     if off == 0 then s!"mov {reg rd}, sp" else s!"add {reg rd}, sp, #{off}"
+  | .movToFpu rd rn _ => s!"fmov {reg rd}, {reg rn}"
+  | .movToVec rd ri rn idx s =>
+    s!"mov {reg rd}.{lane s}[{idx}], {reg ri}.{lane s}[{idx}], {reg rn}"
+  | .vecMisc .cnt rd rn s => s!"cnt {reg rd}.{arr s}, {reg rn}.{arr s}"
+  | .vecLanes .addv rd rn s => s!"addv {reg rd}, {reg rn}.{arr s}"
+  | .movFromVec rd rn idx s =>
+    let op := if s == .size8 || s == .size16 then "umov" else "mov"
+    s!"{op} {reg rd}, {reg rn}.{scalarLane s}[{idx}]"
   | i => s!"?{(repr i).pretty}"
 
 /-- The registers of an instruction, with those of the `args`/`rets` pseudo-instructions (which
@@ -149,9 +172,11 @@ def trim (s : String) : String :=
 /-- Does `s` contain `sub`? -/
 def hasSub (s sub : String) : Bool := (s.splitOn sub).length > 1
 
+/-- Is `t` a register name: a general register, a vreg (`%n`), or a SIMD&FP register (`v4`, and
+the scalar views `b16`, `h`, `s`, `d4`, `q`)? -/
 def isRegTok (t : String) : Bool :=
   t == "fp" || t == "sp" || t == "xzr" || t == "wzr" ||
-    (t.length > 1 && (t.startsWith "x" || t.startsWith "w" || t.startsWith "%") &&
+    (t.length > 1 && ["x", "w", "%", "v", "b", "h", "s", "d", "q"].any (t.startsWith ·) &&
       (t.toList.drop 1).all Char.isDigit)
 
 /-- `line` with every register name replaced by `r`. -/
@@ -1219,7 +1244,31 @@ block0:
       "cset x0, eq", "ret"]
     pinned := ["block0:", "movz %6, #0", "movz %5, #1", "rbit %3, %6", "rbit %4, %5",
       "movz %2, #32768, LSL #48", "movz %1, #0", "subs xzr, %4, %2", "ccmp %3, %1, #nzcv, eq",
-      "cset %0, eq", "rets %0=x0"] }]
+      "cset %0, eq", "rets %0=x0"] },
+  -- `popcnt_i128`: the low half into a vector register (`fmov`), the high half into its lane 1
+  -- (`MInst.movToVec`), `cnt` and `addv` of the 16 bytes, `umov` of the sum, 0 as the high half
+  { name := "d (popcnt)", source := "isa/aarch64/bitops.clif"
+    clif := "function %d(i128) -> i128 {
+block0(v0: i128):
+    v1 = popcnt v0
+    return v1
+}"
+    stock := ["block0:", "fmov d4, x0", "mov v4.d[1], v4.d[1], x1", "cnt v7.16b, v4.16b",
+      "addv b16, v7.16b", "umov w0, v16.b[0]", "movz x1, #0", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "fmov %2, %0",
+      "mov %3.d[1], %2.d[1], %1", "cnt %4.16b, %3.16b", "addv %5, %4.16b", "umov %6, %5.b[0]",
+      "movz %7, #0", "rets %6=x0 %7=x1"] },
+  { name := "popcnt_i128", source := "runtests/i128-bitops-count.clif (CI snapshot stock code)"
+    clif := "function %popcnt_i128(i128) -> i128 system_v {
+block0(v0: i128):
+    v1 = popcnt v0
+    return v1
+}"
+    stock := ["block0:", "fmov d4, x0", "mov v4.d[1], v4.d[1], x1", "cnt v7.16b, v4.16b",
+      "addv b16, v7.16b", "umov w0, v16.b[0]", "movz x1, #0", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1", "fmov %2, %0",
+      "mov %3.d[1], %2.d[1], %1", "cnt %4.16b, %3.16b", "addv %5, %4.16b", "umov %6, %5.b[0]",
+      "movz %7, #0", "rets %6=x0 %7=x1"] }]
 
 /-- `i128` minimum and maximum (rule 2 of `umin`, `umax`, `smin`, `smax`): `lower_select` at
 `$I128` of the `emit_icmp` of the operands, that is `subs` of the low halves and `sbcs` of the
@@ -1664,17 +1713,11 @@ block0(v0: i64):
 
 /-! ## Rejections -/
 
-/-- `i128` instructions outside the foundation (`popcnt`, whose rule needs `MInst.MovToVec`,
-`umul_overflow`, which has no `$I128` rule, a big-endian load, which `little_or_native_endian`
-does not match, and others), and the `isplit` of a widening
-`imul` (its `lower.isle` rule needs the extern `value_is_unused`, which `externCtor128` does
-not model): `lower128` fails on each. -/
+/-- `i128` instructions outside the foundation (`umul_overflow`, which has no `$I128` rule, a
+big-endian load, which `little_or_native_endian` does not match, and others), and the `isplit`
+of a widening `imul` (its `lower.isle` rule needs the extern `value_is_unused`, which
+`externCtor128` does not model): `lower128` fails on each. -/
 def outside : List String := [
-  "function %popcnt(i128) -> i128 {
-block0(v0: i128):
-    v1 = popcnt v0
-    return v1
-}",
   "function %umul_overflow(i128, i128) -> i128, i8 {
 block0(v0: i128, v1: i128):
     v2, v3 = umul_overflow v0, v1
@@ -1723,7 +1766,7 @@ def rejected (src : String) : Bool :=
 #guard selects.all shapeOk
 #guard ariths.length == 10
 #guard ariths.all shapeOk
-#guard bitops.length == 14
+#guard bitops.length == 16
 #guard bitops.all shapeOk
 #guard minmaxes.length == 4
 #guard minmaxes.all shapeOk

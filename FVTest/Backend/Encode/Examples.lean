@@ -109,4 +109,33 @@ example : ((Insn.ldp (.x 1) (.x 2) (.unscaled (.x 3) (-520))).encode env0).toOpt
 example : ((Insn.ldp (.x 1) (.x 2) (.unscaled .xzr 0)).encode env0).toOption = none := by
   decide
 
+/-! `mov vd.d[idx], xn` (INS (general), `MInst.movToVec`, Cranelift `MovToVec` at `Size64x2`). The
+words are `llvm-mc`'s (`-triple=aarch64 -show-encoding`). -/
+
+example : (Insn.movToVec .size64x2 (.v 4) (.x 1) 1).decodeOk env0 = true := by decide
+example : (Insn.movToVec .size64x2 (.v 31) .xzr 0).decodeOk env0 = true := by decide
+-- `mov v4.d[1], x1` (the high half of `popcnt_i128`)
+example : ((Insn.movToVec .size64x2 (.v 4) (.x 1) 1).encode env0).toOption =
+    some 0x4e181c24#32 := by
+  decide
+-- `mov v0.d[0], x0`
+example : ((Insn.movToVec .size64x2 (.v 0) (.x 0) 0).encode env0).toOption =
+    some 0x4e081c00#32 := by
+  decide
+-- `mov v31.d[1], xzr` (register 31 is XZR as the source)
+example : ((Insn.movToVec .size64x2 (.v 31) .xzr 1).encode env0).toOption =
+    some 0x4e181fff#32 := by
+  decide
+-- `mov v16.d[0], x30`
+example : ((Insn.movToVec .size64x2 (.v 16) (.x 30) 0).encode env0).toOption =
+    some 0x4e081fd0#32 := by
+  decide
+
+/-- Rejected: an index outside the two 64-bit lanes, an arrangement other than `2d`, `sp` as the
+source, a general register as the destination. -/
+example : ((Insn.movToVec .size64x2 (.v 4) (.x 1) 2).encode env0).toOption = none := by decide
+example : ((Insn.movToVec .size32x4 (.v 4) (.x 1) 1).encode env0).toOption = none := by decide
+example : ((Insn.movToVec .size64x2 (.v 4) .sp 1).encode env0).toOption = none := by decide
+example : ((Insn.movToVec .size64x2 (.x 4) (.x 1) 1).encode env0).toOption = none := by decide
+
 end Backend.EncodeExamples

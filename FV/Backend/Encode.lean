@@ -666,6 +666,14 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     let (Q, size) := s.qsize
     pure (.DPSFP (.Advanced_simd_three_same { Q, U := 0, size, Rm := ← rm.encV, opcode := 0b10111,
                                               Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .movToVec s rd rn idx =>
+    -- C7.2 INS (general) `mov vd.d[idx], xn`: Q 1, op 0, imm4 0011, imm5 = idx:1000 (D lanes;
+    -- Cranelift `Inst::MovToVec`, `0b010_01110000_00000_0_0011_1_00000_00000 | imm5 << 16`).
+    -- Only the 64-bit lanes (`size64x2`, index 0 or 1); register 31 of `rn` is XZR
+    if s != .size64x2 then throw s!"mov to vector arrangement {repr s}"
+    pure (.DPSFP (.Advanced_simd_copy { Q := 1, op := 0,
+                                        imm5 := ← uField "mov to vector index" 5 (idx * 16 + 8),
+                                        imm4 := 3, Rn := ← rn.encZR, Rd := ← rd.encV }))
   | .b t =>
     -- C6.2 B: imm26 = offset / 4, ±128 MiB (Cranelift `enc_jump26`)
     pure (.BR (.Uncond_branch_imm { op := 0, imm26 := ← env.pcRel "b" 26 4 t }))

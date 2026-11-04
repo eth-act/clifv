@@ -174,6 +174,7 @@ encoded by `armBits`); "Page" is the instruction description in C6.2 (base) or C
 | `cnt` | `DPSFP.Advanced_simd_two_reg_misc` | CNT | `Inst::VecMisc` |
 | `vecLanes addv/uaddlv` | `DPSFP.Advanced_simd_across_lanes` | ADDV, UADDLV | `enc_vec_lanes` |
 | `addp` | `DPSFP.Advanced_simd_three_same` | ADDP (vector) | `enc_vec_rrr` |
+| `movToVec` (`MInst.movToVec`) | `DPSFP.Advanced_simd_copy` (Q 1, imm4 0011; `2d` only, index 0 or 1; `rn` GPR or ZR) | INS (general) (`mov vd.d[idx], xn`) | `Inst::MovToVec` |
 | `b`, `bl` | `BR.Uncond_branch_imm` | B, BL (+ `R_AARCH64_CALL26`) | `enc_jump26` |
 | `bcond` | `BR.Cond_branch_imm` | B.cond | `enc_cbr` |
 | `cbz` | `BR.Compare_branch` | CBZ, CBNZ | `enc_cmpbr` |
@@ -337,6 +338,7 @@ class (`decode_armBits_<Class>`, file `Encode<Group>.lean`):
 | `cnt` | `decode_armBits_Advanced_simd_two_reg_misc` |
 | `vecLanes` | `decode_armBits_Advanced_simd_across_lanes` |
 | `addp` | `decode_armBits_Advanced_simd_three_same` |
+| `movToVec` | `decode_armBits_Advanced_simd_copy` |
 | `b`, `bl` | `decode_armBits_Uncond_branch_imm` |
 | `bcond` | `decode_armBits_Cond_branch_imm` |
 | `cbz` | `decode_armBits_Compare_branch` |
