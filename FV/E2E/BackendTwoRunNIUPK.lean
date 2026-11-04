@@ -76,38 +76,38 @@ theorem backend_twoRunLERWZIUPK (hc : Compiled f k vc vcp rf af fa fb)
     (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
     ∃ T,
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) R.s0) = ra ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0) = ra' ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0) = ra' ∧
       RetAgreeX (frameDrop af + K) (spv s)
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0)
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0)
         (iterN ({ R with X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) R.s0) ∧
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0) ∧
       (∀ a, ¬ F a → ¬ D a →
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0).mem a =
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0).mem a =
         (iterN ({ R with X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) R.s0).mem a) ∧
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0).mem a) ∧
       Arm.read_mem_bytes 16 (spv s - 16#64) (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) R.s0) = xreg 30 s ++ xreg 29 s ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0) = xreg 30 s ++ xreg 29 s ∧
       Arm.read_mem_bytes 16 (spv t0 - 16#64) (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0) = xreg 30 t0 ++ xreg 29 t0 ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0) = xreg 30 t0 ++ xreg 29 t0 ∧
       (∀ a, G a → (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) R.s0).mem a = s.mem a) ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0).mem a = s.mem a) ∧
       (∀ a, G' a → (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0).mem a = t0.mem a) ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0).mem a = t0.mem a) ∧
       Arm.r .ERR (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0) = .None ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0) = .None ∧
       spv (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0) = spv t0 ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0) = spv t0 ∧
       xreg 29 (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0) = xreg 29 t0 ∧
-      (∀ i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen,
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0) = xreg 29 t0 ∧
+      (∀ i < (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) + T + R.retLen,
         R.GoodK (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G' } : RL).GoodK
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)) ∧
-      ∀ i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen, ∃ d d',
+      ∀ i < (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) + T + R.retLen, ∃ d d',
         StEqOutX (fun a => R.Zc d d' a ∧ (F a ∨ D a))
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) := by
@@ -129,10 +129,10 @@ theorem backend_twoRunLERWZIUPK (hc : Compiled f k vc vcp rf af fa fb)
       have heN := ih (by omega)
       obtain ⟨T, hlk, -, hc2, -, hcs2, hmemN⟩ := (core N heN).2 (by omega)
       have hcb : callsBefore (ArmStepX (XI.at 0) H fa) fa base t0
-          ((prologueLines af.saves af.frameSize af.isCaller).length + T) = N := by
+          (prologueSteps af.saves af.frameSize af.isCaller + T) = N := by
         rw [callsBefore_eq_countIn]; exact hc2
       have hcs : CallPc fa base (Arm.r .PC (runX (ArmStepX (XI.at 0) H fa)
-          ((prologueLines af.saves af.frameSize af.isCaller).length + T) t0)) := by
+          (prologueSteps af.saves af.frameSize af.isCaller + T) t0)) := by
         rw [runX_eq]; exact hcs2
       have hlockN : ∀ u, CallPc fa base (Arm.r .PC u) →
           OnCall (ArmStepX (XI.at 0) H fa) fa base t0 N u →
@@ -143,7 +143,7 @@ theorem backend_twoRunLERWZIUPK (hc : Compiled f k vc vcp rf af fa fb)
         have hpci : CallPc fa base (Arm.r .PC (runX (ArmStepX (XI.at 0) H fa) i t0)) := by
           rw [hu]; exact hpc
         have hge := callsBefore_le_of_callSt hi hpci hcb
-        obtain rfl : i = (prologueLines af.saves af.frameSize af.isCaller).length + T := by omega
+        obtain rfl : i = (prologueSteps af.saves af.frameSize af.isCaller) + T := by omega
         refine ⟨_, hu, hi, fun j hj => ?_, fun a hFa hDa => ?_⟩
         · obtain ⟨d, d', hz⟩ := hlk j (Nat.le_trans hj hle)
           refine ⟨(actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp)).Zc d d', ?_,

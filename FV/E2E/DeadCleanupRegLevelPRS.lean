@@ -199,7 +199,7 @@ theorem regLevelCorrect_world_value_atCS {vcp : VCode} {rf : RFunc} {af : AFunc}
           have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
           rw [hf0 _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
-            (hne 16 (by omega) (by omega))] at k1
+            (hne 16 (by omega) (by omega)) (hne 17 (by omega) (by omega)) (by simp)] at k1
           exact setWidth128_inj (k2.trans k1)
         · intro n h8 h16
           obtain ⟨hcs, hal⟩ := calleeSaved_v h8 h16
@@ -209,7 +209,7 @@ theorem regLevelCorrect_world_value_atCS {vcp : VCode} {rf : RFunc} {af : AFunc}
           simp only [ckeep, hm0] at k1
           have k2 := hregs _ hal hsv
           simp only [regVal] at k1 k2
-          rw [hf0 _ (by simp) (by simp) (by simp) (by simp)] at k1
+          rw [hf0 _ (by simp) (by simp) (by simp) (by simp) (by simp) (by simp)] at k1
           show (Arm.r (.SFP (rnum n)) _).setWidth 64 = (Arm.r (.SFP (rnum n)) s).setWidth 64
           rw [k2]
           exact setWidth128_inj k1
