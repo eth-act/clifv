@@ -1400,12 +1400,12 @@ theorem exec_str_wzr_sp_x16 (env : Env) (s : Arm.ArmState) (halign : Arm.CheckSP
     ∃ a, (Insn.store .store32 .xzr (.regReg .sp (.x 16))).toArmInst env = .ok a ∧
       Arm.exec_inst a s = Arm.w .PC (Arm.r .PC s + 4#64) (Arm.write_mem_bytes 4 (spOf s + xreg 16 s) 0#32 s) := by
   have halign' := spAligned halign
+  have hx : ∀ x : BitVec 64, Arm.extend_reg x (Arm.decode_reg_extend 3#3) 0 = x := extend_uxtx0
   refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
   simp (config := {decide := true}) [csimp_rules, StoreOp.fields, Arm.LDST.exec_reg_reg_offset,
     Arm.LDST.exec_reg_imm_common, Arm.LDST.reg_imm_operation, Arm.LDST.Reg_offset.value,
     Arm.LDST.reg_imm_constrain_unpredictable, Arm.ldst_read, Arm.read_gpr_zr, Arm.read_gpr,
-    Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb, Arm.CheckSPAlignment, halign', spOf, xreg,
-    extend_uxtx0]
+    Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb, Arm.CheckSPAlignment, halign', spOf, xreg, hx]
 
 theorem exec_cmn_x16_x17 (env : Env) (s : Arm.ArmState) :
     ∃ a, (Insn.aluRRR .addS true .xzr (.x 16) (.x 17)).toArmInst env = .ok a ∧
@@ -1414,15 +1414,23 @@ theorem exec_cmn_x16_x17 (env : Env) (s : Arm.ArmState) :
   refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
   simp [csimp_rules, xreg]
 
+/-- `b.cond`'s condition is `ConditionHolds` of its condition field. -/
+theorem condHolds_eq (i : Arm.Cond_branch_imm_cls) (s : Arm.ArmState) :
+    Arm.BR.Cond_branch_imm_inst.condition_holds i s = Arm.ConditionHolds i.cond s := rfl
+
 theorem exec_bgt_back (env : Env) (s : Arm.ArmState) :
     ∃ a, (Insn.bcondRel .gt (-12)).toArmInst env = .ok a ∧
       Arm.exec_inst a s = Arm.w .PC (if Arm.ConditionHolds Cond.gt.bits s then Arm.r .PC s - 12#64
         else Arm.r .PC s + 4#64) s := by
   refine ⟨_, by simp [Insn.toArmInst, Insn.armFields, Functor.map, Except.map, pure, Except.pure]; rfl, ?_⟩
-  simp [Arm.ArmInst.norm, Arm.exec_inst, Arm.BR.exec_cond_branch_imm, Arm.write_pc, Arm.read_pc,
-    Arm.BR.Cond_branch_imm_inst.branch_taken_pc, Backend.signExtend_append_zero, Cond.bits]
-  split <;> simp_all
-  bv_omega
+  have hoff : Arm.r .PC s + BitVec.signExtend 64 ((524285#19 : BitVec 19) ++ 0b00#2) =
+      Arm.r .PC s - 12#64 := by
+    rw [show BitVec.signExtend 64 ((524285#19 : BitVec 19) ++ 0b00#2) = 0#64 - 12#64 by decide]
+    bv_omega
+  simp only [Arm.ArmInst.norm, Arm.exec_inst, Arm.BR.exec_cond_branch_imm, Arm.write_pc, Arm.read_pc,
+    Arm.BR.Cond_branch_imm_inst.branch_taken_pc, condHolds_eq]
+  rw [hoff]
+  by_cases h : Arm.ConditionHolds Cond.gt.bits s = true <;> simp [h]
 
 /-- `x16` after `m` iterations of the probe loop: `-4096·m`. -/
 abbrev loopOff (m : Nat) : BitVec 64 := 0#64 - BitVec.ofNat 64 (4096 * m)
@@ -1434,38 +1442,43 @@ theorem cmn_flags {m total : Nat} (hm : 0 < m) (hm' : 4096 * m < 2 ^ 33) (ht : t
       if 4096 * m ≤ total then Arm.make_pstate 0#1 (if 4096 * m = total then 1#1 else 0#1) 1#1 0#1
       else Arm.make_pstate 1#1 0#1 0#1 0#1 := by
   have hr := Arm.fst_AddWithCarry_eq_add (loopOff m) (BitVec.ofNat 64 total)
-  simp only [Arm.AddWithCarry, Arm.make_pstate] at hr ⊢
+  simp only [Arm.AddWithCarry, Arm.make_pstate, BitVec.zero_eq] at hr ⊢
   rw [hr]
-  split
-  · rename_i hle
-    simp only [Arm.PState.mk.injEq]
-    refine ⟨?_, ?_, ?_, ?_⟩
+  have hx : (loopOff m).toNat = 2 ^ 64 - 4096 * m := by
+    simp only [loopOff, BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
+  have hy : (BitVec.ofNat 64 total).toNat = total := by simp; omega
+  by_cases hle : 4096 * m ≤ total
+  · rw [if_pos hle]
+    congr 1
     · apply BitVec.eq_of_toNat_eq
       simp only [Arm.BitVec.lsb, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
       bv_omega
-    · split <;> split <;> bv_omega
-    · split <;> bv_omega
+    · by_cases he : 4096 * m = total
+      · rw [if_pos he, if_pos (by bv_omega)]
+      · rw [if_neg he, if_neg (by bv_omega)]
+    · rw [if_neg (by bv_omega)]
     · rw [if_pos]
-      rw [← BitVec.toInt_inj, BitVec.toInt_signExtend_of_le (by decide), BitVec.toInt_add,
-        BitVec.toInt_add, BitVec.toInt_signExtend_of_le (by decide),
-        BitVec.toInt_signExtend_of_le (by decide), BitVec.toInt_add]
-      simp only [BitVec.toInt_eq_toNat_cond, Int.bmod_def, BitVec.toNat_sub, BitVec.toNat_ofNat]
+      have h0 : (BitVec.zeroExtend (64 + 1) 0#1).toInt = 0 := by decide
+      rw [← BitVec.toInt_inj, BitVec.toInt_signExtend_of_le (by decide : 64 ≤ 64 + 1), BitVec.toInt_add,
+        BitVec.toInt_add, BitVec.toInt_add, BitVec.toInt_signExtend_of_le (by decide : 64 ≤ 64 + 1),
+        BitVec.toInt_signExtend_of_le (by decide : 64 ≤ 64 + 1), h0]
+      simp only [BitVec.toInt_eq_toNat_cond, Int.bmod_def, hx, hy]
       simp only [Nat.reduceSub, Nat.reducePow, Nat.reduceAdd] at *
       repeat' split
       all_goals omega
-  · rename_i hlt
-    simp only [Arm.PState.mk.injEq]
-    refine ⟨?_, ?_, ?_, ?_⟩
+  · rw [if_neg hle]
+    congr 1
     · apply BitVec.eq_of_toNat_eq
       simp only [Arm.BitVec.lsb, BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
       bv_omega
-    · split <;> bv_omega
-    · split <;> bv_omega
+    · rw [if_neg (by bv_omega)]
+    · rw [if_pos (by bv_omega)]
     · rw [if_pos]
-      rw [← BitVec.toInt_inj, BitVec.toInt_signExtend_of_le (by decide), BitVec.toInt_add,
-        BitVec.toInt_add, BitVec.toInt_signExtend_of_le (by decide),
-        BitVec.toInt_signExtend_of_le (by decide), BitVec.toInt_add]
-      simp only [BitVec.toInt_eq_toNat_cond, Int.bmod_def, BitVec.toNat_sub, BitVec.toNat_ofNat]
+      have h0 : (BitVec.zeroExtend (64 + 1) 0#1).toInt = 0 := by decide
+      rw [← BitVec.toInt_inj, BitVec.toInt_signExtend_of_le (by decide : 64 ≤ 64 + 1), BitVec.toInt_add,
+        BitVec.toInt_add, BitVec.toInt_add, BitVec.toInt_signExtend_of_le (by decide : 64 ≤ 64 + 1),
+        BitVec.toInt_signExtend_of_le (by decide : 64 ≤ 64 + 1), h0]
+      simp only [BitVec.toInt_eq_toNat_cond, Int.bmod_def, hx, hy]
       simp only [Nat.reduceSub, Nat.reducePow, Nat.reduceAdd] at *
       repeat' split
       all_goals omega
@@ -1476,8 +1489,23 @@ theorem cmn_gt {m total : Nat} (hm : 0 < m) (hm' : 4096 * m < 2 ^ 33) (ht : tota
     (w : Arm.ArmState) :
     Arm.ConditionHolds Cond.gt.bits (Arm.write_pstate (Arm.AddWithCarry (loopOff m) (BitVec.ofNat 64 total) 0#1).2 w) =
       decide (4096 * m < total) := by
-  rw [conditionHolds_write_pstate, cmn_flags hm hm' ht]
-  split <;> split <;> simp [condOn, Cond.bits, Arm.make_pstate] <;> omega
+  have hl0 : ¬ Arm.BitVec.lsb (12#4) 0 = 1#1 := by decide
+  rw [cmn_flags hm hm' ht]
+  by_cases hle : 4096 * m ≤ total
+  · rw [if_pos hle]
+    by_cases he : 4096 * m = total
+    · rw [if_pos he]
+      have : ¬ 4096 * m < total := by omega
+      simp [this, hl0, Arm.ConditionHolds, Arm.read_flag, Arm.write_pstate, Arm.make_pstate, Arm.r_of_w_same,
+        Arm.r_of_w_different, Cond.bits]
+    · rw [if_neg he]
+      have : 4096 * m < total := by omega
+      simp [this, hl0, Arm.ConditionHolds, Arm.read_flag, Arm.write_pstate, Arm.make_pstate, Arm.r_of_w_same,
+        Arm.r_of_w_different, Cond.bits]
+  · rw [if_neg hle]
+    have : ¬ 4096 * m < total := by omega
+    simp [this, hl0, Arm.ConditionHolds, Arm.read_flag, Arm.write_pstate, Arm.make_pstate, Arm.r_of_w_same,
+      Arm.r_of_w_different, Cond.bits]
 
 /-- The flags after the last iteration (`4096·m ≥ total > 4096·(m - 1)`) are `loopFlag total`. -/
 theorem cmn_last {m total : Nat} (hm : 0 < m) (hm' : 4096 * m < 2 ^ 33) (ht : total < 2 ^ 32)
@@ -1485,14 +1513,23 @@ theorem cmn_last {m total : Nat} (hm : 0 < m) (hm' : 4096 * m < 2 ^ 33) (ht : to
     Arm.r (.FLAG fl) (Arm.write_pstate (Arm.AddWithCarry (loopOff m) (BitVec.ofNat 64 total) 0#1).2 w) =
       loopFlag total fl := by
   rw [cmn_flags hm hm' ht]
-  have hmod : (total % 4096 = 0) ↔ 4096 * m = total := by omega
-  cases fl <;> by_cases h : total % 4096 = 0 <;>
-    simp [Arm.write_pstate, Arm.make_pstate, loopFlag, Arm.r_of_w_same, Arm.r_of_w_different, h] <;>
-    split <;> simp_all <;> omega
+  by_cases h : total % 4096 = 0
+  · have he : 4096 * m = total := by omega
+    rw [if_pos (by omega), if_pos he]
+    cases fl <;> simp [h, Arm.write_pstate, Arm.make_pstate, loopFlag, Arm.r_of_w_same, Arm.r_of_w_different]
+  · have hl : ¬ 4096 * m ≤ total := by omega
+    rw [if_neg hl]
+    cases fl <;> simp [h, Arm.write_pstate, Arm.make_pstate, loopFlag, Arm.r_of_w_same, Arm.r_of_w_different]
 
 /-- The first three lines of the loop body (`sub`, `str`, `cmn`); then the `b.gt`. -/
 theorem probeLoopBody_eq :
     probeLoopBody = probeLoopBody.take 3 ++ [.ins (.bcondRel .gt (-12))] := rfl
+
+/-- One more iteration of the probe loop lowers `x16` by 4096. -/
+theorem loopOff_succ (m : Nat) : loopOff m - 4096#64 = loopOff (m + 1) := by
+  simp only [loopOff]
+  rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega, BitVec.ofNat_add]
+  bv_omega
 
 /-- **`r` iterations of the stack-probe loop** (`probeLoopBody`, placed at `env.pc`) from `s`,
 the `m`-th one first: each starts with `sp = S` and `x16 = -4096·m` (`loopOff`), runs the `sub`,
@@ -1555,7 +1592,7 @@ theorem probeLoop_ok (env : Env) {total : Nat} (hlo : 16384 ≤ total) (hhi : to
     have hx1 : xreg 16 s1 = loopOff (m + 1) := by
       rw [he1]; simp only [xreg, Arm.r_of_w_same]
       simp only [xreg] at h16; rw [h16]
-      rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega, BitVec.ofNat_add]; bv_omega
+      exact loopOff_succ m
     -- `str wzr, [sp, x16]`
     obtain ⟨a2, ha2, he2⟩ := exec_str_wzr_sp_x16 { env with pc := env.pc + 4 } s1
       (checkSP_of (by rw [hsp1]; exact hal))
@@ -1609,7 +1646,7 @@ theorem probeLoop_ok (env : Env) {total : Nat} (hlo : 16384 ≤ total) (hhi : to
       refine steps_cons ha2 (by rw [hs2, he2]; simp [Arm.r_of_w_same, Arm.r_of_w_different, Arm.r_of_write_mem_bytes])
         (by rw [hs2, he2]; simp [Arm.r_of_w_different, Arm.r_of_write_mem_bytes])
         (by rw [hs2, he2]; simp [Arm.w_program, Arm.write_mem_bytes_program]) ?_
-      rw [hs2]
+      rw [hs2, ← hs3]
       refine steps_one ha3 (by rw [hs3, he3]; simp [Arm.write_pstate, Arm.r_of_w_same, Arm.r_of_w_different])
         (by rw [hs3, he3]; simp [Arm.write_pstate, Arm.r_of_w_different])
         (by rw [hs3, he3]; simp [Arm.write_pstate, Arm.w_program])
@@ -1934,7 +1971,7 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (
   have hpIl : pushBytes (savesInt saves).length ≤ 1000 := by omega
   have hpFl : pushBytes (savesFloat saves).length ≤ 1000 := by omega
   generalize hn : probeCount (probeTotal size calls) = n
-  have hn63 : 4096 * n < 2 ^ 63 := by have := probeCount_le (probeTotal size calls); omega
+  have hn63 : 4096 * n < 2 ^ 63 := by have := Backend.probeCount_le (probeTotal size calls); omega
   -- the bases
   generalize hBF : spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) = BF
   have hBFa : BF.toNat % 16 = 0 := by rw [← hBF]; exact aligned_sub hal (by omega) (by omega)
