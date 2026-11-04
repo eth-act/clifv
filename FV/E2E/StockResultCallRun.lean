@@ -128,7 +128,7 @@ theorem seqRun_call_result {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
       (.call ⟨.sym name,retPairs pairs,callDefs [(.x 0,destination)]⟩)
       (pairs.map (values ·.1)) before = some ([output],after,.next) := by
     change (X.call (some name) (pairs.map (values ·.1)) before).map
-      (fun p => (p.1,p.2,Ctl.next)) = _
+      (fun p => (p.1.take (callDefs [(.x 0,destination)]).length,p.2,Ctl.next)) = _
     rw [called]
     rfl
   have execution := seqRun_call_sym step (show [output].length = [(.x 0,destination)].length from rfl)
