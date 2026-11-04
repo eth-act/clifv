@@ -56,6 +56,8 @@ def immOkB : MInst → Bool
   | .fpuRRR _ s .. | .fpuRRRR _ s .. | .fpuCmp s .. => s == .size32 || s == .size64
   -- `ldp`/`stp` (signed offset): a multiple of 8 in the signed 7-bit range scaled by 8
   | .loadP64 _ _ _ off _ | .storeP64 _ _ _ off _ => decide (off % 8 = 0 ∧ -512 ≤ off ∧ off ≤ 504)
+  -- `mov vd.d[idx], xn`: the 64-bit lanes only, index 0 or 1
+  | .movToVec _ _ _ idx s => s == .size64x2 && decide (idx < 2)
   | _ => true
 
 /-- No `condBr`/`trapIf` with an `al`/`nv` condition. -/

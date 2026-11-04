@@ -577,6 +577,10 @@ theorem lines_ok {c : FnCtx} {ps ps' : PState} {m : MInst} {ls : List Line}
     simp only [MInst.lines] at h
     split at h <;> simp [pure, Except.pure, throw, throwThe, MonadExceptOf.throw] at h
     emitNear_fin
+  case movToVec =>
+    simp only [MInst.lines] at h
+    split at h <;> simp [pure, Except.pure, throw, throwThe, MonadExceptOf.throw] at h
+    emitNear_fin
   case loadAddr rd mem =>
     simp only [MInst.lines] at h
     cases hmf : memFinalize c mem 1 with

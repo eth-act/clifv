@@ -251,6 +251,7 @@ def forms : List (String × G Insn) := [
   ("addp", do
     pure (.addp (← pick [.size8x8, .size8x16, .size16x4, .size16x8, .size32x2, .size32x4,
       .size64x2]) (← vr) (← vr) (← vr))),
+  ("mov_to_vec", do pure (.movToVec .size64x2 (← vr) (← gprZR) (← rand 2))),
   ("b", do pure (.b (← label))),
   ("bcond", do pure (.bcond (← randCond) (← label))),
   ("cbz", do pure (.cbz (← coin) (← coin) (← gprZR) (← label))),

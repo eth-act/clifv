@@ -440,6 +440,12 @@ theorem lines_chunk {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
       first
         | exact plain_chunk (plain_ins _ _ rfl)
         | (refine plain_chunk ?_; simp [Plain, lineDef, Line.labelsUsed, Insn.pcRelSpec?])
+  case movToVec =>
+    split at h
+    · cases h
+    · simp only [Except.ok.injEq, Prod.mk.injEq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      exact plain_chunk (plain_ins _ _ rfl)
   case jump =>
     obtain ⟨rfl, rfl⟩ := h
     refine chunk_same (by simp [lineDef]) fun x hx => ?_

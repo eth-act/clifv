@@ -110,6 +110,9 @@ inductive Insn where
   | vecLanes (op : VecLanesOp) (size : VectorSize) (rd rn : Reg)
   /-- `addp vd.<T>, vn.<T>, vm.<T>`. -/
   | addp (size : VectorSize) (rd rn rm : Reg)
+  /-- `mov vd.<T>[idx], xn` (INS (general); Cranelift `MovToVec`): lane `idx` of `vd` becomes
+  `xn`, the other lanes do not change. -/
+  | movToVec (size : VectorSize) (rd rn : Reg) (idx : Nat)
   | b (target : Lbl)
   | bcond (c : Cond) (target : Lbl)
   /-- `cbz` (`nz = false`) / `cbnz` (`nz = true`). -/
@@ -495,6 +498,11 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
   -- encoder checks)
   | .loadP64 rt rt2 rn off fl => pure ([.ins (.ldp rt rt2 (.unscaled rn off)) fl.trapCode], ps)
   | .storeP64 rt rt2 rn off fl => pure ([.ins (.stp rt rt2 (.unscaled rn off)) fl.trapCode], ps)
+  -- `emit.rs` `MovToVec`: one `mov vd.<T>[idx], xn`, which keeps the other lanes of `vd`; the
+  -- allocation ties `rd` to `ri` (`debug_assert_eq!(rd.to_reg(), ri)`)
+  | .movToVec rd ri rn idx s =>
+    if rd != ri then throw s!"movToVec with distinct rd {repr rd} and ri {repr ri}"
+    else one (.movToVec s rd rn idx)
 where
   /-- `LoadAddr` with an immediate offset (`emit.rs`). -/
   addOff (rd rn : Reg) (off : Int) : List Line :=
@@ -950,6 +958,7 @@ def Insn.asm (k : Nat) : Insn → String
     if op == .addv then s!"addv {s.lane}{rd.vnum}, v{rn.vnum}.{s.arr}"
     else s!"uaddlv {s.wideLane}{rd.vnum}, v{rn.vnum}.{s.arr}"
   | .addp s rd rn rm => s!"addp v{rd.vnum}.{s.arr}, v{rn.vnum}.{s.arr}, v{rm.vnum}.{s.arr}"
+  | .movToVec s rd rn idx => s!"mov v{rd.vnum}.{s.lane}[{idx}], {rn.gpr (s == .size64x2)}"
   | .b t => s!"b {t.name k}"
   | .bcond c t => s!"b.{c.asm} {t.name k}"
   | .cbz nz w rt t => s!"{if nz then "cbnz" else "cbz"} {rt.gpr w}, {t.name k}"

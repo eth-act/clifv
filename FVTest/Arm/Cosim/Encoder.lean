@@ -419,6 +419,8 @@ def fpForms : List Spec :=
   ([VectorSize.size8x8, .size8x16, .size16x4, .size16x8, .size32x2, .size32x4, .size64x2].map
     fun s => simple s!"addp {short s}" "enc-simd" do
       return some (.addp s (← gV).2 (← gV).2 (← gV).2, none)) ++
+  [simple "movToVec size64x2" "enc-simd" do
+     return some (.movToVec .size64x2 (← gV).2 (← gZR).2 (← below 2), none)] ++
   ([VectorSize.size8x8, .size8x16, .size16x4, .size16x8, .size32x2, .size32x4].map fun s =>
     simple s!"movi {short s}" "enc-simd" do
       return some (.movi s (← gV).2 (← bits 8), some (← coin))) ++
