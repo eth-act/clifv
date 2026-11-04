@@ -310,14 +310,9 @@ theorem plain_ins (i : Insn) (t : Option Clif.TrapCode) (hi : i.pcRelSpec? = non
 
 theorem loadConst64_plain (rd : Reg) (v : Nat) : Plain (loadConst64 rd v) := by
   intro ln hln
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap, List.mem_range] at hln
-  rcases hln with rfl | ⟨j, -, hj⟩
-  · simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
-  · split at hj
-    · simp only [Option.some.injEq] at hj
-      subst hj
-      simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
-    · cases hj
+  obtain ⟨i, rfl, hf⟩ := Backend.Proof.loadConst64_form hln
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;>
+    simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
 
 theorem memFinalize_plain {c : FnCtx} {m : AMode} {b : Nat} {pre : List Line} {m' : AMode}
     (h : memFinalize c m b = .ok (pre, m')) : Plain pre := by

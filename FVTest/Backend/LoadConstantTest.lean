@@ -1,13 +1,13 @@
-import FV.Backend.LoadConstant
+import FV.Backend.Asm
 import FV.Backend.Encode
 
 /-!
-# `loadConstLines` against Cranelift's `Inst::load_constant`
+# `loadConst64` against Cranelift's `Inst::load_constant`
 
 Gate 1 of AG-2j (#554). Each case gives the value, the instructions Cranelift's
 `Inst::load_constant` (`isa/aarch64/inst/mod.rs`) emits for it (computed by hand from the Rust,
 case by case, as assembly text) and the machine words `llvm-mc -triple=aarch64 -show-encoding`
-assembles that text to. The `#guard`s check that `loadConstLines (x16) value` prints that text
+assembles that text to. The `#guard`s check that `loadConst64 (x16) value` prints that text
 (`Insn.asm`) and encodes to those words (`Insn.encode`).
 
 `%huge_slots` (`runtests/stack.clif`): the stock word `f0437db2` (`0xb27d43f0`) is
@@ -26,12 +26,12 @@ def env0 : Env := ⟨0, fun _ => none⟩
 def insns (ls : List Line) : List Insn :=
   ls.filterMap fun | .ins i _ => some i | _ => none
 
-/-- `loadConstLines x16 v` as assembly text. -/
-def asmOf (v : Nat) : List String := (insns (loadConstLines (.x 16) v)).map (·.asm 0)
+/-- `loadConst64 x16 v` as assembly text. -/
+def asmOf (v : Nat) : List String := (insns (loadConst64 (.x 16) v)).map (·.asm 0)
 
-/-- `loadConstLines x16 v` as machine words. -/
+/-- `loadConst64 x16 v` as machine words. -/
 def wordsOf (v : Nat) : List (Option (BitVec 32)) :=
-  (insns (loadConstLines (.x 16) v)).map fun i => (i.encode env0).toOption
+  (insns (loadConst64 (.x 16) v)).map fun i => (i.encode env0).toOption
 
 /-- One test case: value, expected `load_constant` text, `llvm-mc` words of that text. -/
 structure Case where

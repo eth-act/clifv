@@ -432,12 +432,9 @@ theorem linesWrites_cons {env : Env} {x : Insn} {t : Option Clif.TrapCode} {ls :
 theorem loadConst64_noStores (rd : Reg) (v : Nat) :
     ∀ x t, Line.ins x t ∈ loadConst64 rd v → x.stores = false := by
   intro x t h
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap] at h
-  rcases h with h | ⟨j, _, hj⟩
-  · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
-  · split at hj
-    · simp only [Option.some.injEq, Line.ins.injEq] at hj; obtain ⟨rfl, -⟩ := hj; rfl
-    · cases hj
+  obtain ⟨i, e, hf⟩ := Backend.Proof.loadConst64_form h
+  cases e
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
 
 /-! ## The allocated instructions without stores -/
 
@@ -465,12 +462,8 @@ theorem memFinalize_storeFree {c : FnCtx} {mm : AMode} {b : Nat} {v : List Line 
        · split at hln
          · simp at hln
          · obtain ⟨x, t, rfl⟩ : ∃ x t, ln = .ins x t := by
-             simp only [loadConst64, List.mem_cons, List.mem_filterMap] at hln
-             rcases hln with rfl | ⟨j, _, hj⟩
-             · exact ⟨_, _, rfl⟩
-             · split at hj
-               · simp only [Option.some.injEq] at hj; exact ⟨_, _, hj.symm⟩
-               · cases hj
+             obtain ⟨i, rfl, -⟩ := Backend.Proof.loadConst64_form hln
+             exact ⟨_, _, rfl⟩
            simp [Line.storeFree, loadConst64_noStores _ _ x t hln])
 
 
