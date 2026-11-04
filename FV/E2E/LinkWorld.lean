@@ -255,4 +255,30 @@ theorem armRefines_of_actRet {fb : FnBin} {base ra : BitVec 64} {astep : Arm.Arm
   rw [hr]
   exact hhold.2 j v x hj hx
 
+/-- `armRefines_of_actRet` for returns pinned to x0, x1, … (its statement before #587, for the
+Stock ABI's non-sret returns, `ReturnABI.ordinary`). -/
+theorem armRefines_of_actRet_x {fb : FnBin} {base ra : BitVec 64}
+    {astep : Arm.ArmState → Arm.ArmState} {s : Arm.ArmState} {F G : BitVec 64 → Prop}
+    {syms : String → Option Nat} {vals : List Clif.Val} {cm : Clif.Mem} {us : List (Reg × Reg)}
+    {outs : List CV} {w : Arm.ArmState} (hus : us.map (·.2) = (List.range us.length).map Reg.x)
+    (hlen : us.length = outs.length) (hhold : PrefixHold vals outs) (hm : MemRel F syms cm w)
+    {n : Nat} (h : ActRet ra F G us outs w s (runX astep n s)) :
+    ArmRefines fb base ra astep s (.returned vals cm) := by
+  refine ⟨n, h.ret, ?_, memAgree_of hm h.mem⟩
+  intro j v hj
+  have hjv : j < vals.length := (List.getElem?_eq_some_iff.mp hj).1
+  have hju : j < us.length := by have := hhold.1; omega
+  obtain ⟨x, hx⟩ : ∃ x, outs[j]? = some x :=
+    ⟨outs[j]'(by have := hhold.1; omega), List.getElem?_eq_getElem _⟩
+  have hp : (us[j]'hju).2 = Reg.x j := by
+    have := congrArg (fun l => l[j]?) hus
+    simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
+      Option.map_some] at this
+    exact Option.some.inj this
+  have hr := h.regs j (us[j]'hju).1 (us[j]'hju).2 x (by simp [List.getElem?_eq_getElem hju]) hx
+  rw [hp, regVal_x] at hr
+  show VHolds v (ofX (xreg j (runX astep n s)))
+  rw [hr]
+  exact hhold.2 j v x hj hx
+
 end E2E

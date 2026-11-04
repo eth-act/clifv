@@ -44,7 +44,7 @@ theorem checked_sret_pins_witness (cleanup : Bool) :
 
 /-- The original source selects x8. The retained ordinary mode still selects x0. -/
 theorem physical_pin_witness :
-    ReturnPinMode.stockABI.Valid function [(.vreg 9 .int,.x 8)] ∧
+    ReturnPinMode.stockABI.Valid function [] [(.vreg 9 .int,.x 8)] ∧
       ReturnPinMode.stockABI.pins function 1 = [.x 8] ∧
       ReturnPinMode.ordinary.pins function 1 = [.x 0] := by
   unfold ReturnPinMode.Valid ReturnPinMode.pins ReturnABI
