@@ -32,10 +32,7 @@ theorem result_call_pair {Γ : Rel} {f : Clif.Function} {c : BitVec 64}
   have paired := ni ext.name ext.sig vals cm uses (some ext.name) uses Z w w' actual out actual' out'
     legitimate (Or.inl ⟨rfl,rfl⟩) covers worlds memory.1.1 memory'.1.1 memory.2.1 memory'.2.1
     (Or.inl ⟨⟨ext,member,rfl,rfl⟩,arguments,arguments'⟩) run run'
-  have abi : sigRets ext.sig = [result] := by
-    unfold sigRets
-    split <;> simp [returns]
-  rw [abi] at arity
+  rw [returns] at arity
   cases actual with
   | nil => cases arity
   | cons output tail =>

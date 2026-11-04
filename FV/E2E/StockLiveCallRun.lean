@@ -53,10 +53,7 @@ theorem Ready.execute (source : Ready f result env fr cm outMem Γ fc X initial)
     (some source.ext.name) [source.values source.live] [source.values source.live]
     [⟨.i64,source.liveWord⟩] [⟨.i64,source.returnedWord⟩] source.after source.found (Or.inl ⟨rfl,rfl⟩)
     (source.arguments before) beforeMemory source.sourceReturned (by rw [source.returns]; rfl)
-  have abi : sigRets source.ext.sig = [source.returned] := by
-    unfold sigRets
-    split <;> simp [source.returns]
-  rw [abi] at arity
+  rw [source.returns] at arity
   cases actual with
   | nil => cases arity
   | cons output tail =>

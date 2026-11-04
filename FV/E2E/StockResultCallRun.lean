@@ -188,10 +188,7 @@ theorem SourceRun.execute {f : Clif.Function} {result : Stock.Result} {env : Cli
     (some source.ext.name) (source.pairs.map (source.values ·.1)) (source.pairs.map (source.values ·.1))
     source.sourceArgs [source.sourceValue] source.after source.found (Or.inl ⟨rfl,rfl⟩)
     (source.arguments before) beforeMemory source.sourceReturned (by rw [source.returns]; rfl)
-  have abi : sigRets source.ext.sig = [source.returned] := by
-    unfold sigRets
-    split <;> simp [source.returns]
-  rw [abi] at arity
+  rw [source.returns] at arity
   cases actual with
   | nil => cases arity
   | cons output tail =>
