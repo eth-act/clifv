@@ -413,7 +413,8 @@ its `sub`, `str`, `cmn` and `b.gt`; no `ret`. -/
 theorem noRet_probeLines (total : Nat) : NoRet (probeLines total) := by
   intro x t hln
   rcases probeLines_mem hln with h | h | ⟨n, h⟩ | hl | hl | h | h | h | h <;>
-    (try obtain ⟨_, h | h⟩ := loadConst64_mem hl) <;>
+    (try obtain ⟨_, h, ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩⟩ :=
+      Backend.Proof.loadConst64_form hl) <;>
     (simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; intro h; cases h)
 
 /-- The prologue has no `ret` (with the stack probes, #581: `calls` is the new argument of
