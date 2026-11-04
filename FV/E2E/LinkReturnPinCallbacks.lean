@@ -619,14 +619,14 @@ theorem progResult_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ 
   rw [hbot] at hrt
   have sourceLength : rvals.length = h.sig.returns.length := by
     simpa only [List.length_map,Clif.AbiParam.tys] using congrArg List.length hrt
-  have hlr : rvals.length ≤ h.sig.returns.length := sourceLength.le
+  have hlr : rvals.length ≤ h.sig.returns.length := Nat.le_of_eq sourceLength
   have abiBound : (sigRets h.sig).length ≤ us.length := by
     cases sret : h.sig.params.any (·.purpose == .sret) with
     | true => exact hL.sretRets h hh sret us hrs
     | false =>
       rw [sigRets_of_noSret sret,← sourceLength,hlen]
       exact hhold.1
-  have selected := ReturnPinMode.pins_prefix_of_valid hus abiBound sourceLength.ge
+  have selected := ReturnPinMode.pins_prefix_of_valid hus abiBound (Nat.le_of_eq sourceLength.symm)
   have selectedLength :
       ((modeReturnPins modes h).take h.sig.returns.length).length = h.sig.returns.length := by
     change (((modes h).pins h (sigRets h.sig).length).take h.sig.returns.length).length = _
