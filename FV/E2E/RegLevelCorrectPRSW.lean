@@ -154,15 +154,15 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
         (actRL vcp rf af fa fb lm base s XI H psF K G gv).SegChain
           (fun u => (actRL vcp rf af fa fb lm base s XI H psF K G gv).Good u ∧
             (actRL vcp rf af fa fb lm base s XI H psF K G gv).WReadsIn Ok u)
-          (E2E.runX (ArmStepX (XI.at 0) H fa) (prologueLines af.saves af.frameSize af.isCaller).length s)
+          (E2E.runX (ArmStepX (XI.at 0) H fa) (prologueSteps af.saves af.frameSize af.isCaller) s)
           (actRL vcp rf af fa fb lm base s XI H psF K G gv).initW
           (MConf.init rf (locVal (RAFrame.compute vcp rf)
-            (E2E.runX (ArmStepX (XI.at 0) H fa) (prologueLines af.saves af.frameSize af.isCaller).length s)) w₀) l
+            (E2E.runX (ArmStepX (XI.at 0) H fa) (prologueSteps af.saves af.frameSize af.isCaller) s)) w₀) l
           (E2E.runX (ArmStepX (XI.at 0) H fa)
-            ((prologueLines af.saves af.frameSize af.isCaller).length + (l.map Prod.fst).sum) s) W c' ∧
-        Arm.r .PC (E2E.runX (ArmStepX (XI.at 0) H fa) ((prologueLines af.saves af.frameSize af.isCaller).length +
+            (prologueSteps af.saves af.frameSize af.isCaller + (l.map Prod.fst).sum) s) W c' ∧
+        Arm.r .PC (E2E.runX (ArmStepX (XI.at 0) H fa) (prologueSteps af.saves af.frameSize af.isCaller +
           (l.map Prod.fst).sum + (actRL vcp rf af fa fb lm base s XI H psF K G gv).retLen) s) = ra ∧
-        ∀ i < (prologueLines af.saves af.frameSize af.isCaller).length + (l.map Prod.fst).sum +
+        ∀ i < (prologueSteps af.saves af.frameSize af.isCaller) + (l.map Prod.fst).sum +
             (actRL vcp rf af fa fb lm base s XI H psF K G gv).retLen,
           actWReadsIn vcp rf af fa fb base s (XI.at 0) H K G gv Ok
             (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
@@ -175,14 +175,14 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
   have hR : R.Wf := hRn 0
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (Y := fun _ => True) hR hent hbe
-  have hn0' : n0 = (prologueLines af.saves af.frameSize af.isCaller).length := hn0
+  have hn0' : n0 = (prologueSteps af.saves af.frameSize af.isCaller) := hn0
   subst hn0'
-  let s₁ := iterN R.step (prologueLines af.saves af.frameSize af.isCaller).length s
+  let s₁ := iterN R.step (prologueSteps af.saves af.frameSize af.isCaller) s
   let c₁ := MConf.init R.rf (locVal R.fr s₁) w₀
   obtain ⟨Rl, hSim, hinit, -⟩ :=
     checkedAt_sound R.vc R.rf (csemVIG R.gv R.F R.ctx XI Ok) ckeep hcheck
       (locVal R.fr s₁) (ρsel (locVal R.fr s₁)) (w₀, 0) (hsel _)
-  have hP0 : countIn R.CallSt R.step s (prologueLines af.saves af.frameSize af.isCaller).length = 0 :=
+  have hP0 : countIn R.CallSt R.step s (prologueSteps af.saves af.frameSize af.isCaller) = 0 :=
     countIn_zero_of fun i hi => (ht0 i hi).1.2
   let QC : Arm.ArmState → MConf CV Arm.ArmState → Prop := fun u c =>
     ∃ l W, R.SegChain (fun u => R.Good u ∧ R.WReadsIn Ok u) s₁ R.initW c₁ l u W c ∧
@@ -248,21 +248,21 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
         exact ⟨n3, hn3, ht3, hpc⟩
   obtain ⟨n3, hn3, ht3, hpc⟩ := hret
   subst hn3
-  have hU : iterN R.step ((prologueLines af.saves af.frameSize af.isCaller).length + (l.map Prod.fst).sum) s =
+  have hU : iterN R.step (prologueSteps af.saves af.frameSize af.isCaller + (l.map Prod.fst).sum) s =
       iterN R.step n2 (iterN R.step n1 s₁) := by
     rw [iterN_add]; exact hch.iter.symm
   refine ⟨l, W, c'.mapW Prod.fst, ?_, ?_, fun i hi => ?_⟩
   · rw [runX_eq, runX_eq]
     show R.SegChain (fun u => R.Good u ∧ R.WReadsIn Ok u) s₁ R.initW c₁ l
-      (iterN R.step ((prologueLines af.saves af.frameSize af.isCaller).length + (l.map Prod.fst).sum) s) W _
+      (iterN R.step (prologueSteps af.saves af.frameSize af.isCaller + (l.map Prod.fst).sum) s) W _
     rw [hU]; exact hch
   · rw [runX_eq]
-    show Arm.r .PC (iterN R.step ((prologueLines af.saves af.frameSize af.isCaller).length + (l.map Prod.fst).sum +
+    show Arm.r .PC (iterN R.step (prologueSteps af.saves af.frameSize af.isCaller + (l.map Prod.fst).sum +
       R.retLen) s) = ra
     rw [iterN_add, hU]; exact hpc
   · rw [runX_eq]
     refine trace_add (T := fun u => R.WReadsIn Ok u) (step := R.step)
-      (a := (prologueLines af.saves af.frameSize af.isCaller).length) (b := (l.map Prod.fst).sum + R.retLen)
+      (a := (prologueSteps af.saves af.frameSize af.isCaller)) (b := (l.map Prod.fst).sum + R.retLen)
       (fun j hj => hTop _ (ht0 j hj).2)
       (trace_add (T := fun u => R.WReadsIn Ok u) (step := R.step) (a := (l.map Prod.fst).sum)
         (b := R.retLen) (fun j hj => (hch.trace j hj).2) (fun j hj => ?_)) i (by
