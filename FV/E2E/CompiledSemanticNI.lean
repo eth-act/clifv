@@ -13,6 +13,7 @@ import FV.Backend.Proof.StockMemoryIntegerCheck
 import FV.E2E.StockMemoryCfgNI
 import FV.Backend.Proof.StockMemoryCfgClass
 import FV.Backend.Proof.StockParameterCheck
+import FV.Backend.Proof.StockGeneralLoopCheck7
 import FV.Backend.Proof.StockConditionalRankedCheck
 import FV.E2E.StockCfgNI
 import FV.Backend.Proof.StockTwoBlockCheck
@@ -159,7 +160,7 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
     | true =>
       exact .stockCleanup ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
   simp only [SemanticNI.check,Bool.or_eq_true,Bool.and_eq_true] at lower
-  rcases lower with legacy | ((((((((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg) | memoryUnsigned) | memoryExtending) | memoryStore) | memoryStoreCfg) | memoryLoadStore) | memoryCapturedCopy)
+  rcases lower with legacy | (((((((((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg) | memoryUnsigned) | memoryExtending) | memoryStore) | memoryStoreCfg) | memoryLoadStore) | memoryCapturedCopy)
   · exact .compatible (retained legacy)
   · rcases Stock.Arithmetic.check_sound semantic with legacy | ⟨result,domain,run,equal,_⟩
     · exact .compatible (retained legacy)
@@ -203,6 +204,10 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
   · obtain ⟨result,domain,run,equal⟩ := Stock.ParameterCfg.check_sound semantic
+    exact .cfg domain equal reads
+      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+
+  · obtain ⟨result,domain,run,equal⟩ := Stock.GeneralLoopCfg7.check_sound semantic
     exact .cfg domain equal reads
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 

@@ -378,6 +378,8 @@ def _root_.Backend.MInst.accesses (ctx : FnCtx) : MInst → Arm.ArmState → Lis
   | .store op _ m _, s => [(m.addr ctx op.bytes s, op.bytes)]
   | .loadAcquire ty _ rn _, s | .storeRelease ty _ rn _, s => [(regX s rn, ty.bytes)]
   | .fpuLoad sz _ m _, s | .fpuStore sz _ m _, s => [(m.addr ctx sz.bytes s, sz.bytes)]
+  -- `ldp`/`stp`: one 16-byte access at the base plus the offset (`ArmInstFoot.pairEvs`)
+  | .loadP64 _ _ rn off _, s | .storeP64 _ _ rn off _, s => [(regX s rn + BitVec.ofInt 64 off, 16)]
   | _, _ => []
 
 /-- Every memory access of `i` in state `s` avoids the frame addresses `F`. -/

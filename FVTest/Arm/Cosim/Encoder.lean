@@ -325,8 +325,9 @@ def ldstForms : List Spec :=
        ldstForm s!"fpuStore {short s}" k bytes (some (bytes == 8)) fun am => do
          return .fpuStore s (← gV).2 am])
 
-/-- `ldp`/`stp` (SP pre/post-indexed, the encoder's only pair modes): `scale` bytes per
-register, `mk rt rt2 am`; loads need distinct registers. -/
+/-- `ldp`/`stp` (SP pre/post-indexed; the signed-offset form `[xn, #off]` of `MInst.loadP64`/
+`storeP64` is checked against `llvm-mc` in `FVTest/Backend/Encode/Examples.lean` and the random
+encoder test): `scale` bytes per register, `mk rt rt2 am`; loads need distinct registers. -/
 def pairForm (key : String) (scale : Nat) (load : Bool) (fp : Option Bool) (pre : Bool)
     (mk : Nat → AMode → GenM (Option Insn)) : Spec :=
   let key := s!"{key} {if pre then "pre" else "post"}"
@@ -418,6 +419,8 @@ def fpForms : List Spec :=
   ([VectorSize.size8x8, .size8x16, .size16x4, .size16x8, .size32x2, .size32x4, .size64x2].map
     fun s => simple s!"addp {short s}" "enc-simd" do
       return some (.addp s (← gV).2 (← gV).2 (← gV).2, none)) ++
+  [simple "movToVec size64x2" "enc-simd" do
+     return some (.movToVec .size64x2 (← gV).2 (← gZR).2 (← below 2), none)] ++
   ([VectorSize.size8x8, .size8x16, .size16x4, .size16x8, .size32x2, .size32x4].map fun s =>
     simple s!"movi {short s}" "enc-simd" do
       return some (.movi s (← gV).2 (← bits 8), some (← coin))) ++

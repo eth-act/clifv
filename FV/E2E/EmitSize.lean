@@ -2,6 +2,7 @@ import FV.E2E.RegLevelEmit
 import FV.E2E.MachBufSize
 import FV.Backend.Proof.RelaxLayout
 import FV.Backend.SpillAlloc
+import FV.Backend.Proof.LoadConstant
 
 /-!
 # The size of the spill allocation's code (`E2E.emitFunc_spill_size`)
@@ -73,12 +74,14 @@ def spillSizeOkB (vcp : VCode) : Bool := decide (spillWordBound vcp < 2 ^ 24)
 /-! ## Lines of one instruction (`MInst.lines`) -/
 
 theorem loadConst64_length (rd : Reg) (v : Nat) : (loadConst64 rd v).length ≤ 4 := by
-  unfold loadConst64
-  simp only [List.length_cons]
-  have := List.length_filterMap_le (fun j => if (mask64 v / 2 ^ (16 * (j + 1))) % 2 ^ 16 != 0 then
-    some (Line.ins (.movk true rd ⟨(mask64 v / 2 ^ (16 * (j + 1))) % 2 ^ 16, j + 1⟩)) else none) (List.range 3)
-  simp only [List.length_range] at this
-  omega
+  rcases Backend.Proof.loadConst64_cases rd v with ⟨_, -, e⟩ | ⟨-, _, -, e⟩ | ⟨_, -, e⟩ |
+    ⟨-, -, -, e⟩ <;> rw [e] <;> try simp
+  unfold generalLines
+  dsimp only
+  rw [Backend.Proof.LoadConstant.movSeqLines_length]
+  refine Nat.le_trans (List.length_filterMap_le _ _) ?_
+  simp only [List.length_range]
+  split <;> omega
 
 theorem memFinalize_length {c : FnCtx} {m : AMode} {b : Nat} {pre : List Line} {m' : AMode}
     (h : memFinalize c m b = .ok (pre, m')) : pre.length ≤ 4 := by

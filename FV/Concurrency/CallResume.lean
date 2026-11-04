@@ -386,13 +386,11 @@ theorem noRet_spAdj (sub : Bool) (size : Nat) : NoRet (spAdjLines sub size) := b
   · split at hln
     · simp only [List.mem_singleton, Line.ins.injEq] at hln
       obtain ⟨rfl, -⟩ := hln; intro h; cases h
-    · rw [List.mem_append, loadConst64_eq] at hln
+    · rw [List.mem_append] at hln
       rcases hln with hln | hln
-      · simp only [List.mem_cons] at hln
-        rcases hln with hln | hln
-        · simp only [Line.ins.injEq] at hln; obtain ⟨rfl, -⟩ := hln; intro h; cases h
-        · obtain ⟨c, i, hc⟩ := movkLines_mem hln
-          simp only [Line.ins.injEq] at hc; obtain ⟨rfl, -⟩ := hc; intro h; cases h
+      · obtain ⟨i, e, hf⟩ := loadConst64_form hln
+        cases e
+        rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> (intro h; cases h)
       · simp only [List.mem_singleton, Line.ins.injEq] at hln
         obtain ⟨rfl, -⟩ := hln; intro h; cases h
 

@@ -93,8 +93,8 @@ theorem not_memScopeLS : ¬ MemScopeLS RX := by
   all_goals try cases h
   rcases hm with hm | ⟨-, m', hf⟩
   · cases hm
-  · rw [finX 0x10000 LoadOp.uload64.bytes (by decide) (by decide), loadConst64_eq] at hf
-    simp at hf
+  · rw [finX 0x10000 LoadOp.uload64.bytes (by decide) (by decide)] at hf
+    simp [loadConst64_ne_nil] at hf
 
 /-- **Non-vacuity and strict widening of `arm_alloc_refines_lsx`**: the compiled function with
 GPR and SIMD&FP loads and stores at stack offsets built in `x16` (`RX`) satisfies `R.Wf` and

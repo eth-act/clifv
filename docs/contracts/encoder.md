@@ -161,6 +161,7 @@ encoded by `armBits`); "Page" is the instruction description in C6.2 (base) or C
 | `load`/`store` `spPreIndexed`/`spPostIndexed` | `LDST.Reg_imm_pre_indexed` / `Reg_imm_post_indexed` | LDR*/STR* (immediate, pre/post-index) | `enc_ldst_simm9` |
 | `load`/`store` `regReg`/`regScaled`/`regScaledExtended`/`regExtended` | `LDST.Reg_reg_offset` | LDR*/STR* (register) | `enc_ldst_reg` |
 | `ldp`/`stp` (sp pre/post-index) | `LDST.Reg_pair_pre_indexed` / `Reg_pair_post_indexed` | LDP/STP (64-bit) | `enc_ldst_pair` |
+| `ldp`/`stp` `unscaled rn off` (`MInst.loadP64`/`storeP64`) | `LDST.Reg_pair_signed_offset` (`rn` GPR or `sp`; `off` a multiple of 8 in `-512..504`; an `ldp` with equal destinations is rejected) | LDP/STP (64-bit, signed offset) | `enc_ldst_pair` (`PairAMode::SignedOffset`) |
 | `mov` (with `sp`) | `DPI.Add_sub_imm` (#0) | MOV (to/from SP) → ADD #0 | `Inst::Mov` |
 | `mov` | `DPR.Logical_shifted_reg` (Rn = ZR) | MOV (register) → ORR | `Inst::Mov` |
 | `movWide`, `movk` | `DPI.Move_wide_imm` | MOVZ, MOVN, MOVK | `enc_move_wide`, `enc_movk` |
@@ -173,6 +174,7 @@ encoded by `armBits`); "Page" is the instruction description in C6.2 (base) or C
 | `cnt` | `DPSFP.Advanced_simd_two_reg_misc` | CNT | `Inst::VecMisc` |
 | `vecLanes addv/uaddlv` | `DPSFP.Advanced_simd_across_lanes` | ADDV, UADDLV | `enc_vec_lanes` |
 | `addp` | `DPSFP.Advanced_simd_three_same` | ADDP (vector) | `enc_vec_rrr` |
+| `movToVec` (`MInst.movToVec`) | `DPSFP.Advanced_simd_copy` (Q 1, imm4 0011; `2d` only, index 0 or 1; `rn` GPR or ZR) | INS (general) (`mov vd.d[idx], xn`) | `Inst::MovToVec` |
 | `b`, `bl` | `BR.Uncond_branch_imm` | B, BL (+ `R_AARCH64_CALL26`) | `enc_jump26` |
 | `bcond` | `BR.Cond_branch_imm` | B.cond | `enc_cbr` |
 | `cbz` | `BR.Compare_branch` | CBZ, CBNZ | `enc_cmpbr` |
@@ -327,7 +329,7 @@ class (`decode_armBits_<Class>`, file `Encode<Group>.lean`):
 | `load`/`store` unscaled | `decode_armBits_Reg_unscaled_imm` |
 | `load`/`store` spPreIndexed / spPostIndexed | `decode_armBits_Reg_imm_pre_indexed` / `_post_indexed` |
 | `load`/`store` register modes | `decode_armBits_Reg_reg_offset` |
-| `ldp`/`stp` | `decode_armBits_Reg_pair_pre_indexed` / `_post_indexed` |
+| `ldp`/`stp` | `decode_armBits_Reg_pair_pre_indexed` / `_post_indexed` / `_signed_offset` |
 | `movWide`, `movk` | `decode_armBits_Move_wide_imm` |
 | `cset`, `csel` | `decode_armBits_Conditional_select` |
 | `ccmp` / `ccmpImm` | `decode_armBits_Conditional_compare_reg` / `_imm` |
@@ -336,6 +338,7 @@ class (`decode_armBits_<Class>`, file `Encode<Group>.lean`):
 | `cnt` | `decode_armBits_Advanced_simd_two_reg_misc` |
 | `vecLanes` | `decode_armBits_Advanced_simd_across_lanes` |
 | `addp` | `decode_armBits_Advanced_simd_three_same` |
+| `movToVec` | `decode_armBits_Advanced_simd_copy` |
 | `b`, `bl` | `decode_armBits_Uncond_branch_imm` |
 | `bcond` | `decode_armBits_Cond_branch_imm` |
 | `cbz` | `decode_armBits_Compare_branch` |
@@ -344,7 +347,7 @@ class (`decode_armBits_<Class>`, file `Encode<Group>.lean`):
 | `udf` | `decode_armBits_Udf` |
 | `adr`, `adrpGot`, `adrp` | `decode_armBits_PC_rel_addressing` |
 
-Also proved (not emitted): `Hints`, `Reg_pair_signed_offset`.
+Also proved (not emitted): `Hints`.
 
 ### Tactic (`EncodeBase.lean`)
 
@@ -543,7 +546,8 @@ No `sorryAx`, compiled LRAT, or `native_decide` axiom occurs in these roots.
 - `FnAsm.stepi_eq_sem` is per function; linking several functions (calls through `bl`
   relocations, GOT) is outside the proof (trusted linker).
 - Operand combinations the backend never produces are rejected, not encoded: `ldp`/`stp`
-  other than `sp` pre/post-index, `AluRRImmLogic` with `bic`-style ops after inversion
+  other than `sp` pre/post-index and a base register with a signed offset, an `ldp` with
+  equal destinations, `AluRRImmLogic` with `bic`-style ops after inversion
   other than `and/orr/eor/ands`, `cset al/nv`, load/store extends other
   than `uxtw/uxtx/sxtw/sxtx`, unfinalized addressing modes. `toArmInst` throws with the
   reason and layout fails loudly (`lean-backend` exits 1 naming the function and instruction).

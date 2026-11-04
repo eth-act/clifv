@@ -53,12 +53,15 @@ jobs:
           FV_CI_MAX_JOBS: ${{ vars.FULL_GATE_MAX_JOBS }}
         run: .github/scripts/full-gate-shard.sh ci-plan.json "$WAVE" "$SHARD" "$RUNNER_TEMP/shard"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        # also after failed modules: the script stages the ones that built
+        if: ${{ !cancelled() }}
         with:
           name: stage-w${{ inputs.wave }}-${{ inputs.shard }}
           path: ${{ runner.temp }}/shard/stage
           # ltar archives are compressed already
           compression-level: 0
           retention-days: 2
+          if-no-files-found: ignore
       - name: Memory and swap
         if: always()
         run: |

@@ -5,7 +5,7 @@ import FV.Concurrency.ArmAllocLS
 
 The scope of `arm_alloc_refines_ls` (`MemScopeLS`) covers the plain loads/stores at the final
 addressing modes and at the stack modes whose offset `memFinalize` encodes as an immediate. The
-other stack offsets lower to **an event-free prefix** (`loadConst64 x16 off`: `movz`/`movk`) and
+other stack offsets lower to **an event-free prefix** (`loadConst64 x16 off`: `movz`/`movn`/`movk`/`orr`) and
 **one access** at `[sp|fp, x16, sxtx]`. This module covers them:
 
 * `OneEvPreForm`: **a straight-line form whose lines are an event-free prefix and one access**
@@ -399,12 +399,8 @@ theorem stackFinX {ctx : FnCtx} {m m' : AMode} {n : Nat} {pre : List Line} (hm :
 
 theorem preLines_loadConst64 (rd : Reg) (v : Nat) : PreLines (loadConst64 rd v) := by
   intro ln hln
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap] at hln
-  rcases hln with rfl | ⟨j, _, hj⟩
-  · exact ⟨_, _, rfl, rfl⟩
-  · split at hj
-    · cases hj; exact ⟨_, _, rfl, rfl⟩
-    · cases hj
+  obtain ⟨i, rfl, hf⟩ := loadConst64_form hln
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> exact ⟨_, _, rfl, rfl⟩
 
 theorem finX {n : Nat} {B : Reg} (hB : B = .sp ∨ B = .x 29) :
     FinalAM n (.regExtended B (.x 16) .sxtx) :=

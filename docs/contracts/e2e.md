@@ -276,7 +276,9 @@ the `IntPos` typing of the integer operands (`lowerRulesCorrectT_program`,
 float accesses need the new instruction-semantics obligation `MemRefinesFP Rd`. The
 end-to-end chain does not consume them yet: `backend_correct_final` takes
 `LowerRulesCorrect`/`MemRulesCorrectR` over `CtxInv` (integer values only, `Compile.functionE`),
-and `csemG` leaves `fpuLoad`/`fpuStore` undefined (`GuardR` is `False` there). `E2E.csemGF`
+and `csemG` leaves `fpuLoad`/`fpuStore` undefined (`GuardR` is `False` there; also for the
+`ldp`/`stp` forms `loadP64`/`storeP64` and for `movToVec`, which only the unverified `lower128`
+produces). `E2E.csemGF`
 (`FV/E2E/GuardedFP.lean`) is `csemG` extended by the guarded float accesses; it satisfies
 `Refines`, `MemRefinesR Rd` and `MemRefinesFP Rd` (`refines_csemGF`, `memRefinesR_csemGF`,
 `memRefinesFP_csemGF`), which shows the premises of `MemRulesCorrectRT` are satisfiable.

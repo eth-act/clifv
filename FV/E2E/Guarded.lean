@@ -35,6 +35,10 @@ def GuardR (F Rd : BitVec 64 → Prop) (sb : Nat) : MInst → List CV → Arm.Ar
   | .atomicCasLoop ty .., u :: _, _ => ∀ k < ty.bytes, Rd (lo64 u + BitVec.ofNat 64 k)
   | .load .., _, _ | .store .., _, _ | .loadAcquire .., _, _ | .storeRelease .., _, _
   | .fpuLoad .., _, _ | .fpuStore .., _, _ => False
+  -- `ldp`/`stp` (`lower128` only): outside the memory rules, as the uncovered forms above
+  | .loadP64 .., _, _ | .storeP64 .., _, _ => False
+  -- `mov vd.d[idx], xn` (`lower128` only): not a covered form
+  | .movToVec .., _, _ => False
   | _, _, _ => True
 
 /-- The callee name `csem` passes the external semantics (`bl name`; `none` for `blr`). -/

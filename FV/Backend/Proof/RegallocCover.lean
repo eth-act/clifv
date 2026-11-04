@@ -128,12 +128,8 @@ theorem interOk_prefix {env : Env} {pre tail : List Line} {s S : Arm.ArmState}
 
 theorem mem_loadConst64 {r : Reg} {v : Nat} {ln : Line} (h : ln ∈ loadConst64 r v) :
     ∃ x, ln = .ins x none ∧ x.hooked = false ∧ (Line.ins x none).plain = true := by
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap] at h
-  rcases h with rfl | ⟨j, _, hj⟩
-  · exact ⟨_, rfl, rfl, rfl⟩
-  · split at hj
-    · cases hj; exact ⟨_, rfl, rfl, rfl⟩
-    · cases hj
+  obtain ⟨i, rfl, hf⟩ := loadConst64_form h
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> exact ⟨_, rfl, rfl, rfl⟩
 
 theorem memFinalize_shape {c : FnCtx} {m m' : AMode} {b : Nat} {pre : List Line}
     (h : memFinalize c m b = .ok (pre, m')) : pre = [] ∨ ∃ v, pre = loadConst64 (.x 16) v := by

@@ -33,13 +33,10 @@ theorem spAdjLines_ins (sub : Bool) (size : Nat) :
   · split at hln
     · simp only [List.mem_singleton] at hln
       subst hln; exact ⟨_, rfl, rfl, by cases sub <;> rfl⟩
-    · rw [List.mem_append, loadConst64_eq] at hln
+    · rw [List.mem_append] at hln
       rcases hln with hln | hln
-      · simp only [List.mem_cons] at hln
-        rcases hln with rfl | hln
-        · exact ⟨_, rfl, rfl, rfl⟩
-        · obtain ⟨c, i, rfl⟩ := movkLines_mem hln
-          exact ⟨_, rfl, rfl, rfl⟩
+      · obtain ⟨i, rfl, hf⟩ := loadConst64_form hln
+        rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> exact ⟨_, rfl, rfl, rfl⟩
       · simp only [List.mem_singleton] at hln
         subst hln; exact ⟨_, rfl, rfl, by cases sub <;> rfl⟩
 
