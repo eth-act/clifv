@@ -552,7 +552,8 @@ theorem popLines_plain (int : Bool) (rs : List Reg) : Plain (popLines int rs) :=
 theorem probeLines_plain (total : Nat) : Plain (probeLines total) := by
   intro ln hl
   rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ | hl | hl | rfl | rfl | rfl | rfl <;>
-    (try obtain ⟨_, rfl | rfl⟩ := loadConst64_mem hl) <;>
+    (try obtain ⟨_, rfl, ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩⟩ :=
+      Backend.Proof.loadConst64_form hl) <;>
     simp [lineDef, Line.labelsUsed, Insn.pcRelSpec?]
 
 theorem prologueLines_plain {calls : Bool} (saves : List Reg) (size : Nat) :

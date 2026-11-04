@@ -228,7 +228,8 @@ theorem prologue_exempt {saves : List Reg} (hsv : SavesOk saves) {size i : Nat} 
     have : x.x30Exempt = false := by
       rcases hm with hm | hm | hm | hm
       · rcases probeLines_mem hm with e | e | ⟨_, e⟩ | hl | hl | e | e | e | e <;>
-          (try obtain ⟨_, e | e⟩ := loadConst64_mem hl) <;>
+          (try obtain ⟨_, e, ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩⟩ :=
+            Backend.Proof.loadConst64_form hl) <;>
           (simp only [Line.ins.injEq] at e; obtain ⟨rfl, -⟩ := e; simp [Insn.x30Exempt])
       · exact pushLines_x30 hsv.int x t hm
       · exact pushLines_x30 hsv.float x t hm

@@ -291,17 +291,6 @@ def loadConst64 (rd : Reg) (value : Nat) : List Line :=
   | some _ => [.ins (.logicImm .orr true rd .xzr value)]
   | none => generalLines rd value
 
-/-- The lines of `loadConst64`: a `movz`, then `movk`s, all into `rd`. -/
-theorem loadConst64_mem {rd : Reg} {v : Nat} {ln : Line} (h : ln ∈ loadConst64 rd v) :
-    ∃ imm, ln = .ins (.movWide .movZ true rd imm) ∨ ln = .ins (.movk true rd imm) := by
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap] at h
-  rcases h with rfl | ⟨j, -, hj⟩
-  · exact ⟨_, .inl rfl⟩
-  · split at hj
-    · simp only [Option.some.injEq] at hj
-      exact ⟨_, .inr hj.symm⟩
-    · cases hj
-
 /-- Context for expanding one function. -/
 structure FnCtx where
   /-- Function index in the file (for local label names). -/

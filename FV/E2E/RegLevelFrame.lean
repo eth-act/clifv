@@ -79,11 +79,8 @@ theorem probeLines_ins (total : Nat) :
   have hlc : ∀ n v, ln ∈ loadConst64 (.x n) v → ∃ x, ln = .ins x none ∧ x.hooked = false ∧
       ln.plain = true ∧ x.loads = false ∧ x.tlsTail = false := by
     intro n v hl
-    rw [loadConst64_eq, List.mem_cons] at hl
-    rcases hl with rfl | hl
-    · exact ⟨_, rfl, rfl, rfl, rfl, rfl⟩
-    · obtain ⟨c, i, rfl⟩ := movkLines_mem hl
-      exact ⟨_, rfl, rfl, rfl, rfl, rfl⟩
+    obtain ⟨i, rfl, hf⟩ := loadConst64_form hl
+    rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> exact ⟨_, rfl, rfl, rfl, rfl, rfl⟩
   rcases probeLines_mem h with rfl | rfl | ⟨_, rfl⟩ | hl | hl | rfl | rfl | rfl | rfl
   all_goals first | exact hlc _ _ hl | exact ⟨_, rfl, rfl, rfl, rfl, rfl⟩
 
