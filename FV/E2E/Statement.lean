@@ -410,9 +410,45 @@ theorem StackRoom.mono {m n : Nat} {s : Arm.ArmState} (h : StackRoom m s) (hnm :
 /-- How far below the body's `sp` (`sp_entry - frameDrop`) Cranelift's inline stack probes of
 the prologue (`probeLines`) write: the last probe is at `sp_entry - 16 - 4096·probeCount`, which
 lies below the frame when the probed stack (`probeTotal`) includes the 16-byte setup area of the
-callees of a calling function (`calls`): then up to 16 bytes. -/
+callees of a calling function (`calls`): then up to 16 bytes; for the loop form (16 KiB and
+more, `probeCount = ⌈probeTotal / 4096⌉`) up to 4096 + 16 - 1 bytes. -/
 def probeBelow (af : AFunc) : Nat :=
   if af.frame then 4096 * probeCount (probeTotal af.frameSize af.isCaller) - af.frameSize else 0
+
+/-- The prologue's stack probes are Cranelift's loop (`probeLoopLines`, #581): more than three
+probes. -/
+def probeLoop (total : Nat) : Bool := decide (3 < probeCount total)
+
+/-- The number of instructions the prologue runs: its lines, the stack-probe loop's four
+(`probeLoopBody`) `probeCount` times. -/
+def prologueSteps (saves : List Reg) (size : Nat) (calls : Bool) : Nat :=
+  (prologueLines saves size calls).length +
+    if probeLoop (probeTotal size calls) then 4 * (probeCount (probeTotal size calls) - 1) else 0
+
+/-- Without the probe loop the prologue runs its lines once. -/
+theorem prologueSteps_of_not {saves : List Reg} {size : Nat} {calls : Bool}
+    (h : probeLoop (probeTotal size calls) = false) :
+    prologueSteps saves size calls = (prologueLines saves size calls).length := by
+  simp [prologueSteps, h]
+
+/-- The flags after the probe loop's last `cmn x16, x17` (`x16 = -4096·⌈total / 4096⌉`,
+`x17 = total`): `total - 4096·⌈total / 4096⌉` is zero (`Z`, `C`) when `total` is a multiple of
+4 KiB and negative (`N`) otherwise; no overflow. -/
+def loopFlag (total : Nat) : Arm.PFlag → BitVec 1
+  | .N => if total % 4096 = 0 then 0#1 else 1#1
+  | .Z => if total % 4096 = 0 then 1#1 else 0#1
+  | .C => if total % 4096 = 0 then 1#1 else 0#1
+  | .V => 0#1
+
+/-- The flags after stack probes of a probed stack of `total` bytes, entered in `s`: the probe
+loop's (`loopFlag`, #581), the entry's otherwise. -/
+def probeFlagT (total : Nat) (s : Arm.ArmState) (fl : Arm.PFlag) : BitVec 1 :=
+  if probeLoop total then loopFlag total fl else Arm.r (.FLAG fl) s
+
+/-- The flags after the stack probes of `af`'s prologue, entered in `s` (`probeFlagT`; the entry's
+without a frame). -/
+def probeFlag (af : AFunc) (s : Arm.ArmState) (fl : Arm.PFlag) : BitVec 1 :=
+  if af.frame then probeFlagT (probeTotal af.frameSize af.isCaller) s fl else Arm.r (.FLAG fl) s
 
 /-- `a` is one of the 4 bytes zeroed by `n` stack probes below `base` (the `sp` after the frame
 setup): the probes store `wzr` at `base - 4096·(i + 1)` for `i < n` (`probeLines`). -/
@@ -522,13 +558,37 @@ theorem StackAvail.of_room {K : Nat} {af : AFunc} {s : Arm.ArmState}
     (h : StackRoom (af.frameSize + 16 + K) s) (hp : probeBelow af ≤ K) : StackAvail K af s :=
   ⟨h, hp⟩
 
+/-- The fields after the prologue's stack probes, entered in `s`: the flags of the probe loop
+(`probeFlag`, #581), every other field as in `s`. -/
+def probeR (af : AFunc) (s : Arm.ArmState) : (f : Arm.StateField) → Arm.state_value f
+  | .FLAG fl => probeFlag af s fl
+  | f => Arm.r f s
+
+/-- Without the probe loop the fields after the probes are the entry's. -/
+theorem probeR_of_not {af : AFunc}
+    (h : af.frame = true → probeLoop (probeTotal af.frameSize af.isCaller) = false)
+    (s : Arm.ArmState) (f : Arm.StateField) : probeR af s f = Arm.r f s := by
+  cases f <;> try rfl
+  simp only [probeR, probeFlag, probeFlagT]
+  by_cases hf : af.frame <;> simp [hf, h]
+
+/-- A field other than the flags after the probes is the entry's. -/
+theorem probeR_of_ne {af : AFunc} {f : Arm.StateField} (h : ∀ fl, f ≠ .FLAG fl) (s : Arm.ArmState) :
+    probeR af s f = Arm.r f s := by
+  cases f <;> first | rfl | exact absurd rfl (h _)
+
+/-- The flags after the probes. -/
+theorem probeR_flag (af : AFunc) (s : Arm.ArmState) (fl : Arm.PFlag) :
+    probeR af s (.FLAG fl) = probeFlag af s fl := rfl
+
 /-- The state the function body starts in, relative to the ABI entry state `s`: the prologue
 (when `af.frame`) pushed fp/lr and set up the frame: `sp` lowered by `16 + frameSize`, `x29` the
 frame pointer `sp_entry - 16`; x0–x8 and v0–v7 (arguments; x8 is preserved by the
 prologue — for `sret` functions it carries the hidden struct-return pointer), the program and every field outside
-the allocatable/temporary registers (x18, x30, flags, …) as at entry; memory as at entry but for
-the bytes the prologue's stack probes zeroed (`probeMem`, #581; as at entry for a function
-without probes, the former condition). -/
+the allocatable/temporary registers (x18, x30, flags, …) as at entry but for the flags the
+prologue's stack-probe loop sets (`probeR`, #581; as at entry for a function without the loop,
+the former condition); memory as at entry but for the bytes the prologue's stack probes zeroed
+(`probeMem`, #581; as at entry for a function without probes, the former condition). -/
 def frameDrop (af : AFunc) : Nat := if af.frame then af.frameSize + 16 else 0
 
 structure BodyEntry (af : AFunc) (s w₀ : Arm.ArmState) : Prop where
@@ -536,7 +596,7 @@ structure BodyEntry (af : AFunc) (s w₀ : Arm.ArmState) : Prop where
   fp : xreg 29 w₀ = if af.frame then spv s - 16#64 else xreg 29 s
   args : ∀ i < 9, xreg i w₀ = xreg i s
   argsV : ∀ i < 8, Arm.r (.SFP (BitVec.ofNat 5 i)) w₀ = Arm.r (.SFP (BitVec.ofNat 5 i)) s
-  other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = Arm.r f s
+  other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = probeR af s f
   mem : w₀.mem = probeMem af s
   program : w₀.program = s.program
 
