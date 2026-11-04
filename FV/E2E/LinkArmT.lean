@@ -467,7 +467,7 @@ theorem bodyEntryW_compatT (hL : L.OkT) {h : Clif.Function} (hh : h ∈ L.P.func
       ht.regs r (hL.entryRegs h hh r hr)]
   · have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
     have h30 : f ≠ .GPR 30#5 := by rintro rfl; exact hf (by simp [Masked])
-    rw [r_bodyOf _ _ h29' h31, r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
+    rw [r_bodyOf_probeR _ _ h29' h31]; refine probeR_congr ?_; rw [r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
       hc.world.1 f hf, ht.world.1 f hf]
   · rw [mem_bodyOf]
     exact probeMem_congr hsp (by rw [mem_enterAt, mem_enterAt, hc.world.2.1 a ha, ht.world.2.1 a ha])
@@ -817,7 +817,7 @@ theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
       simp only [w₀']; rw [spv_bodyOf, spv_enterAt, hst]
     have hbw : BodyEntryW Fh (L.A h).vcp.EntryArg (L.A h).af (enterAt (L.A h) t) w₀' :=
       ⟨spv_bodyOf _ _, x29_bodyOf _ _, fun r hr => regVal_bodyOf _ _
-        (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf _ _ h29 h31,
+        (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf_probeR _ _ h29 h31,
         fun a _ => by simp [w₀'], by simp [w₀']⟩
     have hrel' : RelW ⟨Fh, L.syms, (L.A h).af.slotBase, ib⟩ h (spv w₀) cs.frame.slots cs.mem w₀' := by
       refine hRel w₀' hspw₀' ?_ fun a b hv hb => ?_
@@ -844,7 +844,7 @@ theorem progCallT (hL : L.OkT) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Th
           rw [hspw₀, hspw₀']
         have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
         have h30 : f ≠ .GPR 30#5 := by rintro rfl; exact hf (by simp [Masked])
-        rw [r_bodyOf _ _ h29 h31, r_bodyOf _ _ h29 h31, r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
+        rw [r_bodyOf_probeR _ _ h29 h31, r_bodyOf_probeR _ _ h29 h31]; refine probeR_congr ?_; rw [r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
           hcOk.world.1 f hf, hZ.1 f hf]
       · have hnZ : ¬ Z a := fun hz => by
           by_cases hf : Fh a

@@ -1873,28 +1873,60 @@ end LinkSys
 
 /-! ## The callee's body-entry world, the canonical call state -/
 
+/-- The flags after the prologue's stack probes (`probeFlag`, #581) written into `v`. -/
+def probeFlags (af : AFunc) (u v : Arm.ArmState) : Arm.ArmState :=
+  Arm.w (.FLAG .N) (probeFlag af u .N) (Arm.w (.FLAG .Z) (probeFlag af u .Z)
+    (Arm.w (.FLAG .C) (probeFlag af u .C) (Arm.w (.FLAG .V) (probeFlag af u .V) v)))
+
+theorem r_probeFlags (af : AFunc) (u v : Arm.ArmState) {f : Arm.StateField} (hfl : ∀ fl, f ≠ .FLAG fl) :
+    Arm.r f (probeFlags af u v) = Arm.r f v := by
+  simp only [probeFlags]
+  rw [Arm.r_of_w_different (hfl _), Arm.r_of_w_different (hfl _), Arm.r_of_w_different (hfl _),
+    Arm.r_of_w_different (hfl _)]
+
+theorem flag_probeFlags (af : AFunc) (u v : Arm.ArmState) (fl : Arm.PFlag) :
+    Arm.r (.FLAG fl) (probeFlags af u v) = probeFlag af u fl := by
+  cases fl <;> simp [probeFlags, Arm.r_of_w_same, Arm.r_of_w_different]
+
 /-- The body-entry world of an activation entered in `u` that agrees with `u` (`BodyEntry`):
-`sp` lowered by the frame, the frame pointer set, and the bytes the prologue's stack probes zero
-(`probeMem`, #581; the memory of `u` for a function without probes). -/
+`sp` lowered by the frame, the frame pointer set, the flags as the prologue's stack-probe loop
+leaves them (`probeFlag`, #581; the flags of `u` for a function without the loop), and the bytes
+the prologue's stack probes zero (`probeMem`, #581; the memory of `u` for a function without
+probes). -/
 def bodyOf (af : AFunc) (u : Arm.ArmState) : Arm.ArmState :=
-  setMem (Arm.w (.GPR 29#5) (if af.frame then spv u - 16#64 else xreg 29 u)
-    (Arm.w (.GPR 31#5) (spv u - BitVec.ofNat 64 (frameDrop af)) u)) (probeMem af u)
+  setMem (probeFlags af u (Arm.w (.GPR 29#5) (if af.frame then spv u - 16#64 else xreg 29 u)
+    (Arm.w (.GPR 31#5) (spv u - BitVec.ofNat 64 (frameDrop af)) u))) (probeMem af u)
 
 theorem spv_bodyOf (af : AFunc) (u : Arm.ArmState) :
     spv (bodyOf af u) = spv u - BitVec.ofNat 64 (frameDrop af) := by
   simp only [bodyOf, spv]
-  rw [r_setMem, Arm.r_of_w_different (by simp), Arm.r_of_w_same]
+  rw [r_setMem, r_probeFlags _ _ _ (by intro _ h; cases h), Arm.r_of_w_different (by simp),
+    Arm.r_of_w_same]
 
 theorem x29_bodyOf (af : AFunc) (u : Arm.ArmState) :
     xreg 29 (bodyOf af u) = if af.frame then spv u - 16#64 else xreg 29 u := by
   simp only [bodyOf, xreg]
-  rw [r_setMem]
+  rw [r_setMem, r_probeFlags _ _ _ (by intro _ h; cases h)]
   exact Arm.r_of_w_same
 
+/-- A field other than x29, `sp` and the flags at body entry is the entry's. (#581: `hfl` is new:
+the body-entry world now has the flags of the stack-probe loop, `r_bodyOf_probeR`.) -/
 theorem r_bodyOf (af : AFunc) (u : Arm.ArmState) {f : Arm.StateField} (h29 : f ≠ .GPR 29#5)
-    (h31 : f ≠ .GPR 31#5) : Arm.r f (bodyOf af u) = Arm.r f u := by
+    (h31 : f ≠ .GPR 31#5) (hfl : ∀ fl, f ≠ .FLAG fl := by intro _ h; cases h) :
+    Arm.r f (bodyOf af u) = Arm.r f u := by
   simp only [bodyOf]
-  rw [r_setMem, Arm.r_of_w_different h29, Arm.r_of_w_different h31]
+  rw [r_setMem, r_probeFlags _ _ _ hfl, Arm.r_of_w_different h29, Arm.r_of_w_different h31]
+
+/-- **A field other than x29 and `sp` at body entry** is the field after the prologue's stack
+probes (`probeR`: the flags of the probe loop, #581, every other field the entry's). -/
+theorem r_bodyOf_probeR (af : AFunc) (u : Arm.ArmState) {f : Arm.StateField} (h29 : f ≠ .GPR 29#5)
+    (h31 : f ≠ .GPR 31#5) : Arm.r f (bodyOf af u) = probeR af u f := by
+  by_cases hf : ∃ fl, f = .FLAG fl
+  · obtain ⟨fl, rfl⟩ := hf
+    simp only [bodyOf]
+    rw [r_setMem, flag_probeFlags, probeR_flag]
+  · have hfl : ∀ fl, f ≠ .FLAG fl := fun fl e => hf ⟨fl, e⟩
+    rw [r_bodyOf af u h29 h31 hfl, probeR_of_ne hfl]
 
 /-- The body-entry memory: the entry memory after the stack probes (#581). -/
 @[simp] theorem mem_bodyOf (af : AFunc) (u : Arm.ArmState) : (bodyOf af u).mem = probeMem af u :=
@@ -1902,7 +1934,7 @@ theorem r_bodyOf (af : AFunc) (u : Arm.ArmState) {f : Arm.StateField} (h29 : f �
 
 @[simp] theorem program_bodyOf (af : AFunc) (u : Arm.ArmState) :
     (bodyOf af u).program = u.program := by
-  simp only [bodyOf, program_setMem, Arm.w_program]
+  simp only [bodyOf, probeFlags, program_setMem, Arm.w_program]
 
 /-- A byte the stack probes do not zero is the entry memory's. -/
 theorem mem_bodyOf_of_not {af : AFunc} {u : Arm.ArmState} {a : BitVec 64}
@@ -1954,9 +1986,19 @@ theorem regVal_eq_of_field {s t : Arm.ArmState} {r : Reg} (hr : r.isArgReg = tru
   | v n => simp only [regVal]; rw [h _ rfl]
   | _ => simp [Reg.isArgReg] at hr
 
+theorem argReg_ne_flag {r : Reg} (hr : r.isArgReg = true) {f : Arm.StateField}
+    (hf : r.field = some f) : ∀ fl, f ≠ .FLAG fl := by
+  intro fl e
+  subst e
+  cases r with
+  | x n => simp [Reg.field] at hf
+  | v n => simp [Reg.field] at hf
+  | _ => simp [Reg.isArgReg] at hr
+
 theorem regVal_bodyOf (af : AFunc) (u : Arm.ArmState) {r : Reg} (hr : r.isArgReg = true) :
     regVal (bodyOf af u) r = regVal u r :=
-  regVal_eq_of_field hr fun f hf => r_bodyOf af u (argReg_ne29 hr hf).1 (argReg_ne29 hr hf).2.1
+  regVal_eq_of_field hr fun f hf =>
+    r_bodyOf af u (argReg_ne29 hr hf).1 (argReg_ne29 hr hf).2.1 (argReg_ne_flag hr hf)
 
 namespace LinkSys
 
@@ -2065,7 +2107,7 @@ theorem bodyEntryW_compat (hL : L.Ok) {h : Clif.Function} (hh : h ∈ L.P.funcs)
       ht.regs r (hL.entryRegs h hh r hr)]
   · have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
     have h30 : f ≠ .GPR 30#5 := by rintro rfl; exact hf (by simp [Masked])
-    rw [r_bodyOf _ _ h29' h31, r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
+    rw [r_bodyOf_probeR _ _ h29' h31]; refine probeR_congr ?_; rw [r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
       hc.world.1 f hf, ht.world.1 f hf]
   · rw [mem_bodyOf]
     exact probeMem_congr hsp (by rw [mem_enterAt, mem_enterAt, hc.world.2.1 a ha, ht.world.2.1 a ha])
@@ -2507,7 +2549,7 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
       simp only [w₀']; rw [spv_bodyOf, spv_enterAt, hst]
     have hbw : BodyEntryW Fh (L.A h).vcp.EntryArg (L.A h).af (enterAt (L.A h) t) w₀' :=
       ⟨spv_bodyOf _ _, x29_bodyOf _ _, fun r hr => regVal_bodyOf _ _
-        (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf _ _ h29 h31,
+        (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf_probeR _ _ h29 h31,
         fun a _ => by simp [w₀'], by simp [w₀']⟩
     have hrel' : RelW ⟨Fh, L.syms, (L.A h).af.slotBase, ib⟩ h (spv w₀) cs.frame.slots cs.mem w₀' := by
       refine hRel w₀' hspw₀' ?_ fun a b hv hb => ?_
@@ -2534,7 +2576,7 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
           rw [hspw₀, hspw₀']
         have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
         have h30 : f ≠ .GPR 30#5 := by rintro rfl; exact hf (by simp [Masked])
-        rw [r_bodyOf _ _ h29 h31, r_bodyOf _ _ h29 h31, r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
+        rw [r_bodyOf_probeR _ _ h29 h31, r_bodyOf_probeR _ _ h29 h31]; refine probeR_congr ?_; rw [r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
           hcOk.world.1 f hf, hZ.1 f hf]
       · have hnZ : ¬ Z a := fun hz => by
           by_cases hf : Fh a
