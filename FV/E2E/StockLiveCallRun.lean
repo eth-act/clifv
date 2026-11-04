@@ -29,7 +29,7 @@ theorem Ready.virtual_return (source : Ready f result env fr cm outMem Γ fc X i
   apply execute_tail (refines_valueSem Γ.F fc X) (fun _ _ _ => rfl)
     source.placed source.separate source.code preRun
   change (X.call (some source.ext.name) [source.values source.live] before).map
-    (fun pair => (pair.1,pair.2,Ctl.next)) = _
+    (fun pair => (pair.1.take 1,pair.2,Ctl.next)) = _
   rw [called]
   rfl
 
