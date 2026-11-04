@@ -29,6 +29,7 @@ theorem progCallG_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] {M : Nat} (hM :
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
     {cm' : Clif.Mem} (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
@@ -39,10 +40,11 @@ theorem progCallG_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] {M : Nat} (hM :
   try simp only [LinkSys.XMode_ordinary,LinkSys.progXMode_ordinary,LinkSys.modeReturnPins,
     LinkSys.actRLMode,LinkSys.actRL,LinkSys.ThmXReturnPins,LinkSys.ThmX,
     ReturnPinMode.pins,ReturnPinMode.Valid] at shared
-  exact shared hM ihG hpf hcal hib himgF herr hal hroom hdead hmr hargs hsav hpl hinit hrun
+  exact shared hM ihG hpf hcal hib himgF herr hal hroom hdead hpb hmr hargs hsav hpl hinit hrun
 /-- **The callee's states of a returning call of a function of `P`** (`progOsCore_semantic`'s premises):
-from `ThmG` one level down. -/
-theorem progGoodCore_semantic (hL : L.OkSemanticNI) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1))
+from `ThmG` one level down (with the budget `hκ`, #581: the callee's budget holds its probes). -/
+theorem progGoodCore_semantic (hL : L.OkSemanticNI) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ihG : 0 < M → L.ThmG κ (M - 1))
     {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs) (hcallee : L.Callee g h)
     {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
     (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
@@ -56,7 +58,7 @@ theorem progGoodCore_semantic (hL : L.OkSemanticNI) [L.CrunOk] {M : Nat} (ihG : 
   try simp only [LinkSys.XMode_ordinary,LinkSys.progXMode_ordinary,LinkSys.modeReturnPins,
     LinkSys.actRLMode,LinkSys.actRL,LinkSys.ThmXReturnPins,LinkSys.ThmX,
     ReturnPinMode.pins,ReturnPinMode.Valid] at shared
-  exact shared ihG hg hh hcallee himgF himgG himgS hLu hG hra hsw hx
+  exact shared hκ ihG hg hh hcallee himgF himgG himgS hLu hG hra hsw hx
 /-- **The callee of a `blr` at a call state is one `g` may enter through the call's register**
 (`BlrTo`): the callee contract's premise (`RL.CallPre`) is a call through `L.X`, which enters a
 function of `P` only when `g` may enter it (`IndTo`), and pins a call through the GOT to its
@@ -78,8 +80,9 @@ at depth `M` where the callee contract's premise holds (`RL.CallPre`, which `RL.
 at a `bl`/`blr` line) and the machine calls `h` (`CallsAtL`), every state of `h`'s run entered
 from `u` whose step ends without error has the per-state facts: the premise is the antecedent of
 `progOs_semantic`/`progOsReg_semantic` (`calleeOk_semantic`), whose linked call of `h` is the callee activation of
-`progCall_semantic`, whose states `ThmG` one level down covers. -/
-theorem callGood_semantic (hL : L.OkSemanticNI) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1)) {g : Clif.Function}
+`progCall_semantic`, whose states `ThmG` one level down covers (with the budget `hκ`, #581). -/
+theorem callGood_semantic (hL : L.OkSemanticNI) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ihG : 0 < M → L.ThmG κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀) {u : Arm.ArmState} {h : Clif.Function}
     (hpre : (L.actRL κ M g F G s).CallPre u) (hprog : u.program = (L.A g).fb.program (L.A g).base)
@@ -88,14 +91,15 @@ theorem callGood_semantic (hL : L.OkSemanticNI) [L.CrunOk] {M : Nat} (ihG : 0 < 
   try simp only [LinkSys.XMode_ordinary,LinkSys.progXMode_ordinary,LinkSys.modeReturnPins,
     LinkSys.actRLMode,LinkSys.actRL,LinkSys.ThmXReturnPins,LinkSys.ThmX,
     ReturnPinMode.pins,ReturnPinMode.Valid] at shared
-  exact shared ihG hg he hpre hprog hcall
+  exact shared hκ ihG hg he hpre hprog hcall
 /-! ## The states of an activation's run -/
 
 /-- **The states of the activation of `g` at depth `M` entered in `s`** from its trace (the
 register-level `GoodX` of every state before `n`), when every state before its return whose step
 ends without error is before `n`: its own states from the trace, the nested ones from the call
-states (`callGood_semantic`). -/
-theorem runGood_of_trace_semantic (hL : L.OkSemanticNI) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1))
+states (`callGood_semantic`; with the budget `hκ`, #581). -/
+theorem runGood_of_trace_semantic (hL : L.OkSemanticNI) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ihG : 0 < M → L.ThmG κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64}
     {s w₀ : Arm.ArmState} (he : L.MachEntry κ M g F G ra s w₀) {n : Nat}
     (hgood : ∀ i < n, actGoodX (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb
@@ -108,7 +112,7 @@ theorem runGood_of_trace_semantic (hL : L.OkSemanticNI) [L.CrunOk] {M : Nat} (ih
   try simp only [LinkSys.XMode_ordinary,LinkSys.progXMode_ordinary,LinkSys.modeReturnPins,
     LinkSys.actRLMode,LinkSys.actRL,LinkSys.ThmXReturnPins,LinkSys.ThmX,
     ReturnPinMode.pins,ReturnPinMode.Valid] at shared
-  exact shared ihG hg he hgood hbound
+  exact shared hκ ihG hg he hgood hbound
 /-- A returning activation (`ActRet`) has returned in the sense of `RetL`. -/
 theorem retL_of_actRet_semantic {g : Clif.Function} {ra : BitVec 64} {s t : Arm.ArmState}
     {F G : BitVec 64 → Prop} {us : List (Reg × Reg)} {outs : List CV} {wf : Arm.ArmState}

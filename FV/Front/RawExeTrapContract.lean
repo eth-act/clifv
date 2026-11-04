@@ -84,7 +84,8 @@ theorem bundle_correct_raw_trap_contract {b : Bundle} {S : LinkSpec} {file0 file
     hv.run hcs hexp hsl hmem hbnd M
 
 /-- **`Front.bundle_correct_raw_trap_peak` under the trap contract** (recursive programs
-included): as `bundle_correct_raw_trap_contract`, with `frameDrop + D·d` bytes of stack for the
+included): as `bundle_correct_raw_trap_contract`, with `frameDrop + (D·d + pbMax)` bytes of stack
+(#581: the deepest activation's stack probes write up to `pbMax` bytes below its frame) for the
 source run's peak call depth `d`. -/
 theorem bundle_correct_raw_trap_peak_contract {b : Bundle} {S : LinkSpec} {file0 file : ByteArray}
     (hb : buildSpec b = .ok S) (h : Link.DeadCleanup.compileExeU S file0 = .ok file)
@@ -96,10 +97,12 @@ theorem bundle_correct_raw_trap_peak_contract {b : Bundle} {S : LinkSpec} {file0
     {n : String} {f : Clif.Function} (hf : (rawLink us sc).func? n = some f) (d : Nat)
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hC : TrapContract S B file (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d)
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup))
       r args')
     (hv : ClifView S.inputCleanup B (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d)
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup))
       r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

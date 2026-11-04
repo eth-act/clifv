@@ -19,6 +19,9 @@ open Backend Backend.Proof E2E.LinkCheck E2E.SemanticBinary E2E.BinCheck E2E.Sem
 set_option autoImplicit false
 set_option Elab.async false
 variable {I : SemanticStackBound.CompilerInput} {B : BaseEnv} {file : ByteArray}
+/-- The entry premises of the whole-program theorems for the system keeping the slots `S`. The
+stack premise is the room `StackRoom` only (#581: `StackAvail` also asks `probeBelow ≤ K`, a fact
+of the budget). -/
 theorem sysS_entry {D : List Clif.DataObject} (hI : ReturnPinStackBound.okB I = true) (hbin : BinOkWithResults I I.results D file)
     (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
@@ -28,7 +31,7 @@ theorem sysS_entry {D : List Clif.DataObject} (hI : ReturnPinStackBound.okB I = 
     (hr : ClifRun I B f r args cs) :
     (sysS I B f K r S).OkSemanticReturnPins ∧
     AbiEntry (art I f).fb (art I f).base (xreg 30 r) (modelOf I f r) ∧
-    StackAvail K (art I f).af (modelOf I f r) ∧
+    StackRoom ((art I f).af.frameSize + 16 + K) (modelOf I f r) ∧
     (∀ a, (sysS I B f K r S).Img a →
       ¬ StackBelow (frameDrop (art I f).af + K) (spv (modelOf I f r)) a) ∧
     BodyEntry (art I f).af (modelOf I f r) (bodyOf (art I f).af (modelOf I f r)) ∧
@@ -95,7 +98,8 @@ theorem runGood_sysS_of {D : List Clif.DataObject} (hI : ReturnPinStackBound.okB
   obtain ⟨hL, hent, hres, hgfree, hbe, hargs, hsav, hrel, hpl⟩ :=
     sysS_entry hI hbin hB hfm hX ho hav hr
   exact (backend_correct_program_budgetX_return_pins (sysS I B f (κ M f) r S) hL (hκ.extImgProduction _ _ _) hfm M
-    hent hres rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl htr).2 hout
+    hent ⟨hres, (hκ.extImgProduction _ _ _).2 M f hfm⟩ rfl hgfree (fun a _ => rfl) hbe hargs
+    hr.entry hsav hrel hpl htr).2 hout
 
 
 theorem runGood_sysS {D : List Clif.DataObject} (hI : ReturnPinStackBound.okB I = true) (hbin : BinOkWithResults I I.results D file)
@@ -120,37 +124,44 @@ theorem runGood_sysS {D : List Clif.DataObject} (hI : ReturnPinStackBound.okB I 
     (by simp [LinkSys.hybrid, hb, hbud]) ho hav hr htr hout
 
 
+/-- `RunGoodL` of the system keeping the slots for any program: the depth-`M` budget
+`D * M + pbMax I` (#581: with the stack probes of the deepest activation). -/
 theorem runGood_sysS_depth {D : List Clif.DataObject} (hI : ReturnPinStackBound.okB I = true) (hbin : BinOkWithResults I I.results D file)
     (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs) (M : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * M + pbMax I)) r
+      args cs.mem)
     {S : BitVec 64 → Prop}
-    (hav : OutsideAvoids S f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (hav : OutsideAvoids S f (frameDrop (art I f).af + (I.D * M + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
     (hout : (∃ vals cm, Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c)) :
-    (sysS I B f (I.D * M) r S).RunGoodL M f (modelOf I f r) :=
+    (sysS I B f (I.D * M + pbMax I) r S).RunGoodL M f (modelOf I f r) :=
   runGood_sysS_of hI hbin hB hfm M hX
     (LinkSys.budget_K_return_pins _ (ReturnPinBinary.okB_sound hI (baseOk_F hB) fun _ h => .inr h)) rfl ho hav hr htr hout
 
 
+/-- `runGood_sysS_depth` for the run's peak call depth `d` (the budget `D * d + pbMax I`, #581). -/
 theorem runGood_sysS_peak {D : List Clif.DataObject} (hI : ReturnPinStackBound.okB I = true) (hbin : BinOkWithResults I I.results D file)
     (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs) (F d : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r
+      args cs.mem)
     {S : BitVec 64 → Prop}
-    (hav : OutsideAvoids S f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (hav : OutsideAvoids S f (frameDrop (art I f).af + (I.D * d + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs)
     (hout : (∃ vals cm, Clif.runLoop B.env (prog I) (F + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (F + 1) cs = .trapped c)) :
-    (sysS I B f (I.D * d) r S).RunGoodL d f (modelOf I f r) := by
+    (sysS I B f (I.D * d + pbMax I) r S).RunGoodL d f (modelOf I f r) := by
   obtain ⟨hL, hent, hres, hgfree, hbe, hargs, hsav, hrel, hpl⟩ :=
     sysS_entry hI hbin hB hfm hX ho hav hr
-  exact (backend_correct_program_peakX_return_pins (sysS I B f (I.D * d) r S) hL
+  exact (backend_correct_program_peakX_return_pins (sysS I B f (I.D * d + pbMax I) r S) hL
     ((LinkSys.budget_K_return_pins _ (ReturnPinBinary.okB_sound hI (baseOk_F hB) fun _ h => .inr h)).extImgProduction _ _ _) hfm F d
-    hent hres rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl hd htr).2 hout
+    hent ⟨hres, ((LinkSys.budget_K_return_pins _ (ReturnPinBinary.okB_sound hI (baseOk_F hB)
+      fun _ h => .inr h)).extImgProduction _ _ _).2 d f hfm⟩ rfl hgfree (fun a _ => rfl) hbe hargs
+      hr.entry hsav hrel hpl hd htr).2 hout
 
 
 theorem got_of_good {D : List Clif.DataObject} (hI : ReturnPinStackBound.okB I = true) (hbin : BinOkWithResults I I.results D file)

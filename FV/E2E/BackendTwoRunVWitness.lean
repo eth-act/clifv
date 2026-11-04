@@ -167,10 +167,10 @@ theorem source_twoRunLERWZIUV :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound source_cleanupChecks
   have hsub : InSubset ({ funcs := [] } : Clif.Program) source :=
@@ -226,10 +226,10 @@ theorem source_twoRunLERWZIUF_either :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound source_cleanupChecks
   have hsub : InSubset ({ funcs := [] } : Clif.Program) source :=
@@ -313,17 +313,17 @@ theorem r_twoRunLERWZIUV_Lsl (M : Nat) :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) ∧
             ∀ a, ¬ F a → ¬ D a →
               (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-                ((prologueLines af.saves af.frameSize).length + N +
+                ((prologueLines af.saves af.frameSize af.isCaller).length + N +
                   ((epiLines af.saves af.frameSize).length + 1)) t0).mem a =
               (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-                ((prologueLines af.saves af.frameSize).length + N +
+                ((prologueLines af.saves af.frameSize af.isCaller).length + N +
                   ((epiLines af.saves af.frameSize).length + 1)) s).mem a := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound fR_cleanupChecks
   refine ⟨vc, vcp, af, fa, fb, hc, fun env K F D c w₀ w₀' args cs hD hce hrel hrel' hargs hsw hreg
@@ -373,10 +373,10 @@ theorem r_twoRunLERWZIUF_either_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitV
     ∀ vals cm, Clif.runLoop env Lsl.P.bare fuel cs = .returned vals cm →
       ∃ N, RetAgreeX (frameDrop (Lsl.A fR).af + K) (spv s)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + N +
+          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) t0)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + N +
+          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) s) := by
   have hc := fR_compiled
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
@@ -431,14 +431,14 @@ theorem r_twoRunLERWZIUPV_Lsl (M : Nat) :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) ∧
             Arm.read_mem_bytes 16 (spv t0 - 16#64)
               (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-                ((prologueLines af.saves af.frameSize).length + N +
+                ((prologueLines af.saves af.frameSize af.isCaller).length + N +
                   ((epiLines af.saves af.frameSize).length + 1)) t0) = xreg 30 t0 ++ xreg 29 t0 := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound fR_cleanupChecks
   refine ⟨vc, vcp, af, fa, fb, hc, fun env K F D c w₀ w₀' args cs hD hce hrel hrel' hargs hsw hreg
@@ -490,14 +490,14 @@ theorem source_twoRunLERWZIUPF_either :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) ∧
             Arm.read_mem_bytes 16 (spv t0 - 16#64)
               (iterN (ArmStepX xQuiet idHooks fa)
-                ((prologueLines af.saves af.frameSize).length + N +
+                ((prologueLines af.saves af.frameSize af.isCaller).length + N +
                   ((epiLines af.saves af.frameSize).length + 1)) t0) = xreg 30 t0 ++ xreg 29 t0 := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound source_cleanupChecks
   have hsub : InSubset ({ funcs := [] } : Clif.Program) source :=

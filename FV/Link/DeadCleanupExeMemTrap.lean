@@ -71,7 +71,7 @@ theorem compileExe_correct_memtrap {S : LinkSpec} {file0 file : ByteArray}
 
 /-- **The shipped executable compiler is correct with memory traps, recursive programs
 included** (`compileExe_correct_memtrap` for the run's peak call depth `d`, as
-`compileExe_correct_peak`): the outside caller provides `frameDrop + D * d` bytes of stack, the
+`compileExe_correct_peak`): the outside caller provides `frameDrop + (D * d + pbMax)` bytes of stack, the
 run premises are of the callees running with fuel `F` and at most `d - 1` callers of their own
 (`Clif.linkEnvD`). -/
 theorem compileExe_correct_memtrap_peak {S : LinkSpec} {file0 file : ByteArray}
@@ -81,7 +81,8 @@ theorem compileExe_correct_memtrap_peak {S : LinkSpec} {file0 file : ByteArray}
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) f
-      (frameDrop (art S.inputCleanup f).af + S.inputCleanup.D * d) r args cs.mem)
+      (frameDrop (art S.inputCleanup f).af + (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args
+      cs.mem)
     (hr : ClifRun S.inputCleanup B f r args cs)
     (hd : Clif.DepthLe B.env (prog S.inputCleanup) d cs)
     {mp : ArmFault.MemMap}
@@ -201,7 +202,8 @@ theorem compileExe_correct_source_memtrap_peak {S : LinkSpec} {file0 file : Byte
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize f)
-      (frameDrop (art S.inputCleanup (legalize f)).af + S.inputCleanup.D * d) r args' cs'.mem)
+      (frameDrop (art S.inputCleanup (legalize f)).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize f) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

@@ -48,7 +48,7 @@ theorem a2_twoRunPRIYD {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args 
       (ExtSemI.const Xb) H base ra Kp cc Pp Rr s w₀) :
     ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ N, Arm.r .PC (iterN (ArmStepX Xb H (A fA2).fa)
-        ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + N +
+        ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + N +
           (epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1) s) = ra := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]

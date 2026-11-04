@@ -130,6 +130,7 @@ theorem callCount (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M' : Nat}
           ← hsw.1 .ERR (by simp [Masked])]; exact herr)
       (by rw [hspW]; exact halign) (by rw [hspW]; have := hbud; omega)
       (fun a ha => hdead a (by rw [hspW] at ha; exact stackBelow_mono ha hbud))
+      (hκ.2 _ h hh)
       hmrW hargsW hsavW (fun hN => by rw [hspW]; exact hpl hN)
       (fun hN => by rw [hspW]; exact hslot hN) htabC hinit hrun
   obtain ⟨k', -, hret', htabk, htrk⟩ := hcall _ hcOk hmsk hrgn

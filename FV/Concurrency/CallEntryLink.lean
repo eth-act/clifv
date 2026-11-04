@@ -117,14 +117,14 @@ theorem call_end (hL : L.Ok) {nA : String} {FA : LFn} (hA : (nA, FA) ∈ L.fns) 
       (∀ f, f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f (enter FB x) = Arm.r f x) ∧
       xreg 30 (enter FB x) = Arm.r .PC x + 4#64 ∧ (enter FB x).mem = x.mem ∧
       Q (L.act FB (enter FB x) KB GB)
-        (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize).length
+        (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize FB.af.isCaller).length
           (enter FB x))
         (MConf.init FB.rf (locVal (L.act FB (enter FB x) KB GB).fr
-          (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize).length
+          (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize FB.af.isCaller).length
             (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
       AInv (L.act FB (enter FB x) KB GB)
         (MConf.init FB.rf (locVal (L.act FB (enter FB x) KB GB).fr
-          (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize).length
+          (iterN (L.act FB (enter FB x) KB GB).step (prologueLines FB.af.saves FB.af.frameSize FB.af.isCaller).length
             (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
       ArgsAtEntry (L.act FB (enter FB x) KB GB).F fB.sig vals (bodyOf FB.af (enter FB x)) := by
   have hextf : f.extern? fn = some ext := by rw [← hm2.2.1]; exact hext

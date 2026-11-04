@@ -74,7 +74,8 @@ theorem attemptT_correct {S : LinkSpec} {file0 file : ByteArray}
 
 /-- **The typed executable compiler on a Stock route is correct for recursive programs**:
 `attemptT_correct` without the call-graph premise, the outside caller providing
-`frameDrop + D * M` bytes of stack. -/
+`frameDrop + (D * M + pbMax)` bytes of stack (statement change for #581: the unrolled stack
+probes of the deepest frame touch up to `pbMax` bytes below the frames). -/
 theorem attemptT_correct_depth {S : LinkSpec} {file0 file : ByteArray}
     (h : attemptT lower S file0 = .ok file) (B : BaseEnv)
     (hB : BaseOk (sys (input lower S true) B))
@@ -83,7 +84,8 @@ theorem attemptT_correct_depth {S : LinkSpec} {file0 file : ByteArray}
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall (input lower S true) (BinCheck.roByte (input lower S true) S.data) f
-      (frameDrop (art (input lower S true) f).af + (input lower S true).D * M) r args cs.mem)
+      (frameDrop (art (input lower S true) f).af +
+        ((input lower S true).D * M + pbMax (input lower S true))) r args cs.mem)
     (hr : ClifRun (input lower S true) B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog (input lower S true)) B.env M)
       (prog (input lower S true)).bare cs) :
@@ -98,7 +100,7 @@ theorem attemptT_correct_depth {S : LinkSpec} {file0 file : ByteArray}
 
 /-- **The typed executable compiler on a Stock route is correct for recursive programs, with the
 stack of the run's peak call depth** (L1d): `attemptT_correct_depth` with
-`frameDrop + D * d` bytes of stack, `d` bounding the whole-program CLIF run's call depth
+`frameDrop + (D * d + pbMax)` bytes of stack, `d` bounding the whole-program CLIF run's call depth
 (`Clif.DepthLe`). -/
 theorem attemptT_correct_peak {S : LinkSpec} {file0 file : ByteArray}
     (h : attemptT lower S file0 = .ok file) (B : BaseEnv)
@@ -108,7 +110,8 @@ theorem attemptT_correct_peak {S : LinkSpec} {file0 file : ByteArray}
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall (input lower S true) (BinCheck.roByte (input lower S true) S.data) f
-      (frameDrop (art (input lower S true) f).af + (input lower S true).D * d) r args cs.mem)
+      (frameDrop (art (input lower S true) f).af +
+        ((input lower S true).D * d + pbMax (input lower S true))) r args cs.mem)
     (hr : ClifRun (input lower S true) B f r args cs)
     (hd : Clif.DepthLe B.env (prog (input lower S true)) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog (input lower S true)) B.env F d)

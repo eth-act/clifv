@@ -83,7 +83,7 @@ def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := 
   if !af.frame then return []
   let some (_, code) := af.blocks[0]? | throw "unwind: no entry block"
   if code.toList.head? != some .prologue then throw "unwind: the entry block does not start with the prologue"
-  let pro := prologueLines af.saves af.frameSize
+  let pro := prologueLines af.saves af.frameSize af.isCaller
   if 4 * pro.length ≥ 2 ^ 32 then throw "unwind: the prologue exceeds the FDE's 32-bit range"
   -- the final code starts with the entry label, then exactly the prologue
   let got := (fa.lines.toList.drop 1).take pro.length

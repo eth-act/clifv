@@ -1252,12 +1252,163 @@ theorem saves_mem {saves : List Reg} (hsv : SavesOk saves) {r : Reg} (h : r ∈ 
   · have hm : Reg.v n ∈ savesFloat saves := List.mem_filter.2 ⟨h, rfl⟩
     exact .inr ⟨n, rfl, getElem?_idxOf' hm, rfl⟩
 
+theorem aligned_sub {x : BitVec 64} (hx : x.toNat % 16 = 0) {n : Nat} (hn : n % 16 = 0) (hn' : n < 2 ^ 64) :
+    (x - BitVec.ofNat 64 n).toNat % 16 = 0 := by
+  have h16 : (16 : Nat) ∣ 2 ^ 64 := ⟨2 ^ 60, rfl⟩
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn', Nat.mod_mod_of_dvd _ h16]
+  have := x.isLt
+  omega
+
+/-! ## The stack probes (#581) -/
+
+theorem exec_stur_wzr_sp (env : Env) (s : Arm.ArmState) (halign : Arm.CheckSPAlignment s) :
+    ∃ a, (Insn.store .store32 .xzr (.unscaled .sp 0)).toArmInst env = .ok a ∧
+      Arm.exec_inst a s = Arm.w .PC (Arm.r .PC s + 4#64) (Arm.write_mem_bytes 4 (spOf s) 0#32 s) := by
+  have halign' := spAligned halign
+  refine ⟨_, by simp [csimp_rules, pure, Except.pure]; rfl, ?_⟩
+  simp (config := {decide := true}) [csimp_rules, StoreOp.fields, Arm.LDST.exec_reg_unscaled_imm,
+    Arm.LDST.exec_reg_unscaled_imm_gpr,
+    Arm.LDST.exec_reg_imm_common, Arm.LDST.reg_imm_operation, Arm.LDST.Reg_offset.value,
+    Arm.LDST.reg_imm_constrain_unpredictable, Arm.ldst_read, Arm.read_gpr_zr, Arm.read_gpr,
+    Arm.read_pc, Arm.write_pc, Arm.BitVec.lsb, Arm.CheckSPAlignment, halign', spOf]
+
+/-- `n` zero bytes written at `a`: the byte at `b` is zero when `b` is among them. -/
+theorem write_bytes_zero_at : ∀ (n : Nat) (a : BitVec 64) (m : Arm.Memory) (b : BitVec 64),
+    Arm.Memory.write_bytes n a 0#(n * 8) m b = if (b - a).toNat < n then 0#8 else m b
+  | 0, a, m, b => by simp [Arm.Memory.write_bytes]
+  | n + 1, a, m, b => by
+    rw [Arm.Memory.write_bytes_succ]
+    simp only
+    have hz : BitVec.setWidth (n * 8) ((0#((n + 1) * 8)) >>> 8) = 0#(n * 8) := by simp
+    have hb : BitVec.extractLsb' 0 8 (0#((n + 1) * 8)) = 0#8 := by simp
+    rw [hz, hb, write_bytes_zero_at n (a + 1#64)]
+    by_cases hba : b = a
+    · subst hba
+      simp [Arm.Memory.write, Arm.write_store]
+    · have hne : (b - a).toNat ≠ 0 := fun h => hba (by
+        have := BitVec.eq_of_toNat_eq (x := b - a) (y := 0#64) (by simpa using h); bv_omega)
+      have e : (b - a).toNat = (b - (a + 1#64)).toNat + 1 := by
+        have : b - (a + 1#64) = (b - a) - 1#64 := by bv_omega
+        rw [this, BitVec.toNat_sub_of_le (x := b - a) (y := 1#64)
+          (by rw [BitVec.le_def]; exact Nat.one_le_iff_ne_zero.mpr hne),
+          show (1#64).toNat = 1 from rfl]
+        omega
+      simp only [Arm.Memory.write, Arm.write_store, hba, ite_false, e]
+      by_cases hl : (b - (a + 1#64)).toNat < n <;> simp [hl]
+
+/-- The first of `k + 1` probes below `base` is at `base - 4096`, the others are `k` probes below
+`base - 4096`. -/
+theorem probeHitB_succ (k : Nat) (base a : BitVec 64) :
+    probeHitB (k + 1) base a =
+      (decide ((a - (base - 4096#64)).toNat < 4) || probeHitB k (base - 4096#64) a) := by
+  have hr : ∀ i, base - 4096#64 - BitVec.ofNat 64 (4096 * (i + 1)) =
+      base - BitVec.ofNat 64 (4096 * (i + 1 + 1)) := fun i => by
+    rw [show 4096 * (i + 1 + 1) = 4096 + 4096 * (i + 1) by omega, BitVec.ofNat_add]; bv_omega
+  simp only [probeHitB, hr, List.range_succ_eq_map, List.any_cons, List.any_map,
+    Function.comp_def]
+
+/-- The steps of `k` unrolled probes: `sp` lowered by `4096·k`, the 4 bytes at
+`sp - 4096·(i + 1)` zeroed for `i < k`, nothing else but the pc changed. -/
+theorem probeSteps_ok : ∀ (k : Nat) (env : Env) (s : Arm.ArmState), (spOf s).toNat % 16 = 0 →
+    ∃ s', StepsOk env (probeSteps k) s s' ∧ spOf s' = spOf s - BitVec.ofNat 64 (4096 * k) ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 31#5 → Arm.r f s' = Arm.r f s) ∧
+      (∀ a, s'.mem a = if probeHitB k (spOf s) a then 0#8 else s.mem a)
+  | 0, env, s, _ => ⟨s, rfl, by simp, fun _ _ _ => rfl, fun a => by simp [probeHitB]⟩
+  | k + 1, env, s, hal => by
+    obtain ⟨a1, ha1, he1⟩ := exec_sub_sp_imm env ⟨1, true⟩ (by decide) s
+    generalize hs1 : Arm.exec_inst a1 s = s1 at he1
+    have hsp1 : spOf s1 = spOf s - 4096#64 := by
+      rw [he1]; simp [spOf, Arm.r_of_w_same, Arm.r_of_w_different, Imm12.value]
+    have hal1 : (spOf s1).toNat % 16 = 0 := by
+      rw [hsp1]; exact aligned_sub hal (n := 4096) (by decide) (by decide)
+    obtain ⟨a2, ha2, he2⟩ := exec_stur_wzr_sp { env with pc := env.pc + 4 } s1 (checkSP_of hal1)
+    generalize hs2 : Arm.exec_inst a2 s1 = s2 at he2
+    have hsp2 : spOf s2 = spOf s - 4096#64 := by
+      rw [he2]; simp only [spOf] at hsp1 ⊢
+      simp [Arm.r_of_w_different, Arm.r_of_write_mem_bytes, hsp1]
+    have hal2 : (spOf s2).toNat % 16 = 0 := by rw [hsp2, ← hsp1]; exact hal1
+    obtain ⟨s3, h3, hsp3, ho3, hm3⟩ := probeSteps_ok k { env with pc := env.pc + 4 + 4 } s2 hal2
+    refine ⟨s3, ?_, ?_, fun f h1 h2 => ?_, fun a => ?_⟩
+    · show StepsOk env (.ins _ none :: .ins _ none :: probeSteps k) s s3
+      refine steps_cons ha1 (by rw [hs1, he1]; simp [Arm.r_of_w_same, Arm.r_of_w_different])
+        (by rw [hs1, he1]; simp [Arm.r_of_w_different]) (by rw [hs1, he1]; simp [Arm.w_program]) ?_
+      rw [hs1]
+      refine steps_cons ha2 (by rw [hs2, he2]; simp [Arm.r_of_w_same, Arm.r_of_w_different, Arm.r_of_write_mem_bytes])
+        (by rw [hs2, he2]; simp [Arm.r_of_w_different, Arm.r_of_write_mem_bytes])
+        (by rw [hs2, he2]; simp [Arm.w_program, Arm.write_mem_bytes_program]) ?_
+      rw [hs2]; exact h3
+    · rw [hsp3, hsp2]
+      rw [show 4096 * (k + 1) = 4096 + 4096 * k by omega, BitVec.ofNat_add]
+      bv_omega
+    · rw [ho3 f h1 h2, he2, Arm.r_of_w_different h1, Arm.r_of_write_mem_bytes, he1,
+        Arm.r_of_w_different h2, Arm.r_of_w_different h1]
+    · rw [hm3 a, hsp2, he2]
+      have hmem2 : (Arm.w .PC (Arm.r .PC s1 + 4#64) (Arm.write_mem_bytes 4 (spOf s1) 0#32 s1)).mem a =
+          if (a - (spOf s - 4096#64)).toNat < 4 then 0#8 else s.mem a := by
+        rw [Arm.ArmState.mem_w_eq_mem, Arm.Memory.write_mem_bytes_eq_mem_write_bytes]
+        simp only
+        rw [show (0#32 : BitVec 32) = 0#(4 * 8) from rfl, write_bytes_zero_at, hsp1, he1]
+        simp [Arm.ArmState.mem_w_eq_mem]
+      rw [hmem2, probeHitB_succ]
+      cases hk : probeHitB k (spOf s - 4096#64) a <;>
+        by_cases h0 : (a - (spOf s - 4096#64)).toNat < 4 <;>
+        simp only [h0, hk, decide_true, decide_false, Bool.false_or, Bool.true_or, Bool.or_true,
+          Bool.or_false, Bool.false_eq_true, ite_true, ite_false]
+
+/-- `probeLines total` runs: `sp` unchanged, the probed bytes zeroed (`probeHitB`), nothing else
+but the pc changed. -/
+theorem probeLines_ok (env : Env) (total : Nat) (s : Arm.ArmState) (hal : (spOf s).toNat % 16 = 0) :
+    ∃ s', StepsOk env (probeLines total) s s' ∧ spOf s' = spOf s ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 31#5 → Arm.r f s' = Arm.r f s) ∧
+      (∀ a, s'.mem a = if probeHitB (probeCount total) (spOf s) a then 0#8 else s.mem a) := by
+  unfold probeLines
+  simp only
+  by_cases h0 : probeCount total = 0
+  · simp only [h0, beq_self_eq_true, ite_true]
+    exact ⟨s, rfl, rfl, fun _ _ _ => rfl, fun a => by simp [probeHitB]⟩
+  simp only [show (probeCount total == 0) = false by simpa using h0, Bool.false_eq_true, ite_false]
+  have hn : probeCount total ≤ 3 := by unfold probeCount; split <;> omega
+  obtain ⟨s1, h1, hsp1, ho1, hm1⟩ := probeSteps_ok (probeCount total) env s hal
+  obtain ⟨a2, ha2, he2⟩ := exec_add_sp_imm
+    { env with pc := env.pc + 4 * (probeSteps (probeCount total)).length } ⟨probeCount total, true⟩
+    (by show probeCount total < 4096; omega) s1
+  refine ⟨_, StepsOk.append h1 (steps_one ha2 ?_ ?_ ?_), ?_, fun f g1 g2 => ?_, fun a => ?_⟩
+  · simp [he2, Arm.r_of_w_same, Arm.r_of_w_different]
+  · simp [he2, Arm.r_of_w_different]
+  · simp [he2, Arm.w_program]
+  · rw [he2]; simp only [spOf] at hsp1 ⊢
+    simp only [Arm.r_of_w_same, Arm.r_of_w_different (show Arm.StateField.GPR 31#5 ≠ .PC by simp), hsp1,
+      Imm12.value, ite_true]
+    rw [show probeCount total * 4096 = 4096 * probeCount total from Nat.mul_comm _ _]
+    exact BitVec.sub_add_cancel _ _
+  · rw [he2, Arm.r_of_w_different g2, Arm.r_of_w_different g1, ho1 f g1 g2]
+  · rw [he2, Arm.ArmState.mem_w_eq_mem, Arm.ArmState.mem_w_eq_mem, hm1 a]
+
+/-- The probes zero nothing in `[base - c, base + 16)` for `c ≤ 4000` (the clobber area and the
+fp/lr slot above it): every probe is at least 4096 bytes below `base`. -/
+theorem probeHitB_top {n c k : Nat} {base : BitVec 64} (hc : c ≤ 4000) (hk : k < c + 16)
+    (hn : 4096 * n < 2 ^ 63) :
+    probeHitB n base (base - BitVec.ofNat 64 c + BitVec.ofNat 64 k) = false := by
+  simp only [probeHitB, List.any_eq_false, List.mem_range, decide_eq_true_eq]
+  intro i hi
+  have hi' : 4096 * (i + 1) ≤ 4096 * n := Nat.mul_le_mul_left 4096 hi
+  have e : (base - BitVec.ofNat 64 c + BitVec.ofNat 64 k - (base - BitVec.ofNat 64 (4096 * (i + 1)))).toNat =
+      4096 * (i + 1) + k - c := by
+    have h1 : (4096 * (i + 1)) % 2 ^ 64 = 4096 * (i + 1) := Nat.mod_eq_of_lt (by omega)
+    have h2 : c % 2 ^ 64 = c := Nat.mod_eq_of_lt (by omega)
+    have h3 : k % 2 ^ 64 = k := Nat.mod_eq_of_lt (by omega)
+    bv_omega
+  rw [e]; omega
+
+theorem probeHitB_sub16 (n : Nat) (sp a : BitVec 64) :
+    probeHitB n (sp - 16#64) a = probeHitN n sp a := rfl
+
 /-! ## The prologue and the epilogue -/
 
-theorem prologueLines_eq (saves : List Reg) (size : Nat) :
-    prologueLines saves size = [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
-      (pushLines true (savesInt saves) ++ (pushLines false (savesFloat saves) ++
-        spAdjLines true (size - clobberBytes saves))) := by
+theorem prologueLines_eq {calls : Bool} (saves : List Reg) (size : Nat) :
+    prologueLines saves size calls = [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
+      (probeLines (probeTotal size calls) ++ (pushLines true (savesInt saves) ++ (pushLines false (savesFloat saves) ++
+        spAdjLines true (size - clobberBytes saves)))) := by
   simp only [prologueLines, List.append_assoc]
 
 theorem epilogueLines_eq (saves : List Reg) (size : Nat) :
@@ -1266,29 +1417,28 @@ theorem epilogueLines_eq (saves : List Reg) (size : Nat) :
         [.ins (.ldp Reg.fp Reg.lr (.spPostIndexed 16))]))) ++ [.ins .ret] := by
   simp only [epilogueLines, List.append_assoc, List.cons_append, List.nil_append]
 
-theorem aligned_sub {x : BitVec 64} (hx : x.toNat % 16 = 0) {n : Nat} (hn : n % 16 = 0) (hn' : n < 2 ^ 64) :
-    (x - BitVec.ofNat 64 n).toNat % 16 = 0 := by
-  have h16 : (16 : Nat) ∣ 2 ^ 64 := ⟨2 ^ 60, rfl⟩
-  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn', Nat.mod_mod_of_dvd _ h16]
-  have := x.isLt
-  omega
-
 theorem frame_sp_eq (X C D : BitVec 64) :
     X - (BitVec.ofNat 64 16 + C) - D = X - 16#64 - (C + D) := by bv_omega
 
-/-- **The prologue runs** (Cranelift's frame setup and clobber saves): fp/lr pushed at
-`sp - 16`, `x29 = sp - 16`, the saved registers pushed below, `sp` lowered by `16 + size`;
-only the pc, `x29`, `sp` and `x16` change, memory only in `[sp - 16 - clobberBytes, sp)`, where
-the fp/lr slot holds the entry x30:x29 and each saved register's slot (`clobberOff`) its low
-64 bits. -/
-theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} (hs : size < 2 ^ 64)
+/-- **The prologue runs** (Cranelift's frame setup, stack probes and clobber saves): fp/lr
+pushed at `sp - 16`, `x29 = sp - 16`, the probes (`probeLines`) zero 4 bytes at
+`sp - 16 - 4096·(i + 1)` for `i < probeCount` (`probeHitN`), the saved registers pushed below
+fp/lr, `sp` lowered by `16 + size`; only the pc, `x29`, `sp` and `x16` change, memory only in
+`[sp - 16 - clobberBytes, sp)`, where the fp/lr slot holds the entry x30:x29 and each saved
+register's slot (`clobberOff`) its low 64 bits, and at the probed bytes, which are zero.
+(#581: the former statement, memory only in `[sp - 16 - clobberBytes, sp)`, became false with
+Cranelift's probes: a probe of a frame of at least 4 KiB writes 4096 bytes and more below fp/lr,
+for a calling function possibly 16 bytes below the final `sp`; `calls` is the new argument of
+`prologueLines`.) -/
+theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (hs : size < 2 ^ 64)
     (hsv : SavesOk saves) (hcb : clobberBytes saves ≤ size) (s : Arm.ArmState)
     (hal : (spOf s).toNat % 16 = 0) :
-    ∃ s', StepsOk env (prologueLines saves size) s s' ∧
+    ∃ s', StepsOk env (prologueLines saves size calls) s s' ∧
       spOf s' = spOf s - 16#64 - BitVec.ofNat 64 size ∧ xreg 29 s' = spOf s - 16#64 ∧
       (∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → Arm.r f s' = Arm.r f s) ∧
       (∀ a, (∀ k < 16 + clobberBytes saves,
-        a ≠ spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) + BitVec.ofNat 64 k) → s'.mem a = s.mem a) ∧
+        a ≠ spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) + BitVec.ofNat 64 k) →
+        s'.mem a = if probeHitN (probeCount (probeTotal size calls)) (spOf s) a then 0#8 else s.mem a) ∧
       Arm.read_mem_bytes 16 (spOf s - 16#64) s' = xreg 30 s ++ xreg 29 s ∧
       (∀ r ∈ saves, Arm.read_mem_bytes 8 (spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) +
         BitVec.ofNat 64 (clobberOff saves r)) s' = slotVal s r) := by
@@ -1299,6 +1449,8 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} (hs : size < 2 ^
   have hcbe : clobberBytes saves = pushBytes (savesInt saves).length + pushBytes (savesFloat saves).length := rfl
   have hpIl : pushBytes (savesInt saves).length ≤ 1000 := by omega
   have hpFl : pushBytes (savesFloat saves).length ≤ 1000 := by omega
+  generalize hn : probeCount (probeTotal size calls) = n
+  have hn63 : 4096 * n < 2 ^ 63 := by have := probeCount_le_three (probeTotal size calls); omega
   -- the bases
   generalize hBF : spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) = BF
   have hBFa : BF.toNat % 16 = 0 := by rw [← hBF]; exact aligned_sub hal (by omega) (by omega)
@@ -1311,6 +1463,8 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} (hs : size < 2 ^
       16 + pushBytes (savesInt saves).length + pushBytes (savesFloat saves).length by omega,
       BitVec.ofNat_add, BitVec.ofNat_add]
     bv_omega
+  have hBF16 : BF = spOf s - 16#64 - BitVec.ofNat 64 (clobberBytes saves) := by
+    rw [← hBF, BitVec.ofNat_add]; bv_omega
   -- fp/lr and `mov x29, sp`
   have hal0 : Arm.CheckSPAlignment s := checkSP_of hal
   obtain ⟨a1, ha1, he1⟩ := exec_stp_fplr env s hal0
@@ -1329,21 +1483,34 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} (hs : size < 2 ^
     rw [← hs2, he2]; simp [xreg, Arm.r_of_w_same, hsp1]
   have hm2 : s2.mem = (Arm.write_mem_bytes 16 (spOf s - 16#64) (xreg 30 s ++ xreg 29 s) s).mem := by
     rw [← hs2, he2, ← hs1, he1]; simp [Arm.ArmState.mem_w_eq_mem]
+  -- the stack probes
+  have hal2 : (spOf s2).toNat % 16 = 0 := by rw [hsp2]; exact aligned_sub hal (by decide) (by decide)
+  obtain ⟨sP, hP, hspP, hoP, hmP⟩ := probeLines_ok { env with pc := env.pc + 4 + 4 }
+    (probeTotal size calls) s2 hal2
+  rw [hn, hsp2] at hmP
+  have hspP' : spOf sP = spOf s - 16#64 := by rw [hspP, hsp2]
+  -- the probes zero nothing at the top of the frame
+  have hnot : ∀ c k, c ≤ 4000 → k < c + 16 →
+      probeHitB n (spOf s - 16#64) (spOf s - 16#64 - BitVec.ofNat 64 c + BitVec.ofNat 64 k) = false :=
+    fun c k hc hk => probeHitB_top hc hk hn63
   -- the pushes
-  obtain ⟨s3, h3, hsp3, ho3, he3, hp3, hm3, hv3⟩ := pushLines_ok { env with pc := env.pc + 4 + 4 } true
-    (savesInt saves) s2 (BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length)) hsv.int
-    (by have := hsv.intLen; omega) hBIa (by rw [hsp2, hT16])
+  obtain ⟨s3, h3, hsp3, ho3, he3, hp3, hm3, hv3⟩ := pushLines_ok
+    { env with pc := env.pc + 4 + 4 + 4 * (probeLines (probeTotal size calls)).length } true
+    (savesInt saves) sP (BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length)) hsv.int
+    (by have := hsv.intLen; omega) hBIa (by rw [hspP', hT16])
   obtain ⟨s4, h4, hsp4, ho4, he4, hp4, hm4, hv4⟩ := pushLines_ok
-    { env with pc := env.pc + 4 + 4 + 4 * (pushLines true (savesInt saves)).length } false
+    { env with pc := env.pc + 4 + 4 + 4 * (probeLines (probeTotal size calls)).length +
+      4 * (pushLines true (savesInt saves)).length } false
     (savesFloat saves) s3 BF hsv.float (by have := hsv.floatLen; omega) hBFa hsp3
   obtain ⟨s5, h5, hsp5, ho5, hm5⟩ := spAdj_ok
-    { env with pc := env.pc + 4 + 4 + 4 * (pushLines true (savesInt saves)).length +
+    { env with pc := env.pc + 4 + 4 + 4 * (probeLines (probeTotal size calls)).length +
+      4 * (pushLines true (savesInt saves)).length +
       4 * (pushLines false (savesFloat saves)).length } true (size := size - clobberBytes saves) (by omega) s4
   obtain ⟨he5, hp5⟩ := h5.err
   simp only [ite_true] at hsp5
   have hpb : ∀ n, n ≤ pushBytes n := fun n => by unfold pushBytes; omega
-  -- the memory of `s5` against `s2` below fp/lr, and against `s` outside the frame top
-  have hm52 : ∀ a, (∀ k < clobberBytes saves, a ≠ BF + BitVec.ofNat 64 k) → s5.mem a = s2.mem a := by
+  -- the memory of `s5` against `sP` below fp/lr, and against `s` outside the frame top
+  have hm5P : ∀ a, (∀ k < clobberBytes saves, a ≠ BF + BitVec.ofNat 64 k) → s5.mem a = sP.mem a := by
     intro a ha
     rw [hm5, hm4 a (fun k hk => ha k (by omega)), hm3 a (fun k hk e => ha
       (pushBytes (savesFloat saves).length + k) (by omega) (by rw [e, add_ofNat_add]))]
@@ -1351,6 +1518,8 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} (hs : size < 2 ^
       a = BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length + k) → s5.mem a = s3.mem a := by
     intro k hk a ha
     rw [hm5, hm4 a (fun k' hk' e => add_ofNat_ne (by omega) (by omega) (by omega) (ha.symm.trans e))]
+  -- the fields of `sP` against `s`
+  have hoP2 : ∀ f, f ≠ .PC → f ≠ .GPR 31#5 → Arm.r f sP = Arm.r f s2 := hoP
   refine ⟨s5, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [prologueLines_eq, List.cons_append, List.cons_append, List.nil_append]
     refine steps_cons ha1 (by rw [he1]; simp [Arm.r_of_w_same])
@@ -1360,20 +1529,24 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} (hs : size < 2 ^
     refine steps_cons ha2 (by rw [he2]; simp [Arm.r_of_w_same, Arm.r_of_w_different])
       (by rw [he2]; simp [Arm.r_of_w_different]) (by rw [he2]; simp [Arm.w_program]) ?_
     rw [hs2]
-    exact StepsOk.append h3 (StepsOk.append h4 h5)
+    exact StepsOk.append hP (StepsOk.append h3 (StepsOk.append h4 h5))
   · rw [hsp5, hsp4, ← hBF]
     obtain ⟨d, rfl⟩ : ∃ d, size = clobberBytes saves + d := ⟨size - clobberBytes saves, by omega⟩
     rw [Nat.add_sub_cancel_left, BitVec.ofNat_add, BitVec.ofNat_add]
     exact frame_sp_eq _ _ _
   · rw [show xreg 29 s5 = xreg 29 s2 by
       simp only [xreg]
-      rw [ho5 _ (by simp) (by decide) (by decide), ho4 _ (by simp) (by decide), ho3 _ (by simp) (by decide)]]
+      rw [ho5 _ (by simp) (by decide) (by decide), ho4 _ (by simp) (by decide), ho3 _ (by simp) (by decide),
+        hoP2 _ (by simp) (by decide)]]
     exact hx29
   · intro f g1 g2 g3 g4
-    rw [ho5 f g1 g3 g4, ho4 f g1 g3, ho3 f g1 g3, ho2 f g1 g2, ho1 f g1 g3]
+    rw [ho5 f g1 g3 g4, ho4 f g1 g3, ho3 f g1 g3, hoP2 f g1 g3, ho2 f g1 g2, ho1 f g1 g3]
   · intro a ha
-    rw [hm52 a (fun k hk e => ha k (by omega) (by rw [← hBF] at e ⊢; exact e)), hm2,
-      Arm.Memory.write_mem_bytes_eq_mem_write_bytes]
+    rw [hm5P a (fun k hk e => ha k (by omega) (by rw [← hBF] at e ⊢; exact e)), hmP a, probeHitB_sub16]
+    by_cases hh : probeHitN n (spOf s) a = true
+    · simp only [hh, ite_true]
+    simp only [hh, Bool.false_eq_true, ite_false]
+    rw [hm2, Arm.Memory.write_mem_bytes_eq_mem_write_bytes]
     simp only
     refine write_bytes_outside 16 _ _ _ (fun k hk e => ha (clobberBytes saves + k) (by omega) ?_)
     rw [e, hT16, add_ofNat_add, add_ofNat_add, ← hBF]
@@ -1381,18 +1554,23 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} (hs : size < 2 ^
   · rw [hT16]
     apply read_of_agree (t := s) (by decide)
     intro k hk
-    rw [hm52 _ (fun k' hk' e => add_ofNat_ne (by omega) (by omega) (by omega)
+    have haddr : BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length) +
+        BitVec.ofNat 64 (pushBytes (savesInt saves).length) + BitVec.ofNat 64 k =
+        spOf s - 16#64 - BitVec.ofNat 64 0 + BitVec.ofNat 64 k := by
+      rw [← hT16]; simp
+    rw [hm5P _ (fun k' hk' e => add_ofNat_ne (by omega) (by omega) (by omega)
       ((show BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length) +
           BitVec.ofNat 64 (pushBytes (savesInt saves).length) + BitVec.ofNat 64 k =
           BF + BitVec.ofNat 64 (clobberBytes saves + k) by
-        rw [add_ofNat_add, add_ofNat_add]; congr 2; unfold clobberBytes; omega).symm.trans e)), hm2, ← hT16]
+        rw [add_ofNat_add, add_ofNat_add]; congr 2; unfold clobberBytes; omega).symm.trans e)), hmP,
+      haddr, hnot 0 k (by decide) (by omega), ← haddr, if_neg (by decide), hm2, ← hT16]
   · intro r hr
-    have hreg : ∀ n, n < 29 → Arm.r (.GPR (rnum n)) s2 = Arm.r (.GPR (rnum n)) s := fun n hn => by
+    have hreg : ∀ n, n < 29 → Arm.r (.GPR (rnum n)) sP = Arm.r (.GPR (rnum n)) s := fun n hn => by
       have h31 : Arm.StateField.GPR (rnum n) ≠ .GPR 31#5 := fun e => rnum_ne31 hn (Arm.StateField.GPR.inj e)
       have h29 : Arm.StateField.GPR (rnum n) ≠ .GPR 29#5 := fun e => by
         have := congrArg BitVec.toNat (Arm.StateField.GPR.inj e)
         rw [rnum_toNat (by omega)] at this; simp at this; omega
-      rw [ho2 _ (by simp) h29, ho1 _ (by simp) h31]
+      rw [hoP2 _ (by simp) h31, ho2 _ (by simp) h29, ho1 _ (by simp) h31]
     rcases saves_mem hsv hr with ⟨n, rfl, hi, ho⟩ | ⟨n, rfl, hi, ho⟩
     · have hn : n < 29 := (hsv.int _ (List.mem_of_getElem? hi)).2
       have hil : (savesInt saves).idxOf (.x n) < (savesInt saves).length := (List.getElem?_eq_some_iff.1 hi).1
@@ -1416,7 +1594,8 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} (hs : size < 2 ^
           Arm.read_mem_bytes 8 (BF + BitVec.ofNat 64 (8 * (savesFloat saves).idxOf (.v n))) s4 from
         read_of_mem_eq hm5 _ _, hv]
       simp only [slotVal]
-      rw [ho3 _ (by simp) (by simp), ho2 _ (by simp) (by simp), ho1 _ (by simp) (by simp)]
+      rw [ho3 _ (by simp) (by simp), hoP2 _ (by simp) (by simp), ho2 _ (by simp) (by simp),
+        ho1 _ (by simp) (by simp)]
 
 /-- **The epilogue runs up to the `ret`** (Cranelift's clobber restore and frame teardown):
 `sp` raised by `size - clobberBytes`, the saved registers popped (`PopVal`: each gets its slot,
