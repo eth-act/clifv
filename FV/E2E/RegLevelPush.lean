@@ -1628,9 +1628,8 @@ theorem probeLoop_ok (env : Env) {total : Nat} (hlo : 16384 ≤ total) (hhi : to
       simp only
       rw [show (0#32 : BitVec 32) = 0#(4 * 8) from rfl, write_bytes_zero_at, hsp1, hx1, he1]
       simp only [Arm.ArmState.mem_w_eq_mem]
-      congr 3
-      rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega]
-      bv_omega
+      rw [show spOf s + loopOff (m + 1) = spOf s - BitVec.ofNat 64 (4096 * (m + 1)) by
+        simp only [loopOff]; bv_omega]
     have hf3 : ∀ f, f ≠ .PC → f ≠ .GPR 16#5 → (∀ fl, f ≠ .FLAG fl) → Arm.r f s3 = Arm.r f s := by
       intro f g1 g2 g3
       rw [he3, he2, he1]
@@ -1665,7 +1664,8 @@ theorem probeLoop_ok (env : Env) {total : Nat} (hlo : 16384 ≤ total) (hhi : to
         fun f g1 g2 g3 => by rw [hf4 f g1, hf3 f g1 g2 g3], fun a => ?_⟩
       · rw [show spOf s4 = spOf s3 from hf4 _ (by simp), hsp3]
       · show Arm.r _ s4 = _; rw [hf4 _ (by simp), he3]
-        simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same, hx2]
+        simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same]
+        simpa [xreg, loopOff] using hx2
       · show Arm.r _ s4 = _; rw [hf4 _ (by simp), he3]
         simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same]
         simpa [xreg] using hx17
@@ -1673,19 +1673,22 @@ theorem probeLoop_ok (env : Env) {total : Nat} (hlo : 16384 ≤ total) (hhi : to
         rw [hf4 _ (by simp), he3]
         exact cmn_last (by omega) hm1 hhi (by omega) (by omega) _ fl
       · rw [hm4, hmem3 a]
-        simp only [probeHitB, List.range_one, List.any_cons, List.any_nil, Bool.or_false]
-        rw [show spOf s - BitVec.ofNat 64 (4096 * m) - BitVec.ofNat 64 (4096 * (0 + 1)) =
+        simp only [probeHitB, List.range_one, Nat.zero_add, List.any_cons, List.any_nil, Bool.or_false,
+          Nat.mul_one]
+        rw [show spOf s - BitVec.ofNat 64 (4096 * m) - BitVec.ofNat 64 4096 =
           spOf s - BitVec.ofNat 64 (4096 * (m + 1)) by
             rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega, BitVec.ofNat_add]; bv_omega]
         by_cases h : (a - (spOf s - BitVec.ofNat 64 (4096 * (m + 1)))).toNat < 4 <;> simp [h]
     · -- more iterations: the `b.gt` jumps back to the `sub`
       have hpc4 : Arm.r .PC s4 = Arm.r .PC s := by
         rw [he4, hgt]; simp [Arm.r_of_w_same, hpc3, hr]
+        bv_omega
       have hal4 : (spOf s4).toNat % 16 = 0 := by
         rw [show spOf s4 = spOf s3 from hf4 _ (by simp), hsp3]; exact hal
       have h16' : xreg 16 s4 = loopOff (m + 1) := by
         show Arm.r _ s4 = _; rw [hf4 _ (by simp), he3]
-        simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same, hx2]
+        simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same]
+        simpa [xreg, loopOff] using hx2
       have h17' : xreg 17 s4 = BitVec.ofNat 64 total := by
         show Arm.r _ s4 = _; rw [hf4 _ (by simp), he3]
         simp [Arm.write_pstate, Arm.r_of_w_different, Arm.r_of_w_same]
@@ -1695,7 +1698,8 @@ theorem probeLoop_ok (env : Env) {total : Nat} (hlo : 16384 ≤ total) (hhi : to
         probeLoop_ok env hlo hhi r (m + 1) s4 (by omega) hr hal4 h16' h17'
       rw [hsp4] at hL
       refine ⟨s', ⟨rfl, h16, s3, a4, hsteps, ha4, he4'.1, he4'.2, by rw [hs4, hpc4]; simp [Nat.pos_iff_ne_zero.mp hr], by
-        rw [hs4]; exact hL⟩, ?_, by rw [hx16']; congr 2; omega, hx17', hfl', ?_, ?_, fun a => ?_⟩
+        rw [hs4]; exact hL⟩, ?_, by rw [hx16', show m + 1 + r = m + (r + 1) by omega], hx17', hfl', ?_, ?_,
+        fun a => ?_⟩
       · rw [hsp', show spOf s4 = spOf s3 from hf4 _ (by simp), hsp3]
       · rw [hpc', hpc4]
       · intro f g1 g2 g3; rw [hf' f g1 g2 g3, hf4 f g1, hf3 f g1 g2 g3]
@@ -1756,7 +1760,7 @@ theorem probeLines_split (total : Nat) : probeLines total = probeHead total ++ p
   by_cases h : 3 < probeCount total
   · have h0 : (probeCount total == 0) = false := by simp; omega
     simp [h, h0, show ¬ probeCount total ≤ 3 by omega, probeLoopLines]
-  · simp [h]
+  · unfold probeLines; simp [h, show probeCount total ≤ 3 by omega]
 
 /-- The probe loop is the loop form: a probed stack in `[16 KiB, 4 GiB)`, `⌈total / 4096⌉` probes. -/
 theorem probeLoop_facts {total : Nat} (hl : probeLoop total = true) :
