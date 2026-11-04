@@ -5,6 +5,7 @@ import FV.E2E.SizeLower
 import FV.Backend.Proof.IselSzDriver
 import FV.E2E.DeadCleanupTotal
 import FV.Backend.Proof.DeadCleanupPrepare
+import FV.E2E.SizeIn
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Cov Backend.DeadCleanup
