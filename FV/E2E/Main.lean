@@ -223,7 +223,7 @@ theorem probeHit_above {K : Nat} {af : AFunc} {s : Arm.ArmState} (hst : StackAva
   · rfl
   have hr := hst.probe.1
   have hf : af.frame = true := by simp only [probeHit, Bool.and_eq_true] at hp; exact hp.1
-  have hc := probeCount_le af hf
+  have hc := E2E.probeCount_le af hf
   obtain ⟨-, i, hi, k, hk, e⟩ := probeHit_toNat hp (by omega)
   omega
 

@@ -47,7 +47,7 @@ def StackBelow (K : Nat) (sp a : BitVec 64) : Prop :=
 theorem probeHit_below {af : AFunc} {sp a : BitVec 64} (hr : frameDrop af + probeBelow af ≤ sp.toNat)
     (h : probeHit af sp a = true) : StackBelow (frameDrop af + probeBelow af) sp a := by
   have hf : af.frame = true := by simp only [probeHit, Bool.and_eq_true] at h; exact h.1
-  have hc := probeCount_le af hf
+  have hc := E2E.probeCount_le af hf
   have hd : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hf]
   rw [hd] at hr ⊢
   obtain ⟨-, i, hi, k, hk, e⟩ := probeHit_toNat h (by omega)
