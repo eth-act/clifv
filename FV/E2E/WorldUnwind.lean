@@ -76,7 +76,7 @@ theorem iselSimU_relW_cleanup_of {p : Clif.Program} {f : Clif.Function} {k : Nat
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ us outs w, VReturns vcK (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w) ∧
     (∀ c', Clif.runLoopX env p fuel cs.toX = .trapped c' →
       VTraps vcK (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) ρ₀ w₀ c') ∧
@@ -197,7 +197,7 @@ theorem iselSimU_relW_cleanup_stage {p : Clif.Program} {f : Clif.Function} {k : 
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ us outs w, VReturns (skipStage f vc) (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w) ∧
     (∀ c', Clif.runLoopX env p fuel cs.toX = .trapped c' →
       VTraps (skipStage f vc) (valueSemU F ⟨fa.k, af.slotBase⟩ X XR) ρ₀ w₀ c') ∧
