@@ -1131,7 +1131,16 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
     on as `lake cache stage` directories, 25–65 MB per shard). Lean's output is not always
     reproducible, so shards that each built a shared import can stage differing copies:
     `scripts/lake-unstage.py` keeps the copy the most downstream work was built against, and
-    `--only` schedules whatever later jobs find out of date. Then one job assembles every target
+    `--only` schedules whatever later jobs find out of date. A shard stages the modules that built
+    even when others failed, and later waves run anyway. When a shard failed, or the assembled
+    build does, the assemble job publishes a partial `lake-full` (every module that is up to date)
+    with the list of the rest (`lake-full-missing`), then fails, so the gates skip; the next run
+    plans the missing modules and their importers again (`ci-build-plan.py --missing`). A push
+    whose run lost a shard before its build step (a lost runner, a setup failure) gets one retry
+    run (`workflow_dispatch`) unless a newer push already waits. The swap file goes on the disk with
+    more room and leaves 25 GB free on `/` (8 shards died of a full disk, 2026-10-31 to 11-04).
+    Contributors fill their `FV_LAKE_CACHE` from these builds with `scripts/fetch-lake-cache.sh`.
+    Then one job assembles every target
     and executable, and the gate jobs run: `scripts/axiom-audit.py`, crate-proofs, `lean-e2e-check`
     (`link-check` is built, it needs a `cargo fv link-proof` directory to run),
     `lean-backend-filetests.sh`, `lean-backend-encode-check.sh`, `clif-filetests.sh` against

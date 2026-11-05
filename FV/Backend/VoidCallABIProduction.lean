@@ -17,7 +17,7 @@ def lowerCheckedVoidCallABI (f : Clif.Function) (verify : Bool) : Except String 
   | .error _ => lowerCheckedMemoryCapturedCopyNI f verify
 
 def lowerForAllocationVoidCallABI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedVoidCallABI f verify).map (Stock.Arithmetic.stage cleanup)
+  (lowerCheckedVoidCallABI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
 
 namespace ReturnPinFile
 
@@ -31,7 +31,7 @@ structure Entry where
 
 def entry (f : Clif.Function) (verify cleanup : Bool) : Except String Entry := do
   let raw ← lowerCheckedVoidCallABI f verify
-  let prepared ← prepare (Stock.Arithmetic.stage cleanup raw)
+  let prepared ← prepare (Stock.Arithmetic.stageF cleanup f raw)
   pure ⟨f,raw,prepared,Thunk.mk (fun _ => ReturnPinCheck.pins f raw),rfl⟩
 
 def Entry.matches (e : Entry) (definitions : List (Reg × Reg)) : Bool :=

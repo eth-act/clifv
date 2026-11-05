@@ -1013,26 +1013,27 @@ theorem amt_narrow {w : Nat} (hw : w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64) (yl y
     simp only [show 2 ^ 6 - 1 = 63 from rfl] at h
     simp only [show 64 - 1 = 63 from rfl, show 63 % 2 ^ 64 = 63 from rfl, h]; omega
 
+/-- A narrow amount: the low half of an `i128` amount, modulo a width dividing `2^64`. -/
+theorem amt_lo {w : Nat} (hw : w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64) (yl yh : BitVec 64) :
+    yl.toNat % w = (yh ++ yl).toNat % w := by
+  rw [append_toNat]
+  rcases hw with rfl | rfl | rfl | rfl <;> omega
+
 theorem pat_shiftNarrow (op : BinaryOp) (hop : op.isShift = true) (t : Ty)
     (ht : t = .i8 ∨ t = .i16 ∨ t = .i32 ∨ t = .i64) (x : BitVec t.width) (yl yh : BitVec 64) :
     ∃ ρ, runPat (canon [⟨t, x⟩, V64 yl]) (Pat.shiftNarrow op t) = some ρ ∧
       ∀ r, Sem.shift op x (yh ++ yl) = some r → ρ 2 = some ⟨t, r⟩ := by
-  obtain ⟨r, hr⟩ : ∃ r, Sem.shift op x (yh ++ yl) = some r := by
-    cases op <;> simp_all [BinaryOp.isShift, Sem.shift]
   have hw : t.width = 8 ∨ t.width = 16 ∨ t.width = 32 ∨ t.width = 64 := by
     rcases ht with rfl | rfl | rfl | rfl <;> simp
-  have hc := shift_congr (op := op) x (yl &&& BitVec.ofNat 64 (t.width - 1)) (yh ++ yl)
-    (amt_narrow hw yl yh)
-  rw [hr] at hc
-  rcases ht with rfl | rfl | rfl | rfl <;>
-    (simp only [width_i8, width_i16, width_i32, width_i64, Nat.reduceSub] at hc
-     simp (config := { maxSteps := 4000000 }) [Pat.shiftNarrow, S, bin, runPat, evalInst,
-      dframe, canon, Frame.getAs, Frame.get, Res.ofOption, hop,
-      show BinaryOp.band.isShift = false from rfl, bind, Res.bind,
-      Regs.set, Sem.binary, Sem.band]
-     erw [hc]; simp
-     intro r1 h1
-     have e : r = r1 := Option.some.inj (hr.symm.trans h1)
-     subst e; rfl)
+  have hc := shift_congr (op := op) x yl (yh ++ yl) (amt_lo hw yl yh)
+  obtain ⟨r, hr⟩ : ∃ r, Sem.shift op x yl = some r := by
+    cases op <;> simp_all [BinaryOp.isShift, Sem.shift]
+  refine ⟨Regs.set (canon [⟨t, x⟩, V64 yl]) 2 ⟨t, r⟩, ?_, ?_⟩
+  · simp [Pat.shiftNarrow, S, bin, runPat, evalInst, dframe, canon, Frame.getAs, Frame.get,
+      Res.ofOption, hop, bind, Res.bind, Regs.setMany_cons, Regs.setMany_nil, hr, V64]
+  · intro r1 h1
+    rw [← hc, hr] at h1
+    cases h1
+    simp [Regs.set]
 
 end Opt.Legal

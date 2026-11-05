@@ -72,10 +72,12 @@ private theorem prepare_repr (vc : VCode) : prepare vc = prepareRepr vc := by
   simp only [prepare, prepareRepr, splitRun, bind_assoc]
   rfl
 
-private def mapBlocks (T : VBlock → VBlock) (vc : VCode) : VCode :=
+def mapBlocks (T : VBlock → VBlock) (vc : VCode) : VCode :=
   { vc with blocks := vc.blocks.map T }
 
-private structure BlockMap (T : VBlock → VBlock) : Prop where
+/-- A block map that preparation commutes with (`prepare_map`). Public for the skip of unused
+instructions (`FV/Backend/Proof/SkipDeadPrepare.lean`). -/
+structure BlockMap (T : VBlock → VBlock) : Prop where
   default : T default = default
   label : ∀ b, (T b).label = b.label
   params : ∀ b, (T b).params = b.params
@@ -108,7 +110,7 @@ private theorem forIn_map_state {α α' β γ ε : Type} (f : α → α') (g : �
       | done b' => rfl
       | yield b' => exact ih b'
 
-private theorem mapBlocks_cfg {T : VBlock → VBlock} (hT : BlockMap T) (vc : VCode) :
+theorem mapBlocks_cfg {T : VBlock → VBlock} (hT : BlockMap T) (vc : VCode) :
     (mapBlocks T vc).cfg = vc.cfg := by
   unfold VCode.cfg
   simp only [mapBlocks, Array.size_map, Array.findIdx?_map, Function.comp_def, hT.label]
@@ -192,7 +194,7 @@ private theorem mapBlocks_keep (T : VBlock → VBlock) (vc : VCode) (live : Arra
       mapBlocks T { vc with blocks := keep vc.blocks live } := by
   simp only [mapBlocks, keep_map]
 
-private theorem prepare_map {T : VBlock → VBlock} (hT : BlockMap T) (vc : VCode) :
+theorem prepare_map {T : VBlock → VBlock} (hT : BlockMap T) (vc : VCode) :
     prepare (mapBlocks T vc) = (prepare vc).map (mapBlocks T) := by
   rw [prepare_repr, prepare_repr]
   unfold prepareRepr
@@ -366,6 +368,11 @@ theorem preparedCleanupBlock_interface (vc : VCode) (b : VBlock) :
     (preparedCleanupBlock vc b).insts.back? = b.insts.back? := by
   have h := eraseBlock_map vc.classes.size (exitLive vc 0 default) (exitDead vc)
   exact ⟨h.label b, h.params b, h.branchArgs b, h.back b⟩
+
+/-- Transported cleanup is a block map that preparation commutes with (`prepare_map`). Public
+for the production cleanup stage (`FV/Backend/Proof/CleanupStageFacts.lean`). -/
+theorem preparedCleanupBlock_blockMap (vc : VCode) : BlockMap (preparedCleanupBlock vc) :=
+  eraseBlock_map vc.classes.size (exitLive vc 0 default) (exitDead vc)
 
 /-- Transported cleanup can only delete instructions. -/
 theorem preparedCleanupBlock_sublist (vc : VCode) (b : VBlock) :

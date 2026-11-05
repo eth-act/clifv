@@ -16,7 +16,7 @@ def lowerCheckedMemorySretCopyABI (f : Clif.Function) (verify : Bool) : Except S
   | .error _ => lowerCheckedMemoryCapturedCopyNI f verify
 
 def lowerForAllocationMemorySretCopyABI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedMemorySretCopyABI f verify).map (Stock.Arithmetic.stage cleanup)
+  (lowerCheckedMemorySretCopyABI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
 
 /-- Retry the complete previous pipeline with the original input and allocation callback. -/
 def compileFileMemorySretCopyABIWhen {m : Type → Type} [Monad m] (enabled : Bool)

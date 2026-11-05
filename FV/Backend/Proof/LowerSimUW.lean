@@ -146,16 +146,34 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
 
 /-! ## A raising statement -/
 
-/-- **A `call`/`call_indirect` statement whose extern unwinds**: the VCode run reaches a `call`
-whose callee raises an object related to the exception and which ends the activation, the world
-after the unwinder related to the extern's memory. -/
-theorem stmt_step_raiseW (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)
+/-- `VUnwFromW`, executing only from configurations satisfying `P` (the raising `call`'s
+included). -/
+def VUnwFromWP (P : VConf CV W → Prop) (vc : VCode) (sem : ISem CV W) (rz : RaiseFn W)
+    (vs : VState CV W) (obj : BitVec 64) (w' : W) : Prop :=
+  ∃ b k ρ w vb info ops outs, StarP (VStep vc sem) P (.run vs) (.run ⟨b, k, ρ, w⟩) ∧
+    P (.run ⟨b, k, ρ, w⟩) ∧
+    vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.call info) ∧
+    (MInst.call info).operands = .ok ops ∧
+    rz (callDest info) (vuses ops ρ) w = some (obj, w') ∧
+    sem (.call info) (vuses ops ρ) w = some (outs, w', .halt) ∧
+    outs.length = (ops.toList.filter Operand.isDef).length
+
+theorem VUnwFromWP.toVUnwFromW {P : VConf CV W → Prop} {vs : VState CV W} {obj : BitVec 64}
+    {w' : W} (h : VUnwFromWP P vc sem rz vs obj w') : VUnwFromW vc sem rz vs obj w' := by
+  obtain ⟨b, k, ρ, w, vb, info, ops, outs, hs, -, h1⟩ := h
+  exact ⟨b, k, ρ, w, vb, info, ops, outs, hs.star, h1⟩
+
+/-- **A `call`/`call_indirect` statement whose extern unwinds**, with the zone of the run (the
+statement's segment). -/
+theorem stmt_step_raiseWP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)
     (HU : UnwShape f vc ctx R gn bl A) (HR : RaiseHypW f sem rz MR env p out)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
     {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
     {e : Clif.Exn} {mm : Clif.Mem} (hr : instRaise env p s.frame s.mem stm.inst = some (e, mm)) :
-    ∃ obj w', VUnwFromW vc sem rz ⟨b, k, ρ, w⟩ obj w' ∧ E2E.ExnRel e obj ∧ MR slots mm w' := by
+    ∃ B j, f.blocks[b]? = some B ∧ B.body[j]? = some stm ∧ k = pos f R bl b j ∧
+      ∃ obj w', VUnwFromWP (AtSeg b k (seg f R bl b j).length) vc sem rz ⟨b, k, ρ, w⟩ obj w' ∧
+        E2E.ExnRel e obj ∧ MR slots mm w' := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
   subst hk
@@ -215,8 +233,16 @@ theorem stmt_step_raiseW (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv 
     (H.dsem.rename R gn H.shape.ren) hD hdefs
   obtain ⟨ρ₁', hsr', hA1, -⟩ := (hren huses hAg).2 hsr
   have hsegat := (seg_at hcode htne hjlt).1
+  have hlen' := congrArg List.length (seg_eq (R := R) hB hL hstm hsl)
   rw [seg_eq hB hL hstm hsl, List.map_append] at hsegat
-  obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_star hvb hsegat.append_left hsr'
+  obtain ⟨hstar, hk'lt, hi, hops, hsem, hlen, -⟩ := seqRun_stop_starP hvb hsegat.append_left hsr'
+  have hzone : ∀ c, AtSeg (V := CV) (W := W) b (pos f R bl b j)
+      (sl.st'.emitted.toList.map (·.mapRegs R)).length c →
+      AtSeg b (pos f R bl b j) (seg f R bl b j).length c := by
+    rintro c ⟨t, ht, ρ', w', rfl⟩
+    refine ⟨t, ?_, ρ', w', rfl⟩
+    simp only [List.length_map, List.length_append] at hlen' ht
+    omega
   obtain ⟨hmk, hops0⟩ := seqRun_stop_mem hsr
   have hcm : MInst.call ci ∈ sl.st'.emitted.toList := List.mem_of_getElem? hmk
   have hu : ∀ o ∈ ops.toList, o.isUse = true → D o.vreg ∨ ¬ D (gn o.vreg) := by
@@ -231,9 +257,22 @@ theorem stmt_step_raiseW (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv 
     obtain ⟨d, us, ds⟩ := ci
     cases d <;> exact ⟨_, rfl, rfl⟩
   rw [hci'] at hi hops hsem
-  refine ⟨obj, w', ⟨b, _, ρ₁', w₁, vb, ci', ops.map (rnOp gn), _, hstar, hvb, hi, hops,
+  refine ⟨B, j, hB, hstm, rfl, obj, w', ⟨b, _, ρ₁', w₁, vb, ci', ops.map (rnOp gn), _,
+    hstar.mono hzone, hzone _ ⟨_, hk'lt, ρ₁', w₁, rfl⟩, hvb, hi, hops,
     by rw [hdest, hvu]; exact hra, hsem, hlen⟩, hex, ?_⟩
   simpa [fr', restrict, hslots] using hmr'
+
+/-- **A `call`/`call_indirect` statement whose extern unwinds** (`stmt_step_raiseWP` without the
+zone). -/
+theorem stmt_step_raiseW (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)
+    (HU : UnwShape f vc ctx R gn bl A) (HR : RaiseHypW f sem rz MR env p out)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
+    {e : Clif.Exn} {mm : Clif.Mem} (hr : instRaise env p s.frame s.mem stm.inst = some (e, mm)) :
+    ∃ obj w', VUnwFromW vc sem rz ⟨b, k, ρ, w⟩ obj w' ∧ E2E.ExnRel e obj ∧ MR slots mm w' := by
+  obtain ⟨B, j, -, -, -, obj, w', hu, h1, h2⟩ := stmt_step_raiseWP H HU HR hm hbody hr
+  exact ⟨obj, w', VUnwFromWP.toVUnwFromW hu, h1, h2⟩
 
 /-! ## Entering a handler -/
 
@@ -335,7 +374,7 @@ theorem enter_matchUW (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)
 exception table, a `tag 0`/`tag 1` handler). The CLIF steps — the payload bound, the jump to the
 handler — are matched by the terminator's code up to the `tryCall` (`.goto 0`), the landing-pad
 edge block and its `jump`. -/
-theorem term_step_try_exnW (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)
+theorem term_step_try_exnWP (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)
     (HU : UnwShape f vc ctx R gn bl A) (HR : RaiseHypW f sem rz MR env p out)
     {xs : Clif.XState} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots xs.s ⟨b, k, ρ, w⟩) (hbody : xs.s.frame.body = [])
@@ -345,7 +384,7 @@ theorem term_step_try_exnW (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEn
       (∀ c, Clif.stepX env p xs1 ≠ .trapped c) ∧ (∀ vals cm, Clif.stepX env p xs1 ≠ .done vals cm) ∧
       (∀ e' cm, Clif.stepX env p xs1 ≠ .unwound e' cm) ∧
       ∀ xs2, Clif.stepX env p xs1 = .next xs2 →
-        ∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+        ∃ vs', StarP (VStep vc sem) (TermZone vc b k) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
           Match f ctx R gn bl A MR slots xs2.s vs' := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
@@ -491,7 +530,9 @@ theorem term_step_try_exnW (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEn
     show (tryFix T.info _).map _ = _
     rw [hfix]
   rw [htseg] at hsegat hsize
-  obtain ⟨hstar, -, hi, hops', hsem, hlen, -⟩ := seqRun_stop_star hvb hsegat hsr'
+  obtain ⟨hstar, -, hi, hops', hsem, hlen, -⟩ := seqRun_stop_starP hvb hsegat hsr'
+  replace hstar := hstar.mono (Q := TermZone vc b (pos f R bl b B.body.length)) (by
+    rintro c ⟨i, -, ρ', w', rfl⟩; exact .inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩)
   have hK : pos f R bl b B.body.length + pre'.length + 1 = vb.insts.size := by
     rw [hsize]; simp only [List.length_map, List.length_append, List.length_singleton]; omega
   have hback : vb.insts.back? = some ((MInst.tryCall ci' T.info).mapRegs R) := by
@@ -695,8 +736,25 @@ theorem term_step_try_exnW (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEn
       refine VStep.step heb (by rw [hebi]; rfl) (i := .jump tl) (ops := #[]) rfl
         (H.dsem.jump tl w₂) rfl (VNext.goto (by rw [hebi]; rfl) ?_ henv2)
       rw [succOf_eq H.shape.labels hcfg heb hebback]; rfl
-    exact ⟨_, hstar.trans (.step hstep1 (Star.single hstep2)), hM⟩
+    exact ⟨_, hstar.trans (.step (.inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩) hstep1
+      (StarP.single (.inr ⟨_, _, _, eb, tl, rfl, heb, hebi⟩) hstep2)), hM⟩
   | _ => rw [hst] at h; simp [Clif.liftStep] at h
+
+/-- **A raising `try_call`/`try_call_indirect`** (`term_step_try_exnWP` without the zone). -/
+theorem term_step_try_exnW (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEnv p)
+    (HU : UnwShape f vc ctx R gn bl A) (HR : RaiseHypW f sem rz MR env p out)
+    {xs : Clif.XState} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots xs.s ⟨b, k, ρ, w⟩) (hbody : xs.s.frame.body = [])
+    {et : Clif.ExnTable} (hT : IsTryWith xs.s.frame.term et)
+    {e : Clif.Exn} {mm : Clif.Mem} (hr : Clif.raiseAt? env p xs.s = some (e, mm)) :
+    ∃ xs1, Clif.stepX env p xs = .next xs1 ∧
+      (∀ c, Clif.stepX env p xs1 ≠ .trapped c) ∧ (∀ vals cm, Clif.stepX env p xs1 ≠ .done vals cm) ∧
+      (∀ e' cm, Clif.stepX env p xs1 ≠ .unwound e' cm) ∧
+      ∀ xs2, Clif.stepX env p xs1 = .next xs2 →
+        ∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+          Match f ctx R gn bl A MR slots xs2.s vs' := by
+  obtain ⟨xs1, h1, h2, h3, h4, h5⟩ := term_step_try_exnWP H HU HR hm hbody hT hr
+  exact ⟨xs1, h1, h2, h3, h4, fun xs2 h => let ⟨vs', hs, hm'⟩ := h5 xs2 h; ⟨vs', hs.star, hm'⟩⟩
 
 /-! ## Whole runs -/
 

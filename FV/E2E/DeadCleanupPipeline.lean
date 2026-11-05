@@ -1,17 +1,20 @@
 import FV.E2E.Main
 import FV.Backend.Proof.DeadCleanupPrepare
+import FV.E2E.CleanupStageIsel
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 
-/-- The legacy lowering followed by the proved conservative cleanup.
-The lowering validator still checks the raw lowering output. -/
+/-- The legacy lowering followed by the production cleanup stage (`cleanupStage`: Cranelift's
+skip of unused instructions, then the dead-producer cleanup). The lowering validator still checks
+the raw lowering output. (The fields `prepare`/`prepOk` were about `DeadCleanup.prune vc`; the
+compiler now runs `cleanupStage f vc` there.) -/
 structure CompiledCleanup (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : RFunc) (af : AFunc)
     (fa : FnAsm) (fb : FnBin) : Prop where
   lower : lowerFunction f = .ok vc
   lowerOk : lowerCheck f vc = true
-  prepare : prepare (Backend.DeadCleanup.prune vc) = .ok vcp
-  prepOk : prepCheck (Backend.DeadCleanup.prune vc) vcp = true
+  prepare : prepare (cleanupStage f vc) = .ok vcp
+  prepOk : prepCheck (cleanupStage f vc) vcp = true
   check : checkAlloc vcp rf = .ok ()
   alloc : lowerRFunc vcp rf = .ok af
   emit : emitFunc k af = .ok fa
@@ -20,13 +23,14 @@ structure CompiledCleanup (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : R
 /-- `Compiled` with the allocation premise `AllocChecked` (verified in-states, `CheckedAt`, with an
 `EntryOk` entry state) in place of `checkAlloc`'s verdict (V4): the allocation need not come from
 regalloc2 and be accepted by the checker's own fixpoint iteration (the spill allocation,
-`FV/E2E/AllocDirect.lean`). `CompiledCleanup.toA`: every `Compiled` is one. -/
+`FV/E2E/AllocDirect.lean`). `CompiledCleanup.toA`: every `Compiled` is one. (Its
+`prepare`/`prepOk` are about `cleanupStage f vc`, as `CompiledCleanup`'s.) -/
 structure CompiledCleanupA (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : RFunc) (af : AFunc)
     (fa : FnAsm) (fb : FnBin) : Prop where
   lower : lowerFunction f = .ok vc
   lowerOk : lowerCheck f vc = true
-  prepare : prepare (Backend.DeadCleanup.prune vc) = .ok vcp
-  prepOk : prepCheck (Backend.DeadCleanup.prune vc) vcp = true
+  prepare : prepare (cleanupStage f vc) = .ok vcp
+  prepOk : prepCheck (cleanupStage f vc) vcp = true
   check : AllocChecked vcp rf
   alloc : lowerRFunc vcp rf = .ok af
   emit : emitFunc k af = .ok fa
@@ -84,10 +88,10 @@ theorem backend_correct_cleanup_ex {p : Clif.Program} {f : Clif.Function} {k : N
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
-  refine backend_correct_of_layers_ex (fun s' => iselSim_of_driver (ctx := ctx) (st0 := st0) (R := R)
-    (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s')) (fun s' a w => by
-      obtain ⟨hr, ht⟩ := prune_correct (vc := vc) (hPure s') (hCmp s') a w
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hsk⟩ := skipStage_spec hc.lowerOk
+  refine backend_correct_of_layers_ex (fun s' => iselSim_of_driver_stage (ctx := ctx) (st0 := st0)
+    (R := R) (gn := gn) (bl := bl) (A := A) ?_ hsk (hds s') (hmem s')) (fun s' a w => by
+      obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc) (hPure s') (hCmp s') a w
       obtain ⟨pr, pt⟩ := prepareCorrect_of_check (hds s') hc.prepOk a w
       exact ⟨fun _ _ _ h => pr _ _ _ (hr _ _ _ h), fun _ h => pt _ (ht _ h)⟩)
     hM6 hent hres hbe
@@ -115,7 +119,7 @@ theorem backend_correct_cleanup_ex {p : Clif.Program} {f : Clif.Function} {k : N
     tryIndSig := tryIndSig_of_subset hsub
     cfg := by
       obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-      exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+      exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
 
 
 theorem backend_correct_of_rules_cleanup_ex {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}

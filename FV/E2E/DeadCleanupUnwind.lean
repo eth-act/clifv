@@ -88,16 +88,18 @@ theorem prepareCorrectU_cleanup {sem : Sem} {vc vcp : VCode} (hds : DriverSem se
     (h : prepCheck (prune vc) vcp = true) (XR : XRaise) : PrepareCorrectU sem XR vc vcp :=
   prepareCorrectU_trans (pruneCorrectU hp hcmp XR) (prepareCorrectU_of_check hds h XR)
 
-/-- `prepareCorrectU_cleanup` for the value semantics with unwinding. -/
+/-- `prepareCorrectU_cleanup` for the value semantics with unwinding, from the code after the skip
+of unused instructions (`skipStage f vc`, which the production cleanup stage prunes). -/
 theorem prepareCorrectU_cleanup_value {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
     {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : CompiledCleanupA f k vc vcp rf af fa fb)
     (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
-    PrepareCorrectU (valueSemU F ctx X XR) XR vc vcp :=
-  prepareCorrectU_cleanup (driverSem_valueSemU F ctx X XR)
+    PrepareCorrectU (valueSemU F ctx X XR) XR (skipStage f vc) vcp :=
+  prepareCorrectU_cleanup (vc := skipStage f vc) (driverSem_valueSemU F ctx X XR)
     (fun _ _ _ _ _ _ hp h => valueSemU_pure hp h) (valueSemU_cmpOverwrite F ctx X XR) hc.prepOk XR
 
 /-- **The composition with unwinding over the cleanup pipeline**: the CLIF → VCode layer of the
-lowering output `vc` (`IselSimU`), the cleanup and `prepare` (`prepareCorrectU_cleanup`), and the
+code after the skip of unused instructions (`skipStage f vc`, `IselSimU`), the cleanup and
+`prepare` (`prepareCorrectU_cleanup`), and the
 register-level layer of the prepared `vcp` (`RegLevelCorrectUEx`), for a semantics with
 `DriverSem` whose pure producers keep the world and continue (`backend_correct_cleanup_ex`'s
 shape; the entry's arguments as there, `ArgsIn` and `StackArgsAvoid`). -/
@@ -107,7 +109,7 @@ theorem backend_correct_cleanup_layersU_ex {p : Clif.Program} {f : Clif.Function
     {sem : Arm.ArmState → Sem} {XR : XRaise} {F : Arm.ArmState → BitVec 64 → Prop}
     {syms : String → Option Nat} {slotOff out K : Nat} {astep : Arm.ArmState → Arm.ArmState}
     {env : Clif.XEnv}
-    (hIsel : ∀ s, IselSimU (sem s) XR ⟨F s, syms, slotOff, out⟩ env p f vc)
+    (hIsel : ∀ s, IselSimU (sem s) XR ⟨F s, syms, slotOff, out⟩ env p f (skipStage f vc))
     (hds : ∀ s, DriverSem (sem s))
     (hPure : ∀ s i us w outs w' ctl, pureForm i = true →
       sem s i us w = some (outs, w', ctl) → w' = w ∧ ctl = .next)
@@ -121,7 +123,8 @@ theorem backend_correct_cleanup_layersU_ex {p : Clif.Program} {f : Clif.Function
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     ArmRefinesU fb base ra astep s (Clif.runLoopX env p fuel cs.toX) :=
   backend_correct_of_layersU_ex hIsel
-    (fun s' => prepareCorrectU_cleanup (hds s') (hPure s') (hCmp s') hc.prepOk XR) hReg hent hres hbe
+    (fun s' => prepareCorrectU_cleanup (vc := skipStage f vc) (hds s') (hPure s') (hCmp s') hc.prepOk XR)
+    hReg hent hres hbe
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
     hcs hrel htr fuel
 

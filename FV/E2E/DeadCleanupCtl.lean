@@ -1,6 +1,7 @@
 import FV.E2E.SpillCtlCheck
 import FV.Backend.Proof.DeadCleanupPrepare
 import FV.Backend.Proof.DeadCleanupPositions
+import FV.Backend.Proof.CleanupStageSpill
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Spill Backend.DeadCleanup
@@ -43,24 +44,46 @@ private theorem clean_entry {vc : VCode}
     simp [cleanBlock, he, scan_head vc.classes.size (exitDead vc vb.label) (.args ds) tail
       (exitLive vc 0 vb) rfl rfl]
 
-/-- The old control-layout conditions hold after cleanup and preparation. -/
+/-- The skip of unused instructions keeps the control-layout conditions of the lowering: a kept
+instruction sits at an earlier or equal position of the same block (`skipStage_pos`), and the
+entry `args` is kept first (`skipStage_keep`). -/
+private theorem skipStage_ctl (f : Clif.Function) {vc : VCode}
+    (hv : ∀ b vb k i, vc.blocks[b]? = some vb → vb.insts[k]? = some i →
+      CtlNA i ∨ (b = 0 ∧ k = 0 ∧ ArgsOk i))
+    (h0 : ∃ vb ds, vc.blocks[0]? = some vb ∧ vb.insts[0]? = some (.args ds)) :
+    (∀ b vb k i, (skipStage f vc).blocks[b]? = some vb → vb.insts[k]? = some i →
+      CtlNA i ∨ (b = 0 ∧ k = 0 ∧ ArgsOk i)) ∧
+    ∃ vb ds, (skipStage f vc).blocks[0]? = some vb ∧ vb.insts[0]? = some (.args ds) := by
+  refine ⟨fun b vb k i hb hi => ?_, ?_⟩
+  · obtain ⟨old, q, ho, hkq, hq⟩ := skipStage_pos f hb hi
+    rcases hv b old q i ho hq with h | ⟨h0, hq0, ha⟩
+    · exact .inl h
+    · exact .inr ⟨h0, by omega, ha⟩
+  · obtain ⟨vb, ds, hb, hi⟩ := h0
+    obtain ⟨vbK, k', hk', hK, hiK⟩ := skipStage_keep f hb hi rfl
+    exact ⟨vbK, ds, hK, by rw [Nat.le_zero.mp hk'] at hiK; exact hiK⟩
+
+/-- The old control-layout conditions hold after cleanup and preparation. (`hp` is about the
+production cleanup stage `cleanupStage f vc`, formerly `prune vc`.) -/
 theorem ctlInsts_cleanup_pipeline {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
     (hsub : InSubset p f) (hd : Dominated f) (hs : LowerScope f)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp) :
     (∀ b vb k i, vcp.blocks[b]? = some vb → vb.insts[k]? = some i →
       ctlInstOk b k i = true) ∧
     ∃ vb ds, vcp.blocks[0]? = some vb ∧ vb.insts[0]? = some (.args ds) ∧ 1 < vb.insts.size := by
-  obtain ⟨hv, h0⟩ := vc_ctl hd hs (abiSigsOk_of_inSubset hsub) hl
-  have hdom := prune_prepDomain (prepDomain_of_lower hs hl hs.nonempty)
-  have hpv : ∀ b vb k i, (prune vc).blocks[b]? = some vb → vb.insts[k]? = some i →
+  obtain ⟨hv, h0⟩ := skipStage_ctl f (vc_ctl hd hs (abiSigsOk_of_inSubset hsub) hl).1
+    (vc_ctl hd hs (abiSigsOk_of_inSubset hsub) hl).2
+  have hdom := cleanupStage_prepDomain f (prepDomain_of_lower hs hl hs.nonempty)
+  have hpv : ∀ b vb k i, (cleanupStage f vc).blocks[b]? = some vb → vb.insts[k]? = some i →
       CtlNA i ∨ (b = 0 ∧ k = 0 ∧ ArgsOk i) := by
-    unfold prune
-    cases vc.cfg with
+    unfold cleanupStage prune
+    cases (skipStage f vc).cfg with
     | error e => exact hv
     | ok p => exact clean_ctl hv
-  have hp0 : ∃ vb ds, (prune vc).blocks[0]? = some vb ∧ vb.insts[0]? = some (.args ds) := by
-    unfold prune
-    cases vc.cfg with
+  have hp0 : ∃ vb ds, (cleanupStage f vc).blocks[0]? = some vb ∧
+      vb.insts[0]? = some (.args ds) := by
+    unfold cleanupStage prune
+    cases (skipStage f vc).cfg with
     | error e => exact h0
     | ok p => exact clean_entry h0
   refine ⟨fun b vb k i hb hi => ?_, prep_entry hp hdom hp0⟩

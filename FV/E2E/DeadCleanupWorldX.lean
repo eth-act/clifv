@@ -38,14 +38,15 @@ theorem backend_correct_worldX_cleanup {p : Clif.Program} {f : Clif.Function} {k
           (∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
             (runX (ArmStepX X H fa) i s)) ∧
           ∀ m, Arm.r .ERR (runX (ArmStepX X H fa) (n + m + 1) s) ≠ .None) := by
-  have hPrep : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) vc vcp := by
+  have hPrep : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) (skipStage f vc) vcp := by
     intro a w
-    obtain ⟨hr, ht⟩ := prune_correct (vc := vc)
+    obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc)
       (fun _ _ _ _ _ _ hp he => valueSem_pure hp he) (valueSem_cmpOverwrite _ _ _) a w
     obtain ⟨pr, pt⟩ := prepareCorrect_of_check (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
       hc.prepOk a w
     exact ⟨fun _ _ _ he => pr _ _ _ (hr _ _ _ he), fun _ he => pt _ (ht _ he)⟩
-  have hI := iselSim_relW_cleanup hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
+  have hI := iselSim_relW_cleanup_stage hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr
+    fuel
   have hP := hPrep
     (fun _ => 0) w₀
   have hM6 : ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
@@ -60,7 +61,7 @@ theorem backend_correct_worldX_cleanup {p : Clif.Program} {f : Clif.Function} {k
   · obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR⟩ := hI.1 vals cm hrun
     have hrs : vc.RetsSite us := by
       obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-      exact ⟨b, vb, k, hvb, hk⟩
+      exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
     refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_⟩
     obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6, h7⟩, h8⟩ :=
       (hM6 H G base ra s he).1 us outs w (vReturns_gotV_value (hP.1 _ _ _ hv))
@@ -112,14 +113,15 @@ theorem backend_correct_world_niX_cleanup {p : Clif.Program} {f : Clif.Function}
               ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
                 (runX (ArmStepX X H fa) i s)) := by
   intro vals cm hrun
-  have hPrep : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) vc vcp := by
+  have hPrep : PrepareCorrect (valueSem F ⟨fa.k, af.slotBase⟩ X) (skipStage f vc) vcp := by
     intro a w
-    obtain ⟨hr, ht⟩ := prune_correct (vc := vc)
+    obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc)
       (fun _ _ _ _ _ _ hp he => valueSem_pure hp he) (valueSem_cmpOverwrite _ _ _) a w
     obtain ⟨pr, pt⟩ := prepareCorrect_of_check (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X)
       hc.prepOk a w
     exact ⟨fun _ _ _ he => pr _ _ _ (hr _ _ _ he), fun _ he => pt _ (ht _ he)⟩
-  have hI := iselSim_relW_cleanup hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
+  have hI := iselSim_relW_cleanup_stage hsub hc hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr
+    fuel
   have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
       (s : Arm.ArmState), ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ :=
     fun w₀ H G base ra s he => by
@@ -132,7 +134,7 @@ theorem backend_correct_world_niX_cleanup {p : Clif.Program} {f : Clif.Function}
   obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR⟩ := hI.1 vals cm hrun
   have hrs : vc.RetsSite us := by
     obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-    exact ⟨b, vb, k, hvb, hk⟩
+    exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
   refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_,
     fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
   · have hP := hPrep
@@ -140,7 +142,8 @@ theorem backend_correct_world_niX_cleanup {p : Clif.Program} {f : Clif.Function}
     obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6, h7⟩, h8⟩ := (hM6 w₀ H G base ra s he).1 us outs w
       (vReturns_gotV_value (hP.1 _ _ _ hv))
     exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8⟩
-  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni_value hsub hc hX hXI hsym hslot hNI hTls
+  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni_value_stage hsub hc hX hXI hsym hslot
+      hNI hTls
       (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
     obtain ⟨rfl, rfl, rfl⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, w₀⟩) hv1 hv
     have hP := hPrep

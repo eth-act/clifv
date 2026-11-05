@@ -5,9 +5,12 @@ import FV.E2E.DeadCleanupSpillCheckAlloc
 import FV.E2E.DeadCleanupLinkCalls
 import FV.E2E.DeadCleanupLinkFrames
 import FV.E2E.DeadCleanupTotal
+import FV.E2E.DeadCleanupStageFrames
 
 /-! Completeness of the cleanup pipeline under the unchanged linked-input scope.
-The linker's facts describe the actual cleaned artifacts. -/
+The linker's facts describe the actual cleaned artifacts. The pipeline's stage is the production
+cleanup stage `cleanupStage` (formerly `fun _ => prune`), whose prepared code is
+`stagePrepared g vc vcp` (formerly `preparedCleanup vc vcp`). -/
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 
@@ -21,7 +24,7 @@ theorem progOf_resultsCleanupT (I : LinkInput) : progOf I.resultsCleanupT = I.pr
   simp [progOf, LinkInput.resultsCleanupT, LinkInput.prog, Function.comp_def]
 
 theorem resultsCleanupT_ok (I : LinkInput) (R : Res) :
-    ResOkWith (fun _ => prune) (I.withDepth R) I.resultsCleanupT := by
+    ResOkWith cleanupStage (I.withDepth R) I.resultsCleanupT := by
   intro e he a ha
   obtain ⟨fi, -, h1, h2⟩ := mem_resultsCleanupT he
   rw [h2] at ha
@@ -31,16 +34,16 @@ theorem resultsCleanupT_ok (I : LinkInput) (R : Res) :
 
 theorem pipeCleanupT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : SpillDefinedHyp)
     (k : Nat) (base : BitVec 64) (o : Lean.Json) :
-    ∃ a, pipeCleanupT g k base o = .ok a ∧ lowerCheck g a.vc = true ∧ prepCheck (prune a.vc) a.vcp = true ∧
+    ∃ a, pipeCleanupT g k base o = .ok a ∧ lowerCheck g a.vc = true ∧ prepCheck (cleanupStage g a.vc) a.vcp = true ∧
       checkAlloc a.vcp a.rf = .ok () ∧ FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp := by
   obtain ⟨-, -, -, -, -, -, -, hd, hs, har, hlw, hen⟩ := fnScope_parts hsc
   obtain ⟨hw, vc, vcp, hl, hp, hsz⟩ := lowersB_spec hlw
   have hS := lowerScope_of hs
   obtain ⟨ss, ps, hcfg⟩ := Spill.cfg_ok_of_prepare hp (prepDomain_of_lower hS hl hS.nonempty)
-  have hp' := prune_prepare_ok hp
-  have hsize := preparedCleanup_spillSizeOkB vc vcp hcfg hsz
+  have hp' := cleanupStage_prepare_ok (f := g) hp
+  have hsize := stagePrepared_spillSizeOkB g vc vcp hcfg hsz
   have hem := emitCondsB_cleanup_of_input hs hw hl hp' hsize
-  let clean := preparedCleanup vc vcp
+  let clean := stagePrepared g vc vcp
   have hsub := inSubset_of_fnScope hsc { funcs := [] }
   have hD' := dominated_of hd
   have hS := lowerScope_of hs
@@ -48,14 +51,14 @@ theorem pipeCleanupT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : Spil
     backend_correct_final_cleanup_total_emit (k := k) hsub hd hs har hl hp' hem (raAnswer clean o)
   refine ⟨⟨k, vc, clean, allocResult clean (readyAnswer clean (raAnswer clean o)), af, fa, fb, base⟩,
     ?_, lowerCheck_complete hD' hS hl,
-    Prep.prepCheck_complete hp' (prune_prepDomain (prepDomain_of_lower hS hl hS.nonempty)),
+    Prep.prepCheck_complete hp' (cleanupStage_prepDomain g (prepDomain_of_lower hS hl hS.nonempty)),
     checkAlloc_allocResult (spillCheckAlloc_cleanup hD hsub (Spill.arityOk_of har) hD' hS hen hl hp) _,
     formsCovered_cleanup_complete hS hl hp' _⟩
   simp [pipeCleanupT, pipeTWithLowering, Backend.Stock.D0.defaultLower_eq_legacy, hl, hp', clean, ha, he, hla, bind, Except.bind, pure, Except.pure]
 
 theorem chks_resultsCleanupT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
     (hlk : linkerOkR I I.resultsCleanupT = true) {e : Clif.Function × Except String Art} (he : e ∈ I.resultsCleanupT) :
-    (chksWith (fun _ => prune) (I.withDepth I.resultsCleanupT) (progOf I.resultsCleanupT) (tabOf I.resultsCleanupT) e.1 e.2).all
+    (chksWith cleanupStage (I.withDepth I.resultsCleanupT) (progOf I.resultsCleanupT) (tabOf I.resultsCleanupT) e.1 e.2).all
       (·.2) = true := by
   simp only [InScopeP, Bool.and_eq_true] at hin
   obtain ⟨hps, hfs⟩ := hin
@@ -73,7 +76,7 @@ theorem chks_resultsCleanupT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InSco
   obtain ⟨a, ha, hlc, hpc, hca, hcov⟩ := pipeCleanupT_ok hsc hD fi.k
     (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j)
   obtain ⟨hl, hp, -, hlr, -, -, -, -⟩ := pipeCleanupT_spec ha
-  obtain ⟨raw, hraw, hvp⟩ := prune_prepare_ok_inv hp
+  obtain ⟨raw, hraw, hvp⟩ := cleanupStage_prepare_ok_inv hp
   have hga : getOk (pipeCleanupT fi.func fi.k (BitVec.ofNat 64 (I.baseOf fi.func.name))
       (raJ fi.ra fi.j)) = a := by rw [ha]; rfl
   rw [hga] at hfit hra hdep
@@ -82,13 +85,14 @@ theorem chks_resultsCleanupT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InSco
     (callShapeHyp_of (callRunHyp_of callStmtRunHyp tryRunHyp)
       (gotRunHyp_of segRangeHyp gotLocalHyp))
     (inSubset_of_fnScope hsc I.prog) hd hs hnd hcall hl hraw
-  have hsite' := preparedCleanup_sites a.vc raw hsite
+  have hsite' := stagePrepared_sites
+    (prepDomain_of_lower (lowerScope_of hs) hl (lowerScope_of hs).nonempty) hraw hsite
   rw [← hvp] at hsite'
-  have hout := outFits_cleanup_of_lower hd hs hos hl hraw a.rf
+  have hout := outFits_stage_of_lower hd hs hos hl hraw a.rf
   rw [← hvp] at hout
-  have hfr := frame_cleanup_of_lower hl hraw hvp hlr
+  have hfr := frame_stage_of_lower hl hraw hvp hlr
   have hrets := retsB_of_lower iselNoRets hs hl
-  have hent := entryB_cleanup_of_lower hs hl hraw
+  have hent := entryB_stage_of_lower hs hl hraw
   rw [← hvp] at hent
   rw [List.all_eq_true]
   intro c hc
@@ -143,8 +147,8 @@ theorem outArea_cleanup_of_intBase {I : LinkInput} {x : Clif.Function × Art}
     intro h0
     apply h
     show alignTo a.vcp.outgoing 16 = 0
-    obtain ⟨raw, hraw, hv⟩ := prune_prepare_ok_inv hpr
-    rw [hv, (preparedCleanup_metadata a.vc raw).2.2.2.1, outgoing_of_prepare hraw, h0]
+    obtain ⟨raw, hraw, hv⟩ := cleanupStage_prepare_ok_inv hpr
+    rw [hv, (stagePrepared_metadata fi.func a.vc raw).2.2.2.1, outgoing_of_prepare hraw, h0]
     rfl
 
 theorem addrSlotsB_cleanup_of_in {I : LinkInput} {S : String → Option Nat}
@@ -182,7 +186,7 @@ theorem global_resultsCleanupT {I : LinkInput} (hin : InScopeP I = true) (hlk : 
 linker's facts describe: `InScopeP` (the input) and `linkerOkB` (the linker), no check of the
 compiler's own output. -/
 theorem okT_of_inScopeCleanup (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
-    (hlk : linkerOkR I I.resultsCleanupT = true) : okRWith (fun _ => prune) (I.withDepth I.resultsCleanupT) I.resultsCleanupT = true := by
+    (hlk : linkerOkR I I.resultsCleanupT = true) : okRWith cleanupStage (I.withDepth I.resultsCleanupT) I.resultsCleanupT = true := by
   simp only [okRWith, Bool.and_eq_true]
   exact ⟨global_resultsCleanupT hin hlk, List.all_eq_true.2 fun e he => chks_resultsCleanupT hD hin hlk he⟩
 
@@ -195,7 +199,7 @@ theorem okCleanupT_sound (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP 
     (hB : BaseOk (LinkSys.ofInputCleanupT I B F))
     (hF : ∀ a, (LinkSys.ofInputCleanupT I B F).Img a → F a) :
     (LinkSys.ofInputCleanupT I B F).Ok :=
-  okRWith_sound (fun _ => prune) (.inr rfl) (resultsCleanupT_ok I I.resultsCleanupT)
+  okRWith_sound cleanupStage (.inr rfl) (resultsCleanupT_ok I I.resultsCleanupT)
     (okT_of_inScopeCleanup hD hin hlk) hB hF
 
 def CrateStmtCleanupT (I : LinkInput) (n : String) : Prop :=
