@@ -69,7 +69,7 @@ theorem backend_correct_worldX_stock_fence {p : Clif.Program} {k : Nat} {result 
     have mem : MemRel F syms cm w := by
       rw [freed]
       exact memRel_leave (memRel_free memory.1.1 _)
-    refine ⟨us,outs,w,pins,arity,values,mem,site,?_⟩
+    refine ⟨us,outs,w,pins.abi,arity,values,mem,site,?_⟩
     intro H G base ra s he
     have machine := regLevelCorrect_worldX_value hc.check hc.alloc hc.emit hc.layout
       (X := X) (H := H) (K := K) (G := G) (gv := GotV vcp)
