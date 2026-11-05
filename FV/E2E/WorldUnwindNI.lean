@@ -245,7 +245,7 @@ theorem backend_correct_world_ni_cleanupU {p : Clif.Program} {f : Clif.Function}
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
@@ -490,7 +490,7 @@ theorem backend_correct_world_ni_cleanupUG {p : Clif.Program} {f : Clif.Function
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
@@ -734,7 +734,7 @@ theorem backend_correct_world_niU {p : Clif.Program} {f : Clif.Function} {k : Na
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
@@ -978,7 +978,7 @@ theorem backend_correct_world_niUG {p : Clif.Program} {f : Clif.Function} {k : N
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
@@ -1166,7 +1166,7 @@ theorem backend_correct_world_ni_pipelineU {p : Clif.Program} {f : Clif.Function
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
@@ -1354,7 +1354,7 @@ theorem backend_correct_world_ni_pipelineUG {p : Clif.Program} {f : Clif.Functio
     (htr : TrapsExplicitX env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
