@@ -13,8 +13,10 @@ import FV.Backend.Proof.IselCtlTryTI
 #print axioms Backend.Proof.indRulesCorrectT_program
 #print axioms Backend.Proof.tryIndRulesCorrectTP_program
 #print axioms Backend.Proof.tryIndRulesCorrectT_program
-#print axioms Backend.Proof.indStack_of_check
-#print axioms Backend.Proof.indStackT_of_check
+#print axioms Backend.Proof.Driver.indStack_of_check
+#print axioms Backend.Proof.Driver.indStackT_of_check
+#print axioms Backend.Proof.Driver.indStackTC_of_check
+#print axioms Backend.Proof.Driver.indStackTCF_of_check
 #print axioms Backend.Proof.xCallsIndOk_of_regArgs
 #print axioms Backend.indSigsAbiOk_of_indSigsOk
 #print axioms E2E.InSubset.of_regArgs
@@ -24,4 +26,4 @@ import FV.Backend.Proof.IselCtlTryTI
 #print axioms E2E.LinkSys.argsAt_of_tyMatch
 #print axioms E2E.backend_correct_final
 #print axioms E2E.backend_correct_final_cleanup_trapcall
-#print axioms E2E.IndStackWitness.backend_correct_final_ind_stack
+#print axioms E2E.IndStackWitness.backend_correct_final_ind_stack -- witness: native_decide
