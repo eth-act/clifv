@@ -571,8 +571,9 @@ the `retN`/value arguments).
   resolves to the entry block); `padsNonzero_complete_of` takes the weaker fact that no alias of
   another label does. On the pipeline's output that fact is a theorem: `alias_ne_entry` (every
   alias passes `aliasOk`; line 0 of the plan is the entry label followed by the prologue, so it
-  represents only the entry and the blocks forwarding to it) with `fwd_ne_entry_input` (no
-  block forwards to the entry: a forwarding block's `jump` is its prepared block's last
+  represents only the entry and the blocks forwarding to it) with `fwd_ne_entry_stage` (no
+  block forwards to the entry; `fwd_ne_entry_input` is the same for `prune vc`, before #843's
+  `cleanupStage`: a forwarding block's `jump` is its prepared block's last
   instruction — `TargetsLast` from the ISLE runs, `vc_emit`/`prep_emit`, which needs
   `extendsWidenB` — hence a CFG successor, and `lowerRFunc`'s `ctlCheck` excludes the entry).
   So `padsNonzero_complete_input` takes `extendsWidenB f` (part of `fnScopeB` and of every input
