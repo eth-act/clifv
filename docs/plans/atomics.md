@@ -588,13 +588,22 @@ they are; the per-thread layers are new files.
     the loaded bytes and, without a comparison, the flags); `MemScopeL`, **`arm_alloc_refines_loop`**
     (`arm_alloc_refines_mv` with the loops). Witness: `ArmAllocLoopWitness.lean`.
   * **block-ending branches (done, `ArmAllocBranch.lean`)**: `realizes_gotoE` (`realizes_goto`
-    with the branch lines' steps event-free and no store exclusive, `NoEvSteps`); the block-rank
-    measure `μR` (`(#blocks - b) · K + remaining items`): a branch with no Arm step is a
-    fall-through `jump`, which goes to block `b + 1` (`succ_of_label`: the dropped `b`'s target
-    is the next line's label, the next block's, labels unique, `af_nodup`); `goto_op`;
+    with the branch lines' steps event-free and no store exclusive, `NoEvSteps`); the measure
+    (since #553, ranked configurations): layer 4b runs on `RConf` (a configuration paired with
+    a rank; `SrcStepR`, `RelQR`, `DoneR`, `μR c = c.2`), the rank of a `Q` witness (`QR`, `RkC`:
+    the lines after the segment of the block whose code runs, `segEnd`, then the remaining items,
+    then the forwarding steps `QEd` of a `QE` entry). Source steps without an Arm step decrease
+    it: an item without lines, a branch `MachBuffer` removed (the target's label line is after
+    the segment, `qe_entry_rk`), a forwarding block's `jump` (one forwarding step less). No
+    measure on configurations alone exists: a forwarding block `st: jump b` whose `b` was removed
+    and a block `b: jump st` kept as `b st` give `Q` at `b` (entered through `st`) and at `st` at
+    the same state, with zero-step source steps `b → st → b`; a witness's forwarding steps are
+    bounded by the number of blocks (`qed_short`). (Before #553: the block rank
+    `(#blocks - b) · K + remaining items` with the fall-through to block `b + 1`.) `goto_op(R)`;
     `MemScopeB` (`MemScopeL` and the branches), `itemSim_br`, **`arm_alloc_refines_br`**
-    (`arm_alloc_refines_loop`'s conclusion). Witness (`ArmAllocBranchWitness.lean`):
-    `br_premises` (`args; jump 1` / `rets`, the `jump`'s `b` dropped by the fall-through).
+    (`arm_alloc_refines_loop`'s conclusion, ranks dropped by `SRun.fst`). Witness
+    (`ArmAllocBranchWitness.lean`): `br_premises` (`args; jump 1` / `rets`, the `jump`'s `b`
+    removed by `MachBuffer`).
   * **calls: the linking induction (composition done, `CallCompose.lean`)**. `csem`'s `call`
     step has no events, but the callee's Arm code accesses memory. **Decision**: the thread's Arm
     machine runs the callee's code (no hook), and the callee's events are matched through the

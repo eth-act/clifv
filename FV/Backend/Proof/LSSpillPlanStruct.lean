@@ -324,11 +324,11 @@ private theorem hkey_inj {v w : Nat} (h : hkey fn v = hkey fn w) : v = w := by
 /-- The home fold of the all-spill plan puts at most one segment in each entry. -/
 private theorem homeFold :
     ∀ n, n ≤ fn.nv →
-      ∀ i, (((List.range n).foldl (fun (acc : Array (List Seg)) v =>
+      ∀ i, (((List.range n).foldl (fun (acc : Array (List LinearScan.Seg)) v =>
         if (fn.spillPlan.regOf v).isSome then acc else
           acc.modify (2 * fn.spillPlan.home.getD v 0 + (if fn.clsOf v == .float then 1 else 0))
             (fn.spillPlan.segList v ++ ·)) (Array.replicate (2 * fn.spillPlan.nslots) [])).getD i []).length ≤ 1 ∧
-        ((((List.range n).foldl (fun (acc : Array (List Seg)) v =>
+        ((((List.range n).foldl (fun (acc : Array (List LinearScan.Seg)) v =>
         if (fn.spillPlan.regOf v).isSome then acc else
           acc.modify (2 * fn.spillPlan.home.getD v 0 + (if fn.clsOf v == .float then 1 else 0))
             (fn.spillPlan.segList v ++ ·)) (Array.replicate (2 * fn.spillPlan.nslots) [])).getD i []) ≠ [] →
@@ -365,7 +365,7 @@ private theorem homeFold :
       obtain ⟨h1, h2⟩ := ih i
       exact ⟨h1, fun h => (h2 h).imp fun w ⟨hw, he⟩ => ⟨by omega, he⟩⟩
 
-private theorem disjointSorted_short {l : List Seg} (h : l.length ≤ 1) :
+private theorem disjointSorted_short {l : List LinearScan.Seg} (h : l.length ≤ 1) :
     disjointSorted (sortSegs l) = true := by
   have hl : (l.mergeSort fun a b => decide (a.s ≤ b.s)).length ≤ 1 := by
     rw [List.length_mergeSort]; exact h

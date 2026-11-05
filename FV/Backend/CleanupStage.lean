@@ -20,6 +20,50 @@ namespace Backend
 def skipStage (f : Clif.Function) (vc : VCode) : VCode :=
   if Compile.functionE f && Proof.Driver.lowerCheck f vc then Proof.Driver.skipDead f vc else vc
 
+section
+open Proof.Driver
+
+/-- `skipStage` as the compiler runs it (`skipStage_eq_impl`, `@[csimp]`, #877): `lowerCheck` and
+`skipDead` both begin with the same lowering (`buildCtx`, `lowBlocks`), which `skipStage` ran
+twice; here it runs once and both read it (`skipDead`'s part is `skipDeadImpl`'s). -/
+def skipStageImpl (f : Clif.Function) (vc : VCode) : VCode :=
+  if Compile.functionE f then
+    match buildCtx f with
+    | .error _ => vc
+    | .ok (ctx, _, st0) =>
+      match lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+          f.blocks.length with
+      | none => vc
+      | some bl =>
+        let gn := gnAt (gnTable st0.nextVreg (aliasOf f bl))
+        if shapeOk f vc ctx st0 gn bl && certOk f ctx st0 gn bl (inFix f ctx gn) && brIdxOk f ctx &&
+            ((f.blocks.any (·.term.isTry) || !vc.hasTryCall) && (hasTls f || !vc.hasTls)) &&
+            (callsStackOkB f vc.outgoing && entryOkB f) then
+          let R := renOf gn
+          let tbl := skipDropSet f R bl vc
+          let mask := skipMask f R bl vc (skipAt f fun b j => tbl.contains (b, j))
+          if deleteCheck vc mask then deleteWith vc mask else vc
+        else vc
+  else vc
+
+@[csimp] theorem skipStage_eq_impl : @skipStage = @skipStageImpl := by
+  funext f vc
+  unfold skipStage skipStageImpl lowerCheck skipDead
+  cases Compile.functionE f
+  · simp
+  · simp only [Bool.true_and, ↓reduceIte]
+    cases buildCtx f with
+    | error e => simp
+    | ok r =>
+      obtain ⟨ctx, _, st0⟩ := r
+      simp only
+      cases lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+          f.blocks.length with
+      | none => simp
+      | some bl => rfl
+
+end
+
 /-- **The production cleanup stage**: `skipStage`, then `DeadCleanup.prune`. -/
 def cleanupStage (f : Clif.Function) (vc : VCode) : VCode :=
   DeadCleanup.prune (skipStage f vc)

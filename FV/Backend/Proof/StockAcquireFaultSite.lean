@@ -31,7 +31,7 @@ theorem acquire_byte_fault_site {R : RL} (wellFormed : R.Wf) {s : Arm.ArmState}
     TrapAtF mp R.fb R.base code s := by
   obtain ⟨value,sourceUses,rfl,rfl,atomic,flag⟩ := access.load_inv
   obtain ⟨j,destination,base,destinationBound,baseBound,line,pc,clean,program,uses⟩ :=
-    acquire_byte_line related found located
+    acquire_byte_line wellFormed related found located
   have valueEq : value = regVal s (.x base) :=
     (List.cons.inj (sourceUses.symm.trans (uses operands valid))).1
   obtain ⟨byte,bound,missing⟩ := unmapped

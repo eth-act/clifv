@@ -80,7 +80,7 @@ theorem acquireTraps_prepare {vc prepared : VCode} {isem : Backend.Proof.Sem}
     obtain ⟨⟨⟨entry,liveEntry⟩,all⟩,rest⟩ := checked
     let live : Nat → Prop := fun b => b < vc.blocks.size ∧ liveOf successors b = true
     have each : ∀ b,live b → ∃ target,sigmaOf vc prepared b = some target ∧
-        keptOk vc prepared successors successors' b target = true ∧
+        Driver.keptOk vc prepared successors successors' b target = true ∧
         (successors[b]?.getD #[]).all (fun s => decide (s < vc.blocks.size) && liveOf successors s) = true := by
       intro b ⟨inside,present⟩
       have row := all_range all inside

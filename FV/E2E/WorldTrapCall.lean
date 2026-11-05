@@ -41,11 +41,11 @@ theorem regLevel_trapCall_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   obtain ⟨cc, ins, hcA⟩ := checked_of_checkAlloc hcheck
   obtain ⟨a0, hat, hle⟩ := hcA.at
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
-  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, GotV vcp⟩
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, GotV vcp⟩
   have hR : R.Wf := ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨body, hb⟩,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨p, hp, rfl⟩,
     he.abi.program, he.gfree⟩
   have hF : R.F = F := he.hF
   have hreal := realizes_value_all hR (by rw [hF]; exact he.calls)

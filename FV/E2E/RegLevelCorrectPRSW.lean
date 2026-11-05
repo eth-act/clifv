@@ -29,8 +29,12 @@ theorem QW.ofWithX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.s
   cases c with
   | run vs =>
     obtain ⟨b, its, m, w⟩ := vs
-    obtain ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := h
-    exact ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10.ofWithX hP⟩
+    rcases h with ⟨hT, vb, items, pre, code, Xl, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+      h10, h11, h12, h13⟩ | ⟨hT, hf, hpc, hst⟩
+    · exact .inl ⟨hT, vb, items, pre, code, Xl, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+        h10, h11.ofWithX hP, h12, h13⟩
+    · exact .inr ⟨hT, hf.congr (R := { R with X := X }) (R' := R) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩,
+        hpc, hst.ofWithX hP⟩
   | ret => trivial
   | halt => trivial
 
@@ -41,8 +45,12 @@ theorem QW.withX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.sP)
   cases c with
   | run vs =>
     obtain ⟨b, its, m, w⟩ := vs
-    obtain ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := h
-    exact ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10.withX hP⟩
+    rcases h with ⟨hT, vb, items, pre, code, Xl, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+      h10, h11, h12, h13⟩ | ⟨hT, hf, hpc, hst⟩
+    · exact .inl ⟨hT, vb, items, pre, code, Xl, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+        h10, h11.withX hP, h12, h13⟩
+    · exact .inr ⟨hT, hf.congr (R := R) (R' := { R with X := X }) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩,
+        hpc, hst.withX hP⟩
   | ret => trivial
   | halt => trivial
 
@@ -86,13 +94,19 @@ theorem RL.SegChain.ofWithX {R : RL} {X : ExtSem} (hX : ({ R with X := X } : RL)
   induction h with
   | nil => exact .nil
   | @snoc l u W1 c1 c2 n _ hs ht ih =>
-    rw [hX]
+    have hW : ({ R with X := X } : RL).nextW W1.1 W1.2.1 W1.2.2 c1 c2
+        (Arm.r .PC (iterN ({ R with X := X } : RL).step n u)) =
+        R.nextW W1.1 W1.2.1 W1.2.2 c1 c2 (Arm.r .PC (iterN R.step n u)) := by
+      rw [hX]
+      exact RL.nextW_congr (R := R) (R' := { R with X := X }) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ _ _ _ _ _ _
+    rw [hW, hX]
     refine .snoc ih ?_ fun i hi => hT _ (by rw [← hX]; exact ht i hi)
+    have h0 : R.SameCode { R with X := X } := ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
     cases c2 with
     | run _ =>
-      simp only [RL.SegLenA, RL.SegLen, FirstArr] at hs ⊢
-      rw [hX] at hs
-      exact hs
+      simp only [RL.SegLenA, RL.SegLen] at hs ⊢
+      rw [hX, RL.tgtS_congr h0] at hs
+      exact ⟨hs.1, hs.2.trans (RL.emptyW_congr h0 _ _ _ _ _)⟩
     | ret => exact hs
     | halt => exact hs
 
@@ -105,13 +119,19 @@ theorem RL.SegChain.withX {R : RL} {X : ExtSem} (hX : ({ R with X := X } : RL).s
   induction h with
   | nil => exact .nil
   | @snoc l u W1 c1 c2 n _ hs ht ih =>
-    rw [← hX]
+    have hW : ({ R with X := X } : RL).nextW W1.1 W1.2.1 W1.2.2 c1 c2
+        (Arm.r .PC (iterN ({ R with X := X } : RL).step n u)) =
+        R.nextW W1.1 W1.2.1 W1.2.2 c1 c2 (Arm.r .PC (iterN R.step n u)) := by
+      rw [hX]
+      exact RL.nextW_congr (R := R) (R' := { R with X := X }) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ _ _ _ _ _ _
+    rw [← hW, ← hX]
     refine .snoc ih ?_ fun i hi => hT _ (by rw [hX]; exact ht i hi)
+    have h0 : R.SameCode { R with X := X } := ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
     cases c2 with
     | run _ =>
-      simp only [RL.SegLenA, RL.SegLen, FirstArr] at hs ⊢
-      rw [hX]
-      exact hs
+      simp only [RL.SegLenA, RL.SegLen] at hs ⊢
+      rw [hX, RL.tgtS_congr h0]
+      exact ⟨hs.1, hs.2.trans (RL.emptyW_congr h0 _ _ _ _ _).symm⟩
     | ret => exact hs
     | halt => exact hs
 
@@ -123,8 +143,8 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
     {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0)
     (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb)
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {XI : ExtSemI} {H : ArmHooks}
     {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
     (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
@@ -166,12 +186,12 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
             (actRL vcp rf af fa fb lm base s XI H psF K G gv).retLen,
           actWReadsIn vcp rf af fa fb base s (XI.at 0) H K G gv Ok
             (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
-  obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨-, -, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XI.at n, H, psF, K, G, gv⟩
   let R : RL := Rn 0
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hpsF⟩, hent.program, hG⟩
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, hpsF, hent.program, hG⟩
   have hR : R.Wf := hRn 0
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (Y := fun _ => True) hR hent hbe

@@ -190,7 +190,6 @@ theorem LU_okU (F : BitVec 64 → Prop) : (LU F).OkU where
   sites g hg := (ufacts hg).sites
   rows g hg := (ufacts hg).rows
   pads g hg := (ufacts hg).pads
-  last g hg := (ufacts hg).last
   saved g hg := (ufacts hg).saved
   indScopeX g hg hn := absurd (ufacts hg).indFree hn
   baseXR g hg F' slotOff out c := by

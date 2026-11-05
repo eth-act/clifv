@@ -60,7 +60,7 @@ def act (vc : VCode) (rf : RFunc) : RL :=
     s0 := entry fb 0x10000#64
     X := VCodeThread.Witness.X0
     H := ⟨fun _ s => s, fun _ _ s => s⟩
-    psF := ((blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {}).toOption.map (·.2)).getD {}
+    psF := ((emitPlan fa.k af).toOption.map (·.ps)).getD {}
     K := 0
     G := fun _ => False
     gv := fun _ _ => False }
@@ -101,6 +101,12 @@ theorem ok_snd {ε α β : Type} {e : Except ε (α × β)} {d : β} (h : e.toBo
   | error _ => simp [Except.toBool] at h
   | ok r => exact ⟨r.1, by simp [Except.toOption]⟩
 
+theorem ok_ps {e : Except String Plan} (h : e.toBool = true) :
+    ∃ p, e = .ok p ∧ p.ps = (e.toOption.map (·.ps)).getD {} := by
+  cases e with
+  | error _ => simp [Except.toBool] at h
+  | ok p => exact ⟨p, rfl, by simp [Except.toOption]⟩
+
 theorem wf_of {vc : VCode} {rf : RFunc}
     (hc : checkAlloc vc rf = .ok ())
     (ha : (lowerRFunc vc rf).toBool = true)
@@ -111,8 +117,7 @@ theorem wf_of {vc : VCode} {rf : RFunc}
     (hfit : 4 * (act vc rf).fb.words.size ≤ 2 ^ 64)
     (hfs : (act vc rf).af.frameSize ≤ 0x100)
     (hsz : 4 * (act vc rf).fb.words.size ≤ 0x10000)
-    (hps : (blocksLinesE (act vc rf).ctx (act vc rf).af (act vc rf).af.blocks.toList {}).toBool =
-      true) :
+    (hps : (emitPlan (act vc rf).fa.k (act vc rf).af).toBool = true) :
     (act vc rf).Wf where
   check := allocChecked_of_checkAlloc hc
   alloc := ok_getD ha
@@ -137,7 +142,7 @@ theorem wf_of {vc : VCode} {rf : RFunc}
         rw [he]; simp only [Nat.zero_add, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
       exact room_of (by omega) (by omega) (by omega) hd
     · exact Nat.le_of_eq (probeBelow_small (af := (act vc rf).af) (by omega))
-  psF := ok_snd hps
+  psF := ok_ps hps
   prog0 := entry_program _ _
   gfree := fun _ h => h.elim
 
@@ -206,8 +211,7 @@ theorem wf_ofAt {sp base : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.to
     (hfit : 4 * (act vc rf).fb.words.size ≤ 2 ^ 64)
     (hfs : (act vc rf).af.frameSize ≤ 0x100)
     (hsz : 4 * (act vc rf).fb.words.size ≤ 0x10000)
-    (hps : (blocksLinesE (act vc rf).ctx (act vc rf).af (act vc rf).af.blocks.toList {}).toBool =
-      true) :
+    (hps : (emitPlan (act vc rf).fa.k (act vc rf).af).toBool = true) :
     (actAt sp base vc rf).Wf where
   check := allocChecked_of_checkAlloc hc
   alloc := ok_getD ha
@@ -233,7 +237,7 @@ theorem wf_ofAt {sp base : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.to
         (by show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega) hsp2 hb1 hb2 (by omega)
         (by omega) hd
     · exact Nat.le_of_eq (probeBelow_small (show (act vc rf).af.frameSize + 16 < 4096 by omega))
-  psF := ok_snd hps
+  psF := ok_ps hps
   prog0 := entryAt_program _ _ _
   gfree := fun _ h => h.elim
 

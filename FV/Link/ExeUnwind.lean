@@ -68,22 +68,21 @@ structure BaseU (L : LinkSysU) : Prop where
       (∀ rvals m', g vals m = .returned rvals m' → ∀ x ∈ m'.allocs, x ∈ m.allocs) ∧
       (∀ e m', g vals m = .unwound e m' → ∀ x ∈ m'.allocs, x ∈ m.allocs)
 
-/-- `OkU` from its base-environment premises and the per-function facts. -/
-theorem okU_of {L : LinkSysU} (hb : BaseU L)
+/-- `OkU` from its base-environment premises and the per-function facts (no check on the calls
+of the last block, #622). -/
+theorem okU_of_any {L : LinkSysU} (hb : BaseU L)
     (hl : ∀ g ∈ L.P.funcs, lowerCheck g (L.A g).vc = true)
     (hf : ∀ g ∈ L.P.funcs, unwCheck g (L.A g).vc = true ∧
       (∃ l, callSites (L.A g).af (L.A g).fa = .ok l) ∧
       (∃ rows, unwindRows (L.A g).af (L.A g).fa = .ok rows) ∧
       padsNonzeroB (L.A g).af (L.A g).fa = true ∧
-      lastCallsOk (L.A g).af (L.A g).fa = true ∧
       savedCheck (L.A g).vcp (L.A g).rf = true) : L.OkU where
   envX := hb.envX
   lowerU g hg := by simp [lowerCheckU, hl g hg, (hf g hg).1]
   sites g hg := (hf g hg).2.1
   rows g hg := (hf g hg).2.2.1
   pads g hg := (hf g hg).2.2.2.1
-  last g hg := (hf g hg).2.2.2.2.1
-  saved g hg := (hf g hg).2.2.2.2.2
+  saved g hg := (hf g hg).2.2.2.2
   indScopeX := hb.indScopeX
   baseXR := hb.baseXR
   baseXRI := hb.baseXRI
@@ -93,6 +92,20 @@ theorem okU_of {L : LinkSysU} (hb : BaseU L)
   baseNoRaise := hb.baseNoRaise
   baseKeepsPlaceU := hb.baseKeepsPlaceU
   baseKeepsAllocsU := hb.baseKeepsAllocsU
+
+/-- `OkU` from its base-environment premises and the per-function facts (statement kept;
+`okU_of_any`). -/
+theorem okU_of {L : LinkSysU} (hb : BaseU L)
+    (hl : ∀ g ∈ L.P.funcs, lowerCheck g (L.A g).vc = true)
+    (hf : ∀ g ∈ L.P.funcs, unwCheck g (L.A g).vc = true ∧
+      (∃ l, callSites (L.A g).af (L.A g).fa = .ok l) ∧
+      (∃ rows, unwindRows (L.A g).af (L.A g).fa = .ok rows) ∧
+      padsNonzeroB (L.A g).af (L.A g).fa = true ∧
+      lastCallsOk (L.A g).af (L.A g).fa = true ∧
+      savedCheck (L.A g).vcp (L.A g).rf = true) : L.OkU :=
+  okU_of_any hb hl fun g hg =>
+    let h := hf g hg
+    ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.2⟩
 
 /-- **The executable's unwind tables are the compiled functions'**: after
 `compileExeU S file0 = .ok file`, at every pc of every compiled function `g`, libunwind's lookup
@@ -132,7 +145,7 @@ theorem compileExeU_facts {S : LinkSpec} {file0 file : ByteArray}
   have hP : L.P = progOf S.inputCleanup.resultsCleanup := by rw [hLs]; rfl
   have hA : L.A = artOf S.inputCleanup.resultsCleanup := by rw [hLs]; rfl
   simp only [unwOkB, Bool.and_eq_true, parResultsCleanupT_input] at hu
-  refine ⟨hLs ▸ okBCleanup_sound hI hB hF, okU_of hb ?_ ?_, ?_⟩
+  refine ⟨hLs ▸ okBCleanup_sound hI hB hF, okU_of_any hb ?_ ?_, ?_⟩
   · intro g hg
     rw [hP] at hg
     rw [hA]

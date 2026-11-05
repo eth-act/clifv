@@ -37,8 +37,8 @@ theorem firstArr_eq_min {f f' : Arm.ArmState → Arm.ArmState} {s s' : Arm.ArmSt
 
 /-- **The next witness sees only the shapes** (for two activations of one compiled function). -/
 theorem RL.nextW_shape {R R' : RL} (h : R.SameCode R') (j : Nat) (ps1 : PState) (T : List Line)
-    {c d c' d' : MConf CV Arm.ArmState} (hc : MConf.ShapeEq c c') (hd : MConf.ShapeEq d d') :
-    R'.nextW j ps1 T c' d' = R.nextW j ps1 T c d := by
+    {c d c' d' : MConf CV Arm.ArmState} (hc : MConf.ShapeEq c c') (hd : MConf.ShapeEq d d')
+    (p : BitVec 64) : R'.nextW j ps1 T c' d' p = R.nextW j ps1 T c d p := by
   rw [RL.nextW_congr h]
   cases c with
   | run s =>
@@ -54,7 +54,7 @@ theorem RL.nextW_shape {R R' : RL} (h : R.SameCode R') (j : Nat) (ps1 : PState) 
         | run t' =>
           obtain ⟨b₃, its₃, m₃, w₃⟩ := t'
           obtain ⟨rfl, rfl⟩ := hd
-          exact RL.nextW_run j ps1 T b b'' its its'' m m₂ m' m₃ w w₂ w' w₃
+          exact RL.nextW_run j ps1 T b b'' its its'' m m₂ m' m₃ w w₂ w' w₃ p
         | ret => exact hd.elim
         | halt => exact hd.elim
       | ret =>
@@ -84,7 +84,7 @@ theorem RL.nextW_shape {R R' : RL} (h : R.SameCode R') (j : Nat) (ps1 : PState) 
 theorem RL.emptyW_shape {R R' : RL} (h : R.SameCode R') (j : Nat) (ps1 : PState) (T : List Line)
     {c d c' d' : MConf CV Arm.ArmState} (hc : MConf.ShapeEq c c') (hd : MConf.ShapeEq d d') :
     R'.EmptyW j ps1 T c' d' ↔ R.EmptyW j ps1 T c d := by
-  have hW := RL.nextW_shape h j ps1 T hc hd
+  have hW := RL.nextW_shape h j ps1 T hc hd 0
   have hS : RL.Straight c' d' ↔ RL.Straight c d := by
     cases c with
     | run s =>
@@ -143,14 +143,44 @@ theorem RL.segLenA_eq_shape {R R' : RL} (h : R.SameCode R') {j : Nat} {ps1 : PSt
   | run t =>
     cases d' with
     | run t' =>
-      have hp : R'.pcOf (R'.nextW j ps1 T c' (.run t')).1 =
-          R.pcOf (R.nextW j ps1 T c (.run t)).1 := by
-        rw [RL.nextW_shape h j ps1 T hc hd]
-        simp only [RL.pcOf, RL.L, h.fa, h.base]
+      have hS : R'.TgtS j ps1 T c' (.run t') = R.TgtS j ps1 T c (.run t) := by
+        rw [RL.tgtS_congr h]
+        obtain ⟨b'', its'', m₂, w₂⟩ := t
+        obtain ⟨b₃, its₃, m₃, w₃⟩ := t'
+        obtain ⟨rfl, rfl⟩ := hd
+        cases c with
+        | run s0 =>
+          obtain ⟨b, its, m, w⟩ := s0
+          cases c' with
+          | run s0' =>
+            obtain ⟨b', its', m', w'⟩ := s0'
+            obtain ⟨rfl, rfl⟩ := hc
+            exact RL.tgtS_run j ps1 T b b'' its its'' m m₂ m' m₃ w w₂ w' w₃
+          | ret => exact hc.elim
+          | halt => exact hc.elim
+        | ret =>
+          cases c' with
+          | ret => rfl
+          | run => exact hc.elim
+          | halt => exact hc.elim
+        | halt =>
+          cases c' with
+          | halt => rfl
+          | run => exact hc.elim
+          | ret => exact hc.elim
+      have h0 := hs.1
       have h1 := hs'.1
-      rw [hp] at h1
-      exact firstArr_eq_min hs.1 h1 hpc
-        (hs.2.trans ((RL.emptyW_shape h j ps1 T hc hd).symm.trans hs'.2.symm))
+      rw [hS] at h1
+      have hz : n = 0 ↔ n' = 0 :=
+        hs.2.trans ((RL.emptyW_shape h j ps1 T hc hd).symm.trans hs'.2.symm)
+      rcases Nat.lt_trichotomy n n' with hlt | heq | hgt
+      · rcases Nat.eq_zero_or_pos n with hz0 | hz0
+        · exact absurd (hz.mp hz0) (by omega)
+        · exact absurd (by rw [← hpc n (by omega)]; exact h0.1) (h1.2 n hz0 hlt)
+      · exact heq
+      · rcases Nat.eq_zero_or_pos n' with hz0 | hz0
+        · exact absurd (hz.mpr hz0) (by omega)
+        · exact absurd (by rw [hpc n' (by omega)]; exact h1.1) (h0.2 n' hz0 hgt)
     | ret => exact hd.elim
     | halt => exact hd.elim
   | ret =>
@@ -218,10 +248,12 @@ theorem RL.jointSeg {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R')
       Lk i u u' → Lk (i + 1) (R.step u) (R'.step u')) :
     ∃ n d d', MStep R.vc (R.semG Ok) ckeep R.rf c d ∧ MStep R'.vc (R'.semG Ok') ckeep R'.rf c' d' ∧
       MConf.ShapeEq d d' ∧
-      QWA R (iterN R.step n s) (R.nextW j ps1 T c d).1 (R.nextW j ps1 T c d).2.1
-        (R.nextW j ps1 T c d).2.2 d ∧
-      QWA R' (iterN R'.step n s') (R.nextW j ps1 T c d).1 (R.nextW j ps1 T c d).2.1
-        (R.nextW j ps1 T c d).2.2 d' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.2 d ∧
+      QWA R' (iterN R'.step n s') (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.2 d' ∧
       (∀ i < n, (R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
         (R'.GoodX (iterN R'.step i s') ∧ R'.WReadsIn Ok' (iterN R'.step i s'))) ∧
       countIn R.CallSt R.step s n = opCalls R.vc c ∧
@@ -234,8 +266,8 @@ theorem RL.jointSeg {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R')
   have hd := hsh d d' hm hm'
   obtain ⟨rfl, hL⟩ := RL.seg_lock hsc hc hd hs hs' Lk hLpc h0 fun i hi hi' hl =>
     hstep i _ _ (ht i hi) (ht' i hi') hl
-  have hW := RL.nextW_shape hsc j ps1 T hc hd
-  rw [hW] at hqd'
+  have hW := RL.nextW_shape hsc j ps1 T hc hd (Arm.r .PC (iterN R'.step n s'))
+  rw [hW, ← hLpc n _ _ (hL n (Nat.le_refl n))] at hqd'
   exact ⟨n, d, d', hm, hm', hd, hqd, hqd', fun i hi => ⟨ht i hi, ht' i hi⟩, hcnt, hcnt',
     hs, hs', hL⟩
 

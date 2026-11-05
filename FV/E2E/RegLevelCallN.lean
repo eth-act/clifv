@@ -87,11 +87,16 @@ theorem realizes_op_coreXS {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
     (hW' : Arm.r .ERR w' = .None ∧ w'.program = w.program) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       Q R (iterN R.step n s) c'' ∧ Seg s n := by
-  obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
+  have hq' := Q.qs_lt hq hvb hk
+  have hne : its ≠ [] := by
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, hvb0, -, -, hchk0, -⟩ := hq'
+    rw [hvb] at hvb0
+    cases hvb0
+    exact hchk0.tail_ne hk
+  obtain ⟨j, vb0, items, pre, c1, c2, lsA, X', ps1, psm, psm', ps2, x, hvb0, hit, hsplit, hchk, hc1,
+    hc2, h1, h2, h3, htr, hdrop, hpc, hst, hx, hsc⟩ := qs_split hR hq' hne
   rw [hvb] at hvb0
   cases hvb0
-  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
   rw [hi] at hi0
   cases hi0
@@ -110,30 +115,22 @@ theorem realizes_op_coreXS {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {
   rotate_left
   · exact absurd rfl (hna ds)
   · exact absurd rfl (hnr us)
-  obtain ⟨ls1', ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
   have h1' : codeLinesE R.ctx R.af [AInst.inst i'] ps1 = .ok (ls1, ps1) := by
     simp [codeLinesE, ainstLines, hl1 ps1, bind, Except.bind, pure, Except.pure]
   rw [h1'] at h1
   simp only [Except.ok.injEq, Prod.mk.injEq] at h1
-  obtain ⟨rfl, rfl⟩ := h1
+  obtain ⟨hA, -⟩ := h1
+  rw [← hA] at hdrop
   -- the lines at `j`
-  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hdrop' : R.L.drop j = ls1 ++ (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, List.append_assoc, ftR_plain_append _ _ _ hpl hZ, List.append_assoc]
+  have hdrop' : R.L.drop j = ls1 ++ (relaxLines R.far (X' ++ x.2.1) ++
+      R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+    rw [hdrop, relaxLines_plain hpl]
   obtain ⟨nst, hiter, hpc', hgood⟩ := hruns j _ s m w s' hdrop' hst hpc hpre hex
   refine ⟨nst, _, MStep.op hvb hi hops hsz hsem hlen (HavocOuts.refl _ _ _) hc2' (MNext.next hk), ?_,
     hgood⟩
   have hfr := R.frameOkK hR
-  refine ⟨j + ls1.length, vb, items, pre ++ [.op k (regs.map Loc.reg)], c2, ls2, ps1, ps2, T, hvb,
-    hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
-  · rw [← List.drop_drop, hdrop', List.drop_left]
-  · rw [hiter, hpc']
+  refine qs_next hvb hit hsplit hchk' hc2 h2 h3 htr hdrop ?_ ?_ hx hsc
+  · rw [relaxLines_plain hpl, hiter, hpc']
   · rw [hiter]
     have hsp' : spOf s' = R.spB := hK.1.trans hst.sp
     have herr' : Arm.r .ERR s' = .None := by
@@ -184,8 +181,8 @@ theorem realizes_callN {R : RL} (hR : R.Wf)
     exact hC.ext _ _ _ _ _ hx herr
   -- the callee contract's premise at the call state
   have hpre : R.CallPre s := by
-    obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, cc, wh, ops', hal, -, -, hasg, -, hops', hstat,
-      -, -, -, -, -, -, -, hst⟩ := q_op hq hvb hi
+    obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, -, cc, wh, ops', hal, -, -, hasg, -, hops',
+      hstat, -, -, -, -, -, -, -, -, hst, -, -⟩ := q_op hR hq hvb hi hk
     rw [hops] at hops'; cases hops'
     have hm : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
       hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
@@ -193,13 +190,13 @@ theorem realizes_callN {R : RL} (hR : R.Wf)
     rw [hal, useVals_of_store hstat hm] at hsemU
     exact ⟨R.ctx, .call info, .next, ⟨info, ⟨b, vb, k, hvb, .inl hi⟩, .inl rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
       fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,
-      outs, w', hops, hstat, hasg, callAt_of_q hq hvb hi call_hcall regs i' hal hasg, hst.world,
+      outs, w', hops, hstat, hasg, callAt_of_q hR hq hvb hi call_hcall regs i' hal hasg, hst.world,
       hst.align, hst.err, hsemU⟩
   refine realizes_op_coreXS hR hq hvb hi hops hsz hsem hlen hk (exec := fun _ => callExec R.H)
     (Seg := fun s n => (∀ i < n, R.GoodX (iterN R.step i s)) ∧ ∃ i0 < n, R.CallSt (iterN R.step i0 s) ∧
       ∀ i < n, i ≠ i0 → R.NoCallAt (iterN R.step i s))
     (fun _ => RL.callAtGP hR (hC.os R.ctx info ⟨b, vb, k, hvb, .inl hi⟩) hP (q_stRel hq).sp
-      (q_stRel hq).gkeep fun i' ⟨regs, hal, hasg⟩ => callAt_of_q hq hvb hi call_hcall regs i' hal hasg)
+      (q_stRel hq).gkeep fun i' ⟨regs, hal, hasg⟩ => callAt_of_q hR hq hvb hi call_hcall regs i' hal hasg)
     hpre (fun regs i' hasg _ _ hcs => ?_) hW'
   obtain ⟨info', rfl⟩ := assign_call_form hasg
   have hgen : ∀ x, (∀ ps, (MInst.call info').lines R.ctx ps = .ok ([.ins x], ps)) →

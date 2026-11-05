@@ -80,7 +80,7 @@ theorem cfgS : ∃ ss ps, vcS.cfg = .ok (ss, ps) := by
 theorem factsS : (lowerRFunc vcpS rfS).toBool = true ∧ (emitFunc 0 RAS.af).toBool = true ∧
     RAS.fa.k = 0 ∧ RAS.fa.layout.toBool = true ∧ (labelOffsets RAS.fa.lines).toBool = true ∧
     4 * RAS.fb.words.size ≤ 2 ^ 64 ∧ RAS.af.frameSize ≤ 0x100 ∧ 4 * RAS.fb.words.size ≤ 0x10000 ∧
-    (blocksLinesE RAS.ctx RAS.af RAS.af.blocks.toList {}).toBool = true := by
+    (emitPlan RAS.fa.k RAS.af).toBool = true := by
   native_decide
 
 theorem wfRS : RAS.Wf := by
@@ -353,7 +353,7 @@ theorem run_store : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mo
     (fun K => (K == .plainW || K == .plainR) = true) spillS rest2S t1.1 m' t1.2 hq2 hA2
     (moves_kinds checksRunS.2.2.1) (by simp [spillS, Loc.isSave])
   -- the `stlr`
-  obtain ⟨j, hj, hpc, hstr⟩ := q_head hq3 rfl head_stlrS
+  obtain ⟨j, hj, hpc, hstr⟩ := q_head wfRS hq3 rfl (fun _ h => by cases h) head_stlrS
   obtain ⟨t3, ev, r3, -, hk, hn, ha⟩ := excl_step_fwd wfRS hj rfl hstr.prog hpc hstr.err
     (lb := 0) (p := 1) (q := 0) (.inl rfl) (by omega) (by omega) (fun _ => rfl) t2.2
   simp only [show ¬ (0 : Nat) = 1 from by decide, ite_false] at hk

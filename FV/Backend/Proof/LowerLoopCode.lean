@@ -232,7 +232,8 @@ def finishVC (f : Clif.Function) (d : DState) (slotBytes : Nat) : VCode :=
   let R := lowerFunction.resolve d.alias (d.alias.size + 1)
   { name := f.name, blocks := (d.blocks ++ d.edges).map fun vb =>
       { vb with insts := vb.insts.map (MInst.mapRegs R), branchArgs := vb.branchArgs.map R },
-    classes := d.st.classes, slotBytes, outgoing := d.st.outgoing, rulesFired := d.rules }
+    classes := d.st.classes, slotBytes, outgoing := d.st.outgoing, rulesFired := d.rules,
+    cold := loweredCold f (d.blocks ++ d.edges) }
 
 /-- `lowerFunction`, restated. -/
 def lowerFunction' (f : Clif.Function) : Except String VCode :=

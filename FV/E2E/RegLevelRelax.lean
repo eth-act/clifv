@@ -3,13 +3,24 @@ import FV.E2E.RegLevelEmit
 /-!
 # Branch relaxation on line lists (M6)
 
-`emitFunc`'s lines are `relaxLines far` of the lines before relaxation (`emitFunc_ok`):
+`emitFunc`'s lines are `relaxLines far` of the emission plan's lines (`emitFunc_ok`):
 `relaxLines` maps each line on its own (`relaxLine`), so it distributes over `++`, keeps labels,
 jump-table words and plain lines (`relaxLines_plain`), and rewrites only a relaxable branch to a
 far label, into `b.!c .+8; b T` (`relaxLine_far`).
 -/
 
 namespace Backend
+
+/-- A line branch relaxation (`relaxLine`) and the branch rewriting of the emission plan never
+change: an instruction that is neither `b` nor a conditional branch. -/
+def Line.plain : Line → Bool
+  | .ins (.b _) none => false
+  | .ins c none => c.condTarget?.isNone
+  | .ins _ (some _) => true
+  | _ => false
+
+theorem Line.plain_ins {c : Insn} (h : (Line.ins c none).plain = true) : c.condTarget? = none := by
+  cases c <;> simp_all [Line.plain, Insn.condTarget?]
 
 @[simp] theorem relaxLines_nil (f : Lbl → Bool) : relaxLines f [] = [] := rfl
 
@@ -50,12 +61,6 @@ theorem relaxLines_of_none {f : Lbl → Bool} :
 theorem relaxLines_plain {f : Lbl → Bool} {A : List Line} (h : ∀ ln ∈ A, ln.plain = true) :
     relaxLines f A = A :=
   relaxLines_of_none fun ln hln => relaxable_of_plain (h ln hln)
-
-/-- `ftList_plain_append` after relaxation. -/
-theorem ftR_plain_append (f : Lbl → Bool) (P Z : List Line) (hP : ∀ ln ∈ P, ln.plain = true)
-    (hZ : ∀ n, Z[1]? ≠ some (.label (.trap n))) :
-    relaxLines f (ftList (P ++ Z)) = P ++ relaxLines f (ftList Z) := by
-  rw [ftList_plain_append P Z hP hZ, relaxLines_append, relaxLines_plain hP]
 
 /-- A relaxable branch to a far label is relaxed. -/
 theorem relaxLine_far {f : Lbl → Bool} {c : Insn} {t : Lbl} (hc : c.relaxTarget? = some t)
@@ -107,8 +112,8 @@ theorem relaxLines_loop {f : Lbl → Bool} {A : List Line}
       | some _ => rfl
     | _ => rfl
 
-theorem relaxLines_trapLines (f : Lbl → Bool) (ts : List (Lbl × Clif.TrapCode)) :
-    relaxLines f (trapLines ts) = trapLines ts :=
+theorem relaxLines_trapLines (f : Lbl → Bool) (ps : PState) :
+    relaxLines f (trapLines ps) = trapLines ps :=
   relaxLines_of_none fun ln hln => by
     simp only [trapLines, List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at hln
     obtain ⟨p, -, rfl | rfl⟩ := hln <;> rfl

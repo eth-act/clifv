@@ -324,12 +324,15 @@ def entryFor (labs : List (Label × Nat)) : Option TryInfo × Nat → Option Unw
 
 /-- The call-site table `sites` is right for `af` compiled to `fa` (decidable): the `k`-th
 `bl`/`blr` of the final code is the `k`-th call of `af`, and the personality's lookup at the
-call's return offset − 1 finds that call's entry (`entryFor`). -/
+call's return offset − 1 finds that call's entry (`entryFor`). Since #553 a landing pad's
+label may be aliased by `MachBuffer`, so the entries are looked up in the alias-extended
+label list (the one `callSites` computes the pads with). -/
 def CallSitesOk (af : AFunc) (fa : FnAsm) (sites : List CallSite) : Prop :=
   let r := scanLines fa.lines.toList 0 [] []
+  let labs := fa.alias.filterMap (fun l => (r.1.lookup l.2).map (l.1, ·)) ++ r.1
   r.2.length = af.calls.length ∧
   ∀ p ∈ af.calls.zip r.2,
-    (entryFor r.1 p).isSome ∧ Unw.lookup (sites.map (·.entry)) (p.2 - 1) = entryFor r.1 p
+    (entryFor labs p).isSome ∧ Unw.lookup (sites.map (·.entry)) (p.2 - 1) = entryFor labs p
 
 instance (af : AFunc) (fa : FnAsm) (sites : List CallSite) : Decidable (CallSitesOk af fa sites) := by
   unfold CallSitesOk; infer_instance
@@ -474,12 +477,16 @@ theorem callSites_ok {af : AFunc} {fa : FnAsm} {sites : List CallSite}
     generalize hr : scanLines fa.lines.toList 0 [] [] = r at h ⊢
     obtain ⟨labs, rets⟩ := r
     simp only at h ⊢
+    -- the alias-extended label list `callSites` computes the pads with
+    obtain ⟨labs2, hlabs2⟩ : ∃ labs2,
+        labs2 = fa.alias.filterMap (fun l => (labs.lookup l.2).map (l.1, ·)) ++ labs := ⟨_, rfl⟩
+    rw [← hlabs2] at h ⊢
     by_cases hl : (rets.length != af.calls.length) = true
     · simp only [hl, ite_true] at h
       cases h
     · simp only [hl, Bool.false_eq_true, ite_false] at h
       simp only [bne_iff_ne, ne_eq, Decidable.not_not] at hl
-      cases hm : (af.calls.zip rets).mapM (siteEntries labs) with
+      cases hm : (af.calls.zip rets).mapM (siteEntries labs2) with
       | error e => rw [hm] at h; cases h
       | ok gs =>
         rw [hm] at h

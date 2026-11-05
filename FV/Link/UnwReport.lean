@@ -6,8 +6,10 @@ import FV.Link.UnwCheckIn
 
 `lake exe lean-link` prints, per executable, how many compiled functions fail each per-function
 unwinding check `unwFnsB` decides (`unwCheck`, `callSites`, `unwindRows`, `padsNonzeroB`,
-`lastCallsOk`, `savedCheck`), the input conditions of `tryInfoOk_of_input` (`tryTablesB`) and
-`unwCheck_complete` (`tryRetsB`), and the
+`savedCheck`), the input conditions of `tryInfoOk_of_input` (`tryTablesB`) and
+`unwCheck_complete` (`tryRetsB`), `aliasEntryOkB` (the premise of the generic
+`padsNonzero_complete`; a theorem on the pipeline's output, `alias_ne_entry`/
+`fwd_ne_entry_input`, so this row is a cross-check expected to be 0), and the
 functions whose `.eh_frame` entry `ehOkR` rejects (`fnEhFail`). Nothing here is a premise or a
 decision of the compiler; it measures how often the conditions of the totality argument fail on
 real code.
@@ -25,10 +27,10 @@ def unwConds : List (String × (Clif.Function → Art → Bool)) :=
    ("callSites", fun _ a => (Backend.callSites a.af a.fa).toBool),
    ("unwindRows", fun _ a => (Backend.unwindRows a.af a.fa).toBool),
    ("padsNonzeroB", fun _ a => Backend.Proof.padsNonzeroB a.af a.fa),
-   ("lastCallsOk", fun _ a => Backend.Proof.lastCallsOk a.af a.fa),
    ("savedCheck", fun _ a => Backend.savedCheck a.vcp a.rf),
    ("tryTablesB", fun g _ => Link.EhCheck.Complete.tryTablesB g),
-   ("tryRetsB", fun g _ => Link.EhCheck.Complete.tryRetsB g)]
+   ("tryRetsB", fun g _ => Link.EhCheck.Complete.tryRetsB g),
+   ("aliasEntryOkB", fun _ a => Link.EhCheck.Complete.aliasEntryOkB a.af a.fa)]
 
 /-- The functions whose `.eh_frame` entry `ehOkR` rejects (`none`: the program-level part of
 `ehOkR` fails, with its reason). -/

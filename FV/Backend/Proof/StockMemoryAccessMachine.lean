@@ -41,12 +41,12 @@ theorem regLevel_access_fault_world_value {vc : VCode} {rf : RFunc} {af : AFunc}
       ∃ n,TrapAtF mp fb base code (runX (ArmStepX X H fa) n initial) ∧
         ∀ j < n,actGoodX vc rf af fa fb base initial X H K G gv (runX (ArmStepX X H fa) j initial) := by
   obtain ⟨labels,labelOffsets⟩ := FnAsm.layout_labelOffsets layout
-  obtain ⟨body,psF,bodyCode,other,sameK⟩ := emitFunc_ok emitted
+  obtain ⟨plan,planned,-,sameK⟩ := emitFunc_ok emitted
   subst sameK
-  let R : RL := ⟨vc,rf,af,fa,fb,labels,base,initial,X,H,psF,K,G,gv⟩
+  let R : RL := ⟨vc,rf,af,fa,fb,labels,base,initial,X,H,plan.ps,K,G,gv⟩
   have wellFormed : R.Wf := ⟨⟨cc,ins,a0,checked,entryOk⟩,allocated,emitted,layout,labelOffsets,
     by show 4*fb.words.size ≤ 2^64; have := called.fits; omega,
-    stack,⟨body,bodyCode⟩,called.program,globals⟩
+    stack,⟨plan,planned,rfl⟩,called.program,globals⟩
   obtain ⟨n0,good0,related0,invariant0,other⟩ := q_init wellFormed called bodyEntry
   let values := locVal R.fr (iterN R.step n0 initial)
   refine ⟨values,?_⟩
