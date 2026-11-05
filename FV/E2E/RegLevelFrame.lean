@@ -276,7 +276,7 @@ theorem iterN_loop {R : RL} (hR : R.Wf) {T : List Line} {j : Nat}
       refine ⟨by rw [← hsp]; simp [spOf, Arm.r_of_w_different], ?_⟩
       simp only [xreg, Arm.r_of_w_same]
       simp only [xreg] at h16; rw [h16]
-      rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega, BitVec.ofNat_add]; bv_omega
+      exact loopOff_succ m
     have hloc3 : ∀ i < 4, ∃ k < 4, Arm.r .PC (iterN R.step i s) = R.pcOf (j + k) ∧
         (k = 1 → ∃ q < r + 1, spOf (iterN R.step i s) = S ∧
           xreg 16 (iterN R.step i s) = loopOff (m + q + 1)) := fun i hi => by
@@ -315,7 +315,7 @@ theorem iterN_loop {R : RL} (hR : R.Wf) {T : List Line} {j : Nat}
       obtain ⟨x, e, -, -, ht⟩ := probeLoopBody_ins _ (List.mem_of_mem_take h); cases e; exact ht
     have hgx3' := hgx3 htail hgood0 (linesReads_noLoads hnoLoad)
     have hgoodX3 : R.GoodX s3 := by
-      have hg := hg3 3 (by omega) (le_refl _)
+      have hg := hg3 3 (by omega) (Nat.le_refl _)
       rw [hit3] at hg
       refine RL.goodX_ofIns hR hj3 hpc3 rfl rfl hg (herr3.trans herr) (hprog3.trans hprog) ?_
         (RL.readsAt_noLoad hR hj3 hpc3 rfl)
@@ -332,7 +332,7 @@ theorem iterN_loop {R : RL} (hR : R.Wf) {T : List Line} {j : Nat}
         rw [hpc4, if_neg hr, hpc, hj1]
     rcases Nat.eq_zero_or_pos r with rfl | hr
     · simp only [LoopRuns] at hL
-      subst hL
+      subst s'
       have hpc4' : Arm.r .PC s4 = R.pcOf (j + 4) := by rw [hpc4, if_pos rfl, hpc, hpcB]
       refine ⟨hit4, fun _ => hpc4', fun i h1 h2 => ?_, fun i h => ?_, fun i h => hloc3 i (by omega)⟩
       · rcases Nat.lt_or_ge i 4 with h | h
@@ -406,7 +406,7 @@ theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls
     rw [hLL] at hsplit
     generalize hA : fplrLines ++ probeHead (probeTotal size calls) = A
     have hAlen : A.length = 2 + (probeHead (probeTotal size calls)).length := by
-      rw [← hA]; simp [fplrLines]
+      rw [← hA]; simp [fplrLines]; omega
     have hPL : (probeLines (probeTotal size calls)).length = (probeHead (probeTotal size calls)).length + 4 := by
       rw [probeLines_split, hLL]; simp [probeLoopBody]
     have hdropA : R.L.drop j = A ++ (probeLoopBody ++ (prologueTail saves size ++ T)) := by
@@ -421,7 +421,7 @@ theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls
     have hA1 : StepsOk (R.envOf j) A s s1 := by
       rw [← hA]
       refine StepsOk.append h1 ?_
-      rw [show (R.envOf j).pc + 4 * fplrLines.length = (R.envOf j).pc + 4 + 4 by simp [fplrLines]; omega]
+      rw [show (R.envOf j).pc + 4 * fplrLines.length = (R.envOf j).pc + 4 + 4 by simp [fplrLines]]
       exact hH
     have hinsA : ∀ ln ∈ A, ∃ x, ln = .ins x none ∧ x.hooked = false := fun ln h => hins ln (hmemA ln h)
     obtain ⟨hitA, hpcA, hgA, hgxA⟩ := iterN_steps hR hdropA hinsA hprog hpc herr hA1
@@ -433,7 +433,7 @@ theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls
     have henvL : R.envOf (j + A.length) =
         { R.envOf j with pc := (R.envOf j).pc + 4 + 4 + 4 * (probeHead (probeTotal size calls)).length } := by
       rw [RL.envOf_ins hdropA (fun ln h => by obtain ⟨x, e, -⟩ := hinsA ln h; exact ⟨x, none, e⟩), hAlen]
-      congr 1; omega
+      dsimp only; congr 1; omega
     have hApos : 0 < A.length := by omega
     obtain ⟨xp, hxp, hxph⟩ : ∃ xp, R.L[j + A.length - 1]? = some (.ins xp none) ∧ xp.hooked = false := by
       obtain ⟨x, e, hx⟩ := hinsA (A[A.length - 1]) (List.getElem_mem _)
@@ -455,7 +455,7 @@ theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls
       have := RL.envOf_ins hdropL (fun ln h => by obtain ⟨x, e, -⟩ := probeLoopBody_ins ln h; exact ⟨x, none, e⟩)
       rw [henvL] at this
       rw [show j + A.length + 4 = j + A.length + probeLoopBody.length from rfl, this, hPL]
-      congr 1; simp [probeLoopBody]; omega
+      congr 1
     rw [← henvT] at h3
     have hinsT : ∀ ln ∈ prologueTail saves size, ∃ x, ln = .ins x none ∧ x.hooked = false :=
       fun ln h => hins ln (hmemT ln h)
@@ -468,7 +468,7 @@ theorem iterN_proRun {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls
         A.length + 4 * probeCount (probeTotal size calls) + (prologueTail saves size).length := by
       simp only [prologueSteps, hl, ite_true, hlen]; omega
     have hgoodP : R.Good sP := by
-      have := hgL (4 * probeCount (probeTotal size calls)) (by omega) (le_refl _)
+      have := hgL (4 * probeCount (probeTotal size calls)) (by omega) (Nat.le_refl _)
       rwa [hitL] at this
     have hiter : ∀ i, iterN R.step (A.length + i) s = iterN R.step i s1 := fun i => by
       rw [iterN_add, hitA]
