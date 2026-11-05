@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelRelax
+import FV.Backend.Proof.LoadConstant
 
 /-!
 # `adrp` pairs stay adjacent in `emitFunc`'s lines
@@ -188,12 +189,8 @@ theorem pcOk_relaxLines (f : Lbl → Bool) : ∀ (L : List Line) (b : Bool),
 
 theorem loadConst64_noSecond (rd : Reg) (v : Nat) : ∀ ln ∈ loadConst64 rd v, lnSecond ln = false := by
   intro ln h
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap] at h
-  rcases h with rfl | ⟨j, _, hj⟩
-  · rfl
-  · split at hj
-    · simp only [Option.some.injEq] at hj; subst hj; rfl
-    · cases hj
+  obtain ⟨i, rfl, hf⟩ := loadConst64_form h
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
 
 theorem memFinalize_noSecond {c : FnCtx} {mm : AMode} {b : Nat} {v : List Line × AMode}
     (hm : memFinalize c mm b = .ok v) : ∀ ln ∈ v.1, lnSecond ln = false := by

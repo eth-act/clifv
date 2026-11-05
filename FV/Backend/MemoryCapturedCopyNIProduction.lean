@@ -15,7 +15,7 @@ def lowerCheckedMemoryCapturedCopyNI (f : Clif.Function) (verify : Bool) : Excep
   | .error _ => lowerCheckedMemoryLoadStoreNI f verify
 
 def lowerForAllocationMemoryCapturedCopyNI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedMemoryCapturedCopyNI f verify).map (Stock.Arithmetic.stage cleanup)
+  (lowerCheckedMemoryCapturedCopyNI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
 
 /-- Retry the complete previous pipeline with the original input and allocation callback. -/
 def compileFileMemoryCapturedCopyNIWhen {m : Type → Type} [Monad m] (enabled : Bool)

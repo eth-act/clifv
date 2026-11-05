@@ -14,7 +14,7 @@ theorem pipeT_fb (f : Clif.Function) (k : Nat) (b b' : BitVec 64) (o : Lean.Json
   | error => rfl
   | ok vc =>
     simp only
-    cases prepare (Backend.DeadCleanup.prune vc) with
+    cases prepare (cleanupStage f vc) with
     | error => rfl
     | ok vcp =>
       simp only

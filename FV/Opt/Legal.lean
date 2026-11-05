@@ -373,10 +373,10 @@ def copy2 : List Stmt := [S 2 (bin .bor .i64 0 0), S 3 (bin .bor .i64 1 1)]
 
 /-! ### Shifts and rotates -/
 
-/-- A narrow shift by an `i128` amount (inputs `x yl` = `0 1`, output `2`). -/
-def shiftNarrow (op : BinaryOp) (t : Ty) : List Stmt :=
-  [S 3 (.iconst .i64 (BitVec.ofNat 64 (t.width - 1))), S 4 (bin .band .i64 1 3),
-   S 2 (bin op t 0 4)]
+/-- A narrow shift by an `i128` amount (inputs `x yl` = `0 1`, output `2`): the shift by the
+low half, since a shift takes its amount modulo the width of `x` (8, 16, 32 or 64, a divisor of
+`2^64`). -/
+def shiftNarrow (op : BinaryOp) (t : Ty) : List Stmt := [S 2 (bin op t 0 1)]
 
 /-- `constShift op n` (`op` normalised: `rotr` is `rotl`; inputs `xl xh` = `0 1`, outputs
 `rl rh` = `2 3`). -/

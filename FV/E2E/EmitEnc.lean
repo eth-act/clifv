@@ -151,18 +151,8 @@ theorem gr_x {n : Nat} (h : n ≤ 30) : GR (.x n) := ⟨n, rfl, h⟩
 theorem loadConst64_enc {n : Nat} (hn : n ≤ 30) (v : Nat) :
     ∀ i t, Line.ins i t ∈ loadConst64 (.x n) v → i.encodable = true := by
   intro i t h
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap, List.mem_range] at h
-  rcases h with h | ⟨j, hj, hj'⟩
-  · simp only [Line.ins.injEq] at h
-    obtain ⟨rfl, -⟩ := h
-    have : mask64 v / 2 ^ (16 * 0) % 2 ^ 16 < 2 ^ 16 := Nat.mod_lt _ (by decide)
-    enc
-  · split at hj'
-    · simp only [Option.some.injEq, Line.ins.injEq] at hj'
-      obtain ⟨rfl, -⟩ := hj'
-      have : mask64 v / 2 ^ (16 * (j + 1)) % 2 ^ 16 < 2 ^ 16 := Nat.mod_lt _ (by decide)
-      enc
-    · cases hj'
+  obtain ⟨ai, ha⟩ := loadConst64_toArmInst hn v ⟨0, fun _ => some 0⟩ i t h
+  simp [Insn.encodable, Insn.encode, ha, Functor.map, Except.map]
 
 /-- A final addressing mode the encoder accepts for an access of `b` bytes. -/
 def FinOk (b : Nat) : AMode → Prop

@@ -42,7 +42,7 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
     (hout : OutOkTCleanup I = true) (hpipe : I.resultsCleanupT.all (·.2.toBool) = true)
     (hlk : linkerOkR I I.resultsCleanupT = true)
     {e : Clif.Function × Except String Art} (he : e ∈ I.resultsCleanupT) :
-    (chksWithT (fun _ => prune) (I.withDepth I.resultsCleanupT) (progOf I.resultsCleanupT)
+    (chksWithT cleanupStage (I.withDepth I.resultsCleanupT) (progOf I.resultsCleanupT)
       (tabOf I.resultsCleanupT) e.1 e.2).all (·.2) = true := by
   obtain ⟨hps, hfs⟩ := inScopePT_parts hin
   obtain ⟨-, hpg, -⟩ := progScope_parts hps
@@ -66,15 +66,16 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
     | ok a => exact ⟨a, rfl⟩
   rw [hpr] at hfit hra hdep ho
   obtain ⟨hl, hp, -, hlr, -, -, -, -⟩ := pipeCleanupT_spec hpr
-  obtain ⟨raw, hraw, hvp⟩ := prune_prepare_ok_inv hp
+  obtain ⟨raw, hraw, hvp⟩ := cleanupStage_prepare_ok_inv hp
   have hga : getOk (Except.ok (ε := String) a) = a := rfl
   simp only [outChksT, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true, hga,
     progOf_resultsCleanupT] at ho
   obtain ⟨hca, hcov, hrets, hent, hout, hsite, hsr, hci⟩ := ho
   have hS := lowerScopeT_of hs
   have hlc := lowerCheckT_complete (dominated_of hd) hS hl
-  have hpc := Prep.prepCheck_complete hp (prune_prepDomain (Spill.prepDomain_ofT (dominated_of hd) hS hl))
-  have hfr := frame_cleanup_of_lower hl hraw hvp hlr
+  have hpc := Prep.prepCheck_complete hp
+    (cleanupStage_prepDomain _ (Spill.prepDomain_ofT (dominated_of hd) hS hl))
+  have hfr := frame_stage_of_lower hl hraw hvp hlr
   obtain ⟨hdecl, hindB, -, -⟩ := hpg _ hgP
   rw [List.all_eq_true]
   intro c hc'
@@ -117,7 +118,7 @@ passes the output checks, whose pipeline succeeds and whose link the linker's fa
 theorem okT_of_inScopeCleanupT {I : LinkInput} (hin : InScopePT I = true)
     (hout : OutOkTCleanup I = true) (hpipe : I.resultsCleanupT.all (·.2.toBool) = true)
     (hlk : linkerOkR I I.resultsCleanupT = true) :
-    okRWithT (fun _ => prune) (I.withDepth I.resultsCleanupT) I.resultsCleanupT = true := by
+    okRWithT cleanupStage (I.withDepth I.resultsCleanupT) I.resultsCleanupT = true := by
   simp only [okRWithT, Bool.and_eq_true]
   exact ⟨global_resultsCleanupTT hin hlk,
     List.all_eq_true.2 fun e he => chksWithT_resultsCleanupT hin hout hpipe hlk he⟩
@@ -129,7 +130,7 @@ theorem okCleanupT_soundT {I : LinkInput} (hin : InScopePT I = true)
     (hB : BaseOk (LinkSys.ofInputCleanupT I B F))
     (hF : ∀ a, (LinkSys.ofInputCleanupT I B F).Img a → F a) :
     (LinkSys.ofInputCleanupT I B F).OkT :=
-  okRWith_soundT (fun _ => prune) (.inr rfl) (resultsCleanupT_ok I I.resultsCleanupT)
+  okRWith_soundT cleanupStage (.inr rfl) (resultsCleanupT_ok I I.resultsCleanupT)
     (okT_of_inScopeCleanupT hin hout hpipe hlk) hB hF
 
 end E2E.LinkCheck

@@ -244,12 +244,8 @@ theorem seqGo_relaxLines (f : Lbl → Bool) : ∀ (L : List Line) (s : SeqSt),
 
 theorem loadConst64_free (rd : Reg) (v : Nat) : ∀ ln ∈ loadConst64 rd v, lnFree ln = true := by
   intro ln h
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap] at h
-  rcases h with rfl | ⟨j, _, hj⟩
-  · rfl
-  · split at hj
-    · simp only [Option.some.injEq] at hj; subst hj; rfl
-    · cases hj
+  obtain ⟨i, rfl, hf⟩ := loadConst64_form h
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
 
 theorem memFinalize_free {c : FnCtx} {mm : AMode} {b : Nat} {v : List Line × AMode}
     (hm : memFinalize c mm b = .ok v) : ∀ ln ∈ v.1, lnFree ln = true := by

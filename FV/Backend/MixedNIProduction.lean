@@ -15,7 +15,7 @@ def lowerCheckedMixedNI (f : Clif.Function) (verify : Bool) : Except String VCod
   | .error _ => lowerCheckedArithmeticNI f verify
 
 def lowerForAllocationMixedNI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedMixedNI f verify).map (Stock.Arithmetic.stage cleanup)
+  (lowerCheckedMixedNI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
 
 /-- A failed complete attempt retries the previous complete arithmetic pipeline
 with the original source, allocator and verification/cleanup settings. -/

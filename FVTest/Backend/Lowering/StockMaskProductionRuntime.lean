@@ -77,7 +77,7 @@ private def checkConfiguration (label : String)
         let selected ← match Stock.lower f with
           | .ok result => pure result.code
           | .error message => throw (IO.userError message)
-        let expected ← match prepare (Stock.Arithmetic.stage cleanup selected) with
+        let expected ← match prepare (Stock.Arithmetic.stageF cleanup f selected) with
           | .ok prepared => pure prepared
           | .error message => throw (IO.userError message)
         require (decide (vc = expected)) s!"allocator did not receive raw Stock: {f.name}"

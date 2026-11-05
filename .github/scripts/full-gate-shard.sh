@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # One shard of the full-gate build (.github/workflows/full-gate.yml): build the modules
 # scripts/ci-build-plan.py assigned to shard SHARD of wave WAVE, with the memory-aware scheduler,
-# then stage their Lake cache outputs in OUT/stage for the later waves.
+# then stage their Lake cache outputs in OUT/stage for the later waves. When some modules fail,
+# the ones that built are staged anyway (later waves and the assemble job reuse them) and the
+# script exits non-zero.
 #
 # usage: .github/scripts/full-gate-shard.sh PLAN.json WAVE SHARD OUT
 # Expects the Lake cache variables (LAKE_ARTIFACT_CACHE, LAKE_RESTORE_ARTIFACTS, LAKE_CACHE_DIR)
@@ -21,11 +23,17 @@ echo "wave $wave shard $shard: ${#mods[@]} modules"
 # recorded peaks (at most 3 lean processes on 4 vCPUs), modules above 12G alone; caps only steer
 # the packing. A larger runner sets FV_CI_BUDGET / FV_CI_HEAVY / FV_CI_MAX_JOBS (repository
 # variables FULL_GATE_BUDGET / FULL_GATE_HEAVY / FULL_GATE_MAX_JOBS, docs/TO-PROVE.md §7).
+rc=0
 python3 scripts/lake-serial-build.py --only "$out/modules.txt" --out "$out/sched" \
   --record "$out/peaks.tsv" --budget "${FV_CI_BUDGET:-15G}" --heavy "${FV_CI_HEAVY:-12G}" \
   --heavy-avail 0 --pause-avail 1G --max-jobs "${FV_CI_MAX_JOBS:-3}" --margin 1.0 --max-cap 48G \
   --retry-failed --drift-time-scale 0 \
-  "${mods[@]}"
-lake build --no-build "${mods[@]}" -o "$out/outputs.jsonl"
+  "${mods[@]}" || rc=$?
+# with failed modules, `lake build --no-build` exits non-zero but still lists the outputs of every
+# module that is up to date
+if ! lake build --no-build "${mods[@]}" -o "$out/outputs.jsonl" > "$out/no-build.log" 2>&1; then
+  (( rc )) || { tail -n 40 "$out/no-build.log"; exit 1; }
+fi
 lake cache stage "$out/outputs.jsonl" "$out/stage"
 du -sh "$out/stage"
+exit "$rc"

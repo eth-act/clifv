@@ -73,6 +73,11 @@ jobs:
             echo "baseline: run $run, commit $sha"
             echo "run=$run" >> "$GITHUB_OUTPUT"
             echo "sha=$sha" >> "$GITHUB_OUTPUT"
+            # a partial build (some modules failed or a shard was lost) lists the modules it lacks
+            if gh run download "$run" --repo "$GITHUB_REPOSITORY" -n lake-full-missing -D base-missing 2>/dev/null; then
+              echo "partial baseline: $(wc -w < base-missing/missing.txt) modules missing"
+              echo "missing=base-missing/missing.txt" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "no baseline build: planning everything"
           fi
@@ -80,6 +85,7 @@ jobs:
         id: plan
         env:
           BASE: ${{ steps.base.outputs.sha }}
+          MISSING: ${{ steps.base.outputs.missing }}
           # eth-act (free plan) runs at most 20 jobs at once across all its repositories
           SHARDS: ${{ vars.FULL_GATE_SHARDS || '10' }}
           # runner seconds per second recorded in scripts/lake-module-peaks.tsv (GitHub-hosted,
@@ -91,7 +97,8 @@ jobs:
           FV_CI_HEAVY: ${{ vars.FULL_GATE_HEAVY || '12G' }}
           FV_CI_MAX_JOBS: ${{ vars.FULL_GATE_MAX_JOBS || '3' }}
         run: |
-          python3 scripts/ci-build-plan.py ${BASE:+--base "$BASE"} --shards "$SHARDS" --waves 3 \
+          python3 scripts/ci-build-plan.py ${BASE:+--base "$BASE"} ${MISSING:+--missing "$MISSING"} \
+            --shards "$SHARDS" --waves 3 \
             --time-scale "$TIME_SCALE" --prefix-scale FV.Opt.Proof.=1.5 --ram "$RAM" \
             --budget "$FV_CI_BUDGET" --heavy "$FV_CI_HEAVY" --max-jobs "$FV_CI_MAX_JOBS" \
             --out ci-plan.json --github-output $LEAN_TARGETS | tee -a "$GITHUB_STEP_SUMMARY"
@@ -122,7 +129,9 @@ jobs:
   wave2:
     name: Build wave 2
     needs: [plan, wave1]
-    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.wave2 != '[]' && contains(fromJSON('["success","skipped"]'), needs.wave1.result) }}
+    # also after a failed shard: modules that do not need its failures still build, and any import
+    # it lost is rebuilt here (lake-serial-build --only schedules imports that are out of date)
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.wave2 != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -140,7 +149,7 @@ jobs:
   wave3:
     name: Build wave 3
     needs: [plan, wave1, wave2]
-    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.wave3 != '[]' && contains(fromJSON('["success","skipped"]'), needs.wave1.result) && contains(fromJSON('["success","skipped"]'), needs.wave2.result) }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.wave3 != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -158,12 +167,16 @@ jobs:
   assemble:
     name: Assemble build and executables
     needs: [plan, wave1, wave2, wave3]
-    if: ${{ !cancelled() && needs.plan.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.wave1.result) && contains(fromJSON('["success","skipped"]'), needs.wave2.result) && contains(fromJSON('["success","skipped"]'), needs.wave3.result) }}
+    # also after failed shards: what did build is published (a partial lake-full), so the next run
+    # rebuilds only the missing modules and their importers; the job then fails and the gates skip
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 300
     permissions:
       actions: read
       contents: read
+    outputs:
+      complete: ${{ steps.build.outputs.complete }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -174,12 +187,30 @@ jobs:
           base-run-id: ${{ needs.plan.outputs.base-run }}
           stages: stage-w*
       - name: Build every Lean target and executable
+        id: build
+        env:
+          WAVES_OK: ${{ contains(fromJSON('["success","skipped"]'), needs.wave1.result) && contains(fromJSON('["success","skipped"]'), needs.wave2.result) && contains(fromJSON('["success","skipped"]'), needs.wave3.result) }}
         run: |
           mapfile -t exes < <(python3 -c 'import tomllib; print("\n".join(e["name"] for e in tomllib.load(open("lakefile.toml", "rb"))["lean_exe"]))')
           start=$(date +%s)
-          # anything a shard did not cover (none, if the plan is right) builds here
-          lake build $LEAN_TARGETS "${exes[@]}" -o full-outputs.jsonl 2>&1 | tail -n 40
+          complete=0
+          if [[ $WAVES_OK == true ]]; then
+            # anything a shard did not cover (none, if the plan is right) builds here
+            if lake build $LEAN_TARGETS "${exes[@]}" -o full-outputs.jsonl > build.log 2>&1; then complete=1; fi
+            tail -n 40 build.log
+          fi
           echo "lake build: $(( $(date +%s) - start )) s"
+          if (( ! complete )); then
+            # a shard failed (its modules are not rebuilt here, on one runner) or the build did:
+            # publish the modules that are up to date and list the ones that are not
+            lake build --no-build $LEAN_TARGETS -o full-outputs.jsonl > no-build.log 2>&1 || true
+            mkdir -p "$RUNNER_TEMP/lake-full-missing"
+            sed -n 's/^✖ \[[0-9]*\/[0-9]*\] Building \([^ ]*\).*/\1/p' no-build.log | sort -u \
+              > "$RUNNER_TEMP/lake-full-missing/missing.txt"
+            echo "partial build: $(wc -l < "$RUNNER_TEMP/lake-full-missing/missing.txt") modules out of date (and their importers)" \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "complete=$complete" >> "$GITHUB_OUTPUT"
           lake cache stage full-outputs.jsonl "$RUNNER_TEMP/lake-full"
           echo "lake-full: $(du -sh "$RUNNER_TEMP/lake-full" | cut -f1), $(find "$RUNNER_TEMP/lake-full" -type f | wc -l) files"
           df -h /
@@ -190,6 +221,17 @@ jobs:
           compression-level: 0
           # main builds are later runs' baselines
           retention-days: ${{ github.ref == 'refs/heads/main' && 14 || 3 }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: steps.build.outputs.complete != '1'
+        with:
+          name: lake-full-missing
+          path: ${{ runner.temp }}/lake-full-missing/missing.txt
+          retention-days: ${{ github.ref == 'refs/heads/main' && 14 || 3 }}
+      - name: Fail on a partial build
+        if: steps.build.outputs.complete != '1'
+        run: |
+          echo "::error::the build is incomplete; lake-full holds the modules that built (see the step summary)"
+          exit 1
 
   audit:
     name: Axiom audits
@@ -455,6 +497,38 @@ jobs:
           name: gate-cargo-fv-${{ matrix.example }}
           path: gate-logs
           retention-days: 14
+
+  retry:
+    name: Retry after a lost shard
+    needs: [plan, assemble]
+    # once per push: the retry is a workflow_dispatch run and never retries itself
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.plan.result == 'success' && needs.assemble.result != 'skipped' && needs.assemble.outputs.complete != '1' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Start one more run if a shard died before building
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          # A shard whose Build step did not fail lost its runner or failed in setup (a full disk,
+          # a download); a second run plans only what this run's partial lake-full lacks. Modules
+          # that failed to build need a fix, not a retry.
+          lost=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/attempts/$ATTEMPT/jobs?per_page=100" --paginate \
+            --jq '.jobs[] | select((.name | startswith("Build wave")) and .conclusion == "failure")
+                  | select([.steps[] | select(.name == "Build" and .conclusion == "failure")] | length == 0)
+                  | .name')
+          if [[ -z $lost ]]; then echo "no lost shard"; exit 0; fi
+          printf 'lost shards:\n%s\n' "$lost"
+          # a newer push already waits: its run builds on this partial lake-full anyway
+          pending=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/full-gate.yml/runs?branch=main&per_page=20" \
+            --jq "[.workflow_runs[] | select(.id != $RUN_ID and .status != \"completed\")] | length")
+          if (( pending )); then echo "a newer run is pending; no retry"; exit 0; fi
+          gh workflow run full-gate.yml --repo "$GITHUB_REPOSITORY" --ref main
+          echo "started a retry run on main"
 
   report:
     name: Report

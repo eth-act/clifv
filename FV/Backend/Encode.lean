@@ -573,6 +573,14 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
       pure (.LDST (.Reg_pair_pre_indexed { opc := 2, V := 0, L, imm7 := ← imm s, Rt2, Rn := 31, Rt }))
     | .spPostIndexed s =>
       pure (.LDST (.Reg_pair_post_indexed { opc := 2, V := 0, L, imm7 := ← imm s, Rt2, Rn := 31, Rt }))
+    | .unscaled rn s =>
+      -- C6.2 LDP/STP (signed offset) `[xn, #s]` (Cranelift `PairAMode::SignedOffset`, `emit.rs`
+      -- `enc_ldst_pair(0b1010100101/0b1010100100, ...)`): `rn` is a GPR or `sp` (encoding 31);
+      -- an `ldp` with equal destinations is CONSTRAINED UNPREDICTABLE
+      -- (`reg_pair_constrain_unpredictable`), so it is rejected
+      if L = 1#1 ∧ Rt = Rt2 then throw s!"ldp with equal destinations {repr rt}"
+      pure (.LDST (.Reg_pair_signed_offset { opc := 2, V := 0, L, imm7 := ← imm s, Rt2,
+                                             Rn := ← rn.encSP, Rt }))
     | m => throw s!"ldp/stp mode {repr m}"
   | .mov w rd rm =>
     if rd == .sp || rm == .sp then
@@ -658,6 +666,14 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     let (Q, size) := s.qsize
     pure (.DPSFP (.Advanced_simd_three_same { Q, U := 0, size, Rm := ← rm.encV, opcode := 0b10111,
                                               Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .movToVec s rd rn idx =>
+    -- C7.2 INS (general) `mov vd.d[idx], xn`: Q 1, op 0, imm4 0011, imm5 = idx:1000 (D lanes;
+    -- Cranelift `Inst::MovToVec`, `0b010_01110000_00000_0_0011_1_00000_00000 | imm5 << 16`).
+    -- Only the 64-bit lanes (`size64x2`, index 0 or 1); register 31 of `rn` is XZR
+    if s != .size64x2 then throw s!"mov to vector arrangement {repr s}"
+    pure (.DPSFP (.Advanced_simd_copy { Q := 1, op := 0,
+                                        imm5 := ← uField "mov to vector index" 5 (idx * 16 + 8),
+                                        imm4 := 3, Rn := ← rn.encZR, Rd := ← rd.encV }))
   | .b t =>
     -- C6.2 B: imm26 = offset / 4, ±128 MiB (Cranelift `enc_jump26`)
     pure (.BR (.Uncond_branch_imm { op := 0, imm26 := ← env.pcRel "b" 26 4 t }))

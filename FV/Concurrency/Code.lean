@@ -1,5 +1,6 @@
 import FV.Backend.Asm
 import FV.Concurrency.Armv8
+import FV.Backend.Proof.LoadConstant
 
 /-!
 # The mapping table is the table of the emitted code (T2b, #300)
@@ -62,21 +63,20 @@ def akinds : MInst → List AKind
   | .storeRelease .. => [.relW]
   | .atomicRmwLoop .. | .atomicCasLoop .. => [.acqXR, .relXW]
   | .fence => [.dmb]
+  -- `ldp`/`stp` (`loadP64`/`storeP64`): one 16-byte access (`ArmInstFoot.pairEvs`)
+  | .loadP64 .. => [.plainR]
+  | .storeP64 .. => [.plainW]
   | _ => []
 
 theorem kinds_append (a b : List Line) : kinds (a ++ b) = kinds a ++ kinds b :=
   List.filterMap_append
 
 theorem kinds_loadConst64 (rd : Reg) (v : Nat) : kinds (loadConst64 rd v) = [] := by
-  unfold kinds loadConst64
+  unfold kinds
   rw [List.filterMap_eq_nil_iff]
   intro l hl
-  simp only [List.mem_cons, List.mem_filterMap, List.mem_range] at hl
-  rcases hl with rfl | ⟨j, -, hj⟩
-  · rfl
-  · split at hj
-    · cases hj; rfl
-    · cases hj
+  obtain ⟨i, rfl, hf⟩ := Backend.Proof.loadConst64_form hl
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
 
 theorem kinds_memFinalize {c : FnCtx} {m : AMode} {n : Nat} {pre : List Line} {m' : AMode}
     (h : memFinalize c m n = .ok (pre, m')) : kinds pre = [] := by

@@ -86,7 +86,7 @@ theorem semanticPreparedIndFacts (stage : Clif.Function → VCode → VCode) {I 
     exact h
   exact semanticPreparedIndFactsFor (fun _ _ => false) stage hR checked hg hnf
 
-theorem semanticPreparedResults_sound (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune)) (hR : PreparedResults stage I R) (hI : okRSemanticNI stage I R = true) {B : BaseEnv}
+theorem semanticPreparedResults_sound (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = (fun _ => id) ∨ stage = cleanupStage) (hR : PreparedResults stage I R) (hI : okRSemanticNI stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
     (ofRes I R B F).OkSemanticNI := by
   have checked : okRSemanticFor (fun _ _ => false) stage I R = true := by

@@ -58,10 +58,9 @@ def AtNonRet (R : RL) (u : ArmState) : Prop :=
 
 theorem noRet_loadConst64 (rd : Reg) (v : Nat) : NoRet (loadConst64 rd v) := by
   intro x t h
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap, List.mem_range] at h
-  rcases h with h | ⟨j, -, h⟩
-  · cases h; intro h; cases h
-  · split at h <;> cases h; intro h; cases h
+  obtain ⟨i, e, hf⟩ := loadConst64_form h
+  cases e
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> (intro h; cases h)
 
 theorem memFinalize_pre {c : FnCtx} {m : AMode} {n : Nat} {pre : List Line} {m' : AMode}
     (h : memFinalize c m n = .ok (pre, m')) : pre = [] ∨ ∃ v, pre = loadConst64 (.x 16) v := by

@@ -114,6 +114,9 @@ inductive Insn where
   | vecLanes (op : VecLanesOp) (size : VectorSize) (rd rn : Reg)
   /-- `addp vd.<T>, vn.<T>, vm.<T>`. -/
   | addp (size : VectorSize) (rd rn rm : Reg)
+  /-- `mov vd.<T>[idx], xn` (INS (general); Cranelift `MovToVec`): lane `idx` of `vd` becomes
+  `xn`, the other lanes do not change. -/
+  | movToVec (size : VectorSize) (rd rn : Reg) (idx : Nat)
   | b (target : Lbl)
   | bcond (c : Cond) (target : Lbl)
   /-- `cbz` (`nz = false`) / `cbnz` (`nz = true`). -/
@@ -222,15 +225,74 @@ def OperandSize.is64 (s : OperandSize) : Bool := s == .size64
 
 def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
 
-/-- `movz`/`movk` sequence for a 64-bit constant (a correct, not necessarily minimal,
-replacement of `Inst::load_constant`; used only for address offsets). -/
+/-! ### `Inst::load_constant` (`isa/aarch64/inst/mod.rs`, `pub fn load_constant`) -/
+
+/-- Halfword `i` of `v`: `(value >> (16 * i)) & 0xffff`. -/
+def halfword (v i : Nat) : Nat := (v / 2 ^ (16 * i)) % 2 ^ 16
+
+/-- `count_zero_half_words(value, num_half_words)` (`inst/mod.rs`): the number of zero
+halfwords among the low `n`. -/
+def countZeroHalfWords (v n : Nat) : Nat :=
+  ((List.range n).filter fun i => halfword v i == 0).length
+
+/-- The kept `(i, imm16)` pairs of `load_constant`'s general case: the halfwords `i < n` of `v`
+that are not `ignored`, in increasing `i` (the `filter_map` over `0..num_half_words`). -/
+def keptHalfwords (v n ignored : Nat) : List (Nat × Nat) :=
+  (List.range n).filterMap fun i =>
+    if halfword v i == ignored then none else some (i, halfword v i)
+
+/-- The lines of `load_constant`'s general case for the kept halfwords: the first is
+`movn` (with `!imm16 & 0xffff`) when `inv` (`first_is_inverted`), otherwise `movz`; the rest
+are `movk`; all at the operand size `is64`. -/
+def movSeqLines (rd : Reg) (is64 inv : Bool) : List (Nat × Nat) → List Line
+  | [] => []
+  | (i, c) :: rest =>
+    .ins (if inv then .movWide .movN is64 rd ⟨2 ^ 16 - 1 - c, i⟩
+          else .movWide .movZ is64 rd ⟨c, i⟩) ::
+      rest.map fun p => .ins (.movk is64 rd ⟨p.2, p.1⟩)
+
+/-- `load_constant`'s general case (the `else` branch) for `value < 2^64`: the 32-bit forms
+(2 halfwords) when `value >> 32 == 0`, else the 64-bit forms (4 halfwords); `movn` first when
+the complement at that size (`negated`) has more zero halfwords than `value`; the halfwords
+equal to the ignored one (`0xffff` after `movn`, `0` after `movz`) are skipped. -/
+def generalLines (rd : Reg) (value : Nat) : List Line :=
+  -- `if value >> 32 == 0 { (2, Size32, (!value << 32) >> 32) } else { (4, Size64, !value) }`
+  let is64 : Bool := 2 ^ 32 ≤ value
+  let n := if is64 then 4 else 2
+  let negated := if is64 then 2 ^ 64 - 1 - value else 2 ^ 32 - 1 - value
+  let inv : Bool := countZeroHalfWords value n < countZeroHalfWords negated n
+  movSeqLines rd is64 inv (keptHalfwords value n (if inv then 2 ^ 16 - 1 else 0))
+
+/-- **`Inst::load_constant(rd, value)`** (`isa/aarch64/inst/mod.rs`), with `value` taken mod
+2^64: Cranelift's constant load, case by case, in Cranelift's order:
+
+1. `MoveWideConst::maybe_from_u64(value)` (at most one nonzero halfword; 0 gives `movz #0`):
+   one `movz xd, #imm16, lsl #16*k`;
+2. else `MoveWideConst::maybe_from_u64(!value)`: one `movn xd, #imm16, lsl #16*k`;
+3. else `ImmLogic::maybe_from_u64(value, I64)`: one `orr xd, xzr, #value` (the
+   `AluRRImmLogic { alu_op: Orr, size: Size64, rn: zero_reg() }` that `MInst.lines` expands
+   to `.logicImm .orr true rd .xzr (mask64 value)`);
+4. else `generalLines`: the 32-bit forms (`OperandSize::Size32`, 2 halfwords) when
+   `value >> 32 == 0`, otherwise the 64-bit forms (4 halfwords); the first instruction is
+   `movn` when the (operand-size) complement has more zero halfwords than `value`
+   (`first_is_inverted`), otherwise `movz`; the halfwords equal to `0xffff` (after `movn`) or
+   `0` (after `movz`) are skipped; the first kept halfword is the `movz`/`movn` (`movn` with
+   `!imm16 & 0xffff`), the others are `movk` at their shift.
+
+`MoveWideConst.ofNat?` and `ImmLogic.ofNat?` (`FV/Backend/MInst.lean`) are the models of
+`MoveWideConst::maybe_from_u64` and `ImmLogic::maybe_from_u64` that the instruction selector
+also uses. The backend uses it for the `x16` loads of `mem_finalize` and `gen_sp_reg_adjust`. -/
 def loadConst64 (rd : Reg) (value : Nat) : List Line :=
   let value := mask64 value
-  let chunk (i : Nat) := (value / 2 ^ (16 * i)) % 2 ^ 16
-  let first := .ins (.movWide .movZ true rd ⟨chunk 0, 0⟩)
-  first :: ((List.range 3).filterMap fun j =>
-    let i := j + 1
-    if chunk i != 0 then some (.ins (.movk true rd ⟨chunk i, i⟩)) else none)
+  match MoveWideConst.ofNat? value with
+  | some imm => [.ins (.movWide .movZ true rd imm)]
+  | none =>
+  match MoveWideConst.ofNat? (2 ^ 64 - 1 - value) with
+  | some imm => [.ins (.movWide .movN true rd imm)]
+  | none =>
+  match ImmLogic.ofNat? value .size64 with
+  | some _ => [.ins (.logicImm .orr true rd .xzr value)]
+  | none => generalLines rd value
 
 /-- Context for expanding one function. -/
 structure FnCtx where
@@ -499,6 +561,16 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
   | .fpuRound op rd rn => one (.fpuRound op rd rn)
   | .fpuToInt op rd rn => one (.fpuToInt op rd rn)
   | .intToFpu op rd rn => one (.intToFpu op rd rn)
+  -- `emit.rs` `LoadP64`/`StoreP64` with `PairAMode::SignedOffset`: one `ldp`/`stp` (the trap
+  -- code of the flags; the offset is the byte offset, a multiple of 8 in `-512..504`, which the
+  -- encoder checks)
+  | .loadP64 rt rt2 rn off fl => pure ([.ins (.ldp rt rt2 (.unscaled rn off)) fl.trapCode], ps)
+  | .storeP64 rt rt2 rn off fl => pure ([.ins (.stp rt rt2 (.unscaled rn off)) fl.trapCode], ps)
+  -- `emit.rs` `MovToVec`: one `mov vd.<T>[idx], xn`, which keeps the other lanes of `vd`; the
+  -- allocation ties `rd` to `ri` (`debug_assert_eq!(rd.to_reg(), ri)`)
+  | .movToVec rd ri rn idx s =>
+    if rd != ri then throw s!"movToVec with distinct rd {repr rd} and ri {repr ri}"
+    else one (.movToVec s rd rn idx)
 where
   /-- `LoadAddr` with an immediate offset (`emit.rs`). -/
   addOff (rd rn : Reg) (off : Int) : List Line :=
@@ -976,6 +1048,7 @@ def Insn.asm (k : Nat) : Insn → String
     if op == .addv then s!"addv {s.lane}{rd.vnum}, v{rn.vnum}.{s.arr}"
     else s!"uaddlv {s.wideLane}{rd.vnum}, v{rn.vnum}.{s.arr}"
   | .addp s rd rn rm => s!"addp v{rd.vnum}.{s.arr}, v{rn.vnum}.{s.arr}, v{rm.vnum}.{s.arr}"
+  | .movToVec s rd rn idx => s!"mov v{rd.vnum}.{s.lane}[{idx}], {rn.gpr (s == .size64x2)}"
   | .b t => s!"b {t.name k}"
   | .bcond c t => s!"b.{c.asm} {t.name k}"
   | .cbz nz w rt t => s!"{if nz then "cbnz" else "cbz"} {rt.gpr w}, {t.name k}"

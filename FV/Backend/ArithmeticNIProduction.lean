@@ -1,5 +1,6 @@
 import FV.Backend.ScalarProduction
 import FV.Backend.Lowering.StockArithmeticNI
+import FV.Backend.StockArithmeticStageF
 
 namespace Backend
 set_option autoImplicit false
@@ -17,7 +18,7 @@ def lowerCheckedArithmeticNI (f : Clif.Function) (verify : Bool) : Except String
   | .error _ => lowerCheckedProductionWith Stock.ScalarAdd.lower f verify
 
 def lowerForAllocationArithmeticNI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedArithmeticNI f verify).map (Stock.Arithmetic.stage cleanup)
+  (lowerCheckedArithmeticNI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
 
 /-- One complete transactional file attempt, using the same source, allocator,
 verification and cleanup settings. Earlier shipped classes keep their selectors. -/

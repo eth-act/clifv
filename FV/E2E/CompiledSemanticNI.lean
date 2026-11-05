@@ -13,6 +13,7 @@ import FV.Backend.Proof.StockMemoryIntegerCheck
 import FV.E2E.StockMemoryCfgNI
 import FV.Backend.Proof.StockMemoryCfgClass
 import FV.Backend.Proof.StockParameterCheck
+import FV.Backend.Proof.StockGeneralLoopCheck7
 import FV.Backend.Proof.StockConditionalRankedCheck
 import FV.E2E.StockCfgNI
 import FV.Backend.Proof.StockTwoBlockCheck
@@ -145,10 +146,12 @@ theorem toSemantic (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
     exact .memory family.domain equal h
 
 /-- All new semantic and paired premises come from executable checks and actual
-pipeline observations, rather than new accepted-source assumptions. -/
+pipeline observations, rather than new accepted-source assumptions. (`prepared`/`prepOk` are
+about the routes' stage `Stock.Arithmetic.stageF`, formerly `Stock.Arithmetic.stage`: the routes
+now run Cranelift's skip of unused instructions, `cleanupStage`.) -/
 theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
-    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
-    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stageF cleanup f vc) = .ok vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stageF cleanup f vc) vcp = true)
     (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
     (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
     CompiledSemanticNI f k vc vcp rf af fa fb := by
@@ -158,8 +161,11 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
       exact .stock ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
     | true =>
       exact .stockCleanup ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
+  rcases Bool.eq_false_or_eq_true (lowerCheck f vc) with hl | hl
+  · exact .compatible (retained hl)
+  rw [Stock.Arithmetic.stageF_of_lowerCheck_false hl] at prepared prepOk
   simp only [SemanticNI.check,Bool.or_eq_true,Bool.and_eq_true] at lower
-  rcases lower with legacy | ((((((((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg) | memoryUnsigned) | memoryExtending) | memoryStore) | memoryStoreCfg) | memoryLoadStore) | memoryCapturedCopy)
+  rcases lower with legacy | (((((((((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg) | memoryUnsigned) | memoryExtending) | memoryStore) | memoryStoreCfg) | memoryLoadStore) | memoryCapturedCopy)
   · exact .compatible (retained legacy)
   · rcases Stock.Arithmetic.check_sound semantic with legacy | ⟨result,domain,run,equal,_⟩
     · exact .compatible (retained legacy)
@@ -203,6 +209,10 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
   · obtain ⟨result,domain,run,equal⟩ := Stock.ParameterCfg.check_sound semantic
+    exact .cfg domain equal reads
+      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+
+  · obtain ⟨result,domain,run,equal⟩ := Stock.GeneralLoopCfg7.check_sound semantic
     exact .cfg domain equal reads
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 

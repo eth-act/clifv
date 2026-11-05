@@ -123,7 +123,7 @@ theorem compiled_of_checks {f : Clif.Function} {cleanup : Bool} (checked : check
               have stage : CompiledStockArithmeticStage f cleanup 0 result vcp rf af fa fb :=
                 ⟨lowered,prepared,prepOk,check,physical,emitted,emittedLayout⟩
               exact ⟨result,vcp,rf,af,fa,fb,stage,
-                CompiledSemanticNI.of_checks semantic prepared prepOk check physical emitted emittedLayout,
+                CompiledSemanticNI.cfg domain rfl reads stage,
                 actualLower,reads,allocated,(formsCoveredB_iff _ _).mp covered⟩
 
 /-- Each fixed forward CFG with a `trap` leaf has the scalar production domain, the actual

@@ -8,8 +8,10 @@ set_option autoImplicit false
 namespace E2E.LinkCheck
 open Backend
 
+/-- The stage of the production pipeline: with cleanup, the cleanup stage (`cleanupStage`: the
+skip of unused instructions, then `DeadCleanup.prune`). -/
 def productionStage (cleanup : Bool) : Clif.Function → VCode → VCode :=
-  fun _ => cond cleanup DeadCleanup.prune id
+  fun f => cond cleanup (cleanupStage f) id
 
 def LinkInput.pipeProduction (I : LinkInput) (cleanup : Bool) (fi : FnInput) : Except String Art :=
   match I.pipeOfWithLowering Stock.Production.lower (productionStage cleanup) fi with
@@ -20,7 +22,7 @@ def LinkInput.resultsProduction (I : LinkInput) (cleanup : Bool) : Res :=
   I.funcs.map fun fi => (fi.func, I.pipeProduction cleanup fi)
 
 theorem productionStage_cases (cleanup : Bool) :
-    productionStage cleanup = (fun _ => id) ∨ productionStage cleanup = (fun _ => DeadCleanup.prune) := by
+    productionStage cleanup = (fun _ => id) ∨ productionStage cleanup = cleanupStage := by
   cases cleanup with
   | false => exact .inl rfl
   | true => exact .inr rfl

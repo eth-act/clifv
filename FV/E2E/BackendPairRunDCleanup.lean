@@ -11,15 +11,18 @@ import FV.E2E.DeadCleanupGot
 compiler's cleanup path (`CompiledCleanup`): the paired counted run of the selected code in the
 guarded paired value semantics `pairDI (valueSem F ctx) F ctx XI` (the paired contracts of
 `PairDriverDValue.lean`, the entry by `entry_step2PDG`), carried to the allocated code through the
-dead-code cleanup (`prune_correctW` on the paired semantics: a pure form keeps both worlds,
+cleanup stage: the skip of unused instructions (`skipStage f vc`, the kept-code simulation
+`sim_runGK` from the entry `entry_step2PDGZ`) and the dead-code cleanup (`prune_correctW` on the
+paired semantics: a pure form keeps both worlds,
 `pairDI_value_pure`; a compare writes only the flags of both worlds and the forms that follow it
 up to the next compare read no memory, so the pair guard holds trivially there,
 `cmpOverwrite_pairSemD_value`), `prepare` (`prep_soundW`) and the GOT guard
 (`vRetFrom_gotVPDV`). The per-step lockstep of the two runs is `StepLockV` (`XNI` or `XNIF` with
 the world difference inside `F`):
 
-* `valueSem_at_noncall`, `ncIndep_pairD_value`, `noCallProj_pairD_value`;
+* `valueSem_at_noncall`, `ncIndep_pairD_value`, `probeOf_pairD_value`, `noCallProj_pairD_value`;
 * `vcode_niID_valueL`, **`vcode_niID_value`** (`XNI`), **`vcode_niIDF_value`** (`XNIF`, `D ⊆ F`);
+* **`vcode_niID_valueL_stage`**: `vcode_niID_valueL` for `skipStage f vc`;
 * `pairDI_value_pure`, `cmpOverwrite_countedW`, `cmpOverwrite_pairSemD_value`,
   `valueSemV_of_some`, `gotInvPDV_step`, `gotInvPDV_star`, `vRetFrom_gotVPDV`;
 * `backend_pairRunD_cleanupL`, **`backend_pairRunD_cleanup`** (`XNI`),
@@ -45,27 +48,32 @@ theorem ncIndep_pairD_value (F : BitVec 64 → Prop) (ctx : FnCtx) (XI : ExtSemI
   intro m n i h
   exact pairSemD_congr (valueSem_at_noncall F ctx XI h m n) fun Y => csem_at_noncall Y ctx XI h m n
 
-/-- The guarded paired value probes (calls failing) project into the counted guarded semantics. -/
-theorem noCallProj_pairD_value (F : BitVec 64 → Prop) (ctx : FnCtx) (XI : ExtSemI) :
-    NoCallProj (fun n => pairSemD (valueSem F ctx (XI.at n)) F ctx (XI.at n))
-      (fun n => pairSemD (valueSem F ctx (XI.at n).noCall) F ctx (XI.at n).noCall) := by
-  intro n i uses w outs w' ctl h
-  cases hc : i.isCallI with
-  | false =>
+/-- The guarded paired value probes (calls failing) are probes of the guarded paired value
+family. -/
+theorem probeOf_pairD_value (F : BitVec 64 → Prop) (ctx : FnCtx) (XI : ExtSemI) :
+    ProbeOf (fun n => pairSemD (valueSem F ctx (XI.at n).noCall) F ctx (XI.at n).noCall)
+      (fun n => pairSemD (valueSem F ctx (XI.at n)) F ctx (XI.at n)) where
+  noncall n i hc := by
     have he : ∀ Y, csem Y ctx (XI.at n).noCall i = csem Y ctx (XI.at n) i := fun Y =>
       csem_call_congr Y ctx (XI.at n) _ hc
     have hv : valueSem F ctx (XI.at n).noCall i = valueSem F ctx (XI.at n) i := by
       funext us w
       simp only [valueSem, he F]
-    have he2 : pairSemD (valueSem F ctx (XI.at n).noCall) F ctx (XI.at n).noCall i =
-        pairSemD (valueSem F ctx (XI.at n)) F ctx (XI.at n) i := pairSemD_congr hv he
-    simp only at h
-    rw [he2] at h
-    rw [counted_noncall (ncIndep_pairD_value F ctx XI) hc uses w n n, h]
-    rfl
-  | true =>
-    have h' := (pairSemD_sub h).2
-    simp [pairSem, valueSem, specForm_of_isCallI hc, csem_noCall_call hc] at h'
+    exact pairSemD_congr hv he
+  call n i hc uses w := by
+    show pairSemD (valueSem F ctx (XI.at n).noCall) F ctx (XI.at n).noCall i uses w = none
+    cases h : pairSemD (valueSem F ctx (XI.at n).noCall) F ctx (XI.at n).noCall i uses w with
+    | none => rfl
+    | some r =>
+      obtain ⟨outs, w', ctl⟩ := r
+      have h' := (pairSemD_sub h).2
+      simp [pairSem, valueSem, specForm_of_isCallI hc, csem_noCall_call hc] at h'
+
+/-- The guarded paired value probes (calls failing) project into the counted guarded semantics. -/
+theorem noCallProj_pairD_value (F : BitVec 64 → Prop) (ctx : FnCtx) (XI : ExtSemI) :
+    NoCallProj (fun n => pairSemD (valueSem F ctx (XI.at n)) F ctx (XI.at n))
+      (fun n => pairSemD (valueSem F ctx (XI.at n).noCall) F ctx (XI.at n).noCall) :=
+  fun n => counted_probe_proj (probeOf_pairD_value F ctx XI) n
 
 section
 variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
@@ -192,6 +200,138 @@ theorem vcode_niID_valueL (hsub : InSubset p f) (hc : CompiledCleanup f k vc vcp
   obtain ⟨us, outs, w, cm0, -, hret, -, -, -, -, hmr, -⟩ := hR
   exact ⟨us, outs, w, VRetFrom.prefix (vstar_mapW
     (noCallProj_pairD_value F ⟨fa.k, af.slotBase⟩ XI 0) hsP) hret,
+    SameWorld.mono (zof_sub cm0) hmr.2.2⟩
+
+/-- **`vcode_niID_valueL` for the code after the skip of unused instructions** (`skipStage f vc`,
+which the cleanup stage prunes and prepares): the paired entry in the entry code
+(`entry_step2PDGZ`, kept whole, `entry_runK`), then the counted paired run of the kept code
+(`sim_runGK`, the guarded paired value family with its probes, `probeOf_pairD_value`). -/
+theorem vcode_niID_valueL_stage (hsub : InSubset p f)
+    (hc : CompiledCleanup f k vc vcp rf af fa fb)
+    (hone : InstCallsOne f) (htc : TryCallsOne f)
+    {XI : ExtSemI} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    {F : BitVec 64 → Prop} {c : BitVec 64} {args : List Clif.Val} {cs : Clif.State}
+    {D : BitVec 64 → Prop}
+    (hX : ∀ s n, ReachN env p cs s n →
+      XCallsOk (env.only (Clif.Invoked env p s)) (f.externs.map (·.2))
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n) ∧
+      XCallsIndOk (env.only (Clif.Invoked env p s)) (indSigs f)
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n))
+    (hLS : ∀ s n, ReachN env p cs s n →
+      StepLockV F D syms (XI.at n) (env.only (Clif.Invoked env p s)) f c)
+    (hTls : ∀ n, XTls F (XI.at n))
+    (hsym : ∀ n b, syms n = some b → XI.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {w₀ w₀' : Arm.ArmState}
+    (ρ₀ : Nat → CV) (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hrel' : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem
+      w₀')
+    (hargs : ArgsAtEntry F f.sig args w₀)
+    (hsw : SameWorld (fun b => F b ∨ D b) w₀ w₀')
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+      ∃ us outs w,
+        VRetFrom (skipStage f vc) (ISem.counted fun n =>
+            pairSemD (valueSem F ⟨fa.k, af.slotBase⟩ (XI.at n)) F ⟨fa.k, af.slotBase⟩ (XI.at n))
+          ⟨0, 0, ρ₀, ((w₀, w₀'), 0)⟩ us outs w ∧
+        SameWorld (fun b => F b ∨ D b) w.1.1 w.1.2 := by
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hsk⟩ := skipStage_spec hc.lowerOk
+  rcases hsk with heq | hK
+  · rw [heq]
+    exact vcode_niID_valueL hsub hc hone htc hX hLS hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw
+      hreg hstk htr fuel
+  intro vals cm hrun
+  let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
+  have houtB := outgoing_le_intBaseCleanupA hc.toA
+  have Hb1 : ∀ n, DriverHyp f vc ctx st0 R gn bl A
+      (valueSem F ⟨fa.k, af.slotBase⟩ (XI.at n).noCall)
+      (RelW Γ f c) (env.only fun _ _ _ => False) p := fun n =>
+    driverHyp_relW_cleanup hsub hc hshape hcert hbr (xCallsOk_none _ _ _ _)
+      (xCallsIndOk_none _ _ _ _) hsym hslot
+  have Hs1 : ∀ s n, ReachN env p cs s n → DriverHyp f vc ctx st0 R gn bl A
+      (valueSem F ⟨fa.k, af.slotBase⟩ (XI.at n)) (RelW Γ f c) (env.only (Clif.Invoked env p s)) p :=
+    fun s n hr => driverHyp_relW_cleanup hsub hc hshape hcert hbr (hX s n hr).1 (hX s n hr).2
+      hsym hslot
+  have mkP : ∀ {X : ExtSem} {env' : Clif.Env},
+      DriverHyp f vc ctx st0 R gn bl A (valueSem F ⟨fa.k, af.slotBase⟩ X) (RelW Γ f c) env' p →
+      XCallsOk env' (f.externs.map (·.2)) (RelW Γ f c) X →
+      XCallsIndOk env' (indSigs f) (RelW Γ f c) X →
+      (∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) →
+      StepLockV F D syms X env' f c → XTls F X →
+      DriverHyp f vc ctx st0 R gn bl A
+        (pairSemD (valueSem F ⟨fa.k, af.slotBase⟩ X) F ⟨fa.k, af.slotBase⟩ X) (MRP Γ f c D)
+        env' p :=
+    fun H hX' hXI' hsym' hLS' hTls' => {
+      shape := hshape
+      cert := hcert
+      dsem := driverSemG_pairD_value F ⟨fa.k, af.slotBase⟩ _
+      insts := instCalls_pairD_value hc hX' hXI' hsym' hslot hLS'
+      terms := termCalls_pairD_value Γ rfl hTls' ⟨fa.k, af.slotBase⟩
+      ext := H.ext
+      indSig := H.indSig
+      subE := H.subE
+      entryLocs := H.entryLocs
+      brIdx := H.brIdx
+      noTail := H.noTail
+      tries := ⟨_, tryCalls_pairD_value hc hX' hsym' hslot hLS',
+        tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
+      tryExt := H.tryExt
+      tryInd := tryIndCalls_pairD_value hXI' hsym' hLS'
+      tryIndSig := H.tryIndSig
+      cfg := H.cfg }
+  have HbP : ∀ n, DriverHyp f vc ctx st0 R gn bl A
+      (pairSemD (valueSem F ⟨fa.k, af.slotBase⟩ (XI.at n).noCall) F ⟨fa.k, af.slotBase⟩
+        (XI.at n).noCall)
+      (MRP Γ f c D) (env.only fun _ _ _ => False) p := fun n =>
+    mkP (Hb1 n) (xCallsOk_none _ _ _ _) (xCallsIndOk_none _ _ _ _) hsym
+      (stepLockV_of_xni (xNI_noCall _) (hTls n)) (hTls n)
+  have HsP : ∀ s n, ReachN env p cs s n → DriverHyp f vc ctx st0 R gn bl A
+      (pairSemD (valueSem F ⟨fa.k, af.slotBase⟩ (XI.at n)) F ⟨fa.k, af.slotBase⟩ (XI.at n))
+      (MRP Γ f c D) (env.only (Clif.Invoked env p s)) p := fun s n hr =>
+    mkP (Hs1 s n hr) (hX s n hr).1 (hX s n hr).2 hsym (hLS s n hr) (hTls n)
+  have hseg : ∀ b B j stm, f.blocks[b]? = some B → B.body[j]? = some stm →
+      stm.inst.isCallLike = true → callsI (seg f R bl b j) = 1 :=
+    fun _ _ _ _ hB hstm hcl => segCalls_of (Hb1 0) hone hB hstm hcl
+  obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
+  have hB0 : f.blocks[0]? = some B0 := by
+    simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
+  have hP : RunPrem env p f cs := by
+    have hf := hce.func
+    exact ⟨htr.stmt, fun s c fn args et hr hs hb hT B hB => htr.tryCall s c fn args et hr hs hb hT B
+        (hf ▸ hB),
+      fun s c callee args et hr hs hb hT B hB =>
+        htr.tryCallInd s c callee args et hr hs hb hT B (hf ▸ hB),
+      fun s st rest sig callee args hr hb hi ⟨B, hB, hst⟩ =>
+        htr.indirect s st rest sig callee args hr hb hi ⟨B, hf ▸ hB, hst⟩,
+      fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
+        htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
+  have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
+  obtain ⟨kk, ρ₁, w₁, w₁', -, hm1, hsw1, -, hm2, hsw2, hsP⟩ := entry_step2PDGZ (Hb1 0)
+    (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ (XI.at 0).noCall)
+    (memRefines_valueSem _ _ (XI.at 0).noCall hslot hsym) (mrStable_relW Γ f c)
+    (ctx' := ⟨fa.k, af.slotBase⟩) (X := (XI.at 0).noCall) hB0 hce.callers
+    hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
+  have hFD : ∀ a, F a → F a ∨ D a := fun a h => .inl h
+  have hmP : Match f ctx R gn bl A (MRP Γ f c D) cs.frame.slots cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ := by
+    refine ⟨hm1.1, hm1.2.1, hm1.2.2.1, ⟨hm1.2.2.2.1, hm2.2.2.2.1, ?_⟩, hm1.2.2.2.2⟩
+    have h01 : SameWorld (fun b => F b ∨ D b) w₁ w₁' :=
+      SameWorld.trans (SameWorld.mono hFD hsw1)
+        (SameWorld.trans hsw (SameWorld.symm (SameWorld.mono hFD hsw2)))
+    exact sameWorld_zof hm1.2.2.2.1.1.1 hm2.2.2.2.1.1.1 h01 (fun b h => h)
+  have hPrP := probeOf_pairD_value F ⟨fa.k, af.slotBase⟩ XI
+  have hsK := entry_runK hK hB0 (entry_pos hB0 hbody hm1) hsP
+  have hR := sim_runGK hK
+    (fun i h m m' => ncIndep_pairD_value F ⟨fa.k, af.slotBase⟩ XI m m' i h) hPrP hP HbP HsP hseg
+    htc fuel cs 0 0 (kidx (skipMask f R bl vc (skipAt f (skipDrops f R bl vc)) 0) kk) ρ₁
+    (w₁, w₁') .refl ⟨⟨0, kk, ρ₁, (w₁, w₁')⟩, ⟨rfl, rfl, rfl, fun _ _ => rfl⟩, hmP⟩
+  rw [hrun] at hR
+  obtain ⟨us, outs, w, cm0, -, hret, -, -, -, -, hmr, -⟩ := hR
+  exact ⟨us, outs, w, VRetFrom.prefix (vstar_mapW (counted_probe_proj hPrP 0) hsK) hret,
     SameWorld.mono (zof_sub cm0) hmr.2.2⟩
 
 /-- **Non-interference of the counted VCode run of the cleanup path, reads guarded**
@@ -489,9 +629,9 @@ theorem backend_pairRunD_cleanupL (hsub : InSubset p f)
           ⟨0, 0, ρ₀, ((w₀, w₀'), 0)⟩ us outs w ∧
         SameWorld (fun b => F b ∨ D b) w.1.1 w.1.2 := by
   intro vals cm hrun
-  obtain ⟨us, outs, w, hv, hsw'⟩ := vcode_niID_valueL hsub hc hone htc hX hLS hTls hsym hslot ρ₀
-    hce hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
-  have hPr := (prune_correctW (vc := vc)
+  obtain ⟨us, outs, w, hv, hsw'⟩ := vcode_niID_valueL_stage hsub hc hone htc hX hLS hTls hsym
+    hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
+  have hPr := (prune_correctW (vc := skipStage f vc)
     (sem := pairDI (valueSem F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI)
     (fun _ _ _ _ _ _ hi hs => pairDI_value_pure hi hs)
     (cmpOverwrite_countedW fun n => cmpOverwrite_pairSemD_value _ _ _) ρ₀ ((w₀, w₀'), 0)).1 _ _ _ hv

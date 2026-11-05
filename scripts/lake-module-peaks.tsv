@@ -252,7 +252,7 @@ FV.Backend.Proof.IselCmpSelectTI	1999	2
 FV.Backend.Proof.IselCmpTerms	1920	15
 FV.Backend.Proof.IselCmpVec	2126	6
 FV.Backend.Proof.IselCmpVecTI	1975	2
-FV.Backend.Proof.IselContract	5960	346
+FV.Backend.Proof.IselContract	2143	15
 FV.Backend.Proof.IselContractP	5891	216
 FV.Backend.Proof.IselCovCall	1945	6
 FV.Backend.Proof.IselCovCheck	1767	5

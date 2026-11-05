@@ -162,12 +162,8 @@ def NoTrapLbl (ln : Line) : Prop := ∀ n, ln ≠ .label (.trap n)
 
 theorem loadConst64_ins (rd : Reg) (v : Nat) : ∀ ln ∈ loadConst64 rd v, ∃ i t, ln = .ins i t := by
   intro ln h
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap] at h
-  rcases h with rfl | ⟨j, _, hj⟩
-  · exact ⟨_, _, rfl⟩
-  · split at hj
-    · simp only [Option.some.injEq] at hj; exact ⟨_, _, hj.symm⟩
-    · cases hj
+  obtain ⟨i, rfl, -⟩ := loadConst64_form h
+  exact ⟨_, _, rfl⟩
 
 theorem lines_noTrap {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
     (h : m.lines c ps = .ok (ls, ps')) : ∀ ln ∈ ls, NoTrapLbl ln := by
