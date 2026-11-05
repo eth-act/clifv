@@ -89,26 +89,26 @@ def cmpForm : MInst → Bool
   | _ => false
 
 /-- The flags are dead at the head of a retained suffix: a compare overwrites them after
-flag-free producers only, before anything reads them; or, when the block's flags are dead at
-its exit (`e`, `exitDead`), its `jump` comes first. -/
-@[simp] def flagsDead (e : Bool) : List MInst → Bool
+flag-free producers only, before anything reads them. (A rule treating the flags as dead
+across a `jump` to a block that compares first never changed generated code and was removed,
+#608.) -/
+@[simp] def flagsDead : List MInst → Bool
   | [] => false
-  | k :: ks => cmpForm k || (flagFree k && flagsDead e ks) || (isJump k && e)
+  | k :: ks => cmpForm k || (flagFree k && flagsDead ks)
 
 /-- A compare whose flags are dead: what is left of an `icmp` whose user (`brif`, `select`)
 compares again once its dead `cset` is gone (#552). Cranelift never lowers that `icmp`: no
 lowered instruction uses its result (`machinst/lower.rs`, `lower_clif_block`), and its
 users' rules look through it to its operands (`isa/aarch64/lower.isle`). -/
-@[simp] def dropCmp (e : Bool) (m : MInst) (kept : List MInst) : Bool :=
-  cmpForm m && (defs m).isEmpty && flagsDead e kept
+@[simp] def dropCmp (m : MInst) (kept : List MInst) : Bool :=
+  cmpForm m && (defs m).isEmpty && flagsDead kept
 
-/-- Scan backwards; removing a dead producer does not make its inputs live. `e`: the flags are
-dead at the block's exit. -/
-def scan (nregs : Nat) (e : Bool) : List MInst → List Nat → List MInst × List Nat
+/-- Scan backwards; removing a dead producer does not make its inputs live. -/
+def scan (nregs : Nat) : List MInst → List Nat → List MInst × List Nat
   | [], live => ([], live)
   | m :: ms, exit =>
-    let (kept, live) := scan nregs e ms exit
-    if discard m live || dropCmp e m kept then (kept, live)
+    let (kept, live) := scan nregs ms exit
+    if discard m live || dropCmp m kept then (kept, live)
     else (m :: kept, uses nregs m ++ live.filter (fun n => !(defs m).contains n))
 
 def blockUses (nregs : Nat) (b : VBlock) : List Nat :=
@@ -119,32 +119,9 @@ Including the current block handles self-loops without an SSA assumption. -/
 def exitLive (vc : VCode) (_idx : Nat) (_b : VBlock) : List Nat :=
   vc.blocks.toList.flatMap (blockUses vc.classes.size)
 
-/-- The flags are dead at the entry of the block labelled `l` (the CFG's successor: the first
-block with that label): its own instructions overwrite them by a compare after flag-free
-producers only. -/
-def entryDead (vc : VCode) (l : Label) : Bool :=
-  match vc.blocks.findIdx? (·.label == l) with
-  | some s => match vc.blocks[s]? with
-    | some b => flagsDead false b.insts.toList
-    | none => false
-  | none => false
-
-/-- The block ends with a `jump` to a block whose flags are dead at entry. -/
-def jumpsToDead (vc : VCode) (b : VBlock) : Bool :=
-  match b.insts.back? with
-  | some (.jump l) => entryDead vc l
-  | _ => false
-
-/-- The flags are dead at the exit of the blocks labelled `lb`: each ends with a `jump` to a
-block whose flags are dead at entry, e.g. an unused `icmp` before the `jump` to a block that
-compares again (#552). Keyed by the label, so that it is unchanged when `prepare` retargets a
-terminator. -/
-def exitDead (vc : VCode) (lb : Label) : Bool :=
-  vc.blocks.all fun b => b.label != lb || jumpsToDead vc b
-
 def cleanBlock (vc : VCode) (idx : Nat) (b : VBlock) : VBlock :=
   { b with insts :=
-      (scan vc.classes.size (exitDead vc b.label) b.insts.toList (exitLive vc idx b)).1.toArray }
+      (scan vc.classes.size b.insts.toList (exitLive vc idx b)).1.toArray }
 
 def clean (vc : VCode) : VCode :=
   { vc with blocks := vc.blocks.mapIdx (cleanBlock vc) }
