@@ -1,5 +1,6 @@
 import FV.Backend.ScalarProduction
 import FV.Backend.StockArithmeticCheck
+import FV.Backend.StockArithmeticStageF
 
 namespace Backend
 set_option autoImplicit false
@@ -19,7 +20,7 @@ def lowerCheckedSemanticWith (lower : Clif.Function → Except String VCode)
 
 def lowerForAllocationArithmetic (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
   (lowerCheckedSemanticWith Stock.Arithmetic.lowerCandidate f verify).map
-    (Stock.Arithmetic.stage cleanup)
+    (Stock.Arithmetic.stageV verify cleanup f)
 
 /-- Arithmetic candidates use the same allocator, cleanup setting and emission
 pipeline as the shipped compiler. Any function or layout failure retries the

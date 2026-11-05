@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockNoLoadDriver
+import FV.Backend.Proof.StockProtectedSinkFrame
 import FV.Backend.Proof.StockProtectedSinkSource
 import FV.Backend.Proof.StockSourceOrder
 

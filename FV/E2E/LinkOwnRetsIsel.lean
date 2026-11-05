@@ -2,7 +2,6 @@ import FV.E2E.LinkOwnRets
 import FV.Backend.Proof.KillTermIds
 import FV.Backend.Proof.KillGen
 import FV.Backend.Proof.IselShpCtor
-import FV.Backend.Proof.TermSetRoots
 import FV.Backend.Proof.TermSetData
 
 /-!

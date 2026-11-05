@@ -19,9 +19,11 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- **The frame-record pair and `ret`**: the instructions the lock cannot step (any `stp`/`ldp`:
-only the frame record's are ever emitted). -/
+/-- **The frame-record pair and `ret`**: the instructions the lock cannot step (any `stp`/`ldp`
+with `sp` pre/post-indexing: only the prologue and epilogue emit those). The signed-offset form
+`[xn, #off]` (`unscaled`), which only `MInst.loadP64`/`storeP64` emit, is not one. -/
 def _root_.Backend.Insn.frLine : Insn → Bool
+  | .stp _ _ (.unscaled ..) | .ldp _ _ (.unscaled ..) => false
   | .ret | .stp .. | .ldp .. => true
   | _ => false
 
@@ -33,10 +35,9 @@ def RL.FRFree (R : RL) (s : Arm.ArmState) (n : Nat) : Prop :=
 theorem frLine_loadConst64 (rd : Reg) (v : Nat) :
     ∀ x t, Line.ins x t ∈ loadConst64 rd v → x.frLine = false := by
   intro x t h
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap, List.mem_range] at h
-  rcases h with h | ⟨j, -, h⟩
-  · cases h; rfl
-  · split at h <;> cases h; rfl
+  obtain ⟨i, e, hf⟩ := loadConst64_form h
+  cases e
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
 
 theorem memFinalize_preFR {c : FnCtx} {m : AMode} {n : Nat} {pre : List Line} {m' : AMode}
     (h : memFinalize c m n = .ok (pre, m')) : pre = [] ∨ ∃ v, pre = loadConst64 (.x 16) v := by

@@ -1,5 +1,6 @@
 import FV.E2E.SemanticExecTlsSim
-import FV.E2E.SemanticExecProven
+import FV.E2E.SemanticExecGot
+import FV.E2E.SemanticExecGoodReads
 
 /-! # The binary theorems without the TLS hook (T1)
 

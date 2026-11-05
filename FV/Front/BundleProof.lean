@@ -1,3 +1,4 @@
+import FV.Front.Perm
 import FV.Front.Bundle
 import FV.Link.LayoutFacts
 

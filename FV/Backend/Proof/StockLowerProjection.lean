@@ -2,7 +2,7 @@ import FV.Backend.Proof.IselScopedProjectionInv
 import FV.Backend.Proof.StockPureHelperTransport
 import FV.Backend.Proof.IselPrgOfvSound
 import FV.Backend.Proof.KillTermIds
-import FV.Backend.Proof.IselFlow
+import FV.Backend.Proof.IselInterp
 
 namespace Backend.Stock.Proof.LowerProjection
 open Isle Isle.Interp Isle.Aarch64 Backend.Stock.Proof

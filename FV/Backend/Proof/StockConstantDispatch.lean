@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockConstantRecordValues
+import FV.Backend.Proof.IselCtlRuleIds
 import FV.Backend.Proof.StockRootOpcodeMatch
 
 /-! Constant dispatch derived from original source data and actual first-match selection. -/

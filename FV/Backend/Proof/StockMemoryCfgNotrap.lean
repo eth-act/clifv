@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockMemoryNotrap
+import FV.Backend.Proof.StockSourceEntry
 import FV.Backend.Proof.StockMemoryCfgClass
 import FV.Backend.Proof.LowerLemmas
 

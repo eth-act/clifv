@@ -1,6 +1,5 @@
-import FV.E2E.CallReturnPins
 import FV.E2E.LinkArm
-import FV.E2E.SemanticNIBoundary
+import FV.E2E.CompiledSemanticNI
 
 /-! Additive whole-program proofs for actual validated output.
 Uses the existing LinkSys, hooks, CLIF runs, machine, depth/peak budgets and

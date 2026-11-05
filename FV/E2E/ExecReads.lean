@@ -319,12 +319,9 @@ theorem linesReads_cons {env : Env} {x : Insn} {t : Option Clif.TrapCode} {ls : 
 theorem loadConst64_noLoads (rd : Reg) (v : Nat) :
     ∀ x t, Line.ins x t ∈ loadConst64 rd v → x.loads = false := by
   intro x t h
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap] at h
-  rcases h with h | ⟨j, _, hj⟩
-  · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
-  · split at hj
-    · simp only [Option.some.injEq, Line.ins.injEq] at hj; obtain ⟨rfl, -⟩ := hj; rfl
-    · cases hj
+  obtain ⟨i, e, hf⟩ := loadConst64_form h
+  cases e
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
 
 /-! ## The reads of a load's lines -/
 
@@ -446,6 +443,7 @@ which the model's register-offset class reads as a load). -/
 def _root_.Backend.MInst.memRd : MInst → Bool
   | .load .. | .loadAcquire .. | .jtSequence .. | .atomicRmwLoop .. | .atomicCasLoop ..
   | .loadExtNameGot .. | .elfTlsGetAddr .. | .store .fpuStore128 .. | .fpuLoad .. => true
+  | .loadP64 .. => true
   | _ => false
 
 /-- A line without a load. -/
@@ -466,12 +464,8 @@ theorem memFinalize_loadFree {c : FnCtx} {mm : AMode} {b : Nat} {v : List Line �
        · split at hln
          · simp at hln
          · obtain ⟨x, t, rfl⟩ : ∃ x t, ln = .ins x t := by
-             simp only [loadConst64, List.mem_cons, List.mem_filterMap] at hln
-             rcases hln with rfl | ⟨j, _, hj⟩
-             · exact ⟨_, _, rfl⟩
-             · split at hj
-               · simp only [Option.some.injEq] at hj; exact ⟨_, _, hj.symm⟩
-               · cases hj
+             obtain ⟨i, rfl, -⟩ := loadConst64_form hln
+             exact ⟨_, _, rfl⟩
            simp [Line.loadFree, loadConst64_noLoads _ _ x t hln])
 
 theorem store_loads {op : StoreOp} {rd : Reg} {m : AMode} (h : op ≠ .fpuStore128) :

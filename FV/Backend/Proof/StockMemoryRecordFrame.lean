@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockMemoryLoadSelection
+import FV.Backend.Proof.StockMemorySelected
 import FV.Backend.Proof.StockMemoryDispatch
 import FV.Backend.Proof.StockTerminalRoots
 

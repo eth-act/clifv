@@ -1,7 +1,8 @@
 import FV.E2E.LinkArm
 import FV.Opt.Legalize128Pass
 import FV.E2E.Legal
-import FV.E2E.LinkScope
+import FV.E2E.LinkScopeDefs
+import FV.Backend.Proof.SpillLocal
 import FV.E2E.StackBound
 
 /-! # Non-vacuity of `backend_correct_program` (docs/contracts/e2e.md, "Non-vacuity")

@@ -1,5 +1,5 @@
 import Lean
-import FV.Opt.Proof.KernelBV
+import FV.Clif.Syntax
 
 /-!
 # Tactics for the rule proofs

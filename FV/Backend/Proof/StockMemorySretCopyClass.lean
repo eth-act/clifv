@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockMemorySretCopyFunctionObservation
+import FV.Backend.Proof.StockPolicy
+import FV.Backend.Proof.LowerSpec
 
 namespace Backend.Stock.Memory.SretCopy
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof

@@ -1,5 +1,6 @@
 import FV.Backend.Proof.IselGeneric
 import FV.Compile.Subset
+import FV.Isle.Generated.Closure
 import FV.Backend.Proof.IselData
 import FV.Backend.Proof.RegallocOperands
 import FV.Backend.Proof.AbiClass
@@ -1813,12 +1814,35 @@ def BranchRulesCorrect (p : Program) : Prop :=
 
 /-! ## From the rules to every `lower` call -/
 
+/-- `l` has no duplicates and no element that is a set bit of `m`: one pass with a bit set, so
+that the kernel decides `Nodup` of a long list of numerals in linear time (`decide` on
+`Nodup` itself compares every pair). -/
+def nodupBits : List Nat → Nat → Bool
+  | [], _ => true
+  | a :: l, m => !m.testBit a && nodupBits l (m ||| 1 <<< a)
+
+theorem nodup_of_nodupBits : ∀ {l : List Nat} {m : Nat}, nodupBits l m = true →
+    l.Nodup ∧ ∀ x ∈ l, m.testBit x = false
+  | [], _, _ => ⟨List.nodup_nil, by simp⟩
+  | a :: l, m, h => by
+    simp only [nodupBits, Bool.and_eq_true, Bool.not_eq_true'] at h
+    obtain ⟨ih1, ih2⟩ := nodup_of_nodupBits h.2
+    refine ⟨List.nodup_cons.2 ⟨fun ha => ?_, ih1⟩, ?_⟩
+    · have := ih2 a ha
+      simp [Nat.testBit_or, Nat.one_shiftLeft, Nat.testBit_two_pow_self] at this
+    · intro x hx
+      rcases List.mem_cons.1 hx with rfl | hx
+      · exact h.1
+      · have := ih2 x hx
+        simp only [Nat.testBit_or, Bool.or_eq_false_iff] at this
+        exact this.1
+
 set_option maxRecDepth 100000 in
 /-- The rules of `lower` are pairwise distinct (so "the rules before `r`" is well defined). -/
 theorem lower_rules_nodup {p : Program} (hp : Data p) : (p.rulesOf TId.lower).Nodup := by
   rw [show TId.lower = 686 from rfl, hp.r686]
   refine List.Pairwise.of_map (S := fun a b : Nat => a ≠ b) Rule.id
-    (fun _ _ h e => h (congrArg Rule.id e)) ?_
+    (fun _ _ h e => h (congrArg Rule.id e)) (nodup_of_nodupBits (m := 0) ?_).1
   decide +kernel
 
 theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCorrect p)
@@ -1872,6 +1896,32 @@ theorem lowerInstOk_of_rules {p : Program} (hp : Data p) (hrules : LowerRulesCor
         hnorm ii info inst hi hc hstk
         cfg hco m n st tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
+/-- A successful `runTerm` call of the term named `term` (`T` in `program`) is a successful run
+of `T`'s constructor from `st`. Stated for any name: unfolding `runTerm` at a literal name and
+ruling out its `error` branch in each caller made the kernel evaluate the name lookup
+(`termByName?`), about 25 s per caller. -/
+theorem runTerm_ok_applyTerm {ctx : Ctx} {term : String} {T : Term} {args : List V}
+    {st : LState} {out : V} {st' : LState} {tr : List RuleId}
+    (hT : program.termByName? term = some T)
+    (h : runTerm ctx term args st = .ok (some out, st', tr)) :
+    ∃ tr2, (applyTerm program (sem ctx) {} 1000000 T.ret T.id args).run (st, #[]) =
+      .ok (some out, (st', tr2)) := by
+  unfold runTerm Interp.run at h
+  rw [hT] at h
+  dsimp only at h
+  cases ha : (applyTerm program (sem ctx) {} 1000000 T.ret T.id args).run (st, #[]) with
+  | error e => rw [ha] at h; cases h
+  | ok q =>
+    obtain ⟨v, st2, tr2⟩ := q
+    rw [ha] at h
+    simp only [bind, Except.bind, pure, Except.pure] at h
+    injection h with h
+    injection h with h1 h2
+    subst h1
+    injection h2 with h2 _
+    subst h2
+    exact ⟨tr2, rfl⟩
+
 set_option maxRecDepth 20000 in
 /-- `lowerInstOk_of_rules` for the exported program and the backend's own call
 (`runTerm ctx "lower" [.inst ii]`, as `lowerFunction` makes it). -/
@@ -1893,26 +1943,12 @@ theorem lowerInstOk_runTerm (hrules : LowerRulesCorrect program)
     (h : runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr)) :
     ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
       LowerInstOk isem MR env cp ctx inst info.results st rss st' ms := by
-  unfold runTerm Interp.run at h
-  rw [program_termByName_lower] at h
-  dsimp only at h
-  cases ha : (applyTerm program (sem ctx) {} 1000000 T.lower.ret T.lower.id [.inst ii]).run
-      (st, #[]) with
-  | error e => rw [ha] at h; cases h
-  | ok q =>
-    obtain ⟨v, st2, tr2⟩ := q
-    rw [ha] at h
-    simp only [bind, Except.bind, pure, Except.pure] at h
-    injection h with h
-    injection h with h1 h2
-    subst h1
-    injection h2 with h2 _
-    subst h2
-    have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
-      rw [show TId.lower = 686 from rfl, data_program.r686]; decide
-    obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hcalls hind hmem
-      hR hMR hcr hicr hMem hctx hout hnorm hE hMRo hi hc hsig hstk rfl (by omega) hvb ha
-    exact ⟨ms, rss, by simpa using h1, h2, h3⟩
+  obtain ⟨tr2, ha⟩ := runTerm_ok_applyTerm program_termByName_lower h
+  have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
+    rw [show TId.lower = 686 from rfl, data_program.r686]; decide
+  obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOk_of_rules data_program hrules hex hcalls hind hmem
+    hR hMR hcr hicr hMem hctx hout hnorm hE hMRo hi hc hsig hstk rfl (by omega) hvb ha
+  exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 
 /-! ## Terminators (stated by M7; M4's obligations `LowerTermRulesCorrect`, `TermUnmatchable`,
 `BranchRulesCorrect`, `BranchExcludedUnmatchable`)
@@ -1975,7 +2011,7 @@ theorem lower_branch_rules_nodup {p : Program} (hp : Data p) :
     (p.rulesOf TId.lower_branch).Nodup := by
   rw [show TId.lower_branch = 687 from rfl, hp.r687]
   refine List.Pairwise.of_map (S := fun a b : Nat => a ≠ b) Rule.id
-    (fun _ _ h e => h (congrArg Rule.id e)) ?_
+    (fun _ _ h e => h (congrArg Rule.id e)) (nodup_of_nodupBits (m := 0) ?_).1
   decide +kernel
 
 theorem lowerTermOk_of_rules {p : Program} (hp : Data p) (hrules : LowerTermRulesCorrect p)
@@ -2042,8 +2078,63 @@ theorem branchOk_of_rules {p : Program} (hp : Data p) (hrules : BranchRulesCorre
   · exact hrules F isem MR hR hMR r hr hroot f ctx hctx ti t data targets hd hi hbt htl cfg hco m n st
       tr env' s1 out st' tr2 (by omega) (by omega) hvb hfirst hmatch heval
 
+/-- `Array.find?` is `List.find?` on `toList`, proved without `funext`: the core lemmas
+(`Array.find?_toList`, `List.find?_toArray`) depend on `Quot.sound`. The kernel evaluates the
+`List` scan in one pass, while `Array.find?` indexes the array (walking its list) once per
+element. -/
+theorem find?_eq_toList_find? {α : Type} (p : α → Bool) (as : Array α) :
+    as.find? p = as.toList.find? p := by
+  have key : ∀ (i : Nat) (h : i ≤ as.size),
+      Array.forIn'.loop (m := Id) as
+        (fun a _ (_ : Option (Option α) × Unit) =>
+          if p a = true then pure (ForInStep.done (some (some a), ()))
+          else pure (ForInStep.yield (none, ())))
+        i h (none, ()) =
+      (((as.toList.drop (as.size - i)).find? p).map some, ()) := by
+    intro i
+    induction i with
+    | zero =>
+      intro h
+      show ((none : Option (Option α)), ()) = _
+      have : as.size - 0 = as.toList.length := rfl
+      rw [this, List.drop_length]
+      rfl
+    | succ i ih =>
+      intro h
+      have hj : as.size - 1 - i < as.size :=
+        Nat.lt_of_le_of_lt (Nat.sub_le _ _)
+          (Nat.sub_lt (Nat.lt_of_lt_of_le (Nat.succ_pos i) h) Nat.one_pos)
+      have e1 : as.size - (i + 1) = as.size - 1 - i := by
+        rw [Nat.sub_sub, Nat.add_comm]
+      have e2 : as.size - i = as.size - 1 - i + 1 := by
+        rw [← e1, Nat.sub_add_eq, Nat.sub_add_cancel (Nat.le_sub_of_add_le (Nat.add_comm i 1 ▸ h))]
+      have hd : as.toList.drop (as.size - (i + 1)) =
+          as[as.size - 1 - i] :: as.toList.drop (as.size - i) := by
+        rw [e1, e2]
+        exact List.drop_eq_getElem_cons hj
+      rw [hd, List.find?_cons]
+      unfold Array.forIn'.loop
+      cases hp : p as[as.size - 1 - i] with
+      | true => simp only [hp, ite_true]; rfl
+      | false => simp only [hp, ite_false, Bool.false_eq_true]; exact ih (Nat.le_of_succ_le h)
+  have hk := key as.size (Nat.le_refl _)
+  rw [Nat.sub_self, List.drop_zero] at hk
+  have e : (forIn (m := Id) as ((none : Option (Option α)), ())
+        fun a (_ : Option (Option α) × Unit) =>
+          if p a = true then pure (ForInStep.done (some (some a), ()))
+          else pure (ForInStep.yield (none, ()))) =
+      Array.forIn'.loop (m := Id) as
+        (fun a _ (_ : Option (Option α) × Unit) =>
+          if p a = true then pure (ForInStep.done (some (some a), ()))
+          else pure (ForInStep.yield (none, ())))
+        as.size (Nat.le_refl _) (none, ()) := rfl
+  unfold Array.find?
+  rw [e, hk]
+  cases as.toList.find? p <;> rfl
+
 theorem program_termByName_lower_branch :
     program.termByName? "lower_branch" = some T.lower_branch := by
+  rw [Isle.Program.termByName?, find?_eq_toList_find?]
   decide +kernel
 
 set_option maxRecDepth 20000 in
@@ -2057,26 +2148,12 @@ theorem lowerTermOk_runTerm (hrules : LowerTermRulesCorrect program)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower" [.inst ti] st = .ok (some out, st', tr)) :
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t [] st st' ms := by
-  unfold runTerm Interp.run at h
-  rw [program_termByName_lower] at h
-  dsimp only at h
-  cases ha : (applyTerm program (sem ctx) {} 1000000 T.lower.ret T.lower.id [.inst ti]).run
-      (st, #[]) with
-  | error e => rw [ha] at h; cases h
-  | ok q =>
-    obtain ⟨v, st2, tr2⟩ := q
-    rw [ha] at h
-    simp only [bind, Except.bind, pure, Except.pure] at h
-    injection h with h
-    injection h with h1 h2
-    subst h1
-    injection h2 with h2 _
-    subst h2
-    have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
-      rw [show TId.lower = 686 from rfl, data_program.r686]; decide
-    obtain ⟨ms, h1, h2⟩ := lowerTermOk_of_rules data_program hrules hun hR hMR hctx hrt hd hi
-      rfl (by omega) hvb ha
-    exact ⟨ms, by simpa using h1, h2⟩
+  obtain ⟨tr2, ha⟩ := runTerm_ok_applyTerm program_termByName_lower h
+  have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
+    rw [show TId.lower = 686 from rfl, data_program.r686]; decide
+  obtain ⟨ms, h1, h2⟩ := lowerTermOk_of_rules data_program hrules hun hR hMR hctx hrt hd hi
+    rfl (by omega) hvb ha
+  exact ⟨ms, by simpa using h1, h2⟩
 
 set_option maxRecDepth 20000 in
 /-- `branchOk_of_rules` for the exported program and the backend's call
@@ -2090,26 +2167,12 @@ theorem branchOk_runTerm (hrules : BranchRulesCorrect program)
     (htl : TargetsLen t targets) {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower_branch" [.inst ti, .labels targets] st = .ok (some out, st', tr)) :
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧ LowerTermOk isem MR ctx t targets st st' ms := by
-  unfold runTerm Interp.run at h
-  rw [program_termByName_lower_branch] at h
-  dsimp only at h
-  cases ha : (applyTerm program (sem ctx) {} 1000000 T.lower_branch.ret T.lower_branch.id
-      [.inst ti, .labels targets]).run (st, #[]) with
-  | error e => rw [ha] at h; cases h
-  | ok q =>
-    obtain ⟨v, st2, tr2⟩ := q
-    rw [ha] at h
-    simp only [bind, Except.bind, pure, Except.pure] at h
-    injection h with h
-    injection h with h1 h2
-    subst h1
-    injection h2 with h2 _
-    subst h2
-    have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
-      rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
-    obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi hbt htl
-      rfl (by omega) hvb ha
-    exact ⟨ms, by simpa using h1, h2⟩
+  obtain ⟨tr2, ha⟩ := runTerm_ok_applyTerm program_termByName_lower_branch h
+  have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
+    rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
+  obtain ⟨ms, h1, h2⟩ := branchOk_of_rules data_program hrules hex hR hMR hctx hrt hd hi hbt htl
+    rfl (by omega) hvb ha
+  exact ⟨ms, by simpa using h1, h2⟩
 
 /-! ## `try_call` (the normal return)
 
@@ -2314,26 +2377,12 @@ theorem tryOk_runTerm (hrules : TryRulesCorrect program) (hun : TryUnmatchable p
     (h : runTerm ctx "lower_branch" [.inst ti, .labels targets] st = .ok (some out, st', tr)) :
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧
       LowerTryOk isem MR env cp ctx (.call fn args) info st st' ms := by
-  unfold runTerm Interp.run at h
-  rw [program_termByName_lower_branch] at h
-  dsimp only at h
-  cases ha : (applyTerm program (sem ctx) {} 1000000 T.lower_branch.ret T.lower_branch.id
-      [.inst ti, .labels targets]).run (st, #[]) with
-  | error e => rw [ha] at h; cases h
-  | ok q =>
-    obtain ⟨v, st2, tr2⟩ := q
-    rw [ha] at h
-    simp only [bind, Except.bind, pure, Except.pure] at h
-    injection h with h
-    injection h with h1 h2
-    subst h1
-    injection h2 with h2 _
-    subst h2
-    have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
-      rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
-    obtain ⟨ms, h1, h2⟩ := tryOk_of_rules data_program hrules hun hR hMR hMem hout hcr hctx hext hra hd he hi
-      hinfo htr hvb rfl (by omega) hst ha
-    exact ⟨ms, by simpa using h1, h2⟩
+  obtain ⟨tr2, ha⟩ := runTerm_ok_applyTerm program_termByName_lower_branch h
+  have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
+    rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
+  obtain ⟨ms, h1, h2⟩ := tryOk_of_rules data_program hrules hun hR hMR hMem hout hcr hctx hext hra hd he hi
+    hinfo htr hvb rfl (by omega) hst ha
+  exact ⟨ms, by simpa using h1, h2⟩
 
 theorem tryIndOk_of_rules {p : Program} (hp : Data p) (hrules : TryIndRulesCorrect p)
     (hun : TryIndUnmatchable p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
@@ -2394,25 +2443,11 @@ theorem tryIndOk_runTerm (hrules : TryIndRulesCorrect program) (hun : TryIndUnma
     (h : runTerm ctx "lower_branch" [.inst ti, .labels targets] st = .ok (some out, st', tr)) :
     ∃ ms, st'.emitted = st.emitted ++ ms.toArray ∧
       LowerTryOk isem MR env cp ctx (.callIndirect et.sig callee args) info st st' ms := by
-  unfold runTerm Interp.run at h
-  rw [program_termByName_lower_branch] at h
-  dsimp only at h
-  cases ha : (applyTerm program (sem ctx) {} 1000000 T.lower_branch.ret T.lower_branch.id
-      [.inst ti, .labels targets]).run (st, #[]) with
-  | error e => rw [ha] at h; cases h
-  | ok q =>
-    obtain ⟨v, st2, tr2⟩ := q
-    rw [ha] at h
-    simp only [bind, Except.bind, pure, Except.pure] at h
-    injection h with h
-    injection h with h1 h2
-    subst h1
-    injection h2 with h2 _
-    subst h2
-    have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
-      rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
-    obtain ⟨ms, h1, h2⟩ := tryIndOk_of_rules data_program hrules hun hR hMR hcr hctx hd he hsig h8
-      hi hinfo htr hvb rfl (by omega) hst ha
-    exact ⟨ms, by simpa using h1, h2⟩
+  obtain ⟨tr2, ha⟩ := runTerm_ok_applyTerm program_termByName_lower_branch h
+  have hlen : (program.rulesOf TId.lower_branch).length ≤ 1000 := by
+    rw [show TId.lower_branch = 687 from rfl, data_program.r687]; decide
+  obtain ⟨ms, h1, h2⟩ := tryIndOk_of_rules data_program hrules hun hR hMR hcr hctx hd he hsig h8
+    hi hinfo htr hvb rfl (by omega) hst ha
+  exact ⟨ms, by simpa using h1, h2⟩
 
 end Backend.Proof

@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSelectWideComparisonShape
 import FV.Backend.Proof.StockSelectNarrowComparisonShape
 namespace Backend.Stock.Proof.ScalarSelect
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64

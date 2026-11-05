@@ -356,12 +356,9 @@ theorem good_of_nearOkB {ls : List Line} (h : ∀ ln ∈ ls, ln.nearOkB = true) 
 
 theorem loadConst64_nearOkB (rd : Reg) (v : Nat) : ∀ ln ∈ loadConst64 rd v, ln.nearOkB = true := by
   intro ln hl
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap, List.mem_range] at hl
-  rcases hl with rfl | ⟨j, -, hj⟩
-  · simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?]
-  · split at hj
-    · cases hj; simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?]
-    · cases hj
+  obtain ⟨i, rfl, hf⟩ := Backend.Proof.loadConst64_form hl
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;>
+    simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?]
 
 theorem memFinalize_nearOkB {c : FnCtx} {m : AMode} {b : Nat} {pre : List Line} {m' : AMode}
     (h : memFinalize c m b = .ok (pre, m')) : ∀ ln ∈ pre, ln.nearOkB = true := by
@@ -574,6 +571,10 @@ theorem lines_ok {c : FnCtx} {ps ps' : PState} {m : MInst} {ls : List Line}
       · exact memFinalize_nearOkB hmf ln hl
       · simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?]
   case vecDupImm =>
+    simp only [MInst.lines] at h
+    split at h <;> simp [pure, Except.pure, throw, throwThe, MonadExceptOf.throw] at h
+    emitNear_fin
+  case movToVec =>
     simp only [MInst.lines] at h
     split at h <;> simp [pure, Except.pure, throw, throwThe, MonadExceptOf.throw] at h
     emitNear_fin

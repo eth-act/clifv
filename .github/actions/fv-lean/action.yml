@@ -23,13 +23,35 @@ runs:
       run: |
         sudo swapoff -a
         sudo rm -f /mnt/swapfile
-        # /mnt is the runner's scratch disk; the root disk if /mnt lacks room
-        dir=/mnt
-        if (( $(df --output=avail -B1G /mnt | tail -n 1) < SWAP_GB + 4 )); then dir=/; fi
-        sudo fallocate -l "${SWAP_GB}G" "$dir/fv-swapfile"
-        sudo chmod 600 "$dir/fv-swapfile"
-        sudo mkswap "$dir/fv-swapfile" > /dev/null
-        sudo swapon "$dir/fv-swapfile"
+        avail() { df --output=avail -B1G "$1" 2>/dev/null | tail -n 1 | tr -d ' ' || echo 0; }
+        df -h / /mnt 2>/dev/null || df -h /
+        # The workspace, the Lake cache and the downloaded baseline build (~13 GB while it is
+        # unstaged) live on /, so keep ROOT_RESERVE GB free there. A swap file that filled / killed
+        # the runner seconds into the job (8 shards, 2026-10-31 to 11-04: "No space left on device").
+        ROOT_RESERVE=25
+        root_room() { echo $(( $(avail /) - ROOT_RESERVE )); }
+        dir=/ room=$(root_room)
+        # /mnt is a scratch disk on some runner images; on others it is a directory on /
+        if [[ $(stat -c %d /mnt 2>/dev/null) != "$(stat -c %d /)" ]] && (( $(avail /mnt) - 2 > room )); then
+          dir=/mnt room=$(( $(avail /mnt) - 2 ))
+        fi
+        if (( room < SWAP_GB )) && [[ $dir == / ]]; then
+          # preinstalled SDKs the build does not use (~25 GB)
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL
+          room=$(root_room)
+        fi
+        size=$(( room < SWAP_GB ? room : SWAP_GB ))
+        if (( size >= 4 )); then
+          sudo fallocate -l "${size}G" "${dir%/}/fv-swapfile"
+          sudo chmod 600 "${dir%/}/fv-swapfile"
+          sudo mkswap "${dir%/}/fv-swapfile" > /dev/null
+          sudo swapon "${dir%/}/fv-swapfile"
+          echo "swap: ${size} GB on $dir"
+        else
+          echo "::warning::no room for swap (${room} GB above the reserve)"
+        fi
+        df -h /
         free -g
         nproc
     - name: Configure Lean and the Lake cache

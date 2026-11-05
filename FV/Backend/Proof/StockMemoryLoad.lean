@@ -1,6 +1,6 @@
 import FV.Backend.Proof.IselMemSem
-import FV.Backend.Proof.StockMemoryContract
 import FV.Backend.Proof.StockValues
+import FV.Backend.Proof.StockAliasSemantics
 
 /-! Source loads through a resolved machine address. This bridge deliberately
 does not require the legacy identity value/register context. Actual Stock

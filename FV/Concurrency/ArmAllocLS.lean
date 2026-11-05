@@ -1,4 +1,5 @@
 import FV.Concurrency.ArmAllocMemLS
+import FV.Backend.Proof.IselCovForm
 import FV.Concurrency.ArmAllocBranch
 
 /-!
@@ -2182,7 +2183,7 @@ theorem stackFin {ctx : FnCtx} {m m' : AMode} {n : Nat} (hm : StackMode m) (hn :
       | none =>
         rw [hu] at h
         simp only [Prod.mk.injEq] at h
-        exact absurd h.1 (by rw [loadConst64_eq]; exact List.cons_ne_nil _ _)
+        exact absurd h.1 (loadConst64_ne_nil _ _)
   rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;>
     simp only [memFinalize, pure, Except.pure, Except.ok.injEq] at hf
   · obtain ⟨h1, h2⟩ := key .sp _ trivial hf

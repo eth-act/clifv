@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockCmpZeroHelpers
 import FV.Backend.Proof.StockCmpNonzero32Selection
 import FV.Backend.Proof.StockCmpConditionValues
 import FV.Backend.Proof.StockDemandMono

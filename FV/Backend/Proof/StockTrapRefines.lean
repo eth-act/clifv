@@ -1,6 +1,6 @@
 import FV.Backend.Proof.StockMaskBodyRefines
 import FV.Backend.Proof.StockLocalTrapRefines
-import FV.Backend.Proof.StockReturnScanShape
+import FV.Backend.Proof.StockControlShape
 import FV.Backend.Proof.StockScalarContract
 import FV.Backend.Proof.IselCtlTerm
 

@@ -294,6 +294,19 @@ def MInst.visitOperands : MInst → m MInst
     let rd ← f .def_ rd; let rn ← f .use rn; pure (.fpuToInt op rd rn)
   | .intToFpu op rd rn => do
     let rd ← f .def_ rd; let rn ← f .use rn; pure (.intToFpu op rd rn)
+  -- `mod.rs:427`: `LoadP64`: `reg_def(rt); reg_def(rt2); pairmemarg_operands(mem)`;
+  -- `mod.rs:422`: `StoreP64`: `reg_use(rt); reg_use(rt2); pairmemarg_operands(mem)`
+  -- (`PairAMode::SignedOffset`: `reg_use(reg)`)
+  | .loadP64 rt rt2 rn off fl => do
+    let rt ← f .def_ rt; let rt2 ← f .def_ rt2; let rn ← f .use rn
+    pure (.loadP64 rt rt2 rn off fl)
+  | .storeP64 rt rt2 rn off fl => do
+    let rt ← f .use rt; let rt2 ← f .use rt2; let rn ← f .use rn
+    pure (.storeP64 rt rt2 rn off fl)
+  -- `mod.rs:740`: `MovToVec`: `reg_reuse_def(rd, 1); reg_use(ri); reg_use(rn)` (`rd` == `ri`)
+  | .movToVec rd ri rn idx s => do
+    let rd ← f (.reuseDef 1) rd; let ri ← f .use ri; let rn ← f .use rn
+    pure (.movToVec rd ri rn idx s)
 
 end
 

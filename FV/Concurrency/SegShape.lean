@@ -37,6 +37,7 @@ def memBytes : MInst → Option Nat
   | .loadAcquire ty .. | .storeRelease ty .. => some ty.bytes
   | .fpuLoad sz .. | .fpuStore sz .. => some sz.bytes
   | .atomicRmwLoop ty .. | .atomicCasLoop ty .. => some ty.bytes
+  | .loadP64 .. | .storeP64 .. => some 16
   | _ => none
 
 /-- The instructions with memory kinds. -/

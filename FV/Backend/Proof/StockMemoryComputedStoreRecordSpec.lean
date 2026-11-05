@@ -1,4 +1,5 @@
-import FV.Backend.Proof.StockMemoryMixedStoreRecordSpec
+import FV.Backend.Proof.StockMemoryRetainedStoreReturnSpec
+import FV.Backend.Proof.StockStoreMixedRetention
 
 namespace Backend.Stock.Memory.StoreRoots
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64

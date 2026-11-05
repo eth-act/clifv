@@ -7,7 +7,8 @@ TARGET as in scripts/lake-serial-build.py (a library name, a module, or a prefix
 With --base SHA (the commit whose complete build the CI cache holds), only modules whose source
 differs from SHA, and their importers, are planned: Lake restores every other module from the
 cache. Without --base, or when lakefile.toml / lean-toolchain / lake-manifest.json differ, all of
-them are planned.
+them are planned. With --missing FILE (the modules a partial baseline build lacks, written by the
+full gate's assemble job when some modules failed), those and their importers are planned too.
 
 Waves run one after another; the shards of a wave run in parallel on separate runners. A module
 belongs to the wave in which its earliest possible start (longest recorded-seconds import path
@@ -87,6 +88,9 @@ def main():
     ap.add_argument("targets", nargs="+")
     ap.add_argument("--root", default=".")
     ap.add_argument("--base", help="commit whose build the cache holds (default: none, plan all)")
+    ap.add_argument("--missing", metavar="FILE",
+                    help="modules the --base build lacks (whitespace-separated): planned with "
+                         "their importers even if their sources did not change")
     ap.add_argument("--shards", type=int, default=16, help="max shards per wave")
     ap.add_argument("--waves", type=int, default=3, help="number of wave jobs in the workflow")
     ap.add_argument("--wave-overhead", type=float, default=420,
@@ -139,6 +143,10 @@ def main():
             stack.extend(imports[m])
 
     changed = changed_modules(root, a.base, libs, mods) if a.base else None
+    if changed is not None and a.missing:
+        missing = set(pathlib.Path(a.missing).read_text().split()) & set(mods)
+        print(f"{len(missing)} modules missing from the build of {a.base}", file=sys.stderr)
+        changed |= missing
     if changed is None:
         planned = set(want)
     else:

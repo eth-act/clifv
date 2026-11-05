@@ -1,4 +1,5 @@
 import FV.E2E.StockMinMaxFixtures
+import FV.Backend.Proof.StockScalarMinMaxDomain
 import FV.E2E.StockPopcountWitness
 import FV.E2E.StockScalarNI
 import FV.E2E.CompiledSemanticNI

@@ -55,7 +55,7 @@ private def checkConfiguration (label : String)
   for cleanup in [false,true] do
     let retained ← compileFileLogicalNIWhen true allocateBatch pf [] cleanup
     require (retained.unsupported.isEmpty && retained.funcs.length == 9) "retained baseline failed"
-    let expected ← match prepare (Stock.Arithmetic.stage cleanup raw) with
+    let expected ← match prepare (Stock.Arithmetic.stageF cleanup f raw) with
       | .ok vc => pure vc
       | .error message => throw (IO.userError message)
     let seen ← IO.mkRef false
@@ -71,7 +71,7 @@ private def checkConfiguration (label : String)
             | .error message => throw (IO.userError s!"{repr message}")
             | .ok old => match Stock.Scalar.lowerValidated old with
               | .error message => throw (IO.userError message)
-              | .ok lowered => match prepare (Stock.Arithmetic.stage cleanup lowered) with
+              | .ok lowered => match prepare (Stock.Arithmetic.stageF cleanup old lowered) with
                 | .error message => throw (IO.userError message)
                 | .ok prepared => pure prepared
           require (decide (vc = previous)) "a previously shipped class changed code or metadata"

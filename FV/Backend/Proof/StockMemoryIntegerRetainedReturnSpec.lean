@@ -1,6 +1,5 @@
-import FV.Backend.Proof.StockMemoryIntegerReturnSpec
-import FV.Backend.Proof.StockMaskBlockRecords
-import FV.Backend.Proof.StockScanTrapSemantics
+import FV.Backend.Proof.StockMemoryIntegerSelected
+import FV.Backend.Proof.StockMemoryReturnSpec
 
 namespace Backend.Stock.Memory.IntegerRoots
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64

@@ -1,4 +1,5 @@
 import FV.E2E.StockBitFixtures
+import FV.Backend.Proof.StockScalarBitDomain
 import FV.E2E.StockCastWitness
 import FV.E2E.StockScalarNI
 import FV.E2E.CompiledSemanticNI

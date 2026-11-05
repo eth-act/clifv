@@ -1,4 +1,4 @@
-import FV.E2E.RelaxTotal
+import FV.E2E.AllocTotal
 import FV.E2E.EmitReady
 import FV.Backend.AllocReady
 import FV.E2E.EmitPreOk

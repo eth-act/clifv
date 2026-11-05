@@ -115,6 +115,9 @@ and they run under `qemu-aarch64-static`.
    (`FV_LAKE_CACHE`): the scheduler checks all modules in one `lake build --no-build` and builds
    only those out of date; a module another worktree is building at the moment is restored from
    the cache when that build ends instead of being built twice (docs/TO-PROVE.md §7).
+   `scripts/fetch-lake-cache.sh` fills `FV_LAKE_CACHE` with CI's build of the newest main commit
+   your checkout contains (the full gate's `lake-full` artifact, ~7 GB, kept 14 days), so a fresh
+   worktree builds only what differs from it.
 
 ## Usage
 

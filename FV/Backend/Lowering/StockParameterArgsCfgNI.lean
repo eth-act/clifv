@@ -1,19 +1,19 @@
 import FV.Backend.Lowering.StockVoidCallNI
-import FV.Backend.Lowering.StockParameterArgsCfg
+import FV.Backend.Lowering.StockParameterAnyArgsCfg
 import FV.Backend.ABIReadCfg
 
 namespace Backend.Stock.ParameterArgsCfg.NI
 set_option autoImplicit false
 
-/-- Publish the proved argument-passing CFG class as its actual split code; every rejection uses
-the complete previous provider on the original function. -/
+/-- Publish the proved argument-passing CFG class (original or critical-edge successors) as its
+actual split code; every rejection uses the complete previous provider on the original function. -/
 def lowerValidated (f : Clif.Function) : Except String VCode :=
-  if !sourceLeafEligible f then VoidCall.NI.lowerValidated f
+  if !anySourceLeafEligible f then VoidCall.NI.lowerValidated f
   else
     let attempt := do
       let result ← Stock.lower f
       let split ← splitEdgesChecked result.code result.edgeArgs
-      if check f split.code && ABIReadCfg.check f.sig split.code then pure split.code
+      if anyCheck f split.code && ABIReadCfg.check f.sig split.code then pure split.code
       else throw "Stock argument-passing CFG failed source and paired semantic validation"
     match attempt with
     | .ok vc => .ok vc

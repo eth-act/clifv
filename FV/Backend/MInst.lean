@@ -1,5 +1,5 @@
 import FV.Clif
-import FV.Isle
+import FV.Isle.Generated.Program
 
 /-!
 # Typed view of the aarch64 `MInst` subset (M4 backend)
@@ -480,6 +480,13 @@ inductive MInst where
   | fpuToInt (op : FpuToIntOp) (rd rn : Reg)
   /-- S11f: `scvtf/ucvtf sd/dd, wn/xn` (Cranelift `IntToFpu`). -/
   | intToFpu (op : IntToFpuOp) (rd rn : Reg)
+  /-- `ldp xt, xt2, [xn, #off]` (Cranelift `LoadP64` with `PairAMode::SignedOffset`). -/
+  | loadP64 (rt rt2 rn : Reg) (off : Int) (flags : Clif.MemFlags)
+  /-- `stp xt, xt2, [xn, #off]` (Cranelift `StoreP64` with `PairAMode::SignedOffset`). -/
+  | storeP64 (rt rt2 rn : Reg) (off : Int) (flags : Clif.MemFlags)
+  /-- `mov vd.<T>[idx], xn` (INS (general); Cranelift `MovToVec`): `rd` is `ri` with lane `idx`
+  replaced by `rn`. `rd` and `ri` are tied (`reg_reuse_def(rd, 1)`). -/
+  | movToVec (rd ri rn : Reg) (idx : Nat) (size : VectorSize)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-! ### Operands -/
@@ -558,6 +565,9 @@ def MInst.uses : MInst → List Reg
   | .fpuRRR _ _ _ rn rm => [rn, rm]
   | .fpuRRRR _ _ _ rn rm ra => [rn, rm, ra]
   | .fpuCmp _ rn rm => [rn, rm]
+  | .loadP64 _ _ rn _ _ => [rn]
+  | .storeP64 rt rt2 rn _ _ => [rt, rt2, rn]
+  | .movToVec _ ri rn _ _ => [ri, rn]
 
 /-- Registers written by an instruction (excluding `call`/`args` fixed pairs). -/
 def MInst.defs : MInst → List Reg
@@ -577,6 +587,8 @@ def MInst.defs : MInst → List Reg
   | .fpuLoad _ rd _ _ | .fpuCSel _ rd _ _ _ | .fpuMoveFPImm rd _ _ | .vecDupImm rd _ _ _ => [rd]
   | .fpuRR _ _ rd _ | .fpuRRR _ _ rd _ _ | .fpuRRRR _ _ rd _ _ _ | .fpuRound _ rd _
   | .fpuToInt _ rd _ | .intToFpu _ rd _ => [rd]
+  | .loadP64 rt rt2 _ _ _ => [rt, rt2]
+  | .movToVec rd _ _ _ _ => [rd]
   | _ => []
 
 /-- Apply `f` to every register occurrence (uses and defs, not the real registers of the
@@ -653,6 +665,9 @@ def MInst.mapRegs (f : Reg → Reg) : MInst → MInst
   | .fpuRound op rd rn => .fpuRound op (f rd) (f rn)
   | .fpuToInt op rd rn => .fpuToInt op (f rd) (f rn)
   | .intToFpu op rd rn => .intToFpu op (f rd) (f rn)
+  | .loadP64 rt rt2 rn off fl => .loadP64 (f rt) (f rt2) (f rn) off fl
+  | .storeP64 rt rt2 rn off fl => .storeP64 (f rt) (f rt2) (f rn) off fl
+  | .movToVec rd ri rn idx s => .movToVec (f rd) (f ri) (f rn) idx s
 
 /-- Is this a block terminator (`is_term`)? -/
 def MInst.isTerm : MInst → Bool

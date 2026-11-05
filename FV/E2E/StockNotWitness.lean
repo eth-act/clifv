@@ -1,5 +1,6 @@
 import FV.E2E.StockNotFixtures
 import FV.E2E.StockScalarNI
+import FV.Backend.Proof.StockScalarBnotDomain
 import FV.E2E.CompiledSemanticNI
 import FV.Backend.LinearScan
 import FV.Backend.Lowering.StockD0

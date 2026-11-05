@@ -530,7 +530,7 @@ declares. The environment `E` (with the linked environment's names and signature
 functions that `f` neither declares nor can enter through one of its indirect calls, whose
 call-site signature (`IndSig`) must match the callee's (`Signature.abiMatch`, checked by
 `Clif.stepCallIndirect`). -/
-theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String → Option Nat}
+theorem runLoop_linkR_reaches {P : Program} {base : Env} {f : Function} {syms : String → Option Nat}
     (R : State → Outcome) (F : Nat) (s0 : State) (hnd : (P.funcs.map (·.name)).Nodup)
     (hf : f ∈ P.funcs)
     (hP : ∀ g ∈ P.funcs, LinkFree g) (hio : ¬ IndFree f → IndScope P base syms) {E : Env}
@@ -545,7 +545,8 @@ theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String �
     ∀ (N : Nat) (s : State), N ≤ F + 1 → Reaches base P s0 s → LInv P s → LInv (P.only f) s →
       (¬ IndFree f → s.mem.symbols = syms) →
       (∀ msg, runLoop base P N s ≠ .stuck msg) → runLoop base P N s ≠ .outOfFuel →
-      ∃ m, runLoop E P.bare m s = runLoop base P N s := by
+      ∃ m, runLoop E P.bare m s = runLoop base P N s ∧
+      ∀ target, Reaches E P.bare s target → Reaches base P s0 target := by
   have hPf : ∀ g ∈ (P.only f).funcs, LinkFree g := fun g hg => by
     simp only [Program.only, List.mem_cons, List.not_mem_nil, or_false] at hg
     subst hg; exact hP g hf
@@ -556,23 +557,41 @@ theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String �
   cases N with
   | zero => exact absurd rfl hof
   | succ N =>
+  have lift :
+      (∀ nextState, step E P.bare s = .next nextState →
+        ∀ target, Reaches E P.bare nextState target → Reaches base P s0 target) →
+      ∀ target, Reaches E P.bare s target → Reaches base P s0 target := by
+    intro continuation target path
+    cases path with
+    | refl => exact hre
+    | next stepped rest => exact continuation _ stepped _ rest
   -- a per-function step `r` after which the whole-program run continues with `n` steps
   have helper : ∀ (r : StepResult) (n : Nat), n < N + 1 →
       step E P.bare s = r → runLoop base P (N + 1) s = afterStep base P n r →
       (∀ s1, r = .next s1 → Reaches base P s0 s1 ∧ LInv P s1 ∧ LInv (P.only f) s1 ∧
         (¬ IndFree f → s1.mem.symbols = syms)) →
-      ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s := by
+      ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s ∧
+        ∀ target, Reaches E P.bare s target → Reaches base P s0 target := by
     intro r n hn hr hrun hinv
     cases r with
     | next s1 =>
       rw [hrun] at hst hof ⊢
       obtain ⟨h0, h1, h2, h3⟩ := hinv s1 rfl
-      obtain ⟨m, hm⟩ := ih n hn s1 (by omega) h0 h1 h2 h3 hst hof
-      exact ⟨m + 1, by rw [runLoop_succ', hr]; exact hm⟩
-    | _ => exact ⟨0 + 1, by rw [runLoop_succ', hr, hrun]; rfl⟩
+      obtain ⟨m, hm, mapped⟩ := ih n hn s1 (by omega) h0 h1 h2 h3 hst hof
+      refine ⟨m + 1, by rw [runLoop_succ', hr]; exact hm, lift ?_⟩
+      intro nextState stepped target path
+      rw [hr] at stepped
+      cases stepped
+      exact mapped target path
+    | _ =>
+      refine ⟨0 + 1, by rw [runLoop_succ', hr, hrun]; rfl, lift ?_⟩
+      intro nextState stepped target path
+      rw [hr] at stepped
+      cases stepped
   -- the steps that do not call a function of `P` are the same
   have same : step E P.bare s = step base P s →
-      ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s := fun h =>
+      ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s ∧
+        ∀ target, Reaches E P.bare s target → Reaches base P s0 target := fun h =>
     helper _ N (by omega) h (runLoop_succ' ..) fun s1 hs1 =>
       ⟨hre.snoc hs1, (step_next_linv hP hI hs1).1,
         (step_next_linv hPf hIf (h.trans hs1) (fun _ h => by simp at h)).1,
@@ -593,7 +612,8 @@ theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String �
           step E P.bare s = continueWith t rest rs rvals mem2) ∧
         (∀ c, R ⟨fr', [], mem'⟩ = .trapped c →
           step E P.bare s = .trapped c)) →
-      ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s := by
+      ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s ∧
+        ∀ target, Reaches E P.bare s target → Reaches base P s0 target := by
     intro t rest rs g vals hgP htc hfr htsy e1 e2
     rw [runLoop_succ', e1] at hst hof
     rw [runLoop_succ', e1]
@@ -648,7 +668,7 @@ theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String �
           obtain ⟨u, hu, hdone⟩ := runLoop_returned_reaches base P N _ rvals mem2 hsub
           have hreach1 : Reaches base P s0 ⟨{ t.frame with regs, body := rest }, t.callers, mem2⟩ :=
             (hreach0.trans (hu.under K)).snoc (by rw [step_below, hdone]; exact hres)
-          obtain ⟨m, hm⟩ := ih (N - j) (by omega)
+          obtain ⟨m, hm, mapped⟩ := ih (N - j) (by omega)
             ⟨{ t.frame with regs, body := rest }, t.callers, mem2⟩ (by omega) hreach1
             ⟨(hfr regs).1, by rw [htc]; exact hI.2⟩ ⟨(hfr regs).2, by rw [htc]; exact hIf.2⟩
             (fun hn => by
@@ -656,7 +676,11 @@ theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String �
               rw [runLoop_symbols hP (hio hn).keep N _ rvals mem2 hsubI hsub]
               show mem'.symbols = syms
               rw [enterFunc_symbols he, htsy hn]) hst hof
-          exact ⟨m + 1, by rw [runLoop_succ', e2']; exact hm⟩
+          refine ⟨m + 1, by rw [runLoop_succ', e2']; exact hm, lift ?_⟩
+          intro nextState stepped target path
+          rw [e2'] at stepped
+          cases stepped
+          exact mapped target path
       | trapped c =>
         have hne : ∀ vals mem, runLoop base P N ⟨fr', [], mem'⟩ ≠ .returned vals mem := by
           rw [hsub]; exact fun _ _ h => by cases h
@@ -664,7 +688,10 @@ theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String �
         have hlim : R ⟨fr', [], mem'⟩ = .trapped c := by
           rw [hRK (by rw [hsub]; exact fun _ h => by cases h) (by rw [hsub]; exact fun h => by cases h),
             hsub]
-        exact ⟨1, by rw [runLoop_succ', e2t c hlim]; rfl⟩
+        refine ⟨1, by rw [runLoop_succ', e2t c hlim]; rfl, lift ?_⟩
+        intro nextState stepped target path
+        rw [e2t c hlim] at stepped
+        cases stepped
       | stuck msg =>
         have hne : ∀ vals mem, runLoop base P N ⟨fr', [], mem'⟩ ≠ .returned vals mem := by
           rw [hsub]; exact fun _ _ h => by cases h
@@ -682,7 +709,8 @@ theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String �
       ext.name ∈ f.externs.map (·.2.name) →
       step base P s = Opt.callCont base P t rest rs ext vals →
       step E P.bare s = Opt.callCont E P.bare t rest rs ext vals →
-      ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s := by
+      ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s ∧
+        ∀ target, Reaches E P.bare s target → Reaches base P s0 target := by
     intro t rest rs ext vals htc htm hfr hext e1 e2
     cases hpf : P.func? ext.name with
     | none =>
@@ -721,7 +749,8 @@ theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String �
         LFrame (P.only f) { t.frame with regs, body := rest }) → IndSig f d →
       step base P s = indCont base P t rest rs sig d a v →
       step E P.bare s = indCont E P.bare t rest rs sig d a v →
-      ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s := by
+      ∃ m, runLoop E P.bare m s = runLoop base P (N + 1) s ∧
+        ∀ target, Reaches E P.bare s target → Reaches base P s0 target := by
     intro t rest rs sig d a v htc htm hfr hdS e1 e2
     have hnf : ¬ IndFree f := hdS.not_indFree
     have hS := hio hnf
@@ -866,6 +895,29 @@ theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String �
       have hext : f.extern? fn = some ext := by rw [← hff]; exact Opt.callArgs_extern hca
       exact call s rest rs ext vals rfl rfl (fun regs => ⟨hI.1.rest hb regs, hIf.1.rest hb regs⟩)
         (lookup_name_mem hext) e1 e2
+
+
+theorem runLoop_linkR {P : Program} {base : Env} {f : Function} {syms : String → Option Nat}
+    (R : State → Outcome) (F : Nat) (s0 : State) (hnd : (P.funcs.map (·.name)).Nodup)
+    (hf : f ∈ P.funcs)
+    (hP : ∀ g ∈ P.funcs, LinkFree g) (hio : ¬ IndFree f → IndScope P base syms) {E : Env}
+    (hEn : E.names = (linkEnvR P base R).names) (hEs : E.sigOf = (linkEnvR P base R).sigOf)
+    (hEb : ∀ n, P.func? n = none → E.extern n = (linkEnvR P base R).extern n)
+    (hEp : ∀ h ∈ P.funcs, (h.name ∈ f.externs.map (·.2.name) ∨
+      (syms h.name ≠ none ∧ ∃ d, IndSig f d ∧ d.abiMatch h.sig = true)) →
+      E.extern h.name = (linkEnvR P base R).extern h.name)
+    (hR : ∀ (t0 : State) (K : List (Frame × List ValueId)) (n : Nat), K ≠ [] →
+      Reaches base P s0 (t0.below K) → n ≤ F → (∀ msg, runLoop base P n t0 ≠ .stuck msg) →
+      runLoop base P n t0 ≠ .outOfFuel → R t0 = runLoop base P n t0) :
+    ∀ (N : Nat) (s : State), N ≤ F + 1 → Reaches base P s0 s → LInv P s → LInv (P.only f) s →
+      (¬ IndFree f → s.mem.symbols = syms) →
+      (∀ msg, runLoop base P N s ≠ .stuck msg) → runLoop base P N s ≠ .outOfFuel →
+      ∃ m, runLoop E P.bare m s = runLoop base P N s := by
+  intro N s within reached invariant only symbols notStuck notFuel
+  obtain ⟨m,linked,_⟩ := runLoop_linkR_reaches R F s0 hnd hf hP hio hEn hEs hEb hEp hR
+    N s within reached invariant only symbols notStuck notFuel
+  exact ⟨m,linked⟩
+
 
 /-- **Linking at the CLIF level with bounded callee runs** (`runLoop_linkR` with
 `linkEnvN P base M`): a complete whole-program run of at most `M + 1` steps (from a state of `f`'s

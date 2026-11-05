@@ -1,4 +1,4 @@
-import FV.Backend.Proof.LowerLemmas
+import FV.Backend.Proof.LowerValueRelations
 import FV.Backend.Proof.TryRegs
 
 /-!
@@ -37,33 +37,6 @@ def Match (f : Clif.Function) (ctx : Ctx) (R : Reg → Reg) (gn : Nat → Nat) (
     s.frame.body = B.body.drop j ∧ vs.k = pos f R bl vs.b j ∧
     Held gn (A vs.b j) vs.ρ s.frame ∧ DFGCons ctx (restrict s.frame (A vs.b j))
 
-/-- From `vs`, the VCode run reaches an instruction that halts with trap code `c`. -/
-def VTrapFrom {W : Type} (vc : VCode) (sem : ISem CV W) (vs : VState CV W) (c : Clif.TrapCode) :
-    Prop :=
-  ∃ b k ρ w vb i ops outs w', Star (VStep vc sem) (.run vs) (.run ⟨b, k, ρ, w⟩) ∧
-    vc.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧ i.operands = .ok ops ∧
-    sem i (vuses ops ρ) w = some (outs, w', .halt) ∧ trapCode? i = some c
-
-/-- From `vs`, the VCode run executes `rets us` with use values `vals`, final world `w`. -/
-def VRetFrom {W : Type} (vc : VCode) (sem : ISem CV W) (vs : VState CV W) (us : List (Reg × Reg))
-    (vals : List CV) (w : W) : Prop :=
-  ∃ b k ρ w₁ vb ops outs, Star (VStep vc sem) (.run vs) (.run ⟨b, k, ρ, w₁⟩) ∧
-    vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.rets us) ∧
-    (MInst.rets us).operands = .ok ops ∧ vals = vuses ops ρ ∧
-    sem (.rets us) vals w₁ = some (outs, w, .ret)
-
-theorem VTrapFrom.prefix {W : Type} {vc : VCode} {sem : ISem CV W} {vs vs' : VState CV W}
-    {c : Clif.TrapCode} (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : VTrapFrom vc sem vs' c) :
-    VTrapFrom vc sem vs c := by
-  obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hs, h1⟩ := h'
-  exact ⟨b, k, ρ, w, vb, i, ops, outs, w', h.trans hs, h1⟩
-
-theorem VRetFrom.prefix {W : Type} {vc : VCode} {sem : ISem CV W} {vs vs' : VState CV W}
-    {us : List (Reg × Reg)} {vals : List CV} {w : W}
-    (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : VRetFrom vc sem vs' us vals w) :
-    VRetFrom vc sem vs us vals w := by
-  obtain ⟨b, k, ρ, w₁, vb, ops, outs, hs, h1⟩ := h'
-  exact ⟨b, k, ρ, w₁, vb, ops, outs, h.trans hs, h1⟩
 
 /-- `VTrapFrom`, executing only from configurations satisfying `P` (the halting instruction's
 included). -/
@@ -657,14 +630,6 @@ theorem enter_match_br (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   simp only [List.getElem?_map, ha, Option.map_some, Option.some.injEq] at hx
   subst hx
   rw [hρ₂ a haA]; exact hh
-
-/-- DFG consistency only depends on the frame's function, slots and registers. -/
-theorem dfgCons_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func) (hs : fr'.slots = fr.slots)
-    (hr : fr'.regs = fr.regs) (h : DFGCons ctx fr) : DFGCons ctx fr' := by
-  refine ⟨fun x j info cl v hd hi hc hp hv => ?_, fun x t v ht hv => h.2 x t v ht (hr ▸ hv)⟩
-  obtain ⟨vals, hev, hlk⟩ := h.1 x j info cl v hd hi hc hp (hr ▸ hv)
-  exact ⟨vals, fun cm => by rw [evalInst_congr hf hs cm cl (fun y _ => by rw [hr])]; exact hev cm,
-    hlk⟩
 
 /-! ## CLIF terminator steps -/
 
@@ -1837,26 +1802,6 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
   {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
 
-/-- The arguments in the body-entry world `w` as the entry code reads them (the driver's entry
-premise): a register-passed parameter in its argument register (low bits), a stack-passed one
-in the caller's outgoing area at `fp + 16 + off` (above the saved fp/lr pair), whose bytes avoid
-the frame addresses `F`. -/
-def ArgsAtEntry (F : BitVec 64 → Prop) (sig : Clif.Signature) (args : List Clif.Val)
-    (w : Arm.ArmState) : Prop :=
-  ∀ loc v, (loc, v) ∈ (locsOf sig).zip args → match loc with
-    | .reg r => VHolds v (regVal w r)
-    | .stack off =>
-      Avoids F v.ty.bytes (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int))) ∧
-      (Arm.read_mem_bytes v.ty.bytes (Arm.r (.GPR 29#5) w + BitVec.ofInt 64 (16 + (off : Int)))
-        w).setWidth v.ty.width = v.bits
-
-theorem loadVal_congr {F : BitVec 64 → Prop} {s t : Arm.ArmState} (op : LoadOp) {a : BitVec 64}
-    (h : ∀ x, ¬ F x → s.mem x = t.mem x) (hav : Avoids F op.bytes a) :
-    loadVal op a s = loadVal op a t := by
-  have hr : Arm.read_mem_bytes op.bytes a s = Arm.read_mem_bytes op.bytes a t :=
-    read_mem_bytes_congr _ a (fun k hk => h _ (hav k hk))
-  simp only [loadVal, hr]
-
 theorem loadOpOfBytes_facts {b : Nat} (hb : b = 1 ∨ b = 2 ∨ b = 4 ∨ b = 8) :
     (loadOpOfBytes b).bytes = b ∧ loadOpOfBytes b ≠ .fpuLoad128 ∧ loadSigned (loadOpOfBytes b) = false := by
   rcases hb with rfl | rfl | rfl | rfl <;> exact ⟨rfl, by decide, rfl⟩
@@ -2212,7 +2157,7 @@ the same CLIF entry, with the same register arguments (in the parameter register
 stack-argument bytes (`x29` the same), the entry code (`Args`, then the loads) reaches the first
 statement in both with the same vreg file; each world agrees with its entry world outside the
 allocatable registers (`SameWorld F`). -/
-theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+theorem entry_step2Z (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
@@ -2228,9 +2173,9 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
     (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
       w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
         w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) :
-    ∃ k ρ₁ w₁ w₁', Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
+    ∃ k ρ₁ w₁ w₁', StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
       Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
-      Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
+      StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
       Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁'⟩ ∧ SameWorld F w₁' w₀' := by
   obtain ⟨L, hL⟩ := H.blow hB0
   obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk 0 B0 L hB0 hL
@@ -2405,8 +2350,8 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
     simpa using this
   have hlt : 1 + (E.filterMap (entryLoadOf R)).length < vb.insts.size := by
     rw [hpre] at hsz; simp at hsz; omega
-  have hstar := seqRun_fall_star hvb hseg1 hlt hrun
-  have hstar' := seqRun_fall_star hvb hseg1 hlt hrun'
+  have hstar := seqRun_fall_starP hvb hseg1 hlt hrun
+  have hstar' := seqRun_fall_starP hvb hseg1 hlt hrun'
   -- the vreg file holds the parameters, the DFG facts
   have hheld : Held gn (A 0 0) ρ₂ cs.frame := by
     intro x hx
@@ -2462,19 +2407,44 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
       obtain ⟨q, hq, rfl, hqt⟩ := setMany_param_ty hregs hnd hty (hA x hx0).1 hv
       rw [H.cert.paramTy B0 hB0mem q hq] at ht
       rw [hqt]; exact Option.some.inj ht
-  refine ⟨1 + (E.filterMap (entryLoadOf R)).length, ρ₂, w₂, w₂', .step hstep hstar,
+  have hmono : ∀ c, AtSeg (V := CV) (W := Arm.ArmState) 0 1 (E.filterMap (entryLoadOf R)).length c →
+      AtSeg 0 0 (1 + (E.filterMap (entryLoadOf R)).length) c := by
+    rintro c ⟨i, hi, ρ', w', rfl⟩
+    exact ⟨i + 1, by omega, ρ', w', by rw [Nat.zero_add, Nat.add_comm]⟩
+  refine ⟨1 + (E.filterMap (entryLoadOf R)).length, ρ₂, w₂, w₂',
+    .step (AtSeg.zero _ _ _ (by omega) _ _) hstep (hstar.mono hmono),
     ⟨hcall, hfunc, hslots, hmr₂, B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
-      by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2, .step hstep' hstar',
+      by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2,
+    .step (AtSeg.zero _ _ _ (by omega) _ _) hstep' (hstar'.mono hmono),
     ⟨hcall, hfunc, hslots, hmr₂', B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
       by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2'⟩
 
-end
+/-- **Entry on two worlds** (`entry_step2Z` as plain runs). -/
+theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ w₀' : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hmr' : MR slots cs.mem w₀') (hargs : ArgsAtEntry F f.sig args w₀)
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) :
+    ∃ k ρ₁ w₁ w₁', Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, k, ρ₁, w₁⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
+      Star (VStep vc sem) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁'⟩ ∧ SameWorld F w₁' w₀' :=
+  let ⟨k, ρ₁, w₁, w₁', h1, h2, h3, h4, h5, h6⟩ := entry_step2Z H hds hMem hMR hB0 hcall hfunc
+    hslots hbody hterm hregs hty hsig (ρ₀ := ρ₀) hmr hmr' hargs hreg h29 hstk
+  ⟨k, ρ₁, w₁, w₁', h1.star, h2, h3, h4.star, h5, h6⟩
 
-/-- `s'` is reachable from `s` by CLIF steps that continue. -/
-inductive Reach (env : Clif.Env) (p : Clif.Program) : Clif.State → Clif.State → Prop
-  | refl (s : Clif.State) : Reach env p s s
-  | step {s s' s'' : Clif.State} : Clif.step env p s = .next s' → Reach env p s' s'' →
-      Reach env p s s''
+end
 
 theorem Reach.snoc {env : Clif.Env} {p : Clif.Program} {s s' s'' : Clif.State}
     (h : Reach env p s s') (h' : Clif.step env p s' = .next s'') : Reach env p s s'' := by

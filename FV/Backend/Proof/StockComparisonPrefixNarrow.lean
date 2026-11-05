@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockCmpNarrowRhsObserved
+import FV.Backend.Proof.StockMinMaxRegisterRuns
 import FV.Backend.Proof.StockZeroConditionPrefix
 import FV.Backend.Proof.StockCmpMatchedRegister
 import FV.Backend.Proof.StockCmpMatchedImmediate

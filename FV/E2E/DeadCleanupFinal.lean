@@ -50,14 +50,15 @@ theorem hasTry_of_hasTryCallCleanupA {f : Clif.Function} {k : Nat} {vc vcp : VCo
   Classical.byContradiction fun hn => by
     have hf : ∀ B ∈ f.blocks, B.term.isTry = false := fun B hB =>
       Bool.eq_false_iff.mpr fun ht => hn ⟨B, hB, ht⟩
-    rw [noTryCall_of_prepCheck hc.prepOk (prune_noTryCall (noTryCall_of_check hc.lowerOk hf))] at h
+    rw [noTryCall_of_prepCheck hc.prepOk
+      (cleanupStage_noTryCall f (noTryCall_of_check hc.lowerOk hf))] at h
     cases h
 
 theorem hasTls_of_vcodeCleanupA {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
     {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : CompiledCleanupA f k vc vcp rf af fa fb)
     (h : vcp.hasTls = true) : hasTls f = true := by
   cases hf : hasTls f
-  · rw [noTls_of_prepCheck hc.prepOk (prune_noTls (noTls_of_check hc.lowerOk hf))] at h
+  · rw [noTls_of_prepCheck hc.prepOk (cleanupStage_noTls f (noTls_of_check hc.lowerOk hf))] at h
     cases h
   · rfl
 
@@ -65,7 +66,7 @@ theorem outgoing_le_intBaseCleanupA {f : Clif.Function} {k : Nat} {vc vcp : VCod
     {af : AFunc} {fa : FnAsm} {fb : FnBin} (hc : CompiledCleanupA f k vc vcp rf af fa fb) :
     vc.outgoing ≤ (RAFrame.compute vcp rf).intBase := by
   simp only [RAFrame.compute]
-  rw [outgoing_of_prepCheck hc.prepOk, prune_outgoing]
+  rw [outgoing_of_prepCheck hc.prepOk, cleanupStage_outgoing]
   exact le_alignTo _ 16 (by decide)
 
 set_option maxHeartbeats 1000000 in

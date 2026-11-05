@@ -4,7 +4,7 @@ import FV.Backend.Regalloc
 import FV.Backend.Proof.RegallocSound
 import FV.Backend.Proof.RegallocOperands
 import FV.Backend.Proof.EncodeStep
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerOutcomes
 import FV.Backend.Proof.DriverCheck
 import FV.Backend.Proof.PrepareCheck
 import FV.Compile.Subset

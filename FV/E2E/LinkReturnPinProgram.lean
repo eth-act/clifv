@@ -1,3 +1,4 @@
+import FV.E2E.WorldReturnPinBoundary
 import FV.E2E.LinkReturnPinCallbacks
 import FV.Backend.Proof.SretStable
 

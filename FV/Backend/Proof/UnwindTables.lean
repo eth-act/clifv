@@ -1,5 +1,6 @@
 import FV.Backend.Obj
 import FV.Unw.Dwarf
+import FV.Backend.Proof.LoadConstant
 
 /-!
 # The emitted unwind tables are correct by construction (S10c, #230)
@@ -503,12 +504,8 @@ def _root_.Backend.Line.isCall (l : Line) : Bool := callInsn? l.insn?
 
 theorem loadConst64_noCall (rd : Reg) (v : Nat) : ∀ l ∈ loadConst64 rd v, l.isCall = false := by
   intro l hl
-  simp only [loadConst64, List.mem_cons, List.mem_filterMap, List.mem_range] at hl
-  rcases hl with rfl | ⟨j, _, hj⟩
-  · rfl
-  · split at hj
-    · cases hj; rfl
-    · cases hj
+  obtain ⟨i, rfl, hf⟩ := Backend.Proof.loadConst64_form hl
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
 
 theorem spAdjLines_noCall (sub : Bool) (size : Nat) : ∀ l ∈ spAdjLines sub size, l.isCall = false := by
   intro l hl

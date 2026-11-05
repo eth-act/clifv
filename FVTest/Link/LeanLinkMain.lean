@@ -1,3 +1,5 @@
+import FV.Link.TypedCompileSourceModes
+import FV.Link.ReturnPinExeSourceWith
 import FV.Backend.Lowering.StockMemoryCapturedCopyNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
@@ -535,6 +537,26 @@ def main (args0 : List String) : IO UInt32 := do
         IO.eprintln s!"lean-link:   {n}: {fs}"
       printExclusions exe S SC true (bad.map (·.1))
       return 1
+  -- This complete-file attempt leaves every previous mode and retry action below intact.
+  let returnPinEnabled := !opt && !tailOn && SC0.funcs.any (fun fi =>
+    Backend.Stock.MemorySretCopy.eligible fi.func || (Backend.Stock.VoidCall.sourceData? fi.func).isSome)
+  if returnPinEnabled then
+    let lower := Backend.Stock.VoidCall.NI.lowerValidated
+    let SP := SC0.placedProductionWith lower deadCleanup
+    match Link.ReturnPinCompilerWith.attempt lower SP file0 deadCleanup with
+    | .ok file =>
+      IO.FS.writeBinFile exe file
+      IO.println s!"lean-link: {exe}: {summary} written by Link.ReturnPinCompilerWith.attempt (Link.ReturnPinCompilerWith.attempt_correct, Link.ReturnPinCompilerWith.attempt_correct_depth)"
+      if let some f := ldFile then
+        match ← ldCheck SP file0 f with
+        | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
+        | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
+      let src := if srcOk then
+          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.ReturnPinCompilerWith.attempt_correct_source, Link.ReturnPinCompilerWith.attempt_correct_source_peak"
+        else "; outside SrcScopeB: about the legalised program only"
+      IO.println s!"lean-link: {exe}: coverage: Link.ReturnPinCompilerWith.attempt_correct, Link.ReturnPinCompilerWith.attempt_correct_depth{src}"
+      return 0
+    | .error _ => pure ()
   let compiled := if stockEnabled then SemanticCompilerWith.compileWithRoutes routes SC0 file0 deadCleanup
     else (compile SC file0).map fun file => (⟨file,none⟩ : SemanticCompilerWith.RoutedOutput)
   match compiled with
@@ -598,6 +620,24 @@ def main (args0 : List String) : IO UInt32 := do
       IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
     return 0
   | .error e =>
+    -- Recover a typed file with its actual complete route and production stage.
+    if !opt && !tailOn then
+      for typedLower in routes do
+        let TP := SC0.placedProductionWith typedLower deadCleanup
+        match Link.TypedCompilerWith.attempt typedLower TP file0 deadCleanup with
+        | .ok file =>
+          IO.FS.writeBinFile exe file
+          IO.println s!"lean-link: {exe}: {summary} written by Link.TypedCompilerWith.attempt (Link.TypedCompilerWith.attempt_correct)"
+          if let some f := ldFile then
+            match ← ldCheck TP file0 f with
+            | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB)"
+            | .error why => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {why}"
+          let src := if srcOk then
+              "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.TypedCompilerWith.attempt_correct_source, Link.TypedCompilerWith.attempt_correct_source_peak"
+            else "; outside SrcScopeB: about the legalised program only"
+          IO.println s!"lean-link: {exe}: coverage: Link.TypedCompilerWith.attempt_correct, Link.TypedCompilerWith.attempt_correct_depth, Link.TypedCompilerWith.attempt_correct_peak{src}"
+          return 0
+        | .error _ => pure ()
     if e != outOfScopeMsg && e != outOfScopeInMsg then
       IO.eprintln s!"lean-link: {exe}: {e}"
       return 1
