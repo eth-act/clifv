@@ -236,7 +236,8 @@ def sameBlock (a b : VBlock) : Bool :=
 def sameCode (a b : VCode) : Bool :=
   a.name == b.name && a.blocks.size == b.blocks.size &&
     (a.blocks.zip b.blocks).all (fun (x, y) => sameBlock x y) && a.classes == b.classes &&
-    a.slotBytes == b.slotBytes && a.outgoing == b.outgoing && a.rulesFired == b.rulesFired
+    a.slotBytes == b.slotBytes && a.outgoing == b.outgoing && a.rulesFired == b.rulesFired &&
+    a.cold == b.cold
 
 /-- The two lowerings agree on everything except the `Ctx` values (of which the value types,
 definitions and registers are compared). -/
