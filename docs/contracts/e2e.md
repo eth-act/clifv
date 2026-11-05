@@ -4844,6 +4844,9 @@ because the old statement became false with probes (names kept):
   the premises `hpb`/`hκ` (the budget covers `probeBelow`), and `budget_K_return_pins` proves
   both parts of `Budget`. The fixture of the three return-pin witnesses has no probes:
   `E2E.ReturnPinBinaryWitness.pbMax_zero : pbMax (original cleanup) = 0`.
+* `Link.TypedCompilerWith.attempt_correct_depth`/`_peak`/`_source_peak` (#892's typed compile
+  modes): the stack is `frameDrop + (D * M + pbMax)` (was `frameDrop + D * M`), as their
+  `SemanticCompilerWith` counterparts.
 
 Frames of 16 KiB and more (Cranelift's `StackProbeLoop`) still get no probes; that form is a
 separate change.
