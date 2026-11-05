@@ -155,15 +155,15 @@ theorem lower_callInd_fmts : (program.rulesOf TId.lower).all callIndFmtOk = true
   decide +kernel
 
 /-- `rule_lower_2595` (`return_call_indirect`) is a rule of `lower`. -/
-theorem mem_lower_2595 : rule_lower_2595 ∈ program.rulesOf TId.lower :=
+theorem mem_lower_2595_ci : rule_lower_2595 ∈ program.rulesOf TId.lower :=
   List.mem_iff_getElem?.mpr ⟨348, by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl⟩
 
 /-- Term 2295 of the exported program is the opcode `ReturnCallIndirect`. -/
-theorem program_term_2295 : Interp.termOf program 2295 = .ok T.«Opcode.ReturnCallIndirect» := rfl
+theorem program_term_2295_ci : Interp.termOf program 2295 = .ok T.«Opcode.ReturnCallIndirect» := rfl
 
 /-- The `return_call_indirect` rule (opcode `ReturnCallIndirect`) never matches a
 `call_indirect`. -/
-theorem returnCallInd_unmatch {ctx : Ctx} {ii : Nat} {info : IInfo} {callee : Nat}
+theorem returnCallInd_unmatch_r {ctx : Ctx} {ii : Nat} {info : IInfo} {callee : Nat}
     {args : List Nat} {s : Clif.Signature} (hi : ctx.insts[ii]? = some info)
     (hdat : info.data = .data 152 7 [.data 151 9 [], .values (callee :: args), .op (.sig s)])
     {r : Rule} (hr : r = rule_lower_2595) {cfg : Config} {m : Nat}
@@ -189,7 +189,7 @@ theorem returnCallInd_unmatch {ctx : Ctx} {ii : Nat} {info : IInfo} {callee : Na
     simp only [V.data.injEq, true_and] at hfs
     subst hfs
     obtain ⟨e4, hp4, -⟩ := matchArgs_cons_inv hargs
-    obtain ⟨fs2, hu2, -⟩ := matchPat_enum_inv program_term_2295 rfl hp4
+    obtain ⟨fs2, hu2, -⟩ := matchPat_enum_inv program_term_2295_ci rfl hp4
     have h8 := sem_unData_inv hu2
     simp at h8
 
@@ -224,8 +224,8 @@ theorem callIndOut_runTerm {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
     · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2529 (by rw [h]; rfl)] at hmatch heval
       exact call_ind_out data_program indData_program f ctx hctx ii info _ hi hc {} rfl m n st #[]
         env' s1 out st' tr2 hm hn hmatch heval sig callee args s rfl hs
-    · exact absurd hmatch (returnCallInd_unmatch hi hdat
-        (eq_of_mem_of_id lower_ids_nodup hr mem_lower_2595 (by rw [h]; rfl)))
+    · exact absurd hmatch (returnCallInd_unmatch_r hi hdat
+        (eq_of_mem_of_id lower_ids_nodup hr mem_lower_2595_ci (by rw [h]; rfl)))
   · cases hok
 
 /-! ## `try_call_indirect` -/

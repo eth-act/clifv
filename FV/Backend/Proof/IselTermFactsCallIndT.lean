@@ -132,8 +132,8 @@ theorem callIndOut_runTermT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ct
     · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2529 (by rw [h]; rfl)] at hmatch heval
       exact call_ind_outT data_program indData_program f ctx hctx ii info _ hi hc {} rfl m n st #[]
         env' s1 out st' tr2 hm hn hmatch heval sig callee args s rfl hs
-    · exact absurd hmatch (returnCallInd_unmatch hi hdat
-        (eq_of_mem_of_id lower_ids_nodup hr mem_lower_2595 (by rw [h]; rfl)))
+    · exact absurd hmatch (returnCallInd_unmatch_r hi hdat
+        (eq_of_mem_of_id lower_ids_nodup hr mem_lower_2595_ci (by rw [h]; rfl)))
   · cases hok
 
 /-- `TryIndOutOk` over contexts with `TryCtxOkT`, on a `try_call_indirect` whose callee and
