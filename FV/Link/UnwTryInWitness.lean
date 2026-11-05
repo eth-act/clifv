@@ -6,7 +6,7 @@ import FV.Link.UnwFnsCompleteWitness
 
 On `E2E.DeadCleanupUnwindWitness`'s `try_call` function `tc` (`source`: one `tag0` handler):
 its input conditions hold (`native_decide` on `dominatedB`, `lowerScopeB`, `arityOkB`,
-`tryTablesB`, `extendsWidenB`), so `tryInfoOk_of_input`, `fwd_ne_entry_input`,
+`tryTablesB`, `extendsWidenB`), so `tryInfoOk_of_input`, `fwd_ne_entry_stage`,
 `alias_ne_entry`, `padsNonzero_complete_of`, `callSites_complete_input` and
 `padsNonzero_complete_input` apply to its compiled code.
 -/
@@ -43,10 +43,10 @@ theorem tryInfoOk_applies : TryInfoOk vcp :=
   tryInfoOk_of_input inputs_facts.1 inputs_facts.2.1 inputs_facts.2.2.1 inputs_facts.2.2.2.1
     pipe.1 pipe.2
 
-/-- **`fwd_ne_entry_input` applies** to `source`: no block of its allocated code forwards to
+/-- **`fwd_ne_entry_stage` applies** to `source`: no block of its allocated code forwards to
 the entry block. -/
 theorem fwd_applies : ∀ s x, af.fwd? s = some x → x ≠ vb0.label :=
-  fwd_ne_entry_input inputs_facts.2.1 widen_true pipe.1 pipe.2 compiled.1 premises_facts.1
+  fwd_ne_entry_stage inputs_facts.2.1 widen_true pipe.1 pipe.2 compiled.1 premises_facts.1
 
 /-- **`alias_ne_entry` applies** to `source`'s emitted code. -/
 theorem aliasNoEntry_applies : ∀ q ∈ fa.alias, q.1 ≠ vb0.label → q.2 ≠ vb0.label :=

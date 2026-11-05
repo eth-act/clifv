@@ -179,6 +179,7 @@ import FV.E2E.LegalOptUnwind
 #print axioms Link.EhCheck.Complete.padsNonzero_complete_of
 #print axioms Link.EhCheck.Complete.alias_ne_entry
 #print axioms Link.EhCheck.Complete.fwd_ne_entry_input
+#print axioms Link.EhCheck.Complete.fwd_ne_entry_stage
 #print axioms Link.EhCheck.Complete.Witness.fwd_applies -- witness: native_decide
 #print axioms Link.EhCheck.Complete.Witness.aliasNoEntry_applies -- witness: native_decide
 #print axioms Link.EhCheck.Complete.Witness.padsNonzero_of_applies -- witness: native_decide
