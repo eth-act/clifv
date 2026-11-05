@@ -49,11 +49,11 @@ private theorem TK.mono {t t' : List (Reg × Nat × Nat)} {x : Reg} {I : Nat × 
     (ht : ∀ y ∈ t, y ∈ t') : TK t' x I := by
   obtain ⟨y, hy, h1⟩ := h; exact ⟨y, ht y hy, h1⟩
 
-private theorem Excl.mono {pl : Plan} {x : Reg} {s e s' e' : Nat} (h : Excl pl x s e none)
+private theorem Excl.mono {pl : LinearScan.Plan} {x : Reg} {s e s' e' : Nat} (h : Excl pl x s e none)
     (h1 : s ≤ s') (h2 : e' ≤ e) : Excl pl x s' e' none :=
   fun w hw q hq1 hq2 hc => h w hw q (by omega) (by omega) hc
 
-private theorem cov_of_covI {pl : Plan} {v p q r : Nat} (h : pl.covI v p q = true) (h1 : p ≤ r)
+private theorem cov_of_covI {pl : LinearScan.Plan} {v p q r : Nat} (h : pl.covI v p q = true) (h1 : p ≤ r)
     (h2 : r ≤ q) : pl.cov v r = true := by
   unfold Plan.covI at h; unfold Plan.cov
   rw [Array.any_eq_true] at h ⊢
@@ -572,7 +572,7 @@ section
 variable {vc : VCode} {c : LinearScan.Ctx} {g : Nat} {os : Array Operand} {clob : List Reg}
   {st : Nat → Operand → Bool}
 
-private theorem scratch_spec {occ : Array (Array Seg)} {taken : List (Reg × Nat × Nat)} {cl : RegClass}
+private theorem scratch_spec {occ : Array (Array LinearScan.Seg)} {taken : List (Reg × Nat × Nat)} {cl : RegClass}
     {s e : Nat} {x : Reg} (h : scratchReg occ taken cl s e [] = some x) :
     regFree occ taken x s e = true ∧ x ∈ scratchOrder cl := by
   unfold scratchReg at h
@@ -1615,7 +1615,7 @@ private theorem facts {i : MInst} (E : Env vc c g os i.clobbers (c.store g i.isT
 end
 
 /-- **The builder's instruction step** (module doc). -/
-theorem inst_facts {vc : VCode} {fn : Fn} {pl : Plan} (hf : FnOk vc fn)
+theorem inst_facts {vc : VCode} {fn : Fn} {pl : LinearScan.Plan} (hf : FnOk vc fn)
     (hpf : PlanFacts vc (LinearScan.Ctx.ofPlan fn pl)) {g : Nat} {i : MInst} {os : Array Operand}
     (hi : fn.insts[g]? = some i) (hos : fn.ops[g]? = some os) (hok : OpsOk os i.clobbers)
     (hcls : ∀ o ∈ os.toList, fn.clsOf o.vreg = o.cls) {io : IOut}

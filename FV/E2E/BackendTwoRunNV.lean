@@ -255,8 +255,8 @@ theorem backend_twoRunLWNpPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
     (hops : (MInst.rets us).operands = .ok ops) (hvals : outs = vuses ops ρ)
     (hsem : pairDI (valueSemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI
       (.rets us) outs w₁ = some (outs', w, .ret))
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {H : ArmHooks} {G G' : BitVec 64 → Prop}
     {base ra ra' : BitVec 64} {Kp Kp' : Nat} {cc cc' : BitVec 64} {P P' : Nat → BitVec 64 → BitVec 8}
     {Rr Rr' : Nat → Arm.ArmState} {s t0 : Arm.ArmState} {N : Nat}
@@ -344,14 +344,14 @@ theorem backend_twoRunLWNpPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
     subst hR
     have hF := he.hF
     subst hF
-    obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hc.emit
+    obtain ⟨-, -, -, hk⟩ := emitFunc_ok hc.emit
     subst hk
     obtain ⟨ckc, ins, hck⟩ := checked_of_checkAlloc hc.check
     obtain ⟨a0, hat, hle⟩ := hck.at
     have hW0 : ({ actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp) with
         X := (XI.upTo N).at 0 } : RL).Wf :=
       ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
-        by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨body, hpsF⟩,
+        by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
         he.abi.program, he.gfree⟩
     exact (stEqOutX_prologueZ hW0 he.abi hx30 (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
       (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29
@@ -595,8 +595,8 @@ theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
     (hops : (MInst.rets us).operands = .ok ops) (hvals : outs = vuses ops ρ)
     (hsem : pairDI (valueSemV (GotV vcp) F ⟨fa.k, af.slotBase⟩) F ⟨fa.k, af.slotBase⟩ XI
       (.rets us) outs w₁ = some (outs', w, .ret))
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {H : ArmHooks} {G G' : BitVec 64 → Prop}
     {base ra ra' : BitVec 64} {Kp Kp' : Nat} {cc cc' : BitVec 64} {P P' : Nat → BitVec 64 → BitVec 8}
     {Rr Rr' : Nat → Arm.ArmState} {s t0 : Arm.ArmState} {N : Nat}

@@ -70,6 +70,6 @@ preservation. The loop's input is live on its own boundary. -/
 example : ∃ vc : VCode, 1 ∈ exitLive vc 0 vc.blocks[0]! ∧
     (clean vc).blocks[0]!.insts.back? = some liveReturn := by
   refine ⟨⟨"cleanup_flow", #[⟨0, #[deadMvn, liveBic, liveReturn], #[], #[]⟩],
-    #[.int, .int, .int, .int], 0, 0, #[]⟩, ?_, ?_⟩ <;> decide
+    #[.int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_, ?_⟩ <;> decide
 
 end Backend.DeadCleanup

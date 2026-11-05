@@ -65,6 +65,9 @@ structure AFunc where
   /-- The callee-saved registers the prologue pushes and the epilogue pops (`prologueLines`),
   in `calleeSaved` order; their slots form the top `clobberBytes saves` bytes of the frame. -/
   saves : List Reg := []
+  /-- Per block (as `blocks`): Cranelift's effective coldness (`is_effectively_cold`,
+  `VCode.coldOf`); the emitter places the cold blocks after all others (`emitOrder`). -/
+  cold : Array Bool := #[]
   deriving Inhabited
 
 /-- The int registers of a save list (x19–x28). -/

@@ -37,7 +37,7 @@ theorem spillPlan_segFree_nil (s e : Nat) : segFree #[] s e = true := by
   simp [segFree, firstEndGe, firstEndGeIn]
 
 /-- A register of `scratchOrder` that no entry of `taken` uses is free. -/
-private theorem regFree_of {occ : Array (Array Seg)} (hocc : ∀ i, occ.getD i #[] = #[])
+private theorem regFree_of {occ : Array (Array LinearScan.Seg)} (hocc : ∀ i, occ.getD i #[] = #[])
     {taken : List (Reg × Nat × Nat)} {r : Reg} {cl : RegClass} (hr : r ∈ scratchOrder cl)
     (hn : ∀ y ∈ taken, y.1 ≠ r) (s e : Nat) : regFree occ taken r s e = true := by
   obtain ⟨-, -, hi⟩ := scratchOrder_ok hr
@@ -50,7 +50,7 @@ private theorem regFree_of {occ : Array (Array Seg)} (hocc : ∀ i, occ.getD i #
   simp [this]
 
 /-- `scratchReg` finds a register when one of `scratchOrder` is unused. -/
-theorem spillPlan_scratch_some {occ : Array (Array Seg)} (hocc : ∀ i, occ.getD i #[] = #[])
+theorem spillPlan_scratch_some {occ : Array (Array LinearScan.Seg)} (hocc : ∀ i, occ.getD i #[] = #[])
     {taken : List (Reg × Nat × Nat)} {cl : RegClass} (h : ∃ r ∈ scratchOrder cl, ∀ y ∈ taken, y.1 ≠ r)
     (s e : Nat) : ∃ r, scratchReg occ taken cl s e [] = some r ∧ r ∈ scratchOrder cl := by
   obtain ⟨r, hr, hn⟩ := h
@@ -435,7 +435,7 @@ private theorem reuse_ok (hreg : ∀ v, c.pl.regOf v = none) (hocc : ∀ i, c.oc
       · simp [hcon] at hr
       · exact h4 x hx ui hr
 
-private theorem scratchReg_mem {occ : Array (Array Seg)} {taken : List (Reg × Nat × Nat)}
+private theorem scratchReg_mem {occ : Array (Array LinearScan.Seg)} {taken : List (Reg × Nat × Nat)}
     {cl : RegClass} {a b : Nat} {avoid : List Reg} {r : Reg}
     (h : scratchReg occ taken cl a b avoid = some r) : r ∈ scratchOrder cl :=
   List.mem_of_find?_eq_some h

@@ -588,8 +588,9 @@ theorem mvShape_slotLoadAt {cls : RegClass} {r : Reg} {off : Nat} {i : MInst}
     · simp only [List.mem_singleton] at h; subst h
       cases cls <;> exact .inr (.inr (.inl ⟨_, _, _, _, rfl⟩))
 
-/-- Move code consists of `MvShape` instructions. -/
-theorem moveInsts_shape {fr : RAFrame} {src dst : Loc} {code : List AInst}
+/-- Move code consists of `MvShape` instructions. (Named `moveInsts_mvShape`: the name
+`moveInsts_shape` is `RegLevelFwd`'s.) -/
+theorem moveInsts_mvShape {fr : RAFrame} {src dst : Loc} {code : List AInst}
     (h : fr.moveInsts src dst = .ok code) :
     ∃ is : List MInst, code = is.map AInst.inst ∧ ∀ i ∈ is, MvShape i := by
   cases src with
@@ -714,7 +715,7 @@ theorem mem_codeLinesE (ctx : FnCtx) (af : AFunc) :
     · obtain ⟨j, hj, r⟩ := mem_codeLinesE ctx af is h2 ln hln
       exact ⟨j, by simp [hj], r⟩
 
--- `hchk` is not needed: every `moveInsts` output is `MvShape` code (`moveInsts_shape`).
+-- `hchk` is not needed: every `moveInsts` output is `MvShape` code (`moveInsts_mvShape`).
 set_option linter.unusedVariables false in
 /-- **No line of a move is a store exclusive.** -/
 theorem moveLines_noStx {vc : VCode} {rf : RFunc} (ctx : FnCtx) (af : AFunc) {c : CheckCtx}
@@ -723,7 +724,7 @@ theorem moveLines_noStx {vc : VCode} {rf : RFunc} (ctx : FnCtx) (af : AFunc) {c 
     {ls : List Line} {ps ps' : PState} (hls : codeLinesE ctx af code ps = .ok (ls, ps')) :
     ∀ x t, Line.ins x t ∈ ls → ∀ env ai, x.toArmInst env = .ok ai →
       ∀ rel rs rn, Concurrency.ArmInstFoot.clsOf ai ≠ .stx rel rs rn := by
-  obtain ⟨is, rfl, hsh⟩ := moveInsts_shape hmi
+  obtain ⟨is, rfl, hsh⟩ := moveInsts_mvShape hmi
   intro x t hx env ai ha rel rs rn
   obtain ⟨i, hi, ps1, ls1, ps1', hl1, hx1⟩ := mem_codeLinesE ctx af is hls _ hx
   exact clsOf_ne_stx (mvShape_noExcl ctx (hsh i hi) hl1 x t hx1 env ai ha) rel rs rn

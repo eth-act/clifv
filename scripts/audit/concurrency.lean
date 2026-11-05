@@ -129,6 +129,8 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.Witness.wfN
 #print axioms Concurrency.ArmAllocThread.Witness.qN
 #print axioms Concurrency.ArmAllocThread.Witness.noev_premises
+-- the call-site bridge without the last-block check (#622, #553)
+#print axioms Concurrency.SiteAtAny.Witness.siteAt_any_witness -- witness: native_decide
 -- layer 4b, memory items (fence, ldar, stlr)
 #print axioms Concurrency.ArmAllocThread.itemSim_of_op
 #print axioms Concurrency.ArmAllocThread.noev_op
@@ -448,9 +450,14 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.labelOffsets_go_nodup
 #print axioms Concurrency.ArmAllocThread.af_nodup
 #print axioms Concurrency.ArmAllocThread.succ_of_label
-#print axioms Concurrency.ArmAllocThread.head_label
-#print axioms Concurrency.ArmAllocThread.μR_succ
-#print axioms Concurrency.ArmAllocThread.μR_lt
+#print axioms Concurrency.ArmAllocThread.segLines_defs
+-- the ranked measure (#553): `MachBuffer`'s layout made the old block-order measure (`nxtOf`,
+-- `μR`, `head_label`, `μR_succ`, `μR_lt`) false; see FV/Concurrency/ArmAllocBranch.lean
+#print axioms Concurrency.ArmAllocThread.rk
+#print axioms Concurrency.ArmAllocThread.rk_pos
+#print axioms Concurrency.ArmAllocThread.qe_entry_rk
+#print axioms Concurrency.ArmAllocThread.rank_entry
+#print axioms Concurrency.ArmAllocThread.RkC.lt_of_step
 #print axioms Concurrency.ArmAllocThread.csem_goto
 #print axioms Concurrency.ArmAllocThread.realizes_gotoE
 #print axioms Concurrency.ArmAllocThread.goto_op

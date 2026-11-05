@@ -74,6 +74,6 @@ example : pureForm liveBic = true ∧ liveBic.targets = [] ∧
 example : ∃ vc : VCode, vc.blocks.size = 1 ∧
     (clean vc).blocks[0]!.insts.toList = [liveBic, liveReturn] := by
   refine ⟨⟨"cleanup_witness", #[⟨0, #[deadMvn, liveBic, liveReturn], #[], #[]⟩],
-    #[.int, .int, .int, .int], 0, 0, #[]⟩, ?_, ?_⟩ <;> decide
+    #[.int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_, ?_⟩ <;> decide
 
 end Backend.DeadCleanup

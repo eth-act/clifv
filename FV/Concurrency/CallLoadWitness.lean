@@ -29,8 +29,7 @@ theorem wf_gen {vc : VCode} {rf : RFunc} {base : BitVec 64} {s0 : ArmState} {H :
     (hk : (act vc rf).fa.k = 0) (hl : (act vc rf).fa.layout.toBool = true)
     (hm : (labelOffsets (act vc rf).fa.lines).toBool = true)
     (hfit : 4 * (act vc rf).fb.words.size ≤ 2 ^ 64)
-    (hps : (blocksLinesE (act vc rf).ctx (act vc rf).af (act vc rf).af.blocks.toList {}).toBool =
-      true)
+    (hps : (emitPlan (act vc rf).fa.k (act vc rf).af).toBool = true)
     (hst : StackAvail 0 (act vc rf).af s0) (hp : s0.program = (act vc rf).fb.program base)
     (hg : ∀ a, G a → ¬ StackBelow (frameDrop (act vc rf).af + 0) (E2E.spv s0) a) :
     ({ act vc rf with base := base, s0 := s0, H := H, G := G } : RL).Wf where
@@ -43,7 +42,7 @@ theorem wf_gen {vc : VCode} {rf : RFunc} {base : BitVec 64} {s0 : ArmState} {H :
   lm := ArmAllocThread.Witness.ok_getD hm
   fit := hfit
   stack := hst
-  psF := ArmAllocThread.Witness.ok_snd hps
+  psF := ArmAllocThread.Witness.ok_ps hps
   prog0 := hp
   gfree := hg
 
@@ -213,7 +212,7 @@ theorem prefixC : ∃ (n0 j : Nat) (m : Loc → CV),
   have hq2 := realizes_args wfRC hq1 hA1 vb0C argsC0.1 hst
   have hA2 := Backend.Proof.aInv_step wfRC hq1 hA1 hst
   obtain ⟨n2, hq3, -, hp2⟩ := moves_privA wfRC spillL restC _ m' hq2 hA2 (by simp [spillL, Loc.isSave])
-  obtain ⟨j, hj, hpc, hstr⟩ := q_head hq3 rfl head_blC
+  obtain ⟨j, hj, hpc, hstr⟩ := q_head wfRC hq3 rfl (fun _ h => by cases h) head_blC
   rw [← iterN_add, ← iterN_add, ← Nat.add_assoc] at hpc hstr
   rw [← iterN_add] at hp2
   refine ⟨n0 + n1 + n2, j, _, fun i hi => ?_, hj, hpc, hstr, ?_⟩
