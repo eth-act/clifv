@@ -60,7 +60,9 @@ theorem q_initN {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
-  obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
+  obtain ⟨vb, items, code, ps1, pl, X, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0,
+    hdrop, hx, hsc⟩ := entry_block hR
+  subst hpl0
   obtain ⟨s', hsteps, hsp', hfp', ho', hm', -, -⟩ :=
     prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
@@ -145,9 +147,11 @@ theorem q_initN {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
   refine ⟨?_, ?_, hfield⟩
   · have hitems : R.rf.blocks[0]! = items := by simp [getElem!_def, hit]
     simp only [MConf.init, hitems]
-    refine ⟨1 + (prologueLines R.af.saves R.af.frameSize).length, vb, items, [], code, ls, ps1, ps2, T, hvb,
-      hit, rfl, itemsChecked_block hR hvb hit, hcode, hls, htr, ?_, hpc', ?_⟩
-    · rw [← List.drop_drop, hdrop, List.drop_left]
+    refine .inl ⟨1 + (prologueLines R.af.saves R.af.frameSize).length, vb, items, [], code, X,
+      ps1, psm, ps2, x, hvb, hit, rfl, itemsChecked_block hR hvb hit, hcode, hX, hT, htr, ?_, hpc',
+      ?_, hx, hsc⟩
+    · rw [← List.drop_drop (i := (prologueLines R.af.saves R.af.frameSize).length) (j := 1),
+        hdrop, List.drop_left' (by simp)]
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
         hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode', hgk, fun _ => hfp'⟩
       · by_cases h29 : f = .GPR 29#5
@@ -231,27 +235,121 @@ theorem ret_machineN {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
     · simp only [RetTail, TailOk] at h
       obtain ⟨mt, D, hq, hm, _, _, _, _, _, _, -, -, -, htl⟩ := h
       exact ⟨mt, D, hq, hm, fun r hr => by rw [hsav]; exact (retTailOk_prefix htl).subset hr⟩
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
+  -- `Q` at the `rets` item is `Qs` (the forwarding case would need the block to be a `jump`)
+  obtain hqs : Qs R s b (RItem.op k allocs :: its) mt w := by
+    rcases Q.cases hq with hqs | ⟨_, _, _, i, _, _, hvb', he, -, -, hins, hasg, -, -, -, -⟩
+    · exact hqs
+    · exfalso
+      rw [hvb] at hvb'; cases hvb'
+      simp only [RItem.op.injEq] at he
+      obtain ⟨rfl, rfl⟩ := he
+      rw [hins] at hi
+      simp at hi
+      rw [hi] at hasg
+      obtain ⟨_, hj⟩ := assign_rets hasg
+      cases hj
+  obtain ⟨j0, vb', items, pre, code, X, ps1, psm, ps2, x, hvb', hit, hsplit, hchk, hcode, hX,
+    hT, htr, hdrop, hpc, hst, hx, hsc⟩ := hqs
+  rw [hvb] at hvb'; cases hvb'
+  obtain ⟨c1, c2, hitem, hc2', rfl⟩ := itemsCode_cons hcode
+  obtain ⟨regs, i, i', halloc, hi0, hasg, hc1'⟩ := itemCode_op hitem
+  rw [hi] at hi0; cases hi0
   obtain ⟨us', rfl⟩ := assign_rets hasg
-  obtain rfl : c1 = [.epilogueRet] := by
+  obtain rfl : c1 = [AInst.epilogueRet] := by
     rcases hc1' with ⟨-, -, h⟩ | ⟨_, h, -⟩ | ⟨_, -, h⟩
     · exact absurd rfl (h us')
     · cases h
     · exact h
-  simp only [codeLinesE, ainstLines, hframe, ite_true, bind, Except.bind, pure, Except.pure,
-    List.append_nil, Except.ok.injEq, Prod.mk.injEq] at h1
-  obtain ⟨rfl, rfl⟩ := h1
-  rw [epilogueLines_epi] at hdrop
+  -- the checker's facts at the `rets` (its operands and static check)
+  obtain ⟨cc, wh, i2, ops, hi2, hops, hstat, hchk'⟩ := op_checked hchk
+  rw [hi] at hi2; cases hi2
   have hpl : ∀ ln ∈ epiLines R.af.saves R.af.frameSize ++ [Line.ins .ret none], ln.plain = true := by
     intro ln hln
     rcases List.mem_append.1 hln with hln | hln
     · obtain ⟨_, _, _, hp, -⟩ := epiLines_ins _ _ ln hln; exact hp
     · simp only [List.mem_singleton] at hln; subst hln; rfl
-  rw [ftR_plain_append _ _ _ hpl (noTrap_next h2)] at hdrop
-  have hdrop' : R.L.drop j0 = epiLines R.af.saves R.af.frameSize ++
-      (.ins .ret none :: (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
-    rw [hdrop]; simp
+  have hT0 : codeLinesE R.ctx R.af [AInst.epilogueRet] ps1 =
+      .ok (epilogueLines R.af.saves R.af.frameSize, ps1) := by
+    simp [codeLinesE, ainstLines, hframe]
+  -- the lines from `j0`: the epilogue's, then whatever follows (skipped by the `ret`)
+  have hdrop' : ∃ T, R.L.drop j0 = epiLines R.af.saves R.af.frameSize ++
+      (Line.ins .ret none :: T) := by
+    rcases its with _ | ⟨it2, its2⟩
+    · -- the `rets` is the block's last item: its lines are the segment's final lines
+      simp only [itemsCode, pure, Except.pure, Except.ok.injEq] at hc2'
+      obtain rfl := hc2'
+      have hX0 : codeLinesE R.ctx R.af [] ps1 = .ok ([], ps1) := rfl
+      simp only [List.append_nil, List.dropLast_singleton] at hX
+      rw [hX0] at hX
+      simp only [Except.ok.injEq, Prod.mk.injEq] at hX
+      obtain ⟨rfl, rfl⟩ := hX
+      simp only [List.append_nil, List.getLast?_singleton, Option.toList] at hT
+      rw [hT0] at hT
+      simp only [Except.ok.injEq, Prod.mk.injEq] at hT
+      obtain ⟨hT, -⟩ := hT
+      -- the segment's final lines are the epilogue's (the block's last instruction is the `rets`)
+      obtain ⟨p, hp, -⟩ := hR.psF
+      obtain ⟨-, hidx⟩ := segX_mem hp hx
+      obtain ⟨x'', hx'', hok⟩ := hsc
+      rw [hx] at hx''; cases hx''
+      unfold segTermOk at hok
+      rw [hidx] at hok
+      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+      obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
+      rw [hsplit] at hcF
+      obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
+      have hcbe : Except.ok cb = Except.ok ([AInst.epilogueRet] ++ []) :=
+        hcb.symm.trans hcode
+      simp only [Except.ok.injEq, List.append_nil] at hcbe
+      cases hcbe
+      have hb : (((if b = 0 then [AInst.prologue] else []) ++
+          (ca ++ [AInst.epilogueRet])).toArray).back? = some AInst.epilogueRet := by
+        rw [Array.back?_eq_getElem?]
+        simp only [List.size_toArray, List.getElem?_toArray, ← List.getLast?_eq_getElem?,
+          ← List.append_assoc, List.getLast?_append]
+        simp
+      have hab : R.af.blocks[b]?.bind (·.2.back?) = some AInst.epilogueRet := by
+        rw [haf, Option.bind_some]
+        exact hb
+      rw [hab] at hok
+      obtain ⟨hlen, hline⟩ := termOk_kept (fun x0 h => by cases h) (fun tl el kk h => by cases h)
+        (fun kk tl el rn bit h => by cases h) (fun info ti h => by cases h) hok
+      -- the epilogue's lines have no block targets, so the final lines are exactly them
+      have htn : ∀ ln ∈ x.1.term, ln.target? = none := fun ln hln =>
+        epilogueLines_noTarget R.af.saves R.af.frameSize ln (by rw [hT]; exact hln)
+      have hx21 : x.2.1 = x.1.term := by
+        apply List.ext_getElem?
+        intro i0
+        rcases Nat.lt_or_ge i0 x.1.term.length with hlt | hge
+        · obtain ⟨yi, hyi⟩ : ∃ yi, x.2.1[i0]? = some yi := ⟨_, by
+            rw [List.getElem?_eq_some_iff]; exact ⟨by rw [hlen]; exact hlt, rfl⟩⟩
+          obtain ⟨xi, hxi⟩ : ∃ xi, x.1.term[i0]? = some xi := ⟨_, by
+            rw [List.getElem?_eq_some_iff]; exact ⟨hlt, rfl⟩⟩
+          rcases hline i0 xi yi hxi hyi with ⟨hyx, -⟩ | ⟨l, l', e, -, -, -⟩
+          · rw [hyi, hxi, hyx]
+          · exfalso
+            have hm : xi ∈ x.1.term := List.mem_iff_getElem?.mpr ⟨i0, hxi⟩
+            rw [htn _ hm] at e
+            cases e
+        · rw [List.getElem?_eq_none (by rw [← hlen] at hge; omega),
+            List.getElem?_eq_none hge]
+      rw [hdrop, List.nil_append, hx21, ← hT, epilogueLines_epi, relaxLines_plain hpl]
+      exact ⟨R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2), by simp⟩
+    · -- more items: the epilogue's lines are the first instruction's, via the code's split
+      obtain ⟨c0, kk, aa, out, -, -, hrun⟩ := hchk'
+      have hne : it2 :: its2 ≠ [] := by intro h; simp at h
+      obtain ⟨c, ins, _, hc, -⟩ := hR.check
+      obtain ⟨preds, hcfg⟩ := hc.cfg
+      have hc2ne : c2 ≠ [] := itemsCode_ne_nil hcfg hvb hrun hne hc2'
+      rw [List.dropLast_append_of_ne_nil hc2ne] at hX
+      obtain ⟨ls1, X', psm', h1, h2', rfl⟩ := codeLinesE_append _ _ _ _ _ hX
+      rw [hT0] at h1
+      simp only [Except.ok.injEq, Prod.mk.injEq] at h1
+      obtain ⟨rfl, rfl⟩ := h1
+      rw [hdrop, List.append_assoc, relaxLines_append, epilogueLines_epi, relaxLines_plain hpl]
+      exact ⟨relaxLines R.far (X' ++ x.2.1) ++
+        R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2), by simp⟩
+  obtain ⟨T, hdrop'⟩ := hdrop'
   -- `sp + size - clobberBytes` is the bottom of the clobber area, `sp + size` the fp/lr slot
   have hdrop0 : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hframe]
   have hslot : spOf s + BitVec.ofNat 64 R.af.frameSize = spv R.s0 - 16#64 := by

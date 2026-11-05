@@ -82,7 +82,7 @@ theorem cfgC : ∃ ss ps, vcC.cfg = .ok (ss, ps) := by
 theorem factsC : (lowerRFunc vcpC rfC).toBool = true ∧ (emitFunc 0 RAC.af).toBool = true ∧
     RAC.fa.k = 0 ∧ RAC.fa.layout.toBool = true ∧ (labelOffsets RAC.fa.lines).toBool = true ∧
     4 * RAC.fb.words.size ≤ 2 ^ 64 ∧ RAC.af.frameSize ≤ 0x100 ∧ 4 * RAC.fb.words.size ≤ 0x10000 ∧
-    (blocksLinesE RAC.ctx RAC.af RAC.af.blocks.toList {}).toBool = true := by
+    (emitPlan RAC.fa.k RAC.af).toBool = true := by
   native_decide
 
 theorem wfRC : RAC.Wf := by

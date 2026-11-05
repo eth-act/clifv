@@ -133,10 +133,29 @@ theorem regLevel_prefix_coreG {R : RL} (hR : R.Wf) {ra : BitVec 64}
     have hcpc : ∀ regs i', al = regs.map Loc.reg → i.assign regs = .ok i' →
         CallAt R.fa R.base (Arm.r .PC (iterN R.step (n1 + n2) (iterN R.step n0 R.s0))) i' := by
       rcases hci with rfl | ⟨ti, rfl⟩
-      · exact callAt_of_q hq' hvb hi call_hcall
-      · exact callAt_of_q hq' hvb hi tryCall_hcall
-    obtain ⟨j0, vb0, items0, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr',
-      hdrop, hpc', hst⟩ := hq'
+      · exact callAt_of_q hR hq' hvb hi call_hcall
+      · exact callAt_of_q hR hq' hvb hi tryCall_hcall
+    -- a forwarding block's only instruction is a `jump`, no (try) call: `Q` is `Qs`
+    have hqs : Qs R (iterN R.step (n1 + n2) (iterN R.step n0 R.s0)) b1 (.op k al :: its') m' w := by
+      rcases Q.cases hq' with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
+        hasgf, -⟩
+      · exact hqs
+      · exfalso
+        rw [hvb] at hvbf
+        cases hvbf
+        simp only [RItem.op.injEq] at he
+        obtain ⟨rfl, rfl⟩ := he
+        have hi1 := hi
+        rw [hins] at hi1
+        simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
+        subst hi1
+        rcases hci with rfl | ⟨ti, rfl⟩
+        · obtain ⟨ic, he'⟩ := (assign_call_tryCall info regsf).1 _ hasgf
+          cases he'
+        · obtain ⟨ic, he', -⟩ := (assign_call_tryCall info regsf).2 ti _ hasgf
+          cases he'
+    obtain ⟨j0, vb0, items0, pre, code, Xl, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hcode, hX,
+      hT, htr', hdrop, hpc', hst, -, -⟩ := hqs
     rw [hvb] at hvb0; cases hvb0
     obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
     obtain ⟨regs, i0, i', rfl, hi0, hasg, -⟩ := itemCode_op hc1
@@ -196,13 +215,13 @@ theorem regLevel_prefixCG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
         CallSiteAt (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
           K G s fa base i ((ops.toList.filter Operand.isUse).map (ρ ·.vreg)) w u := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let XN := XI.upTo N
-  let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XN.at n, H, psF, K, G, gv⟩
+  let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XN.at n, H, p.ps, K, G, gv⟩
   let R : RL := Rn 0
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩, hent.program, hG⟩
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
   have hC' : ∀ n, CalleeOkGP (fun u => OnCall R.step fa base s n u ∧ spOf u = R.spB) R.F K G s
       (CallAt fa base) (XN.at n) H vcp.CallSite gv := fun n => by

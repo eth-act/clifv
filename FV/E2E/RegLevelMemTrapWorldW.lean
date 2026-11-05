@@ -55,11 +55,11 @@ theorem regLevel_memtrap_world_valueW {vcp : VCode} {rf : RFunc} {af : AFunc} {f
       ∃ n, TrapAtM mp fa fb base c (E2E.runX (ArmStepX X H fa) n s) ∧
         ∀ i < n, actGoodXW vcp rf af fa fb base s X H K G gv (E2E.runX (ArmStepX X H fa) i s)) := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
-  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩
   have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
-    ⟨body, hb⟩, hent.program, hG⟩
+    ⟨p, hp, rfl⟩, hent.program, hG⟩
   obtain ⟨n0, ht0, hq0, hA0, -⟩ := q_initW hR hent hbe
   have hRz0 := realizes_value_allW hR hC hCT hTls hcov
   have hmk : ∀ (n1 n23 : Nat), (∀ i < n1 + n23, R.GoodXW (iterN R.step i (iterN R.step n0 s))) →

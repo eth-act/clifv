@@ -376,7 +376,7 @@ theorem planOk_spillPlan {vc : VCode} {fn : Fn} (hmk : Fn.make vc = .ok fn)
   exact spillPlan_checked hmk hloc
 
 /-- A plan whose context is `checked` passes `planOk` and builds to the checked function. -/
-private theorem of_checked {vc : VCode} {fn : Fn} (hmk : Fn.make vc = .ok fn) {pl : Plan}
+private theorem of_checked {vc : VCode} {fn : Fn} (hmk : Fn.make vc = .ok fn) {pl : LinearScan.Plan}
     {rf : RFunc} (h : (LinearScan.Ctx.ofPlan fn pl).checked = some rf) :
     planOk vc pl = true ∧ buildPlan vc pl = .ok rf := by
   refine ⟨by simp [planOk, hmk, h], ?_⟩
