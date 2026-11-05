@@ -4845,8 +4845,32 @@ because the old statement became false with probes (names kept):
   both parts of `Budget`. The fixture of the three return-pin witnesses has no probes:
   `E2E.ReturnPinBinaryWitness.pbMax_zero : pbMax (original cleanup) = 0`.
 
-Frames of 16 KiB and more (Cranelift's `StackProbeLoop`) still get no probes; that form is a
-separate change.
+## Stack probes (loop form, #581)
+
+Frames with `probeTotal` in [16 KiB, 4 GiB) get Cranelift's `StackProbeLoop` (`probeLoopLines`:
+`x16 = 0`, `x17 = total`, then `sub x16, x16, #4096; str wzr, [sp, x16]; cmn x16, x17; b.gt -12`,
+docs/contracts/backend.md). It runs `⌈total / 4096⌉` iterations (`LoopRuns`, `probeLoop_ok`),
+zeroes 4 bytes at `sp₁ - 4096·i` for each `i`, so the probed bytes reach up to about 4 KiB
+below the frame (the unrolled form: up to 16 bytes); `probeBelow af` covers that distance, and
+the budgets above are unchanged in form. It also leaves `x16`, `x17` and the flags changed.
+Statement changes, each because the old statement became false with the loop (names kept):
+
+* Step counts: every `(prologueLines X.saves X.frameSize X.isCaller).length` became
+  `prologueSteps …` (the loop executes more instructions than it has lines); equal without the
+  loop (`prologueSteps_of_not`). `ProRun` replaces the straight-line prologue run in
+  `q_init`, `q_initW`, `q_initNA`, `q_init_lines`, `prologue_linesAt`, `prologue_fields`,
+  `prun_prologue`, `arm_alloc_refines_entryQ` (Concurrency).
+* `x17` and the flags are no longer kept by the prologue: `entry_calleeSaved`, `q_initW`,
+  `q_initNR`, `prologue_fields` exempt them (weaker premises); `regVal_calleeSaved_congrX` is
+  the new form, `regVal_calleeSaved_congr` is kept and derived.
+* `LinkArm.bodyOf` writes the loop's flags (`probeFlags`); `r_bodyOf` gains the autoParam `hfl`
+  (the field is not a flag), `r_bodyOf_probeR` covers every field.
+* `SretCopyExecBoundary.outside_call` gains `probes : frame → probeCount ≤ 3`: with the loop the
+  probes may reach the heap below a large frame; `SretCopyCapturedExec.probes_small` discharges
+  it from `budget ≤ 4096`.
+* `Concurrency` `kinds_probeLines`/`kinds_prologueLines` count `probeStores` (stores executed),
+  not store lines.
+* `probeLines_length` (≤ 9) and `probeLines_enc` cover the loop.
 
 ## Remaining (precise)
 
