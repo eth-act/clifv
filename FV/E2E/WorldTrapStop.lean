@@ -395,15 +395,15 @@ theorem backend_correct_world_cleanup_trapstop {p : Clif.Program} {f : Clif.Func
   let XT := TrapCallSem env (f.externs.map (·.2)) (indSigs f)
     (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X tc
   have hnt : vcp.hasTryCall = false :=
-    noTryCall_of_prepCheck hc.prepOk (prune_noTryCall (noTryCall_of_check hc.lowerOk hft))
+    noTryCall_of_prepCheck hc.prepOk (cleanupStage_noTryCall f (noTryCall_of_check hc.lowerOk hft))
   have hexcl : ∀ d uses w, X.call d uses w ≠ none → (xrT XT).raise d uses w = none :=
     fun _ _ _ hne => xrT_none fun h => hne h.1
-  have hI := iselSimU_relW_cleanup hsub hc hlU (xCallsOk_trapEnv (c := tc) hX)
+  have hI := iselSimU_relW_cleanup_stage hsub hc hlU (xCallsOk_trapEnv (c := tc) hX)
     (xCallsIndOk_trapEnv (c := tc) hXI) (xRaiseOk_trapEnv hXT) (xRaiseIndOk_trapEnv hXT) hexcl
     hsym hslot (fun _ => 0) hcs hrel hargs htrX fuel
-  have hP := prepareCorrectU_cleanup (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X (xrT XT))
-    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk
-    (xrT XT)
+  have hP := prepareCorrectU_cleanup (vc := skipStage f vc)
+    (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X (xrT XT))
+    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk (xrT XT)
   intro H G base ra s he
   obtain ⟨hR1, hR2⟩ := regLevel_trapStop_world hc.check hc.alloc hc.emit hc.layout hcov hnt XT he
     (fun _ => 0)

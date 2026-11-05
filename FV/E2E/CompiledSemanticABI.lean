@@ -30,28 +30,38 @@ namespace CompiledSemanticABI
 variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
     {af : AFunc} {fa : FnAsm} {fb : FnBin}
 
-/-- All artifact conditions follow from executable checks and the actual pipeline observations. -/
+/-- All artifact conditions follow from executable checks and the actual pipeline observations.
+(`prepared`/`prepOk` are about the routes' stage `Stock.Arithmetic.stageF`, formerly
+`Stock.Arithmetic.stage`, as in `CompiledSemanticNI.of_checks`.) -/
 theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)
-    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
-    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stageF cleanup f vc) = .ok vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stageF cleanup f vc) vcp = true)
     (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
     (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
     CompiledSemanticABI f k vc vcp rf af fa fb := by
   rcases Bool.or_eq_true_iff.mp lower with old | memory
   · exact .compatible (CompiledSemanticNI.of_checks old prepared prepOk check alloc emit layout)
-  · obtain ⟨result,family,run,equal,effects⟩ := Stock.MemorySretCopy.check_sound memory
+  · rcases Bool.eq_false_or_eq_true (lowerCheck f vc) with hl | hl
+    · exact .compatible (CompiledSemanticNI.of_checks (by simp [SemanticNI.check,hl])
+        prepared prepOk check alloc emit layout)
+    rw [Stock.Arithmetic.stageF_of_lowerCheck_false hl] at prepared prepOk
+    obtain ⟨result,family,run,equal,effects⟩ := Stock.MemorySretCopy.check_sound memory
     exact .memorySretCopy family equal effects
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
 theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls f vc = true)
-    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
-    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stageF cleanup f vc) = .ok vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stageF cleanup f vc) vcp = true)
     (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
     (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
     CompiledSemanticABI f k vc vcp rf af fa fb := by
   rcases Bool.or_eq_true_iff.mp lower with old | caller
   · exact of_checks old prepared prepOk check alloc emit layout
-  · obtain ⟨result,run,equal,_,_,_,_,_⟩ := Stock.VoidCall.check_sound (Bool.and_eq_true_iff.mp caller).1
+  · rcases Bool.eq_false_or_eq_true (lowerCheck f vc) with hl | hl
+    · exact of_checks (by simp [SemanticABI.check,SemanticNI.check,hl])
+        prepared prepOk check alloc emit layout
+    rw [Stock.Arithmetic.stageF_of_lowerCheck_false hl] at prepared prepOk
+    obtain ⟨result,run,equal,_,_,_,_,_⟩ := Stock.VoidCall.check_sound (Bool.and_eq_true_iff.mp caller).1
     exact .voidCall (by rwa [equal]) equal
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 

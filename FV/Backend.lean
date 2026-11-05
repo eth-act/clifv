@@ -15,6 +15,7 @@ import FV.Compile.SubsetTC
 import FV.Compile.SubsetTF
 import FV.Backend.Proof.DriverCheckCF
 import FV.Backend.DeadCleanup
+import FV.Backend.CleanupStage
 import FV.Compile.Subset
 import Std.Data.HashSet
 
@@ -108,9 +109,39 @@ def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
   pure vc
 
 /-- Validate the unchanged lowering output, then select the VCode supplied to
-every allocator. Cleanup preserves classes and rule history. -/
+every allocator: with cleanup, the production cleanup stage (`cleanupStage`: Cranelift's skip
+of unused instructions, then the dead-producer cleanup), run as `cleanupStageChecked verify`,
+which reuses the validation's verdict instead of running `lowerCheck` again
+(`lowerForAllocation_verified`). Cleanup preserves classes and rule history. -/
 def lowerForAllocation (f : Clif.Function) (verify deadCleanup : Bool) : Except String VCode :=
-  (lowerChecked f verify).map fun vc => if deadCleanup then DeadCleanup.prune vc else vc
+  (lowerChecked f verify).map fun vc => if deadCleanup then cleanupStageChecked verify f vc else vc
+
+theorem lowerChecked_lowerCheck {f : Clif.Function} {vc : VCode}
+    (h : lowerChecked f true = .ok vc) (hE : Compile.functionE f = true) :
+    Proof.Driver.lowerCheck f vc = true := by
+  unfold lowerChecked at h
+  cases h0 : Stock.D0.defaultLower f with
+  | error e => simp [h0, bind, Except.bind] at h
+  | ok v =>
+    simp only [h0, bind, Except.bind] at h
+    cases hc : lowerCheckFor f v
+    · simp [hc, throw, throwThe, MonadExceptOf.throw, Except.bind] at h
+    · simp only [hc, Bool.true_and, Bool.not_true, Bool.false_eq_true, ite_false, pure,
+        Except.pure, Except.ok.injEq] at h
+      subst h
+      simpa [lowerCheckFor, hE] using hc
+
+/-- **With verification on, the allocator's input is the cleanup stage `cleanupStage` of the
+validated lowering** (the verdict reuse is exact). -/
+theorem lowerForAllocation_verified (f : Clif.Function) (deadCleanup : Bool) :
+    lowerForAllocation f true deadCleanup =
+      (lowerChecked f true).map fun vc => if deadCleanup then cleanupStage f vc else vc := by
+  unfold lowerForAllocation
+  cases h : lowerChecked f true with
+  | error e => rfl
+  | ok vc =>
+    simp only [Except.map]
+    rw [cleanupStageChecked_true (lowerChecked_lowerCheck h)]
 
 /-- The lowering validator's size measure: instructions (statements and terminators) × values.
 `lowerCheck` re-runs the lowering recording every statement's states (their vreg class arrays

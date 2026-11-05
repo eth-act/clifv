@@ -106,7 +106,7 @@ theorem indFactsRWithLowering (lower : Clif.Function → Except String VCode) (s
   revert hb8
   cases hb : sigParamBytes h'.sig <;> simp
 
-theorem okRWithLowering_sound (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune)) (hR : ResOkWithLowering lower stage I R) (hI : okRWith stage I R = true) {B : BaseEnv}
+theorem okRWithLowering_sound (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res} (hstage : stage = (fun _ => id) ∨ stage = cleanupStage) (hR : ResOkWithLowering lower stage I R) (hI : okRWith stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
     (ofRes I R B F).OkProduction := by
   have hn := okRWith_names stage hI
@@ -300,7 +300,7 @@ theorem LinkInput.resultsTWithLowering_legacy (I : LinkInput) :
 
 theorem LinkInput.resultsTWithLowering_sound (I : LinkInput)
     (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode)
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (hI : okRWith stage I (I.resultsTWithLowering lower stage) = true)
     {B : BaseEnv} {F : BitVec 64 → Prop}
     (hB : BaseOk (ofRes I (I.resultsTWithLowering lower stage) B F))
@@ -320,7 +320,7 @@ def CrateStmtWithLowering (I : LinkInput) (lower : Clif.Function → Except Stri
 
 theorem crate_correct_withLowering (I : LinkInput)
     (lower : Clif.Function → Except String VCode) (stage : Clif.Function → VCode → VCode)
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (hI : okRWith stage I (I.resultsTWithLowering lower stage) = true) (n : String) :
     CrateStmtWithLowering I lower stage n :=
   fun _ _ hB hF f hf M _ _ _ _ _ hent hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr =>

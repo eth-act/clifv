@@ -51,7 +51,7 @@ def source : Clif.Function :=
 
 /-- The compiler's outputs (the defaults are never used: `checks_true`). -/
 def vc : VCode := (lowerFunction source).toOption.getD default
-def vcp : VCode := (Backend.prepare (prune vc)).toOption.getD default
+def vcp : VCode := (Backend.prepare (cleanupStage source vc)).toOption.getD default
 def rf : RFunc := spillAlloc vcp
 def af : AFunc := (lowerRFunc vcp rf).toOption.getD default
 def fa : FnAsm := (emitFunc 0 af).toOption.getD default
@@ -62,7 +62,7 @@ the compiled function. -/
 def checks : Bool :=
   Backend.verifiable source && lowerScopeB source && !hasTls source &&
   (lowerFunction source).toBool && lowerCheckU source vc &&
-  (Backend.prepare (prune vc)).toBool && prepCheck (prune vc) vcp &&
+  (Backend.prepare (cleanupStage source vc)).toBool && prepCheck (cleanupStage source vc) vcp &&
   (checkAlloc vcp rf).toBool && (lowerRFunc vcp rf).toBool && (emitFunc 0 af).toBool &&
   fa.layout.toBool
 

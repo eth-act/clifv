@@ -41,10 +41,10 @@ def cleanupChecks (f : Clif.Function) : Bool :=
   | .error _ => false
   | .ok vc =>
     lowerCheck f vc &&
-    match Backend.prepare (prune vc) with
+    match Backend.prepare (cleanupStage f vc) with
     | .error _ => false
     | .ok vcp =>
-      prepCheck (prune vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
+      prepCheck (cleanupStage f vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
       match lowerRFunc vcp (spillAlloc vcp) with
       | .error _ => false
       | .ok af => match emitFunc 0 af with
@@ -63,7 +63,7 @@ theorem cleanupChecks_sound {f : Clif.Function} (h : cleanupChecks f = true) :
     rw [hl] at h
     simp only [Bool.and_eq_true] at h
     obtain ⟨hlo, h⟩ := h
-    cases hp : Backend.prepare (prune vc) with
+    cases hp : Backend.prepare (cleanupStage f vc) with
     | error e => rw [hp] at h; cases h
     | ok vcp =>
       rw [hp] at h

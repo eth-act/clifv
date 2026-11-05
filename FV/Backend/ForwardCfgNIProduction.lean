@@ -15,7 +15,7 @@ def lowerCheckedForwardCfgNI (f : Clif.Function) (verify : Bool) : Except String
   | .error _ => lowerCheckedLinearCfgNI f verify
 
 def lowerForAllocationForwardCfgNI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedForwardCfgNI f verify).map (Stock.Arithmetic.stage cleanup)
+  (lowerCheckedForwardCfgNI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
 
 /-- Retry the previous complete CFG pipeline with the original input,
 allocator and settings if any new CFG attempt is unsupported or fails layout. -/

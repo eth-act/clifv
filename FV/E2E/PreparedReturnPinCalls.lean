@@ -51,7 +51,7 @@ theorem okRReturnPinCalls_previous {stage : Clif.Function → VCode → VCode} {
 /-- Actual checks derive the complete existing program contract, including the new caller. -/
 theorem semanticPreparedReturnPinCallsResults_sound (stage : Clif.Function → VCode → VCode)
     {I : LinkInput} {R : Res}
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (prepared : PreparedResults stage I R) (checked : okRReturnPinCalls stage I R = true)
     {B : BaseEnv} {F : BitVec 64 → Prop} (base : BaseOk (ofRes I R B F))
     (world : ∀ a,(ofRes I R B F).Img a → F a) : (ofRes I R B F).OkSemanticReturnPins := by
@@ -74,7 +74,7 @@ theorem semanticPreparedReturnPinCallsResults_sound (stage : Clif.Function → V
 /-- The original program statement uses the original base and world conditions. -/
 theorem preparedReturnPinCalls_correct (stage : Clif.Function → VCode → VCode)
     {I : LinkInput} {R : Res}
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (prepared : PreparedResults stage I R) (checked : okRReturnPinCalls stage I R = true)
     (name : String) : CrateStmtReturnPins I R name := by
   intro B F base world f found M ra s w₀ args cs entry room frame free image body arguments source

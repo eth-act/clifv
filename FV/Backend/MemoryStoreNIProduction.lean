@@ -15,7 +15,7 @@ def lowerCheckedMemoryStoreNI (f : Clif.Function) (verify : Bool) : Except Strin
   | .error _ => lowerCheckedMemoryExtLoadNI f verify
 
 def lowerForAllocationMemoryStoreNI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
-  (lowerCheckedMemoryStoreNI f verify).map (Stock.Arithmetic.stage cleanup)
+  (lowerCheckedMemoryStoreNI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
 
 /-- Retry the previous complete pipeline on the original input and allocation
 callback if store selection, allocation, emission or layout fails. -/
