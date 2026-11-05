@@ -150,9 +150,11 @@ theorem backend_correct_world_ni_cleanupU_any {p : Clif.Program} {f : Clif.Funct
             ∃ n, ActUnw ra (fun a => F a ∨ D a) G obj w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
               PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧ 0 < n ∧
               UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s))) := by
-  have hI := iselSimU_relW_cleanup hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot (fun _ => 0) hcs
+  have hI := iselSimU_relW_cleanup_stage hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot (fun _ => 0)
+    hcs
     hrel hargs htr fuel
-  have hP := prepareCorrectU_cleanup (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X XR)
+  have hP := prepareCorrectU_cleanup (vc := skipStage f vc)
+    (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X XR)
     (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk XR
   have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop)
       (base ra : BitVec 64) (s : Arm.ArmState),
@@ -170,7 +172,8 @@ theorem backend_correct_world_ni_cleanupU_any {p : Clif.Program} {f : Clif.Funct
       rw [he.hF] at h
       exact h
   have hNIv := fun hNI hTls hRNI D w₀' hrel' hsw hreg hstk =>
-    vcode_niU_value hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot hNI hTls hRNI (D := D) (w₀' := w₀')
+    vcode_niU_value_stage hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot hNI hTls hRNI (D := D)
+      (w₀' := w₀')
       (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel
   refine ⟨fun vals cm hrun => ?_,
     (backend_correct_world_cleanupU_any hsub hc hlU hcov hX hXI hXR hXRi hexcl hsym hslot hsites
@@ -178,7 +181,7 @@ theorem backend_correct_world_ni_cleanupU_any {p : Clif.Program} {f : Clif.Funct
   · obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR⟩ := hI.1 vals cm hrun
     have hrs : vc.RetsSite us := by
       obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-      exact ⟨b, vb, k, hvb, hk⟩
+      exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
     refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H U G base ra s he => ?_,
       fun hNI hTls hRNI D w₀' hrel' hsw hreg hstk H U G base ra s he => ?_⟩
     · exact (hM6 w₀ H U G base ra s he).1 us outs w
@@ -392,9 +395,11 @@ theorem backend_correct_world_ni_cleanupUG_any {p : Clif.Program} {f : Clif.Func
               UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
               ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
                 (runX (Unw.ArmStepU X H U T fa) i s))) := by
-  have hI := iselSimU_relW_cleanup hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot (fun _ => 0) hcs
+  have hI := iselSimU_relW_cleanup_stage hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot (fun _ => 0)
+    hcs
     hrel hargs htr fuel
-  have hP := prepareCorrectU_cleanup (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X XR)
+  have hP := prepareCorrectU_cleanup (vc := skipStage f vc)
+    (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X XR)
     (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk XR
   have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop)
       (base ra : BitVec 64) (s : Arm.ArmState),
@@ -412,7 +417,8 @@ theorem backend_correct_world_ni_cleanupUG_any {p : Clif.Program} {f : Clif.Func
       rw [he.hF] at h
       exact h
   have hNIv := fun hNI hTls hRNI D w₀' hrel' hsw hreg hstk =>
-    vcode_niU_value hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot hNI hTls hRNI (D := D) (w₀' := w₀')
+    vcode_niU_value_stage hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot hNI hTls hRNI (D := D)
+      (w₀' := w₀')
       (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel
   refine ⟨fun vals cm hrun => ?_,
     (backend_correct_world_cleanupUG_any hsub hc hlU hcov hX hXI hXR hXRi hexcl hsym hslot hsites
@@ -420,7 +426,7 @@ theorem backend_correct_world_ni_cleanupUG_any {p : Clif.Program} {f : Clif.Func
   · obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR⟩ := hI.1 vals cm hrun
     have hrs : vc.RetsSite us := by
       obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-      exact ⟨b, vb, k, hvb, hk⟩
+      exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
     refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H U G base ra s he => ?_,
       fun hNI hTls hRNI D w₀' hrel' hsw hreg hstk H U G base ra s he => ?_⟩
     · exact (hM6 w₀ H U G base ra s he).1 us outs w

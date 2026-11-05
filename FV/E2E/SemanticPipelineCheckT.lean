@@ -233,9 +233,10 @@ theorem indFactsRWithTS (stage : Clif.Function → VCode → VCode) {I : LinkInp
 /-- **The typed checks on any pipeline's results establish the typed link contract** (#722):
 `okRWith_soundT` for results whose later stages are the compiler's (`PreparedResults`; no
 lowering equation), each function's artifact being either typed one or the Stock artifact of an
-integer function (`CompiledAnyTS`). -/
+integer function (`CompiledAnyTS`). (The cleanup alternative of `hstage` was
+`fun _ => DeadCleanup.prune`; the compiler's cleanup stage is now `cleanupStage`, #552.) -/
 theorem okRWithTS_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res}
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (hR : PreparedResults stage I R)
     (hI : okRWithTS stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
@@ -329,8 +330,19 @@ theorem okRWithTS_soundT (stage : Clif.Function → VCode → VCode) {I : LinkIn
     · rcases hstage with rfl | rfl
       · exact ⟨.inl (.inr (.legacy ⟨hl, hlowTC, hpr, (fa hg).prepOk, (fa hg).check, ha, he,
           hla⟩)), hb⟩
-      · exact ⟨.inl (.inr (.cleanup ⟨hl, hlowTC, hpr, (fa hg).prepOk, (fa hg).check, ha, he,
-          hla⟩)), hb⟩
+      · -- As in `PipelineCheckT`: the skip runs only on subset-E functions accepted by
+        -- `lowerCheck` (typed branch); elsewhere the stage is `prune vc`.
+        cases hk : (Compile.functionE g && lowerCheck g (artOf R g).vc)
+        · have hst : cleanupStage g (artOf R g).vc = DeadCleanup.prune (artOf R g).vc := by
+            simp only [cleanupStage, skipStage, hk, Bool.false_eq_true, ↓reduceIte]
+          have hpo := (fa hg).prepOk
+          rw [hst] at hpr hpo
+          exact ⟨.inl (.inr (.cleanup ⟨hl, hlowTC, hpr, hpo, (fa hg).check, ha, he, hla⟩)), hb⟩
+        · rw [Bool.and_eq_true] at hk
+          obtain ⟨hE, hlc⟩ := hk
+          exact ⟨.inl (.inl ⟨hinT g hg (Compile.functionET_of_functionE hE),
+            .cleanup ⟨hl, lowerCheckT_of_lowerCheck hlc, hpr, (fa hg).prepOk, (fa hg).check, ha,
+              he, hla⟩⟩), hb⟩
   refine
     { names := hn
       free := fun g hg => (fa hg).free

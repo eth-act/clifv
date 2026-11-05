@@ -312,6 +312,136 @@ theorem iselSim_prefixWI_next_cleanup_ends {p : Clif.Program} {f : Clif.Function
     obtain ⟨b', k'', ρ', w', hst2, -⟩ := N3 t'' (hstep'.trans hs'')
     exact ⟨b', k'', ρ', w', hpre.trans hst2⟩
 
+/-- **`iselSim_prefixWI_next_cleanup_ends` for the code after the skip of unused instructions**
+(`skipStage f vc`, which the cleanup stage prunes and prepares). -/
+theorem iselSim_prefixWI_next_cleanup_ends_stage {p : Clif.Program} {f : Clif.Function} {k : Nat}
+    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f) (hc : CompiledCleanup f k vc vcp rf af fa fb)
+    (hone : InstCallsOne f) (htc : TryCallsOne f)
+    {XI : ExtSemI} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env}
+    {F : BitVec 64 → Prop} {c : BitVec 64} {args : List Clif.Val} {cs : Clif.State}
+    (hX : ∀ s n, ReachN env p cs s n →
+      XCallsOk (env.only (Clif.Invoked env p s)) (f.externs.map (·.2))
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n) ∧
+      XCallsIndOk (env.only (Clif.Invoked env p s)) (indSigs f)
+        (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) (XI.at n))
+    (hsym : ∀ n b, syms n = some b → XI.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {w₀ : Arm.ArmState} (ρ₀ : Nat → CV)
+    (hce : ClifEntry f args cs)
+    (hrel : RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs)
+    {fuel : Nat} (hrun : RunEnds (Clif.runLoop env p fuel cs)) :
+    ∀ t n, ReachN env p cs t n → callNum t = 1 →
+      ∃ b k ρ w, Star (VStep (skipStage f vc) (valueSemI F ⟨fa.k, af.slotBase⟩ XI))
+        (.run ⟨0, 0, ρ₀, (w₀, 0)⟩) (.run ⟨b, k, ρ, (w, n + 1)⟩) := by
+  intro t n hr hcn
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hsk⟩ := skipStage_spec hc.lowerOk
+  rcases hsk with heq | hK
+  · rw [heq]
+    exact iselSim_prefixWI_next_cleanup_ends hsub hc hone htc hX hsym hslot ρ₀ hce hrel hargs htr
+      hrun t n hr hcn
+  let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
+  have Hb : ∀ n, DriverHyp f vc ctx st0 R gn bl A
+      (valueSem F ⟨fa.k, af.slotBase⟩ (XI.at n).noCall)
+      (RelW Γ f c) (env.only fun _ _ _ => False) p := fun n =>
+    driverHyp_relW_cleanup hsub hc hshape hcert hbr (xCallsOk_none _ _ _ _)
+      (xCallsIndOk_none _ _ _ _) hsym hslot
+  have Hs : ∀ s n, ReachN env p cs s n → DriverHyp f vc ctx st0 R gn bl A
+      (valueSem F ⟨fa.k, af.slotBase⟩ (XI.at n)) (RelW Γ f c) (env.only (Clif.Invoked env p s)) p :=
+    fun s n hr => driverHyp_relW_cleanup hsub hc hshape hcert hbr (hX s n hr).1 (hX s n hr).2
+      hsym hslot
+  have hseg : ∀ b B j stm, f.blocks[b]? = some B → B.body[j]? = some stm →
+      stm.inst.isCallLike = true → callsI (seg f R bl b j) = 1 :=
+    fun _ _ _ _ hB hstm hcl => segCalls_of (Hb 0) hone hB hstm hcl
+  obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
+  have hB0 : f.blocks[0]? = some B0 := by
+    simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hent
+  have hP : RunPrem env p f cs := by
+    have hf := hce.func
+    exact ⟨htr.stmt, fun s c fn args et hr hs hb hT B hB => htr.tryCall s c fn args et hr hs hb hT B
+        (hf ▸ hB),
+      fun s c callee args et hr hs hb hT B hB =>
+        htr.tryCallInd s c callee args et hr hs hb hT B (hf ▸ hB),
+      fun s st rest sig callee args hr hb hi ⟨B, hB, hst⟩ =>
+        htr.indirect s st rest sig callee args hr hb hi ⟨B, hf ▸ hB, hst⟩,
+      fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
+        htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
+  have hPr := probeOf_valueSem F ⟨fa.k, af.slotBase⟩ XI
+  obtain ⟨k0, ρ₁, w₁, hstar, hm⟩ := entry_stepP (Hb 0)
+    (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ (XI.at 0).noCall)
+    (memRefines_valueSem _ _ (XI.at 0).noCall hslot hsym) (mrStable_relW Γ f c) hB0 hce.callers
+    hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hargs
+  obtain ⟨⟨b1, k1, ρ1, w1⟩, hsK, hmK⟩ := entry_matchK hK hB0 hbody hstar hm
+  obtain ⟨b, k', ρ, w, hst, hmt⟩ :=
+    sim_prefix_callK hK (noncallIndep_valueSem F ⟨fa.k, af.slotBase⟩ XI) hPr hP Hb Hs hseg htc hmK
+      hr hcn
+  have hpre := (vstar_mapW (counted_probe_proj hPr 0) hsK).trans hst
+  obtain ⟨vsF, -, hMF⟩ := id hmt
+  obtain ⟨fuel', hrun'⟩ := runLoop_ends_reachN hrun hr
+  cases hbt : t.frame.body with
+  | cons st rest =>
+    have hcl : st.inst.isCallLike = true := by
+      simp only [callNum, hbt] at hcn
+      split at hcn
+      · assumption
+      · cases hcn
+    have hnt : ∀ c, Clif.step env p t ≠ .trapped c := fun c hs => by
+      have hd := hP.stmt t c st rest hr.reach hs hbt
+      rw [not_explicitTrap_of_callLike hcl] at hd
+      cases hd
+    obtain ⟨t', -, hs', -⟩ := next_of_ends hrun' (step_ne_done_of_callNum hcn) hnt
+    obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, -⟩ := id hMF
+    have hst : st ∈ B.body := by
+      rw [hbd] at hbt
+      exact List.mem_of_mem_drop (hbt ▸ List.mem_cons_self)
+    have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
+    have hind : ∀ sig callee args, st.inst = .callIndirect sig callee args → ∀ cv,
+        t.frame.get callee = .ok cv → ∀ g ∈ p.funcs, t.mem.symbols g.name ≠ some cv.toNat :=
+      fun sig callee args hi => hP.indirect t st rest sig callee args hr.reach hbt hi
+        ⟨B, hBmem, hst⟩
+    obtain ⟨S1, -⟩ := stmt_stepG_callK hK (sem := fun n => valueSem F ⟨fa.k, af.slotBase⟩ (XI.at n))
+      (noncallIndep_valueSem F ⟨fa.k, af.slotBase⟩ XI) (Hs t n hr) hseg hmt hbt hcl hind
+    obtain ⟨b', k'', ρ', w', hst', -⟩ := S1 t' hs'
+    exact ⟨b', k'', ρ', w', hpre.trans hst'⟩
+  | nil =>
+    have hty : t.frame.term.isTry = true := by
+      simp only [callNum, hbt] at hcn
+      split at hcn
+      · assumption
+      · cases hcn
+    obtain ⟨B, j, hB, hterm, -⟩ := hMF.2.2.2.2
+    have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
+    obtain ⟨et, hT⟩ : ∃ et, IsTryWith t.frame.term et := by
+      cases ht : t.frame.term with
+      | tryCall fn args et => exact ⟨et, .inl ⟨fn, args, rfl⟩⟩
+      | tryCallIndirect c args et => exact ⟨et, .inr ⟨c, args, rfl⟩⟩
+      | _ => rw [ht] at hty; cases hty
+    have hnt : ∀ c, Clif.step env p t ≠ .trapped c := fun c hs => by
+      rcases hT with ⟨fn, args, ht⟩ | ⟨callee, args, ht⟩
+      · exact hP.tryCall t c fn args et hr.reach hs hbt ht B hBmem (hterm.symm.trans ht)
+      · exact hP.tryCallInd t c callee args et hr.reach hs hbt ht B hBmem (hterm.symm.trans ht)
+    obtain ⟨t', fuel'', hs', hrun''⟩ := next_of_ends hrun' (step_ne_done_of_callNum hcn) hnt
+    have hind : ∀ callee args, t.frame.term = .tryCallIndirect callee args et → ∀ cv,
+        t.frame.get callee = .ok cv → ∀ g ∈ p.funcs, t.mem.symbols g.name ≠ some cv.toNat :=
+      fun callee args ht => hP.tryIndirect t callee args et hr.reach hbt ht
+        ⟨B, hBmem, hterm.symm.trans ht⟩
+    obtain ⟨-, Tnx⟩ := term_step_tryGK hK (sem := fun n => valueSem F ⟨fa.k, af.slotBase⟩ (XI.at n))
+      (noncallIndep_valueSem F ⟨fa.k, af.slotBase⟩ XI) (Hs t n hr) htc hmt hbt hT hind
+    have hstep : Clif.step (env.only (Clif.Invoked env p t)) p t = Clif.step env p t :=
+      Clif.step_only fun _ _ _ h => h
+    obtain ⟨-, hnt', hnd, N3⟩ := Tnx t' (hstep.trans hs')
+    have hstep' : Clif.step (env.only (Clif.Invoked env p t)) p t' = Clif.step env p t' := by
+      apply Clif.step_only
+      intro _ _ _ ⟨_, hI⟩
+      obtain ⟨⟨hb', -⟩, -⟩ := Tnx t' (hstep.trans hs')
+      obtain ⟨bc, hj⟩ := (Tnx t' (hstep.trans hs')).1.2
+      simp [hb', hj] at hI
+    obtain ⟨t'', -, hs'', -⟩ := next_of_ends hrun'' (fun v m h => hnd v m (hstep'.trans h))
+      (fun c h => hnt' c (hstep'.trans h))
+    obtain ⟨b', k'', ρ', w', hst2, -⟩ := N3 t'' (hstep'.trans hs'')
+    exact ⟨b', k'', ρ', w', hpre.trans hst2⟩
+
 /-- **`backend_prefix_cleanupPRI_at` for an ending run.** -/
 theorem backend_prefix_cleanupPRI_at_ends {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -346,7 +476,8 @@ theorem backend_prefix_cleanupPRI_at_ends {p : Clif.Program} {f : Clif.Function}
       (XI.at j).call (callDest info) uses w = some r := by
   intro j hj
   obtain ⟨b, k, ρ, w, hstar⟩ :=
-    iselSim_prefixWI_next_cleanup_ends hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs
+    iselSim_prefixWI_next_cleanup_ends_stage hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel
+      hargs
       htr hrun t N hr hcn
   obtain ⟨b1, k1, ρ1, w1, vb, i, ops, r, hs1, hvb, hi, hcall, hops, hsem⟩ :=
     vstar_call_at (j := j) hstar (Nat.zero_le _) (by simp only [vctr]; omega)
@@ -659,7 +790,8 @@ theorem backend_prefix_cleanupPRI_atGE_ends {p : Clif.Program} {f : Clif.Functio
       CallPc fa base (Arm.r .PC u) := by
   intro j hj
   obtain ⟨b, k, ρ, w, hstar⟩ :=
-    iselSim_prefixWI_next_cleanup_ends hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs
+    iselSim_prefixWI_next_cleanup_ends_stage hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel
+      hargs
       htr hrun t N hr hcn
   obtain ⟨b1, k1, ρ1, w1, vb, i, ops, r, hs1, hvb, hi, hcall, hops, hsem⟩ :=
     vstar_call_at (j := j) hstar (Nat.zero_le _) (by simp only [vctr]; omega)

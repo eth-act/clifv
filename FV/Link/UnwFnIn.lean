@@ -50,13 +50,13 @@ theorem fnUnwB_of_pipe {g : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lea
   have hD := dominated_of hd
   have hS := lowerScope_of hs
   have hA := Spill.arityOk_of har
-  obtain ⟨raw, hraw, hvcp⟩ := DeadCleanup.prune_prepare_ok_inv hp
+  obtain ⟨raw, hraw, hvcp⟩ := cleanupStage_prepare_ok_inv hp
   obtain ⟨ss, ps, hcfg⟩ := Spill.cfg_ok_of_prepare hraw (prepDomain_of_lower hS hl hS.nonempty)
   have hne0 := (Spill.edgesHyp_of hD hS hA hl hraw ss ps hcfg).entry.1
   have hcfg' : a.vcp.cfg = .ok (ss, ps) := by
-    rw [hvcp, DeadCleanup.preparedCleanup_cfg]; exact hcfg
+    rw [hvcp, stagePrepared_cfg]; exact hcfg
   have hne : a.vcp.blocks.size ≠ 0 := by
-    rw [hvcp, DeadCleanup.preparedCleanup_blocks, Array.size_map]; exact hne0
+    rw [hvcp, (stagePrepared_metadata g a.vc raw).2.2.2.2.2]; exact hne0
   have hsize : a.rf.blocks.size = a.vcp.blocks.size := by rw [hrf]; exact pipeAlloc_size hne o
   have halloc : lowerRFunc a.vcp (allocResult a.vcp (readyAnswer a.vcp (raAnswer a.vcp o))) =
       .ok a.af := hrf ▸ hlr

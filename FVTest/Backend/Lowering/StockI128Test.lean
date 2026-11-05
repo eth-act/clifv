@@ -6,12 +6,13 @@ import FV.Backend.Lowering.StockI128
   and rotate shapes (`shifts`), 15 `i128` comparison shapes (`compares`), 14 `select`,
   `select_spectre_guard`, `bmask` and `bitselect` shapes (`selects`), 10 arithmetic shapes
   (`ariths`), 16 bit-operation shapes (`bitops`), 4 minimum and maximum shapes (`minmaxes`),
-  4 overflow shapes (`overflows`) and 18 load and store shapes (`mems`), that the instructions
-  it selects have the shape of stock Cranelift's (the expected VCode of the filetests, with
-  registers abstracted, and without regalloc moves and the frame), and they pin its exact
-  pre-allocation VCode.
+  4 overflow shapes (`overflows`), 18 load and store shapes (`mems`) and 3 shapes with `f32`/
+  `f64` values (`floats`), that the instructions it selects have the shape of stock
+  Cranelift's (the expected VCode of the filetests, with registers abstracted, and without
+  regalloc moves and the frame), and they pin its exact pre-allocation VCode.
 * Further `#guard`s check that `lower128` gives the result of `Stock.lower` on functions without
-  `i128` values, and that it rejects `i128` instructions outside the foundation.
+  `i128` values, that it rejects `i128` instructions outside the foundation, and that it loads a
+  stack-passed float parameter with an `ldr d` (`floatStackLoad`).
 * `main` does the two checks over Cranelift's filetests (the build does not run it):
   `lake env lean --run FVTest/Backend/Lowering/StockI128Test.lean [--print] [PATH...]`,
   with the default path `third_party/wasmtime/cranelift/filetests/filetests/isa/aarch64`
@@ -87,8 +88,8 @@ def amode : AMode → String
 /-- One instruction in the syntax of Cranelift's VCode printing (`isa/aarch64/inst/mod.rs`),
 for the instructions of the foundation, the shifts and rotates, the comparisons, the
 selects, the arithmetic, the bit operations (with the vector instructions of `popcnt`), the
-minimum and maximum and the overflow operations; `?` and the representation for every other
-one. `args` and `rets` show their
+minimum and maximum and the overflow operations, and the float `fcsel`, `fcmp` and `ldr`; `?`
+and the representation for every other one. `args` and `rets` show their
 (vreg, physical register) pairs. -/
 def inst : MInst → String
   | .args ps => " ".intercalate ("args" :: ps.map fun (a, p) => s!"{reg a}={reg p}")
@@ -131,6 +132,9 @@ def inst : MInst → String
   | .movFromVec rd rn idx s =>
     let op := if s == .size8 || s == .size16 then "umov" else "mov"
     s!"{op} {reg rd}, {reg rn}.{scalarLane s}[{idx}]"
+  | .fpuCSel _ rd rn rm c => s!"fcsel {reg rd}, {reg rn}, {reg rm}, {lastName c}"
+  | .fpuCmp _ rn rm => s!"fcmp {reg rn}, {reg rm}"
+  | .fpuLoad _ rd m _ => s!"ldr {reg rd}, {amode m}"
   | i => s!"?{(repr i).pretty}"
 
 /-- The registers of an instruction, with those of the `args`/`rets` pseudo-instructions (which
@@ -1624,6 +1628,67 @@ block0(v0: i128):
       "ldp %3, %4, [%5, #16]", "subs xzr, %0, %3", "ccmp %1, %4, #nzcv, eq", "cset %2, eq",
       "rets %2=x0"] }]
 
+/-- `f32`/`f64` values beside `i128` values: a float `select` on an `i128` `icmp`
+(`lower_select_cond` at a scalar float type: `fcsel` on the flags of `emit_icmp_i128`), and an
+`i128` `select` on an `fcmp` (`emit_fcmp`: one `fcmp` for the two `csel`; the unused `fcmp`
+itself is not lowered, `mustLower128`). The float values take float vregs, the float
+parameters and return V registers. The runtests have no expected VCode: their `stock` is the
+stock code of the CI comparison snapshot, in the VCode syntax. -/
+def floats : List Shape := [
+  { name := "select_icmp_i128_f32",
+    source := "runtests/i128-select-float.clif (CI snapshot stock code)"
+    clif := "function %select_icmp_i128_f32(i128, f32, f32) -> f32 system_v {
+block0(v0: i128, v1: f32, v2: f32):
+    v3 = iconst.i64 42
+    v4 = uextend.i128 v3
+    v5 = icmp eq v0, v4
+    v6 = select v5, v1, v2
+    return v6
+}"
+    stock := ["block0:", "movz x7, #42", "movz x8, #0", "subs xzr, x0, x7",
+      "ccmp x1, x8, #nzcv, eq", "fcsel s0, s0, s1, eq", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=v0 %3=v1", "movz %6, #42", "movz %5, #0",
+      "subs xzr, %0, %6", "ccmp %1, %5, #nzcv, eq", "fcsel %4, %2, %3, eq", "rets %4=v0"] },
+  { name := "select_icmp_i128_f64",
+    source := "runtests/i128-select-float.clif (CI snapshot stock code)"
+    clif := "function %select_icmp_i128_f64(i128, f64, f64) -> f64 system_v {
+block0(v0: i128, v1: f64, v2: f64):
+    v3 = iconst.i64 42
+    v4 = uextend.i128 v3
+    v5 = icmp eq v0, v4
+    v6 = select v5, v1, v2
+    return v6
+}"
+    stock := ["block0:", "movz x7, #42", "movz x8, #0", "subs xzr, x0, x7",
+      "ccmp x1, x8, #nzcv, eq", "fcsel d0, d0, d1, eq", "ret"]
+    pinned := ["block0:", "args %0=x0 %1=x1 %2=v0 %3=v1", "movz %6, #42", "movz %5, #0",
+      "subs xzr, %0, %6", "ccmp %1, %5, #nzcv, eq", "fcsel %4, %2, %3, eq", "rets %4=v0"] },
+  { name := "i128_fcmp_eq_select", source := "runtests/i128-select.clif (CI snapshot stock code)"
+    clif := "function %i128_fcmp_eq_select(f32, i128, i128) -> i128 system_v {
+block0(v0: f32, v1: i128, v2: i128):
+    v3 = fcmp eq v0, v0
+    v4 = select v3, v1, v2
+    return v4
+}"
+    stock := ["block0:", "fcmp s0, s0", "csel x0, x0, x2, eq", "csel x1, x1, x3, eq", "ret"]
+    pinned := ["block0:", "args %0=v0 %1=x0 %2=x1 %3=x2 %4=x3", "fcmp %0, %0",
+      "csel %5, %1, %3, eq", "csel %6, %2, %4, eq", "rets %5=x0 %6=x1"] }]
+
+/-- A stack-passed `f64` parameter of a function with an `i128` value (`%fstack`: v0..v7 are
+taken by `f32`s) is an `ldr d` from `[fp, #16]` (`stackArgLoad`), not an integer `ldr`. -/
+def floatStackLoad : Bool :=
+  match function? "function %fstack(i128, f32, f32, f32, f32, f32, f32, f32, f32, f64) -> f64 {
+block0(v0: i128, v1: f32, v2: f32, v3: f32, v4: f32, v5: f32, v6: f32, v7: f32, v8: f32, v9: f64):
+    v10 = select v0, v9, v9
+    return v10
+}" with
+  | some f => match lower128 f with
+    | .ok r => r.code.blocks.any fun b => b.insts.any fun
+      | .fpuLoad .size64 (.vreg _ .float) (.fpOffset 16) _ => true
+      | _ => false
+    | .error _ => false
+  | none => false
+
 /-- `lower128` lowers the shape, its instruction shape is stock's, and its exact VCode is the
 pinned one. -/
 def shapeOk (s : Shape) : Bool :=
@@ -1637,7 +1702,8 @@ def shapeOk (s : Shape) : Bool :=
 
 /-- `Stock.ComparisonCfg.Fixture.function` (`FV/Backend/Proof/StockComparisonWitness.lean`) and
 other `i128`-free functions: a loop with block arguments, a call, memory, stack parameters, an
-`sret` signature, `br_table`, `select`, extensions, and an error (an `i64` `isplit`). -/
+`sret` signature, `br_table`, `select`, extensions, and two errors (an `i64` `isplit`, and the
+`f32` values of `%fsel`, which `lower128` accepts only beside an `i128` value). -/
 def i128Free : List String := [
   "function %comparison_leaves(i64, i64) -> i64 {
 block0(v0: i64, v1: i64):
@@ -1709,6 +1775,11 @@ block0(v0: i64, v1: i64, v2: i8):
 block0(v0: i64):
     v1, v2 = isplit v0
     return v2
+}",
+  "function %fsel(i64, f32, f32) -> f32 {
+block0(v0: i64, v1: f32, v2: f32):
+    v3 = select v0, v1, v2
+    return v3
 }"]
 
 /-! ## Rejections -/
@@ -1716,7 +1787,8 @@ block0(v0: i64):
 /-- `i128` instructions outside the foundation (`umul_overflow`, which has no `$I128` rule, a
 big-endian load, which `little_or_native_endian` does not match, and others), and the `isplit`
 of a widening `imul` (its `lower.isle` rule needs the extern `value_is_unused`, which
-`externCtor128` does not model): `lower128` fails on each. -/
+`externCtor128` does not model), and a call with an `f32` return in a function with an `i128`
+value (`externCtor128` leaves it unmodeled): `lower128` fails on each. -/
 def outside : List String := [
   "function %umul_overflow(i128, i128) -> i128, i8 {
 block0(v0: i128, v1: i128):
@@ -1746,6 +1818,13 @@ block0(v0: i128):
 block0(v0: i64):
     v1 = load.i128 big v0
     return v1
+}",
+  "function %call_f32(i128) -> f32 {
+    fn0 = %g(i64) -> f32
+block0(v0: i128):
+    v1 = ireduce.i64 v0
+    v2 = call fn0(v1)
+    return v2
 }"]
 
 def rejected (src : String) : Bool :=
@@ -1774,6 +1853,9 @@ def rejected (src : String) : Bool :=
 #guard overflows.all shapeOk
 #guard mems.length == 18
 #guard mems.all shapeOk
+#guard floats.length == 3
+#guard floats.all shapeOk
+#guard floatStackLoad
 #guard i128Free.all fun s => (function? s).any fun f => !has128 f && agrees f
 #guard outside.all rejected
 
@@ -1813,7 +1895,7 @@ partial def clifFiles (p : System.FilePath) : IO (Array System.FilePath) := do
 /-- Print each shape: whether it lowers, its shape against stock's, its exact VCode. -/
 def printShapes : IO Unit := do
   for s in shapes ++ extras ++ shifts ++ compares ++ selects ++ ariths ++ bitops ++ minmaxes ++
-      overflows ++ mems do
+      overflows ++ mems ++ floats do
     match function? s.clif with
     | none => IO.println s!"{s.name}: parse error"
     | some f => match lower128 f with

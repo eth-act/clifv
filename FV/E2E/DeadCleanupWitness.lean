@@ -21,10 +21,10 @@ def checks : Bool :=
   | .error _ => false
   | .ok vc =>
     lowerCheck source vc && decide ((prune vc).blocks[0]!.insts.size < vc.blocks[0]!.insts.size) &&
-    match Backend.prepare (prune vc) with
+    match Backend.prepare (cleanupStage source vc) with
     | .error _ => false
     | .ok vcp =>
-      prepCheck (prune vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
+      prepCheck (cleanupStage source vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
       match lowerRFunc vcp (spillAlloc vcp) with
       | .error _ => false
       | .ok af => match emitFunc 0 af with
@@ -55,7 +55,7 @@ theorem compiled_exists :
     rw [hl] at h
     simp only [Bool.and_eq_true, decide_eq_true_eq] at h
     obtain ⟨⟨hlo, hshr⟩, h⟩ := h
-    cases hp : Backend.prepare (prune vc) with
+    cases hp : Backend.prepare (cleanupStage source vc) with
     | error e => rw [hp] at h; cases h
     | ok vcp =>
       rw [hp] at h

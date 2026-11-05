@@ -90,8 +90,8 @@ theorem entry_of_artifact {I : LinkInput} {R : Res} {cleanup : Bool}
     exact checked.2 e present ("compiled: pipeline",e.2.toBool)
       (by simp [chksSemanticFor,staticChksSemanticFor_expanded])
   obtain ⟨lower,prepared,_,_,_,_⟩ := provenance e present _ (getOk_eq success)
-  have prepared' : prepare (Stock.Arithmetic.stage cleanup (getOk e.2).vc) = .ok (getOk e.2).vcp := by
-    cases cleanup <;> simpa [productionStage,Stock.Arithmetic.stage] using prepared
+  have prepared' : prepare (Stock.Arithmetic.stageF cleanup e.1 (getOk e.2).vc) = .ok (getOk e.2).vcp := by
+    cases cleanup <;> simpa [productionStage,Stock.Arithmetic.stageF] using prepared
   simp only [ReturnPinFile.entry,fromResult,artifact,lower,bind,Except.bind,prepared',pure,Except.pure]
 
 theorem entries_of_artifacts {I : LinkInput} {R : Res} {cleanup : Bool}

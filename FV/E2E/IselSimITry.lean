@@ -48,8 +48,9 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {MRW : MemRelTW W}
 
 /-- **`try_call`/`try_call_indirect` step, counted, for a family** (`term_step_tryP`'s proof for
-`sem n`, the run lifted to `ISem.counted sem`: one VCode call, the counter `n` to `n + 1`). -/
-theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
+`sem n`, the run lifted to `ISem.counted sem`: one VCode call, the counter `n` to `n + 1`), in the
+terminator's zone. -/
+theorem term_step_tryGP (hni : NoncallIndep sem) {n : Nat}
     (H : DriverHyp f vc ctx st0 R gn bl A (sem n) MRW env p) (htc : TryCallsOne f)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MRW slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
@@ -61,7 +62,8 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
       (s'.frame.body = [] ∧ ∃ bc, s'.frame.term = .jump bc) ∧
       (∀ c, Clif.step env p s' ≠ .trapped c) ∧ (∀ vals cm, Clif.step env p s' ≠ .done vals cm) ∧
       ∀ s'', Clif.step env p s' = .next s'' →
-        ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
+        ∃ b' k' ρ' w', StarP (VStep vc (ISem.counted sem)) (TermZone vc b k)
+          (.run ⟨b, k, ρ, (w, n)⟩)
           (.run ⟨b', k', ρ', (w', n + 1)⟩) ∧
           Match f ctx R gn bl A MRW slots s'' ⟨b', k', ρ', w'⟩ := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
@@ -280,6 +282,8 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
   rw [hsr'] at hsrI
   simp only [Option.map_some, SeqEnd.liftW, htk, Nat.add_zero, MInst.isCallI] at hsrI
   obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_starP hvb hsegat hsrI
+  replace hstar := hstar.mono (Q := TermZone vc b (pos f R bl b B.body.length)) (by
+    rintro c ⟨i, -, ρ', w', rfl⟩; exact .inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩)
   have hK : pos f R bl b B.body.length + pre.length + 1 = vb.insts.size := by
     rw [hsize]; simp only [List.length_map, List.length_append, List.length_singleton]; omega
   have hback : vb.insts.back? = some ((MInst.tryCall ci' T.info).mapRegs R) := by
@@ -411,7 +415,32 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
     refine VStep.step heb (by rw [hebi]; rfl) (i := .jump tl) (ops := #[]) rfl
       hjump rfl (VNext.goto (by rw [hebi]; rfl) ?_ henv2)
     rw [succOf_eq H.shape.labels hcfg heb hebback]; rfl
-  exact ⟨_, _, _, _, hstar.star.trans (.step hstep1 (.single hstep2)), hM⟩
+  exact ⟨_, _, _, _, hstar.trans (.step (.inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩) hstep1
+    (StarP.single (.inr ⟨_, _, _, eb, tl, rfl, heb, hebi⟩) hstep2)), hM⟩
+
+/-- **`try_call`/`try_call_indirect` step, counted, for a family** (`term_step_tryGP` without
+the zone). -/
+theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
+    (H : DriverHyp f vc ctx st0 R gn bl A (sem n) MRW env p) (htc : TryCallsOne f)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MRW slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    {et : Clif.ExnTable} (hT : IsTryWith s.frame.term et)
+    (hind : ∀ callee args, s.frame.term = .tryCallIndirect callee args et → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
+    (∀ vals cm, Clif.step env p s ≠ .done vals cm) ∧
+    ∀ s', Clif.step env p s = .next s' →
+      (s'.frame.body = [] ∧ ∃ bc, s'.frame.term = .jump bc) ∧
+      (∀ c, Clif.step env p s' ≠ .trapped c) ∧ (∀ vals cm, Clif.step env p s' ≠ .done vals cm) ∧
+      ∀ s'', Clif.step env p s' = .next s'' →
+        ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
+          (.run ⟨b', k', ρ', (w', n + 1)⟩) ∧
+          Match f ctx R gn bl A MRW slots s'' ⟨b', k', ρ', w'⟩ := by
+  obtain ⟨T1, T2⟩ := term_step_tryGP hni H htc hm hbody hT hind
+  refine ⟨T1, fun s' hs => ?_⟩
+  obtain ⟨N0, N1, N2, N3⟩ := T2 s' hs
+  refine ⟨N0, N1, N2, fun s'' hs' => ?_⟩
+  obtain ⟨b', k', ρ', w', h1, h2⟩ := N3 s'' hs'
+  exact ⟨b', k', ρ', w', h1.star, h2⟩
 
 /-- **Whole runs, counted, for a family**: from matching states at CLIF call count `n`, every
 CLIF outcome is realised by the counted VCode run from counter `n` (call number `n` with

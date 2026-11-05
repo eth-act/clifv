@@ -1,5 +1,5 @@
 import FV.E2E.ExtSemGuardRY
-import FV.E2E.IselSimIN
+import FV.E2E.IselSimINTSkip
 import FV.E2E.RegLevelCorrectPRSN
 
 /-!
@@ -120,9 +120,9 @@ theorem backend_correct_world_cleanupPRIN {p : Clif.Program} {f : Clif.Function}
         (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState) (s : Arm.ArmState),
         ActEntryPR vcp rf af fa fb K F G XI H base ra Kp cc P R s w₀ →
         ∃ n, TrapAt fb base c' (runX (ArmStepX (XI.at 0) H fa) n s)) := by
-  have hI := iselSim_relWI_cleanupN hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs
+  have hI := iselSim_relWI_cleanupN_stage hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs
     htr fuel
-  have hPr := prune_correctW (vc := vc) (sem := valueSemI F ⟨fa.k, af.slotBase⟩ XI)
+  have hPr := prune_correctW (vc := skipStage f vc) (sem := valueSemI F ⟨fa.k, af.slotBase⟩ XI)
     (fun _ _ _ _ _ _ hi hs => counted_pure (fun _ _ _ _ _ _ _ hp he => valueSem_pure hp he) hi hs)
     (cmpOverwrite_counted fun n => valueSem_cmpOverwrite _ _ _) (fun _ => 0) (w₀, 0)
   have hP := prep_soundW (DriverSemG.counted fun m =>
@@ -142,7 +142,7 @@ theorem backend_correct_world_cleanupPRIN {p : Clif.Program} {f : Clif.Function}
   · obtain ⟨us, outs, ⟨w, nc⟩, hv, hus, hlen, hhold, hmemR, u, hu, hd⟩ := hI.1 vals cm hrun
     have hrs : vc.RetsSite us := by
       obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-      exact ⟨b, vb, k, hvb, hk⟩
+      exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
     refine ⟨us, outs, w, hus, hlen, hhold, hmemR, hrs, fun H G base ra Kp cc P R s he => ?_⟩
     obtain ⟨n, hcb, h1, h2, h3, h4, h5, h6, h7⟩ :=
       (hM6 H G base ra Kp cc P R s he).1 us outs w nc

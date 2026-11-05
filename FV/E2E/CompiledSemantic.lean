@@ -5,6 +5,7 @@ import FV.E2E.StockLogicalWorldX
 import FV.E2E.StockScalarWorldX
 import FV.E2E.StockMemoryWorldX
 import FV.E2E.StockMemoryCfgWorldX
+import FV.Backend.StockArithmeticStageF
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
@@ -50,21 +51,28 @@ variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
 
 /-- Executable checker facts construct the semantic artifact. This does not
-assert the old lowerCheck verdict for a raw Stock artifact. -/
+assert the old lowerCheck verdict for a raw Stock artifact. (`prepared`/`prepOk` are about the
+routes' stage `Stock.Arithmetic.stageF`, formerly `Stock.Arithmetic.stage`: the routes now run
+Cranelift's skip of unused instructions, `cleanupStage`.) -/
 theorem of_checks {cleanup : Bool} (lower : Stock.Arithmetic.check f vc = true)
-    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
-    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stageF cleanup f vc) = .ok vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stageF cleanup f vc) vcp = true)
     (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
     (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
     CompiledSemantic f k vc vcp rf af fa fb := by
-  rcases Stock.Arithmetic.check_sound lower with legacy | ⟨result,domain,run,equal,_⟩
-  · apply CompiledSemantic.compatible
+  cases hl : lowerCheck f vc with
+  | true =>
+    apply CompiledSemantic.compatible
     cases cleanup with
     | false =>
-      exact .stock ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
+      exact .stock ⟨⟨hl,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
     | true =>
-      exact .stockCleanup ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
-  · exact .arithmetic domain equal ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+      exact .stockCleanup ⟨⟨hl,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
+  | false =>
+    rw [Stock.Arithmetic.stageF_of_lowerCheck_false hl] at prepared prepOk
+    rcases Stock.Arithmetic.check_sound lower with legacy | ⟨result,domain,run,equal,_⟩
+    · rw [hl] at legacy; cases legacy
+    · exact .arithmetic domain equal ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
 theorem check (hc : CompiledSemantic f k vc vcp rf af fa fb) : Backend.checkAlloc vcp rf = .ok () := by
   cases hc with
