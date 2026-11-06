@@ -169,15 +169,10 @@ Only the `FpuLoad` of a constant-pool entry emits a literal load (`fpuLoadLit`, 
 five-word bound also pays for the pool entry `emitFunc_size_le` charges it (`lines_lit`). -/
 
 theorem loadConst64_lit (rd : Reg) (v : Nat) : (loadConst64 rd v).countP Line.isLit = 0 := by
-  unfold loadConst64
-  rw [List.countP_cons, List.countP_eq_zero.2]
-  · simp [Line.isLit]
-  · intro x hx
-    obtain ⟨j, -, hj⟩ := List.mem_filterMap.1 hx
-    dsimp only at hj
-    split at hj
-    · cases hj; simp [Line.isLit]
-    · cases hj
+  rw [List.countP_eq_zero]
+  intro ln hln
+  obtain ⟨i, rfl, hf⟩ := Backend.Proof.loadConst64_form hln
+  rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> simp [Line.isLit]
 
 theorem memFinalize_lit {c : FnCtx} {m : AMode} {b : Nat} {v : List Line × AMode}
     (h : memFinalize c m b = .ok v) : v.1.countP Line.isLit = 0 := by
