@@ -494,12 +494,13 @@ theorem emitPre_of {k : Nat} {af : AFunc}
     have hc := EmitLabels.code_chunk (T := af.blocks.toList.map (·.1)) _ _ _ _ e2
       (fun m hm l' hl' => ht _ hbm m (EmitLabels.mem_of_getLast?_toList hm) l' hl')
     rcases hc.uses_in (.block l) (EmitLabels.mem_uses.2 ⟨ln, hln, target_used htl⟩) with
-      hd | ⟨l', hl', e⟩ | ⟨n, e, -⟩
+      hd | ⟨l', hl', e⟩ | ⟨n, e, -⟩ | ⟨n, e, -⟩
     · rcases hc.defs_in _ hd with ⟨_, h, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
       · cases h
       · cases h
       · cases h
     · cases e; exact hlabel _ hl'
+    · cases e
     · cases e
   have hpad : ∀ b ∈ af.blocks.toList, ∀ a ∈ b.2.toList, ∀ info ti, a = .inst (.tryCall info ti) →
       ∀ h ∈ ti.handlers, ∃ s ∈ ss, s.label = h.label := by
