@@ -120,7 +120,7 @@ theorem successful_program_call_witness :
         exact called
       · rw [system.progXABI_previous old_check]
         exact called
-      · exact arity.trans fixedFacts.2.2.1
+      · exact arity.trans (by rw [fixedFacts.1]; rfl)
     | trapped code => rw [returned] at source; cases source
     | stuck message => rw [returned] at source; cases source
     | outOfFuel => rw [returned] at source; cases source
