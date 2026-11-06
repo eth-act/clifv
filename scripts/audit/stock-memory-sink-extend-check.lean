@@ -20,3 +20,13 @@ import FV.Backend.Proof.StockMemorySinkExtCompatibility
 #print axioms Backend.Stock.MemorySinkExt.Fixture.checked_sink_extend_witness
 
 #print axioms Backend.Stock.MemorySinkExt.Fixture.near_misses_excluded
+
+#print axioms Backend.Stock.MemorySinkExt.previous_checked_exact
+
+#print axioms Backend.Stock.MemorySinkExt.previous_allocation_exact
+
+#print axioms Backend.Stock.MemorySinkExt.Fixture.activation_witness
+
+#print axioms Backend.Stock.MemorySinkExt.Fixture.near_misses_shape
+
+#print axioms Backend.Stock.MemorySinkExt.Fixture.selected_sources_rejected

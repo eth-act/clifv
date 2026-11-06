@@ -191,6 +191,18 @@ class StockConfiguredProviderTests(unittest.TestCase):
             with self.subTest(cleanup=cleanup):
                 self.check_provider(source, cleanup, stock_selected=True)
 
+    def test_configured_sink_extend_provider_keeps_original_inputs(self):
+        widths = {"i8": ("i16", "i32", "i64"), "i16": ("i32", "i64"), "i32": ("i64",)}
+        for op in ("uextend", "sextend"):
+            for load_ty, outs in widths.items():
+                for out in outs:
+                    source = (f"function %load_{op}_{load_ty}_{out}(i64) -> {out} {{\n"
+                              f"block0(v0: i64):\n    v1 = load.{load_ty} v0\n"
+                              f"    v2 = {op}.{out} v1\n    return v2\n}}\n")
+                    for cleanup in (False, True):
+                        with self.subTest(op=op, load_ty=load_ty, out=out, cleanup=cleanup):
+                            self.check_provider(source, cleanup, stock_selected=True)
+
     def test_typed_pipeline_keeps_its_existing_provider(self):
         self.check_provider(MEMORY_CFG, cleanup=False, typed=True)
 

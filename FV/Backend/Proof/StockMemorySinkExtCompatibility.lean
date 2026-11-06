@@ -44,4 +44,25 @@ theorem previous_lower_exact {f : Clif.Function} (absent : eligible f = false) :
     lowerValidated f = MemoryCapturedCopy.lowerValidated f := by
   simp [lowerValidated,absent]
 
+/-- Per function: a source outside this class gets exactly the previous checked
+artifact, whatever the other functions of its file are. -/
+theorem previous_checked_exact {f : Clif.Function} (absent : eligible f = false) (verify : Bool) :
+    lowerCheckedMemorySinkExtNI f verify = lowerCheckedMemoryCapturedCopyNI f verify := by
+  cases lowered : MemoryCapturedCopy.lowerValidated f with
+  | error message =>
+    simp only [lowerCheckedMemorySinkExtNI,previous_lower_exact absent,lowered]
+    rfl
+  | ok vc =>
+    cases verify <;> cases checked : SemanticNI.check f vc <;>
+      simp [lowerCheckedMemorySinkExtNI,lowerCheckedMemoryCapturedCopyNI,previous_lower_exact absent,
+        lowered,checked] <;> rfl
+
+/-- The allocation input of a source outside this class is the previous one. -/
+theorem previous_allocation_exact {f : Clif.Function} (absent : eligible f = false)
+    (verify cleanup : Bool) :
+    lowerForAllocationMemorySinkExtNI f verify cleanup =
+      lowerForAllocationMemoryCapturedCopyNI f verify cleanup := by
+  simp only [lowerForAllocationMemorySinkExtNI,lowerForAllocationMemoryCapturedCopyNI,
+    previous_checked_exact absent]
+
 end Backend.Stock.MemorySinkExt
