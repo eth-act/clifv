@@ -159,7 +159,7 @@ macro_rules
     refine ⟨_, ?_, _, rfl, atomicRmw_lower_ok hMR hM hMRo (by rfl) hety hfl (hA64 _ rfl)⟩
     simp only [LState.fresh]
     exact (frag_fresh3 _ (.atomicRmwLoop _ _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int)
-      (.vreg _ .int) (.vreg _ .int)) (by simp [vdefs, operands_rmwLoop, Operand.isDef])).emitted))
+      (.vreg _ .int) (.vreg _ .int)) (fun _ h => vdefs_rmwLoop_mem _ _ _ _ _ _ _ _ h)).emitted))
 
 section LoopRoots
 variable {p : Program} (hp : Data p) {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat}

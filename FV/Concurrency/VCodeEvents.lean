@@ -307,6 +307,8 @@ theorem visit_akinds {m : Type → Type} [Monad m] [LawfulMonad m]
   case tryCall info ti =>
     rcases info with ⟨dest, us, ds⟩
     cases dest <;> simp [MInst.visitOperands, akinds]
+  case atomicRmwLoop ty op fl a o d s1 s2 =>
+    by_cases hx : op = .xchg <;> simp [MInst.visitOperands, akinds, hx]
   all_goals simp [MInst.visitOperands, akinds]
 
 /-- **Substituting an allocation keeps the kinds.** -/

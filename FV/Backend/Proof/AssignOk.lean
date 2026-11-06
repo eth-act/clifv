@@ -159,6 +159,10 @@ theorem arel_visit (regs : Array Reg) (i : MInst) :
   case tryCall info ti =>
     obtain ⟨dest, uses, defs⟩ := info
     cases dest <;> simp only [MInst.visitOperands] <;> arel_steps regs hN
+  case atomicRmwLoop ty op fl a o d s1 s2 =>
+    -- `xchg` puts x28 in place of scratch2 on both sides
+    simp only [MInst.visitOperands]
+    cases hx : op == .xchg <;> simp only [Bool.false_eq_true, ↓reduceIte, pure_bind] <;> arel_steps regs hN
   all_goals simp only [MInst.visitOperands]
   all_goals arel_steps regs hN
 

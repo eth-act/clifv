@@ -78,7 +78,7 @@ theorem csem_rmw : ∃ r, csem (fun _ => False) ctx0 X0 iRmw [ofX 0x8000#64, ofX
   have he : Arm.r .ERR w0 = .None := by decide +kernel
   have e2 := loopSem_eq (F := fun _ => False) (ty := .int 64) (a := ofX 0x8000#64)
     (body := rmwLoopBody (CTy.int 64).bits .add {}) (regs := [.x 25, .x 26])
-    (uses := [ofX 0x8000#64, ofX 1#64]) (defs := [.x 27, .x 24, .x 28]) (w := w0)
+    (uses := [ofX 0x8000#64, ofX 1#64]) (defs := AtomicRmwLoopOp.defRegs .add) (w := w0)
     ⟨by decide, fun _ _ h => h, he⟩ exec_tr ok_tr
   simp only [iRmw, csem, he, ite_true, e2]
   exact ⟨_, rfl⟩

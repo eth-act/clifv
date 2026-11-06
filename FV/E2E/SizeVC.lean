@@ -220,6 +220,10 @@ theorem visit_pushLe (i : MInst) : PushLe (regCount i) (MInst.visitOperands coll
     obtain ⟨dest, uses, defs⟩ := info
     cases dest <;> simp only [MInst.visitOperands] <;> apply PushLe.mono <;> pushLe_steps <;>
       simp [regCount] <;> omega
+  case atomicRmwLoop ty op fl a o d s1 s2 =>
+    simp only [MInst.visitOperands]
+    cases hx : op == .xchg <;> simp only [Bool.false_eq_true, ↓reduceIte, pure_bind] <;>
+      apply PushLe.mono <;> pushLe_steps <;> simp [regCount] <;> omega
   all_goals simp only [MInst.visitOperands]
   all_goals apply PushLe.mono
   all_goals pushLe_steps
