@@ -1050,7 +1050,11 @@ code stock Cranelift (cg_clif) generated for the same functions: after
 target/fv/<mode>/tmp` compares, per codegen unit and function, `lean.o` with cg_clif's
 `cgclif.o` (exact bytes and relocations) and attributes the differing instructions to causes
 (frame, slot layout, register allocation, dead `cset`, branch layout, instruction selection;
-a heuristic on `llvm-mc` disassembly). Results and the cause issues: #557.
+a heuristic on `llvm-mc` disassembly; `FV_LLVM_MC`, else LLVM 18's or the `llvm-mc` on `PATH`).
+The full gate measures fv-demo and survey on `main` this way, and the daily digest (#46)
+reports the counts and lost matches with the filetest comparison
+([STOCK-COMPILER-COMPARISON.md](STOCK-COMPILER-COMPARISON.md#daily-change-reports)).
+Cause analysis: #557.
 Crate parity is the second of the two stock-parity metrics; the first is the filetest
 comparison above, which CI runs on every PR. A parity PR reports both
 ([STOCK-COMPILER-COMPARISON.md](STOCK-COMPILER-COMPARISON.md#two-parity-metrics), `AGENTS.md`).

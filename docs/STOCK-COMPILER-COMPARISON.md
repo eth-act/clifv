@@ -15,7 +15,8 @@ This comparison is one of the two stock-parity metrics. Both count (`AGENTS.md`)
 | Input | every function of Cranelift's own filetests, under their declared settings | every function of real Rust crates that cg_clif compiles (one default setting) |
 | A function that Lean does not compile | counts as a miss | almost none occur |
 | What it rewards | coverage and identical output (SIMD, tail calls, floats, settings) | identical output on ordinary Rust code |
-| Where it runs | CI, on every PR and main push | by hand: `scripts/stock-crate-parity.py` (`docs/USAGE.md`), results in #557 |
+| Where it runs | CI, on every PR and main push | the full gate on `main` (fv-demo, survey); by hand for a PR: `scripts/stock-crate-parity.py` (`docs/USAGE.md`) |
+| Where it is reported | PR comment; daily digest (#46) | daily digest (#46); cause analysis in #557 |
 
 A parity PR reports both results and loses no match on either.
 
@@ -127,6 +128,20 @@ not directly comparable. The report artifact keeps the per-measurement detail:
 gained and lost matches and supported outputs, added/removed identities, commit
 titles and GitHub authors. Counts measure artifact agreement, not execution or
 proof coverage.
+
+The digest also reports crate parity, the second metric. The full gate's
+`cargo fv` job runs plain `cargo fv test --keep-temps --no-run` on `examples/fv-demo`
+and `examples/survey` and `scripts/stock-crate-parity.py` on the kept objects, and
+uploads the per-function result as the artifact `crate-parity-<crate>-<attempt>`
+(90 days). The step is a measurement: it runs whether or not the gate's own
+`cargo fv` line passes, and it never changes the job's result. The digest reads
+the newest full-gate run on `main` that has both artifacts and shows one more
+table: byte-identical functions per crate, with the change since the previous
+digest. It names functions that stopped matching, by name with the localising
+`__fv_<cgu>_` prefix removed, counting a function that Lean no longer compiles as
+lost too. A full-gate run without the artifacts is passed over and never resets
+the crate baseline. Full-gate runs are post-merge and can be hours apart, so a
+digest can repeat the previous crate measurement; it says so.
 
 Each nightly saves a compact baseline snapshot and detailed report as Actions
 artifacts for 90 days, including on quiet nights. The snapshot is uploaded before
