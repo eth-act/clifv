@@ -111,7 +111,7 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
           rw [hlen]; exact (List.getElem?_eq_some_iff.mp hn).1
         obtain ⟨z, hz⟩ : ∃ z, o[n]? = some z := ⟨_, List.getElem?_eq_getElem hn'⟩
         rw [hz]
-        have hy : y ∈ prologueLines af.saves af.frameSize := by
+        have hy : y ∈ prologueLines af.saves af.frameSize af.isCaller := by
           rw [ht]; exact List.mem_of_getElem? hn
         rcases hlo n y z hn hz with ⟨rfl, -⟩ | ⟨l, -, hyt, -⟩
         · rfl
