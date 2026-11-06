@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelEmit
+import FV.E2E.MachBufSize
 import FV.Backend.Proof.RelaxLayout
 import FV.Backend.SpillAlloc
 import FV.Backend.Proof.LoadConstant
@@ -586,55 +587,50 @@ theorem linesBytes_drop (j : Nat) (L : List Line) : linesBytes (L.drop j) ≤ li
   simp only [linesBytes, List.map_append, List.sum_append] at this ⊢
   omega
 
-theorem ftStep_size (ln : Line) (n1 n2 : Option Line) : linesBytes (ftStep ln n1 n2).1 ≤ ln.size := by
-  unfold ftStep
-  repeat' split
-  all_goals first | (simp [linesBytes]; done) | simp [linesBytes, Line.size]
-
-theorem ftList_size : ∀ (n : Nat) (L : List Line), L.length ≤ n → linesBytes (ftList L) ≤ linesBytes L
-  | _, [], _ => by simp [ftList, linesBytes]
-  | 0, _ :: _, hl => by simp at hl
-  | n + 1, ln :: rest, hl => by
-    rw [ftList_cons]
-    have hp := (ftStep_pos ln rest[0]? rest[1]?).1
-    have hs := ftStep_size ln rest[0]? rest[1]?
-    generalize (ftStep ln rest[0]? rest[1]?) = st at hp hs
-    obtain ⟨out, k⟩ := st
-    obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by simp at hp; omega⟩
-    simp only [List.drop_succ_cons] at *
-    have ih := ftList_size n (rest.drop j) (by simp at hl ⊢; omega)
-    have := linesBytes_drop j rest
-    simp only [linesBytes, List.map_append, List.sum_append, List.map_cons, List.sum_cons] at *
-    omega
-
 theorem isLit_invertTo (c : Insn) (e : Lbl) (t : Option Clif.TrapCode) :
     Line.isLit (.ins (c.invertTo e) t) = Line.isLit (.ins c t) := by
   unfold Insn.invertTo; split <;> rfl
 
-/-- `fallthrough` adds no literal load: it drops a `b` or inverts a conditional branch. -/
-theorem ftStep_lit (ln : Line) (n1 n2 : Option Line) :
-    (ftStep ln n1 n2).1.countP Line.isLit ≤ [ln].countP Line.isLit := by
-  unfold ftStep
-  repeat' split
-  all_goals first | (simp [isLit_invertTo]; done) | simp_all
+/-- The line `MBuf.step` considers: a branch, no literal-pool load. -/
+theorem isLit_of_stepLine {ln : Line}
+    (ht : ((ln.ubr?).orElse fun _ => ln.cbr?).isSome = true) : ln.isLit = false := by
+  cases ln with
+  | ins i tc =>
+    cases tc with
+    | none =>
+      cases i with
+      | b _ => rfl
+      | bcond _ _ => rfl
+      | cbz _ _ _ _ => rfl
+      | tbz _ _ _ _ => rfl
+      | _ => simp [Line.ubr?, Line.cbr?, Insn.condTarget?] at ht
+    | some _ => simp [Line.ubr?, Line.cbr?] at ht
+  | _ => simp [Line.ubr?, Line.cbr?] at ht
 
-theorem ftList_lit : ∀ (n : Nat) (L : List Line), L.length ≤ n →
-    (ftList L).countP Line.isLit ≤ L.countP Line.isLit
-  | _, [], _ => by simp [ftList]
-  | 0, _ :: _, hl => by simp at hl
-  | n + 1, ln :: rest, hl => by
-    rw [ftList_cons]
-    have hp := (ftStep_pos ln rest[0]? rest[1]?).1
-    have hs := ftStep_lit ln rest[0]? rest[1]?
-    generalize (ftStep ln rest[0]? rest[1]?) = st at hp hs
-    obtain ⟨out, k⟩ := st
-    obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by simp at hp; omega⟩
-    simp only [List.drop_succ_cons] at *
-    have ih := ftList_lit n (rest.drop j) (by simp at hl ⊢; omega)
-    have := (List.drop_sublist j rest).countP_le (p := Line.isLit)
-    rw [show ln :: rest = [ln] ++ rest from rfl, List.countP_append, List.countP_append]
-    omega
+theorem isLit_relabel (f : Lbl → Lbl) (ln : Line) : (ln.relabel f).isLit = ln.isLit := by
+  cases ln with
+  | ins i tc => cases i <;> rfl
+  | _ => rfl
 
+/-- The literal-pool loads as a selection of lines (`countP_isLit`). -/
+def litOf (ln : Line) : Option Unit := if ln.isLit then some () else none
+
+theorem countP_isLit (L : List Line) : L.countP Line.isLit = (L.filterMap litOf).length := by
+  rw [List.length_filterMap_eq_countP]
+  congr 1
+  funext ln
+  unfold litOf
+  split <;> simp_all
+
+/-- **The emission plan keeps the number of literal-pool loads** of the unsimplified segments
+(`MachBuffer` touches only branches, #565). -/
+theorem emitPlan_isLit {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
+    (segLines p.segs p.outs).countP Line.isLit =
+      (segLines p.segs (p.segs.map (·.term))).countP Line.isLit := by
+  rw [countP_isLit, countP_isLit, emitPlan_filterMap litOf
+    (fun _ h => by simp [litOf, isLit_of_stepLine h])
+    (fun c e tr => by simp only [litOf, isLit_invertTo])
+    (fun f ln => by simp only [litOf, isLit_relabel]) h]
 theorem pairsOf_count : ∀ rs : List Reg,
     (pairsOf rs).1.length + (if (pairsOf rs).2.isSome then 1 else 0) ≤ rs.length
   | [] => by simp [pairsOf]
@@ -785,88 +781,151 @@ theorem codeLinesE_lit {c : FnCtx} {af : AFunc} :
     simp only [List.length_append, List.countP_append, List.map_cons, List.sum_cons] at *
     omega
 
-theorem blocksLinesE_size {c : FnCtx} {af : AFunc} :
-    ∀ {bs : List (Label × Array AInst)} {ps ps' : PState} {ls : List Line},
-      blocksLinesE c af bs ps = .ok (ls, ps') →
-        linesBytes ls + 4 * ps'.traps.size ≤
-          4 * (bs.map fun b => (b.2.toList.map (aInstWords af.saves.length)).sum).sum + 4 * ps.traps.size
-  | [], ps, ps', ls, h => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-    obtain ⟨rfl, rfl⟩ := h
-    simp [linesBytes]
-  | (l, code) :: bs, ps, ps', ls, h => by
-    simp only [blocksLinesE] at h
-    obtain ⟨⟨l1, ps1⟩, h1, h⟩ := exceptBind_ok h
-    obtain ⟨⟨l2, ps2⟩, h2, h⟩ := exceptBind_ok h
-    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-    obtain ⟨rfl, rfl⟩ := h
-    have := codeLinesE_length h1
-    have := linesBytes_le_length l1
-    have := blocksLinesE_size h2
-    simp only [linesBytes, List.map_cons, List.map_append, List.sum_append, List.sum_cons, Line.size] at *
-    omega
-
-/-- `blocksLinesE_size` with the literal loads: each costs at most the 8 bytes its pool entry
-adds beyond the doubled code. -/
-theorem blocksLinesE_lit {c : FnCtx} {af : AFunc} :
-    ∀ {bs : List (Label × Array AInst)} {ps ps' : PState} {ls : List Line},
-      blocksLinesE c af bs ps = .ok (ls, ps') →
-        linesBytes ls + 8 * ls.countP Line.isLit + 4 * ps'.traps.size ≤
-          4 * (bs.map fun b => (b.2.toList.map (aInstWords af.saves.length)).sum).sum +
+/-- The segments' unsimplified lines (`segsOf`): at most 4 bytes per word of the blocks' code,
+the label lines being empty. -/
+theorem segsOf_size {c : FnCtx} {af : AFunc} :
+    ∀ {bs : List ((Label × Array AInst) × Nat)} {ps ps' : PState} {ss : List Seg},
+      segsOf c af bs ps = .ok (ss, ps') →
+        linesBytes (segLines ss (ss.map (·.term))) + 4 * ps'.traps.size ≤
+          4 * (bs.map fun b => (b.1.2.toList.map (aInstWords af.saves.length)).sum).sum +
             4 * ps.traps.size
-  | [], ps, ps', ls, h => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+  | [], ps, ps', ss, h => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    simp [linesBytes]
-  | (l, code) :: bs, ps, ps', ls, h => by
-    simp only [blocksLinesE] at h
+    simp [linesBytes, segLines]
+  | ((l, code), i) :: bs, ps, ps', ss, h => by
+    simp only [segsOf] at h
     obtain ⟨⟨l1, ps1⟩, h1, h⟩ := exceptBind_ok h
     obtain ⟨⟨l2, ps2⟩, h2, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l3, ps3⟩, h3, h⟩ := exceptBind_ok h
     simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    have := codeLinesE_lit h1
-    have := linesBytes_le_length l1
-    have := blocksLinesE_lit h2
-    have hl : Line.isLit (.label (.block l)) = false := rfl
-    simp only [linesBytes, List.map_cons, List.map_append, List.sum_append, List.sum_cons, Line.size,
-      List.countP_cons, List.countP_append, hl, Bool.false_eq_true, ↓reduceIte] at *
+    have e1 := codeLinesE_length h1
+    have e2 := codeLinesE_length h2
+    have e3 := segsOf_size h3
+    have b1 := linesBytes_le_length l1
+    have b2 := linesBytes_le_length l2
+    have hw : (code.toList.dropLast.map (aInstWords af.saves.length)).sum +
+        (code.toList.getLast?.toList.map (aInstWords af.saves.length)).sum =
+        (code.toList.map (aInstWords af.saves.length)).sum := by
+      rw [← List.sum_append, ← List.map_append]
+      rcases List.eq_nil_or_concat code.toList with e | ⟨L, b, e⟩ <;> simp [e]
+    simp only [segLines, List.map_cons, List.sum_cons, linesBytes, List.map_append,
+      List.sum_append, Line.size] at *
     omega
 
-/-- `emitPre`'s lines are at most `4 · afWords af` bytes. -/
+/-- `segsOf_size` with the literal-pool loads: each costs at most the 8 bytes its pool entry
+adds beyond the doubled code. -/
+theorem segsOf_lit {c : FnCtx} {af : AFunc} :
+    ∀ {bs : List ((Label × Array AInst) × Nat)} {ps ps' : PState} {ss : List Seg},
+      segsOf c af bs ps = .ok (ss, ps') →
+        linesBytes (segLines ss (ss.map (·.term))) +
+            8 * (segLines ss (ss.map (·.term))).countP Line.isLit + 4 * ps'.traps.size ≤
+          4 * (bs.map fun b => (b.1.2.toList.map (aInstWords af.saves.length)).sum).sum +
+            4 * ps.traps.size
+  | [], ps, ps', ss, h => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl⟩ := h
+    simp [linesBytes, segLines]
+  | ((l, code), i) :: bs, ps, ps', ss, h => by
+    simp only [segsOf] at h
+    obtain ⟨⟨l1, ps1⟩, h1, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l2, ps2⟩, h2, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l3, ps3⟩, h3, h⟩ := exceptBind_ok h
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, rfl⟩ := h
+    have e1 := codeLinesE_lit h1
+    have e2 := codeLinesE_lit h2
+    have e3 := segsOf_lit h3
+    have b1 := linesBytes_le_length l1
+    have b2 := linesBytes_le_length l2
+    have hw : (code.toList.dropLast.map (aInstWords af.saves.length)).sum +
+        (code.toList.getLast?.toList.map (aInstWords af.saves.length)).sum =
+        (code.toList.map (aInstWords af.saves.length)).sum := by
+      rw [← List.sum_append, ← List.map_append]
+      rcases List.eq_nil_or_concat code.toList with e | ⟨L, b, e⟩ <;> simp [e]
+    have hl : Line.isLit (.label (.block l)) = false := rfl
+    simp only [segLines, List.map_cons, List.sum_cons, linesBytes, List.map_append,
+      List.sum_append, Line.size, List.countP_cons, List.countP_append, hl,
+      Bool.false_eq_true, ↓reduceIte] at *
+    omega
+
+theorem sum_filter_not {α : Type} (p : α → Bool) (f : α → Nat) :
+    ∀ l : List α, ((l.filter (!p ·)).map f).sum + ((l.filter p).map f).sum = (l.map f).sum
+  | [] => rfl
+  | a :: l => by
+    have := sum_filter_not p f l
+    cases h : p a <;> simp [h] at this ⊢ <;> omega
+
+theorem sum_zipIdx {α : Type} (f : α → Nat) :
+    ∀ (l : List α) (n : Nat), ((l.zipIdx n).map fun x => f x.1).sum = (l.map f).sum
+  | [], _ => rfl
+  | a :: l, n => by simp [List.zipIdx_cons, sum_zipIdx f l (n + 1)]
+
+/-- `emitPre`'s lines are at most `4 · afWords af` bytes: `MachBuffer`'s simplification never
+grows the segments' lines (`emitPlan_bytes`), which the blocks' code bounds in any order. -/
 theorem emitPre_size {k : Nat} {af : AFunc} {pre : Array Line} (h : emitPre k af = .ok pre) :
     linesBytes pre.toList ≤ 4 * afWords af := by
-  obtain ⟨body, ps, hb, rfl⟩ := emitPre_ok h
-  have h1 := blocksLinesE_size hb
-  have h2 := ftList_size body.length body (Nat.le_refl _)
-  have h3 : ∀ ts : List (Lbl × Clif.TrapCode),
-      linesBytes (ts.flatMap fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]) = 4 * ts.length := by
-    intro ts; induction ts <;> simp_all [linesBytes, Line.size]; omega
-  simp only [linesBytes, List.map_append, List.sum_append] at *
-  rw [h3, Array.length_toList]
-  simp only [afWords]
-  simp at h1
-  omega
+  cases hp : emitPlan k af with
+  | error e => simp [emitPre, hp, Functor.map, Except.map] at h
+  | ok p =>
+    simp only [emitPre, hp, Functor.map, Except.map, Except.ok.injEq] at h
+    subst h
+    obtain ⟨hseg, -⟩ := emitPlan_spec hp
+    have h1 := segsOf_size hseg
+    have h2 := emitPlan_bytes hp
+    have hord : ((emitOrder af).map fun b =>
+        (b.1.2.toList.map (aInstWords af.saves.length)).sum).sum = afWords af := by
+      unfold emitOrder afWords
+      rw [List.map_append, List.sum_append]
+      rw [sum_filter_not, sum_zipIdx (fun b : Label × Array AInst =>
+        (b.2.toList.map (aInstWords af.saves.length)).sum)]
+    have h3 : ∀ ts : List (Lbl × Clif.TrapCode),
+        linesBytes (ts.flatMap fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]) =
+          4 * ts.length := by
+      intro ts; induction ts <;> simp_all [linesBytes, Line.size]; omega
+    simp only [List.toList_toArray, Plan.lines, trapLines]
+    simp only [linesBytes, lineBytes, List.map_append, List.sum_append] at h1 h2 h3 ⊢
+    rw [h3, Array.length_toList]
+    rw [hord] at h1
+    simp at h1
+    omega
 
 /-- `emitPre`'s lines with 8 bytes per literal load are at most `4 · afWords af` bytes. -/
 theorem emitPre_size_lit {k : Nat} {af : AFunc} {pre : Array Line} (h : emitPre k af = .ok pre) :
     linesBytes pre.toList + 8 * pre.toList.countP Line.isLit ≤ 4 * afWords af := by
-  obtain ⟨body, ps, hb, rfl⟩ := emitPre_ok h
-  have h1 := blocksLinesE_lit hb
-  have h2 := ftList_size body.length body (Nat.le_refl _)
-  have h2' := ftList_lit body.length body (Nat.le_refl _)
-  have h3 : ∀ ts : List (Lbl × Clif.TrapCode),
-      linesBytes (ts.flatMap fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]) = 4 * ts.length := by
-    intro ts; induction ts <;> simp_all [linesBytes, Line.size]; omega
-  have h4 : ∀ ts : List (Lbl × Clif.TrapCode),
-      (ts.flatMap fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]).countP Line.isLit = 0 := by
-    intro ts; induction ts with
-    | nil => rfl
-    | cons p ts ih => rw [List.flatMap_cons, List.countP_append, ih]; simp [Line.isLit]
-  simp only [linesBytes, List.map_append, List.sum_append, List.countP_append] at *
-  rw [h3, h4, Array.length_toList]
-  simp only [afWords]
-  simp at h1
-  omega
+  cases hp : emitPlan k af with
+  | error e => simp [emitPre, hp, Functor.map, Except.map] at h
+  | ok p =>
+    simp only [emitPre, hp, Functor.map, Except.map, Except.ok.injEq] at h
+    subst h
+    obtain ⟨hseg, -⟩ := emitPlan_spec hp
+    have h1 := segsOf_lit hseg
+    have h2 := emitPlan_bytes hp
+    have h2' := emitPlan_isLit hp
+    have hord : ((emitOrder af).map fun b =>
+        (b.1.2.toList.map (aInstWords af.saves.length)).sum).sum = afWords af := by
+      unfold emitOrder afWords
+      rw [List.map_append, List.sum_append]
+      rw [sum_filter_not, sum_zipIdx (fun b : Label × Array AInst =>
+        (b.2.toList.map (aInstWords af.saves.length)).sum)]
+    have h3 : ∀ ts : List (Lbl × Clif.TrapCode),
+        linesBytes (ts.flatMap fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]) =
+          4 * ts.length := by
+      intro ts; induction ts <;> simp_all [linesBytes, Line.size]; omega
+    have h4 : ∀ ts : List (Lbl × Clif.TrapCode),
+        (ts.flatMap fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]).countP
+          Line.isLit = 0 := by
+      intro ts; induction ts with
+      | nil => rfl
+      | cons p ts ih => rw [List.flatMap_cons, List.countP_append, ih]; simp [Line.isLit]
+    simp only [List.toList_toArray, Plan.lines, trapLines, List.countP_append, h4, h2',
+      Nat.add_zero]
+    simp only [linesBytes, lineBytes, List.map_append, List.sum_append] at h1 h2 h3 ⊢
+    rw [h3, Array.length_toList]
+    rw [hord] at h1
+    simp at h1
+    omega
 
 /-! ### No literal-pool load, no literal line (`emitPre_lit0`) -/
 
@@ -910,38 +969,56 @@ theorem codeLinesE_lit0 {c : FnCtx} {af : AFunc} :
       ainstLines_lit0 (fun m hm => hn m (by subst hm; exact List.mem_cons_self)) h1,
       codeLinesE_lit0 (fun m hm => hn m (List.mem_cons_of_mem _ hm)) h2]
 
-theorem blocksLinesE_lit0 {c : FnCtx} {af : AFunc} :
-    ∀ {bs : List (Label × Array AInst)} {ps ps' : PState} {ls : List Line},
-      (∀ p ∈ bs, ∀ m, AInst.inst m ∈ p.2.toList → m.isLitLoad = false) →
-      blocksLinesE c af bs ps = .ok (ls, ps') → ls.countP Line.isLit = 0
-  | [], ps, ps', ls, _, h => by
-    simp only [blocksLinesE, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+/-- A block of `emitOrder af` is a block of `af`. -/
+theorem emitOrder_mem_blocks {af : AFunc} {q : (Label × Array AInst) × Nat}
+    (hq : q ∈ emitOrder af) : q.1 ∈ af.blocks.toList := by
+  have hz : af.blocks.toList.zipIdx.map (·.1) = af.blocks.toList := by
+    rw [List.zipIdx_eq_zip_range', List.map_fst_zip (by simp)]
+  rw [← hz]; exact List.mem_map.2 ⟨q, (emitOrder_perm af).mem_iff.mp hq, rfl⟩
+
+theorem getLast?_toList_mem {α : Type} {l : List α} {x : α} (h : x ∈ l.getLast?.toList) :
+    x ∈ l := by
+  rcases List.eq_nil_or_concat l with e | ⟨L, b, e⟩ <;> subst e <;> simp_all
+
+theorem segsOf_lit0 {c : FnCtx} {af : AFunc} :
+    ∀ {bs : List ((Label × Array AInst) × Nat)} {ps ps' : PState} {ss : List Seg},
+      (∀ p ∈ bs, ∀ m, AInst.inst m ∈ p.1.2.toList → m.isLitLoad = false) →
+      segsOf c af bs ps = .ok (ss, ps') → (segLines ss (ss.map (·.term))).countP Line.isLit = 0
+  | [], ps, ps', ss, _, h => by
+    simp only [segsOf, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
     rfl
-  | (l, code) :: bs, ps, ps', ls, hn, h => by
-    simp only [blocksLinesE] at h
+  | ((l, code), i) :: bs, ps, ps', ss, hn, h => by
+    simp only [segsOf] at h
     obtain ⟨⟨l1, ps1⟩, h1, h⟩ := exceptBind_ok h
     obtain ⟨⟨l2, ps2⟩, h2, h⟩ := exceptBind_ok h
+    obtain ⟨⟨l3, ps3⟩, h3, h⟩ := exceptBind_ok h
     simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    have e1 := codeLinesE_lit0 (fun m hm => hn _ List.mem_cons_self m hm) h1
-    have e2 := blocksLinesE_lit0 (fun p hp => hn p (List.mem_cons_of_mem _ hp)) h2
+    have e1 := codeLinesE_lit0
+      (fun m hm => hn _ List.mem_cons_self m ((List.dropLast_sublist _).subset hm)) h1
+    have e2 := codeLinesE_lit0 (fun m hm => hn _ List.mem_cons_self m (getLast?_toList_mem hm)) h2
+    have e3 := segsOf_lit0 (fun p hp => hn p (List.mem_cons_of_mem _ hp)) h3
     have hl : Line.isLit (.label (.block l)) = false := rfl
-    simp [List.countP_append, hl, e1, e2]
+    simp [segLines, List.countP_append, hl, e1, e2, e3]
 
 /-- `emitPre` of a function without literal-pool load has no literal line. -/
 theorem emitPre_lit0 {k : Nat} {af : AFunc} {pre : Array Line} (h : emitPre k af = .ok pre)
     (hn : af.NoLit) : pre.toList.countP Line.isLit = 0 := by
-  obtain ⟨body, ps, hb, rfl⟩ := emitPre_ok h
-  have h1 := blocksLinesE_lit0 hn hb
-  have h2 := ftList_lit body.length body (Nat.le_refl _)
-  have h4 : ∀ ts : List (Lbl × Clif.TrapCode),
-      (ts.flatMap fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]).countP Line.isLit = 0 := by
-    intro ts; induction ts with
-    | nil => rfl
-    | cons p ts ih => rw [List.flatMap_cons, List.countP_append, ih]; simp [Line.isLit]
-  rw [List.toList_toArray, List.countP_append, h4]
-  omega
+  cases hp : emitPlan k af with
+  | error e => simp [emitPre, hp, Functor.map, Except.map] at h
+  | ok p =>
+    simp only [emitPre, hp, Functor.map, Except.map, Except.ok.injEq] at h
+    subst h
+    obtain ⟨hseg, -⟩ := emitPlan_spec hp
+    have h1 := segsOf_lit0 (fun q hq m hm => hn q.1 (emitOrder_mem_blocks hq) m hm) hseg
+    have h4 : ∀ ts : List (Lbl × Clif.TrapCode),
+        (ts.flatMap fun p => [Line.label p.1, Line.ins (.udf 0xc11f) (some p.2)]).countP
+          Line.isLit = 0 := by
+      intro ts; induction ts with
+      | nil => rfl
+      | cons p ts ih => rw [List.flatMap_cons, List.countP_append, ih]; simp [Line.isLit]
+    rw [List.toList_toArray, Plan.lines, List.countP_append, emitPlan_isLit hp, h1, trapLines, h4]
 
 /-! ## The bound -/
 

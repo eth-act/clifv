@@ -78,8 +78,7 @@ theorem factsC : (checkAlloc vcpC rfC).isOk = true ∧ (lowerRFunc vcpC rfC).toB
     (labelOffsets (act vcpC rfC).fa.lines).toBool = true ∧
     4 * (act vcpC rfC).fb.words.size ≤ 2 ^ 64 ∧ (act vcpC rfC).af.frameSize ≤ 0x100 ∧
     4 * (act vcpC rfC).fb.words.size ≤ 0x10000 ∧
-    (blocksLinesE (act vcpC rfC).ctx (act vcpC rfC).af (act vcpC rfC).af.blocks.toList {}).toBool =
-      true := by
+    (emitPlan (act vcpC rfC).fa.k (act vcpC rfC).af).toBool = true := by
   native_decide
 
 theorem allocC : checkAlloc vcpC rfC = .ok () := by

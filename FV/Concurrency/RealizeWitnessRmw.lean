@@ -87,7 +87,7 @@ theorem cfgR : ∃ ss ps, vcR.cfg = .ok (ss, ps) := by
 theorem factsR : (lowerRFunc vcpR rfR).toBool = true ∧ (emitFunc 0 RAR.af).toBool = true ∧
     RAR.fa.k = 0 ∧ RAR.fa.layout.toBool = true ∧ (labelOffsets RAR.fa.lines).toBool = true ∧
     4 * RAR.fb.words.size ≤ 2 ^ 64 ∧ RAR.af.frameSize ≤ 0x100 ∧ 4 * RAR.fb.words.size ≤ 0x10000 ∧
-    (blocksLinesE RAR.ctx RAR.af RAR.af.blocks.toList {}).toBool = true := by
+    (emitPlan RAR.fa.k RAR.af).toBool = true := by
   native_decide
 
 theorem wfRR : RAR.Wf := by

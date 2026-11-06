@@ -25,7 +25,7 @@ theorem load_unsigned_fault_site {R : RL} (wellFormed : R.Wf) {s : Arm.ArmState}
   obtain ⟨size,flag,actualAddress⟩ := access.load_inv
   rw [size] at unmapped
   obtain ⟨j,destination,base,destinationBound,baseBound,line,pc,clean,program,uses⟩ :=
-    load_unsigned_line (sb := sb) related found located
+    load_unsigned_line (sb := sb) wellFormed related found located
   rw [uses operands valid] at actualAddress
   have range : offset % LoadOp.uload64.bytes = 0 ∧ offset ≤ 4095*LoadOp.uload64.bytes := by
     rcases sourceOffset with rfl | rfl <;> decide
@@ -59,7 +59,7 @@ theorem store_eight_fault_site {R : RL} (wellFormed : R.Wf) {s : Arm.ArmState}
   obtain ⟨value,addressUses,sourceUses,size,flag,actualAddress⟩ := access.store_inv
   rw [size] at unmapped
   obtain ⟨j,valueReg,base,valueBound,baseBound,line,pc,clean,program,uses⟩ :=
-    store_unsigned_line (sb := sb) related found located
+    store_unsigned_line (sb := sb) wellFormed related found located
   have tail : addressUses = [regVal s (.x base)] :=
     (List.cons.inj (sourceUses.symm.trans (uses operands valid))).2
   rw [tail] at actualAddress

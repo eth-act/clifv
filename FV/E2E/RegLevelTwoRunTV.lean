@@ -45,10 +45,12 @@ theorem RL.jointSegTV {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R'
     ∃ n d d', MStep R.vc (R.valueSemGS Ok) ckeep R.rf c d ∧
       MStep R'.vc (R'.valueSemGS Ok') ckeep R'.rf c' d' ∧
       MConf.ShapeEq d d' ∧
-      QWA R (iterN R.step n s) (R.nextW j ps1 T c d).1 (R.nextW j ps1 T c d).2.1
-        (R.nextW j ps1 T c d).2.2 d ∧
-      QWA R' (iterN R'.step n s') (R.nextW j ps1 T c d).1 (R.nextW j ps1 T c d).2.1
-        (R.nextW j ps1 T c d).2.2 d' ∧
+      QWA R (iterN R.step n s) (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.2 d ∧
+      QWA R' (iterN R'.step n s') (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.1
+        (R.nextW j ps1 T c d (Arm.r .PC (iterN R.step n s))).2.2 d' ∧
       (∀ i < n, (R.GoodX (iterN R.step i s) ∧ R.WReadsIn Ok (iterN R.step i s)) ∧
         (R'.GoodX (iterN R'.step i s') ∧ R'.WReadsIn Ok' (iterN R'.step i s'))) ∧
       countIn R.CallSt R.step s n = opCalls R.vc c ∧
@@ -62,11 +64,11 @@ theorem RL.jointSegTV {R R' : RL} (hR : R.Wf) (hR' : R'.Wf) (hsc : R.SameCode R'
   have hd := hsh d d' hm hm'
   obtain ⟨rfl, hL⟩ := RL.seg_lock hsc hc hd hs hs' Lk hLpc h0 fun i hi hi' hl =>
     hstep i _ _ ⟨s, j, ps1, T, d₀, n, hq, hm0, hs0, hi, rfl, hf⟩
-      ⟨s, n, hP, rfl, hi, hcnt, RL.segStart_of_qwa hq hcnt⟩
+      ⟨s, n, hP, rfl, hi, hcnt, RL.segStart_of_qwa hR hq hcnt⟩
       ⟨s', j, ps1, T, d₀', n', hq', hm0', hs0', hi', rfl, hf'⟩
       (ht i hi) (ht' i hi') hl
-  have hW := RL.nextW_shape hsc j ps1 T hc hd
-  rw [hW] at hqd'
+  have hW := RL.nextW_shape hsc j ps1 T hc hd (Arm.r .PC (iterN R'.step n s'))
+  rw [hW, ← hLpc n _ _ (hL n (Nat.le_refl n))] at hqd'
   exact ⟨n, d, d', hm, hm', hd, hqd, hqd', fun i hi => ⟨ht i hi, ht' i hi⟩, hcnt, hcnt',
     hs, hs', hL⟩
 
@@ -363,8 +365,8 @@ set_option maxHeartbeats 2000000 in
 theorem RL.twoRunPRTV {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin} {k : Nat}
     (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb)
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {XI XI' : ExtSemI} {H : ArmHooks} {K : Nat} {F F' G G' : BitVec 64 → Prop}
     {base ra ra' : BitVec 64} {Kp Kp' : Nat} {cc cc' : BitVec 64} {P P' : Nat → BitVec 64 → BitVec 8}
     {Rr Rr' : Nat → Arm.ArmState} {s t0 w₀ w₀' : Arm.ArmState}
@@ -458,7 +460,7 @@ theorem RL.twoRunPRTV {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb :
         ((prologueLines R.af.saves R.af.frameSize).length + N + R.retLen) t0) = ra' ∧
       R.RetsAt e ∧ R.RetsAt e' := by
   subst hR
-  obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨-, -, -, hk⟩ := emitFunc_ok hemit
   subst hk
   obtain ⟨ckc, ins, hc⟩ := checked_of_checkAlloc hcheck
   obtain ⟨a0, hat, hle⟩ := hc.at
@@ -468,10 +470,10 @@ theorem RL.twoRunPRTV {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb :
   exact RL.twoRunCTV (R := actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)) (t0 := t0)
     (G' := G') (XI := XI) (XI' := XI')
     (fun _ => ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
-      by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨body, hpsF⟩,
+      by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
       he.abi.program, he.gfree⟩)
     (fun _ => ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
-      by show 4 * fb.words.size ≤ 2 ^ 64; have := he'.abi.fits; omega, he'.stack, ⟨body, hpsF⟩,
+      by show 4 * fb.words.size ≤ 2 ^ 64; have := he'.abi.fits; omega, he'.stack, hpsF,
       he'.abi.program, he'.gfree⟩)
     hat ρ₀ (fun _ => Inv_mono hle Inv_entryState) he.abi he'.abi he.body he'.body OkG OkG'
     (fun n => (he.calls n).mono fun _ h => ⟨onCallPR_of he.proph he.regp h.1, h.2⟩)

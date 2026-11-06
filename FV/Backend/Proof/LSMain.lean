@@ -22,7 +22,7 @@ open Backend Backend.LinearScan Backend.Proof Backend.Proof.Spill
 
 /-- What `planOk` gives: the function view, and the plan's context passes `structOk` and builds
 the function `buildPlan` returns. -/
-theorem planOk_spec {vc : VCode} {pl : Plan} (h : planOk vc pl = true) :
+theorem planOk_spec {vc : VCode} {pl : LinearScan.Plan} (h : planOk vc pl = true) :
     ∃ fn rf, Fn.make vc = .ok fn ∧ (LinearScan.Ctx.ofPlan fn pl).structOk = true ∧
       (LinearScan.Ctx.ofPlan fn pl).build = .ok rf ∧ buildPlan vc pl = .ok rf := by
   unfold planOk at h
@@ -41,7 +41,7 @@ theorem planOk_spec {vc : VCode} {pl : Plan} (h : planOk vc pl = true) :
   · cases h
 
 /-- The hypotheses of the runs hold for the allocation of a plan that passes the validator. -/
-theorem hyps_of_planOk {vc : VCode} {fn : Fn} {pl : Plan} {rf : RFunc} {D : Nat → Nat → Bool}
+theorem hyps_of_planOk {vc : VCode} {fn : Fn} {pl : LinearScan.Plan} {rf : RFunc} {D : Nat → Nat → Bool}
     (hmk : Fn.make vc = .ok fn) (hs : (LinearScan.Ctx.ofPlan fn pl).structOk = true)
     (hb : (LinearScan.Ctx.ofPlan fn pl).build = .ok rf) (hloc : SpillLocalOk vc)
     (hav : SpillAvail vc D) : Hyps vc (LinearScan.Ctx.ofPlan fn pl) rf D := by
@@ -51,7 +51,7 @@ theorem hyps_of_planOk {vc : VCode} {fn : Fn} {pl : Plan} {rf : RFunc} {D : Nat 
     fun _ _ _ _ hi hos hok hcls h => inst_facts hf hpf hi hos hok hcls h⟩
 
 /-- **A validated plan builds an `AllocChecked` allocation** (V4b-3, #275). -/
-theorem planOk_allocChecked {vc : VCode} {pl : Plan} {D : Nat → Nat → Bool}
+theorem planOk_allocChecked {vc : VCode} {pl : LinearScan.Plan} {D : Nat → Nat → Bool}
     (h : planOk vc pl = true) (hloc : SpillLocalOk vc) (hav : SpillAvail vc D) :
     ∃ rf, buildPlan vc pl = .ok rf ∧ AllocChecked vc rf := by
   obtain ⟨fn, rf, hmk, hs, hb, hbp⟩ := planOk_spec h
@@ -60,7 +60,7 @@ theorem planOk_allocChecked {vc : VCode} {pl : Plan} {D : Nat → Nat → Bool}
 /-! ## Non-vacuity -/
 
 /-- The linear scan's plan of `step4Ex` (a `jump` passing `v5` to a block with parameter `v7`). -/
-def lsExPlan : Plan :=
+def lsExPlan : LinearScan.Plan :=
   match Fn.make step4Ex with
   | .ok fn => fn.plan (reserved 0)
   | .error _ => default

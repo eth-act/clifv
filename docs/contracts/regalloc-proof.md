@@ -273,6 +273,13 @@ Done (sorry-free, committed on `agent/m6-rest2`):
   (`emitFunc` = `blocksLinesE` + `fallthrough` + trap section), `lowerRFunc_ok` (block code =
   prologue + `itemsCode`), `blocksLinesE_block`, trap-table prefix monotonicity, `emit_block`
   (block `b` in the final lines: its label, then `ftList (lines ++ next label)`).
+  *Since #553* `fallthrough`/`ftList`/`blocksLinesE`/`nxtOf` and the lemmas about them
+  (`fallthrough_eq`, `ftList_*`, `blocksLinesE_block`, `emit_block`) are removed: the emission is
+  `emitPlan` (Cranelift's block order, `MachBuffer`'s branch simplification, checked by
+  `segsOk`/`termOk`; `docs/contracts/encoder.md`), `emitFunc_ok` now says `fa.lines` is the
+  relaxation of `p.lines` for `emitPlan k af = .ok p`, and `emit_seg` places block `b`: its
+  label, the relaxation of its segment's body and final last-instruction lines, then the
+  following segments and the traps.
 - **Machine** (`FV/E2E/RegLevelMachine.lean`): `ArmStepX X H fa` = `stepi` except `bl`/`blr`
   (callee hook `H.call`) and the relocated `adrp`/`ldr got`/`add lo12` pairs (`X.sym`); base
   from the program (`progBase`); `insnAt_line`, `armStepX_ins` (one step at a non-hooked line =
@@ -281,6 +288,11 @@ Done (sorry-free, committed on `agent/m6-rest2`):
 - **Relation** (`FV/E2E/RegLevelSim.lean`): `frameF` (frame addresses `[sp_body + intBase,
   sp_entry)`), `RL` (activation data), `StRel` (store = `locVal`, same world, no error,
   program, sp, alignment, fp/lr), `Q` (code position via `emit_block`/`ftList` + `StRel`).
+  *Since #553* `Q = Qs ∨ QE`: `Qs` places the remaining items' lines via the block's segment of
+  the plan (`segX`, checked: `SegChecked`) and the line after it; `QE` enters a block at its
+  first item or, for a forwarding block (`fwd?`: a lone `jump`) whose `b` may be removed or
+  aliased, at its successor's entry without a step. A block label's line relates to a block's
+  entry through `RepL` (`RegLevelPlan.lean`, `q_entry`/`qe_entry`).
 
 ## Remaining (precise, for the next agent)
 
@@ -302,7 +314,8 @@ Done (sorry-free, committed on `agent/m6-rest2`):
      same program); `loadExtNameGot/Near`: two hooked lines;
    * control: `jump`/`condBr`/`testBitAndBranch` via `FnAsm.layout_branch` and
      `emit_block` of the target (label = block index via `VCode.cfg`); the `fallthrough`
-     variants of the terminator (`ftStep`); `trapIf` not taken; `jtSequence` needs readable
+     variants of the terminator (`ftStep`) (since #553: `reach_jumpX`/`reach_condX` over the
+     plan's `termOk`-checked final lines); `trapIf` not taken; `jtSequence` needs readable
      code bytes (the table is loaded from memory; propose `AbiEntry.code` + code in `F`) and
      the checker/`MStep` havoc of branch defs.
 2. Prologue (from `AbiEntry` to `Q` at block 0 after `prologueLines`, `StRel` incl. `fplr`),
@@ -370,6 +383,7 @@ New (2026-09-27): `os_movFromVec`, `os_vecRRR`, `os_aluRRR_rmZ`, `checkAlloc_sou
 `[propext, Classical.choice, Quot.sound]`; `forward_op`: `[propext]`; `ftList_label_split`,
 `ftList_plain_append`: `[propext, Quot.sound]`; `iterN_execLines`: those plus M5's
 `decode_armBits_*._native.bv_decide` axioms (inherited from `FnAsm.stepi_eq_sem`).
+(`fallthrough_eq`, `emit_block`, `ftList_label_split`, `ftList_plain_append`: removed in #553.)
 
 Earlier:
 
@@ -439,7 +453,10 @@ Done (sorry-free, `FV/E2E/`):
   the block's items).
 - `RegLevelGoto`: `cfg_block` (successor labels), `ft_b`/`ft_cb` (fallthrough rewrites),
   `reach_b`/`reach_cb`, `KindRel`/`kind_alloc`/`kind_brCond(_inv)`, **`realizes_goto`**
-  (jump/condBr/testBitAndBranch incl. fallthrough-rewritten variants).
+  (jump/condBr/testBitAndBranch incl. fallthrough-rewritten variants). Since #553 `ft_b`/`ft_cb`/
+  `reach_b`/`reach_cb` are replaced by `reach_jumpX`/`reach_condX` (each final form `termOk`
+  accepts: kept, retargeted to a label representing the successor, inverted, or removed —
+  falling through to the next line, which represents it).
 - `RegLevelNext`: `q_op`/`q_next`, `realizes_island`, `realizes_trapIf_next`.
 
 Interface with M6Insts (agreed; their commit 18796fb, `RegallocCover.lean`): `MInst.isCtl`,
@@ -504,7 +521,7 @@ Done (sorry-free, branch `agent/m6-ctl2`):
   restore lr from the stack, so no per-instruction fact "the body keeps x30" is needed (M6Insts
   could not add it). Corpus/runtests: encode-check 932 identical, native filetests 3085 pass /
   0 fail (runtests).
-- `emit_block` gives block 0 at line 0.
+- `emit_block` gives block 0 at line 0 (since #553: `emit_seg`'s `b = 0 → j = 0`).
 
 Remaining (not done in this run): prologue/epilogue exec lemmas (normal forms established:
 `stp` pre-index = write fp/lr at `sp-16`, `sp -= 16`; `mov x29, sp`; `sub/add sp` imm or via

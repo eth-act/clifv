@@ -770,7 +770,8 @@ def lower128WithHi (f : Clif.Function) : Except String (Result × HiRegs) := do
     scans := driver.scans
     blockScans := driver.blockScans
     code := { name := f.name, blocks, classes := st.base.classes,
-              slotBytes, outgoing := st.base.outgoing, rulesFired := driver.rules } }, hi)
+              slotBytes, outgoing := st.base.outgoing, rulesFired := driver.rules,
+              cold := loweredCold f blocks } }, hi)
 
 /-- **The native `i128` stock lowering** (foundation scope, unverified). `Stock.lower` with
 `i128` values in register pairs; it fails on every `i128` instruction outside the foundation

@@ -380,9 +380,15 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       -- the allocated code reads the VCode's uses: the same raising callee
       have hU0 := matchRun_uses hcheck hr2 (MStep.op hvb hi hops hsz hsem2 hlen2 hho hcl hn) hvb hi
         hops
-      obtain ⟨j0, items, pre, regs, i', cA, cB, ls1, ls2, ps1, psm, ps2, T', cc', wh, ops'', hal, hit,
-        hsplit, hasg, hc1', hops'', hstat, hchk', hcode2, h1', h2', htr', hdrop, hpc, hst⟩ :=
-        q_op hq2 hvb hi
+      -- a `call` branches nowhere: `Q` is `Qs`, whatever the call's position in its block
+      obtain ⟨-, vb0, items, pre, code, -, -, -, -, -, hvb0, hit, hsplit, hchk, hcode, -, -, -, -,
+        -, hst, -, -⟩ := Q.qs_op hq2 hvb hi (i := .call info) rfl
+      rw [hvb] at hvb0; cases hvb0
+      obtain ⟨c1, -, hc1, -, -⟩ := itemsCode_cons hcode
+      obtain ⟨regs, i0, i', hal, hi0, hasg, -⟩ := itemCode_op hc1
+      rw [hi] at hi0; cases hi0
+      obtain ⟨cc', wh, i2, ops'', hi2, hops'', hstat, -⟩ := op_checked hchk
+      rw [hi] at hi2; cases hi2
       rw [hops] at hops''; cases hops''
       subst hal
       have hm' : ∀ r, r.allocatable = true → m (.reg r) = regVal u r := fun r hr =>
@@ -395,7 +401,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         exact (hgot _ _ _ _).1 hsem
       -- the raising callees' contract: the unwinder's state `t` at our call
       have hsite0 : R.vc.CallSite info := ⟨b, vb, k, hvb, .inl hi⟩
-      have hcpc := callAt_of_q hq2 hvb hi call_hcall regs i' rfl hasg
+      have hcpc := callAt_of_q hR hq2 hvb hi call_hcall regs i' rfl hasg
       have hraiseU := hU.os info (.call info) hsite0 (.inl rfl) u
         (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
         hst.gkeep cc' wh ops regs i' w1 hops hstat hasg hcpc hst.world hst.align hst.err hgg
@@ -486,6 +492,64 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
 
 /-! ## The activation of a compiled function -/
 
+/-- **`regLevelCorrect_world_atXU` without the check on the calls of the last block** (#622:
+`siteAt_any`; the call-site bridge holds for every block since #553). Non-vacuity: every premise
+is one of `regLevelCorrect_world_atXU`'s, so its witnesses apply. -/
+theorem regLevelCorrect_world_atXU_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} {cc : CheckCtx} {ins : Array (Option AState)}
+    {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0)
+    (halloc : lowerRFunc vcp rf = .ok af) (hemit : emitFunc k af = .ok fa)
+    (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks} {XR : XRaise}
+    {U : Unw.UnwHooks} {T : Unw.FnTables} {K : Nat} {G : BitVec 64 → Prop}
+    {gv : Nat → String → Prop} {base ra : BitVec 64} {s : Arm.ArmState}
+    (hent : AbiCall fb base ra s) (hres : StackAvail K af s)
+    (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a) {semU : Sem}
+    (hgot : GotSem gv X semU)
+    (hRz : ∀ lm psF (R : RLU),
+      R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
+      Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL) R.GoodXU)
+    (hrets : ∀ us uses w, semU (.rets us) uses w =
+      csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+        ⟨fa.k, af.slotBase⟩ X (.rets us) uses w)
+    (hhalt : ∀ i uses w outs w', trapCode? i ≠ none → semU i uses w = some (outs, w', .halt) →
+      csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+        ⟨fa.k, af.slotBase⟩ X i uses w = some (outs, w', .halt))
+    (hU : CalleeUnwOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
+      af G s) K G s (CallAt fa base) X XR U vcp.CallSite gv)
+    (hlsda : T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)))
+    {rows : List (Nat × Cfi)}
+    (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) {w₀ : Arm.ArmState}
+    (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
+      af G s) vcp.EntryArg af s w₀)
+    (ρsel : (Loc → CV) → Nat → CV)
+    (hsel : ∀ m₀ : Loc → CV, Inv ckeep a0 m₀ (ρsel m₀) (fun r => m₀ (.reg r))) :
+    ∃ m₀ : Loc → CV,
+    (∀ us vals w, VReturns vcp semU (ρsel m₀) w₀ us vals w →
+      ∃ n, ArmRet ra s (E2E.runX (Unw.ArmStepU X H U T fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (Unw.ArmStepU X H U T fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a →
+          (E2E.runX (Unw.ArmStepU X H U T fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (Unw.ArmStepU X H U T fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (Unw.ArmStepU X H U T fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (Unw.ArmStepU X H U T fa) n s).program = s.program) ∧
+    (∀ c, VTraps vcp semU (ρsel m₀) w₀ c →
+      ∃ n, TrapAt fb base c (E2E.runX (Unw.ArmStepU X H U T fa) n s)) ∧
+    RegLevelUnw semU XR
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+      (Unw.ArmStepU X H U T fa) vcp ra s (ρsel m₀) w₀ := by
+  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
+  subst hk
+  have hR : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩, XR, U, T⟩ : RLU).Wf :=
+    ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
+      by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩,
+      hent.program, hG⟩
+  exact regLevelCorrect_coreU hR hent hcheck hU hgot (hRz lm p.ps _ rfl hR) hrets hhalt hlsda
+    (siteAt_any hR) hrows hcie hfde hsaved hbe ρsel hsel
+
 /-- **`regLevelCorrect_world_atX` with unwinding, generic in the semantics**: the core for the
 activation of the allocated, lowered, emitted and laid-out function entered in `s`, with the
 addresses `frameWG K … G s` outside the world and the calls through the GOT `gv`. `hRz`: the
@@ -512,7 +576,7 @@ theorem regLevelCorrect_world_atXU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa :
     (hU : CalleeUnwOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
       af G s) K G s (CallAt fa base) X XR U vcp.CallSite gv)
     (hlsda : T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)))
-    (hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
+    (_hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
     (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) {w₀ : Arm.ArmState}
     (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
@@ -534,16 +598,108 @@ theorem regLevelCorrect_world_atXU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa :
       ∃ n, TrapAt fb base c (E2E.runX (Unw.ArmStepU X H U T fa) n s)) ∧
     RegLevelUnw semU XR
       (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
-      (Unw.ArmStepU X H U T fa) vcp ra s (ρsel m₀) w₀ := by
-  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
-  subst hk
-  have hR : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ : RLU).Wf :=
-    ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-      by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩,
-      hent.program, hG⟩
-  exact regLevelCorrect_coreU hR hent hcheck hU hgot (hRz lm psF _ rfl hR) hrets hhalt hlsda
-    (siteAt_of_check hR hlast) hrows hcie hfde hsaved hbe ρsel hsel
+      (Unw.ArmStepU X H U T fa) vcp ra s (ρsel m₀) w₀ :=
+  regLevelCorrect_world_atXU_any hcheck hok halloc hemit hlayout hent hres hG hgot hRz hrets hhalt
+    hU hlsda hrows hcie hfde hsaved hbe ρsel hsel
+
+/-- `regLevelCorrect_world_exU` without the check on the calls of the last block (#622;
+`regLevelCorrect_world_atXU_any`). Non-vacuity: its premises are among
+`regLevelCorrect_world_exU`'s. -/
+theorem regLevelCorrect_world_exU_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables} {K : Nat} {G : BitVec 64 → Prop}
+    {gv : Nat → String → Prop} {base ra : BitVec 64} {s : Arm.ArmState}
+    (hent : AbiCall fb base ra s) (hres : StackAvail K af s)
+    (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a) {semU : Sem}
+    (hgot : GotSem gv X semU)
+    (hRz : ∀ lm psF (R : RLU),
+      R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
+      Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL) R.GoodXU)
+    (hrets : ∀ us uses w, semU (.rets us) uses w =
+      csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+        ⟨fa.k, af.slotBase⟩ X (.rets us) uses w)
+    (hhalt : ∀ i uses w outs w', trapCode? i ≠ none → semU i uses w = some (outs, w', .halt) →
+      csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+        ⟨fa.k, af.slotBase⟩ X i uses w = some (outs, w', .halt))
+    (hU : CalleeUnwOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
+      af G s) K G s (CallAt fa base) X XR U vcp.CallSite gv)
+    (hlsda : T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)))
+    {rows : List (Nat × Cfi)}
+    (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) {w₀ : Arm.ArmState}
+    (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
+      af G s) vcp.EntryArg af s w₀) :
+    ∃ ρ₀ : Nat → CV,
+    (∀ us vals w, VReturns vcp semU ρ₀ w₀ us vals w →
+      ∃ n, ArmRet ra s (E2E.runX (Unw.ArmStepU X H U T fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (Unw.ArmStepU X H U T fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a →
+          (E2E.runX (Unw.ArmStepU X H U T fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (Unw.ArmStepU X H U T fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (Unw.ArmStepU X H U T fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (Unw.ArmStepU X H U T fa) n s).program = s.program) ∧
+    (∀ c, VTraps vcp semU ρ₀ w₀ c →
+      ∃ n, TrapAt fb base c (E2E.runX (Unw.ArmStepU X H U T fa) n s)) ∧
+    RegLevelUnw semU XR
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+      (Unw.ArmStepU X H U T fa) vcp ra s ρ₀ w₀ := by
+  obtain ⟨cc, ins, a0, hat, hok⟩ := hcheck
+  obtain ⟨_, h⟩ := regLevelCorrect_world_atXU_any hat hok halloc hemit hlayout hent hres hG hgot
+    hRz hrets hhalt hU hlsda hrows hcie hfde hsaved hbe (entryRho a0) (Inv_entryRho ckeep hok)
+  exact ⟨_, h⟩
+
+/-- `regLevelCorrect_worldU` without the check on the calls of the last block (#622;
+`regLevelCorrect_world_atXU_any`). Non-vacuity: its premises are among `regLevelCorrect_worldU`'s. -/
+theorem regLevelCorrect_worldU_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ())
+    (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables} {K : Nat} {G : BitVec 64 → Prop}
+    {gv : Nat → String → Prop} {base ra : BitVec 64} {s : Arm.ArmState}
+    (hent : AbiCall fb base ra s) (hres : StackAvail K af s)
+    (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a) {semU : Sem}
+    (hgot : GotSem gv X semU)
+    (hRz : ∀ lm psF (R : RLU),
+      R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
+      Realizes R.vc R.rf semU ckeep R.stepU (QA R.toRL) R.GoodXU)
+    (hrets : ∀ us uses w, semU (.rets us) uses w =
+      csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+        ⟨fa.k, af.slotBase⟩ X (.rets us) uses w)
+    (hhalt : ∀ i uses w outs w', trapCode? i ≠ none → semU i uses w = some (outs, w', .halt) →
+      csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+        ⟨fa.k, af.slotBase⟩ X i uses w = some (outs, w', .halt))
+    (hU : CalleeUnwOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
+      af G s) K G s (CallAt fa base) X XR U vcp.CallSite gv)
+    (hlsda : T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)))
+    {rows : List (Nat × Cfi)}
+    (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) {w₀ : Arm.ArmState}
+    (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
+      af G s) vcp.EntryArg af s w₀) (ρ₀ : Nat → CV) :
+    (∀ us vals w, VReturns vcp semU ρ₀ w₀ us vals w →
+      ∃ n, ArmRet ra s (E2E.runX (Unw.ArmStepU X H U T fa) n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x →
+          regVal (E2E.runX (Unw.ArmStepU X H U T fa) n s) p = x) ∧
+        (∀ a, ¬ (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) a →
+          (E2E.runX (Unw.ArmStepU X H U T fa) n s).mem a = w.mem a) ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX (Unw.ArmStepU X H U T fa) n s) = Arm.r f w) ∧
+        (∀ a, G a → (E2E.runX (Unw.ArmStepU X H U T fa) n s).mem a = s.mem a) ∧
+        (E2E.runX (Unw.ArmStepU X H U T fa) n s).program = s.program) ∧
+    (∀ c, VTraps vcp semU ρ₀ w₀ c →
+      ∃ n, TrapAt fb base c (E2E.runX (Unw.ArmStepU X H U T fa) n s)) ∧
+    RegLevelUnw semU XR
+      (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
+      (Unw.ArmStepU X H U T fa) vcp ra s ρ₀ w₀ := by
+  obtain ⟨cc, ins, hc⟩ := checked_of_checkAlloc hcheck
+  obtain ⟨a0, hat, hle⟩ := hc.at
+  obtain ⟨_, h⟩ := regLevelCorrect_world_atXU_any hat (entryOk_of_le hle) halloc hemit hlayout hent
+    hres hG hgot hRz hrets hhalt hU hlsda hrows hcie hfde hsaved hbe (fun _ => ρ₀)
+    (fun _ => Inv_mono hle Inv_entryState)
+  exact h
 
 /-- `regLevelCorrect_world_atXU` for an `AllocChecked` allocation, for one initial vreg file of
 the theorem's choice (`entryRho`; `regLevelCorrect_world_ex`'s counterpart). -/
@@ -567,7 +723,7 @@ theorem regLevelCorrect_world_exU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
     (hU : CalleeUnwOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
       af G s) K G s (CallAt fa base) X XR U vcp.CallSite gv)
     (hlsda : T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)))
-    (hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
+    (_hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
     (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) {w₀ : Arm.ArmState}
     (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
@@ -587,11 +743,9 @@ theorem regLevelCorrect_world_exU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
       ∃ n, TrapAt fb base c (E2E.runX (Unw.ArmStepU X H U T fa) n s)) ∧
     RegLevelUnw semU XR
       (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
-      (Unw.ArmStepU X H U T fa) vcp ra s ρ₀ w₀ := by
-  obtain ⟨cc, ins, a0, hat, hok⟩ := hcheck
-  obtain ⟨_, h⟩ := regLevelCorrect_world_atXU hat hok halloc hemit hlayout hent hres hG hgot hRz
-    hrets hhalt hU hlsda hlast hrows hcie hfde hsaved hbe (entryRho a0) (Inv_entryRho ckeep hok)
-  exact ⟨_, h⟩
+      (Unw.ArmStepU X H U T fa) vcp ra s ρ₀ w₀ :=
+  regLevelCorrect_world_exU_any hcheck halloc hemit hlayout hent hres hG hgot hRz hrets hhalt hU
+    hlsda hrows hcie hfde hsaved hbe
 
 /-- `regLevelCorrect_world_atXU` for a `checkAlloc`-accepted allocation, for every initial vreg
 file (`regLevelCorrect_world`'s counterpart). -/
@@ -616,7 +770,7 @@ theorem regLevelCorrect_worldU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnA
     (hU : CalleeUnwOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
       af G s) K G s (CallAt fa base) X XR U vcp.CallSite gv)
     (hlsda : T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)))
-    (hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
+    (_hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
     (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) {w₀ : Arm.ArmState}
     (hbe : BodyEntryW (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
@@ -635,15 +789,100 @@ theorem regLevelCorrect_worldU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnA
       ∃ n, TrapAt fb base c (E2E.runX (Unw.ArmStepU X H U T fa) n s)) ∧
     RegLevelUnw semU XR
       (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
-      (Unw.ArmStepU X H U T fa) vcp ra s ρ₀ w₀ := by
-  obtain ⟨cc, ins, hc⟩ := checked_of_checkAlloc hcheck
-  obtain ⟨a0, hat, hle⟩ := hc.at
-  obtain ⟨_, h⟩ := regLevelCorrect_world_atXU hat (entryOk_of_le hle) halloc hemit hlayout hent
-    hres hG hgot hRz hrets hhalt hU hlsda hlast hrows hcie hfde hsaved hbe (fun _ => ρ₀)
-    (fun _ => Inv_mono hle Inv_entryState)
-  exact h
+      (Unw.ArmStepU X H U T fa) vcp ra s ρ₀ w₀ :=
+  regLevelCorrect_worldU_any hcheck halloc hemit hlayout hent hres hG hgot hRz hrets hhalt hU
+    hlsda hrows hcie hfde hsaved hbe ρ₀
 
 /-! ## The per-function layer (no kept addresses, no GOT pinning) -/
+
+/-- **`regLevelCorrect_backend_exU_of` without the check on the calls of the last block** (#622;
+`regLevelCorrect_world_exU_any`). Non-vacuity: its premises are among
+`regLevelCorrect_backend_exU_of`'s. -/
+theorem regLevelCorrect_backend_exU_of_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables} {K : Nat}
+    {semOf : Arm.ArmState → Sem}
+    (hRz : ∀ base s lm psF (R : RLU),
+      R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
+        XR, U, T⟩ → R.Wf →
+      Realizes R.vc R.rf (semOf s) ckeep R.stepU (QA R.toRL)
+        R.GoodXU)
+    (hrets : ∀ s us uses w, semOf s (.rets us) uses w =
+      csem (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X (.rets us) uses w)
+    (hhalt : ∀ s i uses w outs w', trapCode? i ≠ none →
+      semOf s i uses w = some (outs, w', .halt) →
+      csem (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X i uses w = some (outs, w', .halt))
+    (hU : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    (hlsda : T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)))
+    {rows : List (Nat × Cfi)}
+    (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) :
+    RegLevelCorrectUEx semOf XR
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
+      (Unw.ArmStepU X H U T fa) vcp af fb := by
+  intro base ra s hent hres w₀ hbe
+  have e := frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
+  obtain ⟨ρ₀, h1, h2, h3⟩ := regLevelCorrect_world_exU_any (G := fun _ => False)
+    (gv := fun _ _ => False) hcheck halloc hemit hlayout hent.toCall hres (fun _ h => h.elim)
+    (gotSem_bot X _)
+    (hRz base s) (by rw [e]; exact hrets s) (by rw [e]; exact hhalt s) (by rw [e]; exact hU base s)
+    hlsda hrows hcie hfde hsaved
+    (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
+      ((ctlCheck_args (lowerRFunc_ok halloc).2.2 hvb hi).2.2 _ hv).2)
+  rw [e] at h1 h3
+  exact ⟨ρ₀, fun us vals w hret => by
+    obtain ⟨n, a1, a2, a3, -⟩ := h1 us vals w hret
+    exact ⟨n, a1, a2, a3⟩, h2, h3⟩
+
+/-- **`regLevelCorrect_backendU_of` without the check on the calls of the last block** (#622;
+`regLevelCorrect_worldU_any`). Non-vacuity: its premises are among
+`regLevelCorrect_backendU_of`'s. -/
+theorem regLevelCorrect_backendU_of_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ())
+    (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables} {K : Nat}
+    {semOf : Arm.ArmState → Sem}
+    (hRz : ∀ base s lm psF (R : RLU),
+      R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
+        XR, U, T⟩ → R.Wf →
+      Realizes R.vc R.rf (semOf s) ckeep R.stepU (QA R.toRL)
+        R.GoodXU)
+    (hrets : ∀ s us uses w, semOf s (.rets us) uses w =
+      csem (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X (.rets us) uses w)
+    (hhalt : ∀ s i uses w outs w', trapCode? i ≠ none →
+      semOf s i uses w = some (outs, w', .halt) →
+      csem (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X i uses w = some (outs, w', .halt))
+    (hU : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    (hlsda : T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)))
+    {rows : List (Nat × Cfi)}
+    (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) :
+    RegLevelCorrectU semOf XR
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
+      (Unw.ArmStepU X H U T fa) vcp af fb := by
+  intro base ra s hent hres w₀ hbe ρ₀
+  have e := frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
+  obtain ⟨h1, h2, h3⟩ := regLevelCorrect_worldU_any (G := fun _ => False)
+    (gv := fun _ _ => False) hcheck halloc hemit hlayout hent.toCall hres (fun _ h => h.elim)
+    (gotSem_bot X _)
+    (hRz base s) (by rw [e]; exact hrets s) (by rw [e]; exact hhalt s) (by rw [e]; exact hU base s)
+    hlsda hrows hcie hfde hsaved
+    (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
+      ((ctlCheck_args (lowerRFunc_ok halloc).2.2 hvb hi).2.2 _ hv).2) ρ₀
+  rw [e] at h1 h3
+  exact ⟨fun us vals w hret => by
+    obtain ⟨n, a1, a2, a3, -⟩ := h1 us vals w hret
+    exact ⟨n, a1, a2, a3⟩, h2, h3⟩
 
 /-- **`RegLevelCorrectUEx` from a realisation of any semantics** `semOf` (`csemU`, or the
 dead-cleanup value semantics with unwinding) agreeing with `csem` at the returns and traps. -/
@@ -668,25 +907,14 @@ theorem regLevelCorrect_backend_exU_of {vcp : VCode} {rf : RFunc} {af : AFunc} {
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     (hlsda : T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)))
-    (hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
+    (_hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
     (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) :
     RegLevelCorrectUEx semOf XR
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
-      (Unw.ArmStepU X H U T fa) vcp af fb := by
-  intro base ra s hent hres w₀ hbe
-  have e := frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
-  obtain ⟨ρ₀, h1, h2, h3⟩ := regLevelCorrect_world_exU (G := fun _ => False)
-    (gv := fun _ _ => False) hcheck halloc hemit hlayout hent.toCall hres (fun _ h => h.elim)
-    (gotSem_bot X _)
-    (hRz base s) (by rw [e]; exact hrets s) (by rw [e]; exact hhalt s) (by rw [e]; exact hU base s)
-    hlsda hlast hrows hcie hfde hsaved
-    (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
-      ((ctlCheck_args (lowerRFunc_ok halloc).2.2 hvb hi).2.2 _ hv).2)
-  rw [e] at h1 h3
-  exact ⟨ρ₀, fun us vals w hret => by
-    obtain ⟨n, a1, a2, a3, -⟩ := h1 us vals w hret
-    exact ⟨n, a1, a2, a3⟩, h2, h3⟩
+      (Unw.ArmStepU X H U T fa) vcp af fb :=
+  regLevelCorrect_backend_exU_of_any hcheck halloc hemit hlayout hRz hrets hhalt hU hlsda hrows
+    hcie hfde hsaved
 
 /-- **`RegLevelCorrectU` from a realisation of any semantics** (`checkAlloc`, every initial vreg
 file). -/
@@ -712,25 +940,14 @@ theorem regLevelCorrect_backendU_of {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     (hlsda : T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)))
-    (hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
+    (_hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
     (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) :
     RegLevelCorrectU semOf XR
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
-      (Unw.ArmStepU X H U T fa) vcp af fb := by
-  intro base ra s hent hres w₀ hbe ρ₀
-  have e := frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
-  obtain ⟨h1, h2, h3⟩ := regLevelCorrect_worldU (G := fun _ => False)
-    (gv := fun _ _ => False) hcheck halloc hemit hlayout hent.toCall hres (fun _ h => h.elim)
-    (gotSem_bot X _)
-    (hRz base s) (by rw [e]; exact hrets s) (by rw [e]; exact hhalt s) (by rw [e]; exact hU base s)
-    hlsda hlast hrows hcie hfde hsaved
-    (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
-      ((ctlCheck_args (lowerRFunc_ok halloc).2.2 hvb hi).2.2 _ hv).2) ρ₀
-  rw [e] at h1 h3
-  exact ⟨fun us vals w hret => by
-    obtain ⟨n, a1, a2, a3, -⟩ := h1 us vals w hret
-    exact ⟨n, a1, a2, a3⟩, h2, h3⟩
+      (Unw.ArmStepU X H U T fa) vcp af fb :=
+  regLevelCorrect_backendU_of_any hcheck halloc hemit hlayout hRz hrets hhalt hU hlsda hrows
+    hcie hfde hsaved
 
 /-! ## `csemU` -/
 
@@ -777,20 +994,51 @@ theorem lsda_cases {af : AFunc} {fa : FnAsm} {T : Unw.FnTables}
 /-- **The raising `tryCall` case of `realizes_allU` from the tables**: `realizes_tryCall_raiseU`
 when the function has an LSDA (the emitted call-site table, `callSites`); vacuous when it has
 none (no call of the function is a `try_call`, so the call-site bridge `SiteAt` excludes a
-`tryCall` item). -/
-theorem realizesTryRaise_of_tables {R : RLU} (hR : R.Wf) {semU : Sem}
+`tryCall` item). No check on the calls of the last block (#622: `siteAt_any`). -/
+theorem realizesTryRaise_of_tables_any {R : RLU} (hR : R.Wf) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU) {lsda : Option (List CallSite)}
     (hsites : callSites R.af R.fa = .ok lsda) (hlsda : R.T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : PadsNonzero R.af R.fa) (hlast : lastCallsOk R.af R.fa = true) :
+    (hpad : PadsNonzero R.af R.fa) :
     RealizesTryRaise R semU := by
   cases lsda with
   | some sites =>
     exact realizes_tryCall_raiseU hR hU hsemT hgot ⟨sites, callSites_ok hsites, hlsda⟩ hpad
-      (siteAt_of_check hR hlast)
+      (siteAt_any hR)
   | none =>
     intro s b k allocs its m w vb info ti ops c' obj w' hq _ hvb hi
-    obtain ⟨j, x, -, -, -, hmem⟩ := siteAt_of_check hR hlast s b k allocs its m w vb _ info
+    obtain ⟨j, x, -, -, -, hmem⟩ := siteAt_any hR s b k allocs its m w vb _ info
+      (some ti) hq hvb hi (.inr ⟨ti, rfl, rfl⟩)
+    have hn := callSites_none hsites
+    have : (some ti : Option TryInfo) ∈ R.af.calls := (List.of_mem_zip hmem).1
+    rw [List.any_eq_false] at hn
+    exact ((hn _ this) rfl).elim
+
+/-- `realizesTryRaise_of_tables_any` under the check `lastCallsOk` (statement kept for its
+callers; the check is not needed since #553/#622). -/
+theorem realizesTryRaise_of_tables {R : RLU} (hR : R.Wf) {semU : Sem}
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU) {lsda : Option (List CallSite)}
+    (hsites : callSites R.af R.fa = .ok lsda) (hlsda : R.T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : PadsNonzero R.af R.fa) (_hlast : lastCallsOk R.af R.fa = true) :
+    RealizesTryRaise R semU :=
+  realizesTryRaise_of_tables_any hR hU hsemT hgot hsites hlsda hpad
+
+/-- **`realizesTryRaise_of_tables_any` with the raising-call states' step facts** (trace
+`R.GoodXUF`, `realizes_tryCall_raiseUF`). -/
+theorem realizesTryRaise_of_tablesF_any {R : RLU} (hR : R.Wf) {semU : Sem}
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU) {lsda : Option (List CallSite)}
+    (hsites : callSites R.af R.fa = .ok lsda) (hlsda : R.T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : PadsNonzero R.af R.fa) :
+    RealizesTryRaiseP R semU R.GoodXUF := by
+  cases lsda with
+  | some sites =>
+    exact realizes_tryCall_raiseUF hR hU hsemT hgot ⟨sites, callSites_ok hsites, hlsda⟩ hpad
+      (siteAt_any hR)
+  | none =>
+    intro s b k allocs its m w vb info ti ops c' obj w' hq _ hvb hi
+    obtain ⟨j, x, -, -, -, hmem⟩ := siteAt_any hR s b k allocs its m w vb _ info
       (some ti) hq hvb hi (.inr ⟨ti, rfl, rfl⟩)
     have hn := callSites_none hsites
     have : (some ti : Option TryInfo) ∈ R.af.calls := (List.of_mem_zip hmem).1
@@ -798,28 +1046,41 @@ theorem realizesTryRaise_of_tables {R : RLU} (hR : R.Wf) {semU : Sem}
     exact ((hn _ this) rfl).elim
 
 /-- **`realizesTryRaise_of_tables` with the raising-call states' step facts** (trace
-`R.GoodXUF`, `realizes_tryCall_raiseUF`). -/
+`R.GoodXUF`, `realizes_tryCall_raiseUF`); statement kept, `realizesTryRaise_of_tablesF_any`. -/
 theorem realizesTryRaise_of_tablesF {R : RLU} (hR : R.Wf) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU) {lsda : Option (List CallSite)}
     (hsites : callSites R.af R.fa = .ok lsda) (hlsda : R.T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : PadsNonzero R.af R.fa) (hlast : lastCallsOk R.af R.fa = true) :
-    RealizesTryRaiseP R semU R.GoodXUF := by
-  cases lsda with
-  | some sites =>
-    exact realizes_tryCall_raiseUF hR hU hsemT hgot ⟨sites, callSites_ok hsites, hlsda⟩ hpad
-      (siteAt_of_check hR hlast)
-  | none =>
-    intro s b k allocs its m w vb info ti ops c' obj w' hq _ hvb hi
-    obtain ⟨j, x, -, -, -, hmem⟩ := siteAt_of_check hR hlast s b k allocs its m w vb _ info
-      (some ti) hq hvb hi (.inr ⟨ti, rfl, rfl⟩)
-    have hn := callSites_none hsites
-    have : (some ti : Option TryInfo) ∈ R.af.calls := (List.of_mem_zip hmem).1
-    rw [List.any_eq_false] at hn
-    exact ((hn _ this) rfl).elim
+    (hpad : PadsNonzero R.af R.fa) (_hlast : lastCallsOk R.af R.fa = true) :
+    RealizesTryRaiseP R semU R.GoodXUF :=
+  realizesTryRaise_of_tablesF_any hR hU hsemT hgot hsites hlsda hpad
+
+/-- **The realisation of `csemU` for a compiled function's activation** (no kept addresses, no
+GOT pinning): `realizes_allU` from `realizes_all` and `realizesTryRaise_of_tables_any`; no check
+on the calls of the last block (#622). Non-vacuity: its premises are among `realizes_csemU`'s. -/
+theorem realizes_csemU_any {R : RLU} (hR : R.Wf)
+    (hgv : R.gv = fun _ _ => False)
+    (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+    (hCT : R.vc.hasTryCall = true →
+      CalleeTryOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
+    (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H) (hcov : FormsCovered R.ctx R.vc)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    {lsda : Option (List CallSite)} (hsites : callSites R.af R.fa = .ok lsda)
+    (hlsda : R.T.lsda = lsda.map (List.map (·.entry))) (hpad : PadsNonzero R.af R.fa) :
+    Realizes R.vc R.rf (csemU R.F R.ctx R.X R.XR) ckeep R.stepU
+      (QA R.toRL) R.GoodXU := by
+  have hreal := realizes_all hR hC hCT hTls hcov
+  refine realizes_allU hR hU hreal (fun i uses w h => ?_) (fun info uses w r obj w' h hr => ?_)
+    (realizesTryRaise_of_tables_any hR hU (tryRaiseSem_csemU _ _ _ _)
+      (by rw [hgv]; exact gotSem_bot _ _)
+      hsites hlsda hpad)
+  · rw [csemU_noRaise h, RL.sem, hgv, csemV_bot]
+  · rw [csemU_call_raise hr] at h
+    cases h
+    rfl
 
 /-- The realisation of `csemU` for a compiled function's activation (no kept addresses, no GOT
-pinning): `realizes_allU` from `realizes_all` and `realizes_tryCall_raiseU`. -/
+pinning) under the check `lastCallsOk` (statement kept for its callers; `realizes_csemU_any`). -/
 theorem realizes_csemU {R : RLU} (hR : R.Wf)
     (hgv : R.gv = fun _ _ => False)
     (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
@@ -829,21 +1090,52 @@ theorem realizes_csemU {R : RLU} (hR : R.Wf)
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     {lsda : Option (List CallSite)} (hsites : callSites R.af R.fa = .ok lsda)
     (hlsda : R.T.lsda = lsda.map (List.map (·.entry))) (hpad : PadsNonzero R.af R.fa)
-    (hlast : lastCallsOk R.af R.fa = true) :
+    (_hlast : lastCallsOk R.af R.fa = true) :
     Realizes R.vc R.rf (csemU R.F R.ctx R.X R.XR) ckeep R.stepU
-      (QA R.toRL) R.GoodXU := by
-  have hreal := realizes_all hR hC hCT hTls hcov
-  refine realizes_allU hR hU hreal (fun i uses w h => ?_) (fun info uses w r obj w' h hr => ?_)
-    (realizesTryRaise_of_tables hR hU (tryRaiseSem_csemU _ _ _ _)
-      (by rw [hgv]; exact gotSem_bot _ _)
-      hsites hlsda hpad hlast)
-  · rw [csemU_noRaise h, RL.sem, hgv, csemV_bot]
-  · rw [csemU_call_raise hr] at h
-    cases h
-    rfl
+      (QA R.toRL) R.GoodXU :=
+  realizes_csemU_any hR hgv hC hCT hTls hcov hU hsites hlsda hpad
+
+/-- **`realizes_csemU_any` for every activation of the compiled function** (no kept addresses,
+no GOT pinning; no check on the calls of the last block, #622). Non-vacuity: its premises are
+among `realizes_csemU_backend`'s. -/
+theorem realizes_csemU_backend_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {X : ExtSem} {H : ArmHooks} {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables}
+    {K : Nat}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : vcp.hasTryCall = true → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : vcp.hasTls = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hU : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : padsNonzeroB af fa = true) :
+    ∀ base s lm psF (R : RLU),
+      R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
+        XR, U, T⟩ → R.Wf →
+      Realizes R.vc R.rf
+        (csemU (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+          ⟨fa.k, af.slotBase⟩ X XR) ckeep R.stepU
+        (QA R.toRL) R.GoodXU := by
+  intro base s lm psF R hReq hR
+  subst hReq
+  have hF : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
+      XR, U, T⟩ : RLU).F =
+      frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s :=
+    frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
+  have h := realizes_csemU_any hR rfl (by rw [hF]; exact (hC s).g _ s _ _)
+    (by rw [hF]; exact fun h => (hCT h s).g _ _ s _ _) (by rw [hF]; exact fun h => hTls h s)
+    hcov (by rw [hF]; exact hU base s) hsites hlsda (padsNonzero_of_check hpad)
+  rw [hF] at h
+  exact h
 
 /-- `realizes_csemU` for every activation of the compiled function (no kept addresses, no GOT
-pinning), from `regLevelCorrect_backend_ex`'s callee contracts and the raising callees'. -/
+pinning), from `regLevelCorrect_backend_ex`'s callee contracts and the raising callees', under the
+check `lastCallsOk` (statement kept for its callers; `realizes_csemU_backend_any`). -/
 theorem realizes_csemU_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     {X : ExtSem} {H : ArmHooks} {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables} {K : Nat}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
@@ -858,25 +1150,15 @@ theorem realizes_csemU_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnA
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true) :
+    (hpad : padsNonzeroB af fa = true) (_hlast : lastCallsOk af fa = true) :
     ∀ base s lm psF (R : RLU),
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
         XR, U, T⟩ → R.Wf →
       Realizes R.vc R.rf
         (csemU (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
           ⟨fa.k, af.slotBase⟩ X XR) ckeep R.stepU
-        (QA R.toRL) R.GoodXU := by
-  intro base s lm psF R hReq hR
-  subst hReq
-  have hF : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
-      XR, U, T⟩ : RLU).F =
-      frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s :=
-    frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
-  have h := realizes_csemU hR rfl (by rw [hF]; exact (hC s).g _ s _ _)
-    (by rw [hF]; exact fun h => (hCT h s).g _ _ s _ _) (by rw [hF]; exact fun h => hTls h s)
-    hcov (by rw [hF]; exact hU base s) hsites hlsda (padsNonzero_of_check hpad) hlast
-  rw [hF] at h
-  exact h
+        (QA R.toRL) R.GoodXU :=
+  realizes_csemU_backend_any hcov hC hCT hTls hU hsites hlsda hpad
 
 /-- `csemU` is `csem` at the returns. -/
 theorem csemU_rets {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR : XRaise}
@@ -884,14 +1166,83 @@ theorem csemU_rets {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR : XRa
     csemU F ctx X XR (.rets us) uses w = csem F ctx X (.rets us) uses w :=
   csemU_noRaise (noRaise_of_ne (fun _ h => by cases h) (fun _ _ h => by cases h) uses w)
 
+/-- **`regLevelCorrect_backend_exU` without the check on the calls of the last block** (#622:
+the call-site bridge `siteAt_any` holds for every block since #553): the machine with unwinding
+realises every return, trap and exceptional end of the prepared VCode under `csemU`, given
+`regLevelCorrect_backend_ex`'s premises, the raising callees' contract, the emitted call-site
+table, the landing pads at non-zero offsets (`padsNonzeroB`), the frame rows and `savedCheck`.
+Non-vacuity: its premises are among `regLevelCorrect_backend_exU`'s
+(`RegLevelCorrectUWitness.premises`). -/
+theorem regLevelCorrect_backend_exU_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables} {K : Nat}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : vcp.hasTryCall = true → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : vcp.hasTls = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hU : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : padsNonzeroB af fa = true)
+    {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) :
+    RegLevelCorrectUEx
+      (fun s => csemU (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X XR)
+      XR (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
+      (Unw.ArmStepU X H U T fa) vcp af fb :=
+  regLevelCorrect_backend_exU_of_any hcheck halloc hemit hlayout
+    (realizes_csemU_backend_any hcov hC hCT hTls hU hsites hlsda hpad) (fun _ => csemU_rets)
+    (fun _ _ _ _ _ _ ht h => by rwa [← csemU_trap ht]) hU (lsda_cases hsites hlsda)
+    hrows hcie hfde hsaved
+
+/-- **`regLevelCorrect_backendU` without the check on the calls of the last block** (#622; a
+`checkAlloc`-accepted allocation, every initial vreg file). Non-vacuity:
+`RegLevelCorrectUWitness.backendU_any_applies`. -/
+theorem regLevelCorrect_backendU_any {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ())
+    (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables} {K : Nat}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : vcp.hasTryCall = true → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : vcp.hasTls = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hU : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : padsNonzeroB af fa = true)
+    {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) :
+    RegLevelCorrectU
+      (fun s => csemU (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X XR)
+      XR (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
+      (Unw.ArmStepU X H U T fa) vcp af fb :=
+  regLevelCorrect_backendU_of_any hcheck halloc hemit hlayout
+    (realizes_csemU_backend_any hcov hC hCT hTls hU hsites hlsda hpad) (fun _ => csemU_rets)
+    (fun _ _ _ _ _ _ ht h => by rwa [← csemU_trap ht]) hU (lsda_cases hsites hlsda)
+    hrows hcie hfde hsaved
+
 /-- **`RegLevelCorrect` with unwinding for the backend's code** (`RegLevelCorrectUEx`, an
 `AllocChecked` allocation): for the allocated, lowered, emitted and laid-out function, the
 machine with unwinding `Unw.ArmStepU X H U T fa` realises every return, trap and exceptional end
 of the prepared VCode under `csemU`, given `regLevelCorrect_backend_ex`'s premises, the raising
 callees' contract `CalleeUnwOkG` of every activation, the emitted call-site table, the landing
-pads at non-zero offsets and the call-site bridge (`padsNonzeroB`, `lastCallsOk`), the frame rows
-the unwinder reads (`T.cie`, `T.fde` from `unwindRows`) and the frame-invariant check
-`savedCheck`. -/
+pads at non-zero offsets and the call-site bridge (`padsNonzeroB`, `lastCallsOk`; statement kept
+for its callers, `regLevelCorrect_backend_exU_any` drops `lastCallsOk`), the frame rows the
+unwinder reads (`T.cie`, `T.fde` from `unwindRows`) and the frame-invariant check `savedCheck`. -/
 theorem regLevelCorrect_backend_exU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
@@ -908,7 +1259,7 @@ theorem regLevelCorrect_backend_exU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
+    (hpad : padsNonzeroB af fa = true) (_hlast : lastCallsOk af fa = true)
     {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) :
     RegLevelCorrectUEx
@@ -916,13 +1267,12 @@ theorem regLevelCorrect_backend_exU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
         ⟨fa.k, af.slotBase⟩ X XR)
       XR (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
       (Unw.ArmStepU X H U T fa) vcp af fb :=
-  regLevelCorrect_backend_exU_of hcheck halloc hemit hlayout
-    (realizes_csemU_backend hcov hC hCT hTls hU hsites hlsda hpad hlast) (fun _ => csemU_rets)
-    (fun _ _ _ _ _ _ ht h => by rwa [← csemU_trap ht]) hU (lsda_cases hsites hlsda) hlast
-    hrows hcie hfde hsaved
+  regLevelCorrect_backend_exU_any hcheck halloc hemit hlayout hcov hC hCT hTls hU hsites hlsda
+    hpad hrows hcie hfde hsaved
 
 /-- **`RegLevelCorrectU` for the backend's code** (a `checkAlloc`-accepted allocation, every
-initial vreg file; `regLevelCorrect_backend`'s counterpart). -/
+initial vreg file; `regLevelCorrect_backend`'s counterpart); statement kept for its callers,
+`regLevelCorrect_backendU_any` drops `lastCallsOk`. -/
 theorem regLevelCorrect_backendU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ())
     (halloc : lowerRFunc vcp rf = .ok af)
@@ -940,7 +1290,7 @@ theorem regLevelCorrect_backendU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : F
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
+    (hpad : padsNonzeroB af fa = true) (_hlast : lastCallsOk af fa = true)
     {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) :
     RegLevelCorrectU
@@ -948,10 +1298,8 @@ theorem regLevelCorrect_backendU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : F
         ⟨fa.k, af.slotBase⟩ X XR)
       XR (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
       (Unw.ArmStepU X H U T fa) vcp af fb :=
-  regLevelCorrect_backendU_of hcheck halloc hemit hlayout
-    (realizes_csemU_backend hcov hC hCT hTls hU hsites hlsda hpad hlast) (fun _ => csemU_rets)
-    (fun _ _ _ _ _ _ ht h => by rwa [← csemU_trap ht]) hU (lsda_cases hsites hlsda) hlast
-    hrows hcie hfde hsaved
+  regLevelCorrect_backendU_any hcheck halloc hemit hlayout hcov hC hCT hTls hU hsites hlsda
+    hpad hrows hcie hfde hsaved
 
 /-! ## Non-vacuity -/
 
@@ -1031,6 +1379,27 @@ theorem backendU_applies {X : ExtSem} {H : ArmHooks} {K : Nat} {fb : FnBin}
   exact regLevelCorrect_backendU hca halloc hemit hlayout hcov hC
     (fun h => absurd h (by rw [hnt]; decide)) hTls hU hsites hlsda hpad hlast hrows hcie hfde
     hsaved
+
+/-- `regLevelCorrect_backendU_any` applies to the witness function (its only block, the last
+one, has a call: the case the dropped check `lastCallsOk` was about) with
+`regLevelCorrect_backend`'s premises only (its unwinding premises are `premises`, without
+`lastCallsOk`). -/
+theorem backendU_any_applies {X : ExtSem} {H : ArmHooks} {K : Nat} {fb : FnBin}
+    (hlayout : fa.layout = .ok fb) (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vc)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vc rf).intBase (RAFrame.compute vc rf).size af s) K X H vc.CallSite)
+    (hTls : vc.hasTls = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vc rf).intBase (RAFrame.compute vc rf).size af s) K X H) :
+    RegLevelCorrectU
+      (fun s => csemU (frameW K (RAFrame.compute vc rf).intBase (RAFrame.compute vc rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X XRaise.none)
+      XRaise.none (frameW K (RAFrame.compute vc rf).intBase (RAFrame.compute vc rf).size af) K
+      (Unw.ArmStepU X H Unw.UnwHooks.none T fa) vc af fb := by
+  obtain ⟨hca, halloc, hemit, -, -, -, hU, hsites, hlsda, hpad, -, hrows, hcie, hfde,
+    hsaved⟩ := premises K X
+  have hnt : vc.hasTryCall = false := by decide +kernel
+  exact regLevelCorrect_backendU_any hca halloc hemit hlayout hcov hC
+    (fun h => absurd h (by rw [hnt]; decide)) hTls hU hsites hlsda hpad hrows hcie hfde hsaved
 
 end RegLevelCorrectUWitness
 

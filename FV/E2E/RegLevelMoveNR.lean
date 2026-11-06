@@ -23,12 +23,17 @@ theorem realizes_moveNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
       ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
   by_cases hds : dst.isSave = true
   · exact ⟨0, q_save hds hq, fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  obtain ⟨j, vb, items, pre, code, ls, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
+  have hq' := Q.qs hq (fun _ h => by cases h)
+  have hne : its ≠ [] := by
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, -, -, -, hchk0, -⟩ := hq'
+    obtain ⟨c, k, a, out, -, -, hrun⟩ := hchk0
+    obtain ⟨hk, h'⟩ := runItems_move hrun
+    rintro rfl
+    exact hk (runItems_nil h').1
+  obtain ⟨j, vb, items, pre, c1, c2, ls1, X', ps1, psm, psm', ps2, x, hvb, hit, hsplit, hchk, hc1,
+    hc2, h1, h2, h3, htr, hdrop, hpc, hst, hx, hsc⟩ := qs_split hR hq' hne
   obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk hns (by simpa using hds)
-  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
   rw [itemCode_move] at hc1
-  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
   obtain ⟨hvs, -, is, s', rfl, hmi, hex, hmo⟩ := lower_move (R.frameOk hR) R.ctx hcm
     hLs hLd hT hc1 hst.world hst.sp hst.align
   obtain ⟨ls1', hcl, hlen, hins, hpl, hrun, hint, hprog, herr⟩ :=
@@ -37,15 +42,9 @@ theorem realizes_moveNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
   simp only [Except.ok.injEq, Prod.mk.injEq] at h1
   obtain ⟨rfl, rfl⟩ := h1
   -- the lines at `j`
-  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
-    intro n e
-    have hm := List.mem_of_getElem? e
-    rcases List.mem_append.1 hm with hm | hm
-    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
-    · simp only [nxtOf] at hm
-      split at hm <;> simp at hm
-  have hdrop' : R.L.drop j = ls1' ++ (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, List.append_assoc, ftR_plain_append _ _ _ hpl hZ, List.append_assoc]
+  have hdrop' : R.L.drop j = ls1' ++ (relaxLines R.far (X' ++ x.2.1) ++
+      R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+    rw [hdrop, relaxLines_plain hpl]
   have hat : ∀ k ln, ls1'[k]? = some ln → R.fa.lines.toList[j + k]? = some ln := by
     intro k ln hk
     have := congrArg (·[k]?) hdrop'
@@ -67,8 +66,8 @@ theorem realizes_moveNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
       (fun i hi => oneLine_of_moveInst R.ctx (hmi i hi)) hex hrd ls1' ps1 ps1 (hcl ps1) _).mono ?_
     rintro a ⟨o, ho, rfl⟩
     exact .inr (.inl (by rw [show spOf s = R.spB from hst.sp]; exact RL.frameRd_slot hR ho))
-  refine ⟨ls1'.length, ⟨j + ls1'.length, vb, items, pre ++ [.move src dst], c2, ls2, ps1, ps2, T, hvb,
-    hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩, fun i hi => ?_⟩
+  refine ⟨ls1'.length, qs_next hvb hit hsplit hchk' hc2 h2 h3 htr hdrop ?_ ?_ hx hsc,
+    fun i hi => ?_⟩
   rotate_right
   · exact R.goodXNR_execLines hR hat
       (fun i t h => by obtain ⟨i', t', e, hh⟩ := hins _ h; cases e; exact hh)
@@ -78,8 +77,8 @@ theorem realizes_moveNR {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.A
         cases e
         exact (oneLine_of_moveInst R.ctx (hmi _ ha)).not_tls n rd tmp rfl) (hcl ps1))
       (by rw [hst.prog]) hpc hst.err hst.sp (hint _) (hrun _) hrd i hi
-  · rw [← List.drop_drop, hdrop', List.drop_left]
-  · rw [hiter, execLines_pc (hrun ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩), hpc]
+  · rw [relaxLines_plain hpl, hiter, execLines_pc (hrun ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩),
+      hpc]
     simp only [RL.pcOf, RL.L]
     rw [lineOffset_drop_ins (by simpa [RL.L] using hdrop') hins', BitVec.add_assoc]
     congr 1

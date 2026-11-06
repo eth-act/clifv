@@ -36,8 +36,8 @@ theorem cmp_unstored {i : MInst} (hc : cmpForm i = true) : unstored i = [] := by
     simp [hn]
 
 /-- Deleting pure instructions and dead compares preserves the killed-register list exactly. -/
-theorem scan_unstored (nregs : Nat) (e : Bool) (ms : List MInst) (live : List Nat) :
-    (scan nregs e ms live).1.flatMap unstored = ms.flatMap unstored := by
+theorem scan_unstored (nregs : Nat) (ms : List MInst) (live : List Nat) :
+    (scan nregs ms live).1.flatMap unstored = ms.flatMap unstored := by
   induction ms with
   | nil => rfl
   | cons i ms ih =>
@@ -59,7 +59,7 @@ theorem clean_killedOf (vc : VCode) : killedOf (clean vc) = killedOf vc := by
   apply List.map_congr_left
   intro vb hb
   simpa [cleanBlock] using
-    scan_unstored vc.classes.size (exitDead vc vb.label) vb.insts.toList (exitLive vc 0 vb)
+    scan_unstored vc.classes.size vb.insts.toList (exitLive vc 0 vb)
 
 theorem clean_termEdgeDefs {vc : VCode} {ss ps : Array (Array Nat)}
     (hcfg : vc.cfg = .ok (ss, ps)) {b : Nat} {vb : VBlock}
@@ -137,7 +137,7 @@ theorem clean_killFree {vc : VCode} {ss ps : Array (Array Nat)}
         refine ⟨hi.1, ?_⟩
         apply List.all_eq_true.mpr
         intro i hm
-        exact List.all_eq_true.mp hi.2 i ((scan_sublist vc.classes.size (exitDead vc vb.label)
+        exact List.all_eq_true.mp hi.2 i ((scan_sublist vc.classes.size
           vb.insts.toList (exitLive vc 0 vb)).subset hm)
 
 /-- Invalid CFGs are unchanged; valid CFGs retain the same kill-free facts. -/

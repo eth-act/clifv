@@ -132,7 +132,9 @@ theorem RL.sP_withX {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
   obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
-  obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
+  obtain ⟨vb, items, code, ps1, pl, Xl, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0, hdrop,
+    -, -⟩ := entry_block hR
+  subst hpl0
   obtain ⟨s', hsteps, -⟩ :=
     prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
@@ -165,6 +167,37 @@ theorem StRel.ofWithX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = 
     show Arm.read_mem_bytes R.topN R.topB s = Arm.read_mem_bytes R.topN R.topB R.sP
     rw [← hP]; exact h.fplr hf, h.code, h.gkeep, h.fp⟩
 
+/-- `Qs` does not read the external semantics (given the state after the prologue does not). -/
+theorem Qs.withX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.sP)
+    {s : Arm.ArmState} {b : Nat} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (h : Qs R s b its m w) : Qs { R with X := X } s b its m w := by
+  obtain ⟨j, vb, items, pre, code, Xl, ps1, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,
+    h11, h12, h13⟩ := h
+  exact ⟨j, vb, items, pre, code, Xl, ps1, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,
+    h11.withX hP, h12, h13⟩
+
+theorem Qs.ofWithX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.sP)
+    {s : Arm.ArmState} {b : Nat} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (h : Qs { R with X := X } s b its m w) : Qs R s b its m w := by
+  obtain ⟨j, vb, items, pre, code, Xl, ps1, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,
+    h11, h12, h13⟩ := h
+  exact ⟨j, vb, items, pre, code, Xl, ps1, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,
+    h11.ofWithX hP, h12, h13⟩
+
+/-- `QE` does not read the external semantics (given the state after the prologue does not). -/
+theorem QE.withX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.sP)
+    {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState} :
+    ∀ {b : Nat}, QE R s m w b → QE { R with X := X } s m w b
+  | _, .std hit h => .std hit (h.withX hP)
+  | _, .fwd a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 h => .fwd a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 (QE.withX hP h)
+
+theorem QE.ofWithX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.sP)
+    {s : Arm.ArmState} {m : Loc → CV} {w : Arm.ArmState} :
+    ∀ {b : Nat}, QE { R with X := X } s m w b → QE R s m w b
+  | _, .std hit h => .std hit (h.ofWithX hP)
+  | _, .fwd a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 h =>
+    .fwd a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 (QE.ofWithX hP h)
+
 /-- **The simulation relation does not read the external semantics** (given the state after the
 prologue does not, `RL.sP_withX`). -/
 theorem RL.Q_withX (R : RL) (X : ExtSem) (hP : ({ R with X := X } : RL).sP = R.sP)
@@ -174,12 +207,12 @@ theorem RL.Q_withX (R : RL) (X : ExtSem) (hP : ({ R with X := X } : RL).sP = R.s
   | run vs =>
     obtain ⟨b, its, m, w⟩ := vs
     constructor
-    · rintro ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩
-      exact ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8, h9,
-        h10.ofWithX hP⟩
-    · rintro ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩
-      exact ⟨j, vb, items, pre, code, ls, ps1, ps2, T, h1, h2, h3, h4, h5, h6, h7, h8, h9,
-        h10.withX hP⟩
+    · rintro (h | ⟨items, hit, hits, h⟩)
+      · exact .inl (h.ofWithX hP)
+      · exact .inr ⟨items, hit, hits, h.ofWithX hP⟩
+    · rintro (h | ⟨items, hit, hits, h⟩)
+      · exact .inl (h.withX hP)
+      · exact .inr ⟨items, hit, hits, h.withX hP⟩
   | ret => exact Iff.rfl
   | halt => exact Iff.rfl
 
@@ -242,12 +275,12 @@ theorem regLevelCorrect_world_atI {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
         (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρsel m₀, (w₀, 0)⟩ c →
       ∃ n, TrapAt fb base c (E2E.runX (ArmStepX (XI.at 0) H fa) n s)) := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, hL, hk⟩ := emitFunc_ok hemit
   subst hk
-  let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XI.at n, H, psF, K, G, gv⟩
+  let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XI.at n, H, p.ps, K, G, gv⟩
   let R : RL := Rn 0
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩, hent.program, hG⟩
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_init hR hent hbe

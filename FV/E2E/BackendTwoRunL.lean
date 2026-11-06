@@ -287,13 +287,6 @@ def KJL (R : RL) (XI : ExtSemI) (t0 : Arm.ArmState) (G' F : BitVec 64 → Prop)
     MStep R.vc (({ R with s0 := t0, G := G', X := XI.at n } : RL).semGS (OkDiff F c c')) ckeep
       R.rf c' d)
 
-/-- `QW` at a run configuration gives `StRel`. -/
-theorem QW.stRel {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
-    {b : Nat} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
-    (h : QW R s j ps1 T (.run ⟨b, its, m, w⟩)) : StRel R s m w := by
-  obtain ⟨_, _, _, _, _, _, -, -, -, -, -, -, -, -, -, hst⟩ := h
-  exact hst
-
 /-- `QWA` at a run configuration gives `StRel` at some store (the machine's in a return tail). -/
 theorem QWA.stRel {R : RL} {s : Arm.ArmState} {j : Nat} {ps1 : PState} {T : List Line}
     {b : Nat} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
@@ -371,8 +364,8 @@ theorem backend_twoRunL (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa
       w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
         w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
     (htr : TrapsExplicit env p cs) (fuel : Nat)
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {H : ArmHooks} {G G' : BitVec 64 → Prop}
     {base ra ra' : BitVec 64} {Kp Kp' : Nat} {cc cc' : BitVec 64} {P P' : Nat → BitVec 64 → BitVec 8}
     {Rr Rr' : Nat → Arm.ArmState} {s t0 : Arm.ArmState}
