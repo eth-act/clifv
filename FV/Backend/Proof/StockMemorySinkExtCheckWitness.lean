@@ -1,8 +1,10 @@
 import FV.Backend.Proof.StockMemorySinkExtCheck
+import FV.Backend.MemorySinkExtNIProduction
 
 /-! Non-vacuity of the executable selector and check on Cranelift's
 `%load_uextend_i8_i32` and `%load_sextend_i16_i64` (`load-extends.clif`, default
-trapping loads), and two near-miss sources that the selector rejects. -/
+trapping loads), near-miss sources that the selector rejects, and selected sources that
+the checker rejects. -/
 namespace Backend.Stock.MemorySinkExt.Fixture
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof
 open Backend.Stock.Memory.SinkExtend
@@ -147,6 +149,22 @@ theorem checked_sink_extend_witness :
     check_of .unsigned8 .i32 unsignedSource effects_uextend,
     check_of .signed16 .i64 signedSource effects_sextend⟩
 
+/-- Activation: the provider and the production layer publish the actual Stock code of
+`%load_uextend_i8_i32`, and the production semantic check accepts it. -/
+theorem activation_witness :
+    ∃ result,Stock.lower (function .unsigned8 .i32) = .ok result ∧
+      lowerValidated (function .unsigned8 .i32) = .ok result.code ∧
+      SemanticNI.check (function .unsigned8 .i32) result.code = true ∧
+      lowerCheckedMemorySinkExtNI (function .unsigned8 .i32) true = .ok result.code := by
+  obtain ⟨result,run,checked⟩ := checked_sink_extend_witness.2.2.2.2.1
+  have selected : eligible (function .unsigned8 .i32) = true := rfl
+  have lowered : lowerValidated (function .unsigned8 .i32) = .ok result.code := by
+    simp [lowerValidated,selected,run,checked]
+  have semantic : SemanticNI.check (function .unsigned8 .i32) result.code = true := by
+    simp [SemanticNI.check,checked]
+  refine ⟨result,run,lowered,semantic,?_⟩
+  simp [lowerCheckedMemorySinkExtNI,lowered,semantic]
+
 /-- Already-extending loads and extensions of another value keep the previous provider. -/
 theorem near_misses_excluded :
     eligible {function .unsigned8 .i32 with blocks := [{block .unsigned8 .i32 with
@@ -154,5 +172,57 @@ theorem near_misses_excluded :
     eligible {function .unsigned8 .i32 with blocks := [{block .unsigned8 .i32 with
       body := [⟨[1],.load .load .i8 {} 0 0⟩,⟨[2],.extend .uextend .i32 0⟩]}]} = false := by
   exact ⟨rfl,rfl⟩
+
+/-- A nonzero offset, an `i64` load and an extension to `i128` keep the previous provider. -/
+theorem near_misses_shape :
+    eligible {function .unsigned8 .i32 with blocks := [{block .unsigned8 .i32 with
+      body := [⟨[1],.load .load .i8 {} 0 8⟩,⟨[2],.extend .uextend .i32 1⟩]}]} = false ∧
+    eligible {function .unsigned8 .i32 with blocks := [{block .unsigned8 .i32 with
+      body := [⟨[1],.load .load .i64 {} 0 0⟩,⟨[2],.extend .uextend .i128 1⟩]}]} = false ∧
+    eligible {function .unsigned8 .i32 with blocks := [{block .unsigned8 .i32 with
+      body := [⟨[1],.load .load .i32 {} 0 0⟩,⟨[2],.extend .sextend .i128 1⟩]}]} = false := by
+  exact ⟨rfl,rfl,rfl⟩
+
+/-- The filetest shape with a big-endian load. -/
+def bigEndian : Clif.Function :=
+  {function .unsigned8 .i32 with blocks := [{block .unsigned8 .i32 with
+    body := [⟨[1],.load .load .i8 {endianness := some .big} 0 0⟩,⟨[2],.extend .uextend .i32 1⟩]}]}
+
+/-- The filetest block with the pointer in the ninth parameter. -/
+def stackBlock : Clif.Block :=
+  { id := 0, params := [(0,.i64),(1,.i64),(2,.i64),(3,.i64),(4,.i64),(5,.i64),(6,.i64),(7,.i64),(8,.i64)],
+    body := [⟨[9],.load .load .i8 {} 8 0⟩,⟨[10],.extend .uextend .i32 9⟩],
+    term := .ret [10] }
+
+/-- The filetest shape with the pointer in the ninth argument, which the ABI puts on the stack. -/
+def stackPointer : Clif.Function :=
+  { name := "load_extend",
+    sig := { params := List.replicate 9 ⟨.i64,.none,.normal⟩, returns := [⟨.i32,.none,.normal⟩] },
+    blocks := [stackBlock] }
+
+section Kernel
+attribute [local semireducible] Isle.Aarch64.program Stock.lower
+private theorem big_lower : (Stock.lower bigEndian).isOk = false := by decide +kernel
+end Kernel
+
+private theorem stack_entry : Memory.registerEntry stackPointer.sig = false := by decide
+
+/-- The selector admits both sources. Stock lowering fails on the big-endian load, and
+the stack pointer is outside the register-entry ABI. The checker rejects every artifact
+of both. -/
+theorem selected_sources_rejected :
+    eligible bigEndian = true ∧ (Stock.lower bigEndian).isOk = false ∧
+      (∀ vc,check bigEndian vc = false) ∧
+    eligible stackPointer = true ∧ ∀ vc,check stackPointer vc = false := by
+  refine ⟨rfl,big_lower,?_,rfl,?_⟩
+  · intro vc
+    cases run : Stock.lower bigEndian with
+    | error message => simp only [check,run,Bool.and_false]
+    | ok result =>
+      have failed := big_lower
+      rw [run] at failed
+      cases failed
+  · intro vc
+    simp only [check,sourceOk,stack_entry,Bool.and_false,Bool.false_and]
 
 end Backend.Stock.MemorySinkExt.Fixture

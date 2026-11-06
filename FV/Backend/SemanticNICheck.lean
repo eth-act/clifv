@@ -1,3 +1,4 @@
+import FV.Backend.StockMemorySinkExtCheck
 import FV.Backend.StockMemoryCapturedCopyCheck
 import FV.Backend.Lowering.StockParameterCfg
 import FV.Backend.Lowering.StockGeneralLoopCfg7
@@ -42,6 +43,6 @@ def check (f : Clif.Function) (vc : VCode) : Bool :=
       (Stock.ConditionalCfg.check f vc && ABIReadCfg.check f.sig vc) ||
       (Stock.ConditionalCfg.rankedCheck f vc && ABIReadCfg.check f.sig vc) ||
       (Stock.ParameterCfg.check f vc && ABIReadCfg.check f.sig vc) ||
-      (Stock.GeneralLoopCfg7.check f vc && ABIReadCfg.check f.sig vc) || Stock.Memory.check f vc || Stock.MemoryCfg.check f vc || Stock.MemoryUnsigned.check f vc || Stock.MemoryExtending.check f vc || Stock.MemoryStore.check f vc || Stock.MemoryStoreCfg.check f vc || Stock.MemoryLoadStore.check f vc || Stock.MemoryCapturedCopy.check f vc)
+      (Stock.GeneralLoopCfg7.check f vc && ABIReadCfg.check f.sig vc) || Stock.Memory.check f vc || Stock.MemoryCfg.check f vc || Stock.MemoryUnsigned.check f vc || Stock.MemoryExtending.check f vc || Stock.MemoryStore.check f vc || Stock.MemoryStoreCfg.check f vc || Stock.MemoryLoadStore.check f vc || Stock.MemoryCapturedCopy.check f vc || Stock.MemorySinkExt.check f vc)
 
 end Backend.SemanticNI

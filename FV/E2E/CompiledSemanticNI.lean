@@ -1,3 +1,5 @@
+import FV.E2E.StockMemorySinkExtNI
+import FV.Backend.Proof.StockMemorySinkExtCheck
 import FV.E2E.StockMemoryCapturedCopyNI
 import FV.Backend.Proof.StockMemoryCapturedCopyCheck
 import FV.E2E.StockMemoryLoadStoreNI
@@ -112,6 +114,12 @@ inductive CompiledSemanticNI (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemanticNI f k vc vcp rf af fa fb
 
+  | memorySinkExtend {kind : Stock.Memory.ExtendedRoots.Kind} {ty : Clif.Ty}
+      {cleanup : Bool} {result : Stock.Result} :
+      Stock.Memory.SinkExtend.SinkExtClass kind ty f → result.code = vc → Stock.Memory.effectsOnly vc = true →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemanticNI f k vc vcp rf af fa fb
+
 namespace CompiledSemanticNI
 variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -145,6 +153,9 @@ theorem toSemantic (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
   | memoryCapturedCopy family equal _ h =>
     exact .memory family.domain equal h
 
+  | memorySinkExtend family equal _ h =>
+    exact .memoryExplicit family.domain equal h
+
 /-- All new semantic and paired premises come from executable checks and actual
 pipeline observations, rather than new accepted-source assumptions. (`prepared`/`prepOk` are
 about the routes' stage `Stock.Arithmetic.stageF`, formerly `Stock.Arithmetic.stage`: the routes
@@ -165,7 +176,7 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
   · exact .compatible (retained hl)
   rw [Stock.Arithmetic.stageF_of_lowerCheck_false hl] at prepared prepOk
   simp only [SemanticNI.check,Bool.or_eq_true,Bool.and_eq_true] at lower
-  rcases lower with legacy | (((((((((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg) | memoryUnsigned) | memoryExtending) | memoryStore) | memoryStoreCfg) | memoryLoadStore) | memoryCapturedCopy)
+  rcases lower with legacy | ((((((((((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg) | memoryUnsigned) | memoryExtending) | memoryStore) | memoryStoreCfg) | memoryLoadStore) | memoryCapturedCopy) | memorySinkExtend)
   · exact .compatible (retained legacy)
   · rcases Stock.Arithmetic.check_sound semantic with legacy | ⟨result,domain,run,equal,_⟩
     · exact .compatible (retained legacy)
@@ -243,6 +254,10 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
 
   · obtain ⟨result,family,run,equal,effects⟩ := Stock.MemoryCapturedCopy.check_sound memoryCapturedCopy
     exact .memoryCapturedCopy family equal effects
+      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+
+  · obtain ⟨kind,ty,result,family,run,equal,effects⟩ := Stock.MemorySinkExt.check_sound memorySinkExtend
+    exact .memorySinkExtend (kind := kind) (ty := ty) family equal effects
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
 end CompiledSemanticNI
@@ -449,5 +464,19 @@ theorem backend_correct_world_niX_semantic {p : Clif.Program} {f : Clif.Function
         (backend_correct_worldX_stock_memory family.domain h hcov hsym hslot hcs hrel hargs fuel).1 vals cm returned
       exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ positive => False.elim (tls positive)⟩
 
+  | @memorySinkExtend kind ty cleanup result family equal effects h =>
+    subst vc
+    classical
+    by_cases tls : XTls F X
+    · intro vals cm returned
+      obtain ⟨us,outs,w,pins,arity,values,memory,site,base,paired⟩ :=
+        backend_correct_world_niX_stock_sink_extend family effects h hcov hsym hslot tls hcs hrel hargs
+          fuel vals cm returned
+      exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ _ => paired⟩
+    · intro vals cm returned
+      obtain ⟨us,outs,w,pins,arity,values,memory,site,base⟩ :=
+        (backend_correct_worldX_stock_memory_explicit family.domain h hcov hsym hslot hcs hrel hargs htr fuel).1
+          vals cm returned
+      exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ positive => False.elim (tls positive)⟩
 
 end E2E

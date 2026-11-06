@@ -13,7 +13,7 @@ theorem previous_file_exact {m : Type → Type} [Monad m]
     (pf : Clif.ParsedFile) (prior : List (String × String)) (cleanup : Bool)
     (none : (pf.funcs.any fun p => p.func.toOption.any eligible) = false) :
     compileFileMemorySretCopyABIWhen enabled allocate pf prior cleanup =
-      compileFileMemoryCapturedCopyNIWhen enabled allocate pf prior cleanup := by
+      compileFileMemorySinkExtNIWhen enabled allocate pf prior cleanup := by
   cases enabled <;> simp [compileFileMemorySretCopyABIWhen,none]
 
 /-- A nonempty ordinary return input inhabits the
@@ -24,7 +24,7 @@ theorem previous_file_exact_witness :
       pf.funcs.length = 1 ∧ pf.funcs.all (·.func.isOk) = true ∧
       (pf.funcs.any fun p => p.func.toOption.any eligible) = false ∧
       compileFileMemorySretCopyABIWhen (m := Id) true (fun _ => pure #[]) pf [] true =
-        compileFileMemoryCapturedCopyNIWhen (m := Id) true (fun _ => pure #[]) pf [] true := by
+        compileFileMemorySinkExtNIWhen (m := Id) true (fun _ => pure #[]) pf [] true := by
   let f : Clif.Function := {
     name := "retained"
     sig := { params := [⟨.i64,.none,.normal⟩], returns := [⟨.i64,.none,.normal⟩] }
@@ -37,11 +37,14 @@ theorem previous_file_exact_witness :
   exact ⟨pf,count,parsed,absent,previous_file_exact true (fun _ => pure #[]) pf [] true absent⟩
 
 /-- Every previously published route keeps its original index. -/
-theorem previous_routes_exact : lowerRoutes.take 20 = MemoryCapturedCopy.lowerRoutes := by rfl
+theorem previous_routes_exact : lowerRoutes.take 21 = MemorySinkExt.lowerRoutes := by rfl
+
+/-- Routes 0–19 keep the indices they had before the sinking provider took route 20. -/
+theorem captured_routes_exact : lowerRoutes.take 20 = MemoryCapturedCopy.lowerRoutes := by rfl
 
 /-- A source outside this class retains its exact previous artifact and history. -/
 theorem previous_lower_exact {f : Clif.Function} (absent : eligible f = false) :
-    lowerValidated f = MemoryCapturedCopy.lowerValidated f := by
+    lowerValidated f = MemorySinkExt.lowerValidated f := by
   simp [lowerValidated,absent]
 
 end Backend.Stock.MemorySretCopy
