@@ -35,8 +35,9 @@ def Lbl.key : Lbl → Nat × Nat
   | .block l => (0, l)
   | .trap n => (1, n)
   | .jt n => (2, n)
-  | .loop n => (3, n)
-  | .skip => (4, 0)
+  | .const n => (3, n)
+  | .loop n => (4, n)
+  | .skip => (5, 0)
 
 theorem Lbl.compare_lex :
     (compare : Lbl → Lbl → Ordering) = compareLex (compareOn (·.key.1)) (compareOn (·.key.2)) := by
@@ -263,6 +264,7 @@ theorem relabel_used (f : Lbl → Lbl) (ln : Line) :
     rcases hx with rfl | rfl
     · exact .inr ⟨t, rfl, rfl⟩
     · exact .inl (by simp [Line.labelsUsed])
+  | data _ => simp [Line.relabel, Line.labelsUsed] at hx
   | ins i tc =>
     cases i <;> simp only [Line.relabel, Line.target?, Insn.setTarget] at hx <;>
       first
@@ -512,6 +514,7 @@ theorem machBuf_labels (allLabels : Bool) (ls : List Line) :
         cases ln with
         | label _ => simp [Line.target?] at ht
         | word a b => simp only [Line.target?, Option.some.injEq] at ht; subst ht; exact hlnU _ (by simp [Line.labelsUsed])
+        | data _ => simp [Line.target?] at ht
         | ins i tc =>
           have hrl : Line.relabel (fun _ => t) (.ins i tc) = .ins i tc := Line.relabel_self ht
           apply hlnU
