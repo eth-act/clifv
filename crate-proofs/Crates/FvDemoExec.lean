@@ -1,9 +1,9 @@
 import Crates.FvDemo
-import FV.E2E.SemanticExecProven
+import FV.E2E.ReturnPinExecProven
 
 /-! # `fv-demo`: the theorem about the executable's own words
 
-`E2E.ExecBytes.binary_correct_exec_proven` (L3) for the `fv-demo` executable of `Crates.FvDemo`:
+`E2E.ReturnPinExecBytes.binary_correct_exec_proven` (L3) for the `fv-demo` executable of `Crates.FvDemo`:
 besides that file's checks (`okB_input`, `bin_ok`), the two per-program checks of the executable
 machine, by `native_decide` on the same input and excerpts:
 
@@ -46,7 +46,7 @@ theorem binary_correct_exec (file : ByteArray) (hfile : Elf.Agrees file exAll) (
     (htr : TrapsExplicit (Clif.linkEnvN (prog compilerInput) B.env M) (prog compilerInput).bare cs) :
     ExecRefines (art compilerInput f).fb (art compilerInput f).base (xreg 30 r) (step compilerInput B file) r
       (BinCheck.RelocAtWithResults compilerInput actualResults) (Clif.runLoop B.env (prog compilerInput) (M + 1) cs) :=
-  binary_correct_exec_proven okB_input codeMap_ok (bin_ok file hfile) (gotB_sound gotB_ok hfile) B
+  ReturnPinExecBytes.binary_correct_exec_proven okB_input codeMap_ok (bin_ok file hfile) (gotB_sound gotB_ok hfile) B
     hB hH hf hc M hX ho hav hr htr
 
 end Crates.FvDemo

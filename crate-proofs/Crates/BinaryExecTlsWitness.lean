@@ -33,7 +33,7 @@ theorem tlsLoader (file : ByteArray) : TlsLoader I closedBase file (r (memOf fil
     show Arm.r .TPIDR (Arm.w .PC (Arm.r .PC s + 4) s) = _
     exact Arm.r_of_w_different (by simp)
   addr g hg rl hrl ht := by
-    have hm := tab_mem (SemanticStackBound.okB_names Crates.AArithAbort.okB_input) hg
+    have hm := tab_mem (SemanticStackBound.okB_names okB_semantic) hg
     have := List.all_eq_true.1 (List.all_eq_true.1 noTlsReloc _ hm) rl hrl
     rw [ht] at this
     exact absurd this (by decide)
@@ -53,7 +53,7 @@ theorem binary_correct_exec_proven_tls_witness :
         XHolds ⟨.i32, 5#32⟩ (xreg 0 (runX (stepT I closedBase file) k (r (memOf file)))) := by
   refine ⟨⟨_, agrees_fileOf⟩, fun file hfile => ?_⟩
   obtain ⟨hX, hoc, hcr, htr, -, -⟩ := binary_correct_exec_witness.2 file hfile
-  have h := binary_correct_exec_proven_tls Crates.AArithAbort.okB_input codeMap_ok
+  have h := binary_correct_exec_proven_tls okB_semantic codeMap_ok
     (Crates.AArithAbort.bin_ok file hfile) (gotB_sound gotB_true hfile) closedBase
     baseOk_closedLe (fun d _ _ h => hooksCall d h) facts.1 acyclic M hX hoc
     (outsideAvoids file) hcr htr (tlsLoader file)

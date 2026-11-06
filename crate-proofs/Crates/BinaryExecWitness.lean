@@ -264,7 +264,7 @@ theorem siteAt_f {file : ByteArray} (hF : ∀ g ∈ (prog I).funcs, FnOk I file 
       have hfit := (hF g hg).fits
       have hd : (art I g).base.toNat + 4 * (art I g).fb.words.size ≤ bse ∨
           bse + 20 ≤ (art I g).base.toNat :=
-        code.2.2.2.2.2.2.2.2.2.2.2.2.2.1 _ (tab_mem (SemanticStackBound.okB_names Crates.AArithAbort.okB_input) hg) hgn
+        code.2.2.2.2.2.2.2.2.2.2.2.2.2.1 _ (tab_mem (SemanticStackBound.okB_names okB_semantic) hg) hgn
       have := congrArg BitVec.toNat hpc
       rw [ha, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : lineOffset _ j < 2 ^ 64),
         Nat.mod_eq_of_lt (by omega)] at this
@@ -440,8 +440,8 @@ end Run
 
 theorem fnOk_all (file : ByteArray) (hfile : Elf.Agrees file Crates.AArithAbort.exAll) :
     ∀ g ∈ (prog I).funcs, FnOk I file g := fun _ hg =>
-  fnOk Crates.AArithAbort.okB_input (Crates.AArithAbort.bin_ok file hfile)
-    (SemanticStackBound.okB_sound (I := I) Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I)) (fun _ h => h)) hg
+  fnOk okB_semantic (Crates.AArithAbort.bin_ok file hfile)
+    (SemanticStackBound.okB_sound (I := I) okB_semantic (Crates.AArithAbort.base_closed (img I)) (fun _ h => h)) hg
 
 theorem entry_model (m : Arm.Memory) : Entry (modelOf I f (r m)) where
   prog := by simp only [modelOf, program_set_program]
@@ -477,11 +477,11 @@ theorem binary_correct_exec_witness :
   have hf := facts.1
   have hfm := (Clif.Program.func?_some hf).1
   obtain ⟨hX, hoc, -⟩ := binary_witness.2 file hfile
-  have hL := SemanticStackBound.okB_sound (I := I) Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
+  have hL := SemanticStackBound.okB_sound (I := I) okB_semantic (Crates.AArithAbort.base_closed (img I))
     (fun _ h => h)
   have htr := trapsExplicit_of_run hL hfm clifEntry rfl run_eq
   have hrun := runOk_entry (fnOk_all file hfile) (entry_model (memOf file)) closedBase M
-  have h := binary_correct_exec Crates.AArithAbort.okB_input (Crates.AArithAbort.bin_ok file hfile)
+  have h := binary_correct_exec okB_semantic (Crates.AArithAbort.bin_ok file hfile)
     closedBase (Crates.AArithAbort.base_closed _) hf acyclic M hX hoc (clifRun _) htr hrun
   rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
   obtain ⟨k, hret, hx, -⟩ := h
@@ -503,7 +503,7 @@ theorem binary_correct_exec_static_witness :
         XHolds ⟨.i32, 5#32⟩ (xreg 0 (runX (step I closedBase file) k (r (memOf file)))) := by
   refine ⟨⟨_, agrees_fileOf⟩, fun file hfile => ?_⟩
   obtain ⟨hX, hoc, hcr, htr, hrun, -⟩ := binary_correct_exec_witness.2 file hfile
-  have h := binary_correct_exec_static Crates.AArithAbort.okB_input codeMap_ok
+  have h := binary_correct_exec_static okB_semantic codeMap_ok
     (Crates.AArithAbort.bin_ok file hfile) closedBase (Crates.AArithAbort.base_closed _)
     (hooksSim_closed I) facts.1 acyclic M hX hoc hcr htr hrun.d
   rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
@@ -525,7 +525,7 @@ theorem binary_correct_exec_of_reads_witness :
   obtain ⟨hX, hoc, hcr, htr, hrun, -⟩ := binary_correct_exec_witness.2 file hfile
   have hreads : RunReadsN I closedBase file M f (modelOf I f (r (memOf file))) :=
     fun M' g t hR he => let d := hrun.d.n M' g t hR he; ⟨d.insn, d.got⟩
-  have h := binary_correct_exec_of_reads Crates.AArithAbort.okB_input codeMap_ok
+  have h := binary_correct_exec_of_reads okB_semantic codeMap_ok
     (Crates.AArithAbort.bin_ok file hfile) closedBase (Crates.AArithAbort.base_closed _)
     (hooksSim_closed I) facts.1 acyclic M hX hoc hcr htr hreads
   rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
@@ -579,7 +579,7 @@ theorem binary_correct_exec_proven_witness :
         XHolds ⟨.i32, 5#32⟩ (xreg 0 (runX (step I closedBase file) k (r (memOf file)))) := by
   refine ⟨⟨_, agrees_fileOf⟩, fun file hfile => ?_⟩
   obtain ⟨hX, hoc, hcr, htr, -, -⟩ := binary_correct_exec_witness.2 file hfile
-  have h := binary_correct_exec_proven Crates.AArithAbort.okB_input codeMap_ok
+  have h := binary_correct_exec_proven okB_semantic codeMap_ok
     (Crates.AArithAbort.bin_ok file hfile) (gotB_sound gotB_true hfile) closedBase
     (Crates.AArithAbort.base_closed _) (hooksSim_closed I) facts.1 acyclic M hX hoc
     (outsideAvoids file) hcr htr
