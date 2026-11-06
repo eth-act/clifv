@@ -282,10 +282,19 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         -- A whole-file retry replaces the previous attempt's configuration receipt.
         rejected.set #[]
         StockConfig.allocateWith c clif rejected allocNone (I128Native.replace native vcs)
-      compileFileReturnPinWhen (!pipelineT && !o.opt.isSome &&
+      -- The functions are lowered as in the default mode (validated where their theorem
+      -- applies, so the validated cleanup also skips dead code, #968, #969). The native `i128`
+      -- functions stay unvalidated: `I128Native.replace` replaces their VCode.
+      let why := "experimental stock-configured driver (outside backend_correct)"
+      let fa ← compileFileReturnPinWhen (!pipelineT && !o.opt.isSome &&
           !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
         configuredAlloc pf
-        (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))) o.deadCleanup
+        (unv128 ++ unvTry ++ native.map (fun (n, _) => (n, why))) o.deadCleanup
+      -- Every compiled function stays outside `backend_correct` in this mode: the configured
+      -- allocation and the native `i128` code are unverified.
+      pure { fa with
+        unverified := fa.funcs.map fun a => (a.name, ((unv128 ++ unvTry).lookup a.name).getD why)
+        unvalidated := [] }
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
     IO.FS.writeFile receipt
       ((StockConfig.receipt request none (some (← rejected.get).toList) o.deadCleanup).pretty ++ "\n")
