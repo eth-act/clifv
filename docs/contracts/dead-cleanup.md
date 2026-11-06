@@ -12,7 +12,9 @@ CFG, it scans each instruction array backwards and removes an instruction only
 when it has a whitelisted pure form, no clobbers, only virtual definitions, at
 least one definition, and no live definition. The whitelist (`pureForm`) includes integer
 moves/constants/address computations, non-flag-setting arithmetic and logical
-operations, multiply-add/subtract, the integer extensions (`uxtb`/`sxth`/…), and `cset` (it
+operations, multiply-add/subtract, the integer extensions (`uxtb`/`sxth`/…), the float
+constant moves (`fmov #imm`, `movi`; #967: they sit between the dead `fcmp` of
+`select_le_f32` and the `fcmp` of its `select`), and `cset` (it
 reads the flags but writes only its definition; #552: the boolean of an `icmp` that the
 `brif`/`select` rule re-compares, which Cranelift does not lower because no lowered instruction
 uses it, `machinst/lower.rs` `lower_clif_block`). Other forms remain in place.
@@ -22,7 +24,7 @@ without the extensions and `cset`).
 The scan also removes a compare (`cmp`/`cmn`/`tst` into `xzr`, or `fcmp` of two float
 registers; `cmpForm`, no definition) whose
 flags are dead (`flagsDead`): the retained instructions after it reach another compare through
-flag-free producers only (`flagFree`: `pureNoFlags` and the extensions), within the same block.
+flag-free producers only (`flagFree`: `pureForm` without `cset`), within the same block.
 This is the rest of the `icmp` above, and with it its operand extension (#552 part 2), and the
 rest of an `fcmp` whose user (`select`, `brif`, `uextend`) compares again (#967). The model
 has no FPSR (`docs/contracts/float.md`), so a dropped `fcmp` may leave FPSR's cumulative
@@ -43,9 +45,21 @@ this premise (`hcmp`/`hCmp`); the positional lemmas (`rel_kept`, `head_nonpure`,
 `nonpure_mem`, `scan_head`, `scan_positions`) gained `cmpForm i = false`: the pass removes more,
 so the old statements are false.
 
-The liveness boundary includes every block's reads and outgoing edge arguments,
-including the current block's reads. This deliberately conservative choice covers
-self-loops without requiring SSA. Operand errors preserve every classed register.
+The liveness boundary (`exitLive`) is the same at every block boundary: every outgoing edge
+argument and the reads of the code that a first round keeps, a round whose boundary is every
+read of every block (`allUses`), including the current block's. This covers self-loops without
+requiring SSA. Reads of instructions that the first round drops do not count, so the head of a
+dead chain goes too: the operand extension of a dropped compare, whose only reader is that
+compare (#968, `select-float.clif`: `uxtb; cmp; cset` of an `icmp` and `uxtb; cmp; fcsel` of
+its `select` become `uxtb; cmp; fcsel`, as in Cranelift). The proof needs only that the boundary
+is closed (`live_closed`): the scan is monotone in its boundary (`scan_mono`: a smaller boundary
+keeps a sublist and leaves the flags dead where they were dead), so what the second round keeps
+reads only registers on the boundary; a prepared block keeps that property
+(`prepare_live_boundary`). The compiler computes the boundary once per function and runs the
+scan with a hash set of live registers (`scanH`, which keeps the same code, `scanH_kept`;
+`@[csimp]` `keptUses_eq_impl`, `clean_eq_impl`): on `corpus/clif-regress/large_frame.clif`
+(9,000 statements in one block) the two rounds take about as long as the one list-based round
+did. Operand errors preserve every classed register.
 Register numbers/classes, block labels/parameters/edges, signatures and rule
 history are preserved. Instruction order within the retained subsequence is
 preserved; loads are not sunk and registers are not renumbered.
