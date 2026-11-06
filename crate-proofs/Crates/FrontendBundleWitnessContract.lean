@@ -191,9 +191,7 @@ theorem bundle_raw_peak_contract_witness :
     (args' := args') (cs := cs.ren σ.symm) (cs' := cs') buildSpec_eq compile_eq hsrc hus scd_ok hσr
     (helperEnv.ren σ.symm) helperBase (Front.Env.ren_symm_ren σ _).symm hf0r
     FrontendBundleWitnessPeak.d
-    -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
-    (by rw [hfs, show pbMax J = 0 by native_decide]; exact contract FrontendBundleWitnessPeak.stack_le)
-    (by rw [hfs]; exact view)
+    (by rw [hfs]; exact contract FrontendBundleWitnessPeak.stack_le) (by rw [hfs]; exact view)
     (pre_entry hfs clifEntry) hexp rfl (Front.Mem.ren_symm_ren σ cm).symm
     (by rw [rawLink_eq]; exact pre_bnd hP (Link.SourceWitness.srcBounded hsrc hslots
       (Clif.Program.func?_some hf).1 clifEntry cm_bounded)) hd M
@@ -286,9 +284,7 @@ theorem bundle_source_peak_contract_witness :
     (args' := args') (cs := cs.ren σ.symm) (cs' := cs') buildSpec_eq compile_eq hsrc hus hσ
     (helperEnv.ren σ.symm) helperBase (Front.Env.ren_symm_ren σ _).symm hf0
     FrontendBundleWitnessPeak.d
-    -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
-    (by rw [hfs, show pbMax J = 0 by native_decide]; exact contract FrontendBundleWitnessPeak.stack_le)
-    (by rw [hfs]; exact view)
+    (by rw [hfs]; exact contract FrontendBundleWitnessPeak.stack_le) (by rw [hfs]; exact view)
     (pre_entry hfs clifEntry) hexp rfl (Front.Mem.ren_symm_ren σ cm).symm
     (pre_bnd hP (Link.SourceWitness.srcBounded hsrc hslots (Clif.Program.func?_some hf).1
       clifEntry cm_bounded)) hd M

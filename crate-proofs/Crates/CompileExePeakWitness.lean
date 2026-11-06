@@ -178,10 +178,8 @@ theorem compileExe_peak_witness :
   have hL := okB_sound CompileExeRecWitness.okB_J (CompileExeRecWitness.base_closed (img J))
     (fun _ h => h)
   have htr := trapsExplicit_of_runD hL hfm clifEntry rfl depth run_eq
-  -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
-  have hpb : pbMax J = 0 := by native_decide
   have h := compileExe_correct_peak CompileExeRecWitness.compile_eq closedBase hB
-    (hooksSim_closed J) hf M d hX (by rw [hpb]; exact hoc) (clifRun _) depth htr
+    (hooksSim_closed J) hf M d hX hoc (clifRun _) depth htr
   rw [show Clif.runLoop closedBase.env (prog J) (M + 1) csT = runT from rfl, run_eq,
     CompileExeRecWitness.x30_r] at h
   obtain ⟨k, hret, hx, -⟩ := h

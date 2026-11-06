@@ -408,11 +408,8 @@ theorem cleanup_peak_witness :
   have hL : (LinkSys.ofInputCleanup J helperBase fun _ => True).Ok :=
     okBCleanup_sound okB_J (baseOk_helper htls hdiv hind hsigs) fun _ _ => trivial
   have htr := E2E.Binary.trapsExplicit_of_runD hL hfm clifEntry' rfl depthT runT_eq
-  -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
-  have hpb : pbMax J = 0 := by native_decide
   have h := Link.DeadCleanup.compileExe_correct_peak compile_eq helperBase hB
-    (Link.DeadCleanup.SourceWitness.hooksSim_helper J) hf F d hX (by rw [hpb]; exact hoc)
-    (clifRun _) depthT htr
+    (Link.DeadCleanup.SourceWitness.hooksSim_helper J) hf F d hX hoc (clifRun _) depthT htr
   rw [show Clif.runLoop helperBase.env (prog J) (F + 1) cs' = runT from rfl, runT_eq, x30_r] at h
   obtain ⟨k, hret, hx, -⟩ := h
   exact ⟨compile_eq, cyclic, depthT, hoc, clifRun _, htr, runT_eq, k, hret, hx 0 _ rfl,
@@ -443,14 +440,12 @@ theorem cleanup_source_peak_witness :
     rw [hp, Option.getD_some]
     exact ⟨⟨3#64, 1#64, rfl, rfl, rfl⟩, rfl, trivial⟩
   have hoc := outsideCall (memOf file) (BinCheck.roByte J spec.data) stack_le
-  -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
-  have hpb : pbMax J = 0 := by native_decide
   have h := Link.DeadCleanup.SourceWitness.compileExe_correct_source_peak_helper compile_eq hsrc
     htls hdiv hind hsigs
     (fun g hg => by
       simpa using
         List.all_eq_true.mp facts.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 g hg)
-    hf d (intact file) (by rw [hpb]; exact hoc) (clifRun _) clifEntry hexp rfl rfl cm_bounded depth M _ _ run_eq
+    hf d (intact file) hoc (clifRun _) clifEntry hexp rfl rfl cm_bounded depth M _ _ run_eq
   rw [x30_r] at h
   obtain ⟨vals', hrel, k, hret, hx, -⟩ := h
   rw [gr, Option.getD_some] at hrel

@@ -20,6 +20,17 @@ open E2E E2E.LinkCheck E2E.SemanticBinary Backend Backend.Proof
 
 abbrev I : SemanticStackBound.CompilerInput := Crates.AArithAbort.compilerInput
 
+/-- The executable passes the semantic checker (`SemanticStackBound.okB`) the theorems below
+assume. `Crates.AArithAbort` (generated) proves the return-pin checker's verdict (`okB_input`);
+this is the previous checker's, on the same input, from the same global checks and the
+per-function checks over both slices. -/
+theorem okB_semantic :
+    okRSemanticNI Crates.AArithAbort.actualStage Crates.AArithAbort.input Crates.AArithAbort.actualResults = true :=
+  SemanticChecksWith.okRProduction_of_checks Crates.AArithAbort.globalB_input (by
+    show SemanticChecksWith.fnsBProduction Crates.AArithAbort.actualLower Crates.AArithAbort.input true
+      (Crates.AArithAbort.slice0 ++ Crates.AArithAbort.slice1) = true
+    native_decide)
+
 /-- The entry's symbol. -/
 def n : String :=
   -- the merge's `__fv_<hash>_` prefix depends on the build directory: look the name up
@@ -109,7 +120,7 @@ theorem facts :
 the program's call graph is reachable from the entry. -/
 theorem acyclic : ¬ SemanticStackBound.CycleFrom (SemanticStackBound.Calls I I.results) f := by
   obtain ⟨f', hf', hc⟩ :=
-    (SemanticStackBound.goodN_iff Crates.AArithAbort.okB_input).1 facts.2.2.2.2.2.2.2.2.2.2.2.1
+    (SemanticStackBound.goodN_iff okB_semantic).1 facts.2.2.2.2.2.2.2.2.2.2.2.1
   rw [facts.1] at hf'
   cases hf'
   exact hc
@@ -218,11 +229,6 @@ theorem run_eq : run = .returned [⟨.i32, 5#32⟩] (LinkWitness.retMem run) := 
   rw [← facts.2.2.2.2.2.2.2.2.1]
   exact LinkWitness.eq_returned facts.2.2.2.2.2.2.2.1
 
-omit m in
-/-- The program has no stack probes (#581): `pbMax` is 0. -/
-theorem pbMax_zero : pbMax I = 0 := by native_decide
-
-set_option maxRecDepth 100000 in
 /-- **Non-vacuity of `binary_correct_depth`** on the `a_arith` executable (panic=abort): a
 machine state `r` in which outside code calls the executable's Lean-compiled
 `core::num::<i32>::wrapping_add` with `2` and `3` meets the boundary contract, the reference
@@ -236,16 +242,12 @@ theorem binary_depth_witness :
       XHolds ⟨.i32, 5#32⟩ (xreg 0 (runX ((sys I closedBase).mach M f) k (modelOf I f (r m)))) := by
   have hf := facts.1
   have hfm := (Clif.Program.func?_some hf).1
-  have hL := SemanticStackBound.okB_sound (I := I) Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
+  have hL := SemanticStackBound.okB_sound (I := I) okB_semantic (Crates.AArithAbort.base_closed (img I))
     (fun _ h => h)
   have htr := trapsExplicit_of_run hL hfm clifEntry rfl run_eq
   have hoc := outsideCall m (fun _ => none) facts.2.2.2.2.2.2.2.2.2.2.1
-  -- #581: the budget is `frameDrop + (D * M + pbMax)`; this program has no stack probes.
-  have hoc' : OutsideCall I (fun _ => none) f (frameDrop (art I f).af + (I.D * M + pbMax I)) (r m) args
-      cs.mem := by
-    rw [pbMax_zero, Nat.add_zero]; exact hoc
-  have h := binary_correct_depth Crates.AArithAbort.okB_input closedBase
-    (Crates.AArithAbort.base_closed _) hf M hoc' (clifRun m) htr
+  have h := binary_correct_depth okB_semantic closedBase
+    (Crates.AArithAbort.base_closed _) hf M hoc (clifRun m) htr
   rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
   obtain ⟨k, hret, hx, -⟩ := h
   exact ⟨hoc, clifRun m, run_eq, k, hret, hx 0 _ rfl⟩
@@ -288,10 +290,10 @@ theorem binary_witness :
     exact (congrArg (Option.getD · 0) hb).trans rfl
   have hoc := outsideCall (memOf file) (BinCheck.roByte I Crates.AArithAbort.dataObjs)
     facts.2.2.2.2.2.2.2.2.2.2.2.2
-  have hL := SemanticStackBound.okB_sound (I := I) Crates.AArithAbort.okB_input (Crates.AArithAbort.base_closed (img I))
+  have hL := SemanticStackBound.okB_sound (I := I) okB_semantic (Crates.AArithAbort.base_closed (img I))
     (fun _ h => h)
   have htr := trapsExplicit_of_run hL hfm clifEntry rfl run_eq
-  obtain ⟨h1, h2⟩ := binary_correct_of_checks_acyclic Crates.AArithAbort.okB_input
+  obtain ⟨h1, h2⟩ := binary_correct_of_checks_acyclic okB_semantic
     (Crates.AArithAbort.bin_ok file hfile) closedBase (Crates.AArithAbort.base_closed _) hf acyclic
     M hX hoc (clifRun _) htr
   rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h1

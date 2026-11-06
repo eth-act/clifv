@@ -458,8 +458,6 @@ theorem bundle_baseline_peak_witness :
   have hP : J.srcProg = (Front.link us sc).rename σ.fwd := srcProg_of buildSpec_eq husB hσ
   have hd := pre_depth hP depth
   have hoc := outsideCall (memOf file) (BinCheck.roByte J SB.data) stack_le
-  -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
-  have hpb : pbMax J = 0 := by native_decide
   have H := Front.bundle_correct_source_peak_baseline (r := r (memOf file)) (args := args)
     (args' := args') (cs := cs.ren σ.symm) (cs' := cs') buildSpec_eq compile_eq
     facts.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 husB hσ
@@ -468,7 +466,7 @@ theorem bundle_baseline_peak_witness :
     (fun _ => ⟨Link.SourceWitness.helperOk, Link.SourceWitness.extLegal,
       Link.SourceWitness.keepsBounded⟩)
     hsig hf0 d
-    (intact file) (by rw [hfs, hpb]; exact hoc) (by rw [hfs]; exact clifRun _)
+    (intact file) (by rw [hfs]; exact hoc) (by rw [hfs]; exact clifRun _)
     hcs0 hexp rfl (Front.Mem.ren_symm_ren σ cm).symm hbnd hd M
   have h := H.1 _ _ hrun0
   rw [hfs, hsig0, x30_r] at h

@@ -121,8 +121,24 @@ def touchesFrame (m : MInst) : Bool :=
   | .call .. | .tryCall .. | .elfTlsGetAddr .. => true
   | .load _ _ (.fpOffset _) _ | .store _ _ (.fpOffset _) _ | .loadAddr _ (.fpOffset _)
   | .load _ _ (.incomingArg _) _ | .store _ _ (.incomingArg _) _
-  | .loadAddr _ (.incomingArg _) => true
+  | .loadAddr _ (.incomingArg _) | .fpuLoad _ _ (.fpOffset _) _ | .fpuStore _ _ (.fpOffset _) _
+  | .fpuLoad _ _ (.incomingArg _) _ | .fpuStore _ _ (.incomingArg _) _ => true
   | _ => false
+
+/-- Incoming stack-argument loads from `sp`, as stock addresses them (`AMode::IncomingArg`;
+`mem_finalize` in `isa/aarch64/inst/emit.rs`: `sp` plus the setup, clobber, fixed-frame and
+outgoing areas). The lowering loads an incoming stack argument from `fp + 16 + off`
+(`fpOffset`). In the body of a function with a frame, `fp = sp + frameSize` (`prologueLines`;
+the body keeps `sp`), so `fpOffset o` addresses `sp + frameSize + o`. Stock's other
+`FPOffset` (`get_return_address`, offset 8) stays. -/
+def argLoadsFromSp (af : AFunc) : AFunc :=
+  let fromSp : AMode → AMode
+    | .fpOffset o => if o ≥ 16 then .spOffset (af.frameSize + o) else .fpOffset o
+    | m => m
+  { af with blocks := af.blocks.map fun (l, code) => (l, code.map fun
+      | .inst (.load op r m fl) => .inst (.load op r (fromSp m) fl)
+      | .inst (.fpuLoad sz r m fl) => .inst (.fpuLoad sz r (fromSp m) fl)
+      | a => a) }
 
 def frameRequired (af : AFunc) : Bool :=
   af.frameSize != 0 || af.slotBase != 0 || af.blocks.any fun (_, code) =>
@@ -170,7 +186,7 @@ def configure (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
   -- `get_return_address` (`isa/aarch64/inst.isle:4577`).
   if c.signReturnAddress && (frame || c.signReturnAddressAll) then
     throw "sign_return_address=true signs this function's return address; Lean does not implement pointer authentication"
-  pure { af with frame }
+  pure (if frame then argLoadsFromSp { af with frame } else { af with frame })
 
 /-- The start of the `unsupported` reason of a function that `configure` rejects. -/
 def rejectionPrefix : String := "stock configuration unsupported for this function: "
