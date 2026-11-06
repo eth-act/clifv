@@ -1121,7 +1121,10 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
     (e.g. `Clif.Ty`) merges, the author tells the integrator, who starts a main-gate run right away.
     The loop is `scripts/main-gate.sh loop <worktree>` (one run on a checkout: `scripts/main-gate.sh run
     <logdir>`, e.g. a bisection probe); its results and logs live in `/home/kev/work/clifv-main-gate`,
-    outside `/tmp`, so a reboot does not lose them.
+    outside `/tmp`, so a reboot does not lose them. A run whose `lake build` of the executables or
+    cargo build of the Rust tools fails skips the native `compare.sh` lines (they would test stale
+    binaries) and is red at the build; on exit, including SIGTERM, a run stops the memcap scopes it
+    started, and those scopes never hold the heavy lock (`flock -o`).
   - *Full gate in CI (`.github/workflows/full-gate.yml`; post-merge only, never a required check):*
     every push to `main` (one run at a time, the newest pending push waits), weekly from scratch, and
     on demand (`workflow_dispatch`, input `fresh`). `scripts/ci-build-plan.py` plans the modules whose
