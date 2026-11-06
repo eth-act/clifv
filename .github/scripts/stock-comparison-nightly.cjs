@@ -45,6 +45,9 @@ function checkedRun(run, workflow = WORKFLOW) {
       !/^[0-9a-f]{40}$/.test(run.head_sha) || !Number.isSafeInteger(run.id) ||
       !Number.isSafeInteger(run.run_attempt)) throw new Error('Unexpected source run');
   if (workflow === WORKFLOW && run.event !== 'push') throw new Error('Not a main push measurement');
+  if (workflow === GATE && !['push', 'schedule', 'workflow_dispatch'].includes(run.event)) {
+    throw new Error('Not a trusted main full-gate run');
+  }
   return run;
 }
 
@@ -153,7 +156,9 @@ function difference(before, after) {
 }
 
 // `cargo fv` localises a function as `__fv_<cgu>_<name>`; the CGU hash is not a stable identity.
-function crateName(fn) { return fn.replace(/^__fv_[0-9a-f]+_/, ''); }
+// Neither is a v0 crate disambiguator (`Cs<base62>_` before the crate name's length), which a
+// toolchain or `Cargo.lock` change renews for every function of the crate.
+function crateName(fn) { return fn.replace(/^__fv_[0-9a-f]+_/, '').replace(/Cs[0-9A-Za-z]*_(?=[1-9])/g, 'C'); }
 
 // One full-gate run's `scripts/stock-crate-parity.py --json` rows per crate, kept as counts per
 // function name, so that the CGU split and the order of repeated names do not decide a match.
@@ -211,8 +216,17 @@ function validateCrate(data) {
 }
 
 // Lost: a name with fewer identical copies than before, including one Lean no longer compiles.
+// When most names of a crate changed (a toolchain or dependency update renames them), the two
+// measurements are not compared name by name, as a changed reference is not on the filetest side.
 function crateDifference(before, after) {
-  const result = { gained: 0, lost: [], added: 0, removed: 0 };
+  const result = { comparable: true, gained: 0, lost: [], added: 0, removed: 0 };
+  for (const example of CRATES) {
+    const names = new Set(before.entries.filter(e => JSON.parse(e[0])[0] === example).map(e => e[0]));
+    const kept = after.entries.filter(e => JSON.parse(e[0])[0] === example && names.has(e[0])).length;
+    const counted = after.entries.filter(e => JSON.parse(e[0])[0] === example).length;
+    if (2 * kept < Math.max(names.size, counted)) result.comparable = false;
+  }
+  if (!result.comparable) return result;
   const old = new Map(before.entries.map(([key, identical, functions]) => [key, { identical, functions }]));
   for (const [key, identical, functions] of after.entries) {
     const previous = old.get(key);
@@ -247,25 +261,28 @@ async function crateReport({ github, repo, now, baseline, loadCrate }) {
   const completed = runs.filter(r => r.status === 'completed' && Date.parse(r.updated_at) <= now.getTime())
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id).slice(0, CRATE_RUNS);
   const problems = [];
+  const passedOver = [];
   let latest = null;
   for (const run of completed) {
     checkedRun(run, GATE);
-    const examples = {};
+    // A crate artifact never stops the filetest digest: any error is named and the next older run read.
     try {
+      const examples = {};
       for (const example of CRATES) {
         examples[example] = loadCrate ? await loadCrate(run, example) :
           await artifact(github, repo, run, `crate-parity-${example}-${run.run_attempt}`, 'crate');
       }
+      latest = crateSnapshot(examples, run);
+      break;
     } catch (error) {
-      if (!error.message.startsWith('Missing or expired artifact:')) throw error;
-      continue;
-    }
-    try { latest = crateSnapshot(examples, run); break; } catch (error) {
-      problems.push({ sha: run.head_sha, url: runUrl(repo, run), problem: error.message });
+      if (String(error?.message).startsWith('Missing or expired artifact:')) {
+        passedOver.push({ sha: run.head_sha, url: runUrl(repo, run) });
+      } else problems.push({ sha: run.head_sha, url: runUrl(repo, run), problem: String(error?.message ?? error) });
     }
   }
   const plan = { previous: crateSummary(repo, baseline), latest: crateSummary(repo, baseline), fresh: false,
-    delta: null, range: null, problems };
+    delta: null, range: null, problems, passedOver: passedOver.length ?
+      { count: passedOver.length, newest: passedOver[0] } : null };
   if (!latest || baseline && latest.run.id === baseline.run.id && latest.run.run_attempt === baseline.run.run_attempt) {
     return { plan, saved: baseline };
   }
@@ -440,7 +457,13 @@ function crateSection(crate) {
       body += `| ${example} | ${fraction(t.identical, t.functions)} | ${change} |\n`;
       parts.push(`${example} ${t.identical}/${t.functions}` + (o ? ` (${signed(t.identical - o.identical)})` : ''));
     }
-    compact = ` Crates: ${parts.join(', ')} at ${crate.latest.sha.slice(0, 12)}.`;
+    // Quiet days add nothing to the compacted history.
+    if (crate.fresh) compact = ` Crates: ${parts.join(', ')} at ${crate.latest.sha.slice(0, 12)}.`;
+    if (crate.delta && !crate.delta.comparable) {
+      body += '\nMost function names changed between the two measurements (a toolchain or dependency ' +
+        'update?), so they are not compared function by function.\n';
+      compact += ' Crate function names changed: not compared by function.';
+    }
     const lost = crate.delta?.lost ?? [];
     if (lost.length) {
       const total = lost.reduce((sum, [, count]) => sum + count, 0);
@@ -455,6 +478,10 @@ function crateSection(crate) {
       compact += ` Lost crate matches${crate.range?.url ? ` (${crate.range.url}${authors})` : ''}: ` +
         `${lost.slice(0, 30).map(name).join('; ')}${lost.length > 30 ? `; and ${lost.length - 30} more` : ''}.`;
     }
+  }
+  if (crate.passedOver) {
+    body += `\n${crate.passedOver.count} newer full-gate run(s) had no crate artifacts ` +
+      `(newest: [${sha(crate.passedOver.newest.sha)}](${crate.passedOver.newest.url})).\n`;
   }
   if (crate.problems?.length) {
     body += `\nCrate parity not read: ${crate.problems.map(p => `[${sha(p.sha)}](${p.url}) (${text(p.problem)})`).join(', ')}.\n`;

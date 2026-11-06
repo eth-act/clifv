@@ -501,9 +501,12 @@ jobs:
       - name: Crate parity
         if: ${{ !cancelled() }}
         continue-on-error: true
+        # a step timeout fails only this step; the job's 240 minutes stay for the gate line
+        timeout-minutes: 60
         env:
           EX: ${{ matrix.example }}
         run: |
+          set -o pipefail
           mkdir -p gate-logs crate-parity
           (cd "examples/$EX" && PATH="$GITHUB_WORKSPACE/rust/target/release:$PATH" FV_ROOT="$GITHUB_WORKSPACE" \
             CARGO_TARGET_DIR="$RUNNER_TEMP/crate-parity" cargo fv test --keep-temps --no-run) \
