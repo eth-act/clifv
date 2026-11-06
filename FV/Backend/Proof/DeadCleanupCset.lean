@@ -3,7 +3,8 @@ import FV.Backend.Proof.DeadCleanupSem
 /-! Witnesses for #552: the cleanup removes a `cset` whose def is dead (the boolean of an
 `icmp` that the `brif` rule re-compares; Cranelift does not lower it, `machinst/lower.rs`
 `lower_clif_block`), keeps a live one, and removes the first of two compares once nothing
-reads its flags before the second overwrites them. -/
+reads its flags before the second overwrites them, for integer and float (`fcmp`, #967)
+compares. -/
 
 namespace Backend.DeadCleanup
 open Backend.Proof
@@ -83,5 +84,34 @@ example : ∃ vc : VCode, (clean vc).blocks[0]!.insts.toList = [cmp01, .jump 1] 
   decide +kernel
 
 example : JumpPlain (mspec 0) := mspec_jumpPlain 0
+
+private def fcmp00 : MInst := .fpuCmp .size32 (.vreg 0 .float) (.vreg 0 .float)
+private def fcmp01 : MInst := .fpuCmp .size64 (.vreg 0 .float) (.vreg 1 .float)
+
+/-- The float compare (#967): `fcmp` is a compare form, and its specification writes only the
+flags (`fcmpFlags`), so the compare-overwrite premise covers it. -/
+example : cmpForm fcmp00 = true ∧ cmpForm fcmp01 = true := ⟨rfl, rfl⟩
+
+example (w : Arm.ArmState) : ∃ w', mspec 0 fcmp01 [0#128, 0#128] w = some ([], w', .next) :=
+  ⟨_, rfl⟩
+
+/-- The `fcmp` + `select`/`brif` shape of an `*_is_nan_*` test (`fcmp s0, s0`): the first
+float compare and its dead `cset` go, the second float compare and its live reader stay. -/
+example : (scan 4 [fcmp00, deadCset, fcmp00, liveCset, retCset] []).1 =
+    [fcmp00, liveCset, retCset] := by decide
+
+/-- A float compare whose flags a `cset` reads is kept; an integer compare whose flags a float
+compare overwrites goes. -/
+example : (scan 4 [fcmp01, liveCset, cmp01, retCset] []).1 =
+    [fcmp01, liveCset, cmp01, retCset] := by decide
+
+example : (scan 4 [cmp01, fcmp01, liveCset, retCset] []).1 = [fcmp01, liveCset, retCset] := by
+  decide
+
+/-- The whole pass on a one-block function with float registers drops the dead `fcmp`. -/
+example : ∃ vc : VCode, vc.blocks.size = 1 ∧
+    (prune vc).blocks[0]!.insts.toList = [fcmp00, liveCset, retCset] := by
+  refine ⟨⟨"fcmp_witness", #[⟨0, #[fcmp00, deadCset, fcmp00, liveCset, retCset], #[], #[]⟩],
+    #[.float, .int, .int, .int], 0, 0, #[], #[]⟩, ?_, ?_⟩ <;> decide +kernel
 
 end Backend.DeadCleanup

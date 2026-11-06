@@ -30,6 +30,9 @@ theorem cmpForm_mapRegs {g : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming g g
   | aluRRImmLogic op sz rd rn imm =>
     cases rd <;> cases rn <;> simp only [MInst.mapRegs, hg.vreg, hx, hz, hs, hv] <;>
       cases op <;> rfl
+  | fpuCmp sz rn rm =>
+    rcases rn with ⟨_, _ | _⟩ | _ | _ | _ | _ <;> rcases rm with ⟨_, _ | _⟩ | _ | _ | _ | _ <;>
+      simp only [MInst.mapRegs, hg.vreg, hx, hz, hs, hv] <;> rfl
   | _ => rfl
 
 theorem specForm_mapRegs {g : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming g gn) (i : MInst) :

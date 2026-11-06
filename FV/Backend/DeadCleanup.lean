@@ -73,15 +73,16 @@ def discard (m : MInst) (live : List Nat) : Bool :=
   pureForm m && m.clobbers.isEmpty && m.defs.all Reg.isVirtual &&
     !(defs m).isEmpty && (defs m).all (fun n => !live.contains n)
 
-/-- Cranelift's compares (`cmp`/`cmn`/`tst`: `subs`/`adds`/`ands` into `xzr`) in the forms
-`ispec` specifies: they write all four NZCV flags from their register uses only, read no
-flags and define no register. -/
+/-- Cranelift's compares (`cmp`/`cmn`/`tst`: `subs`/`adds`/`ands` into `xzr`; the float
+compare `fcmp` of two float vregs) in the forms `ispec` specifies: they write all four NZCV
+flags from their register uses only, read no flags and define no register. -/
 def cmpForm : MInst → Bool
   | .aluRRR .subS _ .xzr (.vreg ..) _ => true
   | .aluRRImm12 .subS _ .xzr (.vreg ..) _ => true
   | .aluRRImm12 .addS _ .xzr (.vreg ..) _ => true
   | .aluRRRExtend .subS _ .xzr (.vreg ..) (.vreg ..) _ => true
   | .aluRRImmLogic .andS _ .xzr (.vreg ..) _ => true
+  | .fpuCmp _ (.vreg _ .float) (.vreg _ .float) => true
   | _ => false
 
 @[simp] def isJump : MInst → Bool
@@ -96,10 +97,11 @@ across a `jump` to a block that compares first never changed generated code and 
   | [] => false
   | k :: ks => cmpForm k || (flagFree k && flagsDead ks)
 
-/-- A compare whose flags are dead: what is left of an `icmp` whose user (`brif`, `select`)
-compares again once its dead `cset` is gone (#552). Cranelift never lowers that `icmp`: no
-lowered instruction uses its result (`machinst/lower.rs`, `lower_clif_block`), and its
-users' rules look through it to its operands (`isa/aarch64/lower.isle`). -/
+/-- A compare whose flags are dead: what is left of an `icmp` or `fcmp` whose user (`brif`,
+`select`, `uextend`) compares again once its dead `cset` is gone (#552, #967). Cranelift never
+lowers that compare: no lowered instruction uses its result (`machinst/lower.rs`,
+`lower_clif_block`), and its users' rules look through it to its operands
+(`isa/aarch64/lower.isle`). -/
 @[simp] def dropCmp (m : MInst) (kept : List MInst) : Bool :=
   cmpForm m && (defs m).isEmpty && flagsDead kept
 
