@@ -55,11 +55,14 @@ its `select` become `uxtb; cmp; fcsel`, as in Cranelift). The proof needs only t
 is closed (`live_closed`): the scan is monotone in its boundary (`scan_mono`: a smaller boundary
 keeps a sublist and leaves the flags dead where they were dead), so what the second round keeps
 reads only registers on the boundary; a prepared block keeps that property
-(`prepare_live_boundary`). The compiler computes the boundary once per function and runs the
-scan with a hash set of live registers (`scanH`, which keeps the same code, `scanH_kept`;
-`@[csimp]` `keptUses_eq_impl`, `clean_eq_impl`): on `corpus/clif-regress/large_frame.clif`
-(9,000 statements in one block) the two rounds take about as long as the one list-based round
-did. Operand errors preserve every classed register.
+(`prepare_live_boundary`). The compiler runs both rounds with a hash set of live registers
+(`scanH`, which keeps the same code, `scanH_kept`): the first round through `keptUses`
+(`@[csimp]` `keptUses_eq_impl`, registered before `exitLive`, whose generated code calls
+`keptUsesImpl`), the second through `clean` (`@[csimp]` `clean_eq_impl`, which computes the
+boundary once per function). No executed path of `lean-backend` calls the list-based `scan`,
+`keptUses`, `clean` or `cleanBlock`. On `corpus/clif-regress/large_frame.clif` (9,000 statements
+in one block), `lean-backend` takes 53 s, against 129 s with the single list-based round
+(same object file; the three binaries run side by side). Operand errors preserve every classed register.
 Register numbers/classes, block labels/parameters/edges, signatures and rule
 history are preserved. Instruction order within the retained subsequence is
 preserved; loads are not sunk and registers are not renumbered.

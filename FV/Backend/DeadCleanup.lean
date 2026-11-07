@@ -132,27 +132,14 @@ def keptUses (vc : VCode) (L : List Nat) : List Nat :=
     regNums b.branchArgs.toList ++
       (scan vc.classes.size b.insts.toList L).1.flatMap (uses vc.classes.size)
 
-/-- The registers live at every block boundary: the reads of the code that a first round, with
-every read live (`allUses`), keeps. A read of an instruction the first round drops does not
-count, so the head of a dead chain goes too: the operand extension of a dropped compare, whose
-only reader is that compare (#968; Cranelift lowers neither). The same set holds at every
-boundary, including the current block's (self-loops). -/
-def exitLive (vc : VCode) (_idx : Nat) (_b : VBlock) : List Nat :=
-  keptUses vc (allUses vc)
-
-def cleanBlock (vc : VCode) (idx : Nat) (b : VBlock) : VBlock :=
-  { b with insts :=
-      (scan vc.classes.size b.insts.toList (exitLive vc idx b)).1.toArray }
-
-def clean (vc : VCode) : VCode :=
-  { vc with blocks := vc.blocks.mapIdx (cleanBlock vc) }
-
-/-! ## The pass as the compiler runs it
+/-! ## The scan as the compiler runs it
 
 `scan` keeps its live set as a list: a block of `n` instructions costs `n²` list operations, and
-the boundary takes a second round (#968). The compiler runs the same scan with a hash set
-(`scanH`), which keeps the same code (`scanH_kept`), and computes the boundary once per function
-(`keptUses_eq_impl`, `clean_eq_impl`, `@[csimp]`). -/
+the boundary takes a second round (#968). The compiler runs both rounds with a hash set
+(`scanH`), which keeps the same code (`scanH_kept`): the first round through `keptUses`
+(`keptUses_eq_impl`, `@[csimp]`, registered before `exitLive` so that its compiled code uses
+it), the second through `clean` (`clean_eq_impl`, `@[csimp]`), which computes the boundary once
+per function. -/
 
 /-- `discard` against a hash set of live registers. -/
 def discardH (m : MInst) (live : Std.HashSet Nat) : Bool :=
@@ -237,6 +224,21 @@ def keptUsesImpl (vc : VCode) (L : List Nat) : List Nat :=
   congr 1
   funext b
   rw [(scanH_kept vc.classes.size b.insts.toList L (liveSet L) (liveSet_contains L)).1]
+
+/-- The registers live at every block boundary: the reads of the code that a first round, with
+every read live (`allUses`), keeps. A read of an instruction the first round drops does not
+count, so the head of a dead chain goes too: the operand extension of a dropped compare, whose
+only reader is that compare (#968; Cranelift lowers neither). The same set holds at every
+boundary, including the current block's (self-loops). -/
+def exitLive (vc : VCode) (_idx : Nat) (_b : VBlock) : List Nat :=
+  keptUses vc (allUses vc)
+
+def cleanBlock (vc : VCode) (idx : Nat) (b : VBlock) : VBlock :=
+  { b with insts :=
+      (scan vc.classes.size b.insts.toList (exitLive vc idx b)).1.toArray }
+
+def clean (vc : VCode) : VCode :=
+  { vc with blocks := vc.blocks.mapIdx (cleanBlock vc) }
 
 /-- `clean` as the compiler runs it: the boundary's hash set is built once per function, not
 once per block, and every block runs `scanH` against it. -/

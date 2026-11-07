@@ -172,4 +172,15 @@ example : ∃ vc : VCode,
     #[.int, .int, .int, .int, .int, .int, .float, .float, .float], 0, 0, #[], #[]⟩, ?_⟩
   decide +kernel
 
+/-- A chain head that a kept instruction of another block reads stays: the boundary holds every
+read of the code that the first round keeps, in every block (`ret34` returns the `uxtb`). -/
+private def ret34 : MInst := .rets [(.vreg 3 .int, .x 0), (.vreg 4 .int, .x 1)]
+
+example : ∃ vc : VCode,
+    (prune vc).blocks[0]!.insts.toList = [ext4, ext5, cmpE5, liveCset, .jump 1] := by
+  refine ⟨⟨"cross_block_chain",
+    #[⟨0, #[ext4, cmpE4, deadCset, ext5, cmpE5, liveCset, .jump 1], #[], #[]⟩,
+      ⟨1, #[ret34], #[], #[]⟩], #[.int, .int, .int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_⟩
+  decide +kernel
+
 end Backend.DeadCleanup
