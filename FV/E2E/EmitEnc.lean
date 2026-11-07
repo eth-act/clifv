@@ -962,8 +962,8 @@ theorem ctl_enc {c : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : Array R
     obtain ⟨n4, rfl⟩ := vregInt_eq h4
     obtain ⟨n5, rfl⟩ := vregInt_eq h5
     simp only [immOkB, Bool.or_eq_true, beq_iff_eq] at himm
-    inv_op
-    exact linesEnc_rmw himm
+    -- the operands depend on the operation (`xchg`: no x28 def)
+    cases op <;> (inv_op; exact linesEnc_rmw himm)
   case atomicCasLoop ty fl a e r d s1 =>
     simp only [ctlInstOk, Bool.and_eq_true] at hok
     obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hok

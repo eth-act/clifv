@@ -409,10 +409,10 @@ theorem sameNF_of_frame {F : BitVec 64 → Prop} {t0 t' w : Arm.ArmState} (rs us
 /-- `csem` of an `atomic_rmw` loop: the run of its body once (`rmwBody_spec`). -/
 theorem csem_rmwLoop (X : ExtSem) (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags)
     (ra ro rd r1 r2 : Nat) (u x : CV) (w : Arm.ArmState) (hty : AtomTy ty)
-    (hav : Avoids F ty.bytes (lo64 u)) : ∃ w' o0 o1 o2,
+    (hav : Avoids F ty.bytes (lo64 u)) : ∃ w' o0 os,
     csem F ctx X (.atomicRmwLoop ty op fl (.vreg ra .int) (.vreg ro .int) (.vreg rd .int)
-        (.vreg r1 .int) (.vreg r2 .int)) [u, x] w = some ([o0, o1, o2], w', .next) ∧
-      o0.setWidth (ty.bytes * 8) = Arm.read_mem_bytes ty.bytes (lo64 u) w ∧
+        (.vreg r1 .int) (.vreg r2 .int)) [u, x] w = some (o0 :: os, w', .next) ∧
+      (o0 :: os).length = op.defRegs.length ∧ o0.setWidth (ty.bytes * 8) = Arm.read_mem_bytes ty.bytes (lo64 u) w ∧
       SameWorldNF F w' (Arm.write_mem_bytes ty.bytes (lo64 u)
         (Clif.Sem.atomicRmw op.clif (Arm.read_mem_bytes ty.bytes (lo64 u) w)
           ((lo64 x).setWidth (ty.bytes * 8))) w) := by
@@ -436,8 +436,9 @@ theorem csem_rmwLoop (X : ExtSem) (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.M
     have herr' : Arm.r .ERR t' = .None := by
       rw [hfr .ERR (by simp) (by simp) (by simp)]; simp [herr]
     have hprog' : t'.program = w.program := by rw [hprog]; simp [Arm.w_program]
-    simp only [hrun, herr', hprog', and_self, ite_true, List.map_cons, List.map_nil]
-    refine ⟨t', _, _, _, rfl, ?_, ?_⟩
+    simp only [hrun, herr', hprog', and_self, ite_true, AtomicRmwLoopOp.defRegs_take_one,
+      List.map_cons, List.map_nil, List.singleton_append]
+    refine ⟨t', _, _, rfl, by unfold AtomicRmwLoopOp.defRegs; split <;> rfl, ?_, ?_⟩
     · simp only [regVal]
       rw [BitVec.setWidth_setWidth_of_le _ (by omega), ← h27]; rfl
     · refine sameNF_of_frame [24#5, 27#5, 28#5] [25#5, 26#5] (by simp [Masked])
@@ -449,7 +450,8 @@ theorem csem_rmwLoop (X : ExtSem) (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.M
         Arm.r_of_w_different (by simpa [rnum] using hf.1)]
   · rename_i herr
     rw [if_pos ⟨hty, hav⟩]
-    exact ⟨_, _, _, _, rfl, ofX_setWidth_setWidth h8 _, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩
+    exact ⟨_, _, _, rfl, by unfold AtomicRmwLoopOp.defRegs; split <;> rfl,
+      ofX_setWidth_setWidth h8 _, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩
 
 /-- A loop run (`loopSem`) that ends without error. -/
 theorem loopSem_eq {ty : CTy} {a : CV} {body : List Line} {regs : List Reg} {uses : List CV}

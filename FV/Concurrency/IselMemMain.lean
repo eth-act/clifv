@@ -702,7 +702,10 @@ theorem mem_segRTN (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X) MR env p
       rmw_form (hi ▸ hcas') hmi0 (by rw [hks, ← hexp.1]; simp)
     have hu : vuses ops ρm = [ρm (gn p0), ρm (gn x0)] := by
       rw [operands_mapRegs H.shape.ren, operands_rmwLoop] at hops'
-      cases hops'; simp [vuses, rnOp]; rfl
+      cases hops'
+      by_cases hx : op' = .xchg
+      · subst hx; simp [vuses, rnOp, rmwOps, Operand.isUse]
+      · simp [vuses, rnOp, rmwOps, hx, Operand.isUse]
     rw [hu] at hcsem2 hev2
     obtain ⟨wr, hevs, hwk, -, -⟩ := IselMemAux.cEvs_rmw_shape hep hcsem2
     obtain ⟨r0, hevs', hrk⟩ : ∃ r0, evs = [r0, wr] ∧ r0.k = .acqXR := ⟨_, hev2.trans hevs, rfl⟩

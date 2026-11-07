@@ -26,11 +26,12 @@ def pairUses : MInst → List Reg
   | .rets us => us.map (·.1)
   | _ => []
 
-/-- The defs `MInst.defs` leaves out: the fixed-def pairs and the LL/SC scratch registers. -/
+/-- The defs `MInst.defs` leaves out: the fixed-def pairs and the LL/SC scratch registers (an
+`xchg` loop's scratch2 is not a def, `MInst.visitOperands`). -/
 def pairDefs : MInst → List Reg
   | .call c | .tryCall c _ => c.defs.map (·.2)
   | .args ds => ds.map (·.1)
-  | .atomicRmwLoop _ _ _ _ _ _ s1 s2 => [s1, s2]
+  | .atomicRmwLoop _ op _ _ _ _ s1 s2 => s1 :: if op == .xchg then [] else [s2]
   | .atomicCasLoop _ _ _ _ _ _ sc => [sc]
   | _ => []
 
@@ -155,6 +156,11 @@ theorem kinv_visit (m : MInst) :
   case tryCall info ti =>
     obtain ⟨dest, uses, defs⟩ := info
     cases dest <;> simp only [MInst.visitOperands] <;> kinv_steps
+    all_goals kinv_side
+  case atomicRmwLoop ty op fl a o d s1 s2 =>
+    -- the visit and `pairDefs` both case on `xchg`
+    simp only [MInst.visitOperands, useRegsK, defRegsK, pairDefs, pairUses]
+    cases hx : op == .xchg <;> simp only [Bool.false_eq_true, ↓reduceIte, pure_bind] <;> kinv_steps
     all_goals kinv_side
   all_goals simp only [MInst.visitOperands]
   all_goals kinv_steps

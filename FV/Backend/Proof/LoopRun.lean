@@ -10,7 +10,8 @@ The bodies of the `atomic_rmw` and `atomic_cas` loops (`rmwLoopBody`, `casLoopHe
 * `rmwBody_spec`: `ldaxr x27, [x25]; …; stlxr w24, …, [x25]` loads the old value into x27,
   writes `atomic_rmw`'s new value (`Clif.Sem.atomicRmw`) of the old value and x26's low bits
   at x25, writes status 0 to w24 (the single-threaded Arm model: the exclusive store
-  succeeds), and changes no other field but the pc, x28 and the flags;
+  succeeds), and changes no other field but the pc, x28 and the flags; `rmwBody_frame`: an
+  `xchg` body leaves x28 alone too (its frame is the defs `AtomicRmwLoopOp.defNums`);
 * `casHead_spec`: `ldaxr x27, [x25]; cmp …` loads the old value and sets the flags so that `ne`
   holds iff the old value differs from x26's low bits (`casLoopCmp`);
 * `stlxr_spec`: the store of x28's low bits at x25, status 0 in w24;
@@ -258,6 +259,49 @@ theorem rmwBody_spec {ty : CTy} (hty : AtomTy ty) (op : AtomicRmwLoopOp) (fl : C
       dsimp only [rmwNew, CTy.bytes, CTy.bits, Nat.reduceDiv, Nat.reduceMul]
       congr 2 <;> rmw_val
     · simp [Arm.w_program, Arm.write_mem_bytes_program]
+
+set_option maxHeartbeats 4000000 in
+/-- The `xchg` loop body (`ldaxr x27, [x25]; stlxr w24, x26, [x25]`) leaves x28 alone. -/
+theorem rmwBody_frame_xchg {ty : CTy} (hty : AtomTy ty) (fl : Clif.MemFlags) (e : Env)
+    {t t' : Arm.ArmState} (h : execLines e (rmwLoopBody ty.bits .xchg fl) t = some t') :
+    LoopFrame [24#5, 27#5] t t' := by
+  rcases hty with rfl | rfl | rfl | rfl
+  all_goals
+    simp only [CTy.bits, rmwLoopBody, rmwLoopMid, rmwLoopStored, List.map, List.cons_append,
+      List.nil_append, List.singleton_append] at h
+    simp (config := {decide := true}) [csimp_rules] at h
+    subst h
+    intro f h1 h2 h3
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h2
+    obtain ⟨h24, h27⟩ := h2
+    have := h3 .N; have := h3 .Z; have := h3 .C; have := h3 .V
+    simp [Arm.r_of_w_different, Arm.r_of_write_mem_bytes, *]
+
+/-- **The frame of the `atomic_rmw` loop body**: every field but the pc, the flags and the def
+registers `op.defNums` (x27, x24 and, unless `xchg`, x28) keeps its value. -/
+theorem rmwBody_frame {ty : CTy} (hty : AtomTy ty) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags)
+    (e : Env) {t t' : Arm.ArmState} (herr : Arm.r .ERR t = .None)
+    (h : execLines e (rmwLoopBody ty.bits op fl) t = some t') :
+    ∀ f, f ≠ .PC → (∀ n ∈ op.defNums, f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
+      Arm.r f t' = Arm.r f t := by
+  intro f h1 h2 h3
+  by_cases hx : op = .xchg
+  · subst hx
+    refine rmwBody_frame_xchg hty fl e h f h1 ?_ h3
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h2 24 (by simp [AtomicRmwLoopOp.defNums])
+    · exact h2 27 (by simp [AtomicRmwLoopOp.defNums])
+  · obtain ⟨t1, hrun, -, -, -, hfr, -⟩ := rmwBody_spec hty op fl e t herr
+    rw [hrun] at h; cases h
+    refine hfr f h1 ?_ h3
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h2 24 (by simp [AtomicRmwLoopOp.defNums, hx])
+    · exact h2 27 (by simp [AtomicRmwLoopOp.defNums, hx])
+    · exact h2 28 (by simp [AtomicRmwLoopOp.defNums, hx])
 
 /-- The bytes an access avoiding `F` reads agree on two states with the same world. -/
 theorem read_avoid {F : BitVec 64 → Prop} {s w : Arm.ArmState} (hsw : SameWorld F s w) {n : Nat}

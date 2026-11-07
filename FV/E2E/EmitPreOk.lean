@@ -110,13 +110,16 @@ theorem rmw_total (c : FnCtx) {ty : CTy} {op : AtomicRmwLoopOp} {fl : Clif.MemFl
         (.vreg d .int) (.vreg d1 .int) (.vreg d2 .int)).clobbers)
     (ha : (MInst.atomicRmwLoop ty op fl (.vreg p .int) (.vreg x .int) (.vreg d .int)
         (.vreg d1 .int) (.vreg d2 .int)).assign regs = .ok i') : LinesTotal c i' := by
-  have hr : regs = #[.x 25, .x 26, .x 27, .x 24, .x 28] :=
-    unreg_eq ((hl _ rfl).trans (by simp [spillLocs, fixedRegs, spillPool, OpSpec.fixedUse, OpSpec.fixedDef, MInst.clobbers]))
+  have hr : regs = rmwRegs op := by
+    refine unreg_eq ((hl _ (operands_rmwLoop _ _ _ _ _ _ _ _)).trans ?_)
+    by_cases hx : op = .xchg
+    · subst hx
+      simp [rmwOps, rmwRegs, spillLocs, fixedRegs, spillPool, OpSpec.fixedUse, OpSpec.fixedDef,
+        MInst.clobbers]
+    · simp [rmwOps, rmwRegs, hx, spillLocs, fixedRegs, spillPool, OpSpec.fixedUse,
+        OpSpec.fixedDef, MInst.clobbers]
   subst hr
-  have e : (MInst.atomicRmwLoop ty op fl (.vreg p .int) (.vreg x .int) (.vreg d .int)
-        (.vreg d1 .int) (.vreg d2 .int)).assign #[.x 25, .x 26, .x 27, .x 24, .x 28] =
-      .ok (.atomicRmwLoop ty op fl (.x 25) (.x 26) (.x 27) (.x 24) (.x 28)) := rfl
-  rw [e] at ha
+  rw [assign_rmwLoop] at ha
   cases ha
   intro ps
   simp [MInst.lines]

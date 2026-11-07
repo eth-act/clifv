@@ -139,7 +139,7 @@ theorem stmt_memtrap0 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       simp only [List.cons_append, List.map_cons, List.getElem_cons_zero, Nat.add_zero] at hk0
       simp only [MInst.mapRegs, H.shape.ren.vreg] at hk0
       refine ⟨B, j, hB, hstm, rfl, by rw [hlen0]; simp, vb, _, _, ρ (gn q), [ρ (gn x)], ty.bytes,
-        hvb, hk0, operands_rmwLoop _ _ _ _ _ _ _ _, by simp [vuses, Operand.isUse], ?_, ?_⟩
+        hvb, hk0, operands_rmwLoop _ _ _ _ _ _ _ _, by rw [vuses_rmwOps], ?_, ?_⟩
       · simp [loopTrap?, hfl, ofClif_bytes_eq, atomTy_ofClif hety]
       · exact ⟨_, by rw [haddr q (by simp [hi, memAddr?]) (by simp [hi, instArgs]) pv hpv,
           ofNat_effAddr0], hQa⟩

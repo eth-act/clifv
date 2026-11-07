@@ -505,7 +505,10 @@ theorem tryCall_visit (regs : Array Reg) (i : MInst) :
     all_goals intro c ti' h; cases h; exact ⟨_, rfl⟩
   all_goals
     simp only [MInst.visitOperands]
-    repeat' first | (with_reducible apply E2E.putPost_bind); intro _ | (with_reducible apply E2E.putPost_pure)
+    repeat' first
+      | (with_reducible apply E2E.putPost_bind); intro _
+      | (with_reducible apply E2E.putPost_pure)
+      | split
   all_goals intro c ti h; cases h
 
 theorem tryCall_assign {i : MInst} {regs : Array Reg} {c : CallInfo} {ti : TryInfo}
