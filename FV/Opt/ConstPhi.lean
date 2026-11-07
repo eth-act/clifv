@@ -28,13 +28,15 @@ This file is the executable part, without proofs:
   `f` is well-formed (`Opt.check`: strict SSA, every block reachable); the solved parameters
   are distinct parameters of non-entry blocks; no solution value is solved itself; the
   definition of each solution value strictly dominates the block of its parameter; every edge
-  into a block passes, at each solved position, a value (not a `try_call` result or payload)
-  that renames to the solution; the result is well-formed; and a function with a `try_call` or
+  has its destination's arity (`Opt.check` does not check a `try_call` successor's) and passes,
+  at each solved position, a value (not a `try_call` result or payload) that renames to the
+  solution; the result is well-formed; and a function with a `try_call` or
   `try_call_indirect` keeps its fresh value (where those calls bind their results,
   `Clif.Function.freshValue`).
-* `run f` (the pass): when `freshOkB f`, remove the unreachable blocks (as Cranelift does
-  first, `Opt.removeUnreachable`), solve, and apply the solution if it is not empty and
-  `cpOk` accepts it; otherwise `f` unchanged.
+* `run f` (the pass): when `freshOkB f`, remove the unreachable blocks (as Cranelift always
+  does first, `Opt.removeUnreachable`), solve, and apply the solution if it is not empty and
+  `cpOk` accepts it (otherwise the function without its unreachable blocks; `f` itself when
+  `freshOkB` fails).
 -/
 
 namespace Opt.ConstPhi
@@ -59,6 +61,11 @@ def AbsVal.join : AbsVal → AbsVal → AbsVal
   | _, .many => .many
   | .one a, .one b => if a = b then .one a else .many
 
+/-- A `try_call` successor's argument: a value, or `none` for a result or exception payload. -/
+def argVal : TryArg → Option ValueId
+  | .val v => some v
+  | _ => none
+
 /-- The edges of a terminator with their arguments (`branch_destination`, in Cranelift's
 order): the destination block id and the arguments, `none` for a `try_call` result or
 exception payload. -/
@@ -67,7 +74,7 @@ def edges : Terminator → List (BlockId × List (Option ValueId))
   | .brif _ t e => [(t.block, t.args.map some), (e.block, e.args.map some)]
   | .brTable _ d t => (d.block, d.args.map some) :: t.map fun c => (c.block, c.args.map some)
   | .tryCall _ _ et | .tryCallIndirect _ _ et =>
-    et.dests.map fun d => (d.block, d.args.map fun | .val v => some v | _ => none)
+    et.dests.map fun d => (d.block, d.args.map argVal)
   | _ => []
 
 /-- One visit of the edges out of the reachable blocks (in reverse postorder), joining every
@@ -171,20 +178,46 @@ def filterTerm (k : Std.HashMap BlockId (List Bool)) : Terminator → Terminator
   | .tryCallIndirect c args et => .tryCallIndirect c args (filterEt k et)
   | t => t
 
-/-- **The rewrite** (Phase 3): the solved parameters removed, every operand and argument
-renamed, the removed positions' arguments dropped. -/
+/-- A block after the rewrite: the solved parameters removed, operands and arguments renamed,
+the removed positions' arguments dropped. -/
+def cpBlock (m : Std.HashMap ValueId ValueId) (k : Std.HashMap BlockId (List Bool)) (b : Block) :
+    Block :=
+  { b with params := b.params.filter (fun p => !m.contains p.1),
+           body := b.body.map (renStmt (rename m)),
+           term := filterTerm k (mapTerm (rename m) b.term) }
+
+/-- **The rewrite** (Phase 3): `cpBlock` on every block. -/
 def apply (f : Function) (sol : List (ValueId × ValueId)) : Function :=
   let m := solMap sol
-  let k := keepMap m f
-  { f with blocks := f.blocks.map fun b =>
-      { b with params := b.params.filter (fun p => !m.contains p.1),
-               body := b.body.map fun s => { s with inst := mapOperands (rename m) s.inst },
-               term := filterTerm k (mapTerm (rename m) b.term) } }
+  { f with blocks := f.blocks.map (cpBlock m (keepMap m f)) }
 
 /-! ## The checker -/
 
 /-- `f` has a `try_call` or `try_call_indirect` terminator. -/
 def hasTry (f : Function) : Bool := f.blocks.any (·.term.isTry)
+
+/-- The solution's parameters and values: distinct parameters of non-entry blocks; no value is
+solved itself; the value's definition strictly dominates the parameter's block. -/
+def keysOk (dmap : Std.HashMap ValueId (Nat × Nat)) (idom : Array (Option Nat))
+    (m : Std.HashMap ValueId ValueId) (sol : List (ValueId × ValueId)) : Bool :=
+  (sol.map (·.1)).Nodup && sol.all fun (p, v) =>
+    !m.contains v && match dmap[p]?, dmap[v]? with
+      | some (bp, 0), some (dv, _) => bp != 0 && dv != bp && ancB idom idom.size dv bp
+      | _, _ => false
+
+/-- Every edge has the arity of its destination and passes, at each solved position, a value
+(not a `try_call` result or payload) renaming to the solution. -/
+def edgesOk (index : Std.HashMap BlockId Nat) (m : Std.HashMap ValueId ValueId) (f : Function) :
+    Bool :=
+  f.blocks.all fun b => (edges b.term).all fun (dst, args) =>
+    match index[dst]? with
+    | some di => match f.blocks[di]? with
+      | some db => db.params.length == args.length && (db.params.zip args).all fun ((p, _), a) =>
+          !m.contains p || match a with
+            | some x => rename m x == rename m p
+            | none => false
+      | none => false
+    | none => false
 
 /-- **The checker** (module doc). -/
 def cpOk (f : Function) (sol : List (ValueId × ValueId)) : Bool :=
@@ -192,39 +225,18 @@ def cpOk (f : Function) (sol : List (ValueId × ValueId)) : Bool :=
   | .error _ => false
   | .ok fi =>
     let m := solMap sol
-    let dmap := defMap f
-    let idom := fi.cfg.idom
-    let blocks := f.blocks.toArray
-    let keys := sol.map (·.1)
     let g := apply f sol
-    -- distinct parameters of non-entry blocks; no chains; the value's definition strictly
-    -- dominates the parameter's block
-    keys.Nodup && sol.all (fun (p, v) =>
-      !m.contains v && match dmap[p]?, dmap[v]? with
-        | some (bp, 0), some (dv, _) => bp != 0 && dv != bp && ancB idom idom.size dv bp
-        | _, _ => false) &&
-    -- every edge passes, at each solved position, a value renaming to the solution
-    blocks.all (fun b => (edges b.term).all fun (dst, args) =>
-      match fi.cfg.index[dst]? with
-      | some di => match blocks[di]? with
-        | some db => (db.params.zip args).all fun ((p, _), a) =>
-            !m.contains p || match a with
-              | some x => rename m x == rename m p
-              | none => false
-        | none => false
-      | none => false) &&
-    (check g).toBool &&
-    (!hasTry f || g.freshValue == f.freshValue)
+    keysOk (defMap f) fi.cfg.idom m sol && edgesOk fi.cfg.index m f && (check g).toBool &&
+      (!hasTry f || g.freshValue == f.freshValue)
 
 /-! ## The pass -/
 
-/-- **Constant-phi removal** (module doc): `apply` of the solution on `f` without its
-unreachable blocks when the solution is not empty and `cpOk` accepts it, else `f`. -/
+/-- **Constant-phi removal** (module doc): `f` without its unreachable blocks, with the solution
+applied when it is not empty and `cpOk` accepts it. -/
 def run (f : Function) : Function :=
   if !freshOkB f then f else
   let f1 := removeUnreachable f
   let sol := solve f1
-  if sol.isEmpty then f
-  else if cpOk f1 sol then apply f1 sol else f
+  if !sol.isEmpty && cpOk f1 sol then apply f1 sol else f1
 
 end Opt.ConstPhi
