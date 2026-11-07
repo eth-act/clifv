@@ -157,7 +157,7 @@ theorem resume_allX {RA : RL} (hRA : RA.Wf) (hgv : RA.gv = fun _ _ => False)
     (habi : ∀ (vb : VBlock) (info : CallInfo),
       RA.vc.blocks[vP'.b]? = some vb → vb.insts[vP'.k]? = some (.call info) →
       (∀ (j : Nat) (d : Reg × Reg), info.defs[j]? = some d → ∃ v, usB[j]? = some (v, d.1)) ∧
-      rvals.length ≤ info.defs.length ∧ info.defs.length = (sigRets ext.sig).length) :
+      rvals.length ≤ info.defs.length ∧ info.defs.length = ext.sig.returns.length) :
     ∃ vV'' vP'' cM'',
       Match f ctx R gn bl A (RelW Γ f c) slots { s' with
           frame := { s'.frame with regs := regs', body := rest }, mem := (cmB.free bases).leave }
@@ -188,7 +188,7 @@ theorem resume_allX {RA : RL} (hRA : RA.Wf) (hgv : RA.gv = fun _ _ => False)
   have hpre : PrefixHold rvals ((defPairs ops allocs).map fun q => locVal RA.fr y q.2) :=
     prefixHold_outs hv' hops hstat' RA.fr hpreB hus hreg hlenv
   have hlenO : ((defPairs ops allocs).map fun q => locVal RA.fr y q.2).length =
-      (sigRets ext.sig).length := by
+      ext.sig.returns.length := by
     have := congrArg List.length (defPairs_locs hv' hops hstat')
     simp only [List.length_map] at this ⊢
     rw [this, hlen]
@@ -284,7 +284,7 @@ theorem resume_allP {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun 
     (habi : ∀ (vb : VBlock) (info : CallInfo),
       RA.vc.blocks[vP'.b]? = some vb → vb.insts[vP'.k]? = some (.call info) →
       (∀ (j : Nat) (d : Reg × Reg), info.defs[j]? = some d → ∃ v, usB[j]? = some (v, d.1)) ∧
-      rvals.length ≤ info.defs.length ∧ info.defs.length = (sigRets ext.sig).length) :
+      rvals.length ≤ info.defs.length ∧ info.defs.length = ext.sig.returns.length) :
     ∃ vV'' vP'' cM'',
       Match f ctx R gn bl A (RelW Γ f c) slots { s' with
           frame := { s'.frame with regs := regs', body := rest }, mem := (cmB.free bases).leave }
@@ -351,7 +351,7 @@ theorem resume_all {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _
     (habi : ∀ (b : Nat) (vb : VBlock) (k : Nat) (info : CallInfo),
       RA.vc.blocks[b]? = some vb → vb.insts[k]? = some (.call info) →
       (∀ (j : Nat) (d : Reg × Reg), info.defs[j]? = some d → ∃ v, usB[j]? = some (v, d.1)) ∧
-      rvals.length ≤ info.defs.length ∧ info.defs.length = (sigRets ext.sig).length) :
+      rvals.length ≤ info.defs.length ∧ info.defs.length = ext.sig.returns.length) :
     ∃ vV'' vP'' cM'',
       Match f ctx R gn bl A (RelW Γ f c) slots { s' with
           frame := { s'.frame with regs := regs', body := rest }, mem := (cmB.free bases).leave }

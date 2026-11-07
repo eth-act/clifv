@@ -13,10 +13,13 @@ inductive ReturnPinMode where
 
 namespace ReturnPinMode
 
-/-- Retain ordinary x0 order or the actual Stock ABI return pins. -/
-def Valid (mode : ReturnPinMode) (f : Clif.Function) (us : List (Reg × Reg)) : Prop :=
+/-- Retain ordinary order or the actual Stock ABI return pins. The ordinary branch returns the
+CLIF values `vals` in x0, x1, … and an `sret` function's struct pointer after them in x8
+(`RetPins`, #587: the ordinary lowering returns it there, as Cranelift and the Stock route do). -/
+def Valid (mode : ReturnPinMode) (f : Clif.Function) (vals : List Clif.Val)
+    (us : List (Reg × Reg)) : Prop :=
   match mode with
-  | .ordinary => us.map (·.2) = (List.range us.length).map Reg.x
+  | .ordinary => RetPins vals us
   | .stockABI => ReturnABI f us
 
 /-- Compute the mode from the existing checker order. No caller certificate is required. -/
@@ -29,11 +32,13 @@ def pins (mode : ReturnPinMode) (f : Clif.Function) (count : Nat) : List Reg :=
   | .ordinary => (List.range count).map Reg.x
   | .stockABI => (returnPins f count).getD []
 
-/-- The selected registers agree with every return proved by the mode contract. -/
-theorem pins_of_valid {mode : ReturnPinMode} {f : Clif.Function} {us : List (Reg × Reg)}
-    (valid : mode.Valid f us) : mode.pins f us.length = us.map (·.2) := by
+/-- The selected registers agree with every return proved by the mode contract (for the ordinary
+branch: when no ABI return follows the CLIF values, #587). -/
+theorem pins_of_valid {mode : ReturnPinMode} {f : Clif.Function} {vals : List Clif.Val}
+    {us : List (Reg × Reg)} (valid : mode.Valid f vals us)
+    (within : mode = .ordinary → us.length ≤ vals.length) : mode.pins f us.length = us.map (·.2) := by
   cases mode with
-  | ordinary => exact valid.symm
+  | ordinary => exact (RetPins.ordinary valid (within rfl)).symm
   | stockABI =>
     change (returnPins f us.length).getD [] = us.map (·.2)
     rw [show returnPins f us.length = some (us.map (·.2)) from valid]
@@ -136,7 +141,7 @@ theorem backend_correct_world_niX_semantic_return_pins {p : Clif.Program} {f : C
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        ReturnPinMode.Valid mode f us ∧ us.length = outs.length ∧
+        ReturnPinMode.Valid mode f vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →

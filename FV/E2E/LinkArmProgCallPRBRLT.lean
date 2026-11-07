@@ -42,7 +42,7 @@ theorem progCallPRBRLTRU (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (e : Nat),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (L.NeedSlots → Clif.NextAdv cs.mem.leave cm' e) ∧
       (∀ t, L.CallerOk F h uses w t →
@@ -476,7 +476,7 @@ theorem progCallPRBRLTR (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (e : Nat),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (L.NeedSlots → Clif.NextAdv cs.mem.leave cm' e) ∧
       (∀ t, L.CallerOk F h uses w t →
@@ -513,7 +513,7 @@ theorem progCallPRBRLT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : 
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (e : Nat),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (L.NeedSlots → Clif.NextAdv cs.mem.leave cm' e) ∧
       (∀ t, L.CallerOk F h uses w t →

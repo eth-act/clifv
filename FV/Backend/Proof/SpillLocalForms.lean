@@ -150,8 +150,11 @@ theorem spillInstOk_jtSequence (dflt : Label) (ts : List Label) {r t1 t2 : Nat} 
 
 theorem x_alloc : ∀ k < 8, (Reg.x k).allocatable = true ∧ Reg.x k ∉ calleeSaved := by decide
 
-/-- `Rets` of distinct registers among x0..x7 (`gen_return`'s `retRegs`) meets `SpillInstOk`. -/
-theorem spillInstOk_rets {ns : List (Nat × Reg)} (hr : ∀ q ∈ ns, ∃ k, k < 8 ∧ q.2 = .x k)
+theorem x_alloc_le8 : ∀ k ≤ 8, (Reg.x k).allocatable = true ∧ Reg.x k ∉ calleeSaved := by decide
+
+/-- `Rets` of distinct registers among x0..x8 (`gen_return`'s `retRegsK`: x8 for an `sret`
+function's struct pointer, #587) meets `SpillInstOk`. -/
+theorem spillInstOk_rets {ns : List (Nat × Reg)} (hr : ∀ q ∈ ns, ∃ k, k ≤ 8 ∧ q.2 = .x k)
     (hnd : (ns.map (·.2)).Nodup) : SpillInstOk (.rets (retPairs ns)) := by
   have mem : ∀ o ∈ (retOps ns).toArray.toList, ∃ q ∈ ns, o = ⟨q.1, .int, .use, .early, .fixed q.2⟩ := by
     intro o ho
@@ -168,7 +171,7 @@ theorem spillInstOk_rets {ns : List (Nat × Reg)} (hr : ∀ q ∈ ns, ∃ k, k <
   · intro o ho p h; obtain ⟨q, hq, rfl⟩ := mem o ho
     cases h
     obtain ⟨k, hk, he⟩ := hr q hq
-    rw [he]; exact ⟨(x_alloc k hk).1, rfl⟩
+    rw [he]; exact ⟨(x_alloc_le8 k hk).1, rfl⟩
   · intro o ho o' ho' p _ _ h h'
     obtain ⟨q, hq, rfl⟩ := mem o ho
     obtain ⟨q', hq', rfl⟩ := mem o' ho'
@@ -191,7 +194,7 @@ theorem spillInstOk_rets {ns : List (Nat × Reg)} (hr : ∀ q ∈ ns, ∃ k, k <
   · intro us _ o ho
     obtain ⟨q, hq, rfl⟩ := mem o ho
     obtain ⟨k, hk, he⟩ := hr q hq
-    exact ⟨q.2, rfl, he ▸ (x_alloc k hk).2⟩
+    exact ⟨q.2, rfl, he ▸ (x_alloc_le8 k hk).2⟩
 
 theorem spillInstOk_jump (l : Label) : SpillInstOk (.jump l) :=
   ⟨#[], rfl, opsOk_simple (by simp) (by simp) (by simp) (by simp), fun _ h => by cases h⟩

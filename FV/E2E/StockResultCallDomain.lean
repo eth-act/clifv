@@ -80,10 +80,7 @@ theorem Layout.return_function {f : Clif.Function} {result : Stock.Result}
   obtain ⟨actual,w2,callRun,resultCount,resultHeld,mem2⟩ := calls layout.data.ext member g fr.slots cm w1
     (some layout.data.ext.name) inputValues inputValues sourceArgs [value] after callee
     (Or.inl ⟨rfl,rfl⟩) argsAt mem1 called (by rw [calleeReturns]; rfl)
-  have abi : sigRets layout.data.ext.sig = [layout.data.returned] := by
-    unfold sigRets
-    split <;> simp [calleeReturns]
-  rw [abi] at resultCount
+  rw [calleeReturns] at resultCount
   cases actual with
   | nil => cases resultCount
   | cons output rest =>
@@ -105,7 +102,7 @@ theorem Layout.return_function {f : Clif.Function} {result : Stock.Result}
         (.call ⟨.sym layout.data.ext.name,retPairs resolvedPairs,callDefs [(.x 0,resolvedDestination)]⟩)
         (resolvedPairs.map (ρ ·.1)) w1 = some ([output],w2,.next) := by
       change (X.call (some layout.data.ext.name) (resolvedPairs.map (ρ ·.1)) w1).map
-        (fun pair => (pair.1,pair.2,Ctl.next)) = _
+        (fun pair => (pair.1.take 1,pair.2,Ctl.next)) = _
       rw [actualArgs,callRun]
       rfl
     have machineCall : seqRun (csem F ctx X)
@@ -148,7 +145,12 @@ theorem Layout.return_function {f : Clif.Function} {result : Stock.Result}
     · refine ⟨0,0+(0+1+prelude.toList.length),updated,w2,block,
         (retOps [(resolvedDestination,.x 0)]).toArray,[],path,placed,instruction,rfl,?_,rfl⟩
       simp [vuses_retOps,updated]
-    · simpa only [ReturnABI,retPairs,List.map_cons,List.map_nil,List.length_cons,List.length_nil] using pins
+    · have ordinary : (sigRets f.sig).any (·.purpose == .sret) = false := by
+        cases sret : (sigRets f.sig).any (·.purpose == .sret) with
+        | false => rfl
+        | true => simp [returnPins,sret] at pins
+      refine ⟨?_,by simp [retPairs,sretRet_nil_of_ordinary ordinary]⟩
+      simpa only [ReturnABI,retPairs,List.map_cons,List.map_nil,List.length_cons,List.length_nil] using pins
 
 /-- This function contract retains the original source execution and general callee memory relation. -/
 structure Domain (f : Clif.Function) (vc : VCode) : Prop where

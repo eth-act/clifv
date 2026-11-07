@@ -200,40 +200,41 @@ theorem outDefsC_append (b : Nat) {ps fr : List Reg} {cs ds : List RegClass}
 /-- **The return and payload vregs of a typed `try_call`** (`tryRegsOfC`): the returns' vregs are
 fresh from `b = st.nextVreg`, of the returns' classes; the defs `gen_try_call_rets` makes of them
 (the return registers `ps`, then the payload registers that are not return registers, `fr`) are
-`outDefsC b (ps ++ fr) (cs ++ ints)`: consecutive fresh vregs. -/
+`outDefsC b (ps ++ fr) (cs ++ ints)`: consecutive fresh vregs. Over the declared returns since
+#587 (`tryRegsOfC` allocates none for an `sret` callee's struct pointer, as Cranelift). -/
 theorem tryRegsOfC_defs {sig : Clif.Signature} {st st1 : LState} {trs : List Reg × List Reg}
     (h : tryRegsOfC sig st = some (trs, st1)) :
-    ∃ ps, retRegsC ((sigRets sig).map retClass) 0 0 = some ps ∧
-      trs.1 = ((sigRets sig).map retClass).zipIdx.map (fun q => Reg.vreg (st.nextVreg + q.2) q.1) ∧
+    ∃ ps, retRegsC (sig.returns.map retClass) 0 0 = some ps ∧
+      trs.1 = (sig.returns.map retClass).zipIdx.map (fun q => Reg.vreg (st.nextVreg + q.2) q.1) ∧
       ps.zip trs.1 ++ ((payloadRegs sig.callConv).zip trs.2).filter (fun q => !ps.contains q.1) =
         callDefsC (outDefsC st.nextVreg
           (ps ++ (payloadRegs sig.callConv).filter fun p => !ps.contains p)
-          ((sigRets sig).map retClass ++
+          (sig.returns.map retClass ++
             List.replicate ((payloadRegs sig.callConv).filter fun p => !ps.contains p).length .int)) ∧
-      st1.nextVreg = st.nextVreg + (sigRets sig).length +
+      st1.nextVreg = st.nextVreg + sig.returns.length +
         ((payloadRegs sig.callConv).filter fun p => !ps.contains p).length := by
   obtain ⟨rets, pays⟩ := trs
   simp only
   unfold tryRegsOfC at h
-  cases hr : retRegsC ((sigRets sig).map retClass) 0 0 with
+  cases hr : retRegsC (sig.returns.map retClass) 0 0 with
   | none => rw [hr] at h; cases h
   | some ps =>
     rw [hr] at h
     simp only [Option.bind_eq_bind, Option.bind_some, Option.pure_def, Option.some.injEq,
       Prod.mk.injEq] at h
     obtain ⟨⟨hrets, hpays⟩, hst⟩ := h
-    obtain ⟨r1, r2⟩ := retFoldC (sigRets sig) #[] st
-    generalize hR : (sigRets sig).foldl (fun (x : Array Reg × LState) q =>
+    obtain ⟨r1, r2⟩ := retFoldC sig.returns #[] st
+    generalize hR : sig.returns.foldl (fun (x : Array Reg × LState) q =>
       ((x.1.push (x.2.fresh (retClass q)).1), (x.2.fresh (retClass q)).2)) (#[], st) = R at r1 r2 hrets hpays hst
     obtain ⟨pl, p1, p2, p3⟩ := payFoldC ps R.1 (payloadRegs sig.callConv) #[] R.2
-    have hps : ps.length = ((sigRets sig).map retClass).length := retRegsC_lengthC _ _ _ hr
+    have hps : ps.length = (sig.returns.map retClass).length := retRegsC_lengthC _ _ _ hr
     simp only [Array.toList_empty, List.nil_append] at r1 p1
     -- the folds of `tryRegsOfC` are the lemmas' (their `match`es are different matchers)
     have hpl : pays = pl := by rw [← hpays]; exact p1
     have hst' : st1.nextVreg = R.2.nextVreg +
         ((payloadRegs sig.callConv).filter fun p => !ps.contains p).length := by
       rw [← hst]; exact p3
-    have hrl : rets = ((sigRets sig).map retClass).zipIdx.map
+    have hrl : rets = (sig.returns.map retClass).zipIdx.map
         (fun q => Reg.vreg (st.nextVreg + q.2) q.1) := by rw [← hrets, r1]
     refine ⟨ps, rfl, hrl, ?_, by rw [hst', r2]⟩
     rw [hpl, p2, hrl, r2, callDefsC_outDefsC, outDefsC_append _ hps, List.length_map]
@@ -381,16 +382,16 @@ theorem try_sym_lowerTryOkTF {Rd F : BitVec 64 → Prop}
     (hext : f.extern? fn = some ext) (hin : ext ∈ exts) (hso : SigStackOk ext.sig outB)
     {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes) {locs : List ArgLoc} {S : Nat}
     (hl : sigArgLocs ext.sig = .ok (locs, S)) {info : TryInfo}
-    (hrets : info.rets ≤ (sigRets ext.sig).length) {b : Nat} {ps fp : List Reg}
-    (hps : ps.length = ((sigRets ext.sig).map retClass).length)
-    (htr : ctx.tryRegs.1 = ((sigRets ext.sig).map retClass).zipIdx.map fun q => Reg.vreg (b + q.2) q.1)
-    (hdefs : ∀ d ∈ (outDefsC b (ps ++ fp) ((sigRets ext.sig).map retClass ++
+    (hrets : info.rets ≤ ext.sig.returns.length) {b : Nat} {ps fp : List Reg}
+    (hps : ps.length = (ext.sig.returns.map retClass).length)
+    (htr : ctx.tryRegs.1 = (ext.sig.returns.map retClass).zipIdx.map fun q => Reg.vreg (b + q.2) q.1)
+    (hdefs : ∀ d ∈ (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
       List.replicate fp.length .int)).map (·.2.1), ∃ c, Reg.vreg d c ∈ tryDefRegs ctx)
     {st st' : LState} (hst' : st'.nextVreg = st.nextVreg) :
     LowerTryOkPC Rd Pc isem MR env cp ctx (.call fn args) info st st'
       ((stackEnts ((locs.zip args).zip bytes)).map (argStoreC (valClassOf ctx)) ++
         [.call ⟨.sym ext.name, argPairsC (liftC (valClassOf ctx) (regPairsOf ((locs.zip args).zip bytes))),
-          callDefsC (outDefsC b (ps ++ fp) ((sigRets ext.sig).map retClass ++
+          callDefsC (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
             List.replicate fp.length .int))⟩]) := by
   refine ⟨by omega, ⟨(stackEnts ((locs.zip args).zip bytes)).map (argStoreC (valClassOf ctx)), _, rfl,
     ?_, fun d hd => ?_⟩, ?_⟩
@@ -414,17 +415,17 @@ theorem try_sym_lowerTryOkTF {Rd F : BitVec 64 → Prop}
         hlen.symm (valClassOf ctx) (fun j v x hv hx => hvh x v (hvx j x v hx hv))
         (argClasses_of_frame hdfg hvals) hmr
       obtain ⟨sym, -, -, htry⟩ := hCR
-      have hdl : (callDefsC (outDefsC b (ps ++ fp) ((sigRets ext.sig).map retClass ++
-          List.replicate fp.length .int))).length = (sigRets ext.sig).length + fp.length := by
+      have hdl : (callDefsC (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
+          List.replicate fp.length .int))).length = ext.sig.returns.length + fp.length := by
         rw [callDefsC, List.length_map, outDefsC_app_length b hps, List.length_map]
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry ext hin g fr.slots cm w1 (.sym ext.name)
         (argPairsC (liftC (valClassOf ctx) (regPairsOf ((locs.zip args).zip bytes))))
-        (callDefsC (outDefsC b (ps ++ fp) ((sigRets ext.sig).map retClass ++
+        (callDefsC (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
           List.replicate fp.length .int))) info
         _ _ vals rvals cm' hg (.inl ⟨rfl, rfl⟩) (by rw [hdl]; omega) hrets
         (hargs w1 (SameWorldNF.refl F w1)) hmr1 hpc hgo hrN
       rw [← liftC_vals (valClassOf ctx)] at hi
-      have hol' : outs.length = (outDefsC b (ps ++ fp) ((sigRets ext.sig).map retClass ++
+      have hol' : outs.length = (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
           List.replicate fp.length .int)).length := by
         rw [hol, callDefsC, List.length_map]
       rw [tryFix_append]
@@ -458,10 +459,10 @@ theorem try_got_lowerTryOkTF {Rd F : BitVec 64 → Prop}
     (hso : SigStackOk ext.sig outB)
     {bytes : List Nat} (hb : sigParamBytes ext.sig = .ok bytes) {locs : List ArgLoc} {S : Nat}
     (hl : sigArgLocs ext.sig = .ok (locs, S)) {info : TryInfo}
-    (hrets : info.rets ≤ (sigRets ext.sig).length) {b : Nat} {ps fp : List Reg}
-    (hps : ps.length = ((sigRets ext.sig).map retClass).length)
-    (htr : ctx.tryRegs.1 = ((sigRets ext.sig).map retClass).zipIdx.map fun q => Reg.vreg (b + q.2) q.1)
-    (hdefs : ∀ d ∈ (outDefsC b (ps ++ fp) ((sigRets ext.sig).map retClass ++
+    (hrets : info.rets ≤ ext.sig.returns.length) {b : Nat} {ps fp : List Reg}
+    (hps : ps.length = (ext.sig.returns.map retClass).length)
+    (htr : ctx.tryRegs.1 = (ext.sig.returns.map retClass).zipIdx.map fun q => Reg.vreg (b + q.2) q.1)
+    (hdefs : ∀ d ∈ (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
       List.replicate fp.length .int)).map (·.2.1), ∃ c, Reg.vreg d c ∈ tryDefRegs ctx)
     {st st' : LState} (hargs : ∀ x ∈ args, x < st.nextVreg)
     (hst' : st'.nextVreg = st.nextVreg + 1) :
@@ -470,7 +471,7 @@ theorem try_got_lowerTryOkTF {Rd F : BitVec 64 → Prop}
        [.loadExtNameGot (.vreg st.nextVreg .int) ext.name,
         .call ⟨.reg (.vreg st.nextVreg .int),
           argPairsC (liftC (valClassOf ctx) (regPairsOf ((locs.zip args).zip bytes))),
-          callDefsC (outDefsC b (ps ++ fp) ((sigRets ext.sig).map retClass ++
+          callDefsC (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
             List.replicate fp.length .int))⟩]) := by
   refine ⟨by omega, ⟨(stackEnts ((locs.zip args).zip bytes)).map (argStoreC (valClassOf ctx)) ++
     [.loadExtNameGot (.vreg st.nextVreg .int) ext.name], _, by rw [List.append_assoc]; rfl, ?_,
@@ -515,13 +516,13 @@ theorem try_got_lowerTryOkTF {Rd F : BitVec 64 → Prop}
         apply List.map_congr_left
         intro q hq
         exact hρ1 _ (map_zip_args (mem_args_of_regPairs (List.mem_map_of_mem hq)))
-      have hdl : (callDefsC (outDefsC b (ps ++ fp) ((sigRets ext.sig).map retClass ++
-          List.replicate fp.length .int))).length = (sigRets ext.sig).length + fp.length := by
+      have hdl : (callDefsC (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
+          List.replicate fp.length .int))).length = ext.sig.returns.length + fp.length := by
         rw [callDefsC, List.length_map, outDefsC_app_length b hps, List.length_map]
       have ht1 : upd ρ t (ofX (sym ext.name)) t = ofX (sym ext.name) := by simp [upd]
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := htry ext hin g fr.slots cm w2
         (.reg (.vreg t .int)) (argPairsC (liftC (valClassOf ctx) (regPairsOf ((locs.zip args).zip bytes))))
-        (callDefsC (outDefsC b (ps ++ fp) ((sigRets ext.sig).map retClass ++
+        (callDefsC (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
           List.replicate fp.length .int))) info
         (upd ρ t (ofX (sym ext.name)) t ::
           (regPairsOf ((locs.zip args).zip bytes)).map (upd ρ t (ofX (sym ext.name)) ·.1))
@@ -529,7 +530,7 @@ theorem try_got_lowerTryOkTF {Rd F : BitVec 64 → Prop}
         (.inr ⟨_, rfl, hcol, by rw [ht1, huses]⟩) (by rw [hdl]; omega) hrets
         (hargsAt w2 hsw) hmr2 hpc hgo hrN
       rw [← liftC_vals (valClassOf ctx)] at hi
-      have hol' : outs.length = (outDefsC b (ps ++ fp) ((sigRets ext.sig).map retClass ++
+      have hol' : outs.length = (outDefsC b (ps ++ fp) (ext.sig.returns.map retClass ++
           List.replicate fp.length .int)).length := by
         rw [hol, callDefsC, List.length_map]
       have hrun3 := seqRun_tryCall_regC (info := info) hi hol'

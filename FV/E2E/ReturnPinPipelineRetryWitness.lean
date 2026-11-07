@@ -16,11 +16,13 @@ theorem captured_attempt_retained (cleanup : Bool) :
   rw [okRReturnPins_eq_fast]
   exact ReturnPinCheckFastWitness.captured_pipeline_passes cleanup
 
-/-- The real incompatible call graph retries every function, not only its callee. -/
+/-- The real mixed call graph keeps its Stock artifacts: since #587 it passes physical return
+compatibility, so nothing is retried (#931; before, every function was retried and this stated
+`= resultsProduction`; the name is kept from then). -/
 theorem mixed_program_retried (cleanup : Bool) :
     PreparedReturnPinCallerBoundaryWitness.input.resultsReturnPins cleanup =
-      PreparedReturnPinCallerBoundaryWitness.input.resultsProduction cleanup := by
-  apply LinkInput.resultsReturnPins_retry
+      PreparedReturnPinCallerBoundaryWitness.outputs cleanup := by
+  apply LinkInput.resultsReturnPins_accept
   exact (PreparedReturnPinCallerBoundaryWitness.legacy_caller_rejected_witness cleanup).2.1
 
 private def previousChecks : Bool :=

@@ -6,9 +6,9 @@ import FV.E2E.SretReturn
 
 The typed chain (`backend_correct_finalT` and its stages, `ArmRefinesT`) claims each CLIF return
 value in the ABI return register of its class; the `_abi` copies also claim the ABI return
-values after them (`sretArg f args`, as `backend_correct_final_abi`), each in the return register
-of its class in the combined list (`ArmRefinesTAbi`), with the extra premise
-`sretStableB f = true`:
+values after them (`sretArg f args`, as `backend_correct_final_abi`) in x8 (`ArmRefinesTAbi`;
+until #587 each in the return register of its class in the combined list, x0 for the `sret`
+pointer of a function without returns), with the extra premise `sretStableB f = true`:
 
 * `IselSimTAbi`, `iselSimTAbi_of_driverT` (from `driver_correctT_abi` and `sret_reach`),
   `iselSimTAbi_of_rules`;
@@ -16,7 +16,7 @@ of its class in the combined list (`ArmRefinesTAbi`), with the extra premise
   `backend_correct_of_layers_exT_abi`, `backend_correct_of_rules_exT_abi`,
   `backend_correct_m4_exT_abi`, `backend_correct_final_exT_abi`, **`backend_correct_finalT_abi`**;
 * **`backend_correct_finalT_sret`**: for a function with an integer `sret` parameter `i` and no
-  returns, a CLIF return is matched by an Arm return with `args[i]` in x0.
+  returns, a CLIF return is matched by an Arm return with `args[i]` in x8.
 -/
 
 namespace E2E
@@ -24,15 +24,17 @@ namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
 
 /-- **CLIF → VCode, typed, with the ABI return values**: `IselSimT` with the returned use values
-holding the CLIF return values followed by `sretArg f args` (`AllHold`), in the return registers
-of the combined list's classes (`RetRegsOk`). -/
+holding the CLIF return values followed by `sretArg f args` (`AllHold`), the CLIF ones in the
+return registers of their classes, the others in x8 (`RetRegsOk vals`). Restated for #587: the
+registers were those of the combined list's classes (`RetRegsOk (vals ++ sretArg f args)`), x0
+for an `sret` pointer; the lowering now returns it in x8, as Cranelift does. -/
 def IselSimTAbi (sem : Sem) (Γ : Rel) (env : Clif.Env) (p : Clif.Program) (f : Clif.Function)
     (vc : VCode) : Prop :=
   ∀ args cs w₀ (ρ₀ : Nat → CV), ClifEntry f args cs → Γ.holds f cs.frame.slots cs.mem w₀ →
     ArgsAtEntry Γ.F f.sig args w₀ → TrapsExplicit env p cs → ∀ fuel,
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns vc sem ρ₀ w₀ us outs w ∧
-        RetRegsOk (vals ++ sretArg f args) us ∧ us.length = outs.length ∧
+        RetRegsOk vals us ∧ us.length = outs.length ∧
         AllHold (vals ++ sretArg f args) outs ∧ MemRel Γ.F Γ.syms cm w ∧
         vals.map (·.ty) = Clif.AbiParam.tys f.sig.returns) ∧
     (∀ c, Clif.runLoop env p fuel cs = .trapped c → VTraps vc sem ρ₀ w₀ c)
@@ -65,13 +67,17 @@ theorem iselSimTAbi_of_driverT {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0
     exact hrun
 
 /-- **What the Arm run does for a CLIF outcome, typed, with the ABI return values** `rets` after
-the CLIF ones: each value of `vals ++ rets` held by the return register of its class in the
-combined list (`retRegsT`). -/
+the CLIF ones: each CLIF value held by the return register of its class (`retRegsT`), each value
+of `rets` by x8. Restated for #587: `rets` were in the return registers of their classes in the
+combined list (x0 for the `sret` pointer of a function without returns), as the backend placed
+them before #587; Cranelift returns the `sret` pointer in x8 on aarch64, and so does the
+backend now. -/
 def ArmRefinesTAbi (fb : FnBin) (base ra : BitVec 64) (astep : Arm.ArmState → Arm.ArmState)
     (s : Arm.ArmState) (rets : List Clif.Val) : Clif.Outcome → Prop
   | .returned vals cm => ∃ n, ArmRet ra s (runX astep n s) ∧
       (∀ (j : Nat) v r, (vals ++ rets)[j]? = some v →
-        (retRegsT ((vals ++ rets).map fun v => tyClass v.ty) 0 0)[j]? = some r →
+        (retRegsT (vals.map fun v => tyClass v.ty) 0 0 ++ List.replicate rets.length (Reg.x 8))[j]? =
+          some r →
         VHolds v (regVal (runX astep n s) r)) ∧
       MemAgree cm (runX astep n s)
   | .trapped c => ∃ n, TrapAt fb base c (runX astep n s)
@@ -87,9 +93,7 @@ theorem ArmRefinesTAbi.armRefinesT {fb : FnBin} {base ra : BitVec 64}
     refine ⟨n, hret, fun j v r hj hr => hx j v r ?_ ?_, hm⟩
     · rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp hj).1]
       exact hj
-    · obtain ⟨rest, hrest⟩ := retRegsT_append (vals.map fun v => tyClass v.ty)
-        (rets.map fun v => tyClass v.ty) 0 0
-      rw [List.map_append, hrest, List.getElem?_append_left (List.getElem?_eq_some_iff.mp hr).1]
+    · rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp hr).1]
       exact hr
   | trapped c => exact h
   | _ => trivial
@@ -117,7 +121,22 @@ theorem backend_correct_of_layers_exT_abi {p : Clif.Program} {f : Clif.Function}
     obtain ⟨n, hret, hregs, hmemF⟩ := hR.1 us outs w ((hPrep s _ _).1 _ _ _ hv)
     refine ⟨n, hret, ?_, memAgree_ofT hmem hmemF⟩
     intro j v r hj hr
-    obtain ⟨u, hu, hur⟩ := retRegsOk_get hus hr
+    have hcnt : us.length - vals.length = (sretArg f args).length := by
+      have := hhold.1; simp only [List.length_append] at this; omega
+    have hj2 : (us.map (·.2))[j]? = some r := by
+      obtain ⟨cs', hcs'⟩ := hus
+      have hl := congrArg List.length hcs'
+      simp only [List.length_map, List.length_append, List.length_replicate, retRegsT_length,
+        List.length_take] at hl
+      rw [hcs', List.take_left' (l₁ := vals.map fun v => tyClass v.ty) (i := vals.length)
+        (by rw [List.length_map])]
+      have hc' : (vals.map (fun v => tyClass v.ty) ++ cs').length - vals.length =
+          (sretArg f args).length := by
+        simp only [List.length_append, List.length_map]; omega
+      rw [hc']
+      exact hr
+    rw [List.getElem?_map] at hj2
+    obtain ⟨u, hu, hur⟩ := Option.map_eq_some_iff.mp hj2
     have hju : j < us.length := (List.getElem?_eq_some_iff.mp hu).1
     obtain ⟨x, hx⟩ : ∃ x, outs[j]? = some x :=
       ⟨outs[j]'(by omega), List.getElem?_eq_getElem _⟩
@@ -320,8 +339,7 @@ theorem backend_correct_final_exT_abi {p : Clif.Program} {f : Clif.Function} {k 
 
 /-- **The typed final theorem with the ABI return values**: `backend_correct_finalT` (its
 premises plus `sretStableB f`), and a return also leaves the ABI return values `sretArg f args`
-after the CLIF ones, each in the return register of its class in the combined list
-(`ArmRefinesTAbi`; for an integer `sret` parameter and no returns, x0:
+after the CLIF ones, in x8 (`ArmRefinesTAbi`; for an `sret` parameter and no returns:
 `backend_correct_finalT_sret`). -/
 theorem backend_correct_finalT_abi {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -356,8 +374,10 @@ theorem backend_correct_finalT_abi {p : Clif.Program} {f : Clif.Function} {k : N
 
 /-- **The `sret` return register through the typed chain**: for a function with an integer
 `sret` parameter `i` and no returns, under the premises of `backend_correct_finalT_abi`, a CLIF
-return is matched by an Arm return whose x0 holds the `sret` argument `args[i]`, with the memory
-the function wrote (`MemAgree`). -/
+return is matched by an Arm return whose x8 holds the `sret` argument `args[i]`, with the memory
+the function wrote (`MemAgree`). Restated for #587 (as `backend_correct_final_sret`): the
+conclusion said x0, true of the backend before #587 (`mov x0, x8` before `ret`); Cranelift
+returns the pointer in x8 on aarch64, and so does the backend now. -/
 theorem backend_correct_finalT_sret {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubsetT p f) (hc : CompiledT f k vc vcp rf af fa fb) (hS : sretStableB f = true)
@@ -391,7 +411,7 @@ theorem backend_correct_finalT_sret {p : Clif.Program} {f : Clif.Function} {k : 
     (hrun : Clif.runLoop env p fuel cs = .returned vals cm) {v : Clif.Val}
     (hv : args[i]? = some v) :
     ∃ n, ArmRet ra s (runX (ArmStepX X H fa) n s) ∧
-      XHolds v (xreg 0 (runX (ArmStepX X H fa) n s)) ∧
+      XHolds v (xreg 8 (runX (ArmStepX X H fa) n s)) ∧
       MemAgree cm (runX (ArmStepX X H fa) n s) := by
   obtain ⟨B0, hentB, hbody, hterm, -, -⟩ := hcs.entry
   have hB0 : f.blocks[0]? = some B0 := by
@@ -402,23 +422,12 @@ theorem backend_correct_finalT_sret {p : Clif.Program} {f : Clif.Function} {k : 
     rw [hnr] at this
     simpa [Clif.AbiParam.tys] using this
   subst hvals
-  -- `v` is an integer: its type is the `sret` parameter's
-  have hvi : v.ty.isInt = true := by
-    have hsig := congrArg (fun l => l[i]?) hcs.sig
-    simp only [List.getElem?_map, hv, Option.map_some] at hsig
-    cases hq : f.sig.params[i]? with
-    | none => rw [hq] at hsig; cases hsig
-    | some q =>
-      rw [hq, Option.map_some, Option.some.injEq] at hsig
-      rw [hsig]; exact hint q hq
   have h := backend_correct_finalT_abi hsub hc hS hT hcov hC hCT hTls hX hXI hsym hslot
     hent hres hbe hargs hcs hrel htr fuel
   rw [hrun, sretArg_of_sret hi hnr, hv] at h
   obtain ⟨n, hret, hx, hm⟩ := h
   refine ⟨n, hret, ?_, hm⟩
-  have hcl : tyClass v.ty = .int := by simp only [tyClass, hvi, ↓reduceIte]
-  have := hx 0 v (.x 0) (by simp) (by
-    simp only [List.nil_append, Option.toList_some, List.map_cons, List.map_nil, hcl]; rfl)
+  have := hx 0 v (.x 8) (by simp) (by simp [retRegsT])
   rwa [regVal_x] at this
 
 end E2E

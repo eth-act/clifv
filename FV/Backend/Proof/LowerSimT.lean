@@ -55,11 +55,14 @@ theorem retRegsT_append : ∀ (a b : List RegClass) (nx nv : Nat),
     obtain ⟨r, hr⟩ := retRegsT_append a b nx (nv + 1)
     exact ⟨r, by simp [retRegsT, hr]⟩
 
-/-- **The returned values are in their ABI return registers**: the registers of the `rets` pairs
-`us` start with the return registers of the values' type classes (`retRegsT`; after them, an
-`sret` function's returned pointer). -/
+/-- **The returned values are in their ABI return registers** (`RetPins` over classes): the
+registers of the `rets` pairs `us` start with the return registers of the values' type classes
+(`retRegsT` of the first `vals.length`, with the extra classes `cs` of an `sret` function's
+returned pointer counted beyond them); after them, in x8. -/
 def RetRegsOk (vals : List Clif.Val) (us : List (Reg × Reg)) : Prop :=
-  ∃ cs, us.map (·.2) = retRegsT (vals.map (fun v => tyClass v.ty) ++ cs) 0 0
+  ∃ cs, us.map (·.2) =
+    retRegsT ((vals.map (fun v => tyClass v.ty) ++ cs).take vals.length) 0 0 ++
+      List.replicate ((vals.map (fun v => tyClass v.ty) ++ cs).length - vals.length) (Reg.x 8)
 
 section
 variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
@@ -623,9 +626,9 @@ theorem stepTerm_ret_tys {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
   · rw [hc] at h; cases h
 
 /-- **Terminator step**, typed, with the ABI return values: a `return` also returns the frame's
-`sretRet f` values (`abiTerm`), all held by the VCode return's use values, with the return
-registers of the combined list (`RetRegsOk (vals ++ sv)`). `term_stepT` is the CLIF-values-only
-corollary. -/
+`sretRet f` values (`abiTerm`), all held by the VCode return's use values, whose return
+registers pin the CLIF values to their classes' return registers (`RetRegsOk vals us`, the
+`sret` pointer in x8 after them). `term_stepT` is the CLIF-values-only corollary. -/
 theorem term_stepT_abi (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : MatchT f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
@@ -635,7 +638,7 @@ theorem term_stepT_abi (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
         MatchT f ctx R gn bl A MR slots s' vs') ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
-        RetRegsOk (vals ++ sv) us ∧ us.length = outs.length ∧
+        RetRegsOk vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave ∧
         vals.map (·.ty) = Clif.AbiParam.tys f.sig.returns) ∧
@@ -872,13 +875,44 @@ theorem term_stepT_abi (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
       hvu.symm, by rw [← hvu]; exact hsem⟩, ?_, ?_, hvsS, hall,
       by simpa [fr', restrict, hslots] using hmr, by rw [hcm, hslots],
       by rw [← hfunc]; exact stepTerm_ret_tys hcall hs⟩
-    · -- `RetRegsOk (vals ++ vs) us`: the classes of the combined list are the driver's
-      have hcl' : (xs ++ sretRet f).map (valClassOf ctx) = (vals ++ vs).map (fun v => tyClass v.ty) :=
+    · -- `RetRegsOk vals us`: the classes of the returned values are the driver's
+      have hvC : valClassOf (termCtx ctx (L.start + B.body.length) L.data) = valClassOf ctx := by
+        funext x; rfl
+      have hclT : (xs ++ sretRet f).map
+            (valClassOf (termCtx ctx (L.start + B.body.length) L.data)) =
+          (vals ++ vs).map (fun v => tyClass v.ty) :=
         getMany_classes hcons.2 hg' (fun x hx => htyA x (hargsTA x (by simp [termArgs, hx])))
-      refine ⟨[], ?_⟩
-      rw [List.append_nil, ← hcl']
-      simp only [List.map_map]
-      exact hus
+      have hcl0 : xs.map (valClassOf (termCtx ctx (L.start + B.body.length) L.data)) =
+          vals.map (fun v => tyClass v.ty) :=
+        getMany_classes hcons.2 hg0 (fun x hx => htyA x (hargsTA x (by simp [termArgs, hx])))
+      rw [hvC] at hclT hcl0
+      have hl0 : (xs.map (valClassOf ctx)).length =
+          (vals.map (fun v => tyClass v.ty)).length := by rw [hcl0]
+      have hclS : (sretRet f).map (valClassOf ctx) = vs.map (fun v => tyClass v.ty) :=
+        (List.append_inj (by rw [← List.map_append, ← List.map_append]; exact hclT) hl0).2
+      refine ⟨vs.map (fun v => tyClass v.ty), ?_⟩
+      have hRaw : List.map (fun x => x.snd)
+          (List.map (fun x => match x with | (v, p) => (R v, p)) us) =
+          List.map (·.2) us := by
+        rw [List.map_map]
+        apply List.map_congr_left
+        intro q _
+        obtain ⟨v, p⟩ := q
+        simp
+      have hus' : List.map (fun x => x.snd)
+          (List.map (fun x => match x with | (v, p) => (R v, p)) us) =
+          retRegsT
+            ((xs.map (valClassOf ctx) ++ (sretRet f).map (valClassOf ctx)).take xs.length) 0 0 ++
+            List.replicate (sretRet f).length (Reg.x 8) := by
+        rw [hRaw, hus, hvC,
+          show (termCtx ctx (L.start + B.body.length) L.data).func = ctx.func from by
+            simp [termCtx], H.shape.ctxInvT.func, ← List.map_append, List.length_append,
+          Nat.add_sub_cancel, Nat.add_sub_cancel_left, List.map_append]
+      rw [← hcl0, ← hclS, (getMany_spec hg0).1.symm,
+        List.take_left' (l₁ := xs.map (valClassOf ctx)) (i := xs.length)
+          (by rw [List.length_map]), List.length_append, List.length_map, Nat.add_sub_cancel_left]
+      rw [hus', List.take_left' (l₁ := xs.map (valClassOf ctx)) (i := xs.length)
+        (by rw [List.length_map]), List.length_map]
     · simp only [List.length_map]; rw [hlen]; exact hall.1
   | trap c =>
     rw [hT] at hrun' hstep
@@ -929,10 +963,8 @@ theorem term_stepT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
   obtain ⟨T1, T2, T3⟩ := term_stepT_abi H hm hbody hnt
   refine ⟨T1, fun vals cm hs => ?_, T3⟩
-  obtain ⟨us, outs, w', sv, h1, ⟨cs, hcs⟩, h3, -, h5, h6, h7, h8⟩ := T2 vals cm hs
-  rw [List.map_append, List.append_assoc] at hcs
-  exact ⟨us, outs, w', h1, ⟨sv.map (fun v => tyClass v.ty) ++ cs, hcs⟩, h3,
-    AllHold.prefix_append h5, h6, h7, h8⟩
+  obtain ⟨us, outs, w', sv, h1, h2, h3, -, h5, h6, h7, h8⟩ := T2 vals cm hs
+  exact ⟨us, outs, w', h1, h2, h3, AllHold.prefix_append h5, h6, h7, h8⟩
 
 /-- **`try_call`/`try_call_indirect` step**, typed (the normal return; the edge block passes
 value arguments in their classes' vregs, `normArgRegT`). -/
@@ -1219,8 +1251,7 @@ theorem term_step_tryT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
         exact hh
       | ret ii =>
         have hii : ii < T.sig.returns.length := hargsOk _ htam
-        have hiN : ii < (sigRets T.sig).length :=
-          Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
+        have hiN : ii < T.sig.returns.length := hii
         have hvi : regs' (f.freshValue + ii) = some rvals[ii] :=
           setMany_nodup hset (List.Pairwise.map _ (fun a b h e => h (Nat.add_left_cancel e)) List.nodup_range) ii _ _
             (by simp [List.getElem?_map, hii]) (List.getElem?_eq_getElem (by omega))
@@ -1253,7 +1284,7 @@ theorem term_step_tryT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     | val v => exact ⟨_, H.shape.ren.vreg _ _⟩
     | ret ii =>
       have hii : ii < T.sig.returns.length := hargsOk _ ha
-      have hiN : ii < (sigRets T.sig).length := Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
+      have hiN : ii < T.sig.returns.length := hii
       have hg : gn (L.tst.nextVreg + ii) = L.tst.nextVreg + ii := H.shape.temps _ (by omega)
       exact ⟨.int, by simp [normArgRegT, tryArgNum, hregsEq, hiN, H.shape.ren.vreg, hg]⟩
     | exn _ => exact absurd (hargsOk _ ha) id
@@ -2040,13 +2071,14 @@ def RunOkT (rt : List Clif.Ty) (vc : VCode) (sem : ISem CV W) (MR : MemRelTW W)
   | .stuck _ | .outOfFuel => True
 
 /-- `RunOkT` with the ABI return values: a return also returns `sv` (the frame's `sretRet f`
-values at the `return`, which satisfy `Q`), the return registers of the combined list
-(`RetRegsOk (vals ++ sv)`), all the use values held (`AllHold (vals ++ sv)`). -/
+values at the `return`, which satisfy `Q`); the return registers pin the CLIF values
+(`RetRegsOk vals us`, the `sret` pointer in x8 after them), all the use values held
+(`AllHold (vals ++ sv)`). -/
 def RunOkTAbi (rt : List Clif.Ty) (vc : VCode) (sem : ISem CV W) (MR : MemRelTW W)
     (slots : List (Clif.SlotId × Nat)) (Q : List Clif.Val → Prop) (vs : VState CV W) :
     Clif.Outcome → Prop
   | .returned vals cm => ∃ us outs w cm0 sv, VRetFrom vc sem vs us outs w ∧
-      RetRegsOk (vals ++ sv) us ∧ us.length = outs.length ∧
+      RetRegsOk vals us ∧ us.length = outs.length ∧
       Q sv ∧ AllHold (vals ++ sv) outs ∧ MR slots cm0 w ∧
       cm = (cm0.free (slots.map (·.2))).leave ∧ vals.map (·.ty) = rt
   | .trapped c => VTrapFrom vc sem vs c
@@ -2069,10 +2101,7 @@ theorem RunOkTAbi.runOkT {rt : List Clif.Ty} {Q : List Clif.Val → Prop} {vs : 
   cases o with
   | returned vals cm =>
     obtain ⟨us, outs, w, cm0, sv, hr, h1, h2, -, h4, h5, h6, h7⟩ := h
-    refine ⟨us, outs, w, cm0, hr, ?_, h2, AllHold.prefix_append h4, h5, h6, h7⟩
-    obtain ⟨cs, hcs⟩ := h1
-    rw [List.map_append, List.append_assoc] at hcs
-    exact ⟨sv.map (fun v => tyClass v.ty) ++ cs, hcs⟩
+    refine ⟨us, outs, w, cm0, hr, h1, h2, AllHold.prefix_append h4, h5, h6, h7⟩
   | trapped c => exact h
   | _ => trivial
 
@@ -2193,8 +2222,9 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
 
 /-- **The typed driver lemma with the ABI return values** (`RunOkTAbi`): a return also returns
-`sv`, the frame's `sretRet f` values, satisfying `Q` (`hQ`), all held (`AllHold`) with the
-return registers of the combined list (`RetRegsOk`). -/
+`sv`, the frame's `sretRet f` values, satisfying `Q` (`hQ`), all held (`AllHold`); the return
+registers pin the CLIF values to their classes' registers (`RetRegsOk`, the `sret` pointer in
+x8 after them). -/
 theorem driver_correctT_abi (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}

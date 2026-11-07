@@ -8,7 +8,8 @@ import FV.E2E.DeadCleanupExecGoodReads
 `_abi` copies of the whole-program chain of `Link.DeadCleanup.compileExe_correct`: for an
 outside call of a function `f` whose `sret` value is bound once (`sretStableB f`), a return of
 the linked machine (and of the executable machine) also leaves the ABI return values
-`sretArg f args` after the CLIF ones in x0.. (`ArmRefinesAbi`, `ExecRefinesAbi`).
+`sretArg f args` after the CLIF ones, in x8 (`ArmRefinesAbi`, `ExecRefinesAbi`; until #587: in
+x0.. after the CLIF values).
 
 Only the outside activation's return is strengthened: its returned branch applies the world
 theorem with the ABI return values (`backend_correct_world_pipeline_abi`) to `f`, with the
@@ -177,7 +178,7 @@ open Backend Backend.Proof E2E.LinkCheck
 open Backend.Proof.Driver (sretStableB)
 
 /-- `binary_correct` with the ABI return values (`sretStableB f`): the linked machine's return
-also leaves `sretArg f args` after the CLIF results in x0... -/
+also leaves `sretArg f args` after the CLIF results, in x8. -/
 theorem binary_correct_abi {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
     {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFacts I X R roB) (B : BaseEnv)
     (hB : BaseOk (sys I B)) {n : String} (hn : DeadCleanupStackBound.goodN I n = true)
@@ -237,11 +238,14 @@ open Backend Backend.Proof E2E.LinkCheck E2E.DeadCleanupBinary E2E.BinCheck Elf
 open Backend.Proof.Driver (sretStableB)
 
 /-- **`ExecRefines` with the ABI return values** `rets` after the CLIF ones (as `ArmRefinesAbi`
-for `ArmRefines`). -/
+for `ArmRefines`): the CLIF values in x0.., the ABI return values in x8. Restated for #587 with
+`ArmRefinesAbi`: it put them in x0.. after the CLIF values, true of the backend before #587
+(`mov x0, x8` before `ret`); Cranelift returns the `sret` pointer in x8 on aarch64. -/
 def ExecRefinesAbi (fb : FnBin) (base ra : BitVec 64) (astep : Arm.ArmState → Arm.ArmState)
     (s : Arm.ArmState) (R : BitVec 64 → Prop) (rets : List Clif.Val) : Clif.Outcome → Prop
   | .returned vals cm => ∃ n, ArmRet ra s (runX astep n s) ∧
-      (∀ (j : Nat) v, (vals ++ rets)[j]? = some v → XHolds v (xreg j (runX astep n s))) ∧
+      (∀ (j : Nat) v, (vals ++ rets)[j]? = some v →
+        XHolds v (xreg (if j < vals.length then j else 8) (runX astep n s))) ∧
       ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → ¬ R (BitVec.ofNat 64 a) →
         Arm.read_mem (BitVec.ofNat 64 a) (runX astep n s) = b
   | .trapped c => ∃ n, TrapAt fb base c (runX astep n s)
@@ -254,9 +258,10 @@ theorem ExecRefinesAbi.execRefines {fb : FnBin} {base ra : BitVec 64}
   cases o with
   | returned vals cm =>
     obtain ⟨n, hret, hx, hm⟩ := h
-    refine ⟨n, hret, fun j v hj => hx j v ?_, hm⟩
-    rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp hj).1]
-    exact hj
+    have hjv := fun j (v : Clif.Val) (hj : vals[j]? = some v) => (List.getElem?_eq_some_iff.mp hj).1
+    refine ⟨n, hret, fun j v hj => ?_, hm⟩
+    have := hx j v (by rw [List.getElem?_append_left (hjv j v hj)]; exact hj)
+    rwa [if_pos (hjv j v hj)] at this
   | trapped c => exact h
   | _ => trivial
 
@@ -437,7 +442,7 @@ theorem binary_correct_exec_of_insn_abi {I : LinkInput} {D : List Clif.DataObjec
     | outOfFuel => trivial
 
 /-- `binary_correct_exec_proven` with the ABI return values (`sretStableB f`): the executable
-machine's return also leaves `sretArg f args` after the CLIF results in x0... -/
+machine's return also leaves `sretArg f args` after the CLIF results, in x8. -/
 theorem binary_correct_exec_proven_abi {I : LinkInput} {D : List Clif.DataObject}
     {file : ByteArray} (hI : okBCleanup I = true)
     (hcm : codeMapB I (tabOf I.resultsCleanup) = true)

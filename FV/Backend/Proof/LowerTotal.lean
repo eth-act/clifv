@@ -186,14 +186,13 @@ theorem foldl_size {α γ : Type} (g : Array Reg × γ → α → Array Reg × �
     rw [List.foldl_cons, foldl_size g hg l, hg]
     simp; omega
 
-/-- `tryRegsOf` computes for a callee with at most 8 returns: one vreg per ABI return, one per
-payload register. -/
+/-- `tryRegsOf` computes for a callee with at most 8 returns: one vreg per declared return, one
+per payload register. -/
 theorem tryRegsOf_ok {s : Clif.Signature} (h : s.returns.length ≤ 8) (st : LState) :
     ∃ rets pays st', tryRegsOf s st = some ((rets, pays), st') ∧
-      rets.length = (sigRets s).length ∧ pays.length = (payloadRegs s.callConv).length := by
-  have h8 := sigRets_le h
+      rets.length = s.returns.length ∧ pays.length = (payloadRegs s.callConv).length := by
   unfold tryRegsOf
-  simp only [retRegs, h8, ite_true, bind, Option.bind, pure]
+  simp only [retRegs, h, ite_true, bind, Option.bind, pure]
   refine ⟨_, _, _, rfl, ?_, ?_⟩
   · rw [Array.length_toList, foldl_size _ (fun q a => by rcases q; simp)]
     simp
@@ -408,7 +407,7 @@ structure TryOk (f : Clif.Function) (ctx : Ctx) (et : Clif.ExnTable) (sig : Clif
   i128 : (sig.returns.any fun x => x.ty == Clif.Ty.i128) = false
   items : items.length = et.handlers.length
   dests : ∀ k td, et.dests[k]? = some td →
-    TryDestOk f ctx et.handlers.length (sigRets sig).length (payloadRegs sig.callConv).length k td
+    TryDestOk f ctx et.handlers.length sig.returns.length (payloadRegs sig.callConv).length k td
 
 theorem exnOf_of {t : Clif.Terminator} {et : Clif.ExnTable} (h : IsTryWith t et) :
     exnOf t = some et := by
@@ -688,7 +687,7 @@ theorem tryOk_of {f : Clif.Function} {ctx : Ctx} {et : Clif.ExnTable} (hin : try
         have := hnargs a ha
         cases a with
         | val v => exact hval _ htdm v ha
-        | ret i => exact ⟨hkh, Nat.lt_of_lt_of_le (hret s hs i ha) (returns_le_sigRets s)⟩
+        | ret i => exact ⟨hkh, hret s hs i ha⟩
         | exn i => simp at this
 
 /-- The terminator's data computes. -/

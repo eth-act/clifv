@@ -291,7 +291,7 @@ theorem progCall_production (hL : L.OkProduction) [hR : L.CrunOk] {M : Nat} (hM 
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (∀ t, L.CallerOk F h uses w t → ∃ k,
         L.pcall M h t =
@@ -726,11 +726,12 @@ theorem progOsCore_production (hL : L.OkProduction) [hR : L.CrunOk] (hκ : L.Bud
     {info : CallInfo} (hdefs0 : info.defs = callDefs Ld)
     {ops : Array Operand} {regs : Array Reg}
     (hdefs : ((ops.zip regs).toList.filter (·.1.isDef)) = (callDefOps Ld).zip (Ld.map (·.1)))
-    {t w w' : Arm.ArmState} {outs : List CV}
+    {t w w' : Arm.ArmState} {o outs : List CV}
     (hK : κ M g ≤ (spOf t).toNat) (hG : ∀ a, G a → t.mem a = s0.mem a)
     (hra : RaOk (L.A h) (Arm.r .PC t))
     (hsw : SameWorld F t w)
-    (hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (outs, w')) :
+    (hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (o, w'))
+    (houts : ∃ n, outs = o.take n) :
     SameWorld F (L.pcall M h t) w' ∧
       FrameKeep (fun a => F a ∧ ¬ StackBelow (κ M g) (spOf t) a) t (L.pcall M h t) ∧
       (∀ p ∈ defRegs ops regs outs, regVal (L.pcall M h t) p.1.2 = p.2) ∧
@@ -820,14 +821,18 @@ theorem progOsCore_production (hL : L.OkProduction) [hR : L.CrunOk] (hκ : L.Bud
   · -- the results
     intro p hp
     obtain ⟨⟨op, r⟩, x⟩ := p
-    rw [defRegs, hdefs] at hp
+    rw [defRegs] at hp
+    obtain ⟨n, rfl⟩ := houts
+    replace hp := mem_zip_of_mem_zip_take hp
+    rw [hdefs] at hp
     obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hp
     simp only [List.getElem?_zip_eq_some] at hj
     obtain ⟨⟨-, hr⟩, hx⟩ := hj
     simp only [List.getElem?_map, Option.map_eq_some_iff] at hx
     obtain ⟨j2, hj2, rfl⟩ := hx
-    have hjr : j < (sigRets h.sig).length := by
+    have hjr' : j < h.sig.returns.length := by
       have := (List.getElem?_eq_some_iff.mp hj2).1; simpa using this
+    have hjr : j < (sigRets h.sig).length := Nat.lt_of_lt_of_le hjr' (returns_le_sigRets _)
     have hjL : j < Ld.length := by
       have := (List.getElem?_eq_some_iff.mp hr).1; simpa using this
     have e : ((Ld.map (·.1)).take (sigRets h.sig).length)[j]? = (Ld.map (·.1))[j]? := by
@@ -837,7 +842,7 @@ theorem progOsCore_production (hL : L.OkProduction) [hR : L.CrunOk] (hκ : L.Bud
     obtain ⟨j1, hj1, rfl⟩ := hr
     rw [List.getElem?_range (by omega : j < min (sigRets h.sig).length Ld.length),
       Option.some.injEq] at hj1
-    rw [List.getElem?_range hjr, Option.some.injEq] at hj2
+    rw [List.getElem?_range hjr', Option.some.injEq] at hj2
     subst hj1 hj2
     show regVal _ (Reg.x j) = regVal _ (Reg.x j)
     rw [hs_eq, regVal_set_program, hc_eq, regVal_set_program]
@@ -858,10 +863,13 @@ theorem progOsCore_production (hL : L.OkProduction) [hR : L.CrunOk] (hκ : L.Bud
         simp only [List.length_map, Clif.AbiParam.tys] at this
         rw [← this]; exact hhold.1
     have hju : j < us.length := by omega
+    have hrl : rvals.length = h.sig.returns.length := by
+      have := congrArg List.length hrt
+      simpa only [List.length_map, Clif.AbiParam.tys] using this
     have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
       have := congrArg (·[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some, Option.some.injEq] at this
+        Option.map_some, Option.some.injEq, retX_lt (hrl ▸ hjr')] at this
       rw [List.getElem?_eq_getElem hju, ← this]
     have hoj : outsV[j]? = some (outsV[j]'(by omega)) := List.getElem?_eq_getElem _
     rw [hs_ret.regs j _ _ _ hus_j hoj, hc_ret.regs j _ _ _ hus_j hoj]
@@ -945,15 +953,16 @@ theorem progOs_production (hL : L.OkProduction) [L.CrunOk] (hκ : L.Budget κ) {
   have hregs := callRegs_eq (regs := regs) (by simpa using hsz')
     (fun p hp r hr => (hloc p hp).2 r hr)
   rw [call_useVals hregs] at hsem
-  have hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (outs, w') := by
+  obtain ⟨o, hx, hout⟩ : ∃ o, L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (o, w') ∧
+      outs = o.take (callDefs Ld).length := by
     simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
     obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
     rw [L.X_prog hpf] at hx
-    exact hx
+    exact ⟨o, hx, rfl⟩
   obtain ⟨us', ds', rfl⟩ := assign_call_sym hasg
   exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_some hpf],
     L.progOsCore_production hL hκ ih hg hh (.inl ⟨_, hsite⟩) himgF himgG himgS hLu hLd rfl (call_defs hregs) hK hG
-      (hL.raCall g hg _ h hsite _ hP.callPc) hsw hx⟩
+      (hL.raCall g hg _ h hsite _ hP.callPc) hsw hx ⟨_, hout⟩⟩
 end LinkSys
 
 namespace LinkSys
@@ -1003,11 +1012,11 @@ theorem progOsReg_production (hL : L.OkProduction) [L.CrunOk] (hκ : L.Budget κ
     exact blrTarget_of hc.layout hlm hj hn0 hpc
       (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (himgG a ha)).trans (himgS a ha)) k wd hk)
   -- the external semantics' call
-  have hx : (L.X κ M g F).call none (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w =
-      some (outs, w') := by
+  obtain ⟨o, hx, hout⟩ : ∃ o, (L.X κ M g F).call none (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w =
+      some (o, w') ∧ outs = o.take (callDefs Ld).length := by
     simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
     obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
-    exact hx
+    exact ⟨o, hx, rfl⟩
   cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
   | none =>
     -- no function of `P` at the target: the base's contract
@@ -1016,7 +1025,7 @@ theorem progOsReg_production (hL : L.OkProduction) [L.CrunOk] (hκ : L.Budget κ
     have hsem' : csem F ctx L.Xb (.call ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩)
         (useVals (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray regs t) w =
         some (outs, w', .next) := by
-      rw [call_useVals_reg hregs0]; simp [csem, hx]
+      rw [call_useVals_reg hregs0, hout]; simp [csem, hx]
     obtain ⟨s', hex, rest⟩ := hL.baseOs g hg _ hsite (.inl rfl) F (κ M g) G s0
       (CallAt (L.A g).fa (L.A g).base) ctx t hK hD hG c wh _ regs _ w outs w' hops0 hst hasg hP hsw
       hal herr hsem'
@@ -1040,7 +1049,7 @@ theorem progOsReg_production (hL : L.OkProduction) [L.CrunOk] (hκ : L.Budget κ
       exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_none hb],
         L.progOsCore_production hL hκ ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS hLu hLd rfl
           (call_defs_reg hregs0) hK hG
-          (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw hx⟩
+          (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw hx ⟨_, hout⟩⟩
     · cases hx
 end LinkSys
 
@@ -1240,7 +1249,7 @@ theorem progResult_production (hL : L.OkProduction) [hR : L.CrunOk] (hκ : L.Bud
       g c sl cm w)
     (hpl : L.NeedSlots → L.PlaceAt cm c) (hinit : Clif.initState L.P h.name vals cm = .ok cs)
     (hret : L.crun M cs = .returned rvals cm') :
-    ∃ outs w', L.progX κ M F h args w = some (outs, w') ∧ outs.length = (sigRets h.sig).length ∧
+    ∃ outs w', L.progX κ M F h args w = some (outs, w') ∧ outs.length = h.sig.returns.length ∧
       PrefixHold rvals outs ∧
       RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c sl cm' w' := by
@@ -1281,26 +1290,32 @@ theorem progResult_production (hL : L.OkProduction) [hR : L.CrunOk] (hκ : L.Bud
     rw [this, r_enterAt _ _ (by simp) (by simp)]
     exact (L.callerOk_canon_production hL hh himgF args w).world.1 _ (by simp [Masked])
   have hce := clifEntry_initState (f := h) hpf hinit
-  have hlr : rvals.length ≤ (sigRets h.sig).length := by
+  have hlr : rvals.length ≤ h.sig.returns.length := by
     have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hretN
     have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
     rw [hbot] at hrt
     have := congrArg List.length hrt
     simp only [List.length_map, Clif.AbiParam.tys] at this
-    rw [this]; exact returns_le_sigRets _
+    rw [this]; exact Nat.le_refl _
+  have hrl : rvals.length = h.sig.returns.length := by
+    have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hretN
+    have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have := congrArg List.length hrt
+    simpa only [List.length_map, Clif.AbiParam.tys] using this
   refine ⟨_, _, by rw [progX, if_pos hcond], ?_, ⟨by simpa using hlr, fun j v x hv hx => ?_⟩,
     ⟨⟨⟨fun a b hv hb => ?_, hmemR.valid, hmemR.symbols⟩, ?_, ?_⟩, ?_, hcond.2⟩⟩
   · rw [List.length_map, List.length_range]
   · -- the results
     have hjr : j < rvals.length := (List.getElem?_eq_some_iff.mp hv).1
     have hju : j < us.length := by have := hhold.1; omega
-    simp only [List.getElem?_map, List.getElem?_range (by omega : j < (sigRets h.sig).length),
+    simp only [List.getElem?_map, List.getElem?_range (by omega : j < h.sig.returns.length),
       Option.map_some, Option.some.injEq] at hx
     subst hx
     have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
       have := congrArg (·[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some, Option.some.injEq] at this
+        Option.map_some, Option.some.injEq, retX_lt hjr] at this
       rw [List.getElem?_eq_getElem hju, ← this]
     have hoj : outsV[j]? = some (outsV[j]'(by omega)) := List.getElem?_eq_getElem _
     rw [hc_eq, regVal_set_program, hc_ret.regs j _ _ _ hus_j hoj]
@@ -1490,7 +1505,7 @@ theorem xCallsIndOk_production (hL : L.OkProduction) [L.CrunOk] (hκ : L.Budget 
         argsAt_regLocs hargs⟩]
       exact hx
     · rw [hol]
-      exact hsr sig hsig hm.ty hm.returns_length
+      exact hm.returns_length
 end LinkSys
 
 namespace LinkSys
@@ -1553,24 +1568,30 @@ theorem progX_ni_production (hL : L.OkProduction) [hR : L.CrunOk] (hN : L.NeedNI
     (fun off v hmz j hj => by
       rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmz j hj (himgF _ hi))]
       exact stackArgs_bytes ha.2.2 ha'.2.2 hsp' off v hmz j hj)
-  -- the callee's ABI results are among the defs of its return site
-  have hsr : (sigRets h.sig).length ≤ us.length := by
-    cases hs : h.sig.params.any (·.purpose == .sret)
-    · have hce := clifEntry_initState hpf hinit
-      obtain ⟨Nr, hrunN⟩ := hR.runs M cs _ hrun (.inl ⟨_, _, rfl⟩)
-      have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hrunN
-      have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
-      rw [hbot] at hrt
-      have e := congrArg List.length hrt
-      simp only [List.length_map, Clif.AbiParam.tys] at e
-      rw [sigRets_of_noSret hs, ← e]
-      have := hhold.1
-      omega
-    · exact hL.sretRets h hh hs us hrs
+  -- the callee's declared results are among the defs of its return site
+  have hsr : h.sig.returns.length ≤ us.length := by
+    have hce := clifEntry_initState hpf hinit
+    obtain ⟨Nr, hrunN⟩ := hR.runs M cs _ hrun (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hrunN
+    have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have e := congrArg List.length hrt
+    simp only [List.length_map, Clif.AbiParam.tys] at e
+    rw [← e]
+    have := hhold.1
+    omega
+  have hrl : rvals.length = h.sig.returns.length := by
+    have hce := clifEntry_initState hpf hinit
+    obtain ⟨Nr, hrunN⟩ := hR.runs M cs _ hrun (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hrunN
+    have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have e := congrArg List.length hrt
+    simpa only [List.length_map, Clif.AbiParam.tys] using e
   have hres : ∀ (u : Arm.ArmState) (kk : Nat) (Y : BitVec 64 → Prop) (G : BitVec 64 → Prop),
       ActRet (Arm.r .PC u + 4) Y G us outs wf (enterAt (L.A h) u)
         (runX (L.mach (M - 1) h) kk (enterAt (L.A h) u)) →
-      ∀ j (hj : j < (sigRets h.sig).length),
+      ∀ j (hj : j < h.sig.returns.length),
         regVal (Arm.set_program (runX (L.mach (M - 1) h) kk (enterAt (L.A h) u)) u.program)
           (.x j) = outs[j]'(by omega) := by
     intro u kk Y G hr j hj
@@ -1578,7 +1599,7 @@ theorem progX_ni_production (hL : L.OkProduction) [hR : L.CrunOk] (hN : L.NeedNI
     have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
       have := congrArg (·[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some, Option.some.injEq] at this
+        Option.map_some, Option.some.injEq, retX_lt (by omega : j < rvals.length)] at this
       rw [List.getElem?_eq_getElem hju, ← this]
     rw [regVal_set_program, hr.regs j _ _ _ hus_j (List.getElem?_eq_getElem _)]
   refine ⟨?_, ?_⟩

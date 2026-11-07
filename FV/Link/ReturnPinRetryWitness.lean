@@ -27,27 +27,33 @@ def rejectedFile0 (cleanup : Bool) : ByteArray :=
   | .ok image => image.write
   | .error _ => ByteArray.empty
 
+/-- Since #587 (#931 fixed) the return-pin attempt accepts the nop-caller fixture `rejected`
+(before, it rejected it and the compiler retried with the previous pipeline). -/
 def retryChecks (cleanup : Bool) : Bool :=
-  !(ReturnPinCompilerWith.attempt lower (rejected.placedProductionWith lower cleanup)
+  (ReturnPinCompilerWith.attempt lower (rejected.placedProductionWith lower cleanup)
     (rejectedFile0 cleanup) cleanup).isOk &&
   (SemanticCompilerWith.compile Stock.Production.lower rejected (rejectedFile0 cleanup) cleanup).isOk
 
 
 attribute [local irreducible] lower initial rejected rejectedFile0 retryChecks
 
--- witness: native_decide (the complete additional negative program in both cleanup modes)
+-- witness: native_decide (the complete additional program in both cleanup modes)
 theorem retry_checks : (retryChecks false && retryChecks true) = true := by native_decide
 
+/-- The compiler keeps the return-pin attempt's output for the fixture `rejected`. Before #587
+this stated the retry with the previous pipeline (`SemanticCompilerWith.compile`); #931 is
+fixed, so the attempt now succeeds and no retry happens. -/
 theorem compiler_retries_complete_previous (cleanup : Bool) :
     ReturnPinCompilerWith.compileWithFallback lower Stock.Production.lower rejected (rejectedFile0 cleanup) cleanup =
-      SemanticCompilerWith.compile Stock.Production.lower rejected (rejectedFile0 cleanup) cleanup := by
+      .ok ⟨getOk (ReturnPinCompilerWith.attempt lower (rejected.placedProductionWith lower cleanup)
+        (rejectedFile0 cleanup) cleanup),true⟩ := by
   have both := Bool.and_eq_true_iff.mp retry_checks
   have checked : retryChecks cleanup = true := by cases cleanup <;> first | exact both.1 | exact both.2
-  simp only [retryChecks,Bool.and_eq_true,Bool.not_eq_true'] at checked
+  simp only [retryChecks,Bool.and_eq_true] at checked
   cases attempt : ReturnPinCompilerWith.attempt lower (rejected.placedProductionWith lower cleanup)
       (rejectedFile0 cleanup) cleanup with
-  | ok bytes => simp only [attempt,Except.isOk] at checked; cases checked.1
-  | error error => exact ReturnPinCompilerWith.compile_retry attempt
+  | ok bytes => exact ReturnPinCompilerWith.compile_accepted attempt
+  | error error => simp only [attempt,Except.isOk] at checked; cases checked.1
 
 end Link.ReturnPinRetryWitness
 
@@ -99,9 +105,11 @@ def storeDroppingLower : ProductionLowering := fun f =>
   (lowerFunction f).map fun vc => {vc with blocks := vc.blocks.map fun block =>
     {block with insts := block.insts.filter fun | .store _ _ _ _ => false | _ => true}}
 
+/-- Since #587 (#931 fixed) the correct compiler's choice for `rejected` is `.current` (before:
+`.previous`, after the return-pin attempt rejected it). -/
 def choiceChecks (cleanup : Bool) : Bool :=
   (ReturnPinCompilerWith.compileWithChoice lower Stock.Production.lower rejected
-    (rejectedFile0 cleanup) cleanup).toOption.any (fun out => decide (out.choice = .previous)) &&
+    (rejectedFile0 cleanup) cleanup).toOption.any (fun out => decide (out.choice = .current)) &&
   (ReturnPinCompilerWith.compileWithChoice storeDroppingLower storeDroppingLower rejected
     (rejectedFile0 cleanup) cleanup).toOption.any (fun out => decide (out.choice = .legacy))
 

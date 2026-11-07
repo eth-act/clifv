@@ -75,7 +75,7 @@ def ThmReturnPins (modes : Clif.Function → ReturnPinMode) (κ : Nat → Clif.F
     (rvals : List Clif.Val) (cm' : Clif.Mem), L.WorldEntry κ M g F vals cs w₀ →
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-      ReturnPinMode.Valid (modes g) g us ∧ us.length = outs.length ∧
+      ReturnPinMode.Valid (modes g) g rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
       (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
         ∃ n, ActRet ra F G us outs wf s (runX (L.mach M g) n s) ∧

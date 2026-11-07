@@ -234,7 +234,7 @@ theorem progResultBT_Lsl
     (htab : Lsl.TableOf (M - 1) h (enterAt (Lsl.A h) (Lsl.canon h args w)) (calleeIni h ini))
     (hinit : Clif.initState Lsl.P h.name vals cm = .ok cs)
     (hret : Lsl.crun M cs = .returned rvals cm') :
-    ∃ outs w', Lsl.progXBT (fun M _ => Lsl.K M) M F h args w = some (outs, w') ∧ outs.length = (sigRets h.sig).length ∧
+    ∃ outs w', Lsl.progXBT (fun M _ => Lsl.K M) M F h args w = some (outs, w') ∧ outs.length = h.sig.returns.length ∧
       PrefixHold rvals outs ∧
       RelW ⟨F, Lsl.syms, (Lsl.A g).af.slotBase, (RAFrame.compute (Lsl.A g).vcp (Lsl.A g).rf).intBase⟩
         g c sl cm' w' :=
@@ -517,7 +517,7 @@ theorem progCallPRBRLT_Lsl
     (hinit : Clif.initState Lsl.P n vals cm = .ok cs)
     (hrun : Lsl.crun M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (e : Nat),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F Lsl.syms cm' wf ∧ (Lsl.A h).vc.RetsSite us ∧
       (Lsl.NeedSlots → Clif.NextAdv cs.mem.leave cm' e) ∧
       (∀ t, Lsl.CallerOk F h uses w t →

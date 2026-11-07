@@ -29,7 +29,7 @@ theorem prgyNX_pipeline_applies :
             source c) XI.sym)
         (∀ vals cm, Clif.runLoop Clif.Env.empty { funcs := [] } fuel cs = .returned vals cm →
           ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-            us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+            RetPins vals us ∧ us.length = outs.length ∧
             PrefixHold vals outs ∧ MemRel F (fun _ => none) cm w ∧ vc.RetsSite us ∧
             ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (Kp : Nat)
               (cc : BitVec 64) (P : Nat → BitVec 64 → BitVec 8) (R : Nat → Arm.ArmState)

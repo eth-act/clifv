@@ -91,7 +91,7 @@ theorem progCall_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : Na
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-      ReturnPinMode.Valid (modes h) h us ∧ us.length = outs.length ∧
+      ReturnPinMode.Valid (modes h) h rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (∀ t, L.CallerOk F h uses w t → ∃ k,
         L.pcall M h t =

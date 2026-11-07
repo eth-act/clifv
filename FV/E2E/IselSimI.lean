@@ -332,7 +332,7 @@ theorem term_stepG (hB : ProbeOf semB sem) {n : Nat}
         (.run ⟨b', k', ρ', (w', n)⟩) ∧ Match f ctx R gn bl A MRW slots s' ⟨b', k', ρ', w'⟩) ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vc (ISem.counted sem) ⟨b, k, ρ, (w, n)⟩ us outs (w', n) ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MRW slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c →
@@ -404,7 +404,7 @@ theorem term_stepI {n : Nat}
         (.run ⟨b', k', ρ', (w', n)⟩) ∧ Match f ctx R gn bl A MR slots s' ⟨b', k', ρ', w'⟩) ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vc (csemI F fctx XI) ⟨b, k, ρ, (w, n)⟩ us outs (w', n) ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc (csemI F fctx XI) ⟨b, k, ρ, (w, n)⟩ c) := by

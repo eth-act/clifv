@@ -93,12 +93,14 @@ theorem callsRefine_csemU {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {X
         (.inl ⟨rfl, rfl⟩) hargs hmr hret0
       obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals
         rvals cm' hg (.inl ⟨rfl, rfl⟩) hargs hmr hret hrl
-      exact ⟨outs, w', by simp [csemU, callDest, hnr, csem, hc], by rw [hol, hds], ho, hm⟩
+      exact ⟨outs, w', by simp [csemU, callDest, hnr, csem, hc,
+        List.take_of_length_le (show outs.length ≤ ds.length by omega)], by rw [hol, hds], ho, hm⟩
     · have hnr := hE.1 ext hin g0 sl cm w none _ args vals rvals cm' hg0
         (.inr ⟨rfl, hcol, rfl⟩) hargs hmr hret0
       obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm'
         hg (.inr ⟨rfl, hcol, rfl⟩) hargs hmr hret hrl
-      exact ⟨outs, w', by simp [csemU, callDest, hnr, csem, hc], by rw [hol, hds], ho, hm⟩
+      exact ⟨outs, w', by simp [csemU, callDest, hnr, csem, hc,
+        List.take_of_length_le (show outs.length ≤ ds.length by omega)], by rw [hol, hds], ho, hm⟩
   · intro ext hin g sl cm w dest us ds ti uses args vals rvals cm' hg hd hds hti hargs hmr hret hrl
     obtain ⟨g0, hg0, hgg⟩ := toEnv_extern hg
     have hret0 := toOutcome_returned ((hgg vals cm).symm.trans hret)
@@ -108,7 +110,11 @@ theorem callsRefine_csemU {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {X
       obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w (some ext.name) uses uses vals
         rvals cm' hg (.inl ⟨rfl, rfl⟩) hargs hmr hret hrl
       refine ⟨_, w', by simp only [csemU, callDest, hnr, csem, hc, Option.filter_some, hol, hti,
-        decide_true, ↓reduceIte, Option.map_some]; rfl, ?_, ho.append _, hm⟩
+        decide_true, ↓reduceIte, Option.map_some,
+        List.take_of_length_le (show (outs ++ List.map (fun _ => ofX 0)
+          (List.drop ext.sig.returns.length ds)).length ≤ ds.length by
+            simp only [List.length_append, List.length_map, List.length_drop]; omega)]; rfl,
+        ?_, ho.append _, hm⟩
       simp only [List.length_append, List.length_map, List.length_drop]
       omega
     · have hnr := hE.1 ext hin g0 sl cm w none _ args vals rvals cm' hg0
@@ -116,7 +122,11 @@ theorem callsRefine_csemU {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {X
       obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX ext hin g sl cm w none _ args vals rvals cm' hg
         (.inr ⟨rfl, hcol, rfl⟩) hargs hmr hret hrl
       refine ⟨_, w', by simp only [csemU, callDest, hnr, csem, hc, Option.filter_some, hol, hti,
-        decide_true, ↓reduceIte, Option.map_some]; rfl, ?_, ho.append _, hm⟩
+        decide_true, ↓reduceIte, Option.map_some,
+        List.take_of_length_le (show (outs ++ List.map (fun _ => ofX 0)
+          (List.drop ext.sig.returns.length ds)).length ≤ ds.length by
+            simp only [List.length_append, List.length_map, List.length_drop]; omega)]; rfl,
+        ?_, ho.append _, hm⟩
       simp only [List.length_append, List.length_map, List.length_drop]
       omega
 
@@ -139,7 +149,8 @@ theorem indCallsRefine_csemU {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
       hmr hret0 hty
     obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg hsg
       (by rw [hu, hs]) hlen hall hmr hret hrl hty
-    exact ⟨outs, w', by simp [csemU, callDest, hnr, csem, hc], by rw [hol, hds], ho, hm⟩
+    exact ⟨outs, w', by simp [csemU, callDest, hnr, csem, hc,
+        List.take_of_length_le (show outs.length ≤ ds.length by omega)], by rw [hol, hds], ho, hm⟩
   · intro sig hin n g sl cm w a r us ds ti u args vals rvals cm' hg hsg ha hu hds hti hlen hall
       hmr hret hrl hty
     have hs : X.sym n 0 = BitVec.ofNat 64 a := hsym n a (by rw [← hMRs sl cm w hmr]; exact ha)
@@ -150,7 +161,11 @@ theorem indCallsRefine_csemU {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
     obtain ⟨outs, w', hc, hol, ho, hm⟩ := hX sig hin n g sl cm w u args vals rvals cm' hg hsg
       (by rw [hu, hs]) hlen hall hmr hret hrl hty
     refine ⟨_, w', by simp only [csemU, callDest, hnr, csem, hc, Option.filter_some, hol, hti,
-      decide_true, ↓reduceIte, Option.map_some]; rfl, ?_, ho.append _, hm⟩
+      decide_true, ↓reduceIte, Option.map_some,
+      List.take_of_length_le (show (outs ++ List.map (fun _ => ofX 0)
+        (List.drop sig.returns.length ds)).length ≤ ds.length by
+          simp only [List.length_append, List.length_map, List.length_drop]; omega)]; rfl,
+      ?_, ho.append _, hm⟩
     simp only [List.length_append, List.length_map, List.length_drop]
     omega
 

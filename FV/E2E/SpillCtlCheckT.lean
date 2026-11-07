@@ -74,7 +74,7 @@ theorem vc_ctlG {f : Clif.Function} {vc : VCode}
   have hd := dominated_of hdom
   have hne := hpd.nonempty
   obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_runT hx hl
-  obtain ⟨hS, hT, hY⟩ := hIf ctx ranges st0 hb
+  obtain ⟨hS, hT, hY⟩ := hIf ctx ranges st0 hb (sretRet_valClass_int hd hec ha.1.1 hb)
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
   obtain ⟨-, hspec⟩ := lowBlocks_spec hlb

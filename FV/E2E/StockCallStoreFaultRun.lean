@@ -29,10 +29,7 @@ theorem FaultReady.execute {f : Clif.Function} {result : Stock.Result} {env : Cl
     (some source.ext.name) [source.values source.argument] [source.values source.argument]
     [⟨.i64,source.liveWord⟩] [⟨.i64,source.returnedWord⟩] source.after source.found (Or.inl ⟨rfl,rfl⟩)
     (source.arguments before) beforeMemory source.sourceReturned (by rw [source.returns]; rfl)
-  have abi : sigRets source.ext.sig = [source.returned] := by
-    unfold sigRets
-    split <;> simp [source.returns]
-  rw [abi] at arity
+  rw [source.returns] at arity
   cases actual with
   | nil => cases arity
   | cons output tail =>
@@ -42,7 +39,7 @@ theorem FaultReady.execute {f : Clif.Function} {result : Stock.Result} {env : Cl
         (.call ⟨.sym source.ext.name,retPairs [(source.argument,.x 0)],callDefs [(.x 0,source.called)]⟩)
         ([(source.argument,Reg.x 0)].map (source.values ·.1)) before = some ([output],after,.next) := by
       change (X.call (some source.ext.name) [source.values source.argument] before).map
-        (fun pair => (pair.1,pair.2,Ctl.next)) = _
+        (fun pair => (pair.1.take 1,pair.2,Ctl.next)) = _
       rw [called]
       rfl
     exact access_tail source.placed source.separate source.code preRun callStep source.flag

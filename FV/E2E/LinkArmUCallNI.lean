@@ -37,7 +37,7 @@ theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
     (hinit : Clif.initState L.P n vals cm = .ok cs) :
     (∀ rvals cm', L.crunX (M + 1) cs = .returned rvals cm' →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins rvals us ∧ us.length = outs.length ∧
         PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
         (∀ t, L.CallerOk F h uses w t → ∃ k,
           L.pcallU (M + 1) h t =
@@ -520,7 +520,7 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
     (hinit : Clif.initState L.P n vals cm = .ok cs) :
     (∀ rvals cm', L.crunX (M + 1) cs = .returned rvals cm' →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins rvals us ∧ us.length = outs.length ∧
         PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
         (∀ t, L.CallerOk F h uses w t → ∃ k,
           L.pcallU (M + 1) h t =
