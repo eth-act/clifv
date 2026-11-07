@@ -655,10 +655,55 @@ block3(v5: i64):
     return v5
 }"
 
+/-- A constant phi whose other incoming edge is from an unreachable block. -/
+def unreach := fn "function %unreach(i32) -> i32 {
+block0(v0: i32):
+    jump block2(v0)
+block1:
+    v1 = iconst.i32 1
+    jump block2(v1)
+block2(v2: i32):
+    return v2
+}"
+
+def unreach' := fn "function %unreach(i32) -> i32 {
+block0(v0: i32):
+    jump block2
+block2:
+    return v0
+}"
+
+#guard [unreach, unreach'].all (·.blocks.length > 1)
+#guard solve unreach == [(2, 0)]
+#guard solve (removeUnreachable unreach) == [(2, 0)]
+-- the solution applies after the unreachable block is removed
+#guard run unreach == unreach'
+#guard accepts unreach
+
+/-- No constant phi, an unreachable block: `run` still removes it (as Cranelift does). -/
+def unreachNoPhi := fn "function %unreach_no_phi(i32) -> i32 {
+block0(v0: i32):
+    brif v0, block2(v0), block3
+block1:
+    v1 = iconst.i32 1
+    jump block2(v1)
+block3:
+    v3 = iconst.i32 3
+    jump block2(v3)
+block2(v2: i32):
+    return v2
+}"
+
+#guard unreachNoPhi.blocks.length == 4
+#guard solve unreachNoPhi == []
+#guard (run unreachNoPhi).blocks.map (·.id) == [0, 3, 2]
+#guard run unreachNoPhi == removeUnreachable unreachNoPhi
+
 #guard [freshTop, freshLow].all (·.blocks.length > 1)
 #guard freshTop.freshValue == 6 && (apply freshTop [(5, 0)]).freshValue == 3
 #guard solve freshTop == [(5, 0)]
 #guard !accepts freshTop
+-- rejected: `run` gives the function without unreachable blocks (none here)
 #guard run freshTop == freshTop
 #guard solve freshLow == [(1, 0)]
 #guard accepts freshLow
