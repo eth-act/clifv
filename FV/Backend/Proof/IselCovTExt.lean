@@ -16,7 +16,7 @@ types), `maybe_uextend` the value or the operand of its `uextend` (an integer po
 namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
-open Backend.Proof.Cov (Clean ExtCov externExtract_cov sem_extract covV)
+open Backend.Proof.Cov (Clean ExtCov externExtract_cov sem_extract)
 open Backend.Proof (ext_flagOff)
 
 /-- **Every statement of the context belongs to an instruction family.** -/
@@ -224,6 +224,10 @@ theorem holdsP_all {as : List AT} {fs : List V}
 theorem γ_c0 {w : V} (h : w.regsIn = [] ∧ covV w = true) : γ f ctx .c0 w :=
   ⟨fun r hr => (by rw [h.1] at hr; cases hr), fun _ => h.2⟩
 
+/-- `γ_c0` from the integer analysis's `Cov.covV` (clean instruction data, extractor outputs). -/
+theorem γ_c0c {w : V} (h : w.regsIn = [] ∧ Cov.covV w = true) : γ f ctx .c0 w :=
+  γ_c0 ⟨h.1, covV_of_cov h.2⟩
+
 /-- The value of a `.vals` position. -/
 theorem valsN_sound (hctx : CtxInvT f ctx) {a : AT} {xs : List Nat} (hv : γ f ctx a (.values xs))
     (n : Nat) (hn : xs.length = n) : HoldsP f ctx (valsN n a) (xs.map .value) := by
@@ -363,7 +367,7 @@ theorem ext_sound (hctx : CtxInvT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
         cases he
         rw [hi] at hi'; cases hi'
         exact holdsP_two ⟨_, mem_resOf hk hF hok.1, rfl⟩ (dataOf_sound hk hF hok.2.2.2)
-      · refine holdsP_two ?_ (γ_c0 (hcl i info hi))
+      · refine holdsP_two ?_ (γ_c0c (hcl i info hi))
         cases hr : info.resTys with
         | nil => exact ⟨.invalid, List.mem_cons_self, rfl⟩
         | cons t ts =>
@@ -476,7 +480,7 @@ theorem ext_sound (hctx : CtxInvT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
         rw [ext_flagOff hfo] at h
         cases h
       · show HoldsP f ctx (List.replicate 4 _) fs
-        exact holdsP_replicate (fun w hw => γ_c0 (hclean w hw)) 4
+        exact holdsP_replicate (fun w hw => γ_c0c (hclean w hw)) 4
     rw [if_neg hfo]
     by_cases hid : (term.id == TId.multi_lane) = true
     · rw [if_pos hid]
@@ -491,12 +495,12 @@ theorem ext_sound (hctx : CtxInvT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
           cases he
           split
           · show HoldsP f ctx (List.replicate 2 _) fs
-            exact holdsP_replicate (fun w hw => γ_c0 (hclean w hw)) 2
+            exact holdsP_replicate (fun w hw => γ_c0c (hclean w hw)) 2
           · rename_i hno
             exact absurd (List.any_eq_true.mpr ⟨_, ht', by simpa using hl⟩) hno
         | _ => simp [tysOf'] at hts
       · show HoldsP f ctx (List.replicate 2 _) fs
-        exact holdsP_replicate (fun w hw => γ_c0 (hclean w hw)) 2
+        exact holdsP_replicate (fun w hw => γ_c0c (hclean w hw)) 2
     rw [if_neg hid]
     by_cases hid : (term.id == TId.dynamic_lane) = true
     · exact absurd (by simpa using hid) hc.dyn
@@ -506,6 +510,6 @@ theorem ext_sound (hctx : CtxInvT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
       exact holdsP_single ⟨[], rfl, trivial⟩
     rw [if_neg hid]
     show HoldsP f ctx (List.replicate 4 _) fs
-    exact holdsP_replicate (fun w hw => γ_c0 (hclean w hw)) 4
+    exact holdsP_replicate (fun w hw => γ_c0c (hclean w hw)) 4
 
 end Backend.Proof.CovT

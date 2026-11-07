@@ -2289,6 +2289,7 @@ def covTabT24 : Tab := [
   (668, [(.flat 15 true), (.flat 15 true), (.reg 1), (.flat 15 true)], (.data 46 0 [(.data 58 119 [(.data 94 0 []), (.flat 15 true), (.flat 15 true), (.reg 1), (.flat 15 true)])])),
   (669, [(.flat 15 true)], (.data 46 0 [(.data 58 136 [(.flat 15 true)])])),
   (670, [(.flat 15 true), (.reg 1), (.flat 0 true), (.flat 0 true)], (.flat 0 true)),
+  (681, [(.data 89 12 [(.flat 0 true)]), (.flat 15 true)], (.reg 2)),
   (698, [(.val [(.int 16)]), (.data 125 0 []), (.ty [(.int 16)])], (.reg 1)),
   (698, [(.val [(.int 16)]), (.data 125 0 []), (.ty [(.int 32)])], (.reg 1)),
   (698, [(.val [(.int 16)]), (.data 125 0 []), (.ty [(.int 64)])], (.reg 1)),
@@ -2302,11 +2303,11 @@ def covTabT24 : Tab := [
   (698, [(.val [(.int 32)]), (.data 125 0 []), (.ty [(.int 64)])], (.reg 1)),
   (698, [(.val [(.int 32)]), (.data 125 0 []), (.ty [(.int 8)])], (.reg 1)),
   (698, [(.val [(.int 32)]), (.data 125 1 []), (.ty [(.int 16)])], (.reg 1)),
-  (698, [(.val [(.int 32)]), (.data 125 1 []), (.ty [(.int 32)])], (.reg 1)),
-  (698, [(.val [(.int 32)]), (.data 125 1 []), (.ty [(.int 64)])], (.reg 1))]
+  (698, [(.val [(.int 32)]), (.data 125 1 []), (.ty [(.int 32)])], (.reg 1))]
 
 /-- Chunk 25 of the table. -/
 def covTabT25 : Tab := [
+  (698, [(.val [(.int 32)]), (.data 125 1 []), (.ty [(.int 64)])], (.reg 1)),
   (698, [(.val [(.int 32)]), (.data 125 1 []), (.ty [(.int 8)])], (.reg 1)),
   (698, [(.val [(.int 64)]), (.data 125 0 []), (.ty [(.int 16)])], (.reg 1)),
   (698, [(.val [(.int 64)]), (.data 125 0 []), (.ty [(.int 32)])], (.reg 1)),
@@ -2393,11 +2394,11 @@ def covTabT25 : Tab := [
   (715, [(.alts [(.data 123 0 [(.reg 1), (.data 93 0 [])]), (.data 123 1 [(.reg 1), (.data 93 0 [])]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 4 [])])]), (.data 58 5 [(.data 59 5 []), (.data 93 0 []), (.reg 4), (.reg 1), (.logic .size32)])])]), (.flat 15 true)])])], (.reg 1)),
   (715, [(.alts [(.data 123 0 [(.reg 1), (.data 93 0 [])]), (.data 123 1 [(.reg 1), (.data 93 0 [])]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 1 []), (.data 84 5 [])])])])]), (.flat 15 true)])])], (.reg 1)),
   (715, [(.alts [(.data 123 1 [(.reg 1), (.data 93 0 [])]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 4 [])])]), (.data 58 5 [(.data 59 5 []), (.data 93 0 []), (.reg 4), (.reg 1), (.logic .size32)])])]), (.flat 15 true)]), (.data 123 0 [(.reg 1), (.data 93 0 [])])])], (.reg 1)),
-  (715, [(.alts [(.data 123 1 [(.reg 1), (.data 93 1 [])]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.data 93 1 []), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.data 93 1 []), (.reg 4), (.reg 1), (.reg 1)])])]), (.flat 15 true)]), (.data 123 0 [(.reg 1), (.data 93 1 [])])])], (.reg 1)),
-  (715, [(.data 123 2 [(.data 47 1 [(.alts [(.data 58 2 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 4 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.flat 0 true)])])]), (.flat 15 true)])], (.reg 1))]
+  (715, [(.alts [(.data 123 1 [(.reg 1), (.data 93 1 [])]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.data 93 1 []), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.data 93 1 []), (.reg 4), (.reg 1), (.reg 1)])])]), (.flat 15 true)]), (.data 123 0 [(.reg 1), (.data 93 1 [])])])], (.reg 1))]
 
 /-- Chunk 26 of the table. -/
 def covTabT26 : Tab := [
+  (715, [(.data 123 2 [(.data 47 1 [(.alts [(.data 58 2 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 4 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.flat 0 true)])])]), (.flat 15 true)])], (.reg 1)),
   (715, [(.data 123 2 [(.data 47 1 [(.alts [(.data 58 2 [(.data 59 10 []), (.data 93 1 []), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 4 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.flat 0 true)])])]), (.flat 15 true)])], (.reg 1)),
   (715, [(.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1)])])]), (.flat 15 true)])], (.reg 1)),
   (715, [(.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.data 93 1 []), (.reg 4), (.reg 1), (.reg 1)])])]), (.flat 15 true)])], (.reg 1)),

@@ -349,13 +349,14 @@ def main (args : List String) : IO UInt32 := do
         -- the spill fallback (`spillAlloc`, `E2E.SpillAccepted`) and its lowering
         let ts0 ← IO.monoMsNow
         let rf := spillAlloc vcp
-        -- the size bound (`E2E.spillSizeOkB`, input condition of `backend_correct_final_total_emit`)
+        -- the size bound (`E2E.spillSizeOkB`, input condition of `backend_correct_final_total_emit`:
+        -- below 2^24 words, and below 2^17 words when a literal-pool load must reach the pool, #565)
         let w := E2E.rfWords vcp rf
         if w > sizeMax then sizeMax := w
-        if w < 2 ^ 24 then sizeOk := sizeOk + 1
+        if E2E.spillSizeOkB vcp then sizeOk := sizeOk + 1
         else
           sizeBad := sizeBad + 1
-          IO.println s!"{file}: %{f.name}: spillSizeOkB fails ({w} words, need < 2^24): out of scope"
+          IO.println s!"{file}: %{f.name}: spillSizeOkB fails ({w} words, need < 2^24, and < 2^17 with a literal-pool load): out of scope"
         if Backend.VCode.noAlwaysB vcp then naOk := naOk + 1
         else
           naBad := naBad + 1

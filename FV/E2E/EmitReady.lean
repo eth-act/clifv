@@ -52,6 +52,7 @@ theorem nearB.go_of {m : Std.HashMap Lbl Nat} :
             simp only [lineOffset_zero] at this
             simpa using this
       | word => rfl
+      | data => rfl
       | label => rfl
     · have := h (j + 1) i tr t reach align o (by simpa using hj) hs hsk hb hrx ho
       rw [lineOffset_cons_succ] at this
@@ -84,6 +85,7 @@ theorem FnAsm.layoutReadyB_of {fa : FnAsm} (hlab : ∃ m, labelOffsets fa.lines 
   · cases ln with
     | ins i t => exact henc i t hln
     | word => rfl
+    | data => rfl
     | label => rfl
 
 end Backend

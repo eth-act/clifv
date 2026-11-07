@@ -108,12 +108,13 @@ theorem ctor_fp_mod_imm64_iff (i : Int) (v : V) (st' : LState) :
   rw [this]
   cases fpModImm? (u64 i) .size64 <;> simp [eq_comm]
 
-/-- The literal pool is not modelled: `emit_u64_le_const` never returns. -/
-theorem ctor_emit_u64_le_const_ne (i : Int) (v : V) (st' : LState) :
-    externCtor ctx T.emit_u64_le_const [.int i] st ≠ .ok (v, st') := by
-  have : externCtor ctx T.emit_u64_le_const [.int i] st =
-      .unmodeled s!"constructor {T.emit_u64_le_const.name} ({[V.int i].length} args)" := rfl
-  rw [this]; exact fun h => by cases h
+/-- `emit_u64_le_const` returns the constant-pool entry of the value (identified by its `u64`
+value, `VCodeConstant`) and leaves the state alone. #565 models the constructor; before, it was
+unmodeled and this theorem said it never returns, which no longer holds, so the name now states
+its result. -/
+theorem ctor_emit_u64_le_const_ne (i : Int) :
+    externCtor ctx T.emit_u64_le_const [.int i] st = .ok (.op (.vcodeConst (u64 i)), st) :=
+  rfl
 
 end Ext
 
@@ -349,17 +350,24 @@ theorem constant_f32_ok (hR : Refines F isem) {N : Nat} (hN : 200 ≤ N) {i : In
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 8000000 in
 include hp hc in
-/-- **`constant_f64`** (`inst.isle:4264–4275`) of a 64-bit pattern. The literal-pool rule
-(`emit_u64_le_const`, not modelled) never returns. -/
+/-- **`constant_f64`** (`inst.isle:4264–4275`) of a 64-bit pattern that needs no literal pool
+(`hpf`, `Compile.f64PoolFree`). #565 models the pool rule's `emit_u64_le_const`, whose load's
+semantics is not proven yet, so the statement is restricted to the patterns it held for before
+(the pool rule never returned then). -/
 theorem constant_f64_ok (hR : Refines F isem) {N : Nat} (hN : 300 ≤ N) {i : Int}
-    (hi0 : 0 ≤ i) (hi : i < 2 ^ 64) {s s' : LState × Array RuleId} {v : V}
+    (hi0 : 0 ≤ i) (hi : i < 2 ^ 64)
+    (hpf : u64 i = 0 ∨ (fpModImm? (u64 i) .size64).isSome = true ∨ u64 i < 2 ^ 32 ∨
+      u64 i % 2 ^ 32 = 0)
+    {s s' : LState × Array RuleId} {v : V}
     (h : ApplyInternal p (sem ctx) cfg N 27 587 [.int i] s v s') :
     FConstOut F isem 64 (u64 i) s.1 s'.1 v := by
   have hp' := hp
   have hu64 : u64 i = i.toNat := by unfold u64; omega
+  revert hpf
   isel_split hp hc h 587
   all_goals isel_inv [*, rule_inst_4264, rule_inst_4268, rule_inst_4271, rule_inst_4273,
     rule_inst_4275] at hm he
+  all_goals intro hpf
   · -- `0`: `movi vd.2s, #0`
     obtain ⟨rfl, rfl⟩ :=
       (ctor_mov_mod_imm_zero32_iff ctx _ _ _).mp ‹externCtor ctx T.asimd_mov_mod_imm_zero _ _ = _›
@@ -410,8 +418,41 @@ theorem constant_f64_ok (hR : Refines F isem) {N : Nat} (hN : 300 ≤ N) {i : In
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     omega
-  · -- the literal pool
-    exact absurd ‹externCtor ctx T.emit_u64_le_const _ _ = _› (ctor_emit_u64_le_const_ne ctx _ _ _ _)
+  · -- the literal pool: by `hpf` an earlier rule matches, but `hpre` says it does not
+    exfalso
+    have key : ∀ (r' : Rule), r' ∈ [rule_inst_4264, rule_inst_4268, rule_inst_4271, rule_inst_4273] →
+        (∀ (k : Nat) (w : LState × Array RuleId),
+          ∃ env, (matchRule p (sem ctx) cfg (k + 20) r' [.int i]).run w = .ok (some env, w)) → False := by
+      intro r' hr' hsome
+      obtain ⟨m', s1, hn⟩ := hpre r' hr'
+      obtain ⟨env, he⟩ := hsome m' _
+      rw [he] at hn
+      cases hn
+    rcases hpf with h0 | hfm | hlt | hlow
+    · refine key rule_inst_4264 (by simp) fun k ⟨st0, tr0⟩ => ?_
+      have hi0' : i = 0 := by omega
+      subst hi0'
+      isel_eval [rule_inst_4264, sem_eq, Except.ok.injEq, Prod.mk.injEq, Option.some.injEq,
+        exists_eq', exists_eq_left', true_and, and_true]
+    · obtain ⟨mm, hmm⟩ := Option.isSome_iff_exists.mp hfm
+      refine key rule_inst_4268 (by simp) fun k ⟨st0, tr0⟩ => ?_
+      have hctor : externCtor ctx T.asimd_fp_mod_imm_from_u64 [.int i, .data 95 3 []] st0 =
+          .ok (.op (.fpModImm mm), st0) := by
+        show (match (fpModImm? (u64 i) .size64).map (V.op ∘ Opnd.fpModImm) with
+          | some v => ExtResult.ok (v, st0) | none => ExtResult.fail) = _
+        rw [hmm]; rfl
+      isel_eval [rule_inst_4268, hctor, hp'.t679, hp'.t2035, Except.ok.injEq, Prod.mk.injEq,
+        Option.some.injEq, exists_eq', exists_eq_left', true_and, and_true]
+    · refine key rule_inst_4271 (by simp) fun k ⟨st0, tr0⟩ => ?_
+      have hx2 : externExtract ctx T.u32_from_u64 (.int i) st0 = .ok [.int i] :=
+        (ext_u32_from_u64_iff ctx _ _ _).mpr ⟨⟨hi0, by omega⟩, rfl⟩
+      isel_eval [rule_inst_4271, hx2, hp'.t1541, Except.ok.injEq, Prod.mk.injEq,
+        Option.some.injEq, exists_eq', exists_eq_left', true_and, and_true]
+    · refine key rule_inst_4273 (by simp) fun k ⟨st0, tr0⟩ => ?_
+      have hx1 : externExtract ctx T.u64_low32_bits_unset (.int i) st0 = .ok [.int i] :=
+        (ext_u64_low32_bits_unset_iff ctx _ _ _).mpr ⟨hlow, rfl⟩
+      isel_eval [rule_inst_4273, hx1, hp'.t588, Except.ok.injEq, Prod.mk.injEq,
+        Option.some.injEq, exists_eq', exists_eq_left', true_and, and_true]
 
 end Const
 
@@ -531,11 +572,13 @@ theorem f32const_okT {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 8000000 in
 /-- **`f64const`** (`rule_lower_68`, `lower.isle:68`): `constant_f64` of the literal's bits
-(`u64_from_ieee64`) into a fresh float vreg. -/
+(`u64_from_ieee64`) into a fresh float vreg, for a constant without literal pool
+(`F64PoolFreeInst`; #565 models the pool, whose load is not proven yet: the statement keeps the
+constants it covered before). -/
 theorem f64const_okT {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem}
     (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
-    (hMR : MRStable F MR) : LowerRuleOkT isem MR env cp p rule_lower_68 := by
-  intro f ctx hctx ii info inst hi hic _ cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
+    (hMR : MRStable F MR) : LowerRuleOkTP F64PoolFreeInst isem MR env cp p rule_lower_68 := by
+  intro f ctx hctx ii info inst hi hic hpfi cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
     heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
   obtain ⟨N, rfl⟩ : ∃ N, n = N + 500 := ⟨n - 500, by omega⟩
@@ -554,8 +597,11 @@ theorem f64const_okT {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem 
   subst hfs
   have h1 := ‹ApplyInternal _ _ _ _ 27 587 _ _ _ _›
   have hlt := imm.isLt
+  have hpf := hpfi .f64 imm rfl rfl
+  have hu64' : u64 (imm.toNat : Int) = imm.toNat := by unfold u64; omega
   obtain ⟨ms, d, rfl, hsh, hrun⟩ :=
-    constant_f64_ok hp' hco hR (by omega) (by omega) (by have h := hlt; simp at h; omega) h1
+    constant_f64_ok hp' hco hR (by omega) (by omega) (by have h := hlt; simp at h; omega)
+      (by rw [hu64']; exact hpf) h1
   have h2 := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
   obtain ⟨rfl, hs2⟩ := output_reg_ok hp' hco (by omega) h2
   try simp only at hs2

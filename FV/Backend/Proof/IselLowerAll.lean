@@ -131,7 +131,7 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
   · rw [lower_rule_eq hr (k := 174) (r0 := rule_lower_63) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     exact (f32const_okT hp MR env cp hR hMR).toOk
   · rw [lower_rule_eq hr (k := 175) (r0 := rule_lower_68) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
-    exact (f64const_okT hp MR env cp hR hMR).toOk
+    exact (f64const_okT hp MR env cp hR hMR).toOk_f64
   · rw [lower_rule_eq hr (k := 177) (r0 := rule_lower_78) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply nop_ok <;> assumption
   · rw [lower_rule_eq hr (k := 396) (r0 := rule_lower_86) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
@@ -489,11 +489,11 @@ theorem lowerRulesCorrectT_program : LowerRulesCorrectT program := by
     rw [lower_floatMoveRoot_filter] at hsub
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hsub
     rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact bitcast_fp_fp_okT hp MR env cp
-    · exact bitcast_gpr_fp_okT hp MR env cp hR hMR
-    · exact bitcast_fp_gpr_okT hp MR env cp hR hMR
-    · exact bitcast_gpr_gpr_okT hp MR env cp
-    · exact f32const_okT hp MR env cp hR hMR
+    · exact (bitcast_fp_fp_okT hp MR env cp).mono fun _ _ => trivial
+    · exact (bitcast_gpr_fp_okT hp MR env cp hR hMR).mono fun _ _ => trivial
+    · exact (bitcast_fp_gpr_okT hp MR env cp hR hMR).mono fun _ _ => trivial
+    · exact (bitcast_gpr_gpr_okT hp MR env cp).mono fun _ _ => trivial
+    · exact (f32const_okT hp MR env cp hR hMR).mono fun _ _ => trivial
     · exact f64const_okT hp MR env cp hR hMR
   · rw [lower_rule_eq hr (k := 308) (r0 := rule_lower_2267)
       (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [hid]; rfl)]

@@ -188,8 +188,18 @@ theorem stage_spillSizeOkB (hT : DelMap T) {succs preds : Array (Array Nat)}
   have hm : spillWordBound (mapBlocks T raw) ≤ spillWordBound raw :=
     spillWordBound_map_mono raw (mapBlocks T raw) T (mapBlocks_blocks T raw)
       hT.map.branchArgs hT.map.params hT.map.back hT.sub hc (by rw [hT.cfg]; exact hc)
-  have hsize : spillWordBound raw < 2 ^ 24 := of_decide_eq_true hs
-  exact decide_eq_true (by omega)
+  have hsize : spillWordBound raw < 2 ^ 24 := spillSizeOkB_bound hs
+  refine spillSizeOkB_of (by omega) ?_
+  have hr := spillSizeOkB_reach hs
+  simp only [poolReachB, Bool.or_eq_true, decide_eq_true_eq] at hr ⊢
+  rcases hr with h | h
+  · exact .inl (by omega)
+  · right
+    simp only [VCode.noPoolB, List.all_eq_true] at h ⊢
+    intro vb hvb i hi
+    rw [mapBlocks_blocks, Array.toList_map, List.mem_map] at hvb
+    obtain ⟨b, hb, rfl⟩ := hvb
+    exact h b hb i ((hT.sub b).subset hi)
 
 /-- The entry block's leading `args` survives. -/
 theorem stage_entry_head (hK : StageDrop T raw) {rb : VBlock} {ds : List (Reg × Reg)}

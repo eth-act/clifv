@@ -19,6 +19,7 @@ theorem condHolds_invert (c : Cond) (hal : c ≠ .al) (hnv : c ≠ .nv) (s : Arm
     Arm.ConditionHolds c.invert.bits s = !Arm.ConditionHolds c.bits s := by
   cases c <;> simp_all [Arm.ConditionHolds, Cond.invert, Cond.bits, Arm.BitVec.lsb] <;> decide
 
+
 theorem brCond_b {env : Env} {l : Lbl} {a : Arm.ArmInst} (h : (Insn.b l).toArmInst env = .ok a)
     (s : Arm.ArmState) : brCond a s = true := by
   simp only [Insn.toArmInst, Backend.map_eq_ok] at h
@@ -394,7 +395,10 @@ theorem beq_not_right (a b : Bool) : (a == !b) = !(a == b) := by cases a <;> cas
 
 /-! ## Reaching a block through the emission plan's final lines (#553) -/
 
-theorem RL.L_plan {R : RL} (hR : R.Wf) : R.L = relaxLines R.far (planLines R.fa.k R.af) := by
+/-- The final lines: the relaxed plan lines, then the literal pool (#565: the pool suffix
+`emitPool` is new; without it the statement no longer holds). -/
+theorem RL.L_plan {R : RL} (hR : R.Wf) :
+    R.L = relaxLines R.far (planLines R.fa.k R.af) ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af := by
   obtain ⟨p, hp, hL, -⟩ := emit_seg hR.emit
   simp only [planLines, hp]
   exact hL
@@ -413,14 +417,14 @@ theorem repLbl_line {R : RL} (hR : R.Wf) {x : Label} {l' : Lbl}
     l' ≠ .skip ∧ ∃ jl, R.L[jl]? = some (.label l') ∧ RepL R.af (planOwn R.fa.k R.af) R.L x jl := by
   obtain ⟨l, j, rfl, hj, hr⟩ := h
   refine ⟨by simp, rix R.far (planLines R.fa.k R.af) j, ?_, ?_⟩
-  · rw [RL.L_plan hR]; exact (relax_label (blockLabelIdx_get hj)).1
-  · rw [RL.L_plan hR]; exact (repOn_repL hr).relax _
+  · rw [RL.L_plan hR]; exact (relax_label_append _ (blockLabelIdx_get hj)).1
+  · rw [RL.L_plan hR]; exact ((repOn_repL hr).relax _).append _
 
 /-- The line after a block's final lines represents `x` if the branch check says so. -/
 theorem rep_nxt {R : RL} (hR : R.Wf) {x : Label} {nxt : Nat}
     (h : planRep R.fa.k R.af x nxt = true) :
     RepL R.af (planOwn R.fa.k R.af) R.L x (rix R.far (planLines R.fa.k R.af) nxt) := by
-  rw [RL.L_plan hR]; exact (repOn_repL h).relax _
+  rw [RL.L_plan hR]; exact ((repOn_repL h).relax _).append _
 
 theorem drop_idx {L : List Line} {i j : Nat} (h : L.drop j = L.drop i) (hi : i < L.length) :
     j = i := by

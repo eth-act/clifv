@@ -62,8 +62,9 @@ def aKey : AInst → Option CallDest
 def blockKeys (p : Label × Array AInst) : List CallDest := p.2.toList.filterMap aKey
 
 theorem isCall_eq (l : Line) : l.isCall = (l.callKey).isSome := by
-  rcases l with ⟨i, t⟩ | ⟨a, b⟩ | ⟨l⟩
+  rcases l with ⟨i, t⟩ | ⟨a, b⟩ | ⟨w⟩ | ⟨l⟩
   · cases i <;> rfl
+  · rfl
   · rfl
   · rfl
 
@@ -90,7 +91,7 @@ theorem relaxLine_callKeys (f : Lbl → Bool) (ln : Line) :
   unfold relaxLine
   split
   · rename_i c t h
-    rcases ln with ⟨i, _ | _⟩ | ⟨a, b⟩ | ⟨l⟩ <;> simp [Line.relaxable?] at h
+    rcases ln with ⟨i, _ | _⟩ | ⟨a, b⟩ | ⟨w⟩ | ⟨l⟩ <;> simp [Line.relaxable?] at h
     obtain ⟨hc, rfl⟩ := h
     split <;> cases i <;> simp_all [callKeys, Insn.relaxTarget?, Insn.condTarget?, Insn.invertTo,
       Line.callKey, List.filterMap_cons, List.filterMap_nil]
@@ -437,6 +438,12 @@ theorem trapLines_callKeys (ps : PState) : callKeys (trapLines ps) = [] := by
   simp only [trapLines, List.mem_flatMap, List.mem_cons, List.mem_nil_iff, or_false] at hl
   obtain ⟨p, -, rfl | rfl⟩ := hl <;> rfl
 
+/-- The literal pool has no call lines (#565). -/
+theorem emitPool_callKeys (c : FnCtx) (af : AFunc) : callKeys (emitPool c af) = [] := by
+  simp only [callKeys, List.filterMap_eq_nil_iff]
+  intro ln hln
+  rcases emitPool_mem hln with ⟨w, rfl⟩ | ⟨n, rfl⟩ <;> rfl
+
 theorem filterMap_split {α β : Type} (f : α → Option β) (X : List α) (hX : X ≠ []) :
     X.dropLast.filterMap f ++ X.getLast?.toList.filterMap f = X.filterMap f := by
   conv => rhs; rw [← List.dropLast_concat_getLast hX]
@@ -559,7 +566,7 @@ theorem L_callKeys {R : RL} (hR : R.Wf) :
     callKeys R.L = (emitOrder R.af).flatMap (fun e => blockKeys e.1) := by
   obtain ⟨p, hp, hL, -⟩ := emitFunc_ok hR.emit
   show callKeys R.fa.lines.toList = _
-  rw [hL, relaxLines_callKeys]
+  rw [hL, callKeys_append, emitPool_callKeys, List.append_nil, relaxLines_callKeys]
   exact plan_callKeys hp
 
 theorem go_absent : ∀ {L : List Line} {off : Nat} {m m' : Std.HashMap Lbl Nat} {l : Lbl},
@@ -583,6 +590,10 @@ theorem go_absent : ∀ {L : List Line} {off : Nat} {m m' : Std.HashMap Lbl Nat}
       | zero => simp at hj
       | succ j => exact go_absent h hc j (by simpa using hj)
     | word a b =>
+      cases j with
+      | zero => simp at hj
+      | succ j => exact go_absent h hc j (by simpa using hj)
+    | data w =>
       cases j with
       | zero => simp at hj
       | succ j => exact go_absent h hc j (by simpa using hj)
@@ -620,6 +631,13 @@ theorem go_unique : ∀ {L : List Line} {off : Nat} {m m' : Std.HashMap Lbl Nat}
         | zero => simp at hq
         | succ q => exact congrArg (· + 1) (go_unique h (by simpa using hp) (by simpa using hq))
     | word a b =>
+      cases p with
+      | zero => simp at hp
+      | succ p =>
+        cases q with
+        | zero => simp at hq
+        | succ q => exact congrArg (· + 1) (go_unique h (by simpa using hp) (by simpa using hq))
+    | data w =>
       cases p with
       | zero => simp at hp
       | succ p =>
@@ -971,7 +989,9 @@ theorem q_call_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
   -- the emission plan and block `b`'s segment
   obtain ⟨p, hp, -, -⟩ := emitFunc_ok hR.emit
   have hPL : planLines R.fa.k R.af = p.lines := by simp [planLines, hp]
-  have hRL : R.L = relaxLines R.far p.lines := by rw [RL.L_plan hR, hPL]
+  have hRL : R.L = relaxLines R.far p.lines ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af := by
+    rw [RL.L_plan hR, hPL]
+  generalize emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af = PL at hRL
   rw [hPL] at hdrop
   obtain ⟨sg, o, N⟩ := x
   obtain ⟨hxm, hxb⟩ := segX_mem hp hx
@@ -1004,16 +1024,16 @@ theorem q_call_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
   rw [hcB] at h1B
   -- the call lines before the pc
   have hdropL : R.L.drop j0 = relaxLines R.far (X ++ o) ++
-      (relaxLines R.far p.lines).drop (rix R.far p.lines (A.length + 1 + sg.body.length + o.length)) := by
+      (relaxLines R.far p.lines ++ PL).drop (rix R.far p.lines (A.length + 1 + sg.body.length + o.length)) := by
     rw [hdrop, hRL]
-  have hsum : (relaxLines R.far p.lines).take j0 ++ relaxLines R.far (X ++ o) =
+  have hsum : (relaxLines R.far p.lines ++ PL).take j0 ++ relaxLines R.far (X ++ o) =
       relaxLines R.far (p.lines.take (A.length + 1 + sg.body.length + o.length)) := by
-    have e1 := List.take_append_drop j0 (relaxLines R.far p.lines)
+    have e1 := List.take_append_drop j0 (relaxLines R.far p.lines ++ PL)
     rw [← hRL, hdropL, hRL, ← List.append_assoc] at e1
-    have e2 : relaxLines R.far p.lines = relaxLines R.far (p.lines.take
-        (A.length + 1 + sg.body.length + o.length)) ++ (relaxLines R.far p.lines).drop
+    have e2 : relaxLines R.far p.lines ++ PL = relaxLines R.far (p.lines.take
+        (A.length + 1 + sg.body.length + o.length)) ++ (relaxLines R.far p.lines ++ PL).drop
         (rix R.far p.lines (A.length + 1 + sg.body.length + o.length)) := by
-      rw [relax_drop, ← relax_split]
+      rw [relax_drop_append, ← List.append_assoc, ← relax_split]
     exact List.append_cancel_right (e1.trans e2)
   have htakeN : p.lines.take (A.length + 1 + sg.body.length + o.length) =
       A ++ .label (.block sg.label) :: (sg.body ++ o) := by

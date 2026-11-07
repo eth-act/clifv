@@ -46,6 +46,11 @@ theorem labelOffsets_go_fresh : ∀ {L : List Line} {off : Nat} {m m' : Std.Hash
       cases j with
       | zero => simp at hj
       | succ j => exact labelOffsets_go_fresh h (by simpa using hj)
+    | data w =>
+      simp only [labelOffsets.go] at h
+      cases j with
+      | zero => simp at hj
+      | succ j => exact labelOffsets_go_fresh h (by simpa using hj)
 
 theorem labelOffsets_go_uniq : ∀ {L : List Line} {off : Nat} {m m' : Std.HashMap Lbl Nat},
     labelOffsets.go L off m = .ok m' → ∀ {j1 j2 : Nat} {l : Lbl}, L[j1]? = some (.label l) →
@@ -64,6 +69,9 @@ theorem labelOffsets_go_uniq : ∀ {L : List Line} {off : Nat} {m m' : Std.HashM
         simp only [labelOffsets.go] at h
         exact ⟨_, _, h, fun _ e => by cases e⟩
       | word a b =>
+        simp only [labelOffsets.go] at h
+        exact ⟨_, _, h, fun _ e => by cases e⟩
+      | data w =>
         simp only [labelOffsets.go] at h
         exact ⟨_, _, h, fun _ e => by cases e⟩
     obtain ⟨off', m'', hg, hc⟩ := hrest
@@ -150,8 +158,10 @@ theorem plan_seg_label_inj {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k a
     obtain ⟨p', hp', hL, -⟩ := emit_seg h
     rw [hp] at hp'
     cases hp'
-    have r1 := (relax_label (F := emitFar ⟨k, af.slotBase⟩ af) e1)
-    have r2 := (relax_label (F := emitFar ⟨k, af.slotBase⟩ af) e2)
+    have r1 := (relax_label_append (F := emitFar ⟨k, af.slotBase⟩ af)
+      (emitPool ⟨k, af.slotBase⟩ af) e1)
+    have r2 := (relax_label_append (F := emitFar ⟨k, af.slotBase⟩ af)
+      (emitPool ⟨k, af.slotBase⟩ af) e2)
     rw [← hL] at r1 r2
     have := labelOffsets_uniq hlm r1.1 r2.1
     have hm := rix_mono (emitFar ⟨k, af.slotBase⟩ af) p.lines

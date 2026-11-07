@@ -263,13 +263,17 @@ theorem fload_reads (ctx : FnCtx) {sz : ScalarSize} (hsz : FpSz sz) {rt : Reg} {
     {fl : Clif.MemFlags} (hm : MemMode sz.bytes m) {ps : PState} {ls : List Line} {ps' : PState}
     (hl : (MInst.fpuLoad sz rt m fl).lines ctx ps = .ok (ls, ps')) (env : Env) (s : Arm.ArmState) :
     LinesReads env ls s (fun a => ∃ k < sz.bytes, a = m.addr ctx sz.bytes s + BitVec.ofNat 64 k) := by
-  simp only [MInst.lines, bind, Except.bind] at hl
-  split at hl
-  · cases hl
+  have hl' : (memFinalize ctx m sz.bytes >>= fun r =>
+      (pure (r.1 ++ [Line.ins (.fpuLoad sz rt r.2) fl.trapCode], ps) : Except String _)) =
+      .ok (ls, ps') := by
+    cases m <;> first | (simp [MemMode] at hm; done) | exact hl
+  simp only [bind, Except.bind] at hl'
+  split at hl'
+  · cases hl'
   rename_i r hr
   obtain ⟨pre, m'⟩ := r
-  simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl
-  obtain ⟨rfl, -⟩ := hl
+  simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl'
+  obtain ⟨rfl, -⟩ := hl'
   obtain ⟨h1, h2, h3⟩ := memFinalize_addr ctx (by rcases fpSz_bytes hsz with e | e <;> omega)
     hm hr env s
   refine linesReads_append_last h1 fun s1 hs1 env' a ha p hp i hi => ?_
