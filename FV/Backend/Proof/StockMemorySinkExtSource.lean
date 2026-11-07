@@ -28,27 +28,41 @@ theorem useStates_chain (ctx : Ctx) {x y z : Nat} (sret : sretRet ctx.func = [])
   simp only [Array.getElem!_set!_ne _ _ _ _ zy]
   rw [Array.getElem!_set!_self _ _ _ (by simp [bound])]
 
+/-- The metadata loop on a load/extension block whose load is plain or atomic. -/
+theorem metadata_chain_of (ctx : Ctx) (ranges : Array (Nat × Nat)) {b : Clif.Block} {x y z : Nat}
+    {first : Clif.Inst} {out : Clif.Ty} {op : Clif.ExtendOp}
+    (loads : (∃ ty flags,first = .load .load ty flags x 0) ∨ ∃ ty flags,first = .atomicLoad ty flags x)
+    (blocks : ctx.func.blocks = [b])
+    (body : b.body = [⟨[y],first⟩,⟨[z],.extend op out y⟩]) (ret : b.term = .ret [z])
+    (range : ranges[0]! = (0,3)) (size : ctx.insts.size = 3) :
+    (sourceMetadata ctx ranges).args = #[[x],[y],[z]] ∧
+      (sourceMetadata ctx ranges).entryColor = #[1,0,2] := by
+  rcases loads with ⟨ty,flags,rfl⟩ | ⟨ty,flags,rfl⟩
+  all_goals
+    simp only [sourceMetadata,blocks,body,ret,size,range,List.zipIdx_cons,List.zipIdx_nil,
+      List.forIn_cons,List.forIn_nil,Id.run_bind,Id.run_pure,colored,mustLower,Stock.instArgs,
+      Stock.termArgs]
+    simp only [Bool.or_true,Bool.or_false,ite_true,ite_false,Bool.false_eq_true,Id.run_pure,
+      pure_bind,Nat.add_zero,Nat.zero_add,Nat.reduceAdd,Nat.reduceSub]
+    constructor <;> rfl
+
 /-- The metadata loop on the load/extension block: operand lists and memory colors. -/
 theorem metadata_chain (ctx : Ctx) (ranges : Array (Nat × Nat)) {b : Clif.Block} {x y z : Nat}
     {ty out : Clif.Ty} {flags : Clif.MemFlags} {op : Clif.ExtendOp} (blocks : ctx.func.blocks = [b])
     (body : b.body = [⟨[y],.load .load ty flags x 0⟩,⟨[z],.extend op out y⟩]) (ret : b.term = .ret [z])
     (range : ranges[0]! = (0,3)) (size : ctx.insts.size = 3) :
     (sourceMetadata ctx ranges).args = #[[x],[y],[z]] ∧
-      (sourceMetadata ctx ranges).entryColor = #[1,0,2] := by
-  simp only [sourceMetadata,blocks,body,ret,size,range,List.zipIdx_cons,List.zipIdx_nil,
-    List.forIn_cons,List.forIn_nil,Id.run_bind,Id.run_pure,colored,mustLower,Stock.instArgs,
-    Stock.termArgs]
-  simp only [Bool.or_true,Bool.or_false,ite_true,ite_false,Bool.false_eq_true,Id.run_pure,
-    pure_bind,Nat.add_zero,Nat.zero_add,Nat.reduceAdd,Nat.reduceSub]
-  constructor <;> rfl
+      (sourceMetadata ctx ranges).entryColor = #[1,0,2] :=
+  metadata_chain_of ctx ranges (Or.inl ⟨ty,flags,rfl⟩) blocks body ret range size
 
 /-- Successful context construction gives the block's colors, one use of the loaded
-value and no sunk instruction. -/
-theorem initial_chain {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {initial : State}
+value and no sunk instruction, for a plain or an atomic load. -/
+theorem initial_chain_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {initial : State}
     (build : Stock.buildCtx f = .ok (ctx,ranges,initial)) (dominated : Dominated f)
-    {b : Clif.Block} (blocks : f.blocks = [b]) {x y z : Nat} {ty out : Clif.Ty}
-    {flags : Clif.MemFlags} {op : Clif.ExtendOp}
-    (body : b.body = [⟨[y],.load .load ty flags x 0⟩,⟨[z],.extend op out y⟩]) (ret : b.term = .ret [z])
+    {b : Clif.Block} (blocks : f.blocks = [b]) {x y z : Nat} {first : Clif.Inst} {out : Clif.Ty}
+    {op : Clif.ExtendOp}
+    (loads : (∃ ty flags,first = .load .load ty flags x 0) ∨ ∃ ty flags,first = .atomicLoad ty flags x)
+    (body : b.body = [⟨[y],first⟩,⟨[z],.extend op out y⟩]) (ret : b.term = .ret [z])
     (parameter : x ∈ b.params.map (·.1)) (noSret : sretRet f = []) :
     initial.entryColor = #[1,0,2] ∧ initial.uses[y]! = .once ∧ initial.sunk = #[false,false,false] := by
   obtain ⟨original,st0,requests,oldBuild,_,finished⟩ := buildCtx_allocation build
@@ -61,7 +75,7 @@ theorem initial_chain {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Na
     rw [spec.facts.insts]
     simp [blockStart,blocks,body]
   have originalBlocks : original.func.blocks = [b] := by rw [spec.func]; exact blocks
-  obtain ⟨args,colors⟩ := metadata_chain original ranges originalBlocks body ret range size
+  obtain ⟨args,colors⟩ := metadata_chain_of original ranges loads originalBlocks body ret range size
   have defs : valueDefs f = b.params.map (·.1) ++ [y,z] := by
     simp [valueDefs,blocks,body]
   have distinct := dominated.ssa
@@ -92,6 +106,17 @@ theorem initial_chain {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Na
   · change Array.replicate original.insts.size false = _
     rw [size]
     rfl
+
+/-- Successful context construction gives the block's colors, one use of the loaded
+value and no sunk instruction. -/
+theorem initial_chain {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {initial : State}
+    (build : Stock.buildCtx f = .ok (ctx,ranges,initial)) (dominated : Dominated f)
+    {b : Clif.Block} (blocks : f.blocks = [b]) {x y z : Nat} {ty out : Clif.Ty}
+    {flags : Clif.MemFlags} {op : Clif.ExtendOp}
+    (body : b.body = [⟨[y],.load .load ty flags x 0⟩,⟨[z],.extend op out y⟩]) (ret : b.term = .ret [z])
+    (parameter : x ∈ b.params.map (·.1)) (noSret : sretRet f = []) :
+    initial.entryColor = #[1,0,2] ∧ initial.uses[y]! = .once ∧ initial.sunk = #[false,false,false] :=
+  initial_chain_of build dominated blocks (Or.inl ⟨ty,flags,rfl⟩) body ret parameter noSret
 
 /-- A return-only signature has no implicit `sret` return value. -/
 theorem sretRet_ordinary {f : Clif.Function}

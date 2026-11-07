@@ -5,7 +5,8 @@ import FV.Backend.Proof.StockCastBaseValues
 /-! Stock's `uextend_load`/`sextend_load` roots (rules 815/824) on an extension
 whose operand is the single result of an original plain load. The match binds the
 load's own type, pointer, flags and offset; the right-hand side sinks the load and
-emits one extending load from the load's address. -/
+emits one extending load from the load's address. Rule 810 does the same for an
+extension of an `atomic_load` result: it emits one acquiring load (`Source`). -/
 namespace Backend.Stock.Memory.SinkExtend
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Memory.ExtendedRoots (Kind)
@@ -60,6 +61,8 @@ private theorem sem_i8 (ctx : Ctx) : (Stock.sem ctx).prim 14 "I8" = some (.ty (.
 private theorem sem_i16 (ctx : Ctx) : (Stock.sem ctx).prim 14 "I16" = some (.ty (.int 16)) := rfl
 private theorem sem_i32 (ctx : Ctx) : (Stock.sem ctx).prim 14 "I32" = some (.ty (.int 32)) := rfl
 private theorem sem_i64 (ctx : Ctx) : (Stock.sem ctx).prim 14 "I64" = some (.ty (.int 64)) := rfl
+private theorem sem_mkData (ctx : Ctx) (ty tag : Nat) (args : List V) :
+    (Stock.sem ctx).mkData ty tag args = .data ty tag args := rfl
 
 /-- The sink root matches an extension of an eligible plain-load result. The match
 retains the scheduling state and binds the load's type, pointer, flags and offset. -/
@@ -163,5 +166,167 @@ theorem stock_sink_extend_rhs_sinks (kind : Kind) (ctx : Ctx) {bits x y j : Nat}
     subst unit
     subst state
     rfl
+
+/-! ## The source load
+
+Rule 810 (`lower.isle` 1272) folds an extension of an `atomic_load` result in the same way
+as rules 815/824 fold a plain load: the extension sinks the atomic load and emits one
+acquiring load (`ldarb`/`ldarh`/`ldar w`), which zero-extends. -/
+
+/-- The original load whose single result the extension consumes. -/
+inductive Source where
+  /-- A plain `load` at offset zero (rules 815/824). -/
+  | plain
+  /-- An `atomic_load` (rule 810, zero extensions only). -/
+  | acquire
+  deriving DecidableEq
+
+/-- The original load instruction of `ty` through the pointer `x`. -/
+def Source.load : Source → Clif.Ty → Clif.MemFlags → Nat → Clif.Inst
+  | .plain,ty,flags,x => .load .load ty flags x 0
+  | .acquire,ty,flags,x => .atomicLoad ty flags x
+
+/-- The extensions that a source admits: rule 810 folds only zero extensions. -/
+def Source.admits : Source → Kind → Bool
+  | .plain,_ => true
+  | .acquire,kind => !signed kind
+
+/-- The root that folds the source load into its extension. -/
+def Source.root : Source → Kind → Rule
+  | .plain,kind => SinkExtend.root kind
+  | .acquire,_ => rule_lower_1272
+
+/-- The one instruction that the root emits into `dst` through the pointer vreg `nreg`. -/
+def Source.emitted : Source → Kind → Reg → Nat → Clif.MemFlags → MInst
+  | .plain,kind,dst,nreg,flags => .load kind.loadOp dst (.unsignedOffset (.vreg nreg .int) 0) flags
+  | .acquire,kind,dst,nreg,flags => .loadAcquire (.int (loadTy kind).width) dst (.vreg nreg .int) flags
+
+/-- The bound environment of a matched rule 810: the result type, the extended value,
+its type, the atomic load's flags and the atomic load itself. -/
+abbrev acquireEnv (w bits y j : Nat) (flags : Clif.MemFlags) : Isle.Interp.Env V :=
+  (((((Array.replicate 5 none).setIfInBounds 0 (some (V.ty (CTy.int w)))).setIfInBounds 3
+    (some (V.value y))).setIfInBounds 1 (some (V.ty (CTy.int bits)))).setIfInBounds 2
+    (some (V.op (.memFlags flags)))).setIfInBounds 4 (some (V.inst j))
+
+/-- Rule 810 matches a zero extension of an eligible atomic-load result. The match
+retains the scheduling state and binds the operand's type and the load's flags. -/
+theorem stock_match_acquire_extend {p : Program} (hp : Data p) (kind : Kind) (ctx : Ctx)
+    {cfg : Config} {i j x y w : Nat} {info load : IInfo} {flags : Clif.MemFlags}
+    (unsigned : signed kind = false)
+    (source : ctx.insts[i]? = some info) (type : info.resTys.head? = some (.int w)) (fits : w ≤ 64)
+    (data : info.data = .data 152 29 [.data 151 (extendTag kind) [],.value y])
+    (typed : ctx.valueType? y = some (.int (loadTy kind).width))
+    (defined : ctx.defInst? y = some j) (loaded : ctx.insts[j]? = some load)
+    (loadData : load.data = .data 152 17 [.data 151 158 [],.value x,.op (.memFlags flags)])
+    (little : flags.endianness ≠ some .big) (st : State)
+    (eligible : Stock.source ctx st y = some (j,true)) (tr : Array RuleId) (n : Nat) :
+    (matchRule p (Stock.sem ctx) cfg (n+5) rule_lower_1272 [.inst i]).run (st,tr) =
+      .ok (some (acquireEnv w (loadTy kind).width y j flags),st,tr) := by
+  have extraction := ext_inst_data_value ctx st.base source
+  rw [data,type,Option.getD_some] at extraction
+  have inner := ext_inst_data_value ctx st.base loaded
+  rw [loadData] at inner
+  have definition := ext_def_inst_some ctx st.base defined
+  have valueType := ext_value_type ctx st.base typed
+  have size := ext_fits_in_64' ctx st.base (.int w)
+  have endian := (ext_little_or_native_endian_iff ctx st.base flags [.op (.memFlags flags)]).mpr ⟨little,rfl⟩
+  have sinkable : Stock.externCtor ctx T.is_sinkable_inst [.value y] st = .ok (.inst j,st) := by
+    change (match Stock.source ctx st y with
+      | some (j,true) => ExtResult.ok (V.inst j,st)
+      | _ => ExtResult.fail) = _
+    rw [eligible]
+  have bits : CTy.bits (.int w) = w := rfl
+  simp only [bits,fits,decide_true,ite_true] at size
+  cases kind <;> simp only [signed,Bool.true_eq_false] at unsigned <;>
+    simp only [signed,extendTag,ScalarCast.extendOpcode,loadTy,Clif.Ty.width] at * <;> cases hp <;>
+    isel_eval [*,rule_lower_1272,sem_extract,sem_unData,sem_eq,sem_ctor]
+
+/-- The `load_acquire` helper allocates one fresh register and emits one acquiring load
+of `bits` from the pointer vreg; every scheduling field is unchanged. -/
+theorem acquire_helper_forward {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config}
+    (overlap : cfg.checkOverlap = false) (st : State) (trace : Array RuleId) (fuel bits nreg : Nat)
+    (flags : Clif.MemFlags) :
+    (applyTerm p (Stock.sem ctx) cfg (fuel+20) 27 422
+      [.ty (.int bits),.op (.memFlags flags),.reg (.vreg nreg .int)]).run (st,trace) =
+      .ok (some (.reg (st.base.fresh .int).1),
+        {st with base := ((st.base.fresh .int).2.emit
+          (.loadAcquire (.int bits) (st.base.fresh .int).1 (.vreg nreg .int) flags))},
+        trace.push rule_inst_3028.id) := by
+  have temp (s : State) : Stock.externCtor ctx T.temp_writable_reg [.ty (.int 64)] s =
+      .ok (.reg (s.base.fresh .int).1,{s with base := (s.base.fresh .int).2}) := rfl
+  have reg (r : Reg) (s : State) : Stock.externCtor ctx T.writable_reg_to_reg [.reg r] s =
+      .ok (.reg r,s) := rfl
+  have emit (s : State) : Stock.externCtor ctx T.emit
+      [.data 58 42 [.ty (.int bits),.reg (st.base.fresh .int).1,.reg (.vreg nreg .int),
+        .op (.memFlags flags)]] s =
+        .ok (.op .unit,{s with base := (s.base.emit
+          (.loadAcquire (.int bits) (st.base.fresh .int).1 (.vreg nreg .int) flags))}) := by
+    rw [stock_ctor_baseOnly ctx T.emit _ s (by decide)]
+    rfl
+  cases hp
+  isel_eval [*,rule_inst_3028,sem_ctor,sem_mkData,sem_i64,temp,reg,emit]
+
+/-- `sink_atomic_load` on an installed atomic load through a parameter pointer sinks the
+load and returns the pointer's register, marking the pointer demanded. -/
+theorem sink_atomic_load_forward {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config}
+    (overlap : cfg.checkOverlap = false) {j x nreg : Nat} {load : IInfo} {flags : Clif.MemFlags} (loaded : ctx.insts[j]? = some load)
+    (loadData : load.data = .data 152 17 [.data 151 158 [],.value x,.op (.memFlags flags)])
+    (parameter : ctx.defInst? x = none) (mapped : ctx.valueReg? x = some (.vreg nreg .int))
+    (st : State) (sink : Stock.externCtor ctx T.sink_inst [.inst j] st = .ok (.op .unit,sunkState st j))
+    (trace : Array RuleId) (fuel : Nat) :
+    (applyTerm p (Stock.sem ctx) cfg (fuel+20) 27 564 [.inst j]).run (st,trace) =
+      .ok (some (.reg (.vreg nreg .int)),(sunkState st j).mark x,trace.push rule_inst_3905.id) := by
+  have inner := ext_inst_data_value ctx st.base loaded
+  rw [loadData] at inner
+  have demanded := stock_put_in_reg ctx (sunkState st j) x (.vreg nreg .int) mapped
+    (by intro i impossible; rw [parameter] at impossible; cases impossible)
+  cases hp
+  isel_eval [*,rule_inst_3905,sem_extract,sem_unData,sem_eq,sem_ctor]
+
+/-- Rule 810's right-hand side sinks the atomic load, demands the pointer and emits one
+acquiring load from the pointer's register into one fresh register. -/
+theorem stock_acquire_extend_rhs {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config}
+    (hc : cfg.checkOverlap = false) {j x y nreg w bits : Nat} {load : IInfo} {flags : Clif.MemFlags}
+    (loaded : ctx.insts[j]? = some load)
+    (loadData : load.data = .data 152 17 [.data 151 158 [],.value x,.op (.memFlags flags)])
+    (parameter : ctx.defInst? x = none) (mapped : ctx.valueReg? x = some (.vreg nreg .int))
+    (st : State) (sink : Stock.externCtor ctx T.sink_inst [.inst j] st = .ok (.op .unit,sunkState st j))
+    (tr : Array RuleId) (n : Nat) :
+    (evalExpr p (Stock.sem ctx) cfg (n+120) rule_lower_1272.rhs (acquireEnv w bits y j flags)).run (st,tr) =
+      .ok (some (.regsVec [[(st.base.fresh .int).1]]),
+        {((sunkState st j).mark x) with base := ((st.base.fresh .int).2.emit
+          (.loadAcquire (.int bits) (st.base.fresh .int).1 (.vreg nreg .int) flags))},
+        ((tr.push rule_inst_3905.id).push rule_inst_3028.id).push rule_prelude_lower_105.id) := by
+  have sunk := fun q fuel => sink_atomic_load_forward hp ctx hc loaded loadData parameter mapped st sink q fuel
+  have acquire := fun q trace fuel => acquire_helper_forward hp ctx hc q trace fuel bits nreg flags
+  have output := fun q trace fuel r => output_run hp ctx hc q trace fuel r
+  cases hp
+  isel_eval [*,rule_lower_1272,sem_ctor] <;> rfl
+
+/-- A successful rule-810 right-hand side has executed its sink of the atomic load:
+Stock's sink of the load succeeded from the matched state. -/
+theorem stock_acquire_extend_rhs_sinks {ctx : Ctx} {j x y w bits : Nat} {load : IInfo}
+    {flags : Clif.MemFlags} (loaded : ctx.insts[j]? = some load)
+    (loadData : load.data = .data 152 17 [.data 151 158 [],.value x,.op (.memFlags flags)])
+    {st next : State} {tr tr' : Array RuleId} {out : V} {n : Nat}
+    (run : (evalExpr program (Stock.sem ctx) {} (n+40) rule_lower_1272.rhs
+      (acquireEnv w bits y j flags)).run (st,tr) = .ok (some out,next,tr')) :
+    Stock.externCtor ctx T.sink_inst [.inst j] st = .ok (.op .unit,sunkState st j) := by
+  rw [sink_ctor_eq]
+  split
+  · rename_i bad
+    exfalso
+    have failed : Stock.externCtor ctx T.sink_inst [.inst j] st =
+        .unmodeled s!"invalid sink of instruction {j}" := by
+      simp only [sink_ctor_eq,bad,ite_true]
+    have inner := ext_inst_data_value ctx st.base loaded
+    rw [loadData] at inner
+    have hp := data_program
+    cases hp
+    revert run
+    isel_eval [*,rule_lower_1272,rule_inst_3905,sem_ctor,sem_extract,sem_unData,sem_eq]
+    intro impossible
+    cases impossible
+  · rfl
 
 end Backend.Stock.Memory.SinkExtend
