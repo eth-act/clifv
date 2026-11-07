@@ -532,9 +532,10 @@ theorem probeCount_le (af : AFunc) (hf : af.frame = true) :
 `frameSize` bytes) and `K` more bytes below it fit below sp without wrapping and hold no code.
 The callees' stack `[sp_body - K, sp_body)` is the dead stack of every call (`CalleeOk`). With
 `K = 0` this is the former precondition (the frame only). The budget also covers the bytes the
-prologue's stack probes write below the frame (`probeBelow`, #581: up to 16 bytes, the setup
-area of the callees Cranelift's probes count in, for a calling function whose probed stack is a
-multiple of 4 KiB; 0 for a function without probes, where this is the former precondition). -/
+prologue's stack probes write below the frame (`probeBelow`, #581: for the unrolled form up to 16
+bytes, the setup area of the callees Cranelift's probes count in, for a calling function whose
+probed stack is a multiple of 4 KiB; for the loop form up to 4096 + 16 - 1 bytes; 0 for a function
+without probes, where this is the former precondition). -/
 def StackAvail (K : Nat) (af : AFunc) (s : Arm.ArmState) : Prop :=
   StackRoom (af.frameSize + 16 + K) s ∧ probeBelow af ≤ K
 
