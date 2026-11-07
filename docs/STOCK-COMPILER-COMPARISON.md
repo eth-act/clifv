@@ -259,6 +259,14 @@ lowering; it does not silently compile those as PIC. `tls_model=none` rejects
 functions needing the existing fixed TLSDESC lowering. `unwind_info=false` removes
 unwind emission. Unsupported configurations are not weakened to improve results.
 
+Before allocation, the adapter drops each `notrap` load whose results are unused
+(`StockConfig.dropDeadNotrapLoads`, #970), as stock does
+(`must_lower_even_if_unused`, `inst_predicates.rs:113`). This pass is unproved.
+The CLIF fact it relies on is `Clif.evalInst_notrap_load`: such a load reads
+without changing memory, or the run is stuck; it never traps. Trapping, atomic
+and incoming stack-argument loads stay. The default mode and `cargo fv` keep these
+loads, as cg_clif's Cranelift 0.136.1 does.
+
 This adapter is **not covered by `backend_correct`**. Configured compilations are
 explicitly marked unverified; register allocation retains its existing checker.
 The original fixed-configuration compiler/proof path is unchanged. Equal output
