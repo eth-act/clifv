@@ -54,8 +54,9 @@ theorem preparedCleanup_entryStored (vc vcp : VCode) (ss ps : Array (Array Nat))
 
 private theorem block_ready {vc vcp : VCode} {ss ps : Array (Array Nat)}
     {D : Nat → Nat → Bool} (hav : SpillAvail vcp D) (hc : vcp.cfg = .ok (ss, ps))
-    (hreads : ∀ vb ∈ vcp.blocks.toList, ∀ i ∈ vb.insts.toList,
-      ∀ n ∈ uses vc.classes.size i, n ∈ exitLive vc 0 default)
+    (hlive : ∀ vb ∈ vcp.blocks.toList,
+      ∀ n ∈ (scan vc.classes.size vb.insts.toList (exitLive vc 0 default)).2,
+        n ∈ exitLive vc 0 default)
     {b : Nat} {vb : VBlock} (hb : vcp.blocks[b]? = some vb) :
     AvailRunReady (preparedCleanupBlock vc vb).insts.toList
         (availStart (preparedCleanup vc vcp) ss ps (restrictedD vc D) b) ∧
@@ -77,8 +78,7 @@ private theorem block_ready {vc vcp : VCode} {ss ps : Array (Array Nat)}
       (availStart vcp ss ps D b)
       (availStart (preparedCleanup vc vcp) ss ps (restrictedD vc D) b) := by
     intro n hn
-    have hnL := scan_boundary_subset
-      (hreads vb (Array.mem_toList_iff.mpr (Array.mem_of_getElem? hb))) n hn
+    have hnL := hlive vb (Array.mem_toList_iff.mpr (Array.mem_of_getElem? hb)) n hn
     simp [availStart, restrictedD, hnL, preparedCleanup_entryStored]
   have h := scan_availability vc.classes.size vb.insts.toList (exitLive vc 0 default)
     _ _ hstart hold
@@ -91,8 +91,9 @@ private theorem block_ready {vc vcp : VCode} {ss ps : Array (Array Nat)}
 CFG delivers them, and every retained read remains available. -/
 theorem preparedCleanup_spillAvail_of (vc vcp : VCode) (D : Nat → Nat → Bool)
     (hav : SpillAvail vcp D)
-    (hreads : ∀ vb ∈ vcp.blocks.toList, ∀ i ∈ vb.insts.toList,
-      ∀ n ∈ uses vc.classes.size i, n ∈ exitLive vc 0 default)
+    (hlive : ∀ vb ∈ vcp.blocks.toList,
+      ∀ n ∈ (scan vc.classes.size vb.insts.toList (exitLive vc 0 default)).2,
+        n ∈ exitLive vc 0 default)
     (hargs : ∀ vb ∈ vcp.blocks.toList, ∀ a ∈ vb.branchArgs.toList,
       a.homeNum ∈ exitLive vc 0 default) :
     SpillAvail (preparedCleanup vc vcp) (restrictedD vc D) := by
@@ -100,7 +101,7 @@ theorem preparedCleanup_spillAvail_of (vc vcp : VCode) (D : Nat → Nat → Bool
   · intro ss ps hc b vb k i ops hb hi hops o ho hu
     rw [preparedCleanup_cfg] at hc
     obtain ⟨old, hb0, rfl⟩ := lookup hb
-    have hr := (block_ready hav hc hreads hb0).1
+    have hr := (block_ready hav hc hlive hb0).1
     exact (availRunReady_iff _ _).mp hr k i ops (by simpa using hi) hops o ho hu
   · intro ss ps hc b vb succ s sb hb hsucc hs hsb v hD
     rw [preparedCleanup_cfg] at hc
@@ -109,7 +110,7 @@ theorem preparedCleanup_spillAvail_of (vc vcp : VCode) (D : Nat → Nat → Bool
     obtain ⟨hDold, hvL⟩ : D s v = true ∧ v ∈ exitLive vc 0 default := by
       simpa [restrictedD, Bool.and_eq_true] using hD
     have hold := hav.edges ss ps hc b old succ s oldsb hb0 hsucc hs hsb0 v hDold
-    have hA := (block_ready hav hc hreads hb0).2
+    have hA := (block_ready hav hc hlive hb0).2
     simp only [edgeAvail, (preparedCleanupBlock_interface vc old).2.2.1,
       (preparedCleanupBlock_interface vc oldsb).2.1] at hold ⊢
     cases hi : (oldsb.params.toList.map Reg.homeNum).idxOf? v with
@@ -133,27 +134,57 @@ theorem restrictedD_entry_empty (vc : VCode) (D : Nat → Nat → Bool)
   intro v
   simp [restrictedD, hD]
 
-private theorem original_read (vc : VCode) {vb : VBlock} (hb : vb ∈ vc.blocks.toList)
-    {i : MInst} (hi : i ∈ vb.insts.toList) {n : Nat} (hn : n ∈ uses vc.classes.size i) :
-    n ∈ exitLive vc 0 default :=
-  List.mem_flatMap.mpr ⟨vb, hb,
-    List.mem_append_right _ (List.mem_flatMap.mpr ⟨i, hi, hn⟩)⟩
-
-theorem prepare_reads_boundary {vc vcp : VCode} (hd : Prep.PrepDomain vc)
+/-- **Every prepared block is closed under the boundary**: preparation keeps original blocks,
+retargets their terminators (same reads and defs, so the same scan up to that terminator,
+`scan_append_swap`) and adds edge blocks (a `jump`, which reads nothing). -/
+theorem prepare_live_boundary {vc vcp : VCode} (hd : Prep.PrepDomain vc)
     (hp : prepare vc = .ok vcp) :
-    ∀ vb ∈ vcp.blocks.toList, ∀ i ∈ vb.insts.toList,
-      ∀ n ∈ uses vc.classes.size i, n ∈ exitLive vc 0 default := by
+    ∀ vb ∈ vcp.blocks.toList,
+      ∀ n ∈ (scan vc.classes.size vb.insts.toList (exitLive vc 0 default)).2,
+        n ∈ exitLive vc 0 default := by
   obtain ⟨ss0, ps0, ss1, ps1, ss2, ps2, next, B, E, hc0, hc1, hS, hc2, rfl⟩ :=
     Prep.prepare_facts hp
-  intro vb hvb i hi n hn
-  rcases Prep.insts3 hd (Prep.cfg_spec hc0) (Prep.cfg_spec hc2) hS hvb hi with
-    ⟨raw, hraw, hi⟩ | ⟨raw, hraw, j, hj, ls, hset⟩ | ⟨l, rfl⟩
-  · exact original_read vc hraw hi hn
-  · have hu : uses vc.classes.size i = uses vc.classes.size j := by
-      simp only [uses, (Driver.setTargets_facts hset).1]
-    rw [hu] at hn
-    exact original_read vc hraw hj hn
-  · simp [uses, MInst.operands, MInst.visitOperands] at hn
+  have cs0 := Prep.cfg_spec hc0
+  have cs2 : Prep.CfgSpec (B ++ E) ss2 := Prep.cfg_spec hc2
+  obtain ⟨_, _, _, _, _, hR, _, _, _, _⟩ := Prep.facts_basic hd cs0 cs2 hS
+  intro vb hvb n hn
+  rw [Array.mem_toList_iff, Array.mem_map] at hvb
+  obtain ⟨i, hiR, rfl⟩ := hvb
+  have hi2 : i < (B ++ E).size := hR i (by simpa using hiR)
+  rw [getElem!_pos (B ++ E) i hi2] at hn
+  by_cases hiB : i < B.size
+  · rw [Array.getElem_append_left hiB] at hn
+    have hi1 : i < (Prep.keep vc.blocks (reachable ss0)).size := by
+      rw [← hS.size]
+      exact hiB
+    obtain ⟨b, hb, e, _⟩ := Prep.keep_src hi1
+    have hmem : (Prep.keep vc.blocks (reachable ss0))[i] ∈ vc.blocks.toList := by
+      rw [e]
+      simp
+    rcases hS.rw i hi1 hiB with h | ⟨t, t', ls, h1, -, h3, h4, -⟩
+    · rw [h] at hn
+      exact live_closed hmem 0 default n hn
+    · rw [h4] at hn
+      obtain ⟨hterm, hterm', hnt, hnt', hops⟩ := retarget_facts h3
+      have hct := cmpForm_of_terminator hterm
+      have hct' := cmpForm_of_terminator hterm'
+      have hl : (Prep.keep vc.blocks (reachable ss0))[i].insts.toList.getLast? = some t := by
+        simpa using h1
+      obtain ⟨xs, hx⟩ := List.getLast?_eq_some_iff.mp hl
+      have hsw := scan_append_swap vc.classes.size (exitLive vc 0 default) xs hnt hnt' hct hct'
+        (by simp only [uses, hops]) (by simp only [defs, hops])
+      have hpop : ((Prep.keep vc.blocks (reachable ss0))[i].insts.pop.push t').toList =
+          xs ++ [t'] := by
+        simp [Array.toList_push, Array.toList_pop, hx]
+      simp only [hpop, hsw] at hn
+      exact live_closed hmem 0 default n (by rw [hx]; exact hn)
+  · rw [Array.getElem_append_right (Nat.le_of_not_lt hiB)] at hn
+    have he : i - B.size < E.size := by simp at hi2; omega
+    obtain ⟨l, hl⟩ := hS.edges _ he
+    rw [hl] at hn
+    simp [scan, discard, dropCmp, pureForm, cmpForm, uses, defs, MInst.operands,
+      MInst.visitOperands] at hn
+    exact hn
 
 theorem prepare_args_boundary {vc vcp : VCode} (hd : Prep.PrepDomain vc)
     (hcls : ClassesOkM vc) (hp : prepare vc = .ok vcp) :
@@ -163,8 +194,7 @@ theorem prepare_args_boundary {vc vcp : VCode} (hd : Prep.PrepDomain vc)
       a.homeNum ∈ exitLive vc 0 default := by
     intro vb hb a ha
     obtain ⟨n, c, rfl, _⟩ := hcls.2 vb hb a (List.mem_append_right _ ha)
-    apply List.mem_flatMap.mpr
-    refine ⟨vb, hb, List.mem_append_left _ ?_⟩
+    apply branchArgs_exit hb _ 0 default
     simp only [regNums, Reg.homeNum, List.mem_filterMap]
     exact ⟨.vreg n c, ha, rfl⟩
   obtain ⟨ss0, ps0, ss1, ps1, ss2, ps2, next, B, E, hc0, hc1, hS, hc2, rfl⟩ :=
@@ -202,7 +232,7 @@ theorem preparedCleanup_spillAvail {vc vcp : VCode} (hd : Prep.PrepDomain vc)
     (hav : SpillAvail vcp D) :
     SpillAvail (preparedCleanup vc vcp) (restrictedD vc D) :=
   preparedCleanup_spillAvail_of vc vcp D hav
-    (prepare_reads_boundary hd hp) (prepare_args_boundary hd hcls hp)
+    (prepare_live_boundary hd hp) (prepare_args_boundary hd hcls hp)
 
 /-! Joint non-vacuity: real CFG, empty entry sets, actual deletion and all of
 the read/edge premises used by the availability transport. -/
@@ -247,11 +277,13 @@ example : ∃ vc : VCode, (∃ ss ps, vc.cfg = .ok (ss, ps)) ∧
     exact ⟨ret, rfl, rfl, fun _ h => by cases h⟩)
   refine ⟨vc, ⟨ss, ps, hc⟩, hav, ?_, ?_⟩
   · apply preparedCleanup_spillAvail_of vc vc _ hav
-    · intro bb hb i hi v hv
+    · intro bb hb v hv
       simp only [vc, List.mem_singleton] at hb
       subst bb
-      simp only [vb, List.mem_cons, List.not_mem_nil, or_false] at hi
-      rcases hi with rfl | rfl <;> simp [uses, hm, hr] at hv
+      have he : (scan vc.classes.size vb.insts.toList (exitLive vc 0 default)).2 = [] := by
+        decide
+      rw [he] at hv
+      cases hv
     · intro bb hb r harr
       simp only [vc, List.mem_singleton] at hb
       subst bb

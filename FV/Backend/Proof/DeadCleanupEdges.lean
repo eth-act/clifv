@@ -66,8 +66,8 @@ theorem clean_edge {V : Type} {vc : VCode} {b s : Nat} {vb sb : VBlock}
             have hx' : x ∈ regNums vb.branchArgs.toList := by
               rw [← regNums_of_mapM _ _ hx]
               exact lookup_snd_mem hl
-            exact blockUses_exit (Array.mem_toList_iff.mpr (Array.mem_of_getElem? hb))
-              (List.mem_append_left _ hx') 0 vb
+            exact branchArgs_exit (Array.mem_toList_iff.mpr (Array.mem_of_getElem? hb))
+              hx' 0 vb
   · simp at he
 
 /-! Non-vacuity: copy a real outgoing argument into the next block's parameter. -/

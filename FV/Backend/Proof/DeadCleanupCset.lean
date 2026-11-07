@@ -4,7 +4,8 @@ import FV.Backend.Proof.DeadCleanupSem
 `icmp` that the `brif` rule re-compares; Cranelift does not lower it, `machinst/lower.rs`
 `lower_clif_block`), keeps a live one, and removes the first of two compares once nothing
 reads its flags before the second overwrites them, for integer and float (`fcmp`, #967)
-compares. -/
+compares, also across the float constant moves of a `select` (`fmov #imm`, `movi`), and drops the
+head of a dead chain (the operand extension of a dropped compare, #968). -/
 
 namespace Backend.DeadCleanup
 open Backend.Proof
@@ -113,5 +114,73 @@ example : ∃ vc : VCode, vc.blocks.size = 1 ∧
     (prune vc).blocks[0]!.insts.toList = [fcmp00, liveCset, retCset] := by
   refine ⟨⟨"fcmp_witness", #[⟨0, #[fcmp00, deadCset, fcmp00, liveCset, retCset], #[], #[]⟩],
     #[.float, .int, .int, .int], 0, 0, #[], #[]⟩, ?_, ?_⟩ <;> decide +kernel
+
+private def fcmpLe : MInst := .fpuCmp .size32 (.vreg 0 .float) (.vreg 1 .float)
+private def fmovOne : MInst := .fpuMoveFPImm (.vreg 6 .float) ⟨0x70#8, .size32⟩ .size32
+private def moviZero : MInst := .vecDupImm (.vreg 7 .float) ⟨0#8, 0, false, false⟩ false .size32x2
+private def fcselLs : MInst :=
+  .fpuCSel .size32 (.vreg 8 .float) (.vreg 6 .float) (.vreg 7 .float) .ls
+private def retF : MInst := .rets [(.vreg 8 .float, .v 0)]
+
+/-- The float constant moves (`fmov s, #1.0`, `movi v.2s, #0`) are flag-free producers: their
+specification keeps the world, and from a world whose flags a compare wrote they step alike. -/
+example : flagFree fmovOne = true ∧ flagFree moviZero = true := ⟨rfl, rfl⟩
+
+example (w : Arm.ArmState) : ∃ outs, mspec 0 fmovOne [] w = some (outs, w, .next) :=
+  ⟨_, by simp only [mspec, ispec, fmovOne]; rfl⟩
+
+example (w : Arm.ArmState) : mspec 0 moviZero [] w = some ([0#128], w, .next) := by
+  simp [mspec, ispec, defOut, moviVal_zero, moviZero]
+
+example (p : Arm.PState) (w : Arm.ArmState) :
+    mspec 0 moviZero [] (Arm.write_pstate p w) =
+      (mspec 0 moviZero [] w).map (fun r => (r.1, Arm.write_pstate p r.2.1, r.2.2)) :=
+  mspec_flagFree_pstate rfl p w
+
+/-- `select_le_f32` (`fcmp le`, two `f32const`s, `select`; #967): the dead first `fcmp` goes
+across the constant moves between it and the `fcmp` of the `select`, which stays with them. -/
+example : (scan 9 [fcmpLe, deadCset, fmovOne, moviZero, fcmpLe, fcselLs, retF] []).1 =
+    [fmovOne, moviZero, fcmpLe, fcselLs, retF] := by decide
+
+/-- An unused constant move goes. -/
+example : (scan 9 [fmovOne, moviZero, retF] [8]).1 = [retF] := by decide
+
+private def fcselEq : MInst :=
+  .fpuCSel .size32 (.vreg 8 .float) (.vreg 6 .float) (.vreg 7 .float) .eq
+
+/-- **The head of a dead chain** (#968, `select-float.clif` `%select_icmp_i8_f32`: `icmp` of an
+`i8`, then a float `select` that compares again): the lowering emits `uxtb; cmp; cset` for the
+`icmp` and `uxtb; cmp; fcsel` for the `select`. A round with every read live (`allUses`) drops
+the dead `cset` and the first compare, but keeps the first `uxtb`, whose only reader is that
+compare. The boundary of the pass is the reads of what that round keeps (`exitLive`), so the
+pass drops the `uxtb` too: Cranelift's single `uxtb; cmp; fcsel`. -/
+example : ∃ vc : VCode,
+    (scan vc.classes.size vc.blocks[0]!.insts.toList (allUses vc)).1 =
+      [ext4, ext5, cmpE5, fcselEq, retF] ∧
+    (prune vc).blocks[0]!.insts.toList = [ext5, cmpE5, fcselEq, retF] := by
+  refine ⟨⟨"dead_chain", #[⟨0, #[ext4, cmpE4, deadCset, ext5, cmpE5, fcselEq, retF], #[], #[]⟩],
+    #[.int, .int, .int, .int, .int, .int, .float, .float, .float], 0, 0, #[], #[]⟩, ?_, ?_⟩ <;>
+    decide +kernel
+
+/-- A chain whose head is read elsewhere stays: the `uxtb` of the dropped compare also feeds a
+returned value. -/
+private def ret4 : MInst := .rets [(.vreg 8 .float, .v 0), (.vreg 4 .int, .x 0)]
+
+example : ∃ vc : VCode,
+    (prune vc).blocks[0]!.insts.toList = [ext4, ext5, cmpE5, fcselEq, ret4] := by
+  refine ⟨⟨"live_chain", #[⟨0, #[ext4, cmpE4, deadCset, ext5, cmpE5, fcselEq, ret4], #[], #[]⟩],
+    #[.int, .int, .int, .int, .int, .int, .float, .float, .float], 0, 0, #[], #[]⟩, ?_⟩
+  decide +kernel
+
+/-- A chain head that a kept instruction of another block reads stays: the boundary holds every
+read of the code that the first round keeps, in every block (`ret34` returns the `uxtb`). -/
+private def ret34 : MInst := .rets [(.vreg 3 .int, .x 0), (.vreg 4 .int, .x 1)]
+
+example : ∃ vc : VCode,
+    (prune vc).blocks[0]!.insts.toList = [ext4, ext5, cmpE5, liveCset, .jump 1] := by
+  refine ⟨⟨"cross_block_chain",
+    #[⟨0, #[ext4, cmpE4, deadCset, ext5, cmpE5, liveCset, .jump 1], #[], #[]⟩,
+      ⟨1, #[ret34], #[], #[]⟩], #[.int, .int, .int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_⟩
+  decide +kernel
 
 end Backend.DeadCleanup
