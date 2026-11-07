@@ -4,7 +4,9 @@ import FV.Backend.Proof.StockCastDispatch
 /-! First-match selection of the sinking extension roots. An extension of an
 eligible plain-load result selects rule 815 (`uextend_load`) or 824
 (`sextend_load`): the higher-priority look-through roots see a `Load` definition
-and fail, and the sinking root precedes the base extension in rule order. -/
+and fail, and the sinking root precedes the base extension in rule order. A zero
+extension of an eligible atomic-load result selects rule 810, the first `uextend`
+root in rule order. -/
 namespace Backend.Stock.Memory.SinkExtend
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Memory.ExtendedRoots (Kind)
@@ -62,6 +64,22 @@ theorem load_source_data (kind : Kind) {f : Clif.Function} {ctx : Ctx} (inv : Ma
   refine ⟨little,Except.ok.inj (data.symm.trans shape),?_⟩
   rw [resTys]
   cases kind <;> rfl
+
+/-- Original atomic-load syntax supplies the load's encoded data and endianness. -/
+theorem atomic_source_data (kind : Kind) {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
+    {j x : Nat} {load : IInfo} {flags : Clif.MemFlags} (loaded : ctx.insts[j]? = some load)
+    (clif : load.clif = some (.atomicLoad (loadTy kind) flags x)) :
+    flags.endianness ≠ some .big ∧
+      load.data = .data 152 17 [.data 151 158 [],.value x,.op (.memFlags flags)] := by
+  have data := inv.data j load _ loaded clif
+  have little : flags.endianness ≠ some .big := by
+    intro big
+    cases kind <;> simp [instData,eTy,loadTy,big] at data
+  have shape : instData f (.atomicLoad (loadTy kind) flags x) =
+      .ok (.data 152 17 [.data 151 158 [],.value x,.op (.memFlags flags)]) := by
+    have small : (flags.endianness == some .big) = false := by simpa using little
+    cases kind <;> simp only [instData,loadTy,eTy,small] <;> rfl
+  exact ⟨little,Except.ok.inj (data.symm.trans shape)⟩
 
 end SourceData
 
@@ -295,5 +313,132 @@ theorem stock_lower_sink_extend (kind : Kind) {f : Clif.Function} {ctx : Ctx}
   obtain ⟨outEq,nextEq,_⟩ := rhs
   refine ⟨sink,outEq.symm,nextEq.symm,?_⟩
   rw [selected.last_rule,chosen]
+
+private theorem lower_at (k : Nat) (r : Rule)
+    (h : (program.rulesOf 686)[k]? = some r) : (program.rulesOf T.lower.id)[k]? = some r := h
+
+private theorem lower_mem (r : Rule) (h : r ∈ program.rulesOf 686) : r ∈ program.rulesOf T.lower.id := h
+
+/-- A zero extension of an eligible atomic-load result selects rule 810: it is the
+first `uextend` root in rule order, and it matches. No selected-rule premise is used. -/
+theorem stock_selected_acquire_extend_rule (kind : Kind) {f : Clif.Function} {ctx : Ctx}
+    (inv : MappedCtxInv f ctx) {i j x y : Nat} {ty : Clif.Ty} {info load : IInfo}
+    {flags : Clif.MemFlags} (unsigned : signed kind = false) (source : ctx.insts[i]? = some info)
+    (clif : info.clif = some (.extend (extendOp kind) ty y)) (small : narrow ty = true)
+    (typed : ctx.valueType? y = some (.int (loadTy kind).width))
+    (defined : ctx.defInst? y = some j) (loaded : ctx.insts[j]? = some load)
+    (loadClif : load.clif = some (.atomicLoad (loadTy kind) flags x))
+    {st next : State} {out : V} {trace : List RuleId}
+    (eligible : Stock.source ctx st y = some (j,true))
+    (selected : LowerSelection ctx i st out next trace) : selected.rule = rule_lower_1272 := by
+  obtain ⟨data,w,type,fits⟩ := extend_source_data kind inv source clif small
+  obtain ⟨little,loadData⟩ := atomic_source_data kind inv loaded loadClif
+  have ids := stock_selected_source_opcode_ids inv source clif data selected
+  -- Every other candidate follows rule 810, which matches, so it was not reached.
+  have later : ∀ (other : Rule) (b : Nat),(program.rulesOf T.lower.id)[b]? = some other → 131 < b →
+      selected.rule ≠ other := by
+    intro other b atOther lt chosen
+    have order := selected.candidates
+    rw [chosen] at order
+    have earlier := mem_pre_of_index lower_ids_nodup order (chosen ▸ atOther)
+      (lower_at 131 rule_lower_1272 (by rw [data_program.r686]; rfl)) lt
+    obtain ⟨fuel,bound,after,failed⟩ := selected.rejected _ earlier
+    have enough := bound
+    rw [lower_count] at enough
+    obtain ⟨n,rfl⟩ : ∃ n,fuel = n+5 := ⟨fuel-5,by omega⟩
+    rw [stock_match_acquire_extend data_program kind ctx unsigned source type fits data typed defined
+      loaded loadData little st eligible #[] n] at failed
+    cases failed
+  cases kind <;> simp only [signed,Bool.true_eq_false] at unsigned
+  all_goals
+    simp only [extendTag,signed,ScalarCast.extendOpcode,ite_false,Bool.false_eq_true] at ids
+    change selected.rule.id ∈ sourceOpcodeIds 141 at ids
+    rw [CastComplete.opcode_inventory.1] at ids
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at ids
+    rcases ids with atomic | comparison | fcompare | plain | base
+    · exact eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+        (lower_mem _ (by rw [data_program.r686]; decide +kernel)) atomic
+    · exact (later rule_lower_1281 132 (lower_at _ _ (by rw [data_program.r686]; rfl)) (by decide)
+        (eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+          (lower_mem _ (by rw [data_program.r686]; decide +kernel)) comparison)).elim
+    · exact (later rule_lower_1283 133 (lower_at _ _ (by rw [data_program.r686]; rfl)) (by decide)
+        (eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+          (lower_mem _ (by rw [data_program.r686]; decide +kernel)) fcompare)).elim
+    · exact (later rule_lower_1300 259 (lower_at _ _ (by rw [data_program.r686]; rfl)) (by decide)
+        (eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+          (lower_mem _ (by rw [data_program.r686]; decide +kernel)) plain)).elim
+    · exact (later rule_lower_1261 459 (lower_at _ _ (by rw [data_program.r686]; rfl)) (by decide)
+        (eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+          (lower_mem _ (by rw [data_program.r686]; decide +kernel)) base)).elim
+
+/-- A successful actual root call on a zero extension of an eligible atomic-load result
+sinks the atomic load and emits exactly one acquiring load from the load's pointer. Its
+output register, state and selected root are determined; no rule receipt is a premise. -/
+theorem stock_lower_acquire_extend (kind : Kind) {f : Clif.Function} {ctx : Ctx}
+    (inv : MappedCtxInv f ctx) {i j x y nreg : Nat} {ty : Clif.Ty} {info load : IInfo}
+    {flags : Clif.MemFlags} (unsigned : signed kind = false) (source : ctx.insts[i]? = some info)
+    (clif : info.clif = some (.extend (extendOp kind) ty y)) (small : narrow ty = true)
+    (typed : ctx.valueType? y = some (.int (loadTy kind).width))
+    (defined : ctx.defInst? y = some j) (loaded : ctx.insts[j]? = some load)
+    (loadClif : load.clif = some (.atomicLoad (loadTy kind) flags x))
+    (parameter : ctx.defInst? x = none) (mapped : ctx.valueReg? x = some (.vreg nreg .int))
+    {st next : State} {out : V} {trace : List RuleId}
+    (eligible : Stock.source ctx st y = some (j,true))
+    (run : Stock.runTerm ctx "lower" [.inst i] st = .ok (some out,next,trace)) :
+    Stock.externCtor ctx T.sink_inst [.inst j] st = .ok (.op .unit,sunkState st j) ∧
+      out = .regsVec [[(st.base.fresh .int).1]] ∧
+      next = {((sunkState st j).mark x) with base := ((st.base.fresh .int).2.emit
+        (.loadAcquire (.int (loadTy kind).width) (st.base.fresh .int).1 (.vreg nreg .int) flags))} ∧
+      trace.getLast? = some rule_lower_1272.id := by
+  obtain ⟨selected⟩ := stock_named_lower_selection run
+  have chosen := stock_selected_acquire_extend_rule kind inv unsigned source clif small typed defined
+    loaded loadClif eligible selected
+  obtain ⟨data,w,type,fits⟩ := extend_source_data kind inv source clif small
+  obtain ⟨little,loadData⟩ := atomic_source_data kind inv loaded loadClif
+  have found := selected.matchedRun
+  rw [chosen] at found
+  have enough := selected.fuelBound
+  rw [lower_count] at enough
+  obtain ⟨m,fuelEq⟩ : ∃ m,selected.matchFuel = m+5 := ⟨selected.matchFuel-5,by omega⟩
+  rw [fuelEq,stock_match_acquire_extend data_program kind ctx unsigned source type fits data typed
+    defined loaded loadData little st eligible #[] m] at found
+  simp only [Except.ok.injEq,Prod.mk.injEq,Option.some.injEq] at found
+  obtain ⟨envEq,stateEq,traceEq⟩ := found
+  have rhs := selected.rhsRun
+  rw [chosen,← envEq,← stateEq,← traceEq] at rhs
+  have sink := stock_acquire_extend_rhs_sinks (n := 999959) loaded loadData rhs
+  rw [stock_acquire_extend_rhs data_program ctx (cfg := {}) rfl loaded loadData parameter mapped st
+    sink #[] 999879] at rhs
+  simp only [Except.ok.injEq,Prod.mk.injEq,Option.some.injEq] at rhs
+  obtain ⟨outEq,nextEq,_⟩ := rhs
+  refine ⟨sink,outEq.symm,nextEq.symm,?_⟩
+  rw [selected.last_rule,chosen]
+
+/-- The sinking root step for either source load: rules 815/824 for a plain load and
+rule 810 for an atomic load. -/
+theorem stock_lower_source_extend (src : Source) (kind : Kind) {f : Clif.Function} {ctx : Ctx}
+    (inv : MappedCtxInv f ctx) {i j x y nreg : Nat} {ty : Clif.Ty} {info load : IInfo}
+    {flags : Clif.MemFlags} (admits : src.admits kind = true) (source : ctx.insts[i]? = some info)
+    (clif : info.clif = some (.extend (extendOp kind) ty y)) (small : narrow ty = true)
+    (typed : ctx.valueType? y = some (.int (loadTy kind).width))
+    (defined : ctx.defInst? y = some j) (loaded : ctx.insts[j]? = some load)
+    (loadClif : load.clif = some (src.load (loadTy kind) flags x))
+    (parameter : ctx.defInst? x = none) (mapped : ctx.valueReg? x = some (.vreg nreg .int))
+    {st next : State} {out : V} {trace : List RuleId}
+    (eligible : Stock.source ctx st y = some (j,true))
+    (run : Stock.runTerm ctx "lower" [.inst i] st = .ok (some out,next,trace)) :
+    Stock.externCtor ctx T.sink_inst [.inst j] st = .ok (.op .unit,sunkState st j) ∧
+      out = .regsVec [[(st.base.fresh .int).1]] ∧
+      next = {((sunkState st j).mark x) with base := ((st.base.fresh .int).2.emit
+        (src.emitted kind (st.base.fresh .int).1 nreg flags))} ∧
+      trace.getLast? = some (src.root kind).id := by
+  cases src with
+  | plain =>
+    exact stock_lower_sink_extend kind inv source clif small defined loaded loadClif parameter mapped
+      eligible run
+  | acquire =>
+    have unsigned : signed kind = false := by simpa [Source.admits] using admits
+    exact stock_lower_acquire_extend kind inv unsigned source clif small typed defined loaded loadClif
+      parameter mapped eligible run
 
 end Backend.Stock.Memory.SinkExtend
