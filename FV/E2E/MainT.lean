@@ -157,12 +157,14 @@ theorem iselSim_of_driverT {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : L
 
 /-- The arguments of the ABI entry state `s` are where the typed entry code reads them in the
 body-entry world `w₀`: the register-passed ones in x0–x8 or v0–v7 (kept by the prologue,
-`BodyEntry.args`/`argsV`), the stack-passed ones at `fp + 16 + off`. -/
+`BodyEntry.args`/`argsV`), the stack-passed ones at `fp + 16 + off`. `hres` is new (#581, as
+`argsAtEntry_body`). -/
 theorem argsAtEntry_bodyT {f : Clif.Function} {args : List Clif.Val} {af : AFunc}
     {s w₀ : Arm.ArmState} {F : BitVec 64 → Prop} (hframe : af.frame = true)
     (hregs : ∀ l ∈ locsOf f.sig, ∀ r, l = .reg r →
       (∃ n, r = .x n ∧ n ≤ 8) ∨ (∃ n, r = .v n ∧ n ≤ 7))
-    (hbe : BodyEntry af s w₀) (h : ArgsIn f.sig args s) (hav : StackArgsAvoid F f.sig args s) :
+    (hbe : BodyEntry af s w₀) (h : ArgsIn f.sig args s) (hav : StackArgsAvoid F f.sig args s)
+    {K : Nat} (hres : StackAvail K af s) :
     ArgsAtEntry F f.sig args w₀ := by
   intro loc v hm
   have hl : loc ∈ locsOf f.sig := (List.of_mem_zip hm).1
@@ -183,7 +185,12 @@ theorem argsAtEntry_bodyT {f : Clif.Function} {args : List Clif.Val} {af : AFunc
     refine ⟨hav off v hm, ?_⟩
     rw [show Arm.read_mem_bytes v.ty.bytes (spv s + BitVec.ofNat 64 off) w₀ =
         Arm.read_mem_bytes v.ty.bytes (spv s + BitVec.ofNat 64 off) s from
-      read_mem_bytes_congr _ _ (fun k _ => by rw [hbe.mem])]
+      read_mem_bytes_congr _ _ (fun k hk => by
+        rw [hbe.mem]
+        refine probeMem_of_not (probeHit_above hres ?_)
+        have := h1.fits
+        simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+        omega)]
     exact h1.bytes
 
 /-- **CLIF → VCode for the typed scope, from the typed rule families**: the typed driver
@@ -313,7 +320,7 @@ theorem backend_correct_of_rules_exT {p : Clif.Program} {f : Clif.Function} {k :
       hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
     hM6 hent hres hbe
-    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
 /-- **Integer returns** (`backend_correct_of_rules_exT` for a function whose returns are
@@ -364,7 +371,7 @@ theorem backend_correct_of_rules_ex_ofT {p : Clif.Program} {f : Clif.Function} {
       hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
     hM6 hent hres hbe
-    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
 /-- **`backend_correct` for the typed scope** (`CompiledT`, `RegLevelCorrect`). -/

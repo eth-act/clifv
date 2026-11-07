@@ -136,13 +136,13 @@ theorem RL.sP_withX {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
     -, -⟩ := entry_block hR
   subst hpl0
   obtain ⟨s', hsteps, -⟩ :=
-    prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
-  have hins : ∀ ln ∈ prologueLines R.af.saves R.af.frameSize,
+  have hins : ∀ ln ∈ prologueLines R.af.saves R.af.frameSize R.af.isCaller,
       ∃ x, ln = .ins x none ∧ x.hooked = false :=
     fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩
   have h1 := (iterN_steps hR hdrop hins hent.program hpc1 hent.err hsteps).1

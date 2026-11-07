@@ -52,14 +52,14 @@ outside `MemScopeLS`), on its runs from the body entry after the prologue: reali
 up to a state related to where its allocated code is done or pauses at its call or its return. -/
 theorem caller_lsC {mon : Mon} {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm RC.step (OkPriv RC)
-      (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize).length RC.s0, mon) ls t') :
+      (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length RC.s0, mon) ls t') :
     ∃ n trS cE ψ, n ≤ ls.length ∧ MTRun RC.vc RC.rf RC.sem ckeep (cEvs RC.F RC.ctx)
-        (MConf.init RC.rf (locVal RC.fr (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize).length
+        (MConf.init RC.rf (locVal RC.fr (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length
           RC.s0)) w₀C) trS cE ∧
       ThreadRefine.Refines (· = ·) (PrivA RC) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧
       (n = ls.length ∨ ∃ tE, PRun Policy.arm RC.step (OkPriv RC)
-        (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize).length RC.s0, mon) (ls.take n) tE ∧
+        (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length RC.s0, mon) (ls.take n) tE ∧
         RelQ RC tE cE ∧ Pause RC cE) := by
   obtain ⟨-, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
   exact arm_alloc_refines_lsC wfRC scopeRC hq hA hr

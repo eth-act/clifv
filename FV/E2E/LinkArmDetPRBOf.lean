@@ -70,7 +70,7 @@ theorem tabUpTo_twinN {M : Nat} {g : Clif.Function} {s s₀ : Arm.ArmState}
     refine ⟨fun h1 a ha => ?_, hle, N', ?_, fun N'' hN'' hr => ?_, ?_⟩
     · rw [← hsp] at ha
       rw [hslot h1 a ha]
-      exact hsl h a ha
+      exact probeMem_congr hsp (hsl h a ha)
     · exact (L.retAt_enterAt_iff).1 ((htb N' hpre).1.1 ((L.retAt_enterAt_iff).2 hret))
     · have hpre'' : ∀ j < N'', ¬ L.RetAt h (enterAt (L.A h) (runX (L.mach (M + 1) g) i s))
           (runX (L.mach M h) j (enterAt (L.A h) (runX (L.mach (M + 1) g) i s))) :=

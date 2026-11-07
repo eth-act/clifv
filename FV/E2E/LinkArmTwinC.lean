@@ -124,7 +124,7 @@ theorem tabUpTo_twinC : ∀ (M : Nat) (g : Clif.Function) (s s₀ : Arm.ArmState
     refine ⟨fun h1 a ha => ?_, hle, N', ?_, fun N'' hN'' hr => ?_, ?_⟩
     · rw [← hsp] at ha
       rw [hslot h1 a ha]
-      exact hsl h hc' a ha
+      exact probeMem_congr hsp (hsl h hc' a ha)
     · exact (L.retAt_enterAt_iff).1 ((htb N' hpre).1.1 ((L.retAt_enterAt_iff).2 hret))
     · have hpre'' : ∀ j < N'', ¬ L.RetAt h (enterAt (L.A h) (runX (L.mach (M + 1) g) i s))
           (runX (L.mach M h) j (enterAt (L.A h) (runX (L.mach (M + 1) g) i s))) :=
@@ -153,7 +153,7 @@ def CallTwinC (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     MemRel F L.syms cm w → ArgsAt h.sig vals uses w → StackArgsAvoid F h.sig vals w →
     (L.NeedSlots → L.PlaceAtB cm (spv w) ini) →
     (L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a)) →
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a)) →
     Clif.initState L.P n vals cm = .ok cs → L.crun M cs = .returned rvals cm' →
     ∀ t, L.CallerOk F h uses w t →
       (∀ f, Masked f → f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (L.canon h uses w)) →
@@ -262,7 +262,7 @@ theorem tabUpTo_twinNC {M : Nat} {g : Clif.Function} {s s₀ : Arm.ArmState}
     refine ⟨fun h1 a ha => ?_, hle, N', ?_, fun N'' hN'' hr => ?_, ?_⟩
     · rw [← hsp] at ha
       rw [hslot h1 a ha]
-      exact hsl h hc' a ha
+      exact probeMem_congr hsp (hsl h hc' a ha)
     · exact (L.retAt_enterAt_iff).1 ((htb N' hpre).1.1 ((L.retAt_enterAt_iff).2 hret))
     · have hpre'' : ∀ j < N'', ¬ L.RetAt h (enterAt (L.A h) (runX (L.mach (M + 1) g) i s))
           (runX (L.mach M h) j (enterAt (L.A h) (runX (L.mach (M + 1) g) i s))) :=

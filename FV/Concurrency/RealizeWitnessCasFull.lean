@@ -61,7 +61,7 @@ theorem stackC1 : StackAvail 0 (act vcpC rfC).af sC1 := by
   have h : StackAvail 0 RAC.af RAC.s0 := wfRC.stack
   unfold StackAvail StackRoom at h ⊢
   rw [spv_sC1]
-  exact ⟨h.1, fun a ha => h.2 a (codeAddr_sC1.mp ha)⟩
+  exact ⟨⟨h.1.1, fun a ha => h.1.2 a (codeAddr_sC1.mp ha)⟩, h.2⟩
 
 theorem wfRC1 : RAC1.Wf := by
   obtain ⟨h1, h2, h3, h4, h5, h6, -, -, h9⟩ := factsC

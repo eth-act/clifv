@@ -60,7 +60,7 @@ theorem resume_premises_of_retC {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) {ra : B
     (hlr : xreg 30 RB.s0 = Arm.r .PC x + 4#64)
     (hm0 : ∀ a, RA.FK a → RB.s0.mem a = x.mem a) (hG : ∀ a, RA.FK a → RB.G a)
     (hr₀ : ∀ r ∈ calleeSaved, ckeep r (r₀ r) =
-      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize).length RB.s0) (.reg r)))
+      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize RB.af.isCaller).length RB.s0) (.reg r)))
     {info : CallInfo} {ops : Array Operand} {allocs : Array Loc}
     (hdef : ∀ d ∈ info.defs, ∃ q ∈ defPairs ops allocs, q.1.isLate = true ∧ q.2 = .reg d.1) :
     Arm.r .PC y = Arm.r .PC x + 4#64 ∧ Arm.r .ERR y = .None ∧ spOf y = spOf x ∧

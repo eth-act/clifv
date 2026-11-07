@@ -286,8 +286,9 @@ def Owns (M : Nat) (g : Clif.Function) (s : Arm.ArmState) (k c x : Nat) : Prop :
 
 open Classical in
 /-- **The bytes of entry `x` of the machine's table** filled from base index `k` by the run of
-`g` at depth `M` from `s`: the memory at the call owning `x` if `x` is that callee's own entry,
-else the callee run's entry. -/
+`g` at depth `M` from `s`: the memory at the call owning `x` after the callee's stack probes
+(`probeMem`, its body-entry memory, #581) if `x` is that callee's own entry, else the callee
+run's entry. -/
 noncomputable def tabB : Nat → Clif.Function → Arm.ArmState → Nat → Nat → Nat → BitVec 8
   | 0, _, _, _, _ => fun _ => 0
   | M + 1, g, s, k, x =>
@@ -295,8 +296,8 @@ noncomputable def tabB : Nat → Clif.Function → Arm.ArmState → Nat → Nat 
       match L.calleeAt g (runX (L.mach (M + 1) g) (L.callStep (M + 1) g s (firstNat _ hx)) s) with
       | some h =>
         if x = k + Clif.sumTo (L.callE (M + 1) g s) (firstNat _ hx) + 1 ∧ slotted h = 1 then
-          fun a => (runX (L.mach (M + 1) g) (L.callStep (M + 1) g s (firstNat _ hx)) s).mem
-            (BitVec.ofNat 64 a)
+          fun a => probeMem (L.A h).af
+            (runX (L.mach (M + 1) g) (L.callStep (M + 1) g s (firstNat _ hx)) s) (BitVec.ofNat 64 a)
         else tabB M h (enterAt (L.A h)
             (runX (L.mach (M + 1) g) (L.callStep (M + 1) g s (firstNat _ hx)) s))
           (k + Clif.sumTo (L.callE (M + 1) g s) (firstNat _ hx) + slotted h) x
@@ -321,7 +322,7 @@ theorem tabB_at (hL : L.Ok) (hK : L.HooksKeep) {M : Nat} {g : Clif.Function}
     L.tabB (M + 1) g s k x =
       if x = k + Clif.sumTo (L.callE (M + 1) g s)
           (callsBefore (L.mach (M + 1) g) (L.A g).fa (L.A g).base s i) + 1 ∧ slotted h = 1 then
-        fun a => (runX (L.mach (M + 1) g) i s).mem (BitVec.ofNat 64 a)
+        fun a => probeMem (L.A h).af (runX (L.mach (M + 1) g) i s) (BitVec.ofNat 64 a)
       else L.tabB M h (enterAt (L.A h) (runX (L.mach (M + 1) g) i s))
         (k + Clif.sumTo (L.callE (M + 1) g s)
           (callsBefore (L.mach (M + 1) g) (L.A g).fa (L.A g).base s i) + slotted h) x := by

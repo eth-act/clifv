@@ -81,7 +81,9 @@ theorem bundle_correct_source_memtrapF_rw {b : Bundle} {S : LinkSpec} {file0 fil
   exact H htr (by have := noMemTrap_ren (σ := σ) hnmt; rwa [← hE, ← hP] at this) c this
 
 /-- **`bundle_correct_source_memtrapF_rw`, recursive programs included** (the trap half of
-`bundle_correct_source_memtrap_peak` with the `MapRelRW` premise): the stack from the units' run's
+`bundle_correct_source_memtrap_peak` with the `MapRelRW` premise): the stack
+`frameDrop + (D * d + pbMax)` (#581: the deepest activation's stack probes write up to `pbMax`
+bytes below its frame) from the units' run's
 call depth `d`; the target's run premises of the callees running with fuel `F` and at most `d - 1`
 callers of their own, at every fuel. -/
 theorem bundle_correct_source_memtrapF_rw_peak {b : Bundle} {S : LinkSpec} {file0 file : ByteArray}
@@ -99,12 +101,14 @@ theorem bundle_correct_source_memtrapF_rw_peak {b : Bundle} {S : LinkSpec} {file
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d) r
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r
       args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize (f.rename σ.fwd)) r args' cs')
     (M : Nat) (mp : ArmFault.MemMap)
     (hmap : MapRelRW mp S.inputCleanup (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d) r
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r
       args' cs'.mem)
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
@@ -188,12 +192,14 @@ theorem bundle_correct_raw_memtrapF_rw_peak {b : Bundle} {S : LinkSpec} {file0 f
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d) r
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r
       args' cs'.mem)
     (hr : ClifRun S.inputCleanup B (legalize (f.rename σ.fwd)) r args' cs')
     (M : Nat) (mp : ArmFault.MemMap)
     (hmap : MapRelRW mp S.inputCleanup (legalize (f.rename σ.fwd))
-      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af + S.inputCleanup.D * d) r
+      (frameDrop (art S.inputCleanup (legalize (f.rename σ.fwd))).af +
+        (S.inputCleanup.D * d + pbMax S.inputCleanup)) r
       args' cs'.mem)
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

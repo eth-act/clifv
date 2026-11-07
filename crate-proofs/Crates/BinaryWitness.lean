@@ -229,6 +229,11 @@ theorem run_eq : run = .returned [⟨.i32, 5#32⟩] (LinkWitness.retMem run) := 
   rw [← facts.2.2.2.2.2.2.2.2.1]
   exact LinkWitness.eq_returned facts.2.2.2.2.2.2.2.1
 
+omit m in
+/-- The program has no stack probes (#581): `pbMax` is 0. -/
+theorem pbMax_zero : pbMax I = 0 := by native_decide
+
+set_option maxRecDepth 100000 in
 /-- **Non-vacuity of `binary_correct_depth`** on the `a_arith` executable (panic=abort): a
 machine state `r` in which outside code calls the executable's Lean-compiled
 `core::num::<i32>::wrapping_add` with `2` and `3` meets the boundary contract, the reference
@@ -246,8 +251,12 @@ theorem binary_depth_witness :
     (fun _ h => h)
   have htr := trapsExplicit_of_run hL hfm clifEntry rfl run_eq
   have hoc := outsideCall m (fun _ => none) facts.2.2.2.2.2.2.2.2.2.2.1
+  -- #581: the budget is `frameDrop + (D * M + pbMax)`; this program has no stack probes.
+  have hoc' : OutsideCall I (fun _ => none) f (frameDrop (art I f).af + (I.D * M + pbMax I)) (r m) args
+      cs.mem := by
+    rw [pbMax_zero, Nat.add_zero]; exact hoc
   have h := binary_correct_depth okB_semantic closedBase
-    (Crates.AArithAbort.base_closed _) hf M hoc (clifRun m) htr
+    (Crates.AArithAbort.base_closed _) hf M hoc' (clifRun m) htr
   rw [show Clif.runLoop closedBase.env (prog I) (M + 1) cs = run from rfl, run_eq, x30_r] at h
   obtain ⟨k, hret, hx, -⟩ := h
   exact ⟨hoc, clifRun m, run_eq, k, hret, hx 0 _ rfl⟩

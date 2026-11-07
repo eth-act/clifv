@@ -40,11 +40,15 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat} {modes : Clif.Function → ReturnPinMode}
 
+/-- `K` is a budget (every frame at most `D`; every function's probes at most `pbMax`). -/
 theorem budget_K_return_pins (hL : L.OkReturnPins modes) : L.Budget fun M _ => L.K M := by
-  intro M g _ h hc
-  have := hL.depth h (L.callee_mem hc)
-  simp only [K, Nat.mul_succ]
-  omega
+  refine ⟨fun M g _ h hc => ?_, fun M g hg => ?_⟩
+  · have := hL.depth h (L.callee_mem hc)
+    simp only [K, Nat.mul_succ]
+    omega
+  · have := L.probeBelow_le_pbMax hg
+    simp only [K]
+    omega
 end LinkSys
 
 namespace LinkSys
@@ -94,8 +98,8 @@ theorem progOsCore_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ 
   simp only [Option.some.injEq, Prod.mk.injEq] at hx
   obtain ⟨rfl, rfl⟩ := hx
   obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, hrs, hcall, -⟩ :=
-    L.progCall_return_pins hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw halw hroom hdead hmr hargs hsav hpl
-      hinit hrun
+    L.progCall_return_pins hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw halw hroom hdead
+      (hκ.2 _ h hh) hmr hargs hsav hpl hinit hrun
   -- the caller state is compatible with the canonical one
   have hcOk : L.CallerOk F h uses w t := by
     refine ⟨hsw, fun a ha => (hG a (himgG a ha)).trans (himgS a ha), fun r hr => ?_,
@@ -586,7 +590,7 @@ theorem progResult_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ 
   have hplw : L.NeedSlots → L.PlaceAt cm (spv w) := fun hN => by rw [hsp]; exact hpl hN
   obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, hrs, hcall, -⟩ :=
     L.progCall_return_pins hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw (by rw [hsp]; exact halign)
-      hroom' hdead' hmemR0 hargs hsav hplw hinit hret
+      hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hplw hinit hret
   obtain ⟨kc, hc_eq, hc_ret⟩ := hcall _ (L.callerOk_canon_return_pins hL hh himgF args w)
   have hcond : L.Cond κ M F h args w ∧ Arm.r .ERR (L.pcall M h (L.canon h args w)) = .None := by
     refine ⟨⟨hM, herrw, by rw [hsp]; exact halign, hroom', hdead', vals, cm, cs, rvals, cm',
@@ -844,9 +848,10 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat} {modes : Clif.Function → ReturnPinMode}
 
+/-- `progX_ni` for `OkReturnPins` (with `hpb`, #581, as `progCall`). -/
 theorem progX_ni_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.ThmReturnPins modes κ (M - 1))
     {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
-    (hcallee : L.Callee g h) {F Z : BitVec 64 → Prop}
+    (hcallee : L.Callee g h) (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h) {F Z : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (hFZ : ∀ a, F a → Z a) {w w' : Arm.ArmState}
     (hsw : SameWorld Z w w') {cm : Clif.Mem} {vals : List Clif.Val} {args : List CV}
     (hm : MemRel F L.syms cm w) (hm' : MemRel F L.syms cm w') (ha : ArgsAt h.sig vals args w)
@@ -872,8 +877,8 @@ theorem progX_ni_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hN : L
     rw [(clifEntry_initState hpf hinit).sig, (clifEntry_initState hpf hinit1).sig]
   have hsav := stackArgsAvoid_tys hsav1 hty
   obtain ⟨us, outs, wf, hus, hlen, hhold, -, hrs, hall, hni⟩ :=
-    L.progCall_return_pins hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ (.inr hN) himgF herr hal hroom hdead hm ha
-      hsav hpl hinit hrun
+    L.progCall_return_pins hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ (.inr hN) himgF herr hal hroom hdead
+      hpb hm ha hsav hpl hinit hrun
   have hc0 := L.callerOk_canon_return_pins hL hh himgF args w
   have hc1 := L.callerOk_canon_return_pins hL hh himgF args w'
   have hsp' : spv w' = spv w := (hsw.1 _ (by simp [Masked])).symm
@@ -936,7 +941,8 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat} {modes : Clif.Function → ReturnPinMode}
 
-theorem xni_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.ThmReturnPins modes κ (M - 1))
+theorem xni_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hN : L.NeedNI) (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.ThmReturnPins modes κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (c : BitVec 64) :
     XNI F L.syms (g.externs.map (·.2)) (indSigs g) c
@@ -991,7 +997,8 @@ theorem xni_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hN : L.NeedNI) {
         exact ⟨(argsAt_iff_of_regs hb hb8 hvl).mpr hall, (argsAt_iff_of_regs hb hb8 hvl).mpr hall⟩
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, u, rfl, hu⟩
     · rw [L.XMode_prog hpf] at hx hx'
-      exact L.progX_ni_return_pins hL hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit hGo hx hx'
+      exact L.progX_ni_return_pins hL hN ih hg hh hcallee (hκ.2 _ h hh) himgF hFZ hsw hm hm' hAA.1
+        hAA.2 hplw hinit hGo hx hx'
     · have hs : symCallee L.Xb L.P (lo64 u) = some h := by
         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = some h
         rw [hu]; exact (L.find_sym_return_pins hL h.name).1 h hpf
@@ -999,8 +1006,8 @@ theorem xni_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hN : L.NeedNI) {
       split at hx
       · rename_i hif
         rw [if_pos hif] at hx'
-        exact L.progX_ni_return_pins hL hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit hGo hx
-          hx'
+        exact L.progX_ni_return_pins hL hN ih hg hh hcallee (hκ.2 _ h hh) himgF hFZ hsw hm hm' hAA.1
+          hAA.2 hplw hinit hGo hx hx'
       · cases hx
 end LinkSys
 
