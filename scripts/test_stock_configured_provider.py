@@ -33,6 +33,53 @@ block0(v0: i64):
     return v0
 }
 """
+# isa/aarch64/dead-notrap-load.clif (wasmtime v49.0.1): stock does not lower an unused `notrap`
+# load (#970); a trapping or atomic load stays.
+DEAD_NOTRAP = """function %dead_notrap_load(i64) {
+block0(v0: i64):
+    v1 = load.i64 notrap aligned v0
+    return
+}
+
+function %dead_notrap_uload8(i64) {
+block0(v0: i64):
+    v1 = uload8.i32 notrap aligned v0
+    return
+}
+
+function %dead_notrap_load_chain(i64) {
+block0(v0: i64):
+    v1 = load.i64 notrap aligned readonly v0+176
+    v2 = load.i32 notrap aligned v1
+    return
+}
+
+function %dead_notrap_load_live_address(i64) -> i64 {
+block0(v0: i64):
+    v1 = iconst.i64 8
+    v2 = iadd v0, v1
+    v3 = load.i64 notrap aligned v2
+    return v2
+}
+
+function %dead_trapping_load(i64) {
+block0(v0: i64):
+    v1 = load.i64 aligned v0
+    return
+}
+
+function %dead_atomic_load(i64) {
+block0(v0: i64):
+    v1 = atomic_load.i64 notrap aligned v0
+    return
+}
+"""
+
+
+def integer_loads(code):
+    """The integer LDR/LDRB/LDRH (unsigned immediate offset) words of `code`."""
+    words = [int.from_bytes(code[i:i + 4], "little") for i in range(0, len(code), 4)]
+    return sum(1 for w in words if w & 0x3FC00000 == 0x39400000)
 
 
 class StockConfiguredProviderTests(unittest.TestCase):
@@ -190,6 +237,53 @@ class StockConfiguredProviderTests(unittest.TestCase):
         for cleanup in (False, True):
             with self.subTest(cleanup=cleanup):
                 self.check_provider(source, cleanup, stock_selected=True)
+
+    def test_configured_sink_extend_provider_keeps_original_inputs(self):
+        widths = {"i8": ("i16", "i32", "i64"), "i16": ("i32", "i64"), "i32": ("i64",)}
+        for op in ("uextend", "sextend"):
+            for load_ty, outs in widths.items():
+                for out in outs:
+                    source = (f"function %load_{op}_{load_ty}_{out}(i64) -> {out} {{\n"
+                              f"block0(v0: i64):\n    v1 = load.{load_ty} v0\n"
+                              f"    v2 = {op}.{out} v1\n    return v2\n}}\n")
+                    for cleanup in (False, True):
+                        with self.subTest(op=op, load_ty=load_ty, out=out, cleanup=cleanup):
+                            self.check_provider(source, cleanup, stock_selected=True)
+
+    def test_configured_compiler_drops_unused_notrap_loads(self):
+        # #970: only the stock-configured driver drops them (`StockConfig.dropDeadNotrapLoads`,
+        # unproved); the default mode, like cg_clif 0.136.1 (`cargo fv`), keeps them.
+        ret = bytes.fromhex("c0035fd6")
+        dropped = {"dead_notrap_load": ret, "dead_notrap_uload8": ret,
+                   "dead_notrap_load_chain": ret,
+                   "dead_notrap_load_live_address": bytes.fromhex("00200091") + ret}
+        # the filetest's expected code of the loads that stay: `ldr x2, [x0]`, `ldar x2, [x0]`
+        kept = {"dead_trapping_load": bytes.fromhex("020040f9") + ret,
+                "dead_atomic_load": bytes.fromhex("02fcdfc8") + ret}
+        # the filetest's settings: no frame pointers, so the expected code is stock's exactly
+        request = copy.deepcopy(self.request)
+        for flag in request["flags"]:
+            if flag["name"] == "preserve_frame_pointers":
+                flag["value"] = "false"
+        with tempfile.TemporaryDirectory(prefix="stock-configured-notrap-") as tmp:
+            directory = Path(tmp)
+            plain, _, _ = self.compile_at(directory / "default", DEAD_NOTRAP, True, False)
+            configured, receipt, _ = self.compile_at(directory / "configured", DEAD_NOTRAP, True, True,
+                                                     request=request)
+            self.assertEqual(plain.returncode, 0, plain.stderr)
+            self.assertEqual(configured.returncode, 0, configured.stderr)
+            self.assertTrue(receipt["configuration_accepted"])
+            self.assertFalse(receipt["function_rejections"])
+            plain_object = ELF(directory / "default/program.o")
+            configured_object = ELF(directory / "configured/program.o")
+            for name, code in (dropped | kept).items():
+                with self.subTest(name=name):
+                    self.assertEqual(configured_object.function(name)[1], code)
+                    plain_code = plain_object.function(name)[1]
+                    if name == "dead_atomic_load":
+                        self.assertIn(bytes.fromhex("02fcdfc8"), plain_code)
+                    else:
+                        self.assertGreater(integer_loads(plain_code), 0)
 
     def test_typed_pipeline_keeps_its_existing_provider(self):
         self.check_provider(MEMORY_CFG, cleanup=False, typed=True)

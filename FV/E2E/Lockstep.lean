@@ -645,8 +645,9 @@ theorem rmw_lockstep2 {F Z : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {ty 
     obtain ⟨hsw, h27⟩ := rmwBody_congr (F := Z) hty op fl env0 env0 hsw0
       (by simp [Arm.r_of_w_different]) (by simp [Arm.r_of_w_different]) hav hrun hrun'
     refine ⟨?_, rfl, hsw⟩
-    simp only [List.take, List.drop, List.map_cons, List.map_nil, List.cons_append,
-      List.nil_append, List.cons.injEq, and_true]
+    rw [AtomicRmwLoopOp.defRegs_take_one]
+    simp only [List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.cons.injEq,
+      and_true]
     exact regVal_x_eq (by simpa [rnum] using h27)
   · rw [if_neg he] at h
     rw [if_neg (herr ▸ he)] at h'

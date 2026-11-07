@@ -19,7 +19,7 @@ def lowerValidated (f : Clif.Function) : Except String VCode :=
     | .ok vc => .ok vc
     | .error _ => VoidCall.NI.lowerValidated f
 
-/-- Retain all published routes and append the checked argument-passing provider as route 22. -/
+/-- Retain all published routes and append the checked argument-passing provider as route 23. -/
 def lowerRoutes : List (Clif.Function → Except String VCode) :=
   VoidCall.NI.lowerRoutes ++ [lowerValidated]
 

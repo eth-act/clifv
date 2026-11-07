@@ -138,6 +138,8 @@ theorem visit_words {m : Type → Type} [Monad m] [LawfulMonad m] (f : OpSpec �
   case tryCall info ti =>
     obtain ⟨dest, uses, defs⟩ := info
     cases dest <;> simp [MInst.visitOperands, instWords]
+  case atomicRmwLoop ty op fl a o d s1 s2 =>
+    by_cases hx : op = .xchg <;> simp [MInst.visitOperands, instWords, hx]
   all_goals simp [MInst.visitOperands, instWords]
 
 theorem exceptBind_ok {ε α β : Type} {x : Except ε α} {g : α → Except ε β} {b : β}
@@ -230,6 +232,8 @@ theorem visit_retsB {m : Type → Type} [Monad m] [LawfulMonad m] (f : OpSpec �
   case tryCall info ti =>
     obtain ⟨dest, uses, defs⟩ := info
     cases dest <;> simp [MInst.visitOperands, retsB]
+  case atomicRmwLoop ty op fl a o d s1 s2 =>
+    by_cases hx : op = .xchg <;> simp [MInst.visitOperands, retsB, hx]
   all_goals simp [MInst.visitOperands, retsB]
 
 theorem visit_run_retsB {f : OpSpec → Reg → StateT Nat (Except String) Reg} {i i' : MInst} {k k' : Nat}

@@ -63,8 +63,8 @@ function fixture(options = {}) {
         return { data: { id: 99, user: bot, body: args.body, html_url: 'https://example.com/comment/99' } }; },
       update: async args => { calls.push(['update', args]); if (options.failUpdate) throw new Error('update failed'); issue.body = args.body; },
       deleteComment: async args => { calls.push(['delete', args]); if (options.failDelete) throw new Error('delete failed'); } },
-  }, paginate: async method => {
-    if (method === 'runs') return options.runs ?? [];
+  }, paginate: async (method, args) => {
+    if (method === 'runs') return args.workflow_id === 'full-gate.yml' ? options.gateRuns ?? [] : options.runs ?? [];
     if (method === 'artifacts') return [{ id: 50, name: 'stock-nightly-state-1', size_in_bytes: 512, expired: false }];
     if (method === 'comments') return options.comments ?? [];
     throw new Error('Unexpected pagination');
@@ -72,6 +72,16 @@ function fixture(options = {}) {
     commits: args.page === 1 ? [{ sha: run(11).head_sha, author: options.author ?? { login: 'contributor' },
       commit: { author: { name: 'Contributor' }, message: 'Fix operation\n\nDetails' } }] : [] } }) };
   return { github, context, issueNumber: 46, core: { info() {}, warning(message) { calls.push(['warning', message]); } }, calls, issue };
+}
+function gateRun(id, changes = {}) {
+  return run(id, { path: n.GATE, ...changes });
+}
+// `scripts/stock-crate-parity.py --json` rows: [name, equal] pairs, localised in `cgu` as cargo fv does.
+function parity(functions, cgu = 'a1b2c3d4e5f6') {
+  return functions.map(([fn, equal]) => ({ cgu, fn: `__fv_${cgu}_${fn}`, stock: 8, lean: equal ? 8 : 12, equal }));
+}
+function crates(fvDemo, survey = [['s', true]], cgu) {
+  return { 'fv-demo': parity(fvDemo, cgu), survey: parity(survey, cgu) };
 }
 function oldComment(id, changes = {}) {
   return { id, user: bot, body: n.render(plan({ snapshot_run_id: id, ...changes })).body };
@@ -277,4 +287,166 @@ test('full archive preserves comments instead of losing evidence', async () => {
   await n.publish({ ...f, plan: plan({ previous }), keep: 1 });
   assert.ok(f.calls.some(c => c[0] === 'warning'));
   assert.equal(f.calls.some(c => c[0] === 'delete'), false);
+});
+
+test('crate parity counts names, not codegen units; offsetting gains cannot hide a loss', () => {
+  const before = n.crateSnapshot(crates([['f', true], ['g', false], ['h', true]]), gateRun(20));
+  const after = n.crateSnapshot(crates([['f', false], ['g', true], ['h', true]], undefined, 'ffffffffffff'), gateRun(21));
+  assert.deepEqual(before.totals['fv-demo'], { functions: 3, identical: 2, missing: 0, stock_bytes: 24, lean_bytes: 28 });
+  const d = n.crateDifference(before, after);
+  assert.equal(d.gained, 1);
+  assert.deepEqual(d.lost, [[JSON.stringify(['fv-demo', 'f']), 1]]);
+  assert.equal(d.added + d.removed, 0);
+});
+test('a crate function that Lean stops compiling is removed and, if it matched, lost', () => {
+  const before = n.crateSnapshot(crates([['f', true], ['g', false]]), gateRun(20));
+  const after = n.crateSnapshot(crates([['g', false], ['k', true]]), gateRun(21));
+  const d = n.crateDifference(before, after);
+  assert.deepEqual(d.lost, [[JSON.stringify(['fv-demo', 'f']), 1]]);
+  assert.equal(d.removed, 1); assert.equal(d.added, 1); assert.equal(d.gained, 1);
+});
+test('repeated crate names compare by count of identical copies', () => {
+  const before = n.crateSnapshot(crates([['f', true], ['f', true]]), gateRun(20));
+  const after = n.crateSnapshot(crates([['f', true], ['f', false]]), gateRun(21));
+  assert.deepEqual(n.crateDifference(before, after).lost, [[JSON.stringify(['fv-demo', 'f']), 1]]);
+});
+test('crate snapshots reject malformed rows, a missing crate and tampered saved counts', () => {
+  for (const change of [c => c['fv-demo'][0].equal = 'True', c => c['fv-demo'][0].stock = -1, c => delete c.survey,
+    c => c.survey = [], c => c['fv-demo'][0].fn = 7]) {
+    const data = crates([['f', true]]); change(data); assert.throws(() => n.crateSnapshot(data, gateRun(20)));
+  }
+  assert.throws(() => n.crateSnapshot(crates([['f', true]]), run(20)), /Unexpected source run/);
+  const missing = crates([['f', true]]); missing['fv-demo'].push({ cgu: 'a1b2c3d4e5f6', fn: 'gone', error: 'not in cg_clif' });
+  assert.equal(n.crateSnapshot(missing, gateRun(20)).totals['fv-demo'].missing, 1);
+  for (const change of [s => s.entries[0][1] = 2, s => s.totals.survey.identical++, s => s.entries.push(s.entries[0]),
+    s => s.entries[0][0] = JSON.stringify(['other', 'f'])]) {
+    const saved = n.crateSnapshot(crates([['f', true]]), gateRun(20)); change(saved);
+    assert.throws(() => n.validateCrate(saved));
+  }
+});
+test('collect reads the newest full-gate run with crate artifacts and compares it with the saved baseline', async () => {
+  const previous = { through: '2026-10-05T00:00:00.000Z', snapshot_run_id: 800, snapshot_attempt: 1 };
+  const crate = n.crateSnapshot(crates([['f', true], ['g', false]]), gateRun(28));
+  const f = fixture({ body: `${n.STATE}${JSON.stringify(previous)} -->`, gateRuns: [
+    gateRun(28, { created_at: '2026-10-04T01:00:00Z' }), gateRun(29, { created_at: '2026-10-04T05:00:00Z' }),
+    gateRun(30, { created_at: '2026-10-04T09:00:00Z', conclusion: 'failure' }),
+    gateRun(31, { created_at: '2026-10-04T10:00:00Z', status: 'in_progress' })] });
+  const loaded = [];
+  const result = await n.collect({ ...f, now: new Date(plan().through),
+    loadState: async () => ({ schema: 1, through: previous.through, baseline: null, crate }),
+    loadCrate: async (r, example) => {
+      loaded.push(r.id);
+      if (r.id === 30) throw new Error(`Missing or expired artifact: crate-parity-${example}-1`);
+      return crates([['f', false], ['g', true]])[example];
+    } });
+  assert.deepEqual([...new Set(loaded)], [30, 29]);
+  assert.equal(result.saved.crate.run.id, 29);
+  assert.equal(result.plan.crate.fresh, true);
+  assert.equal(result.plan.crate.previous.run_id, 28);
+  assert.deepEqual(result.plan.crate.delta.lost, [[JSON.stringify(['fv-demo', 'f']), 1]]);
+  assert.deepEqual(result.plan.crate.range.authors, ['@contributor']);
+});
+test('crate parity: a state without it starts an initial report; quiet nights keep the baseline', async () => {
+  const previous = { through: '2026-10-05T00:00:00.000Z', snapshot_run_id: 800, snapshot_attempt: 1 };
+  const f = fixture({ body: `${n.STATE}${JSON.stringify(previous)} -->`, gateRuns: [gateRun(29)] });
+  const options = { ...f, now: new Date(plan().through), loadCrate: async (_r, example) => crates([['f', true]])[example] };
+  let result = await n.collect({ ...options, loadState: async () => ({ schema: 1, through: previous.through, baseline: null }) });
+  assert.equal(result.plan.crate.previous, null); assert.equal(result.plan.crate.fresh, true);
+  assert.equal(result.plan.crate.delta, null); assert.equal(result.saved.crate.run.id, 29);
+  const crate = result.saved.crate;
+  result = await n.collect({ ...options, loadState: async () => ({ schema: 1, through: previous.through, baseline: null, crate }) });
+  assert.equal(result.plan.crate.fresh, false); assert.deepEqual(result.saved.crate, crate);
+  result = await n.collect({ ...options, gateRuns: [], loadState: async () => ({ schema: 1, through: previous.through, baseline: null, crate }) });
+  assert.equal(result.plan.crate.latest.run_id, 29); assert.deepEqual(result.saved.crate, crate);
+});
+test('a malformed crate artifact is named and the next older run is used; no artifact means no measurement', async () => {
+  const f = fixture({ gateRuns: [gateRun(29, { created_at: '2026-10-04T01:00:00Z' }), gateRun(30, { created_at: '2026-10-04T05:00:00Z' })] });
+  let result = await n.collect({ ...f, now: new Date(plan().through),
+    loadCrate: async (r, example) => r.id === 30 ? [{ fn: 'f', equal: 'yes' }] : crates([['f', true]])[example] });
+  assert.equal(result.saved.crate.run.id, 29);
+  assert.ok(result.plan.crate.problems[0].problem.includes('Invalid crate parity row'));
+  assert.ok(n.render(result.plan).body.includes('Crate parity not read'));
+  result = await n.collect({ ...f, now: new Date(plan().through),
+    loadCrate: async (_r, example) => { throw new Error(`Missing or expired artifact: crate-parity-${example}-1`); } });
+  assert.equal(result.plan.crate.latest, null); assert.equal(result.saved.crate, null);
+  assert.ok(n.render(result.plan).body.includes('No crate measurement yet.'));
+});
+test('render adds one crate table with the change in each row, and names lost crate matches', () => {
+  const before = n.crateSnapshot(crates([['f', true], ['g', false]]), gateRun(28));
+  const after = n.crateSnapshot(crates([['f', false], ['g', true], ['h', true]]), gateRun(29));
+  const crate = { previous: { sha: gateRun(28).head_sha, run_id: 28, run_attempt: 1, url: 'https://example.com/28', totals: before.totals },
+    latest: { sha: gateRun(29).head_sha, run_id: 29, run_attempt: 1, url: 'https://example.com/29', totals: after.totals },
+    fresh: true, delta: n.crateDifference(before, after), problems: [],
+    range: { status: 'ahead', url: 'https://example.com/crate-range', authors: ['@contributor'], commits: [] } };
+  const { body, compact } = n.render(plan({ crate }));
+  assert.equal(body.match(/^\| Crate \| Byte-identical \| Change \|$/gm).length, 1);
+  assert.ok(body.includes('| fv-demo | 2 / 3 (66.7%) | +1 (of +1) |'), body);
+  assert.ok(body.includes('| survey | 1 / 1 (100.0%) | 0 |'));
+  assert.ok(body.includes('**Lost crate matches** (1; commits by @contributor)'));
+  assert.ok(body.includes('- fv-demo f'));
+  assert.ok(compact.includes('Crates: fv-demo 2/3 (+1), survey 1/1 (0)'));
+  assert.ok(compact.includes('Lost crate matches (https://example.com/crate-range; commits by @contributor): fv-demo f.'));
+  const quiet = n.render(plan({ crate: { ...crate, fresh: false, delta: null, range: null } })).body;
+  assert.ok(quiet.includes('No new full-gate measurement'));
+  assert.ok(quiet.includes('| fv-demo | 2 / 3 (66.7%) | — |'));
+  assert.equal(n.render(plan()).body.includes('Real crates'), false);
+});
+test('the issue summary names the crate counts; publish refuses a crate baseline that disagrees', async () => {
+  const saved = n.crateSnapshot(crates([['f', true]]), gateRun(29));
+  const crate = { previous: null, latest: { sha: gateRun(29).head_sha, run_id: 29, run_attempt: 1,
+    url: 'https://example.com/29', totals: saved.totals }, fresh: true, delta: null, range: null, problems: [] };
+  let f = fixture({ saved: { schema: 1, through: plan().through, baseline: n.snapshot(report(), run()), crate: saved } });
+  await n.publish({ ...f, plan: plan({ crate }) });
+  assert.ok(f.issue.body.includes('Real crates (`cargo fv`): fv-demo 1/1, survey 1/1 byte-identical at'));
+  f = fixture({ saved: { schema: 1, through: plan().through, baseline: n.snapshot(report(), run()) } });
+  await assert.rejects(n.publish({ ...f, plan: plan({ crate }) }), /disagrees/);
+  assert.deepEqual(f.calls, []);
+});
+
+test('a toolchain change of the crate disambiguator keeps names comparable; renamed crates are not compared', () => {
+  const before = n.crateSnapshot(crates([['_RNvCsAbC123_4core3foo', true], ['_RNvCs9_5alloc3bar', true]]), gateRun(20));
+  const after = n.crateSnapshot(crates([['_RNvCsZz9_4core3foo', true], ['_RNvCs_5alloc3bar', false]]), gateRun(21));
+  let d = n.crateDifference(before, after);
+  assert.equal(d.comparable, true);
+  assert.deepEqual(d.lost, [[JSON.stringify(['fv-demo', '_RNvC5alloc3bar']), 1]]);
+  const renamed = n.crateSnapshot(crates([['x1', false], ['x2', true], ['x3', true]]), gateRun(21));
+  d = n.crateDifference(before, renamed);
+  assert.equal(d.comparable, false); assert.deepEqual(d.lost, []);
+  const crate = { previous: { sha: gateRun(20).head_sha, run_id: 20, run_attempt: 1, url: 'u', totals: before.totals },
+    latest: { sha: gateRun(21).head_sha, run_id: 21, run_attempt: 1, url: 'v', totals: renamed.totals },
+    fresh: true, delta: d, problems: [], range: { status: 'ahead', url: 'w', authors: [], commits: [] } };
+  const { body, compact } = n.render(plan({ crate }));
+  assert.ok(body.includes('not compared function by function')); assert.equal(body.includes('Lost crate matches'), false);
+  assert.ok(compact.includes('not compared by function'));
+});
+test('any crate artifact error is named and never stops the digest; newer runs without artifacts are counted', async () => {
+  const f = fixture({ gateRuns: [gateRun(28, { created_at: '2026-10-04T01:00:00Z' }),
+    gateRun(29, { created_at: '2026-10-04T05:00:00Z' }), gateRun(30, { created_at: '2026-10-04T09:00:00Z' })] });
+  const result = await n.collect({ ...f, now: new Date(plan().through), loadReport: async () => report(),
+    loadCrate: async (r, example) => {
+      if (r.id === 30) throw new Error(`Missing or expired artifact: crate-parity-${example}-1`);
+      if (r.id === 29) throw new Error('HttpError: Server Error');
+      return crates([['f', true]])[example];
+    } });
+  assert.equal(result.saved.crate.run.id, 28);
+  assert.deepEqual(result.plan.crate.problems.map(p => p.problem), ['HttpError: Server Error']);
+  assert.equal(result.plan.crate.passedOver.count, 1);
+  const { body } = n.render(result.plan);
+  assert.ok(body.includes('1 newer full-gate run(s) had no crate artifacts'));
+  assert.ok(body.includes('Crate parity not read'));
+});
+test('only push, schedule and manual full-gate runs on main are crate sources', () => {
+  for (const changes of [{ event: 'pull_request' }, { head_branch: 'feature' }, { path: n.WORKFLOW }]) {
+    assert.throws(() => n.crateSnapshot(crates([['f', true]]), gateRun(20, changes)));
+  }
+  for (const event of ['push', 'schedule', 'workflow_dispatch']) n.crateSnapshot(crates([['f', true]]), gateRun(20, { event }));
+});
+test('a day without a new crate measurement adds nothing to the compact history', () => {
+  const saved = n.crateSnapshot(crates([['f', true]]), gateRun(29));
+  const latest = { sha: gateRun(29).head_sha, run_id: 29, run_attempt: 1, url: 'u', totals: saved.totals };
+  const quiet = n.render(plan({ crate: { previous: latest, latest, fresh: false, delta: null, range: null, problems: [] } }));
+  assert.equal(quiet.compact.includes('Crates'), false);
+  assert.ok(quiet.body.includes('| fv-demo | 1 / 1 (100.0%) |'));
+  const fresh = n.render(plan({ crate: { previous: null, latest, fresh: true, delta: null, range: null, problems: [] } }));
+  assert.ok(fresh.compact.includes('Crates: fv-demo 1/1, survey 1/1 at'));
 });

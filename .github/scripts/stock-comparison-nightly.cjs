@@ -4,10 +4,14 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const zlib = require('node:zlib');
 const { execFileSync } = require('node:child_process');
-const { validateMeasurement, totalsRows } = require('./stock-comparison-comment.cjs');
+const { validateMeasurement, totalsRows, fraction } = require('./stock-comparison-comment.cjs');
 
 const WORKFLOW = '.github/workflows/stock-compiler-comparison.yml';
 const NIGHTLY = '.github/workflows/stock-comparison-nightly.yml';
+// Crate parity, the second parity metric: the full gate's `cargo fv` job measures these crates.
+const GATE = '.github/workflows/full-gate.yml';
+const CRATES = ['fv-demo', 'survey'];
+const CRATE_RUNS = 20;
 const START = '<!-- clifv-nightly-summary:start -->';
 const END = '<!-- clifv-nightly-summary:end -->';
 const STATE = '<!-- clifv-nightly-state:v1 ';
@@ -41,6 +45,9 @@ function checkedRun(run, workflow = WORKFLOW) {
       !/^[0-9a-f]{40}$/.test(run.head_sha) || !Number.isSafeInteger(run.id) ||
       !Number.isSafeInteger(run.run_attempt)) throw new Error('Unexpected source run');
   if (workflow === WORKFLOW && run.event !== 'push') throw new Error('Not a main push measurement');
+  if (workflow === GATE && !['push', 'schedule', 'workflow_dispatch'].includes(run.event)) {
+    throw new Error('Not a trusted main full-gate run');
+  }
   return run;
 }
 
@@ -148,6 +155,152 @@ function difference(before, after) {
   return result;
 }
 
+// `cargo fv` localises a function as `__fv_<cgu>_<name>`; the CGU hash is not a stable identity.
+// Neither is a v0 crate disambiguator (`Cs<base62>_` before the crate name's length), which a
+// toolchain or `Cargo.lock` change renews for every function of the crate.
+function crateName(fn) { return fn.replace(/^__fv_[0-9a-f]+_/, '').replace(/Cs[0-9A-Za-z]*_(?=[1-9])/g, 'C'); }
+
+// One full-gate run's `scripts/stock-crate-parity.py --json` rows per crate, kept as counts per
+// function name, so that the CGU split and the order of repeated names do not decide a match.
+function crateSnapshot(examples, run) {
+  checkedRun(run, GATE);
+  const totals = {}, entries = [];
+  for (const example of CRATES) {
+    const rows = examples[example];
+    if (!Array.isArray(rows) || rows.length > 200000) throw new Error(`Invalid crate parity rows: ${example}`);
+    const counts = new Map();
+    const t = { functions: 0, identical: 0, missing: 0, stock_bytes: 0, lean_bytes: 0 };
+    for (const row of rows) {
+      if (!row || typeof row !== 'object' || typeof row.fn !== 'string' || !row.fn || row.fn.length > 4096) {
+        throw new Error(`Invalid crate parity row: ${example}`);
+      }
+      if (Object.hasOwn(row, 'error')) { t.missing++; continue; }
+      if (typeof row.equal !== 'boolean' || !Number.isSafeInteger(row.stock) || !Number.isSafeInteger(row.lean) ||
+          row.stock < 0 || row.lean < 0) throw new Error(`Invalid crate parity row: ${example}`);
+      const key = JSON.stringify([example, crateName(row.fn)]);
+      const c = counts.get(key) ?? [0, 0];
+      c[0] += row.equal ? 1 : 0; c[1]++; counts.set(key, c);
+      t.functions++; t.identical += row.equal ? 1 : 0; t.stock_bytes += row.stock; t.lean_bytes += row.lean;
+    }
+    if (!t.functions) throw new Error(`Empty crate parity measurement: ${example}`);
+    totals[example] = t;
+    for (const [key, [identical, functions]] of counts) entries.push([key, identical, functions]);
+  }
+  return { schema: 1, run: { id: run.id, run_attempt: run.run_attempt, head_sha: run.head_sha,
+    head_branch: run.head_branch, event: run.event, path: run.path },
+    totals, entries: entries.sort((a, b) => a[0].localeCompare(b[0])) };
+}
+
+function validateCrate(data) {
+  if (data?.schema !== 1 || !Array.isArray(data.entries) || data.entries.length > 400000 || !data.totals) {
+    throw new Error('Invalid saved crate baseline');
+  }
+  checkedRun(data.run, GATE);
+  const sums = Object.fromEntries(CRATES.map(example => [example, [0, 0]]));
+  const keys = new Set();
+  for (const entry of data.entries) {
+    if (!Array.isArray(entry) || entry.length !== 3 || typeof entry[0] !== 'string' || entry[0].length > 4200 ||
+        keys.has(entry[0]) || !Number.isSafeInteger(entry[1]) || !Number.isSafeInteger(entry[2]) ||
+        entry[1] < 0 || entry[2] < 1 || entry[1] > entry[2]) throw new Error('Invalid saved crate function');
+    const key = JSON.parse(entry[0]);
+    if (!Array.isArray(key) || key.length !== 2 || !Object.hasOwn(sums, key[0]) || typeof key[1] !== 'string') {
+      throw new Error('Invalid saved crate identity');
+    }
+    keys.add(entry[0]); sums[key[0]][0] += entry[1]; sums[key[0]][1] += entry[2];
+  }
+  for (const example of CRATES) {
+    const t = data.totals[example];
+    if (t?.identical !== sums[example][0] || t?.functions !== sums[example][1]) throw new Error('Saved crate counts disagree');
+  }
+  return data;
+}
+
+// Lost: a name with fewer identical copies than before, including one Lean no longer compiles.
+// When most names of a crate changed (a toolchain or dependency update renames them), the two
+// measurements are not compared name by name, as a changed reference is not on the filetest side.
+function crateDifference(before, after) {
+  const result = { comparable: true, gained: 0, lost: [], added: 0, removed: 0 };
+  for (const example of CRATES) {
+    const names = new Set(before.entries.filter(e => JSON.parse(e[0])[0] === example).map(e => e[0]));
+    const kept = after.entries.filter(e => JSON.parse(e[0])[0] === example && names.has(e[0])).length;
+    const counted = after.entries.filter(e => JSON.parse(e[0])[0] === example).length;
+    if (2 * kept < Math.max(names.size, counted)) result.comparable = false;
+  }
+  if (!result.comparable) return result;
+  const old = new Map(before.entries.map(([key, identical, functions]) => [key, { identical, functions }]));
+  for (const [key, identical, functions] of after.entries) {
+    const previous = old.get(key);
+    old.delete(key);
+    if (!previous) { result.added += functions; result.gained += identical; continue; }
+    if (identical < previous.identical) result.lost.push([key, previous.identical - identical]);
+    if (identical > previous.identical) result.gained += identical - previous.identical;
+    if (functions > previous.functions) result.added += functions - previous.functions;
+    if (functions < previous.functions) result.removed += previous.functions - functions;
+  }
+  for (const [key, previous] of old) {
+    result.removed += previous.functions;
+    if (previous.identical) result.lost.push([key, previous.identical]);
+  }
+  result.lost.sort((a, b) => a[0].localeCompare(b[0]));
+  return result;
+}
+
+function crateSummary(repo, snapshot) {
+  if (!snapshot) return null;
+  return { sha: snapshot.run.head_sha, run_id: snapshot.run.id, run_attempt: snapshot.run.run_attempt,
+    url: runUrl(repo, snapshot.run), totals: snapshot.totals };
+}
+
+// The newest full-gate run on main with a crate measurement for every crate, against the
+// previous report's crate baseline. A run without the artifacts (the job was skipped or the
+// measurement step failed) is passed over; it never resets the baseline.
+async function crateReport({ github, repo, now, baseline, loadCrate }) {
+  const runs = await github.paginate(github.rest.actions.listWorkflowRuns, { ...repo,
+    workflow_id: GATE.split('/').at(-1), branch: 'main', per_page: 100,
+    created: `>=${new Date(now.getTime() - 14 * DAY).toISOString()}` });
+  const completed = runs.filter(r => r.status === 'completed' && Date.parse(r.updated_at) <= now.getTime())
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id).slice(0, CRATE_RUNS);
+  const problems = [];
+  const passedOver = [];
+  let latest = null;
+  for (const run of completed) {
+    checkedRun(run, GATE);
+    // A crate artifact never stops the filetest digest: any error is named and the next older run read.
+    try {
+      const examples = {};
+      for (const example of CRATES) {
+        examples[example] = loadCrate ? await loadCrate(run, example) :
+          await artifact(github, repo, run, `crate-parity-${example}-${run.run_attempt}`, 'crate');
+      }
+      latest = crateSnapshot(examples, run);
+      break;
+    } catch (error) {
+      if (String(error?.message).startsWith('Missing or expired artifact:')) {
+        passedOver.push({ sha: run.head_sha, url: runUrl(repo, run) });
+      } else problems.push({ sha: run.head_sha, url: runUrl(repo, run), problem: String(error?.message ?? error) });
+    }
+  }
+  const plan = { previous: crateSummary(repo, baseline), latest: crateSummary(repo, baseline), fresh: false,
+    delta: null, range: null, problems, passedOver: passedOver.length ?
+      { count: passedOver.length, newest: passedOver[0] } : null };
+  if (!latest || baseline && latest.run.id === baseline.run.id && latest.run.run_attempt === baseline.run.run_attempt) {
+    return { plan, saved: baseline };
+  }
+  if (baseline) {
+    const range = await attribution(github, repo, baseline.run.head_sha, latest.run.head_sha);
+    if (!['ahead', 'identical'].includes(range.status)) {
+      problems.push({ sha: latest.run.head_sha, url: runUrl(repo, latest.run),
+        problem: `history ${range.status}, not a forward comparison` });
+      return { plan, saved: baseline };
+    }
+    plan.delta = crateDifference(baseline, latest);
+    plan.range = range;
+  }
+  plan.latest = crateSummary(repo, latest);
+  plan.fresh = true;
+  return { plan, saved: latest };
+}
+
 async function artifact(github, repo, run, name, kind) {
   const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts,
     { ...repo, run_id: run.id, per_page: 100 });
@@ -185,20 +338,24 @@ function measured(snapshot) {
     outputs: t.test_function_compilations - (t.function_statuses.expected_stock_rejection_no_binary ?? 0) };
 }
 
-async function collect({ github, context, issueNumber, now = new Date(), loadReport, loadState }) {
+async function collect({ github, context, issueNumber, now = new Date(), loadReport, loadState, loadCrate }) {
   const repo = context.repo;
   const issue = (await github.rest.issues.get({ ...repo, issue_number: issueNumber })).data;
   const previous = marker(issue.body ?? '', STATE);
   const since = previous?.through ?? new Date(now.getTime() - DAY).toISOString();
   if (!Number.isFinite(Date.parse(since)) || Date.parse(since) > now.getTime()) throw new Error('Invalid digest cursor');
   let baseline = null;
+  let crateBaseline = null;
   if (previous) {
     const source = checkedRun((await github.rest.actions.getWorkflowRun({ ...repo, run_id: previous.snapshot_run_id })).data, NIGHTLY);
     const saved = loadState ? await loadState(source, previous.snapshot_attempt) : await artifact(github, repo, source,
       `stock-nightly-state-${previous.snapshot_attempt}`, 'state');
     if (saved.schema !== 1 || saved.through !== since) throw new Error('Baseline snapshot does not match issue cursor');
     baseline = saved.baseline ? validateSnapshot(saved.baseline) : null;
+    // States from before crate parity have no `crate` member: the first crate report is an initial one.
+    crateBaseline = saved.crate ? validateCrate(saved.crate) : null;
   }
+  const crate = await crateReport({ github, repo, now, baseline: crateBaseline, loadCrate });
   const runs = await github.paginate(github.rest.actions.listWorkflowRuns, { ...repo, workflow_id: WORKFLOW.split('/').at(-1),
     branch: 'main', event: 'push', per_page: 100,
     created: `>=${new Date(Math.min(Date.parse(since), now.getTime() - 7 * DAY) - DAY).toISOString()}` });
@@ -248,8 +405,8 @@ async function collect({ github, context, issueNumber, now = new Date(), loadRep
     initial: measured(initial), latest: measured(baseline),
     compare: initial && baseline && initial.run.head_sha !== baseline.run.head_sha ?
       `https://github.com/${repo.owner}/${repo.repo}/compare/${initial.run.head_sha}...${baseline.run.head_sha}` : null,
-    rows };
-  return { plan, saved: { schema: 1, through: plan.through, baseline } };
+    rows, crate: crate.plan };
+  return { plan, saved: { schema: 1, through: plan.through, baseline, crate: crate.saved } };
 }
 
 function label(key) {
@@ -272,6 +429,67 @@ function table(before, after) {
     return `| ${row.label} | ${row.text} | ${change} |\n`;
   }).join('');
 }
+// The crate-parity part of the digest: one table, the change since the previous report in each
+// row, and the functions that stopped matching.
+function crateSection(crate) {
+  const sha = value => `\`${value.slice(0, 12)}\``;
+  let body = '\n#### Real crates: byte-identical functions (`cargo fv`, full gate)\n\n';
+  let compact = '';
+  if (!crate.latest) {
+    body += 'No crate measurement yet.\n';
+    compact = ' Crates: no measurement yet.';
+  } else {
+    const at = `[${sha(crate.latest.sha)}](${crate.latest.url})`;
+    if (!crate.fresh) body += `No new full-gate measurement since the previous report. The latest is at ${at}.\n\n`;
+    else if (!crate.previous) body += `Full gate at ${at}. No earlier crate measurement to compare with.\n\n`;
+    else if (crate.range?.url) body += `Full gate ${sha(crate.previous.sha)} → ${at} ([commits](${crate.range.url})).\n\n`;
+    else body += `Full gate at ${at}, the same commit as the previous report.\n\n`;
+    body += '| Crate | Byte-identical | Change |\n| --- | --- | --- |\n';
+    const parts = [];
+    for (const example of CRATES) {
+      const t = crate.latest.totals[example];
+      const o = crate.fresh && crate.previous ? crate.previous.totals[example] : null;
+      let change = '—';
+      if (o) {
+        change = signed(t.identical - o.identical);
+        if (t.functions !== o.functions) change += ` (of ${signed(t.functions - o.functions)})`;
+      }
+      body += `| ${example} | ${fraction(t.identical, t.functions)} | ${change} |\n`;
+      parts.push(`${example} ${t.identical}/${t.functions}` + (o ? ` (${signed(t.identical - o.identical)})` : ''));
+    }
+    // Quiet days add nothing to the compacted history.
+    if (crate.fresh) compact = ` Crates: ${parts.join(', ')} at ${crate.latest.sha.slice(0, 12)}.`;
+    if (crate.delta && !crate.delta.comparable) {
+      body += '\nMost function names changed between the two measurements (a toolchain or dependency ' +
+        'update?), so they are not compared function by function.\n';
+      compact += ' Crate function names changed: not compared by function.';
+    }
+    const lost = crate.delta?.lost ?? [];
+    if (lost.length) {
+      const total = lost.reduce((sum, [, count]) => sum + count, 0);
+      const name = ([key, count]) => {
+        const [example, fn] = JSON.parse(key);
+        return `${example} ${text(fn)}` + (count > 1 ? ` (${count} copies)` : '');
+      };
+      const authors = crate.range?.authors?.length ? `; commits by ${crate.range.authors.map(text).join(', ')}` : '';
+      body += `\n**Lost crate matches** (${total.toLocaleString('en-US')}${authors}):\n` +
+        `${lost.slice(0, 30).map(entry => `- ${name(entry)}`).join('\n')}\n` +
+        (lost.length > 30 ? `- ... and ${(lost.length - 30).toLocaleString('en-US')} more (plan artifact)\n` : '');
+      compact += ` Lost crate matches${crate.range?.url ? ` (${crate.range.url}${authors})` : ''}: ` +
+        `${lost.slice(0, 30).map(name).join('; ')}${lost.length > 30 ? `; and ${lost.length - 30} more` : ''}.`;
+    }
+  }
+  if (crate.passedOver) {
+    body += `\n${crate.passedOver.count} newer full-gate run(s) had no crate artifacts ` +
+      `(newest: [${sha(crate.passedOver.newest.sha)}](${crate.passedOver.newest.url})).\n`;
+  }
+  if (crate.problems?.length) {
+    body += `\nCrate parity not read: ${crate.problems.map(p => `[${sha(p.sha)}](${p.url}) (${text(p.problem)})`).join(', ')}.\n`;
+    compact += ` Crate parity not read: ${crate.problems.map(p => `${p.sha.slice(0, 12)} (${text(p.problem)})`).join(', ')}.`;
+  }
+  return { body, compact };
+}
+
 function render(plan) {
   const sha = value => `\`${value.slice(0, 12)}\``;
   const link = row => `[${sha(row.run.head_sha)}](${row.url})`;
@@ -312,6 +530,11 @@ function render(plan) {
       (row.range.url ? ` (${row.range.url}; ${row.range.authors.map(text).join(', ') || 'authors unavailable'})` : '') +
       `: ${row.delta.lost.map(label).join('; ')}.`).join(' ');
   }
+  // Plans from before crate parity have no `crate` member and render as before.
+  if (plan.crate) {
+    const crate = crateSection(plan.crate);
+    body += crate.body; compact += crate.compact;
+  }
   // The compact record keeps lost matches and their attribution after the comment is deleted.
   body = `${COMMENT}${JSON.stringify({ run: plan.snapshot_run_id, attempt: plan.snapshot_attempt })} -->\n` + body +
     `\n${COMPACT}${JSON.stringify(zlib.deflateSync(Buffer.from(compact)).toString('base64'))} -->`;
@@ -340,8 +563,10 @@ async function publish({ github, context, issueNumber, plan, core, keep = 30 }) 
   // The snapshot must exist BEFORE the issue cursor can point to it.
   const saved = await artifact(github, repo, currentRun, `stock-nightly-state-${plan.snapshot_attempt}`, 'state');
   if (saved.schema !== 1 || saved.through !== plan.through ||
-      (saved.baseline?.run.head_sha ?? null) !== (plan.latest?.sha ?? null)) throw new Error('Uploaded baseline disagrees with digest');
+      (saved.baseline?.run.head_sha ?? null) !== (plan.latest?.sha ?? null) ||
+      (saved.crate?.run.id ?? null) !== (plan.crate?.latest?.run_id ?? null)) throw new Error('Uploaded baseline disagrees with digest');
   if (saved.baseline) validateSnapshot(saved.baseline);
+  if (saved.crate) validateCrate(saved.crate);
   const comments = await github.paginate(github.rest.issues.listComments, { ...repo, issue_number: issueNumber, per_page: 100 });
   const rendered = render(plan);
   const own = botComments(comments);
@@ -365,6 +590,10 @@ async function publish({ github, context, issueNumber, plan, core, keep = 30 }) 
   let proposed = [archive, newArchive].filter(Boolean).join('\n');
   const makeSection = (history, cutoff) => `${START}\n## Latest measurement\n\n` +
     (plan.latest ? `${plan.latest.exact}/${plan.latest.outputs} exact outputs at \`${plan.latest.sha.slice(0, 12)}\`.\n` : 'No valid baseline yet.\n') +
+    (plan.crate?.latest ? `Real crates (\`cargo fv\`): ${CRATES.map(example => {
+      const t = plan.crate.latest.totals[example];
+      return `${example} ${t.identical}/${t.functions}`;
+    }).join(', ')} byte-identical at \`${plan.crate.latest.sha.slice(0, 12)}\`.\n` : '') +
     `\n[Latest daily report](${current.html_url}).\n\n## Compacted history\n\n${archiveStart}\n${history || 'No comments compacted yet.'}\n${archiveEnd}\n\n` +
     `${STATE}${JSON.stringify({ through: plan.through, snapshot_run_id: context.runId,
       snapshot_attempt: plan.snapshot_attempt, archived_through: cutoff })} -->\n${END}`;
@@ -399,5 +628,6 @@ async function prepareFiles(args) {
   return result;
 }
 
-module.exports = { snapshot, validateSnapshot, difference, collect, render, publish, prepareFiles,
-  marker, botComments, START, END, STATE, COMMENT, COMPACT, WORKFLOW, NIGHTLY };
+module.exports = { snapshot, validateSnapshot, difference, crateSnapshot, validateCrate, crateDifference,
+  collect, render, publish, prepareFiles, marker, botComments, START, END, STATE, COMMENT, COMPACT, WORKFLOW,
+  NIGHTLY, GATE };

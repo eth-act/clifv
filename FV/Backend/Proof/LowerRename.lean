@@ -182,6 +182,16 @@ theorem Sim.visit (hg : VRenaming g gn) (i : MInst) :
       (ψ := fun (x : Reg × Reg) => (g x.1, x.2)) ?_ us) fun us => Sim.pure _ _ rfl
     intro a; obtain ⟨v, p⟩ := a
     exact Sim.bind (Sim.collect hg _ v) fun b => Sim.pure _ _ rfl
+  | atomicRmwLoop ty op fl a o1 o2 s1 s2 =>
+    -- `xchg` puts x28 in place of scratch2 without visiting it (a real register: `g` fixes it)
+    simp only [MInst.visitOperands, MInst.mapRegs]
+    cases hx : op == .xchg <;> simp only [Bool.false_eq_true, ↓reduceIte] <;>
+      repeat
+        first
+        | exact Sim.pure _ _ rfl
+        | refine Sim.bind (Sim.collect hg _ _) fun _ => ?_
+        | refine Sim.bind (Sim.pure (f := g) (.x 28) (.x 28)
+            (hg.real _ fun _ _ h => by cases h).symm) fun _ => ?_
   | _ =>
     simp only [MInst.visitOperands, MInst.mapRegs]
     repeat

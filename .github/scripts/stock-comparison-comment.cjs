@@ -267,7 +267,7 @@ async function post({ github, context, core, summaryPath = 'report' }) {
   return current.data;
 }
 
-module.exports = { validate, validateMeasurement, totalsRows, render, prepare, post, readSummary };
+module.exports = { validate, validateMeasurement, totalsRows, fraction, render, prepare, post, readSummary };
 if (require.main === module) {
   const data = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');

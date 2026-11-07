@@ -602,8 +602,9 @@ the access avoids the frame addresses `F` and the run ends without error, with t
 unchanged: in the single-threaded Arm model the exclusive store succeeds (`stlxr`'s status
 register is 0, so the `cbnz` back edge is not taken; `docs/decisions/arm-model.md`). The first
 def is read back from its fixed register (x27); the scratch defs, whose values the
-allocated-code semantics havocs (`MInst.keptDefs`), are 0 (not the registers: `xchg` does not
-write x28, and they must not depend on the world's registers). -/
+allocated-code semantics havocs (`MInst.keptDefs`), are 0 (not the registers: they must not
+depend on the world's registers). The `atomic_rmw` loop's defs are `AtomicRmwLoopOp.defRegs`
+(x27, x24 and, unless `xchg`, x28). -/
 noncomputable def loopSem (F : BitVec 64 → Prop) (ty : CTy) (a : CV) (body : List Line)
     (regs : List Reg) (uses : List CV) (defs : List Reg) (w : Arm.ArmState) :
     Option (List CV × Arm.ArmState × Ctl) :=
@@ -676,10 +677,11 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
     match uses with
     | [u, x] =>
       if Arm.r .ERR w = .None then
-        loopSem F ty u (rmwLoopBody ty.bits op fl) [.x 25, .x 26] [u, x] [.x 27, .x 24, .x 28] w
+        loopSem F ty u (rmwLoopBody ty.bits op fl) [.x 25, .x 26] [u, x] op.defRegs w
       else if AtomTy ty ∧ Avoids F ty.bytes (lo64 u) then
         let old := Arm.read_mem_bytes ty.bytes (lo64 u) w
-        some ([ofX (old.setWidth 64), ofX 0, ofX 0], Arm.write_mem_bytes ty.bytes (lo64 u)
+        some (ofX (old.setWidth 64) :: (op.defRegs.drop 1).map (fun _ => ofX 0),
+          Arm.write_mem_bytes ty.bytes (lo64 u)
           (Clif.Sem.atomicRmw op.clif old ((lo64 x).setWidth (ty.bytes * 8))) w, .next)
       else none
     | _ => none

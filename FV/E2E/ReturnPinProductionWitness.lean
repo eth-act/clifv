@@ -42,7 +42,7 @@ private theorem mode_facts (cleanup : Bool) :
 theorem mixed_previous_action {m : Type → Type} [Monad m]
     (alloc : Array VCode → m (Array (Except String AFunc))) (cleanup : Bool) :
     compileFileReturnPinWhen true alloc mixed [] cleanup =
-      compileFileMemoryCapturedCopyNIWhen true alloc mixed [] cleanup :=
+      compileFileMemorySinkExtNIWhen true alloc mixed [] cleanup :=
   compileFileReturnPinWhen_retry alloc mixed [] cleanup (mode_facts cleanup).2
 
 /-- Both cleanup modes retain the actual new artifacts for the original captured program. -/

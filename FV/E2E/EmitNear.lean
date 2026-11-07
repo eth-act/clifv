@@ -1123,6 +1123,8 @@ theorem visit_noAlways {m : Type → Type} [Monad m] [LawfulMonad m]
   case tryCall info ti =>
     rcases info with ⟨dest, us, ds⟩
     cases dest <;> simp [MInst.visitOperands, MInst.noAlways]
+  case atomicRmwLoop ty op fl a o d s1 s2 =>
+    by_cases hx : op = .xchg <;> simp [MInst.visitOperands, MInst.noAlways, hx]
   all_goals simp [MInst.visitOperands, MInst.noAlways]
 
 theorem assign_noAlways {i i' : MInst} {regs : Array Reg} (h : i.assign regs = .ok i') :

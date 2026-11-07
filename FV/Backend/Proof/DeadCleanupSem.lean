@@ -46,6 +46,11 @@ theorem mspec_cmp {sb : Nat} {i : MInst} {us outs : List CV} {w w' : Arm.ArmStat
     rcases us with _ | ⟨a, _ | ⟨b, us⟩⟩ <;>
       simp [mspec, ispec] at h ⊢
     all_goals (obtain ⟨hb, rfl, rfl, rfl⟩ := h; exact ⟨rfl, _, rfl, fun _ => by simp [hb]⟩)
+  case fpuCmp sz rn rm =>
+    rcases us with _ | ⟨a, _ | ⟨b, _ | ⟨c, us⟩⟩⟩ <;>
+      simp [mspec, ispec, ispecFP] at h ⊢
+    cases sz <;> simp at h ⊢
+    all_goals (obtain ⟨rfl, rfl, rfl⟩ := h; exact ⟨rfl, _, rfl, fun _ => ⟨rfl, rfl, rfl⟩⟩)
 
 theorem write_pstate_twice (p q : Arm.PState) (w : Arm.ArmState) :
     Arm.write_pstate q (Arm.write_pstate p w) = Arm.write_pstate q w := by

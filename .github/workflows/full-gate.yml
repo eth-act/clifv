@@ -490,7 +490,37 @@ jobs:
           if [[ $rc == 0 ]] && ! grep -q '^SAME' "gate-logs/$EX.log"; then rc=1; fi
           echo "cargo fv --lean-link --verified $EX rc=$rc $(( $(date +%s) - start )) s: $(grep -E '^SAME|DIFFERENT' "gate-logs/$EX.log" | tr '\n' ' ')" | tee gate-logs/summary.txt
           tail -n 15 "gate-logs/$EX.log"
+          # keep cargo fv's own output: compare.sh writes it to a temporary directory it names
+          logs=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "gate-logs/$EX.log" | tail -n 1)
+          if [[ -n "$logs" && -f "$logs/fv.log" ]]; then cp "$logs/fv.log" "gate-logs/$EX-cargo-fv.log"; fi
           exit $rc
+      # Crate parity, the second stock-parity metric (AGENTS.md), measured as #557 does: plain
+      # `cargo fv test --keep-temps` (tests compiled, not run) and scripts/stock-crate-parity.py.
+      # The daily digest (#46) reads the artifact. A measurement, not a gate line: it runs whether
+      # or not the step above passed, and it never changes this job's result.
+      - name: Crate parity
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        # a step timeout fails only this step; the job's 240 minutes stay for the gate line
+        timeout-minutes: 60
+        env:
+          EX: ${{ matrix.example }}
+        run: |
+          set -o pipefail
+          mkdir -p gate-logs crate-parity
+          (cd "examples/$EX" && PATH="$GITHUB_WORKSPACE/rust/target/release:$PATH" FV_ROOT="$GITHUB_WORKSPACE" \
+            CARGO_TARGET_DIR="$RUNNER_TEMP/crate-parity" cargo fv test --keep-temps --no-run) \
+            > "gate-logs/$EX-crate-parity.log" 2>&1
+          python3 scripts/stock-crate-parity.py --json crate-parity/crate-parity.json \
+            "$RUNNER_TEMP/crate-parity/fv/plain/tmp" | tee crate-parity/summary.txt
+          { echo "### Crate parity: $EX"; echo; echo '```'; cat crate-parity/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() && hashFiles('crate-parity/crate-parity.json') != '' }}
+        with:
+          name: crate-parity-${{ matrix.example }}-${{ github.run_attempt }}
+          path: crate-parity/crate-parity.json
+          retention-days: 90
+          if-no-files-found: error
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:

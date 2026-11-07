@@ -14,7 +14,8 @@ def read_archive(source, kind):
         raise ValueError("oversized artifact")
     with zipfile.ZipFile(io.BytesIO(source)) as archive:
         members = archive.infolist()
-        expected = "stock-comparison-artifacts.tar.gz" if kind == "measurement" else "state.json"
+        expected = {"measurement": "stock-comparison-artifacts.tar.gz", "state": "state.json",
+                    "crate": "crate-parity.json"}[kind]
         if len(members) != 1 or members[0].filename != expected or members[0].file_size > LIMIT:
             raise ValueError("unexpected artifact contents")
         payload = archive.read(members[0])
@@ -35,7 +36,7 @@ def read_archive(source, kind):
 
 if __name__ == "__main__":
     kind = sys.argv[1]
-    if kind not in ("measurement", "state"):
+    if kind not in ("measurement", "state", "crate"):
         raise SystemExit("unknown artifact kind")
     result = read_archive(sys.stdin.buffer.read(LIMIT + 1), kind)
     print(json.dumps(result, separators=(",", ":")))

@@ -410,13 +410,22 @@ theorem ctlShape_defs {N : Nat} {m : MInst} (h : CtlShape N m) :
     · exact h1
     · exact h2
   | rmw t op fl p x d d1 d2 _ _ _ h1 h2 h3 =>
-    cases hops; simp [OpSpec.fixedUse, OpSpec.fixedDef] at ho
-    rcases ho with rfl | rfl | rfl | rfl | rfl
-    · cases hd
-    · cases hd
-    · exact h1
-    · exact h2
-    · exact h3
+    rw [operands_rmwLoop] at hops; cases hops
+    by_cases hx : op = .xchg
+    · subst hx
+      simp [rmwOps] at ho
+      rcases ho with rfl | rfl | rfl | rfl
+      · cases hd
+      · cases hd
+      · exact h1
+      · exact h2
+    · simp [rmwOps, hx] at ho
+      rcases ho with rfl | rfl | rfl | rfl | rfl
+      · cases hd
+      · cases hd
+      · exact h1
+      · exact h2
+      · exact h3
   | cas t fl p e x d d1 _ h1 h2 =>
     cases hops; simp [OpSpec.fixedUse, OpSpec.fixedDef] at ho
     rcases ho with rfl | rfl | rfl | rfl | rfl

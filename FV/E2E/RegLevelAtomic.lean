@@ -149,6 +149,128 @@ theorem fixed_reg {c : CheckCtx} {ops : Array Operand} {regs : Array Reg} {o : O
   have := (hloc _ hm).2 p hc
   injection this
 
+/-! ## The operands of an `atomic_rmw` loop, by operation
+
+`xchg` has defs x27, x24; the other operations also x28 (`AtomicRmwLoopOp.defRegs`). -/
+
+/-- The allocation of an `atomic_rmw` loop's operands is their fixed registers. -/
+theorem rmwRegs_of_fixed {c : CheckCtx} {op : AtomicRmwLoopOp} {va vo vd v1 v2 : Nat}
+    {regs : Array Reg} (hsz : (rmwOps op va vo vd v1 v2).size = (regs.map Loc.reg).size)
+    (hloc : ∀ x ∈ ((rmwOps op va vo vd v1 v2).zip (regs.map Loc.reg)).toList,
+      c.locOk x.2 x.1.cls = true ∧ ∀ r, x.1.con = .fixed r → x.2 = .reg r) :
+    regs = rmwRegs op := by
+  by_cases hx : op = .xchg
+  · subst hx
+    obtain ⟨q0, q1, q2, q3, rfl⟩ := regs4 (by simpa [rmwOps] using hsz.symm)
+    obtain rfl : q0 = .x 25 := fixed_reg (o := ⟨va, .int, .use, .early, .fixed (.x 25)⟩) hloc
+      (by simp [rmwOps]) rfl
+    obtain rfl : q1 = .x 26 := fixed_reg (o := ⟨vo, .int, .use, .early, .fixed (.x 26)⟩) hloc
+      (by simp [rmwOps]) rfl
+    obtain rfl : q2 = .x 27 := fixed_reg (o := ⟨vd, .int, .def, .late, .fixed (.x 27)⟩) hloc
+      (by simp [rmwOps]) rfl
+    obtain rfl : q3 = .x 24 := fixed_reg (o := ⟨v1, .int, .def, .late, .fixed (.x 24)⟩) hloc
+      (by simp [rmwOps]) rfl
+    rfl
+  · obtain ⟨q0, q1, q2, q3, q4, rfl⟩ := regs5 (by simpa [rmwOps, hx] using hsz.symm)
+    obtain rfl : q0 = .x 25 := fixed_reg (o := ⟨va, .int, .use, .early, .fixed (.x 25)⟩) hloc
+      (by simp [rmwOps, hx]) rfl
+    obtain rfl : q1 = .x 26 := fixed_reg (o := ⟨vo, .int, .use, .early, .fixed (.x 26)⟩) hloc
+      (by simp [rmwOps, hx]) rfl
+    obtain rfl : q2 = .x 27 := fixed_reg (o := ⟨vd, .int, .def, .late, .fixed (.x 27)⟩) hloc
+      (by simp [rmwOps, hx]) rfl
+    obtain rfl : q3 = .x 24 := fixed_reg (o := ⟨v1, .int, .def, .late, .fixed (.x 24)⟩) hloc
+      (by simp [rmwOps, hx]) rfl
+    obtain rfl : q4 = .x 28 := fixed_reg (o := ⟨v2, .int, .def, .late, .fixed (.x 28)⟩) hloc
+      (by simp [rmwOps, hx]) rfl
+    simp [rmwRegs, hx]
+
+/-- The use values of an allocated `atomic_rmw` loop: x25 and x26. -/
+theorem rmwOps_uses {V : Type} (op : AtomicRmwLoopOp) (va vo vd v1 v2 : Nat) (m : Loc → V) :
+    (((rmwOps op va vo vd v1 v2).zip ((rmwRegs op).map Loc.reg)).toList.filter (·.1.isUse)).map
+      (m ·.2) = [m (.reg (.x 25)), m (.reg (.x 26))] := by
+  by_cases hx : op = .xchg
+  · subst hx; simp [rmwOps, rmwRegs, Operand.isUse]
+  · simp [rmwOps, rmwRegs, hx, Operand.isUse]
+
+/-- An allocated `atomic_rmw` loop has no early defs. -/
+theorem rmwOps_early {V : Type} (op : AtomicRmwLoopOp) (va vo vd v1 v2 : Nat) (m : Loc → V)
+    (outs : List V) :
+    writeM m (((((rmwOps op va vo vd v1 v2).zip ((rmwRegs op).map Loc.reg)).toList.filter
+      (·.1.isDef)).zip outs).filter (·.1.1.isEarly)) = m := by
+  by_cases hx : op = .xchg
+  · subst hx
+    rcases outs with _ | ⟨_, _ | ⟨_, _⟩⟩ <;>
+      simp [rmwOps, rmwRegs, writeM, Operand.isDef, Operand.isEarly]
+  · rcases outs with _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩ <;>
+      simp [rmwOps, rmwRegs, hx, writeM, Operand.isDef, Operand.isEarly]
+
+/-- The late defs of an allocated `atomic_rmw` loop, with the values `f` of their registers:
+the def registers `op.defNums` hold them, the other locations keep their values. -/
+theorem rmwOps_late {V : Type} (op : AtomicRmwLoopOp) (va vo vd v1 v2 : Nat) (m : Loc → V)
+    (f : Reg → V) :
+    (∀ n ∈ op.defNums, writeM m (((((rmwOps op va vo vd v1 v2).zip
+        ((rmwRegs op).map Loc.reg)).toList.filter (·.1.isDef)).zip (op.defRegs.map f)).filter
+        (·.1.1.isLate)) (.reg (.x n)) = f (.x n)) ∧
+      ∀ l, (∀ n ∈ op.defNums, l ≠ .reg (.x n)) → writeM m (((((rmwOps op va vo vd v1 v2).zip
+        ((rmwRegs op).map Loc.reg)).toList.filter (·.1.isDef)).zip (op.defRegs.map f)).filter
+        (·.1.1.isLate)) l = m l := by
+  by_cases hx : op = .xchg
+  · subst hx
+    rw [show AtomicRmwLoopOp.defNums .xchg = [27, 24] from rfl]
+    refine ⟨fun n hn => ?_, fun l hl => ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+      rcases hn with rfl | rfl <;>
+        simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, writeM, upd, Operand.isDef, Operand.isLate]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hl
+      simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, writeM, upd, Operand.isDef, Operand.isLate,
+        hl.1, hl.2]
+  · rw [show op.defNums = [27, 24, 28] by simp [AtomicRmwLoopOp.defNums, hx]]
+    refine ⟨fun n hn => ?_, fun l hl => ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+      rcases hn with rfl | rfl | rfl <;>
+        simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, hx, writeM, upd, Operand.isDef,
+          Operand.isLate]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hl
+      simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, hx, writeM, upd, Operand.isDef,
+        Operand.isLate, hl.1, hl.2.1, hl.2.2]
+
+/-- The machine's values of the defs of an `atomic_rmw` loop are as many as `csem`'s outputs,
+and agree with them on the first (the old value in x27). -/
+theorem rmw_havoc {V : Type} (op : AtomicRmwLoopOp) (f g : Reg → V) (z : V)
+    (h27 : f (.x 27) = g (.x 27)) :
+    (op.defRegs.map f).length = ((op.defRegs.take 1).map g ++ (op.defRegs.drop 1).map
+      (fun _ => z)).length ∧
+    (op.defRegs.map f).take 1 = ((op.defRegs.take 1).map g ++ (op.defRegs.drop 1).map
+      (fun _ => z)).take 1 := by
+  unfold AtomicRmwLoopOp.defRegs; split <;> simp [h27]
+
+theorem defNums_lt (op : AtomicRmwLoopOp) : ∀ n ∈ op.defNums, n < 32 := by
+  unfold AtomicRmwLoopOp.defNums; split <;> simp
+
+/-- A property of x27, x24 and x28 holds at the def registers of every `atomic_rmw` loop. -/
+theorem defNums_of {op : AtomicRmwLoopOp} {P : Nat → Prop} (h : ∀ n ∈ [27, 24, 28], P n) :
+    ∀ n ∈ op.defNums, P n := by
+  intro n hn
+  apply h
+  unfold AtomicRmwLoopOp.defNums at hn
+  split at hn <;> simp only [List.mem_cons, List.not_mem_nil, or_false] at hn ⊢ <;> omega
+
+theorem mem_defNums_24 (op : AtomicRmwLoopOp) : 24 ∈ op.defNums := by
+  unfold AtomicRmwLoopOp.defNums; split <;> simp
+
+theorem mem_defNums_27 (op : AtomicRmwLoopOp) : 27 ∈ op.defNums := by
+  unfold AtomicRmwLoopOp.defNums; split <;> simp
+
+/-- `csem`'s outputs of an `atomic_rmw` loop are as many as its defs. -/
+theorem rmwOps_defs_len {V : Type} (op : AtomicRmwLoopOp) (va vo vd v1 v2 : Nat) (g : Reg → V)
+    (z : V) :
+    ((op.defRegs.take 1).map g ++ (op.defRegs.drop 1).map (fun _ => z)).length =
+      (((rmwOps op va vo vd v1 v2).zip ((rmwRegs op).map Loc.reg)).toList.filter
+        (·.1.isDef)).length := by
+  by_cases hx : op = .xchg
+  · subst hx; simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, Operand.isDef]
+  · simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, hx, Operand.isDef]
+
 /-- A store that holds the machine's values at the loop's def registers `ds` and the old
 store's elsewhere agrees with the machine after the loop on the allocatable registers. -/
 theorem store_regs {R : RL} {s s' : Arm.ArmState} {m m' : Loc → CV} {w : Arm.ArmState}
@@ -273,27 +395,11 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     q_op hR hq hvb hi hk
   have hoppseq : opsm = ops := Except.ok.inj (hopsm.symm.trans hops)
   subst hoppseq
-  have hops' : opsm = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
-      ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩,
-      ⟨v2, .int, .def, .late, .fixed (.x 28)⟩] := by
-    have e : (MInst.atomicRmwLoop ty op fl (.vreg va .int) (.vreg vo .int) (.vreg vd .int)
-        (.vreg v1 .int) (.vreg v2 .int)).operands =
-        .ok #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
-          ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩,
-          ⟨v2, .int, .def, .late, .fixed (.x 28)⟩] := rfl
-    rw [e] at hopsm; injection hopsm with h; exact h.symm
-  subst hops'
+  obtain rfl : opsm = rmwOps op va vo vd v1 v2 :=
+    (Except.ok.inj ((operands_rmwLoop _ _ _ _ _ _ _ _).symm.trans hopsm)).symm
   obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hstat
-  obtain ⟨q0, q1, q2, q3, q4, rfl⟩ := regs5 (by simpa using hsz.symm)
-  obtain rfl : q0 = .x 25 := fixed_reg (o := ⟨va, .int, .use, .early, .fixed (.x 25)⟩) hloc (by simp) rfl
-  obtain rfl : q1 = .x 26 := fixed_reg (o := ⟨vo, .int, .use, .early, .fixed (.x 26)⟩) hloc (by simp) rfl
-  obtain rfl : q2 = .x 27 := fixed_reg (o := ⟨vd, .int, .def, .late, .fixed (.x 27)⟩) hloc (by simp) rfl
-  obtain rfl : q3 = .x 24 := fixed_reg (o := ⟨v1, .int, .def, .late, .fixed (.x 24)⟩) hloc (by simp) rfl
-  obtain rfl : q4 = .x 28 := fixed_reg (o := ⟨v2, .int, .def, .late, .fixed (.x 28)⟩) hloc (by simp) rfl
-  have hasg' : (MInst.atomicRmwLoop ty op fl (.vreg va .int) (.vreg vo .int) (.vreg vd .int)
-      (.vreg v1 .int) (.vreg v2 .int)).assign #[.x 25, .x 26, .x 27, .x 24, .x 28] =
-      .ok (.atomicRmwLoop ty op fl (.x 25) (.x 26) (.x 27) (.x 24) (.x 28)) := rfl
-  rw [hasg'] at hasg; cases hasg
+  obtain rfl := rmwRegs_of_fixed hsz hloc
+  rw [assign_rmwLoop] at hasg; cases hasg
   obtain rfl : c1 = [.inst (.atomicRmwLoop ty op fl (.x 25) (.x 26) (.x 27) (.x 24) (.x 28))] := by
     rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
     · exact h
@@ -305,12 +411,9 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   obtain ⟨rfl, rfl⟩ := hl1'
   have hreg : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-  have hU : (((#[(⟨va, .int, .use, .early, .fixed (.x 25)⟩ : Operand),
-      ⟨vo, .int, .use, .early, .fixed (.x 26)⟩, ⟨vd, .int, .def, .late, .fixed (.x 27)⟩,
-      ⟨v1, .int, .def, .late, .fixed (.x 24)⟩, ⟨v2, .int, .def, .late, .fixed (.x 28)⟩].zip
-      (#[Reg.x 25, .x 26, .x 27, .x 24, .x 28].map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) =
-      [regVal s (.x 25), regVal s (.x 26)] := by
-    simp [Operand.isUse, hreg (.x 25) rfl, hreg (.x 26) rfl]
+  have hU : (((rmwOps op va vo vd v1 v2).zip ((rmwRegs op).map Loc.reg)).toList.filter
+      (·.1.isUse)).map (m ·.2) = [regVal s (.x 25), regVal s (.x 26)] := by
+    rw [rmwOps_uses, hreg (.x 25) rfl, hreg (.x 26) rfl]
   have hsem0 := hsem
   rw [hU] at hsem
   have herrw : Arm.r .ERR w = .None := by
@@ -384,22 +487,20 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1 := by
     rw [iterN_add, hit1]; simp [iterN, hstep]
   -- the step with the machine's scratch values, and `Q` at the next item
-  have hfr2 : ∀ f, f ≠ .PC → (∀ n ∈ [27, 24, 28], f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
+  have hfr2 : ∀ f, f ≠ .PC → (∀ n ∈ op.defNums, f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
       Arm.r f (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) =
         Arm.r f s := by
     intro f h1 h2 h3
     rw [Arm.r_of_w_different h1]
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, rnum] at h2
-    exact hfr1 f h1 (by simp [h2.1, h2.2.1, h2.2.2]) h3
+    exact rmwBody_frame hty op fl _ hst.err hrun1 f h1 h2 h3
   refine ⟨(rmwLoopBody ty.bits op fl).length + 1, _,
-    MStep.op (outs' := [regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 27),
-      regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 24),
-      regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 28)])
-      (m2 := m) hvb hi hopsm hsz' hsem0 hlen ⟨by simp, fun h => by simp [havocFrom, MInst.keptDefs] at h,
-        fun n h => ?_⟩ ?_ (MNext.next hk), ?_, fun i hi => ?_⟩
+    MStep.op (outs' := op.defRegs.map (regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1)))
+      (m2 := m) hvb hi hopsm hsz' hsem0 hlen ⟨(rmw_havoc op _ _ _ (by simp [regVal, rnum, h27])).1,
+        fun h => by simp [havocFrom, MInst.keptDefs] at h, fun n h => ?_⟩ ?_ (MNext.next hk), ?_,
+      fun i hi => ?_⟩
   · simp only [havocFrom, MInst.keptDefs, Option.some.injEq] at h
     subst h
-    simp [regVal, rnum, h27]
+    exact (rmw_havoc op _ _ _ (by simp [regVal, rnum, h27])).2
   rotate_right
   · rcases Nat.lt_or_ge i (rmwLoopBody ty.bits op fl).length with hi1 | hi1
     · exact hgx1 (rmwBody_tail hty op fl) (RL.good_of_sp hst.sp)
@@ -413,10 +514,10 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       · rw [hstep]; exact RL.nextOk_succ hLc rfl (Arm.r_of_w_same ..)
       · exact RL.readsAt_noLoad hR hLc hpcs1 rfl
   · refine ⟨fun l _ => ?_, fun c hc => by simp [MInst.clobbers] at hc⟩
-    simp [writeM, Operand.isDef, Operand.isEarly]
+    rw [rmwOps_early]
   rw [hiter]
   refine .inl ⟨j0 + (rmwLoopLines ty.bits op fl (.loop ps1.aloop)).length, vb, items,
-    pre ++ [.op k (#[Reg.x 25, .x 26, .x 27, .x 24, .x 28].map Loc.reg)], c2, X',
+    pre ++ [.op k ((rmwRegs op).map Loc.reg)], c2, X',
     { jt := ps1.jt, aloop := ps1.aloop + 1, traps := ps1.traps }, psm', ps2, x,
     hvb, hit, by rw [hsplit]; simp, hchk'', hcode2, hX2, hT2, htr, ?_, ?_, ?_, hx, hsc⟩
   · rw [← List.drop_drop, hdrop, hloop, List.drop_left' (by simp [rmwLoopLines])]
@@ -425,23 +526,17 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     simp [rmwLoopLines]; omega
   · refine stRel_after hR hst ?_ ?_ (SameWorld.w_left (by simp [Masked]) hsw1) ?_ ?_
       ⟨?_, fun a ha => ?_, ?_⟩
-    · refine store_regs hst [27, 24, 28] (by simp) ?_ ?_ hfr2
-      · intro n hn
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
-        rcases hn with rfl | rfl | rfl <;>
-          simp [writeM, upd, Operand.isDef, Operand.isLate]
-      · intro r hr
-        simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hr
-        simp [writeM, upd, Operand.isDef, Operand.isLate, hr.1, hr.2.1, hr.2.2]
-    · intro l hl
-      simp [writeM, upd, Operand.isDef, Operand.isLate, hl]
+    · refine store_regs hst op.defNums (defNums_lt op) (rmwOps_late op va vo vd v1 v2 m _).1
+        (fun r hr => (rmwOps_late op va vo vd v1 v2 m _).2 _ fun n hn e => hr n hn (Loc.reg.inj e))
+        hfr2
+    · exact fun l hl => (rmwOps_late op va vo vd v1 v2 m _).2 _ fun n _ e => hl _ e
     · rw [hfr2 .ERR (by simp) (by simp) (by simp)]; exact hst.err
     · simp only [Arm.w_program]; exact hprog1
-    · simp only [spOf]; exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
+    · simp only [spOf]; exact hfr2 _ (by simp) (defNums_of (by simp [rnum])) (by simp)
     · simp only [Arm.ArmState.mem_w_eq_mem, hmem1]
       refine mem_write_mem_bytes_ne _ _ _ _ _ (fun k hk e => hav k hk ?_)
       rw [← e]; exact RL.FK_F ha
-    · exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
+    · exact hfr2 _ (by simp) (defNums_of (by simp [rnum])) (by simp)
 
 /-! ## `atomic_cas` -/
 

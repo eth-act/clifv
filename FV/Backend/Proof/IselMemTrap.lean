@@ -101,7 +101,9 @@ macro_rules
     rw [hs3] at hs'
     subst hs'
     refine ⟨_, (frag_fresh3 _ _ ?_).emitted, ?_⟩
-    · simp [vdefs, operands_rmwLoop, Operand.isDef, LState.fresh]
+    · intro d hd
+      simp only [LState.fresh] at hd ⊢
+      exact vdefs_rmwLoop_mem _ _ _ _ _ _ _ _ hd
     · refine ⟨fun _ _ _ _ _ h => ?_, fun _ _ _ _ _ h => by cases h⟩
       cases h
       exact ⟨hety, _, _, _, _, rfl⟩))

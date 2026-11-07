@@ -15,7 +15,7 @@ def compileFileReturnPinWhen {m : Type → Type} [Monad m] (enabled : Bool)
     (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
     (pre : List (String × String) := []) (cleanup : Bool := true) : m FileAsm :=
   if enabled && !returnPinModeB pf pre cleanup then
-    compileFileMemoryCapturedCopyNIWhen enabled alloc pf pre cleanup
+    compileFileMemorySinkExtNIWhen enabled alloc pf pre cleanup
   else compileFileVoidCallABIWhen enabled alloc pf pre cleanup
 
 theorem compileFileReturnPinWhen_retry {m : Type → Type} [Monad m]
@@ -23,7 +23,7 @@ theorem compileFileReturnPinWhen_retry {m : Type → Type} [Monad m]
     (pre : List (String × String)) (cleanup : Bool)
     (rejected : returnPinModeB pf pre cleanup = false) :
     compileFileReturnPinWhen true alloc pf pre cleanup =
-      compileFileMemoryCapturedCopyNIWhen true alloc pf pre cleanup := by
+      compileFileMemorySinkExtNIWhen true alloc pf pre cleanup := by
   simp only [compileFileReturnPinWhen,rejected,Bool.not_false,Bool.true_and,ite_true]
 
 theorem compileFileReturnPinWhen_admitted {m : Type → Type} [Monad m]
@@ -38,7 +38,7 @@ theorem compileFileReturnPinWhen_disabled {m : Type → Type} [Monad m]
     (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
     (pre : List (String × String)) (cleanup : Bool) :
     compileFileReturnPinWhen false alloc pf pre cleanup =
-      compileFileMemoryCapturedCopyNIWhen false alloc pf pre cleanup := by
+      compileFileMemorySinkExtNIWhen false alloc pf pre cleanup := by
   simp only [compileFileReturnPinWhen,Bool.false_and,Bool.false_eq_true,ite_false,
     compileFileVoidCallABIWhen,Bool.not_false,ite_true]
 
