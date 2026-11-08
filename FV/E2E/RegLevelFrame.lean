@@ -71,38 +71,48 @@ theorem popLines_ins (int : Bool) (rs : List Reg) :
   obtain ⟨x, rfl, r, r', hx⟩ := popLines_mem h
   rcases hx with rfl | rfl | rfl | rfl <;> exact ⟨_, rfl, rfl, rfl, rfl⟩
 
-theorem prologueLines_ins (saves : List Reg) (size : Nat) :
-    ∀ ln ∈ prologueLines saves size, ∃ x, ln = .ins x none ∧ x.hooked = false ∧ ln.plain = true := by
+/-- The stack probes are plain, unhooked instruction lines without loads (#581). -/
+theorem probeLines_ins (total : Nat) :
+    ∀ ln ∈ probeLines total, ∃ x, ln = .ins x none ∧ x.hooked = false ∧ ln.plain = true ∧
+      x.loads = false ∧ x.tlsTail = false := by
+  intro ln h
+  rcases probeLines_mem h with rfl | rfl | ⟨_, rfl⟩ <;> exact ⟨_, rfl, rfl, rfl, rfl, rfl⟩
+
+theorem prologueLines_ins {calls : Bool} (saves : List Reg) (size : Nat) :
+    ∀ ln ∈ prologueLines saves size calls, ∃ x, ln = .ins x none ∧ x.hooked = false ∧ ln.plain = true := by
   intro ln hln
   rw [prologueLines_eq] at hln
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
-  rcases hln with (rfl | rfl) | h | h | h
+  rcases hln with (rfl | rfl) | h | h | h | h
   · exact ⟨_, rfl, rfl, rfl⟩
   · exact ⟨_, rfl, rfl, rfl⟩
+  · obtain ⟨x, e, h1, h2, -⟩ := probeLines_ins _ _ h; exact ⟨x, e, h1, h2⟩
   · obtain ⟨x, e, h1, h2, -⟩ := pushLines_ins _ _ _ h; exact ⟨x, e, h1, h2⟩
   · obtain ⟨x, e, h1, h2, -⟩ := pushLines_ins _ _ _ h; exact ⟨x, e, h1, h2⟩
   · exact spAdjLines_ins true _ _ h
 
-theorem prologueLines_noLoads (saves : List Reg) (size : Nat) :
-    ∀ i t, Line.ins i t ∈ prologueLines saves size → i.loads = false := by
+theorem prologueLines_noLoads {calls : Bool} (saves : List Reg) (size : Nat) :
+    ∀ i t, Line.ins i t ∈ prologueLines saves size calls → i.loads = false := by
   intro i t hln
   rw [prologueLines_eq] at hln
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
-  rcases hln with (h | h) | h | h | h
+  rcases hln with (h | h) | h | h | h | h
   · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
   · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
+  · obtain ⟨x, e, -, -, hl, -⟩ := probeLines_ins _ _ h; cases e; exact hl
   · obtain ⟨x, e, -, -, hl, -⟩ := pushLines_ins _ _ _ h; cases e; exact hl
   · obtain ⟨x, e, -, -, hl, -⟩ := pushLines_ins _ _ _ h; cases e; exact hl
   · exact spAdjLines_noLoads true _ i t h
 
-theorem prologueLines_tail (saves : List Reg) (size : Nat) :
-    ∀ i t, Line.ins i t ∈ prologueLines saves size → i.tlsTail = false := by
+theorem prologueLines_tail {calls : Bool} (saves : List Reg) (size : Nat) :
+    ∀ i t, Line.ins i t ∈ prologueLines saves size calls → i.tlsTail = false := by
   intro i t hln
   rw [prologueLines_eq] at hln
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hln
-  rcases hln with (h | h) | h | h | h
+  rcases hln with (h | h) | h | h | h | h
   · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
   · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
+  · obtain ⟨x, e, -, -, -, ht⟩ := probeLines_ins _ _ h; cases e; exact ht
   · obtain ⟨x, e, -, -, -, ht⟩ := pushLines_ins _ _ _ h; cases e; exact ht
   · obtain ⟨x, e, -, -, -, ht⟩ := pushLines_ins _ _ _ h; cases e; exact ht
   · exact spAdjLines_tail true _ i t h
@@ -223,7 +233,7 @@ theorem entry_block {R : RL} (hR : R.Wf) :
       codeLinesE R.ctx R.af code.dropLast ps1 = .ok (X, psm) ∧
       codeLinesE R.ctx R.af code.getLast?.toList psm = .ok (x.1.term, ps2) ∧
       ps2.traps.toList <+: R.psF.traps.toList ∧
-      pl = prologueLines R.af.saves R.af.frameSize ∧
+      pl = prologueLines R.af.saves R.af.frameSize R.af.isCaller ∧
       R.L[0]? = some (.label (.block vb.label)) ∧
       R.L.drop 1 = pl ++ (relaxLines R.far (X ++ x.2.1) ++
         R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) ∧
@@ -266,14 +276,14 @@ theorem entry_block {R : RL} (hR : R.Wf) :
   rw [List.dropLast_append_of_ne_nil hcode'] at e1
   obtain ⟨pl, X, hplE, hp2, hsb, hsbe⟩ : ∃ pl X,
       codeLinesE R.ctx R.af [AInst.prologue] ps1 = .ok (pl, ps1) ∧
-      pl = prologueLines R.af.saves R.af.frameSize ∧
+      pl = prologueLines R.af.saves R.af.frameSize R.af.isCaller ∧
       codeLinesE R.ctx R.af code.dropLast ps1 = .ok (X, psm) ∧
       sg.body = pl ++ X := by
     obtain ⟨lsA, lsB, psmA, hA', hB', hsb'⟩ := codeLinesE_append _ _ _ _ _ e1
     simp only [codeLinesE, ainstLines, hframe, ite_true, bind, Except.bind, pure,
       Except.pure, List.append_nil, Except.ok.injEq, Prod.mk.injEq] at hA'
     obtain ⟨rfl, rfl⟩ := hA'
-    exact ⟨prologueLines R.af.saves R.af.frameSize, lsB,
+    exact ⟨prologueLines R.af.saves R.af.frameSize R.af.isCaller, lsB,
       by simp only [codeLinesE, ainstLines, hframe, ite_true, bind, Except.bind, pure,
         Except.pure, List.append_nil, Except.ok.injEq, Prod.mk.injEq], rfl, hB', hsb'⟩
   obtain ⟨p', hp', hps⟩ := hR.psF
@@ -315,7 +325,7 @@ theorem entry_block {R : RL} (hR : R.Wf) :
     simp only [List.toList_toArray, reduceIte] at e2
     rw [hgl] at e2
     exact e2
-  refine ⟨vb, items, code, ps1, prologueLines R.af.saves R.af.frameSize, X, psm, ps2,
+  refine ⟨vb, items, code, ps1, prologueLines R.af.saves R.af.frameSize R.af.isCaller, X, psm, ps2,
     (sg, o, 1 + sg.body.length + o.length), hvb,
     hit, hcode, hsb, e2', by rw [← hps]; exact hpre, rfl, hj, ?_, ?_, ?_⟩
   · -- the drop: strip the prologue's lines from the relaxed segment
@@ -323,9 +333,9 @@ theorem entry_block {R : RL} (hR : R.Wf) :
       simp only [rix, hA]
       simp [relaxLines, relaxLine_label]
     have hsb' : relaxLines R.far sg.body =
-        prologueLines R.af.saves R.af.frameSize ++ relaxLines R.far X := by
+        prologueLines R.af.saves R.af.frameSize R.af.isCaller ++ relaxLines R.far X := by
       rw [hsbe, relaxLines_append,
-        relaxLines_plain (f := R.far) (A := prologueLines R.af.saves R.af.frameSize)
+        relaxLines_plain (f := R.far) (A := prologueLines R.af.saves R.af.frameSize R.af.isCaller)
           (fun ln h => by
             obtain ⟨-, -, -, hp⟩ := prologueLines_ins R.af.saves R.af.frameSize ln h
             exact hp)]
@@ -374,7 +384,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
     hdrop, hx, hsc⟩ := entry_block hR
   subst hpl0
   obtain ⟨s', hsteps, hsp', hfp', ho', hm', -, -⟩ :=
-    prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
@@ -384,7 +394,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
     (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
     hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
-  refine ⟨(prologueLines R.af.saves R.af.frameSize).length,
+  refine ⟨(prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
     hgx (prologueLines_tail _ _) (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
       (linesReads_noLoads (prologueLines_noLoads _ _)), ?_⟩
   have hsP : R.sP = s' := hiter
@@ -406,14 +416,20 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
     simp only [RL.topN]
     rw [hfs] at this
     omega
-  -- the frame top
-  have hslot : ∀ a, (∀ k < R.topN, a ≠ R.topB + BitVec.ofNat 64 k) → s'.mem a = R.s0.mem a :=
-    fun a ha => hm' a ha
+  -- the frame top (and the bytes the stack probes zeroed)
+  have hslot : ∀ a, (∀ k < R.topN, a ≠ R.topB + BitVec.ofNat 64 k) → s'.mem a = probeMem R.af R.s0 a :=
+    fun a ha => by
+      rw [hm' a ha]
+      show _ = (if probeHit R.af (spv R.s0) a then 0#8 else R.s0.mem a)
+      rw [show probeHit R.af (spv R.s0) a =
+        probeHitN (probeCount (probeTotal R.af.frameSize R.af.isCaller)) (spOf R.s0) a by
+          simp only [probeHit, hframe, Bool.true_and]; rfl]
   have hmemF : ∀ a, ¬ R.F a → s'.mem a = w₀.mem a := by
     intro a ha
     rw [hslot a (fun k hk e => ha (e ▸ RL.FK_F (fplr_inF hR hframe k hk))), hbe.mem a ha]
   have hcode' : ∀ a, CodeAddr R.s0 a → s'.mem a = R.s0.mem a := by
     intro a ha
+    rw [← probeMem_of_not (probeHit_noCode hR.stack ha)]
     apply hslot
     intro k hk e
     have h2 := hst0.2 a ha
@@ -444,6 +460,7 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
   -- the kept addresses are not the frame top
   have hgk : ∀ a, R.G a → s'.mem a = R.s0.mem a := by
     intro a ha
+    rw [← probeMem_of_not (hR.gprobe a ha)]
     apply hslot
     intro k hk e
     apply hR.gfree a ha
@@ -457,10 +474,10 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
   refine ⟨?_, ?_, hfield⟩
   · have hitems : R.rf.blocks[0]! = items := by simp [getElem!_def, hit]
     simp only [MConf.init, hitems]
-    refine .inl ⟨1 + (prologueLines R.af.saves R.af.frameSize).length, vb, items, [], code, X,
+    refine .inl ⟨1 + (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length, vb, items, [], code, X,
       ps1, psm, ps2, x, hvb, hit, rfl, itemsChecked_block hR hvb hit, hcode, hX, hT, htr, ?_, hpc',
       ?_, hx, hsc⟩
-    · rw [← List.drop_drop (i := (prologueLines R.af.saves R.af.frameSize).length) (j := 1),
+    · rw [← List.drop_drop (i := (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length) (j := 1),
         hdrop, List.drop_left' (by simp)]
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err], by rw [hprog', hent.program],
         hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode', hgk, fun _ => hfp'⟩
@@ -699,7 +716,7 @@ theorem masked_of_calleeSaved {r : Reg} {f : Arm.StateField} (h : r ∈ calleeSa
 
 /-- The prologue's lines from the ABI entry reach `R.sP`. -/
 theorem RL.sP_steps {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0) :
-    ∃ s', StepsOk (R.envOf 1) (prologueLines R.af.saves R.af.frameSize) R.s0 s' ∧ R.sP = s' ∧
+    ∃ s', StepsOk (R.envOf 1) (prologueLines R.af.saves R.af.frameSize R.af.isCaller) R.s0 s' ∧ R.sP = s' ∧
       Arm.read_mem_bytes 16 (spv R.s0 - 16#64) s' = xreg 30 R.s0 ++ xreg 29 R.s0 ∧
       ∀ r ∈ R.af.saves, Arm.read_mem_bytes 8 (R.topB + BitVec.ofNat 64 (clobberOff R.af.saves r)) s' =
         slotVal R.s0 r := by
@@ -710,7 +727,7 @@ theorem RL.sP_steps {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
     entry_block hR
   subst hpl0
   obtain ⟨s', hsteps, -, -, -, -, h16, hsl⟩ :=
-    prologue_ok (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢

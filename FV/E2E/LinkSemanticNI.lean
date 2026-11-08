@@ -69,6 +69,8 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
+/-- `LinkArm.progCall` for `OkSemanticNI` (with `hpb`, #581: the callee's budget holds its stack
+probes). -/
 theorem progCall_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm κ (M - 1)) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     (hib : ((RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0 ∧
@@ -78,6 +80,7 @@ theorem progCall_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] {M : Nat} (hM : 
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
     {cm' : Clif.Mem} (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
@@ -108,7 +111,7 @@ theorem progCall_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] {M : Nat} (hM : 
   have shared := E2E.LinkSys.progCall_return_pins (modes := fun _ => .ordinary) (κ := κ) (M := M) (n := n) (h := h) (F := F) (uses := uses) (w := w) (vals := vals) (cm := cm) (cs := cs) (rvals := rvals) (cm' := cm') L hL.toReturnPins
   try simp only [LinkSys.XMode_ordinary,LinkSys.progXMode_ordinary,LinkSys.modeReturnPins,
     ReturnPinMode.pins,ReturnPinMode.Valid] at shared
-  exact shared hM ih hpf hcal hib himgF herr hal hroom hdead hmr hargs hsav hpl hinit hrun
+  exact shared hM ih hpf hcal hib himgF herr hal hroom hdead hpb hmr hargs hsav hpl hinit hrun
 end LinkSys
 
 namespace LinkSys
@@ -129,6 +132,7 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
+/-- `K` is a budget (every frame at most `D`; every function's probes at most `pbMax`). -/
 theorem budget_K_semantic (hL : L.OkSemanticNI) : L.Budget fun M _ => L.K M := by
   have shared := E2E.LinkSys.budget_K_return_pins (modes := fun _ => .ordinary)  L hL.toReturnPins
   try simp only [LinkSys.XMode_ordinary,LinkSys.progXMode_ordinary,LinkSys.modeReturnPins,
@@ -348,9 +352,10 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
+/-- `LinkArm.progX_ni` for `OkSemanticNI` (with `hpb`, #581, as `progCall`). -/
 theorem progX_ni_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.Thm κ (M - 1))
     {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
-    (hcallee : L.Callee g h) {F Z : BitVec 64 → Prop}
+    (hcallee : L.Callee g h) (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h) {F Z : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (hFZ : ∀ a, F a → Z a) {w w' : Arm.ArmState}
     (hsw : SameWorld Z w w') {cm : Clif.Mem} {vals : List Clif.Val} {args : List CV}
     (hm : MemRel F L.syms cm w) (hm' : MemRel F L.syms cm w') (ha : ArgsAt h.sig vals args w)
@@ -362,14 +367,15 @@ theorem progX_ni_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] (hN : L.NeedNI) 
   have shared := E2E.LinkSys.progX_ni_return_pins (modes := fun _ => .ordinary) (κ := κ) (M := M) (g := g) (h := h) (F := F) (Z := Z) (w := w) (w' := w') (cm := cm) (vals := vals) (args := args) (cs := cs) (rvals := rvals) (cm' := cm') (o := o) (o' := o') (x := x) (x' := x') L hL.toReturnPins
   try simp only [LinkSys.XMode_ordinary,LinkSys.progXMode_ordinary,LinkSys.modeReturnPins,
     ReturnPinMode.pins,ReturnPinMode.Valid] at shared
-  exact shared hN ih hg hh hcallee himgF hFZ hsw hm hm' ha ha' hpl hinit hrun hx hx'
+  exact shared hN ih hg hh hcallee hpb himgF hFZ hsw hm hm' ha ha' hpl hinit hrun hx hx'
 end LinkSys
 
 namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
-theorem xni_semantic (hL : L.OkSemanticNI) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.Thm κ (M - 1))
+theorem xni_semantic (hL : L.OkSemanticNI) [L.CrunOk] (hN : L.NeedNI) (hκ : L.Budget κ) {M : Nat}
+    (ih : 0 < M → L.Thm κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (c : BitVec 64) :
     XNI F L.syms (g.externs.map (·.2)) (indSigs g) c
@@ -377,7 +383,7 @@ theorem xni_semantic (hL : L.OkSemanticNI) [L.CrunOk] (hN : L.NeedNI) {M : Nat} 
   have shared := E2E.LinkSys.xni_return_pins (modes := fun _ => .ordinary) (κ := κ) (M := M) (g := g) (F := F) L hL.toReturnPins
   try simp only [LinkSys.XMode_ordinary,LinkSys.progXMode_ordinary,LinkSys.modeReturnPins,
     ReturnPinMode.pins,ReturnPinMode.Valid] at shared
-  exact shared hN ih hg himgF c
+  exact shared hN hκ ih hg himgF c
 end LinkSys
 
 namespace LinkSys

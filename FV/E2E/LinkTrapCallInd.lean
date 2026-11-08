@@ -300,7 +300,7 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
       rw [← hname] at hinit
       have hcallee : L.Callee g h := .inr (.inl ⟨ext, hin, hpf⟩)
       obtain ⟨⟨hmemR0, -, -⟩, hspw, herrw⟩ := hmr
-      have hbs : frameDrop (L.A h).af + κ M' h ≤ κ (M' + 1) g := hκ M' g hg h hcallee
+      have hbs : frameDrop (L.A h).af + κ M' h ≤ κ (M' + 1) g := hκ.1 M' g hg h hcallee
       have hroom' : frameDrop (L.A h).af + κ M' h ≤ (spv w).toNat := by
         rw [hspw]; have := hWE.room; omega
       have hdead' : ∀ a, StackBelow (frameDrop (L.A h).af + κ M' h) (spv w) a →
@@ -322,7 +322,7 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
         rw [← huv, hd2] at hcOk
         have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
           (ih (Nat.succ_pos M')) hpfh ⟨g, hg, hcallee⟩
-          hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
+          hWE.img herrw hal' hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
         have hjunk := L.pcall_junk hL hh hTI hra
         have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
           rw [destOf_eq_callDest, hd1]; exact L.hooks_some hpf u
@@ -363,7 +363,7 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
         rw [h2] at hcOk
         have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
           (ih (Nat.succ_pos M')) hpfh ⟨g, hg, hcallee⟩
-          hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
+          hWE.img herrw hal' hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
         have hjunk := L.pcall_junk hL hh hTI hra
         have hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
         have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
@@ -421,7 +421,7 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
         cases hr
       have hcallee : L.Callee g h := .inr (.inr ⟨hh, hdecl⟩)
       obtain ⟨⟨hmemR0, -, -⟩, hspw, herrw⟩ := hmr
-      have hbs : frameDrop (L.A h).af + κ M' h ≤ κ (M' + 1) g := hκ M' g hg h hcallee
+      have hbs : frameDrop (L.A h).af + κ M' h ≤ κ (M' + 1) g := hκ.1 M' g hg h hcallee
       have hroom' : frameDrop (L.A h).af + κ M' h ≤ (spv w).toNat := by
         rw [hspw]; have := hWE.room; omega
       have hdead' : ∀ a, StackBelow (frameDrop (L.A h).af + κ M' h) (spv w) a →
@@ -450,7 +450,7 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
       rw [h2] at hcOk
       have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
         (ih (Nat.succ_pos M')) hpf ⟨g, hg, hcallee⟩
-        hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
+        hWE.img herrw hal' hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
       have hjunk := L.pcall_junk hL hh hTI hra
       have hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
       have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
@@ -507,16 +507,16 @@ theorem thmT_of (hL : L.Ok) [hR : L.CrunOk] (hT : L.TrapsOk) (hB : L.BaseTrapsOk
     (X := L.X κ M g F) (syms := L.syms) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     (xCallsOk_cut (L.xCallsOk hL hκ ihR hg hWE.img hWE.room hWE.dead hWE.align))
     (xCallsIndOk_cut (L.xCallsIndOk hL hκ ihR hg hWE.img hWE.room hWE.dead hWE.align))
-    (L.xTrapsOk hL hB ih hg hWE.img)
+    (L.xTrapsOk hL hB hκ ih hg hWE.img)
     (fun n b hn => hL.symOk n b hn) rfl hWE.clif hWE.rel hWE.args htrE hrunE
     (L.hooks M) G (L.A g).base ra s hAE
   have hroom : frameDrop (L.A g).af ≤ (spv s).toNat := by
-    rw [L.frameDrop_eq hL hg]; have := hME.stack.1; omega
+    rw [L.frameDrop_eq hL hg]; have := hME.stack.1.1; omega
   have htr : PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n :=
     by have := postTrace_of_actGoodX htrace; exact this
   have hgoodOf : (∀ m, Arm.r .ERR (runX (L.mach M g) (n + m + 1) s) ≠ .None) →
       L.RunGoodL M g s := fun hh =>
-    L.runGood_of_trace hL (fun _ => L.thmG hL hκ (M - 1)) hg hME (by exact htrace)
+    L.runGood_of_trace hL hκ (fun _ => L.thmG hL hκ (M - 1)) hg hME (by exact htrace)
       fun k _ he => Nat.lt_of_not_le fun hle => hh (k - n) (by
         rw [show n + (k - n) + 1 = k + 1 by omega]; exact he)
   rcases hcase with ⟨hat, hhalt⟩ | hct
@@ -609,7 +609,7 @@ theorem backend_correct_program_trap_core (L : LinkSys) (hL : L.Ok) [L.CrunOk]
   have hWE : L.WorldEntry κ M f L.F args cs w₀ := by
     refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
     · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
-    · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm k hk hk' => ?_
+    · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs (fun off v hm k hk hk' => ?_) hres
       rw [hF] at hk'
       rcases hk' with hw | hi
       · exact stackArgsAvoid_frameW_pipeline hc hres hent hargs off v hm k hk hw

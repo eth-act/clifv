@@ -10,7 +10,8 @@ The declarations of `FV.E2E.DeadCleanupExecPeak` that depend on the integer link
 (`LinkSys.Ok`, `LinkSys.Thm`, `okBCleanup`, `ArmRefines`), for the typed contract `LinkSys.OkT`
 (suffix `T`; `LinkSys.Ok.*` as `LinkSys.OkT.*`), as `FV.E2E.ExecProvenT` for the baseline
 pipeline: the executable theorem at the run's peak call depth `d` (`Clif.DepthLe`), the stack
-`frameDrop + D * d` (`LinkSys.budget_KT`), any program, recursive ones included.
+`frameDrop + (D * d + pbMax)` (`LinkSys.budget_KT`; #581: the deepest activation's stack probes
+write up to `pbMax` bytes below its frame), any program, recursive ones included.
 
 * `DeadCleanupBinary.binary_correct_peakXT`: the model's refinement, its difference from the
   machine state, `RunGoodL` of the linked system;
@@ -39,13 +40,14 @@ theorem BinFactsT.modelOf_neT {I : LinkInput} {X : Image} {R : BitVec 64 → Pro
 
 /-- **`binary_correctX` for the run's peak call depth** (the cleanup input, typed): the
 whole-program CLIF run of at most `F + 1` steps reaches no state with more than `d` callers
-(`Clif.DepthLe`); the stack premise is the depth-`d` budget `frameDrop + D * d`, the linked
+(`Clif.DepthLe`); the stack premise is the depth-`d` budget `frameDrop + (D * d + pbMax I)`
+(#581: with the stack probes of the deepest activation), the linked
 machine has depth `d`. The run premise `TrapsExplicit` is under `Clif.linkEnvD`. -/
 theorem binary_correct_peakXT {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
     {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFactsT I X R roB) (B : BaseEnv)
     (hB : BaseOk (sys I B)) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
-    (ho : OutsideCall I roB f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I roB f (frameDrop (art I f).af + (I.D * d + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs) :
     ArmRefinesT (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach d f) (modelOf I f r)
@@ -54,19 +56,21 @@ theorem binary_correct_peakXT {I : LinkInput} {X : Image} {R : BitVec 64 → Pro
     ((∃ vals cm, Clif.runLoop B.env (prog I) (F + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (F + 1) cs = .trapped c) →
       (sys I B).RunGoodL d f (modelOf I f r)) := by
-  have hB' : BaseOk (LinkSys.ofInputCleanup I B (worldF I f (I.D * d) r)) := baseOk_F hB
-  have himgF : ∀ a, (LinkSys.ofInputCleanup I B (worldF I f (I.D * d) r)).Img a →
-      worldF I f (I.D * d) r a := fun _ h => .inr h
+  have hB' : BaseOk (LinkSys.ofInputCleanup I B (worldF I f (I.D * d + pbMax I) r)) := baseOk_F hB
+  have himgF : ∀ a, (LinkSys.ofInputCleanup I B (worldF I f (I.D * d + pbMax I) r)).Img a →
+      worldF I f (I.D * d + pbMax I) r a := fun _ h => .inr h
   have hL := okBCleanup_soundT hbin.ok hB' himgF
   have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h =>
     hX a b (hbin.data a b h).1 (hbin.data a b h).2
   obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
     premisesT hL (Clif.Program.func?_some hf).1 hro ho hr
   obtain ⟨hA, hG⟩ := backend_correct_program_peakXT _ hL (LinkSys.budget_KT _ hL)
-    (Clif.Program.func?_some hf).1 F d hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl
+    (Clif.Program.func?_some hf).1 F d hent
+    ⟨hres, (LinkSys.budget_KT _ hL).2 d f (Clif.Program.func?_some hf).1⟩ rfl hgfree himg hbe hargs
+    hr.entry hsav hrel hpl
     hd htr
   refine ⟨?_, hbin.modelOf_neT hX, fun hout => runGoodL_F (hG hout)⟩
-  rw [mach_F I B (fun _ => False) (worldF I f (I.D * d) r)]
+  rw [mach_F I B (fun _ => False) (worldF I f (I.D * d + pbMax I) r)]
   exact hA
 
 end DeadCleanupBinary
@@ -79,7 +83,8 @@ variable {I : LinkInput} {B : BaseEnv} {file : ByteArray}
 
 /-- **The entry premises of the whole-program theorems for the system keeping the slots** `S`
 with the callees' stack `K` (the outside caller's stack `frameDrop + K`), for the typed
-contract. -/
+contract. The stack premise is the room `StackRoom` only (#581: `StackAvail` also asks
+`probeBelow ≤ K`, a fact of the budget). -/
 theorem sysSK_entryT {D : List Clif.DataObject} (hI : okBCleanupT I = true)
     (hbin : DeadCleanupBinCheck.BinOk I D file)
     (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs)
@@ -90,7 +95,7 @@ theorem sysSK_entryT {D : List Clif.DataObject} (hI : okBCleanupT I = true)
     (hr : ClifRun I B f r args cs) :
     (sysSK I B f K r S).OkT ∧
     AbiEntry (art I f).fb (art I f).base (xreg 30 r) (modelOf I f r) ∧
-    StackAvail K (art I f).af (modelOf I f r) ∧
+    StackRoom ((art I f).af.frameSize + 16 + K) (modelOf I f r) ∧
     (∀ a, (sysSK I B f K r S).Img a →
       ¬ StackBelow (frameDrop (art I f).af + K) (spv (modelOf I f r)) a) ∧
     BodyEntry (art I f).af (modelOf I f r) (bodyOf (art I f).af (modelOf I f r)) ∧
@@ -142,25 +147,28 @@ theorem sysSK_entryT {D : List Clif.DataObject} (hI : okBCleanupT I = true)
 
 /-- **`RunGoodL` of the system keeping the slots for the run's peak call depth** `d`, for the
 typed contract: the whole-program run of at most `F + 1` steps reaches no state with more than
-`d` callers (`Clif.DepthLe`); the budget `D * d` (`LinkSys.budget_KT`), the stack
-`frameDrop + D * d` (`backend_correct_program_peakXT`). -/
+`d` callers (`Clif.DepthLe`); the budget `D * d + pbMax I` (`LinkSys.budget_KT`; #581: with the
+stack probes of the deepest activation), the stack `frameDrop + (D * d + pbMax I)`
+(`backend_correct_program_peakXT`). -/
 theorem runGood_sysSK_peakT {D : List Clif.DataObject} (hI : okBCleanupT I = true)
     (hbin : DeadCleanupBinCheck.BinOk I D file)
     (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs) (F d : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r
+      args cs.mem)
     {S : BitVec 64 → Prop}
-    (hav : OutsideAvoids S f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (hav : OutsideAvoids S f (frameDrop (art I f).af + (I.D * d + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs)
     (hout : (∃ vals cm, Clif.runLoop B.env (prog I) (F + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (F + 1) cs = .trapped c)) :
-    (sysSK I B f (I.D * d) r S).RunGoodL d f (modelOf I f r) := by
+    (sysSK I B f (I.D * d + pbMax I) r S).RunGoodL d f (modelOf I f r) := by
   obtain ⟨hL, hent, hres, hgfree, hbe, hargs, hsav, hrel, hpl⟩ :=
     sysSK_entryT hI hbin hB hfm hX ho hav hr
-  exact (backend_correct_program_peakXT (sysSK I B f (I.D * d) r S) hL
+  exact (backend_correct_program_peakXT (sysSK I B f (I.D * d + pbMax I) r S) hL
     ((LinkSys.budget_KT _ (okBCleanup_soundT hI (baseOk_F hB) fun _ h => .inr h)).extImg _ _ _) hfm
-    F d hent hres rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl hd htr).2 hout
+    F d hent ⟨hres, ((LinkSys.budget_KT _ (okBCleanup_soundT hI (baseOk_F hB) fun _ h => .inr h)).extImg
+      _ _ _).2 d f hfm⟩ rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl hd htr).2 hout
 
 /-- **D4 from the per-state facts** of the system keeping the GOT slots with any callees' budget,
 for the typed contract (`got_of_goodT`, whose system fixes the stack bound of a non-recursive
@@ -249,7 +257,8 @@ theorem exec_of_runGoodT {D : List Clif.DataObject}
 
 /-- **The binary theorem about the executable's own words for the run's peak call depth** (the
 cleanup input, typed; `E2E.ExecBytes.binary_correct_exec_peak_provenT` for the baseline): any
-program, recursive ones included, the stack `frameDrop + D * d` where `d` bounds the call depth
+program, recursive ones included, the stack `frameDrop + (D * d + pbMax I)` (#581: with the stack
+probes of the deepest activation) where `d` bounds the call depth
 of the whole-program CLIF run (`Clif.DepthLe`), independent of its fuel `F`. -/
 theorem binary_correct_exec_peak_provenT {D : List Clif.DataObject}
     (hI : okBCleanupT I = true) (hcm : codeMapB I (tabOf I.resultsCleanup) = true)
@@ -258,8 +267,10 @@ theorem binary_correct_exec_peak_provenT {D : List Clif.DataObject}
     (hH : HooksSim I B) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
-    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r
+      args cs.mem)
+    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r args
+      cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs) :
     ExecRefinesT (art I f).fb (art I f).base (xreg 30 r) (step I B file) r
@@ -267,7 +278,8 @@ theorem binary_correct_exec_peak_provenT {D : List Clif.DataObject}
   have hfacts := binFacts_of_checksT hI hbin
   obtain ⟨hA, hdiff, hG⟩ := binary_correct_peakXT hfacts B hB hf F d hX ho hr hd htr
   have hfm := (Clif.Program.func?_some hf).1
-  have hL := okBCleanup_soundT hI (baseOk_F (F' := worldF I f (I.D * d) r) hB) fun _ h => .inr h
+  have hL := okBCleanup_soundT hI (baseOk_F (F' := worldF I f (I.D * d + pbMax I) r) hB)
+    fun _ h => .inr h
   have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
     hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
   obtain ⟨hent, -⟩ := premisesT hL hfm hro ho hr

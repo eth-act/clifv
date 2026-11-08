@@ -8,13 +8,16 @@ import FV.Backend.Proof.StockAluOperandCoverage
 import FV.Backend.Proof.StockDemandExtent
 import FV.Backend.Proof.StockDriverBounds
 import FV.Backend.Proof.StockMemoryReturnRefines
+import FV.Backend.Proof.IselAtomic
 
 /-! Body simulation for `[y = load x; z = extend y]; return z` with the load sunk.
 The two source steps (a plain load, then its extension) run against one machine
 extending load. The loaded value is never demanded, so the guarded relation holds
 across the load step without a register for `y`; the extension step reads memory
 through the same pointer. A source-level lemma identifies the two steps with one
-extending source load, whose machine refinement is the existing load contract. -/
+extending source load, whose machine refinement is the existing load contract. An atomic
+source load (rule 810) and its zero extension amount to the same zero-extending source load;
+the machine's one acquiring load refines it through the existing `ldar` memory contract. -/
 namespace Backend.Stock.Memory.SinkExtend
 open Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Isle Isle.Interp Isle.Aarch64
 open Backend.Stock.Memory.ExtendedRoots (Kind)
@@ -92,6 +95,156 @@ theorem extend_single {fr : Clif.Frame} {cm cm' : Clif.Mem} {op : Clif.ExtendOp}
   obtain ⟨_,_,h⟩ := res_bind_eq_ok h
   cases op <;> simp only [Clif.Res.pure_eq,Clif.Res.ok.injEq,Prod.mk.injEq] at h <;> exact ⟨_,h.1.symm⟩
 
+/-- An atomic load followed by its zero extension computes the same value as one
+zero-extending plain load from the same pointer, and neither step changes memory. -/
+theorem extend_atomic_eval (kind : Kind) (unsigned : signed kind = false)
+    {fr fr1 : Clif.Frame} {cm cm1 cm2 : Clif.Mem}
+    {flags : Clif.MemFlags} {x y : Nat} {ty : Clif.Ty} {v1 v2 : Clif.Val}
+    (loaded : Clif.evalInst fr cm (.atomicLoad (loadTy kind) flags x) = .ok ([v1],cm1))
+    (bound : fr1.get y = .ok v1)
+    (extended : Clif.evalInst fr1 cm1 (.extend (extendOp kind) ty y) = .ok ([v2],cm2)) :
+    cm2 = cm1 ∧ Clif.evalInst fr cm (.load kind.sourceOp ty flags x 0) = .ok ([v2],cm1) := by
+  cases kind <;> simp only [signed,Bool.true_eq_false] at unsigned
+  all_goals
+    simp only [Clif.evalInst] at loaded extended
+    obtain ⟨pv,hp,loaded⟩ := res_bind_eq_ok loaded
+    obtain ⟨_,_,loaded⟩ := res_bind_eq_ok loaded
+    obtain ⟨raw,hl,loaded⟩ := res_bind_eq_ok loaded
+    simp only [Clif.Res.pure_eq,Clif.Res.ok.injEq,Prod.mk.injEq,List.cons.injEq,and_true] at loaded
+    obtain ⟨rfl,rfl⟩ := loaded
+    rw [bound] at extended
+    simp only [Clif.Res.ok_bind] at extended
+    obtain ⟨_,widen,extended⟩ := res_bind_eq_ok extended
+    have widen := of_decide_eq_true (res_check_ok widen)
+    have bytes : ty.bytes = ty.width / 8 := rfl
+    simp only [extendOp,Stock.Proof.ScalarCast.extendOp,signed,Bool.false_eq_true,ite_false,
+      Clif.Res.pure_eq,Clif.Res.ok.injEq,Prod.mk.injEq,List.cons.injEq,and_true] at extended
+    obtain ⟨rfl,rfl⟩ := extended
+    refine ⟨rfl,?_⟩
+    rw [evalInst_load_of hp rfl (by
+      rw [bytes]
+      simp only [Stock.Memory.ExtendedRoots.Kind.sourceOp,Clif.LoadOp.size,loadTy,
+        show Clif.Ty.i8.width = 8 from rfl,show Clif.Ty.i16.width = 16 from rfl,
+        show Clif.Ty.i32.width = 32 from rfl] at widen ⊢
+      omega) hl]
+    simp only [Stock.Memory.ExtendedRoots.Kind.sourceOp,Clif.LoadOp.signed,Bool.false_eq_true,
+      ite_false,Clif.Sem.uextend]
+    rfl
+
+/-- Original syntax of either source load gives little-endian flags. -/
+theorem source_little (src : Source) (kind : Kind) {f : Clif.Function} {ctx : Ctx}
+    (inv : MappedCtxInv f ctx) {j x : Nat} {load : IInfo} {flags : Clif.MemFlags}
+    (loaded : ctx.insts[j]? = some load) (clif : load.clif = some (src.load (loadTy kind) flags x)) :
+    flags.endianness ≠ some .big := by
+  cases src
+  · exact (load_source_data kind inv loaded clif).1
+  · exact (atomic_source_data kind inv loaded clif).1
+
+/-- A source load has one result and keeps memory. -/
+theorem source_load_single (src : Source) {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty}
+    {flags : Clif.MemFlags} {x : Nat} {vals : List Clif.Val} (little : flags.endianness ≠ some .big)
+    (h : Clif.evalInst fr cm (src.load ty flags x) = .ok (vals,cm')) :
+    (∃ v,vals = [v]) ∧ cm' = cm := by
+  cases src
+  · obtain ⟨_,_,_,_,_,_,valsEq,memEq⟩ := evalInst_load_inv little h
+    exact ⟨⟨_,valsEq⟩,memEq⟩
+  · obtain ⟨_,_,_,_,_,valsEq,memEq⟩ := evalInst_atomicLoad_inv little h
+    exact ⟨⟨_,valsEq⟩,memEq⟩
+
+/-- A source load followed by its extension computes the same value as one extending plain
+load from the same pointer, and neither step changes memory. -/
+theorem source_extend_eval (src : Source) (kind : Kind) (admits : src.admits kind = true)
+    {fr fr1 : Clif.Frame} {cm cm1 cm2 : Clif.Mem}
+    {flags : Clif.MemFlags} {x y : Nat} {ty : Clif.Ty} {v1 v2 : Clif.Val}
+    (loaded : Clif.evalInst fr cm (src.load (loadTy kind) flags x) = .ok ([v1],cm1))
+    (bound : fr1.get y = .ok v1)
+    (extended : Clif.evalInst fr1 cm1 (.extend (extendOp kind) ty y) = .ok ([v2],cm2)) :
+    cm2 = cm1 ∧ Clif.evalInst fr cm (.load kind.sourceOp ty flags x 0) = .ok ([v2],cm1) := by
+  cases src
+  · exact extend_load_eval kind loaded bound extended
+  · exact extend_atomic_eval kind (by simpa [Source.admits] using admits) loaded bound extended
+
+/-! ## The machine load -/
+
+/-- A successful zero-extending source load at offset zero and one acquiring load of the
+same size from the pointer's register agree under the existing memory premises. -/
+theorem acquire_source_seqRun
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    {isem : Sem} {MR : MemRelT} {f : Clif.Function}
+    (stable : MRStable F MR) (memorySem : MemRefines F sb syms isem)
+    (memoryOk : MemRelOk F sb syms f MR)
+    {fr : Clif.Frame} {ρ : Nat → CV} {cm cm' : Clif.Mem} {w : Arm.ArmState}
+    (memory : MR fr.slots cm w)
+    {op : Clif.LoadOp} {ty : Clif.Ty} {fl : Clif.MemFlags} {p : Nat} {vals : List Clif.Val}
+    {bits d r : Nat} (atom : AtomTy (.int bits)) (size : (CTy.int bits).bytes = op.size ty)
+    (unsignedOp : op.signed = false) (width : ty.width ≤ 64) (little : fl.endianness ≠ some .big)
+    (pointer : ∀ pv,fr.regs p = some pv → lo64 (ρ r) = BitVec.ofNat 64 (Clif.effAddr pv 0))
+    (source : Clif.evalInst fr cm (.load op ty fl p 0) = .ok (vals,cm')) :
+    ∃ ρ' w',seqRun isem [.loadAcquire (.int bits) (.vreg d .int) (.vreg r .int) fl] ρ w =
+        some (.fall ρ' w') ∧
+      SameWorld F w' w ∧ MR fr.slots cm' w' ∧
+      (∀ v ∈ vals,VHolds v (ρ' d)) ∧ (∀ k,k ≠ d → ρ' k = ρ k) := by
+  obtain ⟨pv,raw,hpv,hle,hvalid,hread,rfl,rfl⟩ := evalInst_load_inv little source
+  obtain ⟨hA64,hF⟩ := memoryOk.valid _ _ _ _ _ memory hvalid
+  have address := pointer pv hpv
+  have avoid : Avoids F (CTy.int bits).bytes (lo64 (ρ r)) := by
+    intro k hk
+    rw [address,← BitVec.ofNat_add]
+    exact hF k (by omega)
+  obtain ⟨w',run,same⟩ := memorySem.2.2.2.2.1 (.int bits) d r fl (ρ r) w atom avoid
+  have executed := seqRun_isem_one (operands_loadAcquire (.int bits) d r fl) run rfl
+  refine ⟨_,w',executed,same,stable _ _ _ _ same.toNF memory,?_,?_⟩
+  · intro v hv
+    simp only [List.mem_singleton] at hv
+    subst v
+    have readEq := readBits_getLsbD_eq (s := w) hread hA64
+      (fun i hi b hb => memoryOk.bytes _ _ _ _ b memory (valid_sub hvalid hi) hb)
+    have positive : 0 < op.size ty := by
+      rw [← size]
+      rcases atom with h | h | h | h <;> cases h <;> decide
+    have bounded : 8 * op.size ty ≤ ty.width := by
+      have : ty.bytes * 8 = ty.width := by cases ty <;> rfl
+      omega
+    have bits' : ∀ j,raw.getLsbD j =
+        (Arm.read_mem_bytes (CTy.int bits).bytes (lo64 (ρ r)) w).getLsbD j := by
+      rw [address,size]
+      exact readEq
+    have held := load_holds size bits' width bounded positive op.signed
+    simp only [unsignedOp,Bool.false_eq_true,ite_false] at held ⊢
+    simpa [vdefUpd,writeV,Operand.isDef,Operand.isEarly,Operand.isLate,upd] using held
+  · intro k different
+    exact vdefUpd_other (by simpa [Operand.isDef] using different)
+
+/-- The root's one machine instruction refines the single zero- or sign-extending source
+load that the source load and its extension amount to: an extending load for a plain
+source, an acquiring load for an atomic source. -/
+theorem source_load_seqRun (src : Source) (kind : Kind) (admits : src.admits kind = true)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    {isem : Sem} {MR : MemRelT} {f : Clif.Function}
+    (stable : MRStable F MR) (memorySem : MemRefines F sb syms isem)
+    (memoryOk : MemRelOk F sb syms f MR)
+    {fr : Clif.Frame} {ρ : Nat → CV} {cm cm' : Clif.Mem} {w : Arm.ArmState}
+    (memory : MR fr.slots cm w)
+    {ty : Clif.Ty} {fl : Clif.MemFlags} {p : Nat} {vals : List Clif.Val} {d r : Nat}
+    (width : ty.width ≤ 64) (little : fl.endianness ≠ some .big)
+    (pointer : ∀ pv,fr.regs p = some pv → lo64 (ρ r) = BitVec.ofNat 64 (Clif.effAddr pv 0))
+    (source : Clif.evalInst fr cm (.load kind.sourceOp ty fl p 0) = .ok (vals,cm')) :
+    ∃ ρ' w',seqRun isem [src.emitted kind (.vreg d .int) r fl] ρ w = some (.fall ρ' w') ∧
+      SameWorld F w' w ∧ MR fr.slots cm' w' ∧
+      (∀ v ∈ vals,VHolds v (ρ' d)) ∧ (∀ k,k ≠ d → ρ' k = ρ k) := by
+  cases src with
+  | plain =>
+    exact load_source_seqRun stable memorySem memoryOk memory (am := .unsignedOffset (.vreg r .int) 0)
+      (by intro r' member; exact ⟨_,List.mem_singleton.mp member⟩) (aop := kind.loadOp)
+      (by cases kind <;> decide) (by cases kind <;> rfl) (by cases kind <;> rfl) width little
+      (fun pv hpv => by simp [amUses,amVregs,AMode.regs,amodeAddr,pointer pv hpv]) source
+  | acquire =>
+    cases kind <;> simp only [Source.admits,signed,Bool.not_true,Bool.false_eq_true] at admits
+    all_goals
+      exact acquire_source_seqRun stable memorySem memoryOk memory
+        (by simp [AtomTy,loadTy,Clif.Ty.width]) rfl rfl width
+        little pointer source
+
 /-! ## The extension record -/
 
 private theorem scan_fields (st : State) (i : Nat) :
@@ -119,12 +272,14 @@ theorem bind_single_vreg_demand {ctx : Ctx} {z n : Nat} {cls : RegClass} {st bou
         MonadExceptOf.throw] at alias
       all_goals repeat' first | (solve | cases alias) | (solve | cases alias; rfl) | split at alias
 
-/-- The extension record of the actual run: one fresh extending load, the pointer
+/-- The extension record of the actual run, for a plain or an atomic load: one fresh
+load (extending or acquiring), the pointer
 demanded and the loaded value not demanded, and the body code is this record's code. -/
-theorem stock_lower_sink_extend_body_facts (kind : Kind) {f : Clif.Function} {result : Result}
+theorem stock_lower_source_extend_body_facts (src : Source) (kind : Kind) {f : Clif.Function}
+    {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {b : Clif.Block} {x y z : Nat} {ty : Clif.Ty} {flags : Clif.MemFlags}
-    (shape : Shape kind f b x y z ty flags)
+    (shape : SourceShape src kind f b x y z ty flags)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList) :
     ∃ (term extend load : ScanRecord) (scanned : BlockScan) (step : Step) (nreg a : Nat),
       SourceBodySplit f event b term scanned ∧ event.block = 0 ∧
@@ -134,17 +289,16 @@ theorem stock_lower_sink_extend_body_facts (kind : Kind) {f : Clif.Function} {re
       step.results = [[.vreg extend.input.base.nextVreg .int]] ∧
       event.ctx.valueReg? x = some (.vreg nreg .int) ∧ event.ctx.valueReg? z = some (.vreg a .int) ∧
       scanned.state = extend.output.state ∧ scanned.code = extend.output.emitted ∧
-      extend.output.emitted = #[.load kind.loadOp (.vreg extend.input.base.nextVreg .int)
-        (.unsignedOffset (.vreg nreg .int) 0) flags] ∧
+      extend.output.emitted = #[src.emitted kind (.vreg extend.input.base.nextVreg .int) nreg flags] ∧
       extend.output.state.base.nextVreg = extend.input.base.nextVreg + 1 ∧
       Demanded extend.output.state x ∧ ¬ Demanded extend.output.state y := by
   obtain ⟨term,extend,load,scanned,step,split,records,zero,extendInst,loadInst,extendInput,loadInput,
     loadRun,retained,recorded,emitted,sunks,eligible⟩ :=
-    stock_lower_sink_extend_eligible kind run scope dominated shape events
+    stock_lower_source_extend_eligible src kind run scope dominated shape events
   have inv := (stock_lower_record_context run scope events).1
   have block : f.blocks[event.block]? = some b := by rw [zero,shape.blocks]; rfl
   have start : blockStart f event.block = 0 := by rw [zero]; simp [blockStart]
-  have statement0 : b.body[0]? = some ⟨[y],.load .load (loadTy kind) flags x 0⟩ := by
+  have statement0 : b.body[0]? = some ⟨[y],src.load (loadTy kind) flags x⟩ := by
     simp [shape.body]
   have statement1 : b.body[1]? = some ⟨[z],.extend (extendOp kind) ty y⟩ := by simp [shape.body]
   obtain ⟨info1,source1,clif1,results1⟩ := ArithmeticBody.body_source_info run events split statement1
@@ -158,13 +312,18 @@ theorem stock_lower_sink_extend_body_facts (kind : Kind) {f : Clif.Function} {re
       (x := y) (by simp)
     rwa [start] at h
   have parameter := stock_lower_source_parameter_definition run dominated events block shape.parameter
-  obtain ⟨nreg,mapped⟩ := inv.typedReg x _ (inv.addr64 _ _ _ x source0 clif0 rfl)
+  have typed : event.ctx.valueType? y = some (.int (loadTy kind).width) := by
+    have h := stock_lower_statement_result_type run scope dominated events block statement0
+      (ty := loadTy kind) (by cases src <;> rfl)
+    rw [h]
+    cases kind <;> rfl
+  obtain ⟨nreg,mapped⟩ := inv.typedReg x _ (inv.addr64 _ _ _ x source0 clif0 (by cases src <;> rfl))
   have rootEligible := eligible
   obtain ⟨receipt⟩ := stock_lower_record_selection run events retained recorded emitted
   have rootRun := receipt.rootRun
   rw [extendInst] at rootRun
-  obtain ⟨sink,outEq,nextEq,_⟩ := stock_lower_sink_extend kind inv source1 clif1 shape.small defined
-    source0 clif0 parameter mapped rootEligible rootRun
+  obtain ⟨sink,outEq,nextEq,_⟩ := stock_lower_source_extend src kind inv shape.admits source1 clif1
+    shape.small typed defined source0 clif0 parameter mapped rootEligible rootRun
   have output := receipt.output
   rw [outEq] at output
   simp only [V.regsVec.injEq] at output
@@ -178,8 +337,8 @@ theorem stock_lower_sink_extend_body_facts (kind : Kind) {f : Clif.Function} {re
   obtain ⟨zr,zSome⟩ := Option.isSome_iff_exists.mp zMapped
   obtain ⟨a,rfl⟩ := inv.valueReg z zr zSome
   obtain ⟨scanNext,scanDemand,scanEmitted⟩ := scan_fields extend.input 1
-  have emittedEq : extend.output.emitted = #[.load kind.loadOp (.vreg extend.input.base.nextVreg .int)
-      (.unsignedOffset (.vreg nreg .int) 0) flags] := by
+  have emittedEq : extend.output.emitted =
+      #[src.emitted kind (.vreg extend.input.base.nextVreg .int) nreg flags] := by
     rw [receipt.code,copiesEq,baseEq,nextEq]
     simp [LState.emit,LState.fresh,scanEmitted,scanNext]
   have stateDemand : extend.output.state.demand = ((scanState extend.input 1).mark x).demand := by
@@ -241,16 +400,39 @@ theorem stock_lower_sink_extend_body_facts (kind : Kind) {f : Clif.Function} {re
   rw [receipt.resultRegs,← output]
   simp [LState.fresh,scanNext]
 
-/-! ## Body simulation -/
-
-/-- Two original source steps, the plain load and its extension, against the body's one
-machine extending load. The guarded relation at the body's final scan state holds
-before both steps; after them it holds at the return's scan state. The loaded value has
-no register; the extension reads the same memory through the same pointer. -/
-theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result : Result}
+/-- The extension record of the actual run: one fresh extending load, the pointer
+demanded and the loaded value not demanded, and the body code is this record's code. -/
+theorem stock_lower_sink_extend_body_facts (kind : Kind) {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {b : Clif.Block} {x y z : Nat} {ty : Clif.Ty} {flags : Clif.MemFlags}
     (shape : Shape kind f b x y z ty flags)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList) :
+    ∃ (term extend load : ScanRecord) (scanned : BlockScan) (step : Step) (nreg a : Nat),
+      SourceBodySplit f event b term scanned ∧ event.block = 0 ∧
+      extend.inst = 1 ∧ load.inst = 0 ∧ extend.input = term.output.state ∧
+      extend ∈ event.output.records ∧ load ∈ event.output.records ∧
+      extend.output.step = some step ∧ step.decision = .emitted ∧
+      step.results = [[.vreg extend.input.base.nextVreg .int]] ∧
+      event.ctx.valueReg? x = some (.vreg nreg .int) ∧ event.ctx.valueReg? z = some (.vreg a .int) ∧
+      scanned.state = extend.output.state ∧ scanned.code = extend.output.emitted ∧
+      extend.output.emitted = #[.load kind.loadOp (.vreg extend.input.base.nextVreg .int)
+        (.unsignedOffset (.vreg nreg .int) 0) flags] ∧
+      extend.output.state.base.nextVreg = extend.input.base.nextVreg + 1 ∧
+      Demanded extend.output.state x ∧ ¬ Demanded extend.output.state y :=
+  stock_lower_source_extend_body_facts .plain kind run scope dominated shape.source events
+
+/-! ## Body simulation -/
+
+/-- Two original source steps, the source load (plain or atomic) and its extension, against
+the body's one
+machine extending load. The guarded relation at the body's final scan state holds
+before both steps; after them it holds at the return's scan state. The loaded value has
+no register; the extension reads the same memory through the same pointer. -/
+theorem stock_source_extend_return_body (src : Source) (kind : Kind) {f : Clif.Function}
+    {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {b : Clif.Block} {x y z : Nat} {ty : Clif.Ty} {flags : Clif.MemFlags}
+    (shape : SourceShape src kind f b x y z ty flags)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Backend.Proof.Sem}
     {MR : MemRelT} (stable : MRStable F MR) (memorySem : MemRefines F sb syms isem)
     (memoryOk : MemRelOk F sb syms f MR) {env : Clif.Env} {cp : Clif.Program}
@@ -265,13 +447,13 @@ theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result 
         GuardedScanRel f result event.ctx event.block MR term.output.state s' ρ' w' := by
   obtain ⟨term,extend,load,scanned,step,nreg,a,split,zero,extendInst,loadInst,extendInput,retained,
     _,recorded,emitted,results,mapped,zMapped,stateEq,codeEq,emittedEq,nextVreg,demandedX,quietY⟩ :=
-    stock_lower_sink_extend_body_facts kind run scope dominated shape events
+    stock_lower_source_extend_body_facts src kind run scope dominated shape events
   refine ⟨term,scanned,split,?_⟩
   intro s s' steps ρ w held
   have inv := (stock_lower_record_context run scope events).1
   have block : f.blocks[event.block]? = some b := by rw [zero,shape.blocks]; rfl
   have start : blockStart f event.block = 0 := by rw [zero]; simp [blockStart]
-  have statement0 : b.body[0]? = some ⟨[y],.load .load (loadTy kind) flags x 0⟩ := by
+  have statement0 : b.body[0]? = some ⟨[y],src.load (loadTy kind) flags x⟩ := by
     simp [shape.body]
   have statement1 : b.body[1]? = some ⟨[z],.extend (extendOp kind) ty y⟩ := by simp [shape.body]
   have current0 : load.inst = blockStart f event.block + 0 := by rw [loadInst,start]
@@ -280,7 +462,7 @@ theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result 
     current1
   obtain ⟨info0,source0,clif0,results0⟩ := ArithmeticBody.body_source_info run events split statement0
     current0
-  obtain ⟨little,_,_⟩ := load_source_data kind inv source0 clif0
+  have little := source_little src kind inv source0 clif0
   have finalState : event.output.state = extend.output.state := split.state.symm.trans stateEq
   have range : (List.range b.body.length).map (blockStart f event.block + ·) = [0,1] := by
     simp [shape.body,start,List.range_succ]
@@ -313,10 +495,9 @@ theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result 
       obtain ⟨info0',inst0,vals1,regs1,rest0,found0,original0,_,outcome0,written0,frame0⟩ := loadParts
       cases Option.some.inj (found0.symm.trans source0)
       cases Option.some.inj (original0.symm.trans clif0)
-      have plain0 : Clif.evalInst fr cm (.load .load (loadTy kind) flags x 0) = .ok (vals1,cm1) := by
-        simpa only [instOutcome] using outcome0
-      obtain ⟨_,_,_,_,_,_,valsEq,memEq⟩ := evalInst_load_inv little plain0
-      obtain ⟨v1,rfl⟩ : ∃ v1,vals1 = [v1] := ⟨_,valsEq⟩
+      have plain0 : Clif.evalInst fr cm (src.load (loadTy kind) flags x) = .ok (vals1,cm1) := by
+        cases src <;> simpa only [instOutcome,Source.load] using outcome0
+      obtain ⟨⟨v1,rfl⟩,memEq⟩ := source_load_single src little plain0
       subst cm1
       rw [results0] at written0
       simp only [Clif.Regs.setMany_cons,Clif.Regs.setMany_nil,Option.some.injEq] at written0
@@ -333,7 +514,7 @@ theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result 
       have plain1 : Clif.evalInst fr1 cm (.extend (extendOp kind) ty y) = .ok (vals2,cm') := by
         simpa only [instOutcome] using outcome1
       obtain ⟨v2,rfl⟩ := extend_single plain1
-      obtain ⟨memSame,oneLoad⟩ := extend_load_eval kind plain0 getY plain1
+      obtain ⟨memSame,oneLoad⟩ := source_extend_eval src kind shape.admits plain0 getY plain1
       subst cm'
       change fr' = _ at frame1
       have func2 : fr'.func = f := by rw [frame1]; exact func1
@@ -342,7 +523,7 @@ theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result 
           x ∈ availOf f (availIn f result.ctx) event.block 0 :=
         ⟨by rw [finalState]; exact demandedX,
           stock_lower_record_args_available run scope dominated events block statement0 current0
-            source0 clif0 x (by simp [Driver.instArgs])⟩
+            source0 clif0 x (by cases src <;> simp [Driver.instArgs,Source.load])⟩
       have restrictedGet : (restrict fr (availOf f (availIn f result.ctx) event.block 0)).get x =
           fr.get x := by
         simp only [Clif.Frame.get,restrict_regs_of_mem required.2]
@@ -357,21 +538,21 @@ theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result 
         rw [restrict_regs_of_mem needed.2] at lookup
         exact values v needed value lookup
       have operands := restrictedHeld x required
-      have pointerTy := inv.addr64 _ _ _ x source0 clif0 rfl
-      have address := mapped_unsigned_address (sb := sb) (bytes := kind.loadOp.bytes) (w := w)
-        operands mapped dfg pointerTy (off := 0) (by cases kind <;> decide)
+      have pointerTy := inv.addr64 _ _ _ x source0 clif0 (by cases src <;> rfl)
+      have pointer : ∀ pv,(restrict fr (availOf f (availIn f result.ctx) event.block 0)).regs x = some pv →
+          lo64 (ρ (aliasNum result.final.alias nreg)) = BitVec.ofNat 64 (Clif.effAddr pv 0) := by
+        intro pv hpv
+        obtain ⟨m,hm,held⟩ := operands pv hpv
+        have equal : m = nreg := by simpa using hm.symm.trans mapped
+        subst m
+        rw [lo64_of_holds held (pv_i64 dfg pointerTy hpv),effAddr_zero]
       have width : ty.width ≤ 64 := by
         have small := shape.small
         cases ty <;> simp [narrow] at small <;> decide
-      obtain ⟨ρ',w',executed,_,memory',loaded,_⟩ := load_source_seqRun stable memorySem memoryOk memory
-        (fr := restrict fr (availOf f (availIn f result.ctx) event.block 0))
-        (ρ := ρ) (d := extend.input.base.nextVreg)
-        (am := .unsignedOffset (.vreg (aliasNum result.final.alias nreg) .int) 0)
-        (by intro r member; exact ⟨_,List.mem_singleton.mp member⟩)
-        (aop := kind.loadOp) (by cases kind <;> decide)
-        (by cases kind <;> rfl) (by cases kind <;> rfl) width little
-        (fun pv hpv => by simpa [amUses,amVregs,AMode.regs,amodeAddr,LoadOp.bytes] using address pv hpv)
-        restrictedEval
+      obtain ⟨ρ',w',executed,_,memory',loaded,_⟩ := source_load_seqRun src kind shape.admits stable
+        memorySem memoryOk memory (fr := restrict fr (availOf f (availIn f result.ctx) event.block 0))
+        (ρ := ρ) (d := extend.input.base.nextVreg) (r := aliasNum result.final.alias nreg)
+        width little pointer restrictedEval
       have value := loaded v2 (by simp)
       -- the body code is the record's one load; its destination has no alias
       have aliasBound : result.final.alias.size ≤ extend.input.base.nextVreg := by
@@ -383,18 +564,31 @@ theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result 
         rfl
       have resolved : extend.output.emitted.toList.map (·.mapRegs
           (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))) =
-          [.load kind.loadOp (.vreg extend.input.base.nextVreg .int)
-            (.unsignedOffset (.vreg (aliasNum result.final.alias nreg) .int) 0) flags] := by
+          [src.emitted kind (.vreg extend.input.base.nextVreg .int)
+            (aliasNum result.final.alias nreg) flags] := by
         rw [emittedEq]
-        change [MInst.load kind.loadOp
-          (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
-            (.vreg extend.input.base.nextVreg .int))
-          (.unsignedOffset (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
-            (.vreg nreg .int)) 0) flags] = _
-        rw [resolve_vreg,resolve_vreg]
-        change [MInst.load kind.loadOp (.vreg (aliasNum result.final.alias extend.input.base.nextVreg) .int)
-          (.unsignedOffset (.vreg (aliasNum result.final.alias nreg) .int) 0) flags] = _
-        rw [fixed]
+        cases src
+        · change [MInst.load kind.loadOp
+            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
+              (.vreg extend.input.base.nextVreg .int))
+            (.unsignedOffset (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
+              (.vreg nreg .int)) 0) flags] = _
+          rw [resolve_vreg,resolve_vreg]
+          change [MInst.load kind.loadOp (.vreg (aliasNum result.final.alias extend.input.base.nextVreg) .int)
+            (.unsignedOffset (.vreg (aliasNum result.final.alias nreg) .int) 0) flags] = _
+          rw [fixed]
+          rfl
+        · change [MInst.loadAcquire (.int (loadTy kind).width)
+            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
+              (.vreg extend.input.base.nextVreg .int))
+            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
+              (.vreg nreg .int)) flags] = _
+          rw [resolve_vreg,resolve_vreg]
+          change [MInst.loadAcquire (.int (loadTy kind).width)
+            (.vreg (aliasNum result.final.alias extend.input.base.nextVreg) .int)
+            (.vreg (aliasNum result.final.alias nreg) .int) flags] = _
+          rw [fixed]
+          rfl
       have executedRecord : seqRun isem (extend.output.emitted.toList.map (·.mapRegs
           (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) ρ w =
           some (.fall ρ' w') := by
@@ -421,7 +615,7 @@ theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result 
               simpa only [withValue,same,ite_false] using lookup
             exact values v ⟨by rw [finalState]; exact needed.1,earlier⟩ val lookup'
         have afterLoad := source_single_result_values source0 clif0 results0 loadStep
-          (by simpa only [instOutcome] using plain0) before
+          (by cases src <;> simpa only [instOutcome,Source.load] using plain0) before
         have defs : ∀ m ∈ extend.output.emitted.toList.map (·.mapRegs
             (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size + 1))),
             ∀ key ∈ vdefs m,
@@ -430,7 +624,7 @@ theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result 
           intro m member key defined
           have equal := List.mem_singleton.mp member
           subst m
-          change key ∈ [extend.input.base.nextVreg] at defined
+          replace defined : key ∈ [extend.input.base.nextVreg] := by cases src <;> exact defined
           have equal := List.mem_singleton.mp defined
           subst key
           rw [nextVreg]
@@ -443,13 +637,37 @@ theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result 
         rw [extendInput] at afterExtend
         exact afterExtend
 
+/-- Two original source steps, the plain load and its extension, against the body's one
+machine extending load. The guarded relation at the body's final scan state holds
+before both steps; after them it holds at the return's scan state. The loaded value has
+no register; the extension reads the same memory through the same pointer. -/
+theorem stock_sink_extend_return_body (kind : Kind) {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {b : Clif.Block} {x y z : Nat} {ty : Clif.Ty} {flags : Clif.MemFlags}
+    (shape : Shape kind f b x y z ty flags)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Backend.Proof.Sem}
+    {MR : MemRelT} (stable : MRStable F MR) (memorySem : MemRefines F sb syms isem)
+    (memoryOk : MemRelOk F sb syms f MR) {env : Clif.Env} {cp : Clif.Program}
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList) :
+    ∃ (term : ScanRecord) (body : BlockScan), SourceBodySplit f event b term body ∧
+      ∀ s s',SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
+        ((List.range b.body.length).map (blockStart f event.block + ·)) s s' →
+      ∀ ρ w,GuardedScanRel f result event.ctx event.block MR event.output.state s ρ w → ∃ ρ' w',
+        seqRun isem (body.code.toList.map (·.mapRegs
+          (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size + 1)))) ρ w =
+          some (.fall ρ' w') ∧
+        GuardedScanRel f result event.ctx event.block MR term.output.state s' ρ' w' :=
+  stock_source_extend_return_body .plain kind run scope dominated shape.source stable memorySem memoryOk
+    events
+
 /-- The return half of the memory contract: an original source return refines the
 actual Stock code, with the sinking body supplied by `stock_sink_extend_return_body`.
 The load's trap behavior is not involved, since the source run returned. -/
-theorem stock_sink_extend_returns (kind : Kind) {f : Clif.Function} {result : Result}
+theorem stock_source_extend_returns (src : Source) (kind : Kind) {f : Clif.Function}
+    {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     (abi : sigAbiOk f.sig = true) {b : Clif.Block} {x y z : Nat} {ty : Clif.Ty} {flags : Clif.MemFlags}
-    (shape : Shape kind f b x y z ty flags)
+    (shape : SourceShape src kind f b x y z ty flags)
     {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame} (entered : SourceEntry f args fr)
     {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {vals : List Clif.Val} {mem : Clif.Mem}
     (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals mem)
@@ -466,11 +684,30 @@ theorem stock_sink_extend_returns (kind : Kind) {f : Clif.Function} {result : Re
     rcases member with rfl | rfl
     all_goals
       constructor
-      · intro fn args impossible; cases impossible
-      · intro sig callee args impossible; cases impossible
+      · intro fn args impossible; cases src <;> cases impossible
+      · intro sig callee args impossible; cases src <;> cases impossible
   exact OrdinaryBody.actual_ordinary_entry_return_refines_frame run scope dominated abi shape.blocks
     family shape.ret entered returned refines driver memorySem stable
-    (fun event events => stock_sink_extend_return_body kind run scope dominated shape stable memorySem
+    (fun event events => stock_source_extend_return_body src kind run scope dominated shape stable memorySem
       memoryOk events) memory arguments
+
+/-- The return half of the memory contract: an original source return refines the
+actual Stock code, with the sinking body supplied by `stock_sink_extend_return_body`.
+The load's trap behavior is not involved, since the source run returned. -/
+theorem stock_sink_extend_returns (kind : Kind) {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) {b : Clif.Block} {x y z : Nat} {ty : Clif.Ty} {flags : Clif.MemFlags}
+    (shape : Shape kind f b x y z ty flags)
+    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame} (entered : SourceEntry f args fr)
+    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {vals : List Clif.Val} {mem : Clif.Mem}
+    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals mem)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {sb : Nat} {syms : String → Option Nat}
+    (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
+    (memoryOk : MemRelOk F sb syms f MR) {w : Arm.ArmState} (memory : MR fr.slots cm w)
+    (arguments : ArgsAtEntry F f.sig args w) :
+    ∃ ρ,RunOkABI f result.code isem MR fr.slots ⟨0,0,ρ,w⟩ (.returned vals mem) :=
+  stock_source_extend_returns .plain kind run scope dominated abi shape.source entered returned refines
+    driver memorySem stable memoryOk memory arguments
 
 end Backend.Stock.Memory.SinkExtend

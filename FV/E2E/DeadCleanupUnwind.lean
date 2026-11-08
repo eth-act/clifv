@@ -125,7 +125,7 @@ theorem backend_correct_cleanup_layersU_ex {p : Clif.Program} {f : Clif.Function
   backend_correct_of_layersU_ex hIsel
     (fun s' => prepareCorrectU_cleanup (vc := skipStage f vc) (hds s') (hPure s') (hCmp s') hc.prepOk XR)
     hReg hent hres hbe
-    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
 
 end E2E

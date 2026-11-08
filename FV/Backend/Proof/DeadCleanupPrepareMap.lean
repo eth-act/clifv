@@ -252,7 +252,7 @@ theorem prepare_map {T : VBlock → VBlock} (hT : BlockMap T) (vc : VCode) :
         · rw [Bool.eq_false_iff.mpr hparam]; rfl
       · rw [Bool.eq_false_iff.mpr hpred]; rfl
 
-private theorem retarget_facts {t t' : MInst} {ls : List Label}
+theorem retarget_facts {t t' : MInst} {ls : List Label}
     (h : t.setTargets ls = some t') :
     t.isTerminator = true ∧ t'.isTerminator = true ∧
       pureForm t = false ∧ pureForm t' = false ∧ t'.operands = t.operands := by
@@ -284,7 +284,7 @@ private theorem flagsDead_append_swap (ks : List MInst) {t t' : MInst}
   | cons k ks ih => simp only [List.cons_append, flagsDead, ih]
 
 /-- Retargeting the final terminator changes only that instruction of the scan. -/
-private theorem scan_append_swap (n : Nat) (L : List Nat) (xs : List MInst)
+theorem scan_append_swap (n : Nat) (L : List Nat) (xs : List MInst)
     {t t' : MInst} (hp : pureForm t = false) (hp' : pureForm t' = false)
     (hc : cmpForm t = false) (hc' : cmpForm t' = false)
     (hu : uses n t' = uses n t) (hd : defs t' = defs t) :

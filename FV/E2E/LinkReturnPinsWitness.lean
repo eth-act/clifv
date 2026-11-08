@@ -105,15 +105,18 @@ theorem successful_program_call_witness :
         · rw [fixedFacts.2.2.2.1]
           exact outRel_zero _ _ _
         · decide +kernel
+      -- #581: `K` includes `pbMax`, which is 0 here (`K_L`: no frame of the program is probed).
+      have hK : system.K 3 = (L fun _ => True).D * 3 := K_L _ 3
       have dead : ∀ a,StackBelow (system.K 3) (0x100000 : BitVec 64) a → True ∧ ¬ system.Img a := by
         intro a below
         refine ⟨trivial,fun image => ?_⟩
         have upper := img_lt image
+        rw [hK] at below
         change a.toNat < 1048576 ∧ 1048576 ≤ a.toNat + 192 at below
         omega
       obtain ⟨values,next,called,arity,held,_⟩ := system.progResult_semantic hL budget
         (fun _ => system.thm_semantic hL budget 2) hg hh callee (fun _ _ => trivial)
-        (by decide +kernel) dead (by decide +kernel) arguments avoids relation (fun _ => ⟨[],rfl⟩)
+        (by rw [hK]; decide +kernel) dead (by decide +kernel) arguments avoids relation (fun _ => ⟨[],rfl⟩)
         entered returned
       refine ⟨system_ok,cs,cm,values,next,rfl,returned,?_,?_,?_,held⟩
       · rw [system.progXWithPins_ordinary]

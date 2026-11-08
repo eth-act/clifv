@@ -98,7 +98,7 @@ theorem tabUpToE_call_at {M : Nat} {g : Clif.Function} {s : Arm.ArmState} {ini :
       (slotted h = 1 → ∀ a, L.SlotByte h (spv (runX (L.mach (M + 1) g) i s)) a →
         ini.bytes (ini.next + Clif.sumTo E
           (callsBefore (L.mach (M + 1) g) (L.A g).fa (L.A g).base s i) + 1) a =
-          (runX (L.mach (M + 1) g) i s).mem (BitVec.ofNat 64 a)) ∧
+          probeMem (L.A h).af (runX (L.mach (M + 1) g) i s) (BitVec.ofNat 64 a)) ∧
       slotted h ≤ E (callsBefore (L.mach (M + 1) g) (L.A g).fa (L.A g).base s i) ∧
       L.TableOfE M h (enterAt (L.A h) (runX (L.mach (M + 1) g) i s))
         ⟨ini.bytes, ini.next + Clif.sumTo E

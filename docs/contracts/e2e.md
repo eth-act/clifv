@@ -4842,6 +4842,50 @@ per-function theorem first needs a call semantics indexed by the actual run, thr
 reg-level simulation; new theorem variants will sit beside the existing ones. The heap-side gap
 (allocating externs) is separate: [#547](https://github.com/eth-act/clifv/issues/547) (SEM2).
 
+## Stack probes (unrolled form, #581)
+
+The prologue now emits Cranelift's unrolled stack probes for frames with
+`probeTotal = frameSize (+16 if the function calls)` in [4 KiB, 16 KiB) (`probeLines`,
+docs/contracts/backend.md). Each probe stores 4 zero bytes at `sp₁ - 4096·i` (`sp₁` the `sp`
+after the frame setup), below the frame by up to `probeBelow af` bytes. Statement changes, each
+because the old statement became false with probes (names kept):
+
+* `BodyEntry.mem : w₀.mem = probeMem af s` (was `= s.mem`): the probed bytes are 0 at body
+  entry and can lie in CLIF stack slots. Identical for a function without probes
+  (`probeMem_of_count`).
+* `StackAvail K af s := StackRoom (af.frameSize + 16 + K) s ∧ probeBelow af ≤ K` (the callees'
+  budget covers the probed bytes; `StackAvail.room`/`.frame`/`.probe`/`.of_room`).
+* The program-level budgets: the outside caller provides `frameDrop + (D * M + pbMax)` (peak:
+  `D * d + pbMax`) bytes of stack instead of `frameDrop + D * M`; `pbMax` is the largest
+  `probeBelow` of the program's functions (0 for programs without probing frames). This touches
+  the `_depth`/`_peak`/trap/source theorems of `Link`, `Link.DeadCleanup`, the typed `attemptT`
+  route and `E2E.binary_correct_*`.
+* `OutsideCall.bytes`/`EntryContract.ClifView.bytes`: CLIF slot bytes are read from the
+  post-probe memory (`probeMem (art I f).af r`); `OutsideCall.image` gets the premise that the
+  byte is not probed. `premises*` conclude `StackRoom (frameSize + 16 + K)`.
+* Linking: `LinkSys.Budget κ` also requires `probeBelow (L.A g).af ≤ κ M g` (`budget_K` gives
+  it for `κ = K M`); the machine-side slot-byte tables read `probeMem`. Concurrency:
+  `LinkOk(X).fn` bounds `frameSize + 16 + probeBelow ≤ Mx`.
+* Return pins (the generic `_return_pins` route, files `FV/E2E/LinkReturnPin*`,
+  `ReturnPin*`, `BinaryBoundary*`, `Sret*`, `FV/Link/ReturnPinExe*With`): the same changes as
+  their `_semantic` counterparts. `E2E.ReturnPinBinary.binary_correct_depth`/`_depthX`/`_peakX`,
+  `E2E.ReturnPinExecBytes.runGood_sysS_depth`/`_peak`, `binary_correct_exec_depth_proven`/
+  `_peak_proven` and `Link.ReturnPinCompilerWith.attempt_correct_depth`/`_peak`/`_source_peak`:
+  the stack is `frameDrop + (D * M + pbMax)` (was `frameDrop + D * M`).
+  `E2E.BinaryBoundaryFacts.premises` and `E2E.ReturnPinExecBytes.sysS_entry` conclude
+  `StackRoom (frameSize + 16 + K)` (was `StackAvail`). The generic lemmas
+  (`progCall_return_pins`, `progCallG_return_pins`, `progX_ni_return_pins`, `xni_return_pins`,
+  `progGoodCore_return_pins`, `callGood_return_pins`, `runGood_of_trace_return_pins`, …) gained
+  the premises `hpb`/`hκ` (the budget covers `probeBelow`), and `budget_K_return_pins` proves
+  both parts of `Budget`. The fixture of the three return-pin witnesses has no probes:
+  `E2E.ReturnPinBinaryWitness.pbMax_zero : pbMax (original cleanup) = 0`.
+* `Link.TypedCompilerWith.attempt_correct_depth`/`_peak`/`_source_peak` (#892's typed compile
+  modes): the stack is `frameDrop + (D * M + pbMax)` (was `frameDrop + D * M`), as their
+  `SemanticCompilerWith` counterparts.
+
+Frames of 16 KiB and more (Cranelift's `StackProbeLoop`) still get no probes; that form is a
+separate change.
+
 ## Remaining (precise)
 
 M4 (`LowerRulesCorrect` and the terminator statements) and M6 (`RegLevelCorrect`, `DriverSem`,

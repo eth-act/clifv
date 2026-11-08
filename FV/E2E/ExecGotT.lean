@@ -33,7 +33,8 @@ variable {I : LinkInput} {B : BaseEnv} {file : ByteArray}
 /-- **The entry premises of the whole-program theorems for the system keeping the slots** `S`
 with the callees' stack `K` (the outside caller's stack `frameDrop + K`): what
 `backend_correct_program_budgetXT` and `backend_correct_program_peakXT` take besides the budget and
-the run premisesT. -/
+the run premisesT. The stack premise is the room `StackRoom` only (#581: `StackAvail` also asks
+`probeBelow ≤ K`, a fact of the budget). -/
 theorem sysS_entryT {D : List Clif.DataObject} (hI : okBT I = true) (hbin : BinOk I D file)
     (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
@@ -43,7 +44,7 @@ theorem sysS_entryT {D : List Clif.DataObject} (hI : okBT I = true) (hbin : BinO
     (hr : ClifRun I B f r args cs) :
     (sysS I B f K r S).OkT ∧
     AbiEntry (art I f).fb (art I f).base (xreg 30 r) (modelOf I f r) ∧
-    StackAvail K (art I f).af (modelOf I f r) ∧
+    StackRoom ((art I f).af.frameSize + 16 + K) (modelOf I f r) ∧
     (∀ a, (sysS I B f K r S).Img a →
       ¬ StackBelow (frameDrop (art I f).af + K) (spv (modelOf I f r)) a) ∧
     BodyEntry (art I f).af (modelOf I f r) (bodyOf (art I f).af (modelOf I f r)) ∧
@@ -112,7 +113,8 @@ theorem runGood_sysS_ofT {D : List Clif.DataObject} (hI : okBT I = true) (hbin :
   obtain ⟨hL, hent, hres, hgfree, hbe, hargs, hsav, hrel, hpl⟩ :=
     sysS_entryT hI hbin hB hfm hX ho hav hr
   exact (backend_correct_program_budgetXT (sysS I B f (κ M f) r S) hL (hκ.extImg _ _ _) hfm M
-    hent hres rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl htr).2 hout
+    hent ⟨hres, (hκ.extImg _ _ _).2 M f hfm⟩ rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav
+    hrel hpl htr).2 hout
 
 /-- **`RunGoodL` of the system keeping the slots**, for a returning or trapping outcome: the
 stack bound of a non-recursive program (`goodN`; the budget `StackBound.budget_ofT`). -/
@@ -138,41 +140,46 @@ theorem runGood_sysST {D : List Clif.DataObject} (hI : okBT I = true) (hbin : Bi
     (by simp [LinkSys.hybrid, hb, hbud]) ho hav hr htr hout
 
 /-- **`RunGoodL` of the system keeping the slots for any program**, recursive ones included: the
-depth-`M` budget `D * M` (`LinkSys.budget_KT`), the stack `frameDrop + D * M`. -/
+depth-`M` budget `D * M + pbMax I` (`LinkSys.budget_KT`; #581: with the stack probes of the
+deepest activation), the stack `frameDrop + (D * M + pbMax I)`. -/
 theorem runGood_sysS_depthT {D : List Clif.DataObject} (hI : okBT I = true) (hbin : BinOk I D file)
     (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs) (M : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * M + pbMax I)) r
+      args cs.mem)
     {S : BitVec 64 → Prop}
-    (hav : OutsideAvoids S f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (hav : OutsideAvoids S f (frameDrop (art I f).af + (I.D * M + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
     (hout : (∃ vals cm, Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c)) :
-    (sysS I B f (I.D * M) r S).RunGoodL M f (modelOf I f r) :=
+    (sysS I B f (I.D * M + pbMax I) r S).RunGoodL M f (modelOf I f r) :=
   runGood_sysS_ofT hI hbin hB hfm M hX
     (LinkSys.budget_KT _ (okB_soundT hI (baseOk_F hB) fun _ h => .inr h)) rfl ho hav hr htr hout
 
 /-- **`RunGoodL` of the system keeping the slots for the run's peak call depth** `d` (L1d): the
 whole-program run of at most `F + 1` steps reaches no state with more than `d` callers
-(`Clif.DepthLe`); the budget `D * d` (`LinkSys.budget_KT`), the stack `frameDrop + D * d`
+(`Clif.DepthLe`); the budget `D * d + pbMax I` (`LinkSys.budget_KT`; #581), the stack
+`frameDrop + (D * d + pbMax I)`
 (`backend_correct_program_peakXT`). -/
 theorem runGood_sysS_peakT {D : List Clif.DataObject} (hI : okBT I = true) (hbin : BinOk I D file)
     (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs) (F d : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r
+      args cs.mem)
     {S : BitVec 64 → Prop}
-    (hav : OutsideAvoids S f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (hav : OutsideAvoids S f (frameDrop (art I f).af + (I.D * d + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs)
     (hout : (∃ vals cm, Clif.runLoop B.env (prog I) (F + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (F + 1) cs = .trapped c)) :
-    (sysS I B f (I.D * d) r S).RunGoodL d f (modelOf I f r) := by
+    (sysS I B f (I.D * d + pbMax I) r S).RunGoodL d f (modelOf I f r) := by
   obtain ⟨hL, hent, hres, hgfree, hbe, hargs, hsav, hrel, hpl⟩ :=
     sysS_entryT hI hbin hB hfm hX ho hav hr
-  exact (backend_correct_program_peakXT (sysS I B f (I.D * d) r S) hL
+  exact (backend_correct_program_peakXT (sysS I B f (I.D * d + pbMax I) r S) hL
     ((LinkSys.budget_KT _ (okB_soundT hI (baseOk_F hB) fun _ h => .inr h)).extImg _ _ _) hfm F d
-    hent hres rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl hd htr).2 hout
+    hent ⟨hres, ((LinkSys.budget_KT _ (okB_soundT hI (baseOk_F hB) fun _ h => .inr h)).extImg _ _ _).2
+      d f hfm⟩ rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl hd htr).2 hout
 
 /-- **D4 from the per-state facts** of the system keeping the GOT slots: at the `ldr` of a GOT
 pair, the slot's bytes are the activation's entry bytes (`RL.GoodX.got`, the slots kept), which

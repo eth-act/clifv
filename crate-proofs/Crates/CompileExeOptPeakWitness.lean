@@ -322,8 +322,11 @@ theorem compileExeOpt_peak_witness :
   obtain ⟨hf0, hf, hne, -⟩ := facts
   have hoc := outsideCall (memOf file) (BinCheck.roByte J spec.opt.data)
     facts.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
+  have hpb : pbMax J = 0 := by native_decide
   have h := (compileExeOpt_correct_peak compile_eq closedBase (base_closed _) (hooksSim_closed J)
-    keepsSymbols hf0 hf d (intact file) hoc (clifRun _) clifEntry rfl rfl rfl depth M).1 _ _ run_eq
+    keepsSymbols hf0 hf d (intact file) (by rw [hpb]; exact hoc) (clifRun _) clifEntry rfl rfl rfl
+    depth M).1 _ _ run_eq
   rw [x30_r] at h
   obtain ⟨k, hret, hx, -⟩ := h
   exact ⟨compile_eq, noFallbacks, hf0, hf, hne, cyclic, depth, hoc, run_eq, k, hret, hx 0 _ rfl,

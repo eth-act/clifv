@@ -58,7 +58,8 @@ theorem attempt_correct {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
 
 /-- **The typed executable compiler on a Stock route is correct for recursive programs**:
 `attempt_correct` without the call-graph premise, the outside caller providing
-`frameDrop + D * M` bytes of stack. -/
+`frameDrop + (D * M + pbMax)` bytes of stack (#581: `pbMax`, the most bytes a function's stack
+probes write below its frame). -/
 theorem attempt_correct_depth {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) (B : BaseEnv)
     (hB : BaseOk (sys (input lower S cleanup) B))
@@ -67,7 +68,8 @@ theorem attempt_correct_depth {S : LinkSpec} {cleanup : Bool} {file0 file : Byte
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall (input lower S cleanup) (BinCheck.roByte (input lower S cleanup) S.data) f
-      (frameDrop (art (input lower S cleanup) f).af + (input lower S cleanup).D * M) r args cs.mem)
+      (frameDrop (art (input lower S cleanup) f).af +
+        ((input lower S cleanup).D * M + pbMax (input lower S cleanup))) r args cs.mem)
     (hr : ClifRun (input lower S cleanup) B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog (input lower S cleanup)) B.env M)
       (prog (input lower S cleanup)).bare cs) :
@@ -82,7 +84,7 @@ theorem attempt_correct_depth {S : LinkSpec} {cleanup : Bool} {file0 file : Byte
 
 /-- **The typed executable compiler on a Stock route is correct for recursive programs, with the
 stack of the run's peak call depth** (L1d): `attempt_correct_depth` with
-`frameDrop + D * d` bytes of stack, `d` bounding the whole-program CLIF run's call depth
+`frameDrop + (D * d + pbMax)` bytes of stack (#581), `d` bounding the whole-program CLIF run's call depth
 (`Clif.DepthLe`). -/
 theorem attempt_correct_peak {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) (B : BaseEnv)
@@ -92,7 +94,8 @@ theorem attempt_correct_peak {S : LinkSpec} {cleanup : Bool} {file0 file : ByteA
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall (input lower S cleanup) (BinCheck.roByte (input lower S cleanup) S.data) f
-      (frameDrop (art (input lower S cleanup) f).af + (input lower S cleanup).D * d) r args cs.mem)
+      (frameDrop (art (input lower S cleanup) f).af +
+        ((input lower S cleanup).D * d + pbMax (input lower S cleanup))) r args cs.mem)
     (hr : ClifRun (input lower S cleanup) B f r args cs)
     (hd : Clif.DepthLe B.env (prog (input lower S cleanup)) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog (input lower S cleanup)) B.env F d)

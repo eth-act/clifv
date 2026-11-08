@@ -191,15 +191,97 @@ theorem spAdjLines_noStores (sub : Bool) (size : Nat) :
         obtain ⟨rfl, rfl⟩ := h
         cases sub <;> rfl
 
-/-- **The prologue writes only the frame top** `[sp - 16 - clobberBytes, sp)`: fp/lr at
-`sp - 16`, the int pushes below it, the float pushes at the bottom; `mov x29, sp` and the `sp`
-adjustment store nothing. -/
-theorem prologue_writes (env : Env) {saves : List Reg} {size : Nat}
+/-- A stack probe's `stur wzr, [sp]` writes 4 bytes at `sp` (#581). -/
+theorem memWrites_stur {env : Env} {a : Arm.ArmInst}
+    (h : (Insn.store .store32 .xzr (.unscaled .sp 0)).toArmInst env = .ok a) (s : Arm.ArmState) :
+    MemWrites a s = [(spOf s, 4)] := by
+  have e : (Insn.store .store32 .xzr (.unscaled .sp 0)).toArmInst env = .ok
+      (.LDST (.Reg_unscaled_imm
+        { size := 2#2, VR := 0#1, opc := 0#2, imm9 := 0#9, Rn := 31#5, Rt := 31#5 })) := by
+    simp [csimp_rules, pure, Except.pure]; rfl
+  rw [e, Except.ok.injEq] at h
+  subst h
+  simp (config := {decide := true}) [MemWrites, RegImm.writes, RegImm.ofUnscaled, RegImm.memop,
+    RegImm.addr, RegImm.scale, Arm.LDST.Reg_offset.value, Arm.BitVec.lsb, spOf, Arm.read_gpr]
+
+/-- `k` unrolled probes write only the probed bytes (`probeHitB`). -/
+theorem probeSteps_writes (env : Env) {P : BitVec 64 → Prop} : ∀ (k : Nat) (s : Arm.ArmState),
+    (spOf s).toNat % 16 = 0 → (∀ a, probeHitB k (spOf s) a = true → P a) →
+    LinesWrites env (probeSteps k) s P
+  | 0, _, _, _ => fun k _ _ hk => by simp [probeSteps] at hk
+  | k + 1, s, hal, hP => by
+    obtain ⟨a1, ha1, he1⟩ := exec_sub_sp_imm env ⟨1, true⟩ (by decide) s
+    have hpc1 : Arm.r .PC (Arm.exec_inst a1 s) = Arm.r .PC s + 4#64 := by
+      rw [he1]; simp [Arm.r_of_w_same, Arm.r_of_w_different]
+    have hsp1 : spOf (Arm.exec_inst a1 s) = spOf s - 4096#64 := by
+      rw [he1]; simp [spOf, Arm.r_of_w_same, Arm.r_of_w_different, Imm12.value]
+    have hrun1 : execLines env [Line.ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) none] s =
+        some (Arm.exec_inst a1 s) := execLines_one ha1 hpc1
+    have hal1 : (spOf (Arm.exec_inst a1 s)).toNat % 16 = 0 := by
+      rw [hsp1]; exact aligned_sub hal (n := 4096) (by decide) (by decide)
+    obtain ⟨a2, ha2, he2⟩ := exec_stur_wzr_sp { env with pc := env.pc + 4 } (Arm.exec_inst a1 s)
+      (checkSP_of hal1)
+    have hpc2 : Arm.r .PC (Arm.exec_inst a2 (Arm.exec_inst a1 s)) =
+        Arm.r .PC (Arm.exec_inst a1 s) + 4#64 := by
+      rw [he2]; simp [Arm.r_of_w_same, Arm.r_of_w_different, Arm.r_of_write_mem_bytes]
+    have hsp2 : spOf (Arm.exec_inst a2 (Arm.exec_inst a1 s)) = spOf s - 4096#64 := by
+      rw [he2, ← hsp1]; simp [spOf, Arm.r_of_w_different, Arm.r_of_write_mem_bytes]
+    have hrun2 : execLines env [Line.ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) none,
+        Line.ins (.store .store32 .xzr (.unscaled .sp 0)) none] s =
+        some (Arm.exec_inst a2 (Arm.exec_inst a1 s)) := by
+      rw [execLines_cons_of hrun1 [Line.ins (.store .store32 .xzr (.unscaled .sp 0)) none]]
+      exact execLines_one ha2 hpc2
+    show LinesWrites env ([Line.ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) none] ++
+      [Line.ins (.store .store32 .xzr (.unscaled .sp 0)) none] ++ probeSteps k) s P
+    refine linesWrites_app (linesWrites_append_last (fun y t h => by
+        simp only [List.mem_singleton, Line.ins.injEq] at h
+        obtain ⟨rfl, rfl⟩ := h
+        rfl) fun s1 hs1 env' a ha p hp i hi => ?_) fun s2 hs2 => ?_
+    · rw [hrun1, Option.some.injEq] at hs1
+      subst hs1
+      rw [memWrites_stur ha, hsp1] at hp
+      simp only [List.mem_singleton] at hp
+      subst hp
+      apply hP
+      rw [probeHitB_succ]
+      simp only at hi ⊢
+      have e : (spOf s - 4096#64 + BitVec.ofNat 64 i - (spOf s - 4096#64)).toNat = i := by
+        rw [BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat]
+        exact Nat.mod_eq_of_lt (by omega)
+      simp [e, hi]
+    · have hs2' : execLines env [Line.ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) none,
+          Line.ins (.store .store32 .xzr (.unscaled .sp 0)) none] s = some s2 := hs2
+      rw [hrun2, Option.some.injEq] at hs2'
+      subst hs2'
+      exact probeSteps_writes { env with pc := env.pc + 4 * 2 } k _
+        (by rw [hsp2, ← hsp1]; exact hal1)
+        (fun a h => hP a (by rw [probeHitB_succ, ← hsp2, h, Bool.or_true]))
+
+/-- The stack probes write only the probed bytes (#581). -/
+theorem probeLines_writes (env : Env) (total : Nat) (s : Arm.ArmState)
+    (hal : (spOf s).toNat % 16 = 0) {P : BitVec 64 → Prop}
+    (hP : ∀ a, probeHitB (probeCount total) (spOf s) a = true → P a) :
+    LinesWrites env (probeLines total) s P := by
+  unfold probeLines
+  simp only
+  split
+  · exact fun k _ _ hk => by simp at hk
+  · exact linesWrites_app (probeSteps_writes env _ s hal hP) fun _ _ =>
+      linesWrites_noStores fun x t h => by
+        simp only [List.mem_singleton, Line.ins.injEq] at h
+        obtain ⟨rfl, rfl⟩ := h
+        rfl
+
+/-- **The prologue writes only the frame top** `[sp - 16 - clobberBytes, sp)` **and the probed
+bytes**: fp/lr at `sp - 16`, the stack probes (`probeHitN`, #581), the int pushes below fp/lr,
+the float pushes at the bottom; `mov x29, sp` and the `sp` adjustment store nothing. -/
+theorem prologue_writes (env : Env) {saves : List Reg} {size : Nat} {calls : Bool}
     (hsv : SavesOk saves) (s : Arm.ArmState)
     (hal : (spOf s).toNat % 16 = 0) {P : BitVec 64 → Prop}
     (hP : ∀ k < 16 + clobberBytes saves,
-      P (spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) + BitVec.ofNat 64 k)) :
-    LinesWrites env (prologueLines saves size) s P := by
+      P (spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) + BitVec.ofNat 64 k))
+    (hPp : ∀ a, probeHitN (probeCount (probeTotal size calls)) (spOf s) a = true → P a) :
+    LinesWrites env (prologueLines saves size calls) s P := by
   have hcbl := hsv.clobber_le
   have hcbe : clobberBytes saves = pushBytes (savesInt saves).length +
       pushBytes (savesFloat saves).length := rfl
@@ -238,9 +320,11 @@ theorem prologue_writes (env : Env) {saves : List Reg} {size : Nat}
       some (Arm.exec_inst a2 (Arm.exec_inst a1 s)) := by
     rw [execLines_cons_of hrun1 [Line.ins (.mov true Reg.fp .sp) none]]
     exact execLines_one ha2 hpc2
+  have hal2 : (spOf (Arm.exec_inst a2 (Arm.exec_inst a1 s))).toNat % 16 = 0 := by
+    rw [hsp2]; exact aligned_sub hal (by decide) (by decide)
   rw [prologueLines_eq]
   refine linesWrites_app
-    (linesWrites_cons (fun y t' h => by
+    (linesWrites_cons (fun y t h => by
         simp only [List.mem_singleton, Line.ins.injEq] at h
         obtain ⟨rfl, rfl⟩ := h
         rfl)
@@ -251,15 +335,24 @@ theorem prologue_writes (env : Env) {saves : List Reg} {size : Nat}
     simp only at hk ⊢
     rw [hT16, add_ofNat_add, add_ofNat_add]
     exact hP _ (by omega)
-  · -- the int pushes
+  · -- the stack probes
     rw [hrun2, Option.some.injEq] at hs2
     subst hs2
-    obtain ⟨s3, h3, hsp3, -⟩ := pushLines_ok { env with pc := env.pc + 8 } true (savesInt saves)
-      (Arm.exec_inst a2 (Arm.exec_inst a1 s)) (BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length))
-      hsv.int (by have := hsv.intLen; omega) hBIa (by rw [hsp2, hT16])
-    refine linesWrites_app (pushLines_writes { env with pc := env.pc + 8 } true (savesInt saves) _
+    obtain ⟨sP, hPs, hspP, -⟩ := probeLines_ok { env with pc := env.pc + 8 } (probeTotal size calls)
+      (Arm.exec_inst a2 (Arm.exec_inst a1 s)) hal2
+    refine linesWrites_app (probeLines_writes { env with pc := env.pc + 8 } (probeTotal size calls) _ hal2
+      (fun a h => hPp a (by rw [← probeHitB_sub16, ← hsp2]; exact h))) fun sP' hsP => ?_
+    rw [execLines_steps hPs hsP]
+    have hspP' : spOf sP = spOf s - 16#64 := by rw [hspP, hsp2]
+    -- the int pushes
+    obtain ⟨s3, h3, hsp3, -⟩ := pushLines_ok
+      { env with pc := env.pc + 8 + 4 * (probeLines (probeTotal size calls)).length } true (savesInt saves)
+      sP (BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length))
+      hsv.int (by have := hsv.intLen; omega) hBIa (by rw [hspP', hT16])
+    refine linesWrites_app (pushLines_writes
+      { env with pc := env.pc + 8 + 4 * (probeLines (probeTotal size calls)).length } true (savesInt saves) _
       (BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length)) hsv.int
-      (by have := hsv.intLen; omega) hBIa (by rw [hsp2, hT16]) (fun k hk => ?_)) fun s3' hs3 => ?_
+      (by have := hsv.intLen; omega) hBIa (by rw [hspP', hT16]) (fun k hk => ?_)) fun s3' hs3 => ?_
     · rw [add_ofNat_add]
       exact hP _ (by omega)
     · -- the float pushes, then the `sp` adjustment

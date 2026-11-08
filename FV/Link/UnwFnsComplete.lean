@@ -139,6 +139,7 @@ namespace Link.EhCheck.Complete
 
 open Backend Backend.Proof Backend.Proof.UnwindTables E2E
 
+
 /-! ## `padsNonzeroB` -/
 
 /-- `labelOffsets` keeps the labels found so far. -/
@@ -416,7 +417,7 @@ theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa
     unwindRows af fa = .ok (prologueRows ++ pushRows af.saves 8) := by
   have hframe := lowerRFunc_frame halloc
   obtain ⟨code, -, haf, h0, hd⟩ := entry_static halloc hemit hvb hit
-  generalize hP : prologueLines af.saves af.frameSize = P at hd
+  generalize hP : prologueLines af.saves af.frameSize af.isCaller = P at hd
   have hins : ∀ ln ∈ P, ∃ i t, ln = .ins i t := by
     intro ln hln
     rw [← hP] at hln

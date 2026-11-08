@@ -11,7 +11,8 @@ activation starts at its ABI entry (the state after the caller's `bl`), so:
 
 * `CompiledE env p RA cs`: the activation `RA` of a compiled CLIF function (`R.Wf`, the widest
   layer-4b scope `MemScopeLS`, no GOT-pinned calls), entered at its ABI entry `RA.s0`
-  (`AbiCall`), with the pipeline facts (`Front`) at the state after the prologue;
+  (`AbiCall`), with the pipeline facts (`Front`) at the state after the prologue, its stack
+  probes writing outside the world (`ProbeF`, #581);
 * **`thread_compiled_entry`**: every precise Arm run under `OkPriv` from the ABI entry realizes,
   on a prefix, a CLIF thread run from `cs` (`Refines Maps`, private set `PrivA RA`, the prefix's
   monitor pairs atomic), the prefix being the whole run, or ending where the CLIF thread stops,
@@ -32,7 +33,10 @@ structure CompiledE (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.Sta
   scope : MemScopeLS RA
   gv : RA.gv = fun _ _ => False
   abi : ∃ ra, AbiCall RA.fb RA.base ra RA.s0
-  front : Front env p RA cs (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize).length RA.s0)
+  front : Front env p RA cs (iterN RA.step (prologueLines RA.af.saves RA.af.frameSize RA.af.isCaller).length RA.s0)
+  /-- the prologue's stack probes write outside the world (#581: new; holds for a frame below
+  4 KiB, `ProbeF.of_small`) -/
+  probe : ProbeF RA
 
 /-- **The Arm prefix `P` drives the activation's allocated code to its end**: a run of the
 allocated code from an entry configuration to `Done`, refined by `P`'s events. -/
@@ -54,7 +58,7 @@ theorem thread_compiled_entry {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs 
     hMRw, hX, hMem, hMRs, hreg, hprep, halloc, hB0, hcall, hfunc, hslots, hbody, hterm, hregs, hty,
     hsig, hmr, hargs, hq, hA⟩ := hc.front
   obtain ⟨nA, trM, cE, ψA, hnA, hM, hAr, hend⟩ :=
-    arm_alloc_refines_entryQ hc.wf hc.scope hent hq hA hr
+    arm_alloc_refines_entryQ hc.wf hc.scope hent hc.probe hq hA hr
   obtain ⟨k, trS, t, ψ, hk, hrun, href, hendk⟩ :=
     arm_isel_refinesE' (E := Done RA cE) hc.gv H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0
       hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr hM hAr hend hnA

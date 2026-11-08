@@ -129,7 +129,9 @@ theorem cleanup_source_peak_nobnd_witness :
     (baseOk_helper htls hdiv hind hsigs) (Link.DeadCleanup.SourceWitness.hooksSim_helper _)
     (fun _ => ⟨Link.SourceWitness.helperOk, Link.SourceWitness.extLegal,
       Link.SourceWitness.keepsBounded⟩)
-    (fun ⟨g, hg, hn⟩ => absurd (hind g hg) hn) hf d (intact file) hoc (clifRun _) clifEntry hexp
+    (fun ⟨g, hg, hn⟩ => absurd (hind g hg) hn) hf d (intact file)
+    -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
+    (by rw [show pbMax J = 0 by native_decide]; exact hoc) (clifRun _) clifEntry hexp
     rfl rfl depth M).1 _ _ run_eq
   rw [x30_r] at h
   obtain ⟨vals', hrel, k, hret, hx, -⟩ := h
@@ -284,7 +286,9 @@ theorem bundle_source_peak_nobnd_witness :
     (fun _ => ⟨Link.SourceWitness.helperOk, Link.SourceWitness.extLegal,
       Link.SourceWitness.keepsBounded⟩)
     (fun ⟨g, hg, hn⟩ => absurd (hind g hg) hn) hf0 d
-    (intact file) (by rw [hfs]; exact hoc) (by rw [hfs]; exact clifRun _)
+    -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
+    (intact file) (by rw [hfs, show pbMax J = 0 by native_decide]; exact hoc)
+    (by rw [hfs]; exact clifRun _)
     (pre_entry hfs clifEntry) hexp rfl (Front.Mem.ren_symm_ren σ cm).symm hd M
   have hrun0 := pre_run hP run_eq
   have h := H.1 _ _ hrun0
@@ -411,7 +415,9 @@ theorem bundle_raw_peak_nobnd_witness :
     (fun _ => ⟨Link.SourceWitness.helperOk, Link.SourceWitness.extLegal,
       Link.SourceWitness.keepsBounded⟩)
     (fun ⟨g, hg, hn⟩ => absurd (hind g hg) hn) hf0r FrontendBundleWitnessPeak.d
-    (intact file) (by rw [hfs]; exact hoc) (by rw [hfs]; exact clifRun _)
+    -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
+    (intact file) (by rw [hfs, show pbMax J = 0 by native_decide]; exact hoc)
+    (by rw [hfs]; exact clifRun _)
     (pre_entry hfs clifEntry) hexp rfl (Front.Mem.ren_symm_ren σ cm).symm hd M
   have hrun0 := pre_run hP run_eq
   have hrun0r : Clif.runLoop (helperEnv.ren σ.symm) (Front.rawLink us scd) M (cs.ren σ.symm) =

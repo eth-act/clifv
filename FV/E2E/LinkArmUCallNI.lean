@@ -21,7 +21,7 @@ variable {κ : Nat → Clif.Function → Nat}
 
 /-- **A call of a function `h` of `P` at depth `M + 1` on the linked machine with unwinding,
 with a fact `Q` of the callee's activation** (`progCallUN` from `ThmUQ Q` one level down; with
-`ThmGU`, the per-state facts `RunGoodLU` of the callee's run). -/
+`ThmGU`, the per-state facts `RunGoodLU` of the callee's run; with `hpb`, #581, as `progCall`). -/
 theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
     {Q : Nat → Clif.Function → Arm.ArmState → Prop}
     (ih : L.ThmUQ Q κ M) {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
@@ -31,6 +31,7 @@ theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ M h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ M h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State}
     (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
@@ -122,6 +123,10 @@ theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
   have hsp0 : spv cn = spv w := hcOk.world.1 _ (by simp [Masked])
   have hspw₀ : spv w₀ = spv w - BitVec.ofNat 64 (frameDrop (L.A h).af) := by
     rw [spv_bodyOf, spv_enterAt, hsp0]
+  -- the callee's stack probes zero only bytes of its frame and of its budget, inside `F` (#581)
+  have hnpw : ∀ u : Arm.ArmState, spv u = spv w → ∀ a, ¬ F a →
+      probeHit (L.A h).af (spv (enterAt (L.A h) u)) a = false := fun u hu a ha => by
+    rw [spv_enterAt, hu]; exact probeHit_of_notF hpb hroom (fun a hb => (hdead a hb).1) ha
   obtain ⟨-, -, hB⟩ := off_toNat 0 (spv w) (frameDrop (L.A h).af) (by omega)
   -- the callee's outgoing area (in the caller's dead stack) is outside the callee's `F`
   let ib := (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase
@@ -207,10 +212,12 @@ theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
           hcOk.world.1 _ (by simp [Masked])]
         exact herr
       · rw [← hmr.bytes a b hv hb]
-        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf, mem_enterAt]
-        rw [L.mem_canon, mem_withImg, if_neg]
+        have hnF : ¬ F (BitVec.ofNat 64 a) := fun hf =>
+          (hmr.valid a 1 hv).2 0 (by omega) (by simpa using hf)
+        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf]
+        rw [probeMem_of_not (hnpw cn hsp0 _ hnF), mem_enterAt, L.mem_canon, mem_withImg, if_neg]
         intro hi
-        exact (hmr.valid a 1 hv).2 0 (by omega) (by simpa using himgF _ hi)
+        exact hnF (himgF _ hi)
     · intro loc v hmem
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hmem
       cases loc with
@@ -225,8 +232,9 @@ theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
         rw [show Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w₀ =
             Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w from
           read_mem_bytes_congr _ _ (fun k hk => by
-            simp only [w₀, mem_bodyOf, mem_enterAt]
-            rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
+            simp only [w₀, mem_bodyOf]
+            rw [probeMem_of_not (hnpw cn hsp0 _ (hsav off v hmem k hk)), mem_enterAt, L.mem_canon,
+              mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
         exact hargs.2.2 off v hmem
       | reg r =>
         obtain ⟨i, hr, hv⟩ := reg_zip _ _ hi
@@ -319,7 +327,7 @@ theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
       fun a ha => by rw [mem_enterAt]; exact himgt a ha, hbw⟩
     · rw [r_enterAt _ _ (by simp) (by simp)]; exact herrt
     · rw [hspt]; exact hal
-    · refine stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_
+    · refine ⟨stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_, hpb⟩
       rw [hspt, ← hdrop] at hb
       exact (hdead a hb).2 (hcode t a ha)
     · rw [hspt]; exact ha.2
@@ -369,7 +377,10 @@ theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
         rw [r_bodyOf _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp)]
         exact herrt
       · have := hmt.bytes a b hv hb
-        simp only [Arm.read_mem, Arm.read_store, w₀', mem_bodyOf, mem_enterAt] at this ⊢
+        have hnF : ¬ F (BitVec.ofNat 64 a) := fun hf =>
+          (hmt.valid a 1 hv).2 0 (by omega) (by simpa using hf)
+        simp only [Arm.read_mem, Arm.read_store, w₀', mem_bodyOf] at this ⊢
+        rw [probeMem_of_not (hnpw t hst _ hnF), mem_enterAt]
         exact this
     · refine ⟨fun f hf => ?_, fun a ha => ?_, by simp [w₀, w₀']⟩
       · by_cases h29 : f = .GPR 29#5
@@ -390,8 +401,9 @@ theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
           by_cases hf : Fh a
           · exact ha (.inl hf)
           · exact ha (.inr ⟨hz, hf⟩)
-        simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
-        rw [hcOk.world.2.1 a (fun hf => hnZ (hFZ a hf)), hZ.2.1 a hnZ]
+        simp only [w₀, w₀', mem_bodyOf]
+        exact probeMem_congr (by rw [spv_enterAt, spv_enterAt, hsp0, hst])
+          (by rw [mem_enterAt, mem_enterAt, hcOk.world.2.1 a (fun hf => hnZ (hFZ a hf)), hZ.2.1 a hnZ])
     · intro r v hm
       have hrl : r ∈ regLocs h.sig :=
         List.mem_filterMap.mpr ⟨.reg r, (List.of_mem_zip hm).1, rfl⟩
@@ -402,8 +414,9 @@ theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
     · intro off v hm k hk
       rw [hx29, fp_off_eq]
       have hnF := hsav off v hm k hk
-      simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
-      rw [hstkt off v hm k hk, hcOk.world.2.1 _ hnF]
+      simp only [w₀, w₀', mem_bodyOf]
+      exact probeMem_congr (by rw [spv_enterAt, spv_enterAt, hsp0, hst])
+        (by rw [mem_enterAt, mem_enterAt, hstkt off v hm k hk, hcOk.world.2.1 _ hnF])
   -- the caller-compatible state from the non-interference clause (with `Z = F`)
   have hcomp : ∀ t, L.CallerOk F h uses w t →
       (∀ a, F a → F a) ∧ SameWorld F t w ∧ (∀ a, L.Img a → t.mem a = L.imgMem a) ∧
@@ -505,7 +518,8 @@ arguments and memory, when the callee run with unwinding (`crunX (M + 1)`) retur
 outcome of `h` that the linked machine's call returns with (not raising) from every caller state
 compatible with `w` (`CallerOk`); when it ends `unwound`, an exception object related to the CLIF
 exception and a world related to the CLIF memory that the linked machine's call raises with from
-every compatible caller state, leaving the callee's frame as the ABI return (`ActUnw`). -/
+every compatible caller state, leaving the callee's frame as the ABI return (`ActUnw`). With
+`hpb` (#581, as `progCall`). -/
 theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
     (ih : L.ThmU κ M) {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
     (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
@@ -514,6 +528,7 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ M h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ M h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State}
     (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
@@ -563,7 +578,7 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
           ActUnw (Arm.r .PC t + 4) Z
             (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a)
             obj wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t)))) := by
-  have H := L.progCallUNQ hL hU (L.thmUQ_true ih) hpf hcal himgF herr hal hroom hdead hmr hargs
+  have H := L.progCallUNQ hL hU (L.thmUQ_true ih) hpf hcal himgF herr hal hroom hdead hpb hmr hargs
     hsav hpl hinit
   refine ⟨fun rvals cm' hr => ?_, fun e cm' hr => ?_⟩
   · obtain ⟨us, outs, wf, a1, a2, a3, a4, a5, a6, a7⟩ := H.1 rvals cm' hr

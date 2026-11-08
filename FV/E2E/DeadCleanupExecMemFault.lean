@@ -715,24 +715,27 @@ theorem binary_correct_exec_memtrapF_rw {D : List Clif.DataObject} (hI : okBClea
       DeadCleanupStackBound.bud I f := fun M => by simp [LinkSys.hybrid, hb, hbud]
   obtain ⟨N, ht, hgood⟩ := backend_correct_program_memtrapW_budget _ hL (hκ.extImg _ _ _) hfm
     (compiledCleanup_of (B := B) (F := worldF I f (DeadCleanupStackBound.bud I f) r) hI hfm) M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (by rw [hκf]; exact hgfree) (fun a _ => rfl) hbe
+    (by rw [hκf]; exact ⟨hres, by rw [← hκf M]; exact hκ.2 M f hfm⟩) (by rw [hκf]; rfl)
+    (by rw [hκf]; exact hgfree) (fun a _ => rfl) hbe
     hargs hr.entry hsav hrel hpl htr hmf hrun
   rw [mach_sysSK] at ht
   exact exec_memtrapF_of_model hI hcm hbin hnogot hB hH hfm hX ho.pc
     (by simp only [xreg, r_modelOf]; exact hent.raOutside) hmap.code ht hgood
 
 /-- **`binary_correct_exec_memtrapF_rw` for the run's peak call depth** (any program, recursive
-ones included). -/
+ones included; the stack `frameDrop + (D * d + pbMax I)`, #581: with the stack probes of the
+deepest activation). -/
 theorem binary_correct_exec_memtrapF_rw_peak {D : List Clif.DataObject} (hI : okBCleanup I = true)
     (hcm : codeMapB I (tabOf I.resultsCleanup) = true) (hbin : DeadCleanupBinCheck.BinOk I D file)
     (hnogot : ∀ a, ¬ GotSlot I file a) (B : BaseEnv) (hB : BaseOk (sys I B)) (hH : HooksSim I B)
     {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f) (F d : Nat)
     {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r
+      args cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicitM (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs)
     {mp : ArmFault.MemMap} (hmf : MapFaults mp (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs)
-    (hmap : MapRelRW mp I f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (hmap : MapRelRW mp I f (frameDrop (art I f).af + (I.D * d + pbMax I)) r args cs.mem)
     {tc : Clif.TrapCode} (hrun : Clif.runLoop B.env (prog I) (F + 1) cs = .trapped tc) :
     ExecTrapF mp I B file f tc r := by
   have hfm := (Clif.Program.func?_some hf).1
@@ -740,8 +743,9 @@ theorem binary_correct_exec_memtrapF_rw_peak {D : List Clif.DataObject} (hI : ok
     sysSK_entry hI hbin hB hfm hX ho hmap.nw hr
   obtain ⟨N, ht, hgood⟩ := backend_correct_program_memtrapW_peak _ hL
     ((LinkSys.budget_K _ (okBCleanup_sound hI (baseOk_F hB) fun _ h => .inr h)).extImg _ _ _) hfm
-    (compiledCleanup_of (B := B) (F := worldF I f (I.D * d) r) hI hfm)
-    F d hent hres rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl hd htr hmf hrun
+    (compiledCleanup_of (B := B) (F := worldF I f (I.D * d + pbMax I) r) hI hfm)
+    F d hent ⟨hres, ((LinkSys.budget_K _ (okBCleanup_sound hI (baseOk_F hB) fun _ h => .inr h)).extImg
+      _ _ _).2 d f hfm⟩ rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl hd htr hmf hrun
   rw [mach_sysSK] at ht
   exact exec_memtrapF_of_model hI hcm hbin hnogot hB hH hfm hX ho.pc
     (by simp only [xreg, r_modelOf]; exact hent.raOutside) hmap.code ht hgood

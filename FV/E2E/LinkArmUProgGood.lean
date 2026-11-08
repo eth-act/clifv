@@ -90,7 +90,7 @@ theorem backend_correct_program_coreUG (L : LinkSysU) (hL : L.Ok)
   have hWE : L.WorldEntry κ M f L.F args cs w₀ := by
     refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
     · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
-    · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm k hk hk' => ?_
+    · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs (fun off v hm k hk hk' => ?_) hres
       rw [hF] at hk'
       rcases hk' with hw | hi
       · exact stackArgsAvoid_frameW_pipeline hc hres hent hargs off v hm k hk hw
