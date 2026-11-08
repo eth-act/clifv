@@ -33,20 +33,20 @@ theorem arm_entryCRN_fC {env : Clif.Env} (henv : env.extern "ld" = none) {c : Bi
         Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs →
         args.map (·.ty) = B0.params.map (·.2) → args.map (·.ty) = fC.sig.params.map (·.ty) →
         RelW ΓC fC c slots cs.mem w₀C → ArgsAtEntry RC.F fC.sig args w₀C →
-        PRun Policy.arm MC2 (OkPriv RC) (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize).length RC.s0, mon) ls t' →
+        PRun Policy.arm MC2 (OkPriv RC) (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length RC.s0, mon) ls t' →
         ∃ k trS t ψ, k ≤ ls.length ∧ CRun env pCL (.run cs) trS t ∧
           Refines Maps (PrivA RC) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
           (k = ls.length ∨ Stop env pCL t ∨
             (∃ tE s' vV' vP' cM', PRun Policy.arm MC2 (OkPriv RC)
-                (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize).length RC.s0, mon) (ls.take k) tE ∧
+                (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length RC.s0, mon) (ls.take k) tE ∧
               RelQ RC tE (.run cM') ∧ Pause RC (.run cM') ∧ t = .run s' ∧ AtCallS s' ∧
               Match fC ctx R gn bl A (RelW ΓC fC c) slots s' vV' ∧
               PMatch vcC RC.vc (csem RC.F RC.ctx RC.X) (cEvs RC.F RC.ctx) L ss' (.run vV') (.run vP') ∧
-              MatchRun cc ins ckeep (fun r => locVal RC.fr (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize).length RC.s0) (.reg r)) cM' vP') ∨
+              MatchRun cc ins ckeep (fun r => locVal RC.fr (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length RC.s0) (.reg r)) cM' vP') ∨
             (∃ tE s', PRun Policy.arm MC2 (OkPriv RC)
-                (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize).length RC.s0, mon) (ls.take k) tE ∧ t = .run s' ∧
+                (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length RC.s0, mon) (ls.take k) tE ∧ t = .run s' ∧
               AtRetS s' ∧ RetEnd RC 0x4000#64 env pCL (RelW ΓC fC c) slots
-                (fun r => locVal RC.fr (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize).length RC.s0) (.reg r)) tE.1 s')) := by
+                (fun r => locVal RC.fr (iterN RC.step (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length RC.s0) (.reg r)) tE.1 s')) := by
   obtain ⟨ctx, st0, R, gn, bl, A, H, hchk⟩ := driverC henv c
   obtain ⟨L, ss, ss', H3, hm3⟩ := CallLayers.prep_init (vc := vcC) (vcp := RC.vc)
     CallResumeL.Witness.prepC

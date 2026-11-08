@@ -150,6 +150,10 @@ theorem keeps_visit (hg : ∀ r, RegCls cls (g r)) (i : MInst) :
   case call info | tryCall info _ =>
     obtain ⟨dest, uses, defs⟩ := info
     cases dest <;> simp only [MInst.visitOperands, MInst.mapRegs] <;> repeat keeps_step hg
+  case atomicRmwLoop ty op fl a o d s1 s2 =>
+    simp only [MInst.visitOperands, MInst.mapRegs]
+    cases hx : op == .xchg <;> simp only [Bool.false_eq_true, ↓reduceIte, pure_bind] <;>
+      repeat keeps_step hg
   all_goals simp only [MInst.visitOperands, MInst.mapRegs]
   all_goals repeat keeps_step hg
 

@@ -173,7 +173,8 @@ def factsB : Bool :=
   LinkWitness.isRet run && decide (LinkWitness.retVals run = [⟨.i128, 8#64 ++ 24#64⟩]) &&
   Clif.depthB helperEnv J.srcProg d M cs &&
   (tabOf J.results).all (fun e => decide (e.2.base.toNat + 4 * e.2.fb.words.size + 4 ≤ 2 ^ 32)) &&
-  !StackBound.goodN J n && decide (frameDrop (artOf J.results f).af + J.D * d ≤ 2 ^ 20) &&
+  !StackBound.goodN J n &&
+    decide (frameDrop (artOf J.results f).af + (J.D * d + pbMaxOf J.results) ≤ 2 ^ 20) &&
   (prog J).funcs.all (fun g => !Backend.hasTls g) &&
   (prog J).funcs.all (fun g => g.externs.all fun e =>
     ((prog J).func? e.2.name).isSome || !Clif.Rust.isDivHelper e.2.name) &&
@@ -195,7 +196,8 @@ theorem facts :
     Clif.depthB helperEnv J.srcProg d M cs = true ∧
     (tabOf J.results).all (fun e => decide (e.2.base.toNat + 4 * e.2.fb.words.size + 4 ≤ 2 ^ 32))
       = true ∧
-    StackBound.goodN J n = false ∧ frameDrop (artOf J.results f).af + J.D * d ≤ 2 ^ 20 ∧
+    StackBound.goodN J n = false ∧
+    frameDrop (artOf J.results f).af + (J.D * d + pbMaxOf J.results) ≤ 2 ^ 20 ∧
     (prog J).funcs.all (fun g => !Backend.hasTls g) = true ∧
     (prog J).funcs.all (fun g => g.externs.all fun e =>
       ((prog J).func? e.2.name).isSome || !Clif.Rust.isDivHelper e.2.name) = true ∧
@@ -382,7 +384,8 @@ theorem compileExe_source_peak_witness :
     StackBound.CycleFrom (StackBound.Calls J J.results) (legalize fs) ∧
     Clif.DepthLe helperEnv J.srcProg d cs ∧
     OutsideCall J (BinCheck.roByte J spec.data) (legalize fs)
-      (frameDrop (art J (legalize fs)).af + J.D * d) (r (memOf file)) args' cs'.mem ∧
+      (frameDrop (art J (legalize fs)).af + (J.D * d + pbMaxOf J.results)) (r (memOf file)) args'
+      cs'.mem ∧
     Clif.runLoop helperEnv J.srcProg M cs = .returned [⟨.i128, 8#64 ++ 24#64⟩]
       (LinkWitness.retMem run) ∧
     ∃ k, ArmRet ra0 (r (memOf file)) (runX (step J helperBase file) k (r (memOf file))) ∧
@@ -399,7 +402,8 @@ theorem compileExe_source_peak_witness :
     intro g hg e he hn
     have := List.all_eq_true.mp (List.all_eq_true.mp hdivB g hg) e he
     simpa [hn] using this
-  have hst' : frameDrop (art J (legalize fs)).af + J.D * d ≤ 2 ^ 20 := by rw [hl]; exact hst
+  have hst' : frameDrop (art J (legalize fs)).af + (J.D * d + pbMaxOf J.results) ≤ 2 ^ 20 := by
+    rw [hl]; exact hst
   have hoc := outsideCall (memOf file) (BinCheck.roByte J spec.data) hst'
   have h := compileExe_correct_source_peak_helper compile_eq hsrc
     (fun g hg => by simpa using List.all_eq_true.mp htls g hg) hdiv

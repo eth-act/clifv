@@ -158,10 +158,16 @@ theorem st_run_throw {α : Type} (e : String) (s : Array Operand) :
 theorem unstored_rmw (t : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (p x : Reg) (d d1 d2 : Nat) :
     ∀ k ∈ unstored (.atomicRmwLoop t op fl p x (.vreg d .int) (.vreg d1 .int) (.vreg d2 .int)),
       k = d1 ∨ k = d2 := by
-  cases hp : p.allocatable <;> cases hx : x.allocatable <;> cases p <;> cases x <;>
-    simp_all [unstored, MInst.operands, MInst.visitOperands, storedDefs, MInst.keptDefs,
-      MInst.isTerminator, OpSpec.fixedUse, OpSpec.fixedDef, MInst.isBranch, MInst.isRet,
-      st_run_throw]
+  by_cases hop : op = .xchg
+  · subst hop
+    cases hp : p.allocatable <;> cases hx : x.allocatable <;> cases p <;> cases x <;>
+      simp_all [unstored, MInst.operands, MInst.visitOperands, storedDefs, MInst.keptDefs,
+        MInst.isTerminator, OpSpec.fixedUse, OpSpec.fixedDef, MInst.isBranch, MInst.isRet,
+        st_run_throw]
+  · cases hp : p.allocatable <;> cases hx : x.allocatable <;> cases p <;> cases x <;>
+      simp_all [unstored, MInst.operands, MInst.visitOperands, storedDefs, MInst.keptDefs,
+        MInst.isTerminator, OpSpec.fixedUse, OpSpec.fixedDef, MInst.isBranch, MInst.isRet,
+        st_run_throw]
 
 set_option maxHeartbeats 4000000 in
 theorem unstored_cas (t : CTy) (fl : Clif.MemFlags) (p e x : Reg) (d d1 : Nat) :

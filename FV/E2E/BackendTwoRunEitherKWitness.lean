@@ -42,12 +42,12 @@ theorem r_twoRunLERWZIUPF_eitherK_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : Bi
     ∀ vals cm, Clif.runLoop env Lsl.P.bare fuel cs = .returned vals cm →
       ∃ N, RetAgreeX (frameDrop (Lsl.A fR).af + K) (spv s)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + N +
+          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) t0)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + N +
+          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) s) ∧
-        ∀ i < (prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + N +
+        ∀ i < (prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1),
           ∃ Z : BitVec 64 → Prop, (∀ a, Z a → F a) ∧
             StEqOutX Z (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa) i t0)
@@ -102,12 +102,12 @@ theorem source_twoRunLERWZIUPF_eitherK :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) ∧
-            ∀ i < (prologueLines af.saves af.frameSize).length + N +
+            ∀ i < (prologueLines af.saves af.frameSize af.isCaller).length + N +
                 ((epiLines af.saves af.frameSize).length + 1),
               ∃ Z : BitVec 64 → Prop, (∀ a, Z a → F a) ∧
                 StEqOutX Z (iterN (ArmStepX xQuiet idHooks fa) i t0)

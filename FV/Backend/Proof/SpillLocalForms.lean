@@ -145,8 +145,8 @@ macro_rules
 theorem spillInstOk_rmwLoop (t : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) {p x d d1 d2 : Nat}
     (h1 : d ≠ d1) (h2 : d ≠ d2) (h3 : d1 ≠ d2) :
     SpillInstOk (.atomicRmwLoop t op fl (.vreg p .int) (.vreg x .int) (.vreg d .int) (.vreg d1 .int)
-      (.vreg d2 .int)) :=
-  ⟨_, rfl, by opsok_concrete, fun _ h => by cases h⟩
+      (.vreg d2 .int)) := by
+  cases op <;> exact ⟨_, rfl, by opsok_concrete, fun _ h => by cases h⟩
 
 theorem spillInstOk_casLoop (t : CTy) (fl : Clif.MemFlags) {p e x d d1 : Nat} (h1 : d ≠ d1) :
     SpillInstOk (.atomicCasLoop t fl (.vreg p .int) (.vreg e .int) (.vreg x .int) (.vreg d .int)

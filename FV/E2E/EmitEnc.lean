@@ -981,8 +981,8 @@ theorem ctl_enc {c : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : Array R
     obtain ⟨n4, rfl⟩ := vregInt_eq h4
     obtain ⟨n5, rfl⟩ := vregInt_eq h5
     simp only [immOkB, Bool.or_eq_true, beq_iff_eq] at himm
-    inv_op
-    exact linesEnc_rmw himm
+    -- the operands depend on the operation (`xchg`: no x28 def)
+    cases op <;> (inv_op; exact linesEnc_rmw himm)
   case atomicCasLoop ty fl a e r d s1 =>
     simp only [ctlInstOk, Bool.and_eq_true] at hok
     obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hok
@@ -1222,6 +1222,23 @@ theorem pushReg_float {saves : List Reg} (hsv : SavesOk saves) :
   · cases hx
   · exact ⟨n, rfl, h1, h2⟩
 
+/-- The stack probes (`sub sp, sp, #4096`, `stur wzr, [sp]`, `add sp, sp, #4096·n`, `n ≤ 3`) are
+encodable. -/
+theorem probeLines_enc (total : Nat) :
+    ∀ i t, Line.ins i t ∈ probeLines total → i.encodable = true := by
+  intro i t h
+  unfold probeLines at h
+  simp only at h
+  split at h
+  · cases h
+  · rcases List.mem_append.mp h with h | h
+    · rcases probeSteps_mem h with h | h <;>
+        (simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; enc)
+    · have := probeCount_le_three total
+      simp only [List.mem_singleton, Line.ins.injEq] at h
+      obtain ⟨rfl, -⟩ := h
+      enc
+
 /-- The prologue (fp/lr, the pushes of the callee-saved registers, the frame) is encodable. -/
 theorem aEnc_prologue (c : FnCtx) {af : AFunc} (hsv : SavesOk af.saves) : AEnc c af .prologue := by
   intro ps ls ps' h i t hi
@@ -1229,9 +1246,10 @@ theorem aEnc_prologue (c : FnCtx) {af : AFunc} (hsv : SavesOk af.saves) : AEnc c
   obtain ⟨rfl, -⟩ := h
   split at hi
   · simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with (((h | h) | h) | h) | h
+    rcases hi with ((((h | h) | h) | h) | h) | h
     · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; enc
     · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; enc
+    · exact probeLines_enc _ i t h
     · exact pushLines_enc true (pushReg_int hsv) i t h
     · exact pushLines_enc false (pushReg_float hsv) i t h
     · exact frameAdj_enc true _ i t h

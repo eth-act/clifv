@@ -198,8 +198,9 @@ theorem oracleAt_of_call (hL : L.Ok) (hκ : L.Budget κ) {M' : Nat} (hdt : L.Det
   -- the slot bytes
   have hslot : L.NeedSlots → ∀ a, L.SlotByte h c a →
       (ini.adv x).bytes ((ini.adv x).next + 1) a =
-        (L.worldPR κ (M' + 1) h (P (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))
-          (R (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)) w).mem
+        probeMem (L.A h).af (L.worldPR κ (M' + 1) h
+          (P (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i))
+          (R (callsBefore (L.mach (M' + 1) g) (L.A g).fa (L.A g).base s i)) w)
           (BitVec.ofNat 64 a) := by
     intro _ a ha
     have h1 : slotted h = 1 := by
@@ -213,7 +214,9 @@ theorem oracleAt_of_call (hL : L.Ok) (hκ : L.Budget κ) {M' : Nat} (hdt : L.Det
       stackBelow_mono hbel (by omega)
     have e1 := hsb h1 a (by rw [hst]; exact ha)
     simp only [Clif.SlotInit.adv]
-    rw [hx, e1, hrgnQ _ (by rw [hst]; exact stackBelow_mono hrg hbud), L.mem_worldPR, worldP,
+    rw [hx, e1]
+    refine probeMem_congr (hst.trans hspW.symm) ?_
+    rw [hrgnQ _ (by rw [hst]; exact stackBelow_mono hrg hbud), L.mem_worldPR, worldP,
       mem_overlay_in (show L.calleeRgn κ (M' + 1) h w (BitVec.ofNat 64 a) by
         unfold calleeRgn; rw [hspw]; exact hrg)]
   -- the actual callee run's table

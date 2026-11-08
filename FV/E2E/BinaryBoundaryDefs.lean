@@ -51,6 +51,10 @@ abbrev prog (I : SemanticStackBound.CompilerInput) : Clif.Program := progOf I.re
 /-- The compiled image of `f` (`SemanticStackBound.ofInput`'s `A f`). -/
 abbrev art (I : SemanticStackBound.CompilerInput) (f : Clif.Function) : Art := artOf I.results f
 
+/-- The most bytes a function's stack probes write below its body's `sp` (#581;
+`SemanticStackBound.ofInput`'s `pbMax`): the depth-`M` stack budget is `D * M + pbMax I`. -/
+abbrev pbMax (I : SemanticStackBound.CompilerInput) : Nat := pbMaxOf I.results
+
 /-- The program's code addresses (`SemanticStackBound.ofInput`'s `Img`). -/
 abbrev img (I : SemanticStackBound.CompilerInput) : BitVec 64 → Prop := ImgT (tabOf I.results)
 
@@ -104,14 +108,15 @@ structure OutsideCall (I : SemanticStackBound.CompilerInput) (roB : BitVec 64 �
   stackFree : ∀ a, img I a → ¬ StackBelow N (spv r) a
   /-- the arguments where AAPCS64 puts them (stack arguments outside the code) -/
   args : ArgsOut (img I) f.sig args r
-  /-- the live CLIF bytes outside the executable's read-only CLIF data (`roB`) are the
-  machine's -/
-  bytes : ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → roB (BitVec.ofNat 64 a) = none →
-    Arm.read_mem (BitVec.ofNat 64 a) r = b
-  /-- the live CLIF bytes at the read-only CLIF data are the CLIF image's (a CLIF-level fact: a
-  store into read-only data is stuck) -/
+  /-- the live CLIF bytes are the machine's after `f`'s prologue stack probes (`probeMem`, #581:
+  the probes zero bytes of `f`'s frame, which can be CLIF slot bytes; the machine's own bytes for a
+  function without probes) -/
+  bytes : ∀ a b, cm.valid a 1 = true → cm.bytes a = some b →
+    probeMem (art I f).af r (BitVec.ofNat 64 a) = b
+  /-- the live CLIF bytes at the read-only CLIF data that `f`'s stack probes do not zero are the
+  CLIF image's (a CLIF-level fact: a store into read-only data is stuck) -/
   image : ∀ a b b', cm.valid a 1 = true → cm.bytes a = some b → roB (BitVec.ofNat 64 a) = some b' →
-    b = b'
+    probeHit (art I f).af (spv r) (BitVec.ofNat 64 a) = false → b = b'
   /-- the live CLIF allocations fit the address space, hold no code, and lie in the free stack
   only in `f`'s CLIF slot region -/
   valid : ∀ a n, cm.valid a n = true → a + n ≤ 2 ^ 64 ∧ ∀ k < n,

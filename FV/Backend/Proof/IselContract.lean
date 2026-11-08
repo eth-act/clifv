@@ -922,6 +922,77 @@ def _root_.Backend.AtomicRmwLoopOp.clif : AtomicRmwLoopOp → Clif.AtomicRmwOp
   | .add => .add | .sub => .sub | .and => .and | .nand => .nand | .xor => .xor | .or => .or
   | .smax => .smax | .smin => .smin | .umax => .umax | .umin => .umin | .xchg => .xchg
 
+/-- The fixed def registers of an `atomic_rmw` loop, in operand order (`mod.rs:473`,
+`MInst.visitOperands`): the old value x27, the `stlxr` status x24 and, unless the operation is
+`xchg` (whose loop stores the operand x26 and never writes x28), the new value x28. -/
+def _root_.Backend.AtomicRmwLoopOp.defRegs (op : AtomicRmwLoopOp) : List Reg :=
+  if op == .xchg then [.x 27, .x 24] else [.x 27, .x 24, .x 28]
+
+theorem _root_.Backend.AtomicRmwLoopOp.defRegs_xchg :
+    AtomicRmwLoopOp.defRegs .xchg = [.x 27, .x 24] := rfl
+
+theorem _root_.Backend.AtomicRmwLoopOp.defRegs_of_ne {op : AtomicRmwLoopOp} (h : op ≠ .xchg) :
+    op.defRegs = [.x 27, .x 24, .x 28] := by
+  simp [AtomicRmwLoopOp.defRegs, h]
+
+theorem _root_.Backend.AtomicRmwLoopOp.defRegs_take_one (op : AtomicRmwLoopOp) :
+    op.defRegs.take 1 = [.x 27] := by
+  unfold AtomicRmwLoopOp.defRegs; split <;> rfl
+
+/-- The register numbers of `AtomicRmwLoopOp.defRegs`. -/
+def _root_.Backend.AtomicRmwLoopOp.defNums (op : AtomicRmwLoopOp) : List Nat :=
+  if op == .xchg then [27, 24] else [27, 24, 28]
+
+theorem _root_.Backend.AtomicRmwLoopOp.defRegs_eq (op : AtomicRmwLoopOp) :
+    op.defRegs = op.defNums.map Reg.x := by
+  unfold AtomicRmwLoopOp.defRegs AtomicRmwLoopOp.defNums; split <;> rfl
+
+/-- The operands of an `atomic_rmw` loop of int vregs (`MInst.visitOperands`, `mod.rs:473`): the
+fixed uses x25 (address) and x26 (operand), then the fixed defs `AtomicRmwLoopOp.defRegs`. -/
+def rmwOps (op : AtomicRmwLoopOp) (va vo vd v1 v2 : Nat) : Array Operand :=
+  #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
+    ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩] ++
+    if op == .xchg then #[] else #[⟨v2, .int, .def, .late, .fixed (.x 28)⟩]
+
+/-- The allocation of the operands of an `atomic_rmw` loop: their fixed registers. -/
+def rmwRegs (op : AtomicRmwLoopOp) : Array Reg :=
+  #[.x 25, .x 26, .x 27, .x 24] ++ if op == .xchg then #[] else #[.x 28]
+
+theorem operands_rmwLoop (t : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (p x d d1 d2 : Nat) :
+    (MInst.atomicRmwLoop t op fl (.vreg p .int) (.vreg x .int) (.vreg d .int) (.vreg d1 .int)
+      (.vreg d2 .int)).operands = .ok (rmwOps op p x d d1 d2) := by
+  cases op <;> rfl
+
+/-- The allocated `atomic_rmw` loop: its fixed registers (x28 also for `xchg`, whose visitor puts
+it in place of the unvisited scratch2). -/
+theorem assign_rmwLoop (t : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (p x d d1 d2 : Nat) :
+    (MInst.atomicRmwLoop t op fl (.vreg p .int) (.vreg x .int) (.vreg d .int) (.vreg d1 .int)
+      (.vreg d2 .int)).assign (rmwRegs op) =
+      .ok (.atomicRmwLoop t op fl (.x 25) (.x 26) (.x 27) (.x 24) (.x 28)) := by
+  cases op <;> rfl
+
+theorem vuses_rmwOps {V : Type} (op : AtomicRmwLoopOp) (p x d d1 d2 : Nat) (ρ : Nat → V) :
+    vuses (rmwOps op p x d d1 d2) ρ = [ρ p, ρ x] := by
+  cases op <;> rfl
+
+theorem rmwOps_defs_length (op : AtomicRmwLoopOp) (p x d d1 d2 : Nat) :
+    ((rmwOps op p x d d1 d2).toList.filter Operand.isDef).length = op.defRegs.length := by
+  cases op <;> rfl
+
+theorem vuseNums_rmwLoop (t : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (p x d d1 d2 : Nat) :
+    vuseNums (MInst.atomicRmwLoop t op fl (.vreg p .int) (.vreg x .int) (.vreg d .int)
+      (.vreg d1 .int) (.vreg d2 .int)) = [p, x] := by
+  cases op <;> rfl
+
+theorem vdefs_rmwLoop_mem (t : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (p x d d1 d2 : Nat)
+    {v : Nat} (h : v ∈ vdefs (MInst.atomicRmwLoop t op fl (.vreg p .int) (.vreg x .int)
+      (.vreg d .int) (.vreg d1 .int) (.vreg d2 .int))) : v = d ∨ v = d1 ∨ v = d2 := by
+  have e : vdefs (MInst.atomicRmwLoop t op fl (.vreg p .int) (.vreg x .int) (.vreg d .int)
+      (.vreg d1 .int) (.vreg d2 .int)) = [d, d1] ++ if op == .xchg then [] else [d2] := by
+    cases op <;> rfl
+  rw [e] at h
+  split at h <;> simp at h <;> omega
+
 /-- **What the memory rules need of the VCode semantics** (M6 discharges it for `csem F ctx X`
 with `ctx.slotBase = sb` and `X.sym n 0` the address `b` of `n` when `syms n = some b`): a
 load or store through an addressing mode whose access avoids the frame addresses `F`
@@ -934,7 +1005,8 @@ runs once) read the old value into their first def (`atomic_rmw`: its low bits; 
 loops of `i8`/`i16` sign-extend it in place) and write the new one — the operation of
 `atomic_rmw` on the old value and the operand's low bits, the replacement value of
 `atomic_cas` if the old value equals the expected value's low bits — with a world that agrees
-up to the flags (`SameWorldNF`; the scratch defs' values are unspecified). `tls_value`
+up to the flags (`SameWorldNF`; the scratch defs' values are unspecified; an `atomic_rmw` loop
+has one output per register of `AtomicRmwLoopOp.defRegs`, as many as its defs). `tls_value`
 (agent/stack-tls-proof, one thread): the TLSDESC sequence of a linked symbol defines its
 address in the first def (the thread pointer, unspecified here, in the second) with a world
 that agrees up to the flags (the resolver may change them). -/
@@ -967,10 +1039,10 @@ def MemRefines (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat
       SameWorld F w' (Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 v).setWidth (ty.bytes * 8)) w)) ∧
   (∀ (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (ra ro rd r1 r2 : Nat) (u x : CV)
       (w : Arm.ArmState),
-    AtomTy ty → Avoids F ty.bytes (lo64 u) → ∃ w' o0 o1 o2,
+    AtomTy ty → Avoids F ty.bytes (lo64 u) → ∃ w' o0 os,
     isem (.atomicRmwLoop ty op fl (.vreg ra .int) (.vreg ro .int) (.vreg rd .int) (.vreg r1 .int)
-        (.vreg r2 .int)) [u, x] w = some ([o0, o1, o2], w', .next) ∧
-      o0.setWidth (ty.bytes * 8) = Arm.read_mem_bytes ty.bytes (lo64 u) w ∧
+        (.vreg r2 .int)) [u, x] w = some (o0 :: os, w', .next) ∧
+      (o0 :: os).length = op.defRegs.length ∧ o0.setWidth (ty.bytes * 8) = Arm.read_mem_bytes ty.bytes (lo64 u) w ∧
       SameWorldNF F w' (Arm.write_mem_bytes ty.bytes (lo64 u)
         (Clif.Sem.atomicRmw op.clif (Arm.read_mem_bytes ty.bytes (lo64 u) w)
           ((lo64 x).setWidth (ty.bytes * 8))) w)) ∧
@@ -1024,10 +1096,10 @@ def MemRefinesR (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
   (∀ (ty : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (ra ro rd r1 r2 : Nat) (u x : CV)
       (w : Arm.ArmState),
     AtomTy ty → Avoids F ty.bytes (lo64 u) → (∀ k < ty.bytes, Rd (lo64 u + BitVec.ofNat 64 k)) →
-    ∃ w' o0 o1 o2,
+    ∃ w' o0 os,
     isem (.atomicRmwLoop ty op fl (.vreg ra .int) (.vreg ro .int) (.vreg rd .int) (.vreg r1 .int)
-        (.vreg r2 .int)) [u, x] w = some ([o0, o1, o2], w', .next) ∧
-      o0.setWidth (ty.bytes * 8) = Arm.read_mem_bytes ty.bytes (lo64 u) w ∧
+        (.vreg r2 .int)) [u, x] w = some (o0 :: os, w', .next) ∧
+      (o0 :: os).length = op.defRegs.length ∧ o0.setWidth (ty.bytes * 8) = Arm.read_mem_bytes ty.bytes (lo64 u) w ∧
       SameWorldNF F w' (Arm.write_mem_bytes ty.bytes (lo64 u)
         (Clif.Sem.atomicRmw op.clif (Arm.read_mem_bytes ty.bytes (lo64 u) w)
           ((lo64 x).setWidth (ty.bytes * 8))) w)) ∧

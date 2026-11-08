@@ -191,13 +191,88 @@ def configure (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
 /-- The start of the `unsupported` reason of a function that `configure` rejects. -/
 def rejectionPrefix : String := "stock configuration unsupported for this function: "
 
-/-- Allocate, then apply `configure`. `clif name` is the CLIF of function `name`. Each rejection
-is recorded in `rejected` as (name, reason), for the receipt. -/
+/-! ## Unused `notrap` loads (#970)
+
+Stock does not lower a `load` whose flags are `notrap` when none of its results is used
+(`must_lower_even_if_unused`, `inst_predicates.rs:113`, wasmtime v49.0.1; the filetest
+`isa/aarch64/dead-notrap-load.clif`). Lean's lowering emits it, and neither cleanup stage drops it
+(`Proof.Driver.skippable` and `DeadCleanup.pureForm` exclude loads). `dropDeadNotrapLoads` drops
+such loads in this stock-configured driver only. It is NOT proved: like `argLoadsFromSp`, it is
+outside `backend_correct`, and every function of this mode is reported unverified. The default
+mode and `cargo fv` do not run it: cg_clif's Cranelift 0.136.1, the reference of `cargo fv`, keeps
+these loads (#970, #588).
+
+The CLIF justification is `Clif.evalInst_notrap_load` (`FV/Clif/NotrapLoad.lean`): a `notrap` load
+reads without changing the memory, or it is stuck; it never traps. So a source run either continues
+past the load with the same memory (its value is unused) or is stuck, which the backend theorems
+do not constrain (`E2E.ArmRefines`). A load that can trap is never dropped. -/
+
+/-- The loads `dropDeadNotrapLoads` may drop: an integer, float or `i128`-pair load whose flags are
+`notrap` (so not a trapping load), whose defs and register uses are all virtual, and whose address
+mode has no writeback (`sp` pre/post-index) and is not an ABI access (`fpOffset`/`incomingArg`: the
+incoming stack arguments, `Backend.stackArgLoad`; `spOffset`). Atomic loads (`ldar`,
+`MInst.loadAcquire`) are other instructions and are never dropped. -/
+def notrapLoad (m : MInst) : Bool :=
+  m.defs.all Reg.isVirtual && m.uses.all Reg.isVirtual && match m with
+    | .load _ _ am fl | .fpuLoad _ _ am fl => fl.notrap && plain am
+    | .loadP64 _ _ _ _ fl => fl.notrap
+    | _ => false
+where plain : AMode → Bool
+  | .spPostIndexed _ | .spPreIndexed _ | .fpOffset _ | .incomingArg _ | .spOffset _ => false
+  | _ => true
+
+/-- `DeadCleanup.discard`, and a `notrapLoad` with no clobbers whose defs are all dead. -/
+def dropDiscard (m : MInst) (live : List Nat) : Bool :=
+  DeadCleanup.discard m live ||
+    (notrapLoad m && m.clobbers.isEmpty && !(DeadCleanup.defs m).isEmpty &&
+      (DeadCleanup.defs m).all (fun n => !live.contains n))
+
+/-- `DeadCleanup.scan` with `dropDiscard`: backwards; a dropped instruction's inputs do not
+become live. -/
+def dropScan (nregs : Nat) : List MInst → List Nat → List MInst × List Nat
+  | [], live => ([], live)
+  | m :: ms, exit =>
+    let (kept, live) := dropScan nregs ms exit
+    if dropDiscard m live then (kept, live)
+    else (m :: kept, DeadCleanup.uses nregs m ++
+      live.filter (fun n => !(DeadCleanup.defs m).contains n))
+
+/-- One pass over every block (`DeadCleanup.clean` with `dropScan`). -/
+def dropPass (vc : VCode) : VCode :=
+  { vc with blocks := vc.blocks.mapIdx fun i b =>
+      { b with insts :=
+          (dropScan vc.classes.size b.insts.toList (DeadCleanup.exitLive vc i b)).1.toArray } }
+
+def instCount (vc : VCode) : Nat := vc.blocks.foldl (fun n b => n + b.insts.size) 0
+
+def notrapLoadCount (vc : VCode) : Nat :=
+  vc.blocks.foldl (fun n b => n + (b.insts.filter notrapLoad).size) 0
+
+/-- **Drop the unused `notrap` loads** (unproved, stock-configured driver only; see above).
+`dropPass` until nothing changes: `DeadCleanup.exitLive` counts the reads of a dropped load, so a
+chain of loads, and the producers of a dropped load's address, go one per pass. The result is used
+only if it drops a `notrapLoad`; otherwise (and for an invalid CFG) `vc` is unchanged. -/
+def dropDeadNotrapLoads (vc : VCode) : VCode :=
+  if notrapLoadCount vc == 0 then vc else
+  match vc.cfg with
+  | .error _ => vc
+  | .ok _ =>
+    let out := go (instCount vc + 1) vc
+    if notrapLoadCount out < notrapLoadCount vc then out else vc
+where go : Nat → VCode → VCode
+  | 0, vc => vc
+  | n + 1, vc =>
+    let vc' := dropPass vc
+    if instCount vc' == instCount vc then vc else go n vc'
+
+/-- Drop the unused `notrap` loads (`dropDeadNotrapLoads`, unproved), allocate, then apply
+`configure`, which decides the frame from the VCode before the drop. `clif name` is the CLIF of
+function `name`. Each rejection is recorded in `rejected` as (name, reason), for the receipt. -/
 def allocateWith (c : Config) (clif : String → List Clif.Function)
     (rejected : IO.Ref (Array (String × String)))
     (run : Array VCode → IO (Array (Except String AFunc))) (vcs : Array VCode) :
     IO (Array (Except String AFunc)) := do
-  let results ← run vcs
+  let results ← run (vcs.map dropDeadNotrapLoads)
   (vcs.zip results).mapM fun (vc, result) => do
     match result with
     | .error e => pure (.error e)

@@ -118,6 +118,13 @@ def miKinds (k : Nat) : Option (List FK) :=
     | none, some _ => some [.u, .u, .u]
     | none, none => none
 
+/-- The field kinds of variant `k` that emitting it upgrades (`upg`): its kinds `ks`, except that
+`AtomicRMWLoop`'s scratch2 (field 7) stays pending: it is a def only when the operation is not
+`xchg` (`MInst.visitOperands`; the `xchg` loop never writes x28), and the field kinds do not see
+the operation. -/
+def upKs (k : Nat) (ks : List FK) : List FK :=
+  if k = VIdx.MInst.AtomicRMWLoop then ks.set 7 .u else ks
+
 /-- Kinds of the fields of a flag/side-effect variant: an instruction (emitted in field order),
 a result register (defined once every instruction is emitted), other. -/
 inductive SK where
@@ -294,7 +301,7 @@ def upg (e : AEnv) : Nat → A → AEnv
   | n + 1, .data τ k fs =>
     if τ == tyMInst then
       match miKinds k with
-      | some ks => upgF e n fs ks
+      | some ks => upgF e n fs (upKs k ks)
       | none => deadEnv e
     else e
   | _, _ => e

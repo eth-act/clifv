@@ -308,7 +308,7 @@ theorem bundle_correct_raw_unwind_src_nobnd {b : Bundle} {S : LinkSpec} {file0 f
         rw [← hmem]; exact hpl0
       · show κ (M0 - 0) (legalize (cs.ren σ).frame.func) ≤ (spv w₀).toNat
         rw [hcsR.func, Nat.sub_zero, hbe.sp]
-        have h1 := hSA.1
+        have h1 := hSA.1.1
         have h2 : frameDrop (L.A (legalize (f.rename σ.fwd))).af ≤
             (L.A (legalize (f.rename σ.fwd))).af.frameSize + 16 := by
           unfold frameDrop; split <;> omega

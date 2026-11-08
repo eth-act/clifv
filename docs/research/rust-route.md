@@ -344,10 +344,13 @@ All four steps landed (commit series on `agent/fv-fallback`):
    new MInst: `loadAcquire`/`storeRelease` (ldar/stlr), `atomicRmwLoop`/`atomicCasLoop` (emit-time
    LL/SC loop expansion transcribed from Cranelift's `inst/emit.rs`: ldaxr/extend/op/stlxr/cbnz
    over fixed x24–x28, with emit-time labels `Lbl.loop`), `csetm` (csinv), `fence` (dmb ish).
-   regalloc operands: `Constraint.fixed` as `aarch64_get_operands` (x25/x26 in, x27/x24/x28
-   out) with one conservative deviation: the x28 def is registered for `xchg` too (Cranelift
-   omits it; x28 is dead across the instruction either way), which keeps `visitOperands`
-   uniform in the op for the rename-commutation proof (`LowerRename.Sim.visit`). The
+   regalloc operands: `Constraint.fixed` as `aarch64_get_operands` (x25/x26 in, x27/x24 out,
+   and x28 out unless the op is `xchg`, as in Cranelift: the `xchg` loop stores x26 and never
+   writes x28). For `xchg` the visitor puts x28 in place of the unvisited scratch2, so visiting
+   commutes with renaming (`LowerRename.Sim.visit`) and the allocated instruction is the same
+   for every op; the defs are `AtomicRmwLoopOp.defRegs`. (An earlier version registered the
+   x28 def for `xchg` too; regalloc then counted x28 as used, the prologue saved it, and the
+   extra operand changed regalloc2's choices in the subword cases, #971.) The
    stack-slot allocator rejects the loop pseudo-insts. Arm model: new
    decode classes `LDST.Reg_exclusive` (LDXR/LDAXR/STXR/STLXR/LDAR/STLR) and `BR.Barrier` (dmb;
    in the BR group because the DPR `decode_class` proofs require every fixed-bit dispatch to be

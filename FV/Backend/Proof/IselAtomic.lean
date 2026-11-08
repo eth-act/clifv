@@ -503,13 +503,6 @@ theorem atomicStore_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb sym
     rw [atom_store_eq hety (hv x _ hxv), ha]
     exact hMRo.store _ _ _ _ _ _ hmr (by rw [ofClif_bytes hety]; exact hvalid)
 
-theorem operands_rmwLoop (t : CTy) (op : AtomicRmwLoopOp) (fl : Clif.MemFlags) (p x d d1 d2 : Nat) :
-    (MInst.atomicRmwLoop t op fl (.vreg p .int) (.vreg x .int) (.vreg d .int) (.vreg d1 .int)
-      (.vreg d2 .int)).operands =
-      .ok #[⟨p, .int, .use, .early, .fixed (.x 25)⟩, ⟨x, .int, .use, .early, .fixed (.x 26)⟩,
-        ⟨d, .int, .def, .late, .fixed (.x 27)⟩, ⟨d1, .int, .def, .late, .fixed (.x 24)⟩,
-        ⟨d2, .int, .def, .late, .fixed (.x 28)⟩] := rfl
-
 theorem operands_casLoop (t : CTy) (fl : Clif.MemFlags) (p e x d d1 : Nat) :
     (MInst.atomicCasLoop t fl (.vreg p .int) (.vreg e .int) (.vreg x .int) (.vreg d .int)
       (.vreg d1 .int)).operands =
@@ -518,16 +511,14 @@ theorem operands_casLoop (t : CTy) (fl : Clif.MemFlags) (p e x d d1 : Nat) :
         ⟨d1, .int, .def, .late, .fixed (.x 24)⟩] := rfl
 
 theorem frag_fresh3 (st : LState) (m : MInst)
-    (hd : vdefs m = [st.nextVreg, st.nextVreg + 1, st.nextVreg + 2]) :
+    (hd : ∀ d ∈ vdefs m, d = st.nextVreg ∨ d = st.nextVreg + 1 ∨ d = st.nextVreg + 2) :
     Frag st ((((st.fresh .int).2.fresh .int).2.fresh .int).2.emit m) [m] := by
   refine ⟨by show st.emitted.push m = _; rw [Array.push_eq_append],
     by show st.nextVreg ≤ st.nextVreg + 1 + 1 + 1; omega, ?_⟩
   intro m' hm d hd'
   simp only [List.mem_singleton] at hm; subst hm
-  rw [hd] at hd'
   show st.nextVreg ≤ d ∧ d < st.nextVreg + 1 + 1 + 1
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hd'
-  omega
+  rcases hd d hd' with rfl | rfl | rfl <;> omega
 
 theorem frag_fresh2 (st : LState) (m : MInst) (hd : vdefs m = [st.nextVreg, st.nextVreg + 1]) :
     Frag st (((st.fresh .int).2.fresh .int).2.emit m) [m] := by
@@ -609,7 +600,7 @@ theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms 
   simp only [LState.fresh]
   have hfr := frag_fresh3 st (.atomicRmwLoop (CTy.ofClif ty) op fl (.vreg p .int) (.vreg x .int)
     (.vreg st.nextVreg .int) (.vreg (st.nextVreg + 1) .int) (.vreg (st.nextVreg + 2) .int))
-    (by simp [vdefs, operands_rmwLoop, Operand.isDef])
+    (fun _ h => vdefs_rmwLoop_mem _ _ _ _ _ _ _ _ h)
   simp only [LState.fresh] at hfr
   refine ⟨hfr.mono, hfr.defs, ?_⟩
   intro fr cm ρ w hf hv hdfg hmr hRd
@@ -624,10 +615,12 @@ theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms 
   dsimp only
   obtain ⟨ha, hA64, havoid⟩ := atom_addr hMRo hdfg hv hp64 hpv hmr hvalid
   rw [← ofClif_bytes hety] at havoid
-  obtain ⟨w2, o0, o1, o2, hs, ho0, hsw⟩ := hM.2.2.2.2.2.2.1 (CTy.ofClif ty) op fl p x st.nextVreg
-    (st.nextVreg + 1) (st.nextVreg + 2) (ρ p) (ρ x) w (atomTy_ofClif hety) havoid
+  obtain ⟨w2, o0, os, hs, hlen, ho0, hsw⟩ := hM.2.2.2.2.2.2.1 (CTy.ofClif ty) op fl p x
+    st.nextVreg (st.nextVreg + 1) (st.nextVreg + 2) (ρ p) (ρ x) w (atomTy_ofClif hety) havoid
     (atom_rd hety hRd ha hvalid hread)
-  have hr := seqRun_isem_one (operands_rmwLoop _ _ _ _ _ _ _ _) (ρ := ρ) hs rfl
+  rw [← vuses_rmwOps op p x st.nextVreg (st.nextVreg + 1) (st.nextVreg + 2) ρ] at hs
+  have hr := seqRun_isem_one (operands_rmwLoop _ _ _ _ _ _ _ _) (ρ := ρ) hs
+    (by rw [hlen, rmwOps_defs_length])
   have hxv := getAs_ok hax
   have hbits := atom_read_eq hety hread hA64
     (fun i hi b hb => hMRo.bytes _ _ _ _ b hmr (valid_sub hvalid hi) hb)
@@ -635,7 +628,7 @@ theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms 
   refine ⟨?_, _, w2, hr, .inr ⟨rfl, ?_⟩, ?_⟩
   · intro m hm u hu
     simp only [List.mem_singleton] at hm; subst hm
-    have hu' : u = p ∨ u = x := by simpa [vuseNums, operands_rmwLoop, Operand.isUse] using hu
+    have hu' : u = p ∨ u = x := by simpa [vuseNums_rmwLoop] using hu
     rcases hu' with rfl | rfl
     · exact .inr (by rw [hpv]; rfl)
     · exact .inr (by rw [hxv]; rfl)
@@ -646,12 +639,19 @@ theorem atomicRmw_lower_ok (hMR : MRStable F MR) (hM : MemRefinesR Rd F sb syms 
     simp only [List.getElem?_cons_zero, Option.some.injEq] at hrs hv'
     subst hrs hv'
     refine ⟨st.nextVreg, .int, rfl, .inl (Nat.le_refl _), ?_⟩
-    have e : vdefUpd #[(⟨p, .int, .use, .early, .fixed (.x 25)⟩ : Operand),
-        ⟨x, .int, .use, .early, .fixed (.x 26)⟩, ⟨st.nextVreg, .int, .def, .late, .fixed (.x 27)⟩,
-        ⟨st.nextVreg + 1, .int, .def, .late, .fixed (.x 24)⟩,
-        ⟨st.nextVreg + 2, .int, .def, .late, .fixed (.x 28)⟩]
-        [o0, o1, o2] ρ st.nextVreg = o0 := by
-      simp [vdefUpd, writeV, Operand.isDef, Operand.isEarly, Operand.isLate, upd]
+    have e : vdefUpd (rmwOps op p x st.nextVreg (st.nextVreg + 1) (st.nextVreg + 2)) (o0 :: os) ρ
+        st.nextVreg = o0 := by
+      by_cases hx : op = .xchg
+      · subst hx
+        obtain ⟨o1, rfl⟩ : ∃ o1, os = [o1] := by
+          rcases os with _ | ⟨o1, _ | ⟨_, _⟩⟩ <;> simp [AtomicRmwLoopOp.defRegs] at hlen
+          exact ⟨o1, rfl⟩
+        simp [vdefUpd, writeV, rmwOps, Operand.isDef, Operand.isEarly, Operand.isLate, upd]
+      · obtain ⟨o1, o2, rfl⟩ : ∃ o1 o2, os = [o1, o2] := by
+          rcases os with _ | ⟨o1, _ | ⟨o2, _ | ⟨_, _⟩⟩⟩ <;>
+            simp [AtomicRmwLoopOp.defRegs_of_ne hx] at hlen
+          exact ⟨o1, o2, rfl⟩
+        simp [vdefUpd, writeV, rmwOps, hx, Operand.isDef, Operand.isEarly, Operand.isLate, upd]
     rw [e]
     exact holds_of_setWidth hety ho0 hbits
   · have hX := hv x _ hxv
@@ -1394,7 +1394,7 @@ macro_rules
     refine ⟨_, ?_, _, rfl, atomicRmw_lower_ok hMR hM hMRo (by rfl) hety hfl (hA64 _ rfl)⟩
     simp only [LState.fresh]
     exact (frag_fresh3 _ (.atomicRmwLoop _ _ _ (.vreg _ .int) (.vreg _ .int) (.vreg _ .int)
-      (.vreg _ .int) (.vreg _ .int)) (by simp [vdefs, operands_rmwLoop, Operand.isDef])).emitted))
+      (.vreg _ .int) (.vreg _ .int)) (fun _ h => vdefs_rmwLoop_mem _ _ _ _ _ _ _ _ h)).emitted))
 
 section LoopRoots
 variable {p : Program} (hp : Data p) {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {sb : Nat}

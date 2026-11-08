@@ -70,7 +70,7 @@ theorem resume_all_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitV
         xreg 30 RB.s0 = Arm.r .PC x + 4#64 → (∀ a, RC.FK a → RB.s0.mem a = x.mem a) →
         (∀ a, RC.FK a → RB.G a) →
         (∀ r ∈ calleeSaved, ckeep r (r₀B r) = ckeep r
-          (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize).length RB.s0) (.reg r))) →
+          (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize RB.af.isCaller).length RB.s0) (.reg r))) →
         y.program = x.program →
         (∀ (j : Nat) (v q : Reg) (u : CV), [(Reg.vreg 2 .int, Reg.x 0)][j]? = some (v, q) →
           ysB[j]? = some u → regVal y q = u) →

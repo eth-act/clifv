@@ -232,6 +232,12 @@ theorem kg_visit (m : MInst) :
     obtain ⟨dest, uses, defs⟩ := info
     cases dest <;> simp only [MInst.visitOperands, pure_bind] <;> apply KG.mono <;> kg_steps
     all_goals kg_close
+  case atomicRmwLoop ty op fl a o d s1 s2 =>
+    -- the visit and `pairDefs` both case on `xchg`
+    simp only [MInst.visitOperands, useRegsK, defRegsK, pairDefs, pairUses]
+    cases hx : op == .xchg <;> simp only [Bool.false_eq_true, ↓reduceIte, pure_bind] <;>
+      apply KG.mono <;> kg_steps
+    all_goals kg_close
   all_goals simp only [MInst.visitOperands]
   all_goals apply KG.mono
   all_goals kg_steps
@@ -324,12 +330,14 @@ def fieldsOf (k : FK) : List FK → List V → List V
   | k' :: ks, f :: fs => (if k' = k then [f] else []) ++ fieldsOf k ks fs
   | _, _ => []
 
-/-- What `ofV` builds from the fields of an `MInst` variant, by field kind (`miKinds`). -/
+/-- What `ofV` builds from the fields of an `MInst` variant, by field kind (`miKinds`; the def
+and call-info fields that emitting it upgrades, `upKs`). -/
 def OfVF (k : Nat) (vs : List V) (m : MInst) : Prop :=
   ∃ ks, miKinds k = some ks ∧ vs.length = ks.length ∧
     (∀ r ∈ useRegsK m, r ∈ useAll ks vs) ∧ (∀ r ∈ defRegsK m, r ∈ defAll ks vs) ∧
-    (∀ f ∈ fieldsOf .d ks vs, ∃ r, f = V.reg r ∧ r ∈ defRegsK m) ∧
-    (∀ f ∈ fieldsOf .c ks vs, ∃ c, f = V.op (.callInfo c) ∧ ∀ q ∈ c.defs, q.2 ∈ defRegsK m)
+    (∀ f ∈ fieldsOf .d (upKs k ks) vs, ∃ r, f = V.reg r ∧ r ∈ defRegsK m) ∧
+    (∀ f ∈ fieldsOf .c (upKs k ks) vs, ∃ c, f = V.op (.callInfo c) ∧
+      ∀ q ∈ c.defs, q.2 ∈ defRegsK m)
 
 theorem miKinds_load {k : Nat} {op : LoadOp} (h : loadOpOfIdx? k = some op) :
     miKinds k = some [.d, .u, .u] := by
@@ -386,7 +394,8 @@ theorem ofV_fields {k : Nat} {vs : List V} {m : MInst}
            | (simp_all; done)
            | grind)
       | (intro f hf
-         (try simp only [fieldsOf, List.mem_append, List.mem_cons, List.mem_nil_iff, or_false,
+         (try simp only [upKs, List.set_cons_succ, List.set_cons_zero, List.set_nil, ite_self,
+           fieldsOf, List.mem_append, List.mem_cons, List.mem_nil_iff, or_false,
            List.append_nil, List.nil_append, reduceIte, reduceCtorEq] at hf)
          all_goals first
            | (simp_all [defRegsK, MInst.defs, pairDefs]; done)

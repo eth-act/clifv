@@ -189,18 +189,19 @@ theorem srcBoundedOpt_peak {S : LinkSpec} {file0 file : ByteArray}
     {n : String} {f f' : Clif.Function} (hf : S.input.srcProg.func? n = some f) (d : Nat)
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (ho : OutsideCall S.opt.input (BinCheck.roByte S.opt.input S.opt.data) f'
-      (frameDrop (art S.opt.input f').af + S.opt.input.D * d) r args' cs'.mem)
+      (frameDrop (art S.opt.input f').af + (S.opt.input.D * d + pbMax S.opt.input)) r args' cs'.mem)
     (hr : ClifRun S.opt.input B f' r args' cs')
     (hcs : ClifEntry f args cs) (hmem : cs'.mem = cs.mem)
     (hd : Clif.DepthLe B.env S.input.srcProg d cs) :
     ∀ s', Opt.Legal.SReach B.env S.input.srcProg cs s' → Opt.Legal.MemBounded s'.mem := by
   refine srcBoundedOpt_gen h hsrc B hB hlegal hsig hm hf ho hr hcs hmem
-    (fun k _ => S.opt.input.D * (d - k)) (fun _ => True) (by simp) trivial ?_
+    (fun k _ => S.opt.input.D * (d - k) + pbMax S.opt.input) (fun _ => True) (by simp) trivial ?_
   intro k g h' g' h'' _ _ _ _ _ hD ⟨t1, ht1, hlen⟩
   have hk : k + 1 ≤ d := hlen ▸ hd t1 (reaches_of_sreach ht1)
   refine ⟨?_, trivial⟩
   have e : d - k = (d - (k + 1)) + 1 := by omega
-  show frameDrop _ + S.opt.input.D * (d - (k + 1)) ≤ S.opt.input.D * (d - k)
+  show frameDrop _ + (S.opt.input.D * (d - (k + 1)) + pbMax S.opt.input) ≤
+    S.opt.input.D * (d - k) + pbMax S.opt.input
   rw [e, Nat.mul_succ]
   omega
 
@@ -315,7 +316,7 @@ theorem compileExeOpt_correct_source_peak_nobnd {S : LinkSpec} {file0 file : Byt
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.opt.input (BinCheck.roByte S.opt.input S.opt.data) f'
-      (frameDrop (art S.opt.input f').af + S.opt.input.D * d) r args' cs'.mem)
+      (frameDrop (art S.opt.input f').af + (S.opt.input.D * d + pbMax S.opt.input)) r args' cs'.mem)
     (hr : ClifRun S.opt.input B f' r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

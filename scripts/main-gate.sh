@@ -6,7 +6,11 @@
 #                                            default, includes clif-filetests and opt-difftest;
 #                                            DEPS=1, the default, the examples/deps line);
 #                                            takes /tmp/clifv-heavy.lock; exit 0 iff green,
-#                                            3 when a host tool is missing (nothing run)
+#                                            3 when a host tool is missing (nothing run). On
+#                                            exit (also SIGTERM/SIGINT/SIGHUP) the run stops its
+#                                            background jobs and every memcap scope it started
+#                                            (clifv-gate-<pid>-<n>.scope), and those scopes never
+#                                            hold the lock (flock -o), so nothing orphaned keeps it
 #   scripts/main-gate.sh loop WORKTREE       forever: check out the newest origin/main tip in
 #                                            WORKTREE (a dedicated worktree), `run` it, record and
 #                                            post the result on #261; stop: touch $GATE_DIR/stop
@@ -28,8 +32,10 @@
 # --lean-link --verified on examples/fv-demo and examples/survey, and on examples/deps (its own
 # gate line; skipped by `loop` when no DEPSPATHS path changed since the last green run: #691,
 # #734) (cargo fv's per-executable binary check runs `cargo fv link-proof` + `lake exe
-# link-check` on every test executable), and plain examples/compare.sh on
-# examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame).
+# link-check on every test executable), and plain examples/compare.sh on
+# examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame). When the `lake build`
+# of the executables or the cargo build of the Rust tools fails, the native lines are skipped
+# (they would run stale binaries) and the run is red at the failed build.
 #
 # Shared Lake cache: FV_LAKE_CACHE when set (it is in orb login shells), else
 # /home/kev/work/clifv-lake-cache.
@@ -53,7 +59,7 @@ CLIFPATHS='FV/Clif FV/Opt FV/Float FVTest/Clif FVTest/Opt scripts/clif-filetests
 # production lowering it must reproduce, cargo-fv, the example itself)
 DEPSPATHS='FV/Link FVTest/Link :(glob)FV/Backend/*Production*.lean rust/crates/cargo-fv examples/deps'
 
-usage() { sed -n '2,16p' "$0" >&2; exit 2; }
+usage() { sed -n '2,20p' "$0" >&2; exit 2; }
 
 # Host tools the gates need (docs/USAGE.md, "Install"): a missing one stops the gate with exit
 # status 3 and is never recorded as a red run.
@@ -65,18 +71,35 @@ check_tools() {
   [ ${#miss[@]} = 0 ] || { echo "main-gate: missing host tools: ${miss[*]} (docs/USAGE.md, \"Install\")" >&2; return 3; }
 }
 
+# A command in its own memcap scope, named $GATE_SCOPE-<n> so that stop_scopes can stop it: memcap
+# scopes live in clifv.slice, outside the caller's cgroup, so stopping the caller's unit or tool
+# scope does not stop them. Run in the background and waited for, so a TERM trap fires at once.
+GATE_SCOPE=clifv-gate-$$ GATE_NSCOPE=0 GATE_ROOT=.
+mc() { # CAP CMD...
+  local cap=$1; shift
+  GATE_NSCOPE=$((GATE_NSCOPE + 1))
+  env FV_MEMCAP="$cap" LEAN_NUM_THREADS=2 FV_MEMCAP_UNIT="$GATE_SCOPE-$GATE_NSCOPE" \
+    "$GATE_ROOT/scripts/memcap.sh" env -u FV_MEMCAP_UNIT "$@" &
+  wait $!
+}
+stop_scopes() {
+  local p
+  for p in $(jobs -p); do kill -TERM "$p" 2>/dev/null; done
+  [ "$GATE_NSCOPE" -gt 0 ] && systemctl --user stop "$GATE_SCOPE-*.scope" 2>/dev/null
+  return 0
+}
+
 run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
-  local L=$1 CLIF=${2:-1} DEPS=${3:-1} W fail=0 r
-  W=$(pwd)
+  local L=$1 CLIF=${2:-1} DEPS=${3:-1} W fail=0 r stale=
+  W=$(pwd); GATE_ROOT=$W
   mkdir -p "$L"
   export FV_LAKE_CACHE=${FV_LAKE_CACHE:-/home/kev/work/clifv-lake-cache}
   local cap=${GATE_CAP:-28G}
-  local MC=(env FV_MEMCAP="$cap" LEAN_NUM_THREADS=2 scripts/memcap.sh)
-  local M12=(env FV_MEMCAP=12G LEAN_NUM_THREADS=2 scripts/memcap.sh)
   {
   echo "start $(date -Is) HEAD $(git rev-parse --short=8 HEAD)"
   python3 scripts/lake-serial-build.py --budget "${GATE_BUDGET:-32G}" --max-cap "${GATE_MAX_CAP:-28G}" \
-    --max-jobs 12 --others-by-usage --retry-failed --out "$L/sched" FV FVTest Corpus > "$L/sched.out" 2>&1
+    --max-jobs 12 --others-by-usage --retry-failed --out "$L/sched" FV FVTest Corpus > "$L/sched.out" 2>&1 &
+  wait $!
   r=$?; local nf; nf=$(grep -cE -- '-> fail' "$L/sched/sched.log" 2>/dev/null)
   echo "serial-build rc=$r fails=$nf: $(tail -n 1 "$L/sched/sched.log" 2>/dev/null)"
   [ "$r" = 0 ] && [ "$nf" = 0 ] || fail=1
@@ -84,24 +107,25 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   EXES=$(awk '/^\[\[/{sec=$0} sec=="[[lean_exe]]" && /^name *=/{gsub(/.*= *"|".*/,""); print}' lakefile.toml | tr '\n' ' ')
   echo "executables: $EXES"
   # shellcheck disable=SC2086
-  "${MC[@]}" lake build FV FVTest Corpus $EXES > "$L/build.log" 2>&1
-  r=$?; echo "full build rc=$r: $(tail -n 1 "$L/build.log")"; grep -E '^error|error:' "$L/build.log" | head -n 20; [ $r = 0 ] || fail=1
-  (cd crate-proofs && env FV_MEMCAP="$cap" LEAN_NUM_THREADS=2 ../scripts/memcap.sh lake build) > "$L/crate.log" 2>&1
+  mc "$cap" lake build FV FVTest Corpus $EXES > "$L/build.log" 2>&1
+  r=$?; echo "full build rc=$r: $(tail -n 1 "$L/build.log")"; grep -E '^error|error:' "$L/build.log" | head -n 20
+  [ $r = 0 ] || { fail=1; stale="lake build of the executables failed"; }
+  mc "$cap" env -C crate-proofs lake build > "$L/crate.log" 2>&1
   r=$?; echo "crate-proofs rc=$r: $(tail -n 1 "$L/crate.log")"; [ $r = 0 ] || fail=1
-  "${M12[@]}" python3 scripts/axiom-audit.py --log-dir "$L/audit" > "$L/axiom-audit.log" 2>&1; r=$?
+  mc 12G python3 scripts/axiom-audit.py --log-dir "$L/audit" > "$L/axiom-audit.log" 2>&1; r=$?
   grep -E '^(ok|FAIL)|axiom audit' "$L/axiom-audit.log"; echo "axiom-audit rc=$r"; [ $r = 0 ] || fail=1
-  "${M12[@]}" scripts/float-spec.sh > "$L/float-spec.log" 2>&1; r=$?
+  mc 12G scripts/float-spec.sh > "$L/float-spec.log" 2>&1; r=$?
   grep -E '^(ok|FAIL)|axiom audit|build failed' "$L/float-spec.log"; echo "float-spec rc=$r"; [ $r = 0 ] || fail=1
-  "${MC[@]}" lake exe lean-e2e-check > "$L/e2e.log" 2>&1; r=$?
+  mc "$cap" lake exe lean-e2e-check > "$L/e2e.log" 2>&1; r=$?
   echo "lean-e2e-check rc=$r: $(grep -E 'accepted|rejected' "$L/e2e.log" | tail -n 3 | tr '\n' ' ')"; [ $r = 0 ] || fail=1
-  "${MC[@]}" scripts/lean-backend-encode-check.sh > "$L/encoding.log" 2>&1; r=$?
+  mc "$cap" scripts/lean-backend-encode-check.sh > "$L/encoding.log" 2>&1; r=$?
   echo "encode-check rc=$r: $(grep -E 'functions [0-9]+:|differ' "$L/encoding.log" | tail -n 2 | tr '\n' ' ')"; [ $r = 0 ] || fail=1
-  "${MC[@]}" scripts/lean-backend-filetests.sh > "$L/filetests.log" 2>&1; r=$?
+  mc "$cap" scripts/lean-backend-filetests.sh > "$L/filetests.log" 2>&1; r=$?
   echo "filetests rc=$r: $(grep -E 'TOTAL|corpus|runtest' "$L/filetests.log" | tail -n 4 | tr '\n' ' ')"; [ $r = 0 ] || fail=1
-  "${MC[@]}" scripts/arm-fault-cosim.sh > "$L/faultcosim.log" 2>&1; r=$?
+  mc "$cap" scripts/arm-fault-cosim.sh > "$L/faultcosim.log" 2>&1; r=$?
   echo "arm-fault-cosim rc=$r: $(grep -E '^TOTAL' "$L/faultcosim.log" | tail -n 1)"; [ $r = 0 ] || fail=1
   if [ "$CLIF" = 1 ]; then
-    "${MC[@]}" scripts/clif-filetests.sh > "$L/clif.log" 2>&1; r=$?
+    mc "$cap" scripts/clif-filetests.sh > "$L/clif.log" 2>&1; r=$?
     local cur cp cf cd_ bp bf bd
     cur=$(grep -E 'TOTAL files [0-9]+: pass' "$L/clif.log" | tail -n 1)
     cp=$(echo "$cur" | grep -oE 'pass [0-9]+' | cut -d' ' -f2)
@@ -110,29 +134,32 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
     read -r bp bf bd < <(grep -v '^#' scripts/clif-filetests-baseline.txt | head -n 1)
     echo "clif-filetests rc=$r pass $cp fail $cf disagree $cd_ (baseline pass $bp fail $bf disagree $bd): $cur"
     if [ -n "$cp" ] && [ -n "$cf" ] && [ -n "$cd_" ] && [ "$cp" -ge "$bp" ] && [ "$cf" -le "$bf" ] && [ "$cd_" -le "$bd" ]; then :; else fail=1; fi
-    "${MC[@]}" scripts/opt-difftest.sh > "$L/optdiff.log" 2>&1; r=$?
+    mc "$cap" scripts/opt-difftest.sh > "$L/optdiff.log" 2>&1; r=$?
     echo "opt-difftest rc=$r: $(tail -n 3 "$L/optdiff.log" | tr '\n' ' ')"; [ $r = 0 ] || fail=1
   else
     echo "clif-filetests, opt-difftest: skipped (no CLIF path changed since the last green run with them)"
   fi
-  (cd rust && FV_MEMCAP=12G ../scripts/memcap.sh cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc) > "$L/rust.log" 2>&1
-  r=$?; echo "rust tools rc=$r"; [ $r = 0 ] || fail=1
+  mc 12G env -C rust cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc > "$L/rust.log" 2>&1
+  r=$?; echo "rust tools rc=$r"
+  [ $r = 0 ] || { fail=1; stale="${stale:+$stale; }cargo build of the Rust tools failed"; }
   local CG=${FV_CG_CLIF:-$W/target/cg_clif/unwind/librustc_codegen_cranelift.so}
-  if [ ! -f "$CG" ]; then
-    FV_MEMCAP=12G scripts/memcap.sh scripts/build-cg-clif.sh > "$L/cg_clif.log" 2>&1 || echo "build-cg-clif rc=$?"
+  if [ ! -f "$CG" ] && [ -z "$stale" ]; then
+    mc 12G scripts/build-cg-clif.sh > "$L/cg_clif.log" 2>&1 || echo "build-cg-clif rc=$?"
   fi
+  local NATIVE=(env PATH="$W/rust/target/release:$PATH" FV_ROOT="$W" FV_CG_CLIF="$CG")
   for ex in fv-demo survey; do
+    if [ -n "$stale" ]; then echo "cargo fv --lean-link --verified $ex: skipped (stale binaries: $stale)"; continue; fi
     rm -rf "examples/$ex/target/fv"
-    env PATH="$W/rust/target/release:$PATH" FV_ROOT="$W" FV_CG_CLIF="$CG" FV_MEMCAP=12G scripts/memcap.sh \
-      examples/compare.sh "examples/$ex" --lean-link --verified > "$L/native_$ex.log" 2>&1
+    mc 12G "${NATIVE[@]}" examples/compare.sh "examples/$ex" --lean-link --verified > "$L/native_$ex.log" 2>&1
     r=$?; echo "cargo fv --lean-link --verified $ex rc=$r: $(grep -E '^SAME|DIFFERENT' "$L/native_$ex.log" | tr '\n' ' ')"
     { [ $r = 0 ] && grep -q '^SAME' "$L/native_$ex.log"; } || fail=1
   done
   # examples/deps (#691, #734): typed and Stock-lowered functions in one executable
-  if [ "$DEPS" = 1 ]; then
+  if [ -n "$stale" ]; then
+    echo "cargo fv --lean-link --verified deps: skipped (stale binaries: $stale)"
+  elif [ "$DEPS" = 1 ]; then
     rm -rf "examples/deps/target/fv"
-    env PATH="$W/rust/target/release:$PATH" FV_ROOT="$W" FV_CG_CLIF="$CG" FV_MEMCAP=12G scripts/memcap.sh \
-      examples/compare.sh examples/deps --lean-link --verified > "$L/native_deps.log" 2>&1
+    mc 12G "${NATIVE[@]}" examples/compare.sh examples/deps --lean-link --verified > "$L/native_deps.log" 2>&1
     r=$?; echo "cargo fv --lean-link --verified deps rc=$r: $(grep -E '^SAME|DIFFERENT|binary check:' "$L/native_deps.log" | tr '\n' ' ')"
     { [ $r = 0 ] && grep -q '^SAME' "$L/native_deps.log"; } || fail=1
   else
@@ -140,11 +167,14 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   fi
   # #479: a panic unwinding through a Lean-compiled frame larger than 32 KiB (plain `cargo fv`:
   # the big function is outside the verified subset, so --verified would keep cg_clif's code)
-  rm -rf examples/bigframe-unwind/target/fv
-  env PATH="$W/rust/target/release:$PATH" FV_ROOT="$W" FV_CG_CLIF="$CG" FV_MEMCAP=12G scripts/memcap.sh \
-    examples/compare.sh examples/bigframe-unwind > "$L/native_bigframe-unwind.log" 2>&1
-  r=$?; echo "cargo fv bigframe-unwind rc=$r: $(grep -E '^SAME|DIFFERENT' "$L/native_bigframe-unwind.log" | tr '\n' ' ')"
-  { [ $r = 0 ] && grep -q '^SAME' "$L/native_bigframe-unwind.log"; } || fail=1
+  if [ -n "$stale" ]; then
+    echo "cargo fv bigframe-unwind: skipped (stale binaries: $stale)"
+  else
+    rm -rf examples/bigframe-unwind/target/fv
+    mc 12G "${NATIVE[@]}" examples/compare.sh examples/bigframe-unwind > "$L/native_bigframe-unwind.log" 2>&1
+    r=$?; echo "cargo fv bigframe-unwind rc=$r: $(grep -E '^SAME|DIFFERENT' "$L/native_bigframe-unwind.log" | tr '\n' ' ')"
+    { [ $r = 0 ] && grep -q '^SAME' "$L/native_bigframe-unwind.log"; } || fail=1
+  fi
   echo "end $(date -Is) RESULT=$([ $fail = 0 ] && echo GREEN || echo RED)"
   } > "$L/summary.log" 2>&1
   return $fail
@@ -200,7 +230,7 @@ loop() { # WORKTREE
     s=$(git rev-parse --short=8 HEAD)
     L=$GATE_DIR/runs/$s
     echo "run $s start $(date -Is) clif=$clif deps=$deps"
-    GATE_LOOP_TIP=$tip setsid flock "$LOCK" "$0" run-locked "$L" "$clif" "$deps" &
+    GATE_LOOP_TIP=$tip setsid flock -o "$LOCK" "$0" run-locked "$L" "$clif" "$deps" &
     run=$!
     wait "$run"; rc=$?; run=
     [ $rc = 4 ] && { echo "run $s dropped $(date -Is): origin/main moved on or stop requested while waiting for the lock"; continue; }
@@ -227,13 +257,15 @@ watch() {
 
 mkdir -p "$GATE_DIR"
 case "${1:-}" in
-  run) [ $# -ge 2 ] || usage; flock "$LOCK" "$0" run-locked "$2" "${3:-1}" "${4:-1}" ;;
+  run) [ $# -ge 2 ] || usage; flock -o "$LOCK" "$0" run-locked "$2" "${3:-1}" "${4:-1}" ;;
   run-locked)
     [ $# -ge 2 ] || usage; check_tools || exit 3; cd "$(git rev-parse --show-toplevel)" || exit 1
     if [ -n "${GATE_LOOP_TIP:-}" ]; then # started by `loop`: the lock wait may have been long
       [ -e "$GATE_DIR/stop" ] && exit 4
       git fetch -q origin && [ "$(git rev-parse origin/main)" != "$GATE_LOOP_TIP" ] && exit 4
     fi
+    trap 'rc=$?; stop_scopes; exit $rc' EXIT
+    trap 'exit 143' TERM INT HUP
     run_gate "$2" "${3:-1}" "${4:-1}" ;;
   loop)
     [ $# = 2 ] || usage

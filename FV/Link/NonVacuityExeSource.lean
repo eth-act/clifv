@@ -173,7 +173,7 @@ theorem compileExe_correct_source_helper {S : LinkSpec} {file0 file : ByteArray}
     (fun ⟨g, hg, hn⟩ => absurd (hind g hg) hn) hf hc hX ho hr hcs hexp hsl hmem hbnd M).1
 
 /-- **`compileExe_correct_source_peak` under `helperBase`** (`compileExe_correct_source_helper`
-for recursive programs): the outside caller provides `frameDrop + D * d` bytes of stack for the
+for recursive programs): the outside caller provides `frameDrop + (D * d + pbMax)` bytes of stack for the
 source run's call depth `d` (`Clif.DepthLe`), no call-graph premise. -/
 theorem compileExe_correct_source_peak_helper {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExe S file0 = .ok file) (hsrc : SrcScopeB S.input = true)
@@ -187,7 +187,7 @@ theorem compileExe_correct_source_peak_helper {S : LinkSpec} {file0 file : ByteA
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) (legalize f)
-      (frameDrop (art S.input (legalize f)).af + S.input.D * d) r args' cs'.mem)
+      (frameDrop (art S.input (legalize f)).af + (S.input.D * d + pbMax S.input)) r args' cs'.mem)
     (hr : ClifRun S.input helperBase (legalize f) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

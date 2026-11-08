@@ -628,9 +628,74 @@ def spAdjLines (sub : Bool) (size : Nat) : List Line :=
     | none => loadConst64 (.x 16) size ++
         [.ins (.aluRRRExtend (if sub then .sub else .add) true .sp .sp (.x 16) .uxtx)]
 
-/-- The prologue of a frame of `size` bytes below fp/lr (clobber area included). -/
-def prologueLines (saves : List Reg) (size : Nat) : List Line :=
+/-- `k` probes of `gen_probestack_unroll`: `sub sp, sp, #4096; stur wzr, [sp]` each. -/
+def probeSteps : Nat → List Line
+  | 0 => []
+  | k + 1 => [.ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩), .ins (.store .store32 .xzr (.unscaled .sp 0))] ++
+      probeSteps k
+
+/-- The stack size Cranelift probes for a frame of `size` bytes below fp/lr (`gen_prologue`'s
+`total_stacksize`: clobbers, fixed frame and outgoing arguments, plus the 16-byte setup area of
+its callees when the function calls, `FunctionCalls` not `None`). -/
+def probeTotal (size : Nat) (calls : Bool) : Nat := size + if calls then 16 else 0
+
+/-- The number of probes (4-byte zero stores at `sp₁ - 4096·i`, `i = 1, …`, where `sp₁` is the
+`sp` after the frame setup) of Cranelift's inline stack probes for a probed stack of `total`
+bytes: `n = total / 4096` (`gen_inline_probestack`, 4 KiB guard), unrolled for `n ≤ 3`
+(`PROBE_MAX_UNROLL`). Frames with `n > 3` (`total ≥ 16 KiB`), where Cranelift emits the
+`StackProbeLoop`, get no probes yet (#581). -/
+def probeCount (total : Nat) : Nat := if total / 4096 ≤ 3 then total / 4096 else 0
+
+theorem probeCount_le_three (total : Nat) : probeCount total ≤ 3 := by
+  unfold probeCount; split <;> omega
+
+theorem probeSteps_length : ∀ k, (probeSteps k).length = 2 * k
+  | 0 => rfl
+  | k + 1 => by simp only [probeSteps, List.length_append, probeSteps_length k]; simp; omega
+
+/-- Cranelift's inline stack probes (`gen_prologue`, `enable_probestack` with the inline strategy
+and a 4 KiB guard, as cg_clif sets them; aarch64 `gen_inline_probestack`) for a function whose
+probed stack takes `total` bytes (`probeTotal`): `n = probeCount total` probes, none when
+`n = 0`; otherwise `gen_probestack_unroll`: `n` times `sub sp, sp, #4096` + `stur wzr, [sp]`
+(`probeSteps`), then `add sp, sp, #4096·n`. -/
+def probeLines (total : Nat) : List Line :=
+  let n := probeCount total
+  if n == 0 then [] else probeSteps n ++ [.ins (.aluImm12 .add true .sp .sp ⟨n, true⟩)]
+
+theorem probeSteps_mem : ∀ {k : Nat} {ln : Line}, ln ∈ probeSteps k →
+    ln = .ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) ∨
+      ln = .ins (.store .store32 .xzr (.unscaled .sp 0))
+  | 0, _, h => by simp [probeSteps] at h
+  | k + 1, ln, h => by
+    simp only [probeSteps, List.cons_append, List.nil_append, List.mem_cons] at h
+    rcases h with rfl | rfl | h
+    · exact .inl rfl
+    · exact .inr rfl
+    · exact probeSteps_mem h
+
+/-- The lines of the stack probes: `sub sp, sp, #4096`, `stur wzr, [sp]` and the final `add sp`. -/
+theorem probeLines_mem {total : Nat} {ln : Line} (h : ln ∈ probeLines total) :
+    ln = .ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) ∨
+      ln = .ins (.store .store32 .xzr (.unscaled .sp 0)) ∨
+      ∃ n, ln = .ins (.aluImm12 .add true .sp .sp ⟨n, true⟩) := by
+  unfold probeLines at h
+  simp only at h
+  split at h
+  · simp at h
+  · rw [List.mem_append, List.mem_singleton] at h
+    rcases h with h | rfl
+    · rcases probeSteps_mem h with rfl | rfl
+      · exact .inl rfl
+      · exact .inr (.inl rfl)
+    · exact .inr (.inr ⟨_, rfl⟩)
+
+/-- The prologue of a frame of `size` bytes below fp/lr (clobber area included); `calls`: the
+function calls (Cranelift's `FunctionCalls` is not `None`), so the probed stack also covers the
+16-byte fp/lr area of its callees. The probes come after the frame setup and before the clobber
+pushes (`gen_prologue`). -/
+def prologueLines (saves : List Reg) (size : Nat) (calls : Bool) : List Line :=
   [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
+  probeLines (probeTotal size calls) ++
   pushLines true (savesInt saves) ++ pushLines false (savesFloat saves) ++
   spAdjLines true (size - clobberBytes saves)
 
@@ -704,7 +769,7 @@ the unsimplified lines. -/
 
 /-- The lines of one `AInst`. -/
 def ainstLines (c : FnCtx) (af : AFunc) : AInst → PState → Except String (List Line × PState)
-  | .prologue, ps => pure (if af.frame then prologueLines af.saves af.frameSize else [], ps)
+  | .prologue, ps => pure (if af.frame then prologueLines af.saves af.frameSize af.isCaller else [], ps)
   | .epilogueRet, ps =>
     pure (if af.frame then epilogueLines af.saves af.frameSize else [.ins .ret], ps)
   | .inst m, ps => m.lines c ps
@@ -901,6 +966,63 @@ def AFunc.fwd? (af : AFunc) (s : Label) : Option Label :=
     | _ => none
   | none => none
 
+/-- The forwarding target of a block (not the entry) with code `code` and label `s`
+(`AFunc.fwd?`'s inner `match`, without the copy to a list). -/
+def AFunc.fwdCode (s : Label) (code : Array AInst) : Option Label :=
+  if code.size == 1 then
+    match (code[0]? : Option AInst) with
+    | some (.inst (.jump x)) => if x == s then none else some x
+    | _ => none
+  else none
+
+/-- `AFunc.fwd?` from block index `i` on, by indexing `af.blocks` (no lists). -/
+def AFunc.fwdFrom (af : AFunc) (s : Label) (i : Nat) : Option Label :=
+  if h : i < af.blocks.size then
+    if af.blocks[i].1 == s then (if i == 0 then none else fwdCode s af.blocks[i].2)
+    else af.fwdFrom s (i + 1)
+  else none
+termination_by af.blocks.size - i
+
+/-- `AFunc.fwd?` as the compiler runs it (`fwd?_eq_fast`, `@[csimp]`, #965): `fwd?` copies the
+blocks to a list and pairs them with their indices on every call, and the emission check calls
+it at every step of `repAt`. -/
+def AFunc.fwdFast (af : AFunc) (s : Label) : Option Label := af.fwdFrom s 0
+
+theorem AFunc.fwdCode_eq (s : Label) (code : Array AInst) :
+    fwdCode s code = match code.toList with
+      | [.inst (.jump x)] => if x == s then none else some x
+      | _ => none := by
+  rcases code with ⟨_ | ⟨a, _ | ⟨b, t⟩⟩⟩
+  · rfl
+  · simp only [fwdCode, List.size_toArray, List.length_singleton, BEq.rfl, ite_true,
+      List.getElem?_toArray, List.getElem?_cons_zero]
+    split <;> split <;> simp_all
+  · simp [fwdCode]
+
+theorem AFunc.fwdFrom_eq (af : AFunc) (s : Label) (i : Nat) :
+    af.fwdFrom s i = match ((af.blocks.toList.drop i).zipIdx i).find? (·.1.1 == s) with
+      | some ((_, code), i) => if i == 0 then none else match code.toList with
+        | [.inst (.jump x)] => if x == s then none else some x
+        | _ => none
+      | none => none := by
+  induction i using AFunc.fwdFrom.induct af s with
+  | case1 i h hs _ | case2 i h hs _ =>
+    rw [fwdFrom, dite_eq_left h, ite_eq_left hs, List.drop_eq_getElem_cons (by simpa using h),
+      List.zipIdx_cons, List.find?_cons_of_pos (by simpa using hs)]
+    simp only [Array.getElem_toList, fwdCode_eq]
+  | case3 i h hs ih =>
+    rw [fwdFrom, dite_eq_left h, ite_eq_right hs, ih]
+    have hd := List.drop_eq_getElem_cons (l := af.blocks.toList) (i := i) (by simpa using h)
+    rw [hd, List.zipIdx_cons, List.find?_cons_of_neg (by simpa using hs)]
+  | case4 i h =>
+    rw [fwdFrom, dite_eq_right h, List.drop_of_length_le (by simpa using h)]
+    rfl
+
+@[csimp] theorem AFunc.fwd?_eq_fast : @AFunc.fwd? = @AFunc.fwdFast := by
+  funext af s
+  rw [fwdFast, fwdFrom_eq, List.drop_zero]
+  rfl
+
 /-- A block label's line index (a tree map: the kernel evaluates it, so `decide +kernel`
 witnesses of emitted code go through the branch check; `Std.HashMap`'s `USize` indexing does
 not reduce). -/
@@ -1028,6 +1150,22 @@ def trustFwd (af : AFunc) (L : List Line) (idx : LabelIdx)
       ts.any fun x => x.1.label == l && segTermOk af (repOn af (S.contains ·) L) idx x
     if S'.length == S.length then S else trustFwd af L idx ts n S'
 
+/-- `trustFwd` as the compiler runs it (`trustFwd_eq_fast`, `@[csimp]`, #965): the lines' array
+and `repAt`'s fuel once per round, not once per `repOn` query of every candidate. -/
+def trustFwdFast (af : AFunc) (L : List Line) (idx : LabelIdx)
+    (ts : List (Seg × List Line × Nat)) : Nat → List Label → List Label
+  | 0, S => S
+  | n + 1, S =>
+    let rep := repAt af (S.contains ·) L.toArray (L.length + af.blocks.size + 1)
+    let S' := S.filter fun l => ts.any fun x => x.1.label == l && segTermOk af rep idx x
+    if S'.length == S.length then S else trustFwdFast af L idx ts n S'
+
+@[csimp] theorem trustFwd_eq_fast : @trustFwd = @trustFwdFast := by
+  funext af L idx ts n S
+  induction n generalizing S with
+  | zero => rfl
+  | succ n ih => simp only [trustFwd, trustFwdFast, repOn, ih]
+
 /-- The trusted forwarding blocks of the segments `ss` ending in `os` laid out as `L`
 (`trustFwd` from all forwarding segments). -/
 def segsTrust (af : AFunc) (ss : List Seg) (os : List (List Line)) (L : List Line) : List Label :=
@@ -1047,6 +1185,18 @@ def segsOk (af : AFunc) (ss : List Seg) (os : List (List Line)) (L : List Line) 
   ss.length == os.length && (ss.head?.map (·.idx)) == some 0 &&
     (segNxts ss os 0).all fun x =>
       ((af.fwd? x.1.label).isSome && !S.contains x.1.label) || segTermOk af rep (blockLabelIdx L) x
+
+/-- `segsOk` as the compiler runs it (`segsOk_eq_fast`, `@[csimp]`, #965): the lines' array,
+`repAt`'s fuel and `blockLabelIdx` once, not once per query or segment. -/
+def segsOkFast (af : AFunc) (ss : List Seg) (os : List (List Line)) (L : List Line) : Bool :=
+  let S := segsTrust af ss os L
+  let rep := repAt af (S.contains ·) L.toArray (L.length + af.blocks.size + 1)
+  let idx := blockLabelIdx L
+  ss.length == os.length && (ss.head?.map (·.idx)) == some 0 &&
+    (segNxts ss os 0).all fun x =>
+      ((af.fwd? x.1.label).isSome && !S.contains x.1.label) || segTermOk af rep idx x
+
+@[csimp] theorem segsOk_eq_fast : @segsOk = @segsOkFast := rfl
 
 /-- An emission plan: the segments in emission order, their final last-instruction lines, the
 emitter's final state (deferred traps) and the block-label aliases (each `aliasOk`). -/
@@ -1076,6 +1226,21 @@ def padsOk (af : AFunc) (own : Label → Bool) (L : List Line) (al : List (Label
       | none => false
     | _ => true
 
+/-- `padsOk` as the compiler runs it (`padsOk_eq_fast`, `@[csimp]`, #965): the lines' array and
+`repAt`'s fuel once, not once per handler. -/
+def padsOkFast (af : AFunc) (own : Label → Bool) (L : List Line) (al : List (Label × Label)) :
+    Bool :=
+  let idx := blockLabelIdx L
+  let rep := repAt af own L.toArray (L.length + af.blocks.size + 1)
+  af.blocks.toList.all fun (_, code) => code.toList.all fun
+    | .inst (.tryCall _ ti) => ti.handlers.all fun h =>
+      match idx[(al.lookup h.label).getD h.label]? with
+      | some j => rep h.label j
+      | none => false
+    | _ => true
+
+@[csimp] theorem padsOk_eq_fast : @padsOk = @padsOkFast := rfl
+
 /-- The `MachBuffer` simplification of the segments `ss` (`allLabels` as in `machBuf`), if it
 splits into them and `segsOk` and `padsOk` accept it. -/
 def machPlan (af : AFunc) (allLabels : Bool) (ss : List Seg) (ps : PState) : Option Plan := do
@@ -1086,6 +1251,37 @@ def machPlan (af : AFunc) (allLabels : Bool) (ss : List Seg) (ps : PState) : Opt
   if segsOk af ss os L' && padsOk af ((segsTrust af ss os L').contains ·) L' al' then
     some ⟨ss, os, ps, al'⟩
   else none
+
+/-- `machPlan` as the compiler runs it (`machPlan_eq_fast`, `@[csimp]`, #965): `segsOk`,
+`padsOk` and every `aliasOk` share one `blockLabelIdx`, one copy of the lines to an array and
+one `segsTrust` (`aliasOk` builds the index and the array per alias). -/
+def machPlanFast (af : AFunc) (allLabels : Bool) (ss : List Seg) (ps : PState) : Option Plan := do
+  let (L, al) := machBuf allLabels (segLines ss (ss.map (·.term)))
+  let os ← splitSegs ss L
+  let L' := segLines ss os ++ trapLines ps
+  let idx := blockLabelIdx L'
+  let A := L'.toArray
+  let n := L'.length + af.blocks.size + 1
+  let rep0 := repAt af (fun _ => false) A n
+  let al' := al.filter fun a => match idx[a.2]? with
+    | some j => rep0 a.1 j
+    | none => false
+  let S := segsTrust af ss os L'
+  let rep := repAt af (S.contains ·) A n
+  let segs := ss.length == os.length && (ss.head?.map (·.idx)) == some 0 &&
+    (segNxts ss os 0).all fun x =>
+      ((af.fwd? x.1.label).isSome && !S.contains x.1.label) || segTermOk af rep idx x
+  let pads := af.blocks.toList.all fun (_, code) => code.toList.all fun
+    | .inst (.tryCall _ ti) => ti.handlers.all fun h =>
+      match idx[(al'.lookup h.label).getD h.label]? with
+      | some j => rep h.label j
+      | none => false
+    | _ => true
+  if segs && pads then
+    some ⟨ss, os, ps, al'⟩
+  else none
+
+@[csimp] theorem machPlan_eq_fast : @machPlan = @machPlanFast := rfl
 
 /-- The emission plan of an allocated function (`k` = its index in the file): the blocks in
 `emitOrder`, `MachBuffer`'s branch simplification (`machPlan`), else the unsimplified lines

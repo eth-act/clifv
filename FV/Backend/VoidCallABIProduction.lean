@@ -1,4 +1,4 @@
-import FV.Backend.MemoryCapturedCopyNIProduction
+import FV.Backend.MemorySinkExtNIProduction
 import FV.Backend.SemanticABICheck
 import FV.Backend.Lowering.StockVoidCallNI
 import FV.Backend.ReturnPinCheck
@@ -14,7 +14,7 @@ def lowerCheckedVoidCallABI (f : Clif.Function) (verify : Bool) : Except String 
     pure vc
   match attempt with
   | .ok vc => .ok vc
-  | .error _ => lowerCheckedMemoryCapturedCopyNI f verify
+  | .error _ => lowerCheckedMemorySinkExtNI f verify
 
 def lowerForAllocationVoidCallABI (f : Clif.Function) (verify cleanup : Bool) : Except String VCode :=
   (lowerCheckedVoidCallABI f verify).map (Stock.Arithmetic.stageV verify cleanup f)
@@ -110,14 +110,14 @@ theorem finishFileVoidCallABI_choice (attempt previous : FileAsm) :
 def compileFileVoidCallABIWhen {m : Type → Type} [Monad m] (enabled : Bool)
     (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
     (preUnverified : List (String × String) := []) (cleanup : Bool := true) : m FileAsm := do
-  if !enabled then return ← compileFileMemoryCapturedCopyNIWhen false alloc pf preUnverified cleanup
+  if !enabled then return ← compileFileMemorySinkExtNIWhen false alloc pf preUnverified cleanup
   let relevant := pf.funcs.any fun p => p.func.toOption.any fun f =>
     Stock.MemorySretCopy.eligible f || (Stock.VoidCall.sourceData? f).isSome
-  if !relevant then return ← compileFileMemoryCapturedCopyNIWhen true alloc pf preUnverified cleanup
+  if !relevant then return ← compileFileMemorySinkExtNIWhen true alloc pf preUnverified cleanup
   let pins := (ReturnPinFile.entries pf preUnverified cleanup).toOption.any ReturnPinFile.check
-  if !pins then return ← compileFileMemoryCapturedCopyNIWhen true alloc pf preUnverified cleanup
+  if !pins then return ← compileFileMemorySinkExtNIWhen true alloc pf preUnverified cleanup
   let attempt ← compileFileWithLowering lowerForAllocationVoidCallABI VCode.rulesFired
     alloc pf preUnverified cleanup
-  finishFileVoidCallABI attempt (compileFileMemoryCapturedCopyNIWhen true alloc pf preUnverified cleanup)
+  finishFileVoidCallABI attempt (compileFileMemorySinkExtNIWhen true alloc pf preUnverified cleanup)
 
 end Backend

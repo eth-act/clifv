@@ -139,6 +139,7 @@ namespace Link.EhCheck.Complete
 
 open Backend Backend.Proof Backend.Proof.UnwindTables E2E
 
+
 /-! ## `padsNonzeroB` -/
 
 /-- `labelOffsets` keeps the labels found so far. -/
@@ -424,7 +425,7 @@ theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa
     unwindRows af fa = .ok (prologueRows ++ pushRows af.saves 8) := by
   have hframe := lowerRFunc_frame halloc
   obtain ⟨code, -, haf, h0, hd⟩ := entry_static halloc hemit hvb hit
-  generalize hP : prologueLines af.saves af.frameSize = P at hd
+  generalize hP : prologueLines af.saves af.frameSize af.isCaller = P at hd
   have hins : ∀ ln ∈ P, ∃ i t, ln = .ins i t := by
     intro ln hln
     rw [← hP] at hln
@@ -513,7 +514,10 @@ theorem tryCall_visit (regs : Array Reg) (i : MInst) :
     all_goals intro c ti' h; cases h; exact ⟨_, rfl⟩
   all_goals
     simp only [MInst.visitOperands]
-    repeat' first | (with_reducible apply E2E.putPost_bind); intro _ | (with_reducible apply E2E.putPost_pure)
+    repeat' first
+      | (with_reducible apply E2E.putPost_bind); intro _
+      | (with_reducible apply E2E.putPost_pure)
+      | split
   all_goals intro c ti h; cases h
 
 theorem tryCall_assign {i : MInst} {regs : Array Reg} {c : CallInfo} {ti : TryInfo}

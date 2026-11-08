@@ -326,7 +326,9 @@ theorem cleanup_opt_peak_witness :
   have hoc := outsideCall (memOf file) (BinCheck.roByte J spec.opt.data)
     facts.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have h := (Link.DeadCleanup.compileExeOpt_correct_peak compile_eq closedBase (base_closed _)
-    (hooksSim_closed J) keepsSymbols hf0 hf d (intact file) hoc (clifRun _) clifEntry rfl rfl rfl
+    -- #581: the stack is `frameDrop + (D * d + pbMax)`; this program has no stack probes.
+    (hooksSim_closed J) keepsSymbols hf0 hf d (intact file)
+    (by rw [show pbMax J = 0 by native_decide]; exact hoc) (clifRun _) clifEntry rfl rfl rfl
     depth M).1 _ _ run_eq
   rw [x30_r] at h
   obtain ⟨k, hret, hx, -⟩ := h

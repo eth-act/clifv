@@ -150,6 +150,15 @@ theorem entryRegs (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
     obtain ⟨n,bound,pin⟩ := regs r found
     exact ⟨n,pin,bound⟩
 
+  | memorySinkExtend family equal effects h =>
+    intro loc member r located
+    have regs := (Spill.locsOf_regs (functionE_sig_int family.scope.subsetE).1
+      (Spill.sret_le_of_sigAbiOk family.abi)).2
+    have found : r ∈ Spill.locRegs (locsOf f.sig) :=
+      List.mem_filterMap.mpr ⟨loc,member,by rw [located]⟩
+    obtain ⟨n,bound,pin⟩ := regs r found
+    exact ⟨n,pin,bound⟩
+
 /-- An ABI-read-only artifact contains no TLS helper; cleanup and checked
 preparation preserve that exclusion. -/
 theorem noTls {sig : Clif.Signature} {code : VCode}
@@ -378,6 +387,17 @@ theorem hasTls_of_vcode_semantic {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     rw [prepared] at ht
     cases ht
 
+  | @memorySinkExtend kind ty cleanup result family equal effects h =>
+    have raw := Stock.Memory.effectsOnly_noTls effects
+    have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
+      rw [equal]
+      cases cleanup with
+      | false => exact raw
+      | true => exact Backend.DeadCleanup.prune_noTls raw
+    have prepared := noTls_of_prepCheck h.prepOk staged
+    rw [prepared] at ht
+    cases ht
+
 set_option maxHeartbeats 1000000 in
 /-- Stack-argument avoidance follows from actual physical allocation and the
 original hardware ABI entry; lowering provenance is irrelevant to the bound. -/
@@ -400,7 +420,7 @@ theorem stackArgsAvoid_frameW_semantic {f : Clif.Function} {k : Nat} {vc vcp : V
     rw [hfs, e]
     exact Nat.le_trans (Nat.le_trans (Nat.le_add_right _ _) (le_alignTo16 _))
       (Nat.le_add_right _ _)
-  have hsp := hres.1
+  have hsp := hres.1.1
   have hfit := h.fits
   have hx : (spv s + BitVec.ofNat 64 off + BitVec.ofNat 64 j -
       (spv s - BitVec.ofNat 64 (frameDrop af))).toNat = off + j + frameDrop af := by

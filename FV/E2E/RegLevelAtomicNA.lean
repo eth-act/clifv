@@ -108,27 +108,11 @@ theorem realizes_rmwLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
     hsc⟩ := qW_op hR hq hvb hi hk
   have hoppseq : opsm = ops := Except.ok.inj (hopsm.symm.trans hops)
   subst hoppseq
-  have hops' : opsm = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
-      ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩,
-      ⟨v2, .int, .def, .late, .fixed (.x 28)⟩] := by
-    have e : (MInst.atomicRmwLoop ty op fl (.vreg va .int) (.vreg vo .int) (.vreg vd .int)
-        (.vreg v1 .int) (.vreg v2 .int)).operands =
-        .ok #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
-          ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩,
-          ⟨v2, .int, .def, .late, .fixed (.x 28)⟩] := rfl
-    rw [e] at hopsm; injection hopsm with h; exact h.symm
-  subst hops'
+  obtain rfl : opsm = rmwOps op va vo vd v1 v2 :=
+    (Except.ok.inj ((operands_rmwLoop _ _ _ _ _ _ _ _).symm.trans hopsm)).symm
   obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hstat
-  obtain ⟨q0, q1, q2, q3, q4, rfl⟩ := regs5 (by simpa using hsz.symm)
-  obtain rfl : q0 = .x 25 := fixed_reg (o := ⟨va, .int, .use, .early, .fixed (.x 25)⟩) hloc (by simp) rfl
-  obtain rfl : q1 = .x 26 := fixed_reg (o := ⟨vo, .int, .use, .early, .fixed (.x 26)⟩) hloc (by simp) rfl
-  obtain rfl : q2 = .x 27 := fixed_reg (o := ⟨vd, .int, .def, .late, .fixed (.x 27)⟩) hloc (by simp) rfl
-  obtain rfl : q3 = .x 24 := fixed_reg (o := ⟨v1, .int, .def, .late, .fixed (.x 24)⟩) hloc (by simp) rfl
-  obtain rfl : q4 = .x 28 := fixed_reg (o := ⟨v2, .int, .def, .late, .fixed (.x 28)⟩) hloc (by simp) rfl
-  have hasg' : (MInst.atomicRmwLoop ty op fl (.vreg va .int) (.vreg vo .int) (.vreg vd .int)
-      (.vreg v1 .int) (.vreg v2 .int)).assign #[.x 25, .x 26, .x 27, .x 24, .x 28] =
-      .ok (.atomicRmwLoop ty op fl (.x 25) (.x 26) (.x 27) (.x 24) (.x 28)) := rfl
-  rw [hasg'] at hasg; cases hasg
+  obtain rfl := rmwRegs_of_fixed hsz hloc
+  rw [assign_rmwLoop] at hasg; cases hasg
   obtain rfl : c1 = [.inst (.atomicRmwLoop ty op fl (.x 25) (.x 26) (.x 27) (.x 24) (.x 28))] := by
     rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
     · exact h
@@ -141,12 +125,9 @@ theorem realizes_rmwLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
   obtain ⟨rfl, rfl⟩ := hl1'
   have hreg : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-  have hU : (((#[(⟨va, .int, .use, .early, .fixed (.x 25)⟩ : Operand),
-      ⟨vo, .int, .use, .early, .fixed (.x 26)⟩, ⟨vd, .int, .def, .late, .fixed (.x 27)⟩,
-      ⟨v1, .int, .def, .late, .fixed (.x 24)⟩, ⟨v2, .int, .def, .late, .fixed (.x 28)⟩].zip
-      (#[Reg.x 25, .x 26, .x 27, .x 24, .x 28].map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) =
-      [regVal s (.x 25), regVal s (.x 26)] := by
-    simp [Operand.isUse, hreg (.x 25) rfl, hreg (.x 26) rfl]
+  have hU : (((rmwOps op va vo vd v1 v2).zip ((rmwRegs op).map Loc.reg)).toList.filter
+      (·.1.isUse)).map (m ·.2) = [regVal s (.x 25), regVal s (.x 26)] := by
+    rw [rmwOps_uses, hreg (.x 25) rfl, hreg (.x 26) rfl]
   have hsem0 := hsem
   rw [hU] at hsem
   have herrw : Arm.r .ERR w = .None := by
@@ -217,36 +198,34 @@ theorem realizes_rmwLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
   have hiter : iterN R.step ((rmwLoopBody ty.bits op fl).length + 1) s =
       Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1 := by
     rw [iterN_add, hit1]; simp [iterN, hstep]
-  have hfr2 : ∀ f, f ≠ .PC → (∀ n ∈ [27, 24, 28], f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
+  have hfr2 : ∀ f, f ≠ .PC → (∀ n ∈ op.defNums, f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
       Arm.r f (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) =
         Arm.r f s := by
     intro f h1 h2 h3
     rw [Arm.r_of_w_different h1]
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, rnum] at h2
-    exact hfr1 f h1 (by simp [h2.1, h2.2.1, h2.2.2]) h3
+    exact rmwBody_frame hty op fl _ hst.err hrun1 f h1 h2 h3
   have hlenL : (rmwLoopLines ty.bits op fl (.loop ps1.aloop)).length =
       (rmwLoopBody ty.bits op fl).length + 2 := by simp [rmwLoopLines]
   have hWs : ∀ (m' : Loc → CV) (w'' : Arm.ArmState) (p : BitVec 64),
-      R.nextW j0 ps1 T (.run ⟨b, .op k (#[Reg.x 25, .x 26, .x 27, .x 24, .x 28].map Loc.reg) :: its, m, w⟩)
+      R.nextW j0 ps1 T (.run ⟨b, .op k ((rmwRegs op).map Loc.reg) :: its, m, w⟩)
         (.run ⟨b, its, m', w''⟩) p = (j0 + (rmwLoopBody ty.bits op fl).length + 2,
           { ps1 with aloop := ps1.aloop + 1 }, T) := by
     intro m' w'' p
     rw [RL.nextW_straight, RL.straightW_eq hvb hc1o hl1o, relaxLines_rmwLoopLines hty, hlenL]
     rfl
   refine ⟨(rmwLoopBody ty.bits op fl).length + 1, _,
-    MStep.op (outs' := [regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 27),
-      regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 24),
-      regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 28)])
-      (m2 := m) hvb hi hops hsz' hsem0 hlen ⟨by simp, fun h => by simp [havocFrom, MInst.keptDefs] at h,
-        fun n h => ?_⟩ ?_ (MNext.next hk), ⟨?_, fun i hi => ?_, ?_⟩, ?_⟩
+    MStep.op (outs' := op.defRegs.map (regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1)))
+      (m2 := m) hvb hi hops hsz' hsem0 hlen
+      ⟨(rmw_havoc op _ _ _ (by simp [regVal, rnum, h27])).1,
+        fun h => by simp [havocFrom, MInst.keptDefs] at h, fun n h => ?_⟩ ?_ (MNext.next hk), ⟨?_, fun i hi => ?_, ?_⟩, ?_⟩
   · simp only [havocFrom, MInst.keptDefs, Option.some.injEq] at h
     subst h
-    simp [regVal, rnum, h27]
+    exact (rmw_havoc op _ _ _ (by simp [regVal, rnum, h27])).2
   · refine ⟨fun l _ => ?_, fun c hc => by simp [MInst.clobbers] at hc⟩
-    simp [writeM, Operand.isDef, Operand.isEarly]
+    rw [rmwOps_early]
   · unfold RL.QWn
     rw [hWs, hiter]
-    refine .inl ⟨hT0, vb, items, pre ++ [.op k (#[Reg.x 25, .x 26, .x 27, .x 24, .x 28].map Loc.reg)],
+    refine .inl ⟨hT0, vb, items, pre ++ [.op k ((rmwRegs op).map Loc.reg)],
       c2, X', psm', ps2, x, hvb, hit, by rw [hsplit]; simp, hchk', hc2, hX2, hT2, htr, ?_, ?_, ?_,
       hx, hsc⟩
     · rw [show j0 + (rmwLoopBody ty.bits op fl).length + 2 =
@@ -257,23 +236,17 @@ theorem realizes_rmwLoopNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : A
       omega
     · refine stRel_after hR hst ?_ ?_ (SameWorld.w_left (by simp [Masked]) hsw1) ?_ ?_
         ⟨?_, fun a ha => ?_, ?_⟩
-      · refine store_regs hst [27, 24, 28] (by simp) ?_ ?_ hfr2
-        · intro n hn
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
-          rcases hn with rfl | rfl | rfl <;>
-            simp [writeM, upd, Operand.isDef, Operand.isLate]
-        · intro r hr
-          simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hr
-          simp [writeM, upd, Operand.isDef, Operand.isLate, hr.1, hr.2.1, hr.2.2]
-      · intro l hl
-        simp [writeM, upd, Operand.isDef, Operand.isLate, hl]
+      · refine store_regs hst op.defNums (defNums_lt op) (rmwOps_late op va vo vd v1 v2 m _).1
+          (fun r hr => (rmwOps_late op va vo vd v1 v2 m _).2 _ fun n hn e => hr n hn (Loc.reg.inj e))
+          hfr2
+      · exact fun l hl => (rmwOps_late op va vo vd v1 v2 m _).2 _ fun n _ e => hl _ e
       · rw [hfr2 .ERR (by simp) (by simp) (by simp)]; exact hst.err
       · simp only [Arm.w_program]; exact hprog1
-      · simp only [spOf]; exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
+      · simp only [spOf]; exact hfr2 _ (by simp) (defNums_of (by simp [rnum])) (by simp)
       · simp only [Arm.ArmState.mem_w_eq_mem, hmem1]
         refine mem_write_mem_bytes_ne _ _ _ _ _ (fun k hk e => hav k hk ?_)
         rw [← e]; exact RL.FK_F ha
-      · exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
+      · exact hfr2 _ (by simp) (defNums_of (by simp [rnum])) (by simp)
   · rcases Nat.lt_or_ge i (rmwLoopBody ty.bits op fl).length with hi1 | hi1
     · exact hgx1 (rmwBody_tail hty op fl) (RL.good_of_sp hst.sp)
         (rmwBody_reads hty op fl _ s fun q hq => .inr (.inr (.inl ⟨hav q hq, havY q hq⟩))) i hi1

@@ -99,13 +99,14 @@ theorem BinFactsTS.modelOf_ne {I : SemanticStackBound.CompilerInput} {X : Image}
   · exact absurd (mem_modelOf_not hi) hne
 
 /-- **`binary_correctXTS` for any program, recursive ones included** (`binary_correct_depthX`
-with `OkT`). -/
+with `OkT`; the stack premise `frameDrop + (D * M + pbMax I)`, #581: with the stack probes of the
+deepest activation). -/
 theorem binary_correct_depthXTS {I : SemanticStackBound.CompilerInput} {X : Image}
     {R : BitVec 64 → Prop} {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFactsTS I X R roB)
     (B : BaseEnv) (hB : BaseOk (sys I B)) {n : String} {f : Clif.Function}
     (hf : (prog I).func? n = some f)
     (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
-    (ho : OutsideCall I roB f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (ho : OutsideCall I roB f (frameDrop (art I f).af + (I.D * M + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ArmRefinesT (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
@@ -114,28 +115,30 @@ theorem binary_correct_depthXTS {I : SemanticStackBound.CompilerInput} {X : Imag
     ((∃ vals cm, Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c) →
       (sys I B).RunGoodL M f (modelOf I f r)) := by
-  have hB' : BaseOk (SemanticStackBound.ofInput I B (worldF I f (I.D * M) r)) := baseOk_F hB
-  have himgF : ∀ a, (SemanticStackBound.ofInput I B (worldF I f (I.D * M) r)).Img a →
-      worldF I f (I.D * M) r a := fun _ h => .inr h
+  have hB' : BaseOk (SemanticStackBound.ofInput I B (worldF I f (I.D * M + pbMax I) r)) := baseOk_F hB
+  have himgF : ∀ a, (SemanticStackBound.ofInput I B (worldF I f (I.D * M + pbMax I) r)).Img a →
+      worldF I f (I.D * M + pbMax I) r a := fun _ h => .inr h
   have hL := SemanticStackBound.okBTS_sound hbin.ok hB' himgF
   have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h =>
     hX a b (hbin.data a b h).1 (hbin.data a b h).2
   obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
     premisesTS hL (Clif.Program.func?_some hf).1 hro ho hr
   obtain ⟨hA, hG⟩ := backend_correct_program_budgetXT _ hL (LinkSys.budget_KT _ hL)
-    (Clif.Program.func?_some hf).1 M hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl htr
+    (Clif.Program.func?_some hf).1 M hent
+    ⟨hres, (LinkSys.budget_KT _ hL).2 M f (Clif.Program.func?_some hf).1⟩ rfl hgfree
+    himg hbe hargs hr.entry hsav hrel hpl htr
   refine ⟨?_, hbin.modelOf_ne hX, fun hout => runGoodL_F (hG hout)⟩
-  rw [mach_F I B (fun _ => False) (worldF I f (I.D * M) r)]
+  rw [mach_F I B (fun _ => False) (worldF I f (I.D * M + pbMax I) r)]
   exact hA
 
 /-- **`binary_correct_depthXTS` for the run's peak call depth** (`binary_correct_peakX` with
-`OkT`). -/
+`OkT`; the stack premise `frameDrop + (D * d + pbMax I)`, #581). -/
 theorem binary_correct_peakXTS {I : SemanticStackBound.CompilerInput} {X : Image}
     {R : BitVec 64 → Prop} {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFactsTS I X R roB)
     (B : BaseEnv) (hB : BaseOk (sys I B)) {n : String} {f : Clif.Function}
     (hf : (prog I).func? n = some f)
     (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
-    (ho : OutsideCall I roB f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I roB f (frameDrop (art I f).af + (I.D * d + pbMax I)) r args cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs) :
     ArmRefinesT (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach d f) (modelOf I f r)
@@ -144,19 +147,21 @@ theorem binary_correct_peakXTS {I : SemanticStackBound.CompilerInput} {X : Image
     ((∃ vals cm, Clif.runLoop B.env (prog I) (F + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (F + 1) cs = .trapped c) →
       (sys I B).RunGoodL d f (modelOf I f r)) := by
-  have hB' : BaseOk (SemanticStackBound.ofInput I B (worldF I f (I.D * d) r)) := baseOk_F hB
-  have himgF : ∀ a, (SemanticStackBound.ofInput I B (worldF I f (I.D * d) r)).Img a →
-      worldF I f (I.D * d) r a := fun _ h => .inr h
+  have hB' : BaseOk (SemanticStackBound.ofInput I B (worldF I f (I.D * d + pbMax I) r)) := baseOk_F hB
+  have himgF : ∀ a, (SemanticStackBound.ofInput I B (worldF I f (I.D * d + pbMax I) r)).Img a →
+      worldF I f (I.D * d + pbMax I) r a := fun _ h => .inr h
   have hL := SemanticStackBound.okBTS_sound hbin.ok hB' himgF
   have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h =>
     hX a b (hbin.data a b h).1 (hbin.data a b h).2
   obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
     premisesTS hL (Clif.Program.func?_some hf).1 hro ho hr
   obtain ⟨hA, hG⟩ := backend_correct_program_peakXT _ hL (LinkSys.budget_KT _ hL)
-    (Clif.Program.func?_some hf).1 F d hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl
+    (Clif.Program.func?_some hf).1 F d hent
+    ⟨hres, (LinkSys.budget_KT _ hL).2 d f (Clif.Program.func?_some hf).1⟩ rfl hgfree
+    himg hbe hargs hr.entry hsav hrel hpl
     hd htr
   refine ⟨?_, hbin.modelOf_ne hX, fun hout => runGoodL_F (hG hout)⟩
-  rw [mach_F I B (fun _ => False) (worldF I f (I.D * d) r)]
+  rw [mach_F I B (fun _ => False) (worldF I f (I.D * d + pbMax I) r)]
   exact hA
 
 /-- `binary_correct_of_checksTS` with `RunGoodL` of the model's run for a returning or trapping
