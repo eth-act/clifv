@@ -114,7 +114,7 @@ theorem attempt_correct_source {S : LinkSpec} {cleanup : Bool} {file0 file : Byt
 
 /-- **The typed compiler on a Stock route refines the original source program, recursive
 programs included** (S3, L1d): `attempt_correct_source_peak` for `attempt`, returned values by
-class (`ExecRefinesT`). -/
+class (`ExecRefinesT`); the stack `frameDrop + (D * d + pbMax)` (#581). -/
 theorem attempt_correct_source_peak {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
     (h : attempt lower S file0 cleanup = .ok file) (hsrc : SrcScopeB (input lower S cleanup) = true)
     (B : BaseEnv) (hB : BaseOk (sys (input lower S cleanup) B)) (hH : HooksSim (input lower S cleanup) B)
@@ -125,8 +125,8 @@ theorem attempt_correct_source_peak {S : LinkSpec} {cleanup : Bool} {file0 file 
     (d : Nat) {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall (input lower S cleanup) (BinCheck.roByte (input lower S cleanup) S.data) (legalize f)
-      (frameDrop (art (input lower S cleanup) (legalize f)).af + (input lower S cleanup).D * d) r args'
-        cs'.mem)
+      (frameDrop (art (input lower S cleanup) (legalize f)).af +
+        ((input lower S cleanup).D * d + pbMax (input lower S cleanup))) r args' cs'.mem)
     (hr : ClifRun (input lower S cleanup) B (legalize f) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

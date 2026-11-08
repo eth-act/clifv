@@ -44,7 +44,7 @@ theorem noRetAt_upTo (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.f
     (hsp : spOf (runX (L.mach M g) i s) = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af))
     (herr : Arm.r .ERR (runX (L.mach M g) i s) = .None) :
     ∀ j < i + 1, ¬ L.RetAt g s (runX (L.mach M g) j s) := by
-  have hroom := hME.stack.1
+  have hroom := hME.stack.1.1
   have hfd := L.frameDrop_eq hL hg
   have hne : ∀ t, spOf t = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af) → spv t ≠ spv s := by
     intro t ht e
@@ -72,7 +72,7 @@ theorem tabUpTo_call_at {M : Nat} {g : Clif.Function} {s : Arm.ArmState} {ini : 
       (slotted h = 1 → ∀ a, L.SlotByte h (spv (runX (L.mach (M + 1) g) i s)) a →
         ini.bytes (ini.next + Clif.sumTo E
           (callsBefore (L.mach (M + 1) g) (L.A g).fa (L.A g).base s i) + 1) a =
-          (runX (L.mach (M + 1) g) i s).mem (BitVec.ofNat 64 a)) ∧
+          probeMem (L.A h).af (runX (L.mach (M + 1) g) i s) (BitVec.ofNat 64 a)) ∧
       slotted h ≤ E (callsBefore (L.mach (M + 1) g) (L.A g).fa (L.A g).base s i) ∧
       ∃ N', RetOf (L.A h) (runX (L.mach (M + 1) g) i s)
           (runX (L.mach M h) N' (enterAt (L.A h) (runX (L.mach (M + 1) g) i s))) ∧

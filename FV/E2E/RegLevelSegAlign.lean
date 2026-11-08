@@ -301,7 +301,7 @@ theorem RL.entryW_congr {R R' : RL} (h : R.SameCode R') (t : Nat) (p : BitVec 64
 /-- **An initial witness**: the line after the prologue, where block 0's lines start, with the
 emitter state of the witness (code data only, as `RL.EntryWit`). -/
 def RL.InitWit (R : RL) (W : Nat × PState × List Line) : Prop :=
-  W.1 = 1 + (prologueLines R.af.saves R.af.frameSize).length ∧ W.2.2 = [] ∧
+  W.1 = 1 + (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length ∧ W.2.2 = [] ∧
     ∀ (items : Array RItem), R.rf.blocks[0]? = some items → QWst R W.1 W.2.1 0 items.toList
 
 open Classical in

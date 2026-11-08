@@ -170,7 +170,7 @@ theorem thm_of_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Budge
       fun ht => L.tlsOk_hooks_mode (hL.baseTls g hg (hasTls_of_vcode_return_pins hc ht) F (κ M g)), hME.body⟩
   refine ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, fun G ra s hME => hall (L.hooks M) G
     (L.A g).base ra s (hAE G ra s w₀ hME), fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
-  exact hni (L.xni_return_pins hL hN ih hg hWE.img (spv w₀)) (L.xTls_return_pins hL hN) D w₀' hrel' hsw hreg hstk
+  exact hni (L.xni_return_pins hL hN hκ ih hg hWE.img (spv w₀)) (L.xTls_return_pins hL hN) D w₀' hrel' hsw hreg hstk
     (L.hooks M) G
     (L.A g).base ra s (hAE G ra s w₀' hME)
 end LinkSys
@@ -257,7 +257,7 @@ theorem backend_correct_program_core_return_pins (L : LinkSys) (hL : L.OkReturnP
   have hWE : L.WorldEntry κ M f L.F args cs w₀ := by
     refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
     · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
-    · refine argsAtEntry_body hfr hc.entryRegs hbe hargs fun off v hm k hk hk' => ?_
+    · refine argsAtEntry_body hfr hc.entryRegs hbe hargs (fun off v hm k hk hk' => ?_) hres
       rw [hF] at hk'
       rcases hk' with hw | hi
       · exact stackArgsAvoid_frameW_return_pins hc hres hent hargs off v hm k hk hw

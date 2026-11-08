@@ -149,7 +149,7 @@ theorem backend_correct_final_unwind_ex_any {p : Clif.Program} {f : Clif.Functio
       hsites hlsda hpad hrows hcie hfde hsaved)
     hent hres hbe
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
-      (stackArgsAvoid_frameWA hc hres hent hargs))
+      (stackArgsAvoid_frameWA hc hres hent hargs) hres)
     hcs hrel htr fuel
 
 /-- **The backend's end-to-end theorem with unwinding without the check on the calls of the last
@@ -211,7 +211,7 @@ theorem backend_correct_final_unwind_any {p : Clif.Program} {f : Clif.Function} 
       hsites hlsda hpad hrows hcie hfde hsaved)
     hent hres hbe
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
-      (stackArgsAvoid_frameW hc hres hent hargs))
+      (stackArgsAvoid_frameW hc hres hent hargs) hres)
     hcs hrel htr fuel
 
 /-- **`backend_correct_final_of_unwind` without the check on the calls of the last block**

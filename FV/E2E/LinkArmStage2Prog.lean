@@ -139,7 +139,8 @@ canonical callee run from `W` with the arguments `args` has the table of `callee
 def OracleAt (κ : Nat → Clif.Function → Nat) (M : Nat) (h : Clif.Function) (c : BitVec 64)
     (cm : Clif.Mem) (args : List CV) (W : Arm.ArmState) : Prop :=
   ∃ ini : Clif.SlotInit, (L.NeedSlots → L.PlaceAtB cm c ini) ∧
-    (L.NeedSlots → ∀ a, L.SlotByte h c a → ini.bytes (ini.next + 1) a = W.mem (BitVec.ofNat 64 a)) ∧
+    (L.NeedSlots → ∀ a, L.SlotByte h c a →
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af W (BitVec.ofNat 64 a)) ∧
     L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h args W)) (calleeIni h ini)
 
 /-- **Stage 2 at one call, with the invocation's facts** (`stage2_answer` whose oracle premise

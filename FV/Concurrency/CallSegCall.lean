@@ -15,8 +15,9 @@ addresses outside its region (`hgB`). Here they come from the caller:
   `CodeIn.callee` passes `CodeIn` on to a callee keeping the caller's frame and kept addresses
   (`G = R.FK`);
 * **`stackAvail_callee`**: a callee entered at the caller's body `sp` with budget `KB` has its
-  `StackAvail` when `frameSize + 16 + KB` fits in the caller's budget (the linked code is in the
-  caller's kept addresses, so outside its region); **`budget_call`**: with a budget
+  `StackAvail` when `frameSize + 16 + KB` fits in the caller's budget and `KB` covers its stack
+  probes below its frame (`probeBelow`, #581; `stackRoom_callee` without them; the linked code is
+  in the caller's kept addresses, so outside its region); **`budget_call`**: with a budget
   `(Dcap - d) * M` at depth `d < Dcap` (`M` bounding every `frameSize + 16`), the callee's budget
   `K - (frameSize + 16)` is `(Dcap - (d + 1)) * M` or more;
 * `nested_callee`: that callee is `Nested` in its caller; **`gfree_callee`**: its kept
@@ -127,10 +128,12 @@ theorem spv_enter {A : RL} {x : ArmState} {m : Loc → CV} {w : ArmState} (hS : 
   rw [r_enter (by simp) (by simp)]
   exact hS.sp
 
-/-- **The callee's stack** (module doc). -/
-theorem stackAvail_callee {A : RL} (hA : A.Wf) {x : ArmState} {m : Loc → CV} {w : ArmState}
+/-- **The callee's stack room**: the callee's frame and budget below its entry `sp` hold no
+code (`StackAvail` without its probe budget, #581). -/
+theorem stackRoom_callee {A : RL} (hA : A.Wf) {x : ArmState} {m : Loc → CV} {w : ArmState}
     (hS : StRel A x m w) (hc : CodeIn L A) {n : String} {FB : LFn} (hB : (n, FB) ∈ L.fns)
-    {KB : Nat} (hK : FB.af.frameSize + 16 + KB ≤ A.K) : StackAvail KB FB.af (enter FB x) := by
+    {KB : Nat} (hK : FB.af.frameSize + 16 + KB ≤ A.K) :
+    StackRoom (FB.af.frameSize + 16 + KB) (enter FB x) := by
   have hsp := spv_enter hS FB
   obtain ⟨h1, h2⟩ := spB_toNat hA
   have hspB : A.spB = spv A.s0 - BitVec.ofNat 64 (frameDrop A.af) := rfl
@@ -146,6 +149,15 @@ theorem stackAvail_callee {A : RL} (hA : A.Wf) {x : ArmState} {m : Loc → CV} {
     generalize A.spB = b at h1 hspB ⊢
     subst hspB
     bv_omega
+
+/-- **The callee's stack** (module doc). (#581: `hp`, the callee's probes below its frame within
+its budget, is new: `StackAvail` now also bounds them, so without it the statement is false for
+a calling callee whose probed stack is a multiple of 4 KiB.) -/
+theorem stackAvail_callee {A : RL} (hA : A.Wf) {x : ArmState} {m : Loc → CV} {w : ArmState}
+    (hS : StRel A x m w) (hc : CodeIn L A) {n : String} {FB : LFn} (hB : (n, FB) ∈ L.fns)
+    {KB : Nat} (hK : FB.af.frameSize + 16 + KB ≤ A.K) (hp : probeBelow FB.af ≤ KB) :
+    StackAvail KB FB.af (enter FB x) :=
+  ⟨stackRoom_callee hA hS hc hB hK, hp⟩
 
 /-- **The callee's budget at depth `d` below `Dcap`** (module doc). -/
 theorem budget_call {Dcap d M K N : Nat} (hK : (Dcap - d) * M ≤ K) (hd : d < Dcap)
@@ -171,12 +183,14 @@ theorem gfree_callee {A : RL} (hA : A.Wf) {x : ArmState} {m : Loc → CV} {w : A
     (hS : StRel A x m w) (hc : CodeIn L A) {n : String} {FB : LFn} (hB : (n, FB) ∈ L.fns)
     {KB : Nat} (hK : FB.af.frameSize + 16 + KB ≤ A.K) :
     ∀ a, A.FK a → ¬ StackBelow (frameDrop FB.af + KB) (spv (enter FB x)) a := fun a hG hR =>
-  (nested_callee (L := L) hS (by have := frameDrop_le FB.af; omega)).region_not_FK hA
-    (stackAvail_callee hA hS hc hB hK) hR hG
+  (nested_callee (L := L) hS (by have := frameDrop_le FB.af; omega)).region_not_FK_room hA
+    (stackRoom_callee hA hS hc hB hK) hR hG
 
 /-! ## The call end -/
 
-/-- **`Link.call_end` from the caller's kept code and budget** (module doc). -/
+/-- **`Link.call_end` from the caller's kept code and budget** (module doc). (#581: `hpB`, the
+callee's probes below its frame within its budget `KB`, is new: the callee's `R.Wf` includes
+`StackAvail`, which now bounds them.) -/
 theorem call_endK (hL : L.Ok) {nA : String} {FA : LFn} (hA : (nA, FA) ∈ L.fns) {s0 : ArmState}
     {K : Nat} {G : BitVec 64 → Prop} (hRA : (L.act FA s0 K G).Wf)
     (hcin : CodeIn L (L.act FA s0 K G))
@@ -210,7 +224,7 @@ theorem call_endK (hL : L.Ok) {nA : String} {FA : LFn} (hA : (nA, FA) ∈ L.fns)
     {vals : List Clif.Val} (hvals : s'.frame.getMany args = .ok vals)
     (htys : vals.map (·.ty) = Clif.AbiParam.tys ext.sig.params)
     {FB : LFn} (hB : (ext.name, FB) ∈ L.fns) (hFB : FB.Static)
-    {KB : Nat} (hKB : FB.af.frameSize + 16 + KB ≤ K)
+    {KB : Nat} (hKB : FB.af.frameSize + 16 + KB ≤ K) (hpB : probeBelow FB.af ≤ KB)
     {fB : Clif.Function} (hsig : fB.sig = ext.sig) :
     L.M x = enter FB x ∧ stepEvs x = [] ∧ cls x = .plain ∧
       (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).Wf ∧
@@ -219,14 +233,14 @@ theorem call_endK (hL : L.Ok) {nA : String} {FA : LFn} (hA : (nA, FA) ∈ L.fns)
       xreg 30 (enter FB x) = Arm.r .PC x + 4#64 ∧ (enter FB x).mem = x.mem ∧
       Q (L.act FB (enter FB x) KB (L.act FA s0 K G).FK)
         (iterN (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).step
-          (prologueLines FB.af.saves FB.af.frameSize).length (enter FB x))
+          (prologueLines FB.af.saves FB.af.frameSize FB.af.isCaller).length (enter FB x))
         (MConf.init FB.rf (locVal (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).fr
           (iterN (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).step
-            (prologueLines FB.af.saves FB.af.frameSize).length (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
+            (prologueLines FB.af.saves FB.af.frameSize FB.af.isCaller).length (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
       AInv (L.act FB (enter FB x) KB (L.act FA s0 K G).FK)
         (MConf.init FB.rf (locVal (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).fr
           (iterN (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).step
-            (prologueLines FB.af.saves FB.af.frameSize).length (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
+            (prologueLines FB.af.saves FB.af.frameSize FB.af.isCaller).length (enter FB x))) (bodyOf FB.af (enter FB x))) ∧
       ArgsAtEntry (L.act FB (enter FB x) KB (L.act FA s0 K G).FK).F fB.sig vals
         (bodyOf FB.af (enter FB x)) ∧
       CodeIn L (L.act FB (enter FB x) KB (L.act FA s0 K G).FK) ∧
@@ -235,7 +249,7 @@ theorem call_endK (hL : L.Ok) {nA : String} {FA : LFn} (hA : (nA, FA) ∈ L.fns)
   have hK' : frameDrop FB.af + KB ≤ K := by have := frameDrop_le FB.af; omega
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := call_end hL hA hRA H hchk hres hcu hlow
     hind hv hnt hout0 hslot hsym hX0 H3 hc huv hdv hq hP hm2 hm3 hm4 hbody hcl hext huniq hvals
-    htys hB hFB (hcin.code hst hB) (stackAvail_callee hRA hst hcin hB hKB)
+    htys hB hFB (hcin.code hst hB) (stackAvail_callee hRA hst hcin hB hKB hpB)
     (gfree_callee hRA hst hcin hB hKB) hsig
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, hcin.callee hRA hst FB KB,
     nested_callee hst hK'⟩
@@ -314,7 +328,7 @@ theorem resume_ret {RA RB : RL} (hRA : RA.Wf) (hRB : RB.Wf) (hgv : RA.gv = fun _
     (hm0 : ∀ a, RA.FK a → RB.s0.mem a = x.mem a) (hG : ∀ a, RA.FK a → RB.G a)
     {r₀B : Reg → CV}
     (hr₀B : ∀ r ∈ calleeSaved, ckeep r (r₀B r) =
-      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize).length RB.s0) (.reg r)))
+      ckeep r (locVal RB.fr (iterN RB.step (prologueLines RB.af.saves RB.af.frameSize RB.af.isCaller).length RB.s0) (.reg r)))
     (hdr : ∀ (b : Nat) (vb : VBlock) (us : List (Reg × Reg)), RB.vc.blocks[b]? = some vb →
       (∃ k : Nat, vb.insts[k]? = some (MInst.rets us)) →
       CallDefsRet RA.vc (us.map (·.2)))

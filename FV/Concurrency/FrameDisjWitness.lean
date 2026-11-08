@@ -24,7 +24,8 @@ def RCK : RL := { RC with K := 0x100 }
 theorem stackRCK : StackAvail 0x100 RCK.af RCK.s0 := by
   have hs := spC
   have hfs : (act vcpC rfC).af.frameSize = 160 := hs.2.2.2.2.2.2.2.1
-  refine ⟨?_, fun a ha => ?_⟩
+  refine ⟨⟨?_, fun a ha => ?_⟩, ArmAllocThread.Witness.probeBelow_le_small
+    (show (act vcpC rfC).af.frameSize + 16 < 4096 by omega)⟩
   · show (act vcpC rfC).af.frameSize + 16 + 0x100 ≤ (E2E.spv RC.s0).toNat
     rw [spv_RC, hfs]; decide
   · obtain ⟨j, hj, hd⟩ := codeAddr_words program_RC ha

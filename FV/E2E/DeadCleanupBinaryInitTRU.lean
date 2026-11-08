@@ -64,7 +64,9 @@ theorem model_init_sysSTRU {D : List Clif.DataObject} (hI : okBCleanup I = true)
     (backend_correct_program_initETXRU (sysS I B f r S) hL (κ := kapW I B f r)
     ((DeadCleanupStackBound.budget_of hI B (worldF I f (DeadCleanupStackBound.bud I f) r)).extImg _ _ _)
     hIO.baseRet hIO.retCount hIO.det hIO.detTab hIO.detTabR hIO.hooks hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (fun a ha => ?_) (fun a _ => rfl) hbe hargs
+    (by rw [hκf]; exact ⟨hres, by rw [← hκf]; exact (DeadCleanupStackBound.budget_of hI B
+      (worldF I f (DeadCleanupStackBound.bud I f) r)).2 M f hfm⟩) (by rw [hκf]; rfl)
+    (fun a ha => ?_) (fun a _ => rfl) hbe hargs
     hr.entry (fun off v hm k hk hx => ?_)
     ⟨⟨hrel.1.bytes, fun a n hv => ?_, hrel.1.symbols⟩, hrel.2.1, hrel.2.2.1, fun j hj => ?_,
       hrel.2.2.2.2⟩ (fun hN => by rw [iniOf_sysS]; exact hpl hN) htr hrun)

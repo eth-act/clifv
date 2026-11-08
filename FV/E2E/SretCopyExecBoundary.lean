@@ -52,8 +52,22 @@ theorem outside_call {I : SemanticStackBound.CompilerInput} {f : Clif.Function} 
     omega
   args := by rw [signature]; exact arguments_out contents _ memory _
   bytes := by
-    intro a value valid initialized _
-    exact (memory_relation contents (art I f).base memory _).bytes a value valid initialized
+    intro a value valid initialized
+    -- the heap lies far below the stack probes (#581: at most three probes below `sp - 16`)
+    have bounds := valid_bounds contents (fun name => I.syms.lookup name) valid
+    have small : a < 2^64 := by rcases bounds with bounds | bounds <;> omega
+    have range : a < 0x500010 := by rcases bounds with bounds | bounds <;> omega
+    have hsp : (spv (machine contents (art I f).base memory)).toNat = 0x1000000 := by
+      rw [stack_pointer]; rfl
+    have hc := probeCount_le_three (probeTotal (art I f).af.frameSize (art I f).af.isCaller)
+    rw [probeMem_of_not]
+    · exact (memory_relation contents (art I f).base memory _).bytes a value valid initialized
+    · cases hp : probeHit (art I f).af (spv (machine contents (art I f).base memory)) (BitVec.ofNat 64 a) with
+      | false => rfl
+      | true =>
+        obtain ⟨-, i, hi, k, hk, e⟩ := probeHit_toNat hp (by rw [hsp]; omega)
+        rw [hsp, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small] at e
+        omega
   image := by
     intro a value other valid initialized placed
     have bounds := valid_bounds contents (fun name => I.syms.lookup name) valid

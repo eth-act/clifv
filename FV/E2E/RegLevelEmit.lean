@@ -15,6 +15,7 @@ segment, last-instruction lines and final lines.
 namespace Backend
 
 
+
 theorem forIn_except_yield {ε σ α : Type} (l : List α) (s : σ)
     (f : α → σ → Except ε (ForInStep σ)) (g : α → σ → Except ε σ)
     (h : ∀ a s, f a s = ForInStep.yield <$> g a s) : forIn l s f = l.foldlM (fun s a => g a s) s := by

@@ -40,6 +40,7 @@ theorem insnAt_ofLine_return_pins {fa : FnAsm} {fb : FnBin} {lm : Std.HashMap Lb
   rw [hb]
   exact insnAt_line (by omega) hj
 
+/-- `progCallG` for `OkReturnPins` (with `hpb`, #581, as `progCall`). -/
 theorem progCallG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ihG : L.ThmG κ (M - 1)) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     (hib : ((RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0 ∧
@@ -49,6 +50,7 @@ theorem progCallG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : N
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
     {cm' : Clif.Mem} (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
@@ -91,6 +93,10 @@ theorem progCallG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : N
   have hsp0 : spv cn = spv w := hcOk.world.1 _ (by simp [Masked])
   have hspw₀ : spv w₀ = spv w - BitVec.ofNat 64 (frameDrop (L.A h).af) := by
     rw [spv_bodyOf, spv_enterAt, hsp0]
+  -- the callee's stack probes zero only bytes of its frame and of its budget, inside `F` (#581)
+  have hnpw : ∀ u : Arm.ArmState, spv u = spv w → ∀ a, ¬ F a →
+      probeHit (L.A h).af (spv (enterAt (L.A h) u)) a = false := fun u hu a ha => by
+    rw [spv_enterAt, hu]; exact probeHit_of_notF hpb hroom (fun a hb => (hdead a hb).1) ha
   obtain ⟨-, -, hB⟩ := off_toNat 0 (spv w) (frameDrop (L.A h).af) (by omega)
   -- the callee's outgoing area (in the caller's dead stack) is outside the callee's `F`
   let ib := (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase
@@ -177,10 +183,12 @@ theorem progCallG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : N
           hcOk.world.1 _ (by simp [Masked])]
         exact herr
       · rw [← hmr.bytes a b hv hb]
-        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf, mem_enterAt]
-        rw [L.mem_canon, mem_withImg, if_neg]
+        have hnF : ¬ F (BitVec.ofNat 64 a) := fun hf =>
+          (hmr.valid a 1 hv).2 0 (by omega) (by simpa using hf)
+        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf]
+        rw [probeMem_of_not (hnpw cn hsp0 _ hnF), mem_enterAt, L.mem_canon, mem_withImg, if_neg]
         intro hi
-        exact (hmr.valid a 1 hv).2 0 (by omega) (by simpa using himgF _ hi)
+        exact hnF (himgF _ hi)
     · intro loc v hmem
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hmem
       cases loc with
@@ -195,8 +203,9 @@ theorem progCallG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : N
         rw [show Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w₀ =
             Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w from
           read_mem_bytes_congr _ _ (fun k hk => by
-            simp only [w₀, mem_bodyOf, mem_enterAt]
-            rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
+            simp only [w₀, mem_bodyOf]
+            rw [probeMem_of_not (hnpw cn hsp0 _ (hsav off v hmem k hk)), mem_enterAt, L.mem_canon,
+              mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
         exact hargs.2.2 off v hmem
       | reg r =>
         obtain ⟨i, hr, hv⟩ := reg_zip _ _ hi
@@ -266,7 +275,7 @@ theorem progCallG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : N
       fun a ha => by rw [mem_enterAt]; exact himgt a ha, hbw⟩
     · rw [r_enterAt _ _ (by simp) (by simp)]; exact herrt
     · rw [hspt]; exact hal
-    · refine stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_
+    · refine ⟨stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_, hpb⟩
       rw [hspt, ← hdrop] at hb
       exact (hdead a hb).2 (hcode t a ha)
     · rw [hspt]; exact ha.2
@@ -299,7 +308,10 @@ theorem progCallG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : N
         rw [r_bodyOf _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp)]
         exact herrt
       · have := hmt.bytes a b hv hb
-        simp only [Arm.read_mem, Arm.read_store, w₀', mem_bodyOf, mem_enterAt] at this ⊢
+        have hnF : ¬ F (BitVec.ofNat 64 a) := fun hf =>
+          (hmt.valid a 1 hv).2 0 (by omega) (by simpa using hf)
+        simp only [Arm.read_mem, Arm.read_store, w₀', mem_bodyOf] at this ⊢
+        rw [probeMem_of_not (hnpw t hst _ hnF), mem_enterAt]
         exact this
     have hsw : SameWorld (fun a => Fh a ∨ D a) w₀ w₀' := by
       refine ⟨fun f hf => ?_, fun a ha => ?_, by simp [w₀, w₀']⟩
@@ -321,8 +333,9 @@ theorem progCallG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : N
           by_cases hf : Fh a
           · exact ha (.inl hf)
           · exact ha (.inr ⟨hz, hf⟩)
-        simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
-        rw [hcOk.world.2.1 a (fun hf => hnZ (hFZ a hf)), hZ.2.1 a hnZ]
+        simp only [w₀, w₀', mem_bodyOf]
+        exact probeMem_congr (by rw [spv_enterAt, spv_enterAt, hsp0, hst])
+          (by rw [mem_enterAt, mem_enterAt, hcOk.world.2.1 a (fun hf => hnZ (hFZ a hf)), hZ.2.1 a hnZ])
     have hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf h.sig).zip vals →
         regVal w₀' r = regVal w₀ r := by
       intro r v hm
@@ -338,8 +351,9 @@ theorem progCallG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : N
       intro off v hm k hk
       rw [hx29, fp_off_eq]
       have hnF := hsav off v hm k hk
-      simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
-      rw [hstkt off v hm k hk, hcOk.world.2.1 _ hnF]
+      simp only [w₀, w₀', mem_bodyOf]
+      exact probeMem_congr (by rw [spv_enterAt, spv_enterAt, hsp0, hst])
+        (by rw [mem_enterAt, mem_enterAt, hstkt off v hm k hk, hcOk.world.2.1 _ hnF])
     exact hniG hN D w₀' hrel' hsw hreg hstk G (Arm.r .PC t + 4)
       (enterAt (L.A h) t) (hME t w₀' hst herrt himgt hbw)
   intro t ht
@@ -360,8 +374,9 @@ theorem progCallG_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] {M : N
     exact hallG G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hME t w₀ hst herrt ht.img hbw)
 
 /-- **The callee's states of a returning call of a function of `P`** (`progOsCore_return_pins`'s premises):
-from `ThmG` one level down. -/
-theorem progGoodCore_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1))
+from `ThmG` one level down (with the budget `hκ`, #581: the callee's budget holds its probes). -/
+theorem progGoodCore_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ihG : 0 < M → L.ThmG κ (M - 1))
     {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs) (hcallee : L.Callee g h)
     {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
     (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
@@ -399,8 +414,8 @@ theorem progGoodCore_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] {M : Nat
       simp [← huses, hq]
     rw [L.regVal_canon _ _ _ hrA, placeArgs_regVal _ _ _ hnd harg (by rw [← hLu]; exact hj) hu,
       setVal_regVal]
-  exact L.progCallG_return_pins hL hM (ihG hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw halw hroom hdead hmr
-    hargs hsav hpl hinit hrun t hcOk
+  exact L.progCallG_return_pins hL hM (ihG hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw halw hroom hdead
+    (hκ.2 _ h hh) hmr hargs hsav hpl hinit hrun t hcOk
 
 /-- **The callee of a `blr` at a call state is one `g` may enter through the call's register**
 (`BlrTo`): the callee contract's premise (`RL.CallPre`) is a call through `L.XMode modes`, which enters a
@@ -508,8 +523,9 @@ at depth `M` where the callee contract's premise holds (`RL.CallPre`, which `RL.
 at a `bl`/`blr` line) and the machine calls `h` (`CallsAtL`), every state of `h`'s run entered
 from `u` whose step ends without error has the per-state facts: the premise is the antecedent of
 `progOs_return_pins`/`progOsReg_return_pins` (`calleeOk_return_pins`), whose linked call of `h` is the callee activation of
-`progCall_return_pins`, whose states `ThmG` one level down covers. -/
-theorem callGood_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1)) {g : Clif.Function}
+`progCall_return_pins`, whose states `ThmG` one level down covers (with the budget `hκ`, #581). -/
+theorem callGood_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ihG : 0 < M → L.ThmG κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀) {u : Arm.ArmState} {h : Clif.Function}
     (hpre : (L.actRLMode modes κ M g F G s).CallPre u) (hprog : u.program = (L.A g).fb.program (L.A g).base)
@@ -577,7 +593,7 @@ theorem callGood_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] {M : Nat} (i
       (fun p hp r hr => (hloc p hp).2 r hr)
     have hx2 : L.progXMode modes κ M F h (Lu.map (fun q => regVal u q.2)) w = some (o, w2) := by
       rw [← L.XMode_prog (κ := κ) (M := M) (g := g) hpf, ← call_useVals hregs]; exact hx
-    exact L.progGoodCore_return_pins hL ihG hg hh (.inl ⟨_, hps⟩) he.imgF he.imgG he.imgS hLu hGk
+    exact L.progGoodCore_return_pins hL hκ ihG hg hh (.inl ⟨_, hps⟩) he.imgF he.imgG he.imgS hLu hGk
       (hL.raCall g hg _ h hps _ hcp) hsw hx2
   | reg r =>
     have hreg : ∀ n, info.dest ≠ .sym n := fun n => by rw [hd]; simp
@@ -623,7 +639,7 @@ theorem callGood_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] {M : Nat} (i
         simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
         exact L.got_target_return_pins hL hs e
       obtain ⟨hLu, -⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
-      exact L.progGoodCore_return_pins hL ihG hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) he.imgF he.imgG he.imgS hLu
+      exact L.progGoodCore_return_pins hL hκ ihG hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) he.imgF he.imgG he.imgS hLu
         hGk (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hcp) hsw hx2
     · cases hx2
 
@@ -632,8 +648,9 @@ theorem callGood_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] {M : Nat} (i
 /-- **The states of the activation of `g` at depth `M` entered in `s`** from its trace (the
 register-level `GoodX` of every state before `n`), when every state before its return whose step
 ends without error is before `n`: its own states from the trace, the nested ones from the call
-states (`callGood_return_pins`). -/
-theorem runGood_of_trace_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1))
+states (`callGood_return_pins`; with the budget `hκ`, #581). -/
+theorem runGood_of_trace_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Budget κ) {M : Nat}
+    (ihG : 0 < M → L.ThmG κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64}
     {s w₀ : Arm.ArmState} (he : L.MachEntry κ M g F G ra s w₀) {n : Nat}
     (hgood : ∀ i < n, actGoodX (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb
@@ -678,7 +695,7 @@ theorem runGood_of_trace_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] {M :
       rcases hcall with ⟨n', hn', -⟩ | ⟨⟨r', hr'⟩, -⟩
       · rw [hins] at hn'; cases hn'; exact hG.call _ ⟨j, tt, hj, hpc⟩ (.inl ⟨n', rfl⟩)
       · rw [hins] at hr'; cases hr'; exact hG.call _ ⟨j, tt, hj, hpc⟩ (.inr ⟨r', rfl⟩)
-    exact L.callGood_return_pins hL ihG hg he hpre hG.prog hcall _ _ _ _ hR' herrt
+    exact L.callGood_return_pins hL hκ ihG hg he hpre hG.prog hcall _ _ _ _ hR' herrt
 
 /-- A returning activation (`ActRet`) has returned in the sense of `RetL`. -/
 theorem retL_of_actRet_return_pins {g : Clif.Function} {ra : BitVec 64} {s t : Arm.ArmState}
@@ -712,11 +729,11 @@ theorem thmG_of_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Budg
       fun ht => L.tlsOk_hooks_mode (hL.baseTls g hg (hasTls_of_vcode_return_pins hc ht) F (κ M g)), hME.body⟩
   refine ⟨fun G ra s hME => ?_, fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
   · obtain ⟨n, hret, -, hgood⟩ := hall (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀ hME)
-    exact L.runGood_of_trace_return_pins hL ihG hg hME hgood fun k hno _ =>
+    exact L.runGood_of_trace_return_pins hL hκ ihG hg hME hgood fun k hno _ =>
       Nat.lt_of_not_le fun hle => hno n hle (L.retL_of_actRet_return_pins hME.abi hret)
-  · obtain ⟨n, hret, -, hgood⟩ := hni (L.xni_return_pins hL hN ih hg hWE.img (spv w₀)) (L.xTls_return_pins hL hN) D w₀'
+  · obtain ⟨n, hret, -, hgood⟩ := hni (L.xni_return_pins hL hN hκ ih hg hWE.img (spv w₀)) (L.xTls_return_pins hL hN) D w₀'
       hrel' hsw hreg hstk (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀' hME)
-    exact L.runGood_of_trace_return_pins hL ihG hg hME hgood fun k hno _ =>
+    exact L.runGood_of_trace_return_pins hL hκ ihG hg hME hgood fun k hno _ =>
       Nat.lt_of_not_le fun hle => hno n hle (L.retL_of_actRet_return_pins hME.abi hret)
 
 /-- **The per-state part of the linking statement at every depth.** -/
@@ -796,7 +813,7 @@ theorem backend_correct_program_coreX_return_pins (L : LinkSys) (hL : L.OkReturn
   have hWE : L.WorldEntry κ M f L.F args cs w₀ := by
     refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
     · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
-    · refine argsAtEntry_body hfr hc.entryRegs hbe hargs fun off v hm k hk hk' => ?_
+    · refine argsAtEntry_body hfr hc.entryRegs hbe hargs (fun off v hm k hk hk' => ?_) hres
       rw [hF] at hk'
       rcases hk' with hw | hi
       · exact stackArgsAvoid_frameW_return_pins hc hres hent hargs off v hm k hk hw
@@ -838,7 +855,7 @@ theorem backend_correct_program_coreX_return_pins (L : LinkSys) (hL : L.OkReturn
         L.calleeOk_return_pins hL hκ ih hf hME,
         fun _ => L.calleeTryOk_return_pins hL hκ ih hf hME,
         fun ht => L.tlsOk_hooks_mode (hL.baseTls f hf (hasTls_of_vcode_return_pins hc ht) L.F (κ M f)), hME.body⟩
-    refine L.runGood_of_trace_return_pins hL (fun _ => L.thmG_return_pins hL hκ (M - 1)) hf hME hgood fun k _ hk => ?_
+    refine L.runGood_of_trace_return_pins hL hκ (fun _ => L.thmG_return_pins hL hκ (M - 1)) hf hME hgood fun k _ hk => ?_
     refine Nat.lt_of_not_le fun hle => hstuck (k - n) ?_
     rw [show n + (k - n) + 1 = k + 1 by omega]
     exact hk

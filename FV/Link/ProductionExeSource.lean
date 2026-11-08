@@ -108,7 +108,8 @@ theorem attempt_correct_source {S : LinkSpec} {cleanup : Bool} {file0 file : Byt
 
 /-- **The executable compiler refines the original source program, recursive programs
 included** (S3, L1d): `attempt_correct_source` without the call-graph premise. The outside
-caller of `legalize f`'s code provides `frameDrop + D * d` bytes of stack, where `d` bounds the
+caller of `legalize f`'s code provides `frameDrop + (D * d + pbMax)` bytes of stack (#581: the
+deepest activation's stack probes write up to `pbMax` bytes below its frame), where `d` bounds the
 call depth of the **source** run from `cs` (`Clif.DepthLe`: no state the whole-program run of the
 original program reaches has more than `d` callers). A return of the source run is the
 executable's return of the results split by `f`'s return groups with the same memory; a trap
@@ -124,7 +125,8 @@ theorem attempt_correct_source_peak {S : LinkSpec} {cleanup : Bool} {file0 file 
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall (input S cleanup) (BinCheck.roByte (input S cleanup) S.data) (legalize f)
-      (frameDrop (art (input S cleanup) (legalize f)).af + (input S cleanup).D * d) r args' cs'.mem)
+      (frameDrop (art (input S cleanup) (legalize f)).af +
+        ((input S cleanup).D * d + pbMax (input S cleanup))) r args' cs'.mem)
     (hr : ClifRun (input S cleanup) B (legalize f) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

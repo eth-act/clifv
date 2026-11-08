@@ -39,7 +39,7 @@ def DetTabPRB (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     MemRel F L.syms cm w → ArgsAt h.sig vals uses w → StackArgsAvoid F h.sig vals w →
     (L.NeedSlots → L.PlaceAtB cm (spv w) ini) →
     (L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a)) →
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a)) →
     Clif.initState L.P n vals cm = .ok cs → L.crun M cs = .returned rvals cm' →
     ∀ t, L.CallerOk F h uses w t →
       (∀ f, Masked f → f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f t = Arm.r f (L.canon h uses w)) →
@@ -49,7 +49,8 @@ def DetTabPRB (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
       L.TableOf (M - 1) h (enterAt (L.A h) (L.canon h uses w)) (calleeIni h ini)
 
 /-- **`progCallPRB` at an actual call state**: the canonical table premise from the table of the
-callee run of a call state `t₁` compatible with the canonical one (`DetTabPRB`). -/
+callee run of a call state `t₁` compatible with the canonical one (`DetTabPRB`; with `hpb`, #581,
+as `progCall`). -/
 theorem progCallPRB_at (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     (ih : L.ThmPRB κ (M - 1)) (hdet : L.DetPRB κ (M - 1)) (hdt : L.DetTabPRB κ M) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
@@ -58,12 +59,13 @@ theorem progCallPRB_at (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
     {cm' : Clif.Mem} {ini : Clif.SlotInit} (hmr : MemRel F L.syms cm w)
     (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAtB cm (spv w) ini)
     (hslotb : L.NeedSlots → ∀ a, L.SlotByte h (spv w) a →
-      ini.bytes (ini.next + 1) a = w.mem (BitVec.ofNat 64 a))
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af w (BitVec.ofNat 64 a))
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm')
     {t₁ : Arm.ArmState} (ht₁ : L.CallerOk F h uses w t₁)
@@ -86,7 +88,7 @@ theorem progCallPRB_at (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
           us outs wf (enterAt (L.A h) t) (runX (L.mach (M - 1) h) k (enterAt (L.A h) t)) ∧
         L.TabUpTo (M - 1) h (enterAt (L.A h) t) (calleeIni h ini).bytes (calleeIni h ini).next k
           e) :=
-  L.progCallPRB hL hM ih hdet hpf hcal himgF herr hal hroom hdead hmr hargs hsav hpl hslotb
+  L.progCallPRB hL hM ih hdet hpf hcal himgF herr hal hroom hdead hpb hmr hargs hsav hpl hslotb
     (hdt n h hpf hcal F himgF uses w herr hal hroom hdead vals cm cs rvals cm' ini hmr hargs hsav
       hpl hslotb hinit hrun t₁ ht₁ hmsk₁ hrgn₁ htab₁) hinit hrun
 

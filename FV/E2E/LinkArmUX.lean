@@ -140,7 +140,8 @@ theorem progResultU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX]
   have hplw : L.NeedSlots → L.PlaceAt cm (spv w) := fun hN => by rw [hsp]; exact hpl hN
   obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, -, hcall, -⟩ :=
     (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw
-      (by rw [hsp]; exact halign) hroom' hdead' hmemR0 hargs hsav hplw hinit).1 rvals cm' hret
+      (by rw [hsp]; exact halign) hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hplw hinit).1
+      rvals cm' hret
   obtain ⟨kc, hc_eq, -, hc_ret⟩ := hcall _ (L.callerOk_canon hL hh himgF args w)
   have hcond : L.CondU κ (M' + 1) F h args w ∧
       Arm.r .ERR (L.pcallU (M' + 1) h (L.canon h args w)) = .None := by
@@ -232,7 +233,8 @@ theorem progRaiseResultU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX]
   have hplw : L.NeedSlots → L.PlaceAt cm (spv w) := fun hN => by rw [hsp]; exact hpl hN
   obtain ⟨obj, wf, hex, hmemR, hall, -⟩ :=
     (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw
-      (by rw [hsp]; exact halign) hroom' hdead' hmemR0 hargs hsav hplw hinit).2 e cm' hret
+      (by rw [hsp]; exact halign) hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hplw hinit).2
+      e cm' hret
   obtain ⟨kc, hc_eq, hc_ret⟩ := hall _ (L.callerOk_canon hL hh himgF args w)
   have hcond : L.CondR κ (M' + 1) F h args w :=
     ⟨hM, herrw, by rw [hsp]; exact halign, hroom', hdead', vals, cm, cs,

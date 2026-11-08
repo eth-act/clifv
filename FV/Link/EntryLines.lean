@@ -21,13 +21,14 @@ open Backend Backend.Proof E2E
 /-! ## The entry block of the emitted code -/
 
 /-- The prologue's lines branch nowhere. -/
-theorem prologueLines_target (saves : List Reg) (size : Nat) :
-    ∀ ln ∈ prologueLines saves size, ln.target? = none := by
+theorem prologueLines_target (saves : List Reg) (size : Nat) (calls : Bool) :
+    ∀ ln ∈ prologueLines saves size calls, ln.target? = none := by
   intro ln hl
   simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
-  rcases hl with (((rfl | rfl) | hl) | hl) | hl
+  rcases hl with ((((rfl | rfl) | hl) | hl) | hl) | hl
   · rfl
   · rfl
+  · rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ <;> rfl
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> rfl
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> rfl
   · rcases mem_spAdjLines hl with ⟨i, -, rfl⟩ | hl | rfl
@@ -58,7 +59,7 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
     ∃ code, itemsCode (RAFrame.compute vc rf) vb items.toList = .ok code ∧
       af.blocks[0]? = some (vb.label, (AInst.prologue :: code).toArray) ∧
       fa.lines.toList[0]? = some (.label (.block vb.label)) ∧
-      prologueLines af.saves af.frameSize <+: fa.lines.toList.drop 1 := by
+      prologueLines af.saves af.frameSize af.isCaller <+: fa.lines.toList.drop 1 := by
   have hframe := lowerRFunc_frame halloc
   obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok halloc
   obtain ⟨code, hcode, haf⟩ := hbl 0 vb items hvb hit
@@ -72,10 +73,10 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
   rw [show (0 : Nat) + 1 = 1 from rfl] at hd
   rw [hd]
   refine List.prefix_append_of_prefix ?_
-  have hpl : ∀ ln ∈ prologueLines af.saves af.frameSize, ln.plain = true := fun ln h => by
+  have hpl : ∀ ln ∈ prologueLines af.saves af.frameSize af.isCaller, ln.plain = true := fun ln h => by
     obtain ⟨-, -, -, hp⟩ := prologueLines_ins _ _ ln h; exact hp
   have hpro : codeLinesE ⟨k, af.slotBase⟩ af [AInst.prologue] ps1 =
-      .ok (prologueLines af.saves af.frameSize, ps1) := by
+      .ok (prologueLines af.saves af.frameSize af.isCaller, ps1) := by
     simp [codeLinesE, ainstLines, hframe, bind, Except.bind, pure, Except.pure]
   simp only [List.toList_toArray] at e1 e2
   by_cases hc : code = []
@@ -110,11 +111,11 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
           rw [hlen]; exact (List.getElem?_eq_some_iff.mp hn).1
         obtain ⟨z, hz⟩ : ∃ z, o[n]? = some z := ⟨_, List.getElem?_eq_getElem hn'⟩
         rw [hz]
-        have hy : y ∈ prologueLines af.saves af.frameSize := by
+        have hy : y ∈ prologueLines af.saves af.frameSize af.isCaller := by
           rw [ht]; exact List.mem_of_getElem? hn
         rcases hlo n y z hn hz with ⟨rfl, -⟩ | ⟨l, -, hyt, -⟩
         · rfl
-        · rw [prologueLines_target _ _ y hy] at hyt; cases hyt
+        · rw [prologueLines_target _ _ _ y hy] at hyt; cases hyt
     rw [← hb0, List.nil_append, hoe, ← ht, relaxLines_plain hpl]
     exact List.prefix_refl _
   · rw [show AInst.prologue :: code = [AInst.prologue] ++ code from rfl,
