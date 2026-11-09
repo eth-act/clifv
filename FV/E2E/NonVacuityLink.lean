@@ -1958,6 +1958,8 @@ theorem backend_correct_program_witness :
         Arm.r_of_w_different (gpr_ne (by omega) (by omega) (by omega : i ≠ 29))]
     · simp [w0, Arm.r_of_w_different]
     · simp only [w0]; rw [Arm.r_of_w_different h31, Arm.r_of_w_different h29]
+      exact (probeR_of_not (af := (A fF).af)
+        (fun _ => by simp only [probeLoop, probeCount_fF]; decide) s0 f).symm
     · simp only [w0, mem_w]; exact (probeMem_of_count probeCount_fF s0).symm
     · simp [w0, Arm.w_program]
   case hargs =>
