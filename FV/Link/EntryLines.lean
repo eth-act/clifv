@@ -28,7 +28,15 @@ theorem prologueLines_target (saves : List Reg) (size : Nat) (calls : Bool) :
   rcases hl with ((((rfl | rfl) | hl) | hl) | hl) | hl
   · rfl
   · rfl
-  · rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ <;> rfl
+  · rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ | hl | hl | rfl | rfl | rfl | rfl
+    · rfl
+    · rfl
+    · rfl
+    · obtain ⟨i, rfl, hf⟩ := loadConst64_form hl
+      rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
+    · obtain ⟨i, rfl, hf⟩ := loadConst64_form hl
+      rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> rfl
+    all_goals rfl
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> rfl
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> rfl
   · rcases mem_spAdjLines hl with ⟨i, -, rfl⟩ | hl | rfl
