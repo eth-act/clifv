@@ -61,7 +61,7 @@ theorem iterN_proRunN {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {call
   refine ⟨h1, h2, h3, fun h0 i hi => ⟨h4 h0 i hi, ?_⟩⟩
   obtain ⟨k, hk, e, -⟩ := h5 i hi
   obtain ⟨x, ex, hx, -⟩ := prologueLines_ins _ _ _ (List.getElem_mem hk)
-  refine RL.noCallAt_of_line hR (j := j + k) ?_ e hx
+  refine RL.noCallAt_of_line hR (j := j + k) (t := none) ?_ e hx
   have := congrArg (·[k]?) hdrop
   simp only [List.getElem?_drop] at this
   rw [this, List.getElem?_append_left hk, List.getElem?_eq_getElem hk, ex]
