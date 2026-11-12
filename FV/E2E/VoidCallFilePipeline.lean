@@ -28,7 +28,9 @@ theorem site_sound (I : LinkInput) (R : Res) (g : Clif.Function) (info : CallInf
     | none => rfl
     | some target =>
       simp only [found,Option.map_some] at checked
-      simpa only [ReturnPinFile.Entry.matches_eq,fromResult] using checked
+      have full : ReturnPinCheck.check info.defs target (artOf R target).vc = true := by
+        simpa only [ReturnPinFile.Entry.matches_eq,fromResult] using checked
+      exact returnPinCheck_take full _
   | reg register =>
     cases register with
     | vreg index cls =>
@@ -44,7 +46,8 @@ theorem site_sound (I : LinkInput) (R : Res) (g : Clif.Function) (info : CallInf
         rcases selected with arity | matched
         · simp only [Bool.or_eq_true]
           exact Or.inl (Or.inr (show decide ((regLocs target.sig).length ≠ info.uses.length) = true from arity))
-        · simp [matched]
+        · simp only [Bool.or_eq_true]
+          exact Or.inr (returnPinCheck_take matched _)
       | float => simp only [LinkSys.returnPinSiteB,destination]
     | x index => simp only [LinkSys.returnPinSiteB,destination]
     | xzr => simp only [LinkSys.returnPinSiteB,destination]

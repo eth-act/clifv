@@ -9,18 +9,25 @@ set_option Elab.async false
 namespace LinkSys
 variable (L : LinkSys)
 
-/-- Check actual direct or indirect targets using the retained reachability and GOT boundary. -/
+/-- Check actual direct or indirect targets using the retained reachability and GOT boundary.
+
+Since #1003 the check reads the call's **results** only, its first `h.sig.returns.length`
+definitions: a call's definitions are its declared results followed, at a `try_call`, by the
+exception payload registers x0, x1 (`Isel`'s `callRets`), and a linked call supplies the declared
+results only (`LinkSys.progXWithPins`, #587). Checking the payload definitions against the return
+pins as well rejected a `try_call` (payload used) of an `sret` function compiled by the Stock route
+(pins `[x8]`, payload definition x0): 2 of the survey's 18 executables. -/
 def returnPinSiteB (g : Clif.Function) (info : CallInfo) : Bool :=
   match info.dest with
   | .sym n => match L.P.func? n with
-    | some h => ReturnPinCheck.check info.defs h (L.A h).vc
+    | some h => ReturnPinCheck.check (info.defs.take h.sig.returns.length) h (L.A h).vc
     | none => true
   | .reg (.vreg t .int) =>
     L.P.funcs.all fun h =>
       !indToB L.syms g h ||
       (match gotOf (L.A g).vcp t with | some n => h.name != n | none => false) ||
       decide ((regLocs h.sig).length ≠ info.uses.length) ||
-      ReturnPinCheck.check info.defs h (L.A h).vc
+      ReturnPinCheck.check (info.defs.take h.sig.returns.length) h (L.A h).vc
   | _ => true
 
 /-- The compiler checks every actual call and try-call before it creates the program artifact. -/
@@ -36,17 +43,28 @@ structure ReturnPinsCompatible (g : Clif.Function) (selected : Clif.Function →
     ∀ definitions,info.defs = callDefs definitions →
       CallReturnPins definitions (selected h)
 
-/-- The executable scan derives direct and indirect physical result compatibility. -/
+/-- The checked return pins a call reads: the first `sig.returns.length` of the callee's
+(`LinkSys.progXWithPins` returns the values of exactly these). -/
+def checkedResultPins (h : Clif.Function) : List Reg :=
+  (L.checkedReturnPins h).take h.sig.returns.length
+
+/-- The executable scan derives direct and indirect physical result compatibility.
+
+Statement changed with `returnPinSiteB` (#1003): the scan now checks a call's results (its first
+`sig.returns.length` definitions), so it gives agreement of the call's definitions with the pins
+a call reads (`checkedResultPins`), no longer with every return pin of the callee; the old
+conclusion is false for the accepted `try_call` of a Stock-route `sret` function
+(`ReturnPinPayloadWitness`). -/
 theorem returnPinsB_sound {g : Clif.Function} (checked : L.returnPinsB g = true) :
-    L.ReturnPinsCompatible g := by
+    L.ReturnPinsCompatible g L.checkedResultPins := by
   constructor
   · intro info h site definitions defs
     obtain ⟨present,name,dest,found⟩ := site
     have selected := site_sound checked present
     simp only [returnPinSiteB,dest,found] at selected
-    rw [defs] at selected
-    have matched := returnPinCheck_sound selected
-    simpa only [returnPinCheck_pins,checkedReturnPins] using matched
+    rw [defs,callDefs_take] at selected
+    have matched := CallReturnPins.take_defs.mp (returnPinCheck_sound selected)
+    simpa only [returnPinCheck_pins,checkedResultPins,checkedReturnPins] using matched
   · intro info present t dest h member target arity definitions defs
     have selected := site_sound checked present
     simp only [returnPinSiteB,dest,List.all_eq_true] at selected
@@ -60,18 +78,24 @@ theorem returnPinsB_sound {g : Clif.Function} (checked : L.returnPinsB g = true)
         simp [same]
     simp only [reachable,Bool.not_true,Bool.false_or,got,arity,ne_eq,not_true_eq_false,
       decide_false,Bool.or_false] at selected
-    rw [defs] at selected
-    have matched := returnPinCheck_sound selected
-    simpa only [returnPinCheck_pins,checkedReturnPins] using matched
+    rw [defs,callDefs_take] at selected
+    have matched := CallReturnPins.take_defs.mp (returnPinCheck_sound selected)
+    simpa only [returnPinCheck_pins,checkedResultPins,checkedReturnPins] using matched
 
 end LinkSys
 
-/-- The compilation field retains the actual return mode and derives static caller compatibility. -/
+/-- The compilation field retains the actual return mode and derives static caller compatibility.
+
+`calls` changed with the scan `returnPinsB` it is derived from (#1003): a call's definitions
+agree with the pins the call reads, the first `sig.returns.length` return pins of the callee
+(`LinkSys.progXWithPins`), which is all `progOsCore_return_pins_results` uses. Agreement with
+every return pin (the field before) implies it (`CallReturnPins.take`). -/
 structure CompiledProgramReturnPins (L : LinkSys) (g : Clif.Function)
     (modes : Clif.Function → ReturnPinMode := fun h => ReturnPinMode.checked h (L.A h).vc) : Prop where
   artifact : CompiledSemanticReturnPins g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
     (L.A g).af (L.A g).fa (L.A g).fb (modes g)
-  calls : L.ReturnPinsCompatible g (fun h => (modes h).pins h (sigRets h.sig).length)
+  calls : L.ReturnPinsCompatible g
+    (fun h => ((modes h).pins h (sigRets h.sig).length).take h.sig.returns.length)
 
 namespace CompiledProgramReturnPins
 variable {L : LinkSys} {g : Clif.Function}

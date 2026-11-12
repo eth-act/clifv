@@ -170,7 +170,7 @@ private theorem compiled_ordinary {L : LinkSys} (hL : L.OkSemanticNI)
   refine ⟨.compatible (hL.compiled g member),?_,?_⟩
   · intro info h site definitions defs
     obtain ⟨name,uses,old,shape,arguments,order⟩ := hL.callRegs g member info h site
-    exact matched_of_defs (CallReturnPins.ordinary order) (congrArg CallInfo.defs shape) defs
+    exact (matched_of_defs (CallReturnPins.ordinary order) (congrArg CallInfo.defs shape) defs).take _
   · intro info site t dest h memberH target arity definitions defs
     have notSym : ∀ name,info.dest ≠ .sym name := by intro name; rw [dest]; intro impossible; cases impossible
     obtain ⟨t',uses,old,shape,targets⟩ := hL.blrRegs g member info site notSym
@@ -183,7 +183,7 @@ private theorem compiled_ordinary {L : LinkSys} (hL : L.OkSemanticNI)
     have arity' : (regLocs h.sig).length = uses.length := by
       simpa only [shape,retPairs,List.length_map] using arity
     have order := (targets h memberH target arity').2
-    exact matched_of_defs (CallReturnPins.ordinary order) (congrArg CallInfo.defs shape) defs
+    exact (matched_of_defs (CallReturnPins.ordinary order) (congrArg CallInfo.defs shape) defs).take _
 
 theorem OkSemanticNI.toReturnPins {L : LinkSys} (h : L.OkSemanticNI) :
     L.OkReturnPins (fun _ => .ordinary) where

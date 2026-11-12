@@ -39,6 +39,7 @@ theorem returnPinSiteB_of_previous {L : LinkSys} {g : Clif.Function} {info : Cal
       obtain ⟨_,uses,definitions,same,_,pins⟩ := siteOk_sound previous dest found
       have defs : info.defs = callDefs definitions := congrArg CallInfo.defs same
       simp only [LinkSys.returnPinSiteB,dest,found]
+      apply returnPinCheck_take
       rw [defs,returnPinCheck_previous (lower h (Clif.Program.func?_some found).1)]
       simpa only [decide_eq_true_eq] using pins
   | reg r =>
@@ -51,7 +52,9 @@ theorem returnPinSiteB_of_previous {L : LinkSys} {g : Clif.Function} {info : Cal
     · by_cases gotMatches : ∀ n,gotOf (L.A g).vcp t = some n → h.name = n
       · by_cases arity : (regLocs h.sig).length = uses.length
         · have pins := (targets h member reachable gotMatches arity).2
-          have accepted : ReturnPinCheck.check (callDefs definitions) h (L.A h).vc = true := by
+          have accepted : ReturnPinCheck.check
+              ((callDefs definitions).take h.sig.returns.length) h (L.A h).vc = true := by
+            apply returnPinCheck_take
             rw [returnPinCheck_previous (lower h member)]
             simpa only [decide_eq_true_eq] using pins
           simp only [accepted,Bool.or_true]
