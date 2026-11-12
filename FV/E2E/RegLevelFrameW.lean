@@ -97,7 +97,7 @@ theorem iterN_proRunWP {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {cal
     rw [hLL] at hsplit
     generalize hA : fplrLines ++ probeHead (probeTotal size calls) = A
     have hAlen : A.length = 2 + (probeHead (probeTotal size calls)).length := by
-      rw [← hA]; simp [fplrLines]
+      rw [← hA]; simp [fplrLines]; omega
     have hPL : (probeLines (probeTotal size calls)).length =
         (probeHead (probeTotal size calls)).length + 4 := by
       rw [probeLines_split, hLL]; simp [probeLoopBody]
@@ -111,7 +111,7 @@ theorem iterN_proRunWP {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {cal
     have hA1 : StepsOk (R.envOf j) A s s1 := by
       rw [← hA]
       refine StepsOk.append h1 ?_
-      rw [show (R.envOf j).pc + 4 * fplrLines.length = (R.envOf j).pc + 4 + 4 by simp [fplrLines]; omega]
+      rw [show (R.envOf j).pc + 4 * fplrLines.length = (R.envOf j).pc + 4 + 4 by simp [fplrLines] <;> omega]
       exact hH
     have hinsA : ∀ ln ∈ A, ∃ x, ln = .ins x none ∧ x.hooked = false := fun ln h => hins ln (hmemA ln h)
     have hwrA : LinesWrites (R.envOf j) A s P := by
@@ -127,7 +127,7 @@ theorem iterN_proRunWP {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {cal
     have henvL : R.envOf (j + A.length) =
         { R.envOf j with pc := (R.envOf j).pc + 4 + 4 + 4 * (probeHead (probeTotal size calls)).length } := by
       rw [RL.envOf_ins hdropA (fun ln h => by obtain ⟨x, e, -⟩ := hinsA ln h; exact ⟨x, none, e⟩), hAlen]
-      congr 1; omega
+      dsimp only; congr 1; omega
     obtain ⟨xp, hxp, hxph⟩ : ∃ xp, R.L[j + A.length - 1]? = some (.ins xp none) ∧ xp.hooked = false := by
       obtain ⟨x, e, hx⟩ := hinsA (A[A.length - 1]) (List.getElem_mem _)
       refine ⟨x, ?_, hx⟩
@@ -148,7 +148,7 @@ theorem iterN_proRunWP {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {cal
       have := RL.envOf_ins hdropL (fun ln h => by obtain ⟨x, e, -⟩ := probeLoopBody_ins ln h; exact ⟨x, none, e⟩)
       rw [henvL] at this
       rw [show j + A.length + 4 = j + A.length + probeLoopBody.length from rfl, this, hPL]
-      congr 1; simp [probeLoopBody]; omega
+      congr 1 <;> simp [probeLoopBody] <;> omega
     rw [← henvT] at h3
     have hinsT : ∀ ln ∈ prologueTail saves size, ∃ x, ln = .ins x none ∧ x.hooked = false :=
       fun ln h => hins ln (hmemT ln h)

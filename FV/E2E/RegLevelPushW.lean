@@ -266,7 +266,7 @@ theorem probeLines_writes_unrolled (env : Env) (total : Nat) (h3 : probeCount to
   simp only
   split
   · exact fun k _ _ hk => by simp at hk
-  · rw [if_pos h3]
+  · -- `split` resolves the inner `if` with `h3`
     exact linesWrites_app (probeSteps_writes env _ s hal hP) fun _ _ =>
       linesWrites_noStores fun x t h => by
         simp only [List.mem_singleton, Line.ins.injEq] at h
