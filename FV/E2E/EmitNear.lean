@@ -1276,6 +1276,8 @@ theorem visit_isLitLoad {m : Type → Type} [Monad m] [LawfulMonad m]
   case tryCall info ti =>
     rcases info with ⟨dest, us, ds⟩
     cases dest <;> simp [MInst.visitOperands, MInst.isLitLoad]
+  case atomicRmwLoop ty op fl a b c d e =>
+    by_cases hx : op = .xchg <;> simp [MInst.visitOperands, MInst.isLitLoad, hx]
   all_goals simp [MInst.visitOperands, MInst.isLitLoad]
 
 theorem assign_isLitLoad {i i' : MInst} {regs : Array Reg} (h : i.assign regs = .ok i') :
