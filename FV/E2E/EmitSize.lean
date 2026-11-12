@@ -713,9 +713,19 @@ theorem spAdjLines_lit (sub : Bool) (size : Nat) : (spAdjLines sub size).countP 
   repeat' split
   all_goals simp [List.countP_append, Line.isLit, this]
 
-theorem prologueLines_lit (saves : List Reg) (n : Nat) :
-    (prologueLines saves n).countP Line.isLit = 0 := by
-  simp [prologueLines, List.countP_append, pushLines_lit, spAdjLines_lit, Line.isLit]
+theorem prologueLines_lit (saves : List Reg) (n : Nat) (calls : Bool) :
+    (prologueLines saves n calls).countP Line.isLit = 0 := by
+  have hp : ∀ t, (probeLines t).countP Line.isLit = 0 := by
+    intro t
+    rw [List.countP_eq_zero]
+    intro a ha
+    simp only [probeLines] at ha
+    split at ha
+    · cases ha
+    · rcases List.mem_append.mp ha with h | h
+      · rcases probeSteps_mem h with rfl | rfl <;> simp [Line.isLit]
+      · simp at h; subst h; simp [Line.isLit]
+  cases calls <;> simp [prologueLines, List.countP_append, pushLines_lit, spAdjLines_lit, hp, Line.isLit]
 
 theorem epilogueLines_lit (saves : List Reg) (n : Nat) :
     (epilogueLines saves n).countP Line.isLit = 0 := by
@@ -746,7 +756,7 @@ theorem ainstLines_lit {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState} {l
   | prologue =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    have := prologueLines_length af.saves af.frameSize
+    have := prologueLines_length (calls := af.isCaller) af.saves af.frameSize
     split <;> simp [aInstWords, prologueLines_lit] <;> omega
   | epilogueRet =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
@@ -957,7 +967,9 @@ theorem ainstLines_lit0 {c : FnCtx} {af : AFunc} {a : AInst} {ps ps' : PState} {
   | prologue =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    split <;> simp [prologueLines_lit]
+    split
+    · exact prologueLines_lit af.saves af.frameSize af.isCaller
+    · simp
   | epilogueRet =>
     simp only [ainstLines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
