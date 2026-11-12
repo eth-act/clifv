@@ -227,10 +227,24 @@ theorem prologue_exempt {saves : List Reg} (hsv : SavesOk saves) {size i : Nat} 
     simp only [List.mem_append] at hm
     have : x.x30Exempt = false := by
       rcases hm with hm | hm | hm | hm
-      · rcases probeLines_mem hm with e | e | ⟨_, e⟩ | hl | hl | e | e | e | e <;>
-          (try obtain ⟨_, e, ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩⟩ :=
-            Backend.Proof.loadConst64_form hl) <;>
-          (simp only [Line.ins.injEq] at e; obtain ⟨rfl, -⟩ := e; simp [Insn.x30Exempt])
+      · have hc : ∀ {y : Insn} {t' : Option Clif.TrapCode}, Line.ins x t = Line.ins y t' →
+            y.x30Exempt = false → x.x30Exempt = false :=
+          fun e hy => by simp only [Line.ins.injEq] at e; rw [e.1]; exact hy
+        have hlc : ∀ {rd : Reg} {v : Nat}, Line.ins x t ∈ loadConst64 rd v → x.x30Exempt = false :=
+          fun hl => by
+            obtain ⟨i, e, hf⟩ := Backend.Proof.loadConst64_form hl
+            cases e
+            rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> simp [Insn.x30Exempt]
+        rcases probeLines_mem hm with e | e | ⟨_, e⟩ | hl | hl | e | e | e | e
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hlc hl
+        · exact hlc hl
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hc e (by simp [Insn.x30Exempt])
       · exact pushLines_x30 hsv.int x t hm
       · exact pushLines_x30 hsv.float x t hm
       · exact spAdjLines_x30 true _ x t hm
