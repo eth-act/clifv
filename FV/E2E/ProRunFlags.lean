@@ -20,7 +20,8 @@ use to do without a premise on the entries' flags (`E2E.stEqOutX_prologueZ_entry
 
 * `FlagTwin`, `FlagTwin.w`, `FlagTwin.write_mem`, `FlagTwin.eq_of_flags`;
 * `flagsOf`, `flagsOf_flag`, `flagsOf_twin`;
-* `ProbeRun.flags_irrel`, **`ProRun.flags_irrel`**.
+* `ProbeRun.flags_irrel`, **`ProRun.flags_irrel`**;
+* `proRun_flags_irrel_witness` (non-vacuity: a 16 KiB frame, two entries differing in `N`).
 -/
 
 open Backend E2E
@@ -203,5 +204,37 @@ theorem ProRun.flags_irrel {env : Env} {saves : List Reg} {size : Nat} {calls : 
     rw [hsp2]; exact aligned_sub hal (by decide) (by decide)
   obtain rfl := ProbeRun.flags_irrel hl hal2 htw2 hP hP'
   exact StepsOk.det hT hT'
+
+/-! ## Non-vacuity -/
+
+/-- An entry with an aligned `sp` and the `N` flag clear. -/
+def flagWitS : Arm.ArmState := Arm.w (.FLAG .N) 0#1 (Arm.w (.GPR 31#5) 0#64 Arm.ArmState.default)
+
+/-- `flagWitS` with the `N` flag set. -/
+def flagWitT : Arm.ArmState := Arm.w (.FLAG .N) 1#1 flagWitS
+
+/-- **`ProRun.flags_irrel` is not vacuous**: a 16 KiB frame has the probe loop, the two entries
+`flagWitS` and `flagWitT` are different twins, both prologue runs exist (`prologue_ok`), and they
+end in the same state. -/
+theorem proRun_flags_irrel_witness (env : Env) :
+    probeLoop (probeTotal 16384 false) = true ∧ FlagTwin flagWitS flagWitT ∧ flagWitS ≠ flagWitT ∧
+      ∃ s' t', ProRun env [] 16384 false flagWitS s' ∧ ProRun env [] 16384 false flagWitT t' ∧
+        s' = t' := by
+  have hal : (spOf flagWitS).toNat % 16 = 0 := by
+    simp [spOf, flagWitS, Arm.r_of_w_same, Arm.r_of_w_different]
+  have htw : FlagTwin flagWitS flagWitT :=
+    ⟨fun f hf => by rw [flagWitT, Arm.r_of_w_different (hf _)],
+      by rw [flagWitT, Arm.w_program], by rw [flagWitT, Arm.ArmState.mem_w_eq_mem]⟩
+  have hal' : (spOf flagWitT).toNat % 16 = 0 := by
+    rw [show spOf flagWitT = spOf flagWitS from (htw.1 _ (by simp)).symm]; exact hal
+  have hl : probeLoop (probeTotal 16384 false) = true := by decide
+  have hsv : SavesOk [] := ⟨fun _ h => (by cases h), List.nodup_nil⟩
+  obtain ⟨s', h1, -⟩ := prologue_ok (calls := false) env (size := 16384) (by decide) hsv (by decide)
+    flagWitS hal
+  obtain ⟨t', h2, -⟩ := prologue_ok (calls := false) env (size := 16384) (by decide) hsv (by decide)
+    flagWitT hal'
+  refine ⟨hl, htw, fun e => ?_, s', t', h1, h2, ProRun.flags_irrel hl hal htw h1 h2⟩
+  have := congrArg (Arm.r (.FLAG .N)) e
+  simp [flagWitS, flagWitT, Arm.r_of_w_same] at this
 
 end Backend.Proof
