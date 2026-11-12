@@ -7,16 +7,25 @@ open Backend Backend.Proof Backend.Proof.Driver
 set_option autoImplicit false
 set_option Elab.async false
 
-/-- The ABI result prefix uses the same physical registers as the proved machine return. -/
+/-- The declared results use the same physical registers as the proved machine return (#587: the
+call results are the declared returns, `f.sig.returns`; an `sret` function's struct pointer after
+them is not a call result). -/
 theorem ReturnPinMode.pins_prefix_of_valid {mode : ReturnPinMode} {f : Clif.Function}
-    {us : List (Reg × Reg)} (valid : mode.Valid f us)
-    (bound : (sigRets f.sig).length ≤ us.length) :
-    mode.pins f (sigRets f.sig).length = (us.map (·.2)).take (sigRets f.sig).length := by
+    {vals : List Clif.Val} {us : List (Reg × Reg)} (valid : mode.Valid f vals us)
+    (bound : (sigRets f.sig).length ≤ us.length) (count : f.sig.returns.length ≤ vals.length) :
+    (mode.pins f (sigRets f.sig).length).take f.sig.returns.length =
+      (us.map (·.2)).take f.sig.returns.length := by
+  have declared : f.sig.returns.length ≤ (sigRets f.sig).length := returns_le_sigRets _
   cases mode with
   | ordinary =>
-    change us.map (·.2) = (List.range us.length).map Reg.x at valid
-    simp only [ReturnPinMode.pins,valid,← List.map_take,List.take_range,Nat.min_eq_left bound]
+    change us.map (·.2) = (List.range us.length).map (retX vals.length) at valid
+    rw [valid,ReturnPinMode.pins,← List.map_take,← List.map_take,List.take_range,List.take_range,
+      Nat.min_eq_left declared,Nat.min_eq_left (Nat.le_trans declared bound)]
+    exact List.map_congr_left fun j member => (retX_lt (by rw [List.mem_range] at member; omega)).symm
   | stockABI =>
+    suffices full : ReturnPinMode.stockABI.pins f (sigRets f.sig).length =
+        (us.map (·.2)).take (sigRets f.sig).length by
+      rw [full,List.take_take,Nat.min_eq_left declared]
     change Backend.Stock.Proof.returnPins f us.length = some (us.map (·.2)) at valid
     by_cases sret : (sigRets f.sig).any (·.purpose == .sret) = true
     · simp only [Backend.Stock.Proof.returnPins,sret,↓reduceIte,Option.some.injEq] at valid
@@ -44,7 +53,7 @@ noncomputable def progXWithPins (pins : Clif.Function → List Reg)
     (κ : Nat → Clif.Function → Nat) (M : Nat) (F : BitVec 64 → Prop)
     (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) : Option (List CV × Arm.ArmState) :=
   if L.Cond κ M F g uses w ∧ Arm.r .ERR (L.pcall M g (L.canon g uses w)) = .None then
-    some ((pins g).map (regVal (L.pcall M g (L.canon g uses w))),
+    some (((pins g).take g.sig.returns.length).map (regVal (L.pcall M g (L.canon g uses w))),
       L.pcall M g (L.canon g uses w))
   else none
 
@@ -53,14 +62,15 @@ theorem progXWithPins_ordinary (κ : Nat → Clif.Function → Nat) (M : Nat)
     (F : BitVec 64 → Prop) (g : Clif.Function) (uses : List CV) (w : Arm.ArmState) :
     L.progXWithPins (fun f => (List.range (sigRets f.sig).length).map Reg.x) κ M F g uses w =
       L.progX κ M F g uses w := by
-  simp only [progXWithPins,progX,List.map_map,Function.comp_def]
+  simp only [progXWithPins,progX,← List.map_take,List.take_range,
+    Nat.min_eq_left (returns_le_sigRets g.sig),List.map_map,Function.comp_def]
 
 /-- A successful call keeps its actual linked world and returns its selected physical values. -/
 theorem progXWithPins_some {pins : Clif.Function → List Reg} {κ : Nat → Clif.Function → Nat}
     {M : Nat} {F : BitVec 64 → Prop} {g : Clif.Function} {uses : List CV}
     {w next : Arm.ArmState} {values : List CV}
     (called : L.progXWithPins pins κ M F g uses w = some (values,next)) :
-    next = L.pcall M g (L.canon g uses w) ∧ values = (pins g).map (regVal next) ∧
+    next = L.pcall M g (L.canon g uses w) ∧ values = ((pins g).take g.sig.returns.length).map (regVal next) ∧
       L.Cond κ M F g uses w ∧ Arm.r .ERR next = .None := by
   classical
   unfold progXWithPins at called
@@ -83,7 +93,8 @@ theorem progXWithPins_call_results {pins : Clif.Function → List Reg} {κ : Nat
     ∀ pair ∈ defRegs ops regs values,regVal actual pair.1.2 = pair.2 := by
   obtain ⟨_,returned,_,_⟩ := L.progXWithPins_some called
   rw [returned]
-  exact matched.defRegs allocated same
+  exact (matched.take g.sig.returns.length).defRegs allocated
+    fun pin member => same pin (List.mem_of_mem_take member)
 
 /-- Select return pins from the actual artifact's checker result and unchanged source signature. -/
 def checkedReturnPins (g : Clif.Function) : List Reg :=
@@ -101,7 +112,8 @@ theorem progXABI_previous {κ : Nat → Clif.Function → Nat} {M : Nat}
     (old : SemanticNI.check g (L.A g).vc = true) :
     L.progXABI κ M F g uses w = L.progX κ M F g uses w := by
   simp only [progXABI,progXWithPins,checkedReturnPins,ReturnPinMode.checked,old,↓reduceIte,
-    ReturnPinMode.pins,progX,List.map_map,Function.comp_def]
+    ReturnPinMode.pins,progX,← List.map_take,List.take_range,
+    Nat.min_eq_left (returns_le_sigRets g.sig),List.map_map,Function.comp_def]
 
 /-- A checked Stock sret artifact selects x8 without changing its original signature. -/
 theorem checkedReturnPins_sret {g : Clif.Function}

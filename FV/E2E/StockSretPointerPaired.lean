@@ -94,7 +94,7 @@ theorem backend_correct_world_niX_stock_sret_original_pointer {p : Clif.Program}
   have mem : MemRel F syms cm q.1 := by
     rw [freed]
     exact memRel_leave (memRel_free memory.1.1.1 _)
-  refine ⟨pointer,reg,value,q.1,original,held,pins,arity,values,mem,site,?_,?_⟩
+  refine ⟨pointer,reg,value,q.1,original,held,pins.abi,arity,values,mem,site,?_,?_⟩
   · intro H G base ra s he
     obtain ⟨n,actual,trace,good⟩ := StockMemoryStoreCfg.machine_return readOnly hc.prepOk hc.check hc.alloc hc.emit hc.layout
       (fun _ h => h) hcov hargs (SameWorld.refl F q.1) first H G base ra s he

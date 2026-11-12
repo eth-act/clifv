@@ -112,7 +112,7 @@ theorem term_ret_fC {env : Clif.Env} (henv : env.extern "ld" = none) (c : BitVec
         s.frame.body = [] → s.frame.term.isTry = false → ∀ vals cm,
         Clif.step env pCL s = .done vals cm →
         ∃ us outs w', VRetFrom vcC (csem RC.F RC.ctx RC.X) ⟨b, k, ρ, w⟩ us outs w' ∧
-          us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+          RetPins vals us ∧ us.length = outs.length ∧
           PrefixHold vals outs ∧ RelW ΓC fC c slots s.mem w' ∧
           cm = (s.mem.free (slots.map (·.2))).leave := by
   obtain ⟨ctx, st0, R, gn, bl, A, H, -⟩ := driverC henv c

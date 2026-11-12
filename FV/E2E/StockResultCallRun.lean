@@ -128,7 +128,7 @@ theorem seqRun_call_result {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
       (.call ⟨.sym name,retPairs pairs,callDefs [(.x 0,destination)]⟩)
       (pairs.map (values ·.1)) before = some ([output],after,.next) := by
     change (X.call (some name) (pairs.map (values ·.1)) before).map
-      (fun p => (p.1,p.2,Ctl.next)) = _
+      (fun p => (p.1.take (callDefs [(.x 0,destination)]).length,p.2,Ctl.next)) = _
     rw [called]
     rfl
   have execution := seqRun_call_sym step (show [output].length = [(.x 0,destination)].length from rfl)
@@ -188,10 +188,7 @@ theorem SourceRun.execute {f : Clif.Function} {result : Stock.Result} {env : Cli
     (some source.ext.name) (source.pairs.map (source.values ·.1)) (source.pairs.map (source.values ·.1))
     source.sourceArgs [source.sourceValue] source.after source.found (Or.inl ⟨rfl,rfl⟩)
     (source.arguments before) beforeMemory source.sourceReturned (by rw [source.returns]; rfl)
-  have abi : sigRets source.ext.sig = [source.returned] := by
-    unfold sigRets
-    split <;> simp [source.returns]
-  rw [abi] at arity
+  rw [source.returns] at arity
   cases actual with
   | nil => cases arity
   | cons output tail =>

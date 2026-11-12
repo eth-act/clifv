@@ -82,7 +82,9 @@ theorem program_correct (cleanup : Bool) : CrateStmtReturnPins input (outputs cl
 theorem producer_retains_attempt (cleanup : Bool) : input.resultsReturnPinCalls cleanup = outputs cleanup :=
   input.resultsReturnPinCalls_accept cleanup (checked cleanup).1
 
-/-- Additional negative fixture. Its caller has a nop outside this first call class. -/
+/-- Additional fixture: its caller has a nop outside the first call class. It was rejected before
+#587 (the caller expected the callee's implicit result in x0); since #587 it is accepted (#931).
+The names below are kept from then. -/
 def rejectedInput : LinkInput := {input with
   funcs := [input.funcs[0]!,{input.funcs[1]! with
     clif := input.funcs[1]!.clif.replace "%sret_caller" "%sret_caller_with_nop" |>.replace
@@ -91,34 +93,35 @@ def rejectedInput : LinkInput := {input with
     if pair.1 = "sret_caller" then ("sret_caller_with_nop",pair.2) else pair}
 
 private def retryChecks (cleanup : Bool) : Bool :=
-  !okRReturnPinCalls (productionStage cleanup) rejectedInput
+  okRReturnPinCalls (productionStage cleanup) rejectedInput
     (rejectedInput.resultsProductionWith Stock.VoidCall.NI.lowerValidated cleanup) &&
-  !okRReturnPins (productionStage cleanup) rejectedInput
+  okRReturnPins (productionStage cleanup) rejectedInput
     (rejectedInput.resultsProductionWith Stock.MemorySretCopy.lowerValidated cleanup) &&
   okRSemanticNI (productionStage cleanup) rejectedInput (rejectedInput.resultsProduction cleanup)
 
 attribute [local irreducible] retryChecks
--- witness: native_decide (the additional two-function negative fixture in both cleanup modes)
+-- witness: native_decide (the additional two-function fixture in both cleanup modes)
 private theorem retryChecks_true : (retryChecks false && retryChecks true) = true := by native_decide
 
 private theorem rejected_checks (cleanup : Bool) :
     okRReturnPinCalls (productionStage cleanup) rejectedInput
-      (rejectedInput.resultsProductionWith Stock.VoidCall.NI.lowerValidated cleanup) = false ∧
+      (rejectedInput.resultsProductionWith Stock.VoidCall.NI.lowerValidated cleanup) = true ∧
     okRReturnPins (productionStage cleanup) rejectedInput
-      (rejectedInput.resultsProductionWith Stock.MemorySretCopy.lowerValidated cleanup) = false ∧
+      (rejectedInput.resultsProductionWith Stock.MemorySretCopy.lowerValidated cleanup) = true ∧
     okRSemanticNI (productionStage cleanup) rejectedInput (rejectedInput.resultsProduction cleanup) = true := by
   have both := Bool.and_eq_true_iff.mp retryChecks_true
   have h : retryChecks cleanup = true := by
     cases cleanup with
     | false => exact both.1
     | true => exact both.2
-  simpa only [retryChecks,Bool.and_eq_true,Bool.not_eq_true',and_assoc] using h
+  simpa only [retryChecks,Bool.and_eq_true,and_assoc] using h
 
-/-- A rejected attempt restores both complete previous artifacts, not only the callee. -/
+/-- The attempt keeps both complete Stock artifacts: since #587 nothing is retried (before, both
+previous artifacts were restored and this stated `= resultsProduction`). -/
 theorem rejected_program_retried (cleanup : Bool) :
-    rejectedInput.resultsReturnPinCalls cleanup = rejectedInput.resultsProduction cleanup := by
-  rw [rejectedInput.resultsReturnPinCalls_retry cleanup (rejected_checks cleanup).1,
-    rejectedInput.resultsReturnPins_retry cleanup (rejected_checks cleanup).2.1]
+    rejectedInput.resultsReturnPinCalls cleanup =
+      rejectedInput.resultsProductionWith Stock.VoidCall.NI.lowerValidated cleanup :=
+  rejectedInput.resultsReturnPinCalls_accept cleanup (rejected_checks cleanup).1
 
 /-- The rejected source class keeps the original program's accepted result. -/
 theorem rejected_program_accepted (cleanup : Bool) :

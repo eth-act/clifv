@@ -13,7 +13,7 @@ i64): return }`), compiled by the shipped compiler with the unwind tables checke
 * `exec_returns_sret`: `Link.DeadCleanup.compileExe_correct_abi` with every premise discharged
   but the entry contract (`Image.Intact`, `OutsideCall`, `ClifRun` of the machine state `r`):
   the executable machine's run of the written `file` from `r` returns to the caller with the
-  `sret` pointer `p0` in x0.
+  `sret` pointer `p0` in x8 (Cranelift's aarch64 ABI; until #587: x0).
 -/
 
 namespace Link.DeadCleanup.SretWitness
@@ -151,19 +151,19 @@ theorem cs0_traps : TrapsExplicit (Clif.linkEnvN (prog spec.inputCleanup) closed
 
 /-- **`compileExe_correct_abi` applies to `s`**: every premise but the entry contract of `r`
 discharged, a return of the executable machine's run of `file` from `r` leaves the `sret`
-pointer `p0` in x0. -/
+pointer `p0` in x8. -/
 theorem exec_returns_sret {r : Arm.ArmState} (hX : (imageOf file).Intact r)
     (ho : OutsideCall spec.inputCleanup (BinCheck.roByte spec.inputCleanup spec.data) fS
       (DeadCleanupStackBound.stackFn spec.inputCleanup fS) r [p0] cs0.mem)
     (hr : ClifRun spec.inputCleanup closedBase fS r [p0] cs0) :
     ∃ k, ArmRet (xreg 30 r) r (runX (step spec.inputCleanup closedBase file) k r) ∧
-      XHolds p0 (xreg 0 (runX (step spec.inputCleanup closedBase file) k r)) := by
+      XHolds p0 (xreg 8 (runX (step spec.inputCleanup closedBase file) k r)) := by
   obtain ⟨he, -⟩ := compileExeU_spec compile_eq
   have := compileExe_correct_abi he closedBase baseOk (hooksSim_closed _) hf hS hc 0 hX ho hr
     cs0_traps
   obtain ⟨cm, hrun⟩ := run_returns
   rw [hrun, sretArg_of_sret (f := fS) (i := 0) (by decide) rfl] at this
   obtain ⟨k, hret, hx, -⟩ := this
-  exact ⟨k, hret, hx 0 p0 rfl⟩
+  exact ⟨k, hret, by simpa using hx 0 p0 rfl⟩
 
 end Link.DeadCleanup.SretWitness

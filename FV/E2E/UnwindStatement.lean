@@ -102,7 +102,7 @@ def IselSimU (sem : Sem) (XR : XRaise) (Γ : Rel) (env : Clif.XEnv) (p : Clif.Pr
     ArgsAtEntry Γ.F f.sig args w₀ → TrapsExplicitX env p cs → ∀ fuel,
     (∀ vals cm, Clif.runLoopX env p fuel cs.toX = .returned vals cm →
       ∃ us outs w, VReturns vc sem ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel Γ.F Γ.syms cm w) ∧
     (∀ c, Clif.runLoopX env p fuel cs.toX = .trapped c → VTraps vc sem ρ₀ w₀ c) ∧
     (∀ e cm, Clif.runLoopX env p fuel cs.toX = .unwound e cm →
@@ -229,11 +229,7 @@ theorem backend_correct_of_layersU_ex {p : Clif.Program} {f : Clif.Function} {vc
     have hju : j < us.length := by have := hhold.1; omega
     obtain ⟨x, hx⟩ : ∃ x, outs[j]? = some x :=
       ⟨outs[j]'(by have := hhold.1; omega), List.getElem?_eq_getElem _⟩
-    have hp : (us[j]'hju).2 = Reg.x j := by
-      have := congrArg (fun l => l[j]?) hus
-      simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some] at this
-      exact Option.some.inj this
+    have hp : (us[j]'hju).2 = Reg.x j := hus.x hjv hju
     have hr := hregs j (us[j]'hju).1 (us[j]'hju).2 x (by simp [List.getElem?_eq_getElem hju]) hx
     rw [hp, regVal_x] at hr
     show VHolds v (ofX (xreg j (runX astep n s)))

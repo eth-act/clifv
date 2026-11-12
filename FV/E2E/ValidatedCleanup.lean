@@ -341,7 +341,7 @@ theorem iselSim_relW_cleanup_validated_of {p : Clif.Program} {f : Clif.Function}
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns vcK (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       VTraps vcK (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
@@ -418,7 +418,7 @@ theorem iselSim_relW_cleanup_validated {p : Clif.Program} {f : Clif.Function} {k
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       VTraps vc (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
@@ -445,7 +445,7 @@ theorem iselSim_relW_cleanup_validated_stage {p : Clif.Program} {f : Clif.Functi
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns (skipStage f vc) (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       VTraps (skipStage f vc) (valueSem F ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c') := by
@@ -472,7 +472,7 @@ theorem backend_correct_world_cleanup_validated {p : Clif.Program} {f : Clif.Fun
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -925,7 +925,7 @@ theorem backend_correct_world_ni_value_validated {p : Clif.Program} {f : Clif.Fu
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -1007,7 +1007,7 @@ theorem backend_correct_worldX_cleanup_validated {p : Clif.Program} {f : Clif.Fu
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -1071,7 +1071,7 @@ theorem backend_correct_world_niX_cleanup_validated {p : Clif.Program} {f : Clif
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →

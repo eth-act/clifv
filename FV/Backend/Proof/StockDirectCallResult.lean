@@ -33,10 +33,7 @@ theorem call_post_result {env : Clif.Env} {exts : List Clif.ExtFunc} {sigs : Lis
     ∃ output,outs = [output] ∧ VHolds value output ∧ MR slots after world := by
   have facts := post.1 ext member g slots cm uses arguments [value] after found
     (Or.inl ⟨rfl,rfl⟩) args memory called (by simp [returns])
-  have abi : sigRets ext.sig = [result] := by
-    unfold sigRets
-    split <;> simp [returns]
-  rw [abi] at facts
+  rw [returns] at facts
   cases outs with
   | nil => simp at facts
   | cons output tail =>

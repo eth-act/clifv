@@ -49,7 +49,7 @@ theorem backend_correct_world_return_pins {p : Clif.Program} {f : Clif.Function}
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        ReturnPinMode.Valid mode f us ∧ us.length = outs.length ∧
+        ReturnPinMode.Valid mode f vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -96,7 +96,7 @@ theorem backend_correct_world_ni_return_pins {p : Clif.Program} {f : Clif.Functi
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        ReturnPinMode.Valid mode f us ∧ us.length = outs.length ∧
+        ReturnPinMode.Valid mode f vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -151,7 +151,7 @@ theorem armRefines_of_actRet_return_pins {fb : FnBin} {base ra : BitVec 64}
     {astep : Arm.ArmState → Arm.ArmState} {s : Arm.ArmState} {F G : BitVec 64 → Prop}
     {syms : String → Option Nat} {f : Clif.Function} {mode : ReturnPinMode}
     {vals : List Clif.Val} {cm : Clif.Mem} {us : List (Reg × Reg)} {outs : List CV}
-    {w : Arm.ArmState} (pins : mode.Valid f us) (abi : sigAbiOk f.sig = true)
+    {w : Arm.ArmState} (pins : mode.Valid f vals us) (abi : sigAbiOk f.sig = true)
     (types : vals.map (·.ty) = Clif.AbiParam.tys f.sig.returns)
     (arity : us.length = outs.length) (values : PrefixHold vals outs) (memory : MemRel F syms cm w)
     {n : Nat} (returned : ActRet ra F G us outs w s (runX astep n s)) :
@@ -160,7 +160,7 @@ theorem armRefines_of_actRet_return_pins {fb : FnBin} {base ra : BitVec 64}
   | ordinary => exact armRefines_of_actRet pins arity values memory returned
   | stockABI =>
     by_cases ordinary : (sigRets f.sig).any (·.purpose == .sret) = false
-    · exact armRefines_of_actRet (ReturnABI.ordinary pins ordinary) arity values memory returned
+    · exact armRefines_of_actRet_x (ReturnABI.ordinary pins ordinary) arity values memory returned
     · have sret : (sigRets f.sig).any (·.purpose == .sret) = true := by
         cases found : (sigRets f.sig).any (·.purpose == .sret) with
         | false => exact False.elim (ordinary found)
