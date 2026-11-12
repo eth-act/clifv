@@ -13,10 +13,11 @@ variable (L : LinkSys)
 
 Since #1003 the check reads the call's **results** only, its first `h.sig.returns.length`
 definitions: a call's definitions are its declared results followed, at a `try_call`, by the
-exception payload registers x0, x1 (`Isel`'s `callRets`), and a linked call supplies the declared
-results only (`LinkSys.progXWithPins`, #587). Checking the payload definitions against the return
-pins as well rejected a `try_call` (payload used) of an `sret` function compiled by the Stock route
-(pins `[x8]`, payload definition x0): 2 of the survey's 18 executables. -/
+exception payload registers x0, x1 that are not result registers (`Isel`'s `callRets`), and a
+linked call supplies the declared results only (`LinkSys.progXWithPins`, #587). Checking the
+payload definitions against the return pins as well rejected every `try_call` of an `sret`
+function compiled by the Stock route (pins `[x8]`, definitions x0, x1): 2 of the survey's 18
+executables. -/
 def returnPinSiteB (g : Clif.Function) (info : CallInfo) : Bool :=
   match info.dest with
   | .sym n => match L.P.func? n with

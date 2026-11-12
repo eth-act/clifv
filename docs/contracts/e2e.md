@@ -222,12 +222,12 @@ The proof covers them as follows.
   `LinkSys.returnPinSiteB`: the call's **results**, its first `h.sig.returns.length` defs, are
   pinned to the first registers of `ReturnPinCheck.pins h` (x0.. for a function lowered by
   `lowerFunction`; `returnPins` for one the Stock route lowered: x8 alone for an `sret`
-  function). The defs after the results are a `try_call`'s exception payload registers x0/x1;
-  no return pin of the callee describes them and a linked call supplies the declared results
-  only (`LinkSys.progXWithPins`), so the check does not read them. Until #1003 it compared all
-  the defs with all the pins, which rejected a `try_call` whose landing pad takes the payload
-  when its callee is a Stock-route `sret` function (payload def x0 against pin x8): the `values`
-  tests of the survey's `b_slices` and `e_option_result` (16 of 18 executables verified).
+  function). The defs after the results are a `try_call`'s exception payload registers (x0/x1
+  when not result registers); no return pin of the callee describes them and a linked call
+  supplies the declared results only (`LinkSys.progXWithPins`), so the check does not read them.
+  Until #1003 it compared all the defs with all the pins, which rejected every `try_call` of a
+  Stock-route `sret` function (defs x0, x1 against the pin x8): the `values` tests of the
+  survey's `b_slices` and `e_option_result` (16 of 18 executables verified).
   `returnPinsB_sound` concludes `ReturnPinsCompatible g L.checkedResultPins`
   (`CompiledProgramReturnPins.calls`: agreement with the pins a call reads), which is what
   `progOsCore_return_pins_results` uses; `progOsCore_return_pins` keeps its statement as a

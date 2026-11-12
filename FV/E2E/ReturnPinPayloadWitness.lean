@@ -1,14 +1,15 @@
 import FV.E2E.PreparedReturnPinSretWitness
 
-/-! # A `try_call` that uses its exception payload, of a Stock-route `sret` function (#1003)
+/-! # A `try_call` of a Stock-route `sret` function (#1003)
 
 The shape that kept two of the survey's executables (`b_slices` and `e_option_result`, test
-`values`) out of the return-pin route: the caller's `try_call` passes `exn0` to its landing pad,
-so its definitions are the payload register x0 (the callee declares no result); the callee is
-an `sret` function compiled by the Stock route, whose only return pin is x8 (the struct
-pointer). Comparing all the call's definitions with the callee's return pins (the check before
-#1003) rejects the call; a linked call supplies the declared results only, here none
-(`LinkSys.progXWithPins`), which is what `LinkSys.returnPinSiteB` checks since #1003. -/
+`values`) out of the return-pin route. A `try_call` defines its declared results and then the
+exception payload registers x0, x1 that are not result registers; the callee here declares no
+result, so the call's definitions are x0 and x1. The callee is an `sret` function compiled by
+the Stock route, whose only return pin is x8 (the struct pointer). Comparing all the call's
+definitions with the callee's return pins (the check before #1003) rejects the call; a linked
+call supplies the declared results only, here none (`LinkSys.progXWithPins`), which is what
+`LinkSys.returnPinSiteB` checks since #1003. -/
 
 namespace E2E.ReturnPinPayloadWitness
 open Backend E2E.LinkCheck
@@ -50,7 +51,7 @@ def allDefsCheck (cleanup : Bool) : Bool :=
 private def shape (cleanup : Bool) : Bool :=
   okRReturnPins (productionStage cleanup) input (outputs cleanup) &&
   returnPinChecks input (outputs cleanup) caller &&
-  decide (callDefRegs (artOf (outputs cleanup) caller).vcp = [[.x 0]]) &&
+  decide (callDefRegs (artOf (outputs cleanup) caller).vcp = [[.x 0,.x 1]]) &&
   decide (ReturnPinCheck.pins callee (artOf (outputs cleanup) callee).vc = [.x 8]) &&
   decide (callee.sig.returns.length = 0) &&
   !allDefsCheck cleanup
@@ -59,14 +60,15 @@ attribute [local irreducible] shape
 -- witness: native_decide (the two fixed complete mixed programs only)
 private theorem shape_true : (shape false && shape true) = true := by native_decide
 
-/-- **The shape of #1003 passes the return-pin checks.** The caller's only call defines x0, the
-exception payload; the callee declares no result and returns its struct pointer in x8; the
-check of all the call's definitions against the callee's pins fails (`allDefsCheck`, the verdict
-before #1003), and the program passes `okRReturnPins`, whose scan reads the call's results. -/
+/-- **The shape of #1003 passes the return-pin checks.** The caller's only call defines x0 and
+x1, the exception payload registers; the callee declares no result and returns its struct
+pointer in x8; the check of all the call's definitions against the callee's pins fails
+(`allDefsCheck`, the verdict before #1003), and the program passes `okRReturnPins`, whose scan
+reads the call's results. -/
 theorem payload_try_call_accepted (cleanup : Bool) :
     okRReturnPins (productionStage cleanup) input (outputs cleanup) = true ∧
       returnPinChecks input (outputs cleanup) caller = true ∧
-      callDefRegs (artOf (outputs cleanup) caller).vcp = [[.x 0]] ∧
+      callDefRegs (artOf (outputs cleanup) caller).vcp = [[.x 0,.x 1]] ∧
       ReturnPinCheck.pins callee (artOf (outputs cleanup) callee).vc = [.x 8] ∧
       callee.sig.returns.length = 0 ∧
       allDefsCheck cleanup = false := by
