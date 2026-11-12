@@ -33,9 +33,10 @@
 # gate line; skipped by `loop` when no DEPSPATHS path changed since the last green run: #691,
 # #734) (cargo fv's per-executable binary check runs `cargo fv link-proof` + `lake exe
 # link-check on every test executable), and plain examples/compare.sh on
-# examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame). A cargo fv line is
-# green when scripts/cargo-fv-gate-check.py says so (the CI full gate calls the same script): a
-# SAME line and, on the --verified lines, `binary check: N of N` with N > 0 (#998). When the `lake build`
+# examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame). A cargo fv line and
+# the arm-fault-cosim line are green when scripts/gate-line-check.py says so (the CI full gate
+# calls the same script): a SAME line and, on the --verified lines, `binary check: N of N` with
+# N > 0; a TOTAL line with vectors and faulting vectors and no failure (#998). When the `lake build`
 # of the executables or the cargo build of the Rust tools fails, the native lines are skipped
 # (they would run stale binaries) and the run is red at the failed build.
 #
@@ -125,7 +126,8 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   mc "$cap" scripts/lean-backend-filetests.sh > "$L/filetests.log" 2>&1; r=$?
   echo "filetests rc=$r: $(grep -E 'TOTAL|corpus|runtest' "$L/filetests.log" | tail -n 4 | tr '\n' ' ')"; [ $r = 0 ] || fail=1
   mc "$cap" scripts/arm-fault-cosim.sh > "$L/faultcosim.log" 2>&1; r=$?
-  echo "arm-fault-cosim rc=$r: $(grep -E '^TOTAL' "$L/faultcosim.log" | tail -n 1)"; [ $r = 0 ] || fail=1
+  v=$(python3 scripts/gate-line-check.py arm-fault-cosim "$L/faultcosim.log"); c=$?
+  echo "arm-fault-cosim rc=$r: $v"; { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   if [ "$CLIF" = 1 ]; then
     mc "$cap" scripts/clif-filetests.sh > "$L/clif.log" 2>&1; r=$?
     local cur cp cf cd_ bp bf bd
@@ -153,7 +155,7 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
     if [ -n "$stale" ]; then echo "cargo fv --lean-link --verified $ex: skipped (stale binaries: $stale)"; continue; fi
     rm -rf "examples/$ex/target/fv"
     mc 12G "${NATIVE[@]}" examples/compare.sh "examples/$ex" --lean-link --verified > "$L/native_$ex.log" 2>&1
-    r=$?; v=$(python3 scripts/cargo-fv-gate-check.py --binary-check "$L/native_$ex.log"); c=$?
+    r=$?; v=$(python3 scripts/gate-line-check.py cargo-fv --binary-check "$L/native_$ex.log"); c=$?
     echo "cargo fv --lean-link --verified $ex rc=$r: $v"
     { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   done
@@ -163,7 +165,7 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   elif [ "$DEPS" = 1 ]; then
     rm -rf "examples/deps/target/fv"
     mc 12G "${NATIVE[@]}" examples/compare.sh examples/deps --lean-link --verified > "$L/native_deps.log" 2>&1
-    r=$?; v=$(python3 scripts/cargo-fv-gate-check.py --binary-check "$L/native_deps.log"); c=$?
+    r=$?; v=$(python3 scripts/gate-line-check.py cargo-fv --binary-check "$L/native_deps.log"); c=$?
     echo "cargo fv --lean-link --verified deps rc=$r: $v"
     { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   else
@@ -176,7 +178,7 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   else
     rm -rf examples/bigframe-unwind/target/fv
     mc 12G "${NATIVE[@]}" examples/compare.sh examples/bigframe-unwind > "$L/native_bigframe-unwind.log" 2>&1
-    r=$?; v=$(python3 scripts/cargo-fv-gate-check.py "$L/native_bigframe-unwind.log"); c=$?
+    r=$?; v=$(python3 scripts/gate-line-check.py cargo-fv "$L/native_bigframe-unwind.log"); c=$?
     echo "cargo fv bigframe-unwind rc=$r: $v"
     { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   fi

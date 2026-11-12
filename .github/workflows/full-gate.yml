@@ -427,9 +427,10 @@ jobs:
             line="pass $p fail $f disagree $d (baseline pass $bp fail $bf disagree $bd)"
           fi
           if [[ $GATE == arm-fault-cosim ]]; then
-            # the local gate's line (152 forms, 15,200 vectors on 9ae930c5); no vector run is not a pass
-            line=$(grep -E '^TOTAL' "gate-logs/$GATE.log" | tail -n 1 || true)
-            if [[ $rc == 0 && ! $line =~ ^TOTAL\ forms\ [1-9][0-9]*\ vectors\ [1-9][0-9]*\ faults\ [0-9]+\ failures\ 0$ ]]; then rc=1; fi
+            # one TOTAL line with forms, vectors and faulting vectors above 0 and no failure
+            # (9ae930c5 locally: 152 forms, 15,200 vectors, 10,318 faults)
+            ok=0; line=$(python3 scripts/gate-line-check.py arm-fault-cosim "gate-logs/$GATE.log") || ok=$?
+            if [[ $rc == 0 && $ok != 0 ]]; then rc=1; fi
           fi
           echo "$GATE rc=$rc $(( $(date +%s) - start )) s: $line" | tee gate-logs/summary.txt
           tail -n 15 "gate-logs/$GATE.log"
@@ -514,7 +515,7 @@ jobs:
           # N of N` with N > 0 (a job that only asked for SAME passed with "0 of 18", #998)
           ok=0
           # shellcheck disable=SC2086
-          verdict=$(python3 scripts/cargo-fv-gate-check.py $BINARY "gate-logs/$EX.log") || ok=$?
+          verdict=$(python3 scripts/gate-line-check.py cargo-fv $BINARY "gate-logs/$EX.log") || ok=$?
           if [[ $rc == 0 && $ok != 0 ]]; then rc=1; fi
           echo "cargo fv${ARGS:+ $ARGS} $EX rc=$rc $(( $(date +%s) - start )) s: $verdict" | tee gate-logs/summary.txt
           grep -E 'Maximum resident|Elapsed' "gate-logs/$EX.time" || true

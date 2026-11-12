@@ -1091,11 +1091,11 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   print only `propext`, `Classical.choice`, `Quot.sound`);
   `scripts/lean-backend-filetests.sh` (corpus 114/114, runtests ≥ 4672/0/0);
   `scripts/lean-backend-encode-check.sh` (0 differ); `lean-e2e-check` (≥ 1149 accepted, 0 rejected);
-  `scripts/arm-fault-cosim.sh` (memory-fault co-simulation against qemu, 0 failures);
+  `scripts/arm-fault-cosim.sh` (memory-fault co-simulation against qemu: faulting vectors, 0 failures);
   `scripts/float-spec.sh` (FV/Float against FloatLib, the same definitions under both toolchains);
   `examples/compare.sh … --lean-link --verified` on `examples/fv-demo`, the survey and `examples/deps`,
   each green only with a `SAME` line and `binary check: N of N` executables, N > 0
-  (`scripts/cargo-fv-gate-check.py`, #998), and plain `examples/compare.sh` on
+  (`scripts/gate-line-check.py`, #998), and plain `examples/compare.sh` on
   `examples/bigframe-unwind` (`SAME`); if CLIF semantics change,
   `scripts/clif-filetests.sh` at its baseline (`scripts/clif-filetests-baseline.txt`) and
   `scripts/opt-difftest.sh` with 0 failures.
