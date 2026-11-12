@@ -150,7 +150,7 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
     (htw : 0 < M → L.CallTwinCET κ M) (hcl : L.CallLock κ M) (hret : L.RetOkPRB κ M)
     (h2 : L.Stage2PRBZSE κ M) : L.LockRet κ M := by
   intro g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm' hWE hME₀ htab hret₀ hrs hpt₀
-    hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29
+    hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 hfl
   have hc := hL.compiled g hg
   have hI : Clif.LInv (L.P.only g) cs := runInv_entry (by simp [Clif.Program.only]) hWE.clif
   have hJ : L.ActInvB g (spv w₀) cs := ⟨hI, hWE.clif.callers, fun hN => ⟨ini, hWE.place hN⟩⟩
@@ -224,7 +224,7 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
       (L.hcallLockXP hL hκ hcl hg hME₀ hME hD hNXF hS2 rfl rfl)
       (fun _ _ _ _ _ _ _ _ _ _ _ _ hz hwd _ m r =>
         L.hooks_lock_tls hNXF M m r hz (zc_sub_F hRF hD hwd))
-      (hag.symm_of_sp hsps) hx29.symm
+      (hag.symm_of_sp hsps) hx29.symm hfl.symm
   -- the return index `k` of both runs, on the machines `L.mach M g`
   obtain ⟨k, hkdef⟩ : ∃ k, k = (prologueLines (Backend.Proof.actRL (L.A g).vcp (L.A g).rf
       (L.A g).af (L.A g).fa (L.A g).fb lm (L.A g).base s₀

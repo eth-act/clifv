@@ -40,7 +40,10 @@ variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
 /-- **The lock to the return** (module doc): `DetRunPRBCR`'s premises; the two runs locked up to
-the canonical return `n₀`, their facts at `n₀`. -/
+the canonical return `n₀`, their facts at `n₀`. (#581: the entries' flags agree when the
+prologue's stack-probe loop runs, `EntryFlags`: the loop sets the flags, so the body-entry
+worlds no longer give the agreement of the entries' flags, which the lock at the entry states
+needs; vacuous for a function without the loop.) -/
 def LockRet (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
   ∀ g ∈ L.P.funcs, ∀ (F : BitVec 64 → Prop) (vals : List Clif.Val) (cs : Clif.State)
     (w₀ : Arm.ArmState) (ini : Clif.SlotInit) (G₀ : BitVec 64 → Prop) (ra₀ : BitVec 64)
@@ -67,6 +70,7 @@ def LockRet (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
         EntryAgree (frameDrop (L.A g).af + κ M g) s s₀ →
         RaOk (L.A g) (ra - 4) →
         Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) s₀ →
+        EntryFlags (L.A g).af s s₀ →
         (∀ i < n₀, ∃ Z, StEqOutX Z (runX (L.mach M g) i s) (runX (L.mach M g) i s₀) ∧
           ∀ a, StackBelow (κ M g) (spv s₀ - BitVec.ofNat 64 (frameDrop (L.A g).af)) a → ¬ Z a) ∧
         RetAgreeX (frameDrop (L.A g).af + κ M g) (spv s₀) (runX (L.mach M g) n₀ s)
@@ -104,12 +108,13 @@ theorem LockRet.ret {M : Nat} (h : L.LockRet κ M) :
           EntryAgree (frameDrop (L.A g).af + κ M g) s s₀ →
           RaOk (L.A g) (ra - 4) →
           Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) s₀ →
+          EntryFlags (L.A g).af s s₀ →
           ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n₀ s) ∧
             PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n₀ :=
   fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm' hWE hME₀ htab hret₀ hrs hpt₀
-    hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 =>
+    hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 hfl =>
     let ⟨_, _, _, _, hret, hpt, _⟩ := h g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm'
-      hWE hME₀ htab hret₀ hrs hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29
+      hWE hME₀ htab hret₀ hrs hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 hfl
     ⟨hret, hpt⟩
 
 /-- **The lock to the return at a call** (module doc): `LockRet` one level down, from a caller
@@ -542,11 +547,15 @@ theorem callLock_of (hL : L.Ok) (hκ : L.Budget κ) [hR : L.CrunOk] {M : Nat} (h
   have hx29t : Arm.r (.GPR 29#5) (enterAt (L.A h) t) = Arm.r (.GPR 29#5) (enterAt (L.A h) cn) := by
     rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
       hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
+  have hflt : EntryFlags (L.A h).af (enterAt (L.A h) t) (enterAt (L.A h) cn) :=
+    EntryFlags.of_eq fun fl => by
+      rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
+        hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
   obtain ⟨hlk, hagr, hmo, hsv, hret, htrk, htwc⟩ := hlock h hh Fh vals cs w₀ (calleeIni h ini) G
     (Arm.r .PC cn + 4) (enterAt (L.A h) cn) us outs wf n₀ m rvals cm' hWE hME0 htab hret0 hrs htr0
     hm (by rw [BitVec.add_sub_cancel]; exact hcOk.ra) D w₀' (fun _ h => (h : False).elim)
     hrel' hsw hreg hstk G (Arm.r .PC t + 4) (enterAt (L.A h) t)
-    (hME t w₀' hst herrt ht.img hbw) hagree (by rw [BitVec.add_sub_cancel]; exact ht.ra) hx29t
+    (hME t w₀' hst herrt ht.img hbw) hagree (by rw [BitVec.add_sub_cancel]; exact ht.ra) hx29t hflt
   have hspc : spv (enterAt (L.A h) cn) = spv w := by rw [spv_enterAt, hsp0]
   have hspt : spv (enterAt (L.A h) t) = spv w := by rw [spv_enterAt, hst]
   refine ⟨hpcall t n₀ ht.ra htrk hret.ret hret.prog, fun i hi => ?_, ?_, fun a ha => ?_, ?_,

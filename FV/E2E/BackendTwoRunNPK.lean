@@ -98,7 +98,8 @@ theorem backend_twoRunLWNpPK (hc : Compiled f k vc vcp rf af fa fb)
       (∃ a b c, ({ R with X := (XI.upTo N).at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags af s t0) :
     (w₁.2 ≤ N → ∃ T e e',
       (∀ i < T, ∃ c c', StEqOutX (fun a => R.Zc c c' a ∧ (F a ∨ D a))
         (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
@@ -169,7 +170,7 @@ theorem backend_twoRunLWNpPK (hc : Compiled f k vc vcp rf af fa fb)
         by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
         he.abi.program, he.gfree⟩
     exact (stEqOutX_prologueZ hW0 he.abi hx30 (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
-      (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29
+      (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29 hfl
         (fun _ h => by exact h)).symm).symm
   have hwi0 : ∀ (m₀ m₀' : Loc → CV), MConf.WIn (fun b => F b ∨ D b)
       (MConf.init R.rf m₀ w₀) (MConf.init R.rf m₀' w₀') := by

@@ -64,7 +64,8 @@ theorem backend_twoRunLERWZNpWPVK (hc : CompiledCleanup f k vc vcp rf af fa fb)
       (∃ a b c, ({ R with X := (XI.upTo N).at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags af s t0) :
     (w₁.2 ≤ N → ∃ T,
       Arm.r .PC (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
         (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0) = ra ∧
@@ -154,7 +155,7 @@ theorem backend_twoRunLERWZNpWPVK (hc : CompiledCleanup f k vc vcp rf af fa fb)
     subst hF
     exact ⟨_, _, stEqOutX_prologueZ_le hW0 he.abi hx30
       (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
-      (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29
+      (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29 hfl
         (c := .run ⟨0, [], fun _ => ρ₀ 0, w₀⟩) (c' := .run ⟨0, [], fun _ => ρ₀ 0, w₀'⟩)
         (fun _ h => h)).symm i hi⟩
   have hproK : ∀ i ≤ (prologueSteps af.saves af.frameSize af.isCaller), ∃ d d', StEqOutX
@@ -172,11 +173,11 @@ theorem backend_twoRunLERWZNpWPVK (hc : CompiledCleanup f k vc vcp rf af fa fb)
     subst hF
     exact ⟨_, _, stEqOutX_inter_of_wDiff hRF hw (stEqOutX_prologueZ_le hW0 he.abi hx30
       (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
-      (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29
+      (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29 hfl
         (c := .run ⟨0, [], fun _ => ρ₀ 0, w₀⟩) (c' := .run ⟨0, [], fun _ => ρ₀ 0, w₀'⟩)
         (fun _ h => h)).symm i hi)⟩
   obtain ⟨hfull, hpre⟩ := backend_twoRunLWNpPVK hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he'
-    hR hcov hx30 hcall htls hag hx29
+    hR hcov hx30 hcall htls hag hx29 hfl
   refine ⟨fun hN => ?_, fun hN => ?_⟩
   · obtain ⟨T, e, e', hlk, ⟨⟨W, hqA, hqB⟩, -, -, hLB⟩, hpc, hpc', hre, hre', hgood⟩ :=
       hfull hN
@@ -315,7 +316,8 @@ theorem backend_twoRunLERWZIUPVK (hc : CompiledCleanup f k vc vcp rf af fa fb)
       (∃ a b c, ({ R with X := (XI.upTo N).at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags af s t0) :
     ∃ T,
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
         (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0) = ra ∧
@@ -360,7 +362,7 @@ theorem backend_twoRunLERWZIUPVK (hc : CompiledCleanup f k vc vcp rf af fa fb)
       (heN : ActEntryPRN vcp rf af fa fb K F G' XI H base ra' Kp' cc' P' Rr' t0 w₀' N) =>
     backend_twoRunLERWZNpWPVK (R := actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp))
       hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF (he.toN N) heN rfl hcov hx30 (hcall N)
-      (htls N) hag hx29
+      (htls N) hag hx29 hfl
   -- induction on the call count
   have hind : ∀ N, N ≤ w₁.2 →
       ActEntryPRN vcp rf af fa fb K F G' XI H base ra' Kp' cc' P' Rr' t0 w₀' N := by

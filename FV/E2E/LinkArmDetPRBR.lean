@@ -35,7 +35,10 @@ variable {κ : Nat → Clif.Function → Nat}
 
 /-- **Determinism of `ThmPRB`'s outcome for returning CLIF runs** (module doc): `DetPRB` with
 the canonical activation's CLIF run returning, both return addresses linked calls' (`RaOk`) and
-the two entries' frame pointers equal. -/
+the two entries' frame pointers equal. (#581: and the entries' flags equal when the prologue's
+stack-probe loop runs, `EntryFlags`: the determinism is proved by locking the two runs from
+their entry states (`LockRet`), and with the loop the body-entry worlds no longer give the
+agreement of the entries' flags; vacuous for a function without the loop.) -/
 def DetPRBR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
   ∀ g ∈ L.P.funcs, ∀ (F : BitVec 64 → Prop) (vals : List Clif.Val) (cs : Clif.State)
     (w₀ : Arm.ArmState) (ini : Clif.SlotInit) (G₀ : BitVec 64 → Prop) (ra₀ : BitVec 64)
@@ -62,6 +65,7 @@ def DetPRBR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
         EntryAgree (frameDrop (L.A g).af + κ M g) s s₀ →
         RaOk (L.A g) (ra - 4) →
         Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) s₀ →
+        EntryFlags (L.A g).af s s₀ →
         ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n s) ∧
           PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n ∧
           L.TabUpTo M g s ini.bytes ini.next n e
@@ -69,7 +73,7 @@ def DetPRBR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
 /-- **Every `DetPRB` is a `DetPRBR`** (the extra premises unused). -/
 theorem DetPRB.toR {M : Nat} (h : L.DetPRB κ M) : L.DetPRBR κ M :=
   fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ e _ _ _ hWE hME₀ htab hret₀ hpt₀ htab₀ _ _ D
-    w₀' _ hrel hsw hreg hstk G ra s hME hag _ _ =>
+    w₀' _ hrel hsw hreg hstk G ra s hME hag _ _ _ =>
     h g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ e hWE hME₀ htab hret₀ hpt₀ htab₀ D w₀' hrel hsw
       hreg hstk G ra s hME hag
 
@@ -104,6 +108,7 @@ def DetPRBRU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
         EntryAgree (frameDrop (L.A g).af + κ M g) s s₀ →
         RaOk (L.A g) (ra - 4) →
         Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) s₀ →
+        EntryFlags (L.A g).af s s₀ →
         ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n s) ∧
           PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n ∧
           L.TabUpTo M g s ini.bytes ini.next n e

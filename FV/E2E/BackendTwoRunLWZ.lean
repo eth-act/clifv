@@ -81,7 +81,8 @@ theorem backend_twoRunLERWZ (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
       (∃ a b c, ({ R with X := XI.at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags af s t0) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
     ∃ N,
       (∀ i < N, ∃ c c', StEqOutX (R.Zc c c')
@@ -108,7 +109,7 @@ theorem backend_twoRunLERWZ (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
   intro vals cm hrun
   obtain ⟨N, e, e', hlk, ⟨⟨W, hqA, -⟩, -, -, hLB⟩, hpc, hpc', hre, hre'⟩ :=
     backend_twoRunLW hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk
-      htr fuel hlm hpsF he he' hR hcov hx30 hcall htls hag hx29 vals cm hrun
+      htr fuel hlm hpsF he he' hR hcov hx30 hcall htls hag hx29 hfl vals cm hrun
   refine ⟨N, hlk, hpc, hpc', ?_⟩
   have hs : ∀ (g : Arm.ArmState → Arm.ArmState) (x : Arm.ArmState) (j : Nat),
       iterN g (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + j) x =
@@ -151,7 +152,7 @@ theorem backend_twoRunLERWZ (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
     rcases Nat.lt_or_ge i (prologueSteps af.saves af.frameSize af.isCaller) with h1 | h1
     · exact ⟨_, _, stEqOutX_prologueZ_le hW0 he.abi hx30
         (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
-        (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29
+        (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29 hfl
           (c := .run ⟨0, [], fun _ => ρ₀ 0, w₀⟩) (c' := .run ⟨0, [], fun _ => ρ₀ 0, w₀'⟩)
           (fun _ h => h)).symm i (Nat.le_of_lt h1)⟩
     · rcases Nat.lt_or_ge i (prologueSteps af.saves af.frameSize af.isCaller + N) with h2 | h2

@@ -90,7 +90,8 @@ theorem backend_twoRunLERWZIUPF_eitherK (hsub : InSubset p f)
       (∃ a b c, ({ R with X := (XI.upTo N).at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags af s t0) :
     ∃ T,
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
         (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0) = ra ∧
@@ -134,9 +135,9 @@ theorem backend_twoRunLERWZIUPF_eitherK (hsub : InSubset p f)
     ⟨h, us, outs, w, ⟨b, kk, ρ, w₁, vb, ops, outs', hs, hvb, hk, hops, hvals, hsem⟩, -⟩ |
     ⟨h, us, outs, w, ⟨b, kk, ρ, w₁, vb, ops, outs', hs, hvb, hk, hops, hvals, hsem⟩, -⟩
   · exact backend_twoRunLERWZIUPK h ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he0 hC' hT' hR
-      hcov hx30 hcall htls hag hx29
+      hcov hx30 hcall htls hag hx29 hfl
   · exact backend_twoRunLERWZIUPVK h ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he0 hC' hT' hR
-      hcov hx30 hcall htls hag hx29
+      hcov hx30 hcall htls hag hx29 hfl
 
 end
 

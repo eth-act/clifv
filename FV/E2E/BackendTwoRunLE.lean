@@ -102,7 +102,10 @@ theorem RL.lrWord_Zc {R : RL} (hR : R.Wf) (c c' : MConf CV Arm.ArmState) {k : Na
 
 /-- **The lock at the two entries**: equal masked registers but `x30`/pc and equal bytes below
 `sp` (`EntryAgree`), equal `x29`, body-entry worlds the same outside `F ∪ D`; the lock set's
-world difference contains the worlds' (`hW`). -/
+world difference contains the worlds' (`hW`). (#581: `hfl` (`EntryFlags`) is new. With
+Cranelift's stack-probe loop the body starts with the loop's flags (`probeR`), so the worlds'
+agreement no longer gives the entries' flags, and the former statement became false for a
+function with the loop; without the loop `hfl` is vacuous.) -/
 theorem stEqOutX_entryZ {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra' : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (hent' : AbiCall R.fb R.base ra' t0)
     {A A' : Reg → Prop} {F' D : BitVec 64 → Prop} {w₀ w₀' : Arm.ArmState}
@@ -110,6 +113,7 @@ theorem stEqOutX_entryZ {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra' : BitVe
     (hF' : ∀ a, F' a → R.F a) (hsw : SameWorld (fun b => R.F b ∨ D b) w₀ w₀')
     (hag : EntryAgree (frameDrop R.af + R.K) R.s0 t0)
     (hx29 : Arm.r (.GPR 29#5) R.s0 = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags R.af R.s0 t0)
     {c c' : MConf CV Arm.ArmState} (hW : ∀ a, w₀.mem a ≠ w₀'.mem a → MConf.WDiff c c' a) :
     StEqOutX (R.Zc c c') R.s0 t0 := by
   refine ⟨fun f hf => ?_, hent.program.trans hent'.program.symm, fun a ha => ?_⟩
@@ -126,7 +130,24 @@ theorem stEqOutX_entryZ {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra' : BitVe
               spv t0 - BitVec.ofNat 64 (frameDrop R.af) := hbe.sp.symm.trans (e3.trans hbe'.sp)
           have := congrArg (· + BitVec.ofNat 64 (frameDrop R.af)) e
           simpa [spv] using this
-        · rw [← hbe.other f hm h29 h31, hsw.1 f hm, hbe'.other f hm h29 h31]
+        · by_cases hflag : ∃ fl, f = .FLAG fl
+          · obtain ⟨fl, rfl⟩ := hflag
+            by_cases hlp : R.af.frame = true ∧
+                probeLoop (probeTotal R.af.frameSize R.af.isCaller) = true
+            · exact hfl hlp.1 hlp.2 fl
+            · have hno : R.af.frame = true →
+                  probeLoop (probeTotal R.af.frameSize R.af.isCaller) = false := fun h1 => by
+                cases h : probeLoop (probeTotal R.af.frameSize R.af.isCaller) with
+                | false => rfl
+                | true => exact absurd ⟨h1, h⟩ hlp
+              exact ((probeR_of_not hno R.s0 _).symm.trans
+                ((hbe.other _ hm h29 h31).symm.trans
+                  ((hsw.1 _ hm).trans (hbe'.other _ hm h29 h31)))).trans (probeR_of_not hno t0 _)
+          · have hne : ∀ fl, f ≠ .FLAG fl := fun fl e => hflag ⟨fl, e⟩
+            exact ((probeR_of_ne (af := R.af) hne R.s0).symm.trans
+              ((hbe.other f hm h29 h31).symm.trans
+                ((hsw.1 f hm).trans (hbe'.other f hm h29 h31)))).trans
+              (probeR_of_ne (af := R.af) hne t0)
   · by_cases hfr : R.FrameRd false a
     · obtain ⟨o, ho, -, rfl⟩ := hfr
       apply hag.2
@@ -404,7 +425,8 @@ theorem backend_twoRunLE (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
       (∃ a b c, ({ R with X := XI.at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags af s t0) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
     ∃ N e e',
       (∀ i < (prologueSteps R.af.saves R.af.frameSize R.af.isCaller),
@@ -455,7 +477,7 @@ theorem backend_twoRunLE (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
         by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
         he.abi.program, he.gfree⟩
     exact (stEqOutX_prologueZ hW0 he.abi hx30 (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
-      (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29
+      (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29 hfl
         (fun _ h => by exact h)).symm).symm
   exact backend_twoRunL hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg
     hstk htr fuel hlm hpsF he he' hR hcov hx30 hfr hcall htls hpro
