@@ -54,10 +54,10 @@ theorem twinNC_of_twinCE {M : Nat} {g : Clif.Function} {s₀ s : Arm.ArmState} {
 theorem detRunPRBCRU_of_lockRet (hL : L.Ok) {M : Nat} (h : L.LockRet κ M) :
     L.DetRunPRBCRU κ M :=
   fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm' hWE hME₀ htab hret₀ hrs hpt₀
-    hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 =>
+    hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 hfl =>
     let ⟨_, _, _, _, hret, hpt, htw⟩ := h g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals
       cm' hWE hME₀ (L.tableOfE_of htab) hret₀ hrs hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra
-      s hME hag hra hx29
+      s hME hag hra hx29 hfl
     ⟨hret, hpt, L.twinNC_of_twinCE (TwinCE.symm L htw)
       (L.noRetAt_of hL hg hME₀.entryP.entry hra₀ hpt₀ hret₀.ret.err)⟩
 
