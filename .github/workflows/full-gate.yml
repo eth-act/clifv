@@ -548,8 +548,8 @@ jobs:
           exit $rc
       - name: Binary check details
         # cargo fv prints one line per executable; keep link-check's own report (its FAIL lines) for
-        # every executable that is not verified, the known ones (#1003) included
-        if: ${{ !cancelled() && matrix.binary }}
+        # every executable that is not verified: the known ones (#1003) and bigframe-unwind's too
+        if: ${{ !cancelled() }}
         continue-on-error: true
         timeout-minutes: 30
         env:
