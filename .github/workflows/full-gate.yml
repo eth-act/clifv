@@ -495,9 +495,16 @@ jobs:
         run: |
           scripts/build-cg-clif.sh
           (cd rust && cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc)
-          # the executables cargo fv runs (restored from the assembled build); without link-check
-          # the per-executable binary check reports "not checked" for every executable (#998)
-          lake build lean-backend lean-link clif-decode link-check 2>&1 | tail -n 1
+          # the executables cargo fv runs (restored from the assembled build). A missing one is not
+          # an error for cargo fv: without link-check the binary check says "not checked" for every
+          # executable (#998), without lean-ld `--lean-link --verified` links with rust-lld (#931)
+          lake build lean-backend lean-link clif-decode link-check lean-ld 2>&1 | tail -n 1
+          for t in lean-backend lean-link clif-decode link-check lean-ld; do test -x ".lake/build/bin/$t"; done
+      - name: Fetch the example's dependencies
+        # examples/deps builds offline from cargo's registry cache (its .cargo/config.toml), as on
+        # a developer's machine; fill the cache from its Cargo.lock
+        if: matrix.example == 'deps'
+        run: (cd examples/deps && CARGO_NET_OFFLINE=false cargo +nightly-2026-09-26 fetch --locked)
       - name: Run
         env:
           EX: ${{ matrix.example }}
@@ -524,6 +531,25 @@ jobs:
           logs=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "gate-logs/$EX.log" | tail -n 1)
           if [[ -n "$logs" && -f "$logs/fv.log" ]]; then cp "$logs/fv.log" "gate-logs/$EX-cargo-fv.log"; fi
           exit $rc
+      - name: Binary check details
+        # cargo fv prints one line per executable; on a red line keep link-check's own report (its
+        # FAIL lines) for every executable that is not verified
+        if: ${{ failure() && matrix.binary != '' }}
+        continue-on-error: true
+        timeout-minutes: 30
+        env:
+          EX: ${{ matrix.example }}
+        run: |
+          n=0
+          while read -r exe; do
+            n=$((n + 1))
+            mode=$(sed -E 's#.*/target/fv/([^/]+)/.*#\1#' <<< "$exe")
+            (cd "examples/$EX" && PATH="$GITHUB_WORKSPACE/rust/target/release:$PATH" FV_ROOT="$GITHUB_WORKSPACE" \
+              cargo fv link-proof --exe "$exe" --out "$RUNNER_TEMP/bin-check-$n" --prune --mode "$mode") \
+              > "gate-logs/$EX-binary-check-$n.log" 2>&1 || true
+            echo "== $exe"
+            grep -E -A1 '^ *FAIL ' "gate-logs/$EX-binary-check-$n.log" | head -n 40 || true
+          done < <(sed -n -E 's/^cargo fv: binary ([^ ]+): not (verified|checked).*/\1/p' "gate-logs/$EX.log")
       # Crate parity, the second stock-parity metric (AGENTS.md), measured as #557 does: plain
       # `cargo fv test --keep-temps` (tests compiled, not run) and scripts/stock-crate-parity.py.
       # The daily digest (#46) reads the artifact. A measurement, not a gate line: it runs whether
