@@ -216,6 +216,25 @@ The proof covers them as follows.
   f.externs.map (·.2)`) with `ds.length = ext.sig.returns.length` defs, `outs.length =
   ds.length` and `PrefixHold rvals outs`. `ExternsNormal` is gone
   (`CallRuleOk` assumes `ExternsIn f exts`).
+* **Return pins at a linked call** (#890/#892, #1003): the return-pin route
+  (`LinkSys.OkReturnPins`, `Link.ReturnPinCompilerWith.attempt`, link-check's `returnPins` line)
+  checks every call and `try_call` of a function `h` of the program with
+  `LinkSys.returnPinSiteB`: the call's **results**, its first `h.sig.returns.length` defs, are
+  pinned to the first registers of `ReturnPinCheck.pins h` (x0.. for a function lowered by
+  `lowerFunction`; `returnPins` for one the Stock route lowered: x8 alone for an `sret`
+  function). The defs after the results are a `try_call`'s exception payload registers x0/x1;
+  no return pin of the callee describes them and a linked call supplies the declared results
+  only (`LinkSys.progXWithPins`), so the check does not read them. Until #1003 it compared all
+  the defs with all the pins, which rejected a `try_call` whose landing pad takes the payload
+  when its callee is a Stock-route `sret` function (payload def x0 against pin x8): the `values`
+  tests of the survey's `b_slices` and `e_option_result` (16 of 18 executables verified).
+  `returnPinsB_sound` concludes `ReturnPinsCompatible g L.checkedResultPins`
+  (`CompiledProgramReturnPins.calls`: agreement with the pins a call reads), which is what
+  `progOsCore_return_pins_results` uses; `progOsCore_return_pins` keeps its statement as a
+  corollary. Witness: `E2E.ReturnPinPayloadWitness.payload_try_call_accepted` and
+  `program_correct` (the shape: accepted, in `CrateStmtReturnPins`, while the check of all defs
+  fails). lean-backend's per-file `ReturnPinFile.site` still compares all the defs (stricter:
+  such a file keeps the previous lowering chain; it changes no verdict of link-check).
 
 ### Typed ABI placement (`f32`/`f64`, S11e2/S11e3/S11e5a)
 
