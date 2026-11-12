@@ -30,10 +30,10 @@ theorem a2_twoRunLERW {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args :
     ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ N, RetAgreeX (frameDrop (A fA2).af + K) (spv s)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + N +
+          (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + N +
             ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) s)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + N +
+          (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + N +
             ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) s) := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]
@@ -64,7 +64,7 @@ theorem a2_twoRunLERW {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args :
             (RAFrame.compute (A fA2).vcp (A fA2).rf).size (A fA2).af G s a
           rw [he.hF]; exact h.resolve_right id) hW
         m r hl)
-    ⟨fun _ _ _ _ => rfl, fun _ _ => rfl⟩ rfl vals cm hrun
+    ⟨fun _ _ _ _ => rfl, fun _ _ => rfl⟩ rfl (EntryFlags.refl _ _) vals cm hrun
   exact ⟨N, h⟩
 
 end E2E.LinkWitness

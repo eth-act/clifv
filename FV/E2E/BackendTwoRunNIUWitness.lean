@@ -64,20 +64,21 @@ theorem a2_twoRunLERWZNpW {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {ar
     (he' : ActEntryPR (A fA2).vcp (A fA2).rf (A fA2).af (A fA2).fa (A fA2).fb K F G'
       (ExtSemI.const Xb) idHooks base ra' Kp' cc' Pp' Rr' t0 w₀)
     (hag : EntryAgree (frameDrop (A fA2).af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) (N : Nat) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags (A fA2).af s t0) (N : Nat) :
     ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ C, (C ≤ N → ∃ T, RetAgreeX (frameDrop (A fA2).af + K) (spv s)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + T +
+          (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + T +
             ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) t0)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + T +
+          (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + T +
             ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) s)) ∧
       (N < C → ∃ T, ∀ a, ¬ F a → ¬ False →
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + T) t0).mem a =
+          (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + T) t0).mem a =
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + T) s).mem a) := by
+          (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + T) s).mem a) := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]
   have hc := a2_compiled
@@ -109,7 +110,7 @@ theorem a2_twoRunLERWZNpW {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {ar
             (RAFrame.compute (A fA2).vcp (A fA2).rf).size (A fA2).af G s a
           rw [he.hF]; exact h.resolve_right id) hW
         m r hl)
-    hag hx29
+    hag hx29 hfl
   refine ⟨w₁.2, fun hle => ?_, fun hlt => ?_⟩
   · obtain ⟨T, -, -, h, -, -⟩ := key.1 hle
     exact ⟨T, h⟩
@@ -131,21 +132,22 @@ theorem a2_twoRunLERWZIU {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {arg
     (he' : ActEntryPR (A fA2).vcp (A fA2).rf (A fA2).af (A fA2).fa (A fA2).fb K F G'
       (ExtSemI.const Xb) idHooks base ra' Kp' cc' Pp' Rr' t0 w₀)
     (hag : EntryAgree (frameDrop (A fA2).af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags (A fA2).af s t0) :
     ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ T, RetAgreeX (frameDrop (A fA2).af + K) (spv s)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + T +
+          (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + T +
             ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) t0)
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + T +
+          (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + T +
             ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) s) ∧
       ∀ a, ¬ F a →
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + T +
+          (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + T +
             ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) t0).mem a =
         (iterN (ArmStepX Xb idHooks (A fA2).fa)
-          ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + T +
+          (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + T +
             ((epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1)) s).mem a := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]
@@ -180,7 +182,7 @@ theorem a2_twoRunLERWZIU {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {arg
             (RAFrame.compute (A fA2).vcp (A fA2).rf).size (A fA2).af G s a
           rw [he.hF]; exact h.resolve_right id) hW
         m r hl)
-    hag hx29
+    hag hx29 hfl
   exact ⟨T, h, fun a ha => hm a ha id⟩
 
 end E2E.LinkWitness

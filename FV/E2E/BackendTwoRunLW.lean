@@ -431,8 +431,8 @@ theorem backend_twoRunLERW (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af
     · rcases wDiff_of_wIn hr1 hr2 hLB.2.1 a h with h' | h'
       · exact hFa h'
       · exact hDa h'
-  · have hPe : (prologueLines (actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)).af.saves
-        (actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)).af.frameSize (actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)).af.isCaller).length
+  · have hPe : (prologueSteps (actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)).af.saves
+        (actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)).af.frameSize (actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)).af.isCaller)
         = (prologueSteps af.saves af.frameSize af.isCaller) := rfl
     have hRe : (actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp)).retLen =
         ({ actRL vcp rf af fa fb lm base s XI H psF K G (GotV vcp) with X := XI.at 0 } : RL).retLen :=

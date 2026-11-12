@@ -425,6 +425,10 @@ theorem detTabPRBE_of (hL : L.Ok) (hκ : L.Budget κ) [hR : L.CrunOk] {M : Nat} 
   have hx29t : Arm.r (.GPR 29#5) (enterAt (L.A h) t) = Arm.r (.GPR 29#5) (enterAt (L.A h) cn) := by
     rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
       hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
+  have hflt : EntryFlags (L.A h).af (enterAt (L.A h) t) (enterAt (L.A h) cn) :=
+    EntryFlags.of_eq fun fl => by
+      rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
+        hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
   -- the actual entry first: its body-entry world, its own prophecies, its returning run
   have hspw₀w : spv w₀' = spv w₀ := by rw [hspw₀', hspw₀]
   have hx29' : Arm.r (.GPR 29#5) w₀' = spv w - 16#64 := by
@@ -461,7 +465,7 @@ theorem detTabPRBE_of (hL : L.Ok) (hκ : L.Budget κ) [hR : L.CrunOk] {M : Nat} 
     hm hraT D w₀ (fun _ h => (h : False).elim)
     (by rw [hspw₀w]; exact hWE.rel) hsw.symm (fun r v hm => (hreg r v hm).symm) hstkC G
     (Arm.r .PC cn + 4) (enterAt (L.A h) cn) (hME cn w₀ hsp0 herrc hcOk.img hbw0) hagreeC
-    (by rw [BitVec.add_sub_cancel]; exact hcOk.ra) hx29t.symm
+    (by rw [BitVec.add_sub_cancel]; exact hcOk.ra) hx29t.symm hflt.symm
   exact L.tableOfE_twinCE (TwinCE.symm L htwc) htabT
 
 end LinkSys

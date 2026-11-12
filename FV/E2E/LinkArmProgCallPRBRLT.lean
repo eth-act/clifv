@@ -461,11 +461,15 @@ theorem progCallPRBRLTRU (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
   have hx29t : Arm.r (.GPR 29#5) (enterAt (L.A h) t) = Arm.r (.GPR 29#5) (enterAt (L.A h) cn) := by
     rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
       hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
+  have hflt : EntryFlags (L.A h).af (enterAt (L.A h) t) (enterAt (L.A h) cn) :=
+    EntryFlags.of_eq fun fl => by
+      rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
+        hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
   obtain ⟨k, hret, htrk, htabk⟩ := hdet h hh Fh vals cs w₀ (calleeIni h ini) G
     (Arm.r .PC cn + 4) (enterAt (L.A h) cn) us outs wf n₀ e m rvals cm' hWE hME0 htab hret0 hrs htr0
     htab0 hm (by rw [BitVec.add_sub_cancel]; exact hcOk.ra) D w₀' (fun _ h => (h : False).elim)
     hrel' hsw hreg hstk G (Arm.r .PC t + 4) (enterAt (L.A h) t)
-    (hME t w₀' hst herrt ht.img hbw) hagree (by rw [BitVec.add_sub_cancel]; exact ht.ra) hx29t
+    (hME t w₀' hst herrt ht.img hbw) hagree (by rw [BitVec.add_sub_cancel]; exact ht.ra) hx29t hflt
   refine ⟨k, hpcall t k ht.ra htrk hret.ret hret.prog, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
     (fun h' => ha (h'.elim (fun h1 => hFZ a h1.1) (fun h2 => (h2 : False).elim))), hret.fields,
     hret.gkeep,

@@ -165,6 +165,7 @@ theorem source_twoRunLERWZIUV :
           ActEntryPR vcp (spillAlloc vcp) af fa fb K F G' (ExtSemI.const xQuiet) idHooks base ra' Kp'
             cc' Pp' Rr' t0 w₀ →
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
+          EntryFlags af s t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX xQuiet idHooks fa)
               (prologueSteps af.saves af.frameSize af.isCaller + N + ((epiLines af.saves af.frameSize).length + 1))
@@ -176,7 +177,7 @@ theorem source_twoRunLERWZIUV :
   have hsub : InSubset ({ funcs := [] } : Clif.Program) source :=
     InSubset.of_verifiable input_conditions.1 (fun _ => rfl)
   refine ⟨vc, vcp, af, fa, fb, hc, fun env K F c w₀ args cs hce hrel hargs htr fuel vals cm hrun
-    G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 => ?_⟩
+    G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 hfl => ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
   obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
   have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
@@ -199,7 +200,7 @@ theorem source_twoRunLERWZIUV :
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨_, _, hj, _⟩ hd => (noHook_lineDest hnh hj hd).elim)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨a, b, c, _, _, hj, _⟩ _ _ =>
       (noHook_line hnh hj).2.2 a b c rfl |>.elim)
-    hag hx29
+    hag hx29 hfl
   exact ⟨N, h⟩
 
 open DeadCleanupWitness in
@@ -223,6 +224,7 @@ theorem source_twoRunLERWZIUF_either :
           ActEntryPR vcp (spillAlloc vcp) af fa fb K F G' (ExtSemI.const xQuiet) idHooks base ra' Kp'
             cc' Pp' Rr' t0 w₀ →
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
+          EntryFlags af s t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX xQuiet idHooks fa)
               (prologueSteps af.saves af.frameSize af.isCaller + N + ((epiLines af.saves af.frameSize).length + 1))
@@ -234,7 +236,7 @@ theorem source_twoRunLERWZIUF_either :
   have hsub : InSubset ({ funcs := [] } : Clif.Program) source :=
     InSubset.of_verifiable input_conditions.1 (fun _ => rfl)
   refine ⟨vc, vcp, af, fa, fb, .cleanup hc, fun env K F c w₀ args cs hce hrel hargs htr fuel vals cm
-    hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 => ?_⟩
+    hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 hfl => ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
   obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
   have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
@@ -254,7 +256,7 @@ theorem source_twoRunLERWZIUF_either :
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨_, _, hj, _⟩ hd => (noHook_lineDest hnh hj hd).elim)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨a, b, c, _, _, hj, _⟩ _ _ =>
       (noHook_line hnh hj).2.2 a b c rfl |>.elim)
-    hag hx29
+    hag hx29 hfl
   exact ⟨N, h⟩
 
 /-- `r`'s callee contracts (no externs, no indirect call), for every memory relation. -/
@@ -309,6 +311,7 @@ theorem r_twoRunLERWZIUV_Lsl (M : Nat) :
           ActEntryPR vcp (spillAlloc vcp) af fa fb K F G' (ExtSemI.const Lsl.Xb) (Lsl.hooks M) base
             ra' Kp' cc' Pp' Rr' t0 w₀' →
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
+          EntryFlags af s t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
               (prologueSteps af.saves af.frameSize af.isCaller + N + ((epiLines af.saves af.frameSize).length + 1))
@@ -325,7 +328,7 @@ theorem r_twoRunLERWZIUV_Lsl (M : Nat) :
                   ((epiLines af.saves af.frameSize).length + 1)) s).mem a := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound fR_cleanupChecks
   refine ⟨vc, vcp, af, fa, fb, hc, fun env K F D c w₀ w₀' args cs hD hce hrel hrel' hargs hsw hreg
-    hstk htr fuel vals cm hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 =>
+    hstk htr fuel vals cm hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 hfl =>
     ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
   obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
@@ -345,7 +348,7 @@ theorem r_twoRunLERWZIUV_Lsl (M : Nat) :
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨_, _, hj, _⟩ hd => (noHook_lineDest hnh hj hd).elim)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨a, b, c, _, _, hj, _⟩ _ _ =>
       (noHook_line hnh hj).2.2 a b c rfl |>.elim)
-    hag hx29
+    hag hx29 hfl
   exact ⟨N, h, hm⟩
 
 set_option maxHeartbeats 4000000 in
@@ -366,14 +369,15 @@ theorem r_twoRunLERWZIUF_either_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitV
     (he' : ActEntryPR (Lsl.A fR).vcp (Lsl.A fR).rf (Lsl.A fR).af (Lsl.A fR).fa (Lsl.A fR).fb K F G'
       (ExtSemI.const Lsl.Xb) (Lsl.hooks M) base ra' Kp' cc' Pp' Rr' t0 w₀)
     (hag : EntryAgree (frameDrop (Lsl.A fR).af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags (Lsl.A fR).af s t0) :
     ∀ vals cm, Clif.runLoop env Lsl.P.bare fuel cs = .returned vals cm →
       ∃ N, RetAgreeX (frameDrop (Lsl.A fR).af + K) (spv s)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
+          (prologueSteps (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) t0)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
+          (prologueSteps (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) s) := by
   have hc := fR_compiled
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
@@ -395,7 +399,7 @@ theorem r_twoRunLERWZIUF_either_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitV
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨_, _, hj, _⟩ hd => (noHook_lineDest hnh hj hd).elim)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨a, b, c, _, _, hj, _⟩ _ _ =>
       (noHook_line hnh hj).2.2 a b c rfl |>.elim)
-    hag hx29
+    hag hx29 hfl
   exact ⟨N, h⟩
 
 set_option maxHeartbeats 4000000 in
@@ -426,6 +430,7 @@ theorem r_twoRunLERWZIUPV_Lsl (M : Nat) :
           ActEntryPR vcp (spillAlloc vcp) af fa fb K F G' (ExtSemI.const Lsl.Xb) (Lsl.hooks M) base
             ra' Kp' cc' Pp' Rr' t0 w₀' →
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
+          EntryFlags af s t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
               (prologueSteps af.saves af.frameSize af.isCaller + N + ((epiLines af.saves af.frameSize).length + 1))
@@ -439,7 +444,7 @@ theorem r_twoRunLERWZIUPV_Lsl (M : Nat) :
                   ((epiLines af.saves af.frameSize).length + 1)) t0) = xreg 30 t0 ++ xreg 29 t0 := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound fR_cleanupChecks
   refine ⟨vc, vcp, af, fa, fb, hc, fun env K F D c w₀ w₀' args cs hD hce hrel hrel' hargs hsw hreg
-    hstk htr fuel vals cm hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 =>
+    hstk htr fuel vals cm hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 hfl =>
     ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
   obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
@@ -459,7 +464,7 @@ theorem r_twoRunLERWZIUPV_Lsl (M : Nat) :
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨_, _, hj, _⟩ hd => (noHook_lineDest hnh hj hd).elim)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨a, b, c, _, _, hj, _⟩ _ _ =>
       (noHook_line hnh hj).2.2 a b c rfl |>.elim)
-    hag hx29
+    hag hx29 hfl
   exact ⟨N, h, hw2⟩
 
 open DeadCleanupWitness in
@@ -484,6 +489,7 @@ theorem source_twoRunLERWZIUPF_either :
           ActEntryPR vcp (spillAlloc vcp) af fa fb K F G' (ExtSemI.const xQuiet) idHooks base ra' Kp'
             cc' Pp' Rr' t0 w₀ →
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
+          EntryFlags af s t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX xQuiet idHooks fa)
               (prologueSteps af.saves af.frameSize af.isCaller + N + ((epiLines af.saves af.frameSize).length + 1))
@@ -499,7 +505,7 @@ theorem source_twoRunLERWZIUPF_either :
   have hsub : InSubset ({ funcs := [] } : Clif.Program) source :=
     InSubset.of_verifiable input_conditions.1 (fun _ => rfl)
   refine ⟨vc, vcp, af, fa, fb, .cleanup hc, fun env K F c w₀ args cs hce hrel hargs htr fuel vals cm
-    hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 => ?_⟩
+    hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 hfl => ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
   obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
   have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
@@ -520,7 +526,7 @@ theorem source_twoRunLERWZIUPF_either :
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨_, _, hj, _⟩ hd => (noHook_lineDest hnh hj hd).elim)
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨a, b, c, _, _, hj, _⟩ _ _ =>
       (noHook_line hnh hj).2.2 a b c rfl |>.elim)
-    hag hx29
+    hag hx29 hfl
   exact ⟨N, h, hw2⟩
 
 end E2E.TwoRunVWitness

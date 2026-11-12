@@ -141,10 +141,10 @@ theorem backend_twoRunLERWZNpWPK (hc : Compiled f k vc vcp rf af fa fb)
     exact ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := he'.abi.fits; omega, he'.stack,
       hpsF, he'.abi.program, he'.gfree⟩
-  have hPe : (prologueLines (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
+  have hPe : (prologueSteps (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
       (GotV vcp)).af.saves (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
       (GotV vcp)).af.frameSize (actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G
-      (GotV vcp)).af.isCaller).length = (prologueSteps af.saves af.frameSize af.isCaller) := rfl
+      (GotV vcp)).af.isCaller) = (prologueSteps af.saves af.frameSize af.isCaller) := rfl
   -- the prologue part of the lock
   have hpro : ∀ i ≤ (prologueSteps af.saves af.frameSize af.isCaller), ∃ d d', StEqOutX
       ((actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp)).Zc d d')
