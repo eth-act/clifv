@@ -48,19 +48,19 @@ theorem a2_twoRunPRIYD {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args 
       (ExtSemI.const Xb) H base ra Kp cc Pp Rr s w₀) :
     ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ N, Arm.r .PC (iterN (ArmStepX Xb H (A fA2).fa)
-        ((prologueLines (A fA2).af.saves (A fA2).af.frameSize).length + N +
+        ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + N +
           (epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1) s) = ra := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]
   have hc := a2_compiled
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
   intro vals cm hrun
   obtain ⟨N, -, -, -, -, -, -, hpc, -⟩ := backend_twoRunPRIYD (D := fun _ => False)
     (hL.subset fA2 hA2) hc
     a2_callsOne.1 a2_callsOne.2 (fun _ n _ => a2_xcalls _ _ _ n) (fun _ _ _ => xb_xNI)
     (fun _ => xbTls F) (fun n b h => by cases h) rfl (fun _ => 0) hce hrel hrel hargs
-    (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel hlm (hk ▸ hpsF) he he
+    (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel hlm ⟨p, hk ▸ hpsF, rfl⟩ he he
     rfl (hL.covered fA2 hA2) (fun _ _ => True) (fun _ _ u u' => u = u')
     (fun _ _ => fun _ Y => Y = F) (fun _ _ => fun _ Y => Y = F) (fun _ _ _ _ _ h => h)
     (fun _ _ _ _ _ h => h) (fun _ _ _ u u' => u = u') (fun _ _ _ _ _ h => h ▸ rfl)

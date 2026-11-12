@@ -29,8 +29,12 @@ theorem QW.ofWithX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.s
   cases c with
   | run vs =>
     obtain ⟨b, its, m, w⟩ := vs
-    obtain ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := h
-    exact ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10.ofWithX hP⟩
+    rcases h with ⟨hT, vb, items, pre, code, Xl, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+      h10, h11, h12, h13⟩ | ⟨hT, hf, hpc, hst⟩
+    · exact .inl ⟨hT, vb, items, pre, code, Xl, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+        h10, h11.ofWithX hP, h12, h13⟩
+    · exact .inr ⟨hT, hf.congr (R := { R with X := X }) (R' := R) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩,
+        hpc, hst.ofWithX hP⟩
   | ret => trivial
   | halt => trivial
 
@@ -41,8 +45,12 @@ theorem QW.withX {R : RL} {X : ExtSem} (hP : ({ R with X := X } : RL).sP = R.sP)
   cases c with
   | run vs =>
     obtain ⟨b, its, m, w⟩ := vs
-    obtain ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩ := h
-    exact ⟨vb, items, pre, code, ls, ps2, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10.withX hP⟩
+    rcases h with ⟨hT, vb, items, pre, code, Xl, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+      h10, h11, h12, h13⟩ | ⟨hT, hf, hpc, hst⟩
+    · exact .inl ⟨hT, vb, items, pre, code, Xl, psm, ps2, x, h1, h2, h3, h4, h5, h6, h7, h8, h9,
+        h10, h11.withX hP, h12, h13⟩
+    · exact .inr ⟨hT, hf.congr (R := R) (R' := { R with X := X }) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩,
+        hpc, hst.withX hP⟩
   | ret => trivial
   | halt => trivial
 
@@ -86,13 +94,19 @@ theorem RL.SegChain.ofWithX {R : RL} {X : ExtSem} (hX : ({ R with X := X } : RL)
   induction h with
   | nil => exact .nil
   | @snoc l u W1 c1 c2 n _ hs ht ih =>
-    rw [hX]
+    have hW : ({ R with X := X } : RL).nextW W1.1 W1.2.1 W1.2.2 c1 c2
+        (Arm.r .PC (iterN ({ R with X := X } : RL).step n u)) =
+        R.nextW W1.1 W1.2.1 W1.2.2 c1 c2 (Arm.r .PC (iterN R.step n u)) := by
+      rw [hX]
+      exact RL.nextW_congr (R := R) (R' := { R with X := X }) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ _ _ _ _ _ _
+    rw [hW, hX]
     refine .snoc ih ?_ fun i hi => hT _ (by rw [← hX]; exact ht i hi)
+    have h0 : R.SameCode { R with X := X } := ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
     cases c2 with
     | run _ =>
-      simp only [RL.SegLenA, RL.SegLen, FirstArr] at hs ⊢
-      rw [hX] at hs
-      exact hs
+      simp only [RL.SegLenA, RL.SegLen] at hs ⊢
+      rw [hX, RL.tgtS_congr h0] at hs
+      exact ⟨hs.1, hs.2.trans (RL.emptyW_congr h0 _ _ _ _ _)⟩
     | ret => exact hs
     | halt => exact hs
 
@@ -105,13 +119,19 @@ theorem RL.SegChain.withX {R : RL} {X : ExtSem} (hX : ({ R with X := X } : RL).s
   induction h with
   | nil => exact .nil
   | @snoc l u W1 c1 c2 n _ hs ht ih =>
-    rw [← hX]
+    have hW : ({ R with X := X } : RL).nextW W1.1 W1.2.1 W1.2.2 c1 c2
+        (Arm.r .PC (iterN ({ R with X := X } : RL).step n u)) =
+        R.nextW W1.1 W1.2.1 W1.2.2 c1 c2 (Arm.r .PC (iterN R.step n u)) := by
+      rw [hX]
+      exact RL.nextW_congr (R := R) (R' := { R with X := X }) ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ _ _ _ _ _ _
+    rw [← hW, ← hX]
     refine .snoc ih ?_ fun i hi => hT _ (by rw [hX]; exact ht i hi)
+    have h0 : R.SameCode { R with X := X } := ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
     cases c2 with
     | run _ =>
-      simp only [RL.SegLenA, RL.SegLen, FirstArr] at hs ⊢
-      rw [hX]
-      exact hs
+      simp only [RL.SegLenA, RL.SegLen] at hs ⊢
+      rw [hX, RL.tgtS_congr h0]
+      exact ⟨hs.1, hs.2.trans (RL.emptyW_congr h0 _ _ _ _ _).symm⟩
     | ret => exact hs
     | halt => exact hs
 
@@ -123,8 +143,8 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
     {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0)
     (halloc : lowerRFunc vcp rf = .ok af)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb)
-    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm) {body : List Line}
-    {psF : PState} (hpsF : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF))
+    {lm : Std.HashMap Lbl Nat} (hlm : labelOffsets fa.lines = .ok lm)
+    {psF : PState} (hpsF : ∃ p, emitPlan fa.k af = .ok p ∧ p.ps = psF)
     {XI : ExtSemI} {H : ArmHooks}
     {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
     (Ok : Arm.ArmState → (BitVec 64 → Prop) → Prop)
@@ -154,35 +174,35 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
         (actRL vcp rf af fa fb lm base s XI H psF K G gv).SegChain
           (fun u => (actRL vcp rf af fa fb lm base s XI H psF K G gv).Good u ∧
             (actRL vcp rf af fa fb lm base s XI H psF K G gv).WReadsIn Ok u)
-          (E2E.runX (ArmStepX (XI.at 0) H fa) (prologueLines af.saves af.frameSize).length s)
+          (E2E.runX (ArmStepX (XI.at 0) H fa) (prologueLines af.saves af.frameSize af.isCaller).length s)
           (actRL vcp rf af fa fb lm base s XI H psF K G gv).initW
           (MConf.init rf (locVal (RAFrame.compute vcp rf)
-            (E2E.runX (ArmStepX (XI.at 0) H fa) (prologueLines af.saves af.frameSize).length s)) w₀) l
+            (E2E.runX (ArmStepX (XI.at 0) H fa) (prologueLines af.saves af.frameSize af.isCaller).length s)) w₀) l
           (E2E.runX (ArmStepX (XI.at 0) H fa)
-            ((prologueLines af.saves af.frameSize).length + (l.map Prod.fst).sum) s) W c' ∧
-        Arm.r .PC (E2E.runX (ArmStepX (XI.at 0) H fa) ((prologueLines af.saves af.frameSize).length +
+            ((prologueLines af.saves af.frameSize af.isCaller).length + (l.map Prod.fst).sum) s) W c' ∧
+        Arm.r .PC (E2E.runX (ArmStepX (XI.at 0) H fa) ((prologueLines af.saves af.frameSize af.isCaller).length +
           (l.map Prod.fst).sum + (actRL vcp rf af fa fb lm base s XI H psF K G gv).retLen) s) = ra ∧
-        ∀ i < (prologueLines af.saves af.frameSize).length + (l.map Prod.fst).sum +
+        ∀ i < (prologueLines af.saves af.frameSize af.isCaller).length + (l.map Prod.fst).sum +
             (actRL vcp rf af fa fb lm base s XI H psF K G gv).retLen,
           actWReadsIn vcp rf af fa fb base s (XI.at 0) H K G gv Ok
             (E2E.runX (ArmStepX (XI.at 0) H fa) i s) := by
-  obtain ⟨-, -, -, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨-, -, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XI.at n, H, psF, K, G, gv⟩
   let R : RL := Rn 0
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hpsF⟩, hent.program, hG⟩
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, hpsF, hent.program, hG⟩
   have hR : R.Wf := hRn 0
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨n0, hn0, ht0, hq0, hA0, -⟩ := q_initNA (Y := fun _ => True) hR hent hbe
-  have hn0' : n0 = (prologueLines af.saves af.frameSize).length := hn0
+  have hn0' : n0 = (prologueLines af.saves af.frameSize af.isCaller).length := hn0
   subst hn0'
-  let s₁ := iterN R.step (prologueLines af.saves af.frameSize).length s
+  let s₁ := iterN R.step (prologueLines af.saves af.frameSize af.isCaller).length s
   let c₁ := MConf.init R.rf (locVal R.fr s₁) w₀
   obtain ⟨Rl, hSim, hinit, -⟩ :=
     checkedAt_sound R.vc R.rf (csemVIG R.gv R.F R.ctx XI Ok) ckeep hcheck
       (locVal R.fr s₁) (ρsel (locVal R.fr s₁)) (w₀, 0) (hsel _)
-  have hP0 : countIn R.CallSt R.step s (prologueLines af.saves af.frameSize).length = 0 :=
+  have hP0 : countIn R.CallSt R.step s (prologueLines af.saves af.frameSize af.isCaller).length = 0 :=
     countIn_zero_of fun i hi => (ht0 i hi).1.2
   let QC : Arm.ArmState → MConf CV Arm.ArmState → Prop := fun u c =>
     ∃ l W, R.SegChain (fun u => R.Good u ∧ R.WReadsIn Ok u) s₁ R.initW c₁ l u W c ∧
@@ -248,21 +268,21 @@ theorem regLevelCorrect_world_atCSW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
         exact ⟨n3, hn3, ht3, hpc⟩
   obtain ⟨n3, hn3, ht3, hpc⟩ := hret
   subst hn3
-  have hU : iterN R.step ((prologueLines af.saves af.frameSize).length + (l.map Prod.fst).sum) s =
+  have hU : iterN R.step ((prologueLines af.saves af.frameSize af.isCaller).length + (l.map Prod.fst).sum) s =
       iterN R.step n2 (iterN R.step n1 s₁) := by
     rw [iterN_add]; exact hch.iter.symm
   refine ⟨l, W, c'.mapW Prod.fst, ?_, ?_, fun i hi => ?_⟩
   · rw [runX_eq, runX_eq]
     show R.SegChain (fun u => R.Good u ∧ R.WReadsIn Ok u) s₁ R.initW c₁ l
-      (iterN R.step ((prologueLines af.saves af.frameSize).length + (l.map Prod.fst).sum) s) W _
+      (iterN R.step ((prologueLines af.saves af.frameSize af.isCaller).length + (l.map Prod.fst).sum) s) W _
     rw [hU]; exact hch
   · rw [runX_eq]
-    show Arm.r .PC (iterN R.step ((prologueLines af.saves af.frameSize).length + (l.map Prod.fst).sum +
+    show Arm.r .PC (iterN R.step ((prologueLines af.saves af.frameSize af.isCaller).length + (l.map Prod.fst).sum +
       R.retLen) s) = ra
     rw [iterN_add, hU]; exact hpc
   · rw [runX_eq]
     refine trace_add (T := fun u => R.WReadsIn Ok u) (step := R.step)
-      (a := (prologueLines af.saves af.frameSize).length) (b := (l.map Prod.fst).sum + R.retLen)
+      (a := (prologueLines af.saves af.frameSize af.isCaller).length) (b := (l.map Prod.fst).sum + R.retLen)
       (fun j hj => hTop _ (ht0 j hj).2)
       (trace_add (T := fun u => R.WReadsIn Ok u) (step := R.step) (a := (l.map Prod.fst).sum)
         (b := R.retLen) (fun j hj => (hch.trace j hj).2) (fun j hj => ?_)) i (by

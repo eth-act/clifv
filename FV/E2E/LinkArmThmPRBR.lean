@@ -46,7 +46,7 @@ theorem noRetAt_of (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.fun
     · have hsp := htr j hj0 hj ⟨_, hcp, by rw [hri.1, hx30, BitVec.sub_add_cancel]⟩
       rw [hri.2.2.2] at hsp
       have hfd := L.frameDrop_eq hL hg
-      have hroom := hME.stack.1
+      have hroom := hME.stack.1.1
       have e := congrArg BitVec.toNat hsp
       have hlt := (spv s).isLt
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at e

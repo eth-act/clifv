@@ -9,10 +9,11 @@ import FV.Backend.Proof.PairsC
 # The spill allocator's facts on float `Args`/`Rets` (S11e5 Stage C, slice 5)
 
 The typed lowering's entry `Args` and `gen_return`'s `Rets` have pairs of either class
-(`argPairsC`): an int vreg in x0..x8 (`Args`) or x0..x7 (`Rets`), an `f32`/`f64` vreg in v0..v7
-(AAPCS64, `sigArgLocs`, `retRegsC`). `spillInstOk_argsC`, `spillInstOk_retsC`: with distinct
-registers (and, for `Args`, distinct vregs) they meet `SpillInstOk`; the integer
-`spillInstOk_rets` is the instance with int pairs (`spillInstOk_rets_of_C`). The fixed v0..v7
+(`argPairsC`): an int vreg in x0..x8 (`Args`; `Rets`: x0..x7, and x8 for an `sret` function's
+struct pointer, #587), an `f32`/`f64` vreg in v0..v7 (AAPCS64, `sigArgLocs`, `retRegsC`,
+`retRegsK`). `spillInstOk_argsC`, `spillInstOk_retsC`: with distinct registers (and, for `Args`,
+distinct vregs) they meet `SpillInstOk`; the integer `spillInstOk_rets` is the instance with int
+pairs (`spillInstOk_rets_of_C`). The fixed v0..v7
 are allocatable, of class float and outside `calleeSaved` (only v8–v15, whose low 64 bits are
 callee-saved, are).
 -/
@@ -51,8 +52,9 @@ theorem nodup_getElem?_inj {α : Type} {l : List α} (h : l.Nodup) {i j : Nat} {
   obtain ⟨hi1, -⟩ := List.getElem?_eq_some_iff.mp hi
   exact (List.Nodup.getElem?_inj hi1 h).mp (hi.trans hj.symm)
 
-/-- **A `Rets` of class-matched, distinct return registers** meets `SpillInstOk`. -/
-theorem spillInstOk_retsC {ns : List (Nat × RegClass × Reg)} (hr : ∀ q ∈ ns, RetRegC q.2.1 q.2.2)
+/-- **A `Rets` of class-matched, distinct return registers** (x0..x8, v0..v7: `ArgRegC`) meets
+`SpillInstOk`. -/
+theorem spillInstOk_retsC {ns : List (Nat × RegClass × Reg)} (hr : ∀ q ∈ ns, ArgRegC q.2.1 q.2.2)
     (hnd : (ns.map (·.2.2)).Nodup) : SpillInstOk (.rets (argPairsC ns)) := by
   have mem : ∀ o ∈ (retOpsC ns).toArray.toList, ∃ q ∈ ns,
       o = ⟨q.1, q.2.1, .use, .early, .fixed q.2.2⟩ := by
@@ -69,7 +71,7 @@ theorem spillInstOk_retsC {ns : List (Nat × RegClass × Reg)} (hr : ∀ q ∈ n
   · intro o ho _; obtain ⟨q, -, rfl⟩ := mem o ho; rfl
   · intro o ho p h; obtain ⟨q, hq, rfl⟩ := mem o ho
     cases h
-    have := argRegC_facts (retRegC_argRegC (hr q hq))
+    have := argRegC_facts (hr q hq)
     exact ⟨this.1, this.2.1⟩
   · intro o ho o' ho' p _ _ h h'
     obtain ⟨q, hq, rfl⟩ := mem o ho
@@ -92,7 +94,7 @@ theorem spillInstOk_retsC {ns : List (Nat × RegClass × Reg)} (hr : ∀ q ∈ n
     rw [this]; exact List.nodup_nil
   · intro us _ o ho
     obtain ⟨q, hq, rfl⟩ := mem o ho
-    exact ⟨q.2.2, rfl, (argRegC_facts (retRegC_argRegC (hr q hq))).2.2⟩
+    exact ⟨q.2.2, rfl, (argRegC_facts (hr q hq)).2.2⟩
 
 /-- **An `Args` of class-matched, distinct argument registers and distinct vregs** meets
 `SpillInstOk`. -/
@@ -151,6 +153,6 @@ theorem spillInstOk_rets_of_C {ns : List (Nat × Reg)} (hr : ∀ q ∈ ns, ∃ k
   refine spillInstOk_retsC (fun q hq => ?_) (by simpa [Function.comp_def] using hnd)
   simp only [List.mem_map] at hq
   obtain ⟨q0, hq0, rfl⟩ := hq
-  exact .inl ⟨rfl, hr q0 hq0⟩
+  exact retRegC_argRegC (.inl ⟨rfl, hr q0 hq0⟩)
 
 end Backend.Proof.Spill

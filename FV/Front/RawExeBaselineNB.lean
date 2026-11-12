@@ -79,7 +79,8 @@ theorem bundle_correct_source_baseline_nobnd {b : Bundle} {S : LinkSpec} {file0 
 /-- `bundle_correct_source_peak` without the premise that the source run's memories lie below `2^64` (A2/B1).
 **The shipped executable compiler refines the frontend bundle's program, recursive
 programs included** (T7e): `Link.compileExe_correct_source_peak` composed as in
-`bundle_correct_source`; the stack from the source run's call depth `d` (`Clif.DepthLe` of the
+`bundle_correct_source`; the stack `frameDrop + (D * d + pbMax)` (#581: the deepest activation's
+stack probes write up to `pbMax` bytes below its frame) from the source run's call depth `d` (`Clif.DepthLe` of the
 units' program). -/
 theorem bundle_correct_source_peak_baseline_nobnd {b : Bundle} {S : LinkSpec} {file0 file : ByteArray}
     (hb : buildSpec b = .ok S) (h : Link.compileExe S file0 = .ok file)
@@ -96,7 +97,8 @@ theorem bundle_correct_source_peak_baseline_nobnd {b : Bundle} {S : LinkSpec} {f
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) (legalize (f.rename σ.fwd))
-      (frameDrop (art S.input (legalize (f.rename σ.fwd))).af + S.input.D * d) r args' cs'.mem)
+      (frameDrop (art S.input (legalize (f.rename σ.fwd))).af + (S.input.D * d + pbMax S.input)) r
+      args' cs'.mem)
     (hr : ClifRun S.input B (legalize (f.rename σ.fwd)) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
@@ -192,7 +194,8 @@ theorem bundle_correct_raw_peak_baseline_nobnd {b : Bundle} {S : LinkSpec} {file
     {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) (legalize (f.rename σ.fwd))
-      (frameDrop (art S.input (legalize (f.rename σ.fwd))).af + S.input.D * d) r args' cs'.mem)
+      (frameDrop (art S.input (legalize (f.rename σ.fwd))).af + (S.input.D * d + pbMax S.input)) r
+      args' cs'.mem)
     (hr : ClifRun S.input B (legalize (f.rename σ.fwd)) r args' cs')
     (hcs : ClifEntry f args cs)
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')

@@ -44,7 +44,7 @@ theorem execRefinesU_of_ended {fb : FnBin} {base ra : BitVec 64}
 
 /-- **The executable compiler is correct on the exceptional edges, on the executable's bytes,
 for the run's peak call depth**: for `compileExeU S file0 = .ok file`, an outside call of `f` in
-`r` with `frameDrop + D * d` bytes of stack (`compileExe_correct_peak`'s premises, the hooks'
+`r` with `frameDrop + (D * d + pbMax)` bytes of stack (`compileExe_correct_peak`'s premises, the hooks'
 contract `HooksSim`) and the linked program with unwinding `L` of the input with this call's world
 (`compileExe_correct_unwind_peak`'s premises), the raising base callees reading no relocated
 instruction byte (`UnwSim`) and the outside caller's call instruction no code of the program
@@ -58,10 +58,12 @@ theorem compileExe_correct_unwind_exec_peak {S : LinkSpec} {file0 file : ByteArr
     (Fu d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) f
-      (frameDrop (art S.inputCleanup f).af + S.inputCleanup.D * d) r args cs.mem)
+      (frameDrop (art S.inputCleanup f).af + (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args
+      cs.mem)
     (hr : ClifRun S.inputCleanup B f r args cs)
     (L : LinkSysU) (hLs : L.toLinkSys =
-      LinkSys.ofInputCleanup S.inputCleanup B (worldF S.inputCleanup f (S.inputCleanup.D * d) r))
+      LinkSys.ofInputCleanup S.inputCleanup B
+        (worldF S.inputCleanup f (S.inputCleanup.D * d + pbMax S.inputCleanup) r))
     (hb : BaseU L) (hNI : L.OkUNI) (hUS : UnwSim S.inputCleanup L.Ub)
     (hra1 : ¬ img S.inputCleanup (xreg 30 r - 1))
     (hd : Clif.DepthLeX L.envX L.P d cs.toX)
@@ -76,10 +78,10 @@ theorem compileExe_correct_unwind_exec_peak {S : LinkSpec} {file0 file : ByteArr
   have hI := okB_leanLink hin hl
   have hbin := binOk_leanLink hl
   have hfacts := binFacts_of_checks hI hbin
-  have hB' := baseOk_F (F' := worldF S.inputCleanup f (S.inputCleanup.D * d) r) hB
+  have hB' := baseOk_F (F' := worldF S.inputCleanup f (S.inputCleanup.D * d + pbMax S.inputCleanup) r) hB
   have hF0 : ∀ a, (LinkSys.ofInputCleanup S.inputCleanup B
-      (worldF S.inputCleanup f (S.inputCleanup.D * d) r)).Img a →
-      worldF S.inputCleanup f (S.inputCleanup.D * d) r a := fun _ h => .inr h
+      (worldF S.inputCleanup f (S.inputCleanup.D * d + pbMax S.inputCleanup) r)).Img a →
+      worldF S.inputCleanup f (S.inputCleanup.D * d + pbMax S.inputCleanup) r a := fun _ h => .inr h
   have hL0 := okBCleanup_sound hI hB' hF0
   have hro : ∀ a b, BinCheck.roByte S.inputCleanup S.data a = some b → r.mem a = b :=
     fun a b h => hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
@@ -96,8 +98,9 @@ theorem compileExe_correct_unwind_exec_peak {S : LinkSpec} {file0 file : ByteArr
     obtain ⟨L0, Ub, envX, XRb, crunX⟩ := L
     change L0 = _ at hLs
     subst hLs
-    exact backend_correct_program_peakUG' _ hLok hU hNI (LinkSys.budget_K _ hL0) hfm Fu d hent hres
-      rfl hgfree himg hbe hargs hr.entry hsav hrel hpl hd htr hout
+    exact backend_correct_program_peakUG' _ hLok hU hNI (LinkSys.budget_K _ hL0) hfm Fu d hent
+      ⟨hres, (LinkSys.budget_K _ hL0).2 d f hfm⟩ rfl hgfree himg hbe hargs hr.entry hsav hrel hpl hd
+      htr hout
   exact compileExe_correct_unwind_exec_peak_of_good h B hB hf Fu d hX ho hr L hLs hb hNI hUS hra1
     hd htr (runOkU_of_good hI (codeMap_leanLink hl) hF hH (leanLink_gotSlot hl)
       (fun g hg => destsInt_of_ok hL' hg) hfm hra (runGoodLU_uSys hLs hgood))
@@ -168,7 +171,8 @@ theorem compileExe_correct_unwind_exec {S : LinkSpec} {file0 file : ByteArray}
     change L0 = _ at hLs
     subst hLs
     exact backend_correct_program_budgetUG' _ hLok hU hNI hκ hfm M hent
-      (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (by rw [hκf]; exact hgfree) himg hbe hargs
+      (by rw [hκf]; exact ⟨hres, by rw [← hκf M]; exact hκ.2 M f hfm⟩) (by rw [hκf]; rfl)
+      (by rw [hκf]; exact hgfree) himg hbe hargs
       hr.entry hsav hrel hpl htr hout
   exact compileExe_correct_unwind_exec_of_good h B hB hf hc M hX ho hr L hLs hb hNI hUS hra1 htr
     (runOkU_of_good hI (codeMap_leanLink hl) hF hH (leanLink_gotSlot hl)
@@ -177,7 +181,7 @@ theorem compileExe_correct_unwind_exec {S : LinkSpec} {file0 file : ByteArray}
 /-- **The optimising executable compiler is correct on the exceptional edges, through the
 mid-end, on the executable's bytes, for the run's peak call depth**: for
 `compileExeOptU S file0 = .ok file`, an outside call of the optimised function `f'` (named `n`)
-in `r` with `frameDrop + D * d` bytes of stack and the hooks' contract `HooksSim`, the linked
+in `r` with `frameDrop + (D * d + pbMax)` bytes of stack and the hooks' contract `HooksSim`, the linked
 program with unwinding `L` of the optimised input with that call's world (its CLIF environment
 keeping the link-time symbols), the entry `cs` of the input's function `f` named `n` with the
 call's registers, slots and memory, and a bound `d` on the call depth of the optimised program's
@@ -191,12 +195,13 @@ theorem compileExeOpt_correct_unwind_exec_peak {S : LinkSpec} {file0 file : Byte
     (hf' : (prog S.opt.inputCleanup).func? n = some f') (d : Nat) {r : Arm.ArmState}
     {args : List Clif.Val} {cs cs' : Clif.State} (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.opt.inputCleanup (BinCheck.roByte S.opt.inputCleanup S.opt.data) f'
-      (frameDrop (art S.opt.inputCleanup f').af + S.opt.inputCleanup.D * d) r args cs'.mem)
+      (frameDrop (art S.opt.inputCleanup f').af + (S.opt.inputCleanup.D * d + pbMax S.opt.inputCleanup))
+      r args cs'.mem)
     (hr : ClifRun S.opt.inputCleanup B f' r args cs') (hcs : ClifEntry f args cs)
     (hregs : cs.frame.regs = cs'.frame.regs) (hsl : cs.frame.slots = cs'.frame.slots)
     (hmem : cs.mem = cs'.mem)
     (L : LinkSysU) (hLs : L.toLinkSys = LinkSys.ofInputCleanup S.opt.inputCleanup B
-      (worldF S.opt.inputCleanup f' (S.opt.inputCleanup.D * d) r))
+      (worldF S.opt.inputCleanup f' (S.opt.inputCleanup.D * d + pbMax S.opt.inputCleanup) r))
     (hb : BaseU L) (hNI : L.OkUNI) (hkeep : Opt.EnvKeepsSymbolsX L.envX)
     (hUS : UnwSim S.opt.inputCleanup L.Ub) (hra1 : ¬ img S.opt.inputCleanup (xreg 30 r - 1))
     (hd : Clif.DepthLeX L.envX L.P d cs'.toX)

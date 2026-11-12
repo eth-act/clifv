@@ -105,44 +105,46 @@ theorem successful_program_call_witness :
         · rw [fixedFacts.2.2.2.1]
           exact outRel_zero _ _ _
         · decide +kernel
+      -- #581: `K` includes `pbMax`, which is 0 here (`K_L`: no frame of the program is probed).
+      have hK : system.K 3 = (L fun _ => True).D * 3 := K_L _ 3
       have dead : ∀ a,StackBelow (system.K 3) (0x100000 : BitVec 64) a → True ∧ ¬ system.Img a := by
         intro a below
         refine ⟨trivial,fun image => ?_⟩
         have upper := img_lt image
+        rw [hK] at below
         change a.toNat < 1048576 ∧ 1048576 ≤ a.toNat + 192 at below
         omega
       obtain ⟨values,next,called,arity,held,_⟩ := system.progResult_semantic hL budget
         (fun _ => system.thm_semantic hL budget 2) hg hh callee (fun _ _ => trivial)
-        (by decide +kernel) dead (by decide +kernel) arguments avoids relation (fun _ => ⟨[],rfl⟩)
+        (by rw [hK]; decide +kernel) dead (by decide +kernel) arguments avoids relation (fun _ => ⟨[],rfl⟩)
         entered returned
       refine ⟨system_ok,cs,cm,values,next,rfl,returned,?_,?_,?_,held⟩
       · rw [system.progXWithPins_ordinary]
         exact called
       · rw [system.progXABI_previous old_check]
         exact called
-      · exact arity.trans fixedFacts.2.2.1
+      · exact arity.trans (by rw [fixedFacts.1]; rfl)
     | trapped code => rw [returned] at source; cases source
     | stuck message => rw [returned] at source; cases source
     | outOfFuel => rw [returned] at source; cases source
 
-/-- The unchanged sret source inhabits the physical prefix proof at x8. -/
+/-- The unchanged sret source selects x8 (`pins_of_valid`; it has no explicit returns, so its
+prefix in `pins_prefix_of_valid` is empty since #587). -/
 theorem sret_prefix_witness :
     let f := Backend.Stock.Memory.StoreRoots.ComputedFixture.function
     ReturnPinMode.stockABI.pins f (sigRets f.sig).length = [.x 8] ∧
-      ReturnPinMode.stockABI.Valid f [(.vreg 9 .int,.x 8)] := by
+      ReturnPinMode.stockABI.Valid f [] [(.vreg 9 .int,.x 8)] := by
   let f := Backend.Stock.Memory.StoreRoots.ComputedFixture.function
   change ReturnPinMode.stockABI.pins f (sigRets f.sig).length = [.x 8] ∧
-    ReturnPinMode.stockABI.Valid f [(.vreg 9 .int,.x 8)]
-  have valid : ReturnPinMode.stockABI.Valid f [(.vreg 9 .int,.x 8)] :=
+    ReturnPinMode.stockABI.Valid f [] [(.vreg 9 .int,.x 8)]
+  have valid : ReturnPinMode.stockABI.Valid f [] [(.vreg 9 .int,.x 8)] :=
     CompiledSemanticReturnPinsWitness.physical_pin_witness.1
-  have bound : (sigRets f.sig).length ≤ ([((.vreg 9 .int : Reg),(.x 8 : Reg))]).length := by
-    rw [show f = _ from Backend.Stock.Memory.SretCopy.Fixture.captured_sret_source_shape_witness]
-    decide +kernel
-  have selected := ReturnPinMode.pins_prefix_of_valid valid bound
+  have selected := ReturnPinMode.pins_of_valid valid (fun h => nomatch h)
   have count : (sigRets f.sig).length = 1 := by
     rw [show f = _ from Backend.Stock.Memory.SretCopy.Fixture.captured_sret_source_shape_witness]
     rfl
   refine ⟨?_,valid⟩
-  simpa only [count,List.map_cons,List.map_nil,List.take_succ_cons,List.take_zero] using selected
+  rw [count]
+  exact selected
 
 end E2E.LinkReturnPinsWitness

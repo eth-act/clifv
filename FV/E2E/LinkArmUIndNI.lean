@@ -65,10 +65,11 @@ theorem sameWorld_endsZ {a : Art} {F Z : BitVec 64 → Prop} (hFZ : ∀ x, F x �
     rw [ht.2.2, hc.2.2, hsw.2.2]
 
 /-- **Non-interference of a call of a function `h` of `P` that returns** (`progX_ni`'s
-counterpart). -/
+counterpart; with `hpb`, #581, as `progCall`). -/
 theorem progXU_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M : Nat}
     (ih : 0 < M → L.ThmU κ (M - 1)) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
-    (hh : h ∈ L.P.funcs) (hcallee : L.Callee g h) {F Z : BitVec 64 → Prop}
+    (hh : h ∈ L.P.funcs) (hcallee : L.Callee g h) (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h)
+    {F Z : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (hFZ : ∀ a, F a → Z a) {w w' : Arm.ArmState}
     (hsw : SameWorld Z w w') {cm : Clif.Mem} {vals : List Clif.Val} {args : List CV}
     (hm : MemRel F L.syms cm w) (hm' : MemRel F L.syms cm w') (ha : ArgsAt h.sig vals args w)
@@ -93,7 +94,7 @@ theorem progXU_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M :
     rw [(clifEntry_initState hpf hinit).sig, (clifEntry_initState hpf hinit1).sig]
   have hsav := LinkSys.stackArgsAvoid_tys hsav1 hty
   obtain ⟨us, outs, wf, hus, hlen, hhold, -, hrs, hall, hni⟩ :=
-    (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herr hal hroom hdead hm ha
+    (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herr hal hroom hdead hpb hm ha
       hsav hpl hinit).1 rvals cm' hrun
   have hc0 := L.callerOk_canon hL hh himgF args w
   have hc1 := L.callerOk_canon hL hh himgF args w'
@@ -106,25 +107,33 @@ theorem progXU_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M :
     (fun off v hmz j hj => by
       rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmz j hj (himgF _ hi))]
       exact LinkSys.stackArgs_bytes ha.2.2 ha'.2.2 hsp' off v hmz j hj)
-  have hsr : (sigRets h.sig).length ≤ us.length := by
-    cases hs : h.sig.params.any (·.purpose == .sret)
-    · have hce := clifEntry_initState hpf hinit
-      obtain ⟨Nr, hrunN⟩ := hR.runs (M' + 1) cs _ hrun (.inl ⟨_, _, rfl⟩)
-      have hrt := Clif.runLoopX_returned_tys hL.free Nr cs.toX rvals cm'
-        (Clif.initState_xinv hinit) hrunN
-      have hbot : cs.toX.s.bottom = h := by
-        simp [Clif.State.toX, Clif.State.bottom, hce.callers, hce.func]
-      rw [hbot] at hrt
-      have e := congrArg List.length hrt
-      simp only [List.length_map, Clif.AbiParam.tys] at e
-      rw [sigRets_of_noSret hs, ← e]
-      have := hhold.1
-      omega
-    · exact hL.sretRets h hh hs us hrs
+  have hsr : h.sig.returns.length ≤ us.length := by
+    have hce := clifEntry_initState hpf hinit
+    obtain ⟨Nr, hrunN⟩ := hR.runs (M' + 1) cs _ hrun (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoopX_returned_tys hL.free Nr cs.toX rvals cm'
+      (Clif.initState_xinv hinit) hrunN
+    have hbot : cs.toX.s.bottom = h := by
+      simp [Clif.State.toX, Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have e := congrArg List.length hrt
+    simp only [List.length_map, Clif.AbiParam.tys] at e
+    rw [← e]
+    have := hhold.1
+    omega
+  have hrl : rvals.length = h.sig.returns.length := by
+    have hce := clifEntry_initState hpf hinit
+    obtain ⟨Nr, hrunN⟩ := hR.runs (M' + 1) cs _ hrun (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoopX_returned_tys hL.free Nr cs.toX rvals cm'
+      (Clif.initState_xinv hinit) hrunN
+    have hbot : cs.toX.s.bottom = h := by
+      simp [Clif.State.toX, Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have e := congrArg List.length hrt
+    simpa only [List.length_map, Clif.AbiParam.tys] using e
   have hres : ∀ (u : Arm.ArmState) (kk : Nat) (Y : BitVec 64 → Prop) (G : BitVec 64 → Prop),
       ActRet (Arm.r .PC u + 4) Y G us outs wf (enterAt (L.A h) u)
         (runX (L.machU M' h) kk (enterAt (L.A h) u)) →
-      ∀ j (hj : j < (sigRets h.sig).length),
+      ∀ j (hj : j < h.sig.returns.length),
         regVal (Arm.set_program (runX (L.machU M' h) kk (enterAt (L.A h) u)) u.program)
           (.x j) = outs[j]'(by omega) := by
     intro u kk Y G hr j hj
@@ -132,7 +141,7 @@ theorem progXU_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M :
     have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
       have := congrArg (·[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some, Option.some.injEq] at this
+        Option.map_some, Option.some.injEq, retX_lt (by omega : j < rvals.length)] at this
       rw [List.getElem?_eq_getElem hju, ← this]
     rw [regVal_set_program, hr.regs j _ _ _ hus_j (List.getElem?_eq_getElem _)]
   refine ⟨?_, ?_⟩
@@ -145,10 +154,12 @@ theorem progXU_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M :
     exact sameWorld_endsZ hFZ hc0.world hc1.world hsw hret.ret hret'.ret hret.mem hret'.mem
       hret.fields hret'.fields
 
-/-- **Non-interference of a call of a function `h` of `P` that raises.** -/
+/-- **Non-interference of a call of a function `h` of `P` that raises** (with `hpb`, #581, as
+`progCall`). -/
 theorem progXR_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M : Nat}
     (ih : 0 < M → L.ThmU κ (M - 1)) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
-    (hh : h ∈ L.P.funcs) (hcallee : L.Callee g h) {F Z : BitVec 64 → Prop}
+    (hh : h ∈ L.P.funcs) (hcallee : L.Callee g h) (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h)
+    {F Z : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (hFZ : ∀ a, F a → Z a) {w w' : Arm.ArmState}
     (hsw : SameWorld Z w w') {cm : Clif.Mem} {vals : List Clif.Val} {args : List CV}
     (hm : MemRel F L.syms cm w) (hm' : MemRel F L.syms cm w') (ha : ArgsAt h.sig vals args w)
@@ -166,7 +177,7 @@ theorem progXR_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M :
     rw [(clifEntry_initState hpf hinit).sig, (clifEntry_initState hpf hinit1).sig]
   have hsav := LinkSys.stackArgsAvoid_tys hsav1 hty
   obtain ⟨obj, wf, -, -, hall, hni⟩ :=
-    (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herr hal hroom hdead hm ha
+    (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herr hal hroom hdead hpb hm ha
       hsav hpl hinit).2 e cm' hrun
   have hc0 := L.callerOk_canon hL hh himgF args w
   have hc1 := L.callerOk_canon hL hh himgF args w'
@@ -220,8 +231,9 @@ theorem argsAt_prog (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh
       LinkSys.argsAt_of_tyMatch habi hmatch hb hb8 hvl h2⟩
 
 /-- **Non-interference of the external semantics of an activation of `g`** with unwinding
-(`xni`'s counterpart): the base externs' (`baseNI`), and `progXU_ni` for a function of `P`. -/
-theorem xniU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hN : L.NeedNI) {M : Nat}
+(`xni`'s counterpart): the base externs' (`baseNI`), and `progXU_ni` for a function of `P` (with
+the budget `hκ`, #581). -/
+theorem xniU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hN : L.NeedNI) (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmU κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) (c : BitVec 64) :
     XNI F L.syms (g.externs.map (·.2)) (indSigs g) c
@@ -254,7 +266,8 @@ theorem xniU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hN : L.NeedNI) {M : Nat}
     have hAA := L.argsAt_prog hL hg hh hpf hdecl hinit hkind hA
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, u, rfl, hu⟩
     · rw [L.XU_prog hpf] at hx hx'
-      exact L.progXU_ni hL hU hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit
+      exact L.progXU_ni hL hU hN ih hg hh hcallee (hκ.2 _ h hh) himgF hFZ hsw hm hm' hAA.1 hAA.2
+        hplw hinit
         hrun hx hx'
     · have hs : symCallee L.Xb L.P (lo64 u) = some h := by
         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = some h
@@ -263,7 +276,8 @@ theorem xniU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hN : L.NeedNI) {M : Nat}
       split at hx
       · rename_i hif
         rw [if_pos hif] at hx'
-        exact L.progXU_ni hL hU hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit
+        exact L.progXU_ni hL hU hN ih hg hh hcallee (hκ.2 _ h hh) himgF hFZ hsw hm hm' hAA.1 hAA.2
+          hplw hinit
           hrun hx hx'
       · cases hx
 
@@ -273,8 +287,10 @@ theorem xTlsU (hL : L.Ok) (hN : L.NeedNI) {M : Nat} {g : Clif.Function} {F : Bit
   fun Z n w w' hFZ hsw => hL.baseTlsNI hN F Z n w w' hFZ hsw
 
 /-- **Non-interference of the raising callees of an activation of `g`** (`XRNI` for `XRU`): the
-base callees' (`OkUNI.baseRaiseNI`), and `progXR_ni` for a function of `P`. -/
-theorem xrniU (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hN : L.NeedNI) {M : Nat}
+base callees' (`OkUNI.baseRaiseNI`), and `progXR_ni` for a function of `P` (with the budget `hκ`,
+#581). -/
+theorem xrniU (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hN : L.NeedNI)
+    (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmU κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) (c : BitVec 64) :
     XRNI F L.syms (g.externs.map (·.2)) (indSigs g) c
@@ -303,7 +319,8 @@ theorem xrniU (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hN : L.NeedN
     have hAA := L.argsAt_prog hL hg hh hpf hdecl hinit hkind hA
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, u, rfl, hu⟩
     · rw [L.XRU_prog hpf] at hx hx'
-      exact L.progXR_ni hL hU hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit
+      exact L.progXR_ni hL hU hN ih hg hh hcallee (hκ.2 _ h hh) himgF hFZ hsw hm hm' hAA.1 hAA.2
+        hplw hinit
         hrun hx hx'
     · have hs : symCallee L.Xb L.P (lo64 u) = some h := by
         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = some h
@@ -312,7 +329,8 @@ theorem xrniU (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hN : L.NeedN
       split at hx
       · rename_i hif
         rw [if_pos hif] at hx'
-        exact L.progXR_ni hL hU hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit
+        exact L.progXR_ni hL hU hN ih hg hh hcallee (hκ.2 _ h hh) himgF hFZ hsw hm hm' hAA.1 hAA.2
+          hplw hinit
           hrun hx hx'
       · cases hx
 
@@ -330,7 +348,7 @@ theorem thm_ofUN (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hκ : L.B
   obtain ⟨rows, hrows⟩ := hU.rows g hg
   obtain ⟨hlsda, hcie, hfde⟩ := Art.tables_eq hsites hrows
   have pipe := fun (htr : TrapsExplicitX (L.envOfX M g (spv w₀)) L.P.bare cs) =>
-    backend_correct_world_ni_pipelineU (hL.subset g hg) hc (hU.lowerU g hg)
+    backend_correct_world_ni_pipelineU_any (hL.subset g hg) hc (hU.lowerU g hg)
       (X := L.XU κ M g F) (XR := L.XRU κ M g F) (syms := L.syms)
       (env := L.envOfX M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
       (L.xCallsOkU hL hU hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
@@ -339,7 +357,7 @@ theorem thm_ofUN (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hκ : L.B
       (L.xRaiseIndOkU hL hU hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
       (fun d uses w hx => L.XU_excl hU.baseExcl d uses w hx)
       (fun n b hn => hL.symOk n b hn) rfl (T := (L.A g).tables) hsites hlsda hrows hcie hfde
-      (hU.pads g hg) (hU.last g hg) (hU.saved g hg) hWE.clif hWE.rel hWE.args htr fuel
+      (hU.pads g hg) (hU.saved g hg) hWE.clif hWE.rel hWE.args htr fuel
   have hAE : ∀ G ra s w₀', L.MachEntry κ M g F G ra s w₀' →
       ActEntryU (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G
         (L.XU κ M g F) (L.hooksU M) (L.XRU κ M g F) (L.UU M) (L.A g).base ra s w₀' :=
@@ -359,8 +377,8 @@ theorem thm_ofUN (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hκ : L.B
     exact ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs,
       fun G ra s hME => hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME),
       fun hN D w₀' hrel' hsw hreg hstk G ra s hME =>
-        hni (L.xniU hL hU hN ih hg hWE.img (spv w₀)) (L.xTlsU hL hN)
-          (L.xrniU hL hU hNI hN ih hg hWE.img (spv w₀)) D w₀' hrel' hsw hreg hstk (L.hooksU M)
+        hni (L.xniU hL hU hN hκ ih hg hWE.img (spv w₀)) (L.xTlsU hL hN)
+          (L.xrniU hL hU hNI hN hκ ih hg hWE.img (spv w₀)) D w₀' hrel' hsw hreg hstk (L.hooksU M)
           (L.UU M) G (L.A g).base ra s (hAE G ra s w₀' hME)⟩
   · exact (pipe (L.trapsExplicitX_envOfX hL hU hg hJ htrX)).2.1 c ((hrunEq fuel).trans hrun)
       (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME)
@@ -371,8 +389,8 @@ theorem thm_ofUN (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hκ : L.B
     exact ⟨obj, wf, hex, hmem,
       fun G ra s hME => hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME),
       fun hN D w₀' hrel' hsw hreg hstk G ra s hME =>
-        hni (L.xniU hL hU hN ih hg hWE.img (spv w₀)) (L.xTlsU hL hN)
-          (L.xrniU hL hU hNI hN ih hg hWE.img (spv w₀)) D w₀' hrel' hsw hreg hstk (L.hooksU M)
+        hni (L.xniU hL hU hN hκ ih hg hWE.img (spv w₀)) (L.xTlsU hL hN)
+          (L.xrniU hL hU hNI hN hκ ih hg hWE.img (spv w₀)) D w₀' hrel' hsw hreg hstk (L.hooksU M)
           (L.UU M) G (L.A g).base ra s (hAE G ra s w₀' hME)⟩
 
 /-- **The linking statement with unwinding at every depth**, with non-interference. -/

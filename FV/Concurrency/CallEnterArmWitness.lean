@@ -59,14 +59,14 @@ theorem enter_call_L :
       (∀ f, f ≠ .PC → f ≠ .GPR 30#5 → Arm.r f (enterL sBF) = Arm.r f sBF) ∧
       xreg 30 (enterL sBF) = Arm.r .PC sBF + 4#64 ∧ (enterL sBF).mem = sBF.mem ∧
       Q (link2.act ldF (enterL sBF) 0 RC.F)
-        (iterN (link2.act ldF (enterL sBF) 0 RC.F).step (prologueLines ldF.af.saves ldF.af.frameSize).length
+        (iterN (link2.act ldF (enterL sBF) 0 RC.F).step (prologueLines ldF.af.saves ldF.af.frameSize ldF.af.isCaller).length
           (enterL sBF))
         (MConf.init ldF.rf (locVal (link2.act ldF (enterL sBF) 0 RC.F).fr
-          (iterN (link2.act ldF (enterL sBF) 0 RC.F).step (prologueLines ldF.af.saves ldF.af.frameSize).length
+          (iterN (link2.act ldF (enterL sBF) 0 RC.F).step (prologueLines ldF.af.saves ldF.af.frameSize ldF.af.isCaller).length
             (enterL sBF))) (bodyOf ldF.af (enterL sBF))) ∧
       AInv (link2.act ldF (enterL sBF) 0 RC.F)
         (MConf.init ldF.rf (locVal (link2.act ldF (enterL sBF) 0 RC.F).fr
-          (iterN (link2.act ldF (enterL sBF) 0 RC.F).step (prologueLines ldF.af.saves ldF.af.frameSize).length
+          (iterN (link2.act ldF (enterL sBF) 0 RC.F).step (prologueLines ldF.af.saves ldF.af.frameSize ldF.af.isCaller).length
             (enterL sBF))) (bodyOf ldF.af (enterL sBF))) := by
   obtain ⟨m, -, hq, -⟩ := prefixF
   have hS := q_stRel hq

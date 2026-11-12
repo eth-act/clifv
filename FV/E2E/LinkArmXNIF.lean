@@ -144,7 +144,7 @@ set_option maxHeartbeats 1000000 in
 callee region and memories equal outside `F`**: one is defined iff the other is (`CondBT`
 carries over, the callee table by `CallTwinCET`), with the same results and worlds equal outside
 `F` (`progCallPRBRLRU`). -/
-theorem progXBT_rel (hL : L.Ok) [hR : L.CrunOk] {M : Nat}
+theorem progXBT_rel (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
     (htw : 0 < M → L.CallTwinCET κ M) {h : Clif.Function} (hh : h ∈ L.P.funcs)
     (hcal : ∃ g ∈ L.P.funcs, L.Callee g h) {F : BitVec 64 → Prop}
@@ -182,13 +182,14 @@ theorem progXBT_rel (hL : L.Ok) [hR : L.CrunOk] {M : Nat}
   have hsav' : StackArgsAvoid F h.sig vals W' := fun off v hmz => by
     rw [hsp]; exact hsav off v hmz
   have hpl' : L.NeedSlots → L.PlaceAtB cm (spv W') ini ∧ ∀ a, L.SlotByte h (spv W') a →
-      ini.bytes (ini.next + 1) a = W'.mem (BitVec.ofNat 64 a) := fun hN => by
+      ini.bytes (ini.next + 1) a = probeMem (L.A h).af W' (BitVec.ofNat 64 a) := fun hN => by
     obtain ⟨h1, h2⟩ := hpl hN
     rw [hsp]
     refine ⟨h1, fun a ha => ?_⟩
     obtain ⟨g, hg, hcg⟩ := hcal
-    rw [h2 a ha, hrgn _ (stackBelow_mono (L.slotByte_below hL hg hcg (by omega) ha).1
-      (Nat.le_add_right _ _))]
+    rw [h2 a ha]
+    exact probeMem_congr hsp.symm (hrgn _ (stackBelow_mono (L.slotByte_below hL hg hcg (by omega) ha).1
+      (Nat.le_add_right _ _)))
   -- the canonical states
   have hc0 := L.callerOk_canon hL hh himgF uses W
   have hc1 := L.callerOk_canon hL hh himgF uses W'
@@ -219,30 +220,29 @@ theorem progXBT_rel (hL : L.Ok) [hR : L.CrunOk] {M : Nat}
       hsav', hpl', htab', hinit, hrun⟩
   -- the canonical callee runs from both canonical states
   obtain ⟨us, outs, wf, e, hus, hlen, hhold, -, hrs, -, hall⟩ := L.progCallPRBRLRU hL hM (ih hM)
-    (hdet hM) hpf hcal himgF herr hal hroom hdead hmr hargs hsav (fun hN => (hpl hN).1)
+    (hdet hM) hpf hcal himgF herr hal hroom hdead (hκ.2 _ h hh) hmr hargs hsav (fun hN => (hpl hN).1)
     (fun hN => (hpl hN).2) htab hinit hrun
   obtain ⟨k₀, hpc₀, hret₀, -⟩ := hall _ hc0 (fun _ _ _ _ => rfl) (fun _ _ => rfl)
   obtain ⟨k, hpc, hret, -⟩ := hall _ hcok hmsk hdd
   have herrt : Arm.r .ERR (L.pcall M h (L.canon h uses W')) = .None := by
     rw [hpc, r_set_program]; exact hret.ret.err
-  -- the callee's ABI results are among the defs of its return site
-  have hsr : (sigRets h.sig).length ≤ us.length := by
-    cases hs : h.sig.params.any (·.purpose == .sret)
-    · have hce := clifEntry_initState hpf hinit
-      obtain ⟨Nr, hrunN⟩ := hR.runs M cs _ hrun (.inl ⟨_, _, rfl⟩)
-      have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hrunN
-      have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
-      rw [hbot] at hrt
-      have e := congrArg List.length hrt
-      simp only [List.length_map, Clif.AbiParam.tys] at e
-      rw [sigRets_of_noSret hs, ← e]
-      have := hhold.1
-      omega
-    · exact hL.sretRets h hh hs us hrs
+  -- the callee's declared results are among the defs of its return site (an `sret` pointer is
+  -- returned in x8 after them, #587)
+  have hlenR : rvals.length = h.sig.returns.length := by
+    have hce := clifEntry_initState hpf hinit
+    obtain ⟨Nr, hrunN⟩ := hR.runs M cs _ hrun (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hrunN
+    have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have e := congrArg List.length hrt
+    simpa only [List.length_map, Clif.AbiParam.tys] using e
+  have hsr : h.sig.returns.length ≤ us.length := by
+    have := hhold.1
+    omega
   have hres : ∀ (u : Arm.ArmState) (kk : Nat) (Y : BitVec 64 → Prop) (G : BitVec 64 → Prop),
       ActRet (Arm.r .PC u + 4) Y G us outs wf (enterAt (L.A h) u)
         (runX (L.mach (M - 1) h) kk (enterAt (L.A h) u)) →
-      ∀ j (hj : j < (sigRets h.sig).length),
+      ∀ j (hj : j < h.sig.returns.length),
         regVal (Arm.set_program (runX (L.mach (M - 1) h) kk (enterAt (L.A h) u)) u.program)
           (.x j) = outs[j]'(by omega) := by
     intro u kk Y G hr j hj
@@ -251,6 +251,7 @@ theorem progXBT_rel (hL : L.Ok) [hR : L.CrunOk] {M : Nat}
       have := congrArg (·[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
         Option.map_some, Option.some.injEq] at this
+      rw [retX_lt (show j < rvals.length by omega)] at this
       rw [List.getElem?_eq_getElem hju, ← this]
     rw [regVal_set_program, hr.regs j _ _ _ hus_j (List.getElem?_eq_getElem _)]
   refine ⟨L.pcall M h (L.canon h uses W'), ?_, ?_⟩
@@ -414,7 +415,7 @@ set_option maxHeartbeats 1000000 in
 /-- **Step 1 of the determinism induction: `XNIF` of the induction step's guarded semantics**
 (module doc): call `n` of `XPBTGY` at the calls the CLIF run of count `n` admits, under
 `NeedNI`, from `ThmPRBRL`/`DetPRBRU` (#732) one level down and `CallTwinCET` at this level. -/
-theorem xnifXPBTGY (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat}
+theorem xnifXPBTGY (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hN : L.NeedNI) {M : Nat}
     (ih : 0 < M → L.ThmPRBRL κ (M - 1)) (hdet : 0 < M → L.DetPRBRU κ (M - 1))
     (htw : 0 < M → L.CallTwinCET κ M) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) (P : Nat → BitVec 64 → BitVec 8)
@@ -466,10 +467,10 @@ theorem xnifXPBTGY (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat}
       intro args'
       have fw : ∀ r : List CV × Arm.ArmState, L.progXPRBT κ M F h args' (P n) (R n) w = some r →
           ∃ x2, L.progXPRBT κ M F h args' (P n) (R n) w' = some (r.1, x2) ∧ SameWorld F r.2 x2 :=
-        fun r hr => L.progXBT_rel hL ih hdet htw hh hcal himgF hWr hWp hWm hWg hr
+        fun r hr => L.progXBT_rel hL hκ ih hdet htw hh hcal himgF hWr hWp hWm hWg hr
       have bw : ∀ r : List CV × Arm.ArmState, L.progXPRBT κ M F h args' (P n) (R n) w' = some r →
           ∃ x2, L.progXPRBT κ M F h args' (P n) (R n) w = some (r.1, x2) :=
-        fun r hr => (L.progXBT_rel hL ih hdet htw hh hcal himgF hWr' hWp' hWm' hWg' hr).imp
+        fun r hr => (L.progXBT_rel hL hκ ih hdet htw hh hcal himgF hWr' hWp' hWm' hWg' hr).imp
           fun _ h => h.1
       refine ⟨⟨fun h0 => ?_, fun h0 => ?_⟩, fun r r' h1 h2 => ?_⟩
       · cases e : L.progXPRBT κ M F h args' (P n) (R n) w' with

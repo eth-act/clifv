@@ -74,7 +74,7 @@ theorem exec_of_armU {S : LinkSpec} {file0 file : ByteArray}
 /-- **The executable compiler is correct on the exceptional edges, on the executable's bytes,
 for the run's peak call depth** (given the per-state facts `RunOkU` of the model's run): for
 `compileExeU S file0 = .ok file`, an outside call of `f` in `r` with
-`frameDrop + D * d` bytes of stack (`compileExe_correct_peak`'s premises) and the linked program
+`frameDrop + (D * d + pbMax)` bytes of stack (`compileExe_correct_peak`'s premises) and the linked program
 with unwinding `L` of the input with this call's world (`compileExe_correct_unwind_peak`'s
 premises), the executable machine with unwinding (`stepU`: the file's words, the hooks, and phase
 2 of the unwinder on the file's tables) run from `r` refines the whole-program run with
@@ -85,10 +85,12 @@ theorem compileExe_correct_unwind_exec_peak_of_good {S : LinkSpec} {file0 file :
     (Fu d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hX : (imageOf file).Intact r)
     (ho : OutsideCall S.inputCleanup (BinCheck.roByte S.inputCleanup S.data) f
-      (frameDrop (art S.inputCleanup f).af + S.inputCleanup.D * d) r args cs.mem)
+      (frameDrop (art S.inputCleanup f).af + (S.inputCleanup.D * d + pbMax S.inputCleanup)) r args
+      cs.mem)
     (hr : ClifRun S.inputCleanup B f r args cs)
     (L : LinkSysU) (hLs : L.toLinkSys =
-      LinkSys.ofInputCleanup S.inputCleanup B (worldF S.inputCleanup f (S.inputCleanup.D * d) r))
+      LinkSys.ofInputCleanup S.inputCleanup B
+        (worldF S.inputCleanup f (S.inputCleanup.D * d + pbMax S.inputCleanup) r))
     (hb : BaseU L) (hNI : L.OkUNI) (hUS : UnwSim S.inputCleanup L.Ub)
     (hra1 : ¬ img S.inputCleanup (xreg 30 r - 1))
     (hd : Clif.DepthLeX L.envX L.P d cs.toX)
@@ -103,10 +105,10 @@ theorem compileExe_correct_unwind_exec_peak_of_good {S : LinkSpec} {file0 file :
   have hI := okB_leanLink hin hl
   have hbin := binOk_leanLink hl
   have hfacts := binFacts_of_checks hI hbin
-  have hB' := baseOk_F (F' := worldF S.inputCleanup f (S.inputCleanup.D * d) r) hB
+  have hB' := baseOk_F (F' := worldF S.inputCleanup f (S.inputCleanup.D * d + pbMax S.inputCleanup) r) hB
   have hF0 : ∀ a, (LinkSys.ofInputCleanup S.inputCleanup B
-      (worldF S.inputCleanup f (S.inputCleanup.D * d) r)).Img a →
-      worldF S.inputCleanup f (S.inputCleanup.D * d) r a := fun _ h => .inr h
+      (worldF S.inputCleanup f (S.inputCleanup.D * d + pbMax S.inputCleanup) r)).Img a →
+      worldF S.inputCleanup f (S.inputCleanup.D * d + pbMax S.inputCleanup) r a := fun _ h => .inr h
   have hL0 := okBCleanup_sound hI hB' hF0
   have hro : ∀ a b, BinCheck.roByte S.inputCleanup S.data a = some b → r.mem a = b :=
     fun a b h => hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
@@ -116,7 +118,8 @@ theorem compileExe_correct_unwind_exec_peak_of_good {S : LinkSpec} {file0 file :
   change L0 = _ at hLs
   subst hLs
   have hA := (compileExe_correct_unwind_peak h B _ hB' hF0 _ rfl hb hNI (LinkSys.budget_K _ hL0)
-    hfm Fu d hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl hd htr).2
+    hfm Fu d hent ⟨hres, (LinkSys.budget_K _ hL0).2 d f hfm⟩ rfl hgfree himg hbe hargs hr.entry
+    hsav hrel hpl hd htr).2
   rw [hmach] at hA
   exact exec_of_armU h B hB hfm hX ho hr _ hUS hra1 hrun hA
 
@@ -176,7 +179,8 @@ theorem compileExe_correct_unwind_exec_of_good {S : LinkSpec} {file0 file : Byte
   change L0 = _ at hLs
   subst hLs
   have hA := (compileExe_correct_unwind h B _ hB' hF0 _ rfl hb hNI hκ hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (by rw [hκf]; exact hgfree) himg hbe hargs
+    (by rw [hκf]; exact ⟨hres, by rw [← hκf M]; exact hκ.2 M f hfm⟩) (by rw [hκf]; rfl)
+    (by rw [hκf]; exact hgfree) himg hbe hargs
     hr.entry hsav hrel hpl htr).2
   rw [hmach] at hA
   exact exec_of_armU h B hB hfm hX ho hr _ hUS hra1 hrun hA

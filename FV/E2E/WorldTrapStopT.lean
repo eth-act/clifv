@@ -1,6 +1,7 @@
 import FV.E2E.WorldTrapStop
 import FV.E2E.TrapCallTryPrep
 import FV.E2E.RegLevelTrapCallTry
+import FV.E2E.TrapCallTryStopSkip
 
 /-!
 # The per-function world theorem with callee traps, `try_call`s included (S9e, #408)
@@ -111,9 +112,31 @@ theorem regLevel_trapStop_coreT {R : RL} (hR : R.Wf) {ra : BitVec 64}
         hops
       have hq2 := (qa_op hq2 hvb hi (fun us h => by
         rcases hik with rfl | ⟨ti, rfl⟩ <;> cases h)).1
-      obtain ⟨j0, items, pre, regs, i', cA, cB, ls1, ls2, ps1, psm, ps2, T', cc', wh, ops'', hal, hit,
-        hsplit, hasg, hc1', hops'', hstat, hchk', hcode2, h1', h2', htr', hdrop, hpc, hst⟩ :=
-        q_op hq2 hvb hi
+      -- a forwarding block's only instruction is a `jump`, no (try) call: `Q` is `Qs`
+      rcases Q.cases hq2 with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
+        hasgf, -⟩
+      rotate_left
+      · rw [hvb] at hvbf
+        cases hvbf
+        simp only [RItem.op.injEq] at he
+        obtain ⟨rfl, rfl⟩ := he
+        have hi1 := hi
+        rw [hins] at hi1
+        simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
+        subst hi1
+        rcases hik with rfl | ⟨ti, rfl⟩
+        · obtain ⟨ic, he'⟩ := (assign_call_tryCall info regsf).1 _ hasgf
+          cases he'
+        · obtain ⟨ic, he', -⟩ := (assign_call_tryCall info regsf).2 ti _ hasgf
+          cases he'
+      obtain ⟨-, vb0, items, pre, code, -, -, -, -, -, hvb0, hit, hsplit, hchk, hcode, -, -, -, -,
+        -, hst, -, -⟩ := hqs
+      rw [hvb] at hvb0; cases hvb0
+      obtain ⟨cA, -, hc1, -, -⟩ := itemsCode_cons hcode
+      obtain ⟨regs, i0, i', hal, hi0, hasg, -⟩ := itemCode_op hc1
+      rw [hi] at hi0; cases hi0
+      obtain ⟨cc', wh, i2, ops'', hi2, hops'', hstat, -⟩ := op_checked hchk
+      rw [hi] at hi2; cases hi2
       rw [hops] at hops''; cases hops''
       subst hal
       have hm' : ∀ r, r.allocatable = true → m (.reg r) = regVal u r := fun r hr =>
@@ -131,14 +154,14 @@ theorem regLevel_trapStop_coreT {R : RL} (hR : R.Wf) {ra : BitVec 64}
         rw [runX_eq]
         exact trace_add ht0 (trace_add ht1 ht2) i (by omega)
       rcases hik with rfl | ⟨ti, rfl⟩
-      · have hcpc := callAt_of_q hq2 hvb hi call_hcall regs i' rfl hasg
+      · have hcpc := callAt_of_q hR hq2 hvb hi call_hcall regs i' rfl hasg
         refine ⟨n0 + n1 + n2, ?_, htrace, by rw [hrun]; exact hst.sp, by rw [hrun]; exact hst.prog⟩
         rw [hrun]
         exact ⟨info, ⟨b, vb, k, hvb, .inl hi⟩, by rw [hst.sp]; exact RL.K_le hR,
           fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc', wh, ops, regs,
           i', w1, hops, hstat, hasg, hcpc, hst.world, hst.align, hst.err, hgg,
           (xrT_some hraise').1⟩
-      · have hcpc := callAt_of_q hq2 hvb hi tryCall_hcall regs i' rfl hasg
+      · have hcpc := callAt_of_q hR hq2 hvb hi tryCall_hcall regs i' rfl hasg
         have hcl0 : ti.clobberAll = false := trySite_clobberAll hR.alloc ⟨b, vb, k, hvb, hi⟩
         obtain ⟨ic, rfl, hasg'⟩ := (assign_call_tryCall info regs).2 ti i' hasg
         refine ⟨n0 + n1 + n2, ?_, htrace, by rw [hrun]; exact hst.sp, by rw [hrun]; exact hst.prog⟩
@@ -279,11 +302,11 @@ theorem regLevel_trapStop_worldT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : F
   obtain ⟨cc, ins, hcA⟩ := checked_of_checkAlloc hcheck
   obtain ⟨a0, hat, hle⟩ := hcA.at
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
-  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, GotV vcp⟩
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, GotV vcp⟩
   have hR : R.Wf := ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨body, hb⟩,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨p, hp, rfl⟩,
     he.abi.program, he.gfree⟩
   have hF : R.F = F := he.hF
   have hreal := realizes_value_all hR (by rw [hF]; exact he.calls)
@@ -412,7 +435,7 @@ theorem backend_correct_world_cleanup_trapstopT {p : Clif.Program} {f : Clif.Fun
   have hicalls := indCallsRefine_valueSemU (F := F) (ctx := fctx)
     (xCallsIndOk_trapEnv (c := tc) hXI) hsym (fun _ _ _ h => h.1.1.symbols) hexcl
   -- CLIF → VCode up to the trapping step, on the proof device `trapEnv env tc`
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs⟩ := loweringU_of_check hlU
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs, hsk⟩ := skipStage_specU hlU
   have HD : DriverHyp f vc ctx st0 R gn bl A sem (RelW Γ f c) (trapEnv env tc).toEnv p :=
     { shape := hshape
       cert := hcert
@@ -438,7 +461,7 @@ theorem backend_correct_world_cleanup_trapstopT {p : Clif.Program} {f : Clif.Fun
       tryIndSig := tryIndSig_of_subset hsub
       cfg := by
         obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-        exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+        exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
   have HR : RaiseHyp f sem (RelW Γ f c) (trapEnv env tc) F X (xrT XT) slotOff syms
       (RAFrame.compute vcp rf).intBase :=
     ⟨raiseSem_valueSemU _ _ X (xrT XT), hRef, hmem, mrStable_relW Γ f c, outArgsOk_relW Γ f c,
@@ -449,13 +472,13 @@ theorem backend_correct_world_cleanup_trapstopT {p : Clif.Program} {f : Clif.Fun
   obtain ⟨B0, hentB, hbody, hterm, hty, hregs⟩ := hcs.entry
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hentB
-  have hD := driver_trapStop (slots := cs.frame.slots) (ρ₀ := fun _ => 0) hp HD hUs HR
+  have hD := driver_trapStop_stage (slots := cs.frame.slots) (ρ₀ := fun _ => 0) hp HD hUs HR hsk
     (driverSem_valueSemU F fctx X (xrT XT)) hB0 hcs.callers hcs.func rfl hbody hterm hregs
     hty.symm hcs.sig hrel hargs htr hrun
   -- `prune` + `prepare`
-  have hP := prepareCorrectU_cleanup (driverSem_valueSemU F fctx X (xrT XT))
-    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk
-    (xrT XT)
+  have hP := prepareCorrectU_cleanup (vc := skipStage f vc)
+    (driverSem_valueSemU F fctx X (xrT XT))
+    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk (xrT XT)
   intro H G base ra s he
   obtain ⟨hR1, hR2, hR3⟩ := regLevel_trapStop_worldT hc.check hc.alloc hc.emit hc.layout hcov XT
     he (fun _ => 0)
@@ -467,9 +490,8 @@ theorem backend_correct_world_cleanup_trapstopT {p : Clif.Program} {f : Clif.Fun
       hR2 obj w' (vUnwinds_gotV_gen (gotPair_valueU _ _ _) (hP.2 _ _ _ _ h))
     exact ⟨n, ht, hsp, hprog, .inr hct⟩
   · obtain ⟨n, ht, hsp, hprog, hct⟩ := hR3 (vTryRaise_gotV_gen (gotPair_valueU _ _ _)
-      (tryRaise_cleanup (driverSem_valueSemU F fctx X (xrT XT))
-        (fun _ _ _ _ _ _ hp' h' => valueSemU_pure hp' h') (valueSemU_cmpOverwrite _ _ _ _)
-        hc.prepOk (xrT XT) h))
+      (tryRaise_cleanup (vc := skipStage f vc) (driverSem_valueSemU F fctx X (xrT XT))
+        (fun _ _ _ _ _ _ hp' h' => valueSemU_pure hp' h') (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk (xrT XT) h))
     exact ⟨n, ht, hsp, hprog, .inr hct⟩
 
 end E2E

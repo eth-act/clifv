@@ -41,10 +41,10 @@ def cleanupChecks (f : Clif.Function) : Bool :=
   | .error _ => false
   | .ok vc =>
     lowerCheck f vc &&
-    match Backend.prepare (prune vc) with
+    match Backend.prepare (cleanupStage f vc) with
     | .error _ => false
     | .ok vcp =>
-      prepCheck (prune vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
+      prepCheck (cleanupStage f vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
       match lowerRFunc vcp (spillAlloc vcp) with
       | .error _ => false
       | .ok af => match emitFunc 0 af with
@@ -63,7 +63,7 @@ theorem cleanupChecks_sound {f : Clif.Function} (h : cleanupChecks f = true) :
     rw [hl] at h
     simp only [Bool.and_eq_true] at h
     obtain ⟨hlo, h⟩ := h
-    cases hp : Backend.prepare (prune vc) with
+    cases hp : Backend.prepare (cleanupStage f vc) with
     | error e => rw [hp] at h; cases h
     | ok vcp =>
       rw [hp] at h
@@ -167,10 +167,10 @@ theorem source_twoRunLERWZIUV :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound source_cleanupChecks
   have hsub : InSubset ({ funcs := [] } : Clif.Program) source :=
@@ -178,9 +178,8 @@ theorem source_twoRunLERWZIUV :
   refine ⟨vc, vcp, af, fa, fb, hc, fun env K F c w₀ args cs hce hrel hargs htr fuel vals cm hrun
     G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 => ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
   have hx30 : fa.x30Free lm = true := by
     rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
   have hnil : (locsOf source.sig).zip args = [] := by
@@ -226,10 +225,10 @@ theorem source_twoRunLERWZIUF_either :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound source_cleanupChecks
   have hsub : InSubset ({ funcs := [] } : Clif.Program) source :=
@@ -237,9 +236,8 @@ theorem source_twoRunLERWZIUF_either :
   refine ⟨vc, vcp, af, fa, fb, .cleanup hc, fun env K F c w₀ args cs hce hrel hargs htr fuel vals cm
     hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 => ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
   have hx30 : fa.x30Free lm = true := by
     rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
   have hnil : (locsOf source.sig).zip args = [] := by
@@ -313,26 +311,25 @@ theorem r_twoRunLERWZIUV_Lsl (M : Nat) :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) ∧
             ∀ a, ¬ F a → ¬ D a →
               (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-                ((prologueLines af.saves af.frameSize).length + N +
+                ((prologueLines af.saves af.frameSize af.isCaller).length + N +
                   ((epiLines af.saves af.frameSize).length + 1)) t0).mem a =
               (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-                ((prologueLines af.saves af.frameSize).length + N +
+                ((prologueLines af.saves af.frameSize af.isCaller).length + N +
                   ((epiLines af.saves af.frameSize).length + 1)) s).mem a := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound fR_cleanupChecks
   refine ⟨vc, vcp, af, fa, fb, hc, fun env K F D c w₀ w₀' args cs hD hce hrel hrel' hargs hsw hreg
     hstk htr fuel vals cm hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 =>
     ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
   have hx30 : fa.x30Free lm = true := by
     rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
   obtain ⟨us, outs, w, ⟨b, kk, ρ, w₁, vb, ops, outs', hs, hvb, hkk, hops, hvals, hsem⟩, -⟩ :=
@@ -373,14 +370,14 @@ theorem r_twoRunLERWZIUF_either_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitV
     ∀ vals cm, Clif.runLoop env Lsl.P.bare fuel cs = .returned vals cm →
       ∃ N, RetAgreeX (frameDrop (Lsl.A fR).af + K) (spv s)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + N +
+          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) t0)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + N +
+          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) s) := by
   have hc := fR_compiled
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
   have hx30 : (Lsl.A fR).fa.x30Free lm = true := by
     have h := fR_x30Free
     rwa [show getOk (labelOffsets (Lsl.A fR).fa.lines) = lm by rw [hlm]; rfl] at h
@@ -391,7 +388,7 @@ theorem r_twoRunLERWZIUF_either_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitV
     (tryCallsOne_all fR) (fun _ _ _ => fR_xcalls _ _ _) (fun _ _ _ => fR_xnif)
     (fun _ => lslTls F) (fun n b h => by cases h) rfl (fun _ h => h.elim) (fun _ => 0) hce hrel
     hrel hargs (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel hrun hlm
-    (hk ▸ hpsF) he (he'.toN 0)
+    ⟨p, hk ▸ hpsF, rfl⟩ he (he'.toN 0)
     (fun n => (he'.calls n).mono fun _ hu => hu.1)
     (fun ht n => (he'.tries ht n).mono fun _ hu => hu.1)
     rfl (Lsl_ok.covered fR fR_mem) hx30
@@ -431,23 +428,22 @@ theorem r_twoRunLERWZIUPV_Lsl (M : Nat) :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) ∧
             Arm.read_mem_bytes 16 (spv t0 - 16#64)
               (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) fa)
-                ((prologueLines af.saves af.frameSize).length + N +
+                ((prologueLines af.saves af.frameSize af.isCaller).length + N +
                   ((epiLines af.saves af.frameSize).length + 1)) t0) = xreg 30 t0 ++ xreg 29 t0 := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound fR_cleanupChecks
   refine ⟨vc, vcp, af, fa, fb, hc, fun env K F D c w₀ w₀' args cs hD hce hrel hrel' hargs hsw hreg
     hstk htr fuel vals cm hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 =>
     ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
   have hx30 : fa.x30Free lm = true := by
     rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
   obtain ⟨us, outs, w, ⟨b, kk, ρ, w₁, vb, ops, outs', hs, hvb, hkk, hops, hvals, hsem⟩, -⟩ :=
@@ -490,14 +486,14 @@ theorem source_twoRunLERWZIUPF_either :
           EntryAgree (frameDrop af + K) s t0 → Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0 →
           ∃ N, RetAgreeX (frameDrop af + K) (spv s)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               t0)
             (iterN (ArmStepX xQuiet idHooks fa)
-              ((prologueLines af.saves af.frameSize).length + N + ((epiLines af.saves af.frameSize).length + 1))
+              ((prologueLines af.saves af.frameSize af.isCaller).length + N + ((epiLines af.saves af.frameSize).length + 1))
               s) ∧
             Arm.read_mem_bytes 16 (spv t0 - 16#64)
               (iterN (ArmStepX xQuiet idHooks fa)
-                ((prologueLines af.saves af.frameSize).length + N +
+                ((prologueLines af.saves af.frameSize af.isCaller).length + N +
                   ((epiLines af.saves af.frameSize).length + 1)) t0) = xreg 30 t0 ++ xreg 29 t0 := by
   obtain ⟨vc, vcp, af, fa, fb, hc, hx30', hnh⟩ := cleanupChecks_sound source_cleanupChecks
   have hsub : InSubset ({ funcs := [] } : Clif.Program) source :=
@@ -505,9 +501,8 @@ theorem source_twoRunLERWZIUPF_either :
   refine ⟨vc, vcp, af, fa, fb, .cleanup hc, fun env K F c w₀ args cs hce hrel hargs htr fuel vals cm
     hrun G G' base ra ra' Kp Kp' cc cc' Pp Pp' Rr Rr' s t0 he he' hag hx29 => ?_⟩
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+  have hpsF' : ∃ p', emitPlan fa.k af = .ok p' ∧ p'.ps = p.ps := ⟨p, hk ▸ hpsF, rfl⟩
   have hx30 : fa.x30Free lm = true := by
     rwa [show getOk (labelOffsets fa.lines) = lm by rw [hlm]; rfl] at hx30'
   have hnil : (locsOf source.sig).zip args = [] := by

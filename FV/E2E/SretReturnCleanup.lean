@@ -19,7 +19,7 @@ premise `sretStableB f = true` (the `sret` value is bound once):
 * `backend_correct_of_rules_cleanup_ex_abi`, `backend_correct_m4_cleanup_ex_abi`,
   `backend_correct_final_cleanup_ex_abi`, **`backend_correct_final_cleanup_abi`**;
 * **`backend_correct_final_cleanup_sret`**: for a function with an `sret` parameter `i` and no
-  returns, a CLIF return is matched by an Arm return with `args[i]` in x0;
+  returns, a CLIF return is matched by an Arm return with `args[i]` in x8 (until #587: x0);
 * `SretReturnCleanup.compiled_cleanup_exists`, `sw_returns_sret_cleanup`: non-vacuity, on
   `SretReturnWitness.sw` (compiled through the dead-cleanup pipeline).
 -/
@@ -74,14 +74,15 @@ theorem backend_correct_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function} {k
     (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefinesAbi fb base ra astep s (sretArg f args) (Clif.runLoop env p fuel cs) := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligations_of_check hc.lowerOk
-  refine backend_correct_of_layers_ex_abi (fun s' => iselSimAbi_of_driver (ctx := ctx) (st0 := st0)
-    (R := R) (gn := gn) (bl := bl) (A := A) ?_ (hds s') (hmem s') hS) (fun s' a w => by
-      obtain ⟨hr, ht⟩ := prune_correct (vc := vc) (hPure s') (hCmp s') a w
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hsk⟩ := skipStage_spec hc.lowerOk
+  refine backend_correct_of_layers_ex_abi (fun s' => iselSimAbi_of_driver_stage (ctx := ctx)
+    (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A) ?_ hsk (hds s') (hmem s') hS)
+    (fun s' a w => by
+      obtain ⟨hr, ht⟩ := prune_correct (vc := skipStage f vc) (hPure s') (hCmp s') a w
       obtain ⟨pr, pt⟩ := prepareCorrect_of_check (hds s') hc.prepOk a w
       exact ⟨fun _ _ _ h => pr _ _ _ (hr _ _ _ h), fun _ h => pt _ (ht _ h)⟩)
     hM6 hent hres hbe
-    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF)
+    (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs hargF hres)
     hcs hrel htr fuel
   exact {
     shape := hshape
@@ -106,7 +107,7 @@ theorem backend_correct_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function} {k
     tryIndSig := tryIndSig_of_subset hsub
     cfg := by
       obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-      exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
+      exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
 
 /-- `backend_correct_of_rules_cleanup_ex` with the ABI return values (`sretStableB f`). -/
 theorem backend_correct_of_rules_cleanup_ex_abi {p : Clif.Program} {f : Clif.Function} {k : Nat}
@@ -259,8 +260,8 @@ theorem backend_correct_final_cleanup_ex_abi {p : Clif.Program} {f : Clif.Functi
 
 /-- **The dead-cleanup end-to-end theorem with the ABI return values**: `backend_correct_final_cleanup`
 (its premises plus `sretStableB f`), and a return also leaves the ABI return values after the
-CLIF ones in x0..: for a function with an `sret` parameter and no returns, the `sret` argument in
-x0 (`sretArg`, `backend_correct_final_cleanup_sret`). -/
+CLIF ones (`ArmRefinesAbi`: in x8 after the CLIF values in x0..): for a function with an `sret`
+parameter and no returns, the `sret` argument in x8 (`sretArg`, `backend_correct_final_cleanup_sret`). -/
 theorem backend_correct_final_cleanup_abi {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : CompiledCleanup f k vc vcp rf af fa fb)
@@ -305,8 +306,11 @@ theorem backend_correct_final_cleanup_abi {p : Clif.Program} {f : Clif.Function}
 
 /-- **The `sret` return register through the dead-cleanup variant**: for a function with an
 `sret` parameter `i` and no returns, under the premises of `backend_correct_final_cleanup_abi`,
-a CLIF return is matched by an Arm return (`ArmRet`) whose x0 holds the `sret` argument
-`args[i]`, with the memory the function wrote (`MemAgree`). -/
+a CLIF return is matched by an Arm return (`ArmRet`) whose x8 holds the `sret` argument
+`args[i]`, with the memory the function wrote (`MemAgree`). Restated for #587 (as
+`backend_correct_final_sret`): the conclusion said x0, true of the backend before #587 (it emitted
+`mov x0, x8` before `ret`); Cranelift returns the pointer in x8 on aarch64, and so does the
+backend now. -/
 theorem backend_correct_final_cleanup_sret {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : CompiledCleanup f k vc vcp rf af fa fb)
@@ -339,7 +343,7 @@ theorem backend_correct_final_cleanup_sret {p : Clif.Program} {f : Clif.Function
     (hrun : Clif.runLoop env p fuel cs = .returned vals cm) {v : Clif.Val}
     (hv : args[i]? = some v) :
     ∃ n, ArmRet ra s (runX (ArmStepX X H fa) n s) ∧
-      XHolds v (xreg 0 (runX (ArmStepX X H fa) n s)) ∧
+      XHolds v (xreg 8 (runX (ArmStepX X H fa) n s)) ∧
       MemAgree cm (runX (ArmStepX X H fa) n s) := by
   obtain ⟨B0, hentB, hbody, hterm, -, -⟩ := hcs.entry
   have hB0 : f.blocks[0]? = some B0 := by
@@ -354,7 +358,7 @@ theorem backend_correct_final_cleanup_sret {p : Clif.Program} {f : Clif.Function
     hent hres hbe hargs hcs hrel htr fuel
   rw [hrun, sretArg_of_sret hi hnr, hv] at h
   obtain ⟨n, hret, hx, hm⟩ := h
-  exact ⟨n, hret, hx 0 v (by simp), hm⟩
+  exact ⟨n, hret, by simpa using hx 0 v (by simp), hm⟩
 
 end E2E
 
@@ -370,10 +374,10 @@ def checksCleanup : Bool :=
   | .error _ => false
   | .ok vc =>
     lowerCheck sw vc &&
-    match Backend.prepare (Backend.DeadCleanup.prune vc) with
+    match Backend.prepare (cleanupStage sw vc) with
     | .error _ => false
     | .ok vcp =>
-      prepCheck (Backend.DeadCleanup.prune vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
+      prepCheck (cleanupStage sw vc) vcp && (checkAlloc vcp (spillAlloc vcp)).isOk &&
       match lowerRFunc vcp (spillAlloc vcp) with
       | .error _ => false
       | .ok af => match emitFunc 0 af with
@@ -407,7 +411,7 @@ theorem compiled_cleanup_exists :
     rw [hl] at h
     simp only [Bool.and_eq_true] at h
     obtain ⟨hlo, h⟩ := h
-    cases hp : Backend.prepare (Backend.DeadCleanup.prune vc) with
+    cases hp : Backend.prepare (cleanupStage sw vc) with
     | error e => rw [hp] at h; cases h
     | ok vcp =>
       rw [hp] at h
@@ -436,7 +440,7 @@ theorem compiled_cleanup_exists :
 
 /-- **`backend_correct_final_cleanup_sret` applies to `sw`**: for its compilation through the
 dead-cleanup pipeline, with the witness callees (`NonVacuity`; `sw` makes no calls), a CLIF return
-of a run of `sw` on `[p, v]` is matched by an Arm return with the struct pointer `p` in x0. -/
+of a run of `sw` on `[p, v]` is matched by an Arm return with the struct pointer `p` in x8. -/
 theorem sw_returns_sret_cleanup :
     ∃ vc vcp af fa fb, CompiledCleanup sw 0 vc vcp (spillAlloc vcp) af fa fb ∧
       ∀ {syms : String → Option Nat} {K : Nat} {env : Clif.Env} (_ : 32 ≤ K) (g h tp : BitVec 64)
@@ -450,7 +454,7 @@ theorem sw_returns_sret_cleanup :
         Clif.runLoop env { funcs := [] } fuel cs = .returned vals cm →
         ∃ n, ArmRet ra s (runX (ArmStepX (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) fa) n s) ∧
-          XHolds p (xreg 0 (runX (ArmStepX (witnessX (witnessSym syms) tp)
+          XHolds p (xreg 8 (runX (ArmStepX (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) fa) n s)) ∧
           MemAgree cm (runX (ArmStepX (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) fa) n s) := by

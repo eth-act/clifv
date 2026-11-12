@@ -41,13 +41,13 @@ def main (args : List String) : IO UInt32 := do
       let route (fi : FnInput) : Option (String × Nat) :=
         let f := fi.func
         if (Stock.MemorySretCopy.eligible f || (Stock.VoidCall.sourceData? f).isSome || Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f ||
-            Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f || (((((((Stock.MemoryCapturedCopy.eligible f || Stock.MemoryLoadStore.eligible f) || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.leafEligible f || Stock.ConditionalForwardCfg.leafEligible f) || Stock.ConditionalCfg.leafEligible f) || Stock.ForwardCfg.leafEligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f)) &&
+            Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f || (((((((Stock.MemorySinkExt.eligible f || Stock.MemoryCapturedCopy.eligible f || Stock.MemoryLoadStore.eligible f) || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.leafEligible f || Stock.ConditionalForwardCfg.leafEligible f) || Stock.ConditionalCfg.leafEligible f) || Stock.ForwardCfg.leafEligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f)) &&
             !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
           -- Probe each complete route before its transactional retry. A retained
           -- logical/mixed artifact must not be skipped directly to legacy.
           let routes := Stock.VoidCall.NI.lowerRoutes.zipIdx
           let probes := if Stock.MemorySretCopy.eligible f || (Stock.VoidCall.sourceData? f).isSome then
-              routes.drop 21 ++ routes.take 21
+              routes.drop 22 ++ routes.take 22
             else routes
           let found := probes.find? fun (lower, _) =>
             match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
@@ -56,7 +56,7 @@ def main (args : List String) : IO UInt32 := do
                 Backend.Proof.Driver.prepCheck (productionStage o.deadCleanup f a.vc) a.vcp &&
                 (SemanticABI.checkCalls f a.vc || lowerOkTSB f a.vc) && artB I0 rd phs a
           let idx := (found.map (·.2)).getD 4
-          if idx != 0 || Stock.MemorySretCopy.eligible f || (Stock.VoidCall.sourceData? f).isSome || (((((((Stock.MemoryCapturedCopy.eligible f || Stock.MemoryLoadStore.eligible f) || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.leafEligible f || Stock.ConditionalForwardCfg.leafEligible f) || Stock.ConditionalCfg.leafEligible f) || Stock.ForwardCfg.leafEligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f) then some (f.name, idx) else none
+          if idx != 0 || Stock.MemorySretCopy.eligible f || (Stock.VoidCall.sourceData? f).isSome || (((((((Stock.MemorySinkExt.eligible f || Stock.MemoryCapturedCopy.eligible f || Stock.MemoryLoadStore.eligible f) || Stock.MemoryStoreCfg.eligible f) || Stock.MemoryStore.eligible f) || Stock.MemoryExtending.eligible f) || Stock.MemoryUnsigned.eligible f || Stock.MemoryCfg.eligible f || Stock.Memory.eligible f || Stock.ParameterCfg.leafEligible f || Stock.ConditionalForwardCfg.leafEligible f) || Stock.ConditionalCfg.leafEligible f) || Stock.ForwardCfg.leafEligible f || Stock.LinearCfg.eligible f || Stock.TwoBlock.Entry.eligible f) then some (f.name, idx) else none
         else none
       (Link.parMap route I0.funcs).filterMap id
   let actualLower := Stock.VoidCall.NI.lowerWithRoutes choices
@@ -110,7 +110,7 @@ def main (args : List String) : IO UInt32 := do
       if fixedS == failI.length && bytesS then some statS else none
     else none
   -- the typed checker (S11e6, #615): when integer validators reject functions, the cleanup
-  -- results `I.resultsCleanup` with the typed checks `chksWithT DeadCleanup.prune` (the checker
+  -- results `I.resultsCleanup` with the typed checks `chksWithT cleanupStage` (the checker
   -- `okBCleanupT`, which accepts integer functions too: `Link.DeadCleanup.compileExeT`'s output,
   -- typed `--verified`); used when the typed validators accept some of the rejected functions;
   -- theorem `E2E.DeadCleanupExecBytes.binary_correct_exec_provenT`. The integer results are
@@ -125,13 +125,13 @@ def main (args : List String) : IO UInt32 := do
       let failSet : Std.HashSet String := failI.foldl (·.insert ·) {}
       let probe := Link.parMap (fun (fi : FnInput) =>
         let r := I0.pipeCleanupOf fi
-        (bad (staticChksWithT (fun _ => DeadCleanup.prune) { I0 with D := max D0 (frameDrop (getOk r).af) }
+        (bad (staticChksWithT cleanupStage { I0 with D := max D0 (frameDrop (getOk r).af) }
           fi.func r)).isEmpty) (I0.funcs.filter fun fi => failSet.contains fi.func.name)
       let fixed := (probe.filter id).length
       if fixed > 0 then
         let R0T : Res := Link.parMap (fun fi => (fi.func, I0.pipeCleanupOf fi)) I0.funcs
         let DT := (R0T.map fun e => frameDrop (getOk e.2).af).foldl max 0
-        (true, false, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT (fun _ => DeadCleanup.prune) { I0 with D := DT } e.1 e.2)) R0T,
+        (true, false, R0T, Link.parMap (fun e => (e.1.name, staticChksWithT cleanupStage { I0 with D := DT } e.1 e.2)) R0T,
           s!"  typed checks: {fixed} of the {failI.length} function(s) failing the integer validators pass the typed ones (okBCleanupT's); the typed checker is used")
       else (false, false, R0I, statI, s!"  typed checks: none of the {failI.length} function(s) failing the integer validators pass the typed ones")
     else (false, false, R0I, statI, "")

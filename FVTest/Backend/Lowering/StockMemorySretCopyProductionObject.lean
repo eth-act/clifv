@@ -40,14 +40,14 @@ private def checkOne (out : System.FilePath) (captured : String) (cleanup : Bool
       if f.name == originalName || f.name == variantName then
         require (Stock.MemorySretCopy.check f raw) "the actual sret artifact failed its source check"
         require (SemanticABI.check f raw) "the actual sret artifact failed ABI-aware validation"
-        let routed ← get (Stock.MemorySretCopy.lowerWithRoutes [(f.name,20)] f)
-        require (decide (routed = raw)) "route20 changed the actual sret artifact"
-      let expected ← get (Backend.prepare (Stock.Arithmetic.stage cleanup raw))
+        let routed ← get (Stock.MemorySretCopy.lowerWithRoutes [(f.name,21)] f)
+        require (decide (routed = raw)) "route21 changed the actual sret artifact"
+      let expected ← get (Backend.prepare (Stock.Arithmetic.stageF cleanup f raw))
       require (decide (code = expected)) "allocator input changed from the actual prepared artifact"
     pure (allocateLean codes)) parsed [] cleanup
   require (production.funcs.length == 3 && production.unsupported.isEmpty &&
     production.unverified.isEmpty && production.unvalidated.isEmpty) "the production adapter lost a verified stage"
-  let previous ← compileFileMemoryCapturedCopyNIWhen true (fun codes => pure (allocateLean codes)) parsed [] cleanup
+  let previous ← compileFileMemorySinkExtNIWhen true (fun codes => pure (allocateLean codes)) parsed [] cleanup
   let attempts ← IO.mkRef (0 : Nat)
   let retried ← compileFileMemorySretCopyABIWhen true (fun codes => do
     let count ← attempts.get
@@ -59,14 +59,14 @@ private def checkOne (out : System.FilePath) (captured : String) (cleanup : Bool
   require ((← attempts.get) ≥ 2 && retryBytes.data == previousBytes.data)
     "complete-file retry changed the previous object"
   let disabled ← compileFileMemorySretCopyABIWhen false (fun codes => pure (allocateLean codes)) parsed [] cleanup
-  let previousDisabled ← compileFileMemoryCapturedCopyNIWhen false (fun codes => pure (allocateLean codes)) parsed [] cleanup
+  let previousDisabled ← compileFileMemorySinkExtNIWhen false (fun codes => pure (allocateLean codes)) parsed [] cleanup
   let disabledBytes ← get disabled.object
   let previousDisabledBytes ← get previousDisabled.object
   require (disabledBytes.data == previousDisabledBytes.data) "disabled adapter changed the previous object"
   let stem := if cleanup then "sret-cleanup" else "sret-plain"
   IO.FS.writeBinFile (out / (stem ++ ".o")) (← get production.object)
   IO.FS.writeFile (out / (stem ++ ".json")) production.tableJson
-  IO.println s!"{stem}: original source, NOP variant, route20, allocator input, stages, and complete-file retry passed"
+  IO.println s!"{stem}: original source, NOP variant, route21, allocator input, stages, and complete-file retry passed"
 
 end FVTest.StockMemorySretCopyProductionObject
 

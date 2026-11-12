@@ -1,6 +1,6 @@
 import FV.E2E.BackendPrefixI
 import FV.E2E.BackendWorldCleanupI
-import FV.E2E.IselSimIPrefixCleanup
+import FV.E2E.IselSimIPrefixSkip
 import FV.E2E.DeadCleanupRegLevelPRS
 
 /-!
@@ -78,13 +78,13 @@ theorem regLevel_value_prefixC {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnA
         CallSiteAt (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
           K G s fa base i ((ops.toList.filter Operand.isUse).map (ρ ·.vreg)) w u := by
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let XN := XI.upTo N
-  let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XN.at n, H, psF, K, G, gv⟩
+  let Rn : Nat → RL := fun n => ⟨vcp, rf, af, fa, fb, lm, base, s, XN.at n, H, p.ps, K, G, gv⟩
   let R : RL := Rn 0
   have hRn : ∀ n, (Rn n).Wf := fun _ => ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩, hent.program, hG⟩
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨p, hp, rfl⟩, hent.program, hG⟩
   have hR : R.Wf := hRn 0
   have hC' : ∀ n, CalleeOkGP (fun u => OnCall R.step fa base s n u ∧ spOf u = R.spB) R.F K G s
       (CallAt fa base) (XN.at n) H vcp.CallSite gv := fun n => by
@@ -220,7 +220,8 @@ theorem backend_prefix_cleanupPRI {p : Clif.Program} {f : Clif.Function} {k : Na
       (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧ (XI.at j).call (callDest info) uses w = some r := by
   intro j hj
   obtain ⟨b, k, ρ, w, hstar, -⟩ :=
-    iselSim_prefixWI_cleanup hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs htr t N hr hcn
+    iselSim_prefixWI_cleanup_stage hsub hc hone htc hX hsym hslot (fun _ => 0) hcs hrel hargs htr t
+      N hr hcn
   obtain ⟨b1, k1, ρ1, w1, vb, i, ops, r, hs1, hvb, hi, hcall, hops, hsem⟩ :=
     vstar_call_at (j := j) hstar (Nat.zero_le _) hj
   obtain ⟨info, hci⟩ := callLike_of_isCallI hcall

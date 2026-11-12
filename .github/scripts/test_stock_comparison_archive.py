@@ -36,6 +36,11 @@ class ArchiveTests(unittest.TestCase):
     def test_state_snapshot(self):
         self.assertEqual(MODULE.read_archive(zipped("state.json", b'{"schema":1}'), "state"), {"schema": 1})
 
+    def test_crate_parity_rows(self):
+        rows = b'[{"cgu": "1e02e46160a0", "fn": "f", "stock": 4, "lean": 4, "equal": true}]'
+        self.assertEqual(MODULE.read_archive(zipped("crate-parity.json", rows), "crate")[0]["equal"], True)
+        with self.assertRaises(ValueError): MODULE.read_archive(zipped("state.json", rows), "crate")
+
     def test_unexpected_zip_paths_or_members(self):
         for name in ("../state.json", "/state.json", "other.json"):
             with self.assertRaises(ValueError): MODULE.read_archive(zipped(name, b'{}'), "state")

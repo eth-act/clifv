@@ -91,7 +91,7 @@ noncomputable def progXP (κ : Nat → Clif.Function → Nat) (M : Nat) (F : Bit
     (g : Clif.Function) (uses : List CV) (Pn : BitVec 64 → BitVec 8) (w : Arm.ArmState) :
     Option (List CV × Arm.ArmState) :=
   if L.CondP κ M F g uses Pn w ∧ Arm.r .ERR (L.pcall M g (L.canonP κ M g uses Pn w)) = .None then
-    some ((List.range (sigRets g.sig).length).map fun j =>
+    some ((List.range g.sig.returns.length).map fun j =>
         regVal (L.pcall M g (L.canonP κ M g uses Pn w)) (.x j),
       L.pcall M g (L.canonP κ M g uses Pn w))
   else none

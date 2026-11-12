@@ -133,7 +133,7 @@ def EndDef (f : Clif.Function) (ctx : Ctx) (bl : List BLow) (bi v : Nat) : Prop 
   (∃ B, f.blocks[bi]? = some B ∧ ∃ y ∈ availOf f (availIn f ctx) bi B.body.length,
       v = asmG f bl y) ∨
     (∃ B L T et, f.blocks[bi]? = some B ∧ bl[bi]? = some L ∧ IsTryWith B.term et ∧
-      L.tl = some T ∧ ∃ i, i < max (sigRets T.sig).length 2 ∧ v = L.tst.nextVreg + i)
+      L.tl = some T ∧ ∃ i, i < max T.sig.returns.length 2 ∧ v = L.tst.nextVreg + i)
 
 /-- The code of CLIF block `bi` before statement `j`. -/
 abbrev pfx (f : Clif.Function) (bl : List BLow) (bi j : Nat) : List MInst :=
@@ -452,7 +452,7 @@ theorem end_def (hen : entryParamsB f = true)
       | error e => simp [h0, Except.map] at hops
       | ok ops0 => exact ⟨ops0, rfl⟩
     have hq : (Reg.x i, L.tst.nextVreg + i) ∈
-        outDefs L.tst.nextVreg (max (sigRets T.sig).length 2) :=
+        outDefs L.tst.nextVreg (max T.sig.returns.length 2) :=
       List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩
     have h2 := defVregs_mapRegs (asm_ren f bl) (isDefV_tryCall hD hops0 hq)
     rw [asm_fix bl hb (show ctx.valDef.size ≤ L.tst.nextVreg + i by omega)] at h2
@@ -605,7 +605,7 @@ theorem edge_info {bi : Nat} {B : Clif.Block} {L : BLow} (hB : f.blocks[bi]? = s
     · simp only [List.mem_map] at ha
       obtain ⟨ta, hta, rfl⟩ := ha
       have hok := hai ta hta
-      have res : ∀ i, i < max (sigRets T.sig).length 2 →
+      have res : ∀ i, i < max T.sig.returns.length 2 →
           EndDef f ctx bl bi (asmR f bl (.vreg (L.tst.nextVreg + i) .int)).homeNum := by
         intro i hi
         rw [hg.vreg, asm_fix bl hb (by omega)]

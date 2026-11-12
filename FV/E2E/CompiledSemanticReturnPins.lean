@@ -13,10 +13,13 @@ inductive ReturnPinMode where
 
 namespace ReturnPinMode
 
-/-- Retain ordinary x0 order or the actual Stock ABI return pins. -/
-def Valid (mode : ReturnPinMode) (f : Clif.Function) (us : List (Reg × Reg)) : Prop :=
+/-- Retain ordinary order or the actual Stock ABI return pins. The ordinary branch returns the
+CLIF values `vals` in x0, x1, … and an `sret` function's struct pointer after them in x8
+(`RetPins`, #587: the ordinary lowering returns it there, as Cranelift and the Stock route do). -/
+def Valid (mode : ReturnPinMode) (f : Clif.Function) (vals : List Clif.Val)
+    (us : List (Reg × Reg)) : Prop :=
   match mode with
-  | .ordinary => us.map (·.2) = (List.range us.length).map Reg.x
+  | .ordinary => RetPins vals us
   | .stockABI => ReturnABI f us
 
 /-- Compute the mode from the existing checker order. No caller certificate is required. -/
@@ -29,11 +32,13 @@ def pins (mode : ReturnPinMode) (f : Clif.Function) (count : Nat) : List Reg :=
   | .ordinary => (List.range count).map Reg.x
   | .stockABI => (returnPins f count).getD []
 
-/-- The selected registers agree with every return proved by the mode contract. -/
-theorem pins_of_valid {mode : ReturnPinMode} {f : Clif.Function} {us : List (Reg × Reg)}
-    (valid : mode.Valid f us) : mode.pins f us.length = us.map (·.2) := by
+/-- The selected registers agree with every return proved by the mode contract (for the ordinary
+branch: when no ABI return follows the CLIF values, #587). -/
+theorem pins_of_valid {mode : ReturnPinMode} {f : Clif.Function} {vals : List Clif.Val}
+    {us : List (Reg × Reg)} (valid : mode.Valid f vals us)
+    (within : mode = .ordinary → us.length ≤ vals.length) : mode.pins f us.length = us.map (·.2) := by
   cases mode with
-  | ordinary => exact valid.symm
+  | ordinary => exact (RetPins.ordinary valid (within rfl)).symm
   | stockABI =>
     change (returnPins f us.length).getD [] = us.map (·.2)
     rw [show returnPins f us.length = some (us.map (·.2)) from valid]
@@ -68,10 +73,11 @@ theorem erase (hc : CompiledSemanticReturnPins f k vc vcp rf af fa fb mode) :
   | memorySretCopy family equal effects h => exact .memorySretCopy family equal effects h
   | voidCall source equal h => exact .voidCall source equal h
 
-/-- The actual checker and pipeline derive the mode internally. -/
+/-- The actual checker and pipeline derive the mode internally. (`prepared`/`prepOk` are about
+the routes' stage `Stock.Arithmetic.stageF`, formerly `Stock.Arithmetic.stage`.) -/
 theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)
-    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
-    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stageF cleanup f vc) = .ok vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stageF cleanup f vc) vcp = true)
     (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
     (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
     CompiledSemanticReturnPins f k vc vcp rf af fa fb (ReturnPinMode.checked f vc) := by
@@ -81,14 +87,19 @@ theorem of_checks {cleanup : Bool} (lower : SemanticABI.check f vc = true)
   · have rejected : SemanticNI.check f vc = false := Bool.eq_false_iff.mpr old
     have memory : Stock.MemorySretCopy.check f vc = true := by
       simpa only [SemanticABI.check,rejected,Bool.false_or] using lower
+    have legacy : lowerCheck f vc = false := by
+      cases hl : lowerCheck f vc
+      · rfl
+      · simp [SemanticNI.check,hl] at rejected
+    rw [Stock.Arithmetic.stageF_of_lowerCheck_false legacy] at prepared prepOk
     simp only [ReturnPinMode.checked,rejected,Bool.false_eq_true,↓reduceIte]
     obtain ⟨result,family,run,equal,effects⟩ := Stock.MemorySretCopy.check_sound memory
     exact .memorySretCopy family equal effects
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
 theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls f vc = true)
-    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
-    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stageF cleanup f vc) = .ok vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stageF cleanup f vc) vcp = true)
     (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
     (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
     CompiledSemanticReturnPins f k vc vcp rf af fa fb (ReturnPinMode.checked f vc) := by
@@ -98,6 +109,11 @@ theorem of_checks_calls {cleanup : Bool} (lower : SemanticABI.checkCalls f vc = 
       (Bool.or_eq_true_iff.mp lower).resolve_left old
     have ordinary : SemanticNI.check f vc = false := Bool.eq_false_iff.mpr
       (fun accepted => old (SemanticABI.previous_check accepted))
+    have legacy : lowerCheck f vc = false := by
+      cases hl : lowerCheck f vc
+      · rfl
+      · simp [SemanticNI.check,hl] at ordinary
+    rw [Stock.Arithmetic.stageF_of_lowerCheck_false legacy] at prepared prepOk
     simp only [ReturnPinMode.checked,ordinary,Bool.false_eq_true,↓reduceIte]
     obtain ⟨result,run,equal,_,_,_,_,_⟩ := Stock.VoidCall.check_sound (Bool.and_eq_true_iff.mp caller).1
     exact .voidCall (by rwa [equal]) equal
@@ -125,7 +141,7 @@ theorem backend_correct_world_niX_semantic_return_pins {p : Clif.Program} {f : C
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        ReturnPinMode.Valid mode f us ∧ us.length = outs.length ∧
+        ReturnPinMode.Valid mode f vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →

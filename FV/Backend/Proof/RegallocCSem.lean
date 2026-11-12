@@ -602,8 +602,9 @@ the access avoids the frame addresses `F` and the run ends without error, with t
 unchanged: in the single-threaded Arm model the exclusive store succeeds (`stlxr`'s status
 register is 0, so the `cbnz` back edge is not taken; `docs/decisions/arm-model.md`). The first
 def is read back from its fixed register (x27); the scratch defs, whose values the
-allocated-code semantics havocs (`MInst.keptDefs`), are 0 (not the registers: `xchg` does not
-write x28, and they must not depend on the world's registers). -/
+allocated-code semantics havocs (`MInst.keptDefs`), are 0 (not the registers: they must not
+depend on the world's registers). The `atomic_rmw` loop's defs are `AtomicRmwLoopOp.defRegs`
+(x27, x24 and, unless `xchg`, x28). -/
 noncomputable def loopSem (F : BitVec 64 → Prop) (ty : CTy) (a : CV) (body : List Line)
     (regs : List Reg) (uses : List CV) (defs : List Reg) (w : Arm.ArmState) :
     Option (List CV × Arm.ArmState × Ctl) :=
@@ -621,24 +622,27 @@ open Classical in
 noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISem CV Arm.ArmState :=
   fun i uses w =>
   match i with
+  -- a call: the callee's first results, one per def (`X.call` gives one per ABI return of the
+  -- callee, `XCallsOk`; the call defines the declared returns only, as Cranelift's
+  -- `gen_call_rets` skips an `sret` callee's struct pointer, #587)
   | .call info =>
     (X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).map
-      fun p => (p.1, p.2, .next)
+      fun p => (p.1.take info.defs.length, p.2, .next)
   -- the call of a `try_call`, returning normally (the only way `Clif.run` resumes after it):
   -- the callee's results (`X.call`), then the value 0 for the def registers beyond them (the
   -- exception payload registers x0/x1 that are not return registers, unconstrained on a normal
   -- return: the allocated-code semantics havocs them there, `havocFrom`, so these values are
   -- never compared with the machine's; constants, so that they do not depend on the callee's
-  -- world), and the normal-return successor (the last, number `ti.handlers.length`); defined
-  -- only when the callee returns at least the call's `ti.rets` results (the lowering's
-  -- `tryInfoOf`: the call-site signature's ABI returns, which a call that returns in the CLIF
-  -- run gives, `CallsRefine`/`IndCallsRefine`), so that the results the continuation reads are
-  -- the callee's
+  -- world), one per def, and the normal-return successor (the last, number
+  -- `ti.handlers.length`); defined only when the callee returns at least the call's `ti.rets`
+  -- results (the lowering's `tryInfoOf`: the call-site signature's declared returns, which a
+  -- call that returns in the CLIF run gives, `CallsRefine`/`IndCallsRefine`), so that the
+  -- results the continuation reads are the callee's
   | .tryCall info ti =>
     ((X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).filter
       fun p => decide (ti.rets ≤ p.1.length)).map
-      fun p => (p.1 ++ (info.defs.drop p.1.length).map (fun _ => ofX 0), p.2,
-        .goto ti.handlers.length)
+      fun p => ((p.1 ++ (info.defs.drop p.1.length).map (fun _ => ofX 0)).take info.defs.length,
+        p.2, .goto ti.handlers.length)
   | .args ds => some (ds.map (fun p => regVal w p.2), w, .next)
   | .rets _ => some ([], w, .ret)
   | .loadExtNameGot _ n => some ([ofX (X.sym n 0)], w, .next)
@@ -673,10 +677,11 @@ noncomputable def csem (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) : ISe
     match uses with
     | [u, x] =>
       if Arm.r .ERR w = .None then
-        loopSem F ty u (rmwLoopBody ty.bits op fl) [.x 25, .x 26] [u, x] [.x 27, .x 24, .x 28] w
+        loopSem F ty u (rmwLoopBody ty.bits op fl) [.x 25, .x 26] [u, x] op.defRegs w
       else if AtomTy ty ∧ Avoids F ty.bytes (lo64 u) then
         let old := Arm.read_mem_bytes ty.bytes (lo64 u) w
-        some ([ofX (old.setWidth 64), ofX 0, ofX 0], Arm.write_mem_bytes ty.bytes (lo64 u)
+        some (ofX (old.setWidth 64) :: (op.defRegs.drop 1).map (fun _ => ofX 0),
+          Arm.write_mem_bytes ty.bytes (lo64 u)
           (Clif.Sem.atomicRmw op.clif old ((lo64 x).setWidth (ty.bytes * 8))) w, .next)
       else none
     | _ => none

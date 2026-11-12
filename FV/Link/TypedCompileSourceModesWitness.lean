@@ -160,12 +160,15 @@ theorem original_source_peak_witness (cleanup : Bool) (word : BitVec 64) : Origi
   have base : BaseOk (sys (input cleanup) closedBase) := by
     rw [input_original]
     exact ProductionBoundaryWitness.base_ok cleanup
-  have bounded : frameDrop (art (input cleanup) fn).af + (input cleanup).D*0 ≤ 4096 := by
+  have bounded : frameDrop (art (input cleanup) fn).af + ((input cleanup).D*0 + pbMax (input cleanup)) ≤
+      4096 := by
     rw [input_original]
     have bound := ReturnPinBinaryWitness.depth_budget cleanup
     change frameDrop (art (ProductionBoundaryWitness.input cleanup) ProductionBoundaryWitness.f).af +
-      (ProductionBoundaryWitness.input cleanup).D*3 ≤ 4096 at bound
-    change frameDrop (art (ProductionBoundaryWitness.input cleanup) ProductionBoundaryWitness.f).af ≤ 4096
+      ((ProductionBoundaryWitness.input cleanup).D*3 + pbMax (ProductionBoundaryWitness.input cleanup)) ≤
+        4096 at bound
+    change frameDrop (art (ProductionBoundaryWitness.input cleanup) ProductionBoundaryWitness.f).af +
+      ((ProductionBoundaryWitness.input cleanup).D*0 + pbMax (ProductionBoundaryWitness.input cleanup)) ≤ 4096
     omega
   have proof := TypedCompilerWith.attempt_correct_source_peak (facts cleanup).1 (facts cleanup).2.1
     closedBase base (hooksSim_closed _) (fun h => False.elim (no_wide cleanup h)) (no_indirect cleanup)

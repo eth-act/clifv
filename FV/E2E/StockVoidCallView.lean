@@ -35,7 +35,7 @@ theorem csem_call_voidCalls_inv {X : ExtSem} {F : BitVec 64 → Prop} {ctx : FnC
     (run : csem F ctx X.voidCalls (.call info) uses w = some (outs,w',ctl)) :
     ∃ actual,csem F ctx X (.call info) uses w = some (actual,w',ctl) ∧ outs = [] := by
   change (X.voidCalls.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).map
-    (fun p => (p.1,p.2,Ctl.next)) = some (outs,w',ctl) at run
+    (fun p => (p.1.take info.defs.length,p.2,Ctl.next)) = some (outs,w',ctl) at run
   cases actual : X.voidCalls.call (match info.dest with | .sym n => some n | .reg _ => none) uses w with
   | none => simp only [actual,Option.map_none] at run; cases run
   | some pair =>
@@ -43,9 +43,9 @@ theorem csem_call_voidCalls_inv {X : ExtSem} {F : BitVec 64 → Prop} {ctx : FnC
     simp only [actual,Option.map_some,Option.some.injEq,Prod.mk.injEq] at run
     obtain ⟨rfl,rfl,rfl⟩ := run
     obtain ⟨old,oldRun,empty⟩ := ExtSem.voidCalls_call_inv actual
-    refine ⟨old,?_,empty⟩
+    refine ⟨old.take info.defs.length,?_,by simp [empty]⟩
     change (X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).map
-      (fun p => (p.1,p.2,Ctl.next)) = _
+      (fun p => (p.1.take info.defs.length,p.2,Ctl.next)) = _
     rw [oldRun]
     rfl
 
@@ -56,7 +56,8 @@ theorem csem_tryCall_voidCalls_inv {X : ExtSem} {F : BitVec 64 → Prop} {ctx : 
     ∃ actual,csem F ctx X (.tryCall info ti) uses w = some (actual,w',ctl) := by
   change (((X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).map
     (fun p => ([],p.2))).filter fun p => decide (ti.rets ≤ p.1.length)).map
-    (fun p => (p.1 ++ (info.defs.drop p.1.length).map (fun _ => ofX 0),p.2,Ctl.goto ti.handlers.length))
+    (fun p => ((p.1 ++ (info.defs.drop p.1.length).map (fun _ => ofX 0)).take info.defs.length,p.2,
+      Ctl.goto ti.handlers.length))
       = some (outs,w',ctl) at run
   cases actual : X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w with
   | none => simp [actual] at run
@@ -66,11 +67,12 @@ theorem csem_tryCall_voidCalls_inv {X : ExtSem} {F : BitVec 64 → Prop} {ctx : 
     by_cases arity : ti.rets ≤ 0
     · simp [Option.filter,arity] at run
       obtain ⟨rfl,rfl,rfl⟩ := run
-      refine ⟨values ++ (info.defs.drop values.length).map (fun _ => ofX 0),?_⟩
+      refine ⟨(values ++ (info.defs.drop values.length).map (fun _ => ofX 0)).take info.defs.length,?_⟩
       have enough : ti.rets ≤ values.length := Nat.le_trans arity (Nat.zero_le _)
       change ((X.call (match info.dest with | .sym n => some n | .reg _ => none) uses w).filter
         (fun p => decide (ti.rets ≤ p.1.length))).map
-        (fun p => (p.1 ++ (info.defs.drop p.1.length).map (fun _ => ofX 0),p.2,Ctl.goto ti.handlers.length)) = _
+        (fun p => ((p.1 ++ (info.defs.drop p.1.length).map (fun _ => ofX 0)).take info.defs.length,p.2,
+          Ctl.goto ti.handlers.length)) = _
       rw [actual]
       simp [Option.filter,enough]
     · simp [Option.filter,arity] at run
@@ -196,7 +198,7 @@ theorem seqRun_call_voidCalls {X : ExtSem} {F : BitVec 64 → Prop} {ctx : FnCtx
   have view : csem F ctx X.voidCalls (.call ⟨.sym name,argPairsC uses,callDefsC []⟩)
       (uses.map (ρ ·.1)) w = some ([],w',.next) := by
     change (X.voidCalls.call (some name) (uses.map (ρ ·.1)) w).map
-      (fun p => (p.1,p.2,Ctl.next)) = _
+      (fun p => (p.1.take ([] : List (Reg × Nat × RegClass)).length,p.2,Ctl.next)) = _
     rw [ExtSem.voidCalls_call run]
     rfl
   have execution := seqRun_call_symC view (show ([] : List CV).length = ([] : List (Reg × Nat × RegClass)).length from rfl)

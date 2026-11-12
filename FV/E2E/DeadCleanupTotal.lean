@@ -12,7 +12,7 @@ open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup
 theorem backend_correct_final_cleanup_total {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)
     (har : Spill.arityOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp)
     (ra : Except String RFunc) :
     ∃ af, lowerAlloc vcp ra = .ok af ∧
       ∀ {fa : FnAsm} {fb : FnBin}, emitFunc k af = .ok fa → fa.layout = .ok fb →
@@ -54,7 +54,7 @@ theorem backend_correct_final_cleanup_total {p : Clif.Program} {f : Clif.Functio
     hent hres hbe hargs hcs hrel htr fuel
   have hc : CompiledCleanupA f k vc vcp (allocResult vcp ra) af fa fb :=
     ⟨hl, lowerCheck_complete (dominated_of hd) (lowerScope_of hs) hl, hp,
-      Prep.prepCheck_complete hp (prune_prepDomain
+      Prep.prepCheck_complete hp (cleanupStage_prepDomain f
         (prepDomain_of_lower (lowerScope_of hs) hl (lowerScope_of hs).nonempty)),
       allocChecked_allocResult_cleanup hsub (Spill.arityOk_of har) (dominated_of hd)
         (lowerScope_of hs) hl hp ra, lowerAlloc_eq ha, he, hla⟩
@@ -65,7 +65,7 @@ theorem backend_correct_final_cleanup_total {p : Clif.Program} {f : Clif.Functio
 theorem backend_correct_final_cleanup_total_ready {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)
     (har : Spill.arityOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp)
     (hspill : ∀ af, lowerRFunc vcp (spillAlloc vcp) = .ok af → emitReady af = true)
     (ra : Except String RFunc) :
     ∃ af, lowerAllocReady vcp ra = .ok af ∧
@@ -114,7 +114,7 @@ theorem backend_correct_final_cleanup_total_ready {p : Clif.Program} {f : Clif.F
 theorem backend_correct_final_cleanup_total_emit {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)
     (har : Spill.arityOkB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp)
     (hem : emitCondsB vcp = true)
     (ra : Except String RFunc) :
     ∃ af, lowerAllocReady vcp ra = .ok af ∧
@@ -161,7 +161,7 @@ theorem backend_correct_final_cleanup_total_emit {p : Clif.Program} {f : Clif.Fu
 theorem backend_correct_final_cleanup_total_emit_in {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} (hsub : InSubset p f) (hd : dominatedB f = true) (hs : lowerScopeB f = true)
     (har : Spill.arityOkB f = true) (hw : extendsWidenB f = true)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp)
+    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (cleanupStage f vc) = .ok vcp)
     (hsz : spillSizeOkB vcp = true)
     (ra : Except String RFunc) :
     ∃ af, lowerAllocReady vcp ra = .ok af ∧

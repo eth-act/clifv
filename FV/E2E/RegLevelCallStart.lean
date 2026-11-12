@@ -118,12 +118,29 @@ end
 
 /-- **A `Q`-state at a call item is a call state**: the item's allocated `call`/`try_call` starts
 with its `bl`/`blr`, at the state's pc (`callAt_of_q`). -/
-theorem RL.callSt_of_q_call {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
-    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+theorem RL.callSt_of_q_call {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
     (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i) (hc : i.isCallI = true) :
     R.CallSt s := by
-  obtain ⟨-, -, -, regs, i', -, -, -, -, -, -, -, -, -, -, -, hal, -, -, hasg, -⟩ := q_op hq hvb hi
+  obtain ⟨regs, i', hal, hasg⟩ : ∃ regs i', allocs = regs.map Loc.reg ∧ i.assign regs = .ok i' := by
+    rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
+      hasgf, -⟩
+    · obtain ⟨j0, vb0, items, pre, code, X, ps1, psm, ps2, x, hvb0, hit, hsplit, hchk, hcode, -⟩ :=
+        id hqs
+      rw [hvb] at hvb0; cases hvb0
+      obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
+      obtain ⟨regs, i1, i', hal, hi0, hasg, -⟩ := itemCode_op hc1
+      rw [hi] at hi0; cases hi0
+      exact ⟨regs, i', hal, hasg⟩
+    · rw [hvb] at hvbf; cases hvbf
+      simp only [RItem.op.injEq] at he
+      obtain ⟨rfl, rfl⟩ := he
+      have hi1 := hi
+      rw [hins] at hi1
+      simp only [List.getElem?_toArray, List.getElem?_cons_zero, Option.some.injEq] at hi1
+      subst hi1
+      exact ⟨regsf, _, half, hasgf⟩
   have hcall : ∀ regs i', i.assign regs = .ok i' → (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us) ∧
       ∃ x ls, (∀ ps, i'.lines R.ctx ps = .ok (.ins x none :: ls, ps)) ∧
         ((∃ n, x = .bl n) ∨ (∃ r, x = .blr r)) ∧ i'.callInsn? = some x := by
@@ -131,7 +148,7 @@ theorem RL.callSt_of_q_call {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Ar
     | call info => exact call_hcall
     | tryCall info ti => exact tryCall_hcall
     | _ => simp [MInst.isCallI] at hc
-  obtain ⟨j, x, t, hj, hxi, hpc⟩ := callAt_of_q hq hvb hi hcall regs i' hal hasg
+  obtain ⟨j, x, t, hj, hxi, hpc⟩ := callAt_of_q hR hq hvb hi hcall regs i' hal hasg
   obtain ⟨-, -, x', -, -, hx', hxi'⟩ := hcall regs i' hasg
   rw [hxi] at hxi'
   cases hxi'
@@ -165,7 +182,7 @@ theorem realizes_allC0 {R : RL} (hR : R.Wf) {P : Arm.ArmState → Prop}
       omega
     rw [hcnt] at h1
     obtain ⟨b, k, allocs, its, m, w, vb, ins, rfl, hvb, hi', hcI⟩ := opCalls_pos (vc := R.vc) h1
-    have hcs := RL.callSt_of_q_call
+    have hcs := RL.callSt_of_q_call hR
       (qa_op hqa hvb hi' (fun us e => by subst e; simp [MInst.isCallI] at hcI)).1 hvb hi' hcI
     have h2 := countIn_two_le hcs (Nat.pos_of_ne_zero hne) hi hci
     rw [hcnt] at h2

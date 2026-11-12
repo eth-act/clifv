@@ -122,8 +122,7 @@ theorem dead_region (hR : R.Wf) {a : BitVec 64} (h : StackBelow R.K R.spB a) :
 
 /-- The activation's code avoids its region (`StackRoom`). -/
 theorem code_not_region (hR : R.Wf) {a : BitVec 64} (hc : CodeAddr R.s0 a) : ¬ Region R a := by
-  have hroom := hR.stack
-  unfold StackAvail at hroom
+  have hroom := hR.stack.1
   have hd : frameDrop R.af ≤ R.af.frameSize + 16 := frameDrop_le R.af
   have h2 := hroom.2 a hc
   have h1 := hroom.1
@@ -149,22 +148,43 @@ end
 section nested
 variable {A B : RL}
 
-/-- A nested callee's region is in the caller's dead stack. -/
-theorem Nested.region_dead (hn : Nested A B) (hB : StackAvail B.K B.af B.s0) {a : BitVec 64}
-    (h : Region B a) :
+/-- The body's `sp` does not wrap and the callees' budget fits below it, from the stack room
+alone (`spBody_toNat` without `StackAvail`'s probe budget, #581). -/
+theorem spBody_toNat_room {K : Nat} {af : AFunc} {s : Arm.ArmState}
+    (h : StackRoom (af.frameSize + 16 + K) s) :
+    (spv s - BitVec.ofNat 64 (frameDrop af)).toNat = (spv s).toNat - frameDrop af ∧
+      frameDrop af + K ≤ (spv s).toNat := by
+  have h1 := h.1
+  have h2 := frameDrop_le af
+  have hlt := (spv s).isLt
+  refine ⟨?_, by omega⟩
+  rw [BitVec.toNat_sub_of_le] <;>
+    simp only [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : frameDrop af < 2 ^ 64)]
+  omega
+
+/-- `Nested.region_dead` from the callee's stack room alone (#581: the region does not need
+`StackAvail`'s probe budget). -/
+theorem Nested.region_dead_room (hn : Nested A B)
+    (hB : StackRoom (B.af.frameSize + 16 + B.K) B.s0) {a : BitVec 64} (h : Region B a) :
     StackBelow A.K A.spB a := by
-  have := spBody_toNat hB
+  have := spBody_toNat_room hB
   have := hn.sp_le
   have := hn.fits
   unfold Region StackBelow at h
   unfold StackBelow
   omega
 
-/-- A nested callee's region avoids the caller's frame and kept addresses. -/
-theorem Nested.region_not_FK (hn : Nested A B) (hA : A.Wf) (hB : StackAvail B.K B.af B.s0)
-    {a : BitVec 64}
+/-- A nested callee's region is in the caller's dead stack. -/
+theorem Nested.region_dead (hn : Nested A B) (hB : StackAvail B.K B.af B.s0) {a : BitVec 64}
+    (h : Region B a) :
+    StackBelow A.K A.spB a :=
+  hn.region_dead_room hB.1 h
+
+/-- `Nested.region_not_FK` from the callee's stack room alone (#581). -/
+theorem Nested.region_not_FK_room (hn : Nested A B) (hA : A.Wf)
+    (hB : StackRoom (B.af.frameSize + 16 + B.K) B.s0) {a : BitVec 64}
     (h : Region B a) : ¬ A.FK a := by
-  have hd := hn.region_dead hB h
+  have hd := hn.region_dead_room hB h
   obtain ⟨hreg, hnf⟩ := dead_region hA hd
   rintro (hf | hg)
   · rcases frameF_frame hA hf with hf | hc
@@ -172,6 +192,12 @@ theorem Nested.region_not_FK (hn : Nested A B) (hA : A.Wf) (hB : StackAvail B.K 
     · exact code_not_region hA hc hreg
   · refine hA.gfree a hg ?_
     unfold Region at hreg; exact hreg
+
+/-- A nested callee's region avoids the caller's frame and kept addresses. -/
+theorem Nested.region_not_FK (hn : Nested A B) (hA : A.Wf) (hB : StackAvail B.K B.af B.s0)
+    {a : BitVec 64}
+    (h : Region B a) : ¬ A.FK a :=
+  hn.region_not_FK_room hA hB.1 h
 
 /-- **The callee's kept addresses avoid its region** (`RL.Wf.gfree` of the callee, which needs
 only its stack room). -/

@@ -311,7 +311,9 @@ inductive CtlShape (N : Nat) : MInst → Prop
       CallOk N L D → CtlShape N (.call ⟨.sym nm, retPairs L, callDefs D⟩)
   | callReg (t : Nat) (L : List (Nat × Reg)) (D : List (Reg × Nat)) :
       CallOk N L D → CtlShape N (.call ⟨.reg (.vreg t .int), retPairs L, callDefs D⟩)
-  | rets (ns : List (Nat × Reg)) : (∀ q ∈ ns, ∃ k, k < 8 ∧ q.2 = .x k) → (ns.map (·.2)).Nodup →
+  /-- `gen_return`'s `Rets`: x0..x7 for the declared returns, x8 for an `sret` function's
+  struct pointer (#587) -/
+  | rets (ns : List (Nat × Reg)) : (∀ q ∈ ns, ∃ k, k ≤ 8 ∧ q.2 = .x k) → (ns.map (·.2)).Nodup →
       CtlShape N (.rets (retPairs ns))
   | condBr (a b : Label) (k : CondBrKind) : KindOk k → CtlShape N (.condBr a b k)
   | trapIf (k : CondBrKind) (c : Clif.TrapCode) : KindOk k → CtlShape N (.trapIf k c)
@@ -408,13 +410,22 @@ theorem ctlShape_defs {N : Nat} {m : MInst} (h : CtlShape N m) :
     · exact h1
     · exact h2
   | rmw t op fl p x d d1 d2 _ _ _ h1 h2 h3 =>
-    cases hops; simp [OpSpec.fixedUse, OpSpec.fixedDef] at ho
-    rcases ho with rfl | rfl | rfl | rfl | rfl
-    · cases hd
-    · cases hd
-    · exact h1
-    · exact h2
-    · exact h3
+    rw [operands_rmwLoop] at hops; cases hops
+    by_cases hx : op = .xchg
+    · subst hx
+      simp [rmwOps] at ho
+      rcases ho with rfl | rfl | rfl | rfl
+      · cases hd
+      · cases hd
+      · exact h1
+      · exact h2
+    · simp [rmwOps, hx] at ho
+      rcases ho with rfl | rfl | rfl | rfl | rfl
+      · cases hd
+      · cases hd
+      · exact h1
+      · exact h2
+      · exact h3
   | cas t fl p e x d d1 _ h1 h2 =>
     cases hops; simp [OpSpec.fixedUse, OpSpec.fixedDef] at ho
     rcases ho with rfl | rfl | rfl | rfl | rfl

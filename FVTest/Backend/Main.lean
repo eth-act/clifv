@@ -53,13 +53,13 @@ proven rule sets (`--opt-proven-only`) a legalised function is covered by
 `E2E.backend_correct_legal_opt_wide` (the legalisation composed with the mid-end), every other by
 `E2E.backend_correct_opt_exe` (`call_indirect`, `try_call`, `try_call_indirect` included); with
 unproven rules every legalised function is reported unverified. The unwinding of a legalised
-function with a `try_call` is covered by `E2E.backend_correct_legal_unwind` when the
+function with a `try_call` is covered by `E2E.backend_correct_legal_unwind_any` when the
 handler-edge check `Opt.Legal.exnOk` and the unwinding theorem's checks pass (dead cleanup,
 no `--opt`). Under `--opt` with the proven rule sets, the unwinding of a function that is not
-legalised is covered by `E2E.backend_correct_opt_exe_cleanup_unwind` (without dead cleanup
-`E2E.backend_correct_opt_exe_unwind`) when its compiled form is the mid-end's output on its
+legalised is covered by `E2E.backend_correct_opt_exe_cleanup_unwind_any` (without dead cleanup
+`E2E.backend_correct_opt_exe_unwind_any`) when its compiled form is the mid-end's output on its
 source function and the unwinding theorem's checks pass on the optimised function; a legalised
-one by `E2E.backend_correct_legal_opt_unwind` (dead cleanup) when its compiled form is the
+one by `E2E.backend_correct_legal_opt_unwind_any` (dead cleanup) when its compiled form is the
 mid-end's output on the source function's legalisation, which `Opt.Legal.check` and
 `Opt.Legal.exnOk` accept, and the checks pass.
 
@@ -191,13 +191,16 @@ def allocRecordingNamed (n : String) (a : Allocator) (vcs : Array VCode)
     | _, _ => none
   pure (afs, recs)
 
-/-- The first check of the unwinding theorem (`E2E.backend_correct_final_cleanup_unwind`, or
-`E2E.backend_correct_final_unwind` without dead cleanup) that fails for a compiled function `f`
-with a `try_call`, on the objects the theorem names: the lowering `vc` of `f` (`unwCheck`, the
+/-- The first check of the unwinding theorem (`E2E.backend_correct_final_cleanup_unwind_any`, or
+`E2E.backend_correct_final_unwind_any` without dead cleanup) that fails for a compiled function
+`f` with a `try_call`, on the objects the theorem names: the lowering `vc` of `f` (`unwCheck`, the
 exceptional-edge half of `lowerCheckU`; `lowerCheck` ran during compilation), the prepared
 VCode and the allocation (`savedCheck vcp rf`), the allocated function and its final code
-(`lastCallsOk af fa`, `padsNonzeroB af fa`). `callSites`/`unwindRows` succeed for every compiled
-function (compilation fails otherwise). With `tc` (a function with typed `try_call`s,
+(`padsNonzeroB af fa`). `callSites`/`unwindRows` succeed for every compiled function
+(compilation fails otherwise). The `_any` theorems have no premise on the calls of the last
+block (#622: the call-site bridge `siteAt_any` holds for every block since #553), so the former
+check `lastCallsOk` is not run; it is a pure check on the compiled objects, so dropping it
+changes no generated code. With `tc` (a function with typed `try_call`s,
 `Compile.functionETC`; #585): the same checks with the class-aware validator `unwCheckTC` over
 `lowerCheckTC`'s recording (`loweringUTC_of_check`) in place of `unwCheck`; no unwinding theorem
 covers typed `try_call`s yet. -/
@@ -211,7 +214,6 @@ def unwindCheckFailure? (f : Clif.Function) (rec : AllocRecord) (fa? : Option Fn
     else match rec, fa? with
       | some (vcp, rf, af), some fa =>
         if !savedCheck vcp rf then some "savedCheck"
-        else if !Proof.lastCallsOk af fa then some "lastCallsOk"
         else if !Proof.padsNonzeroB af fa then some "padsNonzeroB"
         else none
       | _, _ => some "no lowerRFunc allocation (allocator)"
@@ -280,10 +282,19 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
         -- A whole-file retry replaces the previous attempt's configuration receipt.
         rejected.set #[]
         StockConfig.allocateWith c clif rejected allocNone (I128Native.replace native vcs)
-      compileFileReturnPinWhen (!pipelineT && !o.opt.isSome &&
+      -- The functions are lowered as in the default mode (validated where their theorem
+      -- applies, so the validated cleanup also skips dead code, #968, #969). The native `i128`
+      -- functions stay unvalidated: `I128Native.replace` replaces their VCode.
+      let why := "experimental stock-configured driver (outside backend_correct)"
+      let fa ← compileFileReturnPinWhen (!pipelineT && !o.opt.isSome &&
           !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
         configuredAlloc pf
-        (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))) o.deadCleanup
+        (unv128 ++ unvTry ++ native.map (fun (n, _) => (n, why))) o.deadCleanup
+      -- Every compiled function stays outside `backend_correct` in this mode: the configured
+      -- allocation and the native `i128` code are unverified.
+      pure { fa with
+        unverified := fa.funcs.map fun a => (a.name, ((unv128 ++ unvTry).lookup a.name).getD why)
+        unvalidated := [] }
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
     IO.FS.writeFile receipt
       ((StockConfig.receipt request none (some (← rejected.get).toList) o.deadCleanup).pretty ++ "\n")
@@ -327,25 +338,25 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   -- callee of a `try_call` returns normally (callee contract `CalleeTryOk`: the results only; the
   -- exception payload registers are havocked on the normal return). Its unwinding (landing
   -- pads, the LSDA, the frame unwound by the CFI) is inside the unwinding theorem
-  -- (`E2E.backend_correct_final_cleanup_unwind`, without dead cleanup
-  -- `E2E.backend_correct_final_unwind`) when that theorem's checks pass on its compiled objects
-  -- (`unwindCheckFailure?`). An `i128`-legalised function is inside
-  -- `E2E.backend_correct_legal_unwind` (dead cleanup only) when, in addition, its legalisation
+  -- (`E2E.backend_correct_final_cleanup_unwind_any`, without dead cleanup
+  -- `E2E.backend_correct_final_unwind_any`) when that theorem's checks pass on its compiled
+  -- objects (`unwindCheckFailure?`). An `i128`-legalised function is inside
+  -- `E2E.backend_correct_legal_unwind_any` (dead cleanup only) when, in addition, its legalisation
   -- is recomputed from the source function with the same result, and `Opt.Legal.check` and the
   -- handler-edge check `Opt.Legal.exnOk` accept it (`legalUnwOk`). Under `--opt` with the proven
   -- rule sets, a function that is not legalised is inside
-  -- `E2E.backend_correct_opt_exe_cleanup_unwind` (without dead cleanup
-  -- `E2E.backend_correct_opt_exe_unwind`) when its compiled form is `Opt.optimizeExe` of its
+  -- `E2E.backend_correct_opt_exe_cleanup_unwind_any` (without dead cleanup
+  -- `E2E.backend_correct_opt_exe_unwind_any`) when its compiled form is `Opt.optimizeExe` of its
   -- source function, recomputed (`optUnwOk`), and the checks pass on the optimised function; a
-  -- legalised one is inside `E2E.backend_correct_legal_opt_unwind` (dead cleanup only) when its
-  -- compiled form is `Opt.optimizeExe` of the source function's legalisation, recomputed, which
-  -- `Opt.Legal.check` and `Opt.Legal.exnOk` accept (`legalOptUnwOk`). No unwinding theorem
+  -- legalised one is inside `E2E.backend_correct_legal_opt_unwind_any` (dead cleanup only) when
+  -- its compiled form is `Opt.optimizeExe` of the source function's legalisation, recomputed,
+  -- which `Opt.Legal.check` and `Opt.Legal.exnOk` accept (`legalOptUnwOk`). No unwinding theorem
   -- composes unproven rule sets.
   let recs ← records.get
-  let thm := if o.deadCleanup then "backend_correct_final_cleanup_unwind"
-    else "backend_correct_final_unwind"
-  let optThm := if o.deadCleanup then "backend_correct_opt_exe_cleanup_unwind"
-    else "backend_correct_opt_exe_unwind"
+  let thm := if o.deadCleanup then "backend_correct_final_cleanup_unwind_any"
+    else "backend_correct_final_unwind_any"
+  let optThm := if o.deadCleanup then "backend_correct_opt_exe_cleanup_unwind_any"
+    else "backend_correct_opt_exe_unwind_any"
   let legalUnwOk (name : String) (g : Clif.Function) : Bool :=
     match (source.funcs.find? (·.name == name)).bind (·.func.toOption) with
     | some f => match Opt.Legalize128.function128Cert f with
@@ -384,8 +395,8 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
             some "i128 legalized: Opt.Legal.check (no try_call_indirect, no call_indirect at an i128 signature) or Opt.Legal.exnOk (the handler edges) rejects"
           else (unwindCheckFailure? f ((recs.find? (·.1 == p.name)).bind (·.2))
             (fa.funcs.find? (·.name == p.name))).map (s!"unwinding check failed: {·}")
-        let thm := if legal && o.opt.isSome then "backend_correct_legal_opt_unwind"
-          else if legal then "backend_correct_legal_unwind"
+        let thm := if legal && o.opt.isSome then "backend_correct_legal_opt_unwind_any"
+          else if legal then "backend_correct_legal_unwind_any"
           else if o.opt.isSome then optThm else thm
         match why? with
         | none =>

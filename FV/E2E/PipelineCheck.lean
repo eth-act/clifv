@@ -140,8 +140,11 @@ theorem indFactsRWith (stage : Clif.Function → VCode → VCode) {I : LinkInput
   revert hb8
   cases hb : sigParamBytes h'.sig <;> simp
 
+/-- The linked system of a checked result list is `Ok`, for the stages the compiler runs: none
+(`fun _ => id`) or the production cleanup stage (`cleanupStage`, which replaced the cleanup
+`DeadCleanup.prune` alone: Cranelift's skip of unused instructions runs before it). -/
 theorem okRWith_sound (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res}
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune)) (hR : ResOkWith stage I R) (hI : okRWith stage I R = true) {B : BaseEnv}
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage) (hR : ResOkWith stage I R) (hI : okRWith stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
     (ofRes I R B F).Ok := by
   have hn := okRWith_names stage hI

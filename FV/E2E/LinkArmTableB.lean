@@ -7,9 +7,10 @@ import FV.E2E.BackendWorldPRB
 # The linking statement with the slot-byte oracle (SEM1 item (d), `docs/plans/uninit.md` §5.9)
 
 With the slot-byte oracle `ini` the CLIF outcome of an activation depends on the byte table, which
-must be the machine's: entry `k` is the memory at the entry of the `k`-th placed activation with
-slots that the run enters (at its entry state, `BodyEntry.mem`: the body-entry world has the entry
-memory). The linked machine runs a program callee atomically (`pcall`, `linkedCall` of the callee
+must be the machine's: entry `k` is the body-entry memory of the `k`-th placed activation with
+slots that the run enters (`BodyEntry.mem`: the memory at its entry after its prologue's stack
+probes, `probeMem`, #581; the entry memory for a function without probes). The linked machine
+runs a program callee atomically (`pcall`, `linkedCall` of the callee
 machine one level down), so the machine side of the table is recursive in the depth:
 
 * `CallsTo g t h`: the step of `g`'s machine at `t` is a call of the function `h` of `P`
@@ -19,7 +20,8 @@ machine one level down), so the machine side of the table is recursive in the de
 * `TabUpTo M g s b k N e`: the first `N` steps of `g`'s machine at depth `M` from `s` enter the
   placed activations with slots `k + 1, …, k + e` of the table `b`, and each call `j` (`callsBefore`)
   advances the count by `E j`: by `0` at a call outside `P`, by the callee's own entry (`slotted`,
-  whose slot bytes are `b`'s entry, the memory at the call) plus its run's up to its return;
+  whose slot bytes are `b`'s entry, the memory at the call after the callee's stack probes) plus
+  its run's up to its return;
 * `TableOf M g s ini`: every prefix of the run before its return agrees with `ini` from
   `ini.next` on;
 * `WorldEntryB`: `WorldEntry` with the CLIF entry memory placed with the oracle (`PlaceAtB`);
@@ -66,7 +68,7 @@ def TabUpTo : Nat → Clif.Function → Arm.ArmState → (Nat → Nat → BitVec
           let t := runX (L.mach (M + 1) g) i s
           let j := callsBefore (L.mach (M + 1) g) (L.A g).fa (L.A g).base s i
           (slotted h = 1 → ∀ a, L.SlotByte h (spv t) a →
-            b (k + Clif.sumTo E j + 1) a = t.mem (BitVec.ofNat 64 a)) ∧
+            b (k + Clif.sumTo E j + 1) a = probeMem (L.A h).af t (BitVec.ofNat 64 a)) ∧
           slotted h ≤ E j ∧
           ∃ N', RetOf (L.A h) t (runX (L.mach M h) N' (enterAt (L.A h) t)) ∧
             (∀ N'' < N', ¬ RetOf (L.A h) t (runX (L.mach M h) N'' (enterAt (L.A h) t))) ∧
@@ -121,7 +123,7 @@ def ThmPRB (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     L.TableOf M g s ini →
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState) (n e : Nat),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
       ActRet ra F G us outs wf s (runX (L.mach M g) n s) ∧
       PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n ∧

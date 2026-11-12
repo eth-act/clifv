@@ -199,10 +199,9 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
       hME.body⟩
   have hNXF : HookNIX L.Hb L.BaseDest F := hNX hN κ M g F G₀ ra₀ s₀ w₀ he
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
-  obtain ⟨body, psF, hpsF, -, hk⟩ := emitFunc_ok hc.emit
-  have hpsF' : blocksLinesE ⟨(L.A g).fa.k, (L.A g).af.slotBase⟩ (L.A g).af
-      (L.A g).af.blocks.toList {} = .ok (body, psF) := by
-    rw [hk]; exact hpsF
+  obtain ⟨psF, hpsF'⟩ : ∃ psF, ∃ p, emitPlan (L.A g).fa.k (L.A g).af = .ok p ∧ p.ps = psF := by
+    obtain ⟨p, hpsF, -, hk⟩ := emitFunc_ok hc.emit
+    exact ⟨p.ps, p, hk ▸ hpsF, rfl⟩
   have hx30g : (L.A g).fa.x30Free lm = true := hx30 g hg lm hlm
   have hRF : (Backend.Proof.actRL (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb lm
       (L.A g).base s₀ (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs
@@ -213,7 +212,7 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
       (syms := L.syms) (env := L.envOfB M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀)
       (hX_guardRXRI (L.XPBTI κ M g F (L.BP M g s₀) (L.RP M g s₀)) hnrc
         (hret g hg F vals cs w₀ ini hWE))
-      (fun _ _ hs => L.xnifXPBTGY hL hN ih hdet htw hg hWE.img _ _ hnrc hs)
+      (fun _ _ hs => L.xnifXPBTGY hL hκ hN ih hdet htw hg hWE.img _ _ hnrc hs)
       (fun _ => hL.baseTlsNI hN F) (fun n b hn => hL.symOk n b hn) rfl hD (fun _ => 0) hWE.clif
       hWE.rel hrel hWE.args hsw hreg hstk (trapsExplicit_of_returned hrun') fuel hrun' hlm hpsF'
       hAE he0
@@ -233,7 +232,10 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
       (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).af.saves (Backend.Proof.actRL (L.A g).vcp
       (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb lm (L.A g).base s₀
       (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
-      (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).af.frameSize).length + T +
+      (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).af.frameSize (Backend.Proof.actRL (L.A g).vcp
+      (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb lm (L.A g).base s₀
+      (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
+      (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).af.isCaller).length + T +
       (Backend.Proof.actRL (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb lm (L.A g).base
         s₀ (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
         (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).retLen := ⟨_, rfl⟩

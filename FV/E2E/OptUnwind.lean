@@ -27,6 +27,8 @@ externs keep the link-time symbols when they return and when they unwind,
 optimised function. `backend_correct_opt_exe_unwind`: the same for the backend without the
 dead-instruction cleanup (`Compiled`, `backend_correct_final_unwind`). The trusted Rust
 environment with unwinding keeps the symbols (`xenvWith_keepsSymbolsX`).
+`backend_correct_opt_exe_cleanup_unwind_any`, `backend_correct_opt_exe_unwind_any`: the same
+without the check `lastCallsOk` (#622; the two above are their corollaries).
 -/
 
 namespace E2E
@@ -91,6 +93,134 @@ theorem armRefinesU_of_outcome {fb : FnBin} {base ra : BitVec 64}
   | stuck _ => trivial
   | outOfFuel => trivial
 
+/-- **`backend_correct_opt_exe_cleanup_unwind` without the check on the calls of the last block**
+(#622; `backend_correct_final_cleanup_unwind_any`). Non-vacuity: `OptUnwindWitness` (its premises
+are among `backend_correct_opt_exe_cleanup_unwind`'s). -/
+theorem backend_correct_opt_exe_cleanup_unwind_any (cfg : Opt.Config)
+    (hr : cfg.rules = .cranelift) (ha : cfg.ruleAllow = .proven)
+    {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f)
+    (hc : CompiledCleanup (Opt.optimizeExe f cfg) k vc vcp rf af fa fb)
+    (hlU : lowerCheckU (Opt.optimizeExe f cfg) vc = true)
+    {X : ExtSem} {H : ArmHooks} {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables}
+    {syms : String → Option Nat} {slotOff : Nat} {env : Clif.XEnv} {K : Nat}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : (∃ B ∈ (Opt.optimizeExe f cfg).blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : hasTls (Opt.optimizeExe f cfg) = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hU : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    (hX : ∀ s, XCallsOk env.toEnv (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXI : ∀ s, XCallsIndOk env.toEnv (indSigs (Opt.optimizeExe f cfg)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXR : ∀ s, XRaiseOk env (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hXRi : ∀ s, XRaiseIndOk env (indSigs (Opt.optimizeExe f cfg)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hE : Opt.EnvKeepsSymbolsX env)
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
+    {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows)
+    (hpad : padsNonzeroB af fa = true)
+    (hsaved : savedCheck vcp rf = true)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicitX env (Opt.optimizeProgramExe p cfg) (optEntryX cfg f cs)) (fuel : Nat) :
+    ArmRefinesU fb base ra (Unw.ArmStepU X H U T fa) s (Clif.runLoopX env p fuel cs.toX) := by
+  have hF := optimizeExe_shape cfg f
+  obtain ⟨hcs', hsl, hmem, n', hn⟩ := optExe_entryX cfg hr ha hE hcs fuel (p := p)
+  exact armRefinesU_of_outcome hn (backend_correct_final_cleanup_unwind_any
+    (inSubset_optExe cfg hsub) hc hlU hcov hC hCT hTls hU
+    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s')
+    (fun s' => by rw [rel_holds_slots hF.slots]; exact hXI s')
+    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hXR s')
+    (fun s' => by rw [rel_holds_slots hF.slots]; exact hXRi s')
+    hsym hslot hsites hlsda hrows hcie hfde hpad hsaved hent hres hbe
+    (by rw [hF.sig]; exact hargs) hcs'
+    (by rw [rel_holds_slots hF.slots, hsl, hmem]; exact hrel) htr n')
+
+/-- **`backend_correct_opt_exe_unwind` without the check on the calls of the last block** (#622;
+`backend_correct_final_unwind_any`). Non-vacuity: `OptUnwindWitness` (its premises are among
+`backend_correct_opt_exe_unwind`'s). -/
+theorem backend_correct_opt_exe_unwind_any (cfg : Opt.Config) (hr : cfg.rules = .cranelift)
+    (ha : cfg.ruleAllow = .proven)
+    {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p f)
+    (hc : Compiled (Opt.optimizeExe f cfg) k vc vcp rf af fa fb)
+    (hunw : unwCheck (Opt.optimizeExe f cfg) vc = true)
+    {X : ExtSem} {H : ArmHooks} {XR : XRaise} {U : Unw.UnwHooks} {T : Unw.FnTables}
+    {syms : String → Option Nat} {slotOff : Nat} {env : Clif.XEnv} {K : Nat}
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : (∃ B ∈ (Opt.optimizeExe f cfg).blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : hasTls (Opt.optimizeExe f cfg) = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hX : ∀ s, XCallsOk env.toEnv (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXI : ∀ s, XCallsIndOk env.toEnv (indSigs (Opt.optimizeExe f cfg)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
+    (hXR : ∀ s, XRaiseOk env (f.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hXRi : ∀ s, XRaiseIndOk env (indSigs (Opt.optimizeExe f cfg)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hXE : ∀ s, XRaiseExcl env (f.externs.map (·.2)) (indSigs (Opt.optimizeExe f cfg))
+      (fun sl cm w =>
+        Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+          syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X XR)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    (hE : Opt.EnvKeepsSymbolsX env)
+    (hUnw : ∀ base s, CalleeUnwOkG
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : padsNonzeroB af fa = true)
+    {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
+    (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicitX env (Opt.optimizeProgramExe p cfg) (optEntryX cfg f cs)) (fuel : Nat) :
+    ArmRefinesU fb base ra (Unw.ArmStepU X H U T fa) s (Clif.runLoopX env p fuel cs.toX) := by
+  have hF := optimizeExe_shape cfg f
+  obtain ⟨hcs', hsl, hmem, n', hn⟩ := optExe_entryX cfg hr ha hE hcs fuel (p := p)
+  exact armRefinesU_of_outcome hn (backend_correct_final_unwind_any (inSubset_optExe cfg hsub)
+    hc hunw hcov hC hCT hTls
+    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s')
+    (fun s' => by rw [rel_holds_slots hF.slots]; exact hXI s')
+    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hXR s')
+    (fun s' => by rw [rel_holds_slots hF.slots]; exact hXRi s')
+    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hXE s')
+    hsym hslot hUnw hsites hlsda hpad hrows hcie hfde hsaved hent hres hbe
+    (by rw [hF.sig]; exact hargs) hcs'
+    (by rw [rel_holds_slots hF.slots, hsl, hmem]; exact hrel) htr n')
+
 /-- **End-to-end theorem with unwinding over the mid-end of the executable compiler**
 (`--opt-proven-only`, `lean-backend`'s default backend). For an in-subset function `f` of `p`
 whose optimisation `Opt.optimizeExe f cfg` (proven rule sets) the shipped compiler compiles
@@ -103,7 +233,8 @@ Arm return to the caller with the exception object in x0 and the same memory. Pr
 when they unwind, `hE`), and `backend_correct_final_cleanup_unwind`'s unwinding premises at the
 optimised function (the raising callees' contracts `hU`, `hXR`, `hXRi`, the emitted call-site
 table and frame rows, the checks `padsNonzeroB`, `lastCallsOk`, `savedCheck`); the optimised
-program's run with unwinding traps only explicitly (`htr`). -/
+program's run with unwinding traps only explicitly (`htr`). Statement kept for its callers;
+`backend_correct_opt_exe_cleanup_unwind_any` drops `lastCallsOk`. -/
 theorem backend_correct_opt_exe_cleanup_unwind (cfg : Opt.Config) (hr : cfg.rules = .cranelift)
     (ha : cfg.ruleAllow = .proven)
     {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
@@ -142,7 +273,7 @@ theorem backend_correct_opt_exe_cleanup_unwind (cfg : Opt.Config) (hr : cfg.rule
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows)
-    (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
+    (hpad : padsNonzeroB af fa = true) (_hlast : lastCallsOk af fa = true)
     (hsaved : savedCheck vcp rf = true)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
@@ -150,21 +281,13 @@ theorem backend_correct_opt_exe_cleanup_unwind (cfg : Opt.Config) (hr : cfg.rule
     (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicitX env (Opt.optimizeProgramExe p cfg) (optEntryX cfg f cs)) (fuel : Nat) :
-    ArmRefinesU fb base ra (Unw.ArmStepU X H U T fa) s (Clif.runLoopX env p fuel cs.toX) := by
-  have hF := optimizeExe_shape cfg f
-  obtain ⟨hcs', hsl, hmem, n', hn⟩ := optExe_entryX cfg hr ha hE hcs fuel (p := p)
-  exact armRefinesU_of_outcome hn (backend_correct_final_cleanup_unwind (inSubset_optExe cfg hsub)
-    hc hlU hcov hC hCT hTls hU
-    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s')
-    (fun s' => by rw [rel_holds_slots hF.slots]; exact hXI s')
-    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hXR s')
-    (fun s' => by rw [rel_holds_slots hF.slots]; exact hXRi s')
-    hsym hslot hsites hlsda hrows hcie hfde hpad hlast hsaved hent hres hbe
-    (by rw [hF.sig]; exact hargs) hcs'
-    (by rw [rel_holds_slots hF.slots, hsl, hmem]; exact hrel) htr n')
+    ArmRefinesU fb base ra (Unw.ArmStepU X H U T fa) s (Clif.runLoopX env p fuel cs.toX) :=
+  backend_correct_opt_exe_cleanup_unwind_any cfg hr ha hsub hc hlU hcov hC hCT hTls hU hX hXI hXR
+    hXRi hsym hslot hE hsites hlsda hrows hcie hfde hpad hsaved hent hres hbe hargs hcs hrel htr fuel
 
 /-- **`backend_correct_opt_exe_cleanup_unwind` for the backend without the dead-instruction
-cleanup** (`Compiled`, `backend_correct_final_unwind`). -/
+cleanup** (`Compiled`, `backend_correct_final_unwind`; statement kept for its callers,
+`backend_correct_opt_exe_unwind_any` drops `lastCallsOk`). -/
 theorem backend_correct_opt_exe_unwind (cfg : Opt.Config) (hr : cfg.rules = .cranelift)
     (ha : cfg.ruleAllow = .proven)
     {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
@@ -205,7 +328,7 @@ theorem backend_correct_opt_exe_unwind (cfg : Opt.Config) (hr : cfg.rules = .cra
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
-    (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
+    (hpad : padsNonzeroB af fa = true) (_hlast : lastCallsOk af fa = true)
     {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true)
     {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
@@ -214,19 +337,9 @@ theorem backend_correct_opt_exe_unwind (cfg : Opt.Config) (hr : cfg.rules = .cra
     (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
       syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (htr : TrapsExplicitX env (Opt.optimizeProgramExe p cfg) (optEntryX cfg f cs)) (fuel : Nat) :
-    ArmRefinesU fb base ra (Unw.ArmStepU X H U T fa) s (Clif.runLoopX env p fuel cs.toX) := by
-  have hF := optimizeExe_shape cfg f
-  obtain ⟨hcs', hsl, hmem, n', hn⟩ := optExe_entryX cfg hr ha hE hcs fuel (p := p)
-  exact armRefinesU_of_outcome hn (backend_correct_final_unwind (inSubset_optExe cfg hsub)
-    hc hunw hcov hC hCT hTls
-    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hX s')
-    (fun s' => by rw [rel_holds_slots hF.slots]; exact hXI s')
-    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hXR s')
-    (fun s' => by rw [rel_holds_slots hF.slots]; exact hXRi s')
-    (fun s' => by rw [rel_holds_slots hF.slots, hF.externs]; exact hXE s')
-    hsym hslot hUnw hsites hlsda hpad hlast hrows hcie hfde hsaved hent hres hbe
-    (by rw [hF.sig]; exact hargs) hcs'
-    (by rw [rel_holds_slots hF.slots, hsl, hmem]; exact hrel) htr n')
+    ArmRefinesU fb base ra (Unw.ArmStepU X H U T fa) s (Clif.runLoopX env p fuel cs.toX) :=
+  backend_correct_opt_exe_unwind_any cfg hr ha hsub hc hunw hcov hC hCT hTls hX hXI hXR hXRi hXE
+    hsym hslot hE hUnw hsites hlsda hpad hrows hcie hfde hsaved hent hres hbe hargs hcs hrel htr fuel
 
 /-! ## The trusted Rust environment with unwinding keeps the symbols -/
 

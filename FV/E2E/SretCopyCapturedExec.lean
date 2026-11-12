@@ -17,8 +17,9 @@ private def input (cleanup : Bool) : SemanticStackBound.CompilerInput :=
 private def file (cleanup : Bool) : ByteArray := Link.ReturnPinRetryWitness.file cleanup
 private def segments (cleanup : Bool) : List Elf.Phdr :=
   (Elf.phdrs (Elf.fileRd (file cleanup))).getD []
+/-- The depth-15 stack of the caller (#581: with the deepest activation's stack probes, `pbMax`). -/
 private def budget (cleanup : Bool) : Nat :=
-  frameDrop (art (input cleanup) Caller.function).af + (input cleanup).D * 15
+  frameDrop (art (input cleanup) Caller.function).af + ((input cleanup).D * 15 + pbMax (input cleanup))
 private def staticChecks (cleanup : Bool) : Bool :=
   decide (prog (input cleanup) = Caller.program) &&
   (tabOf (input cleanup).results).all

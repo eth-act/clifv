@@ -102,12 +102,12 @@ theorem call_ind_lowerInstOk {Rd F : BitVec 64 → Prop}
     {locs : List ArgLoc} {S : Nat} (hl : sigArgLocs s = .ok (locs, S))
     {st st' : LState} {results : List Nat}
     (hres : results.length = s.returns.length)
-    (hst' : st'.nextVreg = st.nextVreg + (sigRets s).length) :
+    (hst' : st'.nextVreg = st.nextVreg + s.returns.length) :
     LowerInstOkP Rd Pc isem MR env cp ctx (.callIndirect sig callee args) results st
-      (outRegs' st.nextVreg (sigRets s).length) st'
+      (outRegs' st.nextVreg s.returns.length) st'
       ((stackEnts ((locs.zip args).zip bytes)).map argStore ++
         [.call ⟨.reg (.vreg callee .int), retPairs (regPairsOf ((locs.zip args).zip bytes)),
-          callDefs (outDefs st.nextVreg (sigRets s).length)⟩]) := by
+          callDefs (outDefs st.nextVreg s.returns.length)⟩]) := by
   refine ⟨by omega, ?_, ?_⟩
   · intro m hm d hd
     rcases List.mem_append.mp hm with hm | hm
@@ -133,8 +133,8 @@ theorem call_ind_lowerInstOk {Rd F : BitVec 64 → Prop}
       obtain ⟨hlen, hvx⟩ := getMany_ok hvals
       obtain ⟨w1, hrun1, hmr1, hargsAt⟩ := argsAt_after_stores hMR hMem hout hso hb hl hty
         hlen.symm (fun j v x hv hx => hvh x v (hvx j x v hx hv)) hmr
-      have hdl : (callDefs (outDefs st.nextVreg (sigRets s).length)).length =
-          (sigRets s).length := by
+      have hdl : (callDefs (outDefs st.nextVreg s.returns.length)).length =
+          s.returns.length := by
         simp [callDefs, outDefs]
       have hlo : lo64 (ρ callee) = BitVec.ofNat 64 x.toNat := by
         rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
@@ -142,10 +142,10 @@ theorem call_ind_lowerInstOk {Rd F : BitVec 64 → Prop}
       obtain ⟨hcall, -⟩ := hCR
       obtain ⟨outs, w', hi, hol, hro, hmr'⟩ := hcall s hin name g fr.slots cm w1 x.toNat
         (.vreg callee .int) (retPairs (regPairsOf ((locs.zip args).zip bytes)))
-        (callDefs (outDefs st.nextVreg (sigRets s).length)) (ρ callee)
+        (callDefs (outDefs st.nextVreg s.returns.length)) (ρ callee)
         ((regPairsOf ((locs.zip args).zip bytes)).map (ρ ·.1)) vals rvals cm'
         hg hsg hsym hlo hdl (hargsAt w1 (SameWorldNF.refl F w1)) hmr1 hpc hgo hrN hty
-      have hol' : outs.length = (outDefs st.nextVreg (sigRets s).length).length := by
+      have hol' : outs.length = (outDefs st.nextVreg s.returns.length).length := by
         rw [hol]; simp [callDefs, outDefs]
       refine ⟨?_, _, _, seqRun_append_fall' isem hrun1 (seqRun_call_reg hi hol'),
         results_call hrN hres (by rw [hol, hdl]) hro, hmr'⟩

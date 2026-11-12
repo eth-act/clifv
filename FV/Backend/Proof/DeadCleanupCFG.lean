@@ -45,7 +45,7 @@ example : ∃ vc : VCode,
     (∀ b ∈ vc.blocks.toList, ∃ t, b.insts.back? = some t ∧ t.isTerminator = true) ∧
     (clean vc).cfg = vc.cfg := by
   let vc : VCode := ⟨"cleanup_cfg", #[⟨0, #[deadMvn, liveBic, liveReturn], #[], #[]⟩],
-    #[.int, .int, .int, .int], 0, 0, #[]⟩
+    #[.int, .int, .int, .int], 0, 0, #[], #[]⟩
   have ht : ∀ b ∈ vc.blocks.toList, ∃ t,
       b.insts.back? = some t ∧ t.isTerminator = true := by
     intro b hb

@@ -20,34 +20,7 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-! ## Fall-through over the loop lines -/
-
-theorem ftStep_keep {ln : Line} {n1 n2 : Option Line} (h1 : ∀ x t, ln ≠ .ins (.b x) t)
-    (h2 : ∀ c, ln = .ins c none → c.condTarget? = none ∨ ∀ e, n1 ≠ some (.ins (.b e) none)) :
-    ftStep ln n1 n2 = ([ln], 1) := by
-  unfold ftStep
-  repeat' split
-  all_goals simp_all
-
-/-- Lines that are not `b` and not conditional branches pass `fallthrough` unchanged. -/
-theorem ftList_prefix : ∀ (P Z : List Line),
-    (∀ ln ∈ P, (∀ x t, ln ≠ .ins (.b x) t) ∧ ∀ c, ln = .ins c none → c.condTarget? = none) →
-    ftList (P ++ Z) = P ++ ftList Z
-  | [], _, _ => rfl
-  | ln :: P, Z, h => by
-    rw [List.cons_append, ftList_pass (ftStep_keep (h ln (by simp)).1
-      (fun c e => .inl ((h ln (by simp)).2 c e))), ftList_prefix P Z (fun x hx => h x (by simp [hx]))]
-    rfl
-
-/-- A `cbz`/`b.cond` before a `b`: kept, or inverted over the `b` when the line after the `b`
-defines its target. -/
-theorem ftStep_ins_cases (c : Insn) (hc : ∀ x, c ≠ .b x) (n1 n2 : Option Line) :
-    ftStep (.ins c none) n1 n2 = ([.ins c none], 1) ∨
-      ∃ e l, n1 = some (.ins (.b e) none) ∧ n2 = some (.label l) ∧ c.condTarget? = some l ∧
-        ftStep (.ins c none) n1 n2 = ([.ins (c.invertTo e) none], 2) := by
-  unfold ftStep
-  repeat' split
-  all_goals simp_all
+/-! ## Loop lines in the final code -/
 
 /-- A label is defined once: two lines defining it with an instruction between them would get
 two offsets. -/
@@ -78,61 +51,6 @@ theorem label_once {R : RL} (hR : R.Wf) {j0 : Nat} {l : Lbl} {P T : List Line}
   have m2 := lineOffset_mono R.fa.lines.toList (show j0 + (1 + q) + 1 ≤ j0 + (1 + P.length) by omega)
   simp only [Line.size] at s1
   omega
-
-/-- The lines of an `atomic_rmw` loop pass `fallthrough` unchanged. -/
-theorem ftList_rmw {R : RL} (hR : R.Wf) {j0 : Nat} {ty : CTy} (hty : AtomTy ty)
-    {op : AtomicRmwLoopOp} {fl : Clif.MemFlags} {l : Lbl} (hl : ∃ n, l = .loop n) {Z T : List Line}
-    (hd : R.L.drop j0 = relaxLines R.far (ftList (rmwLoopLines ty.bits op fl l ++ Z)) ++ T) :
-    R.L.drop j0 = rmwLoopLines ty.bits op fl l ++ (relaxLines R.far (ftList Z) ++ T) := by
-  have hb : rmwLoopLines ty.bits op fl l ++ Z =
-      (.label l :: rmwLoopBody ty.bits op fl) ++ (.ins (.cbz true true (.x 24) l) none :: Z) := by
-    simp [rmwLoopLines]
-  have hP : ∀ ln ∈ Line.label l :: rmwLoopBody ty.bits op fl,
-      (∀ x t, ln ≠ .ins (.b x) t) ∧ ∀ c, ln = .ins c none → c.condTarget? = none := by
-    rcases hty with rfl | rfl | rfl | rfl <;> cases op <;>
-      simp (config := {decide := true}) [rmwLoopBody, rmwLoopMid, rmwLoopStored, rmwLoopSext,
-        rmwLoopCmp, CTy.bits, Insn.condTarget?]
-  have hPn : relaxLines R.far (Line.label l :: rmwLoopBody ty.bits op fl) =
-      Line.label l :: rmwLoopBody ty.bits op fl :=
-    relaxLines_of_none fun ln h => relaxable_none (hP ln h).2
-  have hcb : ∀ f : Lbl → Bool, relaxLine f (.ins (.cbz true true (.x 24) l) none) =
-      [.ins (.cbz true true (.x 24) l) none] := by
-    obtain ⟨n, rfl⟩ := hl; intro f; rfl
-  rw [hb, ftList_prefix _ _ hP, relaxLines_append, hPn] at hd
-  rcases ftStep_ins_cases (.cbz true true (.x 24) l) (fun x h => by cases h) Z[0]? Z[1]? with
-    hk | ⟨e, l', h0, h1, hct, hk⟩
-  · rw [ftList_pass hk, relaxLines_cons, hcb] at hd
-    rw [hd]; simp [rmwLoopLines]
-  · exfalso
-    simp only [Insn.condTarget?, Option.some.injEq] at hct
-    subst hct
-    obtain ⟨Z', rfl⟩ : ∃ Z', Z = .ins (.b e) none :: .label l :: Z' := by
-      rcases Z with _ | ⟨a, _ | ⟨b, Z'⟩⟩ <;> simp at h0 h1
-      subst h0 h1; exact ⟨Z', rfl⟩
-    rw [ftList_cons, hk] at hd
-    simp only [List.drop, List.singleton_append] at hd
-    rw [ftList_pass (ftStep_keep (fun x t h => by cases h) (fun c h => by cases h)), relaxLines_cons,
-      relaxLines_cons, relaxLine_label] at hd
-    have hbody : ∃ i t, (rmwLoopBody ty.bits op fl)[0]? = some (.ins i t) :=
-      ⟨.ldaxr ty.bits (.x 27) (.x 25), fl.trapCode, by simp [rmwLoopBody]⟩
-    obtain ⟨i, t, hi⟩ := hbody
-    refine label_once hR (j0 := j0) (l := l) (P := rmwLoopBody ty.bits op fl ++
-      relaxLine R.far (.ins ((Insn.cbz true true (.x 24) l).invertTo e) none))
-      (T := relaxLines R.far (ftList Z') ++ T)
-      (q := 0) (i := i) (t := t) ?_ ?_
-    · rw [hd]; simp
-    · rw [List.getElem?_append_left (by simp [rmwLoopBody])]; exact hi
-
-/-- The lines of an `atomic_cas` loop pass `fallthrough` unchanged. -/
-theorem ftList_cas {ty : CTy} (hty : AtomTy ty) (fl : Clif.MemFlags) (a o : Lbl) (Z : List Line) :
-    ftList (casLoopLines ty.bits fl a o ++ Z) = casLoopLines ty.bits fl a o ++ ftList Z := by
-  rcases hty with rfl | rfl | rfl | rfl
-  all_goals
-    simp only [casLoopLines, casLoopHead, casLoopCmp, CTy.bits, List.cons_append, List.nil_append]
-    repeat rw [ftList_pass (ftStep_keep (by simp) (by intro c hc; first
-      | (exfalso; cases hc; done)
-      | exact .inl (by cases hc; rfl)
-      | exact .inr (by intro e; simp)))]
 
 /-! ## Straight lines and labels on the machine -/
 
@@ -231,6 +149,128 @@ theorem fixed_reg {c : CheckCtx} {ops : Array Operand} {regs : Array Reg} {o : O
   have := (hloc _ hm).2 p hc
   injection this
 
+/-! ## The operands of an `atomic_rmw` loop, by operation
+
+`xchg` has defs x27, x24; the other operations also x28 (`AtomicRmwLoopOp.defRegs`). -/
+
+/-- The allocation of an `atomic_rmw` loop's operands is their fixed registers. -/
+theorem rmwRegs_of_fixed {c : CheckCtx} {op : AtomicRmwLoopOp} {va vo vd v1 v2 : Nat}
+    {regs : Array Reg} (hsz : (rmwOps op va vo vd v1 v2).size = (regs.map Loc.reg).size)
+    (hloc : ∀ x ∈ ((rmwOps op va vo vd v1 v2).zip (regs.map Loc.reg)).toList,
+      c.locOk x.2 x.1.cls = true ∧ ∀ r, x.1.con = .fixed r → x.2 = .reg r) :
+    regs = rmwRegs op := by
+  by_cases hx : op = .xchg
+  · subst hx
+    obtain ⟨q0, q1, q2, q3, rfl⟩ := regs4 (by simpa [rmwOps] using hsz.symm)
+    obtain rfl : q0 = .x 25 := fixed_reg (o := ⟨va, .int, .use, .early, .fixed (.x 25)⟩) hloc
+      (by simp [rmwOps]) rfl
+    obtain rfl : q1 = .x 26 := fixed_reg (o := ⟨vo, .int, .use, .early, .fixed (.x 26)⟩) hloc
+      (by simp [rmwOps]) rfl
+    obtain rfl : q2 = .x 27 := fixed_reg (o := ⟨vd, .int, .def, .late, .fixed (.x 27)⟩) hloc
+      (by simp [rmwOps]) rfl
+    obtain rfl : q3 = .x 24 := fixed_reg (o := ⟨v1, .int, .def, .late, .fixed (.x 24)⟩) hloc
+      (by simp [rmwOps]) rfl
+    rfl
+  · obtain ⟨q0, q1, q2, q3, q4, rfl⟩ := regs5 (by simpa [rmwOps, hx] using hsz.symm)
+    obtain rfl : q0 = .x 25 := fixed_reg (o := ⟨va, .int, .use, .early, .fixed (.x 25)⟩) hloc
+      (by simp [rmwOps, hx]) rfl
+    obtain rfl : q1 = .x 26 := fixed_reg (o := ⟨vo, .int, .use, .early, .fixed (.x 26)⟩) hloc
+      (by simp [rmwOps, hx]) rfl
+    obtain rfl : q2 = .x 27 := fixed_reg (o := ⟨vd, .int, .def, .late, .fixed (.x 27)⟩) hloc
+      (by simp [rmwOps, hx]) rfl
+    obtain rfl : q3 = .x 24 := fixed_reg (o := ⟨v1, .int, .def, .late, .fixed (.x 24)⟩) hloc
+      (by simp [rmwOps, hx]) rfl
+    obtain rfl : q4 = .x 28 := fixed_reg (o := ⟨v2, .int, .def, .late, .fixed (.x 28)⟩) hloc
+      (by simp [rmwOps, hx]) rfl
+    simp [rmwRegs, hx]
+
+/-- The use values of an allocated `atomic_rmw` loop: x25 and x26. -/
+theorem rmwOps_uses {V : Type} (op : AtomicRmwLoopOp) (va vo vd v1 v2 : Nat) (m : Loc → V) :
+    (((rmwOps op va vo vd v1 v2).zip ((rmwRegs op).map Loc.reg)).toList.filter (·.1.isUse)).map
+      (m ·.2) = [m (.reg (.x 25)), m (.reg (.x 26))] := by
+  by_cases hx : op = .xchg
+  · subst hx; simp [rmwOps, rmwRegs, Operand.isUse]
+  · simp [rmwOps, rmwRegs, hx, Operand.isUse]
+
+/-- An allocated `atomic_rmw` loop has no early defs. -/
+theorem rmwOps_early {V : Type} (op : AtomicRmwLoopOp) (va vo vd v1 v2 : Nat) (m : Loc → V)
+    (outs : List V) :
+    writeM m (((((rmwOps op va vo vd v1 v2).zip ((rmwRegs op).map Loc.reg)).toList.filter
+      (·.1.isDef)).zip outs).filter (·.1.1.isEarly)) = m := by
+  by_cases hx : op = .xchg
+  · subst hx
+    rcases outs with _ | ⟨_, _ | ⟨_, _⟩⟩ <;>
+      simp [rmwOps, rmwRegs, writeM, Operand.isDef, Operand.isEarly]
+  · rcases outs with _ | ⟨_, _ | ⟨_, _ | ⟨_, _⟩⟩⟩ <;>
+      simp [rmwOps, rmwRegs, hx, writeM, Operand.isDef, Operand.isEarly]
+
+/-- The late defs of an allocated `atomic_rmw` loop, with the values `f` of their registers:
+the def registers `op.defNums` hold them, the other locations keep their values. -/
+theorem rmwOps_late {V : Type} (op : AtomicRmwLoopOp) (va vo vd v1 v2 : Nat) (m : Loc → V)
+    (f : Reg → V) :
+    (∀ n ∈ op.defNums, writeM m (((((rmwOps op va vo vd v1 v2).zip
+        ((rmwRegs op).map Loc.reg)).toList.filter (·.1.isDef)).zip (op.defRegs.map f)).filter
+        (·.1.1.isLate)) (.reg (.x n)) = f (.x n)) ∧
+      ∀ l, (∀ n ∈ op.defNums, l ≠ .reg (.x n)) → writeM m (((((rmwOps op va vo vd v1 v2).zip
+        ((rmwRegs op).map Loc.reg)).toList.filter (·.1.isDef)).zip (op.defRegs.map f)).filter
+        (·.1.1.isLate)) l = m l := by
+  by_cases hx : op = .xchg
+  · subst hx
+    rw [show AtomicRmwLoopOp.defNums .xchg = [27, 24] from rfl]
+    refine ⟨fun n hn => ?_, fun l hl => ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+      rcases hn with rfl | rfl <;>
+        simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, writeM, upd, Operand.isDef, Operand.isLate]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hl
+      simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, writeM, upd, Operand.isDef, Operand.isLate,
+        hl.1, hl.2]
+  · rw [show op.defNums = [27, 24, 28] by simp [AtomicRmwLoopOp.defNums, hx]]
+    refine ⟨fun n hn => ?_, fun l hl => ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+      rcases hn with rfl | rfl | rfl <;>
+        simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, hx, writeM, upd, Operand.isDef,
+          Operand.isLate]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hl
+      simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, hx, writeM, upd, Operand.isDef,
+        Operand.isLate, hl.1, hl.2.1, hl.2.2]
+
+/-- The machine's values of the defs of an `atomic_rmw` loop are as many as `csem`'s outputs,
+and agree with them on the first (the old value in x27). -/
+theorem rmw_havoc {V : Type} (op : AtomicRmwLoopOp) (f g : Reg → V) (z : V)
+    (h27 : f (.x 27) = g (.x 27)) :
+    (op.defRegs.map f).length = ((op.defRegs.take 1).map g ++ (op.defRegs.drop 1).map
+      (fun _ => z)).length ∧
+    (op.defRegs.map f).take 1 = ((op.defRegs.take 1).map g ++ (op.defRegs.drop 1).map
+      (fun _ => z)).take 1 := by
+  unfold AtomicRmwLoopOp.defRegs; split <;> simp [h27]
+
+theorem defNums_lt (op : AtomicRmwLoopOp) : ∀ n ∈ op.defNums, n < 32 := by
+  unfold AtomicRmwLoopOp.defNums; split <;> simp
+
+/-- A property of x27, x24 and x28 holds at the def registers of every `atomic_rmw` loop. -/
+theorem defNums_of {op : AtomicRmwLoopOp} {P : Nat → Prop} (h : ∀ n ∈ [27, 24, 28], P n) :
+    ∀ n ∈ op.defNums, P n := by
+  intro n hn
+  apply h
+  unfold AtomicRmwLoopOp.defNums at hn
+  split at hn <;> simp only [List.mem_cons, List.not_mem_nil, or_false] at hn ⊢ <;> omega
+
+theorem mem_defNums_24 (op : AtomicRmwLoopOp) : 24 ∈ op.defNums := by
+  unfold AtomicRmwLoopOp.defNums; split <;> simp
+
+theorem mem_defNums_27 (op : AtomicRmwLoopOp) : 27 ∈ op.defNums := by
+  unfold AtomicRmwLoopOp.defNums; split <;> simp
+
+/-- `csem`'s outputs of an `atomic_rmw` loop are as many as its defs. -/
+theorem rmwOps_defs_len {V : Type} (op : AtomicRmwLoopOp) (va vo vd v1 v2 : Nat) (g : Reg → V)
+    (z : V) :
+    ((op.defRegs.take 1).map g ++ (op.defRegs.drop 1).map (fun _ => z)).length =
+      (((rmwOps op va vo vd v1 v2).zip ((rmwRegs op).map Loc.reg)).toList.filter
+        (·.1.isDef)).length := by
+  by_cases hx : op = .xchg
+  · subst hx; simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, Operand.isDef]
+  · simp [rmwOps, rmwRegs, AtomicRmwLoopOp.defRegs, hx, Operand.isDef]
+
 /-- A store that holds the machine's values at the loop's def registers `ds` and the old
 store's elsewhere agrees with the machine after the loop on the allocatable registers. -/
 theorem store_regs {R : RL} {s s' : Arm.ArmState} {m m' : Loc → CV} {w : Arm.ArmState}
@@ -324,29 +364,42 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   obtain ⟨vd, rfl⟩ := isVregInt_iff h2
   obtain ⟨v1, rfl⟩ := isVregInt_iff h3
   obtain ⟨v2, rfl⟩ := isVregInt_iff h4
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, hl1, hl2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
-  have hops' : ops = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
-      ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩,
-      ⟨v2, .int, .def, .late, .fixed (.x 28)⟩] := by
-    have e : (MInst.atomicRmwLoop ty op fl (.vreg va .int) (.vreg vo .int) (.vreg vd .int)
-        (.vreg v1 .int) (.vreg v2 .int)).operands =
-        .ok #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨vo, .int, .use, .early, .fixed (.x 26)⟩,
-          ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩,
-          ⟨v2, .int, .def, .late, .fixed (.x 28)⟩] := rfl
-    rw [e] at hops; injection hops with h; exact h.symm
-  subst hops'
+  cases h with
+  | @op b k allocs its m w vb'' i opsm outs outs' w' ctl m2 c' hvb' hi' hopsm hsz' hsem hlen hho hcl hn =>
+  rw [hvb] at hvb'; cases hvb'
+  rw [hi] at hi'; cases hi'
+  -- the loop's control outcome is always `.next`, so its item is not the block's last
+  have hk : k + 1 < vb.insts.size := by
+    simp only [RL.sem, csemV, csem] at hsem
+    split at hsem
+    · split at hsem
+      · obtain ⟨-, -, -, -, hctl⟩ := loopSem_inv hsem
+        cases hn with
+        | next hk => exact hk
+        | @goto jj st items' hk1 hsucc hitems => simp at hctl
+        | ret hh => simp at hctl
+        | halt => simp at hctl
+      · split at hsem
+        · simp only [Option.some.injEq, Prod.mk.injEq] at hsem
+          have hctl := hsem.2.2.symm
+          cases hn with
+          | next hk => exact hk
+          | @goto jj st items' hk1 hsucc hitems => simp at hctl
+          | ret hh => simp at hctl
+          | halt => simp at hctl
+        · cases hsem
+    · cases hsem
+  obtain ⟨j0, items, pre, regs, i', c1, c2, X', ls1, ps1, psm, psm', ps2, x, cc, wh, ops,
+    rfl, hit, hsplit, hasg, hc1', hops, hstat, hchk'', hcode2, hl1, hX2, hT2, htr, hdrop, hpc, hst,
+    hx, hsc⟩ :=
+    q_op hR hq hvb hi hk
+  have hoppseq : opsm = ops := Except.ok.inj (hopsm.symm.trans hops)
+  subst hoppseq
+  obtain rfl : opsm = rmwOps op va vo vd v1 v2 :=
+    (Except.ok.inj ((operands_rmwLoop _ _ _ _ _ _ _ _).symm.trans hopsm)).symm
   obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hstat
-  obtain ⟨q0, q1, q2, q3, q4, rfl⟩ := regs5 (by simpa using hsz.symm)
-  obtain rfl : q0 = .x 25 := fixed_reg (o := ⟨va, .int, .use, .early, .fixed (.x 25)⟩) hloc (by simp) rfl
-  obtain rfl : q1 = .x 26 := fixed_reg (o := ⟨vo, .int, .use, .early, .fixed (.x 26)⟩) hloc (by simp) rfl
-  obtain rfl : q2 = .x 27 := fixed_reg (o := ⟨vd, .int, .def, .late, .fixed (.x 27)⟩) hloc (by simp) rfl
-  obtain rfl : q3 = .x 24 := fixed_reg (o := ⟨v1, .int, .def, .late, .fixed (.x 24)⟩) hloc (by simp) rfl
-  obtain rfl : q4 = .x 28 := fixed_reg (o := ⟨v2, .int, .def, .late, .fixed (.x 28)⟩) hloc (by simp) rfl
-  have hasg' : (MInst.atomicRmwLoop ty op fl (.vreg va .int) (.vreg vo .int) (.vreg vd .int)
-      (.vreg v1 .int) (.vreg v2 .int)).assign #[.x 25, .x 26, .x 27, .x 24, .x 28] =
-      .ok (.atomicRmwLoop ty op fl (.x 25) (.x 26) (.x 27) (.x 24) (.x 28)) := rfl
-  rw [hasg'] at hasg; cases hasg
+  obtain rfl := rmwRegs_of_fixed hsz hloc
+  rw [assign_rmwLoop] at hasg; cases hasg
   obtain rfl : c1 = [.inst (.atomicRmwLoop ty op fl (.x 25) (.x 26) (.x 27) (.x 24) (.x 28))] := by
     rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
     · exact h
@@ -356,20 +409,11 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   simp only [MInst.lines, bne_self_eq_false, Bool.or_false, Bool.and_false, Bool.false_eq_true,
     ite_false, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1'
   obtain ⟨rfl, rfl⟩ := hl1'
-  -- the step of the allocated code
-  cases h with
-  | @op b k allocs its m w vb'' i ops outs outs' w' ctl m2 c' hvb' hi' hops' hsz' hsem hlen hho hcl hn =>
-  rw [hvb] at hvb'; cases hvb'
-  rw [hi] at hi'; cases hi'
-  rw [hops] at hops'; cases hops'
   have hreg : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
-  have hU : (((#[(⟨va, .int, .use, .early, .fixed (.x 25)⟩ : Operand),
-      ⟨vo, .int, .use, .early, .fixed (.x 26)⟩, ⟨vd, .int, .def, .late, .fixed (.x 27)⟩,
-      ⟨v1, .int, .def, .late, .fixed (.x 24)⟩, ⟨v2, .int, .def, .late, .fixed (.x 28)⟩].zip
-      (#[Reg.x 25, .x 26, .x 27, .x 24, .x 28].map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) =
-      [regVal s (.x 25), regVal s (.x 26)] := by
-    simp [Operand.isUse, hreg (.x 25) rfl, hreg (.x 26) rfl]
+  have hU : (((rmwOps op va vo vd v1 v2).zip ((rmwRegs op).map Loc.reg)).toList.filter
+      (·.1.isUse)).map (m ·.2) = [regVal s (.x 25), regVal s (.x 26)] := by
+    rw [rmwOps_uses, hreg (.x 25) rfl, hreg (.x 26) rfl]
   have hsem0 := hsem
   rw [hU] at hsem
   have herrw : Arm.r .ERR w = .None := by
@@ -392,13 +436,36 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
     rmwBody_spec hty op fl (R.envOf (j0 + 1)) s hst.err
   obtain ⟨hsw1, h27⟩ := rmwBody_congr hty op fl (R.envOf (j0 + 1)) env0 hsw0 h25 h26 hav' hrun1 hrunw
   -- the lines
-  have hdrop' := ftList_rmw hR hty ⟨_, rfl⟩ hdrop
+  have hP : ∀ ln ∈ Line.label (.loop ps1.aloop) :: rmwLoopBody ty.bits op fl,
+      (∀ x t, ln ≠ .ins (.b x) t) ∧ ∀ c, ln = .ins c none → c.condTarget? = none := by
+    rcases hty with rfl | rfl | rfl | rfl <;> cases op <;>
+      simp (config := {decide := true}) [rmwLoopBody, rmwLoopMid, rmwLoopStored, rmwLoopSext,
+        rmwLoopCmp, CTy.bits, Insn.condTarget?]
+  have hloop : relaxLines R.far (rmwLoopLines ty.bits op fl (.loop ps1.aloop)) =
+      rmwLoopLines ty.bits op fl (.loop ps1.aloop) := by
+    refine relaxLines_loop (fun ln hln c hc => ?_)
+    rw [show rmwLoopLines ty.bits op fl (.loop ps1.aloop) = .label (.loop ps1.aloop) :: (rmwLoopBody ty.bits op fl ++
+        [.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none]) from rfl] at hln
+    simp only [List.mem_cons, List.mem_append, List.mem_singleton, List.not_mem_nil, or_false] at hln
+    rcases hln with hln | hln | hln
+    · simp [hln] at hc
+    · exact .inl ((hP _ (by simp [hln])).2 c hc)
+    · subst hln
+      injection hc with h9 h10
+      subst h9
+      exact .inr ⟨_, rfl⟩
   have hL0 : R.L[j0]? = some (.label (.loop ps1.aloop)) := by
-    have := congrArg (·[0]?) hdrop'
-    simpa [List.getElem?_drop, rmwLoopLines] using this
+    have h9 := congrArg (·[0]?) hdrop
+    rw [List.getElem?_drop, Nat.add_zero, hloop,
+      show rmwLoopLines ty.bits op fl (.loop ps1.aloop) = .label (.loop ps1.aloop) ::
+        (rmwLoopBody ty.bits op fl ++ [.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none]) from rfl,
+      List.cons_append, List.append_assoc, List.getElem?_cons_zero] at h9
+    exact h9
   have hd1 : R.L.drop (j0 + 1) = rmwLoopBody ty.bits op fl ++
-      (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none :: (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
-    rw [← List.drop_drop, hdrop']; simp [rmwLoopLines]
+      (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none ::
+        (relaxLines R.far (X' ++ x.2.1) ++ R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2))) := by
+    rw [← List.drop_drop, hdrop, hloop]
+    simp [rmwLoopLines]
   have hpc1 : Arm.r .PC s = R.pcOf (j0 + 1) := by rw [hpc, RL.pcOf_succ_label hL0]
   obtain ⟨hit1, hpcs1, hgood1, hgx1⟩ := run_ins hR hd1 (rmwBody_ins hty op fl) hst.prog hpc1 hst.err
     hint1 hrun1
@@ -419,26 +486,21 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   have hiter : iterN R.step ((rmwLoopBody ty.bits op fl).length + 1) s =
       Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1 := by
     rw [iterN_add, hit1]; simp [iterN, hstep]
-  have hk : k + 1 < vb.insts.size := by
-    cases hn with
-    | next hk => exact hk
   -- the step with the machine's scratch values, and `Q` at the next item
-  have hfr2 : ∀ f, f ≠ .PC → (∀ n ∈ [27, 24, 28], f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
+  have hfr2 : ∀ f, f ≠ .PC → (∀ n ∈ op.defNums, f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
       Arm.r f (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) =
         Arm.r f s := by
     intro f h1 h2 h3
     rw [Arm.r_of_w_different h1]
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, rnum] at h2
-    exact hfr1 f h1 (by simp [h2.1, h2.2.1, h2.2.2]) h3
+    exact rmwBody_frame hty op fl _ hst.err hrun1 f h1 h2 h3
   refine ⟨(rmwLoopBody ty.bits op fl).length + 1, _,
-    MStep.op (outs' := [regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 27),
-      regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 24),
-      regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1) (.x 28)])
-      (m2 := m) hvb hi hops hsz' hsem0 hlen ⟨by simp, fun h => by simp [havocFrom, MInst.keptDefs] at h,
-        fun n h => ?_⟩ ?_ (MNext.next hk), ?_, fun i hi => ?_⟩
+    MStep.op (outs' := op.defRegs.map (regVal (Arm.w .PC (R.pcOf (j0 + 1 + (rmwLoopBody ty.bits op fl).length + 1)) s1)))
+      (m2 := m) hvb hi hopsm hsz' hsem0 hlen ⟨(rmw_havoc op _ _ _ (by simp [regVal, rnum, h27])).1,
+        fun h => by simp [havocFrom, MInst.keptDefs] at h, fun n h => ?_⟩ ?_ (MNext.next hk), ?_,
+      fun i hi => ?_⟩
   · simp only [havocFrom, MInst.keptDefs, Option.some.injEq] at h
     subst h
-    simp [regVal, rnum, h27]
+    exact (rmw_havoc op _ _ _ (by simp [regVal, rnum, h27])).2
   rotate_right
   · rcases Nat.lt_or_ge i (rmwLoopBody ty.bits op fl).length with hi1 | hi1
     · exact hgx1 (rmwBody_tail hty op fl) (RL.good_of_sp hst.sp)
@@ -452,34 +514,29 @@ theorem realizes_rmwLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       · rw [hstep]; exact RL.nextOk_succ hLc rfl (Arm.r_of_w_same ..)
       · exact RL.readsAt_noLoad hR hLc hpcs1 rfl
   · refine ⟨fun l _ => ?_, fun c hc => by simp [MInst.clobbers] at hc⟩
-    simp [writeM, Operand.isDef, Operand.isEarly]
+    rw [rmwOps_early]
   rw [hiter]
-  refine ⟨j0 + (rmwLoopLines ty.bits op fl (.loop ps1.aloop)).length, vb, items,
-    pre ++ [.op k (#[Reg.x 25, .x 26, .x 27, .x 24, .x 28].map Loc.reg)], c2, ls2, _, ps2, T,
-    hvb, hit, by rw [hsplit]; simp, hchk', hc2, hl2, htr, ?_, ?_, ?_⟩
-  · rw [← List.drop_drop, hdrop', List.drop_left]
+  refine .inl ⟨j0 + (rmwLoopLines ty.bits op fl (.loop ps1.aloop)).length, vb, items,
+    pre ++ [.op k ((rmwRegs op).map Loc.reg)], c2, X',
+    { jt := ps1.jt, aloop := ps1.aloop + 1, traps := ps1.traps }, psm', ps2, x,
+    hvb, hit, by rw [hsplit]; simp, hchk'', hcode2, hX2, hT2, htr, ?_, ?_, ?_, hx, hsc⟩
+  · rw [← List.drop_drop, hdrop, hloop, List.drop_left' (by simp [rmwLoopLines])]
   · simp only [Arm.r_of_w_same]
     congr 1
     simp [rmwLoopLines]; omega
   · refine stRel_after hR hst ?_ ?_ (SameWorld.w_left (by simp [Masked]) hsw1) ?_ ?_
       ⟨?_, fun a ha => ?_, ?_⟩
-    · refine store_regs hst [27, 24, 28] (by simp) ?_ ?_ hfr2
-      · intro n hn
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
-        rcases hn with rfl | rfl | rfl <;>
-          simp [writeM, upd, Operand.isDef, Operand.isLate]
-      · intro r hr
-        simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hr
-        simp [writeM, upd, Operand.isDef, Operand.isLate, hr.1, hr.2.1, hr.2.2]
-    · intro l hl
-      simp [writeM, upd, Operand.isDef, Operand.isLate, hl]
+    · refine store_regs hst op.defNums (defNums_lt op) (rmwOps_late op va vo vd v1 v2 m _).1
+        (fun r hr => (rmwOps_late op va vo vd v1 v2 m _).2 _ fun n hn e => hr n hn (Loc.reg.inj e))
+        hfr2
+    · exact fun l hl => (rmwOps_late op va vo vd v1 v2 m _).2 _ fun n _ e => hl _ e
     · rw [hfr2 .ERR (by simp) (by simp) (by simp)]; exact hst.err
     · simp only [Arm.w_program]; exact hprog1
-    · simp only [spOf]; exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
+    · simp only [spOf]; exact hfr2 _ (by simp) (defNums_of (by simp [rnum])) (by simp)
     · simp only [Arm.ArmState.mem_w_eq_mem, hmem1]
       refine mem_write_mem_bytes_ne _ _ _ _ _ (fun k hk e => hav k hk ?_)
       rw [← e]; exact RL.FK_F ha
-    · exact hfr2 _ (by simp) (by simp [rnum]) (by simp)
+    · exact hfr2 _ (by simp) (defNums_of (by simp [rnum])) (by simp)
 
 /-! ## `atomic_cas` -/
 
@@ -523,9 +580,39 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   obtain ⟨vx, rfl⟩ := isVregInt_iff h2
   obtain ⟨vd, rfl⟩ := isVregInt_iff h3
   obtain ⟨v1, rfl⟩ := isVregInt_iff h4
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, hl1, hl2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
-  have hops' : ops = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨ve, .int, .use, .early, .fixed (.x 26)⟩,
+  cases h with
+  | @op b k allocs its m w vb'' i opsm outs outs' w' ctl m2 c' hvb' hi' hopsm hsz' hsem hlen hho hcl hn =>
+  rw [hvb] at hvb'; cases hvb'
+  rw [hi] at hi'; cases hi'
+  -- the loop's control outcome is always `.next`, so its item is not the block's last
+  have hk : k + 1 < vb.insts.size := by
+    have hctl : ctl = Ctl.next := by
+      simp only [RL.sem, csemV, csem] at hsem
+      split at hsem
+      · split at hsem
+        · split at hsem
+          · split at hsem
+            · simp only [Option.some.injEq, Prod.mk.injEq] at hsem
+              exact hsem.2.2.symm
+            · exact (loopSem_inv hsem).2.2.2.2
+          · cases hsem
+        · split at hsem
+          · simp only [Option.some.injEq, Prod.mk.injEq] at hsem
+            exact hsem.2.2.symm
+          · cases hsem
+      · cases hsem
+    cases hn with
+    | next hk => exact hk
+    | @goto jj st items' hk1 hsucc hitems => simp at hctl
+    | ret hh => simp at hctl
+    | halt => simp at hctl
+  obtain ⟨j0, items, pre, regs, i', c1, c2, X', ls1, ps1, psm, psm', ps2, x, cc, wh, ops,
+    rfl, hit, hsplit, hasg, hc1', hops, hstat, hchk'', hcode2, hl1, hX2, hT2, htr, hdrop, hpc, hst,
+    hx, hsc⟩ :=
+    q_op hR hq hvb hi hk
+  have hoppseq : opsm = ops := Except.ok.inj (hopsm.symm.trans hops)
+  subst hoppseq
+  have hops' : opsm = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨ve, .int, .use, .early, .fixed (.x 26)⟩,
       ⟨vx, .int, .use, .early, .fixed (.x 28)⟩, ⟨vd, .int, .def, .late, .fixed (.x 27)⟩,
       ⟨v1, .int, .def, .late, .fixed (.x 24)⟩] := by
     have e : (MInst.atomicCasLoop ty fl (.vreg va .int) (.vreg ve .int) (.vreg vx .int)
@@ -533,7 +620,7 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
         .ok #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨ve, .int, .use, .early, .fixed (.x 26)⟩,
           ⟨vx, .int, .use, .early, .fixed (.x 28)⟩, ⟨vd, .int, .def, .late, .fixed (.x 27)⟩,
           ⟨v1, .int, .def, .late, .fixed (.x 24)⟩] := rfl
-    rw [e] at hops; injection hops with h; exact h.symm
+    rw [e] at hopsm; injection hopsm with h; exact h.symm
   subst hops'
   obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hstat
   obtain ⟨q0, q1, q2, q3, q4, rfl⟩ := regs5 (by simpa using hsz.symm)
@@ -555,12 +642,6 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   simp only [MInst.lines, bne_self_eq_false, Bool.or_false, Bool.false_eq_true,
     ite_false, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1'
   obtain ⟨rfl, rfl⟩ := hl1'
-  -- the step of the allocated code
-  cases h with
-  | @op b k allocs its m w vb'' i ops outs outs' w' ctl m2 c' hvb' hi' hops' hsz' hsem hlen hho hcl hn =>
-  rw [hvb] at hvb'; cases hvb'
-  rw [hi] at hi'; cases hi'
-  rw [hops] at hops'; cases hops'
   have hreg : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
     hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
   have hU : (((#[(⟨va, .int, .use, .early, .fixed (.x 25)⟩ : Operand),
@@ -611,12 +692,15 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
   have hcond : Arm.ConditionHolds Cond.ne.bits s1 = Arm.ConditionHolds Cond.ne.bits t1 :=
     ConditionHolds_sameWorld hsw1 _
   -- the lines
+  have hloopCas : relaxLines R.far (casLoopLines ty.bits fl (.loop ps1.aloop)
+      (.loop (ps1.aloop + 1))) =
+      casLoopLines ty.bits fl (.loop ps1.aloop) (.loop (ps1.aloop + 1)) := relaxLines_loop (by
+    rcases hty with rfl | rfl | rfl | rfl <;>
+      simp (config := {decide := true}) [casLoopLines, casLoopHead, casLoopCmp, Insn.condTarget?,
+        CTy.bits])
   have hdrop' : R.L.drop j0 = casLoopLines ty.bits fl (.loop ps1.aloop) (.loop (ps1.aloop + 1)) ++
-      (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, ftList_cas hty, relaxLines_append, relaxLines_loop (by
-      rcases hty with rfl | rfl | rfl | rfl <;>
-        simp (config := {decide := true}) [casLoopLines, casLoopHead, casLoopCmp, Insn.condTarget?,
-          CTy.bits]), List.append_assoc]
+      (relaxLines R.far (X' ++ x.2.1) ++ R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2)) := by
+    rw [hdrop, hloopCas]
   have hat : ∀ q ln, (casLoopLines ty.bits fl (.loop ps1.aloop) (.loop (ps1.aloop + 1)))[q]? = some ln →
       R.L[j0 + q]? = some ln := by
     intro q ln hq
@@ -633,8 +717,9 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       (.ins (.bcond .ne (.loop (ps1.aloop + 1))) none ::
         .ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode ::
         .ins (.cbz true true (.x 24) (.loop ps1.aloop)) none :: .label (.loop (ps1.aloop + 1)) ::
-        (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
-    rw [← List.drop_drop, hdrop']; simp [casLoopLines, casLoopHead]
+        (relaxLines R.far (X' ++ x.2.1) ++ R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2))) := by
+    rw [← List.drop_drop, hdrop']
+    simp [casLoopLines, casLoopHead]
   have hpc1 : Arm.r .PC s = R.pcOf (j0 + 1) := by rw [hpc, RL.pcOf_succ_label hL0]
   obtain ⟨hit1, hpcs1, hgood1, hgx1⟩ := run_ins hR hd1 (casHead_ins _ fl) hst.prog hpc1 hst.err hint1 hrun1
   have hgx01 : ∀ i < 2, R.GoodX (iterN R.step i s) := fun i hi =>
@@ -667,20 +752,20 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
         Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodX (iterN R.step i s) := by
     intro sF nst hitF hpcF hswF h27F hlen2 hfrF hmemF hprogF hctl hgoodF
     subst hctl
-    have hk : k + 1 < vb.insts.size := by
-      cases hn with
-      | next hk => exact hk
-    refine ⟨nst, _, MStep.op (outs' := [regVal sF (.x 27), regVal sF (.x 24)]) (m2 := m) hvb hi hops
-      hsz' hsem0 hlen ⟨by simp [hlen2], fun h => by simp [havocFrom, MInst.keptDefs] at h, fun n h => ?_⟩ ?_
-      (MNext.next hk), ?_, hgoodF⟩
+    refine ⟨nst, _, MStep.op (outs' := [regVal sF (.x 27), regVal sF (.x 24)]) (m2 := m)
+      hvb hi hopsm hsz' hsem0 hlen ⟨by simp [hlen2], fun h => by simp [havocFrom, MInst.keptDefs] at h,
+      fun n h => ?_⟩ ?_ (MNext.next hk), ?_, hgoodF⟩
     · simp only [havocFrom, MInst.keptDefs, Option.some.injEq] at h
       subst h
       simpa using h27F
     · refine ⟨fun l _ => ?_, fun c hc => by simp [MInst.clobbers] at hc⟩
       simp [writeM, Operand.isDef, Operand.isEarly]
     rw [hitF]
-    refine ⟨j0 + 7, vb, items, pre ++ [.op k (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg)],
-      c2, ls2, _, ps2, T, hvb, hit, by rw [hsplit]; simp, hchk', hc2, hl2, htr, ?_, hpcF, ?_⟩
+    refine .inl ⟨j0 + 7, vb, items,
+      pre ++ [.op k (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg)], c2, X',
+      { jt := ps1.jt, aloop := ps1.aloop + 2, traps := ps1.traps }, psm', ps2, x,
+      hvb, hit, by rw [hsplit]; simp, hchk'', hcode2, hX2, hT2, htr,
+      ?_, hpcF, ?_, hx, hsc⟩
     · rw [← List.drop_drop, hdrop']
       exact List.drop_left' (by simp [casLoopLines, casLoopHead])
     · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF
@@ -738,8 +823,9 @@ theorem realizes_casLoop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {al
       (Arm.w .PC (R.pcOf (j0 + 3 + 1)) s1) herr2
     have hd4 : R.L.drop (j0 + 4) = [.ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode] ++
         (.ins (.cbz true true (.x 24) (.loop ps1.aloop)) none :: .label (.loop (ps1.aloop + 1)) ::
-          (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T)) := by
-      rw [← List.drop_drop, hdrop']; simp [casLoopLines, casLoopHead]
+          (relaxLines R.far (X' ++ x.2.1) ++ R.L.drop (rix R.far (planLines R.fa.k R.af) x.2.2))) := by
+      rw [← List.drop_drop, hdrop']
+      simp [casLoopLines, casLoopHead]
     obtain ⟨hit3, hpcs3, -, hgx3⟩ := run_ins hR hd4 (by simp [Insn.hooked])
       (by simp [Arm.w_program, hprog1']) (by simp) herr2
       (fun q h0 h1 => by simp at h1; omega) hrun3

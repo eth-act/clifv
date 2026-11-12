@@ -456,6 +456,25 @@ theorem sigRetRegs_length (s : Clif.Signature) : (sigRetRegs s).length = (sigRet
     rw [sigRets_of_sret hs]
     cases he : s.returns.isEmpty <;> simp [retRegsT_length]
 
+/-- **The return registers of a signature's declared returns, by class** (#587): `sigRetRegs`
+without an `sret` signature's struct pointer, which is no call result (Cranelift's
+`gen_call_rets` gives it no def; the callee returns it in x8). -/
+def declRetRegs (s : Clif.Signature) : List Reg :=
+  retRegsT (s.returns.map fun p => tyClass p.ty) 0 0
+
+theorem declRetRegs_length (s : Clif.Signature) : (declRetRegs s).length = s.returns.length := by
+  simp [declRetRegs, retRegsT_length]
+
+/-- The declared returns' registers are the first ones of `sigRetRegs`. -/
+theorem declRetRegs_eq_take (s : Clif.Signature) :
+    declRetRegs s = (sigRetRegs s).take s.returns.length := by
+  unfold sigRetRegs declRetRegs
+  split
+  · rename_i h
+    rw [Bool.and_eq_true] at h
+    rw [List.isEmpty_iff.mp h.2]; simp [retRegsT]
+  · rw [List.take_of_length_le (by simp [retRegsT_length])]
+
 /-- For integer returns the ABI return registers are x0, x1, …. -/
 theorem sigRetRegs_int {s : Clif.Signature} (hint : ∀ p ∈ s.returns, p.ty.isInt = true) :
     sigRetRegs s = (List.range (sigRets s).length).map Reg.x := by

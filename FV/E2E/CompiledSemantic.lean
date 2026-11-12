@@ -5,6 +5,8 @@ import FV.E2E.StockLogicalWorldX
 import FV.E2E.StockScalarWorldX
 import FV.E2E.StockMemoryWorldX
 import FV.E2E.StockMemoryCfgWorldX
+import FV.E2E.StockMemoryExplicitWorldX
+import FV.Backend.StockArithmeticStageF
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
@@ -45,26 +47,40 @@ inductive CompiledSemantic (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemantic f k vc vcp rf af fa fb
 
+  /-- Memory sources whose loads may trap: the contract needs source traps only under
+  the `TrapsExplicit` run premise. The `memory` arm keeps `Stock.Memory.Domain`. -/
+  | memoryExplicit {cleanup : Bool} {result : Stock.Result} :
+      Stock.Memory.ExplicitDomain f → result.code = vc →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemantic f k vc vcp rf af fa fb
+
 namespace CompiledSemantic
 variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
 
 /-- Executable checker facts construct the semantic artifact. This does not
-assert the old lowerCheck verdict for a raw Stock artifact. -/
+assert the old lowerCheck verdict for a raw Stock artifact. (`prepared`/`prepOk` are about the
+routes' stage `Stock.Arithmetic.stageF`, formerly `Stock.Arithmetic.stage`: the routes now run
+Cranelift's skip of unused instructions, `cleanupStage`.) -/
 theorem of_checks {cleanup : Bool} (lower : Stock.Arithmetic.check f vc = true)
-    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
-    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stageF cleanup f vc) = .ok vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stageF cleanup f vc) vcp = true)
     (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
     (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
     CompiledSemantic f k vc vcp rf af fa fb := by
-  rcases Stock.Arithmetic.check_sound lower with legacy | ⟨result,domain,run,equal,_⟩
-  · apply CompiledSemantic.compatible
+  cases hl : lowerCheck f vc with
+  | true =>
+    apply CompiledSemantic.compatible
     cases cleanup with
     | false =>
-      exact .stock ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
+      exact .stock ⟨⟨hl,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
     | true =>
-      exact .stockCleanup ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
-  · exact .arithmetic domain equal ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+      exact .stockCleanup ⟨⟨hl,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
+  | false =>
+    rw [Stock.Arithmetic.stageF_of_lowerCheck_false hl] at prepared prepOk
+    rcases Stock.Arithmetic.check_sound lower with legacy | ⟨result,domain,run,equal,_⟩
+    · rw [hl] at legacy; cases legacy
+    · exact .arithmetic domain equal ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
 theorem check (hc : CompiledSemantic f k vc vcp rf af fa fb) : Backend.checkAlloc vcp rf = .ok () := by
   cases hc with
@@ -77,6 +93,7 @@ theorem check (hc : CompiledSemantic f k vc vcp rf af fa fb) : Backend.checkAllo
   | scalar _ _ h => exact h.check
   | memory _ _ h => exact h.check
   | memoryCfg _ _ _ h => exact h.check
+  | memoryExplicit _ _ h => exact h.check
 
 theorem alloc (hc : CompiledSemantic f k vc vcp rf af fa fb) : lowerRFunc vcp rf = .ok af := by
   cases hc with
@@ -89,6 +106,7 @@ theorem alloc (hc : CompiledSemantic f k vc vcp rf af fa fb) : lowerRFunc vcp rf
   | scalar _ _ h => exact h.alloc
   | memory _ _ h => exact h.alloc
   | memoryCfg _ _ _ h => exact h.alloc
+  | memoryExplicit _ _ h => exact h.alloc
 
 theorem emit (hc : CompiledSemantic f k vc vcp rf af fa fb) : emitFunc k af = .ok fa := by
   cases hc with
@@ -101,6 +119,7 @@ theorem emit (hc : CompiledSemantic f k vc vcp rf af fa fb) : emitFunc k af = .o
   | scalar _ _ h => exact h.emit
   | memory _ _ h => exact h.emit
   | memoryCfg _ _ _ h => exact h.emit
+  | memoryExplicit _ _ h => exact h.emit
 
 theorem layout (hc : CompiledSemantic f k vc vcp rf af fa fb) : fa.layout = .ok fb := by
   cases hc with
@@ -113,6 +132,7 @@ theorem layout (hc : CompiledSemantic f k vc vcp rf af fa fb) : fa.layout = .ok 
   | scalar _ _ h => exact h.layout
   | memory _ _ h => exact h.layout
   | memoryCfg _ _ _ h => exact h.layout
+  | memoryExplicit _ _ h => exact h.layout
 
 end CompiledSemantic
 
@@ -137,7 +157,7 @@ theorem backend_correct_worldX_semantic {p : Clif.Program} {f : Clif.Function} {
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -177,5 +197,9 @@ theorem backend_correct_worldX_semantic {p : Clif.Program} {f : Clif.Function} {
   | memoryCfg family equal effects h =>
     subst vc
     exact backend_correct_worldX_stock_memory_cfg family effects h hcov hsym hslot hcs hrel hargs fuel
+
+  | memoryExplicit domain equal h =>
+    subst vc
+    exact backend_correct_worldX_stock_memory_explicit domain h hcov hsym hslot hcs hrel hargs htr fuel
 
 end E2E

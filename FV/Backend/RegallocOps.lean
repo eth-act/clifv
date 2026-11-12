@@ -229,16 +229,17 @@ def MInst.visitOperands : MInst → m MInst
     let rn ← f .use rn; let rt ← f .def_ rt; pure (.loadAcquire ty rt rn fl)
   | .storeRelease ty rt rn fl => do
     let rn ← f .use rn; let rt ← f .use rt; pure (.storeRelease ty rt rn fl)
-  -- `mod.rs:473`: fixed uses x25/x26, fixed defs x27/x24/x28. Deviation from Cranelift:
-  -- for `xchg` the scratch2 (x28) def is registered even though the loop does not write it
-  -- (conservative: x28 is dead across the instruction; keeps `visitOperands` total in `op`,
-  -- which the rename-commutation proofs need). Cranelift omits it for `xchg`.
+  -- `mod.rs:473`: fixed uses x25/x26, fixed defs x27/x24, and x28 unless `xchg` (the `xchg`
+  -- loop stores x26 and never writes x28). For `xchg` the visitor does not visit scratch2 and
+  -- puts x28 in its place, whatever the old register: the result then does not depend on
+  -- scratch2, so visiting commutes with renaming (`visit_mapRegs`, `LowerRename.Sim.visit`), and
+  -- the allocated instruction is the same as for the other operations.
   | .atomicRmwLoop ty op fl addr operand oldval s1 s2 => do
     let addr ← f (.fixedUse (.x 25)) addr
     let operand ← f (.fixedUse (.x 26)) operand
     let oldval ← f (.fixedDef (.x 27)) oldval
     let s1 ← f (.fixedDef (.x 24)) s1
-    let s2 ← f (.fixedDef (.x 28)) s2
+    let s2 ← if op == .xchg then pure (.x 28) else f (.fixedDef (.x 28)) s2
     pure (.atomicRmwLoop ty op fl addr operand oldval s1 s2)
   -- `mod.rs:522`: fixed uses x25/x26/x28, fixed defs x27/x24
   | .atomicCasLoop ty fl addr expect replace oldval scratch => do
@@ -362,9 +363,9 @@ def MInst.isBranch : MInst → Bool
 /-- How many leading defs (in operand order) keep the value the instruction gives them;
 `none`: all of them. The others are dead scratch registers whose value the emitted code may or
 may not write, and the checker forgets them: a branch's defs (`JTSequence`'s temporaries, dead
-after the branch), and the scratch defs of the LL/SC loops (x24, x28 of `AtomicRMWLoop`, x24
-of `AtomicCASLoop`: `stlxr`'s status register is not written when the `atomic_cas` comparison
-fails, x28 is not written by an `xchg`). -/
+after the branch), and the scratch defs of the LL/SC loops (x24 and, unless `xchg`, x28 of
+`AtomicRMWLoop`, x24 of `AtomicCASLoop`: `stlxr`'s status register is not written when the
+`atomic_cas` comparison fails). -/
 def MInst.keptDefs (i : MInst) : Option Nat :=
   match i with
   | .atomicRmwLoop .. | .atomicCasLoop .. => some 1

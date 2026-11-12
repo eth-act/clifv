@@ -136,7 +136,7 @@ example : ∃ vc : VCode, gotOf vc 0 = some "callee" ∧
   let c : CallInfo := ⟨.reg (.vreg 0 .int), [], []⟩
   let vc : VCode := ⟨"got_cleanup", #[⟨0,
     #[.loadExtNameGot (.vreg 0 .int) "callee", deadMvn, .call c, liveReturn], #[], #[]⟩],
-    #[.int, .int, .int, .int], 0, 0, #[]⟩
+    #[.int, .int, .int, .int], 0, 0, #[], #[]⟩
   have hgot : gotOf vc 0 = some "callee" := by
     have hm : deadMvn.operands = .ok
         #[⟨2, .int, .def, .late, .reg⟩, ⟨1, .int, .use, .early, .reg⟩] := rfl

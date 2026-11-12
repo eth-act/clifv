@@ -130,7 +130,7 @@ theorem pipeT_okT3 {g : Clif.Function} (h : fnScopeInTB3 g = true) (k : Nat) (ba
 theorem pipeCleanupT_okT3 {g : Clif.Function} (h : fnScopeInTB3 g = true) (k : Nat)
     (base : BitVec 64) (o : Lean.Json) :
     ∃ a, pipeCleanupT g k base o = .ok a ∧ lowerCheckT g a.vc = true ∧
-      prepCheck (Backend.DeadCleanup.prune a.vc) a.vcp = true ∧ AllocChecked a.vcp a.rf ∧
+      prepCheck (cleanupStage g a.vc) a.vcp = true ∧ AllocChecked a.vcp a.rf ∧
       FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp :=
   pipeCleanupT_okT (fnScopeInTB_of_T3 h) k base o
 

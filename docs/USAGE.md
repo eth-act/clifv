@@ -421,15 +421,17 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   `try_call`s whose unwinding is not covered: the theorem covers the runs in which every callee
   of a `try_call` returns normally (with the callee contract `CalleeTryOk` for its results); the
   unwinding path (landing pads, LSDA, unwind tables) is trusted. A `try_call` function whose
-  compiled objects pass the unwinding theorem's checks (`unwCheck`, `savedCheck`, `lastCallsOk`,
-  `padsNonzeroB`; S10e) is reported **verified**: `E2E.backend_correct_final_cleanup_unwind`
+  compiled objects pass the unwinding theorem's checks (`unwCheck`, `savedCheck`,
+  `padsNonzeroB`; S10e) is reported **verified**: `E2E.backend_correct_final_cleanup_unwind_any`
   covers its exceptional edges too (a caught exception reaches the handler with the payload, an
   uncaught one returns to the caller with the exception object and the caller's frame as the
   ABI requires), with the Itanium unwinder/personality model and the decoding of the emitted
   tables trusted. `lean-backend` prints `compiled, verified (try_call: unwinding by …)` for it,
   and for a function failing a check the old label with `unwinding check failed: <check>`. An
-  `i128`-legalised `try_call` function is covered by `E2E.backend_correct_legal_unwind` (S10f)
-  when, in addition, the handler-edge check `Opt.Legal.exnOk` accepts its legalisation.
+  `i128`-legalised `try_call` function is covered by `E2E.backend_correct_legal_unwind_any`
+  (S10f) when, in addition, the handler-edge check `Opt.Legal.exnOk` accepts its legalisation.
+  (The `_any` theorems drop the former check `lastCallsOk` on the calls of the last block,
+  #622; the theorems without the suffix keep it as a premise.)
 * **Non-vacuity.** Every top-level theorem has a witness that its contract premises can all
   hold for realistic callees (docs/contracts/e2e.md, "Non-vacuity";
   `E2E.backend_correct_final_witness`, `E2E.backend_correct_final_id`, and for functions with
@@ -1049,7 +1051,11 @@ code stock Cranelift (cg_clif) generated for the same functions: after
 target/fv/<mode>/tmp` compares, per codegen unit and function, `lean.o` with cg_clif's
 `cgclif.o` (exact bytes and relocations) and attributes the differing instructions to causes
 (frame, slot layout, register allocation, dead `cset`, branch layout, instruction selection;
-a heuristic on `llvm-mc` disassembly). Results and the cause issues: #557.
+a heuristic on `llvm-mc` disassembly; `FV_LLVM_MC`, else LLVM 18's or the `llvm-mc` on `PATH`).
+The full gate measures fv-demo and survey on `main` this way, and the daily digest (#46)
+reports the counts and lost matches with the filetest comparison
+([STOCK-COMPILER-COMPARISON.md](STOCK-COMPILER-COMPARISON.md#daily-change-reports)).
+Cause analysis: #557.
 Crate parity is the second of the two stock-parity metrics; the first is the filetest
 comparison above, which CI runs on every PR. A parity PR reports both
 ([STOCK-COMPILER-COMPARISON.md](STOCK-COMPILER-COMPARISON.md#two-parity-metrics), `AGENTS.md`).

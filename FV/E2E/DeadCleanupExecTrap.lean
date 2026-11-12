@@ -405,12 +405,14 @@ theorem binary_correct_exec_trap {D : List Clif.DataObject} (hI : okBCleanup I =
       DeadCleanupStackBound.bud I f := fun M => by simp [LinkSys.hybrid, hb, hbud]
   have hT := backend_correct_program_trap_budget _ hL0 (trapsOk_of hI hU hnoTry) (baseTrapsOk_F hBT)
     hκ hfm M hent
-    (by rw [hκf]; exact hres) (by rw [hκf]; rfl) (by rw [hκf]; exact hgfree) himg hbe hargs
+    (by rw [hκf]; exact ⟨hres, by rw [← hκf M]; exact hκ.2 M f hfm⟩) (by rw [hκf]; rfl)
+    (by rw [hκf]; exact hgfree) himg hbe hargs
     hr.entry hsav hrel hpl (std_trapsD_F htr) hrun
   exact exec_trap_of_model hI hcm hbin hnogot hB hH hf hX ho hr hT
 
 /-- **`binary_correct_exec_trap` for the run's peak call depth** (any program, recursive ones
-included): the stack `frameDrop + D * d` of the run's call depth `d` (`Clif.DepthLe`), the run
+included): the stack `frameDrop + (D * d + pbMax I)` of the run's call depth `d` (`Clif.DepthLe`;
+#581: with the stack probes of the deepest activation), the run
 premise `TrapsD` of the callees running with fuel `F` and at most `d - 1` callers of their own
 (`LinkSys.peak`). -/
 theorem binary_correct_exec_trap_peak {D : List Clif.DataObject} (hI : okBCleanup I = true)
@@ -421,20 +423,22 @@ theorem binary_correct_exec_trap_peak {D : List Clif.DataObject} (hI : okBCleanu
     (hBT : (sys I B).BaseTrapsOk) {n : String} {f : Clif.Function}
     (hf : (prog I).func? n = some f) (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val}
     {cs : Clif.State} (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + (I.D * d + pbMax I)) r
+      args cs.mem)
     (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
     (htr : ((sys I B).peak F).TrapsD d f cs) {tc : Clif.TrapCode}
     (hrun : Clif.runLoop B.env (prog I) (F + 1) cs = .trapped tc) :
     ∃ k, TrapAtE I B tc (runX (step I B file) k r) := by
   have hfm := (Clif.Program.func?_some hf).1
   have hfacts := binFacts_of_checks hI hbin
-  have hB' : BaseOk (LinkSys.ofInputCleanup I B (worldF I f (I.D * d) r)) := baseOk_F hB
+  have hB' : BaseOk (LinkSys.ofInputCleanup I B (worldF I f (I.D * d + pbMax I) r)) := baseOk_F hB
   have hL0 := okBCleanup_sound hI hB' fun _ h => .inr h
   have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
     hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
   obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ := premises hL0 hfm hro ho hr
   have hT := backend_correct_program_trap_peak _ hL0 (trapsOk_of hI hU hnoTry) (baseTrapsOk_F hBT)
-    (LinkSys.budget_K _ hL0) hfm F d hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl
+    (LinkSys.budget_K _ hL0) hfm F d hent ⟨hres, (LinkSys.budget_K _ hL0).2 d f hfm⟩ rfl hgfree himg
+    hbe hargs hr.entry hsav hrel hpl
     hd (peak_trapsD_F htr) hrun
   exact exec_trap_of_model hI hcm hbin hnogot hB hH hf hX ho hr hT
 

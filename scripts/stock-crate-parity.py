@@ -25,12 +25,17 @@ from collections import Counter
 import difflib
 import json
 from pathlib import Path
+import os
 import re
+import shutil
 import subprocess
 
 from byte_compare import ELF
 
-MC = "/usr/lib/llvm-18/bin/llvm-mc"
+# The CI runners install llvm-18; elsewhere `FV_LLVM_MC` or the `llvm-mc` on PATH.
+MC = os.environ.get("FV_LLVM_MC") or next(
+    (p for p in ("/usr/lib/llvm-18/bin/llvm-mc", shutil.which("llvm-mc")) if p and os.path.exists(p)),
+    "/usr/lib/llvm-18/bin/llvm-mc")
 
 
 def disasm(data):

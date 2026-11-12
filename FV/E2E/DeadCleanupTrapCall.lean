@@ -259,7 +259,7 @@ theorem backend_correct_final_cleanup_trapcall {p : Clif.Program} {f : Clif.Func
   let XT := TrapCallSem env (f.externs.map (·.2)) (indSigs f) (fun sl cm w => Γ.holds f sl cm w) X c
   let fctx : FnCtx := ⟨fa.k, af.slotBase⟩
   have hnt : vcp.hasTryCall = false :=
-    noTryCall_of_prepCheck hc.prepOk (prune_noTryCall (noTryCall_of_check hc.lowerOk hft))
+    noTryCall_of_prepCheck hc.prepOk (cleanupStage_noTryCall f (noTryCall_of_check hc.lowerOk hft))
   have hexcl : ∀ d uses w, X.call d uses w ≠ none → (xrT XT).raise d uses w = none :=
     fun _ _ _ hne => xrT_none fun h => hne h.1
   have houtB := outgoing_le_intBaseCleanupA hc
@@ -270,9 +270,10 @@ theorem backend_correct_final_cleanup_trapcall {p : Clif.Program} {f : Clif.Func
   have hicallsR := indCallsRefine_valueSemU (F := Γ.F) (ctx := fctx)
     (xCallsIndOk_trapEnv (c := c) (hXI s)) hsym (fun _ _ _ h => h.1.symbols) hexcl
   -- CLIF → VCode with unwinding, on the proof device `trapEnv env c`
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs⟩ := loweringU_of_check hlU
-  have hIsel : IselSimU (valueSemU Γ.F fctx X (xrT XT)) (xrT XT) Γ (trapEnv env c) p f vc :=
-    iselSimU_of_driver (ctx := ctx) (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A)
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr, hUs, hsk⟩ := skipStage_specU hlU
+  have hIsel : IselSimU (valueSemU Γ.F fctx X (xrT XT)) (xrT XT) Γ (trapEnv env c) p f
+      (skipStage f vc) :=
+    iselSimU_of_driver_stage (ctx := ctx) (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A)
       { shape := hshape
         cert := hcert
         dsem := (driverSem_valueSemU Γ.F fctx X (xrT XT)).toDriverSemG
@@ -297,8 +298,8 @@ theorem backend_correct_final_cleanup_trapcall {p : Clif.Program} {f : Clif.Func
         tryIndSig := tryIndSig_of_subset hsub
         cfg := by
           obtain ⟨ss, ps, he⟩ := cfg_of_prepare hc.prepare
-          exact ⟨ss, ps, (prune_cfg vc).symm.trans he⟩ }
-      hUs (driverSem_valueSemU Γ.F fctx X (xrT XT)) hRef hMem (raiseSem_valueSemU _ _ _ _)
+          exact ⟨ss, ps, (cleanupStage_cfg f vc).symm.trans he⟩ }
+      hUs hsk (driverSem_valueSemU Γ.F fctx X (xrT XT)) hRef hMem (raiseSem_valueSemU _ _ _ _)
       (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
       (tryStack_mono (tryStack_of_check hc.lowerOk) houtB)
       (indStack_mono (indStack_of_check hc.lowerOk) houtB)
@@ -310,7 +311,7 @@ theorem backend_correct_final_cleanup_trapcall {p : Clif.Program} {f : Clif.Func
     (fun h => hTls (hasTls_of_vcodeCleanupA hc h)) hnt XT hent hres hbe
   have hI := hIsel args cs w₀ ρ₀ hcs hrel
     (argsAtEntry_body (lowerRFunc_frame hc.alloc) (entryRegs_of_check hc.lowerOk) hbe hargs
-      (stackArgsAvoid_frameWCleanupA hc hres hent hargs)) htrX fuel
+      (stackArgsAvoid_frameWCleanupA hc hres hent hargs) hres) htrX fuel
   rcases hout with h | ⟨e, m, h⟩
   · obtain ⟨n, hn⟩ := hR1 c ((hPrep.1 _ _).2 c (hI.2.1 c h))
     exact ⟨n, .inl hn⟩

@@ -242,7 +242,8 @@ theorem backend_correct_worldX_cleanupT (hsub : InSubsetT p f)
           (∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
             (runX (ArmStepX X H fa) i s)) ∧
           ∀ m, Arm.r .ERR (runX (ArmStepX X H fa) (n + m + 1) s) ≠ .None) := by
-  have hI := iselSim_relW_cleanupT hsub hc hT hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
+  have hI := iselSim_relW_cleanupT_stage hsub hc hT hX hXI hsym hslot (fun _ => 0) hcs hrel hargs
+    htr fuel
   have hP := prepareCorrect_cleanupT (F := F) (X := X) hc
     (fun _ => 0) w₀
   have hM6 : ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
@@ -257,7 +258,7 @@ theorem backend_correct_worldX_cleanupT (hsub : InSubsetT p f)
   · obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR, htys⟩ := hI.1 vals cm hrun
     have hrs : vc.RetsSite us := by
       obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-      exact ⟨b, vb, k, hvb, hk⟩
+      exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
     refine ⟨us, outs, w, hus, htys, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_⟩
     obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6, h7⟩, h8⟩ :=
       (hM6 H G base ra s he).1 us outs w (vReturns_gotV_value (hP.1 _ _ _ hv))
@@ -307,7 +308,8 @@ theorem backend_correct_world_niX_cleanupT (hsub : InSubsetT p f)
               ∀ i < n, actGoodX vcp rf af fa fb base s X H K G (GotV vcp)
                 (runX (ArmStepX X H fa) i s)) := by
   intro vals cm hrun
-  have hI := iselSim_relW_cleanupT hsub hc hT hX hXI hsym hslot (fun _ => 0) hcs hrel hargs htr fuel
+  have hI := iselSim_relW_cleanupT_stage hsub hc hT hX hXI hsym hslot (fun _ => 0) hcs hrel hargs
+    htr fuel
   have hM6 : ∀ (w₀ : Arm.ArmState) (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
       (s : Arm.ArmState), ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ :=
     fun w₀ H G base ra s he => by
@@ -320,7 +322,7 @@ theorem backend_correct_world_niX_cleanupT (hsub : InSubsetT p f)
   obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmemR, htys⟩ := hI.1 vals cm hrun
   have hrs : vc.RetsSite us := by
     obtain ⟨b, k, ρ, w₁, vb, ops, outs', -, hvb, hk, -⟩ := hv
-    exact ⟨b, vb, k, hvb, hk⟩
+    exact retsSite_of_skipStage ⟨b, vb, k, hvb, hk⟩
   refine ⟨us, outs, w, hus, htys, hlen, hhold, hmemR, hrs, fun H G base ra s he => ?_,
     fun hNI hTls D w₀' hrel' hsw hreg hstk H G base ra s he => ?_⟩
   · have hP := prepareCorrect_cleanupT (F := F) (X := X) hc
@@ -328,7 +330,8 @@ theorem backend_correct_world_niX_cleanupT (hsub : InSubsetT p f)
     obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6, h7⟩, h8⟩ := (hM6 w₀ H G base ra s he).1 us outs w
       (vReturns_gotV_value (hP.1 _ _ _ hv))
     exact ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8⟩
-  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni_valueT hsub hc hT hX hXI hsym hslot hNI
+  · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ := vcode_ni_valueT_stage hsub hc hT hX hXI hsym
+      hslot hNI
       hTls (fun _ => 0) hcs hrel hrel' hargs hsw hreg hstk htr fuel vals cm hrun
     obtain ⟨rfl, rfl, rfl⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, w₀⟩) hv1 hv
     have hP := prepareCorrect_cleanupT (F := F) (X := X) hc

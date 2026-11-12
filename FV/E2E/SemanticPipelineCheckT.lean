@@ -44,15 +44,15 @@ def lowerOkTSB (g : Clif.Function) (vc : VCode) : Bool :=
     (lowersToB g vc &&
       ((Compile.functionET g && lowerCheckT g vc) || (Compile.functionETCF g && lowerCheckTCF g vc)))
 
-/-- Every return of the code is in x0, x1, … (`RetsX`, decided per instruction). -/
-def retsXB : MInst → Bool
-  | .rets us => decide (us.map (·.2) = (List.range us.length).map Reg.x)
+/-- Every return of the code is in its `retX` register (`RetsX k`, decided per instruction). -/
+def retsXB (k : Nat) : MInst → Bool
+  | .rets us => decide (us.map (·.2) = (List.range us.length).map (retX k))
   | _ => true
 
-theorem retsXB_sound {vc : VCode} (h : allInsts vc retsXB = true) : RetsX vc := by
+theorem retsXB_sound {k : Nat} {vc : VCode} (h : allInsts vc (retsXB k) = true) : RetsX k vc := by
   intro us hr
-  obtain ⟨b, vb, k, hb, hk⟩ := hr
-  have := allInsts_sound h hb hk
+  obtain ⟨b, vb, i, hb, hi⟩ := hr
+  have := allInsts_sound h hb hi
   simpa [retsXB] using this
 
 def staticChksWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput) (g : Clif.Function)
@@ -74,8 +74,8 @@ def staticChksWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput)
    ("subset: storeTyped", Compile.storeTypedB g),
    ("subset: ABI signatures", sigAbiOk g.sig && g.externs.all (fun e => sigAbiOk e.2.sig)),
    ("subset: indirect-call signatures", indSigsOk g),
-   ("sret: subset E, lowerCheck, or returns in x0..", !(g.sig.params.any (·.purpose == .sret)) ||
-     (Compile.functionE g && lowerCheck g a.vc) || allInsts a.vc retsXB)]
+   ("sret: subset E, lowerCheck, or returns in retX", !(g.sig.params.any (·.purpose == .sret)) ||
+     (Compile.functionE g && lowerCheck g a.vc) || allInsts a.vc (retsXB g.sig.returns.length))]
 
 /-- The per-function checks of `okRWithTS`: `staticChksWithTS` and the class-aware link checks
 `linkChksTS` (#742: program calls with arguments and results of either class; it had
@@ -140,7 +140,8 @@ structure FactsWithTS (stage : Clif.Function → VCode → VCode) (I : LinkInput
   free : Clif.LinkFree g
   storeT : Compile.storeTypedB g = true
   sretE : g.sig.params.any (·.purpose == .sret) = true →
-    (Compile.functionE g = true ∧ lowerCheck g a.vc = true) ∨ allInsts a.vc retsXB = true
+    (Compile.functionE g = true ∧ lowerCheck g a.vc = true) ∨
+      allInsts a.vc (retsXB g.sig.returns.length) = true
   abi : sigAbiOk g.sig = true ∧ ∀ e ∈ g.externs, sigAbiOk e.2.sig = true
   indOk : indSigsOk g = true
   ind : indBC (progOf R) (fun n => I.syms.lookup n) g = true
@@ -233,9 +234,10 @@ theorem indFactsRWithTS (stage : Clif.Function → VCode → VCode) {I : LinkInp
 /-- **The typed checks on any pipeline's results establish the typed link contract** (#722):
 `okRWith_soundT` for results whose later stages are the compiler's (`PreparedResults`; no
 lowering equation), each function's artifact being either typed one or the Stock artifact of an
-integer function (`CompiledAnyTS`). -/
+integer function (`CompiledAnyTS`). (The cleanup alternative of `hstage` was
+`fun _ => DeadCleanup.prune`; the compiler's cleanup stage is now `cleanupStage`, #552.) -/
 theorem okRWithTS_soundT (stage : Clif.Function → VCode → VCode) {I : LinkInput} {R : Res}
-    (hstage : stage = (fun _ => id) ∨ stage = (fun _ => DeadCleanup.prune))
+    (hstage : stage = (fun _ => id) ∨ stage = cleanupStage)
     (hR : PreparedResults stage I R)
     (hI : okRWithTS stage I R = true) {B : BaseEnv}
     {F : BitVec 64 → Prop} (hB : BaseOk (ofRes I R B F)) (hF : ∀ a, (ofRes I R B F).Img a → F a) :
@@ -331,8 +333,19 @@ theorem okRWithTS_soundT (stage : Clif.Function → VCode → VCode) {I : LinkIn
     · rcases hstage with rfl | rfl
       · exact ⟨.inl (.inr (.legacy ⟨hl, hlowTC, hpr, (fa hg).prepOk, (fa hg).check, ha, he,
           hla⟩)), hb⟩
-      · exact ⟨.inl (.inr (.cleanup ⟨hl, hlowTC, hpr, (fa hg).prepOk, (fa hg).check, ha, he,
-          hla⟩)), hb⟩
+      · -- As in `PipelineCheckT`: the skip runs only on subset-E functions accepted by
+        -- `lowerCheck` (typed branch); elsewhere the stage is `prune vc`.
+        cases hk : (Compile.functionE g && lowerCheck g (artOf R g).vc)
+        · have hst : cleanupStage g (artOf R g).vc = DeadCleanup.prune (artOf R g).vc := by
+            simp only [cleanupStage, skipStage, hk, Bool.false_eq_true, ↓reduceIte]
+          have hpo := (fa hg).prepOk
+          rw [hst] at hpr hpo
+          exact ⟨.inl (.inr (.cleanup ⟨hl, hlowTC, hpr, hpo, (fa hg).check, ha, he, hla⟩)), hb⟩
+        · rw [Bool.and_eq_true] at hk
+          obtain ⟨hE, hlc⟩ := hk
+          exact ⟨.inl (.inl ⟨hinT g hg (Compile.functionET_of_functionE hE),
+            .cleanup ⟨hl, lowerCheckT_of_lowerCheck hlc, hpr, (fa hg).prepOk, (fa hg).check, ha,
+              he, hla⟩⟩), hb⟩
   refine
     { names := hn
       free := fun g hg => (fa hg).free

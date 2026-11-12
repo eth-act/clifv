@@ -23,6 +23,21 @@ theorem ok_getD {ε α : Type} [Inhabited α] {e : Except ε α} (h : e.toBool =
     e = .ok (e.toOption.getD default) := by
   cases e <;> simp_all [Except.toBool, Except.toOption]
 
+/-- A probed stack below 4 KiB gets no stack probes (#581). -/
+theorem probeCount_small {total : Nat} (h : total < 4096) : probeCount total = 0 := by
+  simp [probeCount, Nat.div_eq_of_lt h]
+
+/-- A frame below 4 KiB (with its callees' 16-byte setup area) gets no stack probes, so none
+below it (#581). -/
+theorem probeBelow_small {af : AFunc} (h : af.frameSize + 16 < 4096) : E2E.probeBelow af = 0 := by
+  have ht : probeTotal af.frameSize af.isCaller < 4096 := by unfold probeTotal; split <;> omega
+  simp [E2E.probeBelow, probeCount_small ht]
+
+/-- `StackAvail`'s probe budget for a frame below 4 KiB: any budget (#581). -/
+theorem probeBelow_le_small {af : AFunc} {K : Nat} (h : af.frameSize + 16 < 4096) :
+    E2E.probeBelow af ≤ K := by
+  rw [probeBelow_small h]; exact Nat.zero_le _
+
 /-- The code words of `fb` at `base`, as memory (zero elsewhere). -/
 def codeMem (fb : FnBin) (base : BitVec 64) : Memory := fun a =>
   let k := (a - base).toNat
@@ -45,7 +60,7 @@ def act (vc : VCode) (rf : RFunc) : RL :=
     s0 := entry fb 0x10000#64
     X := VCodeThread.Witness.X0
     H := ⟨fun _ s => s, fun _ _ s => s⟩
-    psF := ((blocksLinesE ⟨fa.k, af.slotBase⟩ af af.blocks.toList {}).toOption.map (·.2)).getD {}
+    psF := ((emitPlan fa.k af).toOption.map (·.ps)).getD {}
     K := 0
     G := fun _ => False
     gv := fun _ _ => False }
@@ -86,6 +101,12 @@ theorem ok_snd {ε α β : Type} {e : Except ε (α × β)} {d : β} (h : e.toBo
   | error _ => simp [Except.toBool] at h
   | ok r => exact ⟨r.1, by simp [Except.toOption]⟩
 
+theorem ok_ps {e : Except String Plan} (h : e.toBool = true) :
+    ∃ p, e = .ok p ∧ p.ps = (e.toOption.map (·.ps)).getD {} := by
+  cases e with
+  | error _ => simp [Except.toBool] at h
+  | ok p => exact ⟨p, rfl, by simp [Except.toOption]⟩
+
 theorem wf_of {vc : VCode} {rf : RFunc}
     (hc : checkAlloc vc rf = .ok ())
     (ha : (lowerRFunc vc rf).toBool = true)
@@ -96,8 +117,7 @@ theorem wf_of {vc : VCode} {rf : RFunc}
     (hfit : 4 * (act vc rf).fb.words.size ≤ 2 ^ 64)
     (hfs : (act vc rf).af.frameSize ≤ 0x100)
     (hsz : 4 * (act vc rf).fb.words.size ≤ 0x10000)
-    (hps : (blocksLinesE (act vc rf).ctx (act vc rf).af (act vc rf).af.blocks.toList {}).toBool =
-      true) :
+    (hps : (emitPlan (act vc rf).fa.k (act vc rf).af).toBool = true) :
     (act vc rf).Wf where
   check := allocChecked_of_checkAlloc hc
   alloc := ok_getD ha
@@ -109,7 +129,7 @@ theorem wf_of {vc : VCode} {rf : RFunc}
     have hsp : spv (act vc rf).s0 = 0x8000#64 := by
       simp [spv, act, entry, ArmFoot.r_setMem, Arm.r_of_w_different, Arm.r_of_w_same]
     have hK : (act vc rf).K = 0 := rfl
-    refine ⟨?_, fun a ⟨p, hp, hd⟩ => ?_⟩
+    refine ⟨⟨?_, fun a ⟨p, hp, hd⟩ => ?_⟩, ?_⟩
     · rw [hsp, hK]; simp; omega
     · rw [hsp, hK]
       have hp' : List.Mem p (wordsAt 0x10000#64 0 (act vc rf).fb.words.toList) := by
@@ -121,7 +141,8 @@ theorem wf_of {vc : VCode} {rf : RFunc}
       have hp1 : p.1.toNat = 0x10000 + 4 * j := by
         rw [he]; simp only [Nat.zero_add, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
       exact room_of (by omega) (by omega) (by omega) hd
-  psF := ok_snd hps
+    · exact Nat.le_of_eq (probeBelow_small (af := (act vc rf).af) (by omega))
+  psF := ok_ps hps
   prog0 := entry_program _ _
   gfree := fun _ h => h.elim
 
@@ -190,8 +211,7 @@ theorem wf_ofAt {sp base : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.to
     (hfit : 4 * (act vc rf).fb.words.size ≤ 2 ^ 64)
     (hfs : (act vc rf).af.frameSize ≤ 0x100)
     (hsz : 4 * (act vc rf).fb.words.size ≤ 0x10000)
-    (hps : (blocksLinesE (act vc rf).ctx (act vc rf).af (act vc rf).af.blocks.toList {}).toBool =
-      true) :
+    (hps : (emitPlan (act vc rf).fa.k (act vc rf).af).toBool = true) :
     (actAt sp base vc rf).Wf where
   check := allocChecked_of_checkAlloc hc
   alloc := ok_getD ha
@@ -202,7 +222,7 @@ theorem wf_ofAt {sp base : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.to
   stack := by
     have hsp := spv_s0At sp base vc rf
     have hK : (actAt sp base vc rf).K = 0 := rfl
-    refine ⟨?_, fun a ⟨p, hp, hd⟩ => ?_⟩
+    refine ⟨⟨?_, fun a ⟨p, hp, hd⟩ => ?_⟩, ?_⟩
     · rw [hsp, hK]; show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega
     · rw [hsp, hK]
       have hp' : List.Mem p (wordsAt base 0 (act vc rf).fb.words.toList) := by
@@ -216,7 +236,8 @@ theorem wf_ofAt {sp base : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.to
       exact room_ofAt (by show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega)
         (by show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega) hsp2 hb1 hb2 (by omega)
         (by omega) hd
-  psF := ok_snd hps
+    · exact Nat.le_of_eq (probeBelow_small (show (act vc rf).af.frameSize + 16 < 4096 by omega))
+  psF := ok_ps hps
   prog0 := entryAt_program _ _ _
   gfree := fun _ h => h.elim
 

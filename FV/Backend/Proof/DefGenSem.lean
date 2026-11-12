@@ -890,7 +890,8 @@ theorem upg_sound :
         obtain ⟨ks, hks, -, -, -, hd, hc⟩ := ofV_fields hm
         obtain ⟨-, hdv⟩ := operands_okRegs hok
         rw [hks]
-        refine upgF_sound fs ks (he.mono hD) (γL_mono fs hD hl) (fun v hv => ?_) (fun v hv => ?_)
+        refine upgF_sound fs (upKs k' ks) (he.mono hD) (γL_mono fs hD hl) (fun v hv => ?_)
+          (fun v hv => ?_)
         · obtain ⟨r, rfl, hr⟩ := hd v hv
           exact ⟨r, rfl, fun n cl hrn hlo => hdef n (hdv n cl (hrn ▸ hr)) hlo⟩
         · obtain ⟨ci, rfl, hq⟩ := hc v hv

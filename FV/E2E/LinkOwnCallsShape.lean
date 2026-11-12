@@ -157,7 +157,7 @@ theorem callMap_reg {R : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming R gn) {
 /-! ## `try_call` facts -/
 
 theorem tryInfoOf_rets {s : Clif.Signature} {items : List (Option Nat)} {ls : List Label}
-    {info : TryInfo} (h : tryInfoOf s items ls = some info) : info.rets = (sigRets s).length := by
+    {info : TryInfo} (h : tryInfoOf s items ls = some info) : info.rets = s.returns.length := by
   unfold tryInfoOf at h
   split at h
   · cases h

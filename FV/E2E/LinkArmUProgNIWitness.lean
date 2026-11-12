@@ -58,7 +58,6 @@ theorem LUN_okU (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (LUN 
   sites g hg := (ufacts hg).2.1
   rows g hg := (ufacts hg).2.2.1
   pads g hg := (ufacts hg).2.2.2.1
-  last g hg := (ufacts hg).2.2.2.2.1
   saved g hg := (ufacts hg).2.2.2.2.2
   indScopeX g hg hn := ((LUN_ok F hF).indScope g hg hn).toX
   baseXR g _ F' slotOff out c := by

@@ -388,8 +388,33 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
-/-- The callees' stack budget of an activation at level `M`. -/
-def K (M : Nat) : Nat := L.D * M
+/-- The most bytes the stack probes of a function of `P` write below its body's `sp`
+(`probeBelow`, #581): the largest over `P`'s functions, `0` for a program without probes. -/
+def pbMax : Nat := L.P.funcs.foldl (fun x g => max x (probeBelow (L.A g).af)) 0
+
+theorem probeBelow_le_pbMax {g : Clif.Function} (hg : g ∈ L.P.funcs) :
+    probeBelow (L.A g).af ≤ L.pbMax := by
+  unfold pbMax
+  suffices h : ∀ (l : List Clif.Function) (x : Nat),
+      (g ∈ l → probeBelow (L.A g).af ≤ l.foldl (fun y g => max y (probeBelow (L.A g).af)) x) ∧
+        x ≤ l.foldl (fun y g => max y (probeBelow (L.A g).af)) x from (h _ 0).1 hg
+  intro l
+  induction l with
+  | nil => exact fun x => ⟨fun h => absurd h List.not_mem_nil, Nat.le_refl _⟩
+  | cons g' l ih =>
+    intro x
+    rw [List.foldl_cons]
+    obtain ⟨h1, h2⟩ := ih (max x (probeBelow (L.A g').af))
+    refine ⟨fun h => ?_, Nat.le_trans (Nat.le_max_left _ _) h2⟩
+    rcases List.mem_cons.1 h with rfl | h
+    · exact Nat.le_trans (Nat.le_max_right _ _) h2
+    · exact h1 h
+
+/-- The callees' stack budget of an activation at level `M`: `D` per level, plus the bytes the
+stack probes of the activation at the bottom write below its body's `sp` (`pbMax`, #581: the
+budget also holds an activation's probes, `Budget`). For a program without probes `pbMax = 0`,
+the former `D * M`. -/
+def K (M : Nat) : Nat := L.D * M + L.pbMax
 
 /-- The call hook of the linked machine: a `bl` of a function `g` of `P`, and a `blr` whose
 target register holds `g`'s link-time address, run `pc g`; the other calls: the base hook. -/
@@ -635,16 +660,18 @@ def Callee (g h : Clif.Function) : Prop :=
 
 /-- **A stack budget for the callees of each activation** (`κ M g`: the stack below the body's
 `sp` that an activation of `g` at depth `M` gives its callees): a callee's frame and its own
-callees' budget one level down fit in the caller's. `fun M _ => K M` is one (`budget_K`, every
-frame at most `D`); for a program without recursion a depth-independent one exists
-(`FV/E2E/StackBound.lean`). -/
+callees' budget one level down fit in the caller's, and the budget holds the bytes that the stack
+probes of a running activation of `g` write below its body's `sp` (`probeBelow`, #581: inside
+its callees' budget; `StackAvail`). `fun M _ => K M` is one (`budget_K`, every frame at most `D`);
+for a program without recursion a depth-independent one exists (`FV/E2E/StackBound.lean`). -/
 def Budget (κ : Nat → Clif.Function → Nat) : Prop :=
-  ∀ M, ∀ g ∈ L.P.funcs, ∀ h, L.Callee g h → frameDrop (L.A h).af + κ M h ≤ κ (M + 1) g
+  (∀ M, ∀ g ∈ L.P.funcs, ∀ h, L.Callee g h → frameDrop (L.A h).af + κ M h ≤ κ (M + 1) g) ∧
+    ∀ M, ∀ g ∈ L.P.funcs, probeBelow (L.A g).af ≤ κ M g
 
 theorem budget_step {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) {M : Nat} (hM : 0 < M)
     {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hc : L.Callee g h) :
     frameDrop (L.A h).af + κ (M - 1) h ≤ κ M g := by
-  have := hκ (M - 1) g hg h hc
+  have := hκ.1 (M - 1) g hg h hc
   rwa [Nat.sub_add_cancel hM] at this
 
 /-- The functions of `P` an activation of `g` may enter through an address (`blr`): those it may
@@ -699,13 +726,14 @@ def Cond (κ : Nat → Clif.Function → Nat) (M : Nat) (F : BitVec 64 → Prop)
     Clif.initState L.P g.name vals cm = .ok cs ∧ L.crun M cs = .returned rvals cm'
 
 open Classical in
-/-- A call of the function `g` of `P` at depth `M`: the results (x0.., one per ABI
-return) and world of the linked machine's call of `g` from the canonical state, when `Cond`
-holds and that call returned. -/
+/-- A call of the function `g` of `P` at depth `M`: the results (x0.., one per declared return;
+an `sret` function's struct pointer, returned in x8 as in Cranelift, #587, is not a call result:
+Cranelift's call site defines no value for it) and world of the linked machine's call of `g`
+from the canonical state, when `Cond` holds and that call returned. -/
 noncomputable def progX (κ : Nat → Clif.Function → Nat) (M : Nat) (F : BitVec 64 → Prop) (g : Clif.Function) (uses : List CV)
     (w : Arm.ArmState) : Option (List CV × Arm.ArmState) :=
   if L.Cond κ M F g uses w ∧ Arm.r .ERR (L.pcall M g (L.canon g uses w)) = .None then
-    some ((List.range (sigRets g.sig).length).map fun j =>
+    some ((List.range g.sig.returns.length).map fun j =>
         regVal (L.pcall M g (L.canon g uses w)) (.x j),
       L.pcall M g (L.canon g uses w))
   else none
@@ -1900,7 +1928,7 @@ def Thm (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     (rvals : List Clif.Val) (cm' : Clif.Mem), L.WorldEntry κ M g F vals cs w₀ →
     Clif.runLoop (L.envR M g) L.P.bare fuel cs = .returned rvals cm' →
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
       (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
         ∃ n, ActRet ra F G us outs wf s (runX (L.mach M g) n s) ∧
@@ -1922,32 +1950,61 @@ end LinkSys
 /-! ## The callee's body-entry world, the canonical call state -/
 
 /-- The body-entry world of an activation entered in `u` that agrees with `u` (`BodyEntry`):
-`sp` lowered by the frame, the frame pointer set. -/
+`sp` lowered by the frame, the frame pointer set, and the bytes the prologue's stack probes zero
+(`probeMem`, #581; the memory of `u` for a function without probes). -/
 def bodyOf (af : AFunc) (u : Arm.ArmState) : Arm.ArmState :=
-  Arm.w (.GPR 29#5) (if af.frame then spv u - 16#64 else xreg 29 u)
-    (Arm.w (.GPR 31#5) (spv u - BitVec.ofNat 64 (frameDrop af)) u)
+  setMem (Arm.w (.GPR 29#5) (if af.frame then spv u - 16#64 else xreg 29 u)
+    (Arm.w (.GPR 31#5) (spv u - BitVec.ofNat 64 (frameDrop af)) u)) (probeMem af u)
 
 theorem spv_bodyOf (af : AFunc) (u : Arm.ArmState) :
     spv (bodyOf af u) = spv u - BitVec.ofNat 64 (frameDrop af) := by
   simp only [bodyOf, spv]
-  rw [Arm.r_of_w_different (by simp), Arm.r_of_w_same]
+  rw [r_setMem, Arm.r_of_w_different (by simp), Arm.r_of_w_same]
 
 theorem x29_bodyOf (af : AFunc) (u : Arm.ArmState) :
     xreg 29 (bodyOf af u) = if af.frame then spv u - 16#64 else xreg 29 u := by
   simp only [bodyOf, xreg]
+  rw [r_setMem]
   exact Arm.r_of_w_same
 
 theorem r_bodyOf (af : AFunc) (u : Arm.ArmState) {f : Arm.StateField} (h29 : f ≠ .GPR 29#5)
     (h31 : f ≠ .GPR 31#5) : Arm.r f (bodyOf af u) = Arm.r f u := by
   simp only [bodyOf]
-  rw [Arm.r_of_w_different h29, Arm.r_of_w_different h31]
+  rw [r_setMem, Arm.r_of_w_different h29, Arm.r_of_w_different h31]
 
-@[simp] theorem mem_bodyOf (af : AFunc) (u : Arm.ArmState) : (bodyOf af u).mem = u.mem :=
-  Arm.mem_w_of_mem_eq (Arm.mem_w_of_mem_eq rfl _ _) _ _
+/-- The body-entry memory: the entry memory after the stack probes (#581). -/
+@[simp] theorem mem_bodyOf (af : AFunc) (u : Arm.ArmState) : (bodyOf af u).mem = probeMem af u :=
+  rfl
 
 @[simp] theorem program_bodyOf (af : AFunc) (u : Arm.ArmState) :
     (bodyOf af u).program = u.program := by
-  simp only [bodyOf, Arm.w_program]
+  simp only [bodyOf, program_setMem, Arm.w_program]
+
+/-- A byte the stack probes do not zero is the entry memory's. -/
+theorem mem_bodyOf_of_not {af : AFunc} {u : Arm.ArmState} {a : BitVec 64}
+    (h : probeHit af (spv u) a = false) : (bodyOf af u).mem a = u.mem a :=
+  probeMem_of_not h
+
+/-- Two entries with the same `sp` and the same byte at `a` have the same byte at `a` after the
+stack probes. -/
+theorem probeMem_congr {af : AFunc} {u t : Arm.ArmState} {a : BitVec 64} (hsp : spv u = spv t)
+    (h : u.mem a = t.mem a) : probeMem af u a = probeMem af t a := by
+  simp only [probeMem, hsp, h]
+
+/-- The probed bytes lie in the frame and a budget `K` below it that covers `probeBelow`. -/
+theorem probeHit_dead {af : AFunc} {K : Nat} {sp a : BitVec 64} (hpb : probeBelow af ≤ K)
+    (hr : frameDrop af + K ≤ sp.toNat) (h : probeHit af sp a = true) :
+    StackBelow (frameDrop af + K) sp a := by
+  have hb := probeHit_below (by omega) h
+  exact ⟨hb.1, by have := hb.2; omega⟩
+
+/-- A byte outside `F` is not probed when `F` holds the frame and a budget covering the probes. -/
+theorem probeHit_of_notF {af : AFunc} {K : Nat} {sp a : BitVec 64} {F : BitVec 64 → Prop}
+    (hpb : probeBelow af ≤ K) (hr : frameDrop af + K ≤ sp.toNat)
+    (hF : ∀ a, StackBelow (frameDrop af + K) sp a → F a) (ha : ¬ F a) : probeHit af sp a = false := by
+  cases hp : probeHit af sp a
+  · rfl
+  · exact absurd (hF a (probeHit_dead hpb hr hp)) ha
 
 theorem argReg_ne29 {r : Reg} (hr : r.isArgReg = true) {f : Arm.StateField} (hf : r.field = some f) :
     f ≠ .GPR 29#5 ∧ f ≠ .GPR 31#5 ∧ f ≠ .GPR 30#5 ∧ f ≠ .PC := by
@@ -2086,7 +2143,8 @@ theorem bodyEntryW_compat (hL : L.Ok) {h : Clif.Function} (hh : h ∈ L.P.funcs)
     have h30 : f ≠ .GPR 30#5 := by rintro rfl; exact hf (by simp [Masked])
     rw [r_bodyOf _ _ h29' h31, r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
       hc.world.1 f hf, ht.world.1 f hf]
-  · rw [mem_bodyOf, mem_enterAt, mem_enterAt, hc.world.2.1 a ha, ht.world.2.1 a ha]
+  · rw [mem_bodyOf]
+    exact probeMem_congr hsp (by rw [mem_enterAt, mem_enterAt, hc.world.2.1 a ha, ht.world.2.1 a ha])
 
 end LinkSys
 
@@ -2198,7 +2256,8 @@ theorem initState_mem {h : Clif.Function} {n : String} (hpf : L.P.func? n = some
 /-- **A call of a function `h` of `P`** at depth `M` (its callee run at depth `M`, `crun M`,
 returns) from a world `w` with room for the callee's stack: one VCode outcome of `h`, which the
 linked machine's call realises from every caller state compatible with `w` (`CallerOk`), in
-particular from the canonical one. -/
+particular from the canonical one. The callee's budget holds its stack probes (`hpb`, #581: they
+write up to `probeBelow` bytes below its frame, so without it the callee's `StackAvail` fails). -/
 theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm κ (M - 1)) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     (hib : ((RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0 ∧
@@ -2208,13 +2267,14 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
     (hal : (spv w).toNat % 16 = 0)
     (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
     (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h)
     {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {rvals : List Clif.Val}
     {cm' : Clif.Mem} (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (∀ t, L.CallerOk F h uses w t → ∃ k,
         L.pcall M h t =
@@ -2272,6 +2332,10 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
   have hsp0 : spv cn = spv w := hcOk.world.1 _ (by simp [Masked])
   have hspw₀ : spv w₀ = spv w - BitVec.ofNat 64 (frameDrop (L.A h).af) := by
     rw [spv_bodyOf, spv_enterAt, hsp0]
+  -- the callee's stack probes zero only bytes of its frame and of its budget, inside `F` (#581)
+  have hnpw : ∀ u : Arm.ArmState, spv u = spv w → ∀ a, ¬ F a →
+      probeHit (L.A h).af (spv (enterAt (L.A h) u)) a = false := fun u hu a ha => by
+    rw [spv_enterAt, hu]; exact probeHit_of_notF hpb hroom (fun a hb => (hdead a hb).1) ha
   obtain ⟨-, -, hB⟩ := off_toNat 0 (spv w) (frameDrop (L.A h).af) (by omega)
   -- the callee's outgoing area (in the caller's dead stack) is outside the callee's `F`
   let ib := (RAFrame.compute (L.A h).vcp (L.A h).rf).intBase
@@ -2358,10 +2422,12 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
           hcOk.world.1 _ (by simp [Masked])]
         exact herr
       · rw [← hmr.bytes a b hv hb]
-        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf, mem_enterAt]
-        rw [L.mem_canon, mem_withImg, if_neg]
+        have hnF : ¬ F (BitVec.ofNat 64 a) := fun hf =>
+          (hmr.valid a 1 hv).2 0 (by omega) (by simpa using hf)
+        simp only [Arm.read_mem, Arm.read_store, w₀, mem_bodyOf]
+        rw [probeMem_of_not (hnpw cn hsp0 _ hnF), mem_enterAt, L.mem_canon, mem_withImg, if_neg]
         intro hi
-        exact (hmr.valid a 1 hv).2 0 (by omega) (by simpa using himgF _ hi)
+        exact hnF (himgF _ hi)
     · intro loc v hmem
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hmem
       cases loc with
@@ -2376,8 +2442,9 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
         rw [show Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w₀ =
             Arm.read_mem_bytes v.ty.bytes (spv w + BitVec.ofNat 64 off) w from
           read_mem_bytes_congr _ _ (fun k hk => by
-            simp only [w₀, mem_bodyOf, mem_enterAt]
-            rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
+            simp only [w₀, mem_bodyOf]
+            rw [probeMem_of_not (hnpw cn hsp0 _ (hsav off v hmem k hk)), mem_enterAt, L.mem_canon,
+              mem_withImg, if_neg (fun hi => hsav off v hmem k hk (himgF _ hi))])]
         exact hargs.2.2 off v hmem
       | reg r =>
         obtain ⟨i, hr, hv⟩ := reg_zip _ _ hi
@@ -2472,7 +2539,7 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
       fun a ha => by rw [mem_enterAt]; exact himgt a ha, hbw⟩
     · rw [r_enterAt _ _ (by simp) (by simp)]; exact herrt
     · rw [hspt]; exact hal
-    · refine stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_
+    · refine ⟨stackRoom_of (by rw [hspt, ← hdrop]; exact hroom) fun a ha hb => ?_, hpb⟩
       rw [hspt, ← hdrop] at hb
       exact (hdead a hb).2 (hcode t a ha)
     · rw [hspt]; exact ha.2
@@ -2524,7 +2591,10 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
         rw [r_bodyOf _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp)]
         exact herrt
       · have := hmt.bytes a b hv hb
-        simp only [Arm.read_mem, Arm.read_store, w₀', mem_bodyOf, mem_enterAt] at this ⊢
+        have hnF : ¬ F (BitVec.ofNat 64 a) := fun hf =>
+          (hmt.valid a 1 hv).2 0 (by omega) (by simpa using hf)
+        simp only [Arm.read_mem, Arm.read_store, w₀', mem_bodyOf] at this ⊢
+        rw [probeMem_of_not (hnpw t hst _ hnF), mem_enterAt]
         exact this
     have hsw : SameWorld (fun a => Fh a ∨ D a) w₀ w₀' := by
       refine ⟨fun f hf => ?_, fun a ha => ?_, by simp [w₀, w₀']⟩
@@ -2546,8 +2616,9 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
           by_cases hf : Fh a
           · exact ha (.inl hf)
           · exact ha (.inr ⟨hz, hf⟩)
-        simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
-        rw [hcOk.world.2.1 a (fun hf => hnZ (hFZ a hf)), hZ.2.1 a hnZ]
+        simp only [w₀, w₀', mem_bodyOf]
+        exact probeMem_congr (by rw [spv_enterAt, spv_enterAt, hsp0, hst])
+          (by rw [mem_enterAt, mem_enterAt, hcOk.world.2.1 a (fun hf => hnZ (hFZ a hf)), hZ.2.1 a hnZ])
     have hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf h.sig).zip vals →
         regVal w₀' r = regVal w₀ r := by
       intro r v hm
@@ -2563,8 +2634,9 @@ theorem progCall (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm 
       intro off v hm k hk
       rw [hx29, fp_off_eq]
       have hnF := hsav off v hm k hk
-      simp only [w₀, w₀', mem_bodyOf, mem_enterAt]
-      rw [hstkt off v hm k hk, hcOk.world.2.1 _ hnF]
+      simp only [w₀, w₀', mem_bodyOf]
+      exact probeMem_congr (by rw [spv_enterAt, spv_enterAt, hsp0, hst])
+        (by rw [mem_enterAt, mem_enterAt, hstkt off v hm k hk, hcOk.world.2.1 _ hnF])
     obtain ⟨k, hret, htrk⟩ := hni hN D w₀' hrel' hsw hreg hstk G (Arm.r .PC t + 4)
       (enterAt (L.A h) t) (hME t w₀' hst herrt himgt hbw)
     refine ⟨k, hpcall t k hrat htrk hret.ret hret.prog, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
@@ -2732,7 +2804,8 @@ variable {κ : Nat → Clif.Function → Nat}
 theorem K_succ (M : Nat) (hM : 0 < M) : L.K M = L.K (M - 1) + L.D := by
   simp only [K]
   obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
-  simp [Nat.mul_succ]
+  simp only [Nat.add_sub_cancel, Nat.mul_succ]
+  omega
 
 theorem callee_mem {g h : Clif.Function} (hc : L.Callee g h) : h ∈ L.P.funcs := by
   rcases hc with ⟨_, -, n, -, hpf⟩ | ⟨e, -, hpf⟩ | ⟨hh, -⟩
@@ -2740,12 +2813,30 @@ theorem callee_mem {g h : Clif.Function} (hc : L.Callee g h) : h ∈ L.P.funcs :
   · exact (Clif.Program.func?_some hpf).1
   · exact hh
 
-/-- `K` is a budget (every frame at most `D`, `Ok.depth`). -/
+/-- `K` is a budget (every frame at most `D`, `Ok.depth`; every function's probes at most
+`pbMax`). -/
 theorem budget_K (hL : L.Ok) : L.Budget fun M _ => L.K M := by
-  intro M g _ h hc
-  have := hL.depth h (L.callee_mem hc)
-  simp only [K, Nat.mul_succ]
-  omega
+  refine ⟨fun M g _ h hc => ?_, fun M g hg => ?_⟩
+  · have := hL.depth h (L.callee_mem hc)
+    simp only [K, Nat.mul_succ]
+    omega
+  · have := L.probeBelow_le_pbMax hg
+    simp only [K]
+    omega
+
+theorem mem_zip_of_mem_zip_take {α β : Type} {l : List α} {o : List β} {n : Nat} {p : α × β}
+    (h : p ∈ l.zip (o.take n)) : p ∈ l.zip o := by
+  induction l generalizing o n with
+  | nil => simp at h
+  | cons a l ih =>
+    cases o with
+    | nil => simp at h
+    | cons b o =>
+      cases n with
+      | zero => simp at h
+      | succ n =>
+        simp only [List.take_succ_cons, List.zip_cons_cons, List.mem_cons] at h ⊢
+        exact h.imp_right ih
 
 /-- **The core of the operand-view obligation of a call of the function `h` of `P`** (by `bl`
 or `blr`) in the linked machine at depth `M` (from the linking statement at depth `M - 1`): from
@@ -2762,11 +2853,12 @@ theorem progOsCore (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih
     {info : CallInfo} (hdefs0 : info.defs = callDefs Ld)
     {ops : Array Operand} {regs : Array Reg}
     (hdefs : ((ops.zip regs).toList.filter (·.1.isDef)) = (callDefOps Ld).zip (Ld.map (·.1)))
-    {t w w' : Arm.ArmState} {outs : List CV}
+    {t w w' : Arm.ArmState} {o outs : List CV}
     (hK : κ M g ≤ (spOf t).toNat) (hG : ∀ a, G a → t.mem a = s0.mem a)
     (hra : RaOk (L.A h) (Arm.r .PC t))
     (hsw : SameWorld F t w)
-    (hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (outs, w')) :
+    (hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (o, w'))
+    (houts : ∃ n, outs = o.take n) :
     SameWorld F (L.pcall M h t) w' ∧
       FrameKeep (fun a => F a ∧ ¬ StackBelow (κ M g) (spOf t) a) t (L.pcall M h t) ∧
       (∀ p ∈ defRegs ops regs outs, regVal (L.pcall M h t) p.1.2 = p.2) ∧
@@ -2795,8 +2887,8 @@ theorem progOsCore (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih
   simp only [Option.some.injEq, Prod.mk.injEq] at hx
   obtain ⟨rfl, rfl⟩ := hx
   obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, hrs, hcall, -⟩ :=
-    L.progCall hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw halw hroom hdead hmr hargs hsav hpl
-      hinit hrun
+    L.progCall hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw halw hroom hdead (hκ.2 _ h hh) hmr
+      hargs hsav hpl hinit hrun
   -- the caller state is compatible with the canonical one
   have hcOk : L.CallerOk F h uses w t := by
     refine ⟨hsw, fun a ha => (hG a (himgG a ha)).trans (himgS a ha), fun r hr => ?_,
@@ -2856,14 +2948,18 @@ theorem progOsCore (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih
   · -- the results
     intro p hp
     obtain ⟨⟨op, r⟩, x⟩ := p
-    rw [defRegs, hdefs] at hp
+    rw [defRegs] at hp
+    obtain ⟨n, rfl⟩ := houts
+    replace hp := mem_zip_of_mem_zip_take hp
+    rw [hdefs] at hp
     obtain ⟨j, hj⟩ := List.mem_iff_getElem?.mp hp
     simp only [List.getElem?_zip_eq_some] at hj
     obtain ⟨⟨-, hr⟩, hx⟩ := hj
     simp only [List.getElem?_map, Option.map_eq_some_iff] at hx
     obtain ⟨j2, hj2, rfl⟩ := hx
-    have hjr : j < (sigRets h.sig).length := by
+    have hjr' : j < h.sig.returns.length := by
       have := (List.getElem?_eq_some_iff.mp hj2).1; simpa using this
+    have hjr : j < (sigRets h.sig).length := Nat.lt_of_lt_of_le hjr' (returns_le_sigRets _)
     have hjL : j < Ld.length := by
       have := (List.getElem?_eq_some_iff.mp hr).1; simpa using this
     have e : ((Ld.map (·.1)).take (sigRets h.sig).length)[j]? = (Ld.map (·.1))[j]? := by
@@ -2873,7 +2969,7 @@ theorem progOsCore (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih
     obtain ⟨j1, hj1, rfl⟩ := hr
     rw [List.getElem?_range (by omega : j < min (sigRets h.sig).length Ld.length),
       Option.some.injEq] at hj1
-    rw [List.getElem?_range hjr, Option.some.injEq] at hj2
+    rw [List.getElem?_range hjr', Option.some.injEq] at hj2
     subst hj1 hj2
     show regVal _ (Reg.x j) = regVal _ (Reg.x j)
     rw [hs_eq, regVal_set_program, hc_eq, regVal_set_program]
@@ -2885,19 +2981,14 @@ theorem progOsCore (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih
       have hce := clifEntry_initState (f := h) hpf hinit
       simp [Clif.State.bottom, hce.callers, hce.func]
     rw [hbot] at hrt
-    have hlr : (sigRets h.sig).length ≤ us.length := by
-      cases hsr : h.sig.params.any (·.purpose == .sret) with
-      | true => exact hL.sretRets h hh hsr us hrs
-      | false =>
-        rw [sigRets_of_noSret hsr, hlen]
-        have := congrArg List.length hrt
-        simp only [List.length_map, Clif.AbiParam.tys] at this
-        rw [← this]; exact hhold.1
-    have hju : j < us.length := by omega
+    have hrl : rvals.length = h.sig.returns.length := by
+      have := congrArg List.length hrt
+      simpa only [List.length_map, Clif.AbiParam.tys] using this
+    have hju : j < us.length := by have := hhold.1; omega
     have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
       have := congrArg (·[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some, Option.some.injEq] at this
+        Option.map_some, Option.some.injEq, retX_lt (hrl ▸ hjr')] at this
       rw [List.getElem?_eq_getElem hju, ← this]
     have hoj : outsV[j]? = some (outsV[j]'(by omega)) := List.getElem?_eq_getElem _
     rw [hs_ret.regs j _ _ _ hus_j hoj, hc_ret.regs j _ _ _ hus_j hoj]
@@ -2976,15 +3067,16 @@ theorem progOs (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < M 
   have hregs := callRegs_eq (regs := regs) (by simpa using hsz')
     (fun p hp r hr => (hloc p hp).2 r hr)
   rw [call_useVals hregs] at hsem
-  have hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (outs, w') := by
+  obtain ⟨o, hx, hout⟩ : ∃ o, L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (o, w') ∧
+      outs = o.take (callDefs Ld).length := by
     simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
     obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
     rw [L.X_prog hpf] at hx
-    exact hx
+    exact ⟨o, hx, rfl⟩
   obtain ⟨us', ds', rfl⟩ := assign_call_sym hasg
   exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_some hpf],
     L.progOsCore hL hκ ih hg hh (.inl ⟨_, hsite⟩) himgF himgG himgS hLu hLd rfl (call_defs hregs) hK hG
-      (hL.raCall g hg _ h hsite _ hP.callPc) hsw hx⟩
+      (hL.raCall g hg _ h hsite _ hP.callPc) hsw hx ⟨_, hout⟩⟩
 
 /-- **The operand-view obligation of a `blr` call** in the linked machine at depth `M`: the
 target register holds the address of a function of `P` that `g` declares (the linked call of it,
@@ -3033,11 +3125,11 @@ theorem progOsReg (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 <
     exact blrTarget_of hc.layout hlm hj hn0 hpc
       (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (himgG a ha)).trans (himgS a ha)) k wd hk)
   -- the external semantics' call
-  have hx : (L.X κ M g F).call none (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w =
-      some (outs, w') := by
+  obtain ⟨o, hx, hout⟩ : ∃ o, (L.X κ M g F).call none (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w =
+      some (o, w') ∧ outs = o.take (callDefs Ld).length := by
     simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
     obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
-    exact hx
+    exact ⟨o, hx, rfl⟩
   cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
   | none =>
     -- no function of `P` at the target: the base's contract
@@ -3046,7 +3138,7 @@ theorem progOsReg (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 <
     have hsem' : csem F ctx L.Xb (.call ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩)
         (useVals (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray regs t) w =
         some (outs, w', .next) := by
-      rw [call_useVals_reg hregs0]; simp [csem, hx]
+      rw [call_useVals_reg hregs0, hout]; simp [csem, hx]
     obtain ⟨s', hex, rest⟩ := hL.baseOs g hg _ hsite (.inl rfl) F (κ M g) G s0
       (CallAt (L.A g).fa (L.A g).base) ctx t hK hD hG c wh _ regs _ w outs w' hops0 hst hasg hP hsw
       hal herr hsem'
@@ -3070,7 +3162,7 @@ theorem progOsReg (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 <
       exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_none hb],
         L.progOsCore hL hκ ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS hLu hLd rfl
           (call_defs_reg hregs0) hK hG
-          (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw hx⟩
+          (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw hx ⟨_, hout⟩⟩
     · cases hx
 
 end LinkSys
@@ -3274,7 +3366,7 @@ theorem progResult (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih
       g c sl cm w)
     (hpl : L.NeedSlots → L.PlaceAt cm c) (hinit : Clif.initState L.P h.name vals cm = .ok cs)
     (hret : L.crun M cs = .returned rvals cm') :
-    ∃ outs w', L.progX κ M F h args w = some (outs, w') ∧ outs.length = (sigRets h.sig).length ∧
+    ∃ outs w', L.progX κ M F h args w = some (outs, w') ∧ outs.length = h.sig.returns.length ∧
       PrefixHold rvals outs ∧
       RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c sl cm' w' := by
@@ -3300,7 +3392,7 @@ theorem progResult (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih
   have hplw : L.NeedSlots → L.PlaceAt cm (spv w) := fun hN => by rw [hsp]; exact hpl hN
   obtain ⟨us, outsV, wf, hus, hlen, hhold, hmemR, -, hcall, -⟩ :=
     L.progCall hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ hib himgF herrw (by rw [hsp]; exact halign)
-      hroom' hdead' hmemR0 hargs hsav hplw hinit hret
+      hroom' hdead' (hκ.2 _ h hh) hmemR0 hargs hsav hplw hinit hret
   obtain ⟨kc, hc_eq, hc_ret⟩ := hcall _ (L.callerOk_canon hL hh himgF args w)
   have hcond : L.Cond κ M F h args w ∧ Arm.r .ERR (L.pcall M h (L.canon h args w)) = .None := by
     refine ⟨⟨hM, herrw, by rw [hsp]; exact halign, hroom', hdead', vals, cm, cs, rvals, cm',
@@ -3315,26 +3407,26 @@ theorem progResult (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih
     rw [this, r_enterAt _ _ (by simp) (by simp)]
     exact (L.callerOk_canon hL hh himgF args w).world.1 _ (by simp [Masked])
   have hce := clifEntry_initState (f := h) hpf hinit
-  have hlr : rvals.length ≤ (sigRets h.sig).length := by
+  have hlr : rvals.length ≤ h.sig.returns.length := by
     have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hretN
     have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
     rw [hbot] at hrt
     have := congrArg List.length hrt
     simp only [List.length_map, Clif.AbiParam.tys] at this
-    rw [this]; exact returns_le_sigRets _
+    rw [this]; exact Nat.le_refl _
   refine ⟨_, _, by rw [progX, if_pos hcond], ?_, ⟨by simpa using hlr, fun j v x hv hx => ?_⟩,
     ⟨⟨⟨fun a b hv hb => ?_, hmemR.valid, hmemR.symbols⟩, ?_, ?_⟩, ?_, hcond.2⟩⟩
   · rw [List.length_map, List.length_range]
   · -- the results
     have hjr : j < rvals.length := (List.getElem?_eq_some_iff.mp hv).1
     have hju : j < us.length := by have := hhold.1; omega
-    simp only [List.getElem?_map, List.getElem?_range (by omega : j < (sigRets h.sig).length),
+    simp only [List.getElem?_map, List.getElem?_range (by omega : j < h.sig.returns.length),
       Option.map_some, Option.some.injEq] at hx
     subst hx
     have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
       have := congrArg (·[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some, Option.some.injEq] at this
+        Option.map_some, Option.some.injEq, retX_lt hjr] at this
       rw [List.getElem?_eq_getElem hju, ← this]
     have hoj : outsV[j]? = some (outsV[j]'(by omega)) := List.getElem?_eq_getElem _
     rw [hc_eq, regVal_set_program, hc_ret.regs j _ _ _ hus_j hoj]
@@ -3567,7 +3659,7 @@ theorem xCallsIndOk (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0
         argsAt_regLocs hargs⟩]
       exact hx
     · rw [hol]
-      exact hsr sig hsig hm.ty hm.returns_length
+      exact hm.returns_length
 
 /-! ## Non-interference of the linked calls -/
 
@@ -3639,10 +3731,11 @@ theorem memRel_canon {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {
 /-- **Non-interference of a call of a function `h` of `P`** that `g` declares (when the linking
 needs it): from two worlds that agree outside `Z ⊇ F`, related to the same CLIF memory, with the
 arguments where `h`'s ABI puts them in both, on which the callee's run (`crun M`) returns,
-the two calls (`progX`) give the same results and worlds that agree outside `Z`. -/
+the two calls (`progX`) give the same results and worlds that agree outside `Z`. The callee's
+budget holds its stack probes (`hpb`, #581: `progCall`). -/
 theorem progX_ni (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.Thm κ (M - 1))
     {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
-    (hcallee : L.Callee g h) {F Z : BitVec 64 → Prop}
+    (hcallee : L.Callee g h) (hpb : probeBelow (L.A h).af ≤ κ (M - 1) h) {F Z : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (hFZ : ∀ a, F a → Z a) {w w' : Arm.ArmState}
     (hsw : SameWorld Z w w') {cm : Clif.Mem} {vals : List Clif.Val} {args : List CV}
     (hm : MemRel F L.syms cm w) (hm' : MemRel F L.syms cm w') (ha : ArgsAt h.sig vals args w)
@@ -3668,7 +3761,7 @@ theorem progX_ni (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 <
     rw [(clifEntry_initState hpf hinit).sig, (clifEntry_initState hpf hinit1).sig]
   have hsav := stackArgsAvoid_tys hsav1 hty
   obtain ⟨us, outs, wf, hus, hlen, hhold, -, hrs, hall, hni⟩ :=
-    L.progCall hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ (.inr hN) himgF herr hal hroom hdead hm ha
+    L.progCall hL hM (ih hM) hpf ⟨g, hg, hcallee⟩ (.inr hN) himgF herr hal hroom hdead hpb hm ha
       hsav hpl hinit hrun
   have hc0 := L.callerOk_canon hL hh himgF args w
   have hc1 := L.callerOk_canon hL hh himgF args w'
@@ -3680,24 +3773,30 @@ theorem progX_ni (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 <
     (fun off v hmz j hj => by
       rw [L.mem_canon, mem_withImg, if_neg (fun hi => hsav off v hmz j hj (himgF _ hi))]
       exact stackArgs_bytes ha.2.2 ha'.2.2 hsp' off v hmz j hj)
-  -- the callee's ABI results are among the defs of its return site
-  have hsr : (sigRets h.sig).length ≤ us.length := by
-    cases hs : h.sig.params.any (·.purpose == .sret)
-    · have hce := clifEntry_initState hpf hinit
-      obtain ⟨Nr, hrunN⟩ := hR.runs M cs _ hrun (.inl ⟨_, _, rfl⟩)
-      have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hrunN
-      have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
-      rw [hbot] at hrt
-      have e := congrArg List.length hrt
-      simp only [List.length_map, Clif.AbiParam.tys] at e
-      rw [sigRets_of_noSret hs, ← e]
-      have := hhold.1
-      omega
-    · exact hL.sretRets h hh hs us hrs
+  -- the callee's declared results are among the defs of its return site
+  have hsr : h.sig.returns.length ≤ us.length := by
+    have hce := clifEntry_initState hpf hinit
+    obtain ⟨Nr, hrunN⟩ := hR.runs M cs _ hrun (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hrunN
+    have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have e := congrArg List.length hrt
+    simp only [List.length_map, Clif.AbiParam.tys] at e
+    rw [← e]
+    have := hhold.1
+    omega
+  have hrl : rvals.length = h.sig.returns.length := by
+    have hce := clifEntry_initState hpf hinit
+    obtain ⟨Nr, hrunN⟩ := hR.runs M cs _ hrun (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hrunN
+    have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have e := congrArg List.length hrt
+    simpa only [List.length_map, Clif.AbiParam.tys] using e
   have hres : ∀ (u : Arm.ArmState) (kk : Nat) (Y : BitVec 64 → Prop) (G : BitVec 64 → Prop),
       ActRet (Arm.r .PC u + 4) Y G us outs wf (enterAt (L.A h) u)
         (runX (L.mach (M - 1) h) kk (enterAt (L.A h) u)) →
-      ∀ j (hj : j < (sigRets h.sig).length),
+      ∀ j (hj : j < h.sig.returns.length),
         regVal (Arm.set_program (runX (L.mach (M - 1) h) kk (enterAt (L.A h) u)) u.program)
           (.x j) = outs[j]'(by omega) := by
     intro u kk Y G hr j hj
@@ -3705,7 +3804,7 @@ theorem progX_ni (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 <
     have hus_j : us[j]? = some ((us[j]'hju).1, Reg.x j) := by
       have := congrArg (·[j]?) hus
       simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some, Option.some.injEq] at this
+        Option.map_some, Option.some.injEq, retX_lt (by omega : j < rvals.length)] at this
       rw [List.getElem?_eq_getElem hju, ← this]
     rw [regVal_set_program, hr.regs j _ _ _ hus_j (List.getElem?_eq_getElem _)]
   refine ⟨?_, ?_⟩
@@ -3741,7 +3840,7 @@ theorem progX_ni (hL : L.Ok) [hR : L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 <
 the linking needs it): the base externs' (`baseNI`), and for a function of `P` that `g` declares
 `progX_ni` (a direct call has the arguments in the callee's ABI, its declaration having the
 callee's signature, `declSig`; an indirect call's callee takes register arguments, `indSig`). -/
-theorem xni (hL : L.Ok) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.Thm κ (M - 1))
+theorem xni (hL : L.Ok) [L.CrunOk] (hN : L.NeedNI) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F : BitVec 64 → Prop}
     (himgF : ∀ a, L.Img a → F a) (c : BitVec 64) :
     XNI F L.syms (g.externs.map (·.2)) (indSigs g) c
@@ -3797,7 +3896,8 @@ theorem xni (hL : L.Ok) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.T
         exact ⟨argsAt_of_tyMatch habi hmatch hb hb8 hvl h1, argsAt_of_tyMatch habi hmatch hb hb8 hvl h2⟩
     rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, u, rfl, hu⟩
     · rw [L.X_prog hpf] at hx hx'
-      exact L.progX_ni hL hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit hGo hx hx'
+      exact L.progX_ni hL hN ih hg hh hcallee (hκ.2 _ h hh) himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw
+        hinit hGo hx hx'
     · have hs : symCallee L.Xb L.P (lo64 u) = some h := by
         show L.P.funcs.find? (fun h' => L.Xb.sym h'.name 0 == lo64 u) = some h
         rw [hu]; exact (L.find_sym hL h.name).1 h hpf
@@ -3805,8 +3905,8 @@ theorem xni (hL : L.Ok) [L.CrunOk] (hN : L.NeedNI) {M : Nat} (ih : 0 < M → L.T
       split at hx
       · rename_i hif
         rw [if_pos hif] at hx'
-        exact L.progX_ni hL hN ih hg hh hcallee himgF hFZ hsw hm hm' hAA.1 hAA.2 hplw hinit hGo hx
-          hx'
+        exact L.progX_ni hL hN ih hg hh hcallee (hκ.2 _ h hh) himgF hFZ hsw hm hm' hAA.1 hAA.2
+          hplw hinit hGo hx hx'
       · cases hx
 
 /-- The TLSDESC flags of an activation's external semantics are the base's. -/
@@ -4031,7 +4131,7 @@ theorem thm_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < M 
       fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipeline hc ht) F (κ M g)), hME.body⟩
   refine ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, fun G ra s hME => hall (L.hooks M) G
     (L.A g).base ra s (hAE G ra s w₀ hME), fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
-  exact hni (L.xni hL hN ih hg hWE.img (spv w₀)) (L.xTls hL hN) D w₀' hrel' hsw hreg hstk
+  exact hni (L.xni hL hN hκ ih hg hWE.img (spv w₀)) (L.xTls hL hN) D w₀' hrel' hsw hreg hstk
     (L.hooks M) G
     (L.A g).base ra s (hAE G ra s w₀' hME)
 
@@ -4127,7 +4227,7 @@ theorem backend_correct_program_core (L : LinkSys) (hL : L.Ok) [L.CrunOk]
   have hWE : L.WorldEntry κ M f L.F args cs w₀ := by
     refine ⟨hcs, ⟨hrel, rfl, ?_⟩, ?_, ?_, ?_, ?_, hL.imgF, hpl⟩
     · rw [hbe.other .ERR (by simp [Masked]) (by simp) (by simp)]; exact hent.err
-    · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm k hk hk' => ?_
+    · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs (fun off v hm k hk hk' => ?_) hres
       rw [hF] at hk'
       rcases hk' with hw | hi
       · exact stackArgsAvoid_frameW_pipeline hc hres hent hargs off v hm k hk hw

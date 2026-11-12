@@ -110,9 +110,14 @@ Conclusion: `ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel 
 
 The ABI facts are the compiler's (`FV/Backend/Isel.lean`, differentially tested against
 Cranelift): an `sret` parameter is passed in x8 and does not take a slot of x0..x7
-(`sigArgLocs`); a signature with an `sret` parameter and no returns returns the pointer in x0
-(`sigRets`); `lowerFunction` appends the entry block's `sret` parameter to every `return`
-(`sretRet`, `abiTerm`); a call of an `sret` callee places the pointer in x8 and defines x0.
+(`sigArgLocs`); a signature with an `sret` parameter and no returns returns the pointer in x8
+(`sigRets`, `retX`, `retRegsK`: Cranelift's aarch64 `compute_arg_locs` gives the `StructReturn`
+return x8, `isa/aarch64/abi.rs:255-270`, `machinst/abi.rs:902` in cranelift-codegen 0.135.0;
+until #587 the backend moved it to x0 with a `mov x0, x8` Cranelift does not emit);
+`lowerFunction` appends the entry block's `sret` parameter to every `return` (`sretRet`,
+`abiTerm`); a call of an `sret` callee places the pointer in x8 and defines only the declared
+returns (none: `gen_call_output`, `tryRegsOf`, as Cranelift's `gen_call_rets` skips the
+`StructReturn` return, `machinst/abi.rs:1991`).
 The proof covers them as follows.
 
 * **Scope** `InSubset.abiSigs`: `sigAbiOk` of `f`'s signature and of every extern's — `normal`
@@ -128,16 +133,19 @@ The proof covers them as follows.
 * **Return**: `LowerShape`/`lowerCheck` lower `abiTerm f B.term`; the certificate makes the
   appended `sret` value available at every `return` (`Cert.term`), so the `rets` returns the
   CLIF values followed by the pointer. The driver's and the layer statements' return clause is
+  `RetPins vals us` (the CLIF values in x0.., the ABI returns after them in x8, `retX`) and
   `PrefixHold vals outs` (the CLIF values are the first ABI returns); the conclusion
   `ArmRefines` is unchanged (CLIF return values in x0.., memory), so for an `sret` function it
   claims the memory the function wrote through the pointer, not the value of x0.
-* **Return register** (S7, #31, `agent/abi-s7`): `E2E.backend_correct_final_abi`
+* **Return register** (S7, #31, `agent/abi-s7`; restated for #587): `E2E.backend_correct_final_abi`
   (`FV/E2E/SretReturn.lean`) has `backend_correct_final`'s premises plus `sretStableB f`
-  and the conclusion `ArmRefinesAbi … (sretArg f args)`: on a return, x0.. hold `vals ++
-  sretArg f args` (`sretArg`: the `sret` argument when `sigRets` returns the pointer, else
+  and the conclusion `ArmRefinesAbi … (sretArg f args)`: on a return, x0.. hold `vals` and x8
+  holds `sretArg f args` (`sretArg`: the `sret` argument when `sigRets` returns the pointer, else
   nothing; `ArmRefinesAbi.armRefines` gives back `ArmRefines`). `backend_correct_final_sret`:
-  for a function with an `sret` parameter `i` and no returns, x0 holds `args[i]` (the pointer
-  the caller passed in x8; `vals = []` by `runLoop_returned_tys_entry`). The chain: `term_step_abi`
+  for a function with an `sret` parameter `i` and no returns, x8 holds `args[i]` (the pointer
+  the caller passed in x8). Both keep their names; until #587 they said x0, which was true of
+  the backend's `mov x0, x8` and became false when the compiler stopped emitting it to match
+  Cranelift. (`vals = []` by `runLoop_returned_tys_entry`.) The chain: `term_step_abi`
   (the return's use values hold `vals ++ sv`, `sv` the frame's `sretRet f` values, `AllHold`),
   `sim_run_abi`/`driver_correct_abi` (`RunOkAbi Q`: `sv` satisfies any `Q` that holds of
   `sretRet f` in every reachable state; `term_step`, `sim_run`, `driver_correct` are the
@@ -157,7 +165,7 @@ The proof covers them as follows.
   its `_abi` copies (`FV/E2E/SretReturnCleanup.lean`: `backend_correct_final_cleanup_abi`,
   `backend_correct_final_cleanup_sret`, witness `SretReturnCleanup.sw_returns_sret_cleanup`),
   and so has the typed chain (`FV/E2E/SretReturnT.lean`: `ArmRefinesTAbi`, each value of
-  `vals ++ sretArg f args` in the return register of its class in the combined list;
+  `vals` in the return register of its class, each of `sretArg f args` in x8;
   `backend_correct_finalT_abi`, `backend_correct_finalT_sret` for an integer `sret` parameter;
   driver `term_stepT_abi`/`sim_runT_abi`/`driver_correctT_abi`, `term_stepT`/`sim_runT`/
   `driver_correctT` the corollaries; witness `SretReturnWitness.sw_returns_sretT`).
@@ -170,9 +178,9 @@ The proof covers them as follows.
   strengthened: its return branch applies `backend_correct_world_pipeline_abi` to `f` with the
   callee contracts of the unchanged linked induction (`LinkSys.thm` at depth `M - 1`), so a
   compiled callee's contract still claims only its CLIF results (a Lean-compiled caller never
-  reads x0 after an `sret` call). `sret_reach` holds for the per-activation run on `P.bare`
+  reads x8 after an `sret` call). `sret_reach` holds for the per-activation run on `P.bare`
   (no program functions, every call an extern). Witness: `Link.DeadCleanup.SretWitness
-  .exec_returns_sret` (`function %s(i64 sret)` compiled by `compileExeU`, x0 = the pointer).
+  .exec_returns_sret` (`function %s(i64 sret)` compiled by `compileExeU`, x8 = the pointer).
   Over the mid-end: `backend_correct_opt_abi`/`backend_correct_opt_proven_abi`
   (`FV/E2E/SretReturnOpt.lean`; premise `sretStableB (Opt.optimize f cfg)`, the optimiser keeps
   the signature so `sretArg` is the source's; witness `SretReturnWitness.sw_opt_abi`). Through
@@ -186,10 +194,10 @@ The proof covers them as follows.
   *With unwinding* (`agent/AbiS7d-unw`, `FV/E2E/SretReturnUnwind.lean`):
   `E2E.backend_correct_final_unwind_abi` (and `_ex_abi` for `CompiledA`) has
   `backend_correct_final_unwind`'s premises plus `sretStableXB f` and the conclusion
-  `ArmRefinesUAbi … (sretArg f args) (Clif.runLoopX …)` (returns: x0.. hold `vals ++ sretArg f
-  args`; traps and exceptions as `ArmRefinesU`, `ArmRefinesUAbi.armRefinesU`);
+  `ArmRefinesUAbi … (sretArg f args) (Clif.runLoopX …)` (returns: x0.. hold `vals`, x8 holds
+  `sretArg f args`; traps and exceptions as `ArmRefinesU`, `ArmRefinesUAbi.armRefinesU`);
   `backend_correct_final_unwind_sret`: for an `sret` parameter `i` and no returns, a returned run
-  with unwinding leaves `args[i]` in x0 (`vals = []` by `runLoopX_returned_tys_entry`). Chain:
+  with unwinding leaves `args[i]` in x8 (`vals = []` by `runLoopX_returned_tys_entry`). Chain:
   `sim_runX_abi`/`driver_correctU_abi` (`RunOkUAbi Q`, `FV/Backend/Proof/LowerSimUAbi.lean`),
   `IselSimUAbi`, `iselSimUAbi_of_driver`, `iselSimU_final_abi`,
   `backend_correct_of_layersU_ex_abi`. A caught exception continues at a `try_call`'s handler
@@ -203,10 +211,10 @@ The proof covers them as follows.
 * **Calls**: `gen_call_args` puts argument `i` at `(locsOf sig)[i]`: a register (with at most 8
   parameters `x (abiArgIdx …)[i]`, `sigArgLocs_regs`) or a store to `[sp + off]` of the outgoing
   area (`argStores_run`); `gen_call_output` allocates one def per
-  `sigRets` entry. `CallsRefine`/`XCallsOk` are stated for the declared externs (`exts :=
-  f.externs.map (·.2)`) with `ds.length = (sigRets ext.sig).length` defs, `outs.length =
-  ds.length` and `PrefixHold rvals outs`; an `sret` call has no CLIF result (`CtxInv.resTys`),
-  so its extra def is not related to anything (`results_call`). `ExternsNormal` is gone
+  declared return (#587: as Cranelift's `gen_call_rets`, an `sret` callee's struct pointer gets no
+  def). `CallsRefine`/`XCallsOk` are stated for the declared externs (`exts :=
+  f.externs.map (·.2)`) with `ds.length = ext.sig.returns.length` defs, `outs.length =
+  ds.length` and `PrefixHold rvals outs`. `ExternsNormal` is gone
   (`CallRuleOk` assumes `ExternsIn f exts`).
 
 ### Typed ABI placement (`f32`/`f64`, S11e2/S11e3/S11e5a)
@@ -392,14 +400,18 @@ the `retN`/value arguments).
   * the tables the unwinder reads, taken as the emitted ones: `T.lsda` from `callSites`, the CIE
     `cieInsns` and the FDE rows `unwindRows` (S10f discharges these from the linked bytes);
   * the decidable checks `savedCheck` (the callee-save slots hold the entry values at every
-    call), `lastCallsOk` (the call-site bridge), `padsNonzeroB` (landing pads at non-zero
-    offsets);
+    call) and `padsNonzeroB` (landing pads at non-zero offsets); the `_any` variants
+    (`backend_correct_final_cleanup_unwind_any`, `backend_correct_final_unwind_any`, and the
+    `_any` variants of the legal/opt/sret/linked theorems below) need no check on the calls of
+    the last block (#622: the call-site bridge `siteAt_any` holds for every block since #553);
+    the theorems without the suffix keep the former check `lastCallsOk` as a premise and are
+    their corollaries. `lean-backend` cites the `_any` theorems and no longer runs `lastCallsOk`.
   * `TrapsExplicitX` for the runs with unwinding.
 
   Trusted by design, like std: the model of the Itanium unwinder and of the personality routine
   (`FV/Unw/Model.lean`: `Unw.unwindAt`, `Unw.personality`, `Unw.restore`), and the decoding of
   the emitted tables as that model reads them. With `XRaise.none`/`Unw.UnwHooks.none` the theorem
-  specialises to the normal-return shape (`E2E.backend_correct_final_of_unwind`). `lean-backend`
+  specialises to the normal-return shape (`E2E.backend_correct_final_of_unwind_any`). `lean-backend`
   labels a function whose checks pass `compiled, verified`. A function failing a check keeps
   `compiled, verified for normal returns (…; unwinding check failed: <check>)`. So does a
   function compiled with `--opt` with unproven rule sets (no unwinding theorem composes them),
@@ -561,6 +573,22 @@ the `retN`/value arguments).
   handlers' labels are CFG successors (`cfg_spec`) and none is the entry block (`EdgesOk.entry`,
   `preds_empty`). Corollaries `callSites_complete_input`, `padsNonzero_complete_input`; witness
   `Witness.tryInfoOk_applies`/`input_applies` (`FV/Link/UnwTryInWitness.lean`, on `tc`).
+  **Landing pads through `MachBuffer`'s aliases (#553)**: `callSites`/`padsNonzeroB` resolve a
+  handler's label through the emitter's block-label aliases `fa.alias` (`siteLabs`), so a
+  handler forwarding to the entry block would get pad offset 0. The generic
+  `padsNonzero_complete` (any `vc`) therefore takes the decidable `aliasEntryOkB af fa` (no alias
+  resolves to the entry block); `padsNonzero_complete_of` takes the weaker fact that no alias of
+  another label does. On the pipeline's output that fact is a theorem: `alias_ne_entry` (every
+  alias passes `aliasOk`; line 0 of the plan is the entry label followed by the prologue, so it
+  represents only the entry and the blocks forwarding to it) with `fwd_ne_entry_stage` (no
+  block forwards to the entry; `fwd_ne_entry_input` is the same for `prune vc`, before #843's
+  `cleanupStage`: a forwarding block's `jump` is its prepared block's last
+  instruction — `TargetsLast` from the ISLE runs, `vc_emit`/`prep_emit`, which needs
+  `extendsWidenB` — hence a CFG successor, and `lowerRFunc`'s `ctlCheck` excludes the entry).
+  So `padsNonzero_complete_input` takes `extendsWidenB f` (part of `fnScopeB` and of every input
+  scope) instead of a check on the compiled code, and `unwCondB`/`unwCondInB` have no alias
+  condition. Witnesses `Witness.fwd_applies`/`aliasNoEntry_applies`/`padsNonzero_of_applies`.
+  `lake exe lean-link` still reports `aliasEntryOkB` per executable (report only).
   **`unwCheck` from the input** (`FV/Link/UnwCheckIn.lean`): `unwCheck_complete` — on input in
   `Dominated`/`LowerScope` with `tryTablesB` and **`tryRetsB f`** (every `try_call` signature has
   at most two ABI returns, so the call defines x0 and x1 only, as `tryUOk` requires; decidable on
@@ -587,8 +615,8 @@ the `retN`/value arguments).
   wraps it. No frame condition is left (the former `saveFrameB`/`leadOkB` are deleted).
   Witness `Witness.savedCheck_applies`/`unwindRows_frame_applies`/`unwindRows_applies`.
   **What is left, collected** (`FV/Link/UnwFnIn.lean`): `unwCondB g a` = the input condition
-  `tryTablesB`, code below 4 GiB, and the two checks
-  without a completeness proof yet, `unwCheck` and `lastCallsOk`; `fnUnwB_of_pipe` (a function
+  `tryTablesB`, code below 4 GiB, and the check without a completeness proof here, `unwCheck`
+  (`lastCallsOk` is no longer needed since #622); `fnUnwB_of_pipe` (a function
   of `fnScopeB` whose cleanup pipeline succeeded, any allocator answer, passes `fnUnwB`) and
   `unwFnsB_of_conds` (on an `InScopeIn` input, `unwCondsB` of the compiled functions gives
   `unwFnsB`). **Totality with unwinding on `lean-ld`'s inputs** (`FV/Link/ExeULdIn.lean`):
@@ -606,7 +634,7 @@ the `retN`/value arguments).
   #479, `examples/bigframe-unwind`); Cranelift's frame pushes them under the frame record, so
   the limit is gone.
   **Without `unwCheck`** (`FV/Link/UnwCondIn.lean`): `unwCondInB g a` =
-  `tryTablesB`, `tryRetsB`, `lastCallsOk`, code below 4 GiB;
+  `tryTablesB`, `tryRetsB`, code below 4 GiB;
   `Link.EhCheck.Complete.unwCondB_of_in` (by `unwCheck_complete`),
   `unwCondsB_of_in` (`InScopeIn` lift), `Link.DeadCleanup.compileExeU_total_ldCond`; witness
   `ULdCondWitness.compileExeU_total_ldCond_witness`. Measured (debug, panic=unwind,
@@ -2801,7 +2829,8 @@ not `I.resultsCleanup`. `link-check` then evaluates `staticChksWithTS` (the per-
 of `okRWithTS`, `FV/E2E/SemanticPipelineCheckT.lean`): per function either the Stock validator
 (`Compile.functionE`, no `sret`, `SemanticNI.check`) or the typed validators on `lowerFunction`'s
 output (`lowersToB`: `lowerFunction g = .ok vc` decided; `lowerCheckT`/`lowerCheckTCF`); an `sret`
-function is in subset E with `lowerCheck`, or every return of its code is in x0.. (`retsXB`,
+function is in subset E with `lowerCheck`, or every return of its code is in its `retX` register
+(x0.. for the declared returns, x8 for the struct pointer, #587; `retsXB`,
 `RetsX`). It is used when these accept every function the integer validators reject and the
 executable holds `R0I`'s code (`artB`, or `lowersToB` where the Stock lowering fails), and prints
 `checker: typed Stock (okRWithTS)`; the theorem is
@@ -3571,7 +3600,7 @@ the `try_call_indirect` statements `TryIndRulesCorrect`, `TryIndUnmatchable` (of
 | --- | --- | --- |
 | `LowerRulesCorrect program`, `ExcludedUnmatchable program` (every closure root rule of `lower` other than the call rules 1031/1032 is correct on statements; the others never match) | M4 (`IselContract.lean`) | `LowerRulesCorrect`: stated, rules proven family by family (M4AluA/B, M4Cmp, M4Ctl); `ExcludedUnmatchable program`: **proven** (`excludedUnmatchable`, M4Excl, `backend-proof.md` "Excluded root rules") |
 | `CallRulesCorrect program` (call rules 1031 `bl`, 1032 GOT + `blr`, under `CallsRefine`, for `CallRegArgs f`) | M4 (M4Ctl) | stated (contract change #5) |
-| `CallsRefine (F s) env exts MR (sem s)` (callee contract at the VCode level: `loadExtNameGot` loads `sym n`; a call of a declared extern `ext ∈ exts` with ≤ 8 arguments and one def per `sigRets ext.sig` returns one value per def, the first ones its results, and a world related to the extern's memory) | M6 (`csem` from `CalleeSound` + `ExtSem.sym`) | **proven** for `csem` from `XCallsOk` (`callsRefine_csem`) |
+| `CallsRefine (F s) env exts MR (sem s)` (callee contract at the VCode level: `loadExtNameGot` loads `sym n`; a call of a declared extern `ext ∈ exts` with ≤ 8 arguments and one def per declared return (`ext.sig.returns`) returns one value per def, the first ones its results, and a world related to the extern's memory) | M6 (`csem` from `CalleeSound` + `ExtSem.sym`) | **proven** for `csem` from `XCallsOk` (`callsRefine_csem`) |
 | `TermCalls (sem s) MR` (every terminator call `lowerFunction` makes satisfies `LowerTermOk`) | M4, via `termCalls_of_rules` | **proven** from `LowerTermRulesCorrect` (rules 964 `trap`, 1037 `return` of `lower`: `LowerTermRuleOk`), `TermUnmatchable` (other `lower` rules never match a `return`/`trap`), `BranchRulesCorrect` (`BranchRuleOk`, now with `CtxInv`/`ValsBelow`/first-match premises), `BranchExcludedUnmatchable`; these four are M4's open obligations (`backend_correct_of_rules`) |
 | `RegLevelCorrect sem F astep vcp af fb` (VCode returns/traps from the body-entry world ⇒ Arm returns/traps, forward) | M6 + M5 (`M6Rest2`) | placeholder with the agreed content (`BodyEntry`, per-activation `sem`) |
 | `Refines (F s) (sem s)` (the VCode semantics refines M4's `ispec`, every control) | M6 (`csem` characterization lemmas) | **proven** for `csem` (`refines_csem`, M6Refines) |
@@ -3955,6 +3984,11 @@ to a far block/trap label becomes `b.!c .+8; b T` (`Lbl.skip` = `pc + 8`). The s
 `reach_rcb` runs a conditional branch in either form (1 or 2 steps), `step_skip` the inverted
 branch, `reach_cb`/`reach_b`/`jt_machine`/the `trapIf` proofs are restated on it; `Line.plain`
 now excludes every conditional branch (so plain lines are not relaxed, `relaxLines_plain`).
+*Since #553* `emitPre` is the emission plan's lines (`emitPlan`: Cranelift's block order and
+`MachBuffer`'s branch simplification, `encoder.md`), and in `Q = Qs ∨ QE` `Qs` places the
+remaining lines via the block's segment of the plan (`segX`): `relaxLines R.far (X ++ x.2.1)` (the items'
+lines but the last instruction's, then the segment's final lines), then the lines from the one
+after the segment on; `ftList`, `reach_cb`/`reach_b` are gone (`reach_jumpX`/`reach_condX`).
 
 ```lean
 theorem Backend.relaxOf_fixpoint (pre : List Line) : farTargets (relaxLines (relaxOf pre) pre) = []
@@ -4004,7 +4038,8 @@ For the spill allocation's code (`lowerRFunc vcp (spillAlloc vcp) = .ok af`):
 (labels defined once — block labels distinct from `prepare`, trap/jt/loop counters — and every
 used label defined), `emitFunc_spill_encodable` (registers from `spillAccepted`'s checker facts;
 immediates from `immsOkB`), `emitFunc_spill_near` (`NearOk`: the atomic loops and jump tables are
-blocks of ≤ 8 lines that `fallthrough` and relaxation keep together), `emitFunc_spill_size`
+blocks of ≤ 8 lines that the branch simplification — it only touches branches to block labels —
+and relaxation keep together), `emitFunc_spill_size`
 (`fa.size ≤ 8 · rfWords`), combined by `FnAsm.layoutReadyB_of` (the converse of
 `layoutReadyB_sound`) into `emitReady_spill`.
 
@@ -4811,6 +4846,50 @@ include regalloc-chosen values outside the world (earlier callees' register save
 per-function theorem first needs a call semantics indexed by the actual run, threaded through the
 reg-level simulation; new theorem variants will sit beside the existing ones. The heap-side gap
 (allocating externs) is separate: [#547](https://github.com/eth-act/clifv/issues/547) (SEM2).
+
+## Stack probes (unrolled form, #581)
+
+The prologue now emits Cranelift's unrolled stack probes for frames with
+`probeTotal = frameSize (+16 if the function calls)` in [4 KiB, 16 KiB) (`probeLines`,
+docs/contracts/backend.md). Each probe stores 4 zero bytes at `sp₁ - 4096·i` (`sp₁` the `sp`
+after the frame setup), below the frame by up to `probeBelow af` bytes. Statement changes, each
+because the old statement became false with probes (names kept):
+
+* `BodyEntry.mem : w₀.mem = probeMem af s` (was `= s.mem`): the probed bytes are 0 at body
+  entry and can lie in CLIF stack slots. Identical for a function without probes
+  (`probeMem_of_count`).
+* `StackAvail K af s := StackRoom (af.frameSize + 16 + K) s ∧ probeBelow af ≤ K` (the callees'
+  budget covers the probed bytes; `StackAvail.room`/`.frame`/`.probe`/`.of_room`).
+* The program-level budgets: the outside caller provides `frameDrop + (D * M + pbMax)` (peak:
+  `D * d + pbMax`) bytes of stack instead of `frameDrop + D * M`; `pbMax` is the largest
+  `probeBelow` of the program's functions (0 for programs without probing frames). This touches
+  the `_depth`/`_peak`/trap/source theorems of `Link`, `Link.DeadCleanup`, the typed `attemptT`
+  route and `E2E.binary_correct_*`.
+* `OutsideCall.bytes`/`EntryContract.ClifView.bytes`: CLIF slot bytes are read from the
+  post-probe memory (`probeMem (art I f).af r`); `OutsideCall.image` gets the premise that the
+  byte is not probed. `premises*` conclude `StackRoom (frameSize + 16 + K)`.
+* Linking: `LinkSys.Budget κ` also requires `probeBelow (L.A g).af ≤ κ M g` (`budget_K` gives
+  it for `κ = K M`); the machine-side slot-byte tables read `probeMem`. Concurrency:
+  `LinkOk(X).fn` bounds `frameSize + 16 + probeBelow ≤ Mx`.
+* Return pins (the generic `_return_pins` route, files `FV/E2E/LinkReturnPin*`,
+  `ReturnPin*`, `BinaryBoundary*`, `Sret*`, `FV/Link/ReturnPinExe*With`): the same changes as
+  their `_semantic` counterparts. `E2E.ReturnPinBinary.binary_correct_depth`/`_depthX`/`_peakX`,
+  `E2E.ReturnPinExecBytes.runGood_sysS_depth`/`_peak`, `binary_correct_exec_depth_proven`/
+  `_peak_proven` and `Link.ReturnPinCompilerWith.attempt_correct_depth`/`_peak`/`_source_peak`:
+  the stack is `frameDrop + (D * M + pbMax)` (was `frameDrop + D * M`).
+  `E2E.BinaryBoundaryFacts.premises` and `E2E.ReturnPinExecBytes.sysS_entry` conclude
+  `StackRoom (frameSize + 16 + K)` (was `StackAvail`). The generic lemmas
+  (`progCall_return_pins`, `progCallG_return_pins`, `progX_ni_return_pins`, `xni_return_pins`,
+  `progGoodCore_return_pins`, `callGood_return_pins`, `runGood_of_trace_return_pins`, …) gained
+  the premises `hpb`/`hκ` (the budget covers `probeBelow`), and `budget_K_return_pins` proves
+  both parts of `Budget`. The fixture of the three return-pin witnesses has no probes:
+  `E2E.ReturnPinBinaryWitness.pbMax_zero : pbMax (original cleanup) = 0`.
+* `Link.TypedCompilerWith.attempt_correct_depth`/`_peak`/`_source_peak` (#892's typed compile
+  modes): the stack is `frameDrop + (D * M + pbMax)` (was `frameDrop + D * M`), as their
+  `SemanticCompilerWith` counterparts.
+
+Frames of 16 KiB and more (Cranelift's `StackProbeLoop`) still get no probes; that form is a
+separate change.
 
 ## Remaining (precise)
 

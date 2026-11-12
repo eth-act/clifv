@@ -48,8 +48,9 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {MRW : MemRelTW W}
 
 /-- **`try_call`/`try_call_indirect` step, counted, for a family** (`term_step_tryP`'s proof for
-`sem n`, the run lifted to `ISem.counted sem`: one VCode call, the counter `n` to `n + 1`). -/
-theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
+`sem n`, the run lifted to `ISem.counted sem`: one VCode call, the counter `n` to `n + 1`), in the
+terminator's zone. -/
+theorem term_step_tryGP (hni : NoncallIndep sem) {n : Nat}
     (H : DriverHyp f vc ctx st0 R gn bl A (sem n) MRW env p) (htc : TryCallsOne f)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MRW slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
@@ -61,7 +62,8 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
       (s'.frame.body = [] ∧ ∃ bc, s'.frame.term = .jump bc) ∧
       (∀ c, Clif.step env p s' ≠ .trapped c) ∧ (∀ vals cm, Clif.step env p s' ≠ .done vals cm) ∧
       ∀ s'', Clif.step env p s' = .next s'' →
-        ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
+        ∃ b' k' ρ' w', StarP (VStep vc (ISem.counted sem)) (TermZone vc b k)
+          (.run ⟨b, k, ρ, (w, n)⟩)
           (.run ⟨b', k', ρ', (w', n + 1)⟩) ∧
           Match f ctx R gn bl A MRW slots s'' ⟨b', k', ρ', w'⟩ := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
@@ -183,8 +185,8 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
   obtain ⟨-, hregsEq, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc hexn) hregs
   obtain ⟨pre, ci', hms, hpre, hcd⟩ := hok.shape
   have hmono : T.st1.nextVreg ≤ L.tst'.nextVreg := hok.mono
-  have hmax1 : (sigRets T.sig).length ≤ max (sigRets T.sig).length 2 := Nat.le_max_left _ _
-  have hmax2 : 2 ≤ max (sigRets T.sig).length 2 := Nat.le_max_right _ _
+  have hmax1 : T.sig.returns.length ≤ max T.sig.returns.length 2 := Nat.le_max_left _ _
+  have hmax2 : 2 ≤ max T.sig.returns.length 2 := Nat.le_max_right _ _
   have hfix : tryFix T.info L.tst'.emitted.toList = pre ++ [.tryCall ci' T.info] := by
     rw [hms, tryFix_append]
   have hargsA : ∀ y ∈ instArgs ci, y ∈ A b B.body.length := fun y hy => htA y (hciA y hy)
@@ -280,6 +282,8 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
   rw [hsr'] at hsrI
   simp only [Option.map_some, SeqEnd.liftW, htk, Nat.add_zero, MInst.isCallI] at hsrI
   obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_starP hvb hsegat hsrI
+  replace hstar := hstar.mono (Q := TermZone vc b (pos f R bl b B.body.length)) (by
+    rintro c ⟨i, -, ρ', w', rfl⟩; exact .inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩)
   have hK : pos f R bl b B.body.length + pre.length + 1 = vb.insts.size := by
     rw [hsize]; simp only [List.length_map, List.length_append, List.length_singleton]; omega
   have hback : vb.insts.back? = some ((MInst.tryCall ci' T.info).mapRegs R) := by
@@ -355,8 +359,7 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
         exact hh
       | ret ii =>
         have hii : ii < T.sig.returns.length := hargsOk _ htam
-        have hiN : ii < (sigRets T.sig).length :=
-          Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
+        have hiN : ii < T.sig.returns.length := hii
         have hvi : regs' (f.freshValue + ii) = some rvals[ii] :=
           setMany_nodup hset (List.Pairwise.map _ (fun a b h e => h (Nat.add_left_cancel e)) List.nodup_range) ii _ _
             (by simp [List.getElem?_map, hii]) (List.getElem?_eq_getElem (by omega))
@@ -392,7 +395,7 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
     | val v => simp [normArgReg, tryArgNum, H.shape.ren.vreg]
     | ret ii =>
       have hii : ii < T.sig.returns.length := hargsOk _ ha
-      have hiN : ii < (sigRets T.sig).length := Nat.lt_of_lt_of_le hii (returns_le_sigRets _)
+      have hiN : ii < T.sig.returns.length := hii
       have hg : gn (L.tst.nextVreg + ii) = L.tst.nextVreg + ii := H.shape.temps _ (by omega)
       simp [normArgReg, tryArgNum, hregsEq, hiN, H.shape.ren.vreg, hg]
     | exn _ => exact absurd (hargsOk _ ha) id
@@ -411,7 +414,32 @@ theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
     refine VStep.step heb (by rw [hebi]; rfl) (i := .jump tl) (ops := #[]) rfl
       hjump rfl (VNext.goto (by rw [hebi]; rfl) ?_ henv2)
     rw [succOf_eq H.shape.labels hcfg heb hebback]; rfl
-  exact ⟨_, _, _, _, hstar.star.trans (.step hstep1 (.single hstep2)), hM⟩
+  exact ⟨_, _, _, _, hstar.trans (.step (.inl ⟨_, _, _, rfl, Nat.le_add_right _ _⟩) hstep1
+    (StarP.single (.inr ⟨_, _, _, eb, tl, rfl, heb, hebi⟩) hstep2)), hM⟩
+
+/-- **`try_call`/`try_call_indirect` step, counted, for a family** (`term_step_tryGP` without
+the zone). -/
+theorem term_step_tryG (hni : NoncallIndep sem) {n : Nat}
+    (H : DriverHyp f vc ctx st0 R gn bl A (sem n) MRW env p) (htc : TryCallsOne f)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MRW slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    {et : Clif.ExnTable} (hT : IsTryWith s.frame.term et)
+    (hind : ∀ callee args, s.frame.term = .tryCallIndirect callee args et → ∀ cv,
+      s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) :
+    (∀ vals cm, Clif.step env p s ≠ .done vals cm) ∧
+    ∀ s', Clif.step env p s = .next s' →
+      (s'.frame.body = [] ∧ ∃ bc, s'.frame.term = .jump bc) ∧
+      (∀ c, Clif.step env p s' ≠ .trapped c) ∧ (∀ vals cm, Clif.step env p s' ≠ .done vals cm) ∧
+      ∀ s'', Clif.step env p s' = .next s'' →
+        ∃ b' k' ρ' w', Star (VStep vc (ISem.counted sem)) (.run ⟨b, k, ρ, (w, n)⟩)
+          (.run ⟨b', k', ρ', (w', n + 1)⟩) ∧
+          Match f ctx R gn bl A MRW slots s'' ⟨b', k', ρ', w'⟩ := by
+  obtain ⟨T1, T2⟩ := term_step_tryGP hni H htc hm hbody hT hind
+  refine ⟨T1, fun s' hs => ?_⟩
+  obtain ⟨N0, N1, N2, N3⟩ := T2 s' hs
+  refine ⟨N0, N1, N2, fun s'' hs' => ?_⟩
+  obtain ⟨b', k', ρ', w', h1, h2⟩ := N3 s'' hs'
+  exact ⟨b', k', ρ', w', h1.star, h2⟩
 
 /-- **Whole runs, counted, for a family**: from matching states at CLIF call count `n`, every
 CLIF outcome is realised by the counted VCode run from counter `n` (call number `n` with
@@ -606,7 +634,7 @@ theorem iselSim_relWI {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp :
     (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicit env p cs) (fuel : Nat) :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VRetFrom vc (csemI F ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w.1) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       VTrapFrom vc (csemI F ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩ c') := by

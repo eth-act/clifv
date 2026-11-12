@@ -238,7 +238,7 @@ theorem sameInst_facts' {W : Type} {sem : ISem CV W} (hds : DriverSemG sem) {i i
 theorem keptOk_succ_size {ss : Array (Array Nat)} {b b' : Nat} (h : keptOk vc vcp ss ss' b b' = true)
     {sb sb' : Array Nat} (hsb : ss[b]? = some sb) (hsb' : ss'[b']? = some sb') :
     sb'.size = sb.size := by
-  unfold keptOk at h
+  unfold Driver.keptOk at h
   split at h
   · simp only [Bool.and_eq_true, decide_eq_true_eq] at h
     obtain ⟨-, hsucc⟩ := h

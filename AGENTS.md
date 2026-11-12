@@ -21,7 +21,9 @@ agents must follow this discipline.
     miss. CI measures it on every PR and main push and comments on the PR.
     See `docs/STOCK-COMPILER-COMPARISON.md`.
   - Crate parity: every function of real Rust crates that cg_clif compiles.
-    Run `scripts/stock-crate-parity.py` (`docs/USAGE.md`); the overview is #557.
+    The full gate measures it on main (fv-demo, survey). For a PR, run
+    `scripts/stock-crate-parity.py` (`docs/USAGE.md`); the cause analysis is #557.
+  - The daily digest (#46) reports both metrics on main, with lost matches.
   - A parity PR reports both results: the CI line "gained N, lost M" and the crate
     counts before and after. It loses no match on either metric. When you choose
     between parity causes, prefer the ones that move both metrics.

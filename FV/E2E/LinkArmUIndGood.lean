@@ -35,7 +35,7 @@ theorem thm_ofGU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) (hN : 
   obtain ⟨rows, hrows⟩ := hU.rows g hg
   obtain ⟨hlsda, hcie, hfde⟩ := Art.tables_eq hsites hrows
   have pipe := fun (htr : TrapsExplicitX (L.envOfX M g (spv w₀)) L.P.bare cs) =>
-    backend_correct_world_pipelineUG (hL.subset g hg) hc (hU.lowerU g hg)
+    backend_correct_world_pipelineUG_any (hL.subset g hg) hc (hU.lowerU g hg)
       (X := L.XU κ M g F) (XR := L.XRU κ M g F) (syms := L.syms)
       (env := L.envOfX M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
       (L.xCallsOkU hL hU hκ ih' hg hWE.img hWE.room hWE.dead hWE.align)
@@ -44,7 +44,7 @@ theorem thm_ofGU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) (hN : 
       (L.xRaiseIndOkU hL hU hκ ih' hg hWE.img hWE.room hWE.dead hWE.align)
       (fun d uses w hx => L.XU_excl hU.baseExcl d uses w hx)
       (fun n b hn => hL.symOk n b hn) rfl (T := (L.A g).tables) hsites hlsda hrows hcie hfde
-      (hU.pads g hg) (hU.last g hg) (hU.saved g hg) hWE.clif hWE.rel hWE.args htr fuel
+      (hU.pads g hg) (hU.saved g hg) hWE.clif hWE.rel hWE.args htr fuel
   have hAE : ∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
       ActEntryU (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G
         (L.XU κ M g F) (L.hooksU M) (L.XRU κ M g F) (L.UU M) (L.A g).base ra s w₀ :=
@@ -64,11 +64,11 @@ theorem thm_ofGU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) (hN : 
     refine ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, fun G ra s hME => ?_,
       fun hNI => absurd hNI hN⟩
     obtain ⟨n, hret, hpt, hnu, htr⟩ := hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s hME)
-    exact ⟨n, hret, hpt, hnu, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+    exact ⟨n, hret, hpt, hnu, L.runGood_of_traceU hL hU hκ ih hg hME htr fun k hno _ =>
       Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actRet hME.abi hret)⟩
   · obtain ⟨n, htrap, htr, hst⟩ := (pipe (L.trapsExplicitX_envOfX hL hU hg hJ htrX)).2.1 c
       ((hrunEq fuel).trans hrun) (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s hME)
-    refine ⟨n, htrap, L.runGood_of_traceU hL hU ih hg hME htr fun k _ hk => ?_⟩
+    refine ⟨n, htrap, L.runGood_of_traceU hL hU hκ ih hg hME htr fun k _ hk => ?_⟩
     refine Nat.lt_of_not_le fun hle => hst (k - n) ?_
     rw [show n + (k - n) + 1 = k + 1 by omega]
     exact hk
@@ -79,7 +79,7 @@ theorem thm_ofGU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) (hN : 
     refine ⟨obj, wf, hex, hmem, fun G ra s hME => ?_, fun hNI => absurd hNI hN⟩
     obtain ⟨n, hu, hpt, hn0, hx, htr⟩ :=
       hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s hME)
-    exact ⟨n, hu, hpt, hn0, hx, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+    exact ⟨n, hu, hpt, hn0, hx, L.runGood_of_traceU hL hU hκ ih hg hME htr fun k hno _ =>
       Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actUnw hME.abi hu)⟩
 
 /-- **The linking statement with unwinding at every depth, with the per-state facts**
@@ -104,7 +104,7 @@ theorem thm_ofUNG (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hκ : L.
   obtain ⟨rows, hrows⟩ := hU.rows g hg
   obtain ⟨hlsda, hcie, hfde⟩ := Art.tables_eq hsites hrows
   have pipe := fun (htr : TrapsExplicitX (L.envOfX M g (spv w₀)) L.P.bare cs) =>
-    backend_correct_world_ni_pipelineUG (hL.subset g hg) hc (hU.lowerU g hg)
+    backend_correct_world_ni_pipelineUG_any (hL.subset g hg) hc (hU.lowerU g hg)
       (X := L.XU κ M g F) (XR := L.XRU κ M g F) (syms := L.syms)
       (env := L.envOfX M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
       (L.xCallsOkU hL hU hκ ih' hg hWE.img hWE.room hWE.dead hWE.align)
@@ -113,7 +113,7 @@ theorem thm_ofUNG (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hκ : L.
       (L.xRaiseIndOkU hL hU hκ ih' hg hWE.img hWE.room hWE.dead hWE.align)
       (fun d uses w hx => L.XU_excl hU.baseExcl d uses w hx)
       (fun n b hn => hL.symOk n b hn) rfl (T := (L.A g).tables) hsites hlsda hrows hcie hfde
-      (hU.pads g hg) (hU.last g hg) (hU.saved g hg) hWE.clif hWE.rel hWE.args htr fuel
+      (hU.pads g hg) (hU.saved g hg) hWE.clif hWE.rel hWE.args htr fuel
   have hAE : ∀ G ra s w₀', L.MachEntry κ M g F G ra s w₀' →
       ActEntryU (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (κ M g) F G
         (L.XU κ M g F) (L.hooksU M) (L.XRU κ M g F) (L.UU M) (L.A g).base ra s w₀' :=
@@ -134,17 +134,17 @@ theorem thm_ofUNG (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hκ : L.
       fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
     · obtain ⟨n, hret, hpt, hnu, htr⟩ :=
         hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME)
-      exact ⟨n, hret, hpt, hnu, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+      exact ⟨n, hret, hpt, hnu, L.runGood_of_traceU hL hU hκ ih hg hME htr fun k hno _ =>
         Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actRet hME.abi hret)⟩
     · obtain ⟨n, hret, hpt, hnu, htr⟩ :=
-        hni (L.xniU hL hU hN ih' hg hWE.img (spv w₀)) (L.xTlsU hL hN)
-          (L.xrniU hL hU hNI hN ih' hg hWE.img (spv w₀)) D w₀' hrel' hsw hreg hstk (L.hooksU M)
+        hni (L.xniU hL hU hN hκ ih' hg hWE.img (spv w₀)) (L.xTlsU hL hN)
+          (L.xrniU hL hU hNI hN hκ ih' hg hWE.img (spv w₀)) D w₀' hrel' hsw hreg hstk (L.hooksU M)
           (L.UU M) G (L.A g).base ra s (hAE G ra s w₀' hME)
-      exact ⟨n, hret, hpt, hnu, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+      exact ⟨n, hret, hpt, hnu, L.runGood_of_traceU hL hU hκ ih hg hME htr fun k hno _ =>
         Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actRet hME.abi hret)⟩
   · obtain ⟨n, htrap, htr, hst⟩ := (pipe (L.trapsExplicitX_envOfX hL hU hg hJ htrX)).2.1 c
       ((hrunEq fuel).trans hrun) (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME)
-    refine ⟨n, htrap, L.runGood_of_traceU hL hU ih hg hME htr fun k _ hk => ?_⟩
+    refine ⟨n, htrap, L.runGood_of_traceU hL hU hκ ih hg hME htr fun k _ hk => ?_⟩
     refine Nat.lt_of_not_le fun hle => hst (k - n) ?_
     rw [show n + (k - n) + 1 = k + 1 by omega]
     exact hk
@@ -156,13 +156,13 @@ theorem thm_ofUNG (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hκ : L.
       fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
     · obtain ⟨n, hu, hpt, hn0, hx, htr⟩ :=
         hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME)
-      exact ⟨n, hu, hpt, hn0, hx, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+      exact ⟨n, hu, hpt, hn0, hx, L.runGood_of_traceU hL hU hκ ih hg hME htr fun k hno _ =>
         Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actUnw hME.abi hu)⟩
     · obtain ⟨n, hu, hpt, hn0, hx, htr⟩ :=
-        hni (L.xniU hL hU hN ih' hg hWE.img (spv w₀)) (L.xTlsU hL hN)
-          (L.xrniU hL hU hNI hN ih' hg hWE.img (spv w₀)) D w₀' hrel' hsw hreg hstk (L.hooksU M)
+        hni (L.xniU hL hU hN hκ ih' hg hWE.img (spv w₀)) (L.xTlsU hL hN)
+          (L.xrniU hL hU hNI hN hκ ih' hg hWE.img (spv w₀)) D w₀' hrel' hsw hreg hstk (L.hooksU M)
           (L.UU M) G (L.A g).base ra s (hAE G ra s w₀' hME)
-      exact ⟨n, hu, hpt, hn0, hx, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+      exact ⟨n, hu, hpt, hn0, hx, L.runGood_of_traceU hL hU hκ ih hg hME htr fun k hno _ =>
         Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actUnw hME.abi hu)⟩
 
 /-- **The linking statement with unwinding at every depth, with the per-state facts**, with

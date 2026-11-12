@@ -43,7 +43,7 @@ def TabUpToE : Nat → Clif.Function → Arm.ArmState → (Nat → Nat → BitVe
           let t := runX (L.mach (M + 1) g) i s
           let j := callsBefore (L.mach (M + 1) g) (L.A g).fa (L.A g).base s i
           (slotted h = 1 → ∀ a, L.SlotByte h (spv t) a →
-            b (k + Clif.sumTo E j + 1) a = t.mem (BitVec.ofNat 64 a)) ∧
+            b (k + Clif.sumTo E j + 1) a = probeMem (L.A h).af t (BitVec.ofNat 64 a)) ∧
           slotted h ≤ E j ∧
           (∀ N', (∀ N'' < N', ¬ RetOf (L.A h) t (runX (L.mach M h) N'' (enterAt (L.A h) t))) →
             (∀ N'' < N', Arm.r .ERR (runX (L.mach M h) N'' (enterAt (L.A h) t)) = .None) →

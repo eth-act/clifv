@@ -16,7 +16,7 @@ def lowerValidated (f : Clif.Function) : Except String VCode :=
     | .ok vc => .ok vc
     | .error _ => MemorySretCopy.lowerValidated f
 
-/-- Retain all published routes and append the checked caller provider as route21. -/
+/-- Retain all published routes and append the checked caller provider as route22. -/
 def lowerRoutes : List (Clif.Function → Except String VCode) :=
   MemorySretCopy.lowerRoutes ++ [lowerValidated]
 

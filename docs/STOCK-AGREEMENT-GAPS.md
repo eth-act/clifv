@@ -6,15 +6,22 @@ the `main` push run 37250037579 (`5863d3a`): of 4,455 stock outputs, 425 match, 
 differ, 1,176 are rejected for a setting and 1,871 for an operation. #50 (repeated
 function names) and #47 (settings) have since changed these counts: 465 match,
 1,145 differ, 432 are rejected for a setting and 2,413 for an operation. The
-analysis below uses the earlier run. To see the current numbers, run the
-breakdown on a comparison output, either local or from a CI artifact
-(`stock-comparison-artifacts-N`, directory `target/ci-comparison`):
+section "Different outputs" uses the earlier run.
+
+The two "Rejected" sections use a newer run: the `main` push run 42181236069
+(`60188b47`, 2026-11-06). Of 4,455 stock outputs, 1,882 match, 115 differ, 563
+are rejected for a setting and 1,895 for an operation. To see the current
+numbers, run the breakdown on a comparison output, either local or from a CI
+artifact (`stock-comparison-artifacts-N`, directory `target/ci-comparison`):
 
 ```sh
-python3 scripts/stock-comparison-breakdown.py target/ci-comparison
+python3 scripts/stock-comparison-breakdown.py --top 100 target/ci-comparison
 ```
 
 ## Different outputs (983)
+
+On 2026-11-06, 115 outputs differ. A comment on #557 assigns each of them to
+an issue.
 
 | Shape | Outputs |
 | --- | --- |
@@ -136,28 +143,38 @@ already outside `backend_correct`.
 
 Coordinate with those work packages before starting (`AGENTS.md`).
 
-## Rejected for a setting (1,176)
+## Rejected for a setting (563)
 
 The adapter rejects a request with a setting Lean does not implement. The receipt
-names only the first such setting, so a test may need several. On `main` the
-largest are `enable_llvm_abi_extensions` (299), `enable_multi_ret_implicit_sret`
-(298), `opt_level=speed`/`speed_and_size` (243) and `has_lse` (136). #47 accepts
-settings that cannot change a function, which leaves 432 (with #50). Most of the
-rest are `opt_level=speed`, which needs Cranelift's e-graph mid-end (243), and
-functions with LSE atomics (114), `is_pic=false` far symbols (40) or `use_bti` (11).
+names only the first such setting, so a test may need several. #47 accepts
+settings that cannot change a function. Four settings are rejected only for the
+functions that they change: `has_lse`, `use_csdb`, `sign_return_address` and
+`is_pic=false` far symbols. The other settings reject the whole request.
 
-## Rejected for an operation (1,871)
+| Outputs | Setting | What Lean needs |
+| --- | --- | --- |
+| 243 | `opt_level=speed` (238), `speed_and_size` (5) | Cranelift's e-graph mid-end |
+| 171 | `is_pic=false` with a far symbol | the non-PIC far-symbol lowering |
+| 114 | `has_lse=true` with `atomic_rmw`/`atomic_cas` | LSE atomics |
+| 11 | `use_bti=true` | BTI landing pads |
+| 8 | `probestack_strategy=inline` (5), `probestack_size_log2` other than 12 (3) | inline stack probes (#581) |
+| 6 | `use_csdb=true` with `select_spectre_guard`/`br_table` | `csdb` |
+| 3 | `bb_padding_log2_minus_one` other than 0 | block padding |
+| 2 | `sign_return_address=true` in a function that is signed | pointer authentication |
+| 5 | other: `tls_model` (2), `enable_compact_unwind_abi`, `enable_pinned_reg`, `enable_table_access_spectre_mitigation=false` | |
+
+## Rejected for an operation (1,895)
 
 Grouped by Lean's first error for the function. Lean reports the first
 unsupported thing it meets, so a vector function can appear under a scalar type.
 
-| Outputs | First error | Work package |
+| Outputs | First errors | Work package |
 | --- | --- | --- |
-| 957 | integer vector type (`iNxN`) | S12 SIMD (#36) |
-| 486 | scalar float type (`f32`/`f64`) | S11 floats (#35) |
-| 232 | float vector type | S11, S12 |
-| 37 | `const` declarations | |
-| 33 | `tail` calling convention | S8 (#32) |
-| 17 | user function names `uN:N` | |
-| 14 | `is_pic=false` far symbols (a setting; #47 reports it as one) | |
-| 95 | other: missing operations (`uadd_overflow_trap`, overflow multiplies, `iabs`, `bitselect`, `trapz`/`trapnz`, `return_call_indirect`, `get_stack_pointer`, ...) | |
+| 1,257 | vector types: integer (`iNxN`) 990, float (`fNxN`) 267 | S12 SIMD (#36) |
+| 216 | scalar floats: the `f32`/`f64` type 66, `fcvt_to_uint`/`fcvt_to_sint` 40, the saturating converts 31, `bxor`/`bnot`/`band`/`bor` on float values 30, `fma` 21, `fcmp one`/`ueq` 20, `fcopysign` 5, `call_indirect` with float parameters or returns 3 | S11 floats (#35) |
+| 157 | tail calls: the `tail` calling convention 122, `return_call_indirect` 26, `try_call` to a `tail` callee 9 | S8b (#380) |
+| 152 | integer operations: `select_spectre_guard` 60, the overflow operations (`{s,u}{add,sub,mul}_overflow`, `uadd_overflow_trap`) 49, `trapz`/`trapnz` 20, `iabs` 9, `cls` 8, `bitselect` 6 | |
+| 71 | declarations and names: `const` declarations 38, user function names `uN:N` 20, `stack_limit` 5, `dss` 3, patchable function references 3, `dyn_scale_target_const` 2 | |
+| 20 | special registers: `get_stack_pointer` 11, `get_frame_pointer` 4, `get_exception_handler_address` 3, `get_return_address` 2 | |
+| 14 | other calling conventions: `apple_aarch64` 6, `windows_fastcall` 6, `preserve_all` 2 | |
+| 8 | ABI limits: too many return values of one register class 5, an `i128` parameter of `atomic_cas` 3 | |

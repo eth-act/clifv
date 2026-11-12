@@ -17,7 +17,8 @@ backend's pipeline (`lowerFunction`, `prepare`, regalloc2's allocation `raOut` �
 `0xF4000` (`e`), `0xF6000` (`y`), `0xF7000` (`z`). The entry `f` has a
 stack slot and an outgoing-argument area; it calls
 
-* `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x0),
+* `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x8, as
+  Cranelift does since #587),
 * `k` with 9 arguments (the 9th on the stack, in `f`'s outgoing area),
 * `g` by a `try_call` with a result (`g` calls `h`: a non-leaf program callee),
 * the recursive `r` (`r n = 2 n`): its self-call uses the historical alias `r__fvself`, a second
@@ -267,7 +268,7 @@ block0(v0: i64, v1: i64, v2: i64):
 }
 "
 
-def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x8\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x7\"],[\"x21\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x21\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x25\"},{\"from\":\"x25\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":16,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":19,\"pos\":\"before\",\"to\":\"x25\"},{\"from\":\"x25\",\"inst\":20,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"q\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x7\"],[\"x7\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"v\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\"],[\"x5\"],[\"x7\",\"x0\",\"x2\"],[\"x7\",\"x0\"],[\"x10\"],[\"x7\",\"x0\"],[\"x13\"],[\"x15\",\"x1\",\"x3\"],[\"x1\",\"x15\",\"x10\"],[\"x0\",\"x1\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":9,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"a2\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x3\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x0\",\"x1\"],[\"x11\",\"x0\",\"x0\"],[\"x13\",\"x1\",\"x1\"],[\"x0\",\"x11\",\"x13\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x2\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x3\",\"inst\":4,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"w\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x4\"],[\"x6\",\"x0\"],[\"x6\"],[\"x9\"],[\"x0\",\"x9\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"t\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x7\"],[\"x0\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x6\"}],\"name\":\"u\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"m\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x3\",\"x0\"],[\"x3\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"d\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x1\"],[\"x8\",\"x0\",\"x0\"],[\"x0\"],[\"x6\"],[\"x6\",\"x0\",\"x1\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x8\"},{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x19\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x1\",\"inst\":4,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x8\",\"inst\":5,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x19\",\"inst\":5,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x19\",\"inst\":6,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"e\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\"],[\"x7\",\"x0\",\"x1\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x7\"},{\"from\":\"x1\",\"inst\":1,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x2\",\"inst\":1,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"y\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\"],[\"x6\",\"x0\",\"x1\"],[]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x1\",\"inst\":1,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x2\",\"inst\":1,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"z\",\"num_spillslots\":0,\"ok\":true}]}"
+def raOut : String := "{\"functions\":[{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"h\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\",\"x19\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x19\"}],\"name\":\"g\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x8\",\"x0\"],[\"x3\"],[\"x5\",\"x0\"],[\"x5\",\"x8\"],[\"x8\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"s\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\"],[\"x9\"],[\"x0\",\"x0\",\"x9\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"k\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x0\"],[\"x0\"],[\"x0\"],[\"x5\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x11\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"r__fvself\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x8\"],[\"x8\",\"x0\"],[\"x0\"],[\"x7\"],[\"x20\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\",\"x0\",\"x1\"],[],[\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\",\"x0\"],[\"x0\"],[\"x0\",\"x1\",\"x0\"],[\"x0\"],[],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":2,\"pos\":\"before\",\"to\":\"x20\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":6,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x0\",\"inst\":8,\"pos\":\"before\",\"to\":\"x24\"},{\"from\":\"x24\",\"inst\":11,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":16,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x0\",\"inst\":19,\"pos\":\"before\",\"to\":\"x24\"},{\"from\":\"x24\",\"inst\":20,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"f\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"q\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x7\"],[\"x7\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"v\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\",\"x3\"],[\"x5\"],[\"x7\",\"x0\",\"x2\"],[\"x7\",\"x0\"],[\"x10\"],[\"x7\",\"x0\"],[\"x13\"],[\"x15\",\"x1\",\"x3\"],[\"x1\",\"x15\",\"x10\"],[\"x0\",\"x1\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":9,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"a2\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x2\",\"x0\",\"x0\"],[\"x3\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x0\",\"x1\"],[\"x11\",\"x0\",\"x0\"],[\"x13\",\"x1\",\"x1\"],[\"x0\",\"x11\",\"x13\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x2\",\"inst\":4,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x3\",\"inst\":4,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"w\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x4\"],[\"x6\",\"x0\"],[\"x6\"],[\"x9\"],[\"x0\",\"x9\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"t\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x7\"],[\"x0\"],[\"x0\",\"x1\",\"x2\",\"x3\",\"x4\",\"x5\",\"x6\",\"x7\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x2\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x3\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x4\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x5\"},{\"from\":\"x7\",\"inst\":3,\"pos\":\"before\",\"to\":\"x6\"}],\"name\":\"u\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\"],[\"x2\"],[\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[],\"name\":\"m\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x3\",\"x0\"],[\"x3\",\"x0\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"d\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\"],[\"x1\"],[\"x8\",\"x0\"],[\"x0\"],[\"x6\"],[\"x6\",\"x0\",\"x1\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x8\"},{\"from\":\"x1\",\"inst\":2,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x19\",\"inst\":2,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x19\",\"inst\":3,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x1\",\"inst\":4,\"pos\":\"before\",\"to\":\"x19\"},{\"from\":\"x8\",\"inst\":5,\"pos\":\"before\",\"to\":\"x1\"},{\"from\":\"x19\",\"inst\":5,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x19\",\"inst\":6,\"pos\":\"before\",\"to\":\"x0\"}],\"name\":\"e\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\"],[\"x7\",\"x0\",\"x1\",\"x0\"],[\"x0\"]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x7\"},{\"from\":\"x1\",\"inst\":1,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x2\",\"inst\":1,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"y\",\"num_spillslots\":0,\"ok\":true},{\"allocs\":[[\"x0\",\"x1\",\"x2\"],[\"x6\",\"x0\",\"x1\"],[]],\"checker\":\"ok\",\"edits\":[{\"from\":\"x0\",\"inst\":1,\"pos\":\"before\",\"to\":\"x6\"},{\"from\":\"x1\",\"inst\":1,\"pos\":\"before\",\"to\":\"x0\"},{\"from\":\"x2\",\"inst\":1,\"pos\":\"before\",\"to\":\"x1\"}],\"name\":\"z\",\"num_spillslots\":0,\"ok\":true}]}"
 
 deriving instance Inhabited for Art
 
@@ -312,7 +313,7 @@ def fM : Clif.Function := fn 13
 def fD : Clif.Function := fn 14
 /-- `e` calls the base extern `pz` through the GOT (`blr`, two register arguments in x0/x1) next
 to the declared program function `s` of the same arity with a result (its `sret` pointer in x8,
-returned in x0): the GOT site's target is `pz`, not `s` (`GotV`). -/
+returned in x8): the GOT site's target is `pz`, not `s` (`GotV`). -/
 def fE : Clif.Function := fn 15
 /-- `y` calls the pointer it is passed (`call_indirect`, signature `(i64, i32) -> i32`): it may
 reach `s` (which has an address), whose argument registers differ from the call's, but no
@@ -1389,6 +1390,17 @@ def s0 : Arm.ArmState :=
 stp x21, x25, [sp, #-16]!; sub sp, sp, #32`). -/
 def w0 : Arm.ArmState := Arm.w (.GPR 31#5) (sp0 - 64) (Arm.w (.GPR 29#5) (sp0 - 16) s0)
 
+/-- The witness program has no stack probes (#581): every frame is below 4 KiB. -/
+theorem pbMax_L (F : BitVec 64 → Prop) : (L F).pbMax = 0 := by
+  show P.funcs.foldl (fun x g => max x (probeBelow (A g).af)) 0 = 0
+  native_decide
+
+theorem K_L (F : BitVec 64 → Prop) (M : Nat) : (L F).K M = (L F).D * M := by
+  rw [LinkSys.K, pbMax_L, Nat.add_zero]
+
+theorem probeCount_fF : probeCount (probeTotal (A fF).af.frameSize (A fF).af.isCaller) = 0 := by
+  native_decide
+
 /-- The addresses outside the world of the entry activation: its frame, its callees' stack,
 the code. -/
 def F0 : BitVec 64 → Prop :=
@@ -1914,7 +1926,7 @@ theorem backend_correct_program_witness :
     · intro h; cases h
   rw [hrun]
   refine backend_correct_program_returned (L F0) hL hfF M0 (w₀ := w0) (args := [arg]) (cs := cs0)
-    ?hent ?hres rfl ?hgfree ?himg ?hbe ?hargs ?hcs ?hsav ?hrel (fun _ => hplace) (hrun ▸ rfl)
+    ?hent ?hres (by rw [K_L]; rfl) ?hgfree ?himg ?hbe ?hargs ?hcs ?hsav ?hrel (fun _ => hplace) (hrun ▸ rfl)
   case hent =>
     refine ⟨s0_program, imgCode_of (okB_imgB) (by simp [P]) s0 (fun a ha => s0_img ha),
       by simp [s0, L, Arm.r_of_w_same], ?_, ?_, hL.raStar fF hfF, ?_, hL.fits fF hfF⟩
@@ -1923,16 +1935,19 @@ theorem backend_correct_program_witness :
     · simp [s0, xreg, Arm.r_of_w_different, Arm.r_of_w_same]
     · rw [spv_s0]; decide
   case hres =>
-    refine ⟨by simp [L, LinkSys.K, hfs, spv_s0, sp0, M0], fun a ha => ?_⟩
+    refine ⟨⟨by simp only [K_L]; simp [L, hfs, spv_s0, sp0, M0], fun a ha => ?_⟩,
+      Nat.le_trans ((L F0).probeBelow_le_pbMax hfF) (Nat.le_add_left _ _)⟩
     have hlt := codeAddr_lt hbF s0_program ha
-    simp only [L, LinkSys.K, hfs, spv_s0, sp0, M0]
+    simp only [K_L]
+    simp only [L, hfs, spv_s0, sp0, M0]
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     have : (1048576 : BitVec 64).toNat = 1048576 := rfl
     omega
   case hgfree =>
     intro a ha ⟨h1, h2⟩
     have hlt := img_lt ha
-    simp only [L, LinkSys.K, hdrop, spv_s0, sp0, M0] at h1 h2
+    simp only [K_L] at h1 h2
+    simp only [L, hdrop, spv_s0, sp0, M0] at h1 h2
     simp at h2
     omega
   case himg => exact fun a ha => s0_img ha
@@ -1945,7 +1960,7 @@ theorem backend_correct_program_witness :
         Arm.r_of_w_different (gpr_ne (by omega) (by omega) (by omega : i ≠ 29))]
     · simp [w0, Arm.r_of_w_different]
     · simp only [w0]; rw [Arm.r_of_w_different h31, Arm.r_of_w_different h29]
-    · simp [w0, mem_w]
+    · simp only [w0, mem_w]; exact (probeMem_of_count probeCount_fF s0).symm
     · simp [w0, Arm.w_program]
   case hargs =>
     intro loc v hm

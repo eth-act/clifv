@@ -41,11 +41,11 @@ theorem regLevel_trapCall_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   obtain ⟨cc, ins, hcA⟩ := checked_of_checkAlloc hcheck
   obtain ⟨a0, hat, hle⟩ := hcA.at
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
-  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
-  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, GotV vcp⟩
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, GotV vcp⟩
   have hR : R.Wf := ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
-    by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨body, hb⟩,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, ⟨p, hp, rfl⟩,
     he.abi.program, he.gfree⟩
   have hF : R.F = F := he.hF
   have hreal := realizes_value_all hR (by rw [hF]; exact he.calls)
@@ -114,15 +114,15 @@ theorem backend_correct_world_cleanup_trapcall {p : Clif.Program} {f : Clif.Func
   let XT := TrapCallSem env (f.externs.map (·.2)) (indSigs f)
     (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X tc
   have hnt : vcp.hasTryCall = false :=
-    noTryCall_of_prepCheck hc.prepOk (prune_noTryCall (noTryCall_of_check hc.lowerOk hft))
+    noTryCall_of_prepCheck hc.prepOk (cleanupStage_noTryCall f (noTryCall_of_check hc.lowerOk hft))
   have hexcl : ∀ d uses w, X.call d uses w ≠ none → (xrT XT).raise d uses w = none :=
     fun _ _ _ hne => xrT_none fun h => hne h.1
-  have hI := iselSimU_relW_cleanup hsub hc hlU (xCallsOk_trapEnv (c := tc) hX)
+  have hI := iselSimU_relW_cleanup_stage hsub hc hlU (xCallsOk_trapEnv (c := tc) hX)
     (xCallsIndOk_trapEnv (c := tc) hXI) (xRaiseOk_trapEnv hXT) (xRaiseIndOk_trapEnv hXT) hexcl
     hsym hslot (fun _ => 0) hcs hrel hargs htrX fuel
-  have hP := prepareCorrectU_cleanup (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X (xrT XT))
-    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk
-    (xrT XT)
+  have hP := prepareCorrectU_cleanup (vc := skipStage f vc)
+    (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X (xrT XT))
+    (fun _ _ _ _ _ _ hp he => valueSemU_pure hp he) (valueSemU_cmpOverwrite _ _ _ _) hc.prepOk (xrT XT)
   intro H G base ra s he
   obtain ⟨hR1, hR2⟩ := regLevel_trapCall_world hc.check hc.alloc hc.emit hc.layout hcov hnt XT he
     (fun _ => 0)

@@ -1,3 +1,5 @@
+import FV.E2E.StockMemorySinkExtNI
+import FV.Backend.Proof.StockMemorySinkExtCheck
 import FV.E2E.StockMemoryCapturedCopyNI
 import FV.Backend.Proof.StockMemoryCapturedCopyCheck
 import FV.E2E.StockMemoryLoadStoreNI
@@ -112,6 +114,12 @@ inductive CompiledSemanticNI (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemanticNI f k vc vcp rf af fa fb
 
+  | memorySinkExtend {kind : Stock.Memory.ExtendedRoots.Kind} {ty : Clif.Ty}
+      {cleanup : Bool} {result : Stock.Result} :
+      Stock.Memory.SinkExtend.SinkExtClass kind ty f → result.code = vc → Stock.Memory.effectsOnly vc = true →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemanticNI f k vc vcp rf af fa fb
+
 namespace CompiledSemanticNI
 variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
   {af : AFunc} {fa : FnAsm} {fb : FnBin}
@@ -145,11 +153,16 @@ theorem toSemantic (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
   | memoryCapturedCopy family equal _ h =>
     exact .memory family.domain equal h
 
+  | memorySinkExtend family equal _ h =>
+    exact .memoryExplicit family.domain equal h
+
 /-- All new semantic and paired premises come from executable checks and actual
-pipeline observations, rather than new accepted-source assumptions. -/
+pipeline observations, rather than new accepted-source assumptions. (`prepared`/`prepOk` are
+about the routes' stage `Stock.Arithmetic.stageF`, formerly `Stock.Arithmetic.stage`: the routes
+now run Cranelift's skip of unused instructions, `cleanupStage`.) -/
 theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
-    (prepared : Backend.prepare (Stock.Arithmetic.stage cleanup vc) = .ok vcp)
-    (prepOk : prepCheck (Stock.Arithmetic.stage cleanup vc) vcp = true)
+    (prepared : Backend.prepare (Stock.Arithmetic.stageF cleanup f vc) = .ok vcp)
+    (prepOk : prepCheck (Stock.Arithmetic.stageF cleanup f vc) vcp = true)
     (check : Backend.checkAlloc vcp rf = .ok ()) (alloc : lowerRFunc vcp rf = .ok af)
     (emit : emitFunc k af = .ok fa) (layout : fa.layout = .ok fb) :
     CompiledSemanticNI f k vc vcp rf af fa fb := by
@@ -159,8 +172,11 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
       exact .stock ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
     | true =>
       exact .stockCleanup ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
+  rcases Bool.eq_false_or_eq_true (lowerCheck f vc) with hl | hl
+  · exact .compatible (retained hl)
+  rw [Stock.Arithmetic.stageF_of_lowerCheck_false hl] at prepared prepOk
   simp only [SemanticNI.check,Bool.or_eq_true,Bool.and_eq_true] at lower
-  rcases lower with legacy | (((((((((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg) | memoryUnsigned) | memoryExtending) | memoryStore) | memoryStoreCfg) | memoryLoadStore) | memoryCapturedCopy)
+  rcases lower with legacy | ((((((((((((((((((((⟨semantic,reads⟩ | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | ⟨semantic,reads⟩) | memory) | memoryCfg) | memoryUnsigned) | memoryExtending) | memoryStore) | memoryStoreCfg) | memoryLoadStore) | memoryCapturedCopy) | memorySinkExtend)
   · exact .compatible (retained legacy)
   · rcases Stock.Arithmetic.check_sound semantic with legacy | ⟨result,domain,run,equal,_⟩
     · exact .compatible (retained legacy)
@@ -240,6 +256,10 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
     exact .memoryCapturedCopy family equal effects
       ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
+  · obtain ⟨kind,ty,result,family,run,equal,effects⟩ := Stock.MemorySinkExt.check_sound memorySinkExtend
+    exact .memorySinkExtend (kind := kind) (ty := ty) family equal effects
+      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+
 end CompiledSemanticNI
 
 /-- The complete paired linker consumer follows the actual checked artifact,
@@ -263,7 +283,7 @@ theorem backend_correct_world_niX_semantic {p : Clif.Program} {f : Clif.Function
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ (us : List (Reg × Reg)) (outs : List CV) (w : Arm.ArmState),
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w ∧ vc.RetsSite us ∧
         (∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
           ActEntry vcp rf af fa fb K F G X H base ra s w₀ →
@@ -444,5 +464,19 @@ theorem backend_correct_world_niX_semantic {p : Clif.Program} {f : Clif.Function
         (backend_correct_worldX_stock_memory family.domain h hcov hsym hslot hcs hrel hargs fuel).1 vals cm returned
       exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ positive => False.elim (tls positive)⟩
 
+  | @memorySinkExtend kind ty cleanup result family equal effects h =>
+    subst vc
+    classical
+    by_cases tls : XTls F X
+    · intro vals cm returned
+      obtain ⟨us,outs,w,pins,arity,values,memory,site,base,paired⟩ :=
+        backend_correct_world_niX_stock_sink_extend family effects h hcov hsym hslot tls hcs hrel hargs
+          fuel vals cm returned
+      exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ _ => paired⟩
+    · intro vals cm returned
+      obtain ⟨us,outs,w,pins,arity,values,memory,site,base⟩ :=
+        (backend_correct_worldX_stock_memory_explicit family.domain h hcov hsym hslot hcs hrel hargs htr fuel).1
+          vals cm returned
+      exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ positive => False.elim (tls positive)⟩
 
 end E2E
