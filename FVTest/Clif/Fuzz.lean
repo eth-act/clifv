@@ -680,9 +680,11 @@ def compareMain (paths : List String) (interpDir nativeDir : Option String)
         | none => (none, false)
         | some rec => (agree o rec.actual, agreeUpToNaN o rec.actual || hostNaN)
       -- documented interpreter deviation (docs/contracts/clif.md, "srem MIN, -1"): the
-      -- interpreter traps `int_ovf`, CLIF (docs, native backends, `Clif.run`) returns 0
+      -- interpreter traps `int_ovf`, CLIF (docs, native backends, `Clif.run`) returns 0 and goes
+      -- on: `Clif.run` then returns, or traps later with another code (#997)
       let knownInterp := hasSrem f && (match o, ir[i]? with
         | .returned .., some { actual := .trapped "int_ovf", .. } => true
+        | .trapped c, some { actual := .trapped "int_ovf", .. } => c.name != "int_ovf"
         | _, _ => false)
       let upd (c : KeyCounts) : KeyCounts := Id.run do
         let mut c := { c with runs := c.runs + 1 }

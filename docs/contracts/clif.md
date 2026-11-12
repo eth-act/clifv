@@ -442,7 +442,8 @@ qemu); `clif-fuzz compare` reruns `Clif.run` and compares: with the interpreter 
 payloads, with native **bit-exactly** (NaN payloads and trap codes included). Two documented
 interpreter-only differences are not disagreements: x86-host NaNs exposed by a float→int
 `bitcast` when the native run agrees bit-exactly (`nan-agree`), and `srem MIN, -1`
-(`known-deviation`, above). `--coverage` also computes the static coverage of the existing
+(`known-deviation`, above: in a function with an `srem`, the interpreter traps `int_ovf` while
+`Clif.run` returns, or goes on and traps later with another code, #997). `--coverage` also computes the static coverage of the existing
 runtests over the same keys (`before-after.tsv`).
 
 Results (2026-10-18; keys = opcode × condition × type × operand type, `instKey`):
