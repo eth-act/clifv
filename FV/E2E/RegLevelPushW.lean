@@ -257,16 +257,17 @@ theorem probeSteps_writes (env : Env) {P : BitVec 64 → Prop} : ∀ (k : Nat) (
         (by rw [hsp2, ← hsp1]; exact hal1)
         (fun a h => hP a (by rw [probeHitB_succ, ← hsp2, h, Bool.or_true]))
 
-/-- The stack probes write only the probed bytes (#581). -/
-theorem probeLines_writes (env : Env) (total : Nat) (s : Arm.ArmState)
-    (hal : (spOf s).toNat % 16 = 0) {P : BitVec 64 → Prop}
+/-- The unrolled stack probes (`probeCount total ≤ 3`) write only the probed bytes (#581). -/
+theorem probeLines_writes_unrolled (env : Env) (total : Nat) (h3 : probeCount total ≤ 3)
+    (s : Arm.ArmState) (hal : (spOf s).toNat % 16 = 0) {P : BitVec 64 → Prop}
     (hP : ∀ a, probeHitB (probeCount total) (spOf s) a = true → P a) :
     LinesWrites env (probeLines total) s P := by
   unfold probeLines
   simp only
   split
   · exact fun k _ _ hk => by simp at hk
-  · exact linesWrites_app (probeSteps_writes env _ s hal hP) fun _ _ =>
+  · rw [if_pos h3]
+    exact linesWrites_app (probeSteps_writes env _ s hal hP) fun _ _ =>
       linesWrites_noStores fun x t h => by
         simp only [List.mem_singleton, Line.ins.injEq] at h
         obtain ⟨rfl, rfl⟩ := h
@@ -295,7 +296,7 @@ theorem loopBody_writes (env : Env) {P : BitVec 64 → Prop} {S : BitVec 64} {m 
   have h161 : xreg 16 (Arm.exec_inst a1 s) = loopOff (m + 1) := by
     rw [he1]; simp only [xreg, Arm.r_of_w_same]
     simp only [xreg] at h16; rw [h16]
-    rw [show 4096 * (m + 1) = 4096 * m + 4096 by omega, BitVec.ofNat_add]; bv_omega
+    exact loopOff_succ m
   show LinesWrites env ([Line.ins (.aluImm12 .sub true (.x 16) (.x 16) ⟨1, true⟩) none] ++
     [Line.ins (.store .store32 .xzr (.regReg .sp (.x 16))) none] ++
     [Line.ins (.aluRRR .addS true .xzr (.x 16) (.x 17)) none]) s P
@@ -361,7 +362,11 @@ theorem prologueTail_writesX (env : Env) {saves : List Reg} (size : Nat) (hsv : 
   generalize hBF : X - BitVec.ofNat 64 (16 + clobberBytes saves) = BF at hP
   have hS : X = BF + BitVec.ofNat 64 (16 + clobberBytes saves) := by
     rw [← hBF]; exact (BitVec.sub_add_cancel _ _).symm
-  have hBFa : BF.toNat % 16 = 0 := by rw [← hBF]; exact aligned_sub hal (by omega) (by omega)
+  have hBFa : BF.toNat % 16 = 0 := by
+    rw [← hBF]
+    have hpIm := pushBytes_mod (savesInt saves).length
+    have hpFm := pushBytes_mod (savesFloat saves).length
+    exact aligned_sub hal (by omega) (by omega)
   have hT16 : X - 16#64 = BF + BitVec.ofNat 64 (pushBytes (savesFloat saves).length) +
       BitVec.ofNat 64 (pushBytes (savesInt saves).length) := by
     rw [hS, show 16 + clobberBytes saves = pushBytes (savesFloat saves).length +
@@ -404,6 +409,36 @@ theorem loopRest_writes (env : Env) {S : BitVec 64} {r : Nat} (hr : 2 ≤ r) {T 
         rw [e] at hpc
         bv_omega
       · cases hs1
+
+/-- The stack probes, run straight-line, write only the probed bytes (#581): the unrolled
+probes each write their 4 bytes; of the loop form only the first iteration's `str` is reached
+(`loopRest_writes`). -/
+theorem probeLines_writes (env : Env) (total : Nat) (s : Arm.ArmState)
+    (hal : (spOf s).toNat % 16 = 0) {P : BitVec 64 → Prop}
+    (hP : ∀ a, probeHitB (probeCount total) (spOf s) a = true → P a) :
+    LinesWrites env (probeLines total) s P := by
+  by_cases hl : probeLoop total = true
+  · have hH : probeHead total = loadConst64 (.x 16) 0 ++ loadConst64 (.x 17) total := by
+      simp [probeHead, hl]
+    have hLL : probeLoopL total = probeLoopBody := by simp [probeLoopL, hl]
+    have hI : loopIters total = probeCount total := by simp [loopIters, hl]
+    have hn4 : 3 < probeCount total := by simpa [probeLoop] using hl
+    obtain ⟨sP, ⟨s1, hH1, -, hL, -⟩, -⟩ := probeRun_ok env total s hal
+    rw [hI] at hL
+    rw [probeLines_split, hLL, ← List.append_nil probeLoopBody]
+    refine linesWrites_app (linesWrites_noStores fun x t h => ?_) fun s1' hs1 => ?_
+    · rw [hH] at h
+      rcases List.mem_append.1 h with h | h <;> exact loadConst64_noStores _ _ x t h
+    · rw [execLines_steps hH1 hs1]
+      refine loopRest_writes _ (by omega) _ hL fun b hb => hP _ ?_
+      simp only [probeHitB, List.any_eq_true, List.mem_range]
+      refine ⟨0, by omega, ?_⟩
+      rw [show spOf s - 4096#64 + BitVec.ofNat 64 b -
+        (spOf s - BitVec.ofNat 64 (4096 * (0 + 1))) = BitVec.ofNat 64 b by bv_omega]
+      simp only [BitVec.toNat_ofNat, decide_eq_true_eq]
+      omega
+  · have hl' : probeLoop total = false := by simpa using hl
+    exact probeLines_writes_unrolled env total (by simpa [probeLoop] using hl') s hal hP
 
 /-- **The prologue writes only the frame top** `[sp - 16 - clobberBytes, sp)` **and the probed
 bytes**: fp/lr at `sp - 16`, the stack probes (`probeHitN`, #581), the int pushes below fp/lr,
