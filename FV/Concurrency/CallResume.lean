@@ -412,10 +412,22 @@ theorem noRet_popLines (int : Bool) (rs : List Reg) : NoRet (popLines int rs) :=
 its `sub`, `str`, `cmn` and `b.gt`; no `ret`. -/
 theorem noRet_probeLines (total : Nat) : NoRet (probeLines total) := by
   intro x t hln
-  rcases probeLines_mem hln with h | h | ⟨n, h⟩ | hl | hl | h | h | h | h <;>
-    (try obtain ⟨_, h, ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩⟩ :=
-      Backend.Proof.loadConst64_form hl) <;>
-    (simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; intro h; cases h)
+  have hc : ∀ {y : Insn} {t' : Option Clif.TrapCode}, Line.ins x t = Line.ins y t' → y ≠ .ret → x ≠ .ret :=
+    fun e hy => by simp only [Line.ins.injEq] at e; rw [e.1]; exact hy
+  have hlc : ∀ {rd : Reg} {v : Nat}, Line.ins x t ∈ loadConst64 rd v → x ≠ .ret := fun hl => by
+    obtain ⟨i, e, hf⟩ := Backend.Proof.loadConst64_form hl
+    cases e
+    rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> (intro h; cases h)
+  rcases probeLines_mem hln with h | h | ⟨n, h⟩ | hl | hl | h | h | h | h
+  · exact hc h (fun h => by cases h)
+  · exact hc h (fun h => by cases h)
+  · exact hc h (fun h => by cases h)
+  · exact hlc hl
+  · exact hlc hl
+  · exact hc h (fun h => by cases h)
+  · exact hc h (fun h => by cases h)
+  · exact hc h (fun h => by cases h)
+  · exact hc h (fun h => by cases h)
 
 /-- The prologue has no `ret` (with the stack probes, #581: `calls` is the new argument of
 `prologueLines`). -/

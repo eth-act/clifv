@@ -236,7 +236,9 @@ theorem prologue_states {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.
       Line.ins x none ∈ prologueLines R.af.saves R.af.frameSize R.af.isCaller ∧ x.hooked = false ∧
       (iterN R.step i R.s0).program = R.fb.program R.base ∧
       Arm.r .PC (iterN R.step i R.s0) = R.pcOf (1 + k) ∧ Arm.r .ERR (iterN R.step i R.s0) = .None := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hj0, hdrop⟩ := entry_block hR
+  obtain ⟨vb, items, code, ps1, pl, Xe, psm, ps2, xe, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
+    entry_block hR
+  subst hpl0
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
@@ -282,7 +284,9 @@ theorem prologue_evs {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
       (∀ e ∈ stepEvs (iterN R.step i R.s0), R.F e.addr ∧ e.k = .plainW) ∧
         NoStx (iterN R.step i R.s0) := by
   obtain ⟨hframe, -, -, hsv, -, -, -, -, -⟩ := RL.frame_facts hR
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hj0, hdrop⟩ := entry_block hR
+  obtain ⟨vb, items, code, ps1, pl, Xe, psm, ps2, xe, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
+    entry_block hR
+  subst hpl0
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
@@ -317,7 +321,7 @@ theorem prologue_evs {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
       simp only [List.mem_cons, List.mem_replicate] at hin
       rcases hin with h | ⟨-, h⟩ <;> exact h
     have hw := evs_memWrites ha (by rw [hkx, hkind]) _ e he
-    have := hwr i hi (1 + k) x none hj hpck hxh _ a ha _ hw 0 (E2E.ExecBytes.memWrites_pos a _ _ hw)
+    have := hwr i hi (1 + k) x none hj hpck hxh _ a ha _ hw 0 (Backend.Proof.memWrites_pos a _ _ hw)
     exact ⟨by simpa using this, hkind⟩
   · rw [cls_of_decode hdec] at hc
     exact clsOf_ne_stx (noExcl_of_kinds hplain hmem ha) rel rs rn hc
