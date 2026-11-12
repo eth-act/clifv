@@ -11,7 +11,7 @@ passes `sretStableXB` and the exceptional-edge validator `unwCheck`, and the tab
 (`checks_true`, the closed test receipt). `sw_returns_sret_unwind`: with the witness callees
 (`NonVacuity`), no raising callees (`XRaise.none`, `Unw.UnwHooks.none`), every premise of
 `backend_correct_final_unwind_sret` but the run's own is discharged: a return of a run with
-unwinding of `sw` leaves the pointer `p` in x0.
+unwinding of `sw` leaves the pointer `p` in x8 (until #587: x0).
 -/
 
 namespace E2E.SretReturnUnwindWitness
@@ -76,7 +76,7 @@ theorem compiled_exists :
 with the witness callees (`NonVacuity`: every contract premise discharged; `sw` makes no calls)
 and no raising callees (`XRaise.none`, `Unw.UnwHooks.none`), a CLIF return of a run with
 unwinding of `sw` on `[p, v]` is matched by an Arm return on the machine with unwinding with the
-struct pointer `p` in x0. -/
+struct pointer `p` in x8. -/
 theorem sw_returns_sret_unwind :
     Compiled sw 0 vcW vcpW (spillAlloc vcpW) afW faW fbW ∧
       ∀ {syms : String → Option Nat} {K : Nat} {env : Clif.XEnv} (_ : 32 ≤ K) (g h tp : BitVec 64)
@@ -90,7 +90,7 @@ theorem sw_returns_sret_unwind :
         Clif.runLoopX env { funcs := [] } fuel cs.toX = .returned vals cm →
         ∃ n, ArmRet ra s (runX (Unw.ArmStepU (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) Unw.UnwHooks.none TW faW) n s) ∧
-          XHolds p (xreg 0 (runX (Unw.ArmStepU (witnessX (witnessSym syms) tp)
+          XHolds p (xreg 8 (runX (Unw.ArmStepU (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) Unw.UnwHooks.none TW faW) n s)) ∧
           MemAgree cm (runX (Unw.ArmStepU (witnessX (witnessSym syms) tp)
             (witnessHooks g h (witnessSym syms) tp) Unw.UnwHooks.none TW faW) n s) := by

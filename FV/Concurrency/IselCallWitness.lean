@@ -103,7 +103,7 @@ theorem isel_resume_fC {Γ : E2E.Rel} {fctx : FnCtx} {X : ExtSem} {c : BitVec 64
       s.frame.getMany args = .ok vals → vals.map (·.ty) = Clif.AbiParam.tys ext.sig.params →
       rvals.map (·.ty) = Clif.AbiParam.tys ext.sig.returns →
       s.frame.regs.setMany stm.results rvals = some regs' →
-      outs.length = (sigRets ext.sig).length → PrefixHold rvals outs → RelW Γ fC c slots cm' y →
+      outs.length = ext.sig.returns.length → PrefixHold rvals outs → RelW Γ fC c slots cm' y →
       ∃ ρ', VStep vcC (csem Γ.F fctx (xcallX X outs y)) (.run ⟨b, k, ρ, w⟩)
           (.run ⟨b, k + 1, ρ', y⟩) ∧
         Match fC ctx R gn bl A (RelW Γ fC c) slots

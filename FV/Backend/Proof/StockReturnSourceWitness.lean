@@ -408,7 +408,7 @@ theorem stock_return_run_contract_witness (p : Case) (a b : BitVec p.ty.width) :
       ∀ world,
         RunOkABI (function p) result.code ispec (fun _ _ _ => True) []
           ⟨0,1,machine p a b,world⟩ (.returned (values p a b) Clif.Mem.empty) ∧
-        (p.sret = false → RunOk result.code ispec (fun _ _ _ => True) []
+        (p.sret = false → RunOkX result.code ispec (fun _ _ _ => True) []
           ⟨0,1,machine p a b,world⟩ (.returned (values p a b) Clif.Mem.empty)) := by
   obtain ⟨input⟩ := inputs p
   have block : (function p).blocks[input.event.block]? = some (function p).blocks[0]! := by rw [input.block]; rfl

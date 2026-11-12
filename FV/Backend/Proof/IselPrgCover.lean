@@ -720,9 +720,9 @@ theorem try_root {ranges : Array (Nat × Nat)} {st0 : LState} (hP : PInv f ctx)
   have hinst : ∀ k fs, γ f (tryCtx ctx ti data trs) (idat k fs) data →
       γ f (tryCtx ctx ti data trs) (termInst k fs) (.inst ti) :=
     fun k fs h => γ_inst hself (γ_ty_mem (by simp)) h (by simp)
-  have hrl : trs.1.length = (sigRets sig).length := by
+  have hrl : trs.1.length = sig.returns.length := by
     obtain ⟨rets, pays, st', h1, h2, -⟩ :=
-      tryRegsOf_ok (s := sig) (Nat.le_trans (returns_le_sigRets sig) hS.2) st1
+      tryRegsOf_ok (s := sig) hS.2 st1
     rw [hr] at h1
     simp only [Option.some.injEq, Prod.mk.injEq] at h1
     obtain ⟨rfl, -⟩ := h1

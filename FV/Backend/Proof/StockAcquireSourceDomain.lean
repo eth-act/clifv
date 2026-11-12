@@ -51,7 +51,7 @@ theorem original_returns {result : Stock.Result} (lowered : Stock.lower function
     pointer state.mem raw read regs world (by simpa only [slots] using memory)
     (pointer_argument argumentList arguments)
   refine ⟨regs,[(.vreg 195 .int,.x 0)],[ofX (raw.setWidth 64)],next,state.mem,executed,
-    (by rfl),rfl,?_,?_,?_⟩
+    ⟨by rfl,by rw [sourceValues]; rfl⟩,rfl,?_,?_,?_⟩
   · rw [sourceValues]
     exact wide_prefix raw
   · simpa only [slots] using kept

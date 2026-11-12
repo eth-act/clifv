@@ -20,7 +20,7 @@ theorem Layout.return_function_for {f : Clif.Function} {result : Stock.Result}
     {isem : Sem} (refines : Refines F isem) (driver : DriverSem isem)
     (callSem : ∀ (name : String) (pairs : List (Nat × Reg)) (defs : List (Reg × Nat)) uses world,
       isem (.call ⟨.sym name,retPairs pairs,callDefs defs⟩) uses world =
-        (X.call (some name) uses world).map (fun pair => (pair.1,pair.2,Ctl.next)))
+        (X.call (some name) uses world).map (fun pair => (pair.1.take (callDefs defs).length,pair.2,Ctl.next)))
     (retSem : ∀ (us : List (Reg × Reg)) uses world,isem (.rets us) uses world = some ([],world,.ret))
     (calls : XCallsOk env (f.externs.map (·.2)) MR X)
     (stable : MRStable F MR) {sb : Nat} {syms : String → Option Nat}
@@ -68,10 +68,7 @@ theorem Layout.return_function_for {f : Clif.Function} {result : Stock.Result}
   obtain ⟨actual,w2,callRun,resultCount,resultHeld,mem2⟩ := calls layout.data.ext member g fr.slots cm w1
     (some layout.data.ext.name) [ρ liveKey] [ρ liveKey] [⟨.i64,live⟩] [⟨.i64,returnedWord⟩] after callee
     (Or.inl ⟨rfl,rfl⟩) argsAt mem1 called (by rw [calleeReturns]; rfl)
-  have abi : sigRets layout.data.ext.sig = [layout.data.returned] := by
-    unfold sigRets
-    split <;> simp [calleeReturns]
-  rw [abi] at resultCount
+  rw [calleeReturns] at resultCount
   cases actual with
   | nil => cases resultCount
   | cons output rest =>
@@ -83,7 +80,7 @@ theorem Layout.return_function_for {f : Clif.Function} {result : Stock.Result}
         ([(liveKey,Reg.x 0)].map (ρ ·.1)) w1 = some ([output],w2,.next) := by
       rw [callSem]
       change (X.call (some layout.data.ext.name) [ρ liveKey] w1).map
-        (fun pair => (pair.1,pair.2,Ctl.next)) = _
+        (fun pair => (pair.1.take 1,pair.2,Ctl.next)) = _
       rw [callRun]
       rfl
     let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
@@ -108,7 +105,12 @@ theorem Layout.return_function_for {f : Clif.Function} {result : Stock.Result}
     have sumHeld : VHolds ⟨.i64,returnedWord+live⟩ sumValue :=
       LiveCallArithmetic.sum_holds resultValue liveHeld
     refine ⟨entrySeed event.ctx fr,retPairs [(sumKey,.x 0)],[sumValue],w3,after,reached,?_,rfl,?_,mem3,freed⟩
-    · simpa only [ReturnABI,retPairs,List.map_cons,List.map_nil,List.length_cons,List.length_nil] using pins
+    · have ordinary : (sigRets f.sig).any (·.purpose == .sret) = false := by
+        cases sret : (sigRets f.sig).any (·.purpose == .sret) with
+        | false => rfl
+        | true => simp [returnPins,sret] at pins
+      refine ⟨?_,by simp [retPairs,sretRet_nil_of_ordinary ordinary]⟩
+      simpa only [ReturnABI,retPairs,List.map_cons,List.map_nil,List.length_cons,List.length_nil] using pins
     · refine ⟨Nat.le_refl _,?_⟩
       intro j val actual found atOutput
       cases j with

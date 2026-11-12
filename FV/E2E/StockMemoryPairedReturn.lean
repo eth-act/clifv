@@ -67,7 +67,12 @@ theorem stock_lower_return_record_paired_runOk {f : Clif.Function} {result : Res
     | .fall _ w => w | .stop _ _ _ _ _ _ w _ => w) equal
   rw [← preEq,← postEq] at paired
   rw [← postEq] at relatedPost
-  exact runOkABI_of_return_stop placed segment paired selected
+  have returnCount : us.length = vals.length + (sretRet f).length := by
+    have explicit := (getMany_ok ((stepTerm_ret callers).2.2 vals cm done).1).1
+    have both := (getMany_ok read).1
+    simp only [List.length_append] at both valueCount explicit ⊢
+    omega
+  exact runOkABI_of_return_stop placed segment paired ⟨selected, returnCount⟩
     (by have := values.1; omega) values.prefix_append ⟨memory',otherMemory',relatedPost⟩
     ((stepTerm_ret callers).2.2 vals cm done).2
 

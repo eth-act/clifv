@@ -22,6 +22,10 @@ theorem mixed_entry_checks : (checks false && checks true) = true := by native_d
 
 def parsed (I : LinkInput) : Clif.ParsedFile := Clif.parseFile (String.join (I.funcs.map (·.clif)))
 
+/-- Since #587 (struct pointer in x8, #931 fixed) the previous pipeline produces the same object
+as the void-call ABI pipeline for the mixed program (before: a different one), and the return-pin
+file check accepts the nop-caller fixture `rejectedInput` (before: rejected); the retry still
+equals the previous pipeline's output. -/
 def fileChecks (cleanup : Bool) : Bool :=
   let pf := parsed E2E.PreparedReturnPinCallsWitness.input
   let result := Id.run (compileFileVoidCallABIWhen true (fun vcs => pure (allocateLean vcs)) pf [] cleanup)
@@ -35,10 +39,10 @@ def fileChecks (cleanup : Bool) : Bool :=
     (fun vcs => pure (allocateLean vcs)) rejected [] cleanup)
   decide (result.funcs.length = 2) && result.unsupported.isEmpty && result.unverified.isEmpty &&
     result.unvalidated.isEmpty && decide (result.object = attempt.object) &&
-    decide (result.object ≠ original.object) &&
+    decide (result.object = original.object) &&
     decide ((pf.funcs.filterMap (·.func.toOption)) =
       E2E.PreparedReturnPinCallsWitness.input.funcs.map FnInput.func) &&
-    !(ReturnPinFile.entries rejected [] cleanup).toOption.any ReturnPinFile.check &&
+    (ReturnPinFile.entries rejected [] cleanup).toOption.any ReturnPinFile.check &&
     decide (retry.object = previous.object) &&
     previous.unsupported.isEmpty && previous.unverified.isEmpty
 

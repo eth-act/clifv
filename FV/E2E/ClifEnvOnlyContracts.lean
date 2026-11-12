@@ -39,7 +39,7 @@ theorem xCallsOk_only_of {env : Clif.Env} {A : String → List Clif.Val → Clif
         d = none ∧ ext.colocated = false ∧ uses = ofX (X.sym ext.name 0) :: args) →
       ArgsAt ext.sig vals args w → MR sl cm w →
       g vals cm = .returned rvals cm' → rvals.length = ext.sig.returns.length →
-      ∃ outs w', X.call d uses w = some (outs, w') ∧ outs.length = (sigRets ext.sig).length ∧
+      ∃ outs w', X.call d uses w = some (outs, w') ∧ outs.length = ext.sig.returns.length ∧
         PrefixHold rvals outs ∧ MR sl cm' w') :
     XCallsOk (env.only A) exts MR X := by
   intro ext hext g' sl cm w d uses args vals rvals cm' hg hd hargs hmr hret hlen
@@ -58,7 +58,7 @@ theorem xCallsIndOk_only_of {env : Clif.Env} {A : String → List Clif.Val → C
       g vals cm = .returned rvals cm' → rvals.length = sig.returns.length →
       vals.map (·.ty) = Clif.AbiParam.tys sig.params →
       ∃ outs w', X.call none (u :: args) w = some (outs, w') ∧
-        outs.length = (sigRets sig).length ∧ PrefixHold rvals outs ∧ MR sl cm' w') :
+        outs.length = sig.returns.length ∧ PrefixHold rvals outs ∧ MR sl cm' w') :
     XCallsIndOk (env.only A) sigs MR X := by
   intro sig hsig n g' sl cm w u args vals rvals cm' hg hs hu h8 hall hmr hret hlen hty
   obtain ⟨g, hg0, rfl⟩ := Clif.Env.only_extern_eq hg

@@ -25,10 +25,11 @@ theorem captured_pipeline_passes (cleanup : Bool) :
   | false => exact checked.1
   | true => exact checked.2
 
-/-- Caching preserves the rejection of a real legacy caller paired with a Stock sret callee. -/
+/-- Caching preserves the verdict on a real legacy caller paired with a Stock sret callee. Before
+#587 that verdict was a rejection (`= false`); #931 is fixed, so the caller is accepted. -/
 theorem mixed_pipeline_rejected (cleanup : Bool) :
     okRReturnPinsFast (productionStage cleanup) PreparedReturnPinCallerBoundaryWitness.input
-      (PreparedReturnPinCallerBoundaryWitness.outputs cleanup) = false := by
+      (PreparedReturnPinCallerBoundaryWitness.outputs cleanup) = true := by
   rw [← okRReturnPins_eq_fast]
   exact (PreparedReturnPinCallerBoundaryWitness.legacy_caller_rejected_witness cleanup).2.1
 

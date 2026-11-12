@@ -65,11 +65,12 @@ theorem progOsCore_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ 
     {info : CallInfo} (hdefs0 : info.defs = callDefs Ld)
     {ops : Array Operand} {regs : Array Reg}
     (hdefs : ((ops.zip regs).toList.filter (·.1.isDef)) = (callDefOps Ld).zip (Ld.map (·.1)))
-    {t w w' : Arm.ArmState} {outs : List CV}
+    {t w w' : Arm.ArmState} {o outs : List CV}
     (hK : κ M g ≤ (spOf t).toNat) (hG : ∀ a, G a → t.mem a = s0.mem a)
     (hra : RaOk (L.A h) (Arm.r .PC t))
     (hsw : SameWorld F t w)
-    (hx : L.progXMode modes κ M F h (Lu.map (fun q => regVal t q.2)) w = some (outs, w')) :
+    (hx : L.progXMode modes κ M F h (Lu.map (fun q => regVal t q.2)) w = some (o, w'))
+    (houts : ∃ n, outs = o.take n) :
     SameWorld F (L.pcall M h t) w' ∧
       FrameKeep (fun a => F a ∧ ¬ StackBelow (κ M g) (spOf t) a) t (L.pcall M h t) ∧
       (∀ p ∈ defRegs ops regs outs, regVal (L.pcall M h t) p.1.2 = p.2) ∧
@@ -172,18 +173,28 @@ theorem progOsCore_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ 
         have := congrArg List.length hrt
         simp only [List.length_map, Clif.AbiParam.tys] at this
         rw [← this]; exact hhold.1
-    have same : ∀ pin ∈ modeReturnPins modes h,
+    have hrl : h.sig.returns.length ≤ rvals.length := by
+      have := congrArg List.length hrt
+      simp only [List.length_map, Clif.AbiParam.tys] at this
+      omega
+    have same : ∀ pin ∈ (modeReturnPins modes h).take h.sig.returns.length,
         regVal (L.pcall M h t) pin = regVal (L.pcall M h (L.canon h uses w)) pin := by
       intro pin member
       have returnedPin : pin ∈ us.map (·.2) := by
-        have selected := ReturnPinMode.pins_prefix_of_valid hus hlr
-        change pin ∈ (modes h).pins h (sigRets h.sig).length at member
+        have selected := ReturnPinMode.pins_prefix_of_valid hus hlr hrl
+        change pin ∈ ((modes h).pins h (sigRets h.sig).length).take h.sig.returns.length at member
         rw [selected] at member
         exact List.mem_of_mem_take member
       rw [hs_eq,hc_eq,regVal_set_program,regVal_set_program]
       exact hs_ret.pins_agree hc_ret hlen pin returnedPin
-    have resultRegs := hLd.defRegs hdefs same
-    simpa only [List.map_map,Function.comp_def] using resultRegs
+    have resultRegs := (hLd.take h.sig.returns.length).defRegs hdefs same
+    intro p hp
+    obtain ⟨n, rfl⟩ := houts
+    rw [defRegs] at hp
+    have hp' : p ∈ defRegs ops regs (((modeReturnPins modes h).take h.sig.returns.length).map
+        (regVal (L.pcall M h (L.canon h uses w)))) := by
+      rw [defRegs]; exact mem_zip_of_mem_zip_take hp
+    simpa only [List.map_map,Function.comp_def] using resultRegs p hp'
   · -- the registers the callee preserves
     intro r hr hnd' hnc
     rw [hs_eq, regVal_set_program]
@@ -264,17 +275,18 @@ theorem progOs_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Budge
   have hregs := callRegs_eq (regs := regs) (by simpa using hsz')
     (fun p hp r hr => (hloc p hp).2 r hr)
   rw [call_useVals hregs] at hsem
-  have hx : L.progXMode modes κ M F h (Lu.map (fun q => regVal t q.2)) w = some (outs, w') := by
+  obtain ⟨o, hx, hout⟩ : ∃ o, L.progXMode modes κ M F h (Lu.map (fun q => regVal t q.2)) w =
+      some (o, w') ∧ outs = o.take (callDefs Ld).length := by
     simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
     obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
     rw [L.XMode_prog hpf] at hx
-    exact hx
+    exact ⟨o, hx, rfl⟩
   have matched : CallReturnPins Ld (modeReturnPins modes h) :=
     (hL.compiled g hg).calls.direct _ h hsite Ld rfl
   obtain ⟨us', ds', rfl⟩ := assign_call_sym hasg
   exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_some hpf],
     L.progOsCore_return_pins hL hκ ih hg hh (.inl ⟨_, hsite⟩) himgF himgG himgS hLu matched rfl (call_defs hregs) hK hG
-      (hL.raCall g hg _ h hsite _ hP.callPc) hsw hx⟩
+      (hL.raCall g hg _ h hsite _ hP.callPc) hsw hx ⟨_, hout⟩⟩
 end LinkSys
 
 namespace LinkSys
@@ -324,11 +336,12 @@ theorem progOsReg_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Bu
     exact blrTarget_of hc.layout hlm hj hn0 hpc
       (fun k wd hk => hL.imgCode g hg t (fun a ha => (hG a (himgG a ha)).trans (himgS a ha)) k wd hk)
   -- the external semantics' call
-  have hx : (L.XMode modes κ M g F).call none (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w =
-      some (outs, w') := by
+  obtain ⟨o, hx, hout⟩ : ∃ o, (L.XMode modes κ M g F).call none
+      (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w =
+      some (o, w') ∧ outs = o.take (callDefs Ld).length := by
     simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
     obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
-    exact hx
+    exact ⟨o, hx, rfl⟩
   cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
   | none =>
     -- no function of `P` at the target: the base's contract
@@ -337,7 +350,7 @@ theorem progOsReg_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Bu
     have hsem' : csem F ctx L.Xb (.call ⟨.reg (.vreg tv .int), retPairs Lu, callDefs Ld⟩)
         (useVals (tgtOp tv :: (retOps Lu ++ callDefOps Ld)).toArray regs t) w =
         some (outs, w', .next) := by
-      rw [call_useVals_reg hregs0]; simp [csem, hx]
+      rw [call_useVals_reg hregs0, hout]; simp [csem, hx]
     obtain ⟨s', hex, rest⟩ := hL.baseOs g hg _ hsite (.inl rfl) F (κ M g) G s0
       (CallAt (L.A g).fa (L.A g).base) ctx t hK hD hG c wh _ regs _ w outs w' hops0 hst hasg hP hsw
       hal herr hsem'
@@ -364,7 +377,7 @@ theorem progOsReg_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Bu
       exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_none hb],
         L.progOsCore_return_pins hL hκ ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS hLu matched rfl
           (call_defs_reg hregs0) hK hG
-          (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw hx⟩
+          (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw hx ⟨_, hout⟩⟩
     · cases hx
 end LinkSys
 
@@ -564,7 +577,7 @@ theorem progResult_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ 
       g c sl cm w)
     (hpl : L.NeedSlots → L.PlaceAt cm c) (hinit : Clif.initState L.P h.name vals cm = .ok cs)
     (hret : L.crun M cs = .returned rvals cm') :
-    ∃ outs w', L.progXMode modes κ M F h args w = some (outs, w') ∧ outs.length = (sigRets h.sig).length ∧
+    ∃ outs w', L.progXMode modes κ M F h args w = some (outs, w') ∧ outs.length = h.sig.returns.length ∧
       PrefixHold rvals outs ∧
       RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c sl cm' w' := by
@@ -610,27 +623,27 @@ theorem progResult_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ 
   rw [hbot] at hrt
   have sourceLength : rvals.length = h.sig.returns.length := by
     simpa only [List.length_map,Clif.AbiParam.tys] using congrArg List.length hrt
-  have hlr : rvals.length ≤ (sigRets h.sig).length := by
-    rw [sourceLength]
-    exact returns_le_sigRets _
+  have hlr : rvals.length ≤ h.sig.returns.length := Nat.le_of_eq sourceLength
   have abiBound : (sigRets h.sig).length ≤ us.length := by
     cases sret : h.sig.params.any (·.purpose == .sret) with
     | true => exact hL.sretRets h hh sret us hrs
     | false =>
       rw [sigRets_of_noSret sret,← sourceLength,hlen]
       exact hhold.1
-  have selected := ReturnPinMode.pins_prefix_of_valid hus abiBound
-  have selectedLength : (modeReturnPins modes h).length = (sigRets h.sig).length := by
-    change ((modes h).pins h (sigRets h.sig).length).length = _
-    rw [selected,List.length_take,List.length_map,Nat.min_eq_left abiBound]
+  have selected := ReturnPinMode.pins_prefix_of_valid hus abiBound (Nat.le_of_eq sourceLength.symm)
+  have selectedLength :
+      ((modeReturnPins modes h).take h.sig.returns.length).length = h.sig.returns.length := by
+    change (((modes h).pins h (sigRets h.sig).length).take h.sig.returns.length).length = _
+    rw [selected,List.length_take,List.length_map,
+      Nat.min_eq_left (Nat.le_trans (returns_le_sigRets _) abiBound)]
   refine ⟨_, _, by rw [progXMode,progXWithPins,if_pos hcond], ?_, ⟨by simpa only [List.length_map,selectedLength] using hlr, fun j v x hv hx => ?_⟩,
     ⟨⟨⟨fun a b hv hb => ?_, hmemR.valid, hmemR.symbols⟩, ?_, ?_⟩, ?_, hcond.2⟩⟩
   · rw [List.length_map,selectedLength]
   · -- the results
     have hjr : j < rvals.length := (List.getElem?_eq_some_iff.mp hv).1
     have hju : j < us.length := by have := hhold.1; omega
-    have chosen : (modeReturnPins modes h)[j]? = some (us[j]'hju).2 := by
-      change ((modes h).pins h (sigRets h.sig).length)[j]? = _
+    have chosen : ((modeReturnPins modes h).take h.sig.returns.length)[j]? = some (us[j]'hju).2 := by
+      change (((modes h).pins h (sigRets h.sig).length).take h.sig.returns.length)[j]? = _
       rw [selected,List.getElem?_take,if_pos (by omega)]
       simp only [List.getElem?_map,List.getElem?_eq_getElem hju,Option.map_some]
     simp only [List.getElem?_map,chosen,Option.map_some,Option.some.injEq] at hx
@@ -825,7 +838,7 @@ theorem xCallsIndOk_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.
         argsAt_regLocs hargs⟩]
       exact hx
     · rw [hol]
-      exact hsr sig hsig hm.ty hm.returns_length
+      exact hm.returns_length
 end LinkSys
 
 namespace LinkSys
@@ -903,12 +916,21 @@ theorem progX_ni_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hN : L
       have := hhold.1
       omega
     · exact hL.sretRets h hh hs us hrs
+  have hrl : h.sig.returns.length ≤ rvals.length := by
+    have hce := clifEntry_initState hpf hinit
+    obtain ⟨Nr, hrunN⟩ := hR.runs M cs _ hrun (.inl ⟨_, _, rfl⟩)
+    have hrt := Clif.runLoop_returned_tys hL.free Nr cs rvals cm' (runInv_entry hh hce) hrunN
+    have hbot : cs.bottom = h := by simp [Clif.State.bottom, hce.callers, hce.func]
+    rw [hbot] at hrt
+    have e := congrArg List.length hrt
+    simp only [List.length_map, Clif.AbiParam.tys] at e
+    omega
   refine ⟨?_,?_⟩
   · apply List.map_congr_left
     intro pin member
     have returnedPin : pin ∈ us.map (·.2) := by
-      have selected := ReturnPinMode.pins_prefix_of_valid hus hsr
-      change pin ∈ (modes h).pins h (sigRets h.sig).length at member
+      have selected := ReturnPinMode.pins_prefix_of_valid hus hsr hrl
+      change pin ∈ ((modes h).pins h (sigRets h.sig).length).take h.sig.returns.length at member
       rw [selected] at member
       exact List.mem_of_mem_take member
     rw [heq,heq',regVal_set_program,regVal_set_program]

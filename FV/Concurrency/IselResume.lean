@@ -193,7 +193,7 @@ theorem isel_resumeC {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState}
     {rvals : List Clif.Val} {cm' : Clif.Mem}
     (hrty : rvals.map (·.ty) = Clif.AbiParam.tys ext.sig.returns)
     {regs' : Clif.Regs} (hregs : s.frame.regs.setMany stm.results rvals = some regs')
-    {outs : List CV} {y : ArmState} (hlen : outs.length = (sigRets ext.sig).length)
+    {outs : List CV} {y : ArmState} (hlen : outs.length = ext.sig.returns.length)
     (hpre : PrefixHold rvals outs) (hmr : RelW Γ f c slots cm' y) :
     ∃ ρ', VStep vc (csem Γ.F fctx (xcallX X outs y)) (.run ⟨b, k, ρ, w⟩) (.run ⟨b, k + 1, ρ', y⟩) ∧
       Match f ctx R gn bl A (RelW Γ f c) slots

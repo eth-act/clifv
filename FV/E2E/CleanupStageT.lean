@@ -72,11 +72,13 @@ theorem retRegsT_int_range : ∀ (n nx nv : Nat),
     congr 1
     omega
 
-/-- Integer values in the integer return registers `x0, x1, …` are in their typed return
-registers. -/
+/-- Integer values in the integer return registers `x0, x1, …` (any ABI return after them, an
+`sret` function's struct pointer, in x8: `RetPins`) are in their typed return registers. #587:
+`RetRegsOk` puts that extra return in x8, so the pre-#587 premise (x0, x1, … throughout) made
+the statement false when `vals.length < us.length`. -/
 theorem retRegsOk_of_int {vals : List Clif.Val} {us : List (Reg × Reg)}
     (hint : ∀ v ∈ vals, v.ty.isInt = true) (hlen : vals.length ≤ us.length)
-    (hus : us.map (·.2) = (List.range us.length).map Reg.x) : RetRegsOk vals us := by
+    (hus : RetPins vals us) : RetRegsOk vals us := by
   refine ⟨List.replicate (us.length - vals.length) .int, ?_⟩
   have hv : vals.map (fun v => tyClass v.ty) = List.replicate vals.length .int := by
     apply List.eq_replicate_iff.mpr
@@ -86,7 +88,9 @@ theorem retRegsOk_of_int {vals : List Clif.Val} {us : List (Reg × Reg)}
     have h := hint v hv
     revert h
     cases v.ty <;> simp [tyClass, Clif.Ty.isInt]
-  rw [hv, List.replicate_append_replicate, Nat.add_sub_cancel' hlen, retRegsT_int_range, hus]
+  unfold RetPins at hus
+  rw [hv, List.replicate_append_replicate, Nat.add_sub_cancel' hlen, List.take_replicate,
+    Nat.min_eq_left hlen, retRegsT_int_range, List.length_replicate, hus, map_retX_ge hlen]
   simp
 
 /-- **`IselSimT` from `IselSim`** for a function with integer returns: the run's realisation from

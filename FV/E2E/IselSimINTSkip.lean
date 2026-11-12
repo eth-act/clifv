@@ -318,7 +318,7 @@ theorem iselSim_relWI_cleanupN_stage {p : Clif.Program} {f : Clif.Function} {k :
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VRetFrom (skipStage f vc) (valueSemI F ⟨fa.k, af.slotBase⟩ XI)
           ⟨0, 0, ρ₀, (w₀, 0)⟩ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w.1 ∧
         ∃ u, ReachN env p cs u w.2 ∧ Clif.step env p u = .done vals cm) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →

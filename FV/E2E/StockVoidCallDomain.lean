@@ -254,7 +254,14 @@ theorem Layout.return_function {f : Clif.Function} {result : Stock.Result}
       (prelude.toList ++ [.call ⟨.sym layout.ext.name,retPairs resolvedPairs,[]⟩,.rets []]) :=
     segAt_of_toList (L₁ := []) (by simpa only [List.nil_append] using blockList)
   obtain ⟨path,_,instruction,operands,ran,_,_⟩ := seqRun_stop_star placed segment complete
-  refine ⟨entrySeed event.ctx fr,[],[],w2,after,?_,layout.retABI,rfl,?_,mem2,freed⟩
+  have ordinary : (sigRets f.sig).any (·.purpose == .sret) = false := by
+    have pins := layout.retABI
+    unfold ReturnABI returnPins at pins
+    cases sret : (sigRets f.sig).any (·.purpose == .sret)
+    · rfl
+    · simp [sret] at pins
+  have retABIV : ReturnABIV f [] [] := ⟨layout.retABI,by simp [sretRet_nil_of_ordinary ordinary]⟩
+  refine ⟨entrySeed event.ctx fr,[],[],w2,after,?_,retABIV,rfl,?_,mem2,freed⟩
   · exact ⟨0,0+(0+1+prelude.toList.length),ρ,w2,block,#[],[],path,placed,instruction,rfl,rfl,rfl⟩
   · simp [PrefixHold]
 
