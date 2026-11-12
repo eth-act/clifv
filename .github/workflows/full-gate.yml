@@ -1,7 +1,9 @@
 name: Full gate
 
 # The full gate list of docs/TO-PROVE.md §7 ("Gate policy") on GitHub-hosted runners: every
-# Lean target, crate-proofs, the axiom audits (scripts/audit/), the run-time gates and cargo fv.
+# Lean target, crate-proofs, the axiom audits (scripts/audit/), float-spec, the run-time gates and
+# cargo fv. Since 2026-11-11 this is the merge gate, so it runs every line of scripts/main-gate.sh
+# (#998); a line added there is added here.
 #
 # The Lean build is split by scripts/ci-build-plan.py into up to three waves of parallel shards;
 # Lake outputs move between jobs as `lake cache stage` directories (artifacts). The assembled
@@ -385,7 +387,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gate: [lean-backend-filetests, lean-backend-encode-check, clif-filetests, opt-difftest]
+        gate: [lean-backend-filetests, lean-backend-encode-check, clif-filetests, opt-difftest, arm-fault-cosim]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -424,6 +426,11 @@ jobs:
             rc=1; [[ -n $p && $p -ge $bp && $f -le $bf && $d -le $bd ]] && rc=0
             line="pass $p fail $f disagree $d (baseline pass $bp fail $bf disagree $bd)"
           fi
+          if [[ $GATE == arm-fault-cosim ]]; then
+            # the local gate's line (152 forms, 15,200 vectors on 9ae930c5); no vector run is not a pass
+            line=$(grep -E '^TOTAL' "gate-logs/$GATE.log" | tail -n 1 || true)
+            if [[ $rc == 0 && ! $line =~ ^TOTAL\ forms\ [1-9][0-9]*\ vectors\ [1-9][0-9]*\ faults\ [0-9]+\ failures\ 0$ ]]; then rc=1; fi
+          fi
           echo "$GATE rc=$rc $(( $(date +%s) - start )) s: $line" | tee gate-logs/summary.txt
           tail -n 15 "gate-logs/$GATE.log"
           exit $rc
@@ -435,7 +442,7 @@ jobs:
           retention-days: 14
 
   cargo-fv:
-    name: cargo fv --lean-link --verified (${{ matrix.example }})
+    name: cargo fv${{ matrix.args && format(' {0}', matrix.args) }} (${{ matrix.example }})
     needs: [plan, assemble]
     if: ${{ !cancelled() && needs.assemble.result == 'success' }}
     runs-on: ubuntu-24.04
@@ -446,7 +453,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [fv-demo, survey]
+        # The cargo fv lines of scripts/main-gate.sh (#998). `binary`: the line is green only when
+        # every executable passes the binary check (docs/contracts/e2e.md, "Binary level (M9)").
+        # `parity`: the crate-parity measurement below (AGENTS.md: fv-demo and survey).
+        include:
+          - { example: fv-demo, args: '--lean-link --verified', binary: '--binary-check', parity: true }
+          - { example: survey, args: '--lean-link --verified', binary: '--binary-check', parity: true }
+          # #691, #734: typed and Stock-lowered functions in one executable (20 dependencies).
+          # Locally 27 min under a 12 GB cap (after #985), so it fits a 16 GB runner
+          - { example: deps, args: '--lean-link --verified', binary: '--binary-check', parity: false }
+          # #479: a panic unwinding through a Lean-compiled frame larger than 32 KiB. Plain
+          # `cargo fv`: the big function is outside the verified subset (--verified would keep
+          # cg_clif's code), and its executable does not pass the binary check (0 of 1)
+          - { example: bigframe-unwind, args: '', binary: '', parity: false }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -481,15 +500,24 @@ jobs:
       - name: Run
         env:
           EX: ${{ matrix.example }}
+          ARGS: ${{ matrix.args }}
+          BINARY: ${{ matrix.binary }}
         run: |
           mkdir -p gate-logs
           rm -rf "examples/$EX/target/fv"
           start=$(date +%s)
           rc=0
-          PATH="$PWD/rust/target/release:$PATH" FV_ROOT="$PWD" \
-            examples/compare.sh "examples/$EX" --lean-link --verified > "gate-logs/$EX.log" 2>&1 || rc=$?
-          if [[ $rc == 0 ]] && ! grep -q '^SAME' "gate-logs/$EX.log"; then rc=1; fi
-          echo "cargo fv --lean-link --verified $EX rc=$rc $(( $(date +%s) - start )) s: $(grep -E '^SAME|DIFFERENT|binary check:' "gate-logs/$EX.log" | tr '\n' ' ')" | tee gate-logs/summary.txt
+          # shellcheck disable=SC2086
+          PATH="$PWD/rust/target/release:$PATH" FV_ROOT="$PWD" /usr/bin/time -v -o "gate-logs/$EX.time" \
+            examples/compare.sh "examples/$EX" $ARGS > "gate-logs/$EX.log" 2>&1 || rc=$?
+          # green: compare.sh's status 0, its SAME line and, on the --verified lines, `binary check:
+          # N of N` with N > 0 (a job that only asked for SAME passed with "0 of 18", #998)
+          ok=0
+          # shellcheck disable=SC2086
+          verdict=$(python3 scripts/cargo-fv-gate-check.py $BINARY "gate-logs/$EX.log") || ok=$?
+          if [[ $rc == 0 && $ok != 0 ]]; then rc=1; fi
+          echo "cargo fv${ARGS:+ $ARGS} $EX rc=$rc $(( $(date +%s) - start )) s: $verdict" | tee gate-logs/summary.txt
+          grep -E 'Maximum resident|Elapsed' "gate-logs/$EX.time" || true
           tail -n 15 "gate-logs/$EX.log"
           # keep cargo fv's own output: compare.sh writes it to a temporary directory it names
           logs=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "gate-logs/$EX.log" | tail -n 1)
@@ -500,7 +528,7 @@ jobs:
       # The daily digest (#46) reads the artifact. A measurement, not a gate line: it runs whether
       # or not the step above passed, and it never changes this job's result.
       - name: Crate parity
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && matrix.parity }}
         continue-on-error: true
         # a step timeout fails only this step; the job's 240 minutes stay for the gate line
         timeout-minutes: 60
@@ -516,7 +544,7 @@ jobs:
             "$RUNNER_TEMP/crate-parity/fv/plain/tmp" | tee crate-parity/summary.txt
           { echo "### Crate parity: $EX"; echo; echo '```'; cat crate-parity/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: ${{ !cancelled() && hashFiles('crate-parity/crate-parity.json') != '' }}
+        if: ${{ !cancelled() && matrix.parity && hashFiles('crate-parity/crate-parity.json') != '' }}
         with:
           name: crate-parity-${{ matrix.example }}-${{ github.run_attempt }}
           path: crate-parity/crate-parity.json
@@ -526,6 +554,61 @@ jobs:
         if: always()
         with:
           name: gate-cargo-fv-${{ matrix.example }}
+          path: gate-logs
+          retention-days: 14
+
+  float-spec:
+    # FV/Float proved equal to FloatLib's IEEE 754 model, and the same FV/Float definitions under
+    # both toolchains (docs/contracts/float.md, "Trust"; scripts/float-spec.sh). A separate Lake
+    # package on its own toolchain (float-spec/lean-toolchain) that reads only FV/Float's five
+    # core-only modules, so it needs neither the baseline build nor the assembled one.
+    name: float-spec
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/fv-lean
+        with:
+          swap-gb: '16'
+      - name: elan (float-spec's toolchain)
+        env:
+          ELAN_ARCHIVE: ${{ runner.temp }}/elan.tar.gz
+        run: |
+          # scripts/float-spec.sh calls `lake` in the root package (lean-toolchain) and in
+          # float-spec/ (its own lean-toolchain): elan picks the toolchain per directory
+          curl --fail --location --retry 3 \
+            https://github.com/leanprover/elan/releases/download/v4.2.4/elan-x86_64-unknown-linux-gnu.tar.gz \
+            --output "$ELAN_ARCHIVE"
+          echo "42b94d4244e8353142c456ec0e4ca6528fd898a6c604d4059f494e706e431f63  $ELAN_ARCHIVE" | sha256sum --check
+          tar -xzf "$ELAN_ARCHIVE" -C "$RUNNER_TEMP"
+          "$RUNNER_TEMP/elan-init" -y --default-toolchain none --no-modify-path
+          # the root package keeps the pinned toolchain every other job uses
+          "$HOME/.elan/bin/elan" toolchain link "$(cat lean-toolchain)" "$(dirname "$LEAN_BIN_DIR")"
+      - name: Run
+        run: |
+          mkdir -p gate-logs
+          export PATH="$HOME/.elan/bin:$PATH"
+          # Mathlib's oleans (~1 GB download, ~7.5 GB unpacked) and FloatLib's build go on /
+          if (( $(df --output=avail -B1G / | tail -n 1) < 25 )); then
+            sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          fi
+          df -h /
+          (cd float-spec && lake --version) && lake --version
+          start=$(date +%s)
+          rc=0; scripts/float-spec.sh > gate-logs/float-spec.log 2>&1 || rc=$?
+          echo "float-spec rc=$rc $(( $(date +%s) - start )) s: $(grep -E '^(ok|FAIL)|axiom audit|build failed|\(FAIL\)' gate-logs/float-spec.log | tr '\n' ' ')" | tee gate-logs/summary.txt
+          tail -n 15 gate-logs/float-spec.log
+          df -h /
+          exit $rc
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: gate-float-spec
           path: gate-logs
           retention-days: 14
 
@@ -563,7 +646,7 @@ jobs:
 
   report:
     name: Report
-    needs: [plan, wave1, wave2, wave3, assemble, audit, crate-proofs, e2e, runtime, cargo-fv, unused-imports]
+    needs: [plan, wave1, wave2, wave3, assemble, audit, crate-proofs, e2e, runtime, cargo-fv, float-spec, unused-imports]
     if: ${{ always() && needs.plan.result != 'skipped' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10

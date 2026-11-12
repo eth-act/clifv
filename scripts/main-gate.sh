@@ -33,7 +33,9 @@
 # gate line; skipped by `loop` when no DEPSPATHS path changed since the last green run: #691,
 # #734) (cargo fv's per-executable binary check runs `cargo fv link-proof` + `lake exe
 # link-check on every test executable), and plain examples/compare.sh on
-# examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame). When the `lake build`
+# examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame). A cargo fv line is
+# green when scripts/cargo-fv-gate-check.py says so (the CI full gate calls the same script): a
+# SAME line and, on the --verified lines, `binary check: N of N` with N > 0 (#998). When the `lake build`
 # of the executables or the cargo build of the Rust tools fails, the native lines are skipped
 # (they would run stale binaries) and the run is red at the failed build.
 #
@@ -90,7 +92,7 @@ stop_scopes() {
 }
 
 run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
-  local L=$1 CLIF=${2:-1} DEPS=${3:-1} W fail=0 r stale=
+  local L=$1 CLIF=${2:-1} DEPS=${3:-1} W fail=0 r v c stale=
   W=$(pwd); GATE_ROOT=$W
   mkdir -p "$L"
   export FV_LAKE_CACHE=${FV_LAKE_CACHE:-/home/kev/work/clifv-lake-cache}
@@ -151,8 +153,9 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
     if [ -n "$stale" ]; then echo "cargo fv --lean-link --verified $ex: skipped (stale binaries: $stale)"; continue; fi
     rm -rf "examples/$ex/target/fv"
     mc 12G "${NATIVE[@]}" examples/compare.sh "examples/$ex" --lean-link --verified > "$L/native_$ex.log" 2>&1
-    r=$?; echo "cargo fv --lean-link --verified $ex rc=$r: $(grep -E '^SAME|DIFFERENT' "$L/native_$ex.log" | tr '\n' ' ')"
-    { [ $r = 0 ] && grep -q '^SAME' "$L/native_$ex.log"; } || fail=1
+    r=$?; v=$(python3 scripts/cargo-fv-gate-check.py --binary-check "$L/native_$ex.log"); c=$?
+    echo "cargo fv --lean-link --verified $ex rc=$r: $v"
+    { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   done
   # examples/deps (#691, #734): typed and Stock-lowered functions in one executable
   if [ -n "$stale" ]; then
@@ -160,8 +163,9 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   elif [ "$DEPS" = 1 ]; then
     rm -rf "examples/deps/target/fv"
     mc 12G "${NATIVE[@]}" examples/compare.sh examples/deps --lean-link --verified > "$L/native_deps.log" 2>&1
-    r=$?; echo "cargo fv --lean-link --verified deps rc=$r: $(grep -E '^SAME|DIFFERENT|binary check:' "$L/native_deps.log" | tr '\n' ' ')"
-    { [ $r = 0 ] && grep -q '^SAME' "$L/native_deps.log"; } || fail=1
+    r=$?; v=$(python3 scripts/cargo-fv-gate-check.py --binary-check "$L/native_deps.log"); c=$?
+    echo "cargo fv --lean-link --verified deps rc=$r: $v"
+    { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   else
     echo "cargo fv --lean-link --verified deps: skipped (no DEPSPATHS path changed since the last green run)"
   fi
@@ -172,8 +176,9 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   else
     rm -rf examples/bigframe-unwind/target/fv
     mc 12G "${NATIVE[@]}" examples/compare.sh examples/bigframe-unwind > "$L/native_bigframe-unwind.log" 2>&1
-    r=$?; echo "cargo fv bigframe-unwind rc=$r: $(grep -E '^SAME|DIFFERENT' "$L/native_bigframe-unwind.log" | tr '\n' ' ')"
-    { [ $r = 0 ] && grep -q '^SAME' "$L/native_bigframe-unwind.log"; } || fail=1
+    r=$?; v=$(python3 scripts/cargo-fv-gate-check.py "$L/native_bigframe-unwind.log"); c=$?
+    echo "cargo fv bigframe-unwind rc=$r: $v"
+    { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   fi
   echo "end $(date -Is) RESULT=$([ $fail = 0 ] && echo GREEN || echo RED)"
   } > "$L/summary.log" 2>&1

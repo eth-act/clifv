@@ -1092,7 +1092,11 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   `scripts/lean-backend-filetests.sh` (corpus 114/114, runtests ≥ 4672/0/0);
   `scripts/lean-backend-encode-check.sh` (0 differ); `lean-e2e-check` (≥ 1149 accepted, 0 rejected);
   `scripts/arm-fault-cosim.sh` (memory-fault co-simulation against qemu, 0 failures);
-  `cargo fv test --lean-link --verified` on `examples/fv-demo` and the survey; if CLIF semantics change,
+  `scripts/float-spec.sh` (FV/Float against FloatLib, the same definitions under both toolchains);
+  `examples/compare.sh … --lean-link --verified` on `examples/fv-demo`, the survey and `examples/deps`,
+  each green only with a `SAME` line and `binary check: N of N` executables, N > 0
+  (`scripts/cargo-fv-gate-check.py`, #998), and plain `examples/compare.sh` on
+  `examples/bigframe-unwind` (`SAME`); if CLIF semantics change,
   `scripts/clif-filetests.sh` at its baseline (`scripts/clif-filetests-baseline.txt`) and
   `scripts/opt-difftest.sh` with 0 failures.
 - **Gate policy (adopted, #252; @kevaundray's decision of 2026-10-17): merge, then verify.** The full
@@ -1144,12 +1148,17 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
     more room and leaves 25 GB free on `/` (8 shards died of a full disk, 2026-10-31 to 11-04).
     Contributors fill their `FV_LAKE_CACHE` from these builds with `scripts/fetch-lake-cache.sh`.
     Then one job assembles every target
-    and executable, and the gate jobs run: `scripts/axiom-audit.py`, crate-proofs, `lean-e2e-check`
-    (`link-check` is built, it needs a `cargo fv link-proof` directory to run),
-    `lean-backend-filetests.sh`, `lean-backend-encode-check.sh`, `clif-filetests.sh` against
+    and executable, and the gate jobs run every line of `scripts/main-gate.sh` (#998; since
+    2026-11-11 a run on a PR's branch is the merge train's gate): `scripts/axiom-audit.py`,
+    crate-proofs, `lean-e2e-check`,
+    `lean-backend-filetests.sh`, `lean-backend-encode-check.sh`, `arm-fault-cosim.sh`,
+    `clif-filetests.sh` against
     `scripts/clif-filetests-baseline.txt` (a PR that changes CLIF semantics updates it),
-    `opt-difftest.sh`, and `examples/compare.sh … --lean-link --verified` on fv-demo and the survey
-    (cg_clif built in CI). The report job posts the result on #261. Measured on GitHub-hosted runners
+    `opt-difftest.sh`, and the four `examples/compare.sh` lines above (cg_clif built in CI;
+    `link-check` restored from the assembled build, without it every executable is "not checked").
+    `float-spec.sh` runs beside the build (its own Lake package and toolchain, through elan).
+    Not yet in CI: the crate-proofs freshness check (#994, waits for #984).
+    The report job posts the result on #261. Measured on GitHub-hosted runners
     (4 vCPU, 16 GB, 24 GB swap; eth-act's free plan allows 20 jobs at once across all its
     repositories), 2026-10-18: a run with a leaf module changed takes 21 min (shard 3 min, assemble
     10 min, gates 7 min; run 39107480270), one without Lean changes 18 min; a cold build took 8.9 h to
