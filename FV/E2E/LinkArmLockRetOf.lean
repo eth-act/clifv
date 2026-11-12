@@ -226,7 +226,7 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
         L.hooks_lock_tls hNXF M m r hz (zc_sub_F hRF hD hwd))
       (hag.symm_of_sp hsps) hx29.symm hfl.symm
   -- the return index `k` of both runs, on the machines `L.mach M g`
-  obtain ⟨k, hkdef⟩ : ∃ k, k = (prologueLines (Backend.Proof.actRL (L.A g).vcp (L.A g).rf
+  obtain ⟨k, hkdef⟩ : ∃ k, k = prologueSteps (Backend.Proof.actRL (L.A g).vcp (L.A g).rf
       (L.A g).af (L.A g).fa (L.A g).fb lm (L.A g).base s₀
       (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
       (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).af.saves (Backend.Proof.actRL (L.A g).vcp
@@ -235,7 +235,7 @@ theorem lockRet_of (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) (hK : L.Hooks
       (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).af.frameSize (Backend.Proof.actRL (L.A g).vcp
       (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb lm (L.A g).base s₀
       (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
-      (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).af.isCaller).length + T +
+      (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).af.isCaller + T +
       (Backend.Proof.actRL (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb lm (L.A g).base
         s₀ (L.XPBTGY κ M g F (L.BP M g s₀) (L.RP M g s₀) (L.envOfB M g (spv w₀)) cs (spv w₀))
         (L.hooks M) psF (κ M g) G₀ (GotV (L.A g).vcp)).retLen := ⟨_, rfl⟩
