@@ -1100,8 +1100,8 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   (`cannot run`, `missing`, `not checked`, `linking with rust-lld`); and on the `--verified` lines every
   executable is linked by `lean-ld` and passes the binary check (`binary check: N of N`, N > 0).
   **Known-unverified list:** the only exception to N of N is `scripts/gate-known-unverified.txt`
-  (executable + issue; today the `values` test executables of `b_slices` and `e_option_result` in the
-  survey, #1003). It is exact, not a floor: the line is green only if the set of unverified
+  (executable + issue; empty since #1003's fix: until then the `values` test executables of
+  `b_slices` and `e_option_result` in the survey). It is exact, not a floor: the line is green only if the set of unverified
   executables EQUALS the list for that example. One more unverified executable is red (a regression);
   a listed one that verifies again is red too ("remove the entry"), so the list cannot go stale and the
   PR that fixes an issue deletes its entries. A new entry needs a parent decision and an open issue.
