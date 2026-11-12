@@ -242,5 +242,8 @@ structure LowerScope (f : Clif.Function) : Prop where
       f.extern? fn = some e → stackLayoutOk e.sig = true) ∧
     ∀ B ∈ f.blocks, ∀ fn args et e, B.term = .tryCall fn args et → f.extern? fn = some e →
       stackLayoutOk e.sig = true
+  /-- the call-site signatures of the indirect calls have well-formed stack-argument layouts
+  (S5) -/
+  indStackLayout : ∀ s ∈ indSigs f, stackLayoutOk s = true
 
 end Backend.Proof.Driver

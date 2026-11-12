@@ -43,7 +43,7 @@ theorem lowerInstOkP_of_rulesTF (hrules : LowerRulesCorrectTI program)
     (hout : OutArgsOk F outB MR)
     (hnorm : ExternsIn f exts) (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
-    (hsig : IndSigOk f sigs inst) (hst : StoreTyped ctx inst)
+    (hsig : IndSigOk f sigs inst) (hIstk : IndStack sigs outB) (hst : StoreTyped ctx inst)
     (hstk : ∀ fn args e, inst = .call fn args → f.extern? fn = some e → SigStackOk e.sig outB)
     {cfg : Config} (hco : cfg.checkOverlap = false) {n : Nat}
     (hn : 1002 + (program.rulesOf TId.lower).length ≤ n) {ty : TypeId} {st : LState}
@@ -142,7 +142,8 @@ theorem lowerInstOkP_of_rulesTF (hrules : LowerRulesCorrectTI program)
               hn1 hvb hfirst hmatch heval
             exact ⟨ms, rss, h1, h2, h3.toP⟩
           · exact hmF hfmem
-      · exact hind Rd Pc F isem MR env cp sigs hR hMR hicr r hr hind' f ctx hctx ii info inst hi hc
+      · exact hind Rd Pc F isem MR env cp sigs sb syms outB hR hMR hMem hout hIstk hicr r hr hind'
+          f ctx hctx ii info inst hi hc
           hE hsig cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb hfirst hmatch heval
     · exact hcalls Rd Pc F isem MR env cp exts sb syms outB hR hMR hMem hout hcr r hr hcall f ctx
         hctx hnorm ii info inst hi hc hE hstk cfg hco m n st tr env' s1 out st' tr2 hm1 hn1 hvb
@@ -166,7 +167,7 @@ theorem lowerInstOkP_runTermTF (hrules : LowerRulesCorrectTI program)
     (hout : OutArgsOk F outB MR)
     (hnorm : ExternsIn f exts) (hMRo : MemRelOk F sb syms f MR) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
-    (hsig : IndSigOk f sigs inst) (hst : StoreTyped ctx inst)
+    (hsig : IndSigOk f sigs inst) (hIstk : IndStack sigs outB) (hst : StoreTyped ctx inst)
     (hstk : ∀ fn args e, inst = .call fn args → f.extern? fn = some e → SigStackOk e.sig outB)
     {st : LState} {out : V} {st' : LState} {tr : List RuleId} (hvb : ValsBelow ctx st)
     (h : runTerm ctx "lower" [.inst ii] st = .ok (some out, st', tr)) :
@@ -190,7 +191,7 @@ theorem lowerInstOkP_runTermTF (hrules : LowerRulesCorrectTI program)
     have hlen : (program.rulesOf TId.lower).length ≤ 1000 := by
       rw [show TId.lower = 686 from rfl, data_program.r686]; decide
     obtain ⟨ms, rss, h1, h2, h3⟩ := lowerInstOkP_of_rulesTF hrules hT hFT hCvt hFC hnE hcalls
-      hind hmem hmemF hR hMR hcr hicr hMem hFP hctx hout hnorm hMRo hi hc hsig hst hstk rfl
+      hind hmem hmemF hR hMR hcr hicr hMem hFP hctx hout hnorm hMRo hi hc hsig hIstk hst hstk rfl
       (by omega) hvb ha
     exact ⟨ms, rss, by simpa using h1, h2, h3⟩
 

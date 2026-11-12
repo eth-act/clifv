@@ -36,7 +36,9 @@ structure InSubsetTCF (p : Clif.Program) (f : Clif.Function) : Prop where
   tryExterns : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   abiSigs : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true
-  indSigs : ∀ s ∈ indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true
+  /-- the signatures of the indirect calls pass `sigAbiOk` (`InSubset.indSigs`; before S5 they
+  also had at most 8 parameters) -/
+  indSigs : ∀ s ∈ indSigs f, sigAbiOk s = true
   storeTyped : Compile.storeTypedB f = true
 
 /-- The scope with typed `try_call`s is in the scope with the float operations. -/
@@ -61,17 +63,17 @@ theorem indSig_of_subsetTCF {p : Clif.Program} {f : Clif.Function} (h : InSubset
     unfold indSigs
     refine List.mem_flatMap.mpr ⟨B, hB, List.mem_append_left _ (List.mem_filterMap.mpr ⟨st, hst, ?_⟩)⟩
     rw [hi]; exact hs
-  exact ⟨hmem, (h.indSigs s hmem).1⟩
+  exact hmem
 
 theorem tryIndSig_of_subsetTCF {p : Clif.Program} {f : Clif.Function} (h : InSubsetTCF p f) :
     ∀ B ∈ f.blocks, ∀ c args et s, B.term = .tryCallIndirect c args et →
-      f.sigDecls.lookup et.sig = some s → s ∈ indSigs f ∧ s.params.length ≤ 8 := by
+      f.sigDecls.lookup et.sig = some s → s ∈ indSigs f := by
   intro B hB c args et s ht hs
   have hmem : s ∈ indSigs f := by
     unfold indSigs
     refine List.mem_flatMap.mpr ⟨B, hB, List.mem_append_right _ ?_⟩
     rw [ht]; simp [hs]
-  exact ⟨hmem, (h.indSigs s hmem).1⟩
+  exact hmem
 
 /-- **The compiled code with the float operations** (`CompiledTC` with the validator
 `lowerCheckTCF`). -/
@@ -164,6 +166,7 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (hFP s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStackTCF_of_check hlow) houtB)
+      (indStack_mono (indStackTCF_of_check hlow) houtB)
       (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hstT
     terms := termCallsT_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
@@ -179,7 +182,9 @@ theorem iselSimTCF_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       tryStack_mono (tryStackTCF_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCallsT_of_rules htryIndRules htryIndUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s') hctxT
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
+      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
+      (indStack_mono (indStackTCF_of_check hlow) houtB) (hicalls s') hctxT
     tryIndSig := tryIndSig_of_subsetTCF hsub
     cfg := hcfg }
 

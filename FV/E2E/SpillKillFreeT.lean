@@ -58,7 +58,7 @@ theorem abiSigsOk_of_checks {g : Clif.Function} (h1 : sigAbiOk g.sig = true)
     (h2 : g.externs.all (fun e => sigAbiOk e.2.sig) = true) (h3 : indSigsOk g = true) :
     Spill.AbiSigsOk g := by
   simp only [indSigsOk, List.all_eq_true, Bool.and_eq_true, decide_eq_true_eq] at h2 h3
-  exact ⟨⟨h1, h2⟩, h3⟩
+  exact ⟨⟨h1, h2⟩, fun s hs => (h3 s hs).2⟩
 
 namespace LinkCheck
 

@@ -181,7 +181,7 @@ theorem stmt_got {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hd : Dat
           (Cov.totality.1 ctx {} _ _ env (s1, tr1) _ (s', tr2) Cov.total_2529 heval)
         have hsigs : ∀ sig callee args s, inst = .callIndirect sig callee args →
             f.sigDecls.lookup sig = some s → sigAbiOk s = true := fun sig callee args s he hs =>
-          (ha.2 s (Cov.mem_indSigs (he ▸ hmem) hs)).2
+          ha.2 s (Cov.mem_indSigs (he ▸ hmem) hs)
         obtain ⟨E, x, L, D, he', -, -⟩ := run_2529_rel (N := 0) data_program indData_program hctx
           hi hc hsigs rfl hm1 (by omega) hmatch heval
         exact (calls_of_emit_bl h0 E _ he').1 t n hl

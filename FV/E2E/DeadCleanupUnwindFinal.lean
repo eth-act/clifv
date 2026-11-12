@@ -45,7 +45,7 @@ theorem iselSimU_of_driver_stage {f : Clif.Function} {vc vcK : VCode} {ctx : Ctx
     (HU : UnwShape f vc ctx R gn bl A) (hsk : vcK = vc ∨ SkipHyp f vc R bl drop vcK)
     (hds : DriverSem sem) (hRef : Refines Γ.F sem)
     (hMem : MemRefines Γ.F Γ.slotOff Γ.syms sem) (hRS : RaiseSem Γ.F X XR sem)
-    (hstk : CallsStack f Γ.out) (htstk : TryStack f Γ.out)
+    (hstk : CallsStack f Γ.out) (htstk : TryStack f Γ.out) (hIstk : IndStack (indSigs f) Γ.out)
     (hXR : XRaiseOk env (f.externs.map (·.2)) (fun sl cm w => Γ.holds f sl cm w) X XR)
     (hXRi : XRaiseIndOk env (indSigs f) (fun sl cm w => Γ.holds f sl cm w) X XR)
     (hsym : ∀ n b, Γ.syms n = some b → X.sym n 0 = BitVec.ofNat 64 b) :
@@ -53,6 +53,7 @@ theorem iselSimU_of_driver_stage {f : Clif.Function} {vc vcK : VCode} {ctx : Ctx
   have HR : RaiseHyp f sem (fun sl cm w => Γ.holds f sl cm w) env Γ.F X XR Γ.slotOff Γ.syms
       Γ.out :=
     ⟨hRS, hRef, hMem, mrStable_holds Γ f, outArgsOk_holds Γ f, memRelOk_holds Γ f, hstk, htstk,
+      hIstk,
       hXR, hXRi, hsym, fun sl cm w h => (memRelOk_holds Γ f).symbols sl cm w h⟩
   intro args cs w₀ ρ₀ hce hrel hargs htr fuel
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
@@ -122,7 +123,8 @@ theorem backend_correct_cleanup_exU {p : Clif.Program} {f : Clif.Function} {k : 
   refine backend_correct_cleanup_layersU_ex hc (fun s' => iselSimU_of_driver_stage (ctx := ctx)
       (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A) ?_ hUs hsk (hds s') (hRef s')
       (hmem s') (hRS s') (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-      (tryStack_mono (tryStack_of_check hc.lowerOk) houtB) (hXR s') (hXRi s') (hsym s'))
+      (tryStack_mono (tryStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB) (hXR s') (hXRi s') (hsym s'))
     hds hPure hCmp hM6 hent hres hbe hargs hargF hcs hrel htr fuel
   exact {
     shape := hshape
@@ -132,6 +134,7 @@ theorem backend_correct_cleanup_exU {p : Clif.Program} {f : Clif.Function} {k : 
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB)
       (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f)
     terms := hterms s'
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
@@ -205,7 +208,9 @@ theorem backend_correct_of_rules_cleanup_exU {p : Clif.Program} {f : Clif.Functi
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
     (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
+      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB) (hicalls s'))
     hM6 hRef hds hcalls hicalls hmem hPure hCmp hRS hXR hXRi hsym houtB hent hres hbe hargs hargF hcs
     hrel htr fuel
 

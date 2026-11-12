@@ -55,7 +55,7 @@ open Backend Backend.Proof Backend.Proof.Driver
 (`InSubset.of_verifiable` for `InSubsetT`). -/
 theorem InSubsetT.of_verifiableT {p : Clif.Program} {f : Clif.Function}
     (h : Backend.verifiableT f = true) (hp : ∀ n, p.func? n = none) : InSubsetT p f := by
-  simp only [Backend.verifiableT, Backend.abiSigs, Backend.indSigsOk,
+  simp only [Backend.verifiableT, Backend.abiSigs, Backend.indSigsAbiOk,
     Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, and_assoc] at h
   obtain ⟨hE, hst, hf, hext, hind⟩ := h
   exact ⟨hE, fun _ _ _ _ _ _ _ e _ => hp e.name,
@@ -75,7 +75,7 @@ theorem verifiable_or_verifiableT_of_unverifiedReason {f : Clif.Function}
   cases hE : Compile.functionE f <;> cases hT : Compile.functionET f <;>
     cases hTC : Compile.functionETC f <;> cases hTCF : Compile.functionETCF f <;>
     cases hs : Compile.storeTypedB f <;> cases ha : Backend.abiSigs f <;>
-    cases hi : Backend.indSigsOk f <;>
+    cases hi : Backend.indSigsAbiOk f <;>
     simp_all [Backend.verifiable, Backend.verifiableT]
 
 /-- **A function the backend reports without reason is in one of the three scopes**: subset E
@@ -97,7 +97,7 @@ theorem verdict_of_unverifiedReason {f : Clif.Function}
   cases hE : Compile.functionE f <;> cases hT : Compile.functionET f <;>
     cases hTC' : Compile.functionETC f <;> cases hTCF : Compile.functionETCF f <;>
     cases hs : Compile.storeTypedB f <;> cases ha : Backend.abiSigs f <;>
-    cases hi : Backend.indSigsOk f <;>
+    cases hi : Backend.indSigsAbiOk f <;>
     simp_all [Backend.verifiable, Backend.verifiableT, Backend.verifiableTC]
 
 /-- **A function the backend reports without reason is in one of the four scopes**: subset E
@@ -119,7 +119,7 @@ theorem verdict_of_unverifiedReasonF {f : Clif.Function}
   cases hE : Compile.functionE f <;> cases hT : Compile.functionET f <;>
     cases hTC : Compile.functionETC f <;> cases hTCF : Compile.functionETCF f <;>
     cases hs : Compile.storeTypedB f <;> cases ha : Backend.abiSigs f <;>
-    cases hi : Backend.indSigsOk f <;>
+    cases hi : Backend.indSigsAbiOk f <;>
     simp_all [Backend.verifiable, Backend.verifiableT, Backend.verifiableTC,
       Backend.verifiableTCF]
 
@@ -127,7 +127,7 @@ theorem verdict_of_unverifiedReasonF {f : Clif.Function}
 external to `p`. -/
 theorem InSubsetTC.of_verifiableTC {p : Clif.Program} {f : Clif.Function}
     (h : Backend.verifiableTC f = true) (hp : ∀ n, p.func? n = none) : InSubsetTC p f := by
-  simp only [Backend.verifiableTC, Backend.abiSigs, Backend.indSigsOk,
+  simp only [Backend.verifiableTC, Backend.abiSigs, Backend.indSigsAbiOk,
     Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, and_assoc] at h
   obtain ⟨hE, hst, hf, hext, hind⟩ := h
   exact ⟨hE, fun _ _ _ _ _ _ _ e _ => hp e.name,
@@ -192,7 +192,7 @@ theorem lowerChecked_specTC {f : Clif.Function} {vc : VCode}
 external to `p`. -/
 theorem InSubsetTCF.of_verifiableTCF {p : Clif.Program} {f : Clif.Function}
     (h : Backend.verifiableTCF f = true) (hp : ∀ n, p.func? n = none) : InSubsetTCF p f := by
-  simp only [Backend.verifiableTCF, Backend.abiSigs, Backend.indSigsOk,
+  simp only [Backend.verifiableTCF, Backend.abiSigs, Backend.indSigsAbiOk,
     Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, and_assoc] at h
   obtain ⟨hE, hst, hf, hext, hind⟩ := h
   exact ⟨hE, fun _ _ _ _ _ _ _ e _ => hp e.name,

@@ -194,6 +194,7 @@ theorem instCalls_pair_value_viaF (hc : CompiledCleanup f k vc vcp rf af fa fb)
   intro ctx ii info inst st rss st' tr hctx hmem hE hi hcl hsig hemp hvb hrun
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hstk := callsStack_mono (callsStack_of_check hc.lowerOk) (outgoing_le_intBaseCleanupA hc.toA)
+  have hIstk := indStack_mono (indStack_of_check hc.lowerOk) (outgoing_le_intBaseCleanupA hc.toA)
   refine lowerInstOk_pairF_value hNI hTls (Γ := Γ) rfl hctx.func hsig fun Rd Pc => ?_
   obtain ⟨B, hB, stm, hstm, hst⟩ := hmem
   obtain ⟨ms, rss', hem, hov, hok⟩ := lowerInstOkP_runTerm lowerRulesCorrect_program
@@ -202,7 +203,7 @@ theorem instCalls_pair_value_viaF (hc : CompiledCleanup f k vc vcp rf af fa fb)
     (callsRefineP_valueSemG hX (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
     (indCallsRefineP_valueSemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
     (memRefinesR_valueSemG (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
-    hctx (outArgsOk_relW Γ f c) (externsIn_self f) hE (memRelOk_relW Γ f c) hi hcl hsig
+    hctx (outArgsOk_relW Γ f c) (externsIn_self f) hE (memRelOk_relW Γ f c) hi hcl hsig hIstk
     (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst ▸ hc') he) hvb hrun
   cases hov
   rw [hemp, Array.empty_append] at hem

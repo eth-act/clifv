@@ -105,7 +105,7 @@ theorem stmt_callRel {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hd :
         (Cov.totality.1 ctx {} k _ env (s1, tr1) r (s2, tr2) Cov.total_2529 he)
       have hsigs : ∀ sig callee args s, inst = .callIndirect sig callee args →
           f.sigDecls.lookup sig = some s → sigAbiOk s = true := fun sig callee args s he hs =>
-        (ha.2 s (Cov.mem_indSigs (he ▸ hmem) hs)).2
+        ha.2 s (Cov.mem_indSigs (he ▸ hmem) hs)
       obtain ⟨E, x, L, D, he', hrc, h2⟩ := run_2529_rel (N := ctx.valDef.size) data_program
         indData_program hctx hi hc hsigs rfl hm1 hk1 hm he
       exact ⟨Nat.le_trans hIs h2, ⟨h2, callRel_emit E [] _ he' (fun _ h => by cases h) hrc⟩,

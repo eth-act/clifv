@@ -42,6 +42,7 @@ theorem driverHyp_holds {p : Clif.Program} {f : Clif.Function} {vc : VCode} {ctx
   insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
     indRulesCorrect memRulesCorrect_program hRef (mrStable_holds Γ f) hcalls hicalls hmem
     (outArgsOk_holds Γ f) (callsStack_mono (callsStack_of_check hlc) houtB)
+    (indStack_mono (indStack_of_check hlc) houtB)
     (memRelOk_holds Γ f)
   terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
     branchExcludedUnmatchable hRef (mrStable_holds Γ f)
@@ -55,7 +56,7 @@ theorem driverHyp_holds {p : Clif.Program} {f : Clif.Function} {vc : VCode} {ctx
     (outArgsOk_holds Γ f) hcalls, tryStack_mono (tryStack_of_check hlc) houtB⟩
   tryExt := hsub.tryExterns
   tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef (mrStable_holds Γ f)
-    hicalls
+    hmem (outArgsOk_holds Γ f) (indStack_mono (indStack_of_check hlc) houtB) hicalls
   tryIndSig := tryIndSig_of_subset hsub
   cfg := hcfg }
 

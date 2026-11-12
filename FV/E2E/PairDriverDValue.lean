@@ -149,6 +149,7 @@ theorem instCalls_pairD_value (hc : CompiledCleanup f k vc vcp rf af fa fb)
       (indCallsRefineP_valueSemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
       (memRefinesR_valueSemG (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
       hctx (outArgsOk_relW Γ f c) (externsIn_self f) hE (memRelOk_relW Γ f c) hi hcl hsig
+      (indStack_mono (indStack_of_check hc.lowerOk) (outgoing_le_intBaseCleanupA hc.toA))
       (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst ▸ hc') he) hvb hrun
     cases hov
     rw [hemp, Array.empty_append] at hem
@@ -299,7 +300,7 @@ theorem tryCalls_pairD_value (hc : CompiledCleanup f k vc vcp rf af fa fb)
   · trivial
 
 /-- **The `try_call_indirect` calls on pairs of worlds, value semantics, guarded.** -/
-theorem tryIndCalls_pairD_value
+theorem tryIndCalls_pairD_value (hIstk : IndStack (indSigs f) (RAFrame.compute vcp rf).intBase)
     (hXI : XCallsIndOk env (indSigs f)
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
@@ -307,7 +308,7 @@ theorem tryIndCalls_pairD_value
     TryIndCalls (pairSemD (valueSem F ⟨fa.k, af.slotBase⟩ X) F ⟨fa.k, af.slotBase⟩ X)
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p (indSigs f) := by
   intro g ctx ti callee args et data sig items targets info trs lo st1 out st' tr hctx hd he hsig
-    h8 hph hinfo hregs hvb hrun
+    hph hinfo hregs hvb hrun
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hctx' := ctxInv_tryRegs (ctxInv_termCtx hctx hph data) trs
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
@@ -324,8 +325,9 @@ theorem tryIndCalls_pairD_value
     intro Rd Pc
     obtain ⟨ms, hem, hok⟩ := tryIndOkP_runTerm tryIndRulesCorrectP tryIndUnmatchable
       refines_valueSemG (mrStable_relW Γ f c)
+      (memRefinesR_valueSemG (ctx := ⟨fa.k, af.slotBase⟩) rfl hsym) (outArgsOk_relW Γ f c) hIstk
       (indCallsRefineP_valueSemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
-      hctx' hd he hsig h8 hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
+      hctx' hd he hsig hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
       (Nat.le_refl _) hrun
     have : ms = st'.emitted.toList := by
       simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
