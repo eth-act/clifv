@@ -1094,9 +1094,18 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   `scripts/arm-fault-cosim.sh` (memory-fault co-simulation against qemu: faulting vectors, 0 failures);
   `scripts/float-spec.sh` (FV/Float against FloatLib, the same definitions under both toolchains);
   `examples/compare.sh … --lean-link --verified` on `examples/fv-demo`, the survey and `examples/deps`,
-  each green only with a `SAME` line and `binary check: N of N` executables, N > 0
-  (`scripts/gate-line-check.py`, #998), and plain `examples/compare.sh` on
-  `examples/bigframe-unwind` (`SAME`); if CLIF semantics change,
+  and plain `examples/compare.sh` on `examples/bigframe-unwind`. A cargo fv line is green when
+  `scripts/gate-line-check.py` accepts it (one script for CI and `scripts/main-gate.sh`; #998, #1004):
+  `compare.sh` exits 0 with a `SAME` line; cargo fv's own log has no missing-tool or fallback line
+  (`cannot run`, `missing`, `not checked`, `linking with rust-lld`); and on the `--verified` lines every
+  executable is linked by `lean-ld` and passes the binary check (`binary check: N of N`, N > 0).
+  **Known-unverified list:** the only exception to N of N is `scripts/gate-known-unverified.txt`
+  (executable + issue; today the `values` test executables of `b_slices` and `e_option_result` in the
+  survey, #1003). It is exact, not a floor: the line is green only if the set of unverified
+  executables EQUALS the list for that example. One more unverified executable is red (a regression);
+  a listed one that verifies again is red too ("remove the entry"), so the list cannot go stale and the
+  PR that fixes an issue deletes its entries. A new entry needs a parent decision and an open issue.
+  fv-demo, deps and every other line stay strict. If CLIF semantics change,
   `scripts/clif-filetests.sh` at its baseline (`scripts/clif-filetests-baseline.txt`) and
   `scripts/opt-difftest.sh` with 0 failures.
 - **Gate policy (adopted, #252; @kevaundray's decision of 2026-10-17): merge, then verify.** The full
@@ -1154,8 +1163,11 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
     `lean-backend-filetests.sh`, `lean-backend-encode-check.sh`, `arm-fault-cosim.sh`,
     `clif-filetests.sh` against
     `scripts/clif-filetests-baseline.txt` (a PR that changes CLIF semantics updates it),
-    `opt-difftest.sh`, and the four `examples/compare.sh` lines above (cg_clif built in CI;
-    `link-check` restored from the assembled build, without it every executable is "not checked").
+    `opt-difftest.sh`, and the four `examples/compare.sh` lines above (cg_clif built in CI; the five
+    executables cargo fv runs, `lean-backend lean-link clif-decode link-check lean-ld`, restored from
+    the assembled build and required: until #1001 the last two were not, so every link was rust-lld's
+    and every executable "not checked", in green jobs). The job summary prints the known-unverified
+    list with its issue links, and link-check's report of every unverified executable is uploaded.
     `float-spec.sh` runs beside the build (its own Lake package and toolchain, through elan).
     Not yet in CI: the crate-proofs freshness check (#994, waits for #984).
     The report job posts the result on #261. Measured on GitHub-hosted runners

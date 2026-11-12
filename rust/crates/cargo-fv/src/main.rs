@@ -58,6 +58,8 @@ Executables run under qemu-aarch64-static. After a build the report is in target
                       on lean-ld's output (Link.DeadCleanup.compileExe_total_ld) needs no check
                       of the linker's output; separate target dir
   --rust-lld          (with --lean-link) link with rust-lld instead of lean-ld
+                      With --lean-link or --lean-ld a missing lean-link, lean-ld (unless
+                      --rust-lld) or link-check (unless --no-binary-check) is an error
   --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
                       separate target dir)
   --build-std         compile the standard library (std, core, alloc, panic_unwind/panic_abort and
@@ -331,6 +333,19 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let rustc = which_tool(&toolchain, "rustc");
     let rustdoc = which_tool(&toolchain, "rustdoc");
     let root = repo_root();
+    // `--lean-link` / `--lean-ld`: a missing tool is an error, like the three `repo_root` checks,
+    // never a fallback (#1004: without lean-ld every link went to rust-lld, without link-check
+    // every executable was "not checked", and both runs ended with status 0)
+    for (needed, tool, opt_out) in [
+        (lean_link, "lean-link", ""),
+        (lean_ld, "lean-ld", ", or link with rust-lld (--lean-link --rust-lld)"),
+        (lean_link && bin_check, "link-check", ", or pass --no-binary-check"),
+    ] {
+        let p = root.join(".lake/build/bin").join(tool);
+        if needed && !p.exists() {
+            die(&format!("{} missing (FV_ROOT={}); build it: lake build {tool}{opt_out}", p.display(), root.display()));
+        }
+    }
     let Meta { members, target, skip: pkg_skip, mut skip_deps } =
         metadata(&cargo, &toolchain, value_of(&cargo_args, "--manifest-path").as_deref());
     let sysroot = PathBuf::from(capture(Command::new(&rustc).arg("--print").arg("sysroot")).trim());

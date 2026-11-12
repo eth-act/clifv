@@ -1,0 +1,14 @@
+# Executables that are known NOT to pass cargo fv's binary check (docs/contracts/e2e.md,
+# "Binary level (M9)"), each with the issue that tracks it. Read by scripts/gate-line-check.py
+# for the `cargo fv --lean-link --verified` gate lines (CI full gate and scripts/main-gate.sh).
+#
+# A line is green only if the executables that are not verified are EXACTLY the ones listed here
+# for its example: one more is a regression (red), and a listed one that verifies again is red
+# too ("remove the entry"). So this list cannot go stale: the PR that fixes an issue deletes its
+# entries, and nothing is added here without a parent decision and an open issue.
+#
+# Format: EXAMPLE  PACKAGE/EXECUTABLE  #ISSUE   (the executable's file name without its -<hash>)
+
+# 3 Lean-compiled functions in each fail link-check's returnPins (since #892; not fixed by #933)
+survey  b_slices/values  #1003
+survey  e_option_result/values  #1003

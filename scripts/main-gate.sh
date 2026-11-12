@@ -35,8 +35,10 @@
 # link-check on every test executable), and plain examples/compare.sh on
 # examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame). A cargo fv line and
 # the arm-fault-cosim line are green when scripts/gate-line-check.py says so (the CI full gate
-# calls the same script): a SAME line and, on the --verified lines, `binary check: N of N` with
-# N > 0; a TOTAL line with vectors and faulting vectors and no failure (#998). When the `lake build`
+# calls the same script): a SAME line, no missing tool or fallback in cargo fv's own log and, on
+# the --verified lines, every link by lean-ld and every executable through the binary check
+# except exactly the issue-linked ones of scripts/gate-known-unverified.txt; a TOTAL line with
+# vectors and faulting vectors and no failure (#998, #1003, #1004). When the `lake build`
 # of the executables or the cargo build of the Rust tools fails, the native lines are skipped
 # (they would run stale binaries) and the run is red at the failed build.
 #
@@ -90,6 +92,14 @@ stop_scopes() {
   for p in $(jobs -p); do kill -TERM "$p" 2>/dev/null; done
   [ "$GATE_NSCOPE" -gt 0 ] && systemctl --user stop "$GATE_SCOPE-*.scope" 2>/dev/null
   return 0
+}
+
+# The verdict of a cargo fv line (scripts/gate-line-check.py, as in the CI full gate). LOG is the
+# output of examples/compare.sh, which names the directory holding cargo fv's own log (fv.log).
+fv_verdict() { # LOG [--binary-check EXAMPLE]
+  local log=$1 d; shift
+  d=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "$log" | tail -n 1)
+  python3 "$GATE_ROOT/scripts/gate-line-check.py" cargo-fv "$@" "$log" "$d/fv.log"
 }
 
 run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
@@ -155,7 +165,7 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
     if [ -n "$stale" ]; then echo "cargo fv --lean-link --verified $ex: skipped (stale binaries: $stale)"; continue; fi
     rm -rf "examples/$ex/target/fv"
     mc 12G "${NATIVE[@]}" examples/compare.sh "examples/$ex" --lean-link --verified > "$L/native_$ex.log" 2>&1
-    r=$?; v=$(python3 scripts/gate-line-check.py cargo-fv --binary-check "$L/native_$ex.log"); c=$?
+    r=$?; v=$(fv_verdict "$L/native_$ex.log" --binary-check "$ex"); c=$?
     echo "cargo fv --lean-link --verified $ex rc=$r: $v"
     { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   done
@@ -165,7 +175,7 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   elif [ "$DEPS" = 1 ]; then
     rm -rf "examples/deps/target/fv"
     mc 12G "${NATIVE[@]}" examples/compare.sh examples/deps --lean-link --verified > "$L/native_deps.log" 2>&1
-    r=$?; v=$(python3 scripts/gate-line-check.py cargo-fv --binary-check "$L/native_deps.log"); c=$?
+    r=$?; v=$(fv_verdict "$L/native_deps.log" --binary-check deps); c=$?
     echo "cargo fv --lean-link --verified deps rc=$r: $v"
     { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   else
@@ -178,7 +188,7 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   else
     rm -rf examples/bigframe-unwind/target/fv
     mc 12G "${NATIVE[@]}" examples/compare.sh examples/bigframe-unwind > "$L/native_bigframe-unwind.log" 2>&1
-    r=$?; v=$(python3 scripts/gate-line-check.py cargo-fv "$L/native_bigframe-unwind.log"); c=$?
+    r=$?; v=$(fv_verdict "$L/native_bigframe-unwind.log"); c=$?
     echo "cargo fv bigframe-unwind rc=$r: $v"
     { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   fi

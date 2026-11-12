@@ -455,18 +455,19 @@ jobs:
       fail-fast: false
       matrix:
         # The cargo fv lines of scripts/main-gate.sh (#998). `binary`: the line is green only when
-        # every executable passes the binary check (docs/contracts/e2e.md, "Binary level (M9)").
+        # the executables pass the binary check (docs/contracts/e2e.md, "Binary level (M9)"): all
+        # of them, except exactly the issue-linked ones of scripts/gate-known-unverified.txt.
         # `parity`: the crate-parity measurement below (AGENTS.md: fv-demo and survey).
         include:
-          - { example: fv-demo, args: '--lean-link --verified', binary: '--binary-check', parity: true }
-          - { example: survey, args: '--lean-link --verified', binary: '--binary-check', parity: true }
+          - { example: fv-demo, args: '--lean-link --verified', binary: true, parity: true }
+          - { example: survey, args: '--lean-link --verified', binary: true, parity: true }
           # #691, #734: typed and Stock-lowered functions in one executable (20 dependencies).
           # Locally 27 min under a 12 GB cap (after #985), so it fits a 16 GB runner
-          - { example: deps, args: '--lean-link --verified', binary: '--binary-check', parity: false }
+          - { example: deps, args: '--lean-link --verified', binary: true, parity: false }
           # #479: a panic unwinding through a Lean-compiled frame larger than 32 KiB. Plain
           # `cargo fv`: the big function is outside the verified subset (--verified would keep
           # cg_clif's code), and its executable does not pass the binary check (0 of 1)
-          - { example: bigframe-unwind, args: '', binary: '', parity: false }
+          - { example: bigframe-unwind, args: '', binary: false, parity: false }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -495,9 +496,9 @@ jobs:
         run: |
           scripts/build-cg-clif.sh
           (cd rust && cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc)
-          # the executables cargo fv runs (restored from the assembled build). A missing one is not
-          # an error for cargo fv: without link-check the binary check says "not checked" for every
-          # executable (#998), without lean-ld `--lean-link --verified` links with rust-lld (#931)
+          # the five executables cargo fv runs (restored from the assembled build), all required
+          # here. Until #1004 a missing link-check or lean-ld was no error for cargo fv: every
+          # executable "not checked" (#998), every `--lean-link` link by rust-lld, status 0
           lake build lean-backend lean-link clif-decode link-check lean-ld 2>&1 | tail -n 1
           for t in lean-backend lean-link clif-decode link-check lean-ld; do test -x ".lake/build/bin/$t"; done
       - name: Fetch the example's dependencies
@@ -509,7 +510,7 @@ jobs:
         env:
           EX: ${{ matrix.example }}
           ARGS: ${{ matrix.args }}
-          BINARY: ${{ matrix.binary }}
+          BINARY: ${{ matrix.binary && 'yes' || '' }}
         run: |
           mkdir -p gate-logs
           rm -rf "examples/$EX/target/fv"
@@ -518,23 +519,35 @@ jobs:
           # shellcheck disable=SC2086
           PATH="$PWD/rust/target/release:$PATH" FV_ROOT="$PWD" /usr/bin/time -v -o "gate-logs/$EX.time" \
             examples/compare.sh "examples/$EX" $ARGS > "gate-logs/$EX.log" 2>&1 || rc=$?
-          # green: compare.sh's status 0, its SAME line and, on the --verified lines, `binary check:
-          # N of N` with N > 0 (a job that only asked for SAME passed with "0 of 18", #998)
+          # keep cargo fv's own output: compare.sh writes it to a temporary directory it names
+          logs=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "gate-logs/$EX.log" | tail -n 1)
+          if [[ -n "$logs" && -f "$logs/fv.log" ]]; then cp "$logs/fv.log" "gate-logs/$EX-cargo-fv.log"; fi
+          # Green (scripts/gate-line-check.py): compare.sh's status 0, its SAME line, no missing
+          # tool and no fallback in cargo fv's own log and, on the --verified lines, every link by
+          # lean-ld and every executable through the binary check, except exactly the issue-linked
+          # ones of scripts/gate-known-unverified.txt. A job that only asked for SAME passed with
+          # "0 of 18 executable(s) verified" and rust-lld links (#998, #1004).
           ok=0
-          # shellcheck disable=SC2086
-          verdict=$(python3 scripts/gate-line-check.py cargo-fv $BINARY "gate-logs/$EX.log") || ok=$?
+          verdict=$(python3 scripts/gate-line-check.py cargo-fv ${BINARY:+--binary-check "$EX"} \
+            "gate-logs/$EX.log" "gate-logs/$EX-cargo-fv.log") || ok=$?
           if [[ $rc == 0 && $ok != 0 ]]; then rc=1; fi
           echo "cargo fv${ARGS:+ $ARGS} $EX rc=$rc $(( $(date +%s) - start )) s: $verdict" | tee gate-logs/summary.txt
           grep -E 'Maximum resident|Elapsed' "gate-logs/$EX.time" || true
           tail -n 15 "gate-logs/$EX.log"
-          # keep cargo fv's own output: compare.sh writes it to a temporary directory it names
-          logs=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "gate-logs/$EX.log" | tail -n 1)
-          if [[ -n "$logs" && -f "$logs/fv.log" ]]; then cp "$logs/fv.log" "gate-logs/$EX-cargo-fv.log"; fi
+          if [[ -n $BINARY ]] && known=$(grep -E "^$EX[[:space:]]" scripts/gate-known-unverified.txt); then
+            {
+              echo "### Known unverified executables: $EX"
+              echo
+              echo "The line is green only while exactly these executables fail the binary check (\`scripts/gate-known-unverified.txt\`): one more is red, and so is one fewer (the PR that fixes an entry removes it)."
+              echo
+              while read -r _ exe issue; do echo "- \`$exe\`: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/issues/${issue#\#}"; done <<< "$known"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
           exit $rc
       - name: Binary check details
-        # cargo fv prints one line per executable; on a red line keep link-check's own report (its
-        # FAIL lines) for every executable that is not verified
-        if: ${{ failure() && matrix.binary != '' }}
+        # cargo fv prints one line per executable; keep link-check's own report (its FAIL lines) for
+        # every executable that is not verified, the known ones (#1003) included
+        if: ${{ !cancelled() && matrix.binary }}
         continue-on-error: true
         timeout-minutes: 30
         env:
