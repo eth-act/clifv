@@ -34,3 +34,21 @@ import FV.E2E.BackendTwoRunEitherKWitness
 #print axioms E2E.LinkSlotSysWitness.thmPRBRLE_allCRU_Lsl -- witness: native_decide
 #print axioms E2E.TwoRunVWitness.r_twoRunLERWZIUPF_eitherK_Lsl -- witness: native_decide
 #print axioms E2E.TwoRunVWitness.source_twoRunLERWZIUPF_eitherK -- witness: native_decide
+
+-- #581 loop-form stack probes: the two-run theorems that speak only of the states after the
+-- prologues, without a premise on the entries' flags (docs/contracts/e2e.md "Stack probes (loop form)")
+#print axioms Backend.Proof.ProRun.flags_irrel
+#print axioms Backend.Proof.proRun_flags_irrel_witness
+#print axioms E2E.iterN_prologue_flagTwin
+#print axioms E2E.stEqOutX_prologueZ_entry
+#print axioms E2E.stEqOutX_entryZ
+#print axioms E2E.backend_twoRunLE
+#print axioms E2E.backend_twoRunLEF
+#print axioms E2E.backend_twoRunLER
+#print axioms E2E.backend_twoRunLW
+#print axioms E2E.backend_twoRunLWNp
+#print axioms E2E.backend_twoRunLWNpP
+#print axioms E2E.backend_twoRunLWNpPK
+#print axioms E2E.backend_twoRunLWNpPV
+#print axioms E2E.backend_twoRunLWNpV
+#print axioms E2E.backend_twoRunLWNpPVK
