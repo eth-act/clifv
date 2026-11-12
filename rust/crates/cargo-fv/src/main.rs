@@ -161,6 +161,24 @@ fn find_tool(env: &str, candidates: &[PathBuf]) -> PathBuf {
         .unwrap_or_else(|| die(&format!("none of {candidates:?} exists; set {env}")))
 }
 
+/// `--lean-link` / `--lean-ld`: the first missing tool of the Lean link, as an error message. A
+/// missing tool is an error, like the three `repo_root` checks, never a fallback (#1004: without
+/// lean-ld every link went to rust-lld, without link-check every executable was "not checked",
+/// and both runs ended with status 0).
+fn missing_link_tool(root: &Path, lean_link: bool, lean_ld: bool, bin_check: bool) -> Option<String> {
+    [
+        (lean_link, "lean-link", ""),
+        (lean_ld, "lean-ld", ", or link with rust-lld (--lean-link --rust-lld)"),
+        ((lean_link || lean_ld) && bin_check, "link-check", ", or pass --no-binary-check"),
+    ]
+    .into_iter()
+    .find_map(|(needed, tool, opt_out)| {
+        let p = root.join(".lake/build/bin").join(tool);
+        (needed && !p.exists())
+            .then(|| format!("{} missing (FV_ROOT={}); build it: lake build {tool}{opt_out}", p.display(), root.display()))
+    })
+}
+
 fn repo_root() -> PathBuf {
     let r = std::env::var_os("FV_ROOT")
         .map(PathBuf::from)
@@ -333,18 +351,8 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let rustc = which_tool(&toolchain, "rustc");
     let rustdoc = which_tool(&toolchain, "rustdoc");
     let root = repo_root();
-    // `--lean-link` / `--lean-ld`: a missing tool is an error, like the three `repo_root` checks,
-    // never a fallback (#1004: without lean-ld every link went to rust-lld, without link-check
-    // every executable was "not checked", and both runs ended with status 0)
-    for (needed, tool, opt_out) in [
-        (lean_link, "lean-link", ""),
-        (lean_ld, "lean-ld", ", or link with rust-lld (--lean-link --rust-lld)"),
-        (lean_link && bin_check, "link-check", ", or pass --no-binary-check"),
-    ] {
-        let p = root.join(".lake/build/bin").join(tool);
-        if needed && !p.exists() {
-            die(&format!("{} missing (FV_ROOT={}); build it: lake build {tool}{opt_out}", p.display(), root.display()));
-        }
+    if let Some(msg) = missing_link_tool(&root, lean_link, lean_ld, bin_check) {
+        die(&msg);
     }
     let Meta { members, target, skip: pkg_skip, mut skip_deps } =
         metadata(&cargo, &toolchain, value_of(&cargo_args, "--manifest-path").as_deref());
@@ -635,5 +643,37 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     match r.status() {
         Ok(s) => s.code().unwrap_or(1),
         Err(e) => die(&format!("{}: {e}", cargo.display())),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::missing_link_tool;
+
+    /// #1004: with `--lean-link` / `--lean-ld` a missing tool is an error unless its opt-out is given.
+    #[test]
+    fn missing_link_tools_are_errors() {
+        let root = std::env::temp_dir().join(format!("cargo-fv-test-{}", std::process::id()));
+        let bin = root.join(".lake/build/bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        let missing = |link, ld, check| missing_link_tool(&root, link, ld, check);
+        // plain `cargo fv`: none of the three is required
+        assert_eq!(missing(false, false, true), None);
+        // `--lean-link` (lean-ld by default): lean-link, then lean-ld, then link-check
+        assert!(missing(true, true, true).unwrap().contains("lean-link missing"));
+        std::fs::write(bin.join("lean-link"), "").unwrap();
+        assert!(missing(true, true, true).unwrap().contains("lean-ld missing"));
+        // `--rust-lld` opts out of lean-ld, not of link-check
+        assert!(missing(true, false, true).unwrap().contains("link-check missing"));
+        std::fs::write(bin.join("lean-ld"), "").unwrap();
+        assert!(missing(true, true, true).unwrap().contains("link-check missing"));
+        // an explicit `--lean-ld` without `--lean-link` needs the checker too
+        assert!(missing(false, true, true).unwrap().contains("link-check missing"));
+        // `--no-binary-check` opts out of link-check
+        assert_eq!(missing(true, true, false), None);
+        assert_eq!(missing(false, true, false), None);
+        std::fs::write(bin.join("link-check"), "").unwrap();
+        assert_eq!(missing(true, true, true), None);
+        std::fs::remove_dir_all(&root).unwrap();
     }
 }

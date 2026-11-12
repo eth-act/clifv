@@ -496,6 +496,8 @@ jobs:
         run: |
           scripts/build-cg-clif.sh
           (cd rust && cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc)
+          # cargo fv's own check that a missing lean-link/lean-ld/link-check is an error (#1004)
+          (cd rust && cargo test --release -p cargo-fv)
           # the five executables cargo fv runs (restored from the assembled build), all required
           # here. Until #1004 a missing link-check or lean-ld was no error for cargo fv: every
           # executable "not checked" (#998), every `--lean-link` link by rust-lld, status 0

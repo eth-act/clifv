@@ -109,6 +109,10 @@ class CargoFv(unittest.TestCase):
             self.assertFalse(fv(exe("a", "a") + count(1, 1) + FUNCS + "SAME: 0 test outcomes identical (logs: /t)\n", flag)[0])
             # only at the start of a line
             self.assertFalse(fv(exe("a", "a") + count(1, 1) + FUNCS + "  note: SAME: 3 test outcomes identical\n", flag)[0])
+            # review finding (PR #1001, round 2): two valid SAME lines (two logs concatenated) passed
+            ok, line = fv(GREEN + "SAME: 16 test outcomes identical (logs: /t)\n", flag)
+            self.assertFalse(ok)
+            self.assertIn("FAIL: 2 SAME lines, want 1", line)
 
     def test_lean_compiled_functions(self):
         # SAME says nothing about the Lean backend when every function kept cg_clif's code

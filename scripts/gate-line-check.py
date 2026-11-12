@@ -125,8 +125,8 @@ def cargo_fv(text, binary_check, known=(), fv_log=""):
     same = [l for l in lines if l.startswith("SAME")]
     different = [l for l in lines if l.startswith("DIFFERENT")]
     fails = []
-    if not same:
-        fails.append("no SAME line")
+    if len(same) != 1:
+        fails.append(f"{len(same)} SAME lines, want 1")
     for l in same:
         m = SAME.match(l)
         if m is None or int(m[1]) == 0:
