@@ -138,7 +138,7 @@ theorem nv_cases (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
       · exact .inl ⟨by rw [e, hname], rfl⟩
       · exact .inr ⟨e, hto e hcol, _, rfl, by rw [lo64_ofX, hname]⟩
   · -- an indirect call
-    intro sig hsig nm G sl cm u args vals rvals cm' hdn hu hG hsg hlo hl8 hall hmr hret hrl hty
+    intro sig hsig nm G sl cm u args vals rvals cm' hdn hu hG hsg hlo hargsS hmr hret hrl hty
     exfalso
     obtain ⟨hA, hb | ⟨h, hpf, hdecl, -, cs', hinit, hrun⟩⟩ := L.envOfB_only_some hG hret
     · obtain ⟨hpf, -⟩ := hb
@@ -161,6 +161,8 @@ theorem nv_cases (hL : L.Ok) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat}
         hsg h.sig (by simp only [Clif.Env.only_sigOf, envOfB, Clif.linkEnvR_sigOf, hpf,
           Option.map_some])
       obtain ⟨⟨bytes, hb, hb8⟩, -⟩ := hdeclS h hh hdecl (.inl ⟨sig, hsig, hm⟩)
+      have hall : AllHold vals args :=
+        (argsAt_iff_of_regs (hm.paramBytes.trans hb) hb8 hargsS.1).mp hargsS
       obtain ⟨hsw, hmrW, -⟩ := hW h sl cm hcal hM hmr
       have hargsW : ArgsAt h.sig vals args (L.worldPR κ M h (P n) (R n) w) :=
         (argsAt_iff_of_regs hb hb8 hvl).mpr hall

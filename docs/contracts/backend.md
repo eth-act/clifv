@@ -65,7 +65,7 @@ M7's validators (`docs/contracts/e2e.md`, "The validators"): after lowering, `lo
 (`lowerChecked`), and in the regalloc2 path after `prepare`, `prepCheck vc vcp`; a rejection is
 a compile error (the function is not compiled, with the reason). Functions outside the
 end-to-end theorem (`unverifiedReason?`: outside clif-subset-v2 E, unsupported ABI signatures,
-or indirect calls with stack-passed arguments) are compiled without the lowering validator
+or indirect calls with special-purpose parameters) are compiled without the lowering validator
 and listed in `FileAsm.unverified` (`lean-backend` prints `compiled, unverified`). Calls of
 functions in the file, including self-calls, use per-activation environment contracts and do
 not by themselves exclude verification.
