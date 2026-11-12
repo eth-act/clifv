@@ -59,7 +59,7 @@ theorem a2_twoRunLER {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args : 
     (SameWorld.refl _ _) (fun _ _ _ => rfl) (fun _ _ _ _ _ => rfl) htr fuel hlm ⟨p, hk ▸ hpsF, rfl⟩ he he
     rfl (hL.covered fA2 hA2) hx30
     (fun _ _ _ _ _ _ _ _ _ _ _ hl _ _ => hl) (fun _ _ _ _ _ _ _ _ _ _ _ hl _ _ _ => hl)
-    ⟨fun _ _ _ _ => rfl, fun _ _ => rfl⟩ rfl (EntryFlags.refl _ _) vals cm hrun
+    ⟨fun _ _ _ _ => rfl, fun _ _ => rfl⟩ rfl vals cm hrun
   exact ⟨N, h⟩
 
 /-- `stEqOutX_call_of_hookNIX` on the identity hooks. -/

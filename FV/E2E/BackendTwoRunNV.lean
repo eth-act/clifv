@@ -283,8 +283,7 @@ theorem backend_twoRunLWNpPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
       (∃ a b c, ({ R with X := (XI.upTo N).at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
-    (hfl : EntryFlags af s t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
     (w₁.2 ≤ N → ∃ T e e',
       (∀ i < T, ∃ c c', StEqOutX (R.Zc c c')
         (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
@@ -354,9 +353,8 @@ theorem backend_twoRunLWNpPV (hc : CompiledCleanup f k vc vcp rf af fa fb)
       ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
         by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
         he.abi.program, he.gfree⟩
-    exact (stEqOutX_prologueZ hW0 he.abi hx30 (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
-      (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29 hfl
-        (fun _ h => by exact h)).symm).symm
+    exact stEqOutX_prologueZ_entry hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag
+      hx29 hx30 (fun _ h => by exact h)
   have hwi0 : ∀ (m₀ m₀' : Loc → CV), MConf.WIn (fun b => F b ∨ D b)
       (MConf.init R.rf m₀ w₀) (MConf.init R.rf m₀' w₀') := by
     intro m₀ m₀' a hne
@@ -622,8 +620,7 @@ theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
       (∃ a b c, ({ R with X := (XI.upTo N).at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
-    (hfl : EntryFlags af s t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
     (w₁.2 ≤ N → ∃ T e e',
       (∀ i < T, ∃ c c', StEqOutX (R.Zc c c')
         (iterN ({ R with X := (XI.upTo N).at 0 } : RL).step
@@ -661,7 +658,7 @@ theorem backend_twoRunLWNpV (hc : CompiledCleanup f k vc vcp rf af fa fb)
         (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T) = N ∧
       ∃ vb i, vcp.blocks[b]? = some vb ∧ vb.insts[k]? = some i ∧ i.isCallI = true) := by
   obtain ⟨h1, h2⟩ := backend_twoRunLWNpPV hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF he he' hR
-    hcov hx30 (fun n n' c c' i u u' hin _ hin' => hcall n n' c c' i u u' hin hin') htls hag hx29 hfl
+    hcov hx30 (fun n n' c c' i u u' hin _ hin' => hcall n n' c c' i u u' hin hin') htls hag hx29
   refine ⟨fun hN => ?_, h2⟩
   obtain ⟨T, e, e', a1, a2, a3, a4, a5, a6, -⟩ := h1 hN
   exact ⟨T, e, e', a1, a2, a3, a4, a5, a6⟩

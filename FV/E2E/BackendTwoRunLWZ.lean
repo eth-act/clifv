@@ -109,7 +109,7 @@ theorem backend_twoRunLERWZ (hsub : InSubset p f) (hc : Compiled f k vc vcp rf a
   intro vals cm hrun
   obtain ⟨N, e, e', hlk, ⟨⟨W, hqA, -⟩, -, -, hLB⟩, hpc, hpc', hre, hre'⟩ :=
     backend_twoRunLW hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk
-      htr fuel hlm hpsF he he' hR hcov hx30 hcall htls hag hx29 hfl vals cm hrun
+      htr fuel hlm hpsF he he' hR hcov hx30 hcall htls hag hx29 vals cm hrun
   refine ⟨N, hlk, hpc, hpc', ?_⟩
   have hs : ∀ (g : Arm.ArmState → Arm.ArmState) (x : Arm.ArmState) (j : Nat),
       iterN g (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + j) x =

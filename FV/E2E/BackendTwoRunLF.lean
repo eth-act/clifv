@@ -182,8 +182,7 @@ theorem backend_twoRunLEF (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
       (∃ a b c, ({ R with X := XI.at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
-    (hfl : EntryFlags af s t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
     ∃ N e e',
       (∀ i < (prologueSteps R.af.saves R.af.frameSize R.af.isCaller),
@@ -215,7 +214,7 @@ theorem backend_twoRunLEF (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af 
   backend_twoRunLE hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg hstk htr
     fuel hlm hpsF he he' hR hcov hx30 (fun _ _ _ _ _ _ hin hat hx ht => RL.InSeg.exempt hin hat hx ht)
     hcall
-    htls hag hx29 hfl
+    htls hag hx29
 
 end
 
