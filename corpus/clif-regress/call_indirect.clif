@@ -137,3 +137,56 @@ block2:
 }
 ; run: %tci_chain(10, 4) == 35
 ; run: %tci_chain(0, 0) == 7
+
+; S5 (#29): stack-passed arguments of indirect calls. `%sum10` weighs its ten parameters by
+; position (x0..x7, then two on the stack); `call_indirect`/`try_call_indirect` with a ten-parameter
+; call-site signature store the last two arguments in the outgoing area before the `blr`.
+function %sum10(i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i64, v9: i64):
+    v10 = iadd v0, v0
+    v11 = iadd v10, v1
+    v12 = iadd v11, v11
+    v13 = iadd v12, v2
+    v14 = iadd v13, v13
+    v15 = iadd v14, v3
+    v16 = iadd v15, v15
+    v17 = iadd v16, v4
+    v18 = iadd v17, v17
+    v19 = iadd v18, v5
+    v20 = iadd v19, v19
+    v21 = iadd v20, v6
+    v22 = iadd v21, v21
+    v23 = iadd v22, v7
+    v24 = iadd v23, v23
+    v25 = iadd v24, v8
+    v26 = iadd v25, v25
+    v27 = iadd v26, v9
+    return v27
+}
+; run: %sum10(1, 0, 0, 0, 0, 0, 0, 0, 0, 1) == 513
+
+function %ci_stack(i64, i64) -> i64 system_v {
+    sig0 = (i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v
+    fn0 = %sum10(i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v
+block0(v0: i64, v1: i64):
+    v2 = func_addr.i64 fn0
+    v3 = call_indirect sig0, v2(v0, v1, v0, v1, v0, v1, v0, v1, v1, v0)
+    return v3
+}
+; run: %ci_stack(1, 0) == 681
+; run: %ci_stack(0, 1) == 342
+
+function %tci_stack(i64, i64) -> i64 system_v {
+    sig0 = (i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v
+    fn0 = %sum10(i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v
+block0(v0: i64, v1: i64):
+    v2 = func_addr.i64 fn0
+    try_call_indirect v2(v1, v0, v1, v0, v1, v0, v1, v0, v0, v1), sig0, block1(ret0), [ tag0: block2 ]
+block1(v3: i64):
+    return v3
+block2:
+    v4 = iconst.i64 -1
+    return v4
+}
+; run: %tci_stack(1, 0) == 342
+; run: %tci_stack(0, 1) == 681

@@ -27,7 +27,7 @@ theorem abiSigsOk_of_T {g : Clif.Function} (h : fnScopeInTB g = true) : Spill.Ab
   refine ⟨⟨p.2.2.2.1, fun e he => List.all_eq_true.mp p.2.2.2.2.1 e he⟩, fun s hs => ?_⟩
   have := List.all_eq_true.mp p.2.2.2.2.2.1 s hs
   simp only [Bool.and_eq_true, decide_eq_true_eq] at this
-  exact this
+  exact this.2
 
 /-- The conjuncts of `fnScopeInTB2` the typed control-shape analysis needs. -/
 theorem ctlParts_of_T2 {g : Clif.Function} (h : fnScopeInTB2 g = true) :

@@ -25,9 +25,9 @@ open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Spill
 theorem lowerScopeT_of {f : Clif.Function} (h : lowerScopeTB f = true) : LowerScopeT f := by
   simp only [lowerScopeTB, Bool.and_eq_true, List.all_eq_true, bne_iff_ne, ne_eq,
     Bool.not_eq_true', List.isEmpty_eq_false_iff] at h
-  obtain ⟨⟨⟨⟨⟨⟨hE, hne⟩, hent⟩, hctx⟩, htry⟩, hcall⟩, htc⟩ := h
+  obtain ⟨⟨⟨⟨⟨⟨⟨hE, hne⟩, hent⟩, hctx⟩, htry⟩, hcall⟩, htc⟩, hind⟩ := h
   refine ⟨hE, hne, hent, fun ctx ranges st0 hb => ?_, fun B hB et het sig hsig i hi => ?_,
-    ⟨fun B hB st hst fn args e hi he => ?_, fun B hB fn args et e ht he => ?_⟩⟩
+    ⟨fun B hB st hst fn args e hi he => ?_, fun B hB fn args et e ht he => ?_⟩, hind⟩
   · rw [hb] at hctx
     simp only [Bool.and_eq_true, List.all_eq_true] at hctx
     refine ⟨hctx.1, fun ii info inst x hi hc hm => ?_⟩
@@ -52,8 +52,8 @@ theorem lowerScopeTB_of_lowerScopeB {f : Clif.Function} (h : lowerScopeB f = tru
   unfold lowerScopeB at h
   unfold lowerScopeTB
   simp only [Bool.and_eq_true] at h ⊢
-  obtain ⟨⟨⟨⟨⟨⟨hE, hne⟩, hent⟩, hctx⟩, htry⟩, hcall⟩, htc⟩ := h
-  exact ⟨⟨⟨⟨⟨⟨Compile.functionET_of_functionE hE, hne⟩, hent⟩, hctx⟩, htry⟩, hcall⟩, htc⟩
+  obtain ⟨⟨⟨⟨⟨⟨⟨hE, hne⟩, hent⟩, hctx⟩, htry⟩, hcall⟩, htc⟩, hind⟩ := h
+  exact ⟨⟨⟨⟨⟨⟨⟨Compile.functionET_of_functionE hE, hne⟩, hent⟩, hctx⟩, htry⟩, hcall⟩, htc⟩, hind⟩
 
 theorem lowersTB_spec {f : Clif.Function} (h : lowersTB f = true) :
     extendsWidenB f = true ∧ ∃ vc vcp, lowerFunction f = .ok vc ∧ ctlSpillB vc = true ∧
@@ -97,7 +97,8 @@ theorem inSubsetT_of_fnScopeT {g : Clif.Function} (h : fnScopeTB g = true) (p : 
     exact Clif.Program.bare_func? _ _
   · intro sig hs
     have := List.all_eq_true.mp hind sig hs
-    simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at this
+    exact this.2
 
 /-- **The allocation the backend lowers is `AllocChecked`** for a function in the typed input
 scope, whatever the untrusted allocator answered (slice 6's `allocChecked_allocResultT`, its

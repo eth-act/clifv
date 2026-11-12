@@ -361,7 +361,7 @@ theorem handOkT_call (htot : Cov.Totality) {f : Clif.Function} {ctx : Ctx} (hctx
   · obtain rfl := eq_of_mem_of_id lower_ids_nodup hrl mem_lower_2529 (by rw [h]; rfl)
     have hsigs : ∀ sig callee args s, inst = .callIndirect sig callee args →
         f.sigDecls.lookup sig = some s → sigAbiOk s = true := fun sig callee args s he hs =>
-      (ha.2 s (mem_indSigs (he ▸ hmem) hs)).2
+      ha.2 s (mem_indSigs (he ▸ hmem) hs)
     exact handOk_of_run htot total_2529 fun _ hco _ _ _ _ _ _ _ _ _ hm hn hN =>
       run_2529 data_program indData_program hctx hi hc hsigs hco hm hn hN
 

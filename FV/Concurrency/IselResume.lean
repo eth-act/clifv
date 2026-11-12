@@ -39,7 +39,7 @@ def pNil : Clif.Program := { funcs := [] }
 
 /-- A checked function is in the subset of the program without functions. -/
 theorem inSubset_nil {f : Clif.Function} (hv : verifiable f = true) : InSubset pNil f := by
-  simp only [verifiable, abiSigs, indSigsOk, Bool.and_eq_true, List.all_eq_true,
+  simp only [verifiable, abiSigs, indSigsAbiOk, Bool.and_eq_true, List.all_eq_true,
     decide_eq_true_eq, and_assoc] at hv
   obtain ⟨hE, hf, hext', hind⟩ := hv
   exact ⟨hE, fun _ _ _ _ _ _ _ _ _ => rfl, fun _ _ _ _ _ _ _ _ => rfl, ⟨hf, hext'⟩, hind⟩
@@ -112,7 +112,8 @@ theorem driverHypT_mk {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState
     dsem := (driverSem_csem Γ.F fctx X).toDriverSemG
     insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
       indRulesCorrect memRulesCorrect_program hRef hMRs hcalls hicalls hmem hOut
-      (callsStack_mono (callsStack_of_check hlow) houtB) hMRo
+      (callsStack_mono (callsStack_of_check hlow) houtB)
+      (indStack_mono (indStack_of_check hlow) houtB) hMRo
     terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable hRef hMRs
     indSig := indSig_of_subset hsub
@@ -125,7 +126,8 @@ theorem driverHypT_mk {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState
     tryExt := fun B hB fn args et ht => by
       have := List.all_eq_true.mp hnt B hB
       rw [ht] at this; cases this
-    tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef hMRs hicalls
+    tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef hMRs hmem hOut
+      (indStack_mono (indStack_of_check hlow) houtB) hicalls
     tryIndSig := tryIndSig_of_subset hsub
     cfg := hcfg }
 
