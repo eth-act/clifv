@@ -475,8 +475,9 @@ jobs:
         run: |
           scripts/build-cg-clif.sh
           (cd rust && cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc)
-          # the executables cargo fv runs (restored from the assembled build)
-          lake build lean-backend lean-link clif-decode 2>&1 | tail -n 1
+          # the executables cargo fv runs (restored from the assembled build); without link-check
+          # the per-executable binary check reports "not checked" for every executable (#998)
+          lake build lean-backend lean-link clif-decode link-check 2>&1 | tail -n 1
       - name: Run
         env:
           EX: ${{ matrix.example }}
@@ -488,7 +489,7 @@ jobs:
           PATH="$PWD/rust/target/release:$PATH" FV_ROOT="$PWD" \
             examples/compare.sh "examples/$EX" --lean-link --verified > "gate-logs/$EX.log" 2>&1 || rc=$?
           if [[ $rc == 0 ]] && ! grep -q '^SAME' "gate-logs/$EX.log"; then rc=1; fi
-          echo "cargo fv --lean-link --verified $EX rc=$rc $(( $(date +%s) - start )) s: $(grep -E '^SAME|DIFFERENT' "gate-logs/$EX.log" | tr '\n' ' ')" | tee gate-logs/summary.txt
+          echo "cargo fv --lean-link --verified $EX rc=$rc $(( $(date +%s) - start )) s: $(grep -E '^SAME|DIFFERENT|binary check:' "gate-logs/$EX.log" | tr '\n' ' ')" | tee gate-logs/summary.txt
           tail -n 15 "gate-logs/$EX.log"
           # keep cargo fv's own output: compare.sh writes it to a temporary directory it names
           logs=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "gate-logs/$EX.log" | tail -n 1)
