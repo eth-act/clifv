@@ -14,7 +14,7 @@ functions are compiled by the Stock lowerings and whose other functions by `lowe
 
 The projections and the four dispatch theorems `backend_correct_world{,_ni,X,_niX}_pipelineAnyTS`
 have the conclusions of the `…_pipelineAnyTF` ones. The Stock case is the integer world theorem
-(`backend_correct_world…_semantic`) with its returns in x0.. read by class (`retRegsOk_of_x`):
+(`backend_correct_world…_semantic`) with its returns pinned by `RetPins` read by class (`retRegsOk_of_retPins`):
 a run of an integer function returns integers of its return types
 (`returned_tys_stock`, `returned_int_stock`).
 -/
@@ -30,20 +30,37 @@ theorem classes_int {rvals : List Clif.Val} (hint : ∀ v ∈ rvals, v.ty.isInt 
   rintro _ ⟨v, hv, rfl⟩
   simp only [tyClass, hint v hv, ite_true]
 
-/-- Integer returns in x0.. are in their classes' return registers. -/
+/-- Integer returns in x0.. are in their classes' return registers. With exactly as many
+returned registers as values (`hle`; #587: `RetRegsOk` puts any extra ABI return, an `sret`
+function's struct pointer, in x8, so the pre-#587 statement with `≤` became false). -/
 theorem retRegsOk_of_x {rvals : List Clif.Val} {us : List (Reg × Reg)}
     (hus : us.map (·.2) = (List.range us.length).map Reg.x)
+    (hint : ∀ v ∈ rvals, v.ty.isInt = true) (hle : rvals.length = us.length) :
+    RetRegsOk rvals us := by
+  refine ⟨[], ?_⟩
+  rw [List.append_nil, List.take_of_length_le (by simp), classes_int hint, retRegsT_int,
+    List.length_replicate, Nat.sub_self, List.replicate_zero, List.append_nil, hus, hle,
+    List.range_eq_range']
+
+/-- Integer returns pinned by `RetPins` (x0.., then x8) are in their classes' return registers. -/
+theorem retRegsOk_of_retPins {rvals : List Clif.Val} {us : List (Reg × Reg)}
+    (hus : RetPins rvals us)
     (hint : ∀ v ∈ rvals, v.ty.isInt = true) (hle : rvals.length ≤ us.length) :
     RetRegsOk rvals us := by
   refine ⟨List.replicate (us.length - rvals.length) .int, ?_⟩
-  rw [classes_int hint, List.replicate_append_replicate, Nat.add_sub_cancel' hle, retRegsT_int,
-    hus, List.range_eq_range']
+  unfold RetPins at hus
+  rw [classes_int hint, List.replicate_append_replicate, Nat.add_sub_cancel' hle,
+    List.take_replicate, Nat.min_eq_left hle, retRegsT_int, List.length_replicate, hus,
+    map_retX_ge hle, List.range_eq_range']
 
-/-- **Every return of `vc` is in x0, x1, …** (#722): the condition under which the typed link
-layer (`LinkSys.OkT.sretE`) admits an `sret` function outside subset E; `lowerFunction` appends
-the struct pointer to an `sret` function's returns. -/
-def RetsX (vc : VCode) : Prop :=
-  ∀ us, vc.RetsSite us → us.map (·.2) = (List.range us.length).map Reg.x
+/-- **Every return of `vc` is in its `retX` register** (#722): the condition under which the typed
+link layer (`LinkSys.OkT.sretE`) admits an `sret` function outside subset E, for a function of
+`k` declared returns: the first `k` in x0.., the rest (the struct pointer that `lowerFunction`
+appends to an `sret` function's returns) in x8. Before #587 this said x0, x1, … throughout; the
+compiler now returns the struct pointer in x8, as Cranelift does, so that form no longer held
+of any `sret` function's code. -/
+def RetsX (k : Nat) (vc : VCode) : Prop :=
+  ∀ us, vc.RetsSite us → us.map (·.2) = (List.range us.length).map (retX k)
 
 /-- **The Stock artifact of an integer function** (#722): an integer function (`InSubset`)
 without `sret` parameter, with the Stock route's artifact contract (`CompiledSemanticNI`). -/
@@ -186,7 +203,7 @@ theorem backend_correct_world_pipelineAnyTS (hsub : InSubsetTCF p f)
     refine ⟨fun vals cm hrun => ?_, htrap⟩
     obtain ⟨us, outs, w, hus, hlen, hhold, hmem, hrs, hall⟩ := hret vals cm hrun
     exact ⟨us, outs, w,
-      retRegsOk_of_x hus (returned_int_stock hsubS hns hcs htr hrun) (by have := hhold.1; omega),
+      retRegsOk_of_retPins hus (returned_int_stock hsubS hns hcs htr hrun) (by have := hhold.1; omega),
       returned_tys_stock hsubS hns hcs htr hrun, hlen, hhold, hmem, hrs, hall⟩
 
 /-- **The typed world theorem with non-interference for either typed artifact or the Stock
@@ -237,7 +254,7 @@ theorem backend_correct_world_ni_pipelineAnyTS (hsub : InSubsetTCF p f)
       backend_correct_world_ni_semantic (K := K) hsubS hc hcov hX hXI hsym hslot hcs hrel hargs
         htr fuel vals cm hrun
     exact ⟨us, outs, w,
-      retRegsOk_of_x hus (returned_int_stock hsubS hns hcs htr hrun) (by have := hhold.1; omega),
+      retRegsOk_of_retPins hus (returned_int_stock hsubS hns hcs htr hrun) (by have := hhold.1; omega),
       returned_tys_stock hsubS hns hcs htr hrun, hlen, hhold, hmem, hrs, hall, hni⟩
 
 /-- **The typed per-state world theorem for either typed artifact or the Stock artifact of an
@@ -283,7 +300,7 @@ theorem backend_correct_worldX_pipelineAnyTS (hsub : InSubsetTCF p f)
     refine ⟨fun vals cm hrun => ?_, htrap⟩
     obtain ⟨us, outs, w, hus, hlen, hhold, hmem, hrs, hall⟩ := hret vals cm hrun
     exact ⟨us, outs, w,
-      retRegsOk_of_x hus (returned_int_stock hsubS hns hcs htr hrun) (by have := hhold.1; omega),
+      retRegsOk_of_retPins hus (returned_int_stock hsubS hns hcs htr hrun) (by have := hhold.1; omega),
       returned_tys_stock hsubS hns hcs htr hrun, hlen, hhold, hmem, hrs, hall⟩
 
 /-- **The typed per-state world theorem with non-interference for either typed artifact or the
@@ -338,7 +355,7 @@ theorem backend_correct_world_niX_pipelineAnyTS (hsub : InSubsetTCF p f)
       backend_correct_world_niX_semantic (K := K) hsubS hc hcov hX hXI hsym hslot hcs hrel hargs
         htr fuel vals cm hrun
     exact ⟨us, outs, w,
-      retRegsOk_of_x hus (returned_int_stock hsubS hns hcs htr hrun) (by have := hhold.1; omega),
+      retRegsOk_of_retPins hus (returned_int_stock hsubS hns hcs htr hrun) (by have := hhold.1; omega),
       returned_tys_stock hsubS hns hcs htr hrun, hlen, hhold, hmem, hrs, hall, hni⟩
 
 end

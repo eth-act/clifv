@@ -6,9 +6,9 @@ import FV.E2E.SretReturnLink
 
 `compileExe_correct_abi`: `compileExe_correct` for an outside-called function whose `sret` value
 is bound once (`sretStableB f`, the per-function check `lean-e2e-check` reports), and a return of
-the executable machine also leaves the ABI return values `sretArg f args` after the CLIF results
-in x0.. (`ExecRefinesAbi`; for a function with an `sret` parameter `i` and no returns, `args[i]`
-in x0).
+the executable machine also leaves the ABI return values `sretArg f args` after the CLIF results,
+in x8 (`ExecRefinesAbi`; for a function with an `sret` parameter `i` and no returns, `args[i]`
+in x8; until #587: in x0, as the backend moved the pointer there).
 -/
 
 namespace Link.DeadCleanup
@@ -19,7 +19,7 @@ open Backend.Proof.Driver (sretStableB)
 
 /-- **The executable compiler is correct, with the ABI return values**: `compileExe_correct`
 (its premises plus `sretStableB f`), and a return also leaves `sretArg f args` after the CLIF
-results in x0... -/
+results, in x8 (`ExecRefinesAbi`, restated for #587). -/
 theorem compileExe_correct_abi {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExe S file0 = .ok file) (B : BaseEnv) (hB : BaseOk (sys S.inputCleanup B))
     (hH : HooksSim S.inputCleanup B) {n : String} {f : Clif.Function}

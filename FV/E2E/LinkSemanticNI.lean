@@ -87,7 +87,7 @@ theorem progCall_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] {M : Nat} (hM : 
     (hinit : Clif.initState L.P n vals cm = .ok cs)
     (hrun : L.crun M cs = .returned rvals cm') :
     ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
-      us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+      RetPins rvals us ∧ us.length = outs.length ∧
       PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
       (∀ t, L.CallerOk F h uses w t → ∃ k,
         L.pcall M h t =
@@ -155,11 +155,12 @@ theorem progOsCore_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] (hκ : L.Budge
     {info : CallInfo} (hdefs0 : info.defs = callDefs Ld)
     {ops : Array Operand} {regs : Array Reg}
     (hdefs : ((ops.zip regs).toList.filter (·.1.isDef)) = (callDefOps Ld).zip (Ld.map (·.1)))
-    {t w w' : Arm.ArmState} {outs : List CV}
+    {t w w' : Arm.ArmState} {o outs : List CV}
     (hK : κ M g ≤ (spOf t).toNat) (hG : ∀ a, G a → t.mem a = s0.mem a)
     (hra : RaOk (L.A h) (Arm.r .PC t))
     (hsw : SameWorld F t w)
-    (hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (outs, w')) :
+    (hx : L.progX κ M F h (Lu.map (fun q => regVal t q.2)) w = some (o, w'))
+    (houts : ∃ n, outs = o.take n) :
     SameWorld F (L.pcall M h t) w' ∧
       FrameKeep (fun a => F a ∧ ¬ StackBelow (κ M g) (spOf t) a) t (L.pcall M h t) ∧
       (∀ p ∈ defRegs ops regs outs, regVal (L.pcall M h t) p.1.2 = p.2) ∧
@@ -167,10 +168,10 @@ theorem progOsCore_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] (hκ : L.Budge
         r ∉ (MInst.call info).clobbers → regVal (L.pcall M h t) r = regVal t r) ∧
       (∀ r ∈ (MInst.call info).clobbers, r ∈ calleeSaved →
         ckeep r (regVal (L.pcall M h t) r) = ckeep r (regVal t r)) := by
-  have shared := E2E.LinkSys.progOsCore_return_pins (modes := fun _ => .ordinary) (κ := κ) (M := M) (g := g) (h := h) (F := F) (G := G) (s0 := s0) (Lu := Lu) (Ld := Ld) (info := info) (ops := ops) (regs := regs) (t := t) (w := w) (w' := w') (outs := outs) L hL.toReturnPins
+  have shared := E2E.LinkSys.progOsCore_return_pins (modes := fun _ => .ordinary) (κ := κ) (M := M) (g := g) (h := h) (F := F) (G := G) (s0 := s0) (Lu := Lu) (Ld := Ld) (info := info) (ops := ops) (regs := regs) (t := t) (w := w) (w' := w') (o := o) (outs := outs) L hL.toReturnPins
   try simp only [LinkSys.XMode_ordinary,LinkSys.progXMode_ordinary,LinkSys.modeReturnPins,
     ReturnPinMode.pins,ReturnPinMode.Valid] at shared
-  exact shared hκ ih hg hh hcallee himgF himgG himgS hLu (CallReturnPins.ordinary hLd) hdefs0 hdefs hK hG hra hsw hx
+  exact shared hκ ih hg hh hcallee himgF himgG himgS hLu (CallReturnPins.ordinary hLd) hdefs0 hdefs hK hG hra hsw hx houts
 end LinkSys
 
 namespace LinkSys
@@ -278,7 +279,7 @@ theorem progResult_semantic (hL : L.OkSemanticNI) [hR : L.CrunOk] (hκ : L.Budge
       g c sl cm w)
     (hpl : L.NeedSlots → L.PlaceAt cm c) (hinit : Clif.initState L.P h.name vals cm = .ok cs)
     (hret : L.crun M cs = .returned rvals cm') :
-    ∃ outs w', L.progX κ M F h args w = some (outs, w') ∧ outs.length = (sigRets h.sig).length ∧
+    ∃ outs w', L.progX κ M F h args w = some (outs, w') ∧ outs.length = h.sig.returns.length ∧
       PrefixHold rvals outs ∧
       RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c sl cm' w' := by

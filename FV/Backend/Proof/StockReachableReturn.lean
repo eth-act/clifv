@@ -130,7 +130,7 @@ theorem ReturnFromAt.original_sret_arguments {f : Clif.Function} {result : Resul
   obtain ⟨us,outs,world,extra,execution,pins,arity,read,values,memory,freed⟩ := observed
   have same : vals ++ extra = sretArg f args := Clif.Res.ok.inj (read.symm.trans original)
   rw [same] at values
-  exact ⟨us,outs,world,terminal.mem,execution,pins,arity,values,
+  exact ⟨us,outs,world,terminal.mem,execution,pins.abi,arity,values,
     by simpa only [slots] using memory,by simpa only [slots] using freed⟩
 
 end Backend.Stock.Proof

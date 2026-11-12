@@ -133,13 +133,12 @@ theorem mapM_some_mem {α β : Type} {g : α → Option β} :
     · obtain ⟨y, hy, hgy⟩ := mapM_some_mem hrs r hr
       exact ⟨y, List.mem_cons_of_mem _ hy, hgy⟩
 
-/-- Integer value registers return in x0..x(n-1). -/
-theorem retRegsC_valueRegs {ctx : Ctx}
+/-- The classes of integer value registers. -/
+theorem regsClasses_valueRegs {ctx : Ctx}
     (hvr : ∀ x r, ctx.valueReg? x = some r → r.homeCls = .int)
     {xs : List Nat} {rs : List Reg} (h : xs.mapM ctx.valueReg? = some rs) :
-    retRegsC (regsClasses (rs.map fun r => [r])) 0 0 = retRegs rs.length := by
-  rw [regsClasses_single, ← retRegsC_int]
-  congr 1
+    regsClasses (rs.map fun r => [r]) = List.replicate rs.length .int := by
+  rw [regsClasses_single]
   apply List.eq_replicate_iff.mpr
   refine ⟨by simp, fun c hc => ?_⟩
   obtain ⟨r, hr, rfl⟩ := List.mem_map.mp hc
@@ -155,20 +154,23 @@ section
 variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkOverlap = false)
 
 include hp hc in
-/-- `lower_return`: the value registers (integer ones), `rets` pinning them to x0.. -/
+/-- `lower_return`: the value registers (integer ones), `rets` pinning them to x0.. and the
+struct pointer an `sret` function appends (`sretRet`) to x8 (`retX`). -/
 theorem lower_return_ok (hvr : ∀ x r, ctx.valueReg? x = some r → r.homeCls = .int)
     {n : Nat} (hn : 60 ≤ n) {xs : List Nat} {s s' : LState × Array RuleId}
     {v : V} (h : ApplyInternal p (sem ctx) cfg n 25 294 [.values xs] s v s') :
-    ∃ rs ps, xs.mapM ctx.valueReg? = some rs ∧ retRegs rs.length = some ps ∧
+    ∃ rs, xs.mapM ctx.valueReg? = some rs ∧ ∃ ps, (rs.length ≤ 8 ∧
+      ps = (List.range rs.length).map (retX (rs.length - (sretRet ctx.func).length))) ∧
       s'.1 = s.1.emit (.rets (rs.zip ps)) ∧ v = .regsVec [] := by
   isel_split hp hc h 294
   ctl_inv [*, rule_prelude_lower_1493] at hm he
   simp only [mapM_single_map, List.length_map, Option.some.injEq] at *
   subst_vars
   have hrs := ‹List.mapM ctx.valueReg? xs = some _›
-  have hps := ‹retRegsC _ 0 0 = some _›
-  rw [retRegsC_valueRegs hvr hrs] at hps
-  exact ⟨_, hrs, _, hps, rfl⟩
+  have hps := ‹retRegsK _ _ = some _›
+  have h8 := ‹_ ≤ 8›
+  rw [regsClasses_valueRegs hvr hrs, retRegsK_int _ _ h8, Option.some.injEq] at hps
+  exact ⟨_, hrs, _, ⟨h8, hps.symm⟩, rfl⟩
 
 end
 
@@ -250,24 +252,23 @@ theorem ret_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : 
     subst hs
     have hrs' := mapM_valueReg hctx hrs
     subst hrs'
-    obtain ⟨h8, rfl⟩ := retRegs_eq hps
+    obtain ⟨h8, rfl⟩ := hps
     simp only [List.length_map] at h8 ⊢
-    have hz : (xs.map fun x => Reg.vreg x .int).zip ((List.range xs.length).map Reg.x) =
-        retPairs (xs.zip ((List.range xs.length).map Reg.x)) := by
+    generalize hP : (List.range xs.length).map (retX (xs.length - (sretRet ctx.func).length)) = P
+    have hPl : P.length = xs.length := by rw [← hP]; simp
+    have hz : (xs.map fun x => Reg.vreg x .int).zip P = retPairs (xs.zip P) := by
       simp [retPairs, List.zip_map_left, Prod.map]
     rw [hz]
-    refine ⟨[.rets (retPairs (xs.zip ((List.range xs.length).map Reg.x)))], by simp [LState.emit],
+    refine ⟨[.rets (retPairs (xs.zip P))], by simp [LState.emit],
       ⟨by simp [LState.emit], by simp [vdefs_rets], ?_⟩⟩
     intro fr cm ρ w _ hvh _ hmr
     show ∀ vals, fr.getMany xs = .ok vals → _
     intro vals hvals
     obtain ⟨hlen, hv⟩ := getMany_ok hvals
-    have hfst : (xs.zip ((List.range xs.length).map Reg.x)).map (·.1) = xs :=
-      List.map_fst_zip (by simp)
-    have hsnd : (xs.zip ((List.range xs.length).map Reg.x)).map (·.2) =
-        (List.range xs.length).map Reg.x := List.map_snd_zip (by simp)
+    have hfst : (xs.zip P).map (·.1) = xs := List.map_fst_zip (by omega)
+    have hsnd : (xs.zip P).map (·.2) = P := List.map_snd_zip (by omega)
     obtain ⟨w'', hrun, hsw⟩ := seqRun_one_stop hR
-      (operands_rets (xs.zip ((List.range xs.length).map Reg.x))) (ρ := ρ) (w := w) (ctl := .ret)
+      (operands_rets (xs.zip P)) (ρ := ρ) (w := w) (ctl := .ret)
       (by simp) (ispec_rets _ _ w) (by rw [List.toList_toArray, filter_isDef_retOps]; rfl)
     refine ⟨?_, 0, _, _, _, _, _, _, hrun, ?_, ?_, ?_, hMR _ _ _ _ (SameWorld.nf hsw) hmr⟩
     · intro mi hmi u hu
@@ -279,11 +280,12 @@ theorem ret_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : 
       obtain ⟨v, hv'⟩ : ∃ v, vals[j]? = some v := ⟨vals[j]'(by omega), by simp [hj, hlen]⟩
       rw [hv (j := j) _ v (by simp [hj]) hv']
       rfl
-    · simp [retPairs, List.map_map, Function.comp_def] at hsnd ⊢
-      rw [hsnd]
-    · simp [retPairs, hlen]
+    · simp only [retPairs, List.map_map, List.length_map, List.length_zip, hPl, Nat.min_self]
+      simp only [Function.comp_def, Prod.map_snd, id] at hsnd ⊢
+      rw [hsnd, ← hP, hlen]
+    · simp [retPairs, hlen, hPl]
     · rw [vuses_retOps]
-      have : (xs.zip ((List.range xs.length).map Reg.x)).map (ρ ·.1) = xs.map ρ := by
+      have : (xs.zip P).map (ρ ·.1) = xs.map ρ := by
         rw [show (fun q : Nat × Reg => ρ q.1) = ρ ∘ (·.1) from rfl, ← List.map_map, hfst]
       refine ⟨by simp [this, hlen], fun j v x hvj hxj => ?_⟩
       rw [this, List.getElem?_map] at hxj

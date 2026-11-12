@@ -41,7 +41,7 @@ theorem kd_blT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function}
       (st, tr) = .ok (some env', s1))
     (heval : (evalExpr p (sem c) cfg n rule_lower_2542.rhs env').run s1 =
       .ok (some out, (st', tr'))) :
-    TryEm lo.nextVreg (sigRets sig).length st st' := by
+    TryEm lo.nextVreg sig.returns.length st st' := by
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_impl_ok hp (ctx := c) hc (n := n)
@@ -90,15 +90,15 @@ theorem kd_blT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function}
   cases hmi
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
-  have hcd : ((List.range (max (sigRets ext.sig).length 2)).map fun j =>
+  have hcd : ((List.range (max ext.sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs1 hs2
   refine ⟨(stackEnts ((locs.zip args).zip bytes)).map argStore ++
     [.call ⟨.sym ext.name, retPairs (regPairsOf ((locs.zip args).zip bytes)),
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2))⟩], ?_, ?_⟩
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2))⟩], ?_, ?_⟩
   · rw [hs2, hs1]; simp [LState.emit, freshN_emitted]
   · intro mi hmi c' hc'
     rcases List.mem_append.mp hmi with hmi | hmi
@@ -125,7 +125,7 @@ theorem kd_gotT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function
       (st, tr) = .ok (some env', s1))
     (heval : (evalExpr p (sem c) cfg n rule_lower_2551.rhs env').run s1 =
       .ok (some out, (st', tr'))) :
-    TryEm lo.nextVreg (sigRets sig).length st st' := by
+    TryEm lo.nextVreg sig.returns.length st st' := by
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
   obtain ⟨σ, hσ⟩ : ∃ σ : LState, σ.nextVreg = st.nextVreg := ⟨st, rfl⟩
@@ -180,16 +180,16 @@ theorem kd_gotT {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
   rw [show ∀ s : LState, (s.fresh .int).1 = .vreg s.nextVreg .int from fun s => rfl] at hs2 hs0
-  have hcd : ((List.range (max (sigRets ext.sig).length 2)).map fun j =>
+  have hcd : ((List.range (max ext.sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs0 hs1 hs2
   refine ⟨(stackEnts ((locs.zip args).zip bytes)).map argStore ++
     [.loadExtNameGot (.vreg σ.nextVreg .int) ext.name,
      .call ⟨.reg (.vreg σ.nextVreg .int), retPairs (regPairsOf ((locs.zip args).zip bytes)),
-      callDefs (outDefs lo.nextVreg (max (sigRets ext.sig).length 2))⟩], ?_, ?_⟩
+      callDefs (outDefs lo.nextVreg (max ext.sig.returns.length 2))⟩], ?_, ?_⟩
   · rw [hσ, hs2, hs1, hs0]
     simp only [LState.emit, LState.fresh]
     rw [← Array.toList_inj]
@@ -223,7 +223,7 @@ theorem kd_indT {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p)
       (st, tr) = .ok (some env', s1))
     (heval : (evalExpr p (sem c) cfg n rule_lower_2561.rhs env').run s1 =
       .ok (some out, (st', tr'))) :
-    TryEm lo.nextVreg (sigRets sig).length st st' := by
+    TryEm lo.nextVreg sig.returns.length st st' := by
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_ind_impl_ok hp (ctx := c) hc (n := n)
@@ -268,15 +268,15 @@ theorem kd_indT {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p)
   cases hmi
   obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc he) htr
   rw [htrs, exnTableOpnd_cc he, tryDefs_eq _ _ hr8] at hs2
-  have hcd : ((List.range (max (sigRets sig).length 2)).map fun j =>
+  have hcd : ((List.range (max sig.returns.length 2)).map fun j =>
       (Reg.x j, Reg.vreg (lo.nextVreg + j) .int)) =
-      callDefs (outDefs lo.nextVreg (max (sigRets sig).length 2)) := by
+      callDefs (outDefs lo.nextVreg (max sig.returns.length 2)) := by
     simp [callDefs, outDefs, List.map_map, Function.comp_def]
   rw [hcd] at hs2
   simp only at hs1 hs2
   refine ⟨(stackEnts ((locs.zip args).zip bytes)).map argStore ++
     [.call ⟨.reg (.vreg callee .int), retPairs (regPairsOf ((locs.zip args).zip bytes)),
-      callDefs (outDefs lo.nextVreg (max (sigRets sig).length 2))⟩], ?_, ?_⟩
+      callDefs (outDefs lo.nextVreg (max sig.returns.length 2))⟩], ?_, ?_⟩
   · rw [hs2, hs1]; simp [LState.emit]
   · intro mi hmi c' hc'
     rcases List.mem_append.mp hmi with hmi | hmi
@@ -315,9 +315,9 @@ theorem tryDefsExactTF : TryDefsExactTF := by
       (evalExpr program (sem (tryCtx ctx ti data trs)) {} 999999 e env).run (s1, tr1) =
         .ok (out, (s', tr2)) → ∃ o, out = some o :=
     fun hte h => Option.isSome_iff_exists.mp (totality.1 _ {} 999999 _ env _ out _ hte h)
-  have hfin : TryEm lo.nextVreg (sigRets sig).length { st1 with emitted := #[] } s' →
+  have hfin : TryEm lo.nextVreg sig.returns.length { st1 with emitted := #[] } s' →
       ∀ m ∈ s'.emitted.toList, ∀ c, m = .call c →
-        c.defs = callDefs (outDefs lo.nextVreg (max (sigRets sig).length 2)) := by
+        c.defs = callDefs (outDefs lo.nextVreg (max sig.returns.length 2)) := by
     rintro ⟨ms, hms, hc⟩ mi hmi
     rw [hms, Array.empty_append] at hmi
     exact hc mi (by simpa using hmi)

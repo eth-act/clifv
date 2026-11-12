@@ -182,7 +182,7 @@ theorem term_stepGK (hB : ProbeOf semB sem) {n : Nat}
           (DeadDef vc (skipMask f R bl vc drop)) s' ⟨b', k', ρ', w'⟩) ∧
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w' sv, VRetFrom vcK (ISem.counted sem) ⟨b, k, ρ, (w, n)⟩ us outs (w', n) ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         s.frame.getMany (sretRet f) = .ok sv ∧ AllHold (vals ++ sv) outs ∧
         MRW slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
     (∀ c, Clif.step env p s = .trapped c →
@@ -403,7 +403,7 @@ theorem iselSim_relWI_cleanup_stage {p : Clif.Program} {f : Clif.Function} {k : 
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VRetFrom (skipStage f vc) (valueSemI F ⟨fa.k, af.slotBase⟩ XI)
           ⟨0, 0, ρ₀, (w₀, 0)⟩ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         PrefixHold vals outs ∧ MemRel F syms cm w.1) ∧
     (∀ c', Clif.runLoop env p fuel cs = .trapped c' →
       VTrapFrom (skipStage f vc) (valueSemI F ⟨fa.k, af.slotBase⟩ XI) ⟨0, 0, ρ₀, (w₀, 0)⟩ c') := by

@@ -7,13 +7,14 @@ set_option autoImplicit false
 set_option Elab.async false
 set_option maxRecDepth 20000
 
-/-- Keep the original source values and the implicit ABI values in the same actual return trace. -/
+/-- Keep the original source values and the implicit ABI values in the same actual return trace
+(with the number of returned registers, `ReturnABIV`, as `RunOkABIAt` keeps it since #587). -/
 def ReturnValuesAt {W : Type} (f : Clif.Function) (vc : VCode) (edges : Array (Array (Array Reg)))
     (sem : ISem CV W) (MR : MemRelTW W) (s : Clif.State) (vs : VState CV W)
     (xs : List Nat) (vals : List Clif.Val) (cm : Clif.Mem) : Prop :=
   ∃ us outs world extra,
     PerEdgePrep.VRetFromAt vc edges sem vs us outs world ∧
-    ReturnABI f us ∧ us.length = outs.length ∧
+    ReturnABIV f vals us ∧ us.length = outs.length ∧
     s.frame.getMany (xs ++ sretRet f) = .ok (vals ++ extra) ∧
     AllHold (vals ++ extra) outs ∧ MR s.frame.slots s.mem world ∧
     cm = (s.mem.free (s.frame.slots.map (·.2))).leave
@@ -74,11 +75,17 @@ theorem stock_lower_return_record_full_values {f : Clif.Function} {result : Resu
   have sourceValues := requested_values_hold requested read mapped
   have valueCount : (vals ++ extra).length = rs.length := by
     simpa only [List.length_map] using sourceValues.1
+  have sourceCount : vals.length = xs.length :=
+    (getMany_ok ((stepTerm_ret callers).2.2 vals cm done).1).1
+  have allCount : (vals ++ extra).length = (xs ++ sretRet f).length := (getMany_ok read).1
+  have abiCount : us.length = vals.length + (sretRet f).length := by
+    simp only [List.length_append] at allCount valueCount
+    omega
   obtain ⟨ops,world',executed,values,mem⟩ := execution world memory
   have instruction : ((.rets (rs.zip ps) : MInst).mapRegs resolve) = .rets us := rfl
   rw [instruction] at executed
   obtain ⟨steps,_,inst,operands,ran,_,_⟩ := seqRun_stop_starAt placed segment executed
-  refine ⟨us,vuses ops ρ,world',extra,?_,selected,?_,read,values,mem,?_⟩
+  refine ⟨us,vuses ops ρ,world',extra,?_,⟨selected,abiCount⟩,?_,read,values,mem,?_⟩
   · exact ⟨label,k+0,ρ,world,vb,ops,[],steps,placed,inst,operands,rfl,ran⟩
   · have := values.1
     omega
@@ -104,7 +111,7 @@ theorem ReturnValuesAt.sret_value {W : Type} {f : Clif.Function} {vc : VCode}
   obtain ⟨⟨source,pin⟩,rfl⟩ := List.length_eq_one_iff.mp count
   have physical : pin = .x 8 := by
     simpa only [ReturnABI,returnPins,sret,↓reduceIte,List.map_cons,List.map_nil,
-      Option.some.injEq,List.cons.injEq,and_true] using pins.symm
+      Option.some.injEq,List.cons.injEq,and_true] using pins.abi.symm
   subst pin
   exact ⟨source,value,world,execution,values.2 0 pointer value (by rfl) (by rfl),memory,freed⟩
 

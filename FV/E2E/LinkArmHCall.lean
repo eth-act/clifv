@@ -286,12 +286,12 @@ theorem hookLock_callS (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (hcl : L.CallLo
       have hregs := callRegs_eq (regs := regs) (by simpa using hsz')
         (fun p hp r hr => (hloc p hp).2 r hr)
       rw [call_useVals hregs] at hsem
-      have hx : L.progXPRBT κ M F h (Lu.map (fun q => regVal t q.2)) (P n) (R n) w =
-          some (outs, w') := by
+      obtain ⟨o, hx⟩ : ∃ o, L.progXPRBT κ M F h (Lu.map (fun q => regVal t q.2)) (P n) (R n) w =
+          some (o, w') := by
         simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
-        obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
+        obtain ⟨⟨o, w2⟩, hx, -, rfl, -⟩ := hsem
         rw [L.XPRBT_prog hpf] at hx
-        exact hx
+        exact ⟨o, hx⟩
       rw [L.hooks_some hpf, L.hooks_some hpf]
       exact L.pcall_lockXPR hL hκ hcl hg hh (.inl ⟨_, hsite'⟩) himgF himgG himgS hLu hG
         (hL.raCall g hg _ h hsite' _ hP.callPc) hsw hmskQ hrgnQ hx hZ hZF hZd himgt'
@@ -340,11 +340,11 @@ theorem hookLock_callS (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (hcl : L.CallLo
       rw [← hx0, lo64_regVal_x]
       exact blrTarget_of hc.layout hlm hj hn0 (by rw [← hZ.1 .PC (by decide)]; exact hpc)
         (fun k wd hk => hL.imgCode g hg t' himgt' k wd hk)
-    have hx : (L.XPRBT κ M g F P R n).call none
-        (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w = some (outs, w') := by
+    obtain ⟨o, hx⟩ : ∃ o, (L.XPRBT κ M g F P R n).call none
+        (regVal t (.x n0) :: Lu.map (fun q => regVal t q.2)) w = some (o, w') := by
       simp only [csem, Option.map_eq_some_iff, Prod.mk.injEq] at hsem
-      obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
-      exact hx
+      obtain ⟨⟨o, w2⟩, hx, -, rfl, -⟩ := hsem
+      exact ⟨o, hx⟩
     cases hs : symCallee L.Xb L.P (lo64 (regVal t (.x n0))) with
     | none =>
       exact L.hooks_lock_base hN (.inl rfl) (fun _ => by rw [htgt]; exact hs)

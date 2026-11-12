@@ -4,20 +4,26 @@ import FV.Backend.Proof.SretStable
 /-!
 # The `sret` return register (S7)
 
-AAPCS64 (and Cranelift's `sigRets`) returns the struct-return pointer of a function with an
-`sret` parameter and no returns in x0. `backend_correct_final` claims the CLIF return values
-(none for such a function) and the memory; `backend_correct_final_abi` also claims the ABI
-return values after them: `sretArg f args`, the `sret` argument, in x0.
+Cranelift (`sigRets`) returns the struct-return pointer of a function with an `sret` parameter
+and no returns, and on aarch64 it returns it in **x8**, the register it came in: `from_func_sig`
+makes the `sret` parameter the only return (`machinst/abi.rs:902` in cranelift-codegen 0.135.0),
+`compute_arg_locs` assigns a `StructReturn` slot to x8 for the returns as for the parameters
+(`isa/aarch64/abi.rs:255-270`) and `Lower::gen_return` returns `sret_reg` there (AAPCS64 itself
+requires no register to hold the pointer on return). Until #587 the backend returned it in x0
+(`mov x0, x8` before `ret`, an instruction Cranelift does not emit); the statements below said
+x0 then. `backend_correct_final` claims the CLIF return values (none for such a function) and
+the memory; `backend_correct_final_abi` also claims the ABI return values after them:
+`sretArg f args`, the `sret` argument, in x8.
 
 * `IselSimAbi`, `iselSimAbi_of_driver`: the CLIF → VCode layer with all ABI returns held
   (`driver_correct_abi` with `sret_reach`: the `sretRet f` value at every `return` is the
   `sret` argument, for functions with `sretStableB f`);
-* `ArmRefinesAbi`: `ArmRefines` with `vals ++ rets` in x0.. (`ArmRefinesAbi.armRefines`);
+* `ArmRefinesAbi`: `ArmRefines` with `vals` in x0.. and `rets` in x8 (`ArmRefinesAbi.armRefines`);
 * `backend_correct_of_layers_ex_abi`, `backend_correct_ex_abi`, `backend_correct_of_rules_ex_abi`,
   `backend_correct_m4_ex_abi`, `backend_correct_final_ex_abi`, **`backend_correct_final_abi`**:
   the chain of `backend_correct_final[_ex]` with the premise `sretStableB f = true`;
 * **`backend_correct_final_sret`**: for a function with an `sret` parameter `i` and no returns,
-  a return leaves the `sret` argument `args[i]` in x0.
+  a return leaves the `sret` argument `args[i]` in x8.
 -/
 
 namespace E2E
@@ -25,14 +31,15 @@ namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
 
 /-- **CLIF → VCode with the ABI return values**: `IselSim`, and the returned use values hold the
-CLIF return values followed by `sretArg f args` (`AllHold`: exactly the ABI returns). -/
+CLIF return values followed by `sretArg f args` (`AllHold`: exactly the ABI returns), the CLIF
+values in x0.., the ones after them in x8 (`RetPins`). -/
 def IselSimAbi (sem : Sem) (Γ : Rel) (env : Clif.Env) (p : Clif.Program) (f : Clif.Function)
     (vc : VCode) : Prop :=
   ∀ args cs w₀ (ρ₀ : Nat → CV), ClifEntry f args cs → Γ.holds f cs.frame.slots cs.mem w₀ →
     ArgsAtEntry Γ.F f.sig args w₀ → TrapsExplicit env p cs → ∀ fuel,
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns vc sem ρ₀ w₀ us outs w ∧
-        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        RetPins vals us ∧ us.length = outs.length ∧
         AllHold (vals ++ sretArg f args) outs ∧ MemRel Γ.F Γ.syms cm w) ∧
     (∀ c, Clif.runLoop env p fuel cs = .trapped c → VTraps vc sem ρ₀ w₀ c)
 
@@ -78,11 +85,14 @@ theorem iselSimAbi_of_driver {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 :
     exact hrun
 
 /-- What the Arm run does for a CLIF outcome, with the ABI return values `rets` after the CLIF
-ones (`stuck`/`outOfFuel`: no claim). -/
+ones (`stuck`/`outOfFuel`: no claim): the CLIF values in x0.., the ABI return values after them
+(the struct pointer of an `sret` function) in x8 (`retX`; until #587: in x0.. after the CLIF
+values, which the backend no longer does, as Cranelift does not on aarch64). -/
 def ArmRefinesAbi (fb : FnBin) (base ra : BitVec 64) (astep : Arm.ArmState → Arm.ArmState)
     (s : Arm.ArmState) (rets : List Clif.Val) : Clif.Outcome → Prop
   | .returned vals cm => ∃ n, ArmRet ra s (runX astep n s) ∧
-      (∀ (j : Nat) v, (vals ++ rets)[j]? = some v → XHolds v (xreg j (runX astep n s))) ∧
+      (∀ (j : Nat) v, (vals ++ rets)[j]? = some v →
+        XHolds v (xreg (if j < vals.length then j else 8) (runX astep n s))) ∧
       MemAgree cm (runX astep n s)
   | .trapped c => ∃ n, TrapAt fb base c (runX astep n s)
   | .stuck _ | .outOfFuel => True
@@ -94,9 +104,10 @@ theorem ArmRefinesAbi.armRefines {fb : FnBin} {base ra : BitVec 64}
   cases o with
   | returned vals cm =>
     obtain ⟨n, hret, hx, hm⟩ := h
-    refine ⟨n, hret, fun j v hj => hx j v ?_, hm⟩
-    rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp hj).1]
-    exact hj
+    have hjv := fun j (v : Clif.Val) (hj : vals[j]? = some v) => (List.getElem?_eq_some_iff.mp hj).1
+    refine ⟨n, hret, fun j v hj => ?_, hm⟩
+    have := hx j v (by rw [List.getElem?_append_left (hjv j v hj)]; exact hj)
+    rwa [if_pos (hjv j v hj)] at this
   | trapped c => exact h
   | _ => trivial
 
@@ -127,14 +138,10 @@ theorem backend_correct_of_layers_ex_abi {p : Clif.Program} {f : Clif.Function} 
     have hju : j < us.length := by have := hhold.1; omega
     obtain ⟨x, hx⟩ : ∃ x, outs[j]? = some x :=
       ⟨outs[j]'(by have := hhold.1; omega), List.getElem?_eq_getElem _⟩
-    have hp : (us[j]'hju).2 = Reg.x j := by
-      have := congrArg (fun l => l[j]?) hus
-      simp only [List.getElem?_map, List.getElem?_range hju, List.getElem?_eq_getElem hju,
-        Option.map_some] at this
-      exact Option.some.inj this
+    have hp : (us[j]'hju).2 = retX vals.length j := hus.getElem hju
     have hr := hregs j (us[j]'hju).1 (us[j]'hju).2 x (by simp [List.getElem?_eq_getElem hju]) hx
-    rw [hp, regVal_x] at hr
-    show VHolds v (ofX (xreg j (runX astep n s)))
+    rw [hp, retX, regVal_x] at hr
+    show VHolds v (ofX (xreg (if j < vals.length then j else 8) (runX astep n s)))
     rw [hr]
     exact hhold.2 j v x hj hx
   | trapped c =>
@@ -283,7 +290,7 @@ theorem backend_correct_m4_ex_abi {p : Clif.Program} {f : Clif.Function} {k : Na
 
 /-- **The backend's end-to-end theorem with the ABI return values, for an `AllocChecked`
 allocation**: `backend_correct_final_ex`, and a return also leaves the ABI return values after
-the CLIF ones in x0..: `sretArg f args`, the `sret` argument of a function that returns its
+the CLIF ones, in x8: `sretArg f args`, the `sret` argument of a function that returns its
 struct pointer (`sigRets`). Extra premise: the `sret` value is bound once (`sretStableB`,
 decided per function). -/
 theorem backend_correct_final_ex_abi {p : Clif.Program} {f : Clif.Function} {k : Nat}
@@ -322,8 +329,12 @@ theorem backend_correct_final_ex_abi {p : Clif.Program} {f : Clif.Function} {k :
 
 /-- **The backend's end-to-end theorem with the ABI return values** (`docs/contracts/e2e.md`,
 "`sret`"): `backend_correct_final` (its premises plus `sretStableB f`), and a return also leaves
-the ABI return values after the CLIF ones in x0..: for a function with an `sret` parameter and
-no returns, the `sret` argument in x0 (`sretArg`, `backend_correct_final_sret`). -/
+the ABI return values after the CLIF ones in x8: for a function with an `sret` parameter and
+no returns, the `sret` argument in x8 (`sretArg`, `backend_correct_final_sret`). Restated for
+#587: it said x0 (`ArmRefinesAbi` put the ABI returns after the CLIF ones in x0..), true of the
+backend before #587, which moved the pointer to x0 (`mov x0, x8`); Cranelift returns it in x8 on
+aarch64 (`isa/aarch64/abi.rs:255-270`, `machinst/abi.rs:902` in cranelift-codegen 0.135.0), and
+so does the backend now. -/
 theorem backend_correct_final_abi {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb) (hS : sretStableB f = true)
@@ -370,10 +381,14 @@ theorem sretArg_of_sret {f : Clif.Function} {i : Nat}
   simp only [sretArg, hne, ite_true, hi]
 
 /-- **The `sret` return register**: for a function with an `sret` parameter `i` and no returns
-(AAPCS64, `sigRets`: the struct pointer is its one ABI result), under the premises of
-`backend_correct_final_abi`, a CLIF return is matched by an Arm return (`ArmRet`) whose x0 holds
+(`sigRets`: the struct pointer is its one ABI result), under the premises of
+`backend_correct_final_abi`, a CLIF return is matched by an Arm return (`ArmRet`) whose x8 holds
 the `sret` argument `args[i]` (the pointer the caller passed in x8), with the memory the function
-wrote (`MemAgree`). -/
+wrote (`MemAgree`). Restated for #587: the conclusion said x0, true of the backend before #587
+(it emitted `mov x0, x8` before `ret`); Cranelift returns the pointer in x8 on aarch64
+(`compute_arg_locs` gives the `StructReturn` return x8, `isa/aarch64/abi.rs:255-270`;
+`from_func_sig`, `machinst/abi.rs:902`; `Lower::gen_return` returns `sret_reg`; cranelift-codegen
+0.135.0), and the backend now emits exactly Cranelift's code. -/
 theorem backend_correct_final_sret {p : Clif.Program} {f : Clif.Function} {k : Nat}
     {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb) (hS : sretStableB f = true)
@@ -405,7 +420,7 @@ theorem backend_correct_final_sret {p : Clif.Program} {f : Clif.Function} {k : N
     (hrun : Clif.runLoop env p fuel cs = .returned vals cm) {v : Clif.Val}
     (hv : args[i]? = some v) :
     ∃ n, ArmRet ra s (runX (ArmStepX X H fa) n s) ∧
-      XHolds v (xreg 0 (runX (ArmStepX X H fa) n s)) ∧
+      XHolds v (xreg 8 (runX (ArmStepX X H fa) n s)) ∧
       MemAgree cm (runX (ArmStepX X H fa) n s) := by
   obtain ⟨B0, hentB, hbody, hterm, -, -⟩ := hcs.entry
   have hB0 : f.blocks[0]? = some B0 := by
@@ -420,6 +435,6 @@ theorem backend_correct_final_sret {p : Clif.Program} {f : Clif.Function} {k : N
     hent hres hbe hargs hcs hrel htr fuel
   rw [hrun, sretArg_of_sret hi hnr, hv] at h
   obtain ⟨n, hret, hx, hm⟩ := h
-  exact ⟨n, hret, hx 0 v (by simp), hm⟩
+  exact ⟨n, hret, by simpa using hx 0 v (by simp), hm⟩
 
 end E2E
