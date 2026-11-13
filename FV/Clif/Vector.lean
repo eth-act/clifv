@@ -75,6 +75,27 @@ theorem laneBits_pos (s : VShape) : 0 < s.laneBits := by cases s <;> decide
 
 theorem laneBits_mod_eight (s : VShape) : s.laneBits % 8 = 0 := by cases s <;> decide
 
+/-- The integer shape with the same lanes (`f32x4 ↦ i32x4`; the result shape of a lane
+comparison, Cranelift's `as_int`). -/
+def intShape : VShape → VShape
+  | f32x2 => i32x2 | f32x4 => i32x4 | f64x2 => i64x2 | s => s
+
+/-- The shape with lanes of twice the width and half as many (the result of `swiden_low`,
+`swiden_high`, `uwiden_low`, `uwiden_high`): integer shapes only. -/
+def widen? : VShape → Option VShape
+  | i8x16 => some i16x8 | i16x8 => some i32x4 | i32x4 => some i64x2
+  | i8x8 => some i16x4 | i16x4 => some i32x2
+  | _ => none
+
+/-- The shape with lanes of half the width and twice as many (`snarrow`/`unarrow`/`uunarrow`
+of two operands of shape `s`): integer shapes only. -/
+def narrow? : VShape → Option VShape
+  | i16x8 => some i8x16 | i32x4 => some i16x8 | i64x2 => some i32x4
+  | i16x4 => some i8x8 | i32x2 => some i16x4
+  | _ => none
+
+theorem lanes_pos (s : VShape) : 0 < s.lanes := by cases s <;> decide
+
 end VShape
 
 namespace Vec
@@ -177,6 +198,25 @@ theorem bitcastLE_bitcastLE (h : w = w') (x : BitVec w) :
     bitcastLE h.symm (bitcastLE h x) = x := by
   subst h; rfl
 
+/-- The `w`-bit vector whose lane `i` (of `lb` bits) is `f i` for `i < n`, the other bits 0:
+lane-wise operations build their result with it. -/
+def ofLanes (lb : Nat) (f : Nat → BitVec lb) : Nat → BitVec w
+  | 0 => 0
+  | n + 1 => setLane lb (ofLanes lb f n) n (f n)
+
+/-- Lane `i < n` of `ofLanes lb f n` is `f i`. -/
+theorem lane_ofLanes (lb : Nat) (f : Nat → BitVec lb) {n i : Nat} (h : n * lb ≤ w)
+    (hi : i < n) : lane lb (ofLanes (w := w) lb f n) i = f i := by
+  induction n with
+  | zero => omega
+  | succ n ih =>
+    rw [Nat.succ_mul] at h
+    simp only [ofLanes]
+    by_cases hin : i = n
+    · subst hin; exact lane_setLane_same lb _ _ _ h
+    · rw [lane_setLane_ne lb _ _ (fun e => hin e.symm)]
+      exact ih (by omega) (by omega)
+
 end Vec
 
 /-! ## Non-vacuity witnesses -/
@@ -212,5 +252,12 @@ example : (0x0000000000000002_0000000000000001#128) =
 example : Vec.byte (Vec.lane 64 (0x0000000000000002_0000000000000001#128) 1) 0 =
     Vec.byte (0x0000000000000002_0000000000000001#128) 8 :=
   Vec.byte_lane _ (lb := 64) 1 0 (by decide) (by decide)
+
+/-- `lane_ofLanes` at a concrete `i32x4` (its premises hold): lanes `[1, 2, 3, 4]`. -/
+example : Vec.lane 32 (Vec.ofLanes (w := 128) 32 (fun i => BitVec.ofNat 32 (i + 1)) 4) 2 = 3#32 :=
+  Vec.lane_ofLanes 32 _ (by decide) (by decide)
+
+example : Vec.ofLanes (w := 128) 32 (fun i => BitVec.ofNat 32 (i + 1)) 4 =
+    0x00000004_00000003_00000002_00000001#128 := by decide
 
 end Clif

@@ -1,5 +1,12 @@
 # SIMD (S12, #36): vector CLIF types under the theorems
 
+**Scope change (2026-11-13, @codygunton; takeover by @codygunton's agent, #36).** Cranelift's
+own filetests are now the target metric (the stock comparison, `docs/STOCK-COMPILER-COMPARISON.md`):
+on main `7062c4d25` Lean rejects 1,257 of its outputs for a vector type, all at
+`opt_level=none`. Phase B (lane operations, vector arithmetic) is therefore in scope, ordered by
+the outputs each slice unlocks (§10), and the slices of §7 are re-planned. Real-crate parity is
+a holdout and does not rank the work.
+
 Goal: the functions of real crates that cg_clif compiles with vector-typed CLIF (`i64x2`,
 `i32x4`, …) compile through the Lean backend and are covered by the end-to-end theorems
 (`E2E.backend_correct_final*`, `Link.DeadCleanup.compileExe_correct*`) instead of falling back
@@ -102,6 +109,16 @@ lane-wise float operations use the S11c core per lane with the AArch64 `FPCR = 0
 `insertlane` with an out-of-range immediate are rejected by the verifier, so `Clif.run` is
 `stuck` there; `swizzle` yields 0 for out-of-range indices; `shuffle` indexes the 32-byte
 concatenation.
+
+**Instructions (S12d).** The vector-only opcodes and the integer/float operations at a vector
+type are one constructor, `Inst.vector (op : VecOp) (ty : Ty) (args : List ValueId) (imm : Nat)`
+(`imm`: the lane index of `extractlane`/`insertlane`, the constant of `vconst`, the byte mask of
+`shuffle`), so the other constructors keep their scalar statements (they carry a vector type
+only for data movement: `load`, `store`, `bitcast`, `select`) and later slices do not change
+`Clif.Syntax`. The parser turns `iadd.i32x4` and the like into `Inst.vector (.binary .iadd)`;
+`Clif.run` evaluates `Inst.vector` with `Clif.VSem.eval` (lane-wise scalar semantics at the lane
+type, the vector-only opcodes as Cranelift's interpreter; `stuck` on ill-typed operands). The
+oracle is `scripts/clif-filetests.sh` on the vector runtests.
 
 **Lean model (S12b, done).** The lane/byte functions live in `FV/Clif/Vector.lean` (independent of
 `Clif.Ty`, so it does not touch the files of the running float slices): `VShape` with
@@ -207,17 +224,33 @@ vector loads, a slot store, a shim call, a reload, a store); compiler theorems p
 
 ## 7. Slices (one PR each, merged on per-PR gates, TO-PROVE §7)
 
-| slice | content | depends on | size (estimate) |
+Done before the takeover: S12a (#369, this plan, `scripts/simd-scan.py`), S12b (#373,
+`FV/Clif/Vector.lean`), S12c (#370, 17 Advanced SIMD forms co-simulated), S12e (#426, retyping of
+vector memory-to-memory moves to `i128` accesses, `Opt.Retype`, `E2E.backend_correct_retype_legal_wide*`;
+its `lean-backend` wiring is not used: the stock route keeps `ldr q`/`str q`).
+
+Re-planned 2026-11-13 (outputs: the filetest outputs that become compilable, cumulative, from
+the coverage data of §10; an output counts only when its bytes match stock Cranelift's):
+
+| slice | content | outputs | rebuild |
 |---|---|---|---|
-| S12a | **done** (#369): this plan; `scripts/simd-scan.py` | — | docs |
-| S12b | **done**: `FV/Clif/Vector.lean`: `VShape`, `Vec.lane`/`setLane`/`byte`/`bitcastLE`; `lane_setLane_same`, `lane_setLane_ne`, `ext_lane`, `byte_lane`, `byte_bitcastLE`, `bitcastLE_bitcastLE` + witnesses | — | 216 lines, 1 new module (no importers yet) |
-| S12c | **done**: Arm co-simulation of the unchecked Advanced SIMD forms (section 3), 17 forms, 0 failures, no FV/Arm change | — | 60 lines in `FVTest/Arm/Cosim` |
-| S12d | `Clif.Ty.vec`, explicit `isFloat`, `isVec`; parser/printer (`i64x2`, `vconst` literals for runtests); `Clif.run` data movement (`load`, `store`, params, returns, calls, block params, `select`, `bitcast`); integer/float premises where vectors make statements false | floats Stage C slice 8 (scope widening) merged | like S11b (#264: 155 files, +2045/−742) |
-| S12e | **done (theorems)**: `Opt.Retype` + `retype_simX`, `E2E.backend_correct_retype_legal_wide*` (§5, "Route taken"); then `lean-backend` retypes the `vec128` accesses before the `i128` legalisation (needs S12d) | S12d for the wiring | ~900 lines |
-| S12f | `lean-link`: the input's functions retyped before legalisation under new theorem names (`FnInput.func` keeps its meaning), totality, end to end: `lean-e2e-check`, `cargo fv test --lean-link --verified` on fv-demo/survey/deps with fallback counts before → after (deps SIMD 9 → 0), docs | S12e | ~1500 lines |
-| S12e′ (if measured) | vectors in registers: closure gets `rule_lower_2633`/`2754` (+ 64-bit vectors through `2628`/`2750`), 16-byte memory refinement, typed value map with vector types, ABI with vector arguments/returns | S12d, a measured need | like S11e4 + S11e5 slice 4 (~5000 lines) |
-| S12g (if measured) | `bitcast` `i128` ↔ vector: `MInst.movToVec` (`ins`), encoder, `rule_lower_2784`/`2789` | S12e | ~800 lines |
-| phase B | lane semantics and arithmetic (section 1, item 2) | a measured need | DEFERRED |
+| S12d | `Clif.Ty.vec`, explicit `isFloat`, `isVec`; parser/printer for every vector opcode and literal (`vconst`, `const` declarations, `shuffle` masks, lane immediates, vector run values); `Inst.vector`/`VecOp`; `Clif.run` on vectors (`Clif.VSem`) | 0 (prerequisite) | full tree |
+| S12h | backend data movement: 16-byte `.float` ABI slots, `ldr`/`str q` program accesses, `FpuMove128`, `bitcast`, vector `select` | ~20 | Stock |
+| S12i | `splat`, `extractlane`, `insertlane`, `scalar_to_vector`, `vconst` (128-bit literal pool) | ~140 | Stock |
+| S12j | integer lane arithmetic, logic, compares, shifts, `bitselect`, `vall_true`/`vany_true`/`vhigh_bits`; Arm shift-by-immediate | ~580 | Stock + Arm |
+| S12k | widen, narrow, pairwise add | ~750 | Stock + Arm |
+| S12m | float lanes | ~940 | Stock + Arm |
+| S12l | `shuffle`/`swizzle` (`tbl`, `zip`/`uzp`/`trn`, `ext`, `rev`) | ~1,050 | Stock + Arm |
+| S12n | 64-bit vectors; `i8x2`/`i16x2` (a `VShape` change) | ~1,180 | Stock (+ base) |
+| S12o | dynamic vectors | ~1,250 | parser + Stock |
+
+Proof obligations per slice: `Clif.run` semantics checked against Cranelift's interpreter
+(`clif-filetests.sh`), the Arm Advanced SIMD classes the lowering emits modelled and co-simulated
+against qemu, the encoder against Cranelift's (`lean-backend-encode-check.sh`); every existing
+theorem keeps its statement (vectors stay outside the verified scope predicates). The vector
+lowering itself is compiled on the stock-configured route, outside `backend_correct`, like every
+output of that route; proving the vector lowering rules (the former S12e′, §5) is a separate
+track.
 
 ## 8. Testing (oracles)
 
@@ -245,3 +278,39 @@ vector loads, a slot store, a shim call, a reload, a store); compiler theorems p
    extended (or the runtests suffice for data movement).
 6. The mid-end (`Isle.Opt`) has no vector nodes; vector instructions must pass through it
    unchanged (`optimizeExe`'s shape guard), checked by `scripts/opt-difftest.sh`.
+
+## 10. Filetest coverage (2026-11-13)
+
+Stock comparison of main `7062c4d25` (run 43389851748): 1,257 `lean_unsupported` outputs fail on a
+vector type (860 `runtests`, 397 `isa`, 184 files), all at `opt_level=none`. Every rejected
+function was parsed and the constructs it needs listed: (opcode, shape class) for each
+vector-typed instruction, vector parameters/returns, `const` declarations, dynamic vectors.
+Greedy coverage, starting from 128-bit vector parameters and returns (each step adds the
+construct set that unlocks the most functions per construct; dynamic vectors excluded):
+
+| construct set | unlocked | cumulative |
+|---|---|---|
+| `icmp`, `splat` (integer) | +134 | 134 |
+| `bitcast`, `shuffle` | +106 | 240 |
+| `fcmp`, `splat` (float) | +80 | 320 |
+| `extractlane` | +30 | 350 |
+| `sshr` | +26 | 376 |
+| `isub` | +26 | 402 |
+| `iadd`, `swiden_low/high` | +79 | 481 |
+| `uwiden_low/high` | +54 | 535 |
+| `iadd_pairwise`, `imul` | +43 | 578 |
+| `ushr`, `ishl` | +42 | 620 |
+| `insertlane` | +18 | 638 |
+| `const` + `vconst` | +31 | 669 |
+| `fma`, `fneg` | +30 | 699 |
+| `band`, `bor`, `bxor` | +42 | 741 |
+| long tail (1–12 functions per construct) | | 1,187 |
+
+Shapes: `i32x4` 369, `i8x16` 309, `i16x8` 260, `i64x2` 255, `f64x2` 131, `f32x4` 122, 64-bit
+shapes 127, `i16x2`/`i8x2` 21, dynamic 70. Settings: 3 functions have `has_dotprod`, 2
+`has_i8mm`. The comparison compiles through `lean-backend --stock-config`: the default lowering
+interprets the generated ISLE program (all 1,165 rules of Cranelift 0.136.1's aarch64 unit,
+vector rules included), so byte agreement needs `instData` for the vector opcodes, the ISLE
+externs of `aarch64/lower/isle.rs`, `MInst` for the vector instructions with regalloc2's operand
+constraints, and `Asm`/`Encode` as `emit.rs`.
+

@@ -508,19 +508,15 @@ layers (`ThreadRefine.Refines.trans`). The backend layers 1–4 are open, so #38
 per-thread allocation metadata, no step for extern calls that touch memory, and one `tls_value`
 instance; widening those is part of the same item.
 
-## SIMD lane operations (S12 phase B, 2026-10-22)
+## SIMD lane operations (S12 phase B, 2026-10-22; scope changed 2026-11-13)
 
-S12 phase A (`docs/plans/simd.md`) covers vector data movement: vector types, `load`/`store`,
-parameters, returns, calls and `bitcast`. Lane semantics and vector arithmetic (`splat`,
-`extractlane`, `insertlane`, vector `iadd`/`imul`/compares/shifts, widen/narrow, `shuffle`,
-`swizzle`, float lanes) are deferred: cg_clif implements SIMD intrinsics lane by lane through
-memory, so no function of `examples/deps`, the survey, fv-demo, vendor or core/alloc has such a
-vector instruction (`scripts/simd-scan.py`, 2026-10-22). They are needed only by Cranelift's
-SIMD runtests (177 files) and hand-written CLIF. Needed for them: `Clif.run` lane semantics
-(decisions recorded in `simd.md` §2), the Arm Advanced SIMD classes LNSym had and the port
-dropped (`Advanced_simd_{extract,permute,shift_by_immediate,table_lookup,three_different}`,
-compares and float lanes in `three_same`/`two_reg_misc`), co-simulation, and the vector ISLE
-roots (138 excluded root rules mention vector types). Start when a measured crate needs it.
+No longer deferred: on 2026-11-13 @codygunton made Cranelift's filetests the target metric
+(the stock comparison rejects 1,257 outputs for a vector type), so phase B (lane operations and
+vector arithmetic) is in scope, ordered by the outputs each slice unlocks
+(`docs/plans/simd.md` §7, #36). `Clif.run` gives every vector operation its meaning since S12d
+(`Clif.VSem`). What stays outside after S12: the lowering of vector code is not covered by
+`backend_correct` (the stock-configured route that compiles it is unverified), and dynamic
+vector types and the 16/32-bit shapes (`i8x2`, `i16x2`) are not in `Clif.Ty`.
 
 ## std through `cargo fv --build-std`: what stays outside (T3, #39, 2026-10-22)
 

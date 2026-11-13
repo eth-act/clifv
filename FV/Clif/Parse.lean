@@ -124,6 +124,9 @@ structure PState where
   sigDecls : List (Nat × Signature) := []
   /-- The values used by the current body line (`value`), for the vector check of `bodyLine`. -/
   used : List ValueId := []
+  /-- The constants `constN = …` of the function preamble (`vconst.ty constN`), as numbers
+  whose byte `i` is byte `i` of the constant (`ConstantData`, little-endian). -/
+  consts : List (Nat × Nat) := []
 
 abbrev P := ReaderT (Array Tok) (StateT PState (Except ParseError))
 
@@ -388,9 +391,50 @@ inductive Decl where
   | global (id : Nat) (g : GlobalValue)
   | extern (id : FnRef) (e : ExtFunc)
   | sigDecl (id : Nat) (s : Signature)
+  /-- `constN = …` (recorded in `PState.consts`). -/
+  | constDecl (id : Nat)
+
+/-- A scalar literal of type `t` (a float literal, or an integer wrapped to the width). -/
+def scalarValue (t : Ty) : P Val := do
+  if t.isFloat then return ⟨t, ← floatLit t⟩
+  match ← next with
+  | .int s =>
+    match parseIntLit s with
+    | some i => return Val.ofInt t i
+    | none => malformed s!"bad {t.name} value '{s}'"
+  | tok => malformed s!"expected an {t.name} value, got '{tok.show}'"
+
+/-- A vector constant of shape `s` (the reader's `match_uimm128`): `[l0 l1 …]`, one literal of
+the lane type per lane, lane 0 first, or a hexadecimal literal `0x…` (at most `s.width` bits;
+`ConstantData`'s little-endian byte order: byte `i` of the constant is bits `[8i, 8i+8)` of the
+number). The constant as that number. -/
+def vecConst (s : VShape) : P Nat := do
+  if ← optPunct '[' then
+    let mut n := 0
+    for i in [0:s.lanes] do
+      let l ← scalarValue s.laneTy
+      n := n + l.bits.toNat * 2 ^ (i * s.laneBits)
+    expectPunct ']'
+    return n
+  else
+    let i ← anyInt
+    if i < 0 || i ≥ 2 ^ s.width then malformed s!"constant does not fit {s.name}"
+    return i.toNat
 
 def decl : P Decl := do
   let t ← peek
+  if isEntity "const" t then
+    let id ← entity "const"
+    expectPunct '='
+    -- `constN = ty [lanes]` or `constN = 0x…` (`parse_constant_decl`)
+    let n ← match ← peek with
+      | some (.word w) =>
+        match Ty.ofName? w with
+        | some (.vec s) => advance; vecConst s
+        | _ => unsupported s!"constant of type {w}"
+      | _ => vecConst .i8x16
+    modify fun st => { st with consts := (id, n) :: st.consts }
+    return .constDecl id
   if isEntity "ss" t then
     let id ← entity "ss"
     expectPunct '='
@@ -614,7 +658,7 @@ def item (op : String) (sfx : Option Ty) : P Item := do
   match op with
   | "iconst" =>
     let t ← needTy op sfx
-    if t == .i128 || t.isFloat then malformed s!"iconst.{t.name} is not valid CLIF"
+    if t == .i128 || t.isFloat || t.isVec then malformed s!"iconst.{t.name} is not valid CLIF"
     let i ← anyInt
     return .inst (.iconst t (BitVec.ofInt t.width i))
   -- `f32const`/`f64const` are the constants of the float types: `Inst.iconst` at a float type
@@ -722,6 +766,49 @@ def item (op : String) (sfx : Option Ty) : P Item := do
     expectPunct ')'
     expectPunct ','
     return .term (.tryCallIndirect callee args (← exnTable))
+  -- vector-only opcodes (`Inst.vector`, `VecOp`)
+  | "splat" => let t ← needTy op sfx; return .inst (.vector .splat t [← value] 0)
+  | "scalar_to_vector" =>
+    let t ← needTy op sfx; return .inst (.vector .scalarToVector t [← value] 0)
+  | "vconst" =>
+    let t ← needTy op sfx
+    let some s := t.shape? | malformed s!"vconst.{t.name}: not a vector type"
+    let n ← if isEntity "const" (← peek) then do
+        let c ← entity "const"
+        match (← get).consts.lookup c with
+        | some n => if n < 2 ^ s.width then pure n else malformed s!"const{c} does not fit {s.name}"
+        | none => malformed s!"undeclared const{c}"
+      else vecConst s
+    return .inst (.vector .vconst t [] n)
+  | "shuffle" =>
+    let x ← value; expectPunct ','; let y ← value; expectPunct ','
+    let m ← vecConst .i8x16
+    return .inst (.vector .shuffle (← ctrl sfx x) [x, y] m)
+  | "swizzle" | "iadd_pairwise" | "avg_round" | "sqmul_round_sat" | "snarrow" | "unarrow"
+  | "uunarrow" =>
+    let x ← value; expectPunct ','; let y ← value
+    let vop : VecOp := match op with
+      | "swizzle" => .swizzle | "iadd_pairwise" => .iaddPairwise | "avg_round" => .avgRound
+      | "sqmul_round_sat" => .sqmulRoundSat | "snarrow" => .snarrow | "unarrow" => .unarrow
+      | _ => .uunarrow
+    return .inst (.vector vop (← ctrl sfx x) [x, y] 0)
+  | "swiden_low" | "swiden_high" | "uwiden_low" | "uwiden_high" | "fvdemote" | "fvpromote_low"
+  | "vall_true" | "vany_true" =>
+    let x ← value
+    let vop : VecOp := match op with
+      | "swiden_low" => .swidenLow | "swiden_high" => .swidenHigh | "uwiden_low" => .uwidenLow
+      | "uwiden_high" => .uwidenHigh | "fvdemote" => .fvdemote
+      | "fvpromote_low" => .fvpromoteLow | "vall_true" => .vallTrue | _ => .vanyTrue
+    return .inst (.vector vop (← ctrl sfx x) [x] 0)
+  | "vhigh_bits" => let t ← needTy op sfx; return .inst (.vector .vhighBits t [← value] 0)
+  | "extractlane" =>
+    let x ← value; expectPunct ','
+    let i ← anyInt
+    return .inst (.vector .extractlane (← ctrl sfx x) [x] i.toNat)
+  | "insertlane" =>
+    let x ← value; expectPunct ','; let y ← value; expectPunct ','
+    let i ← anyInt
+    return .inst (.vector .insertlane (← ctrl sfx x) [x, y] i.toNat)
   | "trapz" => let c ← value; expectPunct ','; return .inst (.trapz c (← trapCode))
   | "trapnz" => let c ← value; expectPunct ','; return .inst (.trapnz c (← trapCode))
   | "nop" => return .inst .nop
@@ -765,7 +852,24 @@ def vecInstOk (i : Inst) (condTy : Option Ty) : Bool :=
     flags.endianness != some .big
   | .select .. => !(condTy.map Ty.isVec).getD true
   | .call .. | .callIndirect .. => true
+  | .vector op ty _ imm =>
+    match op, ty.shape? with
+    | .vhighBits, _ => ty.isInt
+    | .extractlane, some s | .insertlane, some s => decide (imm < s.lanes)
+    | _, some _ => true
+    | _, none => false
   | _ => false
+
+/-- An integer or float operation at a vector type is the lane-wise `Inst.vector` operation
+(`VecOp.unary`/`binary`/`icmp`/`bitselect`/`float`); other instructions are unchanged. -/
+def toVector (i : Inst) : Inst :=
+  match i with
+  | .unary op ty x => .vector (.unary op) ty [x] 0
+  | .binary op ty x y => .vector (.binary op) ty [x, y] 0
+  | .icmp cc ty x y => .vector (.icmp cc) ty [x, y] 0
+  | .bitselect ty c x y => .vector .bitselect ty [c, x, y] 0
+  | .float op ty args => .vector (.float op) ty args 0
+  | i => i
 
 /-- One body line: alias, instruction (with results) or terminator. -/
 def bodyLine : P (Option (Sum Stmt Terminator)) := do
@@ -786,11 +890,13 @@ def bodyLine : P (Option (Sum Stmt Terminator)) := do
   modify fun s => { s with used := [] }
   match ← item op sfx with
   | .inst i =>
+    let opTys ← (← get).used.mapM typeOf
+    let i := if (opTys ++ sfx.toList).any Ty.isVec then toVector i else i
     let tys ← resultTypes i
     if tys.length != results.length then
       malformed s!"{op}: {results.length} results given, {tys.length} expected"
-    let opTys ← (← get).used.mapM typeOf
-    if (opTys ++ tys).any Ty.isVec then
+    let isVecInst := match i with | .vector .. => true | _ => false
+    if isVecInst || (opTys ++ tys).any Ty.isVec then
       let condTy ← match i with
         | .select _ c _ _ => some <$> typeOf c
         | _ => pure none
@@ -843,6 +949,7 @@ def function : P Function := do
     | .global i g => globals := globals.push (i, g)
     | .extern i e => externs := externs.push (i, e)
     | .sigDecl i s => sigDecls := sigDecls.push (i, s)
+    | .constDecl _ => pure ()
   let mut blocks := #[]
   while !(← isPunct '}') do
     blocks := blocks.push (← block)
@@ -853,30 +960,11 @@ def function : P Function := do
 
 /-! ## Run commands -/
 
-def scalarValue (t : Ty) : P Val := do
-  if t.isFloat then return ⟨t, ← floatLit t⟩
-  match ← next with
-  | .int s =>
-    match parseIntLit s with
-    | some i => return Val.ofInt t i
-    | none => malformed s!"bad {t.name} value '{s}'"
-  | tok => malformed s!"expected an {t.name} value, got '{tok.show}'"
-
 /-- A run-line value; a vector is `[l0 l1 …]`, lane 0 (the least significant, `Clif.Vec.lane`)
-first, each lane a literal of the lane type. -/
+first, each lane a literal of the lane type, or a hexadecimal constant (`vecConst`). -/
 def dataValue (t : Ty) : P Val := do
   match t with
-  | .vec s =>
-    expectPunct '['
-    let lt : Ty := match s.laneBits, s.isFloatLane with
-      | 64, true => .f64 | 32, true => .f32 | 8, _ => .i8 | 16, _ => .i16 | 32, _ => .i32
-      | _, _ => .i64
-    let mut bits : BitVec s.width := 0
-    for i in [0:s.lanes] do
-      let l ← scalarValue lt
-      bits := Vec.setLane s.laneBits bits i (l.bits.setWidth s.laneBits)
-    expectPunct ']'
-    return ⟨.vec s, bits⟩
+  | .vec s => return ⟨.vec s, BitVec.ofNat s.width (← vecConst s)⟩
   | _ => scalarValue t
 
 def dataValues (tys : List Ty) : P (List Val) := do

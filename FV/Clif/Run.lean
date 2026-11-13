@@ -1,6 +1,7 @@
 import FV.Clif.Sem
 import FV.Clif.Mem
 import FV.Clif.FSem
+import FV.Clif.VSem
 
 /-!
 # `Clif.run`: executable, fuel-bounded semantics
@@ -366,6 +367,10 @@ def evalInst (fr : Frame) (mem : Mem) : Inst → Res (List Val × Mem)
   | .float op ty args => do
     let vs ← fr.getMany args
     let r ← evalFloat op ty vs
+    pure ([r], mem)
+  | .vector op ty args imm => do
+    let vs ← fr.getMany args
+    let r ← Res.ofOption s!"{ty.name}: ill-typed vector operation" (VSem.eval op ty vs imm)
     pure ([r], mem)
   | .call .. | .callIndirect .. => .stuck "evalInst: call is handled by step"
   | .funcAddr ty fn => do

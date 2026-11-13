@@ -127,6 +127,23 @@ theorem isFloat_of_not_isInt {t : Ty} (hi : t.isInt = false) (hv : t.isVec = fal
 
 end Ty
 
+/-- The lane type of a vector shape (`i32x4 ↦ i32`, `f64x2 ↦ f64`). -/
+def VShape.laneTy : VShape → Ty
+  | .i8x8 | .i8x16 => .i8
+  | .i16x4 | .i16x8 => .i16
+  | .i32x2 | .i32x4 => .i32
+  | .i64x2 => .i64
+  | .f32x2 | .f32x4 => .f32
+  | .f64x2 => .f64
+
+@[simp] theorem VShape.laneTy_width (s : VShape) : s.laneTy.width = s.laneBits := by
+  cases s <;> rfl
+
+/-- The shape of a vector type. -/
+def Ty.shape? : Ty → Option VShape
+  | .vec s => some s
+  | _ => none
+
 /-- A CLIF runtime value: a width-indexed bit vector. -/
 structure Val where
   ty : Ty
@@ -351,6 +368,40 @@ def ctrlIsOperand : FOp → Bool
 
 end FOp
 
+/-- The operations of `Inst.vector` (S12, `docs/plans/simd.md`): the integer and float
+operations applied lane by lane to a vector type, and the vector-only opcodes. The operands,
+the role of `ty` (Cranelift's controlling type) and of `imm` per operation:
+* `unary op`, `binary op` (`x, y : ty`; a shift amount `y` is a scalar), `bitselect`
+  (`c, x, y : ty`), `avgRound`, `sqmulRoundSat`, `iaddPairwise` (`x, y : ty`): result `ty`;
+* `icmp cc` (`x, y : ty`): result `ty.intShape` (all-ones or zero lanes);
+* `float op`: as `Inst.float` lane by lane (`ty` the operand type, except for the conversions
+  where it is the result type); `fcmp` yields all-ones or zero integer lanes;
+* `splat` (`x` of the lane type), `scalarToVector` (`x` of the lane type: lane 0, the rest 0):
+  result `ty`; `vconst`: no operand, `imm` the 128-bit (or 64-bit) constant, lane 0 least
+  significant; `shuffle` (`x, y : ty`): `imm` holds the 16 byte indices into the 32-byte
+  concatenation `x ++ y`, byte `i` of the mask is bits `[8i, 8i+8)`; `swizzle` (`x, y : ty`);
+* `extractlane` (`x : ty`, lane `imm`): result the lane type; `insertlane` (`x : ty`, `y` of
+  the lane type, lane `imm`): result `ty`;
+* `swidenLow`… `uwidenHigh` (`x : ty`): result `ty.widen?`; `snarrow` `unarrow` `uunarrow`
+  (`x, y : ty`): result `ty.narrow?`; `fvdemote` (`x : f64x2`, `ty = f64x2`): result `f32x4`;
+  `fvpromoteLow` (`x : f32x4`, `ty = f32x4`): result `f64x2`;
+* `vallTrue`, `vanyTrue` (`x : ty`): result `i8`; `vhighBits` (`x` a vector): result `ty`, a
+  scalar integer type. -/
+inductive VecOp where
+  | unary (op : UnaryOp)
+  | binary (op : BinaryOp)
+  | icmp (cc : IntCC)
+  | float (op : FOp)
+  | bitselect
+  | splat | scalarToVector | vconst | shuffle | swizzle
+  | extractlane | insertlane
+  | swidenLow | swidenHigh | uwidenLow | uwidenHigh
+  | snarrow | unarrow | uunarrow
+  | iaddPairwise | avgRound | sqmulRoundSat
+  | vallTrue | vanyTrue | vhighBits
+  | fvdemote | fvpromoteLow
+  deriving DecidableEq, Repr, Inhabited
+
 abbrev ValueId := Nat
 abbrev BlockId := Nat
 abbrev SlotId := Nat
@@ -429,6 +480,11 @@ inductive Inst where
   /-- A float operation (`FOp`, `FV/Clif/FSem.lean`); `ty` is Cranelift's controlling type:
   the result type, except for `fcmp` (the operand type; the result is `i8`). -/
   | float (op : FOp) (ty : Ty) (args : List ValueId)
+  /-- A vector operation (`VecOp`): the lane-wise operations at a vector type and the
+  vector-only opcodes; `ty` is Cranelift's controlling type and `imm` the lane index or the
+  constant (`VecOp`). The other constructors never carry a vector type except for data
+  movement (`load`, `store`, `bitcast`, `select`), calls and block parameters (`Parse`). -/
+  | vector (op : VecOp) (ty : Ty) (args : List ValueId) (imm : Nat)
   deriving DecidableEq, Repr, Inhabited
 
 /-- An argument of a `try_call` successor block call: a value, the `i`-th return value of the
@@ -681,6 +737,21 @@ def Program.func? (p : Program) (name : String) : Option Function :=
 
 /-! ## Result types -/
 
+/-- The result type of `Inst.vector op ty` (`VecOp`); `none` if `ty` is not a shape the
+operation accepts. -/
+def VecOp.resultTy (op : VecOp) (ty : Ty) : Option Ty :=
+  match op with
+  | .icmp _ | .float (.fcmp _) => ty.shape?.map fun s => .vec s.intShape
+  | .float _ | .unary _ | .binary _ | .bitselect | .splat | .scalarToVector | .vconst
+  | .shuffle | .swizzle | .insertlane | .iaddPairwise | .avgRound | .sqmulRoundSat
+  | .vhighBits => some ty
+  | .extractlane => ty.shape?.map (·.laneTy)
+  | .swidenLow | .swidenHigh | .uwidenLow | .uwidenHigh => (ty.shape?.bind (·.widen?)).map .vec
+  | .snarrow | .unarrow | .uunarrow => (ty.shape?.bind (·.narrow?)).map .vec
+  | .fvdemote => if ty == .vec .f64x2 then some (.vec .f32x4) else none
+  | .fvpromoteLow => if ty == .vec .f32x4 then some (.vec .f64x2) else none
+  | .vallTrue | .vanyTrue => some .i8
+
 /-- Result types of an instruction, given the function's extern declarations (for `call`).
 `none` if the instruction is ill-formed (e.g. `iconcat.i128`). -/
 def Inst.resultTypes (sigOf : FnRef → Option Signature)
@@ -700,5 +771,6 @@ def Inst.resultTypes (sigOf : FnRef → Option Signature)
   | .funcAddr ty _ => some [ty]
   | .float (.fcmp _) _ _ => some [.i8]
   | .float _ ty _ => some [ty]
+  | .vector op ty _ _ => (VecOp.resultTy op ty).map fun t => [t]
 
 end Clif

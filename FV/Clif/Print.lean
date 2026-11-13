@@ -119,6 +119,41 @@ def floatText (w : Nat) (x : BitVec w) : String :=
   let (e, t) := FloatLit.fields w
   FloatLit.format x.toNat e t
 
+/-- The CLIF opcode of a vector-only operation (`VecOp`; the lane-wise ones print their scalar
+opcode). -/
+def VecOp.opName : VecOp → String
+  | .unary op => UnaryOp.name op | .binary op => BinaryOp.name op | .icmp _ => "icmp"
+  | .float op => op.name | .bitselect => "bitselect" | .splat => "splat"
+  | .scalarToVector => "scalar_to_vector" | .vconst => "vconst" | .shuffle => "shuffle"
+  | .swizzle => "swizzle" | .extractlane => "extractlane" | .insertlane => "insertlane"
+  | .swidenLow => "swiden_low" | .swidenHigh => "swiden_high" | .uwidenLow => "uwiden_low"
+  | .uwidenHigh => "uwiden_high" | .snarrow => "snarrow" | .unarrow => "unarrow"
+  | .uunarrow => "uunarrow" | .iaddPairwise => "iadd_pairwise" | .avgRound => "avg_round"
+  | .sqmulRoundSat => "sqmul_round_sat" | .vallTrue => "vall_true" | .vanyTrue => "vany_true"
+  | .vhighBits => "vhigh_bits" | .fvdemote => "fvdemote" | .fvpromoteLow => "fvpromote_low"
+
+/-- Cranelift's text of a constant of `bytes` bytes (`ConstantData`'s `Display`: `0x`, then
+the bytes from the most significant down, two hex digits each). -/
+def hexConst (bytes n : Nat) : String :=
+  let digit (d : Nat) : Char := "0123456789abcdef".toList.getD d '0'
+  "0x" ++ String.ofList ((List.range bytes).reverse.flatMap fun i =>
+    let b := n / 2 ^ (8 * i) % 256
+    [digit (b / 16), digit (b % 16)])
+
+/-- The text of `Inst.vector op ty args imm`. The type suffix is printed where Cranelift's
+reader cannot infer the controlling type from the first operand (and on the lane-wise integer
+operations, as for their scalar forms). -/
+def vecInst (op : VecOp) (ty : Ty) (args : List ValueId) (imm : Nat) : String :=
+  match op with
+  | .icmp cc => s!"icmp.{ty.name} {cc.name} {vs args}"
+  | .float (.fcmp cc) => s!"fcmp.{ty.name} {cc.name} {vs args}"
+  | .vconst => s!"vconst.{ty.name} {hexConst ty.bytes imm}"
+  | .shuffle => s!"shuffle {vs args}, {hexConst 16 imm}"
+  | .extractlane | .insertlane => s!"{VecOp.opName op} {vs args}, {imm}"
+  | .unary _ | .binary _ | .float _ | .bitselect | .splat | .scalarToVector | .vhighBits =>
+    s!"{VecOp.opName op}.{ty.name} {vs args}"
+  | _ => s!"{VecOp.opName op} {vs args}"
+
 def inst (tys : ValueId → Option Ty) : Inst → String
   | .iconst ty imm =>
     if ty.isFloat then s!"{ty.name}const {floatText ty.width imm}"
@@ -160,6 +195,7 @@ def inst (tys : ValueId → Option Ty) : Inst → String
   | .nop => "nop"
   | .float (.fcmp cc) ty args => s!"fcmp.{ty.name} {cc.name} {vs args}"
   | .float op ty args => s!"{op.name}.{ty.name} {vs args}"
+  | .vector op ty args imm => vecInst op ty args imm
 
 def term (tys : ValueId → Option Ty) : Terminator → String
   | .jump b => s!"jump {blockCall b}"
