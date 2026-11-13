@@ -478,22 +478,41 @@ def firstOcc (seen : Array Bool) : List Nat → Array Nat → Array Nat
     if seen[j]! then firstOcc seen js out else firstOcc (seen.set! j true) js (out.push j)
 
 /-- Cranelift's lowered block order (`BlockLoweringOrder::new`, blockorder.rs:204-233): the
-reverse postorder of the original blocks (indices `< n`), each followed by its split edge
-blocks (indices `≥ n`) in successor order. `rpo succs` already lists the original blocks in
-that order (an edge block passes the search on to its single successor); each original block
-is followed by its edge-block successors, and every index is kept at its first occurrence (an
-edge block's only predecessor is its source, which comes first in `rpo succs`). -/
-def prepOrder (n : Nat) (succs : Array (Array Nat)) : Array Nat :=
+reverse postorder of the original blocks (`edge i = false`), each followed by its edge-block
+successors (`edge i = true`) in successor order. `rpo succs` already lists the original blocks
+in that order (an edge block passes the search on to its single successor, as
+`dominator_tree.rs:64-73` visits the successors in order); each original block is followed by
+its edge-block successors, and every index is kept at its first occurrence (an edge block's
+only predecessor is its source, which comes first in `rpo succs`). -/
+def prepOrder (edge : Nat → Bool) (succs : Array (Array Nat)) : Array Nat :=
   firstOcc (Array.replicate succs.size false)
     ((rpo succs).toList.flatMap fun i =>
-      if i < n then i :: (succs[i]!.toList.filter (n ≤ ·)) else [i]) #[]
+      if !edge i then i :: (succs[i]!.toList.filter edge) else [i]) #[]
+
+/-- The number of predecessor edges of every block of a CFG with successors `succs` (the sizes of
+`VCode.cfg`'s predecessor lists: Cranelift's `block_in_count`, duplicate edges included). -/
+def inDegrees (succs : Array (Array Nat)) : Array Nat :=
+  succs.foldl (fun d ss => ss.foldl (fun d s => d.modify s (· + 1)) d) (Array.replicate succs.size 0)
+
+/-- The blocks `prepare` places as Cranelift's critical-edge blocks (`LoweredBlock::CriticalEdge`),
+among the blocks `bs` with successors `succs` and in-degrees `indeg` (`inDegrees succs`):
+`prepare`'s own edge blocks (indices from `n` on), and the lowering's edge blocks (labels from
+`edgeFrom` on, `VCode.edgeFrom`) whose single successor has several predecessor edges
+(`block_in_count > 1`). A lowering edge block to a block with one predecessor edge is no
+Cranelift block: it stays where the reverse postorder puts it, right before its successor
+(Cranelift's place of that successor). -/
+def edgeBlock (edgeFrom : Option Nat) (n : Nat) (bs : Array VBlock) (indeg : Array Nat)
+    (succs : Array (Array Nat)) (i : Nat) : Bool :=
+  decide (n ≤ i) || edgeFrom.any fun e =>
+    decide (e ≤ bs[i]!.label) && (succs[i]!.size == 1 && decide (1 < indeg[(succs[i]!)[0]!]!))
 
 /-- Prepare VCode for regalloc2: drop unreachable blocks; split critical edges (an edge from a
 block with several successor edges to a block with several predecessor edges) by an edge
 block `jump target`; order the blocks as Cranelift's `BlockLoweringOrder` does (`prepOrder`:
-reverse postorder, each block's edge blocks right after it; regalloc2's loop-depth estimate
-and checker assume predecessors mostly come first). The entry block must not be a branch
-target (Cranelift's verifier forbids it) and has no parameters. -/
+reverse postorder, each block's critical-edge blocks right after it, `edgeBlock`: `prepare`'s
+own and the lowering's; regalloc2's loop-depth estimate and checker assume predecessors mostly
+come first). The entry block must not be a branch target (Cranelift's verifier forbids it) and
+has no parameters. -/
 def prepare (vc : VCode) : Except String VCode := do
   let (succs, _) ← vc.cfg
   let live := reachable succs
@@ -522,6 +541,8 @@ def prepare (vc : VCode) : Except String VCode := do
     blocks := blocks.push { b with insts := b.insts.pop.push t' }
   let vc := { vc with blocks := blocks ++ edges }
   let (succs, _) ← vc.cfg
-  pure { vc with blocks := (prepOrder blocks.size succs).map fun i => vc.blocks[i]! }
+  pure { vc with blocks :=
+    (prepOrder (edgeBlock vc.edgeFrom blocks.size vc.blocks (inDegrees succs) succs) succs).map
+      fun i => vc.blocks[i]! }
 
 end Backend

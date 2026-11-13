@@ -66,7 +66,9 @@ private def prepareRepr (vc : VCode) : Except String VCode := do
   let (_, blocks, edges) ← splitRun vc succs preds
   let vc := { vc with blocks := blocks ++ edges }
   let (succs, _) ← vc.cfg
-  pure { vc with blocks := (prepOrder blocks.size succs).map fun i => vc.blocks[i]! }
+  pure { vc with blocks :=
+    (prepOrder (edgeBlock vc.edgeFrom blocks.size vc.blocks (inDegrees succs) succs) succs).map
+      fun i => vc.blocks[i]! }
 
 private theorem prepare_repr (vc : VCode) : prepare vc = prepareRepr vc := by
   simp only [prepare, prepareRepr, splitRun, bind_assoc]
@@ -128,6 +130,14 @@ private theorem keep_map (T : VBlock → VBlock) (bs : Array VBlock) (live : Arr
 private theorem next0_map {T : VBlock → VBlock} (hT : BlockMap T) (bs : Array VBlock) :
     next0Of (bs.map T) = next0Of bs := by
   simp only [next0Of, Array.foldl_map, hT.label]
+
+/-- `prepare`'s critical-edge blocks only look at the blocks' labels (`edgeBlock`). -/
+private theorem edgeBlock_map {T : VBlock → VBlock} (hT : BlockMap T) (e : Option Nat) (n : Nat)
+    (bs : Array VBlock) (d : Array Nat) (ss : Array (Array Nat)) :
+    edgeBlock e n (bs.map T) d ss = edgeBlock e n bs d ss := by
+  funext i
+  simp only [edgeBlock, getElem!_def, Array.getElem?_map]
+  cases bs[i]? <;> simp [hT.label]
 
 private def mapSplit (T : VBlock → VBlock) (st : Nat × Array VBlock × Array VBlock) :=
   (st.1, st.2.1.map T, st.2.2.map T)
@@ -241,7 +251,7 @@ theorem prepare_map {T : VBlock → VBlock} (hT : BlockMap T) (vc : VCode) :
               simp only [mapBlocks, Array.map_append, Array.map_map]
               congr 2
               congr 1
-              case e_as => rw [Array.size_map]
+              case e_as => rw [Array.size_map, ← Array.map_append, edgeBlock_map hT]
               funext i
               rw [← Array.map_append]
               simp only [Function.comp_def, getElem!_def, Array.getElem?_map]
