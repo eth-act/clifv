@@ -1379,6 +1379,12 @@ structure VCode where
   from its successor (`blockorder.rs:282-288`). `prepare`'s edge blocks are not listed:
   `coldOf` gives them their successor's. -/
   cold : Array Bool := #[]
+  /-- The first label of the lowering's edge blocks (`lowerFunction`: the number of CLIF blocks;
+  its edge blocks, a `jump` with the arguments of one `brif`/`br_table`/`try_call` successor,
+  have the labels from it on); `none`: the lowering made no such blocks. `prepare` places the
+  critical ones right after their source, as Cranelift places its critical-edge blocks
+  (`blockorder.rs:204-233`). -/
+  edgeFrom : Option Nat := none
   deriving Inhabited
 
 /-- The effective coldness of block `vb` (`cold`; a block not listed: its `jump` target's). -/
@@ -1676,6 +1682,6 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
   let (_, slotBytes) := slotLayout f.slots
   pure { name := f.name, blocks := (d.blocks ++ d.edges).map fixBlock, classes := d.st.classes,
          slotBytes, outgoing := d.st.outgoing, rulesFired := d.rules,
-         cold := loweredCold f (d.blocks ++ d.edges) }
+         cold := loweredCold f (d.blocks ++ d.edges), edgeFrom := some f.blocks.length }
 
 end Backend
