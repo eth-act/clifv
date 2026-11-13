@@ -480,6 +480,10 @@ theorem labelOffsets_go_nodup : ∀ {L : List Line} {off : Nat} {m0 m : Std.Hash
     | word a b =>
       simp only [labelOffsets.go] at h
       simpa [E2E.EmitLabels.lineDef] using labelOffsets_go_nodup h
+    | data w =>
+      simp only [labelOffsets.go] at h
+      simpa [E2E.EmitLabels.lineDef] using labelOffsets_go_nodup h
+
 
 theorem nodup_idx {α : Type} {l : List α} (h : l.Nodup) {i j : Nat} {x : α} (hi : l[i]? = some x)
     (hj : l[j]? = some x) : i = j := by
@@ -560,10 +564,10 @@ theorem lt_segEnd {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array RI
   obtain ⟨A, hA, hX⟩ := segX_get hp hs ho'
   rw [hidx] at hX
   have hPL : planLines R.fa.k R.af = p.lines := by simp [planLines, hp]
-  have hRL : R.L = relaxLines R.far p.lines := hL
+  have hRL : R.L = relaxLines R.far p.lines ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af := hL
   have hlbl : p.lines[A.length]? = some (.label (.block vb.label)) := by
     rw [hA, ← hlab, List.append_assoc, List.cons_append]; exact getElem?_mid _ _ _
-  have r1 := relax_label (F := R.far) hlbl
+  have r1 := relax_label_append (F := R.far) (emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af) hlbl
   rw [← hRL] at r1
   have hj : jl = rix R.far p.lines A.length := labelOffsets_uniq hR.lm hjl r1.1
   have hm := rix_mono R.far p.lines

@@ -110,6 +110,7 @@ theorem lineBytes_relabel (f : Lbl → Lbl) : ∀ L : List Line, lineBytes (L.ma
         simp only [Line.relabel]
         split <;> rfl
       | word _ _ => rfl
+      | data _ => rfl
       | label _ => rfl
     simp only [lineBytes, List.map_map, List.map_cons, List.sum_cons] at ih ⊢
     rw [← ih, Function.comp_def]
@@ -319,5 +320,173 @@ theorem emitPlan_bytes {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .o
       subst h
       exact Nat.le_refl _
     · cases h
+
+/-! ## Lines `MachBuffer` keeps (#565)
+
+`MachBuffer` removes and inverts only branches and retargets branch targets, so a selection
+`g` of lines that sees no branch, no inversion and no retargeting (the literal-pool loads) is
+kept, in order. -/
+
+section Keep
+
+variable {β : Type} (g : Line → Option β)
+
+theorem filterMap_eraseIdx : ∀ (L : List Line) (k : Nat) (ln : Line), L[k]? = some ln →
+    g ln = none → (L.eraseIdx k).filterMap g = L.filterMap g
+  | [], _, _, h, _ => by simp at h
+  | a :: L, 0, ln, h, hk => by
+    simp only [List.getElem?_cons_zero, Option.some.injEq] at h
+    subst h
+    simp only [List.eraseIdx, List.filterMap_cons, hk]
+  | a :: L, k + 1, ln, h, hk => by
+    simp only [List.getElem?_cons_succ] at h
+    show (a :: L.eraseIdx k).filterMap g = (a :: L).filterMap g
+    cases ha : g a with
+    | none =>
+      simp only [List.filterMap_cons, ha]
+      exact filterMap_eraseIdx L k ln h hk
+    | some d =>
+      simp only [List.filterMap_cons, ha]
+      exact congrArg (d :: ·) (filterMap_eraseIdx L k ln h hk)
+
+theorem filterMap_set : ∀ (L : List Line) (p : Nat) (y : Line),
+    (∀ x, L[p]? = some x → g x = none) → g y = none →
+    (L.set p y).filterMap g = L.filterMap g
+  | [], _, _, _, _ => rfl
+  | a :: L, 0, y, h, hy => by
+    have h0 := h a (by simp)
+    simp only [List.set_cons_zero, List.filterMap_cons, h0, hy]
+  | a :: L, p + 1, y, h, hy => by
+    have ih := filterMap_set L p y (fun x hx => h x (by simpa using hx)) hy
+    show (a :: L.set p y).filterMap g = (a :: L).filterMap g
+    cases ha : g a with
+    | none => simp only [List.filterMap_cons, ha]; exact ih
+    | some d => simp only [List.filterMap_cons, ha]; exact congrArg (d :: ·) ih
+
+variable (hb : ∀ ln : Line, ((ln.ubr?).orElse fun _ => ln.cbr?).isSome = true → g ln = none)
+  (hi : ∀ (c : Insn) (e : Lbl) (tr : Option Clif.TrapCode), g (.ins (c.invertTo e) tr) = g (.ins c tr))
+
+include hb hi in
+theorem step_filterMap (allLabels : Bool) (m m' : MBuf) (h : MBuf.step allLabels m = some m') :
+    m'.out.toList.filterMap g = m.out.toList.filterMap g := by
+  have hcb : ∀ {ln : Line} {ct : Lbl}, ln.cbr? = some ct → g ln = none := fun {ln} {ct} hc =>
+    hb ln (by cases hu : ln.ubr? <;> simp [Option.orElse, hu, hc])
+  unfold MBuf.step at h
+  rcases hlc : lastCode m.out m.out.size with - | k
+  · simp [hlc] at h
+  obtain ⟨-, ln, hkln⟩ := lastCode_spec m.out m.out.size k hlc
+  have hln : m.out[k]! = ln := by simp [getElem!_def, hkln]
+  have hkl' : m.out.toList[k]? = some ln := by simpa using hkln
+  rcases ht : (ln.ubr?).orElse (fun _ => ln.cbr?) with - | t
+  · simp only [hlc, hln, ht, Option.bind_eq_bind, Option.bind_some, Option.bind_none] at h
+    cases h
+  have hbr : g ln = none := hb ln (by rw [ht]; rfl)
+  have hE : (m.erase k).toList.filterMap g = m.out.toList.filterMap g := by
+    simp only [MBuf.erase, List.toList_toArray]; exact filterMap_eraseIdx g _ k ln hkl' hbr
+  simp only [hlc, hln, ht, Option.bind_eq_bind, Option.bind_some, Option.bind_none] at h
+  repeat' split at h
+  all_goals first
+    | (simp at h; done)
+    | (cases h; exact hE)
+    | (cases h; rfl)
+    | skip
+  all_goals
+    rcases hpp : lastCode m.out k with - | p
+    · simp only [hpp, Option.bind_none] at h; cases h
+    obtain ⟨hpk, lp, hlp⟩ := lastCode_spec _ _ _ hpp
+    have hlp' : m.out[p]! = lp := by simp [getElem!_def, hlp]
+    simp only [hpp, hlp', Option.bind_some] at h
+    split at h
+    · cases h; exact hE
+    rcases hct : lp.cbr? with - | ct
+    · simp only [hct, Option.bind_none] at h; cases h
+    simp only [hct, Option.bind_some] at h
+    split at h
+    · cases h
+    split at h
+    · rename_i c tc _
+      cases h
+      have hy0 : g (Line.ins (Insn.invertTo t c) tc) = none := by
+        rw [hi]; exact hcb hct
+      show ((m.erase k).set! p _).toList.filterMap g = _
+      rw [Array.set!, Array.toList_setIfInBounds]
+      refine (filterMap_set g _ p _ (fun x hx => ?_) hy0).trans hE
+      simp only [MBuf.erase, List.toList_toArray, List.getElem?_eraseIdx_of_lt hpk,
+        Array.getElem?_toList, hlp, Option.some.injEq] at hx
+      subst hx; exact hcb hct
+    · cases h
+
+include hb hi in
+theorem optimize_filterMap (allLabels : Bool) (m : MBuf) :
+    (MBuf.optimize allLabels m).out.toList.filterMap g = m.out.toList.filterMap g := by
+  unfold MBuf.optimize
+  simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
+  refine mbForIn_inv (P := fun m' : MBuf => m'.out.toList.filterMap g = m.out.toList.filterMap g)
+    _ _ _ rfl ?_
+  intro _ s hs
+  split
+  · rename_i m' h; exact (step_filterMap g hb hi _ _ _ h).trans hs
+  · exact hs
+
+theorem fold_filterMap (F : MBuf → Line → MBuf)
+    (hF : ∀ m ln, (F m ln).out.toList.filterMap g = m.out.toList.filterMap g ++ [ln].filterMap g) :
+    ∀ (ls : List Line) (m : MBuf),
+      (ls.foldl F m).out.toList.filterMap g = m.out.toList.filterMap g ++ ls.filterMap g
+  | [], m => by simp
+  | ln :: ls, m => by
+    rw [List.foldl_cons, fold_filterMap F hF ls, hF, List.append_assoc, ← List.filterMap_append]
+    rfl
+
+theorem filterMap_map_relabel (hr : ∀ (f : Lbl → Lbl) (ln : Line), g (ln.relabel f) = g ln)
+    (f : Lbl → Lbl) : ∀ L : List Line, (L.map (Line.relabel f)).filterMap g = L.filterMap g
+  | [] => rfl
+  | ln :: L => by
+    rw [List.map_cons, List.filterMap_cons, List.filterMap_cons, hr,
+      filterMap_map_relabel hr f L]
+
+include hb hi in
+/-- **`MachBuffer`'s simplification keeps the lines `g` selects**, in order. -/
+theorem machBuf_filterMap (hr : ∀ (f : Lbl → Lbl) (ln : Line), g (ln.relabel f) = g ln)
+    (allLabels : Bool) (ls : List Line) :
+    (machBuf allLabels ls).1.filterMap g = ls.filterMap g := by
+  unfold machBuf
+  dsimp only
+  rw [filterMap_map_relabel g hr, optimize_filterMap g hb hi, fold_filterMap g _ ?hF]
+  · simp
+  case hF =>
+    intro m ln
+    split <;> simp [optimize_filterMap g hb hi, Array.toList_push, List.filterMap_append]
+
+include hb hi in
+/-- **The emission plan keeps the lines `g` selects** of the unsimplified segments. -/
+theorem emitPlan_filterMap (hr : ∀ (f : Lbl → Lbl) (ln : Line), g (ln.relabel f) = g ln)
+    {k : Nat} {af : AFunc} {p : Plan} (h : emitPlan k af = .ok p) :
+    (segLines p.segs p.outs).filterMap g = (segLines p.segs (p.segs.map (·.term))).filterMap g := by
+  unfold emitPlan at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i r hr'
+  obtain ⟨ss, ps⟩ := r
+  dsimp only at h
+  split at h
+  · rename_i p1 h1
+    simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h
+    have h1' : machPlan af true ss ps = some p1 ∨ machPlan af false ss ps = some p1 := by
+      cases e : machPlan af true ss ps with
+      | some q => rw [e] at h1; simp only [Option.orElse] at h1; exact .inl h1
+      | none => rw [e] at h1; simp only [Option.orElse] at h1; exact .inr h1
+    rcases h1' with h1' | h1' <;>
+    · obtain ⟨hs, hsp⟩ := machPlan_split h1'
+      rw [hs, splitSegs_lines _ _ _ hsp]
+      exact machBuf_filterMap g hb hi hr _ _
+  · split at h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      rfl
+    · cases h
+
+end Keep
 
 end Backend

@@ -296,11 +296,152 @@ theorem foldl_trapStep : ∀ (L : List Line) (s : Nat × Array TrapSite),
     | ins i t =>
       cases t <;> simp [trapStep, Nat.add_assoc]
     | word => simp [trapStep, Nat.add_assoc]
+    | data => simp [trapStep, Nat.add_assoc]
     | label => simp [trapStep, Nat.add_assoc]
+
+/-! ## The literal pool (#565) -/
+
+/-- A literal-pool load: `ldr (literal)` of a constant-pool entry. -/
+def Line.isLit : Line → Bool
+  | .ins (.fpuLoadLit _ _ (.const _)) _ => true
+  | _ => false
+
+/-- The pool's lines are data words and the labels of the entries it lays out. -/
+theorem poolLines_mem :
+    ∀ {ns : List Nat} {off : Nat} {ln : Line}, ln ∈ poolLines ns off →
+      (∃ w, ln = .data w) ∨ ∃ n ∈ ns, ln = .label (.const n)
+  | [], _, _, h => by simp [poolLines] at h
+  | n :: ns, off, ln, h => by
+    have hpad : ∀ x ∈ (if off % 8 == 0 then ([] : List Line) else [Line.data 0]), x = .data 0 := by
+      split <;> simp
+    simp only [poolLines, List.mem_append] at h
+    rcases h with (h | h) | h
+    · exact .inl ⟨0, hpad _ h⟩
+    · simp only [List.mem_cons, List.mem_nil_iff, or_false] at h
+      rcases h with rfl | rfl | rfl
+      · exact .inr ⟨n, by simp, rfl⟩
+      · exact .inl ⟨_, rfl⟩
+      · exact .inl ⟨_, rfl⟩
+    · rcases poolLines_mem h with h | ⟨m, hm, rfl⟩
+      · exact .inl h
+      · exact .inr ⟨m, List.mem_cons_of_mem _ hm, rfl⟩
+
+/-- Each pool entry takes at most 12 bytes (a padding word and the 8-byte constant). -/
+theorem poolLines_size (ns : List Nat) :
+    ∀ off, ((poolLines ns off).map Line.size).sum ≤ 12 * ns.length := by
+  induction ns with
+  | nil => intro; simp [poolLines]
+  | cons n ns ih =>
+    intro off
+    have h1 := ih (off + 4 * (if off % 8 == 0 then ([] : List Line) else [Line.data 0]).length + 8)
+    simp only [poolLines, List.map_append, List.sum_append, List.length_cons]
+    by_cases hc : off % 8 == 0 <;> simp [hc, Line.size] at h1 ⊢ <;> omega
+
+theorem foldl_poolStep_length :
+    ∀ (L : List Line) (acc : List Nat),
+      (L.foldl poolStep acc).length ≤ acc.length + L.countP Line.isLit
+  | [], acc => by simp
+  | ln :: L, acc => by
+    have ih := foldl_poolStep_length L (poolStep acc ln)
+    have h : (poolStep acc ln).length ≤ acc.length + (if ln.isLit then 1 else 0) := by
+      unfold poolStep
+      split
+      · simp only [Line.isLit, ite_true]; split <;> simp
+      · omega
+    rw [List.foldl_cons, List.countP_cons]
+    omega
+
+/-- The pool has at most one entry per literal load. -/
+theorem poolUses_length (L : List Line) : (poolUses L).length ≤ L.countP Line.isLit := by
+  simpa [poolUses] using foldl_poolStep_length L []
+
+theorem mem_foldl_poolStep_of_mem {n : Nat} :
+    ∀ {L : List Line} {acc : List Nat}, n ∈ acc → n ∈ L.foldl poolStep acc
+  | [], _, h => h
+  | ln :: L, acc, h => by
+    rw [List.foldl_cons]
+    refine mem_foldl_poolStep_of_mem ?_
+    unfold poolStep
+    split
+    · split
+      · exact h
+      · exact List.mem_append_left _ h
+    · exact h
+
+/-- Every entry a literal load names is in the pool. -/
+theorem mem_foldl_poolStep_lit {n : Nat} {s : ScalarSize} {rd : Reg} {tr : Option Clif.TrapCode} :
+    ∀ {L : List Line} {acc : List Nat},
+      Line.ins (.fpuLoadLit s rd (.const n)) tr ∈ L → n ∈ L.foldl poolStep acc
+  | [], _, h => by cases h
+  | ln :: L, acc, h => by
+    rw [List.foldl_cons]
+    rcases List.mem_cons.mp h with rfl | h
+    · apply mem_foldl_poolStep_of_mem
+      simp only [poolStep]
+      split
+      · rename_i hc; simpa using hc
+      · simp
+    · exact mem_foldl_poolStep_lit h
+
+/-- The pool's entries are distinct. -/
+theorem foldl_poolStep_nodup :
+    ∀ {L : List Line} {acc : List Nat}, acc.Nodup → (L.foldl poolStep acc).Nodup
+  | [], _, h => h
+  | ln :: L, acc, h => by
+    rw [List.foldl_cons]
+    refine foldl_poolStep_nodup ?_
+    unfold poolStep
+    split
+    · split
+      · exact h
+      · rename_i hc
+        rw [List.nodup_append]
+        refine ⟨h, by simp, fun a ha b hb hab => ?_⟩
+        simp only [List.mem_singleton] at hb
+        subst hb; subst hab
+        exact hc (by simpa using ha)
+    · exact h
+
+theorem poolUses_nodup (L : List Line) : (poolUses L).Nodup :=
+  foldl_poolStep_nodup List.nodup_nil
+
+theorem relaxTarget_not_lit {c : Insn} {t : Lbl} (h : c.relaxTarget? = some t) (x : Lbl)
+    (tr tr' : Option Clif.TrapCode) :
+    (Line.ins c tr).isLit = false ∧ (Line.ins (c.invertTo x) tr').isLit = false := by
+  cases c <;> simp [Insn.relaxTarget?, Insn.condTarget?] at h <;> simp [Line.isLit, Insn.invertTo]
+
+theorem relaxLine_countP_isLit (f : Lbl → Bool) (ln : Line) :
+    (relaxLine f ln).countP Line.isLit = if ln.isLit then 1 else 0 := by
+  unfold relaxLine
+  split
+  · rename_i c t h
+    cases ln with
+    | ins i tr =>
+      cases tr with
+      | none =>
+        simp only [Line.relaxable?] at h
+        obtain ⟨t', ht, he⟩ := Option.map_eq_some_iff.mp h
+        cases he
+        obtain ⟨h1, h2⟩ := relaxTarget_not_lit ht .skip none none
+        split <;> simp [List.countP_cons, h1, h2, show (Line.ins (.b t) none).isLit = false from rfl]
+      | some _ => simp [Line.relaxable?] at h
+    | _ => simp [Line.relaxable?] at h
+  · simp [List.countP_cons]
+
+/-- Relaxation keeps the literal loads. -/
+theorem relaxLines_countP_isLit (f : Lbl → Bool) :
+    ∀ L : List Line, (relaxLines f L).countP Line.isLit = L.countP Line.isLit
+  | [] => by simp [relaxLines]
+  | ln :: L => by
+    rw [relaxLines_cons', List.countP_append, relaxLines_countP_isLit f L,
+      relaxLine_countP_isLit, List.countP_cons]
+    omega
 
 theorem emitFunc_unfold {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k af = .ok fa) :
     ∃ pre, emitPre k af = .ok pre ∧
-      fa.lines = (relaxLines (relaxOf pre.toList) pre.toList).toArray ∧
+      fa.lines = (relaxLines (relaxOf pre.toList) pre.toList ++
+        poolLines (poolUses (relaxLines (relaxOf pre.toList) pre.toList))
+          ((relaxLines (relaxOf pre.toList) pre.toList).foldl (· + ·.size) 0)).toArray ∧
       fa.size = (fa.lines.toList.map Line.size).sum ∧ fa.traps = trapsFrom fa.lines.toList 0 := by
   unfold emitFunc at he
   cases hp : emitPre k af with
@@ -311,11 +452,32 @@ theorem emitFunc_unfold {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k af 
       cases ln with
       | ins i t => cases t <;> rfl
       | word => rfl
+      | data => rfl
       | label => rfl)] at he
-    obtain ⟨h1, h2⟩ := foldl_trapStep (relaxLines (relaxOf pre.toList) pre.toList) (0, #[])
+    obtain ⟨h1, h2⟩ := foldl_trapStep (relaxLines (relaxOf pre.toList) pre.toList ++
+      poolLines (poolUses (relaxLines (relaxOf pre.toList) pre.toList))
+        ((relaxLines (relaxOf pre.toList) pre.toList).foldl (· + ·.size) 0)) (0, #[])
     simp only [pure, Except.pure, Except.ok.injEq] at he
     subst he
     exact ⟨pre, rfl, rfl, by simpa using h1, by simpa using h2⟩
+
+/-- The pool's lines are not relaxable branches and define only constant labels. -/
+theorem emitFunc_pool {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc k af = .ok fa) :
+    ∃ pre P, emitPre k af = .ok pre ∧
+      fa.lines.toList = relaxLines (relaxOf pre.toList) pre.toList ++ P ∧
+      (∀ ln ∈ P, (∃ w, ln = .data w) ∨ ∃ n, ln = .label (.const n)) ∧
+      (P.map Line.size).sum ≤ 12 * pre.toList.countP Line.isLit := by
+  obtain ⟨pre, hp, hl, -, -⟩ := emitFunc_unfold he
+  refine ⟨pre, _, hp, by rw [hl, List.toList_toArray], fun ln h => ?_, ?_⟩
+  · rcases poolLines_mem h with h | ⟨n, -, h⟩
+    · exact .inl h
+    · exact .inr ⟨n, h⟩
+  · have h1 := poolLines_size
+      (poolUses (relaxLines (relaxOf pre.toList) pre.toList))
+      ((relaxLines (relaxOf pre.toList) pre.toList).foldl (· + ·.size) 0)
+    have h2 := poolUses_length (relaxLines (relaxOf pre.toList) pre.toList)
+    rw [relaxLines_countP_isLit] at h2
+    omega
 
 theorem sizes_codeLines : ∀ L : List Line, (L.map Line.size).sum = 4 * (codeLines L).length
   | [] => rfl
@@ -347,12 +509,14 @@ theorem codeTraps_trapsFrom : ∀ (L : List Line) (n : Nat),
       cases ln with
       | ins i t => cases t <;> rfl
       | word => rfl
+      | data => rfl
       | label => simp [Line.isLabel] at h
     · simp only [ite_true, trapsFrom]
       rw [codeTraps_trapsFrom L n, Line.size_of_isLabel h, Nat.add_zero]
       cases ln with
       | ins => simp [Line.isLabel] at h
       | word => simp [Line.isLabel] at h
+      | data => simp [Line.isLabel] at h
       | label => rfl
 
 /-- `emitFunc`'s trap table is the trap sites of its code lines (what `FnAsm.layout` checks). -/
@@ -371,6 +535,7 @@ def Line.labelsUsed : Line → List Lbl
     | some (t, _, _) => if t = .skip then [] else [t]
     | none => []
   | .word t b => [t, b]
+  | .data _ => []
   | .label _ => []
 
 /-- The PC-relative lines relaxation does not handle (atomic-loop / jump-table-local labels,
@@ -429,6 +594,64 @@ theorem encodeCode_ne_error {lbl : Lbl → Option Nat} :
     obtain ⟨w', hw'⟩ := h (k + 1) ln' (by simpa using hk)
     exact ⟨w', by rw [Array.size_push, show acc.size + 1 + k = acc.size + (k + 1) by omega]; exact hw'⟩
 
+theorem labelOffsets_go_append : ∀ {A B : List Line} {off : Nat} {m0 m : Std.HashMap Lbl Nat},
+    labelOffsets.go (A ++ B) off m0 = .ok m →
+    ∃ mA, labelOffsets.go A off m0 = .ok mA ∧
+      labelOffsets.go B (off + (A.map Line.size).sum) mA = .ok m
+  | [], B, off, m0, m, h => ⟨m0, rfl, by simpa using h⟩
+  | ln :: A, B, off, m0, m, h => by
+    rw [List.cons_append] at h
+    cases ln with
+    | label l =>
+      simp only [labelOffsets.go] at h ⊢
+      split at h
+      · simp [throw, throwThe, MonadExceptOf.throw] at h
+      · rename_i hc
+        obtain ⟨mA, h1, h2⟩ := labelOffsets_go_append h
+        exact ⟨mA, by rw [if_neg hc]; exact h1, by simpa [Line.size] using h2⟩
+    | _ =>
+      simp only [labelOffsets.go] at h ⊢
+      obtain ⟨mA, h1, h2⟩ := labelOffsets_go_append h
+      exact ⟨mA, h1, by simpa [Nat.add_assoc] using h2⟩
+
+theorem relaxable_target {ln : Line} {c : Insn} {t : Lbl} (h : ln.relaxable? = some (c, t)) :
+    (∃ l, t = .block l) ∨ ∃ n, t = .trap n := by
+  cases ln with
+  | ins i tr =>
+    cases tr with
+    | none =>
+      simp only [Line.relaxable?] at h
+      obtain ⟨t', ht, he⟩ := Option.map_eq_some_iff.mp h
+      cases he
+      unfold Insn.relaxTarget? at ht
+      split at ht <;> simp only [Option.some.injEq, reduceCtorEq] at ht <;> subst ht <;> simp
+    | some _ => simp [Line.relaxable?] at h
+  | _ => simp [Line.relaxable?] at h
+
+/-- Appending lines that are no relaxable branches and define only constant labels (the
+literal pool) keeps every relaxable branch of the relaxed lines in reach of its label. -/
+theorem relaxPool_reaches {pre P : List Line}
+    (hP : ∀ ln ∈ P, (∃ w, ln = .data w) ∨ ∃ n, ln = .label (.const n))
+    {m : Std.HashMap Lbl Nat} (hm : labelOffsets.go (relaxLines (relaxOf pre) pre ++ P) 0 {} = .ok m)
+    {j : Nat} {ln : Line} {c : Insn} {t : Lbl} {o : Nat}
+    (hj : (relaxLines (relaxOf pre) pre ++ P)[j]? = some ln) (hr : ln.relaxable? = some (c, t))
+    (ho : m[t]? = some o) :
+    c.reaches (lineOffset (relaxLines (relaxOf pre) pre ++ P) j) o = true := by
+  obtain ⟨mA, hA, hB⟩ := labelOffsets_go_append hm
+  have hjA : j < (relaxLines (relaxOf pre) pre).length := by
+    refine Nat.lt_of_not_le fun hn => ?_
+    rw [List.getElem?_append_right hn] at hj
+    rcases hP _ (List.mem_of_getElem? hj) with ⟨w, rfl⟩ | ⟨n, rfl⟩ <;> simp [Line.relaxable?] at hr
+  rw [List.getElem?_append_left hjA] at hj
+  have hoA : mA[t]? = some o := by
+    rcases labelOffsets_go_inv hB ho with h | ⟨k, hk, -⟩
+    · exact h
+    · rcases hP _ (List.mem_of_getElem? hk) with ⟨w, h⟩ | ⟨n, h⟩ <;> cases h
+      rcases relaxable_target hr with ⟨l, h⟩ | ⟨n', h⟩ <;> cases h
+  rw [show lineOffset (relaxLines (relaxOf pre) pre ++ P) j = lineOffset (relaxLines (relaxOf pre) pre) j by
+    simp [lineOffset, List.take_append_of_le_length (Nat.le_of_lt hjA)]]
+  exact farTargets_reaches (relaxOf_fixpoint pre) hA hj hr hoA
+
 /-- **Layout totality.** A function `emitFunc` produced lays out, given that its labels are
 defined once and every label operand names a defined label, every instruction's non-label
 operands encode, the PC-relative forms relaxation does not handle reach their labels
@@ -439,11 +662,16 @@ theorem emitFunc_layout_total {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc
     (henc : ∀ i t, Line.ins i t ∈ fa.lines.toList → i.encodable = true)
     (hnear : NearOk fa.lines.toList) (hsz : fa.size < 2 ^ 27) :
     ∃ fb, fa.layout = .ok fb := by
-  obtain ⟨pre, _, hlines, hsize, _⟩ := emitFunc_unfold he
+  obtain ⟨pre, P, -, hlines, hP, -⟩ := emitFunc_pool he
+  obtain ⟨-, -, -, hsize, -⟩ := emitFunc_unfold he
   obtain ⟨m, hm⟩ := hlab
   have hm' : labelOffsets.go fa.lines.toList 0 {} = .ok m := hm
-  have hfar : farTargets fa.lines.toList = [] := by
-    rw [hlines, List.toList_toArray]; exact relaxOf_fixpoint _
+  have hfar : ∀ (j : Nat) (ln : Line) (c : Insn) (t : Lbl) (o : Nat), fa.lines.toList[j]? = some ln → ln.relaxable? = some (c, t) →
+      m[t]? = some o → c.reaches (lineOffset fa.lines.toList j) o = true := by
+    intro j ln c t o hj hr ho
+    have hm2 := hm'
+    rw [hlines] at hj hm2 ⊢
+    exact relaxPool_reaches hP hm2 hj hr ho
   have hsz' : fa.size < 134217728 := hsz
   -- every defined label is at an aligned offset within the function
   have hlbl : ∀ l, Line.label l ∈ fa.lines.toList →
@@ -460,6 +688,7 @@ theorem emitFunc_layout_total {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc
     have hpc4 := lineOffset_mod4 fa.lines.toList j
     cases ln with
     | label => simp [Line.isLabel] at hl
+    | data w => exact ⟨BitVec.ofNat 32 w, rfl⟩
     | word t b =>
       obtain ⟨ot, hot, hot1, _⟩ := hlbl t (hdef _ hmem t (by simp [Line.labelsUsed]))
       obtain ⟨ob, hob, hob1, _⟩ := hlbl b (hdef _ hmem b (by simp [Line.labelsUsed]))
@@ -497,7 +726,7 @@ theorem emitFunc_layout_total {k : Nat} {af : AFunc} {fa : FnAsm} (he : emitFunc
               obtain ⟨t', ht'⟩ := Option.ne_none_iff_exists'.mp hrx
               have := Insn.relaxTarget_pcRelSpec ht' hs
               subst this
-              have hreach := farTargets_reaches hfar hm' hj
+              have hreach := hfar j _ i t' o hj
                 (by simp [Line.relaxable?, ht'] : (Line.ins i none).relaxable? = some (i, t')) ho
               simp only [Insn.reaches, hs, decide_eq_true_eq] at hreach
               exact hreach
@@ -538,6 +767,7 @@ theorem relaxLine_size_le (f : Lbl → Bool) (ln : Line) :
       cases ln with
       | ins => rfl
       | word => rfl
+      | data => rfl
       | label => simp [Line.relaxable?] at h
     split <;>
       simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, this] <;> simp [Line.size]
@@ -552,14 +782,17 @@ theorem relaxLines_size_le (f : Lbl → Bool) :
     have := relaxLine_size_le f ln
     omega
 
-/-- Relaxation at most doubles the code size. -/
+/-- Relaxation at most doubles the code size, and the literal pool adds at most 12 bytes per
+literal load (#565: the old bound `2 · size pre` no longer holds once the pool is appended). -/
 theorem emitFunc_size_le {k : Nat} {af : AFunc} {fa : FnAsm} {pre : Array Line}
     (he : emitFunc k af = .ok fa) (hp : emitPre k af = .ok pre) :
-    fa.size ≤ 2 * (pre.toList.map Line.size).sum := by
-  obtain ⟨pre', hp', hlines, hsize, _⟩ := emitFunc_unfold he
+    fa.size ≤ 2 * (pre.toList.map Line.size).sum + 12 * pre.toList.countP Line.isLit := by
+  obtain ⟨-, -, -, hsize, -⟩ := emitFunc_unfold he
+  obtain ⟨pre', P, hp', hlines, -, hP⟩ := emitFunc_pool he
   rw [hp] at hp'
   cases hp'
-  rw [hsize, hlines, List.toList_toArray]
-  exact relaxLines_size_le _ _
+  rw [hsize, hlines, List.map_append, List.sum_append]
+  have := relaxLines_size_le (relaxOf pre.toList) pre.toList
+  omega
 
 end Backend

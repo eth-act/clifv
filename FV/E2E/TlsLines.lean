@@ -335,6 +335,7 @@ theorem tlsSeqStep_relabel (f : Lbl → Lbl) (s : TlsSeqSt) (ln : Line) :
   cases ln with
   | ins i tc => cases i <;> cases s <;> rfl
   | word _ _ => cases s <;> rfl
+  | data _ => cases s <;> rfl
   | label _ => rfl
 
 theorem tlsSeqGo_relabel (f : Lbl → Lbl) : ∀ (L : List Line) (s : TlsSeqSt),
@@ -394,6 +395,7 @@ theorem tlsSeqGo_relaxLines (f : Lbl → Bool) : ∀ (L : List Line) (s : TlsSeq
     | .ins c (some tc), h => exact keep rfl
     | .label l, h => exact keep rfl
     | .word x y, h => exact keep rfl
+    | .data w, h => exact keep rfl
     | .ins c none, h =>
       rcases relaxLine_cases f c with hr | ⟨t, ht, hr⟩
       · exact keep hr
@@ -543,9 +545,11 @@ theorem emitFunc_tlsClosed {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k a
     TlsClosed fa.lines.toList := by
   obtain ⟨p, hp, hl, -⟩ := emitFunc_ok h
   rw [hl]
-  refine tlsClosed_of_go (tlsSeqGo_relaxLines _ _ _ (tlsSeqOk_append ?_ ?_))
+  refine tlsClosed_of_go (tlsSeqOk_append (tlsSeqGo_relaxLines _ _ _ (tlsSeqOk_append ?_ ?_))
+    (tlsSeqOk_of_free fun ln hln => ?_))
   · exact emitPlan_tlsOk hp
   · exact tlsSeqOk_of_free (trapLines_free _)
+  · rcases emitPool_mem hln with ⟨w, rfl⟩ | ⟨n, rfl⟩ <;> rfl
 
 /-! ## Non-vacuity -/
 

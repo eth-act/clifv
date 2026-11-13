@@ -21,6 +21,7 @@ import FV.E2E.LinkReturnPinProgramWitness
 #print axioms E2E.LinkSys.X_ext_return_pins
 #print axioms E2E.LinkSys.budget_K_return_pins
 #print axioms E2E.LinkSys.progOsCore_return_pins
+#print axioms E2E.LinkSys.progOsCore_return_pins_results
 #print axioms E2E.LinkSys.got_target_return_pins
 #print axioms E2E.LinkSys.progOs_return_pins
 #print axioms E2E.LinkSys.progOsReg_return_pins

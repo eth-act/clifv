@@ -1,5 +1,6 @@
 import FV.Backend.Asm
 import FV.Backend.Regalloc
+import FV.Backend.Proof.RelaxLayout
 
 /-!
 # `emitFunc`'s code structure (M6 proof, register level)
@@ -501,10 +502,32 @@ def emitFar (c : FnCtx) (af : AFunc) : Lbl → Bool :=
   | .ok p => relaxOf p.lines
   | .error _ => fun _ => false
 
+/-- The literal pool `emitFunc` appends after the relaxed lines (#565; empty when no
+`ldr (literal)` load is emitted). -/
+def emitPool (c : FnCtx) (af : AFunc) : List Line :=
+  match emitPlan c.k af with
+  | .ok p =>
+    poolLines (poolUses (relaxLines (relaxOf p.lines) p.lines))
+      ((relaxLines (relaxOf p.lines) p.lines).foldl (· + ·.size) 0)
+  | .error _ => []
+
+/-- The pool's lines are data words and constant-pool labels. -/
+theorem emitPool_mem {c : FnCtx} {af : AFunc} {ln : Line} (h : ln ∈ emitPool c af) :
+    (∃ w, ln = .data w) ∨ ∃ n, ln = .label (.const n) := by
+  unfold emitPool at h
+  split at h
+  · rcases poolLines_mem h with h | ⟨n, -, h⟩
+    · exact .inl h
+    · exact .inr ⟨n, h⟩
+  · cases h
+
 set_option pp.proofs false in
+/-- `emitFunc`'s lines: the relaxed plan lines (body and deferred traps), then the literal pool
+(#565: the pool suffix `emitPool` is new; without it the statement no longer holds). -/
 theorem emitFunc_ok {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
     ∃ p, emitPlan k af = .ok p ∧
-      fa.lines.toList = relaxLines (emitFar ⟨k, af.slotBase⟩ af) p.lines ∧ fa.k = k := by
+      fa.lines.toList = relaxLines (emitFar ⟨k, af.slotBase⟩ af) p.lines ++
+        emitPool ⟨k, af.slotBase⟩ af ∧ fa.k = k := by
   unfold emitFunc at h
   cases hp : emitPlan k af with
   | error e =>
@@ -519,7 +542,7 @@ theorem emitFunc_ok {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok
     · simp only [Except.ok.injEq] at h
       subst h
       refine ⟨p, rfl, ?_, rfl⟩
-      simp [emitFar, hp]
+      simp [emitFar, emitPool, hp]
 
 /-- Segment `i` of a plan is found by its block index. -/
 theorem segAt_of {k : Nat} {af : AFunc} {p : Plan} (hp : emitPlan k af = .ok p) {i : Nat}
@@ -565,22 +588,26 @@ theorem segAt_of {k : Nat} {af : AFunc} {p : Plan} (hp : emitPlan k af = .ok p) 
   simpa using hne
 
 /-- **Block `b` in the final lines**: its label at line `j`, then the relaxation of its body and
-its final lines, then the following segments and the traps. -/
+its final lines, then the following segments and the traps, then the literal pool (#565: the
+pool suffix `emitPool` is new; without it the statement no longer holds). -/
 theorem emit_seg {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
     ∃ p, emitPlan k af = .ok p ∧
-      fa.lines.toList = relaxLines (emitFar ⟨k, af.slotBase⟩ af) p.lines ∧
+      fa.lines.toList = relaxLines (emitFar ⟨k, af.slotBase⟩ af) p.lines ++
+        emitPool ⟨k, af.slotBase⟩ af ∧
       ∀ b l code, af.blocks[b]? = some (l, code) →
         ∃ i s o j ps1 psm ps2, p.segs[i]? = some s ∧ p.outs[i]? = some o ∧ s.idx = b ∧
           s.label = l ∧ segAt k af b = some (s, o) ∧
           fa.lines.toList[j]? = some (.label (.block l)) ∧
           fa.lines.toList.drop (j + 1) = relaxLines (emitFar ⟨k, af.slotBase⟩ af) (s.body ++ o) ++
             relaxLines (emitFar ⟨k, af.slotBase⟩ af)
-              (segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps) ∧
+              (segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps) ++
+            emitPool ⟨k, af.slotBase⟩ af ∧
           codeLinesE ⟨k, af.slotBase⟩ af code.toList.dropLast ps1 = .ok (s.body, psm) ∧
           codeLinesE ⟨k, af.slotBase⟩ af code.toList.getLast?.toList psm = .ok (s.term, ps2) ∧
           ps2.traps.toList <+: p.ps.traps.toList ∧ (b = 0 → j = 0) := by
   obtain ⟨p, hp, hL, -⟩ := emitFunc_ok h
   generalize hF : emitFar ⟨k, af.slotBase⟩ af = F at hL ⊢
+  generalize emitPool ⟨k, af.slotBase⟩ af = P at hL ⊢
   refine ⟨p, hp, hL, fun b l code hbc => ?_⟩
   obtain ⟨hseg, hlen, -⟩ := emitPlan_spec hp
   obtain ⟨hl, -, hss⟩ := segsOf_spec hseg

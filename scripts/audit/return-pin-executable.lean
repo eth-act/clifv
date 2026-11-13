@@ -6,6 +6,7 @@ import FV.E2E.ReturnPinLinkerWitness
 #print axioms E2E.ReturnPinExecBytes.line_overlap
 #print axioms E2E.ReturnPinExecBytes.relocAt_img
 #print axioms E2E.ReturnPinExecBytes.word_static
+#print axioms E2E.ReturnPinExecBytes.data_static
 #print axioms E2E.ReturnPinExecBytes.insn_of_good
 #print axioms E2E.ReturnPinExecBytes.symAddr_of_blrTo
 #print axioms E2E.ReturnPinExecBytes.siteAt_static

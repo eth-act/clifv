@@ -40,19 +40,20 @@ def RL.FrameRd (R : RL) (lr : Bool) (a : BitVec 64) : Prop :=
 
 /-- **A byte the activation's run may read, located, the world reads guarded by `Y`**: a byte of
 a jump table, of the frame (`FrameRd lr`), or a byte outside the frame addresses `F` and outside
-the guard set `Y` (module doc). -/
+the guard set `Y` (module doc), or a byte of a literal-pool word (`.data`, #565). -/
 def RL.ReadInY (R : RL) (Y : BitVec 64 → Prop) (lr : Bool) (a : BitVec 64) : Prop :=
   (∃ j tg bs, R.L[j]? = some (.word tg bs) ∧ ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i) ∨
-    R.FrameRd lr a ∨ (¬ R.F a ∧ ¬ Y a)
+    R.FrameRd lr a ∨ (¬ R.F a ∧ ¬ Y a) ∨
+    ∃ j d, R.L[j]? = some (.data d) ∧ ∃ i < 4, a = R.pcOf j + BitVec.ofNat 64 i
 
 /-- **A byte the activation's run may read, located** (module doc): `ReadInY` at `Y := F`. -/
 def RL.ReadIn (R : RL) (lr : Bool) (a : BitVec 64) : Prop := R.ReadInY R.F lr a
 
 /-- **The reads at `u`, located, guarded by `Y`**: the reads of the unhooked instruction `x` at
-the pc are `ReadInY Y x.ldpFR`. -/
+the pc, as the line's encoding (`R.envL j`) decodes, are `ReadInY Y x.ldpFR`. -/
 def RL.ReadsInY (R : RL) (Y : BitVec 64 → Prop) (u : Arm.ArmState) : Prop :=
   ∀ j x t, R.L[j]? = some (.ins x t) → Arm.r .PC u = R.pcOf j → x.hooked = false →
-    ∀ env a, x.toArmInst env = .ok a → ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2,
+    ∀ a, x.toArmInst (R.envL j) = .ok a → ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2,
       R.ReadInY Y x.ldpFR (p.1 + BitVec.ofNat 64 k)
 
 /-- **The reads at `u`, located**: the reads of the unhooked instruction `x` at the pc are
@@ -82,20 +83,20 @@ theorem RL.ReadIn.mono {R : RL} {a : BitVec 64} (h : R.ReadIn false a) (lr : Boo
 /-- A guarded read is a located read. -/
 theorem RL.ReadInY.readIn {R : RL} {Y : BitVec 64 → Prop} {lr : Bool} {a : BitVec 64}
     (h : R.ReadInY Y lr a) : R.ReadIn lr a :=
-  h.imp_right (Or.imp_right fun h => ⟨h.1, h.1⟩)
+  h.imp_right (Or.imp_right (Or.imp_left fun h => ⟨h.1, h.1⟩))
 
 /-- Guarded reads at a larger guard set are guarded reads at a smaller one. -/
 theorem RL.ReadInY.anti {R : RL} {Y Y' : BitVec 64 → Prop} {lr : Bool} {a : BitVec 64}
     (h : R.ReadInY Y lr a) (hY : ∀ b, Y' b → Y b) : R.ReadInY Y' lr a :=
-  h.imp_right (Or.imp_right fun h => ⟨h.1, fun h' => h.2 (hY _ h')⟩)
+  h.imp_right (Or.imp_right (Or.imp_left fun h => ⟨h.1, fun h' => h.2 (hY _ h')⟩))
 
 theorem RL.ReadsInY.readsIn {R : RL} {Y : BitVec 64 → Prop} {u : Arm.ArmState}
     (h : R.ReadsInY Y u) : R.ReadsIn u :=
-  fun j x t hj hpc hx env a ha p hp k hk => (h j x t hj hpc hx env a ha p hp k hk).readIn
+  fun j x t hj hpc hx a ha p hp k hk => (h j x t hj hpc hx a ha p hp k hk).readIn
 
 theorem RL.ReadsInY.anti {R : RL} {Y Y' : BitVec 64 → Prop} {u : Arm.ArmState}
     (h : R.ReadsInY Y u) (hY : ∀ b, Y' b → Y b) : R.ReadsInY Y' u :=
-  fun j x t hj hpc hx env a ha p hp k hk => (h j x t hj hpc hx env a ha p hp k hk).anti hY
+  fun j x t hj hpc hx a ha p hp k hk => (h j x t hj hpc hx a ha p hp k hk).anti hY
 
 /-- The kept addresses are not in the activation's frame. -/
 theorem RL.G_not_frame {R : RL} (hR : R.Wf) {a : BitVec 64} (h : R.G a) :
@@ -115,15 +116,16 @@ theorem RL.G_not_frame {R : RL} (hR : R.Wf) {a : BitVec 64} (h : R.G a) :
 /-- **The located reads are D2's** (for every guard set `Y`). -/
 theorem RL.readIn_ok {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {lr : Bool} {a : BitVec 64}
     (h : R.ReadInY Y lr a) : R.ReadOk a := by
-  rcases h with h | ⟨o, ho, -, rfl⟩ | h
-  · exact .inr h
+  rcases h with h | ⟨o, ho, -, rfl⟩ | h | h
+  · exact .inr (.inl h)
   · exact .inl fun hG => RL.G_not_frame hR hG o ho rfl
   · exact .inl fun hG => h.1 (.inr hG)
+  · exact .inr (.inr h)
 
 /-- **The guarded located reads give D2.** -/
 theorem RL.ReadsInY.readsAt {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {u : Arm.ArmState}
     (h : R.ReadsInY Y u) : R.ReadsAt u :=
-  fun j x t hj hpc hx env a ha p hp k hk => RL.readIn_ok hR (h j x t hj hpc hx env a ha p hp k hk)
+  fun j x t hj hpc hx a ha p hp k hk => RL.readIn_ok hR (h j x t hj hpc hx a ha p hp k hk)
 
 /-- **The located reads give D2.** -/
 theorem RL.ReadsIn.readsAt {R : RL} (hR : R.Wf) {u : Arm.ArmState} (h : R.ReadsIn u) :
@@ -157,17 +159,28 @@ theorem RL.frameRd_slot {R : RL} (hR : R.Wf) {o : Nat} (ho : o < R.fr.size) :
 
 /-! ## Builders -/
 
-/-- `ReadsIn` at an instruction line from the reads of its instruction (every guard set `Y`). -/
-theorem RL.readsIn_of_line {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {u : Arm.ArmState} {j : Nat}
-    {x : Insn} {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
-    (h : x.hooked = false → ∀ env a, x.toArmInst env = .ok a →
+/-- `ReadsIn` at an instruction line from the reads of its instruction as the line's encoding
+(`R.envOf j`) decodes (every guard set `Y`). -/
+theorem RL.readsIn_of_lineE {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {u : Arm.ArmState}
+    {j : Nat} {x : Insn} {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t))
+    (hpc : Arm.r .PC u = R.pcOf j)
+    (h : x.hooked = false → ∀ a, x.toArmInst (R.envOf j) = .ok a →
       ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2, R.ReadInY Y x.ldpFR (p.1 + BitVec.ofNat 64 k)) :
     R.ReadsInY Y u := by
   intro j' x' t' hj' hpc' hh
   obtain rfl := RL.pcOf_inj hR hj hj' (hpc.symm.trans hpc')
   rw [hj] at hj'
   cases hj'
+  rw [RL.envL_eq hR]
   exact h hh
+
+/-- `ReadsIn` at an instruction line from the reads of its instruction (every guard set `Y`). -/
+theorem RL.readsIn_of_line {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {u : Arm.ArmState} {j : Nat}
+    {x : Insn} {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC u = R.pcOf j)
+    (h : x.hooked = false → ∀ env a, x.toArmInst env = .ok a →
+      ∀ p ∈ E2E.ExecBytes.MemReads a u, ∀ k < p.2, R.ReadInY Y x.ldpFR (p.1 + BitVec.ofNat 64 k)) :
+    R.ReadsInY Y u :=
+  RL.readsIn_of_lineE hR hj hpc fun hh => h hh _
 
 /-- `ReadsIn` at a line whose instruction is no load. -/
 theorem RL.readsIn_noLoad {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {u : Arm.ArmState} {j : Nat}

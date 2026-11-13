@@ -216,6 +216,25 @@ The proof covers them as follows.
   f.externs.map (·.2)`) with `ds.length = ext.sig.returns.length` defs, `outs.length =
   ds.length` and `PrefixHold rvals outs`. `ExternsNormal` is gone
   (`CallRuleOk` assumes `ExternsIn f exts`).
+* **Return pins at a linked call** (#890/#892, #1003): the return-pin route
+  (`LinkSys.OkReturnPins`, `Link.ReturnPinCompilerWith.attempt`, link-check's `returnPins` line)
+  checks every call and `try_call` of a function `h` of the program with
+  `LinkSys.returnPinSiteB`: the call's **results**, its first `h.sig.returns.length` defs, are
+  pinned to the first registers of `ReturnPinCheck.pins h` (x0.. for a function lowered by
+  `lowerFunction`; `returnPins` for one the Stock route lowered: x8 alone for an `sret`
+  function). The defs after the results are a `try_call`'s exception payload registers (x0/x1
+  when not result registers); no return pin of the callee describes them and a linked call
+  supplies the declared results only (`LinkSys.progXWithPins`), so the check does not read them.
+  Until #1003 it compared all the defs with all the pins, which rejected every `try_call` of a
+  Stock-route `sret` function (defs x0, x1 against the pin x8): the `values` tests of the
+  survey's `b_slices` and `e_option_result` (16 of 18 executables verified).
+  `returnPinsB_sound` concludes `ReturnPinsCompatible g L.checkedResultPins`
+  (`CompiledProgramReturnPins.calls`: agreement with the pins a call reads), which is what
+  `progOsCore_return_pins_results` uses; `progOsCore_return_pins` keeps its statement as a
+  corollary. Witness: `E2E.ReturnPinPayloadWitness.payload_try_call_accepted` and
+  `program_correct` (the shape: accepted, in `CrateStmtReturnPins`, while the check of all defs
+  fails). lean-backend's per-file `ReturnPinFile.site` still compares all the defs (stricter:
+  such a file keeps the previous lowering chain; it changes no verdict of link-check).
 
 ### Typed ABI placement (`f32`/`f64`, S11e2/S11e3/S11e5a)
 
@@ -4039,7 +4058,9 @@ For the spill allocation's code (`lowerRFunc vcp (spillAlloc vcp) = .ok af`):
 used label defined), `emitFunc_spill_encodable` (registers from `spillAccepted`'s checker facts;
 immediates from `immsOkB`), `emitFunc_spill_near` (`NearOk`: the atomic loops and jump tables are
 blocks of ≤ 8 lines that the branch simplification — it only touches branches to block labels —
-and relaxation keep together), `emitFunc_spill_size`
+and relaxation keep together; a literal-pool load (#565) reaches its entry after the body when
+the size condition's `poolReachB` holds: below `2 ^ 17` words, or no pool load),
+`emitFunc_spill_size`
 (`fa.size ≤ 8 · rfWords`), combined by `FnAsm.layoutReadyB_of` (the converse of
 `layoutReadyB_sound`) into `emitReady_spill`.
 
@@ -4056,7 +4077,10 @@ theorem E2E.backend_correct_final_total_emit (hsub : InSubset p f) (hd : dominat
 (frame of `allocResult vcp (readyAnswer vcp ra)`). New conditions, all decidable on the prepared
 VCode and counted by `lean-e2e-check` (1149 of 1149 pass each): `spillSizeOkB` (the size input
 condition, genuinely needed: a big enough function exceeds `b`'s 128 MiB; word bound < 2^24,
-largest corpus bound 279479), and three facts about instruction selection's output that are not
+largest corpus bound 279479; since #565 also `poolReachB`: below 2^17 words when the VCode has
+a literal-pool load, whose `ldr (literal)` reaches 1 MiB; subset E never has one,
+`noPoolB_of_formsCovered2`; Cranelift emits a constant island instead, #744), and three facts
+about instruction selection's output that are not
 yet proven from the ISLE rule data: `immsOkB` (immediates in the encoder's ranges; an indirect
 call target is an int vreg), `noAlwaysB` (no `condBr`/`trapIf` on `al`/`nv`, which relaxation
 does not handle), `branchTargetsOkB` (every branch target is a block label; `VCode.cfg` checks

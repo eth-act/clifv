@@ -11,7 +11,7 @@ of an `s`/`d` register, `fpuRRR`, `fpuRR`, `fpuCmp`, the plain `movi` (`VecDupIm
 namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Aarch64
-open Backend.Proof.Cov (Covered covV covVL DeepRegs NumOk)
+open Backend.Proof.Cov (DeepRegs NumOk)
 
 
 variable {f : Clif.Function} {ctx : Ctx}
@@ -649,23 +649,50 @@ end simple
 
 /-! ## Float loads and stores -/
 
+/-- An abstract `AMode.Const` value is a literal-pool entry (#565). -/
+theorem amode_const_of {a : AT} {v : V} (hv : γ f ctx a v) (hc : a.isConstA = true) {am : AMode}
+    (hm : v.amode? = some am) : ∃ c, am = .const c := by
+  cases a with
+  | data t k fs =>
+    obtain ⟨vs, rfl, -⟩ := hv
+    simp only [AT.isConstA, beq_iff_eq] at hc
+    subst hc
+    unfold V.amode? at hm
+    obtain ⟨⟨k', fs'⟩, he, h2⟩ := bind_some_ex hm
+    simp only [V.enumOf?] at he
+    split at he
+    rotate_left
+    · cases he
+    cases he
+    dsimp only at h2
+    revert h2
+    split <;> intro h2 <;> (try cases h2) <;>
+      first | exact ⟨_, rfl⟩ | (exfalso; revert ‹VIdx.AMode.Const = _›; decide) | simp_all
+  | _ => simp [AT.isConstA] at hc
+
 theorem cov_fpuLoad32 {a1 a2 a3 : AT} {v1 v2 : V} {rd : Reg} {am : AMode} {fl : Clif.MemFlags}
-    (hc : AT.cFpuMem 4 [a1, a2, a3] = true) (g1 : γ f ctx a1 v1) (g2 : γ f ctx a2 v2)
+    (hc : AT.cFpuLoad 4 [a1, a2, a3] = true) (g1 : γ f ctx a1 v1) (g2 : γ f ctx a2 v2)
     (r1 : v1.reg? = some rd) (m2 : v2.amode? = some am) :
     Covered (.fpuLoad .size32 rd am fl) = true := by
-  simp only [AT.cFpuMem, Bool.and_eq_true] at hc
+  simp only [AT.cFpuLoad, Bool.and_eq_true, Bool.or_eq_true] at hc
   obtain ⟨_, rfl⟩ := F_of hc.1 g1 r1
-  have := (memOkA_sound g2 m2).1 _ hc.2
-  simp [Covered, FormOk, this, ScalarSize.bytes]
+  rcases hc.2 with h | h
+  · have := (memOkA_sound g2 m2).1 _ h
+    simp [Covered, FormOk, this, ScalarSize.bytes]
+  · obtain ⟨c, rfl⟩ := amode_const_of g2 h m2
+    rfl
 
 theorem cov_fpuLoad64 {a1 a2 a3 : AT} {v1 v2 : V} {rd : Reg} {am : AMode} {fl : Clif.MemFlags}
-    (hc : AT.cFpuMem 8 [a1, a2, a3] = true) (g1 : γ f ctx a1 v1) (g2 : γ f ctx a2 v2)
+    (hc : AT.cFpuLoad 8 [a1, a2, a3] = true) (g1 : γ f ctx a1 v1) (g2 : γ f ctx a2 v2)
     (r1 : v1.reg? = some rd) (m2 : v2.amode? = some am) :
     Covered (.fpuLoad .size64 rd am fl) = true := by
-  simp only [AT.cFpuMem, Bool.and_eq_true] at hc
+  simp only [AT.cFpuLoad, Bool.and_eq_true, Bool.or_eq_true] at hc
   obtain ⟨_, rfl⟩ := F_of hc.1 g1 r1
-  have := (memOkA_sound g2 m2).1 _ hc.2
-  simp [Covered, FormOk, this, ScalarSize.bytes]
+  rcases hc.2 with h | h
+  · have := (memOkA_sound g2 m2).1 _ h
+    simp [Covered, FormOk, this, ScalarSize.bytes]
+  · obtain ⟨c, rfl⟩ := amode_const_of g2 h m2
+    rfl
 
 theorem cov_fpuStore32 {a1 a2 a3 : AT} {v1 v2 : V} {rd : Reg} {am : AMode} {fl : Clif.MemFlags}
     (hc : AT.cFpuMem 4 [a1, a2, a3] = true) (g1 : γ f ctx a1 v1) (g2 : γ f ctx a2 v2)

@@ -60,11 +60,12 @@ private theorem trapIf_reach_stop {R : RL} (hR : R.Wf) {s : Arm.ArmState} {m : L
   rw [hplan] at hp
   simp only [Except.ok.injEq] at hp
   subst hp
-  have hL : R.L = relaxLines R.far (segLines p2.segs p2.outs) ++ trapLines R.psF := by
+  have hL : R.L = relaxLines R.far (segLines p2.segs p2.outs) ++
+      (trapLines R.psF ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af) := by
     show R.fa.lines.toList = _
     rw [hL0, show (emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af) = R.far from rfl, Plan.lines,
-      relaxLines_append, relaxLines_trapLines, hps]
-  obtain ⟨hlab, hudf⟩ := trapLines_get R.psF n (.trap n, code) hn
+      relaxLines_append, relaxLines_trapLines, hps, List.append_assoc]
+  obtain ⟨hlab, hudf⟩ := trapLines_get_append R.psF n (.trap n, code) _ hn
   have hlab' : R.L[(relaxLines R.far (segLines p2.segs p2.outs)).length + 2 * n]? =
       some (.label (.trap n)) := by
     rw [hL, List.getElem?_append_right (by omega)]

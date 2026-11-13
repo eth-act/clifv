@@ -174,6 +174,13 @@ theorem formOk_mapRegs (hg : VRenaming g gn) (ctx : FnCtx) (i : MInst) :
   | fpuRound op rd rn => simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rfl
   | _ => (try simp only [MInst.mapRegs]) <;> rfl
 
+/-- Renaming keeps the literal-pool load (#565). -/
+theorem isPoolLoad_mapRegs (hg : VRenaming g gn) (i : MInst) :
+    (i.mapRegs g).isPoolLoad = i.isPoolLoad := by
+  cases i with
+  | fpuLoad sz rd m fl => simp only [MInst.mapRegs]; rgc rd <;> cases m <;> rfl
+  | _ => (try simp only [MInst.mapRegs]) <;> rfl
+
 theorem useCount_rn (ops : Array Operand) : useCount (ops.map (rnOp gn)) = useCount ops := by
   simp only [useCount, Array.toList_map, List.filter_map, List.length_map]
   rfl
@@ -213,8 +220,35 @@ theorem mspec_other (sb : Nat) {i : MInst} (h : ∀ op rd am fl, i ≠ .load op 
   · exact absurd rfl (h4 _ _ _ _)
   · exact absurd rfl (h5 _ _ _ _)
   · exact absurd rfl (h6 _ _ _ _)
+  · exact absurd rfl (h6 _ _ _ _)
   · exact absurd rfl (h7 _ _ _ _)
   · rfl
+
+/-- `mspec` of a float load not of the literal pool (#565): the addressed load. -/
+theorem mspec_fpuLoad_ne (sb : Nat) {sz : ScalarSize} {rd : Reg} {am : AMode} {fl : Clif.MemFlags}
+    (h : ∀ v, am ≠ .const v) (us : List CV) (w : Arm.ArmState) :
+    mspec sb (.fpuLoad sz rd am fl) us w =
+      match rd with
+      | .vreg _ .float =>
+        if sz = .size32 ∨ sz = .size64 then
+          (amodeAddr sb am sz.bytes us w).map fun a =>
+            ([(Arm.read_mem_bytes sz.bytes a w).setWidth 128], w, .next)
+        else none
+      | _ => ispec (.fpuLoad sz rd am fl) us w := by
+  cases am <;> (try exact absurd rfl (h _)) <;>
+    rcases rd with ⟨n, _ | _⟩ | _ | _ | _ | _ <;> cases us <;> rfl
+
+theorem mspec_fpuLoad_mapRegs_ne (hg : VRenaming g gn) (sb : Nat) {sz : ScalarSize} {rd : Reg}
+    {am : AMode} {fl : Clif.MemFlags} (h : ∀ v, am ≠ .const v) (us : List CV) (w : Arm.ArmState) :
+    mspec sb (.fpuLoad sz (g rd) (am.mapRegs g) fl) us w = mspec sb (.fpuLoad sz rd am fl) us w := by
+  have h' : ∀ v, am.mapRegs g ≠ .const v := by
+    intro v e
+    cases am <;> simp only [AMode.mapRegs, reduceCtorEq] at e
+    exact h _ rfl
+  rw [mspec_fpuLoad_ne sb h', mspec_fpuLoad_ne sb h,
+    show ispec (.fpuLoad sz (g rd) (am.mapRegs g) fl) us w = ispec (.fpuLoad sz rd am fl) us w
+      from ispec_mapRegs hg us w (.fpuLoad sz rd am fl)]
+  rgc rd <;> first | rfl | simp only [amodeAddr_mapRegs hg]
 
 theorem mspec_mapRegs (hg : VRenaming g gn) (sb : Nat) (i : MInst) (us : List CV) (w : Arm.ArmState) :
     mspec sb (i.mapRegs g) us w = mspec sb i us w := by
@@ -230,7 +264,9 @@ theorem mspec_mapRegs (hg : VRenaming g gn) (sb : Nat) (i : MInst) (us : List CV
   | storeRelease ty rt rn fl =>
     simp only [MInst.mapRegs]; rgc rt <;> rgc rn <;> us_cases <;> rfl
   | fpuLoad sz rd am fl =>
-    simp only [MInst.mapRegs]; rgc rd <;> first | rfl | simp only [mspec, amodeAddr_mapRegs hg]
+    cases am with
+    | const v => simp only [MInst.mapRegs, AMode.mapRegs]; rgc rd <;> cases us <;> rfl
+    | _ => exact mspec_fpuLoad_mapRegs_ne hg sb (fun _ h => by cases h) us w
   | fpuStore sz rd am fl =>
     simp only [MInst.mapRegs]; rgc rd <;> us_cases <;> first | rfl | simp only [mspec, amodeAddr_mapRegs hg]
   | _ =>

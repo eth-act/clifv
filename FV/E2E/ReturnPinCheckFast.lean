@@ -86,18 +86,20 @@ theorem ReturnPinCtx.of_direct (I : LinkInput) (R : Res) (n : String) :
     from funext (returnPinArtMap_get R)]
   rfl
 
-/-- Reuse the cached target data at every actual call and try-call. -/
+/-- Reuse the cached target data at every actual call and try-call. As `returnPinSiteB`, the check
+reads the call's results, its first `sig.returns.length` definitions (#1003). -/
 def returnPinSiteWith (C : ReturnPinCtx) (g : Clif.Function) (info : CallInfo) : Bool :=
   match info.dest with
   | .sym n => match C.direct n with
-    | some e => e.check info.defs
+    | some e => e.check (info.defs.take e.function.sig.returns.length)
     | none => true
   | .reg (.vreg t .int) =>
     let got := gotOf (C.artifact g).vcp t
     C.entries.all fun e =>
       !indToB C.symbols g e.function ||
       (match got with | some n => e.function.name != n | none => false) ||
-      decide (e.arity ≠ info.uses.length) || e.check info.defs
+      decide (e.arity ≠ info.uses.length) ||
+      e.check (info.defs.take e.function.sig.returns.length)
   | _ => true
 
 /-- The cache changes no direct, indirect, GOT, or arity decision. -/

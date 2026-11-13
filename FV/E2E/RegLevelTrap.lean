@@ -55,6 +55,15 @@ theorem trapLines_get (ps : PState) (n : Nat) (p : Lbl × Clif.TrapCode)
   rw [trapLines]
   exact trapLines_list ps.traps.toList n p (by simpa using h)
 
+/-- `trapLines_get` with lines appended after the trap section (the literal pool, #565). -/
+theorem trapLines_get_append (ps : PState) (n : Nat) (p : Lbl × Clif.TrapCode)
+    (P : List Line) (h : ps.traps[n]? = some p) :
+    (trapLines ps ++ P)[2 * n]? = some (.label p.1) ∧
+      (trapLines ps ++ P)[2 * n + 1]? = some (.ins (.udf 0xc11f) (some p.2)) := by
+  obtain ⟨h1, h2⟩ := trapLines_get ps n p h
+  exact ⟨by rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp h1).1]; exact h1,
+    by rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp h2).1]; exact h2⟩
+
 /-- A `udf` line at the pc is a trap site. -/
 theorem trapAt_line {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {code : Clif.TrapCode}
     (hj : R.L[j]? = some (.ins (.udf 0xc11f) (some code))) (hpc : Arm.r .PC s = R.pcOf j)
@@ -252,11 +261,12 @@ private theorem trapIf_reach {R : RL} (hR : R.Wf) {s : Arm.ArmState} {m : Loc �
   rw [hplan] at hp
   simp only [Except.ok.injEq] at hp
   subst hp
-  have hL : R.L = relaxLines R.far (segLines p2.segs p2.outs) ++ trapLines R.psF := by
+  have hL : R.L = relaxLines R.far (segLines p2.segs p2.outs) ++
+      (trapLines R.psF ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af) := by
     show R.fa.lines.toList = _
     rw [hL0, show (emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af) = R.far from rfl, Plan.lines,
-      relaxLines_append, relaxLines_trapLines, hps]
-  obtain ⟨hlab, hudf⟩ := trapLines_get R.psF n (.trap n, code) hn
+      relaxLines_append, relaxLines_trapLines, hps, List.append_assoc]
+  obtain ⟨hlab, hudf⟩ := trapLines_get_append R.psF n (.trap n, code) _ hn
   have hlab' : R.L[(relaxLines R.far (segLines p2.segs p2.outs)).length + 2 * n]? =
       some (.label (.trap n)) := by
     rw [hL, List.getElem?_append_right (by omega)]

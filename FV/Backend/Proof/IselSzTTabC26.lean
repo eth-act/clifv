@@ -376,7 +376,7 @@ theorem tgCTabT25_ok : (tgCTabT25).all tgEntryOkT = true :=
     | 87, _ => tgCTabT25_p87
     | _ + 88, hc => absurd hc (by omega)
 
-theorem tgCTabT26_len : (tgCTabT26).length ≤ 12 * 1 := by decide +kernel
+theorem tgCTabT26_len : (tgCTabT26).length ≤ 13 * 1 := by decide +kernel
 
 theorem tgCTabT26_p0 : (((tgCTabT26).drop (0 * 1)).take 1).all tgEntryOkT = true := by
   decide +kernel
@@ -414,8 +414,11 @@ theorem tgCTabT26_p10 : (((tgCTabT26).drop (10 * 1)).take 1).all tgEntryOkT = tr
 theorem tgCTabT26_p11 : (((tgCTabT26).drop (11 * 1)).take 1).all tgEntryOkT = true := by
   decide +kernel
 
+theorem tgCTabT26_p12 : (((tgCTabT26).drop (12 * 1)).take 1).all tgEntryOkT = true := by
+  decide +kernel
+
 theorem tgCTabT26_ok : (tgCTabT26).all tgEntryOkT = true :=
-  all_of_chunks _ _ 1 12 tgCTabT26_len fun c hc => match c, hc with
+  all_of_chunks _ _ 1 13 tgCTabT26_len fun c hc => match c, hc with
     | 0, _ => tgCTabT26_p0
     | 1, _ => tgCTabT26_p1
     | 2, _ => tgCTabT26_p2
@@ -428,6 +431,7 @@ theorem tgCTabT26_ok : (tgCTabT26).all tgEntryOkT = true :=
     | 9, _ => tgCTabT26_p9
     | 10, _ => tgCTabT26_p10
     | 11, _ => tgCTabT26_p11
-    | _ + 12, hc => absurd hc (by omega)
+    | 12, _ => tgCTabT26_p12
+    | _ + 13, hc => absurd hc (by omega)
 
 end Backend.Proof.CovT
