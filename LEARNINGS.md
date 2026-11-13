@@ -201,6 +201,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Effect (2026-10-23):** batch 1: 17 PRs in one gate run, 170 min wall (scheduler 3306/3306, 1100 built, 161 min, mostly `LowerSimT` dependents; the tail of exes, crate-proofs, 66 audit files and run-time gates: 9 min). Batch 2: 3 PRs in one run, 16 min (68 built, 10 min; tail 5 min). Gated separately, the `LowerSimT` rebuild is paid once either way, but every other PR needs its own run on the heavy lock: batch 2's 16 min (a warm run with a small change) is the measured lower bound per run, so ≈16 × 16 min ≈ 4.3 h saved for batch 1 and ≈ 2 × 16 min ≈ 0.5 h for batch 2 (estimate from these measured runs).
 - **Batch 13 (2026-10-27):** squash only while main's tree stays equal to a gated train tip; a mid-sequence squash conflict (stacked chains after earlier squashes, main moving in between) left main half-merged and red for ~1.5 h until a remainder PR (#638) was re-gated. On a conflict, stop, recompose the remaining PRs on the new main and re-gate before merging more.
 
+### A stacked branch names the run below it as its baseline (`base-run`)
+- **Problem:** the CI full gate's baseline is the newest `lake-full` of main or of the own branch, so the first run of a branch stacked on an unmerged PR rebuilt everything that PR's run had just built. #1011 on #996's head: 5,156 of 5,718 modules planned, estimate 8.9 h on 28 shards.
+- **Trick:** `gh workflow run full-gate.yml --ref <branch> -f base-run=<run id of the PR below>`: the planner diffs against that run's commit. Same branch and tree: 0 modules planned. The planner refuses a named baseline when a file modules read untraced differs from it (below).
+- **Where:** `.github/workflows/full-gate.yml` (Plan job), `scripts/ci-build-plan.py --explicit-base`.
+
 ## Compiled checkers (`lean-link`, `link-check`)
 
 ### Hash maps behind a lookup parameter, not `List.lookup`/`P.func?` per element
@@ -254,6 +259,10 @@ Axiom audits, statement diffs, caches of proof results, gates, agent check loops
 ### Untrusted input never widens the policy
 - **Hole (fixed in turbo-lean):** the allowlist could be read from the PR's own `turbo-lean.toml`.
 - **Rule:** read the policy from the base revision; reject `sorryAx` and `Lean.trustCompiler` even under `*`. **Open here:** CI runs the PR's own `scripts/axiom-audit.py`, and the allowlist and `-- witness: native_decide` markers live in files a PR can edit; there is no CODEOWNERS. Candidate fixes: CODEOWNERS for the audit files, or run main's audit script on the PR's build.
+
+### A restored result is only as good as the inputs the cache traces
+- **Hole (review of #1011's `base-run`):** `FVTest.Isle.{Interp,Opt,OptCorpus,Pretty}` read fixtures, corpus files and the pinned ISLE sources while they elaborate; neither Lake's trace nor `ci-build-plan.py` sees those files. A change to one of them alone plans 0 modules and the old check result is restored (#1012; the weekly from-scratch run is the only re-check). A baseline picked by hand makes that easy to hit; so did two ways around the first guard: git reports a moved file under its new name only, and a path followed through a symbolic link before it was classified counted as the module it led to.
+- **Rule:** before reusing a result, list what the producer read, not what the build system says it read. Where the list is incomplete, allow only changes in places known not to be read (an allowlist, not a denylist), compare paths by name before following links, and ask git for both sides of a move (`--no-renames`).
 
 ## From other projects (not yet measured in clifv)
 
