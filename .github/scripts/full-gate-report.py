@@ -11,7 +11,7 @@ because there was nothing to build).
 """
 import importlib.util, json, os, pathlib, re, sys
 
-GATES = ["assemble", "audit", "crate-proofs", "e2e", "runtime", "cargo-fv"]
+GATES = ["assemble", "audit", "crate-proofs", "float-spec", "e2e", "runtime", "cargo-fv"]
 BUILD = ["plan", "wave1", "wave2", "wave3"]
 
 
