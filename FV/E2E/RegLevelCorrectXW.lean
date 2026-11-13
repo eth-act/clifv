@@ -92,7 +92,7 @@ theorem trap_trapIfW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs
     (hholds : kk.holds (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = true) :
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ (∀ i < n, R.GoodXW (iterN R.step i s)) ∧
       ∀ m, Arm.r .ERR (iterN R.step (n + m + 1) s) ≠ .None := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
     hasgf, hsuccf, itx, hitx, hqx⟩
   rotate_left
@@ -255,10 +255,10 @@ theorem regLevelCorrect_world_atXW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa :
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
-    ⟨p, hp, rfl⟩, hent.program, hG⟩
-  have hck := (lowerRFunc_ok hR.alloc).2.2
-  obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initW hR hent hbe
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
+    ⟨p, hp, rfl⟩, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
+  have hck := (hR.alloc.ok).2.2
+  obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_initW hR (lowerRFunc_frame halloc) hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkedAt_sound R.vc R.rf R.sem ckeep hcheck (locVal R.fr (iterN R.step n0 s))
       (ρsel (locVal R.fr (iterN R.step n0 s))) w₀ (hsel _)
@@ -311,7 +311,7 @@ theorem regLevelCorrect_world_atXW {vcp : VCode} {rf : RFunc} {af : AFunc} {fa :
         obtain ⟨mt, hq2'⟩ := qa_q hq2
         have hst := q_stRel hq2'
         obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsaved, hmem, hfld, hprogF, hvalsM⟩ :=
-          ret_machineW hR hent hq2 hvb hi
+          ret_machineW hR (lowerRFunc_frame halloc) hent hq2 hvb hi
         -- every state of the run before the return is `GoodXW`
         have htr : ∀ i < n0 + n1 + n2 + n3, R.GoodXW (E2E.runX (ArmStepX X H fa) i s) := by
           intro i hi

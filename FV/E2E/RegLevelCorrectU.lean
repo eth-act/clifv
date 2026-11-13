@@ -3,6 +3,7 @@ import FV.E2E.RegLevelUTry
 import FV.E2E.RegLevelFrameSaved
 import FV.E2E.RegLevelCallSite
 import FV.E2E.UnwindStatement
+import FV.E2E.RegLevelLeafKeep
 
 /-!
 # The register-level theorem with unwinding (S10e, #232)
@@ -161,7 +162,7 @@ at the returns and at the trapping instructions, every return, trap and exceptio
 state. The exceptional ends need the call-site table in the tables `T` (`LsdaAt`), the call-site
 bridge (`SiteAt`), the frame rows (`T.cie`, `T.fde` from `unwindRows`) and the frame-invariant
 check `savedCheck`. -/
-theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
+theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {cc : CheckCtx} {ins : Array (Option AState)}
     {a0 : AState} (hcheck : CheckedAt R.vc R.rf cc ins a0) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
@@ -190,8 +191,8 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
     (∀ c, VTraps R.vc semU (ρsel m₀) w₀ c →
       ∃ n, TrapAt R.fb R.base c (E2E.runX R.stepU n R.s0)) ∧
     RegLevelUnw semU R.XR R.F R.stepU R.vc ra R.s0 (ρsel m₀) w₀ := by
-  have hf : R.af.frame = true := lowerRFunc_frame hR.alloc
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hf : R.af.frame = true := hframe
+  have hck := (hR.alloc.ok).2.2
   have hrf : savedCheckRF R.vc R.rf = true := by
     have h := hsaved
     simp only [savedCheck, Bool.and_eq_true] at h
@@ -257,7 +258,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         obtain ⟨mt, hq2'⟩ := qa_q hq2
         have hst := q_stRel hq2'
         obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
-          ret_machine hR hent hq2 hvb hi
+          ret_machine hR hent hq2 hvb hi (RL.leafRegs3 hR ht0 ht1 ht2)
         have e3 := RLU.iterN_stepU hR hU n3 _ ht3
         have hm0 : ∀ r, locVal R.fr (iterN R.step n0 R.s0) (.reg r) =
             regVal (iterN R.step n0 R.s0) r := fun _ => rfl

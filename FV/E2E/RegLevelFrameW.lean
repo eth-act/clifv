@@ -233,14 +233,14 @@ theorem iterN_proRunW {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {call
 field but the pc, x16, x17, x29, `sp` and the flags is as at entry. (#581: x17 and the flags are
 new exceptions: Cranelift's stack-probe loop sets them; the former statement, every field but
 the pc, x16, x29 and `sp`, became false for a probed stack of 16 KiB or more.) -/
-theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem q_initW {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : Arm.ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
     ∃ n, (∀ i < n, R.GoodXW (iterN R.step i R.s0)) ∧
       Q R (iterN R.step n R.s0) (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       AInv R (MConf.init R.rf (locVal R.fr (iterN R.step n R.s0)) w₀) ∧
       ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
         (∀ fl, f ≠ .FLAG fl) → Arm.r f (iterN R.step n R.s0) = Arm.r f R.s0 := by
-  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, hdrop0⟩ := RL.frame_facts hR
+  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, hdrop0⟩ := RL.frame_facts hR hframe
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
@@ -263,7 +263,7 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
       have hkN : k < R.topN := by simp only [RL.topN]; exact hk
       rw [show (spv R.s0 - BitVec.ofNat 64 (16 + clobberBytes R.af.saves) + BitVec.ofNat 64 k)
         = R.topB + BitVec.ofNat 64 k from by simp only [RL.topB, RL.topN]]
-      exact RL.top_notG hR k hkN)
+      exact RL.top_notG hR hframe k hkN)
     (fun a hp hG => by
       have := hR.gprobe a hG
       simp only [probeHit, hframe, Bool.true_and] at this
@@ -386,7 +386,7 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
         have hm : (R.fr.total + 16) % 2 ^ 64 = R.fr.total + 16 := Nat.mod_eq_of_lt (by omega)
         rw [BitVec.toNat_sub_of_le (by simp only [BitVec.le_def, BitVec.toNat_ofNat, hm]; simp only [spv] at *; omega),
           BitVec.toNat_ofNat, hm]
-        have : R.fr.total % 16 = 0 := (RL.frame_facts hR).2.2.2.2.2.2.1
+        have : R.fr.total % 16 = 0 := (RL.alloc_facts hR).2.2.2.2.2.1
         simp only [spv, spOf] at *
         omega
       · simp only [RL.topImg, hsP]
@@ -394,7 +394,7 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
     show regVal s' r = regVal w₀ r
     rw [hbe.args r hr]
     obtain ⟨vb', ds, hvb', hi', v, hv⟩ := hr
-    have hr := ((ctlCheck_args (lowerRFunc_ok hR.alloc).2.2 hvb' hi').2.2 _ hv).2
+    have hr := ((ctlCheck_args (hR.alloc.ok).2.2 hvb' hi').2.2 _ hv).2
     cases r with
     | x n =>
       simp only [Reg.isArgReg, decide_eq_true_eq] at hr
@@ -411,7 +411,7 @@ theorem q_initW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.bas
 /-- **The return on the machine**: from `Q` at a `Rets` item, the epilogue and `ret` reach the
 return address with `sp` and x29 as at entry, the allocatable registers and the memory as at
 the item, and the returned values in their fixed registers. -/
-theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+theorem ret_machineW {R : RL} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
     {w : Arm.ArmState} (hqa : QA R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock}
     {us : List (Reg × Reg)} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.rets us)) :
@@ -426,9 +426,8 @@ theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
       ∀ ops, (MInst.rets us).operands = .ok ops → ∀ (j : Nat) (v p : Reg) (x : CV), us[j]? = some (v, p) →
         ((((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)))[j]? = some x →
         regVal (iterN R.step n s) p = x := by
-  have hframe := lowerRFunc_frame hR.alloc
-  have hck := (lowerRFunc_ok hR.alloc).2.2
-  obtain ⟨-, hfs, hsav, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  have hck := (hR.alloc.ok).2.2
+  obtain ⟨hfs, hsav, hsv, -, hcb, -⟩ := RL.alloc_facts hR
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
@@ -503,7 +502,7 @@ theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
       rw [hx] at hx''; cases hx''
       unfold segTermOk at hok
       rw [hidx] at hok
-      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+      obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
       obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
       rw [hsplit] at hcF
       obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
@@ -588,7 +587,7 @@ theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
   -- the reads: the clobber area and fp/lr, no kept address
   have hrdE : LinesReads (R.envOf j0) (epiLines R.af.saves R.af.frameSize) s R.ReadOk :=
     epilogue_reads (R.envOf j0) hs hsv hcb' s hal fun k hk => by
-      rw [hB]; exact .inl (RL.top_notG hR k (by simp only [RL.topN]; omega))
+      rw [hB]; exact .inl (RL.top_notG hR hframe k (by simp only [RL.topN]; omega))
   obtain ⟨hiter, hpc1, hgood, hgx⟩ := iterN_stepsW hR hdrop'
     (fun ln h => by obtain ⟨x, e, hh, -, -⟩ := epiLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
     hst.prog hpc hst.err hsteps
@@ -621,7 +620,7 @@ theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
     rw [iterN_one_succ, hiter]; exact hstep.trans he'
   -- the top of the frame as the prologue left it
   have hbytes := read_mem_bytes_bytes R.topN R.topB s R.sP (hst.fplr hframe)
-  obtain ⟨sP, -, hsP, hP16, hPsl⟩ := RL.sP_steps hR hent
+  obtain ⟨sP, -, hsP, hP16, hPsl⟩ := RL.sP_steps hR hframe hent
   rw [hsP] at hbytes
   have hfplr : Arm.read_mem_bytes 16 (spOf s + BitVec.ofNat 64 R.af.frameSize) s =
       xreg 30 R.s0 ++ xreg 29 R.s0 := by

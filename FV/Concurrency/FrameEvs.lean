@@ -789,7 +789,7 @@ theorem prologue_fields {R : RL} (hR : R.Wf) {ra : BitVec 64}
       (∀ fl, f ≠ .FLAG fl) →
       Arm.r f (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) =
         Arm.r f R.s0 := by
-  obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  obtain ⟨hfs, -, hsv, -, hcb, -⟩ := RL.alloc_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
   obtain ⟨vb, items, code, ps1, pl, X, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0,

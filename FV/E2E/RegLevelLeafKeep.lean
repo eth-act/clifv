@@ -1,6 +1,6 @@
 import FV.E2E.RegLevelGoodX
 import FV.E2E.LeafKeepDefs
-import FV.E2E.LinkArmStepFrameRec
+import FV.E2E.ArmGprFoot
 
 /-!
 # `x29` and `x30` through the body of a frameless leaf (#1028, slice 2)
@@ -46,10 +46,14 @@ theorem gpr_exec_inst {k : BitVec 5} (hk : ¬ 31#5 = k) {a : Arm.ArmInst}
   rw [hfree]
   exact Arm.r_of_w_same
 
+/-- The Arm instruction of the backend's `ret` (`br x30`'s return form; `E2E.retI`). -/
+def retInsn : Arm.ArmInst :=
+  .BR (.Uncond_branch_reg { opc := 2, op2 := 31, op3 := 0, Rn := 30, op4 := 0 })
+
 /-- `ret` keeps every general-purpose register (it reads `x30` and writes only the pc). -/
 theorem gpr_exec_ret (k : BitVec 5) (s : Arm.ArmState) :
-    Arm.r (.GPR k) (Arm.exec_inst retI s) = Arm.r (.GPR k) s := by
-  simp (config := { decide := true }) only [retI, Arm.exec_inst, Arm.BR.exec_uncond_branch_reg,
+    Arm.r (.GPR k) (Arm.exec_inst retInsn s) = Arm.r (.GPR k) s := by
+  simp (config := { decide := true }) only [retInsn, Arm.exec_inst, Arm.BR.exec_uncond_branch_reg,
     ↓reduceIte]
   simp only [Arm.write_pc]
   exact gpr_w (by simp) _ _
@@ -67,9 +71,9 @@ theorem RL.step_gprKeep {R : RL} (hR : R.Wf) {k : BitVec 5} (hk31 : ¬ 31#5 = k)
     rw [hstep]
     simp only [Insn.gprKeep, hh, Bool.false_eq_true, ↓reduceIte] at hk
     split at hk
-    · have e : a = retI := by
+    · have e : a = retInsn := by
         have := ha
-        simp only [show Insn.ret.toArmInst _ = .ok retI from rfl, Except.ok.injEq] at this
+        simp only [show Insn.ret.toArmInst _ = .ok retInsn from rfl, Except.ok.injEq] at this
         exact this.symm
       subst e
       exact gpr_exec_ret k u
@@ -117,5 +121,26 @@ theorem RL.iterN_leafKeep {R : RL} (hR : R.Wf) (hk : R.fa.leafKeep R.lm = true)
     xreg 29 (iterN R.step n s) = xreg 29 s ∧ xreg 30 (iterN R.step n s) = xreg 30 s := by
   simp only [FnAsm.leafKeep, Bool.and_eq_true] at hk
   exact ⟨RL.iterN_gprKeep hR (by decide) hk.1 hg, RL.iterN_gprKeep hR (by decide) hk.2 hg⟩
+
+/-- **The x29/x30 premise of `ret_machine`** from the activation's run: on a frameless leaf
+(`RL.Wf.leaf`), a run of `GoodX` states keeps x29 and x30. -/
+theorem RL.leafRegs {R : RL} (hR : R.Wf) {n : Nat} {s : Arm.ArmState}
+    (hg : ∀ i < n, R.GoodX (iterN R.step i s)) :
+    R.af.frame = false →
+      xreg 29 (iterN R.step n s) = xreg 29 s ∧ xreg 30 (iterN R.step n s) = xreg 30 s :=
+  fun hf => RL.iterN_leafKeep hR (hR.leaf hf) hg
+
+/-- `RL.leafRegs` for a run in three parts (the prologue, the body, the last step's segment). -/
+theorem RL.leafRegs3 {R : RL} (hR : R.Wf) {a b c : Nat} {s : Arm.ArmState}
+    (h0 : ∀ i < a, R.GoodX (iterN R.step i s))
+    (h1 : ∀ i < b, R.GoodX (iterN R.step i (iterN R.step a s)))
+    (h2 : ∀ i < c, R.GoodX (iterN R.step i (iterN R.step b (iterN R.step a s)))) :
+    R.af.frame = false →
+      xreg 29 (iterN R.step c (iterN R.step b (iterN R.step a s))) = xreg 29 s ∧
+      xreg 30 (iterN R.step c (iterN R.step b (iterN R.step a s))) = xreg 30 s := by
+  intro hf
+  have h := RL.leafRegs hR (trace_add h0 (trace_add h1 h2)) hf
+  rw [iterN_add, iterN_add] at h
+  exact h
 
 end E2E

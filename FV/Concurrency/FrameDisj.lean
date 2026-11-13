@@ -60,7 +60,7 @@ theorem spB_toNat (hR : R.Wf) :
 /-- The int/spill area and the CLIF slots end below the frame drop. -/
 theorem size_le_drop (hR : R.Wf) : R.fr.size ≤ R.af.frameSize ∧ R.af.frameSize ≤ frameDrop R.af ∨
     R.fr.size = 0 ∧ R.af.frameSize = 0 ∧ frameDrop R.af = 0 := by
-  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨hfs, -⟩, hfr, -⟩ := hR.alloc.ok
   have hle : R.fr.size ≤ R.fr.total := compute_size_le_total R.vc R.rf
   simp only [RL.fr] at hle hfr ⊢
   unfold frameDrop

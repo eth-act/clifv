@@ -1,4 +1,5 @@
 import FV.E2E.RegLevelCorrectU
+import FV.E2E.RegLevelLeafKeep
 
 /-!
 # The register-level theorem with unwinding, keeping the trace (S10f, #233)
@@ -347,7 +348,7 @@ theorem trap_trapIf_udf {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {all
     ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ (∀ i < n, R.GoodX (iterN R.step i s)) ∧
       (∃ j t, R.L[j]? = some (.ins (.udf 0xc11f) t) ∧ Arm.r .PC (iterN R.step n s) = R.pcOf j) ∧
       (iterN R.step n s).program = R.fb.program R.base := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   rcases Q.cases hq with hqs | ⟨vbf, allocsf, regsf, if_, xf, bx, hvbf, he, hits, half, hins,
     hasgf, hsuccf, itx, hitx, hqx⟩
   rotate_left
@@ -475,7 +476,7 @@ and `RLU.RaiseXF`**: every state of the run before a return, a trap or an except
 satisfies `P` (`Realizes … P`, e.g. `RLU.GoodXUF`); after a trap every state errs; an exceptional
 end also keeps the addresses `G` and the program, and its last step leaves the frame by unwinding
 (`UnwExit`). -/
-theorem regLevelCorrect_coreUTP {R : RLU} (hR : R.Wf) {ra : BitVec 64}
+theorem regLevelCorrect_coreUTP {R : RLU} (hR : R.Wf) (hframe : R.af.frame = true) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {cc : CheckCtx} {ins : Array (Option AState)}
     {a0 : AState} (hcheck : CheckedAt R.vc R.rf cc ins a0) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
@@ -516,8 +517,8 @@ theorem regLevelCorrect_coreUTP {R : RLU} (hR : R.Wf) {ra : BitVec 64}
           Arm.r f (E2E.runX R.stepU n R.s0) = Arm.r f w) ∧
         (∀ i < n, P (E2E.runX R.stepU i R.s0)) ∧ 0 < n ∧
         UnwExit R.U R.T R.fa (E2E.runX R.stepU (n - 1) R.s0)) := by
-  have hf : R.af.frame = true := lowerRFunc_frame hR.alloc
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hf : R.af.frame = true := hframe
+  have hck := (hR.alloc.ok).2.2
   have hrf : savedCheckRF R.vc R.rf = true := by
     have h := hsaved
     simp only [savedCheck, Bool.and_eq_true] at h
@@ -586,7 +587,7 @@ theorem regLevelCorrect_coreUTP {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         obtain ⟨mt, hq2'⟩ := qa_q hq2
         have hst := q_stRel hq2'
         obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsvd, hmem, hfld, hprogF, hvalsM⟩ :=
-          ret_machine hR hent hq2 hvb hi
+          ret_machine hR hent hq2 hvb hi (RL.leafRegs3 hR ht0 ht1 ht2)
         have e3 := RLU.iterN_stepU hR hU n3 _ ht3
         have ht3U : ∀ i < n3, P (iterN R.stepU i
             (iterN R.stepU n2 (iterN R.stepU n1 (iterN R.stepU n0 R.s0)))) := fun i hi => by
@@ -860,7 +861,7 @@ theorem regLevelCorrect_coreUTP {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         obtain ⟨-, hrow⟩ := unwindRows_frame hrows hf
         rw [hrow _ (List.of_mem_zip hmem).2] at hrest
         exact restore_frameRow_fields
-          (fun p hp => pushRows_ne18 (RL.frame_facts hR).2.2.2.1.1 hp) hrest
+          (fun p hp => pushRows_ne18 (RL.alloc_facts hR).2.2.1.1 hp) hrest
       have hstep : R.stepU u = Arm.w (.GPR 0#5) obj t' := by
         rw [hstepU]
         simp only [Unw.unwindAt, hoff, hpers, hcie, hfde, hrest]
@@ -1031,7 +1032,7 @@ def FrameOkU (R : RLU) (u : Arm.ArmState) : Prop :=
 
 /-- **`FrameOkU` at a raising-call state** from the emitted tables (`unwindRows`, the CIE/FDE
 of the rows) and the save-slot check (`savedCheck`). -/
-theorem frameOkU_of {R : RLU} (hR : R.Wf) {rows : List (Nat × Cfi)}
+theorem frameOkU_of {R : RLU} (hR : R.Wf) (hframe : R.af.frame = true) {rows : List (Nat × Cfi)}
     (hrows : unwindRows R.af R.fa = .ok rows) (hcie : R.T.cie = UnwindTables.cieInsns)
     (hfde : R.T.fde = UnwindTables.insnsFrom 0 rows) (hsaved : savedCheck R.vc R.rf = true)
     {u : Arm.ArmState} (h : R.RaiseXF u) : FrameOkU R u := by
@@ -1045,7 +1046,7 @@ theorem frameOkU_of {R : RLU} (hR : R.Wf) {rows : List (Nat × Cfi)}
     · simp only [Option.some.injEq] at hd; exact .inl ⟨n, rfl, hd.symm⟩
     · simp only [Option.some.injEq] at hd; exact .inr ⟨r, rfl, hd.symm⟩
   have hsp := h.tsp x d obj t ⟨j, tt, hj, hpc⟩ hdx hr
-  have hf : R.af.frame = true := lowerRFunc_frame hR.alloc
+  have hf : R.af.frame = true := hframe
   have hdrop : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hf]
   obtain ⟨-, hrow⟩ := UnwindTables.unwindRows_frame hrows hf
   have hret : lineOffset R.L j + 4 ∈ (scanLines R.fa.lines.toList 0 [] []).2 :=
@@ -1091,7 +1092,7 @@ theorem frameOkU_of {R : RLU} (hR : R.Wf) {rows : List (Nat × Cfi)}
     simp only [UnwindTables.frameRow, List.mem_append, List.mem_reverse, List.mem_cons,
       List.not_mem_nil, or_false] at hp
     rcases hp with hp | rfl | rfl
-    · obtain ⟨-, hfs, -, hsvk, -, hcb, -⟩ := RL.frame_facts hR
+    · obtain ⟨hfs, -, hsvk, -, hcb, -⟩ := RL.alloc_facts hR
       obtain ⟨d, off⟩ := p
       obtain ⟨r, hr, -, rfl⟩ := mem_pushRows hp
       have := clobberOff_le hsvk (saves_of_IF hr)

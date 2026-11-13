@@ -124,7 +124,7 @@ theorem realizes_trapIf_next {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c')
     (hnh : ∀ w', c' ≠ .halt w') :
     ∃ n, Q R (iterN R.step n s) c' ∧ ∀ i < n, R.GoodX (iterN R.step i s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   cases h with
   | @op b k allocs its m w vb' i ops' outs outs' w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hho hcl hn =>
   rw [hvb] at hvb'; cases hvb'

@@ -63,7 +63,7 @@ theorem realizes_rmwLoopNY {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
         (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some rY) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
   obtain ⟨⟨⟨⟨h0, h1⟩, h2⟩, h3⟩, h4⟩ := hok
@@ -293,7 +293,7 @@ theorem realizes_casLoopNY {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Ar
         (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = some rY) :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       Q R (iterN R.step n s) c'' ∧ ∀ i < n, R.GoodXNY Y (iterN R.step i s) := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
   obtain ⟨⟨⟨⟨h0, h1⟩, h2⟩, h3⟩, h4⟩ := hok

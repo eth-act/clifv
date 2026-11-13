@@ -237,7 +237,7 @@ theorem qWs_term {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {ps1 : PState
   obtain ⟨-, hidx⟩ := segX_mem hp hx
   unfold segTermOk at hok
   rw [hidx] at hok
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨codeF, hcF, haf⟩ := hbl b vb items hvb hit
   rw [hsplit] at hcF
   obtain ⟨ca, cb, -, hcb, rfl⟩ := itemsCode_append hcF
@@ -422,7 +422,7 @@ theorem qWst_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array R
     (ho : (R.af.fwd? vb.label).isNone = true ∨ planOwn R.fa.k R.af vb.label = true)
     {jl : Nat} (hjl : R.L[jl]? = some (.label (.block vb.label))) :
     ∃ j ps1, R.pcOf j = R.pcOf jl ∧ QWst R j ps1 t items.toList := by
-  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hR.alloc
+  obtain ⟨⟨-, -, -, hbl⟩, -⟩ := hR.alloc.ok
   obtain ⟨code, hcode, haf⟩ := hbl t vb items hvb hit
   obtain ⟨p, hp, hL, hseg⟩ := emit_seg hR.emit
   obtain ⟨i, sg, o, -, ps1, psm, ps2, hs, ho', hidx, hlab, -, -, -, e1, e2, hpre, -⟩ :=

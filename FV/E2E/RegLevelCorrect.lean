@@ -7,6 +7,7 @@ import FV.Backend.Proof.RegallocCSemWorld
 import FV.E2E.RegLevelAtomic
 import FV.E2E.RegLevelOpReads
 import FV.E2E.RegLevelPool
+import FV.E2E.RegLevelLeafKeep
 
 /-!
 # The register-level theorem (M6): `RegLevelCorrect` for the backend's code
@@ -229,7 +230,7 @@ theorem realizes_step {R : RL} (hR : R.Wf) (hC : CalleeOkG R.F R.K R.G R.s0 (Cal
         ∀ i < n, R.GoodX (iterN R.step i s) :=
     fun n c'' hm hq' ht => ⟨n, c'', hm, ⟨hq', aInv_step hR hq hA hm⟩, ht⟩
   have nil : ∀ i < 0, R.GoodX (iterN R.step i s) := fun _ h => absurd h (Nat.not_lt_zero _)
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   cases h with
   | move =>
     obtain ⟨n, hn, ht⟩ := realizes_move hR hq (hns _ _ _ _ _ _ rfl)
@@ -451,9 +452,9 @@ theorem regLevelCorrect_world_atX {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
   obtain ⟨p, hp, hL, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
-    ⟨p, hp, rfl⟩, hent.program, hG⟩
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
+    ⟨p, hp, rfl⟩, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
+  have hck := (hR.alloc.ok).2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_init hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
     checkedAt_sound R.vc R.rf R.sem ckeep hcheck (locVal R.fr (iterN R.step n0 s))
@@ -507,7 +508,7 @@ theorem regLevelCorrect_world_atX {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
         obtain ⟨mt, hq2'⟩ := qa_q hq2
         have hst := q_stRel hq2'
         obtain ⟨n3, ht3, hpc, herr, hsp, hx29, hregs, hsaved, hmem, hfld, hprogF, hvalsM⟩ :=
-          ret_machine hR hent hq2 hvb hi
+          ret_machine hR hent hq2 hvb hi (RL.leafRegs3 hR ht0 ht1 ht2)
         -- every state of the run before the return is `GoodX`
         have htr : ∀ i < n0 + n1 + n2 + n3, R.GoodX (E2E.runX (ArmStepX X H fa) i s) := by
           intro i hi

@@ -403,7 +403,7 @@ theorem realizes_jtNAF {R : RL} (hR : R.Wf) {Y : BitVec 64 → Prop} {s : Arm.Ar
     (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
     ∃ n c'', MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       R.SegNA Y s j ps1 T (.run ⟨b, .op k allocs :: its, m, w⟩) c'' n ∧ R.FRFree s n := by
-  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hck := (hR.alloc.ok).2.2
   have hok := ctlCheck_inst hck hvb hi
   simp only [ctlInstOk, Bool.and_eq_true] at hok
   obtain ⟨⟨hr0, ha0⟩, hb0⟩ := hok
