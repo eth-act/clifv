@@ -59,7 +59,9 @@ private theorem probes_small (cleanup : Bool) :
   simp only [budget, frameDrop, hfr, ite_true] at hb
   have ht : probeTotal (art (input cleanup) Caller.function).af.frameSize
       (art (input cleanup) Caller.function).af.isCaller < 16384 := by
-    unfold probeTotal; split <;> omega
+    have := probeTotal_le (art (input cleanup) Caller.function).af.frameSize
+      (art (input cleanup) Caller.function).af.isCaller
+    omega
   unfold probeCount
   rw [if_pos (by omega)]
   omega

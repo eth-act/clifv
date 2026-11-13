@@ -538,7 +538,7 @@ theorem pushLines_noCall (int : Bool) (rs : List Reg) : ∀ l ∈ pushLines int 
     | some r => simp only [List.mem_singleton] at hl; subst hl; cases int <;> rfl
   · cases int <;> rfl
 
-theorem prologueLines_noCall {calls : Bool} (saves : List Reg) (size : Nat) :
+theorem prologueLines_noCall {calls : StackProbe} (saves : List Reg) (size : Nat) :
     ∀ l ∈ prologueLines saves size calls, l.isCall = false := by
   intro l hl
   simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl

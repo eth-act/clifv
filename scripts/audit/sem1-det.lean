@@ -52,3 +52,23 @@ import FV.E2E.BackendTwoRunEitherKWitness
 #print axioms E2E.backend_twoRunLWNpPV
 #print axioms E2E.backend_twoRunLWNpV
 #print axioms E2E.backend_twoRunLWNpPVK
+
+-- #1013 stack probes follow Cranelift's `enable_probestack` (`Backend.StackProbe`): the prologue
+-- theorems hold for any setting; without probes the facts of before the probes
+-- (docs/contracts/e2e.md "Stack probes and Cranelift's settings")
+#print axioms Backend.Proof.prologue_ok
+#print axioms Backend.Proof.prologue_ok_off
+#print axioms Backend.Proof.prologue_ok_off_witness
+#print axioms Backend.probeTotal_off
+#print axioms Backend.probeTotal_le
+#print axioms Backend.probeCount_zero
+#print axioms Backend.probeLines_zero
+#print axioms Backend.prologueLines_off
+#print axioms Backend.AFunc.isCaller_of_not_probes
+#print axioms Backend.AFunc.isCaller_of_probes
+#print axioms E2E.prologueSteps_off
+#print axioms E2E.prologueSteps_of_not_probes
+#print axioms E2E.probeCount_of_not_probes
+#print axioms E2E.probeBelow_of_not_probes
+#print axioms E2E.probeMem_of_not_probes
+#print axioms E2E.probeFlag_of_not_probes
