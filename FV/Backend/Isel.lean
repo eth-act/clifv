@@ -218,6 +218,47 @@ def aapcsConv (c : Option Clif.CallConv) : Bool :=
 /-- Text of an instruction for error messages. -/
 def instText (i : Clif.Inst) : String := Clif.Print.inst (fun _ => none) i
 
+/-- The Cranelift `Opcode` of a vector operation (`Clif.VecOp`). -/
+def vecOpcode : Clif.VecOp → Option String
+  | .unary u => match u with
+    | .ineg => "Ineg" | .bnot => "Bnot" | .iabs => "Iabs" | .popcnt => "Popcnt" | .clz => "Clz"
+    | .cls => "Cls" | _ => none
+  | .binary b => match b with
+    | .uaddSat => "UaddSat" | .saddSat => "SaddSat" | .usubSat => "UsubSat"
+    | .ssubSat => "SsubSat" | b => binaryOpcode b
+  | .icmp _ => "Icmp"
+  | .float f => match f with
+    | .fma => "Fma" | .fcopysign => "Fcopysign" | .fcmp _ => "Fcmp"
+    | f => (fBinaryOpcode f).orElse fun _ => (fUnaryOpcode f).orElse fun _ => fCvtOpcode f
+  | .bitselect => "Bitselect" | .splat => "Splat" | .scalarToVector => "ScalarToVector"
+  | .vconst => "Vconst" | .shuffle => "Shuffle" | .swizzle => "Swizzle"
+  | .extractlane => "Extractlane" | .insertlane => "Insertlane" | .swidenLow => "SwidenLow"
+  | .swidenHigh => "SwidenHigh" | .uwidenLow => "UwidenLow" | .uwidenHigh => "UwidenHigh"
+  | .snarrow => "Snarrow" | .unarrow => "Unarrow" | .uunarrow => "Uunarrow"
+  | .iaddPairwise => "IaddPairwise" | .avgRound => "AvgRound" | .sqmulRoundSat => "SqmulRoundSat"
+  | .vallTrue => "VallTrue" | .vanyTrue => "VanyTrue" | .vhighBits => "VhighBits"
+  | .fvdemote => "Fvdemote" | .fvpromoteLow => "FvpromoteLow"
+
+/-- The `InstructionData` of a vector operation (`Clif.Inst.vector`), as Cranelift's: the
+format of the opcode, the operands, the lane immediate (`Uimm8`), the `vconst` constant and the
+`shuffle` mask (both represented by their 128-bit value, the data the constant handle and the
+immediate refer to). -/
+def vecInstData (op : Clif.VecOp) (args : List Nat) (imm : Nat) : Except String V := do
+  let some n := vecOpcode op | throw s!"vector operation {repr op} is not lowered"
+  match op, args with
+  | .icmp cc, [x, y] =>
+    pure (instDataV "IntCompare" [opcodeV n, .values [x, y], mkVariant tyIntCC (intccName cc)])
+  | .float (.fcmp cc), [x, y] =>
+    pure (instDataV "FloatCompare" [opcodeV n, .values [x, y], mkVariant TyId.FloatCC (floatccName cc)])
+  | .vconst, [] => pure (instDataV "UnaryConst" [opcodeV n, .int imm])
+  | .shuffle, [x, y] => pure (instDataV "Shuffle" [opcodeV n, .values [x, y], .int imm])
+  | .extractlane, [x] => pure (instDataV "BinaryImm8" [opcodeV n, .value x, .int imm])
+  | .insertlane, [x, y] => pure (instDataV "TernaryImm8" [opcodeV n, .values [x, y], .int imm])
+  | _, [x] => pure (instDataV "Unary" [opcodeV n, .value x])
+  | _, [x, y] => pure (instDataV "Binary" [opcodeV n, .values [x, y]])
+  | _, [x, y, z] => pure (instDataV "Ternary" [opcodeV n, .values [x, y, z]])
+  | _, _ => throw s!"{n}: operand count"
+
 /-- `InstructionData` of a non-terminator instruction of E (an error with the reason if the
 instruction is outside E). The float data movement of S11e4 (`valTyOk`): `f32const`/`f64const`
 (`UnaryIeee32`/`UnaryIeee64` with the literal's bit pattern, as Cranelift's `Ieee32::bits`),
@@ -259,19 +300,19 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .ireduce ty x => if eTy ty then pure (instDataV "Unary" [opcodeV "Ireduce", .value x])
     else throw "ireduce.i128"
   | .load op ty flags p off =>
-    if !eTy ty && !(ty.isFloat && op == .load) then throw s!"load.{ty.name}"
+    if !eTy ty && !((ty.isFloat || ty.isVec) && op == .load) then throw s!"load.{ty.name}"
     else if flags.endianness == some .big then throw "big-endian load"
     else pure (instDataV "Load" [opcodeV (loadOpcode op), .value p, .op (.memFlags flags), .int off])
   | .store op ty flags x p off =>
-    if !eTy ty && !(ty.isFloat && op == .store) then throw s!"store.{ty.name}"
+    if !eTy ty && !((ty.isFloat || ty.isVec) && op == .store) then throw s!"store.{ty.name}"
     else if flags.endianness == some .big then throw "big-endian store"
     else pure (instDataV "Store"
       [opcodeV (storeOpcode op), .values [x, p], .op (.memFlags flags), .int off])
   | .select ty c x y =>
-    if valTyOk ty then pure (instDataV "Ternary" [opcodeV "Select", .values [c, x, y]])
+    if valTyOk ty || ty.isVec then pure (instDataV "Ternary" [opcodeV "Select", .values [c, x, y]])
     else throw s!"select.{ty.name}"
   | .bitcast ty flags x =>
-    if valTyOk ty then pure (instDataV "LoadNoOffset" [opcodeV "Bitcast", .value x, .op (.memFlags flags)])
+    if valTyOk ty || ty.isVec then pure (instDataV "LoadNoOffset" [opcodeV "Bitcast", .value x, .op (.memFlags flags)])
     else throw s!"bitcast.{ty.name}"
   | .nop => pure (instDataV "NullAry" [opcodeV "Nop"])
   | .symbolValue ty gv =>
@@ -365,6 +406,7 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
           else throw s!"{n}.{ty.name}"
         | none => throw s!"`{op.name}` with one operand is not in the lowering"
     | _ => throw s!"`{op.name}` is not in the lowering"
+  | .vector op _ args imm => vecInstData op args imm
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`)
@@ -460,7 +502,7 @@ register of its class (`tyClass`), then 8-byte-minimum naturally aligned stack s
 pointer-sized). -/
 def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
   s.params.mapM fun p =>
-    if p.ty == .i128 || p.ty.isVec then throw "i128 or vector parameter"
+    if p.ty == .i128 then throw "i128 parameter"
     else match p.purpose with
       | .normal | .vmctx => pure p.ty.bytes
       | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"
@@ -757,13 +799,17 @@ def trustedFlags : Clif.MemFlags := { trapCode := none, aligned := true }
 for an integer register, `ldr s`/`ldr d` for a float one. -/
 def stackArgLoad (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
   match r.homeCls with
-  | .float => .fpuLoad (if bytes == 4 then .size32 else .size64) r am trustedFlags
+  | .float =>
+    if bytes == 16 then .load .fpuLoad128 r am trustedFlags
+    else .fpuLoad (if bytes == 4 then .size32 else .size64) r am trustedFlags
   | .int => .load (loadOpOfBytes bytes) r am trustedFlags
 
 /-- The store of a stack-passed value of `bytes` bytes from `r` (`stackArgLoad`'s inverse). -/
 def stackArgStore (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
   match r.homeCls with
-  | .float => .fpuStore (if bytes == 4 then .size32 else .size64) r am trustedFlags
+  | .float =>
+    if bytes == 16 then .store .fpuStore128 r am trustedFlags
+    else .fpuStore (if bytes == 4 then .size32 else .size64) r am trustedFlags
   | .int => .store (storeOpOfBytes bytes) r am trustedFlags
 
 /-- The register classes of returned values (one register each): the class of the first
@@ -1425,7 +1471,7 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
   let mut ranges : Array (Nat × Nat) := #[]
   for b in f.blocks do
     for (v, ty) in b.params do
-      if !valTyOk ty then throw s!"block parameter v{v} is {ty.name}"
+      if !(valTyOk ty || ty.isVec) then throw s!"block parameter v{v} is {ty.name}"
       valTy := valTy.set! v (some (CTy.ofClif ty))
     let start := insts.size
     for s in b.body do
@@ -1434,7 +1480,7 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
         throw "ill-typed instruction"
       if tys.length != s.results.length then throw "result count mismatch"
       for (r, ty) in s.results.zip tys do
-        if !valTyOk ty then throw s!"value v{r} is {ty.name}"
+        if !(valTyOk ty || ty.isVec) then throw s!"value v{r} is {ty.name}"
         valTy := valTy.set! r (some (CTy.ofClif ty))
         valDef := valDef.set! r (some insts.size)
       insts := insts.push ⟨data, s.results, tys.map CTy.ofClif, some s.inst⟩
