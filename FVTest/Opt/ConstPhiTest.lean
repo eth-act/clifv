@@ -709,4 +709,40 @@ block2(v2: i32):
 #guard accepts freshLow
 #guard (run freshLow).blocks.map (·.params.map (·.1)) == [[0], [], [4], [5]]
 
+/-! ## The arity of `try_call` successors (`Opt.check` does not check it) -/
+
+/-- The normal-return successor `block2(v2)` is passed two arguments. -/
+def badArity := fn "function %bad_arity(i64) -> i64 system_v {
+    sig0 = (i64) -> i64 system_v
+    fn0 = %g(i64) -> i64 system_v
+block0(v0: i64):
+    jump block1(v0)
+block1(v1: i64):
+    try_call fn0(v1), sig0, block2(ret0, v1), [ default: block3(exn0) ]
+block2(v2: i64):
+    return v2
+block3(v3: i64):
+    return v3
+}"
+
+/-- The same with the right arity. -/
+def goodArity := fn "function %good_arity(i64) -> i64 system_v {
+    sig0 = (i64) -> i64 system_v
+    fn0 = %g(i64) -> i64 system_v
+block0(v0: i64):
+    jump block1(v0)
+block1(v1: i64):
+    try_call fn0(v1), sig0, block2(ret0), [ default: block3(exn0) ]
+block2(v2: i64):
+    return v2
+block3(v3: i64):
+    return v3
+}"
+
+#guard [badArity, goodArity].all (·.blocks.length == 4)
+#guard (Opt.check badArity).toBool
+#guard !cpOk badArity [(1, 0)]
+#guard solve goodArity == [(1, 0)]
+#guard cpOk goodArity [(1, 0)]
+
 end ConstPhiTest
