@@ -13,10 +13,14 @@ usage() {
     'Requires git, rustup, Python >=3.11, a C/C++ toolchain, and Lean from lean-toolchain.' \
     'Put Lean/lake on PATH, or set LEAN_BIN_DIR to their directory.' \
     'FV_MEMCAP defaults to 16G. FV_COMPARE_MEMCAP=0 explicitly disables systemd memory caps.' \
+    'FV_COMPARE_PREBUILT=1 (CI): the Lean executables are built already; one that is out of' \
+    'date is an error, not a build (.github/scripts/stock-comparison-lean.sh builds them).' \
     'Exit 10 with a finished results.json is a completed measurement, not suite equivalence.'
 }
 
 OUT="target/stock-compiler-comparison-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+# The Lean executables measured; scripts/stock-comparison-lean-build.py lists the same ones.
+LEAN_EXES=(lean-backend lean-backend-lowering-trace lean-stock-lowering-compare lean-stock-lowering-test)
 JOBS=2
 INPUTS=()
 while [[ $# -gt 0 ]]; do
@@ -36,6 +40,9 @@ done
 [[ "$JOBS" =~ ^[1-9][0-9]*$ ]] || { printf 'jobs must be positive\n' >&2; exit 2; }
 [[ ${FV_COMPARE_MEMCAP:-1} == 0 || ${FV_COMPARE_MEMCAP:-1} == 1 ]] || {
   printf 'FV_COMPARE_MEMCAP must be 0 or 1\n' >&2; exit 2;
+}
+[[ ${FV_COMPARE_PREBUILT:-0} == 0 || ${FV_COMPARE_PREBUILT:-0} == 1 ]] || {
+  printf 'FV_COMPARE_PREBUILT must be 0 or 1\n' >&2; exit 2;
 }
 [[ ! ${BLESS+x} ]] || { printf 'BLESS must be unset\n' >&2; exit 2; }
 for tool in git rustup python3; do
@@ -85,7 +92,13 @@ step rust-toolchain rustup toolchain install "$RUST_VERSION" --profile minimal
   printf 'memory_cap=%s\n' "${FV_MEMCAP:-16G}"
 } > "$BUILD_LOGS/versions.txt"
 step allocator guard rustup run "$RUST_VERSION" cargo build --locked --release --manifest-path rust/Cargo.toml -p lean-regalloc
-step lean-backend guard lake build lean-backend lean-backend-lowering-trace lean-stock-lowering-compare lean-stock-lowering-test
+if [[ ${FV_COMPARE_PREBUILT:-0} == 1 ]]; then
+  # CI never builds Lean here: this script's plain `lake build` on one runner is the build that
+  # lost the runner or ran out of time after every Lean source change (#1018)
+  step lean-backend guard lake build --no-build "${LEAN_EXES[@]}"
+else
+  step lean-backend guard lake build "${LEAN_EXES[@]}"
+fi
 step stock-exporter bash scripts/prejit-export-build.sh
 step trace-validation guard python3 -m unittest discover -s scripts -p test_lowering_trace.py -v
 step schedule-validation guard python3 -m unittest discover -s scripts -p test_stock_lowering_schedule.py -v
