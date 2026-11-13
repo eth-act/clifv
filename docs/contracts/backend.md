@@ -395,7 +395,12 @@ and `add sp, sp, #n, lsl #12` (`gen_probestack_unroll`); for `total ≥ 16 KiB` 
 Cranelift's `StackProbeLoop`: `x16 = 0`, `x17 = total` (`Inst::load_constant`), then
 `sub x16, x16, #1, lsl #12; str wzr, [sp, x16]; cmn x16, x17; b.gt .-12`, which stores at
 `sp - 4096·i` for `i = 1, …, ⌈total / 4096⌉` and leaves x17 and the flags set (`probeLines`,
-`probeLoopLines`; the back edge `Insn.bcondRel` has no label).
+`probeLoopLines`; the back edge `Insn.bcondRel` has no label). The probes follow Cranelift's
+`enable_probestack` (#1013): `AFunc.probes` (true in the compiler, as cg_clif sets it) selects
+them; `lean-backend --stock-config` clears it when the request's `enable_probestack` is false
+(Cranelift's default), accepts `probestack_strategy=inline` with `probestack_size_log2=12`, and
+for the outline strategy (unimplemented on aarch64 in Cranelift) or another guard size compiles
+only the functions below the guard, without probes (`StockConfig.probeSetting`).
 Spill code is `ldr`/`str` (`ldur`/`stur` for offsets < 256,
 `[sp, x16, sxtx]` beyond the scaled range), which never changes NZCV, so `cmp` + `b.cond` and
 `cmp` + `JTSequence` stay adjacent in effect. Special cases: `movk` (tied `rd`/`rn`) loads

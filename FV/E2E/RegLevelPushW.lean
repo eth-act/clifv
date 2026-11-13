@@ -443,7 +443,7 @@ theorem probeLines_writes (env : Env) (total : Nat) (s : Arm.ArmState)
 /-- **The prologue writes only the frame top** `[sp - 16 - clobberBytes, sp)` **and the probed
 bytes**: fp/lr at `sp - 16`, the stack probes (`probeHitN`, #581), the int pushes below fp/lr,
 the float pushes at the bottom; `mov x29, sp` and the `sp` adjustment store nothing. -/
-theorem prologue_writes (env : Env) {saves : List Reg} {size : Nat} {calls : Bool}
+theorem prologue_writes (env : Env) {saves : List Reg} {size : Nat} {calls : StackProbe}
     (hsv : SavesOk saves) (s : Arm.ArmState)
     (hal : (spOf s).toNat % 16 = 0) {P : BitVec 64 → Prop}
     (hP : ∀ k < 16 + clobberBytes saves,

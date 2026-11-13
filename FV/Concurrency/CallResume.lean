@@ -431,7 +431,7 @@ theorem noRet_probeLines (total : Nat) : NoRet (probeLines total) := by
 
 /-- The prologue has no `ret` (with the stack probes, #581: `calls` is the new argument of
 `prologueLines`). -/
-theorem noRet_prologue (saves : List Reg) (size : Nat) (calls : Bool) :
+theorem noRet_prologue (saves : List Reg) (size : Nat) (calls : StackProbe) :
     NoRet (prologueLines saves size calls) := by
   intro x t hln
   rw [prologueLines_eq] at hln

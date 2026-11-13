@@ -70,7 +70,7 @@ theorem RL.hat_of_drop {R : RL} {j : Nat} {ls T : List Line} (hdrop : R.L.drop j
 last step writes only addresses satisfying `P`, when `P` holds on the frame top and the probed
 bytes: fp/lr and the pushes write the frame top, the probes (unrolled, or the loop's
 `str wzr, [sp, x16]` in every iteration) the probed bytes. -/
-theorem iterN_proRunWP {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : Bool}
+theorem iterN_proRunWP {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : StackProbe}
     (hsv : SavesOk saves) {T : List Line} {j : Nat} {s s' : Arm.ArmState}
     (hdrop : R.L.drop j = prologueLines saves size calls ++ T)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
@@ -215,7 +215,7 @@ theorem iterN_proRunWP {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {cal
 /-- **The prologue's states with their writes** (#581, `iterN_proRun` with `RL.GoodXW`): from a
 state satisfying `RL.Good`, every state of the prologue's run before its last step satisfies
 `RL.GoodXW` when `G` avoids the frame top and the probed bytes (`iterN_proRunWP`). -/
-theorem iterN_proRunW {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : Bool}
+theorem iterN_proRunW {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : StackProbe}
     (hsv : SavesOk saves) {T : List Line} {j : Nat} {s s' : Arm.ArmState}
     (hdrop : R.L.drop j = prologueLines saves size calls ++ T)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)

@@ -287,7 +287,7 @@ theorem kinds_probeLines (total : Nat) :
 then pushes the saved registers: plain writes only. (#581: the former statement, without the
 probes' writes, became false with Cranelift's stack probes; `calls` is the new argument of
 `prologueLines`; the probes' count is `probeStores`.) -/
-theorem kinds_prologueLines (saves : List Reg) (n : Nat) (calls : Bool) :
+theorem kinds_prologueLines (saves : List Reg) (n : Nat) (calls : StackProbe) :
     kinds (prologueLines saves n calls) = .plainW :: List.replicate
       (probeStores (probeTotal n calls) +
         ((pushLines true (savesInt saves)).length + (pushLines false (savesFloat saves)).length))

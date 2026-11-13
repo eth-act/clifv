@@ -48,7 +48,7 @@ theorem iterN_stepsN {R : RL} (hR : R.Wf) {ls T : List Line} {j : Nat} {s s' : A
 
 /-- `iterN_proRun` with `RL.GoodXN` (#581): the prologue's lines are unhooked, so no state of its
 run is a call state. -/
-theorem iterN_proRunN {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : Bool}
+theorem iterN_proRunN {R : RL} (hR : R.Wf) {saves : List Reg} {size : Nat} {calls : StackProbe}
     {T : List Line} {j : Nat} {s s' : Arm.ArmState}
     (hdrop : R.L.drop j = prologueLines saves size calls ++ T)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
