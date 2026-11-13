@@ -9,6 +9,7 @@ import FV.Backend.Proof.IselFloatConst
 import FV.Backend.Proof.IselCtlRuleIds
 import FV.Backend.Proof.IselCovDriver
 import FV.Backend.Proof.LowerContractT
+import FV.Backend.Proof.IselPrgMono
 
 /-!
 # The lowering of the float scope emits no literal-pool load (#1002)
@@ -177,6 +178,16 @@ theorem internal_first {W σ : Type} {p : Program} {sem : Isle.Sem W σ} {cfg : 
       exact h3
     | none => cases pure_ok h4; exact h3
 
+/-- A match that returned keeps its result with more fuel (`monoAt`). -/
+theorem matchRule_mono_le {W σ : Type} {p : Program} {sem : Isle.Sem W σ} {cfg : Config}
+    {m m' : Nat} (hm : m ≤ m') {r : Rule} {vs : List W} {s : σ × Array RuleId}
+    {res : Option (Isle.Interp.Env W) × (σ × Array RuleId)}
+    (h : (matchRule p sem cfg m r vs).run s = .ok res) :
+    (matchRule p sem cfg m' r vs).run s = .ok res := by
+  induction hm with
+  | refl => exact h
+  | step _ ih => exact (monoAt _).mrule _ _ _ _ ih
+
 /-! ## `constant_f64` without literal pool -/
 
 section Const
@@ -193,7 +204,7 @@ theorem constant_f64_noPool (hd : DataP ctx) (hc : cfg.checkOverlap = false) {i 
     (hi0 : 0 ≤ i) (hi : i < 2 ^ 64)
     (hpf : u64 i = 0 ∨ (fpModImm? (u64 i) .size64).isSome = true ∨ u64 i < 2 ^ 32 ∨
       u64 i % 2 ^ 32 = 0)
-    {n : Nat} (hn : 30 ≤ n) {ty : TypeId} {s s' : LState} {tr tr' : Array RuleId} {r : Option V}
+    {n : Nat} {ty : TypeId} {s s' : LState} {tr tr' : Array RuleId} {r : Option V}
     (h : (applyTerm program (sem ctx) cfg (n + 1) ty 587 [.int i]).run (s, tr) =
       .ok (r, (s', tr'))) :
     NoPoolSince s s' ∧ ∀ v, r = some v → v.poolIn = false := by
@@ -204,7 +215,7 @@ theorem constant_f64_noPool (hd : DataP ctx) (hc : cfg.checkOverlap = false) {i 
   rw [hlen] at hfirst
   clear h
   revert hpf
-  rcases hfirst with ⟨rfl, rfl⟩ | ⟨rl, pre, post, hL, hpre, m, env, s1, tr1, tr2, hmn, hnm, hmatch,
+  rcases hfirst with ⟨rfl, rfl⟩ | ⟨rl, pre, post, hL, hpre, m, env, s1, tr1, tr2, -, -, hmatch,
     hrhs⟩
   · intro _
     exact ⟨noPool_refl _, fun v hv => by cases hv⟩
@@ -225,11 +236,11 @@ theorem constant_f64_noPool (hd : DataP ctx) (hc : cfg.checkOverlap = false) {i 
             ∃ env, (matchRule program (sem ctx) cfg (k + 20) r' [.int i]).run w =
               .ok (some env, w)) → False := by
         intro r' hr' hsome
-        obtain ⟨m', hm', s1', hn'⟩ := hpre r' hr'
-        obtain ⟨k, rfl⟩ : ∃ k, m' = k + 20 := ⟨m' - 20, by omega⟩
-        obtain ⟨env', he⟩ := hsome k _
-        rw [he] at hn'
-        cases hn'
+        obtain ⟨m', -, s1', hn'⟩ := hpre r' hr'
+        have hn'' := matchRule_mono_le (Nat.le_add_right m' 20) hn'
+        obtain ⟨env', he⟩ := hsome m' _
+        rw [he] at hn''
+        cases hn''
       rcases hpf with h0 | hfm | hlt | hlow
       · refine key rule_inst_4264 (by simp) fun k ⟨st0, tr0⟩ => ?_
         have hi0' : i = 0 := by omega
@@ -283,7 +294,7 @@ literal-pool load, the literal's bits `n` being `Compile.f64PoolFree`. -/
 theorem f64const_rhs_noPool {f : Clif.Function} {ctx : Ctx} {cfg : Config} (hctx : CtxInvT f ctx)
     (hsc : InstScopeTF ctx) (hd : DataP ctx) (hco : cfg.checkOverlap = false) {ii : Nat}
     {info : IInfo} {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
-    {m k : Nat} (hm21 : 21 ≤ m) (hk : 40 ≤ k) {s s1 s2 : LState} {tr tr1 tr2 : Array RuleId}
+    {m k : Nat} {s s1 s2 : LState} {tr tr1 tr2 : Array RuleId}
     {env : Interp.Env V} {r : Option V}
     (hm : (matchRule program (sem ctx) cfg m rule_lower_68 [.inst ii]).run (s, tr) =
       .ok (some env, (s1, tr1)))
@@ -293,9 +304,10 @@ theorem f64const_rhs_noPool {f : Clif.Function} {ctx : Ctx} {cfg : Config} (hctx
   obtain ⟨hs, -⟩ := Cov.matchRule_noIfLets (ctx := ctx) (cfg := cfg)
     (r := rule_lower_68) rfl hm
   cases hs
-  obtain ⟨m', rfl⟩ : ∃ m', m = (m' + 20) + 1 := ⟨m - 21, by omega⟩
+  have hm' := matchRule_mono_le (m := m) (m' := (m + 20) + 1) (by omega) hm
+  clear hm
   obtain ⟨info', fs, hi', hdat⟩ := root_match_data hp ctx (r := rule_lower_68) rfl hp.t2481
-    term_2481_kind hp.t2344 term_2344_kind (m := m' + 20) hm
+    term_2481_kind hp.t2344 term_2344_kind (m := m + 20) hm'
   rw [hi] at hi'
   cases hi'
   have hdd := hctx.data ii info inst hi hc
@@ -303,44 +315,55 @@ theorem f64const_rhs_noPool {f : Clif.Function} {ctx : Ctx} {cfg : Config} (hctx
   obtain ⟨imm, rfl, rfl⟩ := instData_f64const_inv hdd
   have hpf := f64PoolFreeInst_of_instETF (hsc ii info _ hi hc) .f64 imm rfl rfl
   have henv : env[0]? = some (some (.int (imm.toNat : Int))) := by
-    isel_inv' hp [] at hm
+    isel_inv' hp [] at hm'
     obtain ⟨rfl, rfl⟩ := fconst_data_eq hi hdat ‹ctx.insts[ii]? = some _› ‹V.data 152 34 _ = _›
     have hfs := (ext_u64_from_ieee64_iff ctx _ _ _).mp ‹externExtract ctx T.u64_from_ieee64 _ _ = _›
     simp only [List.cons.injEq, and_true] at hfs
     subst hfs
     simp
-  clear hm
+  clear hm'
   have hlt := imm.isLt
   have h64 : imm.toNat < 2 ^ 64 := by simpa using hlt
   have hu : u64 (imm.toNat : Int) = imm.toNat := by unfold u64; omega
-  obtain ⟨k', rfl⟩ : ∃ k', k = k' + 5 := ⟨k - 5, by omega⟩
-  have he1 : (evalExpr program (sem ctx) cfg ((k' + 4) + 1)
-      (.term 25 172 [.term 27 587 [.var 4 0]]) env).run (s, tr) = .ok (r, (s2, tr2)) := he
+  have he1 : (evalExpr program (sem ctx) cfg k (.term 25 172 [.term 27 587 [.var 4 0]]) env).run
+      (s, tr) = .ok (r, (s2, tr2)) := he
   clear he
+  -- a run that returns has the fuel of every nested step
+  cases k with
+  | zero => rw [evalExpr.eq_1] at he1; exact (throw_ok he1).elim
+  | succ k =>
   rw [evalExpr.eq_7] at he1
   obtain ⟨o, ⟨sa, tra⟩, h1, h2⟩ := bind_ok he1
-  have h1' : (evalArgs program (sem ctx) cfg ((k' + 3) + 1) [.term 27 587 [.var 4 0]] env).run
-      (s, tr) = .ok (o, (sa, tra)) := h1
-  clear h1
-  rw [evalArgs.eq_3] at h1'
-  obtain ⟨o1, ⟨sb, trb⟩, h3, h4⟩ := bind_ok h1'
-  have h3' : (evalExpr program (sem ctx) cfg ((k' + 2) + 1) (.term 27 587 [.var 4 0]) env).run
-      (s, tr) = .ok (o1, (sb, trb)) := h3
-  clear h3
-  rw [evalExpr.eq_7] at h3'
-  obtain ⟨o2, ⟨sc, trc⟩, h5, h6⟩ := bind_ok h3'
-  have hargs : (evalArgs program (sem ctx) cfg ((k' + 1) + 1) [.var 4 0] env).run (s, tr) =
+  cases k with
+  | zero => rw [evalArgs.eq_1] at h1; exact (throw_ok h1).elim
+  | succ k =>
+  rw [evalArgs.eq_3] at h1
+  obtain ⟨o1, ⟨sb, trb⟩, h3, h4⟩ := bind_ok h1
+  cases k with
+  | zero => rw [evalExpr.eq_1] at h3; exact (throw_ok h3).elim
+  | succ k =>
+  rw [evalExpr.eq_7] at h3
+  obtain ⟨o2, ⟨sc, trc⟩, h5, h6⟩ := bind_ok h3
+  cases k with
+  | zero => rw [evalArgs.eq_1] at h5; exact (throw_ok h5).elim
+  | succ k =>
+  cases k with
+  | zero =>
+    rw [evalArgs.eq_3] at h5
+    obtain ⟨_, _, h5a, -⟩ := bind_ok h5
+    rw [evalExpr.eq_1] at h5a
+    exact (throw_ok h5a).elim
+  | succ k =>
+  have hargs : (evalArgs program (sem ctx) cfg ((k + 1) + 1) [.var 4 0] env).run (s, tr) =
       .ok (some [.int (imm.toNat : Int)], (s, tr)) :=
     evalArgs_cons_iff.mpr ⟨_, (s, tr), [], evalExpr_var_iff.mpr ⟨henv, rfl⟩,
       evalArgs_nil_iff.mpr ⟨rfl, rfl⟩, rfl⟩
-  have h5' : (evalArgs program (sem ctx) cfg ((k' + 1) + 1) [.var 4 0] env).run (s, tr) =
-      .ok (o2, (sc, trc)) := h5
-  rw [hargs] at h5'
-  cases h5'
-  have h6' : (applyTerm program (sem ctx) cfg ((k' + 1) + 1) 27 587 [.int (imm.toNat : Int)]).run
+  rw [hargs] at h5
+  cases h5
+  have h6' : (applyTerm program (sem ctx) cfg ((k + 1) + 1) 27 587 [.int (imm.toNat : Int)]).run
       (s, tr) = .ok (o1, (sb, trb)) := h6
   obtain ⟨hR1, hv1⟩ := constant_f64_noPool hd hco (i := (imm.toNat : Int)) (by omega) (by omega)
-    (by rw [hu]; exact hpf) (n := k' + 1) (by omega) h6'
+    (by rw [hu]; exact hpf) h6'
   cases o1 with
   | none =>
     cases pure_ok h4
@@ -348,10 +371,8 @@ theorem f64const_rhs_noPool {f : Clif.Function} {ctx : Ctx} {cfg : Config} (hctx
     exact hR1
   | some w =>
     obtain ⟨o3, ⟨sd, trd⟩, h7, h8⟩ := bind_ok h4
-    have h7' : (evalArgs program (sem ctx) cfg ((k' + 2) + 1) [] env).run (sb, trb) =
-        .ok (o3, (sd, trd)) := h7
-    rw [evalArgs.eq_2] at h7'
-    cases pure_ok h7'
+    rw [evalArgs.eq_2] at h7
+    cases pure_ok h7
     cases pure_ok h8
     have hT172 : (172 : TermId) ∈ poolTab := by simpa using poolTab_outputReg
     obtain ⟨-, hR2, -⟩ := uSound (poolModel ctx hd) hco _ _ _ _ _ _ _ _ _
@@ -387,16 +408,14 @@ theorem stmt_noPool (hsc : InstScopeTF ctx) (hnm : LowerNoMatch ctx) (hd : DataP
     · exact .inr (.inr (hnm ii info inst hi hc rl hrl hcr {}))
     · exact .inr (.inl ⟨hrl, h585⟩)
     · exact .inl ⟨poolRuleOk_of hok, fun _ _ => trivial⟩
-  have hlen : 1002 + (program.rulesOf 686).length ≤ 999999 := lower_len
   exact (uRoot (poolModel ctx hd) rfl (fun _ _ => True)
     (fun rl => rl ∈ program.rulesOf TId.lower ∧ rl.id = 585) data_program.t686 term_686_kind rfl
     hrules
-    (fun rl _ ⟨hrl, h585⟩ k m s0 tr0 env s1 tr1 r s2 tr2 hn hmk hkm _ _ hm he => by
+    (fun rl _ ⟨hrl, h585⟩ k m s0 tr0 env s1 tr1 r s2 tr2 _ _ _ _ _ hm he => by
       have hr : rl = rule_lower_68 :=
         eq_of_mem_of_id lower_ids_nodup hrl mem_lower_68 (by rw [h585]; rfl)
       subst hr
-      exact ⟨trivial, f64const_rhs_noPool hctx hsc hd rfl hi hc (by omega) (by omega) hm he,
-        fun _ _ => trivial⟩)
+      exact ⟨trivial, f64const_rhs_noPool hctx hsc hd rfl hi hc hm he, fun _ _ => trivial⟩)
     (fun v hv => by
       simp only [List.mem_singleton] at hv
       subst hv

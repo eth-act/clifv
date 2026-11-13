@@ -67,6 +67,27 @@ theorem poolReachB_of_T3F {g : Clif.Function} {vc vcp : VCode} (h : fnScopeInTB3
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hs, -⟩ := fnScopeInT3F_parts h
   exact poolReachB_lowerTF (lowerScopeTF_of hs) hl hp
 
+/-- **The run-time conjunct #955 added to `fnScopeInTB3F` was redundant** (`poolReachIn_of_T3`,
+#1002): on the scope without it, the removed check holds, so the scope decides the same set of
+functions as before. -/
+theorem poolReachIn_of_T3F {g : Clif.Function} (h : fnScopeInTB3F g = true) :
+    (decide (sizeBoundIn g < 2 ^ 17) ||
+      match lowerFunction g with
+      | .ok vc => match prepare vc with
+        | .ok vcp => vcp.noPoolB
+        | .error _ => true
+      | .error _ => true) = true := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hs, -⟩ := fnScopeInT3F_parts h
+  rw [Bool.or_eq_true]
+  right
+  split
+  · rename_i vc hl
+    split
+    · rename_i vcp hp
+      exact noPoolB_lowerTF (lowerScopeTF_of hs) hl hp
+    · rfl
+  · rfl
+
 /-- **The float scope is in the scope with typed `try_call`s and the float operations.** -/
 theorem functionETCF_of_functionETF {f : Clif.Function} (h : Compile.functionETF f = true) :
     Compile.functionETCF f = true := by

@@ -52,6 +52,28 @@ theorem poolReachB_of_T3 {g : Clif.Function} {vc vcp : VCode} (h : fnScopeInTB3 
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hs, -⟩ := fnScopeInT3_parts h
   exact poolReachB_lowerT (lowerScopeT_of hs) hl hp
 
+/-- **The run-time conjunct #955 added to `fnScopeInTB3` was redundant** (#1002): on the scope
+without it, the removed check (the size bound below `2 ^ 17` words, or `VCode.noPoolB` of the
+prepared VCode) holds. So removing it changed no function's membership: `fnScopeInTB3` decides
+the same set as before, and `compileExeT3` takes the same branch on every input. -/
+theorem poolReachIn_of_T3 {g : Clif.Function} (h : fnScopeInTB3 g = true) :
+    (decide (sizeBoundIn g < 2 ^ 17) ||
+      match lowerFunction g with
+      | .ok vc => match prepare vc with
+        | .ok vcp => vcp.noPoolB
+        | .error _ => true
+      | .error _ => true) = true := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hs, -⟩ := fnScopeInT3_parts h
+  rw [Bool.or_eq_true]
+  right
+  split
+  · rename_i vc hl
+    split
+    · rename_i vcp hp
+      exact noPoolB_lowerT (lowerScopeT_of hs) hl hp
+    · rfl
+  · rfl
+
 /-- **`lowerOutTB` holds on `fnScopeInTB3`**: every run-time check of the typed input scope is a
 theorem on the decided input checks. -/
 theorem lowerOutTB_of_T3 {g : Clif.Function} (h : fnScopeInTB3 g = true) : lowerOutTB g = true := by

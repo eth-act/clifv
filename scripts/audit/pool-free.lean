@@ -57,11 +57,13 @@ import FVTest.E2E.PoolLoadWitness
 -- the input scopes without the `poolReachInB` conjunct
 #print axioms E2E.LinkCheck.fnScopeInT3_parts
 #print axioms E2E.LinkCheck.poolReachB_of_T3
+#print axioms E2E.LinkCheck.poolReachIn_of_T3
 #print axioms E2E.LinkCheck.lowerOutTB_of_T3
 #print axioms E2E.LinkCheck.fnScopeInTB2_of_T3
 #print axioms E2E.LinkCheck.emitCondsB_of_T3
 #print axioms E2E.LinkCheck.fnScopeInT3F_parts
 #print axioms E2E.LinkCheck.poolReachB_of_T3F
+#print axioms E2E.LinkCheck.poolReachIn_of_T3F
 #print axioms E2E.LinkCheck.pipeCleanupT_okT3F
 -- witnesses: a typed function with an `f64const`; a pooled constant is outside the scope
 #print axioms EmitCondsTWitness.fW_f64const -- witness: native_decide
