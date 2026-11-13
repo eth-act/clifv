@@ -22,6 +22,10 @@ on:
         description: Build everything (ignore the baseline build)
         type: boolean
         default: false
+      base-run:
+        description: Run id whose lake-full is the baseline (default, the newest of main or of this branch); for a branch stacked on another PR's head. Refused if a non-Lean build input differs from that run's commit
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -61,13 +65,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           OWN_BRANCH: ${{ github.ref_name }}
+          BASE_RUN: ${{ inputs.base-run }}
         run: |
           # newest unexpired `lake-full` of a run on main or on this branch; Lake's cache is
-          # content-addressed, so any baseline is safe: the planner rebuilds what differs from it
-          read -r run sha < <(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=lake-full&per_page=100" \
-            --jq '[.artifacts[] | select(.expired | not)
-                   | select(.workflow_run.head_branch == "main" or .workflow_run.head_branch == env.OWN_BRANCH)]
-                  | sort_by(.created_at) | last | "\(.workflow_run.id // "") \(.workflow_run.head_sha // "")"') || true
+          # content-addressed, so any baseline is safe: the planner rebuilds what differs from it.
+          # `base-run` names another run's instead: a branch stacked on another PR's head takes
+          # that PR's build, where its own first run would build the same modules again. The
+          # planner then refuses a difference in a file modules read untraced (--explicit-base)
+          if [[ -n $BASE_RUN ]]; then
+            [[ $BASE_RUN =~ ^[0-9]+$ ]] || { echo "::error::base-run is not a run id: $BASE_RUN"; exit 1; }
+            read -r run sha < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BASE_RUN/artifacts?name=lake-full" \
+              --jq '[.artifacts[] | select(.expired | not)] | last | "\(.workflow_run.id // "") \(.workflow_run.head_sha // "")"') || true
+            [[ -n "${run:-}" ]] || { echo "::error::base-run: run $BASE_RUN has no unexpired lake-full artifact"; exit 1; }
+          else
+            read -r run sha < <(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=lake-full&per_page=100" \
+              --jq '[.artifacts[] | select(.expired | not)
+                     | select(.workflow_run.head_branch == "main" or .workflow_run.head_branch == env.OWN_BRANCH)]
+                    | sort_by(.created_at) | last | "\(.workflow_run.id // "") \(.workflow_run.head_sha // "")"') || true
+          fi
           if [[ -n "${sha:-}" ]] && ! git cat-file -e "$sha^{commit}" 2>/dev/null; then
             git fetch -q --depth 1 origin "$sha" || true
           fi
@@ -80,6 +95,9 @@ jobs:
               echo "partial baseline: $(wc -w < base-missing/missing.txt) modules missing"
               echo "missing=base-missing/missing.txt" >> "$GITHUB_OUTPUT"
             fi
+          elif [[ -n $BASE_RUN ]]; then
+            echo "::error::base-run: the commit $sha of run $BASE_RUN cannot be fetched"
+            exit 1
           else
             echo "no baseline build: planning everything"
           fi
@@ -88,6 +106,8 @@ jobs:
         env:
           BASE: ${{ steps.base.outputs.sha }}
           MISSING: ${{ steps.base.outputs.missing }}
+          # empty with `fresh` (no baseline step: everything is planned)
+          EXPLICIT: ${{ steps.base.outputs.run && inputs.base-run }}
           # eth-act (free plan) runs at most 20 jobs at once across all its repositories
           SHARDS: ${{ vars.FULL_GATE_SHARDS || '10' }}
           # runner seconds per second recorded in scripts/lake-module-peaks.tsv (GitHub-hosted,
@@ -99,7 +119,10 @@ jobs:
           FV_CI_HEAVY: ${{ vars.FULL_GATE_HEAVY || '12G' }}
           FV_CI_MAX_JOBS: ${{ vars.FULL_GATE_MAX_JOBS || '3' }}
         run: |
+          # without pipefail tee's status hides the planner's refusal (and any other failure of it)
+          set -o pipefail
           python3 scripts/ci-build-plan.py ${BASE:+--base "$BASE"} ${MISSING:+--missing "$MISSING"} \
+            ${EXPLICIT:+--explicit-base} \
             --shards "$SHARDS" --waves 3 \
             --time-scale "$TIME_SCALE" --prefix-scale FV.Opt.Proof.=1.5 --ram "$RAM" \
             --budget "$FV_CI_BUDGET" --heavy "$FV_CI_HEAVY" --max-jobs "$FV_CI_MAX_JOBS" \
@@ -454,20 +477,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The cargo fv lines of scripts/main-gate.sh (#998). `binary`: the line is green only when
-        # the executables pass the binary check (docs/contracts/e2e.md, "Binary level (M9)"): all
-        # of them, except exactly the issue-linked ones of scripts/gate-known-unverified.txt.
+        # The cargo fv lines of scripts/main-gate.sh (#998). Every line is green only when its
+        # executables pass the binary check (docs/contracts/e2e.md, "Binary level (M9)"), all of
+        # them except exactly the issue-linked ones of scripts/gate-known-unverified.txt, and when
+        # its counts (executables, Lean-compiled and verified functions) are the pinned ones of
+        # scripts/gate-expected-counts.txt (#1004); the `--lean-link` lines also link with lean-ld.
         # `parity`: the crate-parity measurement below (AGENTS.md: fv-demo and survey).
         include:
-          - { example: fv-demo, args: '--lean-link --verified', binary: true, parity: true }
-          - { example: survey, args: '--lean-link --verified', binary: true, parity: true }
+          - { example: fv-demo, args: '--lean-link --verified', parity: true }
+          - { example: survey, args: '--lean-link --verified', parity: true }
           # #691, #734: typed and Stock-lowered functions in one executable (20 dependencies).
-          # Locally 27 min under a 12 GB cap (after #985), so it fits a 16 GB runner
-          - { example: deps, args: '--lean-link --verified', binary: true, parity: false }
+          # Locally 27 min under a 12 GB cap (after #985); 2 h 08 min on a runner (#1010)
+          - { example: deps, args: '--lean-link --verified', parity: false }
           # #479: a panic unwinding through a Lean-compiled frame larger than 32 KiB. Plain
           # `cargo fv`: the big function is outside the verified subset (--verified would keep
-          # cg_clif's code), and its executable does not pass the binary check (0 of 1)
-          - { example: bigframe-unwind, args: '', binary: false, parity: false }
+          # cg_clif's code), so its executable is outside the binary check: `0 of 1`, with its
+          # entry in the known-unverified list (#1008, #1009)
+          - { example: bigframe-unwind, args: '', parity: false }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -512,37 +538,62 @@ jobs:
         env:
           EX: ${{ matrix.example }}
           ARGS: ${{ matrix.args }}
-          BINARY: ${{ matrix.binary && 'yes' || '' }}
+          BEFORE: ${{ github.event.before }}
         run: |
           mkdir -p gate-logs
           rm -rf "examples/$EX/target/fv"
+          # where the line's time goes (#1010): the busiest processes, every five minutes (threads,
+          # CPU share since its start, resident kB, seconds since its start)
+          (while sleep 300; do date -u +%T; ps -eo pid,nlwp,pcpu,rss,etimes,comm --sort=-pcpu | awk 'NR <= 9' || true; done) \
+            > "gate-logs/$EX.ps" 2>&1 &
+          sampler=$!
           start=$(date +%s)
           rc=0
           # shellcheck disable=SC2086
           PATH="$PWD/rust/target/release:$PATH" FV_ROOT="$PWD" /usr/bin/time -v -o "gate-logs/$EX.time" \
             examples/compare.sh "examples/$EX" $ARGS > "gate-logs/$EX.log" 2>&1 || rc=$?
+          kill "$sampler" 2> /dev/null || true
           # keep cargo fv's own output: compare.sh writes it to a temporary directory it names
           logs=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "gate-logs/$EX.log" | tail -n 1)
           if [[ -n "$logs" && -f "$logs/fv.log" ]]; then cp "$logs/fv.log" "gate-logs/$EX-cargo-fv.log"; fi
           # Green (scripts/gate-line-check.py): compare.sh's status 0, its SAME line, no missing
-          # tool and no fallback in cargo fv's own log and, on the --verified lines, every link by
-          # lean-ld and every executable through the binary check, except exactly the issue-linked
-          # ones of scripts/gate-known-unverified.txt. A job that only asked for SAME passed with
-          # "0 of 18 executable(s) verified" and rust-lld links (#998, #1004).
+          # tool and no fallback in cargo fv's own log, every executable through the binary check
+          # except exactly the issue-linked ones of scripts/gate-known-unverified.txt, the pinned
+          # counts of scripts/gate-expected-counts.txt and, on the --lean-link lines, every link
+          # by lean-ld. A job that only asked for SAME passed with "0 of 18 executable(s)
+          # verified" and rust-lld links (#998, #1004); one that asked for N of N passes with a
+          # smaller N. The counts (pinned and measured) and the known-unverified executables with
+          # cargo fv's reasons go to the job summary.
+          # --base: the pins of the base revision. A PR may raise a pin, not lower it: the pins
+          # are read from the base revision too (LEARNINGS.md, "Untrusted input never widens the
+          # policy"), or a change that loses functions turns green by editing the file. The base
+          # revision is main's tip on a branch and, on main, the tip the push replaced (never
+          # the tested commit). Without its copy (it cannot be fetched) the verdict is red; it
+          # is empty while the base revision has no such file.
+          base="$RUNNER_TEMP/expected-counts-base.txt"
+          python3 scripts/gate-line-check.py base-pins "$base" --before "$BEFORE" || true
+          lean_link=()
+          if [[ " $ARGS " == *" --lean-link "* ]]; then lean_link=(--lean-link); fi
           ok=0
-          verdict=$(python3 scripts/gate-line-check.py cargo-fv ${BINARY:+--binary-check "$EX"} \
-            "gate-logs/$EX.log" "gate-logs/$EX-cargo-fv.log") || ok=$?
+          verdict=$(python3 scripts/gate-line-check.py cargo-fv "$EX" "${lean_link[@]}" --base "$base" \
+            --summary "$GITHUB_STEP_SUMMARY" "gate-logs/$EX.log" "gate-logs/$EX-cargo-fv.log") || ok=$?
           if [[ $rc == 0 && $ok != 0 ]]; then rc=1; fi
           echo "cargo fv${ARGS:+ $ARGS} $EX rc=$rc $(( $(date +%s) - start )) s: $verdict" | tee gate-logs/summary.txt
           grep -E 'Maximum resident|Elapsed' "gate-logs/$EX.time" || true
           tail -n 15 "gate-logs/$EX.log"
-          if [[ -n $BINARY ]] && known=$(grep -E "^$EX[[:space:]]" scripts/gate-known-unverified.txt); then
+          # the functions that run Lean-compiled code without being verified (plain cargo fv only:
+          # --verified keeps cg_clif's code for them), with lean-backend's reason (#1008)
+          (cd "examples/$EX" && PATH="$GITHUB_WORKSPACE/rust/target/release:$PATH" FV_ROOT="$GITHUB_WORKSPACE" \
+            cargo fv report --functions 2> /dev/null | grep -E '^    unverified ' | sort | uniq -c) \
+            > "gate-logs/$EX-unverified.txt" || true
+          if [[ -s "gate-logs/$EX-unverified.txt" ]]; then
             {
-              echo "### Known unverified executables: $EX"
+              echo "### Lean-compiled, unverified functions: $EX"
               echo
-              echo "The line is green only while exactly these executables fail the binary check (\`scripts/gate-known-unverified.txt\`): one more is red, and so is one fewer (the PR that fixes an entry removes it)."
+              echo '```'
+              cat "gate-logs/$EX-unverified.txt"
+              echo '```'
               echo
-              while read -r _ exe issue; do echo "- \`$exe\`: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/issues/${issue#\#}"; done <<< "$known"
             } >> "$GITHUB_STEP_SUMMARY"
           fi
           exit $rc
@@ -596,6 +647,90 @@ jobs:
         if: always()
         with:
           name: gate-cargo-fv-${{ matrix.example }}
+          path: gate-logs
+          retention-days: 14
+
+  crate-proofs-fresh:
+    # #994: the committed generated crate proofs are exactly what scripts/regen-crate-proofs.sh
+    # writes from this tree. Their statements quote the compiler's output (CLIF, register
+    # allocations, executable bytes), so a PR that changes generated code regenerates them in
+    # the same PR (#709, #711). The crate-proofs job only builds the committed files: stale
+    # proofs that still build passed it (#933 @aa4f16a55 lost its regeneration in a merge).
+    # The script's output does not depend on the checkout or on $HOME (#984), so an empty diff
+    # here means the files were regenerated from this tree, on any machine.
+    name: crate-proofs freshness
+    needs: [plan, assemble]
+    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/fv-lean
+        with:
+          swap-gb: '16'
+          stages: lake-full
+      - name: Tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq qemu-user-static llvm-18
+          rustup toolchain install nightly-2026-09-26 --profile minimal \
+            --component rustc-dev --target aarch64-unknown-linux-musl
+          rustup target add aarch64-unknown-linux-musl
+      - name: Rust build cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+            target/cg_clif
+          key: full-gate-rust-cargo-fv-${{ hashFiles('rust/rust-toolchain.toml', 'rust/**/Cargo.lock', 'scripts/build-cg-clif.sh', 'scripts/patches/cg-clif-extnames.patch') }}
+      - name: Build cg_clif and cargo fv
+        run: |
+          scripts/build-cg-clif.sh
+          (cd rust && cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc)
+          # the executables the script runs (restored from the assembled build), all required:
+          # without link-check `cargo fv link-proof` writes no Lean file and exits 0
+          lake build lean-backend clif-decode link-check dead-cleanup-generate 2>&1 | tail -n 1
+          for t in lean-backend clif-decode link-check dead-cleanup-generate; do test -x ".lake/build/bin/$t"; done
+      - name: Regenerate and compare
+        run: |
+          mkdir -p gate-logs
+          start=$(date +%s)
+          regen=0
+          FV_ROOT="$PWD" /usr/bin/time -v -o gate-logs/regen.time scripts/regen-crate-proofs.sh \
+            > gate-logs/regen.log 2>&1 || regen=$?
+          # every difference from the committed tree: changed, deleted and new files
+          git add --intent-to-add -- crate-proofs
+          git diff --stat=200 -- crate-proofs > gate-logs/changed.txt
+          n=$(git diff --name-only -- crate-proofs | wc -l)
+          rc=0
+          if [[ $regen != 0 || $n != 0 ]]; then rc=1; fi
+          if (( n )); then
+            git diff --binary -- crate-proofs > gate-logs/crate-proofs-regen.patch
+            {
+              echo "### crate-proofs freshness: $n file(s) differ from scripts/regen-crate-proofs.sh's output"
+              echo
+              echo "The committed generated crate proofs are not the ones this tree generates. Rerun \`FV_ROOT=\$PWD scripts/regen-crate-proofs.sh\` and commit the result (the script's output does not depend on the machine), or apply \`crate-proofs-regen.patch\` from the artifact \`gate-crate-proofs-fresh\`, and check that \`crate-proofs\` builds."
+              echo
+              echo '```'
+              tail -n 40 gate-logs/changed.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "crate-proofs freshness rc=$rc $(( $(date +%s) - start )) s: regen-crate-proofs.sh exit $regen, $n file(s) differ from the committed crate-proofs" | tee gate-logs/summary.txt
+          grep -E 'Maximum resident|Elapsed' gate-logs/regen.time || true
+          tail -n 15 gate-logs/regen.log
+          exit $rc
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: gate-crate-proofs-fresh
           path: gate-logs
           retention-days: 14
 
@@ -688,7 +823,7 @@ jobs:
 
   report:
     name: Report
-    needs: [plan, wave1, wave2, wave3, assemble, audit, crate-proofs, e2e, runtime, cargo-fv, float-spec, unused-imports]
+    needs: [plan, wave1, wave2, wave3, assemble, audit, crate-proofs, crate-proofs-fresh, e2e, runtime, cargo-fv, float-spec, unused-imports]
     if: ${{ always() && needs.plan.result != 'skipped' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10

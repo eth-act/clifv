@@ -35,10 +35,11 @@
 # link-check on every test executable), and plain examples/compare.sh on
 # examples/bigframe-unwind (#479: unwinding through a > 32 KiB Lean frame). A cargo fv line and
 # the arm-fault-cosim line are green when scripts/gate-line-check.py says so (the CI full gate
-# calls the same script): a SAME line, no missing tool or fallback in cargo fv's own log and, on
-# the --verified lines, every link by lean-ld and every executable through the binary check
-# except exactly the issue-linked ones of scripts/gate-known-unverified.txt; a TOTAL line with
-# vectors and faulting vectors and no failure (#998, #1003, #1004). When the `lake build`
+# calls the same script): a SAME line, no missing tool or fallback in cargo fv's own log, every
+# executable through the binary check except exactly the issue-linked ones of
+# scripts/gate-known-unverified.txt, the counts of scripts/gate-expected-counts.txt (executables,
+# Lean-compiled and verified functions) and, on the --lean-link lines, every link by lean-ld; a
+# TOTAL line with vectors and faulting vectors and no failure (#998, #1003, #1004, #1008). When the `lake build`
 # of the executables or the cargo build of the Rust tools fails, the native lines are skipped
 # (they would run stale binaries) and the run is red at the failed build.
 #
@@ -96,10 +97,17 @@ stop_scopes() {
 
 # The verdict of a cargo fv line (scripts/gate-line-check.py, as in the CI full gate). LOG is the
 # output of examples/compare.sh, which names the directory holding cargo fv's own log (fv.log).
-fv_verdict() { # LOG [--binary-check EXAMPLE]
+# The pinned counts are also compared with those of a base revision that is never the tested
+# commit (`gate-line-check.py base-pins --local`): a pin below them is red, so a commit cannot make
+# a drop green by lowering its own pin. GATE_BASE_REV (set by `loop`: the last green commit) names
+# it; a one-shot `run` takes the commit where HEAD left origin/main, or HEAD's parent on main.
+# Without a base revision the verdict is red. A deliberate drop (a parent decision) stays red in
+# `loop` until its commit is recorded GREEN by hand in results.tsv.
+fv_verdict() { # LOG EXAMPLE [--lean-link]
   local log=$1 d; shift
   d=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "$log" | tail -n 1)
-  python3 "$GATE_ROOT/scripts/gate-line-check.py" cargo-fv "$@" "$log" "$d/fv.log"
+  (cd "$GATE_ROOT" && python3 scripts/gate-line-check.py base-pins "$log.base-pins" --local "${GATE_BASE_REV:-}") > "$log.base-rev" 2>&1
+  python3 "$GATE_ROOT/scripts/gate-line-check.py" cargo-fv "$@" --base "$log.base-pins" "$log" "$d/fv.log"
 }
 
 run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
@@ -165,7 +173,7 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
     if [ -n "$stale" ]; then echo "cargo fv --lean-link --verified $ex: skipped (stale binaries: $stale)"; continue; fi
     rm -rf "examples/$ex/target/fv"
     mc 12G "${NATIVE[@]}" examples/compare.sh "examples/$ex" --lean-link --verified > "$L/native_$ex.log" 2>&1
-    r=$?; v=$(fv_verdict "$L/native_$ex.log" --binary-check "$ex"); c=$?
+    r=$?; v=$(fv_verdict "$L/native_$ex.log" "$ex" --lean-link); c=$?
     echo "cargo fv --lean-link --verified $ex rc=$r: $v"
     { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   done
@@ -175,7 +183,7 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   elif [ "$DEPS" = 1 ]; then
     rm -rf "examples/deps/target/fv"
     mc 12G "${NATIVE[@]}" examples/compare.sh examples/deps --lean-link --verified > "$L/native_deps.log" 2>&1
-    r=$?; v=$(fv_verdict "$L/native_deps.log" --binary-check deps); c=$?
+    r=$?; v=$(fv_verdict "$L/native_deps.log" deps --lean-link); c=$?
     echo "cargo fv --lean-link --verified deps rc=$r: $v"
     { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   else
@@ -188,7 +196,7 @@ run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
   else
     rm -rf examples/bigframe-unwind/target/fv
     mc 12G "${NATIVE[@]}" examples/compare.sh examples/bigframe-unwind > "$L/native_bigframe-unwind.log" 2>&1
-    r=$?; v=$(fv_verdict "$L/native_bigframe-unwind.log"); c=$?
+    r=$?; v=$(fv_verdict "$L/native_bigframe-unwind.log" bigframe-unwind); c=$?
     echo "cargo fv bigframe-unwind rc=$r: $v"
     { [ $r = 0 ] && [ $c = 0 ]; } || fail=1
   fi
@@ -247,7 +255,7 @@ loop() { # WORKTREE
     s=$(git rev-parse --short=8 HEAD)
     L=$GATE_DIR/runs/$s
     echo "run $s start $(date -Is) clif=$clif deps=$deps"
-    GATE_LOOP_TIP=$tip setsid flock -o "$LOCK" "$0" run-locked "$L" "$clif" "$deps" &
+    GATE_LOOP_TIP=$tip GATE_BASE_REV=$lastgreen setsid flock -o "$LOCK" "$0" run-locked "$L" "$clif" "$deps" &
     run=$!
     wait "$run"; rc=$?; run=
     [ $rc = 4 ] && { echo "run $s dropped $(date -Is): origin/main moved on or stop requested while waiting for the lock"; continue; }

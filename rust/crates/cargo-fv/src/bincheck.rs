@@ -22,8 +22,21 @@ fn field<'a>(out: &'a str, key: &str) -> Option<&'a str> {
     out.lines().find_map(|l| l.trim_start().strip_prefix(key))
 }
 
-/// The verdict from `link-check`'s output (`ok`: its exit status was 0).
-pub fn verdict_of(out: &str, ok: bool) -> Verdict {
+/// Why `link-check` stopped without a `binary:` line: its last `link-check: ` line other than
+/// the header `link-check: <exe>`, without the executable's name. `link-check: <exe>: <message>`
+/// when the bundle cannot be assembled (e.g. `link-proof skipped N function(s) of the region:
+/// <first>: <why>`); `link-check: <message>` when it cannot be read, before any header. The
+/// header and the messages are on different streams, so in either order.
+fn stop_reason<'a>(out: &'a str, exe: &str) -> Option<&'a str> {
+    out.lines()
+        .filter_map(|l| l.trim_start().strip_prefix("link-check: "))
+        .filter(|l| *l != exe)
+        .map(|l| l.strip_prefix(exe).and_then(|r| r.strip_prefix(": ")).unwrap_or(l))
+        .last()
+}
+
+/// The verdict on `exe` from `link-check`'s output (`ok`: its exit status was 0).
+pub fn verdict_of(out: &str, ok: bool, exe: &str) -> Verdict {
     let not = |s: String| Verdict { verified: false, summary: s };
     if field(out, "link-check: ").is_none() {
         // `cargo fv link-proof` stopped before the checker (no kept codegen unit, …)
@@ -62,7 +75,18 @@ pub fn verdict_of(out: &str, ok: bool) -> Verdict {
             let detail = out.lines().find(|l| l.trim_start().starts_with("BIN ")).map(|l| format!(" — {}", l.trim())).unwrap_or_default();
             return not(format!("not verified: binary check failed: {b}{detail}"));
         }
-        None => return not("not verified: link-check ran no binary check (lake build link-check)".into()),
+        None => {
+            return not(match stop_reason(out, exe) {
+                Some(why) if why.starts_with("link-proof skipped ") => format!(
+                    "not verified: link-check stopped before the binary check: {why} (the executable links \
+                     Lean-compiled code that is unverified, so it is not the proven program; `cargo fv report \
+                     --functions` lists the unverified functions, and --lean-link --verified keeps cg_clif's \
+                     code for them)"
+                ),
+                Some(why) => format!("not verified: link-check stopped before the binary check: {why}"),
+                None => "not verified: link-check stopped before the binary check without a reason".into(),
+            })
+        }
     }
     if !ok || field(out, "okB: ") != Some("true") {
         return not(format!("not verified: the crate checker fails (okB){}", first_fail.map(|f| format!(": {f}")).unwrap_or_default()));
@@ -104,8 +128,66 @@ pub fn check(fv_dir: &Path, exe: &str, manifest: Option<&str>) -> Verdict {
         Ok(o) => {
             let mut text = String::from_utf8_lossy(&o.stdout).into_owned();
             text.push_str(&String::from_utf8_lossy(&o.stderr));
-            verdict_of(&text, o.status.success())
+            verdict_of(&text, o.status.success(), exe)
         }
         Err(e) => not(format!("not checked: {e}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::verdict_of;
+
+    const EXE: &str = "/w/target/fv/plain/aarch64-unknown-linux-musl/debug/build/bigframe-unwind/938e46b67ec0fe2f/out/bigframe_unwind-938e46b67ec0fe2f";
+    const SKIPPED: &str = "link-proof skipped 1 function(s) of the region: __fv_e90dc2697494__RNxC15bigframe_unwind12H1IxI06hs9Qw: unverified: outside clif-subset-v2 E";
+
+    /// #1008: link-check stops at an unverified function of the region (examples/bigframe-unwind).
+    /// The verdict names the function and the reason, not a missing tool.
+    #[test]
+    fn skipped_function_is_the_reason() {
+        let link_proof = format!("cargo fv link-proof: 74 functions of 2 codegen unit(s) of {EXE} (skipped 1, left out of the region 0), 2554 executable symbols → /w/bin-check/bundle.json\n");
+        // `check` appends stderr to stdout; a log with both streams merged has the header last
+        for out in [
+            format!("link-check: {EXE}\n{link_proof}link-check: {EXE}: {SKIPPED}\n"),
+            format!("{link_proof}link-check: {EXE}: {SKIPPED}\nlink-check: {EXE}\n"),
+        ] {
+            let v = verdict_of(&out, false, EXE);
+            assert!(!v.verified);
+            assert!(v.summary.starts_with(&format!("not verified: link-check stopped before the binary check: {SKIPPED} (")), "{}", v.summary);
+            assert!(!v.summary.contains("lake build"), "{}", v.summary);
+        }
+    }
+
+    #[test]
+    fn other_stops() {
+        // another message of link-check after its header
+        let v = verdict_of(&format!("link-check: {EXE}\nlink-check: {EXE}: unit a-1: no data.clif\n"), false, EXE);
+        assert_eq!(v.summary, "not verified: link-check stopped before the binary check: unit a-1: no data.clif");
+        // only the header (link-check died)
+        let v = verdict_of(&format!("link-check: {EXE}\n"), false, EXE);
+        assert_eq!(v.summary, "not verified: link-check stopped before the binary check without a reason");
+        // review finding (CiGate2Review 2): link-check cannot read the bundle and stops before
+        // its header; the one line is the reason, not a header to drop
+        let v = verdict_of("link-check: /w/bin-check/bundle.json: unexpected end of input\n", false, EXE);
+        assert_eq!(v.summary, "not verified: link-check stopped before the binary check: /w/bin-check/bundle.json: unexpected end of input");
+        // link-check did not run: `cargo fv link-proof` stopped first
+        let v = verdict_of("cargo fv: no linked executable in /w/tmp (build with --keep-temps)\n", false, EXE);
+        assert!(v.summary.starts_with("not checked: "), "{}", v.summary);
+    }
+
+    #[test]
+    fn verified_and_failing() {
+        let ok = format!(
+            "link-check: {EXE}\n  okB: true\n  --prune: 74 of 74 functions pass (0 dropped)\n  binary: ok\n  stack: no call cycle\n"
+        );
+        let v = verdict_of(&ok, true, EXE);
+        assert!(v.verified, "{}", v.summary);
+        assert!(v.summary.starts_with("verified: E2E.Binary.binary_correct holds for its 74 Lean-compiled functions"), "{}", v.summary);
+        let pruned = ok.replace("74 of 74 functions pass (0 dropped)", "71 of 74 functions pass (3 dropped)");
+        let v = verdict_of(&pruned, true, EXE);
+        assert!(!v.verified);
+        assert!(v.summary.starts_with("not verified: 3 of 74 Lean-compiled functions fail"), "{}", v.summary);
+        let v = verdict_of(&ok.replace("binary: ok", "binary: FAIL 2 excerpts"), true, EXE);
+        assert!(v.summary.starts_with("not verified: binary check failed: FAIL 2 excerpts"), "{}", v.summary);
     }
 }
