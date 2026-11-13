@@ -1,8 +1,13 @@
+import contextlib
 import importlib.util
+import io
 import json
+import os
 from pathlib import Path
+import sys
 import tempfile
 import unittest
+from unittest import mock
 
 SPEC = importlib.util.spec_from_file_location("stock_ratchet", Path(__file__).with_name("stock-comparison-ratchet.py"))
 RATCHET = importlib.util.module_from_spec(SPEC)
@@ -68,6 +73,51 @@ class CheckTests(unittest.TestCase):
             (Path(temp) / RATCHET.MEMBER).write_text(json.dumps({"run_attempt": 1}))
             self.assertEqual(RATCHET.newest_summary(Path(temp))["run_attempt"], 1)
             with self.assertRaises(SystemExit): RATCHET.newest_summary(Path(temp) / "missing")
+
+
+class NoResultTests(unittest.TestCase):
+    """#1018: a measuring job that did not succeed is a failed check, never a skipped one."""
+
+    def run_main(self, measured, files=()):
+        with tempfile.TemporaryDirectory() as temp:
+            for attempt, data in files:
+                d = Path(temp) / f"stock-comparison-summary-{attempt}"; d.mkdir()
+                (d / RATCHET.MEMBER).write_text(json.dumps(data))
+            step_summary = Path(temp) / "step-summary.md"
+            env = {"GITHUB_RUN_ID": "123", "CI_HEAD_SHA": HEAD, "GITHUB_REPOSITORY": "eth-act/clifv",
+                   "GITHUB_STEP_SUMMARY": str(step_summary)}
+            if measured is not None:
+                env["MEASURE_RESULT"] = measured
+            out = io.StringIO()
+            with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(sys, "argv", ["ratchet", temp]), \
+                    contextlib.redirect_stdout(out):
+                try:
+                    status = RATCHET.main()
+                except SystemExit as stop:
+                    status = stop.code
+            return status, out.getvalue(), step_summary.read_text() if step_summary.exists() else ""
+
+    def test_failed_cancelled_or_skipped_measurement_fails_with_a_message(self):
+        passing = dict(summary(), run_attempt=1)
+        for measured in ("failure", "cancelled", "skipped", ""):
+            # an earlier attempt's passing summary does not stand for the failed attempt
+            for files in ((), ((1, passing),)):
+                status, out, step_summary = self.run_main(measured, files)
+                self.assertEqual(status, 1, measured)
+                self.assertIn("::error title=No stock-comparison result::", out)
+                self.assertIn("gh run rerun 123 --failed", out)
+                self.assertIn("No stock-comparison result", step_summary)
+                self.assertIn(f"`{measured or 'unknown'}`", step_summary)
+
+    def test_successful_measurement_is_checked_as_before(self):
+        for measured in ("success", None):
+            status, out, _ = self.run_main(measured, ((1, dict(summary(), run_attempt=1)),))
+            self.assertEqual(status, 0); self.assertIn("+0 / -0", out)
+            status, out, _ = self.run_main(measured, ((1, dict(summary(lost=[LOST]), run_attempt=1)),))
+            self.assertEqual(status, 1); self.assertNotIn("No stock-comparison result", out)
+            # no summary at all is a failure too, not a pass
+            self.assertNotEqual(self.run_main(measured)[0], 0)
+
 
 
 if __name__ == "__main__":

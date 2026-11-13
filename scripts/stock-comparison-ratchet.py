@@ -6,6 +6,12 @@ accepts the losses; it is read when this job runs, so re-running the job after l
 passes. On `main` there is no override: the commit is marked, and the next push compares
 with it. When no baseline exists there is nothing to compare, and the check passes; when one
 exists but could not be retrieved or read, the check fails (the label does not override that).
+
+MEASURE_RESULT is the result of the workflow's measuring job ("Build and compare"). Anything
+but `success` (it failed, ran out of time, lost its runner) means there is no measurement of
+this commit: the check fails with "no result", whatever an earlier attempt measured and
+whatever the labels say, since lost matches cannot be ruled out (#1018: a skipped check read
+as a pass). Without the variable the summary alone decides (a missing summary fails).
 """
 import argparse
 import json
@@ -16,6 +22,7 @@ import subprocess
 LABEL = "stock-comparison-accept-losses"
 MEMBER = "ci-comparison.ci-summary.json"
 SHOWN = 50
+NO_RESULT = "No stock-comparison result"
 
 
 def newest_summary(directory):
@@ -67,14 +74,28 @@ def check(summary, run_id, head, labels):
     return 1, lines
 
 
+def no_result(result, run_id):
+    """Report lines when the measuring job did not succeed."""
+    return [f"{NO_RESULT}: the job \"Build and compare\" ended as `{result or 'unknown'}` (it failed, ran out "
+            "of time or lost its runner; its annotations and log say which). Nothing was measured for this "
+            "commit, so lost matches cannot be ruled out.",
+            f"Re-run the failed jobs of this workflow run (`gh run rerun {run_id} --failed`). "
+            f"The label {LABEL} does not override a missing measurement."]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("summaries", type=Path, help="directory with the downloaded summary artifacts")
     args = parser.parse_args()
-    number = os.environ.get("PR_NUMBER", "")
-    labels = pr_labels(os.environ["GITHUB_REPOSITORY"], number) if number else None
-    status, lines = check(newest_summary(args.summaries), int(os.environ["GITHUB_RUN_ID"]),
-                          os.environ["CI_HEAD_SHA"], labels)
+    run_id = int(os.environ["GITHUB_RUN_ID"])
+    measured = os.environ.get("MEASURE_RESULT")
+    if measured is not None and measured != "success":
+        status, lines = 1, no_result(measured, run_id)
+        print(f"::error title={NO_RESULT}::{' '.join(lines)}")
+    else:
+        number = os.environ.get("PR_NUMBER", "")
+        labels = pr_labels(os.environ["GITHUB_REPOSITORY"], number) if number else None
+        status, lines = check(newest_summary(args.summaries), run_id, os.environ["CI_HEAD_SHA"], labels)
     print("\n".join(lines))
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:

@@ -48,7 +48,52 @@ Every pull request and every push to `main` runs the full pipeline on
 `ubuntu-24.04`, with two comparison workers. A push to `main` writes the job
 summary and saves the artifacts; it posts no comment. CI uses `FV_COMPARE_MEMCAP=0`, because a systemd user session is not
 required on the hosted runner. The workflow installs the checksum-pinned Lean
-toolchain and caches toolchains, Rust downloads, and compiler build outputs.
+toolchain and caches toolchains, Rust downloads, and Rust build outputs.
+
+### Lean executables in CI
+
+The job does not build Lean from nothing (#1018). The four Lean executables the
+pipeline runs (`LEAN_EXES` in `scripts/stock-compiler-comparison.sh`) import 418
+of the tree's modules. A plain `lake build` of them on one hosted runner (16 GB,
+no swap, one `lean` per core) lost the runner or ran out of time after every
+Lean source change. Instead:
+
+1. `scripts/stock-comparison-lean-build.py` picks a Full gate build
+   (`.github/workflows/full-gate.yml`, artifact `lake-full`): the one of the
+   tested commit if there is one, otherwise the complete, unexpired one that
+   leaves the fewest recorded seconds of those 418 modules to build (a module
+   whose source differs from that build's commit, and its importers). After a
+   squash merge this is usually the build of the pull request's head, which has
+   the same tree. Only runs of the Full gate workflow in this repository count,
+   never a `pull_request` run and never a partial build.
+2. `.github/actions/fv-lean` unstages that build and the workflow's own saved
+   outputs (Actions cache `stock-lean-*`) into the Lake cache. Lake's cache is
+   keyed by each module's inputs, so an older or unrelated build is safe: Lake
+   restores a module only when its source, its imports, the toolchain and the
+   Lake configuration match. No module of the 418 reads a file while it
+   elaborates (`scripts/test_stock_comparison_lean_build.py` checks this).
+3. `.github/scripts/stock-comparison-lean.sh` builds what is left with
+   `scripts/lake-serial-build.py` under the limits of the Full gate's shards
+   (swap, heavy modules alone), within `STOCK_LEAN_LIMIT_S` (150 minutes; the
+   whole 418 modules are estimated at 105). It saves the result for later runs;
+   after a failure or the time limit it saves the modules that did build, so a
+   re-run continues from them.
+4. The pipeline then runs with `FV_COMPARE_PREBUILT=1`: an executable that is
+   out of date is an error there, not a build.
+
+A pull request that changes Lean sources is measured before its own Full gate
+run exists, so its changed modules and their importers are built in step 3;
+when only the lookup itself fails (an API error), the job fails rather than
+building everything.
+
+**No result is a failed check.** A measurement that fails, runs out of time
+(`STOCK_LEAN_LIMIT_S`, `STOCK_COMPARE_LIMIT_S`) or loses its runner fails
+**Build and compare** with an error annotation titled `No stock-comparison
+result`, and **Check lost matches** fails with the same title instead of being
+skipped (a skipped check reads as "nothing lost"). The label
+`stock-comparison-accept-losses` does not override it. Re-run the failed jobs
+(`gh run rerun <run> --failed`). Only a run cancelled by a newer commit of the
+same pull request reports nothing.
 
 A green measurement job means that the full inventory was processed and the
 report is valid. It does **not** mean compiler equivalence. The pipeline exits
