@@ -1284,7 +1284,7 @@ theorem prepare_facts {vc vcp : VCode} (h : prepare vc = .ok vcp) :
         (keep vc.blocks (reachable ss0)).size (next, B, E) ∧
       ({ vc with blocks := B ++ E } : VCode).cfg = .ok (ss2, ps2) ∧
       vcp = { vc with blocks := (prepOrder (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2)
-        ss2) ss2).map fun i => (B ++ E)[i]! } := by
+        ss2) ss2).map (fun i => (B ++ E)[i]!) } := by
   unfold prepare at h
   simp only [bind, Except.bind] at h
   split at h
@@ -1666,9 +1666,9 @@ theorem pop_mem {α : Type} {xs : Array α} {x : α} (h : x ∈ xs.pop.toList) :
   rw [Array.toList_pop] at h
   exact List.dropLast_subset _ h
 
-/-- `prepare`'s critical-edge blocks (`edgeBlock`) of the split blocks `B ++ E` with successors
-`ss2` (`prepare_facts`), named `vc`, `B`, `E`, `ss2` where it is used. -/
-set_option quotPrecheck false in
+-- `prepare`'s critical-edge blocks (`edgeBlock`) of the split blocks `B ++ E` with successors
+-- `ss2` (`prepare_facts`), named `vc`, `B`, `E`, `ss2` where it is used.
+set_option hygiene false in
 local notation "EB" => edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2
 
 section main
