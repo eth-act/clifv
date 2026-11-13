@@ -52,7 +52,7 @@ example : (scan 7 [ext4, cmpE4, ext5, cmpE5, liveCset, retCset] []).1 =
 example : ∃ vc : VCode, vc.blocks.size = 1 ∧
     (clean vc).blocks[0]!.insts.toList = [cmp01, liveCset, retCset] := by
   refine ⟨⟨"cset_witness", #[⟨0, #[cmp01, deadCset, cmp01, liveCset, retCset], #[], #[]⟩],
-    #[.int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_, ?_⟩ <;> decide
+    #[.int, .int, .int, .int], 0, 0, #[], #[], none⟩, ?_, ?_⟩ <;> decide
 
 example : pureForm (.mov .size64 (.vreg 1 .int) (.vreg 0 .int)) = true :=
   pureForm_of_pureNoFlags rfl
@@ -76,12 +76,12 @@ the successor compares first (the cross-block rule never changed generated code,
 so does one whose successor reads the flags first. -/
 example : ∃ vc : VCode, (clean vc).blocks[0]!.insts.toList = [cmp01, .jump 1] := by
   refine ⟨⟨"cset_jump", #[⟨0, #[cmp01, .jump 1], #[], #[]⟩,
-    ⟨1, #[cmp0, liveCset, retCset], #[], #[]⟩], #[.int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_⟩
+    ⟨1, #[cmp0, liveCset, retCset], #[], #[]⟩], #[.int, .int, .int, .int], 0, 0, #[], #[], none⟩, ?_⟩
   decide +kernel
 
 example : ∃ vc : VCode, (clean vc).blocks[0]!.insts.toList = [cmp01, .jump 1] := by
   refine ⟨⟨"cset_jump_live", #[⟨0, #[cmp01, .jump 1], #[], #[]⟩,
-    ⟨1, #[liveCset, cmp0, retCset], #[], #[]⟩], #[.int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_⟩
+    ⟨1, #[liveCset, cmp0, retCset], #[], #[]⟩], #[.int, .int, .int, .int], 0, 0, #[], #[], none⟩, ?_⟩
   decide +kernel
 
 example : JumpPlain (mspec 0) := mspec_jumpPlain 0
@@ -113,7 +113,7 @@ example : (scan 4 [cmp01, fcmp01, liveCset, retCset] []).1 = [fcmp01, liveCset, 
 example : ∃ vc : VCode, vc.blocks.size = 1 ∧
     (prune vc).blocks[0]!.insts.toList = [fcmp00, liveCset, retCset] := by
   refine ⟨⟨"fcmp_witness", #[⟨0, #[fcmp00, deadCset, fcmp00, liveCset, retCset], #[], #[]⟩],
-    #[.float, .int, .int, .int], 0, 0, #[], #[]⟩, ?_, ?_⟩ <;> decide +kernel
+    #[.float, .int, .int, .int], 0, 0, #[], #[], none⟩, ?_, ?_⟩ <;> decide +kernel
 
 private def fcmpLe : MInst := .fpuCmp .size32 (.vreg 0 .float) (.vreg 1 .float)
 private def fmovOne : MInst := .fpuMoveFPImm (.vreg 6 .float) ⟨0x70#8, .size32⟩ .size32
@@ -159,7 +159,7 @@ example : ∃ vc : VCode,
       [ext4, ext5, cmpE5, fcselEq, retF] ∧
     (prune vc).blocks[0]!.insts.toList = [ext5, cmpE5, fcselEq, retF] := by
   refine ⟨⟨"dead_chain", #[⟨0, #[ext4, cmpE4, deadCset, ext5, cmpE5, fcselEq, retF], #[], #[]⟩],
-    #[.int, .int, .int, .int, .int, .int, .float, .float, .float], 0, 0, #[], #[]⟩, ?_, ?_⟩ <;>
+    #[.int, .int, .int, .int, .int, .int, .float, .float, .float], 0, 0, #[], #[], none⟩, ?_, ?_⟩ <;>
     decide +kernel
 
 /-- A chain whose head is read elsewhere stays: the `uxtb` of the dropped compare also feeds a
@@ -169,7 +169,7 @@ private def ret4 : MInst := .rets [(.vreg 8 .float, .v 0), (.vreg 4 .int, .x 0)]
 example : ∃ vc : VCode,
     (prune vc).blocks[0]!.insts.toList = [ext4, ext5, cmpE5, fcselEq, ret4] := by
   refine ⟨⟨"live_chain", #[⟨0, #[ext4, cmpE4, deadCset, ext5, cmpE5, fcselEq, ret4], #[], #[]⟩],
-    #[.int, .int, .int, .int, .int, .int, .float, .float, .float], 0, 0, #[], #[]⟩, ?_⟩
+    #[.int, .int, .int, .int, .int, .int, .float, .float, .float], 0, 0, #[], #[], none⟩, ?_⟩
   decide +kernel
 
 /-- A chain head that a kept instruction of another block reads stays: the boundary holds every
@@ -180,7 +180,7 @@ example : ∃ vc : VCode,
     (prune vc).blocks[0]!.insts.toList = [ext4, ext5, cmpE5, liveCset, .jump 1] := by
   refine ⟨⟨"cross_block_chain",
     #[⟨0, #[ext4, cmpE4, deadCset, ext5, cmpE5, liveCset, .jump 1], #[], #[]⟩,
-      ⟨1, #[ret34], #[], #[]⟩], #[.int, .int, .int, .int, .int, .int], 0, 0, #[], #[]⟩, ?_⟩
+      ⟨1, #[ret34], #[], #[]⟩], #[.int, .int, .int, .int, .int, .int], 0, 0, #[], #[], none⟩, ?_⟩
   decide +kernel
 
 end Backend.DeadCleanup
