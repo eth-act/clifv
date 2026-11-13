@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The verdict of a gate line whose exit status alone does not say that the check ran (#998).
 
-usage: gate-line-check.py cargo-fv EXAMPLE [--lean-link] [--known FILE] [--expected FILE] [--summary FILE] COMPARE_LOG FV_LOG
+usage: gate-line-check.py cargo-fv EXAMPLE [--lean-link] [--known FILE] [--expected FILE] [--base FILE] [--summary FILE] COMPARE_LOG FV_LOG
        gate-line-check.py arm-fault-cosim LOG
 
 Exit status 0 iff the log is that of a green line; prints one line: the lines the verdict was
@@ -35,7 +35,11 @@ in its `(logs: DIR)`):
     EXECUTABLES; the N and the V of the functions line are not below LEAN and VERIFIED (a drop
     is a regression) and not above them either: a rise is recorded by changing the file in the
     same PR (the verdict prints the new line). Without the pins `N of N` passed with a smaller N:
-    a crate whose codegen units all fall back to cg_clif leaves the executable count (#1004);
+    a crate whose codegen units all fall back to cg_clif leaves the executable count (#1004).
+    With --base FILE (the expected counts of the base revision: main's copy, which the CI gate
+    fetches) no pin of EXAMPLE is below the base revision's: a PR records rises, it cannot make
+    a drop green by lowering the pin in the same change (LEARNINGS.md, "Untrusted input never
+    widens the policy"); a deliberate drop is a parent decision, merged with this line red;
   - with --lean-link (the lines that link with lean-ld): at least one `linked by lean-ld` line
     and no `linked by rust-lld` line in FV_LOG.
   --summary FILE appends the counts (pinned and measured) and the known-unverified executables
@@ -143,6 +147,16 @@ def pin_fails(example, got, pinned):
     return fails
 
 
+def base_fails(pinned, base):
+    """The failed conditions of the pins against the base revision's pins of the example (None:
+    it has none, e.g. a new example)."""
+    if pinned is None or base is None:
+        return []
+    return [f"pinned {what}: {p} is below the base revision's {b} (scripts/gate-expected-counts.txt on main): "
+            "a PR may raise a pin, lowering one is a parent decision"
+            for what, p, b in zip(PINS, pinned, base) if p < b]
+
+
 def binary_fails(lines, known):
     """The failed conditions of the binary check, for the known-unverified entries `known`."""
     counts = [(l, COUNT.match(l)) for l in lines if l.startswith("cargo fv: binary check:")]
@@ -183,10 +197,11 @@ def fallback_fails(fv_log, lean_ld):
     return fails
 
 
-def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None):
+def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None, base=None):
     """(ok, one-line summary) for the text of a compare.sh log and of cargo fv's own log;
     `lean_link`: a --lean-link line; `known`: the known-unverified entries [(executable, issue)]
-    of the example; `pinned`: its expected (executables, Lean-compiled, verified) counts."""
+    of the example; `pinned`: its expected (executables, Lean-compiled, verified) counts; `base`:
+    the base revision's (None: not compared)."""
     lines = text.splitlines()
     same = [l for l in lines if l.startswith("SAME")]
     different = [l for l in lines if l.startswith("DIFFERENT")]
@@ -207,6 +222,7 @@ def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None):
     fails += fallback_fails(fv_log, lean_link)
     fails += binary_fails(lines, list(known))
     fails += pin_fails(example, measured(lines), pinned)
+    fails += base_fails(pinned, base)
     shown = [l for l in lines if l.startswith("cargo fv: binary check:")] + same + different
     shown += [m[0].removeprefix("cargo fv: ") for m in funcs]
     if pinned is not None:
@@ -218,9 +234,10 @@ def cargo_fv(example, text, lean_link, known=(), fv_log="", pinned=None):
     return not fails, " ".join(shown + [f"FAIL: {f}" for f in fails])
 
 
-def summary(example, text, known, pinned, env=os.environ):
+def summary(example, text, known, pinned, env=os.environ, base=None):
     """Markdown for the CI job summary: the pinned and the measured counts of the line, and the
-    known-unverified executables with their issue and cargo fv's reason."""
+    known-unverified executables with their issue and cargo fv's reason; `base`: the base
+    revision's pins, named when they differ."""
     lines = text.splitlines()
     got = measured(lines)
     out = [f"### cargo fv counts: {example}", "",
@@ -240,8 +257,12 @@ def summary(example, text, known, pinned, env=os.environ):
             "recorded by changing the file in the same PR."]
     if None not in got and pinned is not None and got != pinned:
         out += ["", "This run's line: `" + "  ".join([example] + [str(g) for g in got]) + "`"]
+    if base is not None and pinned is not None and base != pinned:
+        out += ["", "The base revision (main) pins `" + "  ".join([example] + [str(b) for b in base]) + "`"
+                + ("; **a pin below it is red**: a PR may raise a pin, lowering one is a parent decision."
+                   if base_fails(pinned, base) else "; no pin of this branch is below it.")]
     if known:
-        base = env.get("GITHUB_SERVER_URL", ""), env.get("GITHUB_REPOSITORY", "")
+        repo = env.get("GITHUB_SERVER_URL", ""), env.get("GITHUB_REPOSITORY", "")
         why = collections.defaultdict(list)
         for m in filter(None, map(EXE.match, lines)):
             if not m[2].startswith("verified: "):
@@ -251,7 +272,7 @@ def summary(example, text, known, pinned, env=os.environ):
                 "(`scripts/gate-known-unverified.txt`): one more is red, and so is one fewer (the PR that "
                 "fixes an entry removes it).", ""]
         for e, issue in known:
-            link = f"{base[0]}/{base[1]}/issues/{issue[1:]}" if all(base) else issue
+            link = f"{repo[0]}/{repo[1]}/issues/{issue[1:]}" if all(repo) else issue
             reasons = why[e] or ["(no `not verified` line in this run)"]
             out.append(f"- `{e}`: {link}: {reasons.pop(0)[:600]}")
     return "\n".join(out) + "\n\n"
@@ -288,7 +309,7 @@ def main(argv):
     opts, args = {}, []
     while rest:
         a = rest.pop(0)
-        if a in ("--known", "--expected", "--summary") and kind == "cargo-fv" and rest and a not in opts:
+        if a in ("--known", "--expected", "--base", "--summary") and kind == "cargo-fv" and rest and a not in opts:
             opts[a] = rest.pop(0)
         elif a == "--lean-link" and kind == "cargo-fv" and a not in opts:
             opts[a] = True
@@ -309,12 +330,16 @@ def main(argv):
                 fv_log = f.read()
             known, errors = read_known(pathlib.Path(opts.get("--known", KNOWN)).read_text(), example)
             pinned, errors2 = read_expected(pathlib.Path(opts.get("--expected", EXPECTED)).read_text(), example)
-            ok, line = cargo_fv(example, text, "--lean-link" in opts, known, fv_log, pinned)
-            if errors + errors2:
-                ok, line = False, " ".join([line] + [f"FAIL: {e}" for e in errors + errors2])
+            base, errors3 = (None, [])
+            if "--base" in opts:
+                base, errors3 = read_expected(pathlib.Path(opts["--base"]).read_text(), example)
+                errors3 = [f"base revision: {e}" for e in errors3]
+            ok, line = cargo_fv(example, text, "--lean-link" in opts, known, fv_log, pinned, base)
+            if errors + errors2 + errors3:
+                ok, line = False, " ".join([line] + [f"FAIL: {e}" for e in errors + errors2 + errors3])
             if "--summary" in opts:
                 with open(opts["--summary"], "a") as f:
-                    f.write(summary(example, text, known, pinned))
+                    f.write(summary(example, text, known, pinned, base=base))
     except OSError as e:
         print(f"FAIL: {e}")
         return 1

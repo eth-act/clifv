@@ -394,6 +394,30 @@ class PinnedCounts(unittest.TestCase):
         # outside CI the issue is named, not linked
         self.assertIn("- `b_slices/values`: #1003: not verified", gc.summary("survey", survey(), KNOWN, PINNED, {}))
 
+    def test_pin_lowered_below_the_base_revision(self):
+        # review finding (CiGate2Review 1): a drop was green when the same change lowered the
+        # pin. The log and the branch's pins agree (6 executables, 3000 functions); main pins more
+        log = "".join(exe(c, c) + exe(c, "values") for c in ("a_arith", "b_slices", "c_structs_enums")) + count(6, 6)
+        log += ("cargo fv: 3000 of 3251 functions compiled by the Lean backend (3000 verified): your crate(s)\n"
+                "SAME: 16 test outcomes identical (logs: /t)\n")
+        lowered = (6, 3000, 3000)
+        self.assertTrue(fv(log, True, pinned=lowered)[0])
+        ok, line = gc.cargo_fv("survey", log, True, (), LEAN_LD, lowered, PINNED)
+        self.assertFalse(ok)
+        for what, p, b in (("executables through the binary check", 6, 8), ("functions compiled by the Lean backend", 3000, 3251),
+                           ("verified functions", 3000, 3251)):
+            self.assertIn(f"FAIL: pinned {what}: {p} is below the base revision's {b}", line)
+        # one lowered pin is enough; a raised or an equal pin is the recorded rise
+        self.assertFalse(gc.cargo_fv("survey", survey(bad=()), True, (), LEAN_LD, PINNED, (8, 3251, 3252))[0])
+        self.assertTrue(gc.cargo_fv("survey", survey(bad=()), True, (), LEAN_LD, PINNED, PINNED)[0])
+        self.assertTrue(gc.cargo_fv("survey", survey(bad=()), True, (), LEAN_LD, PINNED, (7, 3200, 3100))[0])
+        # an example the base revision does not pin (a new example, or the file is new)
+        self.assertTrue(gc.cargo_fv("survey", survey(bad=()), True, (), LEAN_LD, PINNED, None)[0])
+        md = gc.summary("survey", log, [], lowered, {}, PINNED)
+        self.assertIn("The base revision (main) pins `survey  8  3251  3251`; **a pin below it is red**", md)
+        self.assertIn("no pin of this branch is below it", gc.summary("survey", survey(bad=()), [], PINNED, {}, (7, 3200, 3100)))
+        self.assertNotIn("base revision", gc.summary("survey", survey(bad=()), [], PINNED, {}, PINNED))
+
 
 class CommandLine(unittest.TestCase):
     def run_script(self, *a):
@@ -452,6 +476,21 @@ class CommandLine(unittest.TestCase):
             self.assertEqual(run("survey", "--lean-link", log, str(fvlog) + ".absent").returncode, 1)
             self.assertEqual(run("survey", "--lean-link", log, fvlog, known=str(known) + ".absent").returncode, 1)
             self.assertEqual(run("survey", "--lean-link", log, fvlog, pins=str(pins) + ".absent").returncode, 1)
+            # --base: main's pins; a pin of the branch below them is red, an unreadable base too
+            base = t / "base.txt"
+            base.write_text(PINS)
+            self.assertEqual(run("survey", "--lean-link", "--base", base, log, fvlog).returncode, 0)
+            base.write_text(PINS.replace("survey  8  3251  3251", "survey  8  3260  3260"))
+            r = run("survey", "--lean-link", "--base", base, log, fvlog)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("FAIL: pinned verified functions: 3251 is below the base revision's 3260", r.stdout)
+            base.write_text("")
+            self.assertEqual(run("survey", "--lean-link", "--base", base, log, fvlog).returncode, 0)
+            base.write_text("survey 8 oops\n")
+            r = run("survey", "--lean-link", "--base", base, log, fvlog)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("FAIL: base revision: unreadable expected-counts line", r.stdout)
+            self.assertEqual(run("survey", "--lean-link", "--base", str(base) + ".absent", log, fvlog).returncode, 1)
 
     def test_default_files(self):
         # without --known and --expected the checked-in files apply (a log with deps' pinned counts)

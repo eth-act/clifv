@@ -90,14 +90,15 @@ cargo fv link-proof --exe "$exe" || true
 cd "$ROOT"
 "$ROOT/.lake/build/bin/dead-cleanup-generate" crate-proofs/Crates
 
-# link-check names the executable by its absolute path (in comments only)
+# link-check names the executable by its absolute path (in comments only): make it the path
+# inside the repository (a literal replacement: the checkout's path is not a pattern)
+written=()
 for m in "${GEN[@]}"; do
   [ -f "crate-proofs/Crates/$m.lean" ] || { echo "regen-crate-proofs: crate-proofs/Crates/$m.lean was not written" >&2; exit 1; }
-  for f in "crate-proofs/Crates/$m.lean" "crate-proofs/Crates/$m"/*.lean; do
-    [ -f "$f" ] || continue   # a module that is not split has no directory
-    sed -i "s|$ROOT/||g" "$f"
-    if grep -qF "$ROOT" "$f"; then
-      echo "regen-crate-proofs: $f still names this checkout ($ROOT)" >&2; exit 1
-    fi
+  written+=("crate-proofs/Crates/$m.lean")
+  for f in "crate-proofs/Crates/$m"/*.lean; do
+    # a module that is not split has no directory
+    if [ -f "$f" ]; then written+=("$f"); fi
   done
 done
+python3 scripts/strip-path-prefix.py "$ROOT/" "${written[@]}"

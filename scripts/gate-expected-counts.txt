@@ -9,6 +9,9 @@
 #   this file records the rise: the PR that verifies more functions changes its line in the same
 #   PR (the gate's verdict and the CI job summary print the new line). So the pins never lag.
 # - A PR that changes an example (a new test, a dependency) changes its line as well.
+# - No pin may fall: the CI gate also reads main's copy of this file, and a pin below main's is
+#   red, so a PR cannot turn a drop green by lowering the pin. A deliberate drop (an example
+#   loses a function, a stricter check un-verifies some) is a parent decision.
 #
 # Format: EXAMPLE  EXECUTABLES  LEAN  VERIFIED   (the directory name under examples/)
 
