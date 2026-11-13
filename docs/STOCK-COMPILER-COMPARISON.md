@@ -20,6 +20,13 @@ This comparison is one of the two stock-parity metrics. Both count (`AGENTS.md`)
 
 A parity PR reports both results and loses no match on either.
 
+The filetest comparison reports two counts. **Exact function outputs** are measured through the
+stock-configured driver (`--stock-config`), which runs unproved steps after allocation (the frame
+decision, `argLoadsFromSp`, `dropDeadNotrapLoads`, native `i128`). The **honest metric** counts
+the outputs of the proved compiler, with the test's settings as compiler input and no unproved
+step, that are identical to stock for functions `backend_correct` covers ("The honest metric"
+below). Both have a lost-match check.
+
 ## Reproduce
 
 One command from a fresh checkout builds all three executables, validates the
@@ -129,7 +136,9 @@ compared with the `main` commit it is based on, not with a newer `main`. The
 summary records the outputs gained and lost since that baseline.
 
 The **Check lost matches** job (`scripts/stock-comparison-ratchet.py`) fails
-when an output that matched on the baseline no longer matches. If the loss is
+when an output that matched on the baseline no longer matches, in either metric
+(the summary's `matched` and `proved_matched`; a baseline from before the honest
+metric compares the exact outputs only). If the loss is
 intended, add the label `stock-comparison-accept-losses` to the pull request and
 re-run that job; the label is read when the job runs. A push to `main` has no
 override: the commit is marked failed, and the next push compares with it. A
@@ -332,6 +341,33 @@ This adapter is **not covered by `backend_correct`**. Configured compilations ar
 explicitly marked unverified; register allocation retains its existing checker.
 The original fixed-configuration compiler/proof path is unchanged. Equal output
 is empirical evidence, not a Lean proof of equivalence to stock Cranelift.
+
+## The honest metric
+
+`lean-backend --settings request.json --settings-receipt receipt.json` is the proved
+settings mode: the request (the `--stock-config` schema) is compiler input, and the proved
+compiler (`cargo fv`'s default mode: regalloc2 checked by `checkAlloc`, dead cleanup, no
+`--opt`) compiles every function exactly as without the option. No stock-configured step runs:
+no `StockConfig.configure`, `argLoadsFromSp`, `dropDeadNotrapLoads` or `I128Native`.
+Settings the proved compiler does not implement reject the request (exit 3), as with
+`--stock-config`, or per function the function's output (`StockConfig.admit`): the checks of
+the table above, and a frame exactly where stock sets one up (`frameRequired`/`touchesFrame`).
+The proved compiler always sets up a frame today, so a leaf that stock compiles without one
+under `preserve_frame_pointers=false` is rejected; such a function stays compiled, because its
+callers' code does not depend on it. The receipt's `functions` gives per function
+`setting_rejection`, `unsupported`, or `backend_correct` (with `unverified`/`unvalidated`: why
+not). `--opt`, `--regalloc`, `--personality`, `--pipeline-t` and `--stock-config` are refused.
+
+`scripts/stock-compiler-compare.py` compiles every compilation group a second time in this mode
+(`--proved-compiler`, default `lean-backend`) and stores per function a compact `proved` row:
+its status as `compare_function` decides it, `backend_correct`, and `honest` (identical and
+covered). The totals give `proved_exact_code_artifacts` and `proved_function_statuses`
+(`identical_code_artifact_not_covered`: identical, outside `backend_correct`). CI fails on a
+failed proved compilation, as on a failed stock-configured one.
+
+First value: 76 of the 4,455 stock outputs at `41e51746d` (all 76 are among the 1,970 exact
+outputs). Of the others, 1,793 are leaves rejected for `preserve_frame_pointers=false`, 108 are
+identical but outside subset E, and 20 differ (#44, thread C).
 
 ## What counts as agreement
 

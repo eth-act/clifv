@@ -205,6 +205,20 @@ test('render marks a changed total and a first measurement', () => {
   assert.ok(body.includes('No earlier measurement'));
   assert.ok(body.includes('| Exact function outputs | 1 / 3 (33.3%) | \u2014 |'));
 });
+test('render adds the honest metric, with no change against a report from before it', () => {
+  const before = report([EXACT, DIFFERENT, UNSUPPORTED]).totals;
+  const after = { ...report([EXACT, EXACT, UNSUPPORTED]).totals, proved_exact_code_artifacts: 1 };
+  let { body, compact } = n.render(plan({ initial: { exact: 1, outputs: 3, sha: run().head_sha, totals: before },
+    latest: { exact: 2, outputs: 3, sha: run(11).head_sha, totals: after } }));
+  assert.ok(body.includes('| Exact function outputs | 2 / 3 (66.7%) | +1 |'));
+  assert.ok(body.includes('| Exact outputs of the proved compiler (honest) | 1 / 3 (33.3%) | \u2014 |'));
+  assert.ok(compact.includes('2/3 exact (+1), 1 honest at'));
+  const later = { ...after, proved_exact_code_artifacts: 2 };
+  ({ body, compact } = n.render(plan({ initial: { exact: 2, outputs: 3, sha: run(11).head_sha, totals: after },
+    latest: { exact: 2, outputs: 3, sha: run(12).head_sha, totals: later } })));
+  assert.ok(body.includes('| Exact outputs of the proved compiler (honest) | 2 / 3 (66.7%) | +1 |'));
+  assert.ok(compact.includes('2/3 exact (0), 2 honest (+1) at'));
+});
 test('render names lost matches with their commit range and author, and unmeasured commits', () => {
   const row = { run: run(11), url: 'https://example.com/run', exact: 0, outputs: 1,
     range: { authors: ['@contributor'], commits: [{ sha: run(11).head_sha, title: 'Change lowering' }], url: 'https://example.com/range' },

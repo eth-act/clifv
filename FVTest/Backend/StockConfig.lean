@@ -161,10 +161,13 @@ def usesCsdb (f : Clif.Function) : Bool :=
   f.blocks.any fun b =>
     b.body.any (fun s => s.inst matches .selectSpectreGuard ..) || b.term matches .brTable ..
 
-/-- The per-function part of the settings policy. `fs` is the function's CLIF before and after
-`i128` legalisation. Each error is a setting rejection (`allocate` records it). -/
-def configure (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
-    Except String AFunc := do
+/-- The per-function checks of the settings policy, shared by `configure` (stock-configured
+driver) and `admit` (proved settings mode). `fs` is the function's CLIF before and after `i128`
+legalisation. Each error is a setting rejection. The result is stock's frame decision: whether
+stock sets up a frame for this function (`preserve_frame_pointers`, or a frame the function
+needs). It changes no code. -/
+def checkFunction (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
+    Except String Bool := do
   if fs.isEmpty then throw s!"no CLIF function {vc.name} to check the settings against"
   if !c.pic && vc.blocks.any (fun b => b.insts.any (fun i => i matches .loadExtNameGot ..)) then
     throw "is_pic=false requires a non-PIC far-symbol lowering that Lean does not implement"
@@ -186,10 +189,47 @@ def configure (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
   -- `get_return_address` (`isa/aarch64/inst.isle:4577`).
   if c.signReturnAddress && (frame || c.signReturnAddressAll) then
     throw "sign_return_address=true signs this function's return address; Lean does not implement pointer authentication"
+  pure frame
+
+/-- The per-function part of the settings policy of the stock-configured driver:
+`checkFunction`, then the frame as stock decides it, and stack-argument loads from `sp` (both
+unproved). -/
+def configure (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
+    Except String AFunc := do
+  let frame ← checkFunction c fs vc af
   pure (if frame then argLoadsFromSp { af with frame } else { af with frame })
 
 /-- The start of the `unsupported` reason of a function that `configure` rejects. -/
 def rejectionPrefix : String := "stock configuration unsupported for this function: "
+
+/-- **Proved settings mode** (`lean-backend --settings`): the per-function admission. The
+function is compiled by the proved compiler unchanged (`af` is returned as allocated: no
+`configure`, no `argLoadsFromSp`, no `dropDeadNotrapLoads`, no native `i128`). Its output is
+claimed for the settings only where the proved compiler implements the settings for it: `checkFunction` passes, and the
+compiled function has a frame exactly when stock sets one up (the proved compiler always sets
+one up today, so a frameless leaf under `preserve_frame_pointers=false` is rejected). -/
+def admit (c : Config) (fs : List Clif.Function) (vc : VCode) (af : AFunc) :
+    Except String AFunc := do
+  let frame ← checkFunction c fs vc af
+  if frame != af.frame then
+    throw (if frame then "stock sets up a frame for this function; the compiled function has none"
+      else "preserve_frame_pointers=false: stock omits this function's frame; the proved compiler sets one up")
+  pure af
+
+/-- `admit` on each allocation of `run`, which it returns unchanged. Each rejection is recorded
+in `rejected` as (name, reason): the function stays compiled, so that its callers in the file
+are compiled as without the option (their code does not depend on the callee's frame), and its
+own output is not claimed for these settings (the receipt's `setting_rejection`). -/
+def admitWith (c : Config) (clif : String → List Clif.Function)
+    (rejected : IO.Ref (Array (String × String)))
+    (run : Array VCode → IO (Array (Except String AFunc))) (vcs : Array VCode) :
+    IO (Array (Except String AFunc)) := do
+  let results ← run vcs
+  for (vc, result) in vcs.zip results do
+    if let .ok af := result then
+      if let .error why := admit c (clif vc.name) vc af then
+        rejected.modify (·.push (vc.name, why))
+  pure results
 
 /-! ## Unused `notrap` loads (#970)
 
@@ -317,5 +357,17 @@ def receipt (request : Json) (error : Option String)
     match functionRejections with
     | some rs => [("function_rejections", Json.mkObj (rs.map fun (n, why) => (n, toJson why)))]
     | none => [])
+
+/-- The receipt of the proved settings mode (`lean-backend --settings`). `functions` gives, per
+function of the file, whether it was compiled, why not (`setting_rejection`: `admit`;
+`unsupported`), and whether `backend_correct` covers it (`unverified`, `unvalidated`: why not). -/
+def settingsReceipt (request : Json) (error : Option String)
+    (functions : List (String × Json)) (deadCleanup : Bool) : Json :=
+  Json.mkObj [("schema", toJson (1 : Nat)), ("request", request),
+    ("mode", toJson "proved"), ("dead_instruction_cleanup", toJson deadCleanup),
+    ("configuration_accepted", toJson error.isNone), ("error", toJson error),
+    ("proof_scope", toJson "the proved compiler, unchanged: per function, backend_correct covers it iff backend_correct is true"),
+    ("policy", toJson "exact requested flags, as --stock-config; a function is compiled only where the proved compiler implements the settings for it (StockConfig.admit: the checks of configure, and a frame exactly where stock sets one up); no configure, argLoadsFromSp, dropDeadNotrapLoads or native i128 lowering; no binary normalization"),
+    ("functions", Json.mkObj functions)]
 
 end StockConfig

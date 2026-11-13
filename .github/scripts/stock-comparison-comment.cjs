@@ -36,7 +36,24 @@ function paths(value, label) {
   return value;
 }
 
-function validateBaseline(b, matched) {
+// The honest metric's comparison with the baseline (`baseline_comparison.proved`).
+function validateProvedBaseline(p, proved) {
+  if (p === null || typeof p !== 'object' || typeof p.available !== 'boolean') throw new Error('Invalid honest comparison');
+  if (!p.available) {
+    if (typeof p.failed !== 'boolean' || typeof p.reason !== 'string' || p.reason.length > 300) {
+      throw new Error('Invalid honest comparison');
+    }
+    return;
+  }
+  for (const key of ['baseline_proved_exact_code_artifacts', 'gained_count', 'lost_count']) count(p[key], key);
+  entries(p.gained, 'honest gained', LISTED); entries(p.lost, 'honest lost', LISTED);
+  if (p.gained.length !== Math.min(p.gained_count, LISTED) || p.lost.length !== Math.min(p.lost_count, LISTED) ||
+      p.baseline_proved_exact_code_artifacts - p.lost_count + p.gained_count !== proved) {
+    throw new Error('Inconsistent honest comparison');
+  }
+}
+
+function validateBaseline(b, matched, proved) {
   if (b === null || typeof b !== 'object' || typeof b.available !== 'boolean') throw new Error('Invalid baseline comparison');
   if (!b.available) {
     if (typeof b.failed !== 'boolean') throw new Error('Invalid baseline failure flag');
@@ -52,6 +69,7 @@ function validateBaseline(b, matched) {
       b.baseline_exact_code_artifacts - b.lost_count + b.gained_count !== matched) {
     throw new Error('Inconsistent baseline comparison');
   }
+  validateProvedBaseline(b.proved, proved);
 }
 
 // The measurement: complete, consistent totals for this run and commit. The nightly digest
@@ -84,6 +102,11 @@ function validateMeasurement(data, run) {
       t.files_with_compared_function_outputs > scope ||
       t.files_all_aarch64_code_artifacts_identical > t.files_with_compared_function_outputs ||
       t.failed_stock_compile_assertions || t.source_files_modified) throw new Error('Inconsistent report totals');
+  // The honest metric; reports from before it have no such total.
+  if (t.proved_exact_code_artifacts !== undefined &&
+      count(t.proved_exact_code_artifacts, 'proved_exact_code_artifacts') > t.test_function_compilations) {
+    throw new Error('Inconsistent report totals');
+  }
   for (const key of ['elapsed_seconds', 'cpu_seconds', 'peak_runner_memory_used_bytes']) {
     if (!Number.isFinite(data[key]) || data[key] < 0 || data[key] > 2 ** 40) throw new Error(`Invalid ${key}`);
   }
@@ -100,7 +123,11 @@ function validate(data, run) {
   if (harness === null || typeof harness !== 'object' || Array.isArray(harness)) throw new Error('Invalid harness hashes');
   paths(Object.keys(harness), 'harness files');
   if (Object.values(harness).some(h => typeof h !== 'string' || !/^[0-9a-f]{64}$/.test(h))) throw new Error('Invalid harness hashes');
-  validateBaseline(data.baseline_comparison, t.exact_code_artifacts);
+  if (t.proved_exact_code_artifacts === undefined ||
+      entries(data.proved_matched, 'proved_matched', 1e5).length !== t.proved_exact_code_artifacts) {
+    throw new Error('Inconsistent honest outputs');
+  }
+  validateBaseline(data.baseline_comparison, t.exact_code_artifacts, t.proved_exact_code_artifacts);
   return data;
 }
 
@@ -135,6 +162,18 @@ function baselineSection(b, repo) {
   }
   if (b.lost_count) text += `\n**Lost matches** (${b.lost_count.toLocaleString('en-US')}):\n${listed(b.lost, b.lost_count, 30)}\n`;
   if (b.gained_count) text += `\nNew matches (${b.gained_count.toLocaleString('en-US')}):\n${listed(b.gained, b.gained_count, 10)}\n`;
+  const p = b.proved;
+  if (!p.available) {
+    const reason = p.reason.replace(/[^A-Za-z0-9 .,:;()/_=+-]/g, '?');
+    text += p.failed ? `\n**The honest metric could not be compared with \`main\`:** ${reason}. The lost-match check fails.\n`
+      : `\nHonest metric: no \`main\` baseline to compare with: ${reason}.\n`;
+    return text;
+  }
+  const honest = p.baseline_proved_exact_code_artifacts - p.lost_count + p.gained_count;
+  text += `\nHonest metric: **+${p.gained_count.toLocaleString('en-US')} / \u2212${p.lost_count.toLocaleString('en-US')}** ` +
+    `(${p.baseline_proved_exact_code_artifacts.toLocaleString('en-US')} \u2192 ${honest.toLocaleString('en-US')}).\n`;
+  if (p.lost_count) text += `\n**Lost honest matches** (${p.lost_count.toLocaleString('en-US')}):\n${listed(p.lost, p.lost_count, 30)}\n`;
+  if (p.gained_count) text += `\nNew honest matches (${p.gained_count.toLocaleString('en-US')}):\n${listed(p.gained, p.gained_count, 10)}\n`;
   return text;
 }
 
@@ -152,6 +191,9 @@ function totalsRows(t) {
     ['Official CLIF test inventory', t.inventoried_test_files, t.official_test_files, ' files'],
     ['AArch64 files with outputs compared', t.files_with_compared_function_outputs, scope],
     ['Exact function outputs', t.exact_code_artifacts, stockOutputs],
+    // The honest metric: absent from reports made before it.
+    ...(t.proved_exact_code_artifacts === undefined ? [] :
+      [['Exact outputs of the proved compiler (honest)', t.proved_exact_code_artifacts, stockOutputs]]),
     ['Files with every AArch64 output matching', t.files_all_aarch64_code_artifacts_identical, scope],
     ['Different function outputs', f.different_code_artifact ?? 0],
     ['Rejected for a setting', f.unsupported_configuration ?? 0],
@@ -176,6 +218,8 @@ ${totalsRows(data.totals).map(row => `| ${row.label} | ${row.text} |`).join('\n'
 
 Exact matches require identical bytes, relocations, alignment, and trap records.
 Rejected outputs do not pass. Expected stock failures without code are excluded from the output total.
+The honest metric counts exact outputs of the proved compiler (\`lean-backend --settings\`: the test's settings
+as compiler input, no stock-configured step) for functions \`backend_correct\` covers.
 
 ${baselineSection(data.baseline_comparison, repo)}
 Pipeline time: **${data.elapsed_seconds.toFixed(1)} seconds** (build, validation, artifact generation, and comparison).
@@ -184,7 +228,8 @@ This job uses two comparison workers. Rust toolchain setup is included in the pi
 Lean installation and cache transfers are outside the pipeline time.
 
 A successful measurement job means the measurement completed, not that both compilers fully agree.
-The "Check lost matches" job fails when an output that matched on that \`main\` commit no longer matches.
+The "Check lost matches" job fails when an output that matched on that \`main\` commit no longer matches,
+in either metric.
 The label \`stock-comparison-accept-losses\` accepts intended losses on a pull request.
 `;
 }

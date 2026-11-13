@@ -16,13 +16,17 @@ function data() {
     target: 'aarch64-unknown-linux-gnu', elapsed_seconds: 42, cpu_seconds: 70,
     peak_runner_memory_used_bytes: 2 ** 30, pipeline_exit_code: 10, full_artifact_equivalence_verified: false,
     matched: Array.from({ length: 425 }, (_, i) => entry(i)),
+    proved_matched: Array.from({ length: 76 }, (_, i) => entry(i)),
     harness_sha256: { 'scripts/stock-compiler-compare.py': 'c'.repeat(64) },
     baseline_comparison: { available: true, run_id: 37262606411, run_attempt: 1, head_sha: 'b'.repeat(40),
       baseline_exact_code_artifacts: 424, gained_count: 2, lost_count: 1,
-      gained: [entry(1), entry(2)], lost: [entry(500, '%g')], harness_changed: [] },
+      gained: [entry(1), entry(2)], lost: [entry(500, '%g')], harness_changed: [],
+      proved: { available: true, baseline_proved_exact_code_artifacts: 76, gained_count: 1, lost_count: 1,
+        gained: [entry(2)], lost: [entry(501, '%h')] } },
     totals: { official_test_files: 1302, inventoried_test_files: 1302,
       files_with_compared_function_outputs: 116, files_all_aarch64_code_artifacts_identical: 19,
-      test_function_compilations: 4501, exact_code_artifacts: 425, failed_stock_compile_assertions: 0,
+      test_function_compilations: 4501, exact_code_artifacts: 425, proved_exact_code_artifacts: 76,
+      failed_stock_compile_assertions: 0,
       source_files_modified: 0, nonrepeatable_reference_stages: 1,
       file_statuses: { binary_test: 484, no_lean_target: 630, non_binary_test: 180, stock_parser_warning_skip: 8 },
       function_statuses: { identical_code_artifact: 425, different_code_artifact: 983,
@@ -71,6 +75,21 @@ test('render compares with the main baseline and lists lost matches first', () =
   assert.ok(body.indexOf('Lost matches') < body.indexOf('New matches'));
   assert.ok(!body.includes('measuring code changed'));
 });
+test('render reports the honest metric next to the exact outputs, with its lost matches', () => {
+  const body = render(data(), repo, run);
+  for (const expected of ['| Exact outputs of the proved compiler (honest) | 76 / 4,455 (1.7%) |',
+    'Honest metric: **+1 / \u22121** (76 \u2192 76)',
+    '**Lost honest matches** (1):\n- `isa/aarch64/a.clif` `%h` (compile, variant 0, function 501)',
+    'New honest matches (1):', 'in either metric']) assert.ok(body.includes(expected), expected);
+  assert.ok(body.indexOf('| Exact function outputs |') < body.indexOf('| Exact outputs of the proved compiler'));
+});
+test('render explains an honest comparison without a baseline', () => {
+  const summary = data();
+  summary.baseline_comparison.proved = { available: false, failed: false, reason: 'the main baseline predates the honest metric' };
+  assert.ok(render(summary, repo, run).includes('Honest metric: no `main` baseline to compare with: the main baseline predates'));
+  summary.baseline_comparison.proved.failed = true;
+  assert.ok(render(summary, repo, run).includes('**The honest metric could not be compared with `main`:**'));
+});
 test('render flags harness changes and bounds long lists', () => {
   const summary = data(); const b = summary.baseline_comparison;
   b.harness_changed = ['FVTest/Backend/StockConfig.lean'];
@@ -103,7 +122,12 @@ test('invalid, partial, or mismatched reports cannot publish', () => {
     d => d.baseline_comparison.lost_count = 2, d => d.baseline_comparison.lost[0][4] = '`%g`',
     d => d.baseline_comparison.head_sha = 'main', d => d.baseline_comparison.harness_changed = ['../x\n'],
     d => d.baseline_comparison = { available: false, failed: false, reason: 'x'.repeat(301) },
-    d => d.baseline_comparison = { available: false, reason: 'no failure flag' }, d => delete d.baseline_comparison]) {
+    d => d.baseline_comparison = { available: false, reason: 'no failure flag' }, d => delete d.baseline_comparison,
+    d => d.proved_matched.pop(), d => delete d.proved_matched, d => delete d.totals.proved_exact_code_artifacts,
+    d => d.totals.proved_exact_code_artifacts = 5000, d => d.proved_matched[0][4] = '%f @someone',
+    d => d.baseline_comparison.proved.lost_count = 2, d => delete d.baseline_comparison.proved,
+    d => d.baseline_comparison.proved = { available: false, reason: 'no failure flag' },
+    d => d.baseline_comparison.proved.lost[0][0] = '[x](http://e).clif']) {
     const summary = data(); edit(summary); assert.throws(() => validate(summary, run));
   }
 });
