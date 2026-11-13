@@ -105,7 +105,13 @@ class NoResultTests(unittest.TestCase):
                 status, out, step_summary = self.run_main(measured, files)
                 self.assertEqual(status, 1, measured)
                 self.assertIn("::error title=No stock-comparison result::", out)
-                self.assertIn("gh run rerun 123 --failed", out)
+                # review finding (CiGate4Review round 2, 2): `--failed` re-runs failed jobs and
+                # their dependents, so after a cancelled measurement it re-ran the ratchet alone
+                if measured == "failure":
+                    self.assertIn("(`gh run rerun 123 --failed`)", out)
+                else:
+                    self.assertIn("(`gh run rerun 123`;", out)
+                    self.assertNotIn("rerun 123 --failed", out)
                 self.assertIn("No stock-comparison result", step_summary)
                 self.assertIn(f"`{measured or 'unknown'}`", step_summary)
 

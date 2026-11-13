@@ -129,15 +129,23 @@ class Tree:
 
 
 def assemble_result(repo, run_id, api):
-    """Conclusion of the run's newest assemble job (None: none, or not finished)."""
-    for page in range(1, 6):
+    """Conclusion of the run's newest assemble job (None: none, or not finished).
+
+    `filter=latest` lists the jobs of the newest attempt. A job that an attempt did not run
+    again is listed there with the conclusion it had (seen on run 43460163729: after only
+    "Check lost matches" was re-run, attempt 2 lists "Build and compare" as `success` under a
+    new job id), so re-running a gate job of a Full gate run does not hide its assemble job,
+    and a re-run of the assemble job itself replaces the old conclusion."""
+    found, page = [], 1
+    while True:
         listed = json.loads(api(f"repos/{repo}/actions/runs/{run_id}/jobs?filter=latest&per_page=100&page={page}"))
-        for job in listed["jobs"]:
-            if job["name"] == ASSEMBLE:
-                return job.get("conclusion")
-        if page * 100 >= listed.get("total_count", 0):
+        found += [job for job in listed["jobs"] if job["name"] == ASSEMBLE]
+        if not listed["jobs"] or page * 100 >= listed.get("total_count", 0):
             break
-    return None
+        page += 1
+    if not found:
+        return None
+    return max(found, key=lambda job: (job.get("run_attempt") or 0, job.get("id") or 0)).get("conclusion")
 
 
 def usable(repo, run, api):

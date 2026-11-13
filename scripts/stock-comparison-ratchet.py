@@ -76,14 +76,21 @@ def check(summary, run_id, head, labels):
 
 def no_result(result, run_id):
     """Report lines when the measuring job did not succeed."""
-    how = ("it was cancelled: by hand, at the job's time limit, or because a newer commit or event of the "
-           "pull request started another run of this workflow (then that run's result is the one that counts)"
-           if result == "cancelled" else
-           "it failed, ran out of time or lost its runner; its annotations and log say which")
+    if result == "failure":
+        how = "it failed, ran out of time or lost its runner; its annotations and log say which"
+        rerun = f"Re-run the failed jobs of this workflow run (`gh run rerun {run_id} --failed`)."
+    else:
+        # `--failed` re-runs failed jobs and the jobs that need them: after a cancelled (or
+        # skipped) measuring job that is this job alone, which would fail again unmeasured
+        how = ("it was cancelled: by hand, at the job's time limit, or because a newer commit or event of the "
+               "pull request started another run of this workflow" if result == "cancelled" else
+               "it did not run to a result")
+        rerun = (f"If a newer run of this workflow exists for the same commit or pull request, that run's result is "
+                 f"the one that counts and this one needs nothing. Otherwise re-run all jobs of this workflow run "
+                 f"(`gh run rerun {run_id}`; `--failed` would re-run this job only).")
     return [f"{NO_RESULT}: the job \"Build and compare\" ended as `{result or 'unknown'}` ({how}). "
             "Nothing was measured for this commit in this run, so lost matches cannot be ruled out.",
-            f"Re-run the failed jobs of this workflow run (`gh run rerun {run_id} --failed`). "
-            f"The label {LABEL} does not override a missing measurement."]
+            f"{rerun} The label {LABEL} does not override a missing measurement."]
 
 
 def main():

@@ -97,7 +97,10 @@ skipped (a skipped check reads as "nothing lost"). The label
 measurement too (cancelled by hand, at the job's 300-minute limit, or because
 a newer commit or event of the pull request started another run) and fails in
 the same way; when another run replaced it, that run's result is the one that
-counts.
+counts, otherwise re-run all jobs (`gh run rerun <run>`: `--failed` re-runs
+failed jobs and the jobs that need them, which after a cancelled measurement is
+the check alone). A pending push run of `main` that GitHub drops from the queue
+for a newer push starts no job at all.
 
 Measured on #1019's first run (the chosen build had the tested tree's Lean
 sources: nothing to build): the job took 10 minutes, 4 of them the download and

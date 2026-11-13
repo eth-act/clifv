@@ -55,8 +55,10 @@ class FakeGitHub:
     def jobs(self, run_id, page):
         jobs = [{"name": f"Build wave 1 ({i}) / shard {i}", "conclusion": "success"} for i in range(self.jobs_before)]
         conclusion = self.assemble.get(run_id, "success")
-        if conclusion != "absent":
-            jobs.append({"name": BUILD.ASSEMBLE, "conclusion": conclusion})
+        if isinstance(conclusion, list):   # several listed executions: (attempt, job id, conclusion)
+            jobs += [{"name": BUILD.ASSEMBLE, "run_attempt": a, "id": i, "conclusion": c} for a, i, c in conclusion]
+        elif conclusion != "absent":
+            jobs.append({"name": BUILD.ASSEMBLE, "run_attempt": 1, "id": 1, "conclusion": conclusion})
         jobs.append({"name": "Axiom audits", "conclusion": "failure"})
         return {"total_count": len(jobs), "jobs": jobs[(page - 1) * 100:page * 100]}
 
@@ -211,6 +213,21 @@ class FindTests(Repo):
             found = BUILD.find(REPO, head, BUILD.Tree(self.root), api=self.api, log=self.log.append)
             self.assertEqual(found["run"], expected)
             self.assertEqual(sum("/jobs?" in call for call in self.api.calls), 3)
+
+    def test_the_newest_execution_of_the_assemble_job_decides(self):
+        # review finding (CiGate4Review round 2, 1), checked against the API: the newest attempt
+        # lists a job it did not run again with its old conclusion (run 43460163729, attempt 2),
+        # so a Full gate run whose audit job alone was re-run keeps its build; an assemble job
+        # that was run again and failed does not
+        head = self.commit({"docs/x.md": "y\n"})
+        for listed, expected in (([(2, 900, "success")], 5),                        # carried over into attempt 2
+                                 ([(1, 100, "success"), (2, 900, "failure")], None),
+                                 ([(2, 900, "failure"), (1, 100, "success")], None),
+                                 ([(1, 100, "failure"), (2, 900, "success")], 5),
+                                 ([(2, 900, None)], None)):                         # running again
+            self.api, self.log = FakeGitHub([run(5, head)], {5: ["lake-full"]}, {5: listed}), []
+            found = BUILD.find(REPO, head, BUILD.Tree(self.root), api=self.api, log=self.log.append)
+            self.assertEqual(found["run"], expected, listed)
 
     def test_no_run_at_all_builds_the_cone(self):
         found = self.find([], {})
