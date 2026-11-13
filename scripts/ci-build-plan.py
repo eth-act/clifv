@@ -65,12 +65,14 @@ def lakefile_modules_same(root, base):
 
 
 # Lake does not trace the files a module reads while it elaborates (FVTest/Isle/oracle/*, the
-# corpus files those name, the ISLE sources of the Wasmtime pin), so a build whose baseline
-# differs in one of them alone restores the old result. With a baseline named by hand
-# (--explicit-base, the workflow's `base-run`) the plan therefore refuses every changed file
-# that is neither a module source nor under one of these directories, which no module build
-# reads: the workflow, the documents, the Rust tools, the examples, the generated crate proofs,
-# and scripts/ apart from the Wasmtime pin.
+# corpus files those name, the ISLE sources of the Wasmtime pin; #1012), so a build whose
+# baseline differs in one of them alone restores the old result. With a baseline named by hand
+# (--explicit-base, the workflow's `base-run`) the plan therefore refuses every changed path
+# (old names of moved or removed files included) that is neither a module source nor under one
+# of these directories: the workflow, the documents, the Rust tools, the examples, the generated
+# crate proofs, and scripts/ apart from the Wasmtime pin. No module reads them while it is built
+# (the libraries' sources name rust/target/release/lean-regalloc and crate-proofs/Crates, both
+# in executables' `main`); a module that starts to must take its directory out of this list.
 NO_BUILD_INPUT = (".github/", "docs/", "crate-proofs/", "rust/", "examples/", "scripts/")
 UNTRACED_SCRIPTS = {"scripts/fetch-third-party.sh"}
 
@@ -82,34 +84,58 @@ def untraced_inputs(files):
                   or not (f.startswith(NO_BUILD_INPUT) or ("/" not in f and f.endswith(".md"))))
 
 
+def linked_from_outside(root, files):
+    """Of `files` (changed paths under NO_BUILD_INPUT), those a tracked symbolic link outside
+    these directories leads to (the link is the file or a directory above it): a module can read
+    them under the link's name. As `FILE (through LINK)`."""
+    r = subprocess.run(["git", "ls-files", "-s", "-z"], cwd=root, capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit(f"git ls-files failed ({r.stderr.strip()}): no plan on a named baseline")
+    links = [e.split("\t", 1)[1] for e in filter(None, r.stdout.split("\0")) if e.startswith("120000 ")]
+    out = []
+    for link in untraced_inputs(links):
+        target = (root / link).resolve()
+        for f in files:
+            p = (root / f).resolve()
+            if target == p or target in p.parents:
+                out.append(f"{f} (through {link})")
+    return sorted(out)
+
+
 def changed_modules(root, base, libs, mods, explicit=False):
     """Modules whose source differs between `base` and HEAD, or None if everything is stale.
     With `explicit` (a baseline named by hand), exits if a possible untraced input differs."""
-    r = subprocess.run(["git", "diff", "--name-only", "-z", base, "HEAD", "--"], cwd=root,
-                       capture_output=True, text=True)
+    # --no-renames: a file moved away is a changed (deleted) path too, not only its new name
+    r = subprocess.run(["git", "diff", "--name-only", "--no-renames", "-z", base, "HEAD", "--"],
+                       cwd=root, capture_output=True, text=True)
     if r.returncode != 0:
         if explicit:
             sys.exit(f"git diff {base} failed ({r.stderr.strip()}): no plan on a named baseline")
         print(f"git diff {base} failed ({r.stderr.strip()}): planning everything", file=sys.stderr)
         return None
     by_path = {p.resolve(): m for m, p in mods.items()}
-    out, other = set(), []
+    out, files = set(), []
     for f in filter(None, r.stdout.split("\0")):
         if f == "lakefile.toml" and lakefile_modules_same(root, base):
             continue
         if f in GLOBAL_INPUTS:
             print(f"{f} changed since {base}: planning everything", file=sys.stderr)
             return None
+        files.append(f)
         m = by_path.get((root / f).resolve())
         if m:
             out.add(m)
-        else:
-            other.append(f)
-    bad = untraced_inputs(other) if explicit else []
-    if bad:
-        sys.exit(f"the named baseline {base} differs in {len(bad)} file(s) a module build may "
-                 f"read without Lake tracing them: {' '.join(bad[:20])}\n"
-                 f"its build cannot be the baseline: run without base-run")
+    if explicit:
+        # the module sources by their own names: a changed path that only leads to one (a
+        # symbolic link) plans that module, and is still a changed file that is no module source
+        sources = {os.path.relpath(p, root) for p in mods.values()}
+        other = [f for f in files if f not in sources]
+        bad = untraced_inputs(other)
+        bad += linked_from_outside(root, [f for f in other if f not in bad])
+        if bad:
+            sys.exit(f"the named baseline {base} differs in {len(bad)} file(s) a module build may "
+                     f"read without Lake tracing them: {' '.join(bad[:20])}\n"
+                     f"its build cannot be the baseline: run without base-run")
     return out
 
 

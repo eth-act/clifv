@@ -106,6 +106,66 @@ class Plan(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertIsNone(planned)
 
+    def test_fixture_moved_into_an_allowed_directory(self):
+        # review finding (CiGate3Review 2): git reported an exact rename by its new name only, so
+        # the fixture moved to scripts/ looked like a new script; Interp still reads the old path
+        (self.root / "FVTest/Isle/oracle/cases.trace").rename(self.root / "scripts/cases.trace")
+        self.commit()
+        self.assertEqual(self.git("diff", "--name-only", self.base, "HEAD"), "scripts/cases.trace")
+        r, planned = self.plan("--explicit-base")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("FVTest/Isle/oracle/cases.trace", r.stderr)
+        self.assertIsNone(planned)
+
+    def test_fixture_replaced_by_a_link_to_a_module(self):
+        # review finding (CiGate3Review 3): the changed path was followed before it was classified,
+        # so a fixture that became a symbolic link to a module source counted as that module
+        self.write({"FVTest/Unrelated.lean": "def u := 1\n"})
+        (self.root / "FVTest/Isle/oracle/cases.trace").unlink()
+        (self.root / "FVTest/Isle/oracle/cases.trace").symlink_to("../../Unrelated.lean")
+        self.commit()
+        r, planned = self.plan("--explicit-base")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("FVTest/Isle/oracle/cases.trace", r.stderr)
+        self.assertIsNone(planned)
+        r, planned = self.plan()   # the automatic baseline: the module the link leads to, as before
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(planned, ["FVTest.Unrelated"])
+
+    def test_allowed_file_read_through_a_link(self):
+        # the baseline already holds a link from a fixture's place into docs/ (file or directory):
+        # a change behind it is a change of what the module reads
+        (self.root / "FVTest/Isle/oracle/cases.trace").unlink()
+        (self.root / "FVTest/Isle/oracle/cases.trace").symlink_to("../../../docs/cases.trace")
+        (self.root / "FVTest/Isle/more").symlink_to("../../docs/more")
+        self.write({"docs/cases.trace": "case 1 -> 2\n", "docs/more/a/b.trace": "x\n", "docs/other.md": "x\n"})
+        self.base = self.commit()
+        for f in ("docs/cases.trace", "docs/more/a/b.trace"):
+            self.write({f: "changed\n", "docs/other.md": f})
+            self.commit()
+            r, planned = self.plan("--explicit-base")
+            self.assertNotEqual(r.returncode, 0, f)
+            self.assertIn(f + " (through FVTest/Isle/", r.stderr)
+            self.assertNotIn("docs/other.md", r.stderr)
+            self.assertIsNone(planned, f)
+            self.base = self.git("rev-parse", "HEAD")
+        self.write({"docs/other.md": "y\n"})
+        self.commit()
+        r, planned = self.plan("--explicit-base")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(planned, [])
+
+    def test_removed_or_renamed_module_is_refused(self):
+        # its old path is no module source any more: a named baseline does not guess what read it
+        (self.root / "FV/B.lean").rename(self.root / "FV/C.lean")
+        self.commit()
+        r, planned = self.plan("--explicit-base")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("FV/B.lean", r.stderr)
+        r, planned = self.plan()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(planned, ["FV.C"])
+
     def test_tooling_and_documents_plan_nothing(self):
         # the stacked gate-tooling branch: workflow, scripts, Rust tool, documents, crate proofs
         self.write({".github/workflows/full-gate.yml": "on: push\n", "scripts/gate-expected-counts.txt": "fv-demo 2 1400 1400\n",
