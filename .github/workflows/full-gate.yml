@@ -23,7 +23,7 @@ on:
         type: boolean
         default: false
       base-run:
-        description: Run id whose lake-full is the baseline (default, the newest of main or of this branch); for a branch stacked on another PR's head
+        description: Run id whose lake-full is the baseline (default, the newest of main or of this branch); for a branch stacked on another PR's head. Refused if a non-Lean build input differs from that run's commit
         type: string
         default: ''
 
@@ -70,7 +70,8 @@ jobs:
           # newest unexpired `lake-full` of a run on main or on this branch; Lake's cache is
           # content-addressed, so any baseline is safe: the planner rebuilds what differs from it.
           # `base-run` names another run's instead: a branch stacked on another PR's head takes
-          # that PR's build, where its own first run would build the same modules again
+          # that PR's build, where its own first run would build the same modules again. The
+          # planner then refuses a difference in a file modules read untraced (--explicit-base)
           if [[ -n $BASE_RUN ]]; then
             [[ $BASE_RUN =~ ^[0-9]+$ ]] || { echo "::error::base-run is not a run id: $BASE_RUN"; exit 1; }
             read -r run sha < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BASE_RUN/artifacts?name=lake-full" \
@@ -105,6 +106,8 @@ jobs:
         env:
           BASE: ${{ steps.base.outputs.sha }}
           MISSING: ${{ steps.base.outputs.missing }}
+          # empty with `fresh` (no baseline step: everything is planned)
+          EXPLICIT: ${{ steps.base.outputs.run && inputs.base-run }}
           # eth-act (free plan) runs at most 20 jobs at once across all its repositories
           SHARDS: ${{ vars.FULL_GATE_SHARDS || '10' }}
           # runner seconds per second recorded in scripts/lake-module-peaks.tsv (GitHub-hosted,
@@ -116,7 +119,10 @@ jobs:
           FV_CI_HEAVY: ${{ vars.FULL_GATE_HEAVY || '12G' }}
           FV_CI_MAX_JOBS: ${{ vars.FULL_GATE_MAX_JOBS || '3' }}
         run: |
+          # without pipefail tee's status hides the planner's refusal (and any other failure of it)
+          set -o pipefail
           python3 scripts/ci-build-plan.py ${BASE:+--base "$BASE"} ${MISSING:+--missing "$MISSING"} \
+            ${EXPLICIT:+--explicit-base} \
             --shards "$SHARDS" --waves 3 \
             --time-scale "$TIME_SCALE" --prefix-scale FV.Opt.Proof.=1.5 --ram "$RAM" \
             --budget "$FV_CI_BUDGET" --heavy "$FV_CI_HEAVY" --max-jobs "$FV_CI_MAX_JOBS" \

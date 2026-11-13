@@ -1159,8 +1159,13 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   - *Full gate in CI (`.github/workflows/full-gate.yml`; post-merge only, never a required check):*
     every push to `main` (one run at a time, the newest pending push waits), weekly from scratch, and
     on demand (`workflow_dispatch`, input `fresh`). `scripts/ci-build-plan.py` plans the modules whose
-    sources differ from the newest `lake-full` build (artifact of an earlier run on `main`) and their
-    importers, split into up to 3 waves of parallel shards (`.github/workflows/full-gate-shard.yml`,
+    sources differ from the newest `lake-full` build (artifact of an earlier run on `main` or on the
+    same branch) and their importers. A branch stacked on another PR's head names that PR's run
+    instead (input `base-run`, a run id), so the modules that run built are not built again; the
+    planner then refuses any difference in a file that modules read without Lake tracing it
+    (`--explicit-base`: `FVTest/Isle/oracle/`, `corpus/`, the Wasmtime pin, anything outside the
+    workflow, documents, Rust tools, examples and crate proofs). The plan is
+    split into up to 3 waves of parallel shards (`.github/workflows/full-gate-shard.yml`,
     `.github/scripts/full-gate-shard.sh`: `lake-serial-build.py --only … --retry-failed`, outputs passed
     on as `lake cache stage` directories, 25–65 MB per shard). Lean's output is not always
     reproducible, so shards that each built a shared import can stage differing copies:

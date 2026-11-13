@@ -9,6 +9,8 @@ differs from SHA, and their importers, are planned: Lake restores every other mo
 cache. Without --base, or when lakefile.toml / lean-toolchain / lake-manifest.json differ, all of
 them are planned. With --missing FILE (the modules a partial baseline build lacks, written by the
 full gate's assemble job when some modules failed), those and their importers are planned too.
+With --explicit-base (the baseline is a run named by hand, the workflow's `base-run`), there is no
+plan if a file that modules may read without Lake tracing it differs from SHA (untraced_inputs).
 
 Waves run one after another; the shards of a wave run in parallel on separate runners. A module
 belongs to the wave in which its earliest possible start (longest recorded-seconds import path
@@ -62,16 +64,37 @@ def lakefile_modules_same(root, base):
     return False
 
 
-def changed_modules(root, base, libs, mods):
-    """Modules whose source differs between `base` and HEAD, or None if everything is stale."""
-    r = subprocess.run(["git", "diff", "--name-only", base, "HEAD", "--"], cwd=root,
+# Lake does not trace the files a module reads while it elaborates (FVTest/Isle/oracle/*, the
+# corpus files those name, the ISLE sources of the Wasmtime pin), so a build whose baseline
+# differs in one of them alone restores the old result. With a baseline named by hand
+# (--explicit-base, the workflow's `base-run`) the plan therefore refuses every changed file
+# that is neither a module source nor under one of these directories, which no module build
+# reads: the workflow, the documents, the Rust tools, the examples, the generated crate proofs,
+# and scripts/ apart from the Wasmtime pin.
+NO_BUILD_INPUT = (".github/", "docs/", "crate-proofs/", "rust/", "examples/", "scripts/")
+UNTRACED_SCRIPTS = {"scripts/fetch-third-party.sh"}
+
+
+def untraced_inputs(files):
+    """Of `files` (repository paths that are no module source), those a module build may read."""
+    return sorted(f for f in files
+                  if f in UNTRACED_SCRIPTS
+                  or not (f.startswith(NO_BUILD_INPUT) or ("/" not in f and f.endswith(".md"))))
+
+
+def changed_modules(root, base, libs, mods, explicit=False):
+    """Modules whose source differs between `base` and HEAD, or None if everything is stale.
+    With `explicit` (a baseline named by hand), exits if a possible untraced input differs."""
+    r = subprocess.run(["git", "diff", "--name-only", "-z", base, "HEAD", "--"], cwd=root,
                        capture_output=True, text=True)
     if r.returncode != 0:
+        if explicit:
+            sys.exit(f"git diff {base} failed ({r.stderr.strip()}): no plan on a named baseline")
         print(f"git diff {base} failed ({r.stderr.strip()}): planning everything", file=sys.stderr)
         return None
     by_path = {p.resolve(): m for m, p in mods.items()}
-    out = set()
-    for f in r.stdout.split():
+    out, other = set(), []
+    for f in filter(None, r.stdout.split("\0")):
         if f == "lakefile.toml" and lakefile_modules_same(root, base):
             continue
         if f in GLOBAL_INPUTS:
@@ -80,6 +103,13 @@ def changed_modules(root, base, libs, mods):
         m = by_path.get((root / f).resolve())
         if m:
             out.add(m)
+        else:
+            other.append(f)
+    bad = untraced_inputs(other) if explicit else []
+    if bad:
+        sys.exit(f"the named baseline {base} differs in {len(bad)} file(s) a module build may "
+                 f"read without Lake tracing them: {' '.join(bad[:20])}\n"
+                 f"its build cannot be the baseline: run without base-run")
     return out
 
 
@@ -88,6 +118,10 @@ def main():
     ap.add_argument("targets", nargs="+")
     ap.add_argument("--root", default=".")
     ap.add_argument("--base", help="commit whose build the cache holds (default: none, plan all)")
+    ap.add_argument("--explicit-base", action="store_true",
+                    help="--base was named by hand (the workflow's base-run), not found among "
+                         "the runs of main or of this branch: fail if a file that a module "
+                         "build may read untraced differs from it")
     ap.add_argument("--missing", metavar="FILE",
                     help="modules the --base build lacks (whitespace-separated): planned with "
                          "their importers even if their sources did not change")
@@ -142,7 +176,9 @@ def main():
             want.add(m)
             stack.extend(imports[m])
 
-    changed = changed_modules(root, a.base, libs, mods) if a.base else None
+    if a.explicit_base and not a.base:
+        sys.exit("--explicit-base needs --base")
+    changed = changed_modules(root, a.base, libs, mods, a.explicit_base) if a.base else None
     if changed is not None and a.missing:
         missing = set(pathlib.Path(a.missing).read_text().split()) & set(mods)
         print(f"{len(missing)} modules missing from the build of {a.base}", file=sys.stderr)
