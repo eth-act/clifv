@@ -649,4 +649,8 @@ def Inst.resultTypes (sigOf : FnRef → Option Signature)
   | .float (.fcmp _) _ _ => some [.i8]
   | .float _ ty _ => some [ty]
 
+/-- SCRATCH (branch agent/CiGate4-probe, never merged): changes this module's `.olean`, so the
+stock comparison builds 293 of its 418 modules on its runner (#1018). -/
+theorem cigate4Probe : True := trivial
+
 end Clif
