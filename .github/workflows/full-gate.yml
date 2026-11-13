@@ -8,13 +8,15 @@ name: Full gate
 # The Lean build is split by scripts/ci-build-plan.py into up to three waves of parallel shards;
 # Lake outputs move between jobs as `lake cache stage` directories (artifacts). The assembled
 # build of a main commit (`lake-full`) is the baseline of later runs: only modules whose sources
-# differ from the baseline commit, and their importers, are rebuilt.
+# differ from the baseline commit, and their importers, are rebuilt. The modules that read other
+# files while they elaborate are elaborated again on every run (scripts/elab-inputs.py, #1012).
 on:
   push:
     branches: [main]
   schedule:
-    # weekly from scratch (no baseline; Lake does not trace every input, e.g. the ISLE sources
-    # FVTest.Isle reads), in its own concurrency group: a cold build takes most of a day here
+    # weekly from scratch (no baseline; Lake does not trace every input: the files FVTest.Isle
+    # reads are covered by scripts/elab-inputs.py on every run, an input nobody has listed only
+    # here), in its own concurrency group: a cold build takes most of a day here
     - cron: '17 1 * * 6'
   workflow_dispatch:
     inputs:
