@@ -1,4 +1,4 @@
-import importlib.util, os, pathlib, subprocess, sys, tempfile, unittest
+import importlib.util, os, pathlib, re, subprocess, sys, tempfile, unittest
 
 HERE = pathlib.Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("gate_line_check", HERE / "gate-line-check.py")
@@ -459,7 +459,7 @@ class BaseRevision(unittest.TestCase):
 
             def run(ref, event, before, sha):
                 env = dict(os.environ, GITHUB_REF=ref, GITHUB_EVENT_NAME=event, GITHUB_SHA=sha)
-                args = ["base-pins", str(out)] + ([] if before is None else ["--before", before])
+                args = ["base-pins", str(out), "--before", before or ""]
                 return subprocess.run([sys.executable, str(HERE / "gate-line-check.py"), *args], cwd=work, env=env,
                                       capture_output=True, text=True)
 
@@ -483,6 +483,65 @@ class BaseRevision(unittest.TestCase):
             r = run("refs/heads/main", "push", "c" * 40, c2)
             self.assertEqual((r.returncode, out.exists()), (1, False), r.stdout + r.stderr)
             self.assertIn("FAIL: base revision", r.stdout)
+
+    def test_main_gate_run_has_a_base_revision(self):
+        # review finding (CiGate2Review, round 3): only `main-gate.sh loop` passed a base revision;
+        # a one-shot `run` on a branch that lowers its pins was green. fv_verdict, as main-gate.sh
+        # defines it, on a branch whose commit loses two executables and lowers the pins with them
+        def git(cwd, *a):
+            return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=cwd, capture_output=True,
+                                  text=True, check=True).stdout.strip()
+
+        fn = re.search(r"(?ms)^fv_verdict\(\) \{.*?^\}\n", (HERE / "main-gate.sh").read_text())[0]
+        lowered_log = "".join(exe(c, c) + exe(c, "values") for c in ("a_arith", "b_slices", "c_structs_enums")) + count(6, 6)
+        lowered_log += "cargo fv: 3000 of 3251 functions compiled by the Lean backend (3000 verified): your crate(s)\n"
+        with tempfile.TemporaryDirectory() as t:
+            t = pathlib.Path(t)
+            origin, work, log = t / "origin", t / "work", t / "native_survey.log"
+            (t / "logs").mkdir()
+            (t / "logs" / "fv.log").write_text(LEAN_LD)
+            same = f"SAME: 16 test outcomes identical (logs: {t}/logs)\n"
+            (origin / "scripts").mkdir(parents=True)
+            git(origin, "init", "-q", "-b", "main")
+            (origin / "README").write_text("x\n")
+            git(origin, "add", ".")
+            git(origin, "commit", "-q", "-m", "c0")
+            (origin / "scripts" / "gate-line-check.py").write_text((HERE / "gate-line-check.py").read_text())
+            (origin / "scripts" / "gate-known-unverified.txt").write_text("# none\n")
+            (origin / "scripts" / "gate-expected-counts.txt").write_text(PINS)
+            git(origin, "add", ".")
+            git(origin, "commit", "-q", "-m", "c1")
+            git(t, "clone", "-q", origin.as_uri(), "work")
+            git(work, "checkout", "-q", "-b", "agent/x")
+            (work / "scripts" / "gate-expected-counts.txt").write_text(PINS.replace("survey  8  3251  3251", "survey  6  3000  3000"))
+            git(work, "commit", "-q", "-am", "c2")
+
+            def verdict(text, **env):
+                log.write_text(text + same)
+                e = {k: v for k, v in os.environ.items() if k != "GATE_BASE_REV"} | env
+                return subprocess.run(["bash", "-c", f'set -u\nGATE_ROOT=$PWD\n{fn}\nfv_verdict "$1" survey --lean-link', "_", str(log)],
+                                      cwd=work, env=e, capture_output=True, text=True)
+
+            # the branch's own pins accept the drop; the pins of the commit it left main at do not
+            r = verdict(lowered_log)
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertIn("FAIL: pinned verified functions: 3000 is below the base revision's 3251", r.stdout)
+            self.assertIn("FAIL: pinned executables through the binary check: 6 is below the base revision's 8", r.stdout)
+            # `loop` names the base revision (its last green commit): here one with the lowered pins
+            r = verdict(lowered_log, GATE_BASE_REV=git(work, "rev-parse", "HEAD"))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertEqual(verdict(lowered_log, GATE_BASE_REV="no-such-revision").returncode, 1)
+            # on main itself the base is the commit's parent (c0: no pins yet, nothing to compare)
+            git(work, "checkout", "-q", "main")
+            r = verdict(survey(bad=()).replace(SAME, FUNCS))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertIn("no scripts/gate-expected-counts.txt", (t / "native_survey.log.base-rev").read_text())
+            # no origin/main to compare with: no base revision, no green line
+            git(work, "remote", "remove", "origin")
+            r = verdict(survey(bad=()).replace(SAME, FUNCS))
+            self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+            self.assertIn("FAIL:", r.stdout)
+            self.assertIn("origin/main is unknown", (t / "native_survey.log.base-rev").read_text())
 
 
 class CommandLine(unittest.TestCase):
@@ -594,8 +653,9 @@ class CommandLine(unittest.TestCase):
                   ["cargo-fv", "survey", "--lean-link", "--lean-link", "a.log", "fv.log"],
                   ["cargo-fv", "survey", "--known", "k", "--known", "k", "a.log", "fv.log"],
                   ["cargo-fv", "", "a.log", "fv.log"], ["cargo-fv", "survey", "--verified", "a.log", "fv.log"],
-                  ["cargo-fv", "--binary-check", "survey", "a.log", "fv.log"], ["base-pins"], ["base-pins", "--before", "x"],
-                  ["base-pins", "out.txt", "--after", "x"], ["base-pins", "out.txt", "--before"], ["base-pins", ""]):
+                  ["cargo-fv", "--binary-check", "survey", "a.log", "fv.log"], ["base-pins"], ["base-pins", "out.txt"],
+                  ["base-pins", "--before", "x"], ["base-pins", "out.txt", "--after", "x"], ["base-pins", "out.txt", "--before"],
+                  ["base-pins", "", "--local", ""], ["base-pins", "out.txt", "--local"]):
             self.assertEqual(self.run_script(*a).returncode, 2, a)
 
 

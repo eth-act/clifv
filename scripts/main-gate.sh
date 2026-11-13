@@ -97,22 +97,17 @@ stop_scopes() {
 
 # The verdict of a cargo fv line (scripts/gate-line-check.py, as in the CI full gate). LOG is the
 # output of examples/compare.sh, which names the directory holding cargo fv's own log (fv.log).
-# GATE_BASE_REV (set by `loop`: the last green commit): the revision whose pinned counts are the
-# base; a pin below them is red (a commit cannot make a drop green by lowering its own pin). A
-# deliberate drop (a parent decision) stays red here until its commit is recorded GREEN by hand
-# in results.tsv.
+# The pinned counts are also compared with those of a base revision that is never the tested
+# commit (`gate-line-check.py base-pins --local`): a pin below them is red, so a commit cannot make
+# a drop green by lowering its own pin. GATE_BASE_REV (set by `loop`: the last green commit) names
+# it; a one-shot `run` takes the commit where HEAD left origin/main, or HEAD's parent on main.
+# Without a base revision the verdict is red. A deliberate drop (a parent decision) stays red in
+# `loop` until its commit is recorded GREEN by hand in results.tsv.
 fv_verdict() { # LOG EXAMPLE [--lean-link]
-  local log=$1 d base=(); shift
+  local log=$1 d; shift
   d=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "$log" | tail -n 1)
-  if [ -n "${GATE_BASE_REV:-}" ]; then
-    base=(--base "$log.base-pins")
-    if git -C "$GATE_ROOT" cat-file -e "$GATE_BASE_REV:scripts/gate-expected-counts.txt" 2>/dev/null; then
-      git -C "$GATE_ROOT" show "$GATE_BASE_REV:scripts/gate-expected-counts.txt" > "$log.base-pins" || rm -f "$log.base-pins"
-    else
-      : > "$log.base-pins"   # the last green commit is older than the file
-    fi
-  fi
-  python3 "$GATE_ROOT/scripts/gate-line-check.py" cargo-fv "$@" "${base[@]}" "$log" "$d/fv.log"
+  (cd "$GATE_ROOT" && python3 scripts/gate-line-check.py base-pins "$log.base-pins" --local "${GATE_BASE_REV:-}") > "$log.base-rev" 2>&1
+  python3 "$GATE_ROOT/scripts/gate-line-check.py" cargo-fv "$@" --base "$log.base-pins" "$log" "$d/fv.log"
 }
 
 run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
