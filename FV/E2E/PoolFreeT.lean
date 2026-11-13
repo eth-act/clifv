@@ -12,7 +12,9 @@ VCode has no literal-pool load: the scope's `f64const`s are `Compile.f64PoolFree
 `Pool.tryCall_noPool`), and the driver's own instructions, its renaming, `prepare` and the
 dead-code cleanup add none. Hence `VCode.noPoolB` and the literal loads' reach `poolReachB` of the
 prepared VCode are theorems on these scopes (`poolReachB_lowerTF`, `poolReachB_cleanup_lowerTF`,
-`poolReachB_lowerT`, `poolReachB_cleanup_lowerT`), with no size condition.
+`poolReachB_lowerT`, `poolReachB_cleanup_lowerT`), with no size condition, and the typed
+analysis's three-way coverage is two-way there (`Driver.formsCovered2_of_noPool`,
+`Driver.formsCovered2_completeT`; the float scope's is in `LinkScopeChecksTF`).
 
 Since #955 these were a premise `hpool` of the typed scopes' size theorems and a run-time
 conjunct of the input scopes; #1002 part 1 removes both.

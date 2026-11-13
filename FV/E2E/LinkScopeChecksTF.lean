@@ -20,8 +20,8 @@ typed scope's theorems, the run-time checks of the lowering's output hold:
 * of `prepare`'s output: `formsCoveredB` (`formsCoveredB_completeTF`), `ctlInstsB`
   (`ctlInsts_pipelineTF`), `emitCondsB` (`emitConds_lowerTF`; also after the dead-code cleanup,
   `emitConds_cleanup_lowerTF`);
-* the coverage is two-way (`formsCovered2_completeTF`, `formsCovered2_completeT`: a control form
-  or `FormOk`), since the scope has no literal-pool load (`noPoolB_lowerTF`, #1002).
+* the coverage is two-way (`formsCovered2_completeTF`: a control form or `FormOk`), since the
+  scope has no literal-pool load (`noPoolB_lowerTF`, #1002).
 
 The analyses' tables cover the float families 31-35 of `CovT.famTab`; `prepare`'s domain comes
 from `Spill.prepDomain_ofTF` (no lowering validator).
