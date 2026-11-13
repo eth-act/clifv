@@ -2,6 +2,7 @@
 """The verdict of a gate line whose exit status alone does not say that the check ran (#998).
 
 usage: gate-line-check.py cargo-fv EXAMPLE [--lean-link] [--known FILE] [--expected FILE] [--base FILE] [--summary FILE] COMPARE_LOG FV_LOG
+       gate-line-check.py base-pins OUT [--before SHA]
        gate-line-check.py arm-fault-cosim LOG
 
 Exit status 0 iff the log is that of a green line; prints one line: the lines the verdict was
@@ -45,6 +46,14 @@ in its `(logs: DIR)`):
   --summary FILE appends the counts (pinned and measured) and the known-unverified executables
   with cargo fv's reasons to FILE as Markdown (the CI job summary).
 
+base-pins (CI; run in the checkout): writes to OUT the expected counts of the base revision of
+this run, for `cargo-fv --base OUT`, and prints the revision. The base revision is never the
+tested commit: on a branch it is main's tip; on main it is the tip the push replaced (--before,
+the push event's `before`), or the tested commit's parent when there is none (a re-run, the
+weekly run). Read from the environment: GITHUB_REF, GITHUB_EVENT_NAME, GITHUB_SHA. OUT is empty
+when the base revision has no such file; exit status 1 and no OUT when the revision cannot be
+fetched (`cargo-fv --base OUT` then fails).
+
 arm-fault-cosim (the output of scripts/arm-fault-cosim.sh):
   - exactly one line `TOTAL forms F vectors V faults X failures 0`, with F, V and X > 0: no form,
     no vector or no faulting vector means the memory-fault behaviour was not exercised.
@@ -56,6 +65,7 @@ import collections
 import os
 import pathlib
 import re
+import subprocess
 import sys
 
 SAME = re.compile(r"^SAME: (\d+) test outcomes identical")
@@ -297,12 +307,56 @@ def arm_fault_cosim(text):
     return not fails, " ".join(totals + [f"FAIL: {f}" for f in fails])
 
 
+def base_revision(ref, event, before, sha):
+    """(what to fetch from origin, depth, the commit among the fetched) for the base revision of
+    a CI run on `ref` at commit `sha`: never the tested commit itself (a push run on main that
+    read main's tip compared the pins with themselves)."""
+    if ref != "refs/heads/main":
+        return "main", 1, "FETCH_HEAD"
+    if event == "push" and re.fullmatch(r"[0-9a-f]{40}", before or "") and set(before) != {"0"}:
+        return before, 1, "FETCH_HEAD"
+    return sha, 2, "FETCH_HEAD^"
+
+
+def base_pins(out, before, env=os.environ):
+    """Write the base revision's expected counts to `out`; the exit status."""
+    path = pathlib.Path(out)
+    path.unlink(missing_ok=True)
+    what, depth, rev = base_revision(env.get("GITHUB_REF", ""), env.get("GITHUB_EVENT_NAME", ""), before,
+                                     env.get("GITHUB_SHA", ""))
+    git = lambda *a: subprocess.run(["git", *a], capture_output=True, text=True)
+    r = git("fetch", "-q", "--depth", str(depth), "origin", what)
+    commit = git("rev-parse", "-q", "--verify", f"{rev}^{{commit}}") if r.returncode == 0 else r
+    if commit.returncode != 0:
+        print(f"FAIL: base revision {what} ({rev}): {(r.stderr or commit.stderr).strip() or 'not found'}")
+        return 1
+    name = f"{commit.stdout.strip()}:scripts/gate-expected-counts.txt"
+    text = ""
+    if git("cat-file", "-e", name).returncode == 0:
+        shown = git("show", name)
+        if shown.returncode != 0:
+            print(f"FAIL: base revision: git show {name}: {shown.stderr.strip()}")
+            return 1
+        text = shown.stdout
+    path.write_text(text)
+    print(f"base revision {commit.stdout.strip()[:9]} ({what}, {rev}): "
+          + (f"{sum(1 for l in text.splitlines() if l.strip() and not l.lstrip().startswith('#'))} pinned line(s)"
+             if text else "no scripts/gate-expected-counts.txt"))
+    return 0
+
+
 def usage():
-    print("\n".join(__doc__.strip().splitlines()[2:4]), file=sys.stderr)
+    print("\n".join(__doc__.strip().splitlines()[2:5]), file=sys.stderr)
     return 2
 
 
 def main(argv):
+    if argv and argv[0] == "base-pins":
+        if len(argv) == 2 and argv[1].strip() and not argv[1].startswith("-"):
+            return base_pins(argv[1], "")
+        if len(argv) == 4 and argv[2] == "--before" and argv[1].strip() and not argv[1].startswith("-"):
+            return base_pins(argv[1], argv[3])
+        return usage()
     if not argv or argv[0] not in ("cargo-fv", "arm-fault-cosim"):
         return usage()
     kind, rest = argv[0], argv[1:]

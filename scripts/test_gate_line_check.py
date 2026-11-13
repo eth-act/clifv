@@ -1,4 +1,4 @@
-import importlib.util, pathlib, subprocess, sys, tempfile, unittest
+import importlib.util, os, pathlib, subprocess, sys, tempfile, unittest
 
 HERE = pathlib.Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("gate_line_check", HERE / "gate-line-check.py")
@@ -419,6 +419,72 @@ class PinnedCounts(unittest.TestCase):
         self.assertNotIn("base revision", gc.summary("survey", survey(bad=()), [], PINNED, {}, PINNED))
 
 
+class BaseRevision(unittest.TestCase):
+    """Review finding (CiGate2Review, round 2): on a push to main the base revision was the pushed
+    commit, so its pins were compared with themselves."""
+
+    A, B = "a" * 40, "b" * 40
+
+    def test_selection(self):
+        self.assertEqual(gc.base_revision("refs/heads/agent/x", "workflow_dispatch", "", self.B), ("main", 1, "FETCH_HEAD"))
+        self.assertEqual(gc.base_revision("refs/heads/agent/x", "push", self.A, self.B), ("main", 1, "FETCH_HEAD"))
+        self.assertEqual(gc.base_revision("refs/heads/main", "push", self.A, self.B), (self.A, 1, "FETCH_HEAD"))
+        # no usable `before`: the tested commit's parent, never the commit itself
+        for event, before in (("workflow_dispatch", ""), ("schedule", ""), ("push", "0" * 40), ("push", ""), ("push", "main"),
+                              ("workflow_dispatch", self.A)):
+            self.assertEqual(gc.base_revision("refs/heads/main", event, before, self.B), (self.B, 2, "FETCH_HEAD^"), (event, before))
+
+    def test_base_pins_in_a_repository(self):
+        # origin's main: c0 without pins, c1 with them, c2 lowers them; a shallow checkout as in CI
+        def git(cwd, *a):
+            return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=cwd, capture_output=True,
+                                  text=True, check=True).stdout.strip()
+
+        lowered = PINS.replace("survey  8  3251  3251", "survey  6  3000  3000")
+        with tempfile.TemporaryDirectory() as t:
+            t = pathlib.Path(t)
+            origin, work, out = t / "origin", t / "work", t / "base.txt"
+            (origin / "scripts").mkdir(parents=True)
+            git(origin, "init", "-q", "-b", "main")
+            git(origin, "config", "uploadpack.allowAnySHA1InWant", "true")
+            commits = []
+            for name, text in (("README", "x\n"), ("scripts/gate-expected-counts.txt", PINS),
+                               ("scripts/gate-expected-counts.txt", lowered)):
+                (origin / name).write_text(text)
+                git(origin, "add", ".")
+                git(origin, "commit", "-q", "-m", "c")
+                commits.append(git(origin, "rev-parse", "HEAD"))
+            c0, c1, c2 = commits
+            git(t, "clone", "-q", "--depth", "1", origin.as_uri(), "work")
+
+            def run(ref, event, before, sha):
+                env = dict(os.environ, GITHUB_REF=ref, GITHUB_EVENT_NAME=event, GITHUB_SHA=sha)
+                args = ["base-pins", str(out)] + ([] if before is None else ["--before", before])
+                return subprocess.run([sys.executable, str(HERE / "gate-line-check.py"), *args], cwd=work, env=env,
+                                      capture_output=True, text=True)
+
+            # the push of c2 to main: the pins of the tip it replaced, not its own lowered ones
+            r = run("refs/heads/main", "push", c1, c2)
+            self.assertEqual((r.returncode, out.read_text()), (0, PINS), r.stdout + r.stderr)
+            self.assertIn(f"base revision {c1[:9]}", r.stdout)
+            self.assertEqual(gc.read_expected(out.read_text(), "survey")[0], PINNED)
+            # a re-run on main has no `before`: the tested commit's parent
+            for event, before in (("workflow_dispatch", ""), ("schedule", None), ("push", "0" * 40)):
+                r = run("refs/heads/main", event, before, c2)
+                self.assertEqual((r.returncode, out.read_text()), (0, PINS), (event, r.stdout + r.stderr))
+            # the base revision has no pins yet: an empty file (no constraint), not an error
+            r = run("refs/heads/main", "push", c0, c1)
+            self.assertEqual((r.returncode, out.read_text()), (0, ""), r.stdout + r.stderr)
+            self.assertIn("no scripts/gate-expected-counts.txt", r.stdout)
+            # a branch: main's tip
+            r = run("refs/heads/agent/x", "workflow_dispatch", "", c1)
+            self.assertEqual((r.returncode, out.read_text()), (0, lowered), r.stdout + r.stderr)
+            # a revision that cannot be fetched: status 1 and no file, so `cargo-fv --base` fails
+            r = run("refs/heads/main", "push", "c" * 40, c2)
+            self.assertEqual((r.returncode, out.exists()), (1, False), r.stdout + r.stderr)
+            self.assertIn("FAIL: base revision", r.stdout)
+
+
 class CommandLine(unittest.TestCase):
     def run_script(self, *a):
         return subprocess.run([sys.executable, str(HERE / "gate-line-check.py"), *map(str, a)], capture_output=True, text=True)
@@ -528,7 +594,8 @@ class CommandLine(unittest.TestCase):
                   ["cargo-fv", "survey", "--lean-link", "--lean-link", "a.log", "fv.log"],
                   ["cargo-fv", "survey", "--known", "k", "--known", "k", "a.log", "fv.log"],
                   ["cargo-fv", "", "a.log", "fv.log"], ["cargo-fv", "survey", "--verified", "a.log", "fv.log"],
-                  ["cargo-fv", "--binary-check", "survey", "a.log", "fv.log"]):
+                  ["cargo-fv", "--binary-check", "survey", "a.log", "fv.log"], ["base-pins"], ["base-pins", "--before", "x"],
+                  ["base-pins", "out.txt", "--after", "x"], ["base-pins", "out.txt", "--before"], ["base-pins", ""]):
             self.assertEqual(self.run_script(*a).returncode, 2, a)
 
 
