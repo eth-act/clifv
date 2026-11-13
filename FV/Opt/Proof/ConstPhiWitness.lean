@@ -7,7 +7,8 @@ import FV.Opt.Proof.ConstPhiSimU
 can only hold `v0`: `cpOk` accepts the solution `[(1, 0)]` (`fwd_ok`) and the rewrite changes
 the function (`fwd_changed`), so `Opt.ConstPhi.cpOk_simU` relates two different functions
 (`fwd_simU`); the pass itself finds the solution and keeps the result (`fwd_run`), so
-`Opt.ConstPhi.run_simU` does too.
+`Opt.ConstPhi.run_simU` does too. The pass's `Std.HashMap`s do not reduce in the kernel, so
+the three evaluations use `native_decide`.
 -/
 
 namespace Opt.ConstPhi.Witness
@@ -28,13 +29,13 @@ def fwd' : Function :=
     { id := 0, params := [(0, .i64)], term := .jump ⟨1, []⟩ },
     { id := 1, params := [], term := .ret [0] }] }
 
-theorem fwd_ok : cpOk fwd [(1, 0)] = true := by decide +kernel
+theorem fwd_ok : cpOk fwd [(1, 0)] = true := by native_decide -- witness: native_decide
 
-theorem fwd_apply : apply fwd [(1, 0)] = fwd' := by decide +kernel
+theorem fwd_apply : apply fwd [(1, 0)] = fwd' := by native_decide -- witness: native_decide
 
 theorem fwd_changed : fwd' ≠ fwd := by decide +kernel
 
-theorem fwd_run : run fwd = fwd' := by decide +kernel
+theorem fwd_run : run fwd = fwd' := by native_decide -- witness: native_decide
 
 /-- **`cpOk_simU` relates two different functions.** -/
 theorem fwd_simU : FunSimU fwd fwd' := fwd_apply ▸ cpOk_simU fwd_ok
