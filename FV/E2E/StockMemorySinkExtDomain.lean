@@ -10,8 +10,8 @@ already excludes memory-access traps (as for the legacy route), so this contract
 for the trap refinement only on runs whose traps are explicit.
 
 The sinking load/extension class satisfies it vacuously: under `TrapsExplicit` its
-source run never traps. The load cannot trap (it is not an explicit trap) and the
-extension and return never trap. No statement about the machine's behaviour on a
+source run never traps. The load, plain or atomic, cannot trap (it is not an explicit
+trap) and the extension and return never trap. No statement about the machine's behaviour on a
 faulting address is needed: neither "the extending load traps exactly when the plain
 load traps" nor its converse is used. -/
 namespace Backend.Stock.Memory
@@ -75,6 +75,22 @@ structure SinkExtClass (kind : Kind) (ty : Clif.Ty) (f : Clif.Function) : Prop w
   ordinary : (sigRets f.sig).any (·.purpose == .sret) = false
   registers : ∀ loc ∈ locsOf f.sig,∃ pin,loc = .reg pin
   shape : ∃ (b : Clif.Block) (x y z : Nat) (flags : Clif.MemFlags),Shape kind f b x y z ty flags
+/-- The production source class for a plain or an atomic source load. -/
+structure SourceExtClass (src : Source) (kind : Kind) (ty : Clif.Ty) (f : Clif.Function) : Prop where
+  scope : LowerScope f
+  dominated : Dominated f
+  abi : sigAbiOk f.sig = true
+  ordinary : (sigRets f.sig).any (·.purpose == .sret) = false
+  registers : ∀ loc ∈ locsOf f.sig,∃ pin,loc = .reg pin
+  shape : ∃ (b : Clif.Block) (x y z : Nat) (flags : Clif.MemFlags),SourceShape src kind f b x y z ty flags
+
+/-- The plain-load class is the plain source of the general class. -/
+theorem SinkExtClass.source {kind : Kind} {ty : Clif.Ty} {f : Clif.Function}
+    (family : SinkExtClass kind ty f) : SourceExtClass .plain kind ty f := by
+  obtain ⟨b,x,y,z,flags,shape⟩ := family.shape
+  exact ⟨family.scope,family.dominated,family.abi,family.ordinary,family.registers,
+    ⟨b,x,y,z,flags,shape.source⟩⟩
+
 
 /-- An extension never traps. -/
 theorem extend_notrap (fr : Clif.Frame) (cm : Clif.Mem) (op : Clif.ExtendOp) (ty : Clif.Ty) (y : Nat)
@@ -93,10 +109,11 @@ theorem extend_notrap (fr : Clif.Frame) (cm : Clif.Mem) (op : Clif.ExtendOp) (ty
     · simp only [wide,decide_false,Clif.Res.check_false,Clif.Res.stuck_bind] at trapped
       cases trapped
 
-/-- Under explicit traps the original source run of the class never traps: the load
-is not an explicit trap, and the extension and the return cannot trap. -/
-theorem stock_sink_extend_no_trap (kind : Kind) {f : Clif.Function} {b : Clif.Block}
-    {x y z : Nat} {ty : Clif.Ty} {flags : Clif.MemFlags} (shape : Shape kind f b x y z ty flags)
+/-- Under explicit traps the original source run of the class never traps: the source
+load (plain or atomic) is not an explicit trap, and the extension and the return cannot
+trap. -/
+theorem stock_source_extend_no_trap (src : Source) (kind : Kind) {f : Clif.Function} {b : Clif.Block}
+    {x y z : Nat} {ty : Clif.Ty} {flags : Clif.MemFlags} (shape : SourceShape src kind f b x y z ty flags)
     {fr : Clif.Frame} {cm : Clif.Mem} (body : fr.body = b.body) (term : fr.term = b.term)
     {env : Clif.Env} {cp : Clif.Program} (explicit : E2E.TrapsExplicit env cp ⟨fr,[],cm⟩)
     (fuel : Nat) (code : Clif.TrapCode) :
@@ -106,21 +123,21 @@ theorem stock_sink_extend_no_trap (kind : Kind) {f : Clif.Function} {b : Clif.Bl
   | succ fuel =>
     rw [Clif.runLoop_succ]
     have first : (⟨fr,[],cm⟩ : Clif.State).frame.body =
-        ⟨[y],.load .load (loadTy kind) flags x 0⟩ :: [⟨[z],.extend (extendOp kind) ty y⟩] := by
+        ⟨[y],src.load (loadTy kind) flags x⟩ :: [⟨[z],.extend (extendOp kind) ty y⟩] := by
       change fr.body = _
       rw [body,shape.body]
-    rw [Clif.step_inst env cp _ _ _ first (by intro fn args impossible; cases impossible)
-      (by intro sig callee args impossible; cases impossible)]
-    cases evaluated : Clif.evalInst fr cm (.load .load (loadTy kind) flags x 0) with
+    rw [Clif.step_inst env cp _ _ _ first (by intro fn args impossible; cases src <;> cases impossible)
+      (by intro sig callee args impossible; cases src <;> cases impossible)]
+    cases evaluated : Clif.evalInst fr cm (src.load (loadTy kind) flags x) with
     | trap c =>
       have stepped : Clif.step env cp ⟨fr,[],cm⟩ = .trapped c := by
-        rw [Clif.step_inst env cp _ _ _ first (by intro fn args impossible; cases impossible)
-          (by intro sig callee args impossible; cases impossible)]
+        rw [Clif.step_inst env cp _ _ _ first (by intro fn args impossible; cases src <;> cases impossible)
+          (by intro sig callee args impossible; cases src <;> cases impossible)]
         change Clif.StepResult.ofRes (Clif.evalInst fr cm _) _ = _
         rw [evaluated]
         rfl
       have impossible := explicit.stmt ⟨fr,[],cm⟩ c _ _ (.refl _) stepped first
-      cases impossible
+      cases src <;> cases impossible
     | stuck message =>
       simp [Clif.StepResult.ofRes]
     | ok pair =>
@@ -141,15 +158,25 @@ theorem stock_sink_extend_no_trap (kind : Kind) {f : Clif.Function} {b : Clif.Bl
         · intro fr cm c
           exact extend_notrap fr cm _ ty y c
 
+/-- Under explicit traps the original source run of the class never traps: the load
+is not an explicit trap, and the extension and the return cannot trap. -/
+theorem stock_sink_extend_no_trap (kind : Kind) {f : Clif.Function} {b : Clif.Block}
+    {x y z : Nat} {ty : Clif.Ty} {flags : Clif.MemFlags} (shape : Shape kind f b x y z ty flags)
+    {fr : Clif.Frame} {cm : Clif.Mem} (body : fr.body = b.body) (term : fr.term = b.term)
+    {env : Clif.Env} {cp : Clif.Program} (explicit : E2E.TrapsExplicit env cp ⟨fr,[],cm⟩)
+    (fuel : Nat) (code : Clif.TrapCode) :
+    Clif.runLoop env cp fuel ⟨fr,[],cm⟩ ≠ .trapped code :=
+  stock_source_extend_no_trap .plain kind shape.source body term explicit fuel code
+
 /-- The class derives the explicit-trap memory contract: returns from the sinking body,
-traps vacuously from `stock_sink_extend_no_trap`. -/
-theorem SinkExtClass.domain {kind : Kind} {ty : Clif.Ty} {f : Clif.Function}
-    (family : SinkExtClass kind ty f) : ExplicitDomain f := by
+traps vacuously from `stock_source_extend_no_trap`. -/
+theorem SourceExtClass.domain {src : Source} {kind : Kind} {ty : Clif.Ty} {f : Clif.Function}
+    (family : SourceExtClass src kind ty f) : ExplicitDomain f := by
   obtain ⟨b,x,y,z,flags,shape⟩ := family.shape
   refine ⟨family.scope,family.dominated,family.abi,family.ordinary,?_,?_⟩
   · intro result run args cm fr entered env cp fuel vals mem returned F isem refines driver
       sb syms memorySem MR stable memoryOk w memory arguments
-    exact stock_sink_extend_returns kind run family.scope family.dominated family.abi shape entered
+    exact stock_source_extend_returns src kind run family.scope family.dominated family.abi shape entered
       returned refines driver memorySem stable memoryOk memory arguments
   · intro result run args cm fr entered env cp fuel code explicit trapped
     obtain ⟨b',regs,entry,_,_,_,frame⟩ := entered
@@ -161,6 +188,12 @@ theorem SinkExtClass.domain {kind : Kind} {ty : Clif.Ty} {f : Clif.Function}
     have body : fr.body = b.body := by rw [frame]
     have term : fr.term = b.term := by rw [frame]
     exfalso
-    exact (stock_sink_extend_no_trap kind shape body term explicit fuel code trapped)
+    exact (stock_source_extend_no_trap src kind shape body term explicit fuel code trapped)
+
+/-- The class derives the explicit-trap memory contract: returns from the sinking body,
+traps vacuously from `stock_sink_extend_no_trap`. -/
+theorem SinkExtClass.domain {kind : Kind} {ty : Clif.Ty} {f : Clif.Function}
+    (family : SinkExtClass kind ty f) : ExplicitDomain f :=
+  family.source.domain
 
 end Backend.Stock.Memory.SinkExtend
