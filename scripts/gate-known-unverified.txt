@@ -8,7 +8,3 @@
 # entries, and nothing is added here without a parent decision and an open issue.
 #
 # Format: EXAMPLE  PACKAGE/EXECUTABLE  #ISSUE   (the executable's file name without its -<hash>)
-
-# 3 Lean-compiled functions in each fail link-check's returnPins (since #892; not fixed by #933)
-survey  b_slices/values  #1003
-survey  e_option_result/values  #1003

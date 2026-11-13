@@ -55,13 +55,17 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat} {modes : Clif.Function → ReturnPinMode}
 
-theorem progOsCore_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.ThmReturnPins modes κ (M - 1)) {g h : Clif.Function}
+/-- `progOsCore_return_pins` from agreement of the call's definitions with the pins the call
+reads, the callee's first `sig.returns.length` return pins (#1003; what
+`CompiledProgramReturnPins.calls` gives since then). The proof is `progOsCore_return_pins`'s, which
+used its `hLd` through `CallReturnPins.take` only. -/
+theorem progOsCore_return_pins_results (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.ThmReturnPins modes κ (M - 1)) {g h : Clif.Function}
     (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
     (hcallee : L.Callee g h)
     {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
     (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
     {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)} (hLu : Lu.map (·.2) = regLocs h.sig)
-    (hLd : CallReturnPins Ld (modeReturnPins modes h))
+    (hLd : CallReturnPins Ld ((modeReturnPins modes h).take h.sig.returns.length))
     {info : CallInfo} (hdefs0 : info.defs = callDefs Ld)
     {ops : Array Operand} {regs : Array Reg}
     (hdefs : ((ops.zip regs).toList.filter (·.1.isDef)) = (callDefOps Ld).zip (Ld.map (·.1)))
@@ -187,7 +191,7 @@ theorem progOsCore_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ 
         exact List.mem_of_mem_take member
       rw [hs_eq,hc_eq,regVal_set_program,regVal_set_program]
       exact hs_ret.pins_agree hc_ret hlen pin returnedPin
-    have resultRegs := (hLd.take h.sig.returns.length).defRegs hdefs same
+    have resultRegs := hLd.defRegs hdefs same
     intro p hp
     obtain ⟨n, rfl⟩ := houts
     rw [defRegs] at hp
@@ -237,6 +241,34 @@ theorem progOsCore_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ 
       simp only [ckeep, regVal]
       rw [show rnum (8 + i) = BitVec.ofNat 5 (8 + i) from rfl, e,
         r_enterAt _ _ (by simp) (by simp)]
+
+/-- The statement before #1003 (agreement with every return pin of the callee), now a corollary
+of `progOsCore_return_pins_results` (`CallReturnPins.take`). -/
+theorem progOsCore_return_pins (hL : L.OkReturnPins modes) [hR : L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.ThmReturnPins modes κ (M - 1)) {g h : Clif.Function}
+    (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
+    (hcallee : L.Callee g h)
+    {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
+    (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
+    {Lu : List (Nat × Reg)} {Ld : List (Reg × Nat)} (hLu : Lu.map (·.2) = regLocs h.sig)
+    (hLd : CallReturnPins Ld (modeReturnPins modes h))
+    {info : CallInfo} (hdefs0 : info.defs = callDefs Ld)
+    {ops : Array Operand} {regs : Array Reg}
+    (hdefs : ((ops.zip regs).toList.filter (·.1.isDef)) = (callDefOps Ld).zip (Ld.map (·.1)))
+    {t w w' : Arm.ArmState} {o outs : List CV}
+    (hK : κ M g ≤ (spOf t).toNat) (hG : ∀ a, G a → t.mem a = s0.mem a)
+    (hra : RaOk (L.A h) (Arm.r .PC t))
+    (hsw : SameWorld F t w)
+    (hx : L.progXMode modes κ M F h (Lu.map (fun q => regVal t q.2)) w = some (o, w'))
+    (houts : ∃ n, outs = o.take n) :
+    SameWorld F (L.pcall M h t) w' ∧
+      FrameKeep (fun a => F a ∧ ¬ StackBelow (κ M g) (spOf t) a) t (L.pcall M h t) ∧
+      (∀ p ∈ defRegs ops regs outs, regVal (L.pcall M h t) p.1.2 = p.2) ∧
+      (∀ r, r.allocatable = true → (∀ p ∈ (ops.zip regs).toList, p.1.isDef = true → p.2 ≠ r) →
+        r ∉ (MInst.call info).clobbers → regVal (L.pcall M h t) r = regVal t r) ∧
+      (∀ r ∈ (MInst.call info).clobbers, r ∈ calleeSaved →
+        ckeep r (regVal (L.pcall M h t) r) = ckeep r (regVal t r)) :=
+  L.progOsCore_return_pins_results hL hκ ih hg hh hcallee himgF himgG himgS hLu
+    (hLd.take h.sig.returns.length) hdefs0 hdefs hK hG hra hsw hx houts
 end LinkSys
 
 namespace LinkSys
@@ -281,11 +313,11 @@ theorem progOs_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Budge
     obtain ⟨⟨o, w2⟩, hx, rfl, rfl, -⟩ := hsem
     rw [L.XMode_prog hpf] at hx
     exact ⟨o, hx, rfl⟩
-  have matched : CallReturnPins Ld (modeReturnPins modes h) :=
+  have matched : CallReturnPins Ld ((modeReturnPins modes h).take h.sig.returns.length) :=
     (hL.compiled g hg).calls.direct _ h hsite Ld rfl
   obtain ⟨us', ds', rfl⟩ := assign_call_sym hasg
   exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_some hpf],
-    L.progOsCore_return_pins hL hκ ih hg hh (.inl ⟨_, hsite⟩) himgF himgG himgS hLu matched rfl (call_defs hregs) hK hG
+    L.progOsCore_return_pins_results hL hκ ih hg hh (.inl ⟨_, hsite⟩) himgF himgG himgS hLu matched rfl (call_defs hregs) hK hG
       (hL.raCall g hg _ h hsite _ hP.callPc) hsw hx ⟨_, hout⟩⟩
 end LinkSys
 
@@ -370,12 +402,12 @@ theorem progOsReg_return_pins (hL : L.OkReturnPins modes) [L.CrunOk] (hκ : L.Bu
         simp only [List.head?_cons, Option.map_some, Option.some.injEq] at e
         exact L.got_target_return_pins hL hs e
       obtain ⟨hLu, hLd⟩ := hregs h hh ⟨hdecl.1, hgot⟩ (by rw [← hdecl.2, List.length_map])
-      have matched : CallReturnPins Ld (modeReturnPins modes h) :=
+      have matched : CallReturnPins Ld ((modeReturnPins modes h).take h.sig.returns.length) :=
         (hL.compiled g hg).calls.indirect _ hsite tv rfl h hh ⟨hdecl.1,hgot⟩
           (by simpa only [retPairs,List.length_map] using hdecl.2.symm) Ld rfl
       have hb : (blrTarget t).bind (symCallee L.Xb L.P) = some h := by rw [htgt]; exact hs
       exact ⟨L.pcall M h t, by simp only [callExec, hal, ↓reduceIte, L.hooks_none hb],
-        L.progOsCore_return_pins hL hκ ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS hLu matched rfl
+        L.progOsCore_return_pins_results hL hκ ih hg hh (.inr (.inr ⟨hh, hdecl.1.1⟩)) himgF himgG himgS hLu matched rfl
           (call_defs_reg hregs0) hK hG
           (hL.raBlr g hg _ hsite hreg h hh hdecl.1.1 _ hP.callPc) hsw hx ⟨_, hout⟩⟩
     · cases hx
