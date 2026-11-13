@@ -541,8 +541,7 @@ def prepare (vc : VCode) : Except String VCode := do
     blocks := blocks.push { b with insts := b.insts.pop.push t' }
   let vc := { vc with blocks := blocks ++ edges }
   let (succs, _) ← vc.cfg
-  pure { vc with blocks :=
-    (prepOrder (edgeBlock vc.edgeFrom blocks.size vc.blocks (inDegrees succs) succs) succs).map
-      fun i => vc.blocks[i]! }
+  pure { vc with blocks := (prepOrder (edgeBlock vc.edgeFrom blocks.size vc.blocks (inDegrees succs)
+    succs) succs).map fun i => vc.blocks[i]! }
 
 end Backend
