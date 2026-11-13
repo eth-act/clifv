@@ -1283,8 +1283,7 @@ theorem prepare_facts {vc vcp : VCode} (h : prepare vc = .ok vcp) :
       SInv (keep vc.blocks (reachable ss0)) (next0Of (keep vc.blocks (reachable ss0)))
         (keep vc.blocks (reachable ss0)).size (next, B, E) ∧
       ({ vc with blocks := B ++ E } : VCode).cfg = .ok (ss2, ps2) ∧
-      vcp = { vc with blocks := (prepOrder (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2)
-        ss2) ss2).map (fun i => (B ++ E)[i]!) } := by
+      vcp = { vc with blocks := (prepOrder (edgeBlock vc.edgeFrom B.size (B ++ E) (inDegrees ss2) ss2) ss2).map fun i => (B ++ E)[i]! } := by
   unfold prepare at h
   simp only [bind, Except.bind] at h
   split at h
