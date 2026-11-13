@@ -304,9 +304,13 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     let (afs, recs) ← allocRecordingNamed ra alloc vcs shapeOf
     records.set ((vcs.map (·.name)).zip recs)
     pure afs
-  -- the proved settings mode only checks functions (`StockConfig.admit`); it changes no code
+  -- the proved settings mode: `preserve_frame_pointers` as compiler input (`Backend.frameless`),
+  -- and the settings checks (`StockConfig.admit`)
+  let noFrame ← IO.mkRef (#[] : Array (String × String))
   let allocDefault : Array VCode → IO (Array (Except String AFunc)) := match proved with
-    | some c => fun vcs => do rejected.set #[]; StockConfig.admitWith c clif rejected allocNone vcs
+    | some c => fun vcs => do
+      rejected.set #[]; noFrame.set #[]
+      StockConfig.admitWith c clif rejected noFrame allocNone vcs
     | none => allocNone
   let fa ← match stock with
     | none => (if pipelineT then compileFileWith allocNone pf (unv128 ++ unvTry) false
@@ -333,6 +337,12 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
       pure { fa with
         unverified := fa.funcs.map fun a => (a.name, ((unv128 ++ unvTry).lookup a.name).getD why)
         unvalidated := [] }
+  -- frameless leaves (`--settings`, `preserve_frame_pointers=false`) are outside
+  -- `backend_correct` until #1028's theorems
+  let nf ← noFrame.get
+  let leaves := nf.toList.filter fun p =>
+    fa.funcs.any (·.name == p.1) && !fa.unverified.any (·.1 == p.1) && !fa.unvalidated.any (·.1 == p.1)
+  let fa := { fa with unverified := fa.unverified ++ leaves }
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
     IO.FS.writeFile receipt
       ((StockConfig.receipt request none (some (← rejected.get).toList) o.deadCleanup).pretty ++ "\n")

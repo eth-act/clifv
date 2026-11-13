@@ -344,25 +344,28 @@ class StockIntegrationTests(unittest.TestCase):
                 b"function %far() -> i64 {\nfn0 = %external () -> i64\nblock0:\nv0 = call fn0()\nreturn v0\n}\n")
         with tempfile.TemporaryDirectory(prefix="stock-config-test-") as temp:
             root=Path(temp);base=self.seed(root/"stock")
-            # preserve_frame_pointers=false (the filetests' default): stock omits the leaf's frame and
-            # the proved compiler does not; the leaf stays compiled (its caller's code does not depend on
-            # it) but is not claimed. is_pic=false: the far call is not claimed.
+            # preserve_frame_pointers=false (the filetests' default): the compiler omits the leaf's
+            # frame, as stock does (Backend.frameless); no theorem covers a frameless leaf yet (#1028).
+            # is_pic=false: the far call is not claimed; it stays compiled (its callers' code does not
+            # depend on it).
             result,receipt=self.proved(root/"default",base,source)
             self.assertEqual(result.returncode,0,result.stderr)
             self.assertEqual((receipt["mode"],receipt["request"],receipt["configuration_accepted"]),("proved",base,True))
             functions=receipt["functions"]
-            self.assertIn("preserve_frame_pointers=false",functions["leaf"]["setting_rejection"])
+            self.assertEqual((functions["leaf"]["compiled"],functions["leaf"]["backend_correct"]),(True,False))
+            self.assertIn("frameless leaf",functions["leaf"]["unverified"])
+            self.assertEqual((root/"default/dump/leaf.bin").read_bytes(),bytes.fromhex("c0035fd6"))
             self.assertIn("is_pic=false",functions["far"]["setting_rejection"])
             self.assertEqual(functions["caller"],{"compiled":True,"backend_correct":True})
             for name in ("leaf","caller","far"):
                 self.assertTrue((root/"default/dump"/f"{name}.bin").exists(),name)
-            self.assertIn(b"%leaf: compiled, not for these settings",result.stderr)
-            # The same code as without --settings: no stock-configured step runs.
+            self.assertIn(b"%far: compiled, not for these settings",result.stderr)
+            # Functions with a frame: the same code as without --settings (no stock-configured step).
             plain=root/"plain";plain.mkdir()
             (plain/"input.clif").write_bytes(source)
             subprocess.run([self.lean,plain/"input.clif",plain/"program.o","--dump",plain/"dump"],
                            check=True,capture_output=True,env=self.env)
-            for name in ("leaf","caller","far"):
+            for name in ("caller","far"):
                 self.assertEqual((root/"default/dump"/f"{name}.bin").read_bytes(),(plain/"dump"/f"{name}.bin").read_bytes())
             self.assertFalse(any(s["name"]==".eh_frame" for s in COMPARE.ELF(root/"default/program.o").sections))
             # With a frame requested, the leaf's output is the proved compiler's for these settings.
@@ -400,11 +403,12 @@ class StockIntegrationTests(unittest.TestCase):
             self.assertEqual(len(variant["functions_compared"]),3)
             self.assertTrue(all(r["lean_dump_matches_object_relocations"] for r in variant["functions_compared"]))
             self.assertFalse(any(r["full_artifact_equivalence_verified"] for r in variant["functions_compared"]))
-            # bswap's functions are leaves: under preserve_frame_pointers=false stock omits their frame,
-            # which the proved compiler does not implement yet.
+            # bswap's functions are leaves: under preserve_frame_pointers=false the proved compiler omits
+            # their frame, as stock does, but no theorem covers a frameless leaf yet (#1028).
             for r in variant["functions_compared"]:
-                self.assertEqual((r["proved"]["status"],r["proved"]["honest"]),("unsupported_configuration",False))
-                self.assertIn("preserve_frame_pointers=false",r["proved"]["reason"])
+                self.assertEqual((r["proved"]["status"],r["proved"]["backend_correct"],r["proved"]["honest"]),
+                                 ("identical_code_artifact",False,False))
+                self.assertIn("frameless leaf",r["proved"]["not_covered"])
 
     def test_stock_run_preparation_and_exact_outputs(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
