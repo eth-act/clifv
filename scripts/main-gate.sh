@@ -97,10 +97,22 @@ stop_scopes() {
 
 # The verdict of a cargo fv line (scripts/gate-line-check.py, as in the CI full gate). LOG is the
 # output of examples/compare.sh, which names the directory holding cargo fv's own log (fv.log).
+# GATE_BASE_REV (set by `loop`: the last green commit): the revision whose pinned counts are the
+# base; a pin below them is red (a commit cannot make a drop green by lowering its own pin). A
+# deliberate drop (a parent decision) stays red here until its commit is recorded GREEN by hand
+# in results.tsv.
 fv_verdict() { # LOG EXAMPLE [--lean-link]
-  local log=$1 d; shift
+  local log=$1 d base=(); shift
   d=$(sed -n 's/.*(logs: \(.*\))$/\1/p' "$log" | tail -n 1)
-  python3 "$GATE_ROOT/scripts/gate-line-check.py" cargo-fv "$@" "$log" "$d/fv.log"
+  if [ -n "${GATE_BASE_REV:-}" ]; then
+    base=(--base "$log.base-pins")
+    if git -C "$GATE_ROOT" cat-file -e "$GATE_BASE_REV:scripts/gate-expected-counts.txt" 2>/dev/null; then
+      git -C "$GATE_ROOT" show "$GATE_BASE_REV:scripts/gate-expected-counts.txt" > "$log.base-pins" || rm -f "$log.base-pins"
+    else
+      : > "$log.base-pins"   # the last green commit is older than the file
+    fi
+  fi
+  python3 "$GATE_ROOT/scripts/gate-line-check.py" cargo-fv "$@" "${base[@]}" "$log" "$d/fv.log"
 }
 
 run_gate() { # LOGDIR CLIF DEPS; cwd: the worktree root
@@ -248,7 +260,7 @@ loop() { # WORKTREE
     s=$(git rev-parse --short=8 HEAD)
     L=$GATE_DIR/runs/$s
     echo "run $s start $(date -Is) clif=$clif deps=$deps"
-    GATE_LOOP_TIP=$tip setsid flock -o "$LOCK" "$0" run-locked "$L" "$clif" "$deps" &
+    GATE_LOOP_TIP=$tip GATE_BASE_REV=$lastgreen setsid flock -o "$LOCK" "$0" run-locked "$L" "$clif" "$deps" &
     run=$!
     wait "$run"; rc=$?; run=
     [ $rc = 4 ] && { echo "run $s dropped $(date -Is): origin/main moved on or stop requested while waiting for the lock"; continue; }
