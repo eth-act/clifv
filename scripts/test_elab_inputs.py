@@ -1,4 +1,4 @@
-import contextlib, importlib.util, io, pathlib, re, tempfile, types, unittest
+import contextlib, importlib.util, io, pathlib, re, subprocess, tempfile, types, unittest
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -24,10 +24,10 @@ READ = 'def check : IO Unit := do\n  let _ ← IO.FS.readFile "fixtures/a.trace"
 
 
 class Candidates(unittest.TestCase):
-    def flagged(self, files):
+    def flagged(self, files, not_readers=()):
         tmp, mods, imports = tree(files)
         with tmp:
-            return ei.candidates(mods, imports)
+            return ei.candidates(mods, imports, not_readers)
 
     def test_eval_of_a_reading_check(self):
         self.assertEqual(self.flagged({"T.A": READ + "#eval check\n", "T.B": "import T.A\ndef b := 1\n"}), {"T.A"})
@@ -42,22 +42,61 @@ class Candidates(unittest.TestCase):
         for command in ("#eval check", "run_cmd check", "run_elab check", "run_meta check",
                         "initialize check", "builtin_initialize check", "initialize x : Nat ← check",
                         "@[init] private initialize check", "#guard_msgs in #eval check",
-                        "  #eval check", "unsafe initialize check"):
+                        "  #eval check", "unsafe initialize check",
+                        # review finding (CiGate4Review2 3): a tactic block runs code too
+                        "example : True := by run_tac check", "example : True := by\n  run_tac (check)\n  trivial",
+                        "example : True := by (run_tac check)"):
             self.assertEqual(self.flagged({"T.A": READ + command + "\n"}), {"T.A"}, command)
 
     def test_other_readers(self):
         for call in ('IO.FS.readBinFile "x"', '(System.FilePath.mk "d").readDir', 'IO.FS.lines "x"',
                      '(System.FilePath.mk "d").walkDir', 'include_str "x"', 'IO.Process.output { cmd := "x" }',
-                     'IO.Process.run { cmd := "x" }', 'h.readToEnd', 'h.getLine'):
+                     'IO.Process.run { cmd := "x" }', 'h.readToEnd', 'h.getLine',
+                     # review finding (CiGate4Review2 3): existence, metadata, handles, the environment
+                     '(System.FilePath.mk "fixture").pathExists', '(System.FilePath.mk "d").isDir',
+                     '(System.FilePath.mk "f").metadata', 'IO.FS.realPath "f"', '(System.FilePath.mk "f").realPath',
+                     'IO.getEnv "FIXTURE"', 'IO.FS.Handle.mk "f" .read', 'IO.FS.withFile "f" .read fun h => h.read 10',
+                     'IO.currentDir', 'IO.getStdin'):
             self.assertEqual(self.flagged({"T.A": f"def check : IO Unit := do\n  let _ ← {call}\n#eval check\n"}),
                              {"T.A"}, call)
+            # the reading helper in an import, the command in the importer
+            self.assertEqual(self.flagged({"T.Lib": f"def check : IO Unit := do\n  let _ ← {call}\n",
+                                           "T.Use": "import T.Lib\nexample : True := by run_tac check\n"}), {"T.Use"}, call)
+
+    def test_leans_own_environment_is_not_an_input(self):
+        # `getEnv` (the declarations elaborated so far) is in most elaborators
+        files = {"T.A": 'elab "find_it" : tactic => do\n  let env ← getEnv\n  pure ()\n#eval 1\n'}
+        self.assertEqual(self.flagged(files), set())
 
     def test_an_elaborator_that_reads(self):
-        files = {"T.Tac": READ + 'elab "load_it" : tactic => do\n  check\n',
-                 # a pure elaborator in a module that imports a run-time reader is no candidate
-                 "T.Pure": 'import T.Lib\nelab "destr" : tactic => pure ()\nelab_rules : tactic | `(tactic| x) => pure ()\n',
-                 "T.Lib": READ}
-        self.assertEqual(self.flagged(files), {"T.Tac"})
+        self.assertEqual(self.flagged({"T.Tac": READ + 'elab "load_it" : tactic => do\n  check\n'}), {"T.Tac"})
+
+    def test_syntax_runs_where_it_is_used(self):
+        # review finding (CiGate4Review2 2): the module that defines a macro or an elaborator is
+        # elaborated without running it; the check runs in the modules that use the syntax
+        macro = {"T.Lib": READ, "T.Cmd": 'import T.Lib\nmacro "#check_fixture" : command => `(#eval check)\n',
+                 "T.Use": "import T.Cmd\n#check_fixture\n", "T.Far": "import T.Use\ndef far := 1\n",
+                 "T.Other": "import T.Lib\ndef other := 1\n"}
+        self.assertEqual(self.flagged(macro), {"T.Cmd", "T.Use", "T.Far"})
+        elab = {"T.Lib": READ, "T.Tac": 'import T.Lib\nelab "load_it" : tactic => do\n  check\n',
+                "T.Use": "import T.Tac\nexample : True := by\n  load_it\n  trivial\n"}
+        self.assertEqual(self.flagged(elab), {"T.Tac", "T.Use"})
+        rules = {"T.Lib": READ, "T.Syn": 'import T.Lib\nsyntax "load_it" : tactic\n',
+                 "T.Tac": "import T.Syn\nelab_rules : tactic | `(tactic| load_it) => check\n",
+                 "T.Use": "import T.Tac\nexample : True := by load_it\n"}
+        self.assertEqual(self.flagged(rules), {"T.Tac", "T.Use"})
+
+    def test_a_pure_elaborator_beside_a_run_time_reader_needs_a_reason(self):
+        # the text cannot tell `destr` from an elaborator that calls the imported `check`: the
+        # module is a candidate until NOT_READERS says its syntax reads nothing; only then are
+        # its importers left alone
+        files = {"T.Lib": READ, "T.Pure": 'import T.Lib\nelab "destr" : tactic => pure ()\n',
+                 "T.Use": "import T.Pure\nexample : True := by destr\n"}
+        self.assertEqual(self.flagged(files), {"T.Pure", "T.Use"})
+        self.assertEqual(self.flagged(files, not_readers={"T.Pure"}), {"T.Pure"})
+        # no reading call anywhere among its imports: no candidate
+        self.assertEqual(self.flagged({"T.Pure": 'elab "destr" : tactic => pure ()\n',
+                                       "T.Use": "import T.Pure\nexample : True := by destr\n"}), set())
 
     def test_no_candidate(self):
         files = {"T.Main": READ + "def main : IO Unit := check\n",           # reads when it runs
@@ -86,7 +125,7 @@ class Table(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         _, cls.mods, cls.imports = ei.load_lsb().load_modules(ROOT)
-        cls.found = ei.candidates(cls.mods, cls.imports)
+        cls.found = ei.candidates(cls.mods, cls.imports, ei.NOT_READERS)
 
     def test_every_candidate_has_a_row(self):
         # A module that may read a file while it elaborates needs a row in READERS of
@@ -132,13 +171,15 @@ class Table(unittest.TestCase):
 
 
 class Check(unittest.TestCase):
-    def run_check(self, failing=(), fetch_rc=0, error_text=()):
+    def run_check(self, failing=(), fetch_rc=0, error_text=(), git=(0, "")):
         calls = []
 
         def run(cmd, **kw):
             calls.append((cmd, kw))
             if cmd[0].endswith("fetch-third-party.sh"):
                 return types.SimpleNamespace(returncode=fetch_rc, stdout="pin mismatch\n" if fetch_rc else "")
+            if cmd[0] == "git":
+                return types.SimpleNamespace(returncode=git[0], stdout=git[1])
             source = cmd[-1]
             if source in failing:
                 return types.SimpleNamespace(returncode=1, stdout=f"{source}:66:0: error: oracle mismatch\n")
@@ -156,9 +197,11 @@ class Check(unittest.TestCase):
         status, out, calls, logs = self.run_check()
         self.assertEqual(status, 0)
         self.assertEqual(calls[0][0][1:], ["wasmtime"])
-        sources = [cmd[-1] for cmd, _ in calls[1:]]
+        self.assertEqual(calls[1][0], ["git", "-C", str(ROOT / "third_party/wasmtime"), "status", "--porcelain",
+                                       "--untracked-files=no", "--", "cranelift/codegen"])
+        sources = [cmd[-1] for cmd, _ in calls[2:]]
         self.assertEqual(sorted(sources), sorted(m.replace(".", "/") + ".lean" for m in ei.READERS))
-        for cmd, kw in calls[1:]:
+        for cmd, kw in calls[2:]:
             self.assertEqual(cmd[:2], ["lake", "lean"])             # the source itself, not `lake build`
             self.assertEqual(pathlib.Path(kw["cwd"]), ROOT)         # the readers' paths are relative to the root
         n = len(ei.READERS)
@@ -172,13 +215,54 @@ class Check(unittest.TestCase):
             self.assertIn("FAIL FVTest.Isle.Interp", out)
             self.assertIn("oracle mismatch", out)
             self.assertIn("FAILED FVTest.Isle.Interp", out.splitlines()[-1])
-            self.assertEqual(len(calls), 1 + len(ei.READERS))     # the others still run
+            self.assertEqual(len(calls), 2 + len(ei.READERS))     # the others still run
 
     def test_a_wrong_pin_fails_before_anything_is_elaborated(self):
         status, out, calls, _ = self.run_check(fetch_rc=1)
         self.assertEqual(status, 1)
         self.assertEqual(len(calls), 1)
         self.assertIn("fetch-third-party.sh wasmtime failed", out)
+
+    def test_edited_wasmtime_sources_fail_before_anything_is_elaborated(self):
+        # review finding (CiGate4Review2 1): the fetch script compares the commit only; a kept
+        # checkout with an edited ISLE source at the pinned commit passed
+        for git, text in (((0, " M cranelift/codegen/src/isa/aarch64/inst.isle\n"), "1 file(s) differ"),
+                          ((128, "fatal: not a git repository\n"), "git status failed")):
+            status, out, calls, _ = self.run_check(git=git)
+            self.assertEqual(status, 1)
+            self.assertEqual(len(calls), 2)
+            self.assertIn("third_party/wasmtime/cranelift/codegen is not the pinned commit's", out)
+            self.assertIn(text, out)
+
+
+class ModifiedSources(unittest.TestCase):
+    def test_tracked_changes_below_the_directory_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = pathlib.Path(tmp)
+
+            def git(*a):
+                r = subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", *a],
+                                   cwd=repo, capture_output=True, text=True)
+                self.assertEqual(r.returncode, 0, r.stderr)
+
+            for f in ("cranelift/codegen/src/a.isle", "cranelift/filetests/src/b.rs"):
+                (repo / f).parent.mkdir(parents=True)
+                (repo / f).write_text("x\n")
+            git("init", "-q"); git("add", "-A"); git("commit", "-q", "-m", "pin")
+            self.assertEqual(ei.modified_sources(repo, "cranelift/codegen"), [])
+            # the stock comparison's patch touches cranelift/filetests only; new files are not read
+            (repo / "cranelift/filetests/src/b.rs").write_text("patched\n")
+            (repo / "cranelift/codegen/src/new.isle").write_text("untracked\n")
+            self.assertEqual(ei.modified_sources(repo, "cranelift/codegen"), [])
+            (repo / "cranelift/codegen/src/a.isle").write_text("edited\n")
+            self.assertEqual(ei.modified_sources(repo, "cranelift/codegen"), [" M cranelift/codegen/src/a.isle"])
+            git("add", "cranelift/codegen/src/a.isle")               # staged, working tree equal to the index
+            self.assertEqual(ei.modified_sources(repo, "cranelift/codegen"), ["M  cranelift/codegen/src/a.isle"])
+            git("commit", "-q", "-m", "moved")                       # HEAD moved: the fetch script's part
+            self.assertEqual(ei.modified_sources(repo, "cranelift/codegen"), [])
+            (repo / "cranelift/codegen/src/a.isle").unlink()
+            self.assertEqual(ei.modified_sources(repo, "cranelift/codegen"), [" D cranelift/codegen/src/a.isle"])
+            self.assertIsNone(ei.modified_sources(repo / "missing", "cranelift/codegen"))
 
 
 class GateLines(unittest.TestCase):

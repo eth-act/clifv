@@ -298,7 +298,9 @@ jobs:
         # not trace those files, so every build with a baseline restores the old result of the
         # check, also when the planner plans the module. This line elaborates each of those
         # modules from its source (`lake lean`), on every run, against this tree's files; the
-        # list is READERS in scripts/elab-inputs.py (scripts/test_elab_inputs.py keeps it complete).
+        # list is READERS in scripts/elab-inputs.py (scripts/test_elab_inputs.py asks for a row
+        # when the sources show a new reader). Edited Wasmtime sources at the pinned commit fail
+        # the line too.
         if: ${{ !cancelled() }}
         run: |
           mkdir -p gate-logs

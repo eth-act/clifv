@@ -24,7 +24,9 @@ READERS lists those modules with the files each reads. Two things use it:
   modules whose source changed (the plan shows them; `check` is what re-runs their checks).
 
 scripts/test_elab_inputs.py fails when a module that may read a file while it elaborates
-(`candidates`) is in neither READERS nor NOT_READERS: a new reader needs a row.
+(`candidates`) is in neither READERS nor NOT_READERS: a new reader needs a row. `candidates` is
+a heuristic over the source text, wide rather than exact; the weekly from-scratch run of the
+full gate stays the check for an input nobody listed.
 """
 import argparse, importlib.util, os, pathlib, re, subprocess, sys, time
 
@@ -41,17 +43,31 @@ READERS = {
     "FVTest.Isle.OptCorpus": ["FVTest/Isle/oracle/opt_corpus.trace", "corpus/clif/"],
     "FVTest.Isle.Pretty": ["scripts/fetch-third-party.sh"],
 }
-# module -> why it reads nothing while it elaborates although `candidates` names it
-NOT_READERS = {}
+# module -> why it reads nothing while it elaborates, and the syntax it defines reads nothing
+# where it is used, although `candidates` names it
+NOT_READERS = {
+    "FV.E2E.EmitEnc": "its elaborators (`destr`, `destr_all`, `cases_op`) are case splits in MetaM; the reading "
+                      "call among its imports is FV.Backend.Regalloc's run-time call of lean-regalloc",
+    "FV.E2E.LinkOwnFrames": "its elaborator `qs_priv%` builds the name of a constant; the reading call among "
+                            "its imports is FV.Backend.Regalloc's run-time call of lean-regalloc",
+}
+WASMTIME = "third_party/wasmtime"
+WASMTIME_READ = "cranelift/codegen"  # the part of the Wasmtime sources FVTest.Isle.Pretty reads
 
-# calls that read a file or directory, or start a process (which can read anything)
-READS = re.compile(r"\b(readFile|readBinFile|readDir|walkDir|readToEnd|getLine)\b|IO\.FS\.lines|include_str"
-                   r"|IO\.Process\.")
-# commands that run code while their own module elaborates, or when it is imported
-RUNS = re.compile(r"(?:^|\s)(#eval|run_cmd|run_elab|run_meta)\b|^\s*(?:@\[[^\]]*\]\s*)?"
-                  r"(?:(?:private|protected|scoped|local|unsafe)\s+)*(initialize|builtin_initialize)\b", re.M)
+# calls that read a file, a directory or their metadata, the process environment or standard
+# input, or start a process (which can read anything)
+READS = re.compile(r"\b(readFile|readBinFile|readDir|walkDir|readToEnd|getLine)\b"
+                   r"|\.(pathExists|isDir|metadata|realPath)\b|IO\.(getEnv|currentDir|appPath|getStdin)\b"
+                   r"|IO\.FS\.(lines|Handle|withFile)|include_str|IO\.Process\.")
+_MODIFIERS = r"(?:@\[[^\]]*\]\s*)?(?:(?:private|protected|scoped|local|unsafe)\s+)*"
+# commands and tactics that run code while their own module elaborates, or when it is imported
+RUNS = re.compile(r"(?:^|[\s(])(#eval|run_cmd|run_elab|run_meta|run_tac)\b|^\s*" + _MODIFIERS
+                  + r"(initialize|builtin_initialize)\b", re.M)
 # definitions of elaborators: their code runs where they are used
-ELABS = re.compile(r"^\s*(?:@\[[^\]]*\]\s*)?(?:(?:private|protected|scoped|local|unsafe)\s+)*(elab|elab_rules)\b", re.M)
+ELABS = re.compile(r"^\s*" + _MODIFIERS + r"(elab|elab_rules)\b", re.M)
+# definitions of syntax: what they expand or elaborate to runs where they are used
+SYNTAX = re.compile(r"^\s*" + _MODIFIERS + r"(elab|elab_rules|macro|macro_rules|syntax|notation|infixl|infixr|infix"
+                    r"|prefix|postfix)\b", re.M)
 
 
 def load_lsb():
@@ -66,27 +82,47 @@ def code(text):
     return re.sub(r"--.*", "", re.sub(r"/-.*?-/", "", text, flags=re.S))
 
 
-def candidates(mods, imports):
-    """Modules that may read a file while they elaborate: a command that runs code (`#eval`,
-    `run_cmd`, `initialize`, ...) in a module whose imports, itself included, hold a reading
-    call; or an elaborator definition in a module that itself holds one. A heuristic over the
-    source text: it cannot see a read behind `unsafe` code or a foreign function."""
+def candidates(mods, imports, not_readers=()):
+    """Modules that may read a file while they elaborate. A heuristic over the source text:
+
+    * a command or tactic that runs code (`#eval`, `run_cmd`, `run_tac`, `initialize`, ...), or
+      an elaborator definition, in a module whose imports, itself included, hold a reading call
+      (the call may be a helper's in another module);
+    * every module that imports such a module if that module also defines syntax (a macro that
+      expands to `#eval check`, an elaborator that calls a reading helper: the code runs in the
+      modules that use the syntax), unless it is in `not_readers`, which says the syntax it
+      defines reads nothing.
+
+    It cannot see a read behind `unsafe` code, a foreign function or an instance, nor which
+    importer uses a syntax; and it names modules that only import a run-time reader (those go to
+    NOT_READERS)."""
     text = {m: code(p.read_text(errors="replace")) for m, p in mods.items()}
     reads = {m for m, t in text.items() if READS.search(t)}
-    out = {m for m in reads if ELABS.search(text[m])}
-    for m, t in text.items():
-        if not RUNS.search(t):
-            continue
+
+    def imports_a_read(m):
         seen, stack = set(), [m]
         while stack:
             x = stack.pop()
             if x in reads:
-                out.add(m)
-                break
+                return True
             if x not in seen:
                 seen.add(x)
                 stack.extend(imports[x])
-    return out
+        return False
+
+    out = {m for m, t in text.items() if (RUNS.search(t) or ELABS.search(t)) and imports_a_read(m)}
+    importers = {m: [] for m in mods}
+    for m, deps in imports.items():
+        for d in deps:
+            importers[d].append(m)
+    stack = [m for m in out if SYNTAX.search(text[m]) and m not in not_readers]
+    spread = set()
+    while stack:
+        for r in importers[stack.pop()]:
+            if r not in spread:
+                spread.add(r)
+                stack.append(r)
+    return out | spread
 
 
 def readers_of(files, readers=None):
@@ -94,6 +130,14 @@ def readers_of(files, readers=None):
     readers = READERS if readers is None else readers
     return {m for m, inputs in readers.items()
             if any(f == i or (i.endswith("/") and f.startswith(i)) for f in files for i in inputs)}
+
+
+def modified_sources(repo, subdir, run=subprocess.run):
+    """Tracked files below `subdir` of the git checkout `repo` whose index or working tree
+    differs from its HEAD (`git status --porcelain` lines), or None if git fails."""
+    r = run(["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=no", "--", subdir],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    return None if r.returncode != 0 else [line for line in r.stdout.splitlines() if line.strip()]
 
 
 def check(log_dir, run=subprocess.run):
@@ -105,11 +149,18 @@ def check(log_dir, run=subprocess.run):
         return 1
     if log_dir:
         log_dir.mkdir(parents=True, exist_ok=True)
-    # the pinned Wasmtime sources FVTest.Isle.Pretty reads (the script checks the pin)
+    # the pinned Wasmtime sources FVTest.Isle.Pretty reads: the script checks the commit, not
+    # the files, and a checkout that lives across runs (scripts/main-gate.sh's worktree, a
+    # checkout shared through a symbolic link) can hold edited files at the pinned commit
     fetch = run([str(ROOT / "scripts/fetch-third-party.sh"), "wasmtime"], cwd=ROOT,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     if fetch.returncode != 0:
         print(f"elaboration-time inputs: scripts/fetch-third-party.sh wasmtime failed\n{fetch.stdout}")
+        return 1
+    edited = modified_sources(ROOT / WASMTIME, WASMTIME_READ, run)
+    if edited is None or edited:
+        print(f"elaboration-time inputs: {WASMTIME}/{WASMTIME_READ} is not the pinned commit's "
+              + ("(git status failed)" if edited is None else f"({len(edited)} file(s) differ: {' | '.join(edited[:5])})"))
         return 1
     bad = []
     for m in sorted(READERS):

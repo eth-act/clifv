@@ -1172,7 +1172,8 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
     `scripts/main-gate.sh`) therefore elaborates each of them from its source on every run
     (`lake lean`), and the planner plans the readers of a changed input with their importers.
     `READERS` in that script is the list; `scripts/test_elab_inputs.py` (Quick checks) fails when a
-    module that may read a file while it elaborates has no row. The plan is
+    module that may read a file while it elaborates has no row (a heuristic over the source text:
+    the weekly from-scratch run stays the check for an input nobody listed). The plan is
     split into up to 3 waves of parallel shards (`.github/workflows/full-gate-shard.yml`,
     `.github/scripts/full-gate-shard.sh`: `lake-serial-build.py --only … --retry-failed`, outputs passed
     on as `lake cache stage` directories, 25–65 MB per shard). Lean's output is not always
