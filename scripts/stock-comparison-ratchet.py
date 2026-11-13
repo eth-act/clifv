@@ -8,10 +8,10 @@ with it. When no baseline exists there is nothing to compare, and the check pass
 exists but could not be retrieved or read, the check fails (the label does not override that).
 
 MEASURE_RESULT is the result of the workflow's measuring job ("Build and compare"). Anything
-but `success` (it failed, ran out of time, lost its runner) means there is no measurement of
-this commit: the check fails with "no result", whatever an earlier attempt measured and
-whatever the labels say, since lost matches cannot be ruled out (#1018: a skipped check read
-as a pass). Without the variable the summary alone decides (a missing summary fails).
+but `success` (it failed, ran out of time, lost its runner, was cancelled) means there is no
+measurement of this commit: the check fails with "no result", whatever an earlier attempt
+measured and whatever the labels say, since lost matches cannot be ruled out (#1018: a skipped
+check read as a pass). Without the variable the summary alone decides (a missing summary fails).
 """
 import argparse
 import json
@@ -76,9 +76,12 @@ def check(summary, run_id, head, labels):
 
 def no_result(result, run_id):
     """Report lines when the measuring job did not succeed."""
-    return [f"{NO_RESULT}: the job \"Build and compare\" ended as `{result or 'unknown'}` (it failed, ran out "
-            "of time or lost its runner; its annotations and log say which). Nothing was measured for this "
-            "commit, so lost matches cannot be ruled out.",
+    how = ("it was cancelled: by hand, at the job's time limit, or because a newer commit or event of the "
+           "pull request started another run of this workflow (then that run's result is the one that counts)"
+           if result == "cancelled" else
+           "it failed, ran out of time or lost its runner; its annotations and log say which")
+    return [f"{NO_RESULT}: the job \"Build and compare\" ended as `{result or 'unknown'}` ({how}). "
+            "Nothing was measured for this commit in this run, so lost matches cannot be ruled out.",
             f"Re-run the failed jobs of this workflow run (`gh run rerun {run_id} --failed`). "
             f"The label {LABEL} does not override a missing measurement."]
 

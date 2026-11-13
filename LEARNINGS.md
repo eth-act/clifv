@@ -206,6 +206,12 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Trick:** `gh workflow run full-gate.yml --ref <branch> -f base-run=<run id of the PR below>`: the planner diffs against that run's commit. Same branch and tree: 0 modules planned. The planner refuses a named baseline when a file modules read untraced differs from it (below).
 - **Where:** `.github/workflows/full-gate.yml` (Plan job), `scripts/ci-build-plan.py --explicit-base`.
 
+### A side workflow takes its Lean build from the gate's, not from its own cold build
+- **Problem:** the stock comparison built its four executables with a plain `lake build` on one hosted runner (841 Lake jobs, 16 GB, no swap, one `lean` per core). After every Lean source change its cache missed; since #955 the build lost the runner twice at job 634-635 and hit the 60-minute limit once. The ratchet job was then skipped, no commit of main was measured, and #1011 was squashed without a comparison result (#1018).
+- **Trick:** the Full gate already builds those modules on many runners and publishes them (`lake-full`, a staged Lake cache keyed by each module's inputs). Pick the run that leaves the fewest modules of the executables' import cone to build (`scripts/stock-comparison-lean-build.py`: the tested commit's run, else by `git diff` against each candidate's commit), unstage it, and build the rest with `lake-serial-build.py` inside a time limit that fails the step (a job at its own limit is cancelled, and a job that `needs` it is skipped: make the dependent check run `always()` and fail on anything but `success`).
+- **Numbers:** #1019's first run, tree of main `27bf181f0`: 0 of 418 modules to build, job 10 min (4 min `lake-full` download and unstage, 77 s restore and stage, 3 min Rust and comparison), against no finished run in the three before it. Whole cone from nothing on one runner under the scheduler: 1.75 h estimated (critical path 1.19 h recorded, so more runners would not shorten it).
+- **Where:** `.github/workflows/stock-compiler-comparison.yml`, `.github/scripts/stock-comparison-lean.sh`, `docs/STOCK-COMPILER-COMPARISON.md` ("Lean executables in CI").
+
 ## Compiled checkers (`lean-link`, `link-check`)
 
 ### Hash maps behind a lookup parameter, not `List.lookup`/`P.func?` per element

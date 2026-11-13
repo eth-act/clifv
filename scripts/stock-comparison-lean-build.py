@@ -18,7 +18,8 @@ This script picks the build that leaves the least to build for the tested commit
    repository (a squashed pull request has the tree of the branch head its Full gate ran on),
 
 each counted only if it is a run of the Full gate workflow of this repository (not of a fork,
-not a pull_request run) and its build is complete (no `lake-full-missing`). For each, the
+not a pull_request run) and its build is complete (its assemble job succeeded; no
+`lake-full-missing`). For each, the
 modules of the cone whose source differs from that run's commit, and their importers, are what
 would be built (scripts/ci-build-plan.py's rule); the candidate with the fewest recorded seconds
 of them wins, the first one with nothing to build ends the search.
@@ -47,6 +48,7 @@ HERE = Path(__file__).resolve().parent
 WORKFLOW = "full-gate.yml"
 WORKFLOW_PATH = ".github/workflows/" + WORKFLOW
 ARTIFACT, MISSING = "lake-full", "lake-full-missing"
+ASSEMBLE = "Assemble build and executables"  # the job of full-gate.yml that uploads them
 # The executables scripts/stock-compiler-comparison.sh builds (test_stock_comparison_lean_build.py
 # checks the two lists against each other).
 EXES = ["lean-backend", "lean-backend-lowering-trace", "lean-stock-lowering-compare", "lean-stock-lowering-test"]
@@ -126,8 +128,20 @@ class Tree:
         return TIME_SCALE * sum(self.secs.get(m, DEFAULT_SECS) for m in modules)
 
 
+def assemble_result(repo, run_id, api):
+    """Conclusion of the run's newest assemble job (None: none, or not finished)."""
+    for page in range(1, 6):
+        listed = json.loads(api(f"repos/{repo}/actions/runs/{run_id}/jobs?filter=latest&per_page=100&page={page}"))
+        for job in listed["jobs"]:
+            if job["name"] == ASSEMBLE:
+                return job.get("conclusion")
+        if page * 100 >= listed.get("total_count", 0):
+            break
+    return None
+
+
 def usable(repo, run, api):
-    """Why `run` (a workflow run object) cannot be the build, or None. One API call."""
+    """Why `run` (a workflow run object) cannot be the build, or None. Two API calls."""
     if run.get("path", "").split("@")[0] != WORKFLOW_PATH:
         return "not a Full gate run"
     if run.get("event") not in EVENTS:
@@ -142,6 +156,12 @@ def usable(repo, run, api):
         return f"no unexpired {ARTIFACT}"
     if MISSING in names:
         return "a partial build"
+    # The assemble job uploads `lake-full` before the list of missing modules and fails after
+    # both: without the list (the job is still running, or it lost its runner between the two
+    # uploads) a partial build looks complete. Only the job's success says it is.
+    assembled = assemble_result(repo, run["id"], api)
+    if assembled != "success":
+        return f"its assemble job is {assembled or 'not finished'}"
     return None
 
 

@@ -28,9 +28,10 @@ jobs:
     # Lake jobs on this runner (16 GB, no swap): since #955 it lost the runner twice at job
     # 634-635 and ran into the former 60-minute limit once, so no commit was measured.
     # The two long steps stop themselves and fail with a message (STOCK_LEAN_LIMIT_S,
-    # STOCK_COMPARE_LIMIT_S); the job limit is above their sum and should never be reached: a
-    # job that reaches it is cancelled, not failed.
-    timeout-minutes: 240
+    # STOCK_COMPARE_LIMIT_S); the job limit leaves 90 minutes above their sum for the rest
+    # (downloads, swap, caches, uploads: 10 to 15 minutes). A job that reaches its limit is
+    # cancelled, not failed; "Check lost matches" fails in that case too.
+    timeout-minutes: 300
     # actions: read finds the Full gate build and the main baseline summary.
     permissions:
       actions: read
@@ -159,11 +160,13 @@ jobs:
   ratchet:
     name: Check lost matches
     needs: measure
-    # Also after a measurement that failed, ran out of time or lost its runner: this job then
-    # fails with "no result" (it used to be skipped, and a skipped check reads as "nothing
-    # lost"). Not when the run itself was cancelled (a newer commit of the pull request
-    # replaced it).
-    if: ${{ !cancelled() }}
+    # Always: after a measurement that failed, ran out of time, lost its runner or was cancelled
+    # (by hand, at the job's time limit, or because a newer commit of the pull request replaced
+    # the run), this job fails with "no result". It used to be skipped, and a skipped check reads
+    # as "nothing lost" (#1018). `!cancelled()` would still skip it at the job's time limit and
+    # after a cancellation by hand; a replaced run belongs to an older commit, where a failed
+    # check blocks nothing.
+    if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     # pull-requests: read reads the override label when this job runs.

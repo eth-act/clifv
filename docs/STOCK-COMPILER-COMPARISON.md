@@ -65,7 +65,8 @@ Lean source change. Instead:
    whose source differs from that build's commit, and its importers). After a
    squash merge this is usually the build of the pull request's head, which has
    the same tree. Only runs of the Full gate workflow in this repository count,
-   never a `pull_request` run and never a partial build.
+   never a `pull_request` run, and only a build whose assemble job succeeded (a
+   run that is still assembling, or published a partial build, is passed over).
 2. `.github/actions/fv-lean` unstages that build and the workflow's own saved
    outputs (Actions cache `stock-lean-*`) into the Lake cache. Lake's cache is
    keyed by each module's inputs, so an older or unrelated build is safe: Lake
@@ -92,8 +93,16 @@ building everything.
 result`, and **Check lost matches** fails with the same title instead of being
 skipped (a skipped check reads as "nothing lost"). The label
 `stock-comparison-accept-losses` does not override it. Re-run the failed jobs
-(`gh run rerun <run> --failed`). Only a run cancelled by a newer commit of the
-same pull request reports nothing.
+(`gh run rerun <run> --failed`). **Check lost matches** runs after a cancelled
+measurement too (cancelled by hand, at the job's 300-minute limit, or because
+a newer commit or event of the pull request started another run) and fails in
+the same way; when another run replaced it, that run's result is the one that
+counts.
+
+Measured on #1019's first run (the chosen build had the tested tree's Lean
+sources: nothing to build): the job took 10 minutes, 4 of them the download and
+unstaging of `lake-full`, 1 restoring and staging the executables, 3 the Rust
+builds and the comparison.
 
 A green measurement job means that the full inventory was processed and the
 report is valid. It does **not** mean compiler equivalence. The pipeline exits
