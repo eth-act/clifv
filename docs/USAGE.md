@@ -644,6 +644,16 @@ pipeline, the D0 lowering without dead cleanup or Stock routes, the compiler
 closed cleanup fixtures `Crates/DeadCleanupGenerated{,Split}.lean` with `lake exe
 dead-cleanup-generate` (FVTest/Link/DeadCleanupGenerate.lean: the `cleanup_unused` fixture, 1 and
 33 copies, compiled by `Link.DeadCleanup.compileExe` and written by `leanFilesCleanup`, #745).
+The script's output does not depend on the machine (#984): rustc gets `--remap-path-prefix` for the
+checkout (`/clifv`) and for the toolchain's library sources (`/rustc/<commit>`), cargo then keeps
+RUSTFLAGS (with the absolute path of cg_clif) out of the `-<16 hex>` in its file names, from which
+cargo fv derives its `__fv_<12 hex>_` symbol prefixes, the builds go to target directories of their
+own (`target/regen`, `target/pipeline-t`, removed first), and the generated files name the
+executable by its path inside the repository. The generated modules are removed before they are
+written, so a step that writes nothing shows as deleted files. The CI full gate's job `crate-proofs
+freshness` (#994) reruns the script and fails on any difference from the committed files, so a PR
+that changes generated code and does not regenerate is red even when the old proofs still build;
+when it is red, rerun the script or apply the patch in its artifact.
 
 ## Examples and results
 

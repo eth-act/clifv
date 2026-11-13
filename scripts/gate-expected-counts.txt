@@ -1,0 +1,20 @@
+# The pinned counts of the cargo fv gate lines (#1004): per example, the executables that go
+# through cargo fv's binary check (the M of `binary check: N of M executable(s) verified`), and
+# the N and V of `N of M functions compiled by the Lean backend (V verified)`. Read by
+# scripts/gate-line-check.py (CI full gate and scripts/main-gate.sh).
+#
+# - EXECUTABLES is exact. An executable without Lean-compiled code leaves the binary check, so
+#   without this pin the line stayed `N of N` with a smaller N.
+# - LEAN and VERIFIED: a run below the pin is red (a regression). A run above it is red too until
+#   this file records the rise: the PR that verifies more functions changes its line in the same
+#   PR (the gate's verdict and the CI job summary print the new line). So the pins never lag.
+# - A PR that changes an example (a new test, a dependency) changes its line as well.
+#
+# Format: EXAMPLE  EXECUTABLES  LEAN  VERIFIED   (the directory name under examples/)
+
+# `--lean-link --verified`: an unverified function keeps cg_clif's code, so LEAN = VERIFIED
+fv-demo          2   1372   1372
+survey          18   3251   3251
+deps             4  20910  20910
+# plain cargo fv: `big` (lib and test crate) is Lean-compiled and unverified
+bigframe-unwind  1    103    101
