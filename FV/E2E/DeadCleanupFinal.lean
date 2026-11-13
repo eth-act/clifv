@@ -147,7 +147,7 @@ theorem backend_correct_final_cleanup_ex {p : Clif.Program} {f : Clif.Function} 
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env p fuel cs) :=
   backend_correct_m4_cleanup_ex (ctx := fun _ => ⟨fa.k, af.slotBase⟩) (X := fun _ => X) hsub hc
-    (regLevelCorrect_backend_ex_value hc.check hc.alloc hc.emit hc.layout hcov hC
+    (regLevelCorrect_backend_ex_value hc.check (AllocAF.of_lowerRFunc hc.alloc) (noLeaf_of_lowerRFunc hc.alloc) hc.emit hc.layout hcov hC
       (fun h => hCT (hasTry_of_hasTryCallCleanupA hc h)) (fun h => hTls (hasTls_of_vcodeCleanupA hc h)))
     (fun _ => refines_valueSem _ _ X) hX hXI (fun _ => hsym)
     (fun _ => memRefines_valueSem _ _ X hslot hsym) (outgoing_le_intBaseCleanupA hc)

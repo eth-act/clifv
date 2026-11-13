@@ -22,7 +22,8 @@ private theorem valueSemV_halt {gv : Nat → String → Prop} {F : BitVec 64 →
 
 theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {fb : FnBin} {k : Nat} {cc : CheckCtx} {ins : Array (Option AState)}
-    {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0) (halloc : lowerRFunc vcp rf = .ok af)
+    {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0) (halloc : AllocAF vcp rf af)
+    (hleaf : af.frame = false → fa.leafChk = true)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
     {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
@@ -57,8 +58,8 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
   obtain ⟨p, hp, -, hk⟩ := emitFunc_ok hemit
   subst hk
   let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, p.ps, K, G, gv⟩
-  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, AllocAF.of_lowerRFunc halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
-    ⟨p, hp, rfl⟩, hent.program, hG, noLeaf_of_lowerRFunc halloc⟩
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hcheck, hok⟩, halloc, hemit, hlayout, hlm, by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres,
+    ⟨p, hp, rfl⟩, hent.program, hG, fun h => leafKeep_of_leafChk (hleaf h) hlm⟩
   have hck := (hR.alloc.ok).2.2
   obtain ⟨n0, ht0, hq0, hA0, hf0⟩ := q_init hR hent hbe
   obtain ⟨Rl, hSim, hinit, hkeep⟩ :=
@@ -237,7 +238,8 @@ theorem regLevelCorrect_world_atX_value {vcp : VCode} {rf : RFunc} {af : AFunc} 
 (any choice satisfying the entry state). -/
 theorem regLevelCorrect_world_at_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
     {fb : FnBin} {k : Nat} {cc : CheckCtx} {ins : Array (Option AState)}
-    {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0) (halloc : lowerRFunc vcp rf = .ok af)
+    {a0 : AState} (hcheck : CheckedAt vcp rf cc ins a0) (hok : EntryOk a0) (halloc : AllocAF vcp rf af)
+    (hleaf : af.frame = false → fa.leafChk = true)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
     {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
@@ -265,7 +267,7 @@ theorem regLevelCorrect_world_at_value {vcp : VCode} {rf : RFunc} {af : AFunc} {
           spv (E2E.runX (ArmStepX X H fa) i s) = spv s - BitVec.ofNat 64 (frameDrop af)) ∧
     (∀ c, VTraps vcp (valueSemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) (ρsel m₀) w₀ c →
       ∃ n, TrapAt fb base c (E2E.runX (ArmStepX X H fa) n s)) := by
-  obtain ⟨m₀, h1, h2⟩ := regLevelCorrect_world_atX_value hcheck hok halloc hemit hlayout hcov hent hres hG hC
+  obtain ⟨m₀, h1, h2⟩ := regLevelCorrect_world_atX_value hcheck hok halloc hleaf hemit hlayout hcov hent hres hG hC
     hCT hTls hbe ρsel hsel
   exact ⟨m₀, fun us vals w hret => let ⟨n, h, _⟩ := h1 us vals w hret; ⟨n, h⟩,
     fun c htr => let ⟨n, h, _⟩ := h2 c htr; ⟨n, h⟩⟩
@@ -279,7 +281,8 @@ callee contract required only at the states that keep `G` (`CalleeOkG`). A retur
 leaves every unmasked field but x29/`sp` as the VCode run's final world `w` (the flags, x18, …),
 the memory at `G` as at entry and the program unchanged. -/
 theorem regLevelCorrect_world_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
-    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : AllocAF vcp rf af)
+    (hleaf : af.frame = false → fa.leafChk = true)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
     {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
@@ -306,14 +309,15 @@ theorem regLevelCorrect_world_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
       ∃ n, TrapAt fb base c (E2E.runX (ArmStepX X H fa) n s)) := by
   obtain ⟨cc, ins, hc⟩ := checked_of_checkAlloc hcheck
   obtain ⟨a0, hat, hle⟩ := hc.at
-  obtain ⟨_, h⟩ := regLevelCorrect_world_at_value hat (entryOk_of_le hle) halloc hemit hlayout hcov hent
+  obtain ⟨_, h⟩ := regLevelCorrect_world_at_value hat (entryOk_of_le hle) halloc hleaf hemit hlayout hcov hent
     hres hG hC hCT hTls hbe (fun _ => ρ₀) (fun _ => Inv_mono hle Inv_entryState)
   exact h
 
 /-- `regLevelCorrect_world_value` for an `AllocChecked` allocation (V4), for one initial vreg file of the
 theorem's choice (`entryRho`: the values the entry state places in the initial store). -/
 theorem regLevelCorrect_world_ex_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
-    {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : lowerRFunc vcp rf = .ok af)
+    {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : AllocAF vcp rf af)
+    (hleaf : af.frame = false → fa.leafChk = true)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
     {K : Nat} {G : BitVec 64 → Prop} {gv : Nat → String → Prop}
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
@@ -340,7 +344,7 @@ theorem regLevelCorrect_world_ex_value {vcp : VCode} {rf : RFunc} {af : AFunc} {
     (∀ c, VTraps vcp (valueSemV gv (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s) ⟨fa.k, af.slotBase⟩ X) ρ₀ w₀ c →
       ∃ n, TrapAt fb base c (E2E.runX (ArmStepX X H fa) n s)) := by
   obtain ⟨cc, ins, a0, hat, hok⟩ := hcheck
-  obtain ⟨_, h⟩ := regLevelCorrect_world_at_value hat hok halloc hemit hlayout hcov hent hres hG hC hCT
+  obtain ⟨_, h⟩ := regLevelCorrect_world_at_value hat hok halloc hleaf hemit hlayout hcov hent hres hG hC hCT
     hTls hbe (entryRho a0) (Inv_entryRho ckeep hok)
   exact ⟨_, h⟩
 
@@ -352,7 +356,8 @@ callees' dead stack of `K` bytes; function context `⟨fa.k, af.slotBase⟩`, ex
 `CalleeOk` of every activation (with stack budget `K`, for the call sites of `vcp`), and (for code with a `tls_value`) the
 TLSDESC contract `TlsOk`. (`regLevelCorrect_world_value` without kept addresses.) -/
 theorem regLevelCorrect_backend_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
-    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : lowerRFunc vcp rf = .ok af)
+    {fb : FnBin} {k : Nat} (hcheck : checkAlloc vcp rf = .ok ()) (halloc : AllocAF vcp rf af)
+    (hleaf : af.frame = false → fa.leafChk = true)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
     {K : Nat} (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
@@ -368,12 +373,12 @@ theorem regLevelCorrect_backend_value {vcp : VCode} {rf : RFunc} {af : AFunc} {f
       (ArmStepX X H fa) vcp af fb := by
   intro base ra s hent hres w₀ hbe ρ₀
   have e := frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
-  have h := regLevelCorrect_world_value (G := fun _ => False) (gv := fun _ _ => False) hcheck halloc hemit
+  have h := regLevelCorrect_world_value (G := fun _ => False) (gv := fun _ _ => False) hcheck halloc hleaf hemit
     hlayout hcov hent.toCall hres
     (fun _ h => h.elim) (by rw [e]; exact (hC s).g _ s _ _) (by rw [e]; exact fun h => (hCT h s).g _ _ s _ _)
     (by rw [e]; exact fun h => hTls h s)
     (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
-      ((ctlCheck_args (lowerRFunc_ok halloc).2.2 hvb hi).2.2 _ hv).2) ρ₀
+      ((ctlCheck_args halloc.ok.2.2 hvb hi).2.2 _ hv).2) ρ₀
   rw [e, valueSemV_bot] at h
   exact ⟨fun us vals w hret => by
     obtain ⟨n, h1, h2, h3, -⟩ := h.1 us vals w hret
@@ -381,7 +386,8 @@ theorem regLevelCorrect_backend_value {vcp : VCode} {rf : RFunc} {af : AFunc} {f
 
 /-- `regLevelCorrect_backend_value` for an `AllocChecked` allocation (V4): `RegLevelCorrectEx`. -/
 theorem regLevelCorrect_backend_ex_value {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
-    {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : lowerRFunc vcp rf = .ok af)
+    {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : AllocAF vcp rf af)
+    (hleaf : af.frame = false → fa.leafChk = true)
     (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
     {K : Nat} (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
@@ -397,12 +403,12 @@ theorem regLevelCorrect_backend_ex_value {vcp : VCode} {rf : RFunc} {af : AFunc}
       (ArmStepX X H fa) vcp af fb := by
   intro base ra s hent hres w₀ hbe
   have e := frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
-  obtain ⟨ρ₀, h⟩ := regLevelCorrect_world_ex_value (G := fun _ => False) (gv := fun _ _ => False) hcheck halloc hemit
+  obtain ⟨ρ₀, h⟩ := regLevelCorrect_world_ex_value (G := fun _ => False) (gv := fun _ _ => False) hcheck halloc hleaf hemit
     hlayout hcov hent.toCall hres
     (fun _ h => h.elim) (by rw [e]; exact (hC s).g _ s _ _) (by rw [e]; exact fun h => (hCT h s).g _ _ s _ _)
     (by rw [e]; exact fun h => hTls h s)
     (by rw [e]; exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
-      ((ctlCheck_args (lowerRFunc_ok halloc).2.2 hvb hi).2.2 _ hv).2)
+      ((ctlCheck_args halloc.ok.2.2 hvb hi).2.2 _ hv).2)
   rw [e, valueSemV_bot] at h
   exact ⟨ρ₀, fun us vals w hret => by
     obtain ⟨n, h1, h2, h3, -⟩ := h.1 us vals w hret

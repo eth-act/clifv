@@ -321,7 +321,7 @@ theorem backend_correct_world_cleanup_abi {p : Clif.Program} {f : Clif.Function}
   have hP := hP (fun _ => 0) w₀
   have hM6 : ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
       ActEntry vcp rf af fa fb K F G X H base ra s w₀ → _ := fun H G base ra s he => by
-    have h := regLevelCorrect_world_value hc.check hc.alloc hc.emit hc.layout (X := X) (H := H)
+    have h := regLevelCorrect_world_value hc.check (AllocAF.of_lowerRFunc hc.alloc) (noLeaf_of_lowerRFunc hc.alloc) hc.emit hc.layout (X := X) (H := H)
       (K := K) (G := G) (gv := GotV vcp) hcov he.abi he.stack he.gfree (by rw [he.hF]; exact he.calls)
       (by rw [he.hF]; exact he.tries) (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.body)
       (fun _ => 0)
