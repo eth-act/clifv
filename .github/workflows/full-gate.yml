@@ -540,11 +540,23 @@ jobs:
           # verified" and rust-lld links (#998, #1004); one that asked for N of N passes with a
           # smaller N. The counts (pinned and measured) and the known-unverified executables with
           # cargo fv's reasons go to the job summary.
+          # --base: main's pins. A branch may raise a pin, not lower it: the pins are read from
+          # the base revision too (LEARNINGS.md, "Untrusted input never widens the policy"), or a
+          # PR that loses functions turns green by editing the file. Without main's copy (the
+          # fetch failed) the verdict is red; main has none before this file's first merge.
+          base="$RUNNER_TEMP/expected-counts-main.txt"
+          if git fetch -q --depth 1 origin main; then
+            if git cat-file -e FETCH_HEAD:scripts/gate-expected-counts.txt 2> /dev/null; then
+              git show FETCH_HEAD:scripts/gate-expected-counts.txt > "$base" || rm -f "$base"
+            else
+              : > "$base"
+            fi
+          fi
           lean_link=()
           if [[ " $ARGS " == *" --lean-link "* ]]; then lean_link=(--lean-link); fi
           ok=0
-          verdict=$(python3 scripts/gate-line-check.py cargo-fv "$EX" "${lean_link[@]}" --summary "$GITHUB_STEP_SUMMARY" \
-            "gate-logs/$EX.log" "gate-logs/$EX-cargo-fv.log") || ok=$?
+          verdict=$(python3 scripts/gate-line-check.py cargo-fv "$EX" "${lean_link[@]}" --base "$base" \
+            --summary "$GITHUB_STEP_SUMMARY" "gate-logs/$EX.log" "gate-logs/$EX-cargo-fv.log") || ok=$?
           if [[ $rc == 0 && $ok != 0 ]]; then rc=1; fi
           echo "cargo fv${ARGS:+ $ARGS} $EX rc=$rc $(( $(date +%s) - start )) s: $verdict" | tee gate-logs/summary.txt
           grep -E 'Maximum resident|Elapsed' "gate-logs/$EX.time" || true
