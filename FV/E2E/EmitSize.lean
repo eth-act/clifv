@@ -685,7 +685,7 @@ theorem probeLines_length (total : Nat) : (probeLines total).length ≤ 9 := by
 
 /-- The prologue: fp/lr, x29, the stack probes, at most one push per saved register, the `sp`
 adjustment. -/
-theorem prologueLines_length {calls : Bool} (saves : List Reg) (n : Nat) :
+theorem prologueLines_length {calls : StackProbe} (saves : List Reg) (n : Nat) :
     (prologueLines saves n calls).length ≤ 16 + saves.length := by
   have := pushLines_length true (savesInt saves)
   have := pushLines_length false (savesFloat saves)
@@ -718,7 +718,7 @@ theorem spAdjLines_lit (sub : Bool) (size : Nat) : (spAdjLines sub size).countP 
   repeat' split
   all_goals simp [List.countP_append, Line.isLit, this]
 
-theorem prologueLines_lit (saves : List Reg) (n : Nat) (calls : Bool) :
+theorem prologueLines_lit (saves : List Reg) (n : Nat) (calls : StackProbe) :
     (prologueLines saves n calls).countP Line.isLit = 0 := by
   have hp : ∀ t, (probeLines t).countP Line.isLit = 0 := by
     intro t

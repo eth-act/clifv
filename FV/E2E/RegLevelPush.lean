@@ -1871,7 +1871,7 @@ theorem probeRun_ok (env : Env) (total : Nat) (s : Arm.ArmState) (hal : (spOf s)
 
 /-! ## The prologue and the epilogue -/
 
-theorem prologueLines_eq {calls : Bool} (saves : List Reg) (size : Nat) :
+theorem prologueLines_eq {calls : StackProbe} (saves : List Reg) (size : Nat) :
     prologueLines saves size calls = [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
       (probeLines (probeTotal size calls) ++ (pushLines true (savesInt saves) ++ (pushLines false (savesFloat saves) ++
         spAdjLines true (size - clobberBytes saves)))) := by
@@ -1894,7 +1894,7 @@ def prologueTail (saves : List Reg) (size : Nat) : List Line :=
   pushLines true (savesInt saves) ++ (pushLines false (savesFloat saves) ++
     spAdjLines true (size - clobberBytes saves))
 
-theorem prologueLines_split {calls : Bool} (saves : List Reg) (size : Nat) :
+theorem prologueLines_split {calls : StackProbe} (saves : List Reg) (size : Nat) :
     prologueLines saves size calls = fplrLines ++ (probeHead (probeTotal size calls) ++
       (probeLoopL (probeTotal size calls) ++ prologueTail saves size)) := by
   rw [prologueLines_eq, probeLines_split, List.append_assoc]; rfl
@@ -1903,13 +1903,13 @@ theorem prologueLines_split {calls : Bool} (saves : List Reg) (size : Nat) :
 (which lowers `sp` by 16), the stack probes (`ProbeRun`: the probe loop runs its body
 `probeCount` times, #581), the pushes and the `sp` adjustment. Without the probe loop it is the
 straight-line run of `prologueLines` (`ProRun.stepsOk`). -/
-def ProRun (env : Env) (saves : List Reg) (size : Nat) (calls : Bool) (s s' : Arm.ArmState) : Prop :=
+def ProRun (env : Env) (saves : List Reg) (size : Nat) (calls : StackProbe) (s s' : Arm.ArmState) : Prop :=
   ∃ s2 sP, StepsOk env fplrLines s s2 ∧ spOf s2 = spOf s - 16#64 ∧
     ProbeRun { env with pc := env.pc + 4 + 4 } (probeTotal size calls) s2 sP ∧
     StepsOk { env with pc := env.pc + 4 + 4 + 4 * (probeLines (probeTotal size calls)).length }
       (prologueTail saves size) sP s'
 
-theorem ProRun.err {env : Env} {saves : List Reg} {size : Nat} {calls : Bool} {s s' : Arm.ArmState}
+theorem ProRun.err {env : Env} {saves : List Reg} {size : Nat} {calls : StackProbe} {s s' : Arm.ArmState}
     (h : ProRun env saves size calls s s') : Arm.r .ERR s' = Arm.r .ERR s ∧ s'.program = s.program := by
   obtain ⟨s2, sP, h1, -, h2, h3⟩ := h
   obtain ⟨e1, p1⟩ := h1.err
@@ -1917,7 +1917,7 @@ theorem ProRun.err {env : Env} {saves : List Reg} {size : Nat} {calls : Bool} {s
   obtain ⟨e3, p3⟩ := h3.err
   exact ⟨e3.trans (e2.trans e1), p3.trans (p2.trans p1)⟩
 
-theorem ProRun.det {env : Env} {saves : List Reg} {size : Nat} {calls : Bool} {s s1 s2 : Arm.ArmState}
+theorem ProRun.det {env : Env} {saves : List Reg} {size : Nat} {calls : StackProbe} {s s1 s2 : Arm.ArmState}
     (h1 : ProRun env saves size calls s s1) (h2 : ProRun env saves size calls s s2) : s1 = s2 := by
   obtain ⟨t1, u1, hA1, -, hP1, hT1⟩ := h1
   obtain ⟨t2, u2, hA2, -, hP2, hT2⟩ := h2
@@ -1926,7 +1926,7 @@ theorem ProRun.det {env : Env} {saves : List Reg} {size : Nat} {calls : Bool} {s
   exact StepsOk.det hT1 hT2
 
 /-- Without the probe loop the prologue's run is straight-line. -/
-theorem ProRun.stepsOk {env : Env} {saves : List Reg} {size : Nat} {calls : Bool} {s s' : Arm.ArmState}
+theorem ProRun.stepsOk {env : Env} {saves : List Reg} {size : Nat} {calls : StackProbe} {s s' : Arm.ArmState}
     (hl : probeLoop (probeTotal size calls) = false) (h : ProRun env saves size calls s s') :
     StepsOk env (prologueLines saves size calls) s s' := by
   obtain ⟨s2, sP, h1, -, ⟨s1, hH, -, hL, -⟩, h3⟩ := h
@@ -1953,7 +1953,7 @@ with Cranelift's probes: a probe of a frame of at least 4 KiB writes 4096 bytes 
 fp/lr, and for a probed stack of 16 KiB or more Cranelift's probe loop (`probeLoopBody`) jumps
 back, sets `x17` and the flags; the run is `ProRun`, straight-line without the loop
 (`ProRun.stepsOk`); `calls` is the new argument of `prologueLines`.) -/
-theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (hs : size < 2 ^ 64)
+theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : StackProbe} (hs : size < 2 ^ 64)
     (hsv : SavesOk saves) (hcb : clobberBytes saves ≤ size) (s : Arm.ArmState)
     (hal : (spOf s).toNat % 16 = 0) :
     ∃ s', ProRun env saves size calls s s' ∧
@@ -2133,6 +2133,36 @@ theorem prologue_ok (env : Env) {saves : List Reg} {size : Nat} {calls : Bool} (
       simp only [slotVal]
       rw [ho3 _ (by simp) (by simp), hoP2 _ (by simp) (by simp) (by simp) (by simp) (by simp),
         ho2 _ (by simp) (by simp), ho1 _ (by simp) (by simp)]
+
+/-- **The prologue without stack probes** (`StackProbe.off`: `enable_probestack=false`, #1013):
+`prologue_ok` then gives the statement of before the probes (#581): a straight-line run
+(`StepsOk`) of the prologue's lines (`prologueLines_off`: the frame setup, the pushes, the `sp`
+adjustment), the flags kept, memory changed only in `[sp - 16 - clobberBytes, sp)`. (`x17` is
+not written either; this corollary of `prologue_ok` does not say so.) -/
+theorem prologue_ok_off (env : Env) {saves : List Reg} {size : Nat} (hs : size < 2 ^ 64)
+    (hsv : SavesOk saves) (hcb : clobberBytes saves ≤ size) (s : Arm.ArmState)
+    (hal : (spOf s).toNat % 16 = 0) :
+    ∃ s', StepsOk env (prologueLines saves size .off) s s' ∧
+      spOf s' = spOf s - 16#64 - BitVec.ofNat 64 size ∧ xreg 29 s' = spOf s - 16#64 ∧
+      (∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
+        Arm.r f s' = Arm.r f s) ∧
+      (∀ a, (∀ k < 16 + clobberBytes saves,
+        a ≠ spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) + BitVec.ofNat 64 k) →
+        s'.mem a = s.mem a) ∧
+      Arm.read_mem_bytes 16 (spOf s - 16#64) s' = xreg 30 s ++ xreg 29 s ∧
+      (∀ r ∈ saves, Arm.read_mem_bytes 8 (spOf s - BitVec.ofNat 64 (16 + clobberBytes saves) +
+        BitVec.ofNat 64 (clobberOff saves r)) s' = slotVal s r) := by
+  have hl : probeLoop (probeTotal size .off) = false := by rw [probeTotal_off]; decide
+  obtain ⟨s', hpr, hsp, hfp, hf, hfl, hm, hlr, hsl⟩ :=
+    prologue_ok (calls := .off) env hs hsv hcb s hal
+  refine ⟨s', hpr.stepsOk hl, hsp, hfp, fun f g1 g2 g3 g4 g5 => ?_, fun a ha => ?_, hlr, hsl⟩
+  · by_cases hF : ∃ fl, f = Arm.StateField.FLAG fl
+    · obtain ⟨fl, rfl⟩ := hF
+      rw [hfl fl]
+      simp [probeFlagT, hl]
+    · exact hf f g1 g2 g3 g4 g5 (fun fl e => hF ⟨fl, e⟩)
+  · rw [hm a ha, probeTotal_off, probeCount_zero]
+    simp [probeHitN, probeHitB]
 
 /-- **The epilogue runs up to the `ret`** (Cranelift's clobber restore and frame teardown):
 `sp` raised by `size - clobberBytes`, the saved registers popped (`PopVal`: each gets its slot,

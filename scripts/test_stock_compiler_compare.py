@@ -131,7 +131,8 @@ class StockIntegrationTests(unittest.TestCase):
             unknown = copy.deepcopy(base); unknown["flags"].append({"name":"future_feature","value":"true"});requests.append(unknown)
             missing = copy.deepcopy(base);missing["flags"].pop();requests.append(missing)
             duplicate = copy.deepcopy(base);duplicate["flags"].append(duplicate["flags"][0]);requests.append(duplicate)
-            for name, value in (("opt_level","speed"),("enable_nan_canonicalization","true"),("enable_probestack","true")):
+            for name, value in (("opt_level","speed"),("enable_nan_canonicalization","true"),
+                                ("probestack_strategy","sideways"),("probestack_size_log2","twelve")):
                 request = copy.deepcopy(base)
                 next(f for f in request["flags"] if f["name"]==name)["value"]=value
                 requests.append(request)
@@ -198,6 +199,66 @@ class StockIntegrationTests(unittest.TestCase):
                 result,receipt=self.compile(root/label,request,source)
                 self.assertEqual(result.returncode,0,result.stderr)
                 self.assertEqual(set(receipt["function_rejections"]),set(names),label)
+
+    def test_stack_probes_follow_the_settings(self):
+        # #1013: stock probes the stack only with enable_probestack (gen_prologue, machinst/abi.rs:2326).
+        source=(b"function %big() -> i64 {\nss0 = explicit_slot 100000\nblock0:\nv0 = stack_addr.i64 ss0\nreturn v0\n}\n\n"
+                b"function %mid() -> i64 {\nss0 = explicit_slot 12288\nblock0:\nv0 = stack_addr.i64 ss0\nreturn v0\n}\n\n"
+                b"function %small() -> i64 {\nss0 = explicit_slot 2048\nblock0:\nv0 = stack_addr.i64 ss0\nreturn v0\n}\n")
+        words=lambda *ws: b"".join(w.to_bytes(4,"little") for w in ws)
+        # Stock's bytes of %large, %unrolled and %single_page of isa/aarch64/inline-probestack.clif
+        # (enable_probestack=true, inline, 4 KiB guard): the probe loop, three unrolled probes, none.
+        loop=words(0xa9bf7bfd,0x910003fd,0xd2800010,0x5290d411,0x72a00031,0xd1400610,0xb8306bff,0xab11021f,
+                   0x54ffffac,0x5290d410,0x72a00030,0xcb3063ff,0x910003e0,0x5290d410,0x72a00030,0x8b3063ff,
+                   0xa8c17bfd,0xd65f03c0)
+        unrolled=words(0xa9bf7bfd,0x910003fd,0xd14007ff,0xb80003ff,0xd14007ff,0xb80003ff,0xd14007ff,0xb80003ff,
+                       0x91400fff,0xd1400fff,0x910003e0,0x91400fff,0xa8c17bfd,0xd65f03c0)
+        small=words(0xa9bf7bfd,0x910003fd,0xd12003ff,0x910003e0,0x912003ff,0xa8c17bfd,0xd65f03c0)
+        # Without probes: the seven probe instructions after `stp; mov x29, sp` are absent
+        # (as isa/aarch64/stack.clif %stack_addr_big, enable_probestack=false).
+        bare=lambda code: code[:8]+code[36:]
+        with tempfile.TemporaryDirectory(prefix="stock-config-test-") as temp:
+            root=Path(temp);base=self.seed(root/"stock")
+            flags={f["name"]:f["value"] for f in base["flags"]}
+            self.assertEqual((flags["enable_probestack"],flags["probestack_strategy"],flags["probestack_size_log2"]),
+                             ("false","outline","12"))
+            enabled=with_flag(base,"flags","enable_probestack","true")
+            inline=with_flag(enabled,"flags","probestack_strategy","inline")
+            cases={
+                "off":(base,{},{"big":bare(loop),"mid":bare(unrolled)}),
+                # Stock reads the strategy and the guard size only with enable_probestack.
+                "off-other":(with_flag(with_flag(base,"flags","probestack_strategy","inline"),
+                    "flags","probestack_size_log2","6"),{},{"big":bare(loop),"mid":bare(unrolled)}),
+                "inline":(inline,{},{"big":loop,"mid":unrolled}),
+                # gen_probestack is unimplemented on AArch64: stock compiles no probed function.
+                "outline":(enabled,{"big":"probestack_strategy=outline","mid":"probestack_strategy=outline"},{}),
+                # A 64 KiB guard: no probe below it; Lean has the 4 KiB guard only.
+                "inline-64k":(with_flag(inline,"flags","probestack_size_log2","16"),
+                    {"big":"probestack_size_log2=16"},{"mid":bare(unrolled)}),
+            }
+            for label,(request,rejected,expected) in cases.items():
+                result,receipt=self.compile(root/label,request,source)
+                self.assertEqual(result.returncode,0,result.stderr)
+                self.assertTrue(receipt["configuration_accepted"],label)
+                self.assertEqual(set(receipt["function_rejections"]),set(rejected),label)
+                for name,reason in rejected.items():
+                    self.assertIn(reason,receipt["function_rejections"][name],(label,name))
+                    self.assertFalse((root/label/"dump"/f"{name}.bin").exists(),(label,name))
+                for name,code in {**expected,"small":small}.items():
+                    self.assertEqual((root/label/"dump"/f"{name}.bin").read_bytes().hex(),code.hex(),(label,name))
+
+    def test_stock_probe_files_exact_outputs(self):
+        # #1013: one file with enable_probestack=true (inline, 4 KiB guard), and the functions of
+        # isa/aarch64/stack.clif (enable_probestack=false) whose frames stock would otherwise probe.
+        with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
+            row=COMPARE.one(COMPARE.SUITE/"isa/aarch64/inline-probestack.clif",Path(temp)/"on",self.env,self.exporter,True)
+            self.assertTrue(row["all_declared_aarch64_code_artifacts_identical"])
+            self.assertEqual([r["name"] for r in row["variants"][0]["functions_compared"]],
+                             ["%single_page","%unrolled","%large"])
+            row=COMPARE.one(COMPARE.SUITE/"isa/aarch64/stack.clif",Path(temp)/"off",self.env,self.exporter,True)
+            status={r["name"]:r["status"] for r in row["variants"][0]["functions_compared"]}
+            for name in ("%stack_addr_big","%stack_load_big","%stack_store_big","%i128_stack_store_big","%i128_stack_load_big"):
+                self.assertEqual(status[name],"identical_code_artifact",name)
 
     def test_stock_compile_assertions_and_exact_outputs(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:

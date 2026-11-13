@@ -6,6 +6,12 @@ accepts the losses; it is read when this job runs, so re-running the job after l
 passes. On `main` there is no override: the commit is marked, and the next push compares
 with it. When no baseline exists there is nothing to compare, and the check passes; when one
 exists but could not be retrieved or read, the check fails (the label does not override that).
+
+MEASURE_RESULT is the result of the workflow's measuring job ("Build and compare"). Anything
+but `success` (it failed, ran out of time, lost its runner, was cancelled) means there is no
+measurement of this commit: the check fails with "no result", whatever an earlier attempt
+measured and whatever the labels say, since lost matches cannot be ruled out (#1018: a skipped
+check read as a pass). Without the variable the summary alone decides (a missing summary fails).
 """
 import argparse
 import json
@@ -16,6 +22,7 @@ import subprocess
 LABEL = "stock-comparison-accept-losses"
 MEMBER = "ci-comparison.ci-summary.json"
 SHOWN = 50
+NO_RESULT = "No stock-comparison result"
 
 
 def newest_summary(directory):
@@ -67,14 +74,38 @@ def check(summary, run_id, head, labels):
     return 1, lines
 
 
+def no_result(result, run_id):
+    """Report lines when the measuring job did not succeed."""
+    if result == "failure":
+        how = "it failed, ran out of time or lost its runner; its annotations and log say which"
+        rerun = f"Re-run the failed jobs of this workflow run (`gh run rerun {run_id} --failed`)."
+    else:
+        # `--failed` re-runs failed jobs and the jobs that need them: after a cancelled (or
+        # skipped) measuring job that is this job alone, which would fail again unmeasured
+        how = ("it was cancelled: by hand, at the job's time limit, or because a newer commit or event of the "
+               "pull request started another run of this workflow" if result == "cancelled" else
+               "it did not run to a result")
+        rerun = (f"If a newer run of this workflow exists for the same commit or pull request, that run's result is "
+                 f"the one that counts and this one needs nothing. Otherwise re-run all jobs of this workflow run "
+                 f"(`gh run rerun {run_id}`; `--failed` would re-run this job only).")
+    return [f"{NO_RESULT}: the job \"Build and compare\" ended as `{result or 'unknown'}` ({how}). "
+            "Nothing was measured for this commit in this run, so lost matches cannot be ruled out.",
+            f"{rerun} The label {LABEL} does not override a missing measurement."]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("summaries", type=Path, help="directory with the downloaded summary artifacts")
     args = parser.parse_args()
-    number = os.environ.get("PR_NUMBER", "")
-    labels = pr_labels(os.environ["GITHUB_REPOSITORY"], number) if number else None
-    status, lines = check(newest_summary(args.summaries), int(os.environ["GITHUB_RUN_ID"]),
-                          os.environ["CI_HEAD_SHA"], labels)
+    run_id = int(os.environ["GITHUB_RUN_ID"])
+    measured = os.environ.get("MEASURE_RESULT")
+    if measured is not None and measured != "success":
+        status, lines = 1, no_result(measured, run_id)
+        print(f"::error title={NO_RESULT}::{' '.join(lines)}")
+    else:
+        number = os.environ.get("PR_NUMBER", "")
+        labels = pr_labels(os.environ["GITHUB_REPOSITORY"], number) if number else None
+        status, lines = check(newest_summary(args.summaries), run_id, os.environ["CI_HEAD_SHA"], labels)
     print("\n".join(lines))
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:

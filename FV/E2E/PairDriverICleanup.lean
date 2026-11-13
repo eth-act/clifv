@@ -237,26 +237,26 @@ theorem vcode_niI_value_stage {p : Clif.Program} {f : Clif.Function} {k : Nat} {
   have h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀ := (hsw.1 _ (by simp [Masked])).symm
   have H0 := H1 _ _ (xCallsOk_none env _ _ (XI.at 0).noCall)
     (xCallsIndOk_none env _ _ (XI.at 0).noCall) hsym
-  obtain ⟨kk, ρ₁, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2⟩ := entry_step2Z H0
+  -- the kept entry code has no load of an unused stack-passed parameter (#586)
+  obtain ⟨ρ₁, ρF, w₁, w₁', hs1K, hm1, hsw1, hs2K, hm2, hsw2, hag⟩ := entry_matchK2 H0 hK
     (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ (XI.at 0).noCall)
     (memRefines_valueSem _ _ (XI.at 0).noCall hslot hsym) (mrStable_relW Γ f c) hB0 hce.callers
     hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
   have hFD : ∀ a, F a → F a ∨ D a := fun a h => .inl h
-  have hmP : Match f ctx R gn bl A (MRP Γ f c D) cs.frame.slots cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ := by
+  have hmP : Match f ctx R gn bl A (MRP Γ f c D) cs.frame.slots cs
+      ⟨0, (pre f R 0).length, ρF, (w₁, w₁')⟩ := by
     refine ⟨hm1.1, hm1.2.1, hm1.2.2.1, ⟨hm1.2.2.2.1, hm2.2.2.2.1, ?_⟩, hm1.2.2.2.2⟩
     have h01 : SameWorld (fun b => F b ∨ D b) w₁ w₁' :=
       SameWorld.trans (SameWorld.mono hFD hsw1)
         (SameWorld.trans hsw (SameWorld.symm (SameWorld.mono hFD hsw2)))
     exact sameWorld_zof hm1.2.2.2.1.1.1 hm2.2.2.2.1.1.1 h01 (fun b h => h)
   have hPr := probeOf_valueSem F ⟨fa.k, af.slotBase⟩ XI
-  have hkk := entry_pos hB0 hbody hm1
-  have hs1K := entry_runK hK hB0 hkk hs1
-  have hs2K := entry_runK hK hB0 hkk hs2
   intro vals cm hrun
   have hR := sim_runGK hK (noncallIndep_pair (noncallIndep_valueSem F ⟨fa.k, af.slotBase⟩ XI))
     (probeOf_pair hPr) hP Hb Hs hseg htc fuel cs 0 0
-    (kidx (skipMask f R bl vc (skipAt f (skipDrops f R bl vc)) 0) kk) ρ₁ (w₁, w₁') .refl
-    ⟨⟨0, kk, ρ₁, (w₁, w₁')⟩, ⟨rfl, rfl, rfl, fun _ _ => rfl⟩, hmP⟩
+    (kidx (skipMask f R bl vc (skipAt f (skipDrops f R bl vc)) 0) (pre f R 0).length) ρ₁
+    (w₁, w₁') .refl
+    ⟨⟨0, (pre f R 0).length, ρF, (w₁, w₁')⟩, ⟨rfl, rfl, rfl, hag⟩, hmP⟩
   rw [hrun] at hR
   obtain ⟨us, outs, ⟨⟨x1, x2⟩, nc⟩, cm0, sv, hret, -, -, -, -, hmr, -⟩ := hR
   have h1 := vRetFrom_mapW counted_pair_proj₁ hret

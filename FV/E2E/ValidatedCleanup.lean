@@ -822,12 +822,18 @@ theorem vcode_ni_value_validated_of {p : Clif.Program} {f : Clif.Function} {k : 
     (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X) hmem (mrStable_relW Γ f c) hB0 hce.callers hce.func
     rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
   have hFD : ∀ a, F a → F a ∨ D a := fun a h => .inl h
-  have hmP : Match f ctx R gn bl A (MRP Γ f c D) cs.frame.slots cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ := by
+  have hmkP : ∀ {ρ : Nat → CV} {w w' : Arm.ArmState},
+      Match f ctx R gn bl A (RelW Γ f c) cs.frame.slots cs ⟨0, kk, ρ, w⟩ →
+      Match f ctx R gn bl A (RelW Γ f c) cs.frame.slots cs ⟨0, kk, ρ, w'⟩ →
+      SameWorld F w w₀ → SameWorld F w' w₀' →
+      Match f ctx R gn bl A (MRP Γ f c D) cs.frame.slots cs ⟨0, kk, ρ, (w, w')⟩ := by
+    intro ρ w w' hm1 hm2 hsw1 hsw2
     refine ⟨hm1.1, hm1.2.1, hm1.2.2.1, ⟨hm1.2.2.2.1, hm2.2.2.2.1, ?_⟩, hm1.2.2.2.2⟩
-    have h01 : SameWorld (fun b => F b ∨ D b) w₁ w₁' :=
+    have h01 : SameWorld (fun b => F b ∨ D b) w w' :=
       SameWorld.trans (SameWorld.mono hFD hsw1)
         (SameWorld.trans hsw (SameWorld.symm (SameWorld.mono hFD hsw2)))
     exact sameWorld_zof hm1.2.2.2.1.1.1 hm2.2.2.2.1.1.1 h01 (fun b h => h)
+  have hmP := hmkP hm1 hm2 hsw1 hsw2
   intro vals cm hrun
   rcases hsk with rfl | hK
   · have hR := sim_run HP hP fuel cs ⟨0, kk, ρ₁, (w₁, w₁')⟩ (.refl _) hmP
@@ -837,11 +843,14 @@ theorem vcode_ni_value_validated_of {p : Clif.Program} {f : Clif.Function} {k : 
     exact ⟨us, outs, w.1, w.2, VRetFrom.prefix hs1.star h1, VRetFrom.prefix hs2.star h2,
       SameWorld.mono (zof_sub cm0) hmr.2.2⟩
   · have hkk := entry_pos hB0 hbody hm1
-    have hs1K := entry_runK hK hB0 hkk hs1
-    have hs2K := entry_runK hK hB0 hkk hs2
+    -- the kept entry code has no load of an unused stack-passed parameter (#586)
+    obtain ⟨ρK, ρF, wK, wK', hs1K, hm1K, hsw1K, hs2K, hm2K, hsw2K, hag⟩ := entry_matchK2 H hK
+      (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ X) hmem (mrStable_relW Γ f c) hB0 hce.callers
+      hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hrel' hargs hreg h29 hstk
+    rw [← hkk] at hs1K hm1K hs2K hm2K
     have hR := sim_run_abiK hK HP hP (Q := fun _ => True) (fun _ _ _ _ => trivial) fuel cs
-      ⟨0, kidx (skipMask f R bl vc drop 0) kk, ρ₁, (w₁, w₁')⟩ (.refl _)
-      ⟨⟨0, kk, ρ₁, (w₁, w₁')⟩, ⟨rfl, rfl, rfl, fun _ _ => rfl⟩, hmP⟩
+      ⟨0, kidx (skipMask f R bl vc drop 0) kk, ρK, (wK, wK')⟩ (.refl _)
+      ⟨⟨0, kk, ρF, (wK, wK')⟩, ⟨rfl, rfl, rfl, hag⟩, hmkP hm1K hm2K hsw1K hsw2K⟩
     rw [hrun] at hR
     obtain ⟨us, outs, w, cm0, hret, -, -, -, hmr, -⟩ := hR.runOk
     obtain ⟨h1, h2⟩ := vRetFrom_pair hret

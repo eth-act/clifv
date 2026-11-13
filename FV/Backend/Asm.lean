@@ -637,10 +637,24 @@ def probeSteps : Nat → List Line
   | k + 1 => [.ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩), .ins (.store .store32 .xzr (.unscaled .sp 0))] ++
       probeSteps k
 
-/-- The stack size Cranelift probes for a frame of `size` bytes below fp/lr (`gen_prologue`'s
-`total_stacksize`: clobbers, fixed frame and outgoing arguments, plus the 16-byte setup area of
-its callees when the function calls, `FunctionCalls` not `None`). -/
-def probeTotal (size : Nat) (calls : Bool) : Nat := size + if calls then 16 else 0
+/-- The stack size Cranelift's inline stack probes cover for a frame of `size` bytes below fp/lr
+(`gen_prologue`'s `total_stacksize`: clobbers, fixed frame and outgoing arguments, plus the
+16-byte setup area of its callees when the function calls, `FunctionCalls` not `None`:
+`StackProbe.caller`); nothing without probes (`StackProbe.off`: `gen_prologue` calls
+`gen_inline_probestack` only when `enable_probestack` is set). -/
+def probeTotal (size : Nat) : StackProbe → Nat
+  | .off => 0
+  | .leaf => size
+  | .caller => size + 16
+
+/-- Without probes nothing is probed. -/
+theorem probeTotal_off (size : Nat) : probeTotal size .off = 0 := rfl
+
+/-- The probed stack is at most the frame and the callees' 16-byte setup area. -/
+theorem probeTotal_le (size : Nat) : ∀ calls : StackProbe, probeTotal size calls ≤ size + 16
+  | .off => Nat.zero_le _
+  | .leaf => Nat.le_add_right _ _
+  | .caller => Nat.le_refl _
 
 /-- The number of probes (4-byte zero stores at `sp₁ - 4096·i`, `i = 1, …, n`, where `sp₁` is
 the `sp` after the frame setup) of Cranelift's inline stack probes for a probed stack of `total`
@@ -658,6 +672,9 @@ theorem probeCount_le (total : Nat) : probeCount total ≤ 2 ^ 20 := by
   · omega
   · split <;> omega
 
+/-- Nothing to probe: no probes. -/
+theorem probeCount_zero : probeCount 0 = 0 := by decide
+
 theorem probeSteps_length : ∀ k, (probeSteps k).length = 2 * k
   | 0 => rfl
   | k + 1 => by simp only [probeSteps, List.length_append, probeSteps_length k]; simp; omega
@@ -674,16 +691,22 @@ the loop (`probeLoopBody`). -/
 def probeLoopLines (total : Nat) : List Line :=
   loadConst64 (.x 16) 0 ++ loadConst64 (.x 17) total ++ probeLoopBody
 
-/-- Cranelift's inline stack probes (`gen_prologue`, `enable_probestack` with the inline strategy
+/-- Cranelift's inline stack probes (`gen_prologue` with `enable_probestack`, the inline strategy
 and a 4 KiB guard, as cg_clif sets them; aarch64 `gen_inline_probestack`) for a function whose
-probed stack takes `total` bytes (`probeTotal`): `n = probeCount total` probes, none when
+probed stack takes `total` bytes (`probeTotal`; 0 without probes, `StackProbe.off`):
+`n = probeCount total` probes, none when
 `n = 0`; for `n ≤ 3` `gen_probestack_unroll`: `n` times `sub sp, sp, #4096` + `stur wzr, [sp]`
-(`probeSteps`), then `add sp, sp, #4096·n`; otherwise the loop (`probeLoopLines`). -/
+(`probeSteps`), then `add sp, sp, #4096·n`; otherwise the loop (`probeLoopLines`). Whether it is
+unrolled depends on `total` only (`PROBE_MAX_UNROLL` is a constant), on no setting. -/
 def probeLines (total : Nat) : List Line :=
   let n := probeCount total
   if n == 0 then []
   else if n ≤ 3 then probeSteps n ++ [.ins (.aluImm12 .add true .sp .sp ⟨n, true⟩)]
   else probeLoopLines total
+
+/-- Nothing to probe: no lines. -/
+theorem probeLines_zero : probeLines 0 = [] := by
+  simp [probeLines, probeCount_zero]
 
 theorem probeSteps_mem : ∀ {k : Nat} {ln : Line}, ln ∈ probeSteps k →
     ln = .ins (.aluImm12 .sub true .sp .sp ⟨1, true⟩) ∨
@@ -729,15 +752,26 @@ theorem probeLines_mem {total : Nat} {ln : Line} (h : ln ∈ probeLines total) :
     · exact .inr (.inr (.inr (.inr (.inr (.inr (.inr (.inl rfl)))))))
     · exact .inr (.inr (.inr (.inr (.inr (.inr (.inr (.inr rfl)))))))
 
-/-- The prologue of a frame of `size` bytes below fp/lr (clobber area included); `calls`: the
-function calls (Cranelift's `FunctionCalls` is not `None`), so the probed stack also covers the
-16-byte fp/lr area of its callees. The probes come after the frame setup and before the clobber
-pushes (`gen_prologue`). -/
-def prologueLines (saves : List Reg) (size : Nat) (calls : Bool) : List Line :=
+/-- The prologue of a frame of `size` bytes below fp/lr (clobber area included); `calls`
+(`StackProbe`): whether Cranelift probes the stack (`enable_probestack`), and if so whether the
+function calls (Cranelift's `FunctionCalls` is not `None`), so that the probed stack also covers
+the 16-byte fp/lr area of its callees. The probes come after the frame setup and before the
+clobber pushes (`gen_prologue`). -/
+def prologueLines (saves : List Reg) (size : Nat) (calls : StackProbe) : List Line :=
   [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
   probeLines (probeTotal size calls) ++
   pushLines true (savesInt saves) ++ pushLines false (savesFloat saves) ++
   spAdjLines true (size - clobberBytes saves)
+
+/-- **Without stack probes** (`enable_probestack=false`, #1013) the prologue is the frame setup,
+the clobber pushes and the `sp` adjustment: the prologue of before the probes (#581). -/
+theorem prologueLines_off (saves : List Reg) (size : Nat) :
+    prologueLines saves size .off =
+      [.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))), .ins (.mov true Reg.fp .sp)] ++
+      pushLines true (savesInt saves) ++ pushLines false (savesFloat saves) ++
+      spAdjLines true (size - clobberBytes saves) := by
+  unfold prologueLines
+  rw [probeTotal_off, probeLines_zero, List.append_nil]
 
 /-- The epilogue frees the fixed frame by adjusting `sp` (as the prologue allocated it; `x16`
 holds large sizes), pops the saved registers, then fp/lr, and returns. It does not read `fp`:

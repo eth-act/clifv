@@ -21,7 +21,7 @@ open Backend Backend.Proof E2E
 /-! ## The entry block of the emitted code -/
 
 /-- The prologue's lines branch nowhere. -/
-theorem prologueLines_target (saves : List Reg) (size : Nat) (calls : Bool) :
+theorem prologueLines_target (saves : List Reg) (size : Nat) (calls : StackProbe) :
     ∀ ln ∈ prologueLines saves size calls, ln.target? = none := by
   intro ln hl
   simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
