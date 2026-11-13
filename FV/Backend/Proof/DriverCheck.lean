@@ -125,6 +125,7 @@ def instArgs : Clif.Inst → List Clif.ValueId
   | .callIndirect _ callee args => callee :: args
   | .funcAddr _ _ => []
   | .float _ _ args => args
+  | .vector _ _ args _ => args
 
 /-- The value operands of a terminator. -/
 def termArgs : Clif.Terminator → List Clif.ValueId

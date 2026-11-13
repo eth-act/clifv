@@ -40,6 +40,7 @@ def operands : Inst → List ValueId
   | .callIndirect _ callee args => callee :: args
   | .funcAddr _ _ => []
   | .float _ _ args => args
+  | .vector _ _ args _ => args
 
 /-- Rename the operands of an instruction (results are not part of `Inst`). -/
 def mapOperands (f : ValueId → ValueId) : Inst → Inst
@@ -77,6 +78,7 @@ def mapOperands (f : ValueId → ValueId) : Inst → Inst
   | .symbolValue ty gv => .symbolValue ty gv
   | .tlsValue ty gv => .tlsValue ty gv
   | .float op ty args => .float op ty (args.map f)
+  | .vector op ty args imm => .vector op ty (args.map f) imm
 
 /-- Pure nodes (see the module doc). `select_spectre_guard` is kept in the skeleton, as a
 barrier Cranelift also never rewrites away. -/

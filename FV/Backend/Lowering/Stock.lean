@@ -25,6 +25,7 @@ def instArgs : Clif.Inst → List Nat
   | .call _ args => args
   | .callIndirect _ callee args => callee :: args
   | .float _ _ args => args
+  | .vector _ _ args _ => args
 
 def termArgs : Clif.Terminator → List Nat
   | .jump bc => bc.args

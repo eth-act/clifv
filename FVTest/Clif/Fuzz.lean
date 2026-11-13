@@ -96,6 +96,7 @@ def instKey (tys : ValueId → Option Ty) : Inst → String
   | .float op ty args =>
     if op.ctrlIsOperand then s!"{op.name}.{ty.name}"
     else s!"{op.name}.{ty.name}<{src (args.headD 0)}"
+  | .vector _ ty _ _ => s!"vector.{ty.name}"
 where
   src (x : ValueId) : String := ((tys x).map Ty.name).getD "?"
 
