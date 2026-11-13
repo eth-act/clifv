@@ -17,13 +17,19 @@ HEAD = "a" * 40
 LOST = ["a.clif", 0, "compile", 3, "%f"]
 
 
-def summary(lost=(), gained=(), available=True, harness_changed=(), failed=False):
+def summary(lost=(), gained=(), available=True, harness_changed=(), failed=False, proved=None):
     comparison = {"available": False, "failed": failed, "reason": "lookup failed" if failed else "none found"}
     if available:
         comparison = {"available": True, "run_id": 77, "run_attempt": 1, "head_sha": "b" * 40,
                       "baseline_exact_code_artifacts": 10, "gained_count": len(gained), "lost_count": len(lost),
-                      "gained": list(gained), "lost": list(lost), "harness_changed": list(harness_changed)}
+                      "gained": list(gained), "lost": list(lost), "harness_changed": list(harness_changed),
+                      "proved": proved or honest()}
     return {"run_id": 123, "head_sha": HEAD, "baseline_comparison": comparison}
+
+
+def honest(lost=(), gained=()):
+    return {"available": True, "baseline_proved_exact_code_artifacts": 5, "gained_count": len(gained),
+            "lost_count": len(lost), "gained": list(gained), "lost": list(lost)}
 
 
 class CheckTests(unittest.TestCase):
@@ -54,7 +60,28 @@ class CheckTests(unittest.TestCase):
 
     def test_harness_change_is_reported(self):
         _, lines = RATCHET.check(summary(harness_changed=["scripts/stock_common.py"]), 123, HEAD, None)
-        self.assertIn("scripts/stock_common.py", lines[1])
+        self.assertIn("scripts/stock_common.py", lines[2])
+
+    def test_honest_losses_fail_unless_labelled(self):
+        for labels in ([], None):
+            status, lines = RATCHET.check(summary(proved=honest(lost=[LOST])), 123, HEAD, labels)
+            self.assertEqual(status, 1)
+            self.assertIn("Honest outputs that matched on main and no longer match (1):", lines)
+            self.assertIn("(5 -> 4)", lines[1])
+        status, lines = RATCHET.check(summary(proved=honest(lost=[LOST])), 123, HEAD, [RATCHET.LABEL])
+        self.assertEqual(status, 0); self.assertIn("Accepted", lines[-1])
+        status, lines = RATCHET.check(summary(proved=honest(gained=[LOST])), 123, HEAD, None)
+        self.assertEqual(status, 0); self.assertIn("+1 / -0 (5 -> 6)", lines[1])
+
+    def test_honest_baseline_before_the_metric_passes_but_a_failed_one_fails(self):
+        before = {"available": False, "failed": False, "reason": "the main baseline predates the honest metric"}
+        status, lines = RATCHET.check(summary(proved=before), 123, HEAD, None)
+        self.assertEqual(status, 0); self.assertIn("predates", lines[1])
+        for comparison in (dict(before, failed=True), {"available": False, "reason": "x"}):
+            self.assertEqual(RATCHET.check(summary(proved=comparison), 123, HEAD, [RATCHET.LABEL])[0], 1)
+        missing = summary(); del missing["baseline_comparison"]["proved"]
+        status, lines = RATCHET.check(missing, 123, HEAD, None)
+        self.assertEqual(status, 1); self.assertIn("no honest comparison", lines[-2])
 
     def test_summary_of_another_run_or_commit_is_rejected(self):
         for run_id, head in ((124, HEAD), (123, "c" * 40)):

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Fail when an output that matched on the baseline `main` commit no longer matches.
+"""Fail when an output that matched on the baseline `main` commit no longer matches: an exact
+output, or an honest one (the proved compiler's output identical to stock, for a function
+`backend_correct` covers; `stock-compiler-compare.py`).
 
 Reads the run's CI summary (`stock-comparison-ci.py`). On a pull request, the label LABEL
 accepts the losses; it is read when this job runs, so re-running the job after labelling
@@ -46,6 +48,15 @@ def entry(e):
     return f"{test} {name} ({stage}, variant {variant}, function {position})"
 
 
+def listed_losses(b, what):
+    """Report lines naming the lost outputs of one metric's comparison `b`."""
+    lines = [f"{what} that matched on main and no longer match ({b['lost_count']}):"]
+    lines += [f"- {entry(e)}" for e in b["lost"][:SHOWN]]
+    if b["lost_count"] > SHOWN:
+        lines.append(f"- ... and {b['lost_count'] - SHOWN} more (see the summary artifact)")
+    return lines
+
+
 def check(summary, run_id, head, labels):
     """(exit status, report lines)."""
     if summary.get("run_id") != run_id or summary.get("head_sha") != head:
@@ -58,14 +69,25 @@ def check(summary, run_id, head, labels):
         return 0, [f"No main baseline to compare with: {b['reason']}."]
     lines = [f"Compared with main {b['head_sha'][:12]} (run {b['run_id']}): "
              f"+{b['gained_count']} / -{b['lost_count']} exact outputs."]
+    p = b.get("proved")
+    if not isinstance(p, dict) or not p.get("available") and p.get("failed") is not False:
+        why = p.get("reason") if isinstance(p, dict) else "the summary has no honest comparison"
+        return 1, lines + [f"The honest metric could not be compared with main: {why}.",
+                           "Without it, lost honest matches cannot be ruled out."]
+    if p["available"]:
+        lines.append(f"Honest metric (proved compiler, backend_correct): +{p['gained_count']} / -{p['lost_count']} "
+                     f"({p['baseline_proved_exact_code_artifacts']} -> "
+                     f"{p['baseline_proved_exact_code_artifacts'] - p['lost_count'] + p['gained_count']}).")
+    else:
+        lines.append(f"Honest metric: no main baseline to compare with: {p['reason']}.")
     if b["harness_changed"]:
         lines.append("The measuring code changed since then: " + ", ".join(b["harness_changed"]) + ".")
-    if not b["lost_count"]:
+    if b["lost_count"]:
+        lines += listed_losses(b, "Outputs")
+    if p["available"] and p["lost_count"]:
+        lines += listed_losses(p, "Honest outputs")
+    if not b["lost_count"] and not (p["available"] and p["lost_count"]):
         return 0, lines
-    lines.append(f"Outputs that matched on main and no longer match ({b['lost_count']}):")
-    lines += [f"- {entry(e)}" for e in b["lost"][:SHOWN]]
-    if b["lost_count"] > SHOWN:
-        lines.append(f"- ... and {b['lost_count'] - SHOWN} more (see the summary artifact)")
     if labels is not None and LABEL in labels:
         lines.append(f"Accepted by the label {LABEL}.")
         return 0, lines

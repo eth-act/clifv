@@ -3,7 +3,9 @@
 
 The summary lists every exact output and hashes the measuring code. Given a baseline summary
 from `main` (`stock-comparison-baseline.py`), it also lists the outputs gained and lost since
-then; `stock-comparison-ratchet.py` fails on lost ones.
+then; `stock-comparison-ratchet.py` fails on lost ones. The same holds for the honest metric
+(`proved_matched`): the outputs of the proved compiler (`lean-backend --settings`) identical to
+stock for functions `backend_correct` covers.
 """
 import argparse
 from collections import Counter
@@ -33,6 +35,9 @@ LISTED = 200  # gained/lost entries kept in the summary; the counts are always c
 FILE_STATUSES = {"binary_test", "non_binary_test", "no_lean_target", "stock_parser_warning_skip"}
 FUNCTION_STATUSES = {"identical_code_artifact", "different_code_artifact", "unsupported_configuration",
                      "lean_unsupported", "expected_stock_rejection_no_binary"}
+# The proved compiler's statuses: a failed or crashed compilation is not a measurement.
+PROVED_STATUSES = {"identical_code_artifact", "different_code_artifact", "unsupported_configuration",
+                   "lean_unsupported"}
 
 
 def validate_report(report):
@@ -62,6 +67,16 @@ def validate_report(report):
         raise ValueError("file totals disagree")
     if totals["exact_code_artifacts"] != totals["function_statuses"].get("identical_code_artifact", 0):
         raise ValueError("match total disagrees")
+    proved = [f["proved"] for f in functions if "proved" in f]
+    # Every output stock produced and Lean was asked to compile has a proved-compiler result.
+    if len(proved) != sum(f["status"] != "expected_stock_rejection_no_binary" for f in functions):
+        raise ValueError("a compared output has no proved-compiler result")
+    if any(p["status"] not in PROVED_STATUSES for p in proved):
+        raise ValueError("unexpected proved-compiler failure")
+    if any(p["honest"] != (p["backend_correct"] and p["status"] == "identical_code_artifact") for p in proved):
+        raise ValueError("inconsistent proved-compiler result")
+    if totals["proved_exact_code_artifacts"] != sum(p["honest"] for p in proved):
+        raise ValueError("honest total disagrees")
     if totals["failed_stock_compile_assertions"] or totals["source_files_modified"]:
         raise ValueError("stock assertions failed or stock test sources changed")
     return totals
@@ -73,6 +88,14 @@ def matched_entries(report):
                   for test in report["tests"] for variant in test["variants"]
                   for position, row in enumerate(variant["functions_compared"])
                   if row["status"] == "identical_code_artifact")
+
+
+def proved_matched_entries(report):
+    """Every honest output (`proved.honest`) in the form of `matched_entries`."""
+    return sorted([test["test"], variant["index"], variant["stage"], position, row["name"]]
+                  for test in report["tests"] for variant in test["variants"]
+                  for position, row in enumerate(variant["functions_compared"])
+                  if row.get("proved", {}).get("honest"))
 
 
 def harness_hashes(root=ROOT):
@@ -103,28 +126,45 @@ def baseline_summary(found):
     return summary, None, False
 
 
-def well_formed(summary):
-    """The baseline fields this comparison reads: matched entries and harness hashes."""
-    entries, hashes = summary.get("matched"), summary.get("harness_sha256")
+def well_formed_entries(entries):
     return (isinstance(entries, list)
             and all(isinstance(e, list) and len(e) == 5 and all(isinstance(x, (str, int)) for x in e)
-                    for e in entries)
+                    for e in entries))
+
+
+def well_formed(summary):
+    """The baseline fields this comparison reads: matched entries and harness hashes, and the
+    honest entries if the baseline has them (summaries from before the honest metric do not)."""
+    hashes = summary.get("harness_sha256")
+    return (well_formed_entries(summary.get("matched"))
+            and ("proved_matched" not in summary or well_formed_entries(summary["proved_matched"]))
             and isinstance(hashes, dict) and all(isinstance(v, str) for v in hashes.values()))
 
 
-def compare_with_baseline(matched, harness, found):
-    """Exact outputs gained and lost since the baseline, and the measuring files that changed."""
+def delta(now, before):
+    now, before = {tuple(e) for e in now}, {tuple(e) for e in before}
+    gained, lost = sorted(now - before), sorted(before - now)
+    return {"gained_count": len(gained), "lost_count": len(lost),
+            "gained": [list(e) for e in gained[:LISTED]], "lost": [list(e) for e in lost[:LISTED]]}
+
+
+def compare_with_baseline(matched, harness, found, proved_matched=()):
+    """Exact outputs gained and lost since the baseline, and the measuring files that changed;
+    under `proved`, the same for the honest outputs."""
     base, reason, failed = baseline_summary(found)
     if base is None:
         return {"available": False, "failed": failed, "reason": reason}
-    now, before = {tuple(e) for e in matched}, {tuple(e) for e in base["matched"]}
-    gained, lost = sorted(now - before), sorted(before - now)
     old = base["harness_sha256"]
+    if "proved_matched" in base:
+        proved = {"available": True, "baseline_proved_exact_code_artifacts": len(base["proved_matched"]),
+                  **delta(proved_matched, base["proved_matched"])}
+    else:
+        proved = {"available": False, "failed": False, "reason": "the main baseline predates the honest metric"}
     return {"available": True, "run_id": base["run_id"], "run_attempt": base["run_attempt"],
-            "head_sha": base["head_sha"], "baseline_exact_code_artifacts": len(before),
-            "gained_count": len(gained), "lost_count": len(lost),
-            "gained": [list(e) for e in gained[:LISTED]], "lost": [list(e) for e in lost[:LISTED]],
-            "harness_changed": sorted(p for p in old.keys() | harness.keys() if old.get(p) != harness.get(p))}
+            "head_sha": base["head_sha"], "baseline_exact_code_artifacts": len(base["matched"]),
+            **delta(matched, base["matched"]),
+            "harness_changed": sorted(p for p in old.keys() | harness.keys() if old.get(p) != harness.get(p)),
+            "proved": proved}
 
 
 def runner_memory_used():
@@ -177,6 +217,7 @@ def main():
     report = json.loads((out / "results.json").read_text())
     totals = validate_report(report)
     matched, harness = matched_entries(report), harness_hashes()
+    proved_matched = proved_matched_entries(report)
     if args.baseline is None:
         found = {"available": False, "failed": False, "reason": "no baseline lookup"}
     elif not args.baseline.exists():
@@ -196,8 +237,8 @@ def main():
             "cpu_seconds": round(after.ru_utime + after.ru_stime - before.ru_utime - before.ru_stime, 3),
             "peak_runner_memory_used_bytes": max(samples),
             "pipeline_exit_code": result.returncode,
-            "matched": matched, "harness_sha256": harness,
-            "baseline_comparison": compare_with_baseline(matched, harness, found)}
+            "matched": matched, "proved_matched": proved_matched, "harness_sha256": harness,
+            "baseline_comparison": compare_with_baseline(matched, harness, found, proved_matched)}
     summary.write_text(json.dumps(data, indent=2) + "\n")
     print("Complete CI measurement:", summary, flush=True)
     return 0

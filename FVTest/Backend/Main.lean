@@ -63,6 +63,14 @@ one by `E2E.backend_correct_legal_opt_unwind_any` (dead cleanup) when its compil
 mid-end's output on the source function's legalisation, which `Opt.Legal.check` and
 `Opt.Legal.exnOk` accept, and the checks pass.
 
+With `--settings <request.json> --settings-receipt <receipt.json>` (the proved settings mode),
+the settings of a Cranelift filetest (the `--stock-config` request schema) are compiler input:
+settings the proved compiler does not implement reject the request (exit 3) or, per function,
+the function's output (`StockConfig.admit`; "compiled, not for these settings: …"). No
+stock-configured step runs: the functions are compiled exactly as without the option. The
+receipt lists, per function, whether `backend_correct` covers it. `scripts/stock-compiler-compare.py`
+counts the outputs of this mode that are identical to stock and covered (the honest metric).
+
 A function inside the theorem's scope whose size is over the validation budget
 (`Backend.validationBudget`, blocks × values) is compiled without running the lowering
 validator and listed as `compiled, unverified (validation budget)`.
@@ -71,7 +79,7 @@ validator and listed as `compiled, unverified (validation budget)`.
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--pipeline-t] [--stock-config <request.json> --config-receipt <receipt.json>]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--pipeline-t] [--stock-config <request.json> --config-receipt <receipt.json>] [--settings <request.json> --settings-receipt <receipt.json>]"
 
 /-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
 rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
@@ -92,6 +100,13 @@ structure Opts where
   personality : Option String := none
   stockConfig : Option String := none
   configReceipt : Option String := none
+  /-- `--settings <request.json>` (with `--settings-receipt <receipt.json>`): the proved settings
+  mode. The request has `--stock-config`'s schema. The proved compiler compiles every function
+  unchanged (no stock-configured step); a function's output is for these settings only where it
+  implements them (`StockConfig.admit`), and the receipt says per function whether
+  `backend_correct` covers it. -/
+  settings : Option String := none
+  settingsReceipt : Option String := none
   deadCleanup : Bool := true
   /-- `--pipeline-t` (or `FV_PIPELINE_T=1`): compile with `E2E.LinkCheck.pipeT`'s pipeline (the
   D0 lowering, no dead cleanup, no Stock routes), the compiler `crate_correct_inScope` covers.
@@ -228,6 +243,13 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   if o.stockConfig.isSome && (o.opt.isSome || o.regalloc.any (· != "regalloc2") || o.personality.isSome) then
     IO.eprintln "lean-backend: stock configuration forbids independent opt/regalloc/personality overrides"
     return 2
+  if o.settingsReceipt.isSome != o.settings.isSome then
+    IO.eprintln "lean-backend: --settings and --settings-receipt must be supplied together"
+    return 2
+  if o.settings.isSome && (o.stockConfig.isSome || o.opt.isSome || o.regalloc.any (· != "regalloc2") ||
+      o.personality.isSome || pipelineT) then
+    IO.eprintln "lean-backend: --settings (the proved compiler) forbids --stock-config, --opt, --regalloc, --personality and --pipeline-t"
+    return 2
   let mut stock : Option StockConfig.Config := none
   if let some path := o.stockConfig then
     let request ← match Lean.Json.parse (← IO.FS.readFile path) with
@@ -240,6 +262,18 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     match checked with
     | .error e => IO.eprintln s!"lean-backend: unsupported stock configuration: {e}"; return 3
     | .ok c => stock := some c
+  -- the proved settings mode: the same request schema, the proved compiler unchanged
+  let mut proved : Option StockConfig.Config := none
+  if let (some path, some receipt) := (o.settings, o.settingsReceipt) then
+    let request ← match Lean.Json.parse (← IO.FS.readFile path) with
+      | .ok j => pure j
+      | .error e => do IO.eprintln s!"lean-backend: invalid settings JSON: {e}"; return 2
+    match StockConfig.parse request with
+    | .error e =>
+      IO.FS.writeFile receipt ((StockConfig.settingsReceipt request (some e) [] o.deadCleanup).pretty ++ "\n")
+      IO.eprintln s!"lean-backend: settings the proved compiler does not implement: {e}"
+      return 3
+    | .ok c => proved := some c
   let ra := o.regalloc.getD "regalloc2"
   let some runAlloc ← allocRunOfName? ra
     | do IO.eprintln s!"lean-backend: unknown allocator {ra}"; return 2
@@ -270,11 +304,15 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     let (afs, recs) ← allocRecordingNamed ra alloc vcs shapeOf
     records.set ((vcs.map (·.name)).zip recs)
     pure afs
+  -- the proved settings mode only checks functions (`StockConfig.admit`); it changes no code
+  let allocDefault : Array VCode → IO (Array (Except String AFunc)) := match proved with
+    | some c => fun vcs => do rejected.set #[]; StockConfig.admitWith c clif rejected allocNone vcs
+    | none => allocNone
   let fa ← match stock with
     | none => (if pipelineT then compileFileWith allocNone pf (unv128 ++ unvTry) false
         else compileFileReturnPinWhen (!o.opt.isSome &&
           !(pf.funcs.any fun p => p.func.toOption.any fun f => f.blocks.any (·.term.isTry)))
-          allocNone pf (unv128 ++ unvTry) o.deadCleanup)
+          allocDefault pf (unv128 ++ unvTry) o.deadCleanup)
     | some c => do
       -- native `i128` lowering for the functions `I128Native.nativeSet` admits (#554)
       let native := if pipelineT then [] else I128Native.nativeSet source pf o.deadCleanup
@@ -298,7 +336,27 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
     IO.FS.writeFile receipt
       ((StockConfig.receipt request none (some (← rejected.get).toList) o.deadCleanup).pretty ++ "\n")
-  let fa := match stock with
+  if let (some c, some receipt) := (proved, o.settingsReceipt) then
+    let rs ← rejected.get
+    let verdict (name : String) : Lean.Json :=
+      let why (p : List (String × String)) := p.lookup name
+      if let some r := rs.toList.lookup name then
+        Lean.Json.mkObj [("compiled", Lean.toJson (fa.funcs.any (·.name == name))),
+          ("backend_correct", Lean.toJson false), ("setting_rejection", Lean.toJson r)]
+      else if let some r := why fa.unsupported then
+        Lean.Json.mkObj [("compiled", Lean.toJson false), ("unsupported", Lean.toJson r)]
+      else if let some r := why fa.unverified then
+        Lean.Json.mkObj [("compiled", Lean.toJson true), ("backend_correct", Lean.toJson false), ("unverified", Lean.toJson r)]
+      else if let some r := why fa.unvalidated then
+        Lean.Json.mkObj [("compiled", Lean.toJson true), ("backend_correct", Lean.toJson false), ("unvalidated", Lean.toJson r)]
+      else if fa.funcs.any (·.name == name) then
+        Lean.Json.mkObj [("compiled", Lean.toJson true), ("backend_correct", Lean.toJson true)]
+      else Lean.Json.mkObj [("compiled", Lean.toJson false)]
+    for (n, why) in rs do
+      IO.eprintln s!"lean-backend: {input}: %{n}: compiled, not for these settings: {why}"
+    IO.FS.writeFile receipt ((StockConfig.settingsReceipt c.request none
+      (pf.funcs.map fun p => (p.name, verdict p.name)) o.deadCleanup).pretty ++ "\n")
+  let fa := match stock <|> proved with
     | some c => if c.unwind then fa else { fa with unwind := [] }
     | none => fa
   if output.endsWith ".o" || o.dump.isSome then
@@ -314,7 +372,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
           IO.FS.writeBinFile (System.FilePath.mk d / s!"{fb.name}.bin") (wordsBytes fb.words)
           IO.FS.writeFile (System.FilePath.mk d / s!"{fb.name}.relocs.json") fb.relocsJson
           IO.FS.writeFile (System.FilePath.mk d / s!"{fb.name}.traps.json") fb.trapsJson
-          if let some c := stock then
+          if let some c := stock <|> proved then
             let metadata := Lean.Json.mkObj [
               ("name", Lean.toJson fb.name), ("alignment", Lean.toJson (4 : Nat)),
               ("unwind_disabled", Lean.toJson (!c.unwind)),
@@ -421,6 +479,8 @@ def main (args : List String) : IO UInt32 := do
     | "--personality" :: p :: rest => opts { o with personality := some p } rest
     | "--stock-config" :: c :: rest => opts { o with stockConfig := some c } rest
     | "--config-receipt" :: c :: rest => opts { o with configReceipt := some c } rest
+    | "--settings" :: c :: rest => opts { o with settings := some c } rest
+    | "--settings-receipt" :: c :: rest => opts { o with settingsReceipt := some c } rest
     | "--dead-cleanup" :: rest => opts { o with deadCleanup := true } rest
     | "--no-dead-cleanup" :: rest => opts { o with deadCleanup := false } rest
     | "--pipeline-t" :: rest => opts { o with pipelineT := true } rest

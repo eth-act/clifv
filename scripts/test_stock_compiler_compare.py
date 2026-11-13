@@ -20,22 +20,90 @@ def with_flag(request, key, name, value):
     return changed
 
 
+def fake_compiler(argv, directory, name, env):
+    """Both lean-backend modes, accepting the request and compiling function `f`."""
+    stock = "--stock-config" in argv
+    config = Path(argv[argv.index("--stock-config" if stock else "--settings") + 1])
+    receipt = Path(argv[argv.index("--config-receipt" if stock else "--settings-receipt") + 1])
+    data = {"schema": 1, "request": json.loads(config.read_text()), "configuration_accepted": True}
+    data.update({"function_rejections": {}} if stock else
+                {"mode": "proved", "functions": {"f": {"compiled": True, "backend_correct": True}}})
+    receipt.write_text(json.dumps(data))
+    return {"exit": 0, "argv": [str(arg) for arg in argv]}
+
+
 class ContractTests(unittest.TestCase):
     def test_extra_compiler_arguments_are_recorded_without_changing_request(self):
         variant = {"target": "aarch64", "flags": [], "isa_flags": [], "stage": "compile",
                    "isa_index": 0, "command_index": 0}
-        def run(argv, directory, name, env):
-            config = Path(argv[argv.index("--stock-config") + 1])
-            receipt = Path(argv[argv.index("--config-receipt") + 1])
-            receipt.write_text(json.dumps({"schema": 1, "request": json.loads(config.read_text()),
-                                          "configuration_accepted": True, "function_rejections": {}}))
-            return {"exit": 0, "argv": [str(arg) for arg in argv]}
-        with tempfile.TemporaryDirectory() as tmp, patch.object(COMPARE, "command", run), \
-                patch.object(COMPARE, "LEAN_COMPILER_ARGS", ["--no-dead-cleanup"]):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(COMPARE, "command", fake_compiler), \
+                patch.object(COMPARE, "LEAN_COMPILER_ARGS", ["--no-dead-cleanup"]), \
+                patch.object(COMPARE, "PROVED_BINARY", Path("/proved/lean-backend")):
             _, contract = COMPARE.compile_lean(variant, b"input", Path(tmp) / "compile", {})
             self.assertIn("--no-dead-cleanup", contract["command"]["argv"])
             self.assertEqual(contract["request"], COMPARE.request_for(variant, b"input"))
             self.assertTrue(contract["contract_verified"])
+            # The proved compiler runs on the same input and settings, without the extra arguments.
+            proved = contract["proved"]
+            self.assertTrue(proved["contract_verified"])
+            self.assertEqual(proved["command"]["argv"][0], "/proved/lean-backend")
+            self.assertIn("--settings", proved["command"]["argv"])
+            self.assertNotIn("--no-dead-cleanup", proved["command"]["argv"])
+            self.assertNotIn("--stock-config", proved["command"]["argv"])
+            self.assertEqual(proved["functions"], {"f": {"compiled": True, "backend_correct": True}})
+
+    def test_proved_receipt_must_come_from_the_proved_mode(self):
+        variant = {"target": "aarch64", "flags": [], "isa_flags": [], "stage": "compile",
+                   "isa_index": 0, "command_index": 0}
+        def stock_receipt(argv, directory, name, env):
+            result = fake_compiler(argv, directory, name, env)
+            if "--settings" in argv:
+                path = Path(argv[argv.index("--settings-receipt") + 1])
+                receipt = json.loads(path.read_text()); receipt.pop("mode")
+                path.write_text(json.dumps(receipt))
+            return result
+        with tempfile.TemporaryDirectory() as tmp, patch.object(COMPARE, "command", stock_receipt):
+            _, contract = COMPARE.compile_lean(variant, b"input", Path(tmp) / "compile", {})
+            self.assertTrue(contract["contract_verified"])
+            self.assertFalse(contract["proved"]["contract_verified"])
+            self.assertIn("proved settings mode", contract["proved"]["contract_error"])
+
+    def test_proved_functions_must_be_a_name_to_verdict_map(self):
+        verdicts = {"f": {"compiled": True, "backend_correct": True}}
+        self.assertEqual(COMPARE.proved_functions({"functions": verdicts}), verdicts)
+        for receipt in ({}, {"functions": None}, {"functions": ["f"]}, {"functions": {"f": True}}):
+            self.assertIsNone(COMPARE.proved_functions(receipt))
+
+    def test_honest_needs_an_identical_output_that_backend_correct_covers(self):
+        ok = {"contract_error": None, "contract_verified": True, "command": {"exit": 0}}
+        def proved(verdict, status="identical_code_artifact", contract=ok):
+            full = {"name": "%f", "status": status, "bytes": {"equal": status == "identical_code_artifact"},
+                    "exact_code_and_relocations": True, "relocations_equal": True, "traps_equal": True,
+                    "alignment_equal": True}
+            with patch.object(COMPARE, "compare_function", lambda *args: full):
+                return COMPARE.compare_proved("%f", None, Path("/nonexistent"), {**contract, "functions": {"f": verdict}},
+                                              True, {"isa_flags": []}, b"")
+        covered = {"compiled": True, "backend_correct": True}
+        row = proved(covered)
+        self.assertEqual((row["status"], row["backend_correct"], row["honest"]), ("identical_code_artifact", True, True))
+        self.assertTrue(row["bytes_equal"])
+        # Identical but outside backend_correct (e.g. outside subset E): not honest.
+        row = proved({"compiled": True, "backend_correct": False, "unverified": "outside clif-subset-v2 E"})
+        self.assertEqual((row["status"], row["honest"], row["not_covered"]),
+                         ("identical_code_artifact", False, "outside clif-subset-v2 E"))
+        row = proved(covered, "different_code_artifact")
+        self.assertEqual((row["backend_correct"], row["honest"]), (True, False))
+        # A setting the proved compiler does not implement for the function: never compared.
+        row = proved({"compiled": True, "backend_correct": False, "setting_rejection": "preserve_frame_pointers=false"})
+        self.assertEqual((row["status"], row["honest"]), ("unsupported_configuration", False))
+        row = proved(covered, contract={"contract_error": "unsupported setting opt_level=speed",
+                                        "contract_verified": False, "command": {"exit": 3}})
+        self.assertEqual((row["status"], row["honest"]), ("unsupported_configuration", False))
+        row = proved(covered, contract={"contract_error": None, "contract_verified": False, "command": {"exit": 1}})
+        self.assertEqual((row["status"], row["honest"]), ("lean_compilation_failed", False))
+        # No verdict for the function: not covered.
+        row = proved({})
+        self.assertEqual((row["status"], row["backend_correct"], row["honest"]), ("identical_code_artifact", False, False))
 
     def test_receipt_requires_exact_settings_and_input(self):
         request = {"schema":1,"input_sha256":COMPARE.digest(b"input"),"flags":[]}
@@ -260,6 +328,67 @@ class StockIntegrationTests(unittest.TestCase):
             for name in ("%stack_addr_big","%stack_load_big","%stack_store_big","%i128_stack_store_big","%i128_stack_load_big"):
                 self.assertEqual(status[name],"identical_code_artifact",name)
 
+    def proved(self, directory, request, source=b"function %leaf(i64) -> i64 {\nblock0(v0: i64):\nreturn v0\n}\n", extra=()):
+        directory.mkdir(parents=True)
+        input_path, config, receipt = directory/"input.clif",directory/"config.json",directory/"receipt.json"
+        input_path.write_bytes(source)
+        config.write_text(json.dumps(request))
+        result = subprocess.run([self.lean,input_path,directory/"program.o","--settings",config,
+            "--settings-receipt",receipt,"--dump",directory/"dump",*extra],capture_output=True,env=self.env)
+        return result,json.loads(receipt.read_text()) if receipt.exists() else None
+
+    def test_proved_mode_compiles_unchanged_and_claims_only_implemented_settings(self):
+        source=(b"function %leaf(i64) -> i64 {\nblock0(v0: i64):\nreturn v0\n}\n\n"
+                b"function %caller(i64) -> i64 {\nfn0 = colocated %leaf(i64) -> i64\nblock0(v0: i64):\n"
+                b"v1 = call fn0(v0)\nreturn v1\n}\n\n"
+                b"function %far() -> i64 {\nfn0 = %external () -> i64\nblock0:\nv0 = call fn0()\nreturn v0\n}\n")
+        with tempfile.TemporaryDirectory(prefix="stock-config-test-") as temp:
+            root=Path(temp);base=self.seed(root/"stock")
+            # preserve_frame_pointers=false (the filetests' default): stock omits the leaf's frame and
+            # the proved compiler does not; the leaf stays compiled (its caller's code does not depend on
+            # it) but is not claimed. is_pic=false: the far call is not claimed.
+            result,receipt=self.proved(root/"default",base,source)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertEqual((receipt["mode"],receipt["request"],receipt["configuration_accepted"]),("proved",base,True))
+            functions=receipt["functions"]
+            self.assertIn("preserve_frame_pointers=false",functions["leaf"]["setting_rejection"])
+            self.assertIn("is_pic=false",functions["far"]["setting_rejection"])
+            self.assertEqual(functions["caller"],{"compiled":True,"backend_correct":True})
+            for name in ("leaf","caller","far"):
+                self.assertTrue((root/"default/dump"/f"{name}.bin").exists(),name)
+            self.assertIn(b"%leaf: compiled, not for these settings",result.stderr)
+            # The same code as without --settings: no stock-configured step runs.
+            plain=root/"plain";plain.mkdir()
+            (plain/"input.clif").write_bytes(source)
+            subprocess.run([self.lean,plain/"input.clif",plain/"program.o","--dump",plain/"dump"],
+                           check=True,capture_output=True,env=self.env)
+            for name in ("leaf","caller","far"):
+                self.assertEqual((root/"default/dump"/f"{name}.bin").read_bytes(),(plain/"dump"/f"{name}.bin").read_bytes())
+            self.assertFalse(any(s["name"]==".eh_frame" for s in COMPARE.ELF(root/"default/program.o").sections))
+            # With a frame requested, the leaf's output is the proved compiler's for these settings.
+            framed=with_flag(with_flag(base,"flags","preserve_frame_pointers","true"),"flags","is_pic","true")
+            result,receipt=self.proved(root/"framed",framed,source)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertEqual(receipt["functions"]["leaf"],{"compiled":True,"backend_correct":True})
+            self.assertEqual(receipt["functions"]["far"],{"compiled":True,"backend_correct":True})
+            self.assertGreater(len((root/"framed/dump/leaf.bin").read_bytes()),4)
+            self.assertEqual(json.loads((root/"framed/dump/leaf.metadata.json").read_text())["alignment"],4)
+
+    def test_proved_mode_rejects_unimplemented_settings_and_driver_overrides(self):
+        with tempfile.TemporaryDirectory(prefix="stock-config-test-") as temp:
+            root=Path(temp);base=self.seed(root/"stock")
+            for index,request in enumerate((with_flag(base,"flags","opt_level","speed"),
+                                            with_flag(base,"isa_flags","use_bti","true"))):
+                result,receipt=self.proved(root/f"case-{index}",request)
+                self.assertEqual(result.returncode,3,result.stderr)
+                self.assertFalse(receipt["configuration_accepted"])
+                self.assertEqual(receipt["functions"],{})
+                self.assertFalse((root/f"case-{index}/program.o").exists())
+            for index,extra in enumerate((("--opt",),("--regalloc","spill"),("--personality","p"))):
+                result,receipt=self.proved(root/f"override-{index}",base,extra=extra)
+                self.assertEqual(result.returncode,2)
+                self.assertIsNone(receipt)
+
     def test_stock_compile_assertions_and_exact_outputs(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
             row=COMPARE.one(COMPARE.SUITE/"isa/aarch64/bswap.clif",Path(temp),self.env,self.exporter,True)
@@ -271,6 +400,11 @@ class StockIntegrationTests(unittest.TestCase):
             self.assertEqual(len(variant["functions_compared"]),3)
             self.assertTrue(all(r["lean_dump_matches_object_relocations"] for r in variant["functions_compared"]))
             self.assertFalse(any(r["full_artifact_equivalence_verified"] for r in variant["functions_compared"]))
+            # bswap's functions are leaves: under preserve_frame_pointers=false stock omits their frame,
+            # which the proved compiler does not implement yet.
+            for r in variant["functions_compared"]:
+                self.assertEqual((r["proved"]["status"],r["proved"]["honest"]),("unsupported_configuration",False))
+                self.assertIn("preserve_frame_pointers=false",r["proved"]["reason"])
 
     def test_stock_run_preparation_and_exact_outputs(self):
         with tempfile.TemporaryDirectory(prefix="stock-compare-test-") as temp:
