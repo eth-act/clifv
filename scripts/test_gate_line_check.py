@@ -24,8 +24,17 @@ NO_LEAN_LD = ("warning: linker stderr: fv-rustc: --lean-ld: cannot run /w/.lake/
 NO_LINK_CHECK = "cargo fv link-proof: /w/.lake/build/bin/link-check missing (lake build link-check); run it on /w/bin-check/x\n"
 
 
-def fv(log, binary_check, known=(), fv_log=LEAN_LD):
-    return gc.cargo_fv(log, binary_check, known, fv_log)
+# the pins of the `survey()` log, and a file with them
+PINNED = (8, 3251, 3251)
+PINS = "# comment\n\nsurvey  8  3251  3251\nfv-demo  8  3251  3251\n"
+
+
+def fv(log, lean_link, known=(), fv_log=LEAN_LD, pinned=None, example="survey"):
+    """The verdict of a log; without `pinned` the log's own counts are the pins (the pins have
+    their own tests, PinnedCounts)."""
+    if pinned is None:
+        pinned = tuple(0 if c is None else c for c in gc.measured(log.splitlines()))
+    return gc.cargo_fv(example, log, lean_link, known, fv_log, pinned)
 
 
 def exe(package, stem, verdict="verified: E2E.Binary.binary_correct holds for its 70 Lean-compiled functions",
@@ -91,13 +100,25 @@ class CargoFv(unittest.TestCase):
         self.assertFalse(fv(exe("a", "a") + exe("a", "values", "not verified: x") + count(2, 2) + SAME, True)[0])
         self.assertFalse(fv(count(4, 4) + SAME, True)[0])
 
-    def test_without_binary_check(self):
-        # examples/bigframe-unwind (plain `cargo fv`, rust-lld): its one executable is outside the
-        # binary check
-        log = exe("bigframe-unwind", "bigframe_unwind", "not verified: link-check ran no binary check (lake build link-check)")
-        log += count(0, 1) + FUNCS + "SAME: 2 test outcomes identical (logs: /t)\n"
-        self.assertTrue(fv(log, False, fv_log=log)[0])
-        self.assertTrue(fv(SAME, False, fv_log="")[0])
+    def test_plain_line_needs_the_binary_check_too(self):
+        # #1008: examples/bigframe-unwind (plain `cargo fv`, rust-lld) printed `0 of 1` and
+        # passed. Its executable is outside the binary check for a stated reason: the line is
+        # green only with the executable's entry in the known-unverified list
+        reason = ("not verified: link-check stopped before the binary check: link-proof skipped 1 function(s) of "
+                  "the region: __fv_e90dc2697494__RNxC15bigframe_unwind12H1IxI06hs9Qw: unverified: outside "
+                  "clif-subset-v2 E (the executable links Lean-compiled code that is unverified, so it is not the "
+                  "proven program; `cargo fv report --functions` lists the unverified functions, and --lean-link "
+                  "--verified keeps cg_clif's code for them)")
+        funcs = "cargo fv: 103 of 103 functions compiled by the Lean backend (101 verified): your crate(s) 103 of 103\n"
+        log = exe("bigframe-unwind", "bigframe_unwind", reason) + count(0, 1) + funcs + "SAME: 2 test outcomes identical (logs: /t)\n"
+        ok, line = fv(log, False, fv_log=log)
+        self.assertFalse(ok)
+        self.assertIn("FAIL: not verified: bigframe-unwind/bigframe_unwind", line)
+        ok, line = fv(log, False, [("bigframe-unwind/bigframe_unwind", "#581")], fv_log=log)
+        self.assertTrue(ok, line)
+        self.assertIn("known unverified (scripts/gate-known-unverified.txt): bigframe-unwind/bigframe_unwind #581", line)
+        # no executable with Lean-compiled code: cargo fv prints no count line
+        self.assertFalse(fv(SAME, False, fv_log="")[0])
 
     def test_same_line(self):
         for flag in (False, True):
@@ -225,8 +246,11 @@ class KnownUnverified(unittest.TestCase):
         self.assertFalse(fv(log, True, one)[0])
         self.assertTrue(fv(log, True, one + one)[0])
 
-    def test_list_only_with_binary_check(self):
-        self.assertTrue(fv(survey(bad=()), False, KNOWN)[0])
+    def test_list_applies_to_every_line(self):
+        # also to a line that does not link with lean-ld (bigframe-unwind)
+        self.assertTrue(fv(survey(), False, KNOWN)[0])
+        self.assertFalse(fv(survey(bad=()), False, KNOWN)[0])
+        self.assertFalse(fv(survey(), False)[0])
 
     def test_read_known(self):
         self.assertEqual(gc.read_known(LIST, "survey"), (KNOWN, []))
@@ -275,6 +299,102 @@ class ArmFaultCosim(unittest.TestCase):
         self.assertFalse(gc.arm_fault_cosim("note TOTAL forms 152 vectors 15200 faults 10318 failures 0\n")[0])
 
 
+class PinnedCounts(unittest.TestCase):
+    """#1004's residual: `N of N` passed with a smaller N. The executables and the Lean-compiled
+    and verified functions of every example are pinned (scripts/gate-expected-counts.txt)."""
+
+    BIG = ("cargo fv: binary /w/target/fv/plain/aarch64-unknown-linux-musl/debug/build/bigframe-unwind/938e46b67ec0fe2f/out/"
+           "bigframe_unwind-938e46b67ec0fe2f: verified: E2E.Binary.binary_correct holds for its 75 Lean-compiled functions\n"
+           + count(1, 1) + "cargo fv: 103 of 103 functions compiled by the Lean backend (101 verified): your crate(s)\n"
+           "SAME: 2 test outcomes identical (logs: /t)\n")
+
+    def test_equal(self):
+        ok, line = fv(survey(bad=()), True, pinned=PINNED)
+        self.assertTrue(ok, line)
+        self.assertIn("pinned (scripts/gate-expected-counts.txt): 8 executables, 3251 Lean-compiled, 3251 verified", line)
+
+    def test_fewer_executables(self):
+        # a crate whose codegen units all fell back to cg_clif: its executables have no
+        # Lean-compiled code and leave the binary check; the rest is still N of N
+        log = "".join(exe(c, c) + exe(c, "values") for c in ("a_arith", "b_slices", "c_structs_enums")) + count(6, 6) + SAME
+        self.assertTrue(fv(log, True)[0])
+        ok, line = fv(log, True, pinned=PINNED)
+        self.assertFalse(ok)
+        self.assertIn("FAIL: executables through the binary check: 6, pinned 8 (exact; an intended change sets "
+                      "`survey  6  3251  3251` in scripts/gate-expected-counts.txt in the same PR)", line)
+
+    def test_more_executables(self):
+        ok, line = fv(survey(bad=()), True, pinned=(7, 3251, 3251))
+        self.assertFalse(ok)
+        self.assertIn("FAIL: executables through the binary check: 8, pinned 7", line)
+
+    def test_drop_is_a_regression(self):
+        ok, line = fv(survey(bad=()), True, pinned=(8, 3251, 3260))
+        self.assertFalse(ok)
+        self.assertIn("FAIL: verified functions: 3251 is below the pinned 3260 (a regression)", line)
+        self.assertNotIn("Lean backend: 3251 is", line)
+        ok, line = fv(survey(bad=()), True, pinned=(8, 3252, 3251))
+        self.assertFalse(ok)
+        self.assertIn("FAIL: functions compiled by the Lean backend: 3251 is below the pinned 3252 (a regression)", line)
+
+    def test_rise_must_be_recorded(self):
+        ok, line = fv(survey(bad=()), True, pinned=(8, 3251, 3200))
+        self.assertFalse(ok)
+        self.assertIn("FAIL: verified functions: 3251 is above the pinned 3200: record the rise in the same PR "
+                      "(`survey  8  3251  3251` in scripts/gate-expected-counts.txt)", line)
+        self.assertFalse(fv(survey(bad=()), True, pinned=(8, 3000, 3000))[0])
+
+    def test_lean_and_verified_are_two_pins(self):
+        # plain cargo fv links unverified Lean code: 103 Lean-compiled, 101 verified
+        for pinned, ok in (((1, 103, 101), True), ((1, 103, 100), False), ((1, 103, 102), False),
+                           ((1, 102, 101), False), ((1, 104, 101), False), ((2, 103, 101), False)):
+            self.assertEqual(fv(self.BIG, False, pinned=pinned, example="bigframe-unwind")[0], ok, pinned)
+
+    def test_no_pins_for_the_example(self):
+        ok, line = gc.cargo_fv("survey", survey(bad=()), True, (), LEAN_LD, None)
+        self.assertFalse(ok)
+        self.assertIn("FAIL: no pinned counts for survey (scripts/gate-expected-counts.txt)", line)
+
+    def test_missing_count_fails_once(self):
+        # no binary check line: its own failure, no second one from the pins
+        ok, line = fv(SAME, True, pinned=PINNED)
+        self.assertFalse(ok)
+        self.assertEqual(line.count("FAIL:"), 1, line)
+
+    def test_read_expected(self):
+        self.assertEqual(gc.read_expected(PINS, "survey"), (PINNED, []))
+        self.assertEqual(gc.read_expected(PINS, "deps"), (None, []))
+        for bad in ("survey 8 3251\n", "survey 8 3251 3251 1\n", "survey 8 many 3251\n", "survey -8 3251 3251\n",
+                    "survey 8 3251 3252\n", "survey 8 3251 3251\nsurvey 8 3251 3251\n"):
+            self.assertEqual(len(gc.read_expected(bad, "fv-demo")[1]), 1, bad)
+
+    def test_checked_in_file(self):
+        # every gate line's example has its pins, and the file parses
+        text = (HERE / "gate-expected-counts.txt").read_text()
+        for e in ("fv-demo", "survey", "deps", "bigframe-unwind"):
+            pinned, errors = gc.read_expected(text, e)
+            self.assertEqual(errors, [])
+            self.assertTrue(pinned and pinned[0] > 0 and pinned[1] >= pinned[2] > 0, e)
+
+    def test_summary(self):
+        env = {"GITHUB_SERVER_URL": "https://github.com", "GITHUB_REPOSITORY": "eth-act/clifv"}
+        md = gc.summary("survey", survey(), KNOWN, PINNED, env)
+        self.assertIn("| executables through the binary check | 8 | 8 | equal |", md)
+        self.assertIn("| verified functions | 3251 | 3251 | equal |", md)
+        self.assertNotIn("This run's line", md)
+        self.assertIn("- `b_slices/values`: https://github.com/eth-act/clifv/issues/1003: not verified: 3 of 365", md)
+        md = gc.summary("survey", survey(bad=()), [], (9, 3251, 3200), {})
+        self.assertIn("| executables through the binary check | 9 | 8 | **-1: must be equal** |", md)
+        self.assertIn("| verified functions | 3200 | 3251 | **+51: record the rise in this PR** |", md)
+        self.assertIn("This run's line: `survey  8  3251  3251`", md)
+        self.assertNotIn("Known unverified", md)
+        md = gc.summary("survey", survey(bad=()), [], (8, 3300, 3300), {})
+        self.assertIn("| verified functions | 3300 | 3251 | **-49: a regression** |", md)
+        self.assertIn("**missing**", gc.summary("survey", SAME, [], None, {}))
+        # outside CI the issue is named, not linked
+        self.assertIn("- `b_slices/values`: #1003: not verified", gc.summary("survey", survey(), KNOWN, PINNED, {}))
+
+
 class CommandLine(unittest.TestCase):
     def run_script(self, *a):
         return subprocess.run([sys.executable, str(HERE / "gate-line-check.py"), *map(str, a)], capture_output=True, text=True)
@@ -282,39 +402,75 @@ class CommandLine(unittest.TestCase):
     def test_cargo_fv(self):
         with tempfile.TemporaryDirectory() as t:
             t = pathlib.Path(t)
-            log, known, fvlog = t / "survey.log", t / "known.txt", t / "fv.log"
+            log, known, fvlog, pins = t / "survey.log", t / "known.txt", t / "fv.log", t / "pins.txt"
             log.write_text(survey())
             known.write_text(LIST)
             fvlog.write_text(LEAN_LD)
-            self.assertEqual(self.run_script("cargo-fv", log, fvlog).returncode, 0)
-            r = self.run_script("cargo-fv", "--binary-check", "survey", "--known", known, log, fvlog)
+            pins.write_text(PINS)
+
+            def run(example, *a, known=known, pins=pins):
+                return self.run_script("cargo-fv", example, "--known", known, "--expected", pins, *a)
+
+            r = run("survey", "--lean-link", log, fvlog)
             self.assertEqual((r.returncode, len(r.stdout.splitlines())), (0, 1), r.stdout)
             # the list is per example: the same log under another example's name is red
-            r = self.run_script("cargo-fv", "--binary-check", "fv-demo", "--known", known, log, fvlog)
+            r = run("fv-demo", "--lean-link", log, fvlog)
             self.assertEqual(r.returncode, 1)
             self.assertIn("FAIL: not verified: b_slices/values", r.stdout)
-            # cargo fv's own log decides too
+            # cargo fv's own log decides too; a lean-ld link is asked for with --lean-link only
             fvlog.write_text(NO_LEAN_LD)
-            self.assertEqual(self.run_script("cargo-fv", "--binary-check", "survey", "--known", known, log, fvlog).returncode, 1)
+            self.assertEqual(run("survey", "--lean-link", log, fvlog).returncode, 1)
+            fvlog.write_text("")
+            self.assertEqual(run("survey", "--lean-link", log, fvlog).returncode, 1)
+            self.assertEqual(run("survey", log, fvlog).returncode, 0)
             fvlog.write_text(LEAN_LD)
             # an unreadable list line is red for every example
             known.write_text(LIST + "survey oops\n")
-            self.assertEqual(self.run_script("cargo-fv", "--binary-check", "survey", "--known", known, log, fvlog).returncode, 1)
-            # a missing log or list is a failure, not a pass
-            self.assertEqual(self.run_script("cargo-fv", "--binary-check", "survey", str(log) + ".absent", fvlog).returncode, 1)
-            self.assertEqual(self.run_script("cargo-fv", "--binary-check", "survey", log, str(fvlog) + ".absent").returncode, 1)
-            self.assertEqual(self.run_script("cargo-fv", log, "/fv.log").returncode, 1)
-            self.assertEqual(self.run_script("cargo-fv", "--binary-check", "survey", "--known", str(known) + ".absent", log, fvlog).returncode, 1)
+            self.assertEqual(run("survey", "--lean-link", log, fvlog).returncode, 1)
+            known.write_text(LIST)
+            # the pins: another count, an unreadable line, no line for the example
+            pins.write_text(PINS.replace("survey  8", "survey  9"))
+            r = run("survey", "--lean-link", log, fvlog)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("FAIL: executables through the binary check: 8, pinned 9", r.stdout)
+            pins.write_text(PINS + "deps 4 many 1\n")
+            self.assertEqual(run("survey", "--lean-link", log, fvlog).returncode, 1)
+            pins.write_text("fv-demo  8  3251  3251\n")
+            r = run("survey", "--lean-link", log, fvlog)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("FAIL: no pinned counts for survey", r.stdout)
+            pins.write_text(PINS)
+            # --summary appends the Markdown of the counts and of the known-unverified executables
+            md = t / "summary.md"
+            md.write_text("before\n")
+            self.assertEqual(run("survey", "--lean-link", "--summary", md, log, fvlog).returncode, 0)
+            text = md.read_text()
+            self.assertTrue(text.startswith("before\n### cargo fv counts: survey\n"), text)
+            self.assertIn("### Known unverified executables: survey", text)
+            # a missing log, list or pins file is a failure, not a pass
+            self.assertEqual(run("survey", "--lean-link", str(log) + ".absent", fvlog).returncode, 1)
+            self.assertEqual(run("survey", "--lean-link", log, str(fvlog) + ".absent").returncode, 1)
+            self.assertEqual(run("survey", "--lean-link", log, fvlog, known=str(known) + ".absent").returncode, 1)
+            self.assertEqual(run("survey", "--lean-link", log, fvlog, pins=str(pins) + ".absent").returncode, 1)
 
-    def test_default_list(self):
-        # without --known the checked-in list applies
+    def test_default_files(self):
+        # without --known and --expected the checked-in files apply (a log with deps' pinned counts)
+        e, lean, verified = gc.read_expected((HERE / "gate-expected-counts.txt").read_text(), "deps")[0]
+        funcs = f"cargo fv: {lean} of {lean} functions compiled by the Lean backend ({verified} verified): your crate(s)\n"
+        same = "SAME: 16 test outcomes identical (logs: /t)\n"
         with tempfile.TemporaryDirectory() as t:
             log, fvlog = pathlib.Path(t) / "deps.log", pathlib.Path(t) / "fv.log"
             fvlog.write_text(LEAN_LD)
-            log.write_text(exe("deps-demo", "deps_demo") + count(1, 1) + SAME)
-            self.assertEqual(self.run_script("cargo-fv", "--binary-check", "deps", log, fvlog).returncode, 0)
-            log.write_text(exe("deps-demo", "deps_demo", "not verified: x") + count(0, 1) + SAME)
-            self.assertEqual(self.run_script("cargo-fv", "--binary-check", "deps", log, fvlog).returncode, 1)
+            log.write_text(exe("deps-demo", "deps_demo") * e + count(e, e) + funcs + same)
+            self.assertEqual(self.run_script("cargo-fv", "deps", "--lean-link", log, fvlog).returncode, 0)
+            log.write_text(exe("deps-demo", "deps_demo") * (e - 1) + exe("deps-demo", "deps_demo", "not verified: x") + count(e - 1, e) + funcs + same)
+            self.assertEqual(self.run_script("cargo-fv", "deps", "--lean-link", log, fvlog).returncode, 1)
+            log.write_text(exe("deps-demo", "deps_demo") * (e - 1) + count(e - 1, e - 1) + funcs + same)
+            r = self.run_script("cargo-fv", "deps", "--lean-link", log, fvlog)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn(f"pinned {e} (exact", r.stdout)
+            r = self.run_script("cargo-fv", "no-such-example", "--lean-link", log, fvlog)
+            self.assertIn("FAIL: no pinned counts for no-such-example", r.stdout)
 
     def test_arm_fault_cosim(self):
         with tempfile.TemporaryDirectory() as t:
@@ -327,12 +483,13 @@ class CommandLine(unittest.TestCase):
 
     def test_usage(self):
         # a wrong call is an error (status 2), never a verdict
-        for a in ([], ["cargo-fv"], ["cargo-fv", "a.log"], ["cargo-fv", "--binary-check"],
-                  ["cargo-fv", "--binary-check", "a.log", "fv.log"], ["deps.log"], ["float-spec", "x.log"],
-                  ["arm-fault-cosim", "--binary-check", "survey", "x.log"], ["arm-fault-cosim", "a.log", "b.log"],
-                  ["cargo-fv", "a.log", "b.log", "c.log"], ["cargo-fv", "--known", "k.txt", "a.log", "fv.log"],
-                  ["cargo-fv", "--binary-check", "survey", "--binary-check", "deps", "a.log", "fv.log"],
-                  ["cargo-fv", "--binary-check", "", "a.log", "fv.log"], ["cargo-fv", "--verified", "a.log", "fv.log"]):
+        for a in ([], ["cargo-fv"], ["cargo-fv", "a.log"], ["cargo-fv", "a.log", "fv.log"], ["deps.log"],
+                  ["float-spec", "x.log"], ["arm-fault-cosim", "--lean-link", "x.log"], ["arm-fault-cosim", "a.log", "b.log"],
+                  ["cargo-fv", "survey", "a.log", "b.log", "c.log"], ["cargo-fv", "survey", "a.log", "fv.log", "--known"],
+                  ["cargo-fv", "survey", "--lean-link", "--lean-link", "a.log", "fv.log"],
+                  ["cargo-fv", "survey", "--known", "k", "--known", "k", "a.log", "fv.log"],
+                  ["cargo-fv", "", "a.log", "fv.log"], ["cargo-fv", "survey", "--verified", "a.log", "fv.log"],
+                  ["cargo-fv", "--binary-check", "survey", "a.log", "fv.log"]):
             self.assertEqual(self.run_script(*a).returncode, 2, a)
 
 

@@ -1094,18 +1094,31 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   `scripts/arm-fault-cosim.sh` (memory-fault co-simulation against qemu: faulting vectors, 0 failures);
   `scripts/float-spec.sh` (FV/Float against FloatLib, the same definitions under both toolchains);
   `examples/compare.sh … --lean-link --verified` on `examples/fv-demo`, the survey and `examples/deps`,
-  and plain `examples/compare.sh` on `examples/bigframe-unwind`. A cargo fv line is green when
+  and plain `examples/compare.sh` on `examples/bigframe-unwind`; `scripts/regen-crate-proofs.sh` with no
+  difference from the committed `crate-proofs/` (the freshness check, #994: the generated crate proofs are
+  the ones this tree generates; the script's output does not depend on the checkout or on `$HOME`, #984).
+  A cargo fv line is green when
   `scripts/gate-line-check.py` accepts it (one script for CI and `scripts/main-gate.sh`; #998, #1004):
   `compare.sh` exits 0 with a `SAME` line; cargo fv's own log has no missing-tool or fallback line
-  (`cannot run`, `missing`, `not checked`, `linking with rust-lld`); and on the `--verified` lines every
-  executable is linked by `lean-ld` and passes the binary check (`binary check: N of N`, N > 0).
+  (`cannot run`, `missing`, `not checked`, `linking with rust-lld`); every executable passes the binary
+  check (`binary check: N of N`, N > 0; on every line since #1008, also the plain one); the counts are
+  the pinned ones; and on the `--lean-link` lines every executable is linked by `lean-ld`.
   **Known-unverified list:** the only exception to N of N is `scripts/gate-known-unverified.txt`
   (executable + issue; today the `values` test executables of `b_slices` and `e_option_result` in the
-  survey, #1003). It is exact, not a floor: the line is green only if the set of unverified
+  survey, #1003, and bigframe-unwind's test executable, #1009: plain cargo fv links its unverified
+  `big`, and `link-check` stops at an unverified function). It is exact, not a floor: the line is green
+  only if the set of unverified
   executables EQUALS the list for that example. One more unverified executable is red (a regression);
   a listed one that verifies again is red too ("remove the entry"), so the list cannot go stale and the
   PR that fixes an issue deletes its entries. A new entry needs a parent decision and an open issue.
-  fv-demo, deps and every other line stay strict. If CLIF semantics change,
+  fv-demo and deps stay strict.
+  **Pinned counts:** `scripts/gate-expected-counts.txt` holds, per example, the executables that go
+  through the binary check and the Lean-compiled and verified functions (#1004: an executable without
+  Lean-compiled code leaves the check, so `N of N` passed with a smaller N). The executables are exact.
+  A function count below its pin is red (a regression); one above it is red until the file records the
+  rise, so the PR that verifies more functions, or changes an example, changes its line in the same PR
+  (the verdict and the CI job summary print the pinned and the measured counts and the new line).
+  If CLIF semantics change,
   `scripts/clif-filetests.sh` at its baseline (`scripts/clif-filetests-baseline.txt`) and
   `scripts/opt-difftest.sh` with 0 failures.
 - **Gate policy (adopted, #252; @kevaundray's decision of 2026-10-17): merge, then verify.** The full
@@ -1166,10 +1179,13 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
     `opt-difftest.sh`, and the four `examples/compare.sh` lines above (cg_clif built in CI; the five
     executables cargo fv runs, `lean-backend lean-link clif-decode link-check lean-ld`, restored from
     the assembled build and required: until #1001 the last two were not, so every link was rust-lld's
-    and every executable "not checked", in green jobs). The job summary prints the known-unverified
-    list with its issue links, and link-check's report of every unverified executable is uploaded.
-    `float-spec.sh` runs beside the build (its own Lake package and toolchain, through elan).
-    Not yet in CI: the crate-proofs freshness check (#994, waits for #984).
+    and every executable "not checked", in green jobs). The job summary prints the pinned and the
+    measured counts, the known-unverified list with its issue links and cargo fv's reasons, and the
+    Lean-compiled functions that are not verified; link-check's report of every unverified executable
+    is uploaded. `float-spec.sh` runs beside the build (its own Lake package and toolchain, through elan).
+    The job `crate-proofs freshness` (#994) reruns `scripts/regen-crate-proofs.sh` and fails on any
+    difference from the committed `crate-proofs/` (the difference is uploaded as a patch); it is a CI
+    line only: `scripts/main-gate.sh` builds the committed crate proofs and does not regenerate them.
     The report job posts the result on #261. Measured on GitHub-hosted runners
     (4 vCPU, 16 GB, 24 GB swap; eth-act's free plan allows 20 jobs at once across all its
     repositories), 2026-10-18: a run with a leaf module changed takes 21 min (shard 3 min, assemble
