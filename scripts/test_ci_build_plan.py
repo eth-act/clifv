@@ -1,4 +1,4 @@
-import importlib.util, json, pathlib, subprocess, sys, tempfile, unittest
+import importlib.util, json, os, pathlib, re, shutil, subprocess, sys, tempfile, unittest
 
 HERE = pathlib.Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("ci_build_plan", HERE / "ci-build-plan.py")
@@ -314,6 +314,36 @@ class Workflow(unittest.TestCase):
         self.assertLess(run.index("set -o pipefail"), run.index("scripts/ci-build-plan.py"))
         self.assertIn("${EXPLICIT:+--explicit-base}", run)
         self.assertIn("EXPLICIT: ${{ steps.base.outputs.run && inputs.base-run }}", step)
+
+    @unittest.skipUnless(shutil.which("jq"), "needs jq (present on the CI runners)")
+    def test_baseline_only_from_runs_of_this_repository(self):
+        # #1021: an artifact named lake-full of a pull request run from a fork (its head branch
+        # may be called main) was taken as the baseline
+        text = (HERE.parent / ".github/workflows/full-gate.yml").read_text()
+        step = text[text.index("      - name: Find baseline build\n"):text.index("      - name: Plan\n")]
+        named, automatic = re.findall(r"--jq '(.*?)'\)", step, re.S)
+
+        def artifact(run, branch, created, head_repo=1, repo=1, expired=False):
+            return {"expired": expired, "created_at": created,
+                    "workflow_run": {"id": run, "head_sha": f"{run:040x}", "head_branch": branch,
+                                     "repository_id": repo, "head_repository_id": head_repo}}
+
+        def pick(program, artifacts):
+            r = subprocess.run(["jq", "-r", program], input=json.dumps({"artifacts": artifacts}), text=True,
+                               capture_output=True, env={"OWN_BRANCH": "agent/x", "PATH": os.environ["PATH"]})
+            self.assertEqual(r.returncode, 0, r.stderr)
+            return r.stdout.split()
+
+        ours = [artifact(1, "main", "2026-11-01"), artifact(2, "agent/x", "2026-11-02"), artifact(3, "agent/y", "2026-11-09")]
+        fork = [artifact(7, "main", "2026-11-10", head_repo=2), artifact(8, "agent/x", "2026-11-11", head_repo=2),
+                artifact(9, "main", "2026-11-12", head_repo=None, repo=None)]
+        self.assertEqual(pick(automatic, ours), ["2", f"{2:040x}"])
+        self.assertEqual(pick(automatic, ours + fork), ["2", f"{2:040x}"])        # newer, but not ours
+        self.assertEqual(pick(automatic, fork), [])
+        self.assertEqual(pick(automatic, ours[:1] + [artifact(4, "main", "2026-11-05", expired=True)]), ["1", f"{1:040x}"])
+        self.assertEqual(pick(named, ours[2:]), ["3", f"{3:040x}"])               # any branch of ours, by hand
+        self.assertEqual(pick(named, fork[:1]), [])
+        self.assertEqual(pick(named, fork[2:]), [])
 
 
 if __name__ == "__main__":

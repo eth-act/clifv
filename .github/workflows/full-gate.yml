@@ -73,15 +73,21 @@ jobs:
           # content-addressed, so any baseline is safe: the planner rebuilds what differs from it.
           # `base-run` names another run's instead: a branch stacked on another PR's head takes
           # that PR's build, where its own first run would build the same modules again. The
-          # planner then refuses a difference in a file modules read untraced (--explicit-base)
+          # planner then refuses a difference in a file modules read untraced (--explicit-base).
+          # Only runs of this repository count (#1021): a pull request from a fork runs here with
+          # its own workflow files and its own branch name (a fork's `main` too), and what such
+          # a run uploads as `lake-full` is not a build anyone checked.
           if [[ -n $BASE_RUN ]]; then
             [[ $BASE_RUN =~ ^[0-9]+$ ]] || { echo "::error::base-run is not a run id: $BASE_RUN"; exit 1; }
             read -r run sha < <(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BASE_RUN/artifacts?name=lake-full" \
-              --jq '[.artifacts[] | select(.expired | not)] | last | "\(.workflow_run.id // "") \(.workflow_run.head_sha // "")"') || true
-            [[ -n "${run:-}" ]] || { echo "::error::base-run: run $BASE_RUN has no unexpired lake-full artifact"; exit 1; }
+              --jq '[.artifacts[] | select(.expired | not)
+                     | select(.workflow_run.repository_id != null and .workflow_run.head_repository_id == .workflow_run.repository_id)]
+                    | last | "\(.workflow_run.id // "") \(.workflow_run.head_sha // "")"') || true
+            [[ -n "${run:-}" ]] || { echo "::error::base-run: run $BASE_RUN has no unexpired lake-full artifact of a run of this repository"; exit 1; }
           else
             read -r run sha < <(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=lake-full&per_page=100" \
               --jq '[.artifacts[] | select(.expired | not)
+                     | select(.workflow_run.repository_id != null and .workflow_run.head_repository_id == .workflow_run.repository_id)
                      | select(.workflow_run.head_branch == "main" or .workflow_run.head_branch == env.OWN_BRANCH)]
                     | sort_by(.created_at) | last | "\(.workflow_run.id // "") \(.workflow_run.head_sha // "")"') || true
           fi
