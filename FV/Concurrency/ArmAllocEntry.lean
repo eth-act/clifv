@@ -1,6 +1,7 @@
 import FV.Concurrency.ArmAllocLS
 import FV.Concurrency.CallCompose
 import FV.Concurrency.FrameEvs
+import FV.E2E.RegLevelFrameW
 
 /-!
 # Layer 4b from the ABI entry: the prologue (T2h, #311)
@@ -9,8 +10,8 @@ Layer 4b's run-level theorems (`arm_alloc_refines_ls`, …) start at the allocat
 configuration, i.e. after the prologue. Here the precise Arm run starts at the **ABI entry**
 `R.s0` (`AbiCall`: the pc at the function's first word, an aligned `sp`):
 
-* `q_init_lines`: `RegLevelFrame.q_init` with the prologue's lines exposed (`LinesAt`) and the
-  number of its steps (`prologueLines`' length): `Q ∧ AInv` at the entry configuration after
+* `q_init_lines`: `RegLevelFrame.q_init` with the prologue's run exposed (`ProRun` from line 1)
+  and the number of its steps (`prologueSteps`): `Q ∧ AInv` at the entry configuration after
   them;
 * `prologue_evs`: every step of the prologue (Cranelift's: fp/lr's `stp`, `mov x29, sp`, the
   stack probes, the pushes of the saved registers, the `sp` adjustment) accesses only fp/lr, the
@@ -34,18 +35,22 @@ open Arm ArmFoot ArmThread ArmInstFoot VCodeThread Backend Backend.Proof AllocTh
 
 /-! ## After the prologue -/
 
-/-- **`q_init` with the prologue's lines**: from the ABI entry, the prologue's lines run
-(`LinesAt` at line 1) to the state after them, where `Q ∧ AInv` hold at the entry configuration
-of the allocated code (store = the machine's locations, world = any body-entry world `w₀`). -/
+/-- **`q_init` with the prologue's run**: from the ABI entry, the prologue runs (`ProRun` at
+line 1, `prologueSteps` machine steps) to the state after it, where `Q ∧ AInv` hold at the entry
+configuration of the allocated code (store = the machine's locations, world = any body-entry
+world `w₀`). (#581: the former first conjunct, `LinesAt` (a straight-line run of the prologue's
+lines, `prologueLines`' length steps), became false with Cranelift's stack-probe loop, whose
+`b.gt` jumps back; the run is `ProRun`, its steps `prologueSteps`, both as before without the
+loop.) -/
 theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     {w₀ : ArmState} (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) :
-    LinesAt R 1 (prologueLines R.af.saves R.af.frameSize R.af.isCaller) R.s0
-      (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0) ∧
-    Q R (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)
+    ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0
+      (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) ∧
+    Q R (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)
       (MConf.init R.rf (locVal R.fr
-        (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)) w₀) ∧
+        (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)) w₀) ∧
     AInv R (MConf.init R.rf (locVal R.fr
-      (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)) w₀) := by
+      (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)) w₀) := by
   obtain ⟨hframe, hfs, -, hsv, -, hcb, -, -, hdrop0⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hsp0 := (spv R.s0).isLt
@@ -53,24 +58,18 @@ theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
   obtain ⟨vb, items, code, ps1, pl, X, psm, ps2, x, hvb, hit, hcode, hX, hT, htr, hpl0, hj0,
     hdrop, hx, hsc⟩ := entry_block hR
   subst hpl0
-  obtain ⟨s', hsteps, hsp', hfp', ho', hm', -, -⟩ :=
+  obtain ⟨s', hsteps, hsp', hfp', ho', hfl', hm', -, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
-  obtain ⟨hiter, hpc', -, -⟩ := iterN_steps hR hdrop
-    (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
-    hent.program hpc1 hent.err hsteps
+  obtain ⟨hiter, hpc', -, -, -⟩ := iterN_proRun hR hdrop hent.program hpc1 hent.err hsteps
   obtain ⟨herr', hprog'⟩ := hsteps.err
-  have hlat : LinesAt R 1 (prologueLines R.af.saves R.af.frameSize R.af.isCaller) R.s0 s' :=
-    ⟨lines_at hdrop, fun x t h => by
-      obtain ⟨x', e, hh, -⟩ := prologueLines_ins _ _ _ h; cases e; exact hh,
-      hent.program, by rw [hpc1]; rfl, hent.err, stepsOk_interOk hsteps hent.err, hsteps.exec⟩
   have hsP : R.sP = s' := hiter
   rw [hiter]
-  refine ⟨hlat, ?_⟩
+  refine ⟨hsteps, ?_⟩
   have hspB : spOf s' = R.spB := by
     rw [hsp', RL.spB, hdrop0, ← hfs]; exact sp_sub16 _ _
   have htopB : R.topB.toNat = (spv R.s0).toNat - R.topN := by
@@ -128,8 +127,8 @@ theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
     rw [e2] at h2
     rw [hfs] at this h2
     omega
-  have hfield : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 →
-      Arm.r f s' = Arm.r f R.s0 := ho'
+  have hfield : ∀ f, f ≠ .PC → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → f ≠ .GPR 16#5 → f ≠ .GPR 17#5 →
+      (∀ fl, f ≠ .FLAG fl) → Arm.r f s' = Arm.r f R.s0 := ho'
   -- the kept addresses are not the frame top
   have hgk : ∀ a, R.G a → s'.mem a = R.s0.mem a := by
     intro a ha
@@ -155,7 +154,12 @@ theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
     · refine ⟨fun l _ _ => rfl, ⟨fun f hf => ?_, hmemF, ?_⟩, by rw [herr', hent.err],
         by rw [hprog', hent.program], hspB, ?_, fun _ => ?_, code_keep hR.prog0 hent.code hcode',
         hgk, fun _ => hfp'⟩
-      · by_cases h29 : f = .GPR 29#5
+      · by_cases hfl : ∃ fl, f = .FLAG fl
+        · obtain ⟨fl, rfl⟩ := hfl
+          rw [hfl' fl, hbe.other _ hf (by simp) (by simp)]
+          simp [probeR, probeFlag, hframe]
+        have hfl : ∀ fl, f ≠ .FLAG fl := fun fl e => hfl ⟨fl, e⟩
+        by_cases h29 : f = .GPR 29#5
         · subst h29
           have := hbe.fp
           simp only [hframe, ite_true, xreg] at this hfp'
@@ -166,8 +170,9 @@ theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
           simp only [spv] at this
           rw [this]; exact hspB
         have h16 : f ≠ .GPR 16#5 := by rintro rfl; exact hf (by simp [Masked])
+        have h17 : f ≠ .GPR 17#5 := by rintro rfl; exact hf (by simp [Masked])
         have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
-        rw [hfield f hpc h29 h31 h16, hbe.other f hf h29 h31]
+        rw [hfield f hpc h29 h31 h16 h17 hfl, hbe.other f hf h29 h31, probeR_of_ne hfl]
       · rw [hprog', hbe.program]
       · rw [checkSP_iff, hspB]
         simp only [RL.spB, hdrop0]
@@ -193,10 +198,10 @@ theorem q_init_lines {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
         fun m h1 h2 e => rnum_ne (a := n) (b := m) (by omega) h2 (by omega) (Arm.StateField.GPR.inj e)
       simp only [regVal]
       rw [hfield _ (by simp) (hne 29 (by omega) (by omega)) (hne 31 (by omega) (by omega))
-        (hne 16 (by omega) (by omega))]
+        (hne 16 (by omega) (by omega)) (hne 17 (by omega) (by omega)) (by simp)]
     | v n =>
       simp only [regVal]
-      rw [hfield _ (by simp) (by simp) (by simp) (by simp)]
+      rw [hfield _ (by simp) (by simp) (by simp) (by simp) (by simp) (by simp)]
     | _ => simp [Reg.isArgReg] at hr
 
 /-! ## The prologue's events -/
@@ -217,59 +222,120 @@ theorem ProbeF.of_small {R : RL} (h : R.af.frameSize + 16 < 4096) : ProbeF R := 
   have ht : probeTotal R.af.frameSize R.af.isCaller < 4096 := by unfold probeTotal; split <;> omega
   exact ProbeF.of_count (by simp [probeCount, Nat.div_eq_of_lt ht])
 
+/-- **The prologue's states** (#581): the prologue's run from the ABI entry (`ProRun`) is its
+`prologueSteps` machine steps, and every state before its last step is at an (unhooked)
+instruction line `1 + k` of the prologue, with the program and no error. These are the facts the
+straight-line `LinesAt` gave, which Cranelift's stack-probe loop (its `b.gt` jumps back) does not
+make. -/
+theorem prologue_states {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+    {s' : ArmState} (hpr : ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0 s') :
+    iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0 = s' ∧
+    ∀ i < prologueSteps R.af.saves R.af.frameSize R.af.isCaller, ∃ k x,
+      k < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length ∧
+      R.fa.lines.toList[1 + k]? = some (.ins x none) ∧
+      Line.ins x none ∈ prologueLines R.af.saves R.af.frameSize R.af.isCaller ∧ x.hooked = false ∧
+      (iterN R.step i R.s0).program = R.fb.program R.base ∧
+      Arm.r .PC (iterN R.step i R.s0) = R.pcOf (1 + k) ∧ Arm.r .ERR (iterN R.step i R.s0) = .None := by
+  obtain ⟨vb, items, code, ps1, pl, Xe, psm, ps2, xe, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
+    entry_block hR
+  subst hpl0
+  have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
+    rw [hent.pc]
+    simp only [RL.pcOf, RL.L] at hj0 ⊢
+    rw [lineOffset_succ _ _ _ hj0]
+    simp [lineOffset, Line.size]
+  obtain ⟨hiter, -, -, hgx, hline⟩ := iterN_proRun hR hdrop hent.program hpc1 hent.err hpr
+  have hgx' := hgx (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
+  refine ⟨hiter, fun i hi => ?_⟩
+  obtain ⟨k, hk, hpck, -⟩ := hline i hi
+  have hgi := hgx' i hi
+  obtain ⟨x, hx, hxh, -⟩ :=
+    prologueLines_ins (calls := R.af.isCaller) R.af.saves R.af.frameSize _ (List.getElem_mem hk)
+  have hj : R.fa.lines.toList[1 + k]? = some (.ins x none) := by
+    have := congrArg (·[k]?) hdrop
+    simp only [List.getElem?_drop, RL.L] at this
+    rw [this, List.getElem?_append_left hk, List.getElem?_eq_getElem hk, hx]
+  exact ⟨k, x, hk, hj, hx ▸ List.getElem_mem hk, hxh, hgi.prog, hpck, hgi.err⟩
+
+/-- **The prologue keeps the program** (#581: `CallSeg.linesAt_program` for the prologue's run,
+`ProRun`). -/
+theorem prologue_program {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+    {s' : ArmState} (hpr : ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0 s') :
+    ∀ i ≤ prologueSteps R.af.saves R.af.frameSize R.af.isCaller,
+      (iterN R.step i R.s0).program = R.fb.program R.base := by
+  intro i hi
+  obtain ⟨hit, hst⟩ := prologue_states hR hent hpr
+  rcases Nat.lt_or_ge i (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) with h | h
+  · obtain ⟨-, -, -, -, -, -, hp, -⟩ := hst i h
+    exact hp
+  · obtain rfl : i = prologueSteps R.af.saves R.af.frameSize R.af.isCaller := by omega
+    rw [hit, hpr.err.2, hent.program]
+
 /-- **The prologue's steps**: each accesses only fp/lr, the clobber area and the bytes of the
 stack probes (in `R.F`) with plain writes, and none is a store exclusive. (#581: `hpf`, the probed
 bytes in `R.F`, is new: without it the statement is false, as Cranelift's stack probes may store
-into CLIF stack slots, which are not in `R.F`.) -/
+into CLIF stack slots, which are not in `R.F`. The prologue's run is `ProRun` and its steps
+`prologueSteps`, not a straight-line run (`LinesAt`) of `prologueLines`' length steps, which
+Cranelift's stack-probe loop does not make.) -/
 theorem prologue_evs {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
-    (hpf : ProbeF R)
-    {s' : ArmState} (hlat : LinesAt R 1 (prologueLines R.af.saves R.af.frameSize R.af.isCaller) R.s0 s') :
-    ∀ i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
+    (hpf : ProbeF R) {s' : ArmState}
+    (hpr : ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0 s') :
+    ∀ i < prologueSteps R.af.saves R.af.frameSize R.af.isCaller,
       (∀ e ∈ stepEvs (iterN R.step i R.s0), R.F e.addr ∧ e.k = .plainW) ∧
         NoStx (iterN R.step i R.s0) := by
-  obtain ⟨hframe, hfs, -, hsv, -, hcb, -, hst', -⟩ := RL.frame_facts hR
-  have hsp0 := (spv R.s0).isLt
-  have hs : R.af.frameSize < 2 ^ 64 := by omega
-  have hev := prologue_evsIn (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0
-    hent.spAligned
-  have hplain : ∀ k ∈ kinds (prologueLines R.af.saves R.af.frameSize R.af.isCaller), k = .plainR ∨ k = .plainW := by
+  obtain ⟨hframe, -, -, hsv, -, -, -, -, -⟩ := RL.frame_facts hR
+  obtain ⟨vb, items, code, ps1, pl, Xe, psm, ps2, xe, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
+    entry_block hR
+  subst hpl0
+  have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
+    rw [hent.pc]
+    simp only [RL.pcOf, RL.L] at hj0 ⊢
+    rw [lineOffset_succ _ _ _ hj0]
+    simp [lineOffset, Line.size]
+  have hwr := iterN_proRunWP hR hsv hdrop hent.program hpc1 hent.err hent.spAligned hpr (P := R.F)
+    (fun k hk => by
+      have := RL.FK_F (fplr_inF hR hframe k (by simpa [RL.topN] using hk))
+      simpa [RL.topB, RL.topN, spOf, spv] using this)
+    (fun a hp => hpf a (by simpa [probeHit, hframe, spOf, spv] using hp))
+  have hplain : ∀ k ∈ kinds (prologueLines R.af.saves R.af.frameSize R.af.isCaller),
+      k = .plainR ∨ k = .plainW := by
     intro k hk
     rw [kinds_prologueLines] at hk
     simp only [List.mem_cons, List.mem_replicate] at hk
     rcases hk with rfl | ⟨-, rfl⟩ <;> exact .inr rfl
-  have hseg := hlat.seg hR
-  have hstep := step_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hlat.at_ hlat.hook
-    hlat.prog hlat.pc hlat.err hlat.inter hlat.run
   intro i hi
+  obtain ⟨k, x, -, hj, hmem, hxh, hprog, hpck, herr⟩ := (prologue_states hR hent hpr).2 i hi
+  obtain ⟨a, ha, -, hev, hdec⟩ := stepEvs_line (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hj hxh
+    hprog (by rw [hpck]; rfl) herr
   refine ⟨fun e he => ?_, fun rel rs rn hc => ?_⟩
-  · have hm : e ∈ (segEvs R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0).flatten :=
-      List.mem_flatten.2 ⟨_, stepEvs_mem_segEvs hi, he⟩
-    rw [hseg] at hm
-    refine ⟨?_, ?_⟩
-    · rcases hev e hm with ⟨k, hk, hk'⟩ | hp
-      · rw [hk']
-        have := RL.FK_F (fplr_inF hR hframe k (by simpa [RL.topN] using hk))
-        simpa [RL.topB, RL.topN, spOf, spv] using this
-      · exact hpf _ (by simpa [probeHit, hframe, spOf, spv] using hp)
-    · have hmk := (VCodeEvents.linesEvs_kinds _ _ _).subset (List.mem_map_of_mem (f := (·.k)) hm)
-      rcases hplain _ hmk with h | h
-      · rw [kinds_prologueLines] at hmk
-        simp only [List.mem_cons, List.mem_replicate] at hmk
-        rcases hmk with h' | ⟨-, h'⟩ <;> simp [h'] at h
-      · exact h
-  · obtain ⟨x, t, a, hli, ha, hdec, -, -⟩ := hstep i hi
-    rw [show R.step = ArmStepX R.X R.H R.fa from rfl, cls_of_decode hdec] at hc
-    exact clsOf_ne_stx (noExcl_of_kinds hplain (List.mem_of_getElem? hli) ha) rel rs rn hc
+  · rw [hev] at he
+    have hkx : insnKind x = some e.k := by
+      have hmk := (instEvs_kinds ha _).subset (List.mem_map_of_mem (f := (·.k)) he)
+      cases h : insnKind x with
+      | none => rw [h] at hmk; cases hmk
+      | some k' => rw [h] at hmk; simp only [Option.toList_some, List.mem_singleton] at hmk; rw [hmk]
+    have hkind : e.k = .plainW := by
+      have hin : e.k ∈ kinds (prologueLines R.af.saves R.af.frameSize R.af.isCaller) :=
+        List.mem_filterMap.2 ⟨_, hmem, by simp [lineKind, hkx]⟩
+      rw [kinds_prologueLines] at hin
+      simp only [List.mem_cons, List.mem_replicate] at hin
+      rcases hin with h | ⟨-, h⟩ <;> exact h
+    have hw := evs_memWrites ha (by rw [hkx, hkind]) _ e he
+    have := hwr i hi (1 + k) x none hj hpck hxh _ a ha _ hw 0 (Backend.Proof.memWrites_pos a _ _ hw)
+    exact ⟨by simpa using this, hkind⟩
+  · rw [cls_of_decode hdec] at hc
+    exact clsOf_ne_stx (noExcl_of_kinds hplain hmem ha) rel rs rn hc
 
 /-- **A precise run through (a prefix of) the prologue** under `OkPriv` is the single-core run;
 its events are private plain writes. (#581: `hpf` (`ProbeF`) is new: the stack probes' writes are
-private only when the probed bytes are in `R.F`.) -/
+private only when the probed bytes are in `R.F`; the prologue's run is `ProRun`, its steps
+`prologueSteps`, as in `prologue_evs`.) -/
 theorem prun_prologue {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
     (hpf : ProbeF R)
-    {s' : ArmState} (hlat : LinesAt R 1 (prologueLines R.af.saves R.af.frameSize R.af.isCaller) R.s0 s')
+    {s' : ArmState} (hlat : ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0 s')
     {mon : Mon} {L : List Lab} {t1 : ArmState × Mon}
     (hr : PRun Policy.arm R.step (OkPriv R) (R.s0, mon) L t1)
-    (hL : L.length ≤ (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length) :
+    (hL : L.length ≤ prologueSteps R.af.saves R.af.frameSize R.af.isCaller) :
     t1.1 = iterN R.step L.length R.s0 ∧ PrivW (PrivA R) (evTr L) ∧
       ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := by
   have hpe := prologue_evs hR hent hpf hlat
@@ -313,10 +379,12 @@ theorem refines_privW {K : Type} {MK : K → AKind → Prop} {Priv : Nat → Pro
 
 /-! ## From the ABI entry -/
 
-/-- **The prologue's lines from the ABI entry** (`q_init_lines` without the body world). -/
+/-- **The prologue's run from the ABI entry** (`q_init_lines` without the body world). (#581:
+the former statement, a straight-line run (`LinesAt`) of `prologueLines`' length steps, became
+false with Cranelift's stack-probe loop; the run is `ProRun`, its steps `prologueSteps`.) -/
 theorem prologue_linesAt {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0) :
-    LinesAt R 1 (prologueLines R.af.saves R.af.frameSize R.af.isCaller) R.s0
-      (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0) := by
+    ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0
+      (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) := by
   obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
   have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
@@ -330,20 +398,18 @@ theorem prologue_linesAt {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R
     simp only [RL.pcOf, RL.L] at hj0 ⊢
     rw [lineOffset_succ _ _ _ hj0]
     simp [lineOffset, Line.size]
-  obtain ⟨hiter, -⟩ := iterN_steps hR hdrop
-    (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
-    hent.program hpc1 hent.err hsteps
+  obtain ⟨hiter, -⟩ := iterN_proRun hR hdrop hent.program hpc1 hent.err hsteps
   rw [hiter]
-  exact ⟨lines_at hdrop, fun x t h => by
-    obtain ⟨x', e, hh, -⟩ := prologueLines_ins _ _ _ h; cases e; exact hh,
-    hent.program, by rw [hpc1]; rfl, hent.err, stepsOk_interOk hsteps hent.err, hsteps.exec⟩
+  exact hsteps
 
 /-- **Layer 4b from the ABI entry, from any configuration `Q`-related to the state after the
 prologue** (`arm_alloc_refines_entry` with `Q ∧ AInv` given). (#581: `hpf` (`ProbeF`) is new:
-the prologue's stack probes refine no CLIF step only when the probed bytes are private.) -/
+the prologue's stack probes refine no CLIF step only when the probed bytes are private; the
+state after the prologue is after `prologueSteps` steps, which Cranelift's stack-probe loop
+makes more than `prologueLines`' length.) -/
 theorem arm_alloc_refines_entryQ {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (hpf : ProbeF R) {c : MConf CV ArmState}
-    (hq : Q R (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0) c)
+    (hq : Q R (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) c)
     (hA : AInv R c) {mon : Mon} {ls : List Lab}
     {t' : ArmState × Mon} (hr : PRun Policy.arm R.step (OkPriv R) (R.s0, mon) ls t') :
     ∃ n trS cE ψ, n ≤ ls.length ∧ MTRun R.vc R.rf R.sem ckeep (cEvs R.F R.ctx) c trS cE ∧
@@ -352,10 +418,10 @@ theorem arm_alloc_refines_entryQ {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) {ra :
   have hlat := prologue_linesAt hR hent
   have hpp : ∀ {mon : Mon} {L : List Lab} {t1 : ArmState × Mon},
       PRun Policy.arm R.step (OkPriv R) (R.s0, mon) L t1 →
-      L.length ≤ (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length →
+      L.length ≤ prologueSteps R.af.saves R.af.frameSize R.af.isCaller →
       t1.1 = iterN R.step L.length R.s0 ∧ PrivW (PrivA R) (evTr L) ∧
         ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := fun h hL => prun_prologue hR hent hpf hlat h hL
-  generalize hP : (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length = P at hq hpp
+  generalize hP : prologueSteps R.af.saves R.af.frameSize R.af.isCaller = P at hq hpp
   by_cases hle : ls.length ≤ P
   · -- the run ends inside the prologue: private writes only
     obtain ⟨-, hpw, -⟩ := hpp hr hle

@@ -4912,8 +4912,77 @@ because the old statement became false with probes (names kept):
   modes): the stack is `frameDrop + (D * M + pbMax)` (was `frameDrop + D * M`), as their
   `SemanticCompilerWith` counterparts.
 
-Frames of 16 KiB and more (Cranelift's `StackProbeLoop`) still get no probes; that form is a
-separate change.
+## Stack probes (loop form, #581)
+
+Frames with `probeTotal` in [16 KiB, 4 GiB) get Cranelift's `StackProbeLoop` (`probeLoopLines`:
+`x16 = 0`, `x17 = total`, then `sub x16, x16, #4096; str wzr, [sp, x16]; cmn x16, x17; b.gt -12`,
+docs/contracts/backend.md). It runs `⌈total / 4096⌉` iterations (`LoopRuns`, `probeLoop_ok`),
+zeroes 4 bytes at `sp₁ - 4096·i` for each `i`, so the probed bytes reach up to about 4 KiB
+below the frame (the unrolled form: up to 16 bytes); `probeBelow af` covers that distance, and
+the budgets above are unchanged in form. It also leaves `x16`, `x17` and the flags changed.
+Statement changes, each because the old statement became false with the loop (names kept):
+
+* Step counts: every `(prologueLines X.saves X.frameSize X.isCaller).length` became
+  `prologueSteps …` (the loop executes more instructions than it has lines); equal without the
+  loop (`prologueSteps_of_not`). `ProRun` replaces the straight-line prologue run in
+  `q_init`, `q_initW`, `q_initNA`, `q_init_lines`, `prologue_linesAt`, `prologue_fields`,
+  `prun_prologue`, `arm_alloc_refines_entryQ` (Concurrency).
+* `x17` and the flags are no longer kept by the prologue: `entry_calleeSaved`, `q_initW`,
+  `q_initNR`, `prologue_fields` exempt them (weaker premises); `regVal_calleeSaved_congrX` is
+  the new form, `regVal_calleeSaved_congr` is kept and derived.
+* `LinkArm.bodyOf` writes the loop's flags (`probeFlags`); `r_bodyOf` gains the autoParam `hfl`
+  (the field is not a flag), `r_bodyOf_probeR` covers every field.
+* `SretCopyExecBoundary.outside_call` gains `probes : frame → probeCount ≤ 3`: with the loop the
+  probes may reach the heap below a large frame; `SretCopyCapturedExec.probes_small` discharges
+  it from `budget ≤ 4096`.
+* `Concurrency` `kinds_probeLines`/`kinds_prologueLines` count `probeStores` (stores executed),
+  not store lines.
+* `probeLines_length` (≤ 9) and `probeLines_enc` cover the loop.
+* `probeLines_writes` (`FV/E2E/RegLevelPushW.lean`) keeps its statement and covers the loop
+  form (run straight-line, only the first iteration's `str` is reached, `loopRest_writes`);
+  `probeLines_writes_unrolled` is the new lemma for the unrolled form alone (premise
+  `probeCount total ≤ 3`), the former proof, which `probeLines_writes` uses in that case.
+* **`EntryFlags`** (`FV/E2E/LinkArmProphDetE.lean`), a new premise of the per-step locks of two
+  runs from their entry states:
+  `EntryFlags af s s₀ := af.frame = true → probeLoop (probeTotal af.frameSize af.isCaller) = true
+  → ∀ fl, r (.FLAG fl) s = r (.FLAG fl) s₀` (the two entries' flags are equal when the prologue
+  runs the probe loop; vacuous for every function without the loop: `EntryFlags.of_not`, so each
+  statement keeps its exact former domain there). Why: `BodyEntry.other` says the body starts
+  with the loop's flags (`probeR`), so the body-entry worlds' agreement (`SameWorld`) no longer
+  determines the entries' flags, and a statement that locks the two runs at every step from
+  the entries (`StEqOutX` at step 0 includes the flags) is false for a loop-form function
+  entered twice with different flags. Where (each right after `hx29`):
+  * `stEqOutX_entryZ` (the lock at the two entries);
+  * the two-run theorems whose conclusion locks every step from the entries:
+    `backend_twoRunLERW`, `backend_twoRunLERWZ`, `backend_twoRunLERWZNp`, `…NpW`, `…NpWP`,
+    `…NpWPK`, `backend_twoRunLERWZI`, `…IU`, `…IUP`, `…IUPK`, their cleanup-path forms
+    `backend_twoRunLERWZNpWPV`, `…NpWV`, `…NpV`, `…IV`, `…IUPV`, `…IUV`, `…NpWPVK`, `…IUPVK`,
+    and `backend_twoRunLERWZIUF_either`, `…IUPF_either`, `…IUPF_eitherK`;
+  * the clause definitions `LockRet` (and `LockRet.ret`), `DetRunPRBCR`, `DetRunPRBCRU`,
+    `DetPRBR`, `DetPRBRU` (their consequents lock or twin the runs from the entries).
+  It is discharged at the link like `hx29`: a callee is entered from two call states that are
+  already locked, so the entries' flags are equal (`hflt` in `LinkArmLockRet`,
+  `LinkArmDetTabE`, `LinkArmProgCallPRBRL`, `LinkArmProgCallPRBRLT`). `ThmPDE`, `ThmPDERX29`
+  and every top-level theorem are unchanged.
+* The two-run theorems whose conclusions speak only of the states after the prologues keep
+  their statements, with no flags premise: `backend_twoRunLE`, `backend_twoRunLEF`,
+  `backend_twoRunLER`, `backend_twoRunLW`, `backend_twoRunLWNp`, `backend_twoRunLWNpP`,
+  `backend_twoRunLWNpPK`, `backend_twoRunLWNpPV`, `backend_twoRunLWNpV`,
+  `backend_twoRunLWNpPVK`. Their lock after both prologues is the new
+  `stEqOutX_prologueZ_entry` (`FV/E2E/BackendTwoRunLE.lean`): in the loop form the prologue's
+  result does not depend on the entry flags (`Backend.Proof.ProRun.flags_irrel`,
+  `FV/E2E/ProRunFlags.lean`: the frame setup and the loop's constants write the same values
+  from two entries differing only in flags, `probeLoop_ok` gives the state after the loop
+  completely, with the flags `loopFlag total`; non-vacuity `proRun_flags_irrel_witness`, a
+  16 KiB frame entered with `N` clear and set), so the second run's state after its prologue
+  is that of its entry with the first entry's flags (`iterN_prologue_flagTwin`), to which
+  `stEqOutX_entryZ` applies.
+* Witnesses: the step counts in the statements of `BackendTwoRun{,D,S,T,LR,LW,LWLsl,NI,NIU,
+  NIUP,EitherK,V}Witness` are `prologueSteps …` (were `(prologueLines …).length`; the fixtures
+  have no loop, so the numbers are the same); the witnesses of the theorems that gained
+  `EntryFlags` (`BackendTwoRun{NI,NIU,NIUP,EitherK,V}Witness`) carry it as a hypothesis in the
+  same place, and the closed ones (`BackendTwoRunLWWitness`, `…LWLslWitness`: both runs from
+  one entry) discharge it with `EntryFlags.refl`.
 
 ## Remaining (precise)
 

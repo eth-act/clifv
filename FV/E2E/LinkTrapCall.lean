@@ -744,7 +744,7 @@ theorem progCallTG (hL : L.Ok) [hR : L.CrunOk] {D : Nat → Clif.Function → Cl
       · exact .inr (.inr ⟨hF, hb⟩)
   have hbw : BodyEntryW Fh (L.A h).vcp.EntryArg (L.A h).af (enterAt (L.A h) t) w₀ :=
     ⟨spv_bodyOf _ _, x29_bodyOf _ _, fun r hr => regVal_bodyOf _ _
-      (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf _ _ h29 h31,
+      (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf_probeR _ _ h29 h31,
       fun a _ => by simp [w₀], by simp [w₀]⟩
   have hME : L.MachEntry κ (M - 1) h Fh G (Arm.r .PC t + 4) (enterAt (L.A h) t) w₀ := by
     refine ⟨⟨by simp, fun k wd hk => hL.imgCode h hh _ (fun a ha => by

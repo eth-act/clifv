@@ -36,6 +36,29 @@ def EntryAgree (K : Nat) (s s₀ : Arm.ArmState) : Prop :=
 theorem EntryAgree.refl (K : Nat) (s : Arm.ArmState) : EntryAgree K s s :=
   ⟨fun _ _ _ _ => rfl, fun _ _ => rfl⟩
 
+/-- **The two entries' flags agree when the prologue's stack-probe loop runs** (#581). The loop
+(`probeLoopLines`: a probed stack of 16 KiB or more) sets the flags, so the body-entry worlds
+(`BodyEntry.other`: `probeR`) no longer determine the flags of the entries, and the lock of two
+runs at the prologue's first steps (before the loop's first `cmn`) needs them to agree. Vacuous
+for a function without the loop: there the body-entry worlds give the agreement, as before. -/
+def EntryFlags (af : AFunc) (s s₀ : Arm.ArmState) : Prop :=
+  af.frame = true → probeLoop (probeTotal af.frameSize af.isCaller) = true →
+    ∀ fl, Arm.r (.FLAG fl) s = Arm.r (.FLAG fl) s₀
+
+theorem EntryFlags.refl (af : AFunc) (s : Arm.ArmState) : EntryFlags af s s := fun _ _ _ => rfl
+
+theorem EntryFlags.symm {af : AFunc} {s s₀ : Arm.ArmState} (h : EntryFlags af s s₀) :
+    EntryFlags af s₀ s := fun h1 h2 fl => (h h1 h2 fl).symm
+
+/-- Entries with the same flags. -/
+theorem EntryFlags.of_eq {af : AFunc} {s s₀ : Arm.ArmState}
+    (h : ∀ fl, Arm.r (.FLAG fl) s = Arm.r (.FLAG fl) s₀) : EntryFlags af s s₀ := fun _ _ => h
+
+/-- Without the probe loop nothing is asked of the entries' flags. -/
+theorem EntryFlags.of_not {af : AFunc} (h : af.frame = true →
+    probeLoop (probeTotal af.frameSize af.isCaller) = false) (s s₀ : Arm.ArmState) :
+    EntryFlags af s s₀ := fun h1 h2 => by rw [h h1] at h2; cases h2
+
 /-- **Two states at the return agree for the caller**: every register but `x30` and the pc, and
 the `K` bytes below `c`. -/
 def RetAgree (K : Nat) (c : BitVec 64) (u u₀ : Arm.ArmState) : Prop :=

@@ -49,6 +49,21 @@ private theorem image_bound (cleanup : Bool) {a : BitVec 64} (inside : img (inpu
     a.toNat < 0x300000 :=
   ProductionBoundaryWitness.image_bound (by decide) (static_facts cleanup).2.1 inside
 
+/-- The caller's frame is below 4 KiB (its depth-15 budget is), so at most three probes (#581). -/
+private theorem probes_small (cleanup : Bool) :
+    (art (input cleanup) Caller.function).af.frame = true →
+      probeCount (probeTotal (art (input cleanup) Caller.function).af.frameSize
+        (art (input cleanup) Caller.function).af.isCaller) ≤ 3 := by
+  intro hfr
+  have hb := (static_facts cleanup).2.2.1
+  simp only [budget, frameDrop, hfr, ite_true] at hb
+  have ht : probeTotal (art (input cleanup) Caller.function).af.frameSize
+      (art (input cleanup) Caller.function).af.isCaller < 16384 := by
+    unfold probeTotal; split <;> omega
+  unfold probeCount
+  rw [if_pos (by omega)]
+  omega
+
 /-- The exact original linked caller has a complete executable entry for arbitrary source bytes. -/
 -- witness: native_decide (only the fixed images' static facts; all heap contents remain symbolic)
 theorem captured_entry (cleanup : Bool) (contents : Nat → BitVec 8) :
@@ -65,7 +80,8 @@ theorem captured_entry (cleanup : Bool) (contents : Nat → BitVec 8) :
   let memory : BitVec 64 → BitVec 8 := fun a => (Elf.loadMem (file cleanup) a).getD 0
   let r := machine contents (art (input cleanup) Caller.function).base memory
   refine ⟨r,?_,?_,?_,?_⟩
-  · apply outside_call rfl (static_facts cleanup).2.2.1 (fun _ code => image_bound cleanup code)
+  · apply outside_call rfl (static_facts cleanup).2.2.1 (probes_small cleanup)
+      (fun _ code => image_bound cleanup code)
     intro a range
     rw [(static_facts cleanup).2.2.2.2.2]
     rfl

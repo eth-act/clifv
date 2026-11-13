@@ -215,8 +215,8 @@ theorem prefixC : ∃ (n0 j : Nat) (m : Loc → CV),
     regVal (iterN RC.step n0 RC.s0) (.x 0) = 0 := by
   obtain ⟨hlat, hq, hA⟩ := q_init_lines wfRC abiRC bodyRC
   have hpe := prologue_evs wfRC abiRC probeF_RC hlat
-  have hpr0 := linesAt_program wfRC hlat
-  generalize hn0 : (prologueLines RC.af.saves RC.af.frameSize RC.af.isCaller).length = n0 at hpe hpr0 hq hA
+  have hpr0 := prologue_program wfRC abiRC hlat
+  generalize hn0 : (prologueSteps RC.af.saves RC.af.frameSize RC.af.isCaller) = n0 at hpe hpr0 hq hA
   have hq0 := hq
   have hA0 := hA
   have e0 := checksRunC.1

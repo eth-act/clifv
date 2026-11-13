@@ -671,12 +671,17 @@ theorem saves_split : ∀ saves : List Reg,
     cases r <;> simp_all [savesInt, savesFloat, List.filter_cons] <;> omega
 
 theorem probeLines_length (total : Nat) : (probeLines total).length ≤ 9 := by
-  have := probeCount_le_three total
   unfold probeLines
   simp only
   split
   · simp
-  · simp only [List.length_append, probeSteps_length, List.length_singleton]; omega
+  · split
+    · simp only [List.length_append, probeSteps_length, List.length_singleton]; omega
+    · have := loadConst64_length (.x 17) total
+      have h0 : (loadConst64 (.x 16) 0).length = 1 := by decide
+      simp only [probeLoopLines, probeLoopBody, List.length_append, List.length_cons,
+        List.length_nil]
+      omega
 
 /-- The prologue: fp/lr, x29, the stack probes, at most one push per saved register, the `sp`
 adjustment. -/
@@ -719,12 +724,17 @@ theorem prologueLines_lit (saves : List Reg) (n : Nat) (calls : Bool) :
     intro t
     rw [List.countP_eq_zero]
     intro a ha
-    simp only [probeLines] at ha
-    split at ha
-    · cases ha
-    · rcases List.mem_append.mp ha with h | h
-      · rcases probeSteps_mem h with rfl | rfl <;> simp [Line.isLit]
-      · simp at h; subst h; simp [Line.isLit]
+    have hc := fun rd v => List.countP_eq_zero.mp (loadConst64_lit rd v) a
+    rcases probeLines_mem ha with rfl | rfl | ⟨_, rfl⟩ | h | h | rfl | rfl | rfl | rfl
+    · simp [Line.isLit]
+    · simp [Line.isLit]
+    · simp [Line.isLit]
+    · exact hc _ _ h
+    · exact hc _ _ h
+    · simp [Line.isLit]
+    · simp [Line.isLit]
+    · simp [Line.isLit]
+    · simp [Line.isLit]
   cases calls <;> simp [prologueLines, List.countP_append, pushLines_lit, spAdjLines_lit, hp, Line.isLit]
 
 theorem epilogueLines_lit (saves : List Reg) (n : Nat) :

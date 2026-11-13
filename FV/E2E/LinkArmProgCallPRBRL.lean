@@ -360,7 +360,7 @@ theorem progCallPRBRLRU (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
   have herrc : Arm.r .ERR cn = .None := by rw [hcOk.world.1 _ (by simp [Masked])]; exact herr
   have hbw0 : BodyEntryW Fh (L.A h).vcp.EntryArg (L.A h).af (enterAt (L.A h) cn) w₀ :=
     ⟨spv_bodyOf _ _, x29_bodyOf _ _, fun r hr => regVal_bodyOf _ _
-      (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf _ _ h29 h31,
+      (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf_probeR _ _ h29 h31,
       fun a _ => by simp [w₀], by simp [w₀]⟩
   have hME0 : L.MachEntryPR κ (M - 1) h Fh G (Arm.r .PC cn + 4) (enterAt (L.A h) cn) w₀ P' R' :=
     ⟨⟨hME cn w₀ hsp0 herrc hcOk.img hbw0, prophOk_prophOf _ _ _ _ _ _⟩,
@@ -404,7 +404,7 @@ theorem progCallPRBRLRU (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
     simp only [w₀']; rw [spv_bodyOf, spv_enterAt, hst]
   have hbw : BodyEntryW Fh (L.A h).vcp.EntryArg (L.A h).af (enterAt (L.A h) t) w₀' :=
     ⟨spv_bodyOf _ _, x29_bodyOf _ _, fun r hr => regVal_bodyOf _ _
-      (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf _ _ h29 h31,
+      (harg r (hL.entryRegs h hh r hr)), fun f hf h29 h31 => r_bodyOf_probeR _ _ h29 h31,
       fun a _ => by simp [w₀'], by simp [w₀']⟩
   have hrel' : RelW ⟨Fh, L.syms, (L.A h).af.slotBase, ib⟩ h (spv w₀) cs.frame.slots cs.mem w₀' := by
     refine hRel w₀' hspw₀' ?_ (fun a b hv hb => ?_) (fun hN a hsb => ?_)
@@ -435,7 +435,7 @@ theorem progCallPRBRLRU (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
         rw [hspw₀, hspw₀']
       have hpc : f ≠ .PC := by rintro rfl; exact hf trivial
       have h30 : f ≠ .GPR 30#5 := by rintro rfl; exact hf (by simp [Masked])
-      rw [r_bodyOf _ _ h29 h31, r_bodyOf _ _ h29 h31, r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
+      rw [r_bodyOf_probeR _ _ h29 h31, r_bodyOf_probeR _ _ h29 h31]; refine probeR_congr ?_; rw [r_enterAt _ _ hpc h30, r_enterAt _ _ hpc h30,
         hcOk.world.1 f hf, hZ.1 f hf]
     · by_cases hFa : F a
       · -- a byte of the exterior outside `Fh`: the callee's outgoing area or slot region, in the
@@ -480,11 +480,15 @@ theorem progCallPRBRLRU (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M)
   have hx29t : Arm.r (.GPR 29#5) (enterAt (L.A h) t) = Arm.r (.GPR 29#5) (enterAt (L.A h) cn) := by
     rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
       hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
+  have hflt : EntryFlags (L.A h).af (enterAt (L.A h) t) (enterAt (L.A h) cn) :=
+    EntryFlags.of_eq fun fl => by
+      rw [r_enterAt _ _ (by simp) (by simp), r_enterAt _ _ (by simp) (by simp),
+        hZ.1 _ (by simp [Masked]), hcOk.world.1 _ (by simp [Masked])]
   obtain ⟨k, hret, htrk, htabk⟩ := hdet h hh Fh vals cs w₀ (calleeIni h ini) G
     (Arm.r .PC cn + 4) (enterAt (L.A h) cn) us outs wf n₀ e m rvals cm' hWE hME0 htab hret0 hrs htr0
     htab0 hm (by rw [BitVec.add_sub_cancel]; exact hcOk.ra) D w₀' (fun _ h => (h : False).elim)
     hrel' hsw hreg hstk G (Arm.r .PC t + 4) (enterAt (L.A h) t)
-    (hME t w₀' hst herrt ht.img hbw) hagree (by rw [BitVec.add_sub_cancel]; exact ht.ra) hx29t
+    (hME t w₀' hst herrt ht.img hbw) hagree (by rw [BitVec.add_sub_cancel]; exact ht.ra) hx29t hflt
   refine ⟨k, hpcall t k ht.ra htrk hret.ret hret.prog, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
     (fun h' => ha (h'.elim (fun h1 => hFZ a h1.1) (fun h2 => (h2 : False).elim))), hret.fields,
     hret.gkeep,

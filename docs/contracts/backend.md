@@ -386,13 +386,16 @@ sp + outgoing   explicit CLIF stack slots, Cranelift's layout (slot id order,
 sp              outgoing stack-argument area (max over the function's calls)
 ```
 
-Prologue `stp x29, x30, [sp, #-16]!; mov x29, sp; sub sp, sp, #size` (`movz/movk x16` +
-`sub sp, sp, x16, uxtx` if `size` is not an `imm12`); epilogue `mov sp, x29;
+Prologue `stp x29, x30, [sp, #-16]!; mov x29, sp; sub sp, sp, #size` (`Inst::load_constant`
+into x16 + `sub sp, sp, x16, uxtx` if `size` is not an `imm12`); epilogue `mov sp, x29;
 ldp x29, x30, [sp], #16; ret`. Stack probes (#581, Cranelift's inline probestack with a 4 KiB
-guard, as cg_clif configures it): for `total = size (+16 if the function calls)` with
-`n = total / 4096` in 1..3, the prologue's `sub sp` is followed by `n` times
-`sub sp, sp, #1, lsl #12; stur wzr, [sp]` and `add sp, sp, #n, lsl #12` (`probeLines`,
-`gen_probestack_unroll`); `total ≥ 16 KiB` (Cranelift's `StackProbeLoop`) gets no probes yet.
+guard, as cg_clif configures it), after `mov x29, sp`, for `total = size (+16 if the function
+calls)`: with `n = total / 4096` in 1..3, `n` times `sub sp, sp, #1, lsl #12; stur wzr, [sp]`
+and `add sp, sp, #n, lsl #12` (`gen_probestack_unroll`); for `total ≥ 16 KiB` (below 4 GiB)
+Cranelift's `StackProbeLoop`: `x16 = 0`, `x17 = total` (`Inst::load_constant`), then
+`sub x16, x16, #1, lsl #12; str wzr, [sp, x16]; cmn x16, x17; b.gt .-12`, which stores at
+`sp - 4096·i` for `i = 1, …, ⌈total / 4096⌉` and leaves x17 and the flags set (`probeLines`,
+`probeLoopLines`; the back edge `Insn.bcondRel` has no label).
 Spill code is `ldr`/`str` (`ldur`/`stur` for offsets < 256,
 `[sp, x16, sxtx]` beyond the scaled range), which never changes NZCV, so `cmp` + `b.cond` and
 `cmp` + `JTSequence` stay adjacent in effect. Special cases: `movk` (tied `rd`/`rn`) loads

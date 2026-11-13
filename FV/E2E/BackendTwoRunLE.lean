@@ -1,5 +1,6 @@
 import FV.E2E.BackendTwoRunL
 import FV.E2E.LinkArmProphDetE
+import FV.E2E.ProRunFlags
 
 /-!
 # The machine lock from the entries (SEM1 #537, `docs/plans/uninit.md` §5.9, machine lock)
@@ -11,8 +12,17 @@ keeps equal), with body-entry worlds the same outside `F ∪ D`, are locked at `
 configurations; the prologue keeps the lock (it reads nothing, writes `x29`/`sp` and the pushed
 callee-saved registers from equal values, and the record, whose saved-LR word is in `Zc`).
 
+With Cranelift's stack-probe loop (#581) the lock at the entries (`stEqOutX_entryZ`) and at
+every step of the prologue (`stEqOutX_prologueZ_le`) needs the entries' flags equal
+(`EntryFlags`); the lock after both prologues does not (`stEqOutX_prologueZ_entry`: the
+prologue's result does not depend on the entry flags in the loop form,
+`Backend.Proof.ProRun.flags_irrel`), so `backend_twoRunLE`, whose conclusion speaks only of the
+states after the prologues, has no such premise.
+
 * `mem_eq_of_read_mem_bytes`, `RL.jtByte_mem_eq`, `RL.jtByte_codeAddr`, `RL.lrWord_Zc`;
 * `stEqOutX_entryZ`, `pushLines_x30`, `prologue_exempt`, `stEqOutX_prologueZ`;
+* `abiCall_of_flagTwin`, `bodyEntryW_of_flagTwin`, `iterN_prologue_flagTwin`,
+  **`stEqOutX_prologueZ_entry`**;
 * **`backend_twoRunLE`**.
 -/
 
@@ -110,7 +120,10 @@ theorem RL.lrWord_Zc {R : RL} (hR : R.Wf) (c c' : MConf CV Arm.ArmState) {k : Na
 
 /-- **The lock at the two entries**: equal masked registers but `x30`/pc and equal bytes below
 `sp` (`EntryAgree`), equal `x29`, body-entry worlds the same outside `F ∪ D`; the lock set's
-world difference contains the worlds' (`hW`). -/
+world difference contains the worlds' (`hW`). (#581: `hfl` (`EntryFlags`) is new. With
+Cranelift's stack-probe loop the body starts with the loop's flags (`probeR`), so the worlds'
+agreement no longer gives the entries' flags, and the former statement became false for a
+function with the loop; without the loop `hfl` is vacuous.) -/
 theorem stEqOutX_entryZ {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra' : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) (hent' : AbiCall R.fb R.base ra' t0)
     {A A' : Reg → Prop} {F' D : BitVec 64 → Prop} {w₀ w₀' : Arm.ArmState}
@@ -118,6 +131,7 @@ theorem stEqOutX_entryZ {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra' : BitVe
     (hF' : ∀ a, F' a → R.F a) (hsw : SameWorld (fun b => R.F b ∨ D b) w₀ w₀')
     (hag : EntryAgree (frameDrop R.af + R.K) R.s0 t0)
     (hx29 : Arm.r (.GPR 29#5) R.s0 = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags R.af R.s0 t0)
     {c c' : MConf CV Arm.ArmState} (hW : ∀ a, w₀.mem a ≠ w₀'.mem a → MConf.WDiff c c' a) :
     StEqOutX (R.Zc c c') R.s0 t0 := by
   refine ⟨fun f hf => ?_, hent.program.trans hent'.program.symm, fun a ha => ?_⟩
@@ -134,7 +148,24 @@ theorem stEqOutX_entryZ {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra' : BitVe
               spv t0 - BitVec.ofNat 64 (frameDrop R.af) := hbe.sp.symm.trans (e3.trans hbe'.sp)
           have := congrArg (· + BitVec.ofNat 64 (frameDrop R.af)) e
           simpa [spv] using this
-        · rw [← hbe.other f hm h29 h31, hsw.1 f hm, hbe'.other f hm h29 h31]
+        · by_cases hflag : ∃ fl, f = .FLAG fl
+          · obtain ⟨fl, rfl⟩ := hflag
+            by_cases hlp : R.af.frame = true ∧
+                probeLoop (probeTotal R.af.frameSize R.af.isCaller) = true
+            · exact hfl hlp.1 hlp.2 fl
+            · have hno : R.af.frame = true →
+                  probeLoop (probeTotal R.af.frameSize R.af.isCaller) = false := fun h1 => by
+                cases h : probeLoop (probeTotal R.af.frameSize R.af.isCaller) with
+                | false => rfl
+                | true => exact absurd ⟨h1, h⟩ hlp
+              exact ((probeR_of_not hno R.s0 _).symm.trans
+                ((hbe.other _ hm h29 h31).symm.trans
+                  ((hsw.1 _ hm).trans (hbe'.other _ hm h29 h31)))).trans (probeR_of_not hno t0 _)
+          · have hne : ∀ fl, f ≠ .FLAG fl := fun fl e => hflag ⟨fl, e⟩
+            exact ((probeR_of_ne (af := R.af) hne R.s0).symm.trans
+              ((hbe.other f hm h29 h31).symm.trans
+                ((hsw.1 f hm).trans (hbe'.other f hm h29 h31)))).trans
+              (probeR_of_ne (af := R.af) hne t0)
   · by_cases hfr : R.FrameRd false a
     · obtain ⟨o, ho, -, rfl⟩ := hfr
       apply hag.2
@@ -235,8 +266,24 @@ theorem prologue_exempt {saves : List Reg} (hsv : SavesOk saves) {size i : Nat} 
     simp only [List.mem_append] at hm
     have : x.x30Exempt = false := by
       rcases hm with hm | hm | hm | hm
-      · rcases probeLines_mem hm with e | e | ⟨_, e⟩ <;>
-          (simp only [Line.ins.injEq] at e; obtain ⟨rfl, -⟩ := e; simp [Insn.x30Exempt])
+      · have hc : ∀ {y : Insn} {t' : Option Clif.TrapCode}, Line.ins x t = Line.ins y t' →
+            y.x30Exempt = false → x.x30Exempt = false :=
+          fun e hy => by simp only [Line.ins.injEq] at e; rw [e.1]; exact hy
+        have hlc : ∀ {rd : Reg} {v : Nat}, Line.ins x t ∈ loadConst64 rd v → x.x30Exempt = false :=
+          fun hl => by
+            obtain ⟨i, e, hf⟩ := Backend.Proof.loadConst64_form hl
+            cases e
+            rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> simp [Insn.x30Exempt]
+        rcases probeLines_mem hm with e | e | ⟨_, e⟩ | hl | hl | e | e | e | e
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hlc hl
+        · exact hlc hl
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hc e (by simp [Insn.x30Exempt])
+        · exact hc e (by simp [Insn.x30Exempt])
       · exact pushLines_x30 hsv.int x t hm
       · exact pushLines_x30 hsv.float x t hm
       · exact spAdjLines_x30 true _ x t hm
@@ -256,7 +303,7 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
     {Z : BitVec 64 → Prop}
     (hLR : ∀ k, 8 ≤ k → k < 16 → Z (spv R.s0 - 16#64 + BitVec.ofNat 64 k)) {t : Arm.ArmState}
     (h : StEqOutX Z t R.s0) :
-    ∀ i ≤ (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
+    ∀ i ≤ (prologueSteps R.af.saves R.af.frameSize R.af.isCaller),
       StEqOutX Z (iterN R.step i t) (iterN R.step i R.s0) := by
   obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
   have hst0 := hR.stack.frame
@@ -264,7 +311,7 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
   obtain ⟨vb, items, code, ps1, pl, Xl, psm, ps2, x, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
     entry_block hR
   subst hpl0
-  obtain ⟨s', hsteps, -, -, -, -, -, -⟩ :=
+  obtain ⟨s', hsteps, -, -, -, -, -, -, -⟩ :=
     prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) R.s0 hent.spAligned
   have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
     rw [hent.pc]
@@ -278,31 +325,24 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
     simp only [List.getElem?_drop, RL.L] at this
     rw [this, List.getElem?_append_left (List.getElem?_eq_some_iff.1 hk).1]
     exact hk
-  have hhook : ∀ i t, Line.ins i t ∈ prologueLines R.af.saves R.af.frameSize R.af.isCaller → i.hooked = false :=
-    fun i t hm => by
-      obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ _ hm; cases e; exact hh
-  have hinter := stepsOk_interOk hsteps hent.err
-  have hpcs := iterN_execLines_pc (X := R.X) (H := R.H) hR.layout hR.lm hR.fit _ 1 R.s0 s' hat hhook
-    hent.program (by rw [hpc1]; rfl) hent.err hinter hsteps.exec
-  have hgx := (iterN_steps hR hdrop (fun ln h => by
-      obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ _ ln h; exact ⟨x, e, hh⟩)
-    hent.program hpc1 hent.err hsteps).2.2.2 (prologueLines_tail _ _)
-    (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
-    (linesReads_noLoads (prologueLines_noLoads _ _))
+  obtain ⟨-, -, -, hgx0, hloc⟩ := iterN_proRun hR hdrop hent.program hpc1 hent.err hsteps
+  have hgx := hgx0 (.inl (by rw [hent.pc]; exact RL.not_postCall_base hR hent.fits))
   intro i hi
   induction i with
   | zero => exact h
   | succ i ih =>
-    have hi' : i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length := by omega
+    have hi' : i < (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) := by omega
     have hl := ih (by omega)
-    obtain ⟨ln, hln⟩ : ∃ ln, (prologueLines R.af.saves R.af.frameSize R.af.isCaller)[i]? = some ln :=
-      ⟨_, List.getElem?_eq_getElem hi'⟩
+    -- the line of the `i`-th state (the stack-probe loop runs its lines repeatedly)
+    obtain ⟨kl, hkl, hpck, hk0⟩ := hloc i hi'
+    obtain ⟨ln, hln⟩ : ∃ ln, (prologueLines R.af.saves R.af.frameSize R.af.isCaller)[kl]? = some ln :=
+      ⟨_, List.getElem?_eq_getElem hkl⟩
     obtain ⟨x, rfl, hhx, -⟩ := prologueLines_ins _ _ _ (List.mem_of_getElem? hln)
-    have hj := hat i _ hln
+    have hj := hat kl _ hln
     have hg := hgx i hi'
     have ht : OnLine R.fa R.fb R.lm R.base (iterN R.step i R.s0) x :=
-      ⟨hR.layout, hR.lm, hR.fit, hg.prog, hg.err, ⟨1 + i, none, hj, hpcs i (by omega)⟩⟩
-    have hex : x.x30Exempt = true → i = 0 ∧ x = .stp .fp .lr (.spPreIndexed (-16)) :=
+      ⟨hR.layout, hR.lm, hR.fit, hg.prog, hg.err, ⟨1 + kl, none, hj, hpck⟩⟩
+    have hex : x.x30Exempt = true → kl = 0 ∧ x = .stp .fp .lr (.spPreIndexed (-16)) :=
       prologue_exempt hsv hln
     have hstep := stEqOutX_line (X := R.X) (H := R.H) ht hx30
       (prologueLines_tail _ _ x none (List.mem_of_getElem? hln))
@@ -326,7 +366,8 @@ theorem stEqOutX_prologueZ_le {R : RL} (hR : R.Wf) {ra : BitVec 64}
     refine hstep.mono fun a ha => ?_
     rcases ha with ha | ⟨e, k, hk8, hk16, rfl⟩
     · exact ha
-    · obtain ⟨rfl, -⟩ := hex (by rw [e]; decide)
+    · obtain ⟨hkl0, -⟩ := hex (by rw [e]; decide)
+      obtain rfl := hk0 hkl0
       rw [stpAddr_fr]
       exact hLR k hk8 hk16
 
@@ -337,9 +378,103 @@ theorem stEqOutX_prologueZ {R : RL} (hR : R.Wf) {ra : BitVec 64}
     {Z : BitVec 64 → Prop}
     (hLR : ∀ k, 8 ≤ k → k < 16 → Z (spv R.s0 - 16#64 + BitVec.ofNat 64 k)) {t : Arm.ArmState}
     (h : StEqOutX Z t R.s0) :
-    StEqOutX Z (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t)
-      (iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0) :=
+    StEqOutX Z (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t)
+      (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0) :=
   stEqOutX_prologueZ_le hR hent hx30 hLR h _ (Nat.le_refl _)
+
+/-- An ABI entry with other flags is an ABI entry. -/
+theorem abiCall_of_flagTwin {fb : FnBin} {base ra : BitVec 64} {s t : Arm.ArmState}
+    (h : AbiCall fb base ra t) (htw : FlagTwin s t) : AbiCall fb base ra s :=
+  ⟨htw.2.1.trans h.program,
+    fun k w hw => by
+      rw [Arm.Memory.State.read_mem_bytes_eq_mem_read_bytes, htw.2.2,
+        ← Arm.Memory.State.read_mem_bytes_eq_mem_read_bytes]
+      exact h.code k w hw,
+    (htw.1 _ (by simp)).trans h.pc, (htw.1 _ (by simp)).trans h.err,
+    (show xreg 30 s = xreg 30 t from htw.1 _ (by simp)).trans h.lr,
+    by rw [show spv s = spv t from htw.1 _ (by simp)]; exact h.spAligned, h.fits⟩
+
+/-- With the stack-probe loop the body-entry world of an entry is the body-entry world of the
+entry with other flags: the body starts with the loop's flags (`probeR`). -/
+theorem bodyEntryW_of_flagTwin {F : BitVec 64 → Prop} {A : Reg → Prop} {af : AFunc}
+    {s t w₀ : Arm.ArmState} (h : BodyEntryW F A af t w₀) (htw : FlagTwin s t)
+    (hf : af.frame = true) (hl : probeLoop (probeTotal af.frameSize af.isCaller) = true) :
+    BodyEntryW F A af s w₀ := by
+  have hsp : spv s = spv t := htw.1 _ (by simp)
+  refine ⟨by rw [hsp]; exact h.sp,
+    by rw [hsp, show xreg 29 s = xreg 29 t from htw.1 _ (by simp)]; exact h.fp,
+    fun r hr => (h.args r hr).trans ?_, fun f hm h29 h31 => (h.other f hm h29 h31).trans ?_,
+    fun a ha => (h.mem a ha).trans ?_, h.program.trans htw.2.1.symm⟩
+  · cases r <;> simp only [regVal] <;> first | rfl | rw [htw.1 _ (by simp)]
+  · cases f with
+    | FLAG fl => simp [probeR, probeFlag, probeFlagT, hf, hl]
+    | _ => exact (htw.1 _ (by simp)).symm
+  · simp only [probeMem]; rw [hsp, htw.2.2]
+
+/-- **The prologue's machine run does not depend on the entry flags in the loop form** (#581):
+two ABI entries that differ at most in their flags are in the same state after the prologue's
+`prologueSteps` instructions (`ProRun.flags_irrel` on the machine, `iterN_proRun`). -/
+theorem iterN_prologue_flagTwin {R : RL} (hR : R.Wf) {ra ra' : BitVec 64} {t t' : Arm.ArmState}
+    (hent : AbiCall R.fb R.base ra t) (hent' : AbiCall R.fb R.base ra' t') (htw : FlagTwin t t')
+    (hl : probeLoop (probeTotal R.af.frameSize R.af.isCaller) = true) :
+    iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t =
+      iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t' := by
+  obtain ⟨-, hfs, -, hsv, -, hcb, -, -, -⟩ := RL.frame_facts hR
+  have hst0 := hR.stack.frame
+  have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; have := (spv R.s0).isLt; omega
+  obtain ⟨vb, items, code, ps1, pl, Xl, psm, ps2, x, -, -, -, -, -, -, hpl0, hj0, hdrop, -, -⟩ :=
+    entry_block hR
+  subst hpl0
+  have hpc1 : ∀ {ra : BitVec 64} {u : Arm.ArmState}, AbiCall R.fb R.base ra u →
+      Arm.r .PC u = R.pcOf 1 := by
+    intro ra u hu
+    rw [hu.pc]
+    simp only [RL.pcOf, RL.L] at hj0 ⊢
+    rw [lineOffset_succ _ _ _ hj0]
+    simp [lineOffset, Line.size]
+  obtain ⟨s', hsteps, -⟩ :=
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) t hent.spAligned
+  obtain ⟨s'', hsteps', -⟩ :=
+    prologue_ok (calls := R.af.isCaller) (R.envOf 1) hs hsv (by rw [hfs]; exact hcb) t' hent'.spAligned
+  rw [(iterN_proRun hR hdrop hent.program (hpc1 hent) hent.err hsteps).1,
+    (iterN_proRun hR hdrop hent'.program (hpc1 hent') hent'.err hsteps').1]
+  exact ProRun.flags_irrel hl hent.spAligned htw hsteps hsteps'
+
+/-- **The lock after both prologues, from the entries** (`stEqOutX_entryZ` and
+`stEqOutX_prologueZ` without `EntryFlags`, #581). Without the stack-probe loop the entries are
+locked and the prologue keeps the lock. With the loop the entries' flags may differ, but the
+second run's state after the prologue is that of its entry with the first entry's flags
+(`iterN_prologue_flagTwin`), which is locked with the first entry. -/
+theorem stEqOutX_prologueZ_entry {R : RL} (hR : R.Wf) {t0 : Arm.ArmState} {ra ra' : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0) (hent' : AbiCall R.fb R.base ra' t0)
+    {A A' : Reg → Prop} {F' D : BitVec 64 → Prop} {w₀ w₀' : Arm.ArmState}
+    (hbe : BodyEntryW R.F A R.af R.s0 w₀) (hbe' : BodyEntryW F' A' R.af t0 w₀')
+    (hF' : ∀ a, F' a → R.F a) (hsw : SameWorld (fun b => R.F b ∨ D b) w₀ w₀')
+    (hag : EntryAgree (frameDrop R.af + R.K) R.s0 t0)
+    (hx29 : Arm.r (.GPR 29#5) R.s0 = Arm.r (.GPR 29#5) t0)
+    (hx30 : R.fa.x30Free R.lm = true)
+    {c c' : MConf CV Arm.ArmState} (hW : ∀ a, w₀.mem a ≠ w₀'.mem a → MConf.WDiff c c' a) :
+    StEqOutX (R.Zc c c')
+      (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)
+      (iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t0) := by
+  have hLR : ∀ k, 8 ≤ k → k < 16 → R.Zc c c' (spv R.s0 - 16#64 + BitVec.ofNat 64 k) :=
+    fun k h8 h16 => RL.lrWord_Zc hR c c' h8 h16
+  by_cases hl : probeLoop (probeTotal R.af.frameSize R.af.isCaller) = true
+  · have htw := flagsOf_twin R.s0 t0
+    have hent1 := abiCall_of_flagTwin hent' htw
+    have hbe1 := bodyEntryW_of_flagTwin hbe' htw (lowerRFunc_frame hR.alloc) hl
+    have hag1 : EntryAgree (frameDrop R.af + R.K) R.s0 (flagsOf R.s0 t0) :=
+      ⟨fun f hm hpc h30 => (hag.1 f hm hpc h30).trans
+          (htw.1 f (fun fl e => by subst e; exact hm)).symm,
+        fun a ha => (hag.2 a ha).trans (congrFun htw.2.2 a).symm⟩
+    have h := (stEqOutX_prologueZ hR hent hx30 hLR
+      (stEqOutX_entryZ hR hent hent1 hbe hbe1 hF' hsw hag1
+        (hx29.trans (htw.1 _ (by simp)).symm)
+        (EntryFlags.of_eq fun fl => (flagsOf_flag R.s0 t0 fl).symm) hW).symm).symm
+    rwa [iterN_prologue_flagTwin hR hent1 hent' htw hl] at h
+  · exact (stEqOutX_prologueZ hR hent hx30 hLR
+      (stEqOutX_entryZ hR hent hent' hbe hbe' hF' hsw hag hx29
+        (EntryFlags.of_not (fun _ => by simpa using hl) _ _) hW).symm).symm
 
 section
 variable {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
@@ -405,41 +540,41 @@ theorem backend_twoRunLE (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
     (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
     ∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
     ∃ N e e',
-      (∀ i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length,
+      (∀ i < (prologueSteps R.af.saves R.af.frameSize R.af.isCaller),
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)) ∧
       (∀ i < N, ∃ c c', StEqOutX (R.Zc c c')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) R.s0)
+        (iterN ({ R with X := XI.at 0 } : RL).step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + i) R.s0)
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + i) t0)) ∧
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + i) t0)) ∧
       JR R ({ R with s0 := t0, G := G' } : RL) (KJL R XI t0 G' F)
         (fun d d' u u' => StEqOutX (R.Zc d d') u u')
-        (iterN ({ R with X := XI.at 0 } : RL).step ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) R.s0) e
+        (iterN ({ R with X := XI.at 0 } : RL).step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N) R.s0) e
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N) t0) e' ∧
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N) t0) e' ∧
       (∀ i < R.retLen,
         ({ R with X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with X := XI.at 0 } : RL).step
-            ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + i) R.s0) ∧
+            (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + i) R.s0) ∧
         ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).GoodXNY (fun _ => True)
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-            ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + i) t0)) ∧
+            (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + i) t0)) ∧
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) R.s0) = ra ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + N + R.retLen) t0) = ra' ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + N + R.retLen) t0) = ra' ∧
       R.RetsAt e ∧ R.RetsAt e' := by
 
   have hpro : StEqOutX
       (R.Zc (MConf.init R.rf (locVal R.fr (iterN ({ R with X := XI.at 0 } : RL).step
-          (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)) w₀)
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)) w₀)
         (MConf.init R.rf (locVal R.fr (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t0)) w₀'))
-      (iterN ({ R with X := XI.at 0 } : RL).step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0)
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t0)) w₀'))
+      (iterN ({ R with X := XI.at 0 } : RL).step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0)
       (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length t0) := by
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) t0) := by
     subst hR
     have hF := he.hF
     subst hF
@@ -452,9 +587,8 @@ theorem backend_twoRunLE (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
       ⟨⟨ckc, ins, a0, hat, entryOk_of_le hle⟩, hc.alloc, hc.emit, hc.layout, hlm,
         by show 4 * fb.words.size ≤ 2 ^ 64; have := he.abi.fits; omega, he.stack, hpsF,
         he.abi.program, he.gfree⟩
-    exact (stEqOutX_prologueZ hW0 he.abi hx30 (fun k h8 h16 => RL.lrWord_Zc hW0 _ _ h8 h16)
-      (stEqOutX_entryZ hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag hx29
-        (fun _ h => by exact h)).symm).symm
+    exact stEqOutX_prologueZ_entry hW0 he.abi he'.abi he.body he'.body (fun _ h => h) hsw hag
+      hx29 hx30 (fun _ h => by exact h)
   exact backend_twoRunL hsub hc hone htc hX hNI hTls hsym hslot ρ₀ hce hrel hrel' hargs hsw hreg
     hstk htr fuel hlm hpsF he he' hR hcov hx30 hfr hcall htls hpro
 

@@ -21,7 +21,9 @@ namespace LinkSys
 variable (L : LinkSys)
 variable {κ : Nat → Clif.Function → Nat}
 
-/-- **The determinism step for returning CLIF runs** (module doc). -/
+/-- **The determinism step for returning CLIF runs** (module doc). (#581: `EntryFlags`, the
+entries' flags agree when the prologue's stack-probe loop runs, is a new premise, as in
+`LockRet`: the twin runs are locked from their entry states.) -/
 def DetRunPRBCR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
   ∀ g ∈ L.P.funcs, ∀ (F : BitVec 64 → Prop) (vals : List Clif.Val) (cs : Clif.State)
     (w₀ : Arm.ArmState) (ini : Clif.SlotInit) (G₀ : BitVec 64 → Prop) (ra₀ : BitVec 64)
@@ -47,6 +49,7 @@ def DetRunPRBCR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
         EntryAgree (frameDrop (L.A g).af + κ M g) s s₀ →
         RaOk (L.A g) (ra - 4) →
         Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) s₀ →
+        EntryFlags (L.A g).af s s₀ →
         ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n₀ s) ∧
           PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n₀ ∧
           L.TwinNC M g s₀ s n₀
@@ -54,7 +57,7 @@ def DetRunPRBCR (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
 /-- Every `DetRunPRBC` is a `DetRunPRBCR`. -/
 theorem DetRunPRBC.toR {M : Nat} (h : L.DetRunPRBC κ M) : L.DetRunPRBCR κ M :=
   fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ _ _ _ hWE hME₀ _ hret₀ hpt₀ _ _ D w₀' _ hrel
-    hsw hreg hstk G ra s hME hag _ _ =>
+    hsw hreg hstk G ra s hME hag _ _ _ =>
     h g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ hWE hME₀ hret₀ hpt₀ D w₀' hrel hsw hreg hstk
       G ra s hME hag
 
@@ -88,13 +91,14 @@ theorem detPRBGR_ofC
           EntryAgree (frameDrop (L.A g).af + κ M g) s s₀ →
           RaOk (L.A g) (ra - 4) →
           Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) s₀ →
+          EntryFlags (L.A g).af s s₀ →
           ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n s) ∧
             PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n ∧
             U M g s ini.bytes ini.next n e :=
   fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ e fuel rvals cm' hWE hME₀ htab hret₀ hpt₀ hU₀
-    hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 =>
+    hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 hfl =>
     let ⟨hret, hpt, htw⟩ := hd g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm' hWE
-      hME₀ htab hret₀ hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29
+      hME₀ htab hret₀ hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 hfl
     ⟨n₀, hret, hpt, hU _ _ _ _ _ _ _ _ htw hU₀⟩
 
 /-- **`DetPRBR` from `DetRunPRBCR`** (`tabUpTo_twinNC`). -/
@@ -131,6 +135,7 @@ def DetRunPRBCRU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
         EntryAgree (frameDrop (L.A g).af + κ M g) s s₀ →
         RaOk (L.A g) (ra - 4) →
         Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) s₀ →
+        EntryFlags (L.A g).af s s₀ →
         ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.mach M g) n₀ s) ∧
           PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n₀ ∧
           L.TwinNC M g s₀ s n₀
@@ -143,9 +148,9 @@ theorem DetRunPRBCR.toU {M : Nat} (h : L.DetRunPRBCR κ M) : L.DetRunPRBCRU κ M
 /-- **`DetPRBRU` from `DetRunPRBCRU`** (`tabUpTo_twinNC`, #732). -/
 theorem detPRBRU_ofC {M : Nat} (hd : L.DetRunPRBCRU κ M) : L.DetPRBRU κ M :=
   fun g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ e fuel rvals cm' hWE hME₀ htab hret₀ hrs hpt₀
-    htab₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 =>
+    htab₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 hfl =>
     let ⟨hret, hpt, htw⟩ := hd g hg F vals cs w₀ ini G₀ ra₀ s₀ us outs wf n₀ fuel rvals cm' hWE
-      hME₀ htab hret₀ hrs hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29
+      hME₀ htab hret₀ hrs hpt₀ hrun hra₀ D w₀' hD hrel hsw hreg hstk G ra s hME hag hra hx29 hfl
     ⟨n₀, hret, hpt, L.tabUpTo_twinNC htw htab₀⟩
 
 end LinkSys

@@ -419,7 +419,9 @@ theorem prologueLines_free {calls : Bool} (saves : List Reg) (size : Nat) :
   rcases hl with ((((rfl | rfl) | hl) | hl) | hl) | hl
   · exact rfl
   · exact rfl
-  · rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ <;> exact rfl
+  · rcases probeLines_mem hl with rfl | rfl | ⟨_, rfl⟩ | hl | hl | rfl | rfl | rfl | rfl <;>
+      (try obtain ⟨_, rfl, ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩⟩ :=
+        Backend.Proof.loadConst64_form hl) <;> exact rfl
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> exact rfl
   · obtain ⟨i, rfl, a, b, rfl | rfl⟩ := mem_pushLines hl <;> exact rfl
   · rcases mem_spAdjLines hl with ⟨i, -, rfl⟩ | hl | rfl

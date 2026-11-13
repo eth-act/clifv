@@ -52,7 +52,7 @@ def StackBelow (K : Nat) (sp a : BitVec 64) : Prop :=
 theorem probeHit_below {af : AFunc} {sp a : BitVec 64} (hr : frameDrop af + probeBelow af ≤ sp.toNat)
     (h : probeHit af sp a = true) : StackBelow (frameDrop af + probeBelow af) sp a := by
   have hf : af.frame = true := by simp only [probeHit, Bool.and_eq_true] at h; exact h.1
-  have hc := probeCount_le af hf
+  have hc := E2E.probeCount_le af hf
   have hd : frameDrop af = af.frameSize + 16 := by simp [frameDrop, hf]
   rw [hd] at hr ⊢
   obtain ⟨-, i, hi, k, hk, e⟩ := probeHit_toNat h (by omega)
@@ -271,7 +271,7 @@ structure BodyEntryW (F : BitVec 64 → Prop) (A : Reg → Prop) (af : AFunc) (s
   sp : spv w₀ = spv s - BitVec.ofNat 64 (frameDrop af)
   fp : xreg 29 w₀ = if af.frame then spv s - 16#64 else xreg 29 s
   args : ∀ r, A r → regVal w₀ r = regVal s r
-  other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = Arm.r f s
+  other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = probeR af s f
   mem : ∀ a, ¬ F a → w₀.mem a = probeMem af s a
   program : w₀.program = s.program
 
@@ -427,8 +427,9 @@ def topN : Nat := 16 + clobberBytes R.af.saves
 /-- The lowest of them: the bottom of the clobber area. -/
 def topB : BitVec 64 := spv R.s0 - BitVec.ofNat 64 R.topN
 
-/-- The state after the prologue. -/
-noncomputable def sP : Arm.ArmState := iterN R.step (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length R.s0
+/-- The state after the prologue (its `prologueSteps` instructions: the stack-probe loop runs its
+body `probeCount` times, #581). -/
+noncomputable def sP : Arm.ArmState := iterN R.step (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) R.s0
 
 /-- What the prologue leaves in fp/lr and the clobber area. -/
 noncomputable def topImg : BitVec (R.topN * 8) := Arm.read_mem_bytes R.topN R.topB R.sP

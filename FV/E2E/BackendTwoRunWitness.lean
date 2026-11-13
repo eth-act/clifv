@@ -25,7 +25,8 @@ theorem xb_xNI {F : BitVec 64 → Prop} {syms : String → Option Nat} {exts : L
 
 /-- **`backend_twoRunPRIY` applies** to the program's compiled function `a2` (the entry
 premises remain), for one activation entered twice: the two runs agree at every index and
-return to `ra`. -/
+return to `ra`. (#581: the prologue's steps are `prologueSteps`, its lines and the stack-probe
+loop's repeated iterations, as in `backend_twoRunPRIY`.) -/
 theorem a2_twoRunPRIY {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args : List Clif.Val}
     {cs : Clif.State} {w₀ : Arm.ArmState} (hce : ClifEntry fA2 args cs)
     (hrel : RelW ⟨F, fun _ => none, (A fA2).af.slotBase,
@@ -38,7 +39,7 @@ theorem a2_twoRunPRIY {F : BitVec 64 → Prop} {c : BitVec 64} {K : Nat} {args :
       (ExtSemI.const Xb) H base ra Kp cc Pp Rr s w₀) :
     ∀ vals cm, Clif.runLoop Clif.Rust.env (L F).P.bare fuel cs = .returned vals cm →
       ∃ N, Arm.r .PC (iterN (ArmStepX Xb H (A fA2).fa)
-        ((prologueLines (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller).length + N +
+        (prologueSteps (A fA2).af.saves (A fA2).af.frameSize (A fA2).af.isCaller + N +
           (epiLines (A fA2).af.saves (A fA2).af.frameSize).length + 1) s) = ra := by
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]

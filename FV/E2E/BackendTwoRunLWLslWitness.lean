@@ -88,10 +88,10 @@ theorem r_twoRunLERW_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitVec 64} {K :
     ∀ vals cm, Clif.runLoop env Lsl.P.bare fuel cs = .returned vals cm →
       ∃ N, RetAgreeX (frameDrop (Lsl.A fR).af + K) (spv s)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
+          (prologueSteps (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) s)
         (iterN (ArmStepX Lsl.Xb (Lsl.hooks M) (Lsl.A fR).fa)
-          ((prologueLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller).length + N +
+          (prologueSteps (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize (Lsl.A fR).af.isCaller + N +
             ((epiLines (Lsl.A fR).af.saves (Lsl.A fR).af.frameSize).length + 1)) s) := by
   have hc := fR_compiled
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
@@ -122,7 +122,7 @@ theorem r_twoRunLERW_Lsl (M : Nat) {F : BitVec 64 → Prop} {c : BitVec 64} {K :
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ ⟨a, b, c, j, t, hj, _⟩ _ _ => by
       obtain ⟨-, -, htl⟩ := noHook_line hnh hj
       exact absurd rfl (htl a b c))
-    ⟨fun _ _ _ _ => rfl, fun _ _ => rfl⟩ rfl vals cm hrun
+    ⟨fun _ _ _ _ => rfl, fun _ _ => rfl⟩ rfl (EntryFlags.refl _ _) vals cm hrun
   exact ⟨N, h⟩
 
 end E2E.LinkSlotSysWitness

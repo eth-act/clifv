@@ -408,11 +408,26 @@ theorem noRet_popLines (int : Bool) (rs : List Reg) : NoRet (popLines int rs) :=
   obtain ⟨rfl, -⟩ := e
   rcases hy with rfl | rfl | rfl | rfl <;> intro h <;> cases h
 
-/-- The stack probes (#581): `sub sp`, `stur wzr` and `add sp`, no `ret`. -/
+/-- The stack probes (#581): `sub sp`, `stur wzr` and `add sp`, or the loop's constants and
+its `sub`, `str`, `cmn` and `b.gt`; no `ret`. -/
 theorem noRet_probeLines (total : Nat) : NoRet (probeLines total) := by
   intro x t hln
-  rcases probeLines_mem hln with h | h | ⟨n, h⟩ <;>
-    (simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; intro h; cases h)
+  have hc : ∀ {y : Insn} {t' : Option Clif.TrapCode}, Line.ins x t = Line.ins y t' → y ≠ .ret → x ≠ .ret :=
+    fun e hy => by simp only [Line.ins.injEq] at e; rw [e.1]; exact hy
+  have hlc : ∀ {rd : Reg} {v : Nat}, Line.ins x t ∈ loadConst64 rd v → x ≠ .ret := fun hl => by
+    obtain ⟨i, e, hf⟩ := Backend.Proof.loadConst64_form hl
+    cases e
+    rcases hf with ⟨_, _, _, rfl⟩ | ⟨_, _, rfl⟩ | ⟨_, rfl⟩ <;> (intro h; cases h)
+  rcases probeLines_mem hln with h | h | ⟨n, h⟩ | hl | hl | h | h | h | h
+  · exact hc h (fun h => by cases h)
+  · exact hc h (fun h => by cases h)
+  · exact hc h (fun h => by cases h)
+  · exact hlc hl
+  · exact hlc hl
+  · exact hc h (fun h => by cases h)
+  · exact hc h (fun h => by cases h)
+  · exact hc h (fun h => by cases h)
+  · exact hc h (fun h => by cases h)
 
 /-- The prologue has no `ret` (with the stack probes, #581: `calls` is the new argument of
 `prologueLines`). -/
@@ -428,6 +443,16 @@ theorem noRet_prologue (saves : List Reg) (size : Nat) (calls : Bool) :
   · exact noRet_pushLines _ _ x t h
   · exact noRet_pushLines _ _ x t h
   · exact noRet_spAdj true _ x t h
+
+/-- **Through the prologue's run** (`ProRun` from the ABI entry), every state before its last
+step is at a line other than `ret` (#581: `linesAt_nonRet` for the prologue, whose stack-probe
+loop is no straight-line run). -/
+theorem prologue_nonRet {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0)
+    {s' : ArmState} (hpr : ProRun (R.envOf 1) R.af.saves R.af.frameSize R.af.isCaller R.s0 s') :
+    ∀ i < prologueSteps R.af.saves R.af.frameSize R.af.isCaller, AtNonRet R (iterN R.step i R.s0) := by
+  intro i hi
+  obtain ⟨k, x, -, hj, hmem, hxh, -, hpck, -⟩ := (ArmAllocThread.prologue_states hR hent hpr).2 i hi
+  exact ⟨1 + k, x, none, hj, noRet_prologue _ _ _ x none hmem, hxh, hpck⟩
 
 theorem noRet_epiLines (saves : List Reg) (size : Nat) : NoRet (epiLines saves size) := by
   intro x t hln

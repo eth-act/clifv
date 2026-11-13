@@ -129,6 +129,10 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Trick:** a leaf Lake package (`float-spec/`) holds the Mathlib-dependent equality proofs; nothing imports it. Cost there: Mathlib cache ~1 GB download / 7.5 GB disk once, FloatLib ~2.5 min, FVFloatSpec ~1.5 min at ~2.6 GB per process (FloatBridge).
 - **Don't bump the whole repo for one leaf's dependency:** FloatLib needs Lean v4.35.0. The repo-wide 4.34.1 → 4.35.0 bump reached only ~650 of 3,546 modules after 6 restarts, each stopped by new breakages (heartbeat limits on concrete `rfl`/`decide`, instance-transparency unification blocking `exec_bitfield` rewrites, a `kbv` budget), and would rebuild every branch and the shared cache (branch `agent/floatlib-lean435-only`, parked). Instead `float-spec/` has its own `lean-toolchain` (v4.35.0) and compiles the 5 core-only FV/Float modules from `../FV` into its own `.lake` (a `lean_lib` with `srcDir = ".."`, not `require fv from ".."`: a path dependency would build into the root's `.lake` and the shared cache). They compiled unchanged on 4.35.0 in under 1 s each; `float-spec/defs-hash.lean` checks both toolchains elaborate identical definitions (FloatBridge3).
 
+### `try obtain … := f hl` does not skip the cases where `hl` is unbound
+- **Problem (#995):** `rcases … with e | hl | e <;> (try obtain ⟨…⟩ := f hl) <;> …` relies on `try` to skip the cases without `hl`. With `hl` as an argument, `obtain`/`rcases` elaborate the term with error recovery: `Unknown identifier` is logged, the module is red, and `try`/`first` do not catch it (a bare `:= hl`, `exact f hl` and `have := f hl` are caught). It stays green only while every case binds `hl`; a new case of the split breaks it (#581: two modules red in a 6 h Full gate run).
+- **Rule:** name the cases (`rcases … with e | hl | e`, then `· …` per case, or a helper lemma per kind of case). Eight sites of the old shape are listed in #995.
+
 ## Build infrastructure
 
 ### Threads per Lean process don't help us

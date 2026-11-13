@@ -125,23 +125,24 @@ theorem backend_twoRunLERWZIU (hc : Compiled f k vc vcp rf af fa fb)
       (∃ a b c, ({ R with X := (XI.upTo N).at n } : RL).AtLine u (.ldrTlsDescLo12 a b c)) →
       ∀ m r, StEqOutX (R.Zc c c') (H.tls m r u) (H.tls m r u'))
     (hag : EntryAgree (frameDrop af + K) s t0)
-    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0) :
+    (hx29 : Arm.r (.GPR 29#5) s = Arm.r (.GPR 29#5) t0)
+    (hfl : EntryFlags af s t0) :
     ∃ T,
       Arm.r .PC (iterN ({ R with X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) R.s0) = ra ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0) = ra ∧
       Arm.r .PC (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-        ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0) = ra' ∧
+        (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0) = ra' ∧
       RetAgreeX (frameDrop af + K) (spv s)
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0)
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0)
         (iterN ({ R with X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) R.s0) ∧
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0) ∧
       (∀ a, ¬ F a → ¬ D a →
         (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) t0).mem a =
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) t0).mem a =
         (iterN ({ R with X := XI.at 0 } : RL).step
-          ((prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen) R.s0).mem a) ∧
-      ∀ i < (prologueLines R.af.saves R.af.frameSize R.af.isCaller).length + T + R.retLen, ∃ d d',
+          (prologueSteps R.af.saves R.af.frameSize R.af.isCaller + T + R.retLen) R.s0).mem a) ∧
+      ∀ i < (prologueSteps R.af.saves R.af.frameSize R.af.isCaller) + T + R.retLen, ∃ d d',
         StEqOutX (R.Zc d d')
           (iterN ({ R with s0 := t0, G := G', X := XI.at 0 } : RL).step i t0)
           (iterN ({ R with X := XI.at 0 } : RL).step i R.s0) := by
@@ -151,7 +152,7 @@ theorem backend_twoRunLERWZIU (hc : Compiled f k vc vcp rf af fa fb)
       (heN : ActEntryPRN vcp rf af fa fb K F G' XI H base ra' Kp' cc' P' Rr' t0 w₀' N) =>
     backend_twoRunLERWZNpW (R := actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp))
       hc ρ₀ hsw hs hvb hk hops hvals hsem hlm hpsF (he.toN N) heN rfl hcov hx30 (hcall N)
-      (htls N) hag hx29
+      (htls N) hag hx29 hfl
   -- induction on the call count
   have hind : ∀ N, N ≤ w₁.2 →
       ActEntryPRN vcp rf af fa fb K F G' XI H base ra' Kp' cc' P' Rr' t0 w₀' N := by
@@ -163,10 +164,10 @@ theorem backend_twoRunLERWZIU (hc : Compiled f k vc vcp rf af fa fb)
       have heN := ih (by omega)
       obtain ⟨T, hlk, -, hc2, -, hcs2, hmemN⟩ := (core N heN).2 (by omega)
       have hcb : callsBefore (ArmStepX (XI.at 0) H fa) fa base t0
-          ((prologueLines af.saves af.frameSize af.isCaller).length + T) = N := by
+          (prologueSteps af.saves af.frameSize af.isCaller + T) = N := by
         rw [callsBefore_eq_countIn]; exact hc2
       have hcs : CallPc fa base (Arm.r .PC (runX (ArmStepX (XI.at 0) H fa)
-          ((prologueLines af.saves af.frameSize af.isCaller).length + T) t0)) := by
+          (prologueSteps af.saves af.frameSize af.isCaller + T) t0)) := by
         rw [runX_eq]; exact hcs2
       have hlockN : ∀ u, CallPc fa base (Arm.r .PC u) →
           OnCall (ArmStepX (XI.at 0) H fa) fa base t0 N u →
@@ -177,7 +178,7 @@ theorem backend_twoRunLERWZIU (hc : Compiled f k vc vcp rf af fa fb)
         have hpci : CallPc fa base (Arm.r .PC (runX (ArmStepX (XI.at 0) H fa) i t0)) := by
           rw [hu]; exact hpc
         have hge := callsBefore_le_of_callSt hi hpci hcb
-        obtain rfl : i = (prologueLines af.saves af.frameSize af.isCaller).length + T := by omega
+        obtain rfl : i = (prologueSteps af.saves af.frameSize af.isCaller) + T := by omega
         refine ⟨_, hu, hi, fun j hj => ?_, fun a hFa hDa => ?_⟩
         · obtain ⟨d, d', hz⟩ := hlk j (Nat.le_trans hj hle)
           refine ⟨(actRL vcp rf af fa fb lm base s (XI.upTo N) H psF K G (GotV vcp)).Zc d d', ?_,
