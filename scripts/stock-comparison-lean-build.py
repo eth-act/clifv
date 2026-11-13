@@ -54,8 +54,12 @@ ASSEMBLE = "Assemble build and executables"  # the job of full-gate.yml that upl
 EXES = ["lean-backend", "lean-backend-lowering-trace", "lean-stock-lowering-compare", "lean-stock-lowering-test"]
 EVENTS = {"push", "workflow_dispatch", "schedule"}
 CANDIDATES = 20
-DEFAULT_SECS = 60.0  # a module without a record in scripts/lake-module-peaks.tsv
-TIME_SCALE = 2.0     # runner seconds per recorded second (as the Full gate's Plan job)
+# Measured on a hosted runner (#1020's run 43462386914: 293 modules built, 3,012 s of Lean in
+# 29.2 min of scheduler wall time): the 225 modules with a record in
+# scripts/lake-module-peaks.tsv took 1.49 times their recorded seconds, the 68 without one 2.3 s
+# on average (10 s at most).
+DEFAULT_SECS = 5.0   # a module without a record
+TIME_SCALE = 1.5     # runner seconds per recorded second
 
 
 def load(name, file):
@@ -215,7 +219,8 @@ def find(repo, head, tree, api=gh_api, log=print):
         modules = tree.to_build(run["head_sha"])
         cost = tree.estimate(modules)
         log(f"run {run['id']} ({run.get('head_branch')} {run['head_sha'][:12]}): "
-            f"{len(modules)} of {len(tree.cone)} modules to build, about {cost / 60:.0f} min of Lean")
+            f"{len(modules)} of {len(tree.cone)} modules to build, about {cost / 60:.0f} min of Lean "
+            f"run one after another")
         if best is None or cost < best[0]:
             best = (cost, run, modules)
         if not modules:
@@ -261,13 +266,13 @@ def main():
     args.out.write_text(json.dumps(found) + "\n")
     minutes = found["estimate_s"] / 60
     if found["run"] is None:
-        line = (f"{found['reason']}: all {found['cone']} modules are built here (scheduled within memory; "
-                f"about {minutes:.0f} min of Lean)")
+        line = (f"{found['reason']}: all {found['cone']} modules are built here (scheduled within memory, up to "
+                f"3 at once; about {minutes:.0f} min of Lean run one after another)")
         print(f"::warning title=Stock comparison builds its Lean executables from nothing::{line}")
     else:
         line = (f"Lean build: Full gate run {found['run']} ({found['branch']} {found['head_sha'][:12]}; "
                 f"{found['reason']}): {found['to_build']} of {found['cone']} modules to build here, "
-                f"about {minutes:.0f} min of Lean")
+                f"about {minutes:.0f} min of Lean run one after another (the scheduler runs up to 3 at once)")
         print(line)
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as out:
