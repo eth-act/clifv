@@ -38,7 +38,9 @@ class UntracedInputs(unittest.TestCase):
         self.assertEqual(cbp.untraced_inputs(bad), sorted(bad))
 
 
-class Plan(unittest.TestCase):
+class PlanRepo:
+    """A small repository with a base commit, and the planner run on it."""
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = pathlib.Path(self.tmp.name)
@@ -76,6 +78,8 @@ class Plan(unittest.TestCase):
             planned = sorted(m for w in json.loads(out.read_text())["waves"] for s in w for m in s["modules"])
         return r, planned
 
+
+class Plan(PlanRepo, unittest.TestCase):
     def test_fixture_alone_differs_from_a_named_baseline(self):
         # review finding (CiGate3Review 1): a branch stacked on a PR's head changes only the file
         # FVTest.Isle.Interp reads while it elaborates; with that PR's run as `base-run` the plan
@@ -128,9 +132,9 @@ class Plan(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertIn("FVTest/Isle/oracle/cases.trace", r.stderr)
         self.assertIsNone(planned)
-        r, planned = self.plan()   # the automatic baseline: the module the link leads to, as before
-        self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(planned, ["FVTest.Unrelated"])
+        r, planned = self.plan()   # the automatic baseline: the module the link leads to, and the
+        self.assertEqual(r.returncode, 0, r.stderr)   # fixture's reader (#1012)
+        self.assertEqual(planned, ["FVTest.Isle.Interp", "FVTest.Unrelated"])
 
     def test_allowed_file_read_through_a_link(self):
         # the baseline already holds a link from a fixture's place into docs/ (file or directory):
@@ -212,6 +216,92 @@ class Plan(unittest.TestCase):
         r, planned = self.plan()
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(planned, ["FV.B"])
+
+
+class ElaborationInputs(PlanRepo, unittest.TestCase):
+    """#1012: with the automatic baseline, a change to a file that modules read while they
+    elaborate planned no module."""
+
+    READERS = {
+        "FVTest/Isle/Opt.lean": 'import FV.A\n#eval show IO Unit from do\n  let _ ← IO.FS.readFile "FVTest/Isle/oracle/opt.trace"\n',
+        "FVTest/Isle/OptCorpus.lean": 'import FVTest.Isle.Opt\n#eval show IO Unit from do\n  let _ ← IO.FS.readFile "FVTest/Isle/oracle/opt_corpus.trace"\n',
+        "FVTest/Isle/Pretty.lean": 'import FV.A\n#eval show IO Unit from do\n  let _ ← IO.FS.readFile "third_party/wasmtime/cranelift/codegen/x.isle"\n',
+        "FVTest/Isle.lean": "import FVTest.Isle.Interp\nimport FVTest.Isle.Pretty\n",
+        "FVTest/Top.lean": "import FVTest.Isle\n",
+        "FVTest/Isle/oracle/opt.trace": "x\n", "FVTest/Isle/oracle/opt_corpus.trace": "file corpus/clif/x.clif\n",
+        "FVTest/Isle/oracle/cases.clif": "function %c() {}\n",
+    }
+
+    def setUp(self):
+        super().setUp()
+        self.write(self.READERS)
+        self.base = self.commit()
+
+    def planned_after(self, files=None, delete=()):
+        self.write(files or {})
+        for f in delete:
+            (self.root / f).unlink()
+        self.commit()
+        r, planned = self.plan()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.base = self.git("rev-parse", "HEAD")
+        return r, planned
+
+    def test_the_issues_repro(self):
+        # only fixtures change: `0 of N modules planned` before
+        r, planned = self.planned_after({"FVTest/Isle/oracle/cases.trace": "case 1 -> 3\n\n",
+                                         "FVTest/Isle/oracle/opt.trace": "broken\n"})
+        self.assertEqual(planned, ["FVTest.Isle", "FVTest.Isle.Interp", "FVTest.Isle.Opt", "FVTest.Isle.OptCorpus",
+                                   "FVTest.Top"])
+        self.assertIn("2 module(s) read a file while they elaborate", r.stderr)
+        self.assertIn("FVTest.Isle.Interp FVTest.Isle.Opt", r.stderr)
+
+    def test_each_input_plans_its_reader_and_the_importers(self):
+        isle = ["FVTest.Isle", "FVTest.Top"]
+        for files, expected in (
+                ({"FVTest/Isle/oracle/cases.trace": "case 1 -> 4\n"}, ["FVTest.Isle.Interp"] + isle),
+                ({"FVTest/Isle/oracle/opt_corpus.trace": "file corpus/clif/y.clif\n"}, ["FVTest.Isle.OptCorpus"]),
+                ({"corpus/clif/x.clif": "function %y() {}\n"}, ["FVTest.Isle.OptCorpus"]),
+                ({"corpus/clif/new one.clif": "function %z() {}\n"}, ["FVTest.Isle.OptCorpus"]),
+                ({"scripts/fetch-third-party.sh": "WASMTIME_COMMIT=bbbb\n"}, isle + ["FVTest.Isle.Pretty"])):
+            _, planned = self.planned_after(files)
+            self.assertEqual(planned, sorted(expected), list(files))
+
+    def test_deleted_and_moved_inputs(self):
+        _, planned = self.planned_after(delete=["corpus/clif/x.clif"])
+        self.assertEqual(planned, ["FVTest.Isle.OptCorpus"])
+        # git reports an exact rename by its new name only; the old name is the reader's input
+        (self.root / "FVTest/Isle/oracle/cases.trace").rename(self.root / "docs/cases.trace")
+        _, planned = self.planned_after()
+        self.assertEqual(planned, ["FVTest.Isle", "FVTest.Isle.Interp", "FVTest.Top"])
+
+    def test_a_source_change_and_an_input_change_together(self):
+        _, planned = self.planned_after({"FV/B.lean": "import FV.A\ndef b := a + 1\n",
+                                         "corpus/clif/x.clif": "function %y() {}\n"})
+        self.assertEqual(planned, ["FV.B", "FVTest.Isle.OptCorpus"])
+
+    def test_other_files_plan_nothing(self):
+        # the oracle's own input (no module reads it), documents, other scripts
+        r, planned = self.planned_after({"FVTest/Isle/oracle/cases.clif": "function %d() {}\n", "docs/TO-PROVE.md": "y\n",
+                                         "scripts/gate-expected-counts.txt": "fv-demo 2 1400 1400\n", "corpus/README.md": "x\n"})
+        self.assertEqual(planned, [])
+        self.assertNotIn("read a file while they elaborate", r.stderr)
+
+    def test_a_reader_outside_the_targets_is_not_planned(self):
+        self.write({"FVTest/Isle/oracle/cases.trace": "case 1 -> 5\n"})
+        self.commit()
+        out = self.root / "plan.json"
+        r = subprocess.run([sys.executable, str(HERE / "ci-build-plan.py"), "--root", str(self.root), "--base", self.base,
+                            "--out", str(out), "FV"], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(out.read_text())["planned"], 0)
+
+    def test_a_named_baseline_still_refuses_them(self):
+        self.write({"FVTest/Isle/oracle/cases.trace": "case 1 -> 6\n"})
+        self.commit()
+        r, planned = self.plan("--explicit-base")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIsNone(planned)
 
 
 class Workflow(unittest.TestCase):

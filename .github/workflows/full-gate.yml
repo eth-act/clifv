@@ -284,6 +284,22 @@ jobs:
           lake build $LEAN_TARGETS 2>&1 | tail -n 1
           set -o pipefail
           python3 scripts/axiom-audit.py --log-dir gate-logs | tee gate-logs/summary.txt
+      - name: Elaboration-time inputs
+        # #1012: some FVTest modules check themselves against files they read while they
+        # elaborate (FVTest/Isle/oracle/*, corpus/clif/*, the pinned Wasmtime sources). Lake does
+        # not trace those files, so every build with a baseline restores the old result of the
+        # check, also when the planner plans the module. This line elaborates each of those
+        # modules from its source (`lake lean`), on every run, against this tree's files; the
+        # list is READERS in scripts/elab-inputs.py (scripts/test_elab_inputs.py keeps it complete).
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p gate-logs
+          start=$(date +%s)
+          rc=0
+          python3 scripts/elab-inputs.py check --log-dir gate-logs/elab-inputs > gate-logs/elab-inputs.log 2>&1 || rc=$?
+          cat gate-logs/elab-inputs.log
+          echo "elab-inputs rc=$rc $(( $(date +%s) - start )) s: $(tail -n 1 gate-logs/elab-inputs.log)" | tee -a gate-logs/summary.txt
+          exit $rc
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:

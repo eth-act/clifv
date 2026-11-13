@@ -11,6 +11,10 @@ them are planned. With --missing FILE (the modules a partial baseline build lack
 full gate's assemble job when some modules failed), those and their importers are planned too.
 With --explicit-base (the baseline is a run named by hand, the workflow's `base-run`), there is no
 plan if a file that modules may read without Lake tracing it differs from SHA (untraced_inputs).
+A module that reads a file while it elaborates (scripts/elab-inputs.py, READERS) is planned, with
+its importers, when that file differs from SHA (#1012). Lake itself still restores such a module
+from the cache (its trace does not hold the file): the plan shows it, and the gate line
+`scripts/elab-inputs.py check` is what elaborates it again, on every run.
 
 Waves run one after another; the shards of a wave run in parallel on separate runners. A module
 belongs to the wave in which its earliest possible start (longest recorded-seconds import path
@@ -34,6 +38,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 _spec = importlib.util.spec_from_file_location("lake_serial_build", HERE / "lake-serial-build.py")
 lsb = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(lsb)
+_spec = importlib.util.spec_from_file_location("elab_inputs", HERE / "elab-inputs.py")
+elab_inputs = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(elab_inputs)
 
 GLOBAL_INPUTS = {"lakefile.toml", "lean-toolchain", "lake-manifest.json"}
 
@@ -103,7 +110,8 @@ def linked_from_outside(root, files):
 
 
 def changed_modules(root, base, libs, mods, explicit=False):
-    """Modules whose source differs between `base` and HEAD, or None if everything is stale.
+    """Modules whose source, or a file they read while they elaborate (scripts/elab-inputs.py),
+    differs between `base` and HEAD, or None if everything is stale.
     With `explicit` (a baseline named by hand), exits if a possible untraced input differs."""
     # --no-renames: a file moved away is a changed (deleted) path too, not only its new name
     r = subprocess.run(["git", "diff", "--name-only", "--no-renames", "-z", base, "HEAD", "--"],
@@ -125,6 +133,13 @@ def changed_modules(root, base, libs, mods, explicit=False):
         m = by_path.get((root / f).resolve())
         if m:
             out.add(m)
+    # old names included (--no-renames): a fixture moved away is a changed input of its reader
+    readers = sorted(elab_inputs.readers_of(files) & mods.keys())
+    if readers:
+        print(f"{len(readers)} module(s) read a file while they elaborate that changed since {base}: "
+              f"{' '.join(readers)} (planned with their importers; `scripts/elab-inputs.py check` "
+              f"elaborates them again)", file=sys.stderr)
+        out.update(readers)
     if explicit:
         # the module sources by their own names: a changed path that only leads to one (a
         # symbolic link) plans that module, and is still a changed file that is no module source
