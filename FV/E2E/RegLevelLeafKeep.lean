@@ -31,6 +31,17 @@ namespace E2E
 
 open Backend Backend.Proof GprFoot
 
+/-- `leafKeep` at the function's own label offsets (`false` if they do not resolve): the check
+`lean-backend` runs on a frameless leaf's compiled code. -/
+def _root_.Backend.FnAsm.leafChk (fa : FnAsm) : Bool :=
+  match labelOffsets fa.lines with
+  | .ok lm => fa.leafKeep lm
+  | .error _ => false
+
+theorem leafKeep_of_leafChk {fa : FnAsm} (h : fa.leafChk = true) {lm : Std.HashMap Lbl Nat}
+    (hm : labelOffsets fa.lines = .ok lm) : fa.leafKeep lm = true := by
+  simpa [FnAsm.leafChk, hm] using h
+
 /-- `x_k` after a write of another field. -/
 theorem gpr_w {k : BitVec 5} {f : Arm.StateField} (hf : f ≠ .GPR k) (v : Arm.state_value f)
     (s : Arm.ArmState) : Arm.r (.GPR k) (Arm.w f v s) = Arm.r (.GPR k) s :=
