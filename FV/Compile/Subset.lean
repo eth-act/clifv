@@ -5,7 +5,7 @@ import FV.Clif.Syntax
 
 `Compile.onlySubsetE p` holds iff every instruction, terminator, type and memory flag of `p`
 is in list E: integer types `i8 … i64`; the opcodes of the E table; memory flags limited to
-`notrap`/`aligned` (little-endian, no `readonly`/`can_move`).
+`notrap`/`aligned` (little-endian, by default or explicit `little`; no `readonly`/`can_move`).
 -/
 
 namespace Compile
@@ -30,8 +30,11 @@ def binaryE : BinaryOp → Bool
   | .smin | .smax | .umin | .umax => true
   | _ => false
 
+/-- Memory flags of E: little-endian (the default or an explicit `little`, the same access on
+AArch64: `Mem.loadBits`/`storeBits` read `big` only), not `can_move`, and the default or the
+`heap_oob` trap code. -/
 def flagsE (f : MemFlags) : Bool :=
-  f.endianness.isNone && !f.canMove &&
+  f.endianness != some .big && !f.canMove &&
     (f.trapCode.isNone || f.trapCode == some .heapOob)
 
 def instE : Inst → Bool

@@ -130,11 +130,11 @@ theorem instET_cases {i : Clif.Inst} (h : Compile.instET i = true) :
     exact absurd (show Compile.instE (Clif.Inst.float op ty args) = true from h)
       (by simp [Compile.instE])
 
-/-- Little-endian (or default) memory flags: `flagsE`. -/
-theorem endianness_none_of_flagsE {fl : Clif.MemFlags} (h : Compile.flagsE fl = true) :
+/-- Little-endian (default or explicit) memory flags: `flagsE`. -/
+theorem endianness_not_big_of_flagsE {fl : Clif.MemFlags} (h : Compile.flagsE fl = true) :
     (fl.endianness == some Clif.Endianness.big) = false := by
-  simp only [Compile.flagsE, Bool.and_eq_true] at h
-  rw [Option.isNone_iff_eq_none.mp h.1.1]; rfl
+  simp only [Compile.flagsE, Bool.and_eq_true, bne_iff_ne, ne_eq] at h
+  simpa using h.1.1
 
 /-- `instData` succeeds on a statement of the typed movement scope satisfying `stmtInB`:
 subset E's cases as in `instData_ok`, plus the float data movement `instET` adds
@@ -152,7 +152,7 @@ theorem instData_okT {f : Clif.Function} {s : Clif.Stmt} (hT : Compile.instET s.
   · obtain ⟨op, ty, fl, p, off, rfl⟩ := hload
     simp only [Compile.instET, Bool.and_eq_true, Bool.or_eq_true] at hT'
     obtain ⟨hfl, hty⟩ := hT'
-    have hbig := endianness_none_of_flagsE hfl
+    have hbig := endianness_not_big_of_flagsE hfl
     rcases hty with hty | ⟨hty, hop⟩
     · have hty' : eTy ty = true := hty
       exact ⟨instDataV "Load" [opcodeV (loadOpcode op), .value p, .op (.memFlags fl), .int off],
@@ -165,7 +165,7 @@ theorem instData_okT {f : Clif.Function} {s : Clif.Stmt} (hT : Compile.instET s.
   · obtain ⟨op, ty, fl, x, p, off, rfl⟩ := hstore
     simp only [Compile.instET, Bool.and_eq_true, Bool.or_eq_true] at hT'
     obtain ⟨hfl, hty⟩ := hT'
-    have hbig := endianness_none_of_flagsE hfl
+    have hbig := endianness_not_big_of_flagsE hfl
     rcases hty with hty | ⟨hty, hop⟩
     · have hty' : eTy ty = true := hty
       exact ⟨instDataV "Store" [opcodeV (storeOpcode op), .values [x, p], .op (.memFlags fl),

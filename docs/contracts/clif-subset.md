@@ -127,7 +127,7 @@ VeriISLE run excludes the `i128` tag. Floats and vectors are in neither list.
 | `clz` `ctz` `popcnt` | yes | intrinsics |
 | `icmp` (all 10 `IntCC`) | yes | returns `i8` 0/1 |
 | `uextend` `sextend` `ireduce` | yes | width changes |
-| `load` `store` `uload8/16/32` `sload8/16/32` `istore8/16/32` | yes | flags: `notrap`/`aligned` only when justified (PLAN.md §3.2); little-endian |
+| `load` `store` `uload8/16/32` `sload8/16/32` `istore8/16/32` | yes | flags: `notrap`/`aligned` only when justified (PLAN.md §3.2); little-endian (the default or an explicit `little`, the same access on AArch64; `big` is outside E) |
 | `stack_addr` | no | explicit stack slots for fixed-size aggregates |
 | `jump` `brif` `br_table` `return` | no (terminators) | control flow; `br_table`'s index must be `i8`/`i16`/`i32` (Cranelift's verifier requires `i32`; `Clif.run` does not check it). The lowering compares and dispatches on the low 32 bits, so M7's `lowerCheck` rejects an `i64` index (compile error; `BrIdxTyped`, contract change #6) |
 | `call` | no | direct calls to other `flat def`s and to runtime externs, default call conv |
@@ -140,7 +140,7 @@ VeriISLE run excludes the `i128` tag. Floats and vectors are in neither list.
 | `symbol_value` | no | v2: `symbol_value.i64 gvN` only, `gvN = symbol [colocated] %name[+offset]` naming a **data object** of the link-time image (`Clif.Image`); no `tls`, no function symbols, no other global-value kinds. Loads from it follow the `load` rules; stores into read-only objects are `stuck` (a precondition) |
 | `tls_value` | no | v3 (agent/stack-tls-proof): `tls_value.i64 gvN`, `gvN = symbol [colocated] tls %name` (offset 0; the lowering rejects an offset). One thread: the address of the memory's symbol, as `symbol_value` (`Clif.run`); the backend's TLSDESC sequence under the trusted hook contract `TlsOk` (`docs/decisions/arm-model.md`) |
 | `bmask` | no | v3 (agent/atomics-proof): result and operand `i8..i64` (Cranelift's `lower_bmask`: `cmp #0` + `csetm ne`, an `i8`/`i16` operand masked first) |
-| `atomic_load` `atomic_store` | no | v3: `i8..i64`, little-endian, `i64` address (`ldar`/`stlr`). Single-threaded semantics: a plain load/store (`docs/decisions/arm-model.md`, "Atomics") |
+| `atomic_load` `atomic_store` | no | v3: `i8..i64`, little-endian (default or explicit `little`), `i64` address (`ldar`/`stlr`). Single-threaded semantics: a plain load/store (`docs/decisions/arm-model.md`, "Atomics") |
 | `fence` | no | v3: `dmb ish`, no effect in the single-threaded model |
 
 Deliberately excluded from E:
