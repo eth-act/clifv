@@ -434,14 +434,14 @@ theorem qWst_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array R
   rw [hp] at hp'
   cases hp'
   have hPL : planLines R.fa.k R.af = p.lines := by simp [planLines, hp]
-  have hRL : R.L = relaxLines R.far p.lines := hL
+  have hRL : R.L = relaxLines R.far p.lines ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af := hL
   -- the block's label line
   have e : p.lines = (A ++ [Line.label (.block sg.label)] ++ (sg.body ++ o)) ++
       (segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps) := by
     rw [hA]; simp
   have hlbl : p.lines[A.length]? = some (.label (.block vb.label)) := by
     rw [hA, ← hlab, List.append_assoc, List.cons_append]; exact getElem?_mid _ _ _
-  have r1 := relax_label (F := R.far) hlbl
+  have r1 := relax_label_append (F := R.far) (emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af) hlbl
   rw [← hRL] at r1
   have hj : jl = rix R.far p.lines A.length := labelOffsets_uniq hR.lm hjl r1.1
   subst hj
@@ -459,7 +459,8 @@ theorem qWst_entry {R : RL} (hR : R.Wf) {t : Nat} {vb : VBlock} {items : Array R
     have d2 : p.lines.drop (A.length + 1 + sg.body.length + o.length) =
         segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps := by
       rw [e]; exact List.drop_left' (by simp; omega)
-    rw [hPL, hRL, relax_drop, relax_drop, d1, d2, relaxLines_append]
+    rw [hPL, hRL, relax_drop_append, relax_drop_append, d1, d2, relaxLines_append,
+      List.append_assoc]
 
 /-- **Every block but the entry has an entry witness at each line representing it**
 (`qe_entry`'s code part). -/

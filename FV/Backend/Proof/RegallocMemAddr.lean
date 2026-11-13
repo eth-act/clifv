@@ -29,6 +29,7 @@ theorem execLines_append : ∀ (env : Env) (A B : List Line) (s : Arm.ArmState),
     · rfl
   | _, .label _ :: _, _, _ => rfl
   | _, .word _ _ :: _, _, _ => rfl
+  | _, .data _ :: _, _, _ => rfl
 
 theorem zext_imm12 {k : Nat} (hk : k < 4096) : (0#52 ++ BitVec.ofNat 12 k) = BitVec.ofNat 64 k := by
   apply BitVec.eq_of_toNat_eq

@@ -27,7 +27,7 @@ order (`emitOrder`). -/
 theorem callKeys_emit {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k af = .ok fa) :
     callKeys fa.lines.toList = (emitOrder af).flatMap (fun e => blockKeys e.1) := by
   obtain ⟨p, hp, hL, -⟩ := emitFunc_ok h
-  rw [hL, relaxLines_callKeys]
+  rw [hL, callKeys_append, emitPool_callKeys, List.append_nil, relaxLines_callKeys]
   exact plan_callKeys hp
 
 theorem callIdx_length : ∀ L : List Line, (callIdx L).length = nCalls L
@@ -165,6 +165,7 @@ theorem go_mono : ∀ {L : List Line} {off : Nat} {m lm : Std.HashMap Lbl Nat},
         · exact hv
     | ins i t => exact go_mono h l v hv
     | word a b => exact go_mono h l v hv
+    | data w => exact go_mono h l v hv
 
 /-- `labelOffsets` gives a label first defined after byte offset `off` an offset ≥ `off`. -/
 theorem go_ge : ∀ {L : List Line} {off : Nat} {m lm : Std.HashMap Lbl Nat} {l : Lbl} {v : Nat},
@@ -186,6 +187,7 @@ theorem go_ge : ∀ {L : List Line} {off : Nat} {m lm : Std.HashMap Lbl Nat} {l 
         · exact go_ge h (by rw [Std.HashMap.getElem?_insert]; simp [he, hn]) hv
     | ins i t => exact Nat.le_trans (Nat.le_add_right _ _) (go_ge h hn hv)
     | word a b => exact Nat.le_trans (Nat.le_add_right _ _) (go_ge h hn hv)
+    | data w => exact Nat.le_trans (Nat.le_add_right _ _) (go_ge h hn hv)
 
 /-- The emitted code: the entry label, the prologue's `stp`/`mov`, the rest. -/
 theorem lines_head {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
@@ -261,9 +263,14 @@ private theorem plan_head {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa :
   rw [hL] at hR
   generalize emitFar ⟨k, af.slotBase⟩ af = F at hR
   cases hpl : p.lines with
-  | nil => rw [hpl] at hR; simp [relaxLines] at hR
+  | nil =>
+    rw [hpl] at hR
+    simp only [relaxLines, List.flatMap_nil, List.nil_append] at hR
+    have hm : Line.label (.block vb.label) ∈ emitPool ⟨k, af.slotBase⟩ af := by
+      rw [hR]; exact List.mem_cons_self
+    rcases emitPool_mem hm with ⟨w, hw⟩ | ⟨n, hw⟩ <;> cases hw
   | cons x0 xs =>
-    rw [hpl, relaxLines_cons] at hR
+    rw [hpl, relaxLines_cons, List.append_assoc] at hR
     rcases relaxLine_cases F x0 with h0 | ⟨c, t, h0⟩
     · rw [h0, List.singleton_append, List.cons.injEq] at hR
       obtain ⟨rfl, hR⟩ := hR
@@ -303,6 +310,7 @@ private theorem repAt_one {af : AFunc} {own : Label → Bool} {L : List Line}
       | label l => exact absurd hL (h1 l)
       | ins i t => cases af.fwd? s <;> simp [ih]
       | word a b => cases af.fwd? s <;> simp [ih]
+      | data w => cases af.fwd? s <;> simp [ih]
 
 /-- Line 0, the entry label followed by no label, represents only the entry block when no
 block forwards to the entry. -/

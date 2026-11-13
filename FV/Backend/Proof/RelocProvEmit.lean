@@ -476,6 +476,7 @@ theorem relabel_ok {f : Clif.Function} (F : Lbl → Lbl) {ln : Line} (h : LnOk f
     · exact insnOk_setTarget _ h
     · exact h
   | word _ _ => exact trivial
+  | data _ => exact trivial
   | label _ => exact trivial
 
 theorem step_ok {f : Clif.Function} (allLabels : Bool) (m m' : MBuf)
@@ -591,6 +592,7 @@ theorem relaxLines_ok {f : Clif.Function} (F : Lbl → Bool) : ∀ (L : List Lin
       | .ins c (some tc), h0, hy => simp only [relaxLine, Line.relaxable?, List.mem_singleton] at hy; subst hy; exact h0
       | .label l, _, hy => simp only [relaxLine, Line.relaxable?, List.mem_singleton] at hy; subst hy; exact trivial
       | .word x z, _, hy => simp only [relaxLine, Line.relaxable?, List.mem_singleton] at hy; subst hy; exact trivial
+      | .data _, _, hy => simp only [relaxLine, Line.relaxable?, List.mem_singleton] at hy; subst hy; exact trivial
       | .ins c none, h0, hy =>
         rcases relaxLine_cases F c with hr | ⟨t, -, hr⟩
         · rw [hr] at hy; simp only [List.mem_singleton] at hy; subst hy; exact h0
@@ -608,7 +610,10 @@ theorem emitFunc_lnOk {f : Clif.Function} {k : Nat} {af : AFunc} {fa : FnAsm}
     ∀ ln ∈ fa.lines.toList, LnOk f ln := by
   obtain ⟨p, hp, hl, -⟩ := emitFunc_ok h
   rw [hl]
-  exact relaxLines_ok _ _ (emitPlan_lnOk hc hp)
+  intro ln hln
+  rcases List.mem_append.1 hln with hln | hln
+  · exact relaxLines_ok _ _ (emitPlan_lnOk hc hp) ln hln
+  · rcases emitPool_mem hln with ⟨w, rfl⟩ | ⟨n, rfl⟩ <;> exact trivial
 
 /-! ## Layout -/
 

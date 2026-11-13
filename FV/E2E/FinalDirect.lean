@@ -119,4 +119,12 @@ theorem formsCovered_complete_witness (cx : FnCtx) :
       exact ⟨dominated_of hd, lowerScope_of hs, vc, vcp, rfl, hp,
         formsCovered_complete (lowerScope_of hs) h hp cx⟩
 
+/-- **Non-vacuity of `formsCovered2_complete`** (subset E's two-way coverage, #565) on
+`lowerWitness`. -/
+theorem formsCovered2_complete_witness :
+    ∃ vc vcp, lowerFunction lowerWitness = .ok vc ∧ Backend.prepare vc = .ok vcp ∧
+      FormsCovered2 vcp := by
+  obtain ⟨-, hs, vc, vcp, hl, hp, -⟩ := formsCovered_complete_witness default
+  exact ⟨vc, vcp, hl, hp, formsCovered2_complete hs hl hp⟩
+
 end E2E

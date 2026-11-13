@@ -295,7 +295,8 @@ theorem pad_rep {R : RL} (hR : R.Wf) {ti : TryInfo} {ret : Nat} {e : Unw.CallSit
       rw [← he]
   obtain ⟨p, hp, -, -⟩ := emitFunc_ok hR.emit
   have hPL : planLines R.fa.k R.af = p.lines := by simp [planLines, hp]
-  have hRL : R.L = relaxLines R.far p.lines := by rw [RL.L_plan hR, hPL]
+  have hRL : R.L = relaxLines R.far p.lines ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af := by
+    rw [RL.L_plan hR, hPL]
   have hown : planOwn R.fa.k R.af = fun l => (segsTrust R.af p.segs p.outs p.lines).contains l := by
     simp [planOwn, hp]
   have hal : R.fa.alias = p.alias := by
@@ -308,7 +309,7 @@ theorem pad_rep {R : RL} (hR : R.Wf) {ti : TryInfo} {ret : Nat} {e : Unw.CallSit
       R.L[rix R.far p.lines j]? = some (.label (.block x)) ∧ lineOffset R.L (rix R.far p.lines j) = off := by
     intro x j off hj hx
     have hj' : R.L[rix R.far p.lines j]? = some (.label (.block x)) := by
-      rw [hRL]; exact (relax_label hj).1
+      rw [hRL]; exact (relax_label_append _ hj).1
     obtain ⟨j', hj'', ho⟩ := (labelOffsets_spec hR.lm _ _).mp (scanLines_labelOffsets hR.lm hx)
     have := RL.label_unique hR hj'' hj'
     subst this
@@ -324,7 +325,7 @@ theorem pad_rep {R : RL} (hR : R.Wf) {ti : TryInfo} {ret : Nat} {e : Unw.CallSit
     · rename_i j hj
       refine ⟨j, by simpa using blockLabelIdx_get hj, ?_⟩
       rw [hRL]
-      exact RepL.relax _ (RepL.mono (fun _ h => by cases h) (repOn_repL this))
+      exact (RepL.relax _ (RepL.mono (fun _ h => by cases h) (repOn_repL this))).append _
     · cases this
   unfold siteLabs at hlk
   rw [lookup_append] at hlk
@@ -359,7 +360,7 @@ theorem pad_rep {R : RL} (hR : R.Wf) {ti : TryInfo} {ret : Nat} {e : Unw.CallSit
       obtain ⟨j, hj, -⟩ := halias x hxm
       have hx := scanLines_lookup_some x R.fa.lines.toList 0 [] []
         (.inl (List.mem_of_getElem? (show R.L[rix R.far p.lines j]? = _ from by
-          rw [hRL]; exact (relax_label hj).1)))
+          rw [hRL]; exact (relax_label_append _ hj).1)))
       have := lookup_aliasLabs_isSome hx _ hxm
       rw [hA] at this
       cases this
@@ -370,7 +371,7 @@ theorem pad_rep {R : RL} (hR : R.Wf) {ti : TryInfo} {ret : Nat} {e : Unw.CallSit
         have hj' : p.lines[j]? = some (.label (.block l)) := by simpa using blockLabelIdx_get hj
         refine ⟨_, ?_, (hoff l j _ hj' hlk).2⟩
         rw [hRL, hown]
-        exact RepL.relax _ (repOn_repL hh0)
+        exact (RepL.relax _ (repOn_repL hh0)).append _
       · cases hh0
 
 /-- **A raising `try_call` on the machine, with the raising-call state's step facts**: the callee

@@ -182,6 +182,7 @@ theorem relabel_pair (f : Lbl → Lbl) (ln : Line) :
   cases ln with
   | ins i tc => cases i <;> exact ⟨rfl, rfl⟩
   | word _ _ => exact ⟨rfl, rfl⟩
+  | data _ => exact ⟨rfl, rfl⟩
   | label _ => exact ⟨rfl, rfl⟩
 
 theorem pcOk_relabel (f : Lbl → Lbl) : ∀ (L : List Line) (b : Bool),
@@ -310,6 +311,7 @@ theorem pcOk_relaxLines (f : Lbl → Bool) : ∀ (L : List Line) (b : Bool),
     | .ins c (some tc), h => exact keep rfl
     | .label l, h => exact keep rfl
     | .word x y, h => exact keep rfl
+    | .data w, h => exact keep rfl
     | .ins c none, h =>
       rcases relaxLine_cases f c with hr | ⟨t, ht, hr⟩
       · exact keep hr
@@ -536,8 +538,10 @@ theorem emitFunc_pairsClosed {k : Nat} {af : AFunc} {fa : FnAsm} (h : emitFunc k
     PairsClosed fa.lines.toList := by
   obtain ⟨p, hp, hl, -⟩ := emitFunc_ok h
   rw [hl]
-  refine pairsClosed_of_pcOk (pcOk_relaxLines _ _ _ (pcOk_append ?_ ?_))
+  refine pairsClosed_of_pcOk (pcOk_append (pcOk_relaxLines _ _ _ (pcOk_append ?_ ?_)) ?_)
   · exact emitPlan_pcOk hp
   · exact pcOk_of_noSecond _ (trapLines_noSecond _)
+  · refine pcOk_of_noSecond _ fun ln hln => ?_
+    rcases emitPool_mem hln with ⟨w, rfl⟩ | ⟨n, rfl⟩ <;> rfl
 
 end Backend.Proof

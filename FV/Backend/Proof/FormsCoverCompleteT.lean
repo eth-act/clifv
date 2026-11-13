@@ -80,6 +80,12 @@ theorem vcBlocksT_all' (P : MInst → Prop)
     subst hm0
     exact hR R gn hRg _ (hjump tl)
 
+/-- Renaming keeps the typed coverage `CovT.Covered`. -/
+theorem coveredT_mapRegs {R : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming R gn) (m : MInst) :
+    CovT.Covered (m.mapRegs R) = CovT.Covered m := by
+  unfold CovT.Covered
+  rw [isCtl_mapRegs, formOk_mapRegs hg, isPoolLoad_mapRegs hg]
+
 /-- The load of a stack-passed parameter into a vreg is covered. -/
 theorem covered_stackArgLoad (n : Nat) (c : RegClass) (b : Nat) (off : Int) :
     Cov.Covered (stackArgLoad (.vreg n c) b (.fpOffset off)) = true := by
@@ -108,7 +114,7 @@ them in vregs. -/
 def StmtCovT (ctx : Ctx) : Prop :=
   ∀ ii info inst s out s' tr, ctx.insts[ii]? = some info → info.clif = some inst →
     runTerm ctx "lower" [.inst ii] s = .ok (out, s', tr) →
-    Cov.CovSince s s' ∧ ∀ rss, out = some (.regsVec rss) → info.results ≠ [] →
+    CovT.CovSince s s' ∧ ∀ rss, out = some (.regsVec rss) → info.results ≠ [] →
       ∀ rs ∈ rss, ∀ r ∈ rs, ∃ n c, r = .vreg n c
 
 /-- Every non-`try_call` terminator of `f`'s run (at its placeholder slot) emits only covered
@@ -117,14 +123,14 @@ def TermCovT (f : Clif.Function) (ctx : Ctx) : Prop :=
   ∀ B ∈ f.blocks, ∀ ti data targets s out s' tr, ti < ctx.insts.size →
     ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → B.term.isTry = false →
     termData (abiTerm f B.term) = .ok data →
-    termCallF ctx ti data B.term targets s = .ok (out, s', tr) → Cov.CovSince s s'
+    termCallF ctx ti data B.term targets s = .ok (out, s', tr) → CovT.CovSince s s'
 
 /-- Every `try_call` terminator of `f`'s run (at its placeholder slot) emits only covered
 instructions. -/
 def TryCovT (f : Clif.Function) (ctx : Ctx) : Prop :=
   ∀ B ∈ f.blocks, ∀ ti data trs targets s out s' tr, ti < ctx.insts.size →
     ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → tryCallData f B.term = .ok data →
-    tryCallF ctx ti data trs targets s = .ok (out, s', tr) → Cov.CovSince s s'
+    tryCallF ctx ti data trs targets s = .ok (out, s', tr) → CovT.CovSince s s'
 
 /-- **Form coverage of the compiled function (typed)**, for input with integer externs whose
 VCode is in `prepare`'s domain. Given the ISLE runs' coverage, every instruction of
@@ -143,7 +149,7 @@ theorem formsCovered_of_runsG {f : Clif.Function} {vc vcp : VCode}
   have hemp := lowBlocks_emptied hlb
   have hstm : ∀ (bi : Nat) (B : Clif.Block) (L : BLow) (j : Nat) (stm : Clif.Stmt) (sl : SLow),
       f.blocks[bi]? = some B → bl[bi]? = some L → B.body[j]? = some stm → L.sl[j]? = some sl →
-      (∀ m ∈ sl.st'.emitted.toList, Cov.Covered m = true) ∧ extraOfT ctx stm.results sl.rss = [] := by
+      (∀ m ∈ sl.st'.emitted.toList, CovT.Covered m = true) ∧ extraOfT ctx stm.results sl.rss = [] := by
     intro bi B L j stm sl hB hL hj hsl
     obtain ⟨-, hc, -, -⟩ := hspec bi B L hB hL
     obtain ⟨info, hi, hic, hres⟩ := hcf.stmt bi B j stm hB hj
@@ -156,8 +162,9 @@ theorem formsCovered_of_runsG {f : Clif.Function} {vc vcp : VCode}
     · cases hr : stm.results with
       | nil => simp [extraOfT]
       | cons r rs => exact extraOfT_nil_of_vregs (hvr sl.rss rfl (by rw [hres, hr]; simp))
-  have hall := vcBlocksT_all' (fun m => Cov.Covered m = true)
-    (fun _ _ hg m h => by rw [covered_mapRegs hg]; exact h) (fun _ => rfl) covered_stackArgLoad
+  have hall := vcBlocksT_all' (fun m => CovT.Covered m = true)
+    (fun _ _ hg m h => by rw [coveredT_mapRegs hg]; exact h) (fun _ => rfl)
+    (fun n c b off => CovT.covered_of_cov (covered_stackArgLoad n c b off))
     (fun _ => rfl) (f := f) (ctx := ctx) (bl := bl)
     (fun bi B L j stm sl hB hL hj hsl => (hstm bi B L j stm sl hB hL hj hsl).1)
     (fun bi B L j stm sl hB hL hj hsl m hm => by
@@ -187,11 +194,11 @@ theorem formsCovered_of_runsG {f : Clif.Function} {vc vcp : VCode}
           rw [hms] at hm
           exact hcov m (by simpa using hm)
       · rfl)
-  apply formsCovered_of_prepare hp hpd
+  apply formsCovered_of_prepareT hp hpd
   rw [hvb]
   intro vb hvb' i hi
   have := hall vb hvb' i hi
-  simpa [Cov.Covered, Bool.or_eq_true] using this
+  simpa [CovT.Covered, Bool.or_eq_true, or_assoc] using this
 
 /-- **Form coverage of the compiled function (typed).** Given the ISLE runs' coverage, every
 instruction of `prepare (lowerFunction f)` is a control form or `FormOk`. -/

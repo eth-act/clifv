@@ -1,5 +1,6 @@
 import FV.E2E.LinkScopeChecksTF
 import FV.E2E.LinkScopeInputDefsTC
+import FV.E2E.LinkScopeInputDefsT3
 import FV.E2E.LinkScopeInputCleanupT
 import FV.E2E.SpillKillFreeT
 import FV.Backend.Proof.LowerCompleteTCF
@@ -11,8 +12,9 @@ import FV.Backend.Proof.LowerCompleteTCF
 float scope: `lowerScopeTFB` (the scope `Compile.functionETF`: float arithmetic, rounding,
 conversions, scalar `fcmp`) for `Compile.functionET`/`lowerScopeTB`, plus `Compile.floatArgsTyped`
 (the float operands of the float operations are float-defined; without it a `fadd` of an
-integer-defined value lowers to an `fpu_rrr` reading an integer vreg). No conjunct runs the
-compiler.
+integer-defined value lowers to an `fpu_rrr` reading an integer vreg), and the literal loads' reach
+`poolReachInB` (#565, as in `fnScopeInTB3`). Only `poolReachInB` may run the compiler, and only
+for a function whose size bound `sizeBoundIn` is at least `2 ^ 17` words.
 
 * `lowersTCB_of_T3F`: the run-time decider of the typed-try_call scope `lowersTCB`
   (`lowerFunction` succeeds and its output passes the float validator `lowerCheckTCF`) is a
@@ -40,7 +42,7 @@ def fnScopeInTB3F (g : Clif.Function) : Bool :=
   g.sig.params.all (fun p => decide (p.ty.width ≤ 64)) && linkFreeB g &&
   dominatedB g && lowerScopeTFB g && Spill.arityOkB g &&
   (extendsWidenB g && sizeOkB g && driverInB g && Prg.iselInB g) && Spill.entryParamsB g &&
-  entryClassOkB g && Compile.selectTypedB g && Driver.bitcastWidthB g
+  entryClassOkB g && Compile.selectTypedB g && Driver.bitcastWidthB g && poolReachInB g
 
 /-- **`InScopeInT3F`**: `InScopeInT3` with `fnScopeInTB3F`. -/
 def InScopeInT3F (I : LinkInput) : Bool :=
@@ -56,9 +58,21 @@ theorem fnScopeInT3F_parts {g : Clif.Function} (h : fnScopeInTB3F g = true) :
     dominatedB g = true ∧ lowerScopeTFB g = true ∧ Spill.arityOkB g = true ∧
     extendsWidenB g = true ∧ sizeOkB g = true ∧ driverInB g = true ∧ Prg.iselInB g = true ∧
     Spill.entryParamsB g = true ∧ entryClassOkB g = true ∧ Compile.selectTypedB g = true ∧
-    bitcastWidthB g = true := by
+    bitcastWidthB g = true ∧ poolReachInB g = true := by
   simp only [fnScopeInTB3F, Bool.and_eq_true, and_assoc] at h
   exact h
+
+/-- **The literal loads reach the pool on `fnScopeInTB3F`** (#565): below `2 ^ 17` words by the
+input bound (`poolReachB_of_sizeTF`), else `poolReachInB`'s run-time check. -/
+theorem poolReachB_of_T3F {g : Clif.Function} {vc vcp : VCode} (h : fnScopeInTB3F g = true)
+    (hl : lowerFunction g = .ok vc) (hp : prepare vc = .ok vcp) : poolReachB vcp = true := by
+  obtain ⟨hst, -, hfa, -, -, -, -, -, -, -, hd, hs, -, -, -, -, -, -, -, hsel, -, hpr⟩ :=
+    fnScopeInT3F_parts h
+  simp only [poolReachInB, Bool.or_eq_true, decide_eq_true_eq] at hpr
+  rcases hpr with h17 | hn
+  · exact poolReachB_of_sizeTF hd (lowerScopeTF_of hs) hfa hst hsel h17 hl hp
+  · simp only [hl, hp] at hn
+    exact poolReachB_of_noPool hn
 
 /-- **The float scope is in the scope with typed `try_call`s and the float operations.** -/
 theorem functionETCF_of_functionETF {f : Clif.Function} (h : Compile.functionETF f = true) :
@@ -125,7 +139,7 @@ theorem pipeCleanupT_okT3F {g : Clif.Function} (h : fnScopeInTB3F g = true) (k :
       prepCheck (cleanupStage g a.vc) a.vcp = true ∧ AllocChecked a.vcp a.rf ∧
       FormsCovered ⟨a.fa.k, a.af.slotBase⟩ a.vcp := by
   obtain ⟨hst, htc, hfa, habi, hext, hind, h7, h8, h9, h10, hd, hs, har, hw, hsz, hdrv, hin, hent,
-    hec, hsel, hbw⟩ := fnScopeInT3F_parts h
+    hec, hsel, hbw, -⟩ := fnScopeInT3F_parts h
   by_cases hE : Compile.functionE g = true
   · have hsc : fnScopeB g = true := fnScopeB_of_input (by
       simp only [fnScopeInB, hE, habi, hext, hind, h7, h8, h9, h10, hd, lowerScopeB_of_TF hE hs,
@@ -141,7 +155,7 @@ theorem pipeCleanupT_okT3F {g : Clif.Function} (h : fnScopeInTB3F g = true) (k :
   have hEc := entryClassOk_of hec
   have hcs := ctlSpillB_of_TF hd hS hfa hst hsel ha hEc hl
   obtain ⟨vcp, hp⟩ := Prep.prepare_okTF hS hl
-  have hem := emitConds_lowerTF hd hS hfa hst hsel hw hbw hsz hl hp
+  have hem := emitConds_lowerTF hd hS hfa hst hsel hw hbw hsz hl hp (poolReachB_of_T3F h hl hp)
   have hcov := formsCovered_completeTF hd hS hfa hst hsel hl hp default
   have hk := spillKillFreeTF hD hS ha (arityOk_of har) htc hl hp
   have hci := ctlInsts_pipelineTF hd hS hfa hst hsel ha hEc hl hp

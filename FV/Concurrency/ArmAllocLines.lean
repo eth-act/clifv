@@ -62,6 +62,7 @@ theorem segEvs_execLines {X : ExtSem} {H : ArmHooks} {fa : FnAsm} {fb : FnBin}
   | [], _, _, _, _, _, _, _, _, _, _ => by simp [segEvs, linesEvs]
   | .label _ :: _, _, _, _, _, _, _, _, _, _, h => by simp [execLines] at h
   | .word _ _ :: _, _, _, _, _, _, _, _, _, _, h => by simp [execLines] at h
+  | .data _ :: _, _, _, _, _, _, _, _, _, _, h => by simp [execLines] at h
   | .ins i t :: ls, j, s, s', hat, hhook, hprog, hpc, herr, hinter, h => by
     have hj : fa.lines.toList[j]? = some (.ins i t) := by simpa using hat 0 _ rfl
     obtain ⟨a, ha, hstep, hev, -⟩ := stepEvs_line (X := X) (H := H) hl hm hfit hj
@@ -117,6 +118,7 @@ theorem execLines_ins : ∀ {env : Env} {ls : List Line} {s s' : ArmState},
       · cases h
   | _, .label _ :: _, _, _, h => by simp [execLines] at h
   | _, .word _ _ :: _, _, _, h => by simp [execLines] at h
+  | _, .data _ :: _, _, _, h => by simp [execLines] at h
 
 theorem execLines_take {env : Env} {ls : List Line} {s s' : ArmState}
     (h : execLines env ls s = some s') (i : Nat) : ∃ s1, execLines env (ls.take i) s = some s1 := by

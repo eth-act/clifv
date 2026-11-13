@@ -288,12 +288,14 @@ theorem backend_twoRunLW (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af f
         intro hk
         apply readsAvoid_stepiEvs
         intro a ha ev hev hdir k hk'
-        obtain ⟨j', a', ha', hd⟩ := ht.decodeAt
+        obtain ⟨a', ha', hd⟩ := decodeAt_ofLine ht.layout ht.lm ht.fit ht.prog hj hpc
         rw [hd, Option.some.injEq] at ha
         subst ha
         have hcov := (ExecBytes.instEvs_cover hev).1 hdir
         obtain ⟨Y, -, hYO, hrd⟩ := hwr
-        have hr := hrd j x tc hj hpc hk _ a' ha' (ev.addr, ev.n) hcov k hk'
+        have hr := hrd j x tc hj hpc hk a'
+          (by refine (congrArg (x.toArmInst ·) ?_).trans ha'; exact RL.envL_of_lm ht.lm j)
+          (ev.addr, ev.n) hcov k hk'
         rw [hld] at hr
         refine RL.notZc_of_readInY hr fun b hb => ?_
         rcases hYO with hall | ⟨_, -, hYD⟩

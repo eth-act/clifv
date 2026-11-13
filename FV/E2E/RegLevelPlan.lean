@@ -220,6 +220,34 @@ theorem RepL.relax {af : AFunc} {own : Label → Bool} {L : List Line} (F : Lbl 
     exact .skip ho this.1 (by rw [← this.2]; exact ih)
   | fwd hx _ ih => exact .fwd hx ih
 
+/-! ## Lines appended after the relaxed lines (the literal pool, #565) -/
+
+theorem getElem?_append_of_some {α : Type} {L : List α} {j : Nat} {x : α} (P : List α)
+    (h : L[j]? = some x) : (L ++ P)[j]? = some x := by
+  rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp h).1]; exact h
+
+/-- `relax_drop` with lines appended after the relaxed lines. -/
+theorem relax_drop_append (F : Lbl → Bool) (L : List Line) (j : Nat) (P : List Line) :
+    (relaxLines F L ++ P).drop (rix F L j) = relaxLines F (L.drop j) ++ P := by
+  rw [List.drop_append_of_le_length, relax_drop]
+  unfold rix
+  rw [relax_split F L j, List.length_append]
+  omega
+
+/-- `relax_label` with lines appended after the relaxed lines. -/
+theorem relax_label_append {F : Lbl → Bool} {L : List Line} {j : Nat} {l : Lbl} (P : List Line)
+    (h : L[j]? = some (.label l)) :
+    (relaxLines F L ++ P)[rix F L j]? = some (.label l) ∧ rix F L (j + 1) = rix F L j + 1 :=
+  ⟨getElem?_append_of_some P (relax_label h).1, (relax_label h).2⟩
+
+/-- `RepL` is kept by appending lines. -/
+theorem RepL.append {af : AFunc} {own : Label → Bool} {L : List Line} (P : List Line)
+    {s : Label} {j : Nat} (h : RepL af own L s j) : RepL af own (L ++ P) s j := by
+  induction h with
+  | here ho hl => exact .here ho (getElem?_append_of_some P hl)
+  | skip ho hl _ ih => exact .skip ho (getElem?_append_of_some P hl) ih
+  | fwd hx _ ih => exact .fwd hx ih
+
 /-! ## What `termOk` accepts -/
 
 /-- A branch target `l'` reaches block `s`: a block label whose line (`idx`) represents `s`. -/
@@ -512,6 +540,7 @@ theorem Line.relabel_self {x : Line} {t : Lbl} (h : x.target? = some t) :
     simp only [Line.relabel, h]
     cases i <;> simp_all [Line.target?, Insn.setTarget]
   | word a b => simp_all [Line.target?, Line.relabel]
+  | data w => simp [Line.target?] at h
   | label l => simp [Line.target?] at h
 
 theorem lineOk_self {rep : Label → Nat → Bool} {idx : LabelIdx} {x : Line}

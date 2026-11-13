@@ -39,11 +39,12 @@ private theorem trapIf_reachN {R : RL} (hR : R.Wf) {s : Arm.ArmState} {m : Loc �
   rw [hplan] at hp
   simp only [Except.ok.injEq] at hp
   subst hp
-  have hL : R.L = relaxLines R.far (segLines p2.segs p2.outs) ++ trapLines R.psF := by
+  have hL : R.L = relaxLines R.far (segLines p2.segs p2.outs) ++
+      (trapLines R.psF ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af) := by
     show R.fa.lines.toList = _
     rw [hL0, show (emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af) = R.far from rfl, Plan.lines,
-      relaxLines_append, relaxLines_trapLines, hps]
-  obtain ⟨hlab, hudf⟩ := trapLines_get R.psF n (.trap n, code) hn
+      relaxLines_append, relaxLines_trapLines, hps, List.append_assoc]
+  obtain ⟨hlab, hudf⟩ := trapLines_get_append R.psF n (.trap n, code) _ hn
   have hlab' : R.L[(relaxLines R.far (segLines p2.segs p2.outs)).length + 2 * n]? =
       some (.label (.trap n)) := by
     rw [hL, List.getElem?_append_right (by omega)]
@@ -227,17 +228,18 @@ private theorem trapIf_reach_lineN {R : RL} (hR : R.Wf) {s : Arm.ArmState} {m : 
     (fun hct env a ha => by rw [kind_brCond_inv hst hkr _ _ hct ha, hholds])
     (by rw [hst.prog]) hpc hst.err hst.sp
   have hjl := hjt rfl
-  -- the final lines: the body's segments' relaxation and the trap section
+  -- the final lines: the body's segments' relaxation, the trap section and the literal pool
   obtain ⟨p, hp, hL0, -⟩ := emit_seg hR.emit
   obtain ⟨p2, hplan, hps⟩ := hR.psF
   rw [hplan] at hp
   simp only [Except.ok.injEq] at hp
   subst hp
-  have hL : R.L = relaxLines R.far (segLines p2.segs p2.outs) ++ trapLines R.psF := by
+  have hL : R.L = relaxLines R.far (segLines p2.segs p2.outs) ++
+      (trapLines R.psF ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af) := by
     show R.fa.lines.toList = _
     rw [hL0, show (emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af) = R.far from rfl, Plan.lines,
-      relaxLines_append, relaxLines_trapLines, hps]
-  obtain ⟨hlab, hudf⟩ := trapLines_get R.psF n (.trap n, code) hn
+      relaxLines_append, relaxLines_trapLines, hps, List.append_assoc]
+  obtain ⟨hlab, hudf⟩ := trapLines_get_append R.psF n (.trap n, code) _ hn
   have hlab' : R.L[(relaxLines R.far (segLines p2.segs p2.outs)).length + 2 * n]? =
       some (.label (.trap n)) := by
     rw [hL, List.getElem?_append_right (by omega)]

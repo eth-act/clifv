@@ -289,13 +289,13 @@ theorem entry_block {R : RL} (hR : R.Wf) :
   obtain ⟨p', hp', hps⟩ := hR.psF
   rw [hp] at hp'
   cases hp'
-  have hRL : R.L = relaxLines R.far p.lines := hL
+  have hRL : R.L = relaxLines R.far p.lines ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af := hL
   -- the entry's segment's position: the label line is line 0, so the prefix is empty
   obtain ⟨A, hA, hx2⟩ := segX_get hp hs ho'
   have hA0 : A = [] := by
     have hA1 : p.lines[A.length]? = some (.label (.block sg.label)) := by
       rw [hA]; simp
-    obtain ⟨r1, -⟩ := relax_label (F := R.far) hA1
+    obtain ⟨r1, -⟩ := relax_label_append (F := R.far) (emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af) hA1
     rw [hlab] at r1
     rw [← hRL] at r1
     have h0' := labelOffsets_uniq hR.lm hj r1
@@ -339,8 +339,9 @@ theorem entry_block {R : RL} (hR : R.Wf) :
           (fun ln h => by
             obtain ⟨-, -, -, hp⟩ := prologueLines_ins R.af.saves R.af.frameSize ln h
             exact hp)]
-    have hL1 : List.drop 1 (relaxLines R.far p.lines) = relaxLines R.far (p.lines.drop 1) := by
-      rw [← relax_drop R.far p.lines 1, hrix]
+    have hL1 : List.drop 1 (relaxLines R.far p.lines ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af) =
+        relaxLines R.far (p.lines.drop 1) ++ emitPool ⟨R.fa.k, R.af.slotBase⟩ R.af := by
+      rw [← relax_drop_append R.far p.lines 1, hrix]
     have hd1' : p.lines.drop 1 = (sg.body ++ o) ++
         (segLines (p.segs.drop (i + 1)) (p.outs.drop (i + 1)) ++ trapLines p.ps) := by
       rw [hA]; simp
@@ -351,7 +352,7 @@ theorem entry_block {R : RL} (hR : R.Wf) :
     have hp21 : (sg, o, 1 + sg.body.length + o.length).snd.fst = o := rfl
     rw [hRL, hL1, hd1', hp21]
     simp only [relaxLines_append, hsb']
-    rw [relax_drop R.far p.lines (1 + sg.body.length + o.length), hrest]
+    rw [relax_drop_append R.far p.lines (1 + sg.body.length + o.length), hrest]
     simp only [relaxLines_append, List.append_assoc]
   · exact hx2
   · have hfwd0 : (R.af.fwd? vb.label).isNone = true := by

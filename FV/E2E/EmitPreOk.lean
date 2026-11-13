@@ -238,13 +238,14 @@ theorem moveInsts_total (c : FnCtx) {fr : RAFrame} {src dst : Loc} {l : List AIn
   · cases h
 
 /-- **An instruction of the spill allocation expands**: an instruction `i` of the VCode that is a
-covered form or a control form meeting `ctlInstOk`, with the operand locations `spillLocs`. -/
+covered form, the literal-pool load (#565) or a control form meeting `ctlInstOk`, with the operand
+locations `spillLocs`. -/
 theorem op_total {c : FnCtx} {i i' : MInst} {regs : Array Reg} {b k : Nat}
-    (hcov : i.isCtl = true ∨ FormOk c i = true) (hctl : ctlInstOk b k i = true)
+    (hcov : i.isCtl = true ∨ FormOk c i = true ∨ i.isPoolLoad = true) (hctl : ctlInstOk b k i = true)
     (hloc : ∀ ops, i.operands = .ok ops → regs.map Loc.reg = spillLocs ops i.clobbers)
     (hasg : i.assign regs = .ok i') (hna : ∀ ds, i' ≠ .args ds) (hnr : ∀ us, i' ≠ .rets us) :
     LinesTotal c i' := by
-  rcases hcov with hc | hf
+  rcases hcov with hc | hf | hp
   · cases i
     case atomicRmwLoop ty op fl a o d s1 s2 =>
       simp only [ctlInstOk, Bool.and_eq_true] at hctl
@@ -274,6 +275,9 @@ theorem op_total {c : FnCtx} {i i' : MInst} {regs : Array Reg} {b k : Nat}
       exact assign_post hasg (ctl_post c regs hc (fun _ _ _ _ _ _ _ _ h => by cases h)
         (fun _ _ _ _ _ _ _ h => by cases h) (fun _ _ _ h => by cases h)) hna hnr
   · exact formOk_total hf hasg
+  · obtain ⟨sz, d, v, fl, rfl, -⟩ := isPoolLoad_form hp
+    obtain ⟨r, -, rfl⟩ := assign_poolLoad hasg
+    intro ps; exact ⟨_, rfl⟩
 
 /-! ## The code of the spill allocation -/
 
@@ -419,6 +423,7 @@ theorem target_used {ln : Line} {l : Label} (h : ln.target? = some (.block l)) :
   cases ln with
   | ins i tc => cases i <;> simp_all [Line.target?, Line.labelsUsed, Insn.pcRelSpec?]
   | word a b => simp_all [Line.target?, Line.labelsUsed]
+  | data _ => simp [Line.target?] at h
   | label _ => simp [Line.target?] at h
 
 set_option pp.proofs false in
@@ -492,12 +497,13 @@ theorem emitPre_of {k : Nat} {af : AFunc}
     have hc := EmitLabels.code_chunk (T := af.blocks.toList.map (·.1)) _ _ _ _ e2
       (fun m hm l' hl' => ht _ hbm m (EmitLabels.mem_of_getLast?_toList hm) l' hl')
     rcases hc.uses_in (.block l) (EmitLabels.mem_uses.2 ⟨ln, hln, target_used htl⟩) with
-      hd | ⟨l', hl', e⟩ | ⟨n, e, -⟩
+      hd | ⟨l', hl', e⟩ | ⟨n, e, -⟩ | ⟨n, e, -⟩
     · rcases hc.defs_in _ hd with ⟨_, h, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
       · cases h
       · cases h
       · cases h
     · cases e; exact hlabel _ hl'
+    · cases e
     · cases e
   have hpad : ∀ b ∈ af.blocks.toList, ∀ a ∈ b.2.toList, ∀ info ti, a = .inst (.tryCall info ti) →
       ∀ h ∈ ti.handlers, ∃ s ∈ ss, s.label = h.label := by

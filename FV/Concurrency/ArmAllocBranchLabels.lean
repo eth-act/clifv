@@ -35,8 +35,9 @@ theorem af_nodup {R : RL} (hR : R.Wf) : (R.af.blocks.toList.map fun p => Lbl.blo
   obtain ⟨hl, -, hss⟩ := Backend.segsOf_spec hseg
   have hn := (labelOffsets_go_nodup (show labelOffsets.go R.fa.lines.toList 0 {} = .ok R.lm
     from hR.lm)).1
-  rw [hL, (E2E.EmitLabels.relaxLines_spec _ _).1, Plan.lines, E2E.EmitLabels.defs_append] at hn
-  have hs := (segLines_defs _ _ hlen).nodup (List.nodup_append.1 hn).1
+  rw [hL, E2E.EmitLabels.defs_append, (E2E.EmitLabels.relaxLines_spec _ _).1, Plan.lines,
+    E2E.EmitLabels.defs_append] at hn
+  have hs := (segLines_defs _ _ hlen).nodup (List.nodup_append.1 (List.nodup_append.1 hn).1).1
   -- the segments' labels are the blocks' in `emitOrder`
   have he : (p.segs.map fun s => Lbl.block s.label) =
       (emitOrder R.af).map fun x => Lbl.block x.1.1 := by

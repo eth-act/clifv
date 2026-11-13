@@ -117,7 +117,7 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
         · rfl
         · rw [prologueLines_target _ _ _ y hy] at hyt; cases hyt
     rw [← hb0, List.nil_append, hoe, ← ht, relaxLines_plain hpl]
-    exact List.prefix_refl _
+    exact ⟨_, rfl⟩
   · rw [show AInst.prologue :: code = [AInst.prologue] ++ code from rfl,
       List.dropLast_append_of_ne_nil hc] at e1
     obtain ⟨l1, X, psA, h1, -, hb⟩ := codeLinesE_append _ _ _ _ _ e1
@@ -125,6 +125,6 @@ theorem entry_static {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAs
     simp only [Except.ok.injEq, Prod.mk.injEq] at h1
     obtain ⟨rfl, -⟩ := h1
     rw [hb, List.append_assoc, relaxLines_append, relaxLines_plain hpl]
-    exact List.prefix_append _ _
+    exact ⟨_, (List.append_assoc _ _ _).symm⟩
 
 end Link.EhCheck.Complete

@@ -441,6 +441,7 @@ theorem linesEvs_insKind_none : ∀ {env : Env} {pre : List Line} (s : ArmState)
       · simp only [instEvs_none ha hk]
   | env, .label _ :: _, _, h => by obtain ⟨x, t', e, -⟩ := h _ List.mem_cons_self; cases e
   | env, .word _ _ :: _, _, h => by obtain ⟨x, t', e, -⟩ := h _ List.mem_cons_self; cases e
+  | env, .data _ :: _, _, h => by obtain ⟨x, t', e, -⟩ := h _ List.mem_cons_self; cases e
 
 /-- **An event-free prefix of lines does not touch the memory**: running it over `setMem M s` is
 `setMem M` of running it over `s` (its events are empty, so its footprint is memory-free). -/
