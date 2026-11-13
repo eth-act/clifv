@@ -561,7 +561,7 @@ jobs:
           # the functions that run Lean-compiled code without being verified (plain cargo fv only:
           # --verified keeps cg_clif's code for them), with lean-backend's reason (#1008)
           (cd "examples/$EX" && PATH="$GITHUB_WORKSPACE/rust/target/release:$PATH" FV_ROOT="$GITHUB_WORKSPACE" \
-            cargo fv report --functions 2> /dev/null | grep -E '^ +unverified ' | sort | uniq -c) \
+            cargo fv report --functions 2> /dev/null | grep -E '^    unverified ' | sort | uniq -c) \
             > "gate-logs/$EX-unverified.txt" || true
           if [[ -s "gate-logs/$EX-unverified.txt" ]]; then
             {
