@@ -23,7 +23,8 @@ open Clif
 
 deriving instance Hashable for Clif.Ty, Clif.UnaryOp, Clif.BinaryOp, Clif.DivOp,
   Clif.OverflowOp, Clif.CarryOp, Clif.ExtendOp, Clif.LoadOp, Clif.StoreOp, Clif.AtomicRmwOp,
-  Clif.TrapCode, Clif.Endianness, Clif.MemFlags, Clif.IntCC, Clif.FloatCC, Clif.FOp, Clif.Inst
+  Clif.TrapCode, Clif.Endianness, Clif.MemFlags, Clif.IntCC, Clif.FloatCC, Clif.FOp, Clif.VecOp,
+  Clif.Inst
 
 /-- The values an instruction reads, in operand order. -/
 def operands : Inst → List ValueId
