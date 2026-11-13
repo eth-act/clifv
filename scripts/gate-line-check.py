@@ -2,7 +2,7 @@
 """The verdict of a gate line whose exit status alone does not say that the check ran (#998).
 
 usage: gate-line-check.py cargo-fv EXAMPLE [--lean-link] [--known FILE] [--expected FILE] [--base FILE] [--summary FILE] COMPARE_LOG FV_LOG
-       gate-line-check.py base-pins OUT [--before SHA]
+       gate-line-check.py base-pins OUT (--before SHA | --local REV)
        gate-line-check.py arm-fault-cosim LOG
 
 Exit status 0 iff the log is that of a green line; prints one line: the lines the verdict was
@@ -46,13 +46,17 @@ in its `(logs: DIR)`):
   --summary FILE appends the counts (pinned and measured) and the known-unverified executables
   with cargo fv's reasons to FILE as Markdown (the CI job summary).
 
-base-pins (CI; run in the checkout): writes to OUT the expected counts of the base revision of
-this run, for `cargo-fv --base OUT`, and prints the revision. The base revision is never the
-tested commit: on a branch it is main's tip; on main it is the tip the push replaced (--before,
-the push event's `before`), or the tested commit's parent when there is none (a re-run, the
-weekly run). Read from the environment: GITHUB_REF, GITHUB_EVENT_NAME, GITHUB_SHA. OUT is empty
-when the base revision has no such file; exit status 1 and no OUT when the revision cannot be
-fetched (`cargo-fv --base OUT` then fails).
+base-pins (run in the checkout): writes to OUT the expected counts of the base revision of this
+run, for `cargo-fv --base OUT`, and prints the revision. The base revision is never the tested
+commit. OUT is empty when the base revision has no such file; exit status 1 and no OUT when the
+revision cannot be found (`cargo-fv --base OUT` then fails: no base, no green line).
+  --before SHA (CI; SHA: the push event's `before`, or empty): on a branch main's tip; on main
+    the tip the push replaced, or the tested commit's parent when there is none (a re-run, the
+    weekly run). Fetched from origin. Read from the environment: GITHUB_REF, GITHUB_EVENT_NAME,
+    GITHUB_SHA.
+  --local REV (scripts/main-gate.sh; nothing is fetched): REV, the loop's last green commit; with
+    an empty REV (a one-shot run) the commit where HEAD left origin/main, or HEAD's parent when
+    HEAD is on origin/main.
 
 arm-fault-cosim (the output of scripts/arm-fault-cosim.sh):
   - exactly one line `TOTAL forms F vectors V faults X failures 0`, with F, V and X > 0: no form,
@@ -318,14 +322,31 @@ def base_revision(ref, event, before, sha):
     return sha, 2, "FETCH_HEAD^"
 
 
-def base_pins(out, before, env=os.environ):
-    """Write the base revision's expected counts to `out`; the exit status."""
+def local_base_revision(rev, git):
+    """The base revision of a local run: `rev` (scripts/main-gate.sh's last green commit) when
+    given; else, for a one-shot run, the commit where HEAD left origin/main (a branch), or
+    HEAD's parent when HEAD is on origin/main (main itself, a bisection). None: unknown."""
+    if rev:
+        return rev
+    head, fork = git("rev-parse", "HEAD"), git("merge-base", "HEAD", "origin/main")
+    if head.returncode != 0 or fork.returncode != 0:
+        return None
+    return "HEAD^" if fork.stdout.strip() == head.stdout.strip() else fork.stdout.strip()
+
+
+def base_pins(out, mode, value, env=os.environ):
+    """Write the base revision's expected counts to `out`; the exit status. `mode`: `--before`
+    (CI: `value` is the push event's `before`) or `--local` (`value`: the last green commit)."""
     path = pathlib.Path(out)
     path.unlink(missing_ok=True)
-    what, depth, rev = base_revision(env.get("GITHUB_REF", ""), env.get("GITHUB_EVENT_NAME", ""), before,
-                                     env.get("GITHUB_SHA", ""))
     git = lambda *a: subprocess.run(["git", *a], capture_output=True, text=True)
-    r = git("fetch", "-q", "--depth", str(depth), "origin", what)
+    if mode == "--before":
+        what, depth, rev = base_revision(env.get("GITHUB_REF", ""), env.get("GITHUB_EVENT_NAME", ""), value,
+                                         env.get("GITHUB_SHA", ""))
+        r = git("fetch", "-q", "--depth", str(depth), "origin", what)
+    else:
+        what, rev = "local", local_base_revision(value, git)
+        r = subprocess.CompletedProcess([], 0 if rev else 1, "", "HEAD or origin/main is unknown")
     commit = git("rev-parse", "-q", "--verify", f"{rev}^{{commit}}") if r.returncode == 0 else r
     if commit.returncode != 0:
         print(f"FAIL: base revision {what} ({rev}): {(r.stderr or commit.stderr).strip() or 'not found'}")
@@ -352,10 +373,8 @@ def usage():
 
 def main(argv):
     if argv and argv[0] == "base-pins":
-        if len(argv) == 2 and argv[1].strip() and not argv[1].startswith("-"):
-            return base_pins(argv[1], "")
-        if len(argv) == 4 and argv[2] == "--before" and argv[1].strip() and not argv[1].startswith("-"):
-            return base_pins(argv[1], argv[3])
+        if len(argv) == 4 and argv[2] in ("--before", "--local") and argv[1].strip() and not argv[1].startswith("-"):
+            return base_pins(argv[1], argv[2], argv[3])
         return usage()
     if not argv or argv[0] not in ("cargo-fv", "arm-fault-cosim"):
         return usage()

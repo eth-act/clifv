@@ -1118,8 +1118,11 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   A function count below its pin is red (a regression); one above it is red until the file records the
   rise, so the PR that verifies more functions, or changes an example, changes its line in the same PR
   (the verdict and the CI job summary print the pinned and the measured counts and the new line).
-  The CI gate also reads main's copy of the file (`--base`): a pin below main's is red, so a PR cannot
-  make a drop green by lowering the pin; a deliberate drop is a parent decision.
+  The gates also read the file of a base revision that is never the tested commit (`gate-line-check.py
+  base-pins`: main's tip on a branch; on main the tip the push replaced, else the commit's parent;
+  `scripts/main-gate.sh`: the last green commit, or for a one-shot run where HEAD left `origin/main`).
+  A pin below the base revision's is red, so a change cannot make a drop green by lowering the pin; a
+  deliberate drop is a parent decision.
   If CLIF semantics change,
   `scripts/clif-filetests.sh` at its baseline (`scripts/clif-filetests-baseline.txt`) and
   `scripts/opt-difftest.sh` with 0 failures.
