@@ -155,9 +155,11 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
   {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
 
-/-- **`entry_step2P` with the paired run guarded** (its proof), for any semantics with the memory
-forms; the three runs in the entry code (`AtSeg 0 0 k`, as `entry_step2Z`). -/
-theorem entry_step2PDGZ (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+/-- **`entry_step2ZK` with the paired run guarded** (the entry code without the loads of the
+parameters `keep` rejects, #586; its proof), for any semantics with the memory forms; the three
+runs in the kept entry code. `entry_step2PDGZ` is the case `keep = fun _ => true`, `vcK = vc`. -/
+theorem entry_step2PDGZK (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    (hds : DriverSem sem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR) {ctx' : FnCtx} {X : ExtSem}
     {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
@@ -172,16 +174,22 @@ theorem entry_step2PDGZ (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds
     (h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀)
     (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
       w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
-        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) :
-    ∃ k ρ₁ w₁ w₁', StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀⟩)
-        (.run ⟨0, k, ρ₁, w₁⟩) ∧
-      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
-      StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
-      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁'⟩ ∧ SameWorld F w₁' w₀' ∧
-      StarP (VStep vc (pairSemD sem F ctx' X)) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, (w₀, w₀')⟩)
-        (.run ⟨0, k, ρ₁, (w₁, w₁')⟩) := by
-  obtain ⟨L, hL⟩ := H.blow hB0
-  obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk 0 B0 L hB0 hL
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k))
+    (keep : Clif.ValueId → Bool) {vcK : VCode} {vbK : VBlock} (hvbK : vcK.blocks[0]? = some vbK)
+    (hsegK : SegAt vbK 0 (.args (entryRegs f R B0) :: entryLoadsK f R keep B0))
+    (hltK : 1 + (entryLoadsK f R keep B0).length < vbK.insts.size) :
+    ∃ ρK ρF w₁ w₁',
+      StarP (VStep vcK sem) (AtSeg 0 0 (1 + (entryLoadsK f R keep B0).length))
+        (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, 1 + (entryLoadsK f R keep B0).length, ρK, w₁⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, (pre f R 0).length, ρF, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
+      StarP (VStep vcK sem) (AtSeg 0 0 (1 + (entryLoadsK f R keep B0).length))
+        (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, 1 + (entryLoadsK f R keep B0).length, ρK, w₁'⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, (pre f R 0).length, ρF, w₁'⟩ ∧ SameWorld F w₁' w₀' ∧
+      StarP (VStep vcK (pairSemD sem F ctx' X))
+        (AtSeg 0 0 (1 + (entryLoadsK f R keep B0).length)) (.run ⟨0, 0, ρ₀, (w₀, w₀')⟩)
+        (.run ⟨0, 1 + (entryLoadsK f R keep B0).length, ρK, (w₁, w₁')⟩) ∧
+      ∀ y, (∀ q ∈ entryParams f B0, q.1.1.1 = y → keep y = false → ∀ off, q.1.2 ≠ .stack off) →
+        ρF y = ρK y := by
   obtain ⟨hnd, hA⟩ := H.cert.entry B0 hB0
   have hB0mem : B0 ∈ f.blocks := List.mem_of_getElem? hB0
   obtain ⟨hlocs, bytes, hb⟩ := H.entryLocs
@@ -246,12 +254,31 @@ theorem entry_step2PDGZ (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds
     exact ⟨List.mem_iff_getElem?.mpr ⟨m, by simp [List.getElem?_zip_eq_some, hl, hv]⟩,
       hbyte m v _ hv hbb, hbb⟩
   obtain ⟨ns, hnsdef⟩ : ∃ ns, ns = entryNs E := ⟨_, rfl⟩
-  have hpre : pre f R 0 = .args (argPairs ns) :: E.filterMap (entryLoadOf R) := by
-    simp only [pre, hB0, entryRegs, entryLoads, ← hEdef]
+  have hregsE : entryRegs f R B0 = argPairs ns := by
+    simp only [entryRegs, ← hEdef]
     rw [entryRegs_eq E hRid, ← hnsdef]
   have hnsnd : (ns.map (·.1)).Nodup := by
     rw [hnsdef]
     exact (entryNs_sublist E).nodup (by rw [hEids]; exact hnd)
+  -- the parameters whose loads are kept, and the others
+  obtain ⟨EK, hEK⟩ : ∃ EK, EK = E.filter fun q => keep q.1.1.1 := ⟨_, rfl⟩
+  obtain ⟨ED, hED⟩ : ∃ ED, ED = E.filter fun q => !keep q.1.1.1 := ⟨_, rfl⟩
+  have hEKsub : ∀ q ∈ EK, q ∈ E := fun q hq => by
+    rw [hEK] at hq; exact (List.mem_filter.mp hq).1
+  have hEDsub : ∀ q ∈ ED, q ∈ E := fun q hq => by
+    rw [hED] at hq; exact (List.mem_filter.mp hq).1
+  have hEKkeep : ∀ q ∈ EK, keep q.1.1.1 = true := fun q hq => by
+    rw [hEK] at hq; simpa using (List.mem_filter.mp hq).2
+  have hEDkeep : ∀ q ∈ ED, keep q.1.1.1 = false := fun q hq => by
+    rw [hED] at hq; simpa using (List.mem_filter.mp hq).2
+  have hEKnd : (EK.map (·.1.1.1)).Nodup := by
+    rw [hEK]
+    exact (List.filter_sublist.map _).nodup (by rw [hEids]; exact hnd)
+  have hEDnd : (ED.map (·.1.1.1)).Nodup := by
+    rw [hED]
+    exact (List.filter_sublist.map _).nodup (by rw [hEids]; exact hnd)
+  have hloadsK : entryLoadsK f R keep B0 = EK.filterMap (entryLoadOf R) := by
+    rw [hEK, hEdef]; rfl
   have hops := operands_args ns
   have hvu : vuses (argOps ns).toArray ρ₀ = [] := by
     simp only [vuses, List.toList_toArray, List.map_eq_nil_iff, List.filter_eq_nil_iff]
@@ -302,20 +329,22 @@ theorem entry_step2PDGZ (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds
     obtain ⟨hav, -⟩ := h
     rw [hqb, hw]
     exact ⟨hqb ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hqbm), hav⟩
-  obtain ⟨ρ₂, w₂, hrun, hmr₂, hfr, hreg2, hstk2, hsw2⟩ := entryLoads_run hMem hMR E ρ₁ slots
-    cs.mem w₀ hRid (by rw [hEids]; exact hnd) (hloadsF w₀ rfl) hmr
-  obtain ⟨ρ₂', w₂', hrun', hmr₂', hfr', hreg2', hstk2', hsw2'⟩ := entryLoads_run hMem hMR E ρ₁
-    slots cs.mem w₀' hRid (by rw [hEids]; exact hnd) (hloadsF w₀' h29) hmr'
+  obtain ⟨ρ₂, w₂, hrun, hmr₂, hfr, hreg2, hstk2, hsw2⟩ := entryLoads_run hMem hMR EK ρ₁ slots
+    cs.mem w₀ (fun q hq => hRid q (hEKsub q hq)) hEKnd
+    (fun q hq => hloadsF w₀ rfl q (hEKsub q hq)) hmr
+  obtain ⟨ρ₂', w₂', hrun', hmr₂', hfr', hreg2', hstk2', hsw2'⟩ := entryLoads_run hMem hMR EK ρ₁
+    slots cs.mem w₀' (fun q hq => hRid q (hEKsub q hq)) hEKnd
+    (fun q hq => hloadsF w₀' h29 q (hEKsub q hq)) hmr'
   have hρ₂ : ρ₂' = ρ₂ := by
     funext y
-    by_cases hy : y ∈ E.map (·.1.1.1)
+    by_cases hy : y ∈ EK.map (·.1.1.1)
     · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hy
       cases hl : q.1.2 with
       | reg p => rw [hreg2' q hq p hl, hreg2 q hq p hl]
       | stack off =>
         rw [hstk2' q hq off hl, hstk2 q hq off hl, h29]
-        obtain ⟨m, v, hm, hv⟩ := hEmem q hq
-        obtain ⟨hmem, hqb, hqbm⟩ := hentry q hq m v hm hv
+        obtain ⟨m, v, hm, hv⟩ := hEmem q (hEKsub q hq)
+        obtain ⟨hmem, hqb, hqbm⟩ := hentry q (hEKsub q hq) m v hm hv
         have hbs : q.2 = 1 ∨ q.2 = 2 ∨ q.2 = 4 ∨ q.2 = 8 :=
           sigParamBytes_bytes hb _ (List.mem_of_getElem? hqbm)
         congr 1
@@ -329,52 +358,48 @@ theorem entry_step2PDGZ (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds
             exact hstk off v (hl ▸ hmem) k hk)]
     · rw [hfr' y hy, hfr y hy]
   rw [hρ₂] at hrun'
-  obtain ⟨ρP, wP, wP', hrunP, hrunA, hrunB⟩ := entryLoads_runPDG (ctx' := ctx') (X := X) hMem E ρ₁
-    w₀ w₀' hRid
-    (by rw [hEids]; exact hnd) (hloadsF w₀ rfl) h29 (fun q hq off ho k hk => by
-      obtain ⟨m, v, hm, hv⟩ := hEmem q hq
-      obtain ⟨hmem, hqb, -⟩ := hentry q hq m v hm hv
+  obtain ⟨ρP, wP, wP', hrunP, hrunA, hrunB⟩ := entryLoads_runPDG (ctx' := ctx') (X := X) hMem EK
+    ρ₁ w₀ w₀' (fun q hq => hRid q (hEKsub q hq)) hEKnd
+    (fun q hq => hloadsF w₀ rfl q (hEKsub q hq)) h29 (fun q hq off ho k hk => by
+      obtain ⟨m, v, hm, hv⟩ := hEmem q (hEKsub q hq)
+      obtain ⟨hmem, hqb, -⟩ := hentry q (hEKsub q hq) m v hm hv
       exact hstk off v (ho ▸ hmem) k (hqb ▸ hk))
   rw [hrun] at hrunA
   rw [hrun'] at hrunB
   simp only [Option.some.injEq, SeqEnd.fall.injEq] at hrunA hrunB
   obtain ⟨rfl, rfl⟩ := hrunA
   obtain ⟨-, rfl⟩ := hrunB
-  have hsz : (pre f R 0).length < vb.insts.size := by
-    have h1 : vb.insts.size = vb.insts.toList.length := by simp
-    have h2 : 0 < (tseg R bl 0).length := List.length_pos_iff.mpr htne
-    rw [h1, hcode]; simp only [List.length_append]; omega
-  have hseg0 : SegAt vb 0 (pre f R 0) := by
-    intro k hk
-    rw [Nat.zero_add, ← Array.getElem?_toList, hcode, List.append_assoc,
-      List.getElem?_append_left hk, List.getElem?_eq_getElem hk]
-  have hvb0 : vb.insts[0]? = some (.args (argPairs ns)) := by
-    exact SegAt.head (show SegAt vb 0 (MInst.args (argPairs ns) :: E.filterMap (entryLoadOf R)) by
-      rw [← hpre]; exact hseg0)
-  have hnext : 0 + 1 < vb.insts.size := by rw [hpre] at hsz; simp at hsz; omega
-  have hstep : VStep vc sem (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, 1, ρ₁, w₀⟩) := by
+  -- the vreg file that also has the values the left-out loads would have read
+  have h29₂ : Arm.r (.GPR 29#5) w₂ = Arm.r (.GPR 29#5) w₀ := hsw2.1 (.GPR 29#5) (by simp [Masked])
+  obtain ⟨ρ₃, w₃, -, -, hfr3, hreg3, hstk3, -⟩ := entryLoads_run hMem hMR ED ρ₂ slots cs.mem w₂
+    (fun q hq => hRid q (hEDsub q hq)) hEDnd
+    (fun q hq => hloadsF w₂ h29₂ q (hEDsub q hq)) hmr₂
+  have hvb0 : vbK.insts[0]? = some (.args (argPairs ns)) := by
+    rw [← hregsE]; exact SegAt.head hsegK
+  have hnext : 0 + 1 < vbK.insts.size := by omega
+  have hstep : VStep vcK sem (.run ⟨0, 0, ρ₀, w₀⟩) (.run ⟨0, 1, ρ₁, w₀⟩) := by
     rw [hρ₁]
-    exact VStep.step hvb hvb0 hops hsem hlen (VNext.next hnext)
-  have hstep' : VStep vc sem (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, 1, ρ₁, w₀'⟩) := by
+    exact VStep.step hvbK hvb0 hops hsem hlen (VNext.next hnext)
+  have hstep' : VStep vcK sem (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, 1, ρ₁, w₀'⟩) := by
     rw [hρ₁]
-    exact VStep.step hvb hvb0 hops hsem' hlen (VNext.next hnext)
-  have hstepP : VStep vc (pairSemD sem F ctx' X) (.run ⟨0, 0, ρ₀, (w₀, w₀')⟩)
+    exact VStep.step hvbK hvb0 hops hsem' hlen (VNext.next hnext)
+  have hstepP : VStep vcK (pairSemD sem F ctx' X) (.run ⟨0, 0, ρ₀, (w₀, w₀')⟩)
       (.run ⟨0, 1, ρ₁, (w₀, w₀')⟩) := by
     rw [hρ₁]
-    refine VStep.step hvb hvb0 hops ?_ hlen (VNext.next hnext)
+    refine VStep.step hvbK hvb0 hops ?_ hlen (VNext.next hnext)
     rw [pairSemD_of (pGuard_noLoad rfl _ _)]
     exact pairSem_eq hsem hsem'
-  have hseg1 : SegAt vb 1 (E.filterMap (entryLoadOf R)) := by
-    have := (show SegAt vb 0 (.args (argPairs ns) :: E.filterMap (entryLoadOf R)) by
-      rw [← hpre]; exact hseg0).tail
+  have hseg1 : SegAt vbK 1 (EK.filterMap (entryLoadOf R)) := by
+    have := hsegK.tail
+    rw [hloadsK] at this
     simpa using this
-  have hlt : 1 + (E.filterMap (entryLoadOf R)).length < vb.insts.size := by
-    rw [hpre] at hsz; simp at hsz; omega
-  have hstar := seqRun_fall_starP hvb hseg1 hlt hrun
-  have hstar' := seqRun_fall_starP hvb hseg1 hlt hrun'
-  have hstarP := seqRun_fall_starP hvb hseg1 hlt hrunP
+  have hlt : 1 + (EK.filterMap (entryLoadOf R)).length < vbK.insts.size := by
+    rw [← hloadsK]; exact hltK
+  have hstar := seqRun_fall_starP hvbK hseg1 hlt hrun
+  have hstar' := seqRun_fall_starP hvbK hseg1 hlt hrun'
+  have hstarP := seqRun_fall_starP hvbK hseg1 hlt hrunP
   -- the vreg file holds the parameters, the DFG facts
-  have hheld : Held gn (A 0 0) ρ₂ cs.frame := by
+  have hheld : Held gn (A 0 0) ρ₃ cs.frame := by
     intro x hx
     obtain ⟨hxp, -⟩ := hA x hx
     obtain ⟨m, hm, hxm⟩ := List.getElem_of_mem hxp
@@ -387,7 +412,7 @@ theorem entry_step2PDGZ (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds
     refine ⟨args[m], hrx, ?_⟩
     have hgx : gn x = x := by
       rw [← hxq]; exact H.shape.params B0 hB0mem _ (List.getElem_mem hm')
-    show VHolds args[m] (ρ₂ (gn x))
+    show VHolds args[m] (ρ₃ (gn x))
     rw [hgx]
     obtain ⟨loc, b, hloc, hbb, hEm⟩ := hEget m _ hqm
     have hqE : ((B0.params[m], loc), b) ∈ E := List.mem_of_getElem? hEm
@@ -395,29 +420,73 @@ theorem entry_step2PDGZ (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds
       List.mem_iff_getElem?.mpr ⟨m, by simp [List.getElem?_zip_eq_some, hloc, hma]⟩
     have hb' : b = args[m].ty.bytes := hbyte m _ b (List.getElem?_eq_getElem hma) hbb
     have h := hargs _ _ hmem
-    cases loc with
-    | reg r =>
-      have h1 := hreg2 _ hqE r rfl
-      simp only at h1
-      rw [← hxq, h1]
+    have hbs : args[m].ty.bytes = 1 ∨ args[m].ty.bytes = 2 ∨ args[m].ty.bytes = 4 ∨
+        args[m].ty.bytes = 8 := hb' ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hbb)
+    obtain ⟨hob, -, hsg⟩ := loadOpOfBytes_facts hbs
+    have hw : args[m].ty.width ≤ 64 :=
+      (show ∀ t : Clif.Ty, (t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8) →
+        t.width ≤ 64 by intro t; cases t <;> decide) _ hbs
+    have hregV : ∀ r, loc = .reg r → VHolds args[m] (ρ₁ x) := by
+      intro r hr
+      subst hr
+      rw [← hxq]
       have hns : (B0.params[m].1, r) ∈ ns := hnsdef ▸ mem_entryNs hqE rfl
       obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hns
       rw [hρ₁, vdefUpd_argOps hnsnd (by simp [argPairs]) i hi (x := regVal w₀ r) (by simp [argPairs, hi])]
       exact h
-    | stack off =>
-      have h1 := hstk2 _ hqE off rfl
-      simp only at h1
-      rw [← hxq, h1, hb']
+    have hstkV : ∀ off, loc = .stack off → VHolds args[m] (ofX (loadVal
+        (loadOpOfBytes b) (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int))) w₀)) := by
+      intro off ho
+      subst ho
+      rw [hb']
       obtain ⟨-, hrd⟩ := h
-      have hbs : args[m].ty.bytes = 1 ∨ args[m].ty.bytes = 2 ∨ args[m].ty.bytes = 4 ∨
-          args[m].ty.bytes = 8 := hb' ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hbb)
-      obtain ⟨hob, -, hsg⟩ := loadOpOfBytes_facts hbs
-      have hw : args[m].ty.width ≤ 64 :=
-        (show ∀ t : Clif.Ty, (t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8) →
-          t.width ≤ 64 by intro t; cases t <;> decide) _ hbs
       simp only [VHolds, ofX, loadVal, hsg, Bool.false_eq_true, ↓reduceIte]
       rw [hob, BitVec.setWidth_setWidth_of_le _ (by omega), BitVec.setWidth_setWidth_of_le _ hw]
       exact hrd
+    cases hk : keep x with
+    | true =>
+      have hqK : ((B0.params[m], loc), b) ∈ EK := by
+        rw [hEK]
+        exact List.mem_filter.mpr ⟨hqE, by simpa [hxq] using hk⟩
+      have hx3 : ρ₃ x = ρ₂ x := hfr3 x (fun hin => by
+        obtain ⟨q', hq', hq'x⟩ := List.mem_map.mp hin
+        have := hEDkeep q' hq'
+        rw [hq'x, hk] at this
+        cases this)
+      rw [hx3]
+      cases loc with
+      | reg r =>
+        have h1 := hreg2 _ hqK r rfl
+        simp only [hxq] at h1
+        rw [h1]
+        exact hregV r rfl
+      | stack off =>
+        have h1 := hstk2 _ hqK off rfl
+        simp only [hxq] at h1
+        rw [h1]
+        exact hstkV off rfl
+    | false =>
+      have hqD : ((B0.params[m], loc), b) ∈ ED := by
+        rw [hED]
+        exact List.mem_filter.mpr ⟨hqE, by simpa [hxq] using hk⟩
+      cases loc with
+      | reg r =>
+        have h1 := hreg3 _ hqD r rfl
+        simp only [hxq] at h1
+        have hx2 : ρ₂ x = ρ₁ x := hfr x (fun hin => by
+          obtain ⟨q', hq', hq'x⟩ := List.mem_map.mp hin
+          have := hEKkeep q' hq'
+          rw [hq'x, hk] at this
+          cases this)
+        rw [h1, hx2]
+        exact hregV r rfl
+      | stack off =>
+        have h1 := hstk3 _ hqD off rfl
+        simp only [hxq] at h1
+        have hav := (h : Avoids F args[m].ty.bytes _ ∧ _).1
+        rw [h1, h29₂, loadVal_congr (F := F) (loadOpOfBytes b) (fun a ha => hsw2.2.1 a ha)
+          (by rw [hb', hob]; exact hav)]
+        exact hstkV off rfl
   have hdfg : DFGCons ctx (restrict cs.frame (A 0 0)) := by
     refine ⟨fun x d info cl v hd _ _ _ hv => ?_, fun x t v ht hv => ?_⟩
     · have hx0 : x ∈ A 0 0 := restrict_regs_isSome (by rw [hv]; rfl)
@@ -428,19 +497,77 @@ theorem entry_step2PDGZ (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds
       obtain ⟨q, hq, rfl, hqt⟩ := setMany_param_ty hregs hnd hty (hA x hx0).1 hv
       rw [H.cert.paramTy B0 hB0mem q hq] at ht
       rw [hqt]; exact Option.some.inj ht
+  have hagree : ∀ y, (∀ q ∈ entryParams f B0, q.1.1.1 = y → keep y = false →
+      ∀ off, q.1.2 ≠ .stack off) → ρ₃ y = ρ₂ y := by
+    intro y hy
+    by_cases hyD : y ∈ ED.map (·.1.1.1)
+    · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hyD
+      cases hl : q.1.2 with
+      | reg r => exact hreg3 q hq r hl
+      | stack off => exact absurd hl (hy q (hEdef ▸ hEDsub q hq) rfl (hEDkeep q hq) off)
+    · exact hfr3 y hyD
   have hmono : ∀ {W : Type} (c : VConf CV W),
-      AtSeg 0 1 (E.filterMap (entryLoadOf R)).length c →
-      AtSeg 0 0 (1 + (E.filterMap (entryLoadOf R)).length) c := by
+      AtSeg 0 1 (EK.filterMap (entryLoadOf R)).length c →
+      AtSeg 0 0 (1 + (EK.filterMap (entryLoadOf R)).length) c := by
     rintro W c ⟨i, hi, ρ', w', rfl⟩
     exact ⟨i + 1, by omega, ρ', w', by rw [Nat.zero_add, Nat.add_comm]⟩
-  refine ⟨1 + (E.filterMap (entryLoadOf R)).length, ρ₂, w₂, w₂',
+  rw [hloadsK]
+  refine ⟨ρ₂, ρ₃, w₂, w₂',
     .step (AtSeg.zero _ _ _ (by omega) _ _) hstep (hstar.mono fun c h => hmono c h),
     ⟨hcall, hfunc, hslots, hmr₂, B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
-      by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2,
+      by simp [pos], hheld, hdfg⟩, hsw2,
     .step (AtSeg.zero _ _ _ (by omega) _ _) hstep' (hstar'.mono fun c h => hmono c h),
     ⟨hcall, hfunc, hslots, hmr₂', B0, 0, hB0, hterm, Nat.zero_le _, by simp [hbody],
-      by simp [pos, hpre]; omega, hheld, hdfg⟩, hsw2',
-    .step (AtSeg.zero _ _ _ (by omega) _ _) hstepP (hstarP.mono fun c h => hmono c h)⟩
+      by simp [pos], hheld, hdfg⟩, hsw2',
+    .step (AtSeg.zero _ _ _ (by omega) _ _) hstepP (hstarP.mono fun c h => hmono c h), hagree⟩
+
+/-- **`entry_step2P` with the paired run guarded** (its proof), for any semantics with the memory
+forms; the three runs in the entry code (`AtSeg 0 0 k`, as `entry_step2Z`). -/
+theorem entry_step2PDGZ (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : DriverSem sem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (hMem : MemRefines F sb syms sem) (hMR : MRStable F MR) {ctx' : FnCtx} {X : ExtSem}
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ w₀' : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hmr' : MR slots cs.mem w₀') (hargs : ArgsAtEntry F f.sig args w₀)
+    (hreg : ∀ r v, (ArgLoc.reg r, v) ∈ (locsOf f.sig).zip args → regVal w₀' r = regVal w₀ r)
+    (h29 : Arm.r (.GPR 29#5) w₀' = Arm.r (.GPR 29#5) w₀)
+    (hstk : ∀ off v, (ArgLoc.stack off, v) ∈ (locsOf f.sig).zip args → ∀ k < v.ty.bytes,
+      w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+        w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) :
+    ∃ k ρ₁ w₁ w₁', StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀⟩)
+        (.run ⟨0, k, ρ₁, w₁⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁⟩ ∧ SameWorld F w₁ w₀ ∧
+      StarP (VStep vc sem) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, w₀'⟩) (.run ⟨0, k, ρ₁, w₁'⟩) ∧
+      Match f ctx R gn bl A MR slots cs ⟨0, k, ρ₁, w₁'⟩ ∧ SameWorld F w₁' w₀' ∧
+      StarP (VStep vc (pairSemD sem F ctx' X)) (AtSeg 0 0 k) (.run ⟨0, 0, ρ₀, (w₀, w₀')⟩)
+        (.run ⟨0, k, ρ₁, (w₁, w₁')⟩) := by
+  obtain ⟨L, hL⟩ := H.blow hB0
+  obtain ⟨vb, hvb, -, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk 0 B0 L hB0 hL
+  have hpre : pre f R 0 = .args (entryRegs f R B0) :: entryLoadsK f R (fun _ => true) B0 := by
+    simp [pre, hB0, entryLoadsK_true]
+  have hsz : (pre f R 0).length < vb.insts.size := by
+    have h1 : vb.insts.size = vb.insts.toList.length := by simp
+    have h2 : 0 < (tseg R bl 0).length := List.length_pos_iff.mpr htne
+    rw [h1, hcode]; simp only [List.length_append]; omega
+  have hseg0 : SegAt vb 0 (pre f R 0) := by
+    intro k hk
+    rw [Nat.zero_add, ← Array.getElem?_toList, hcode, List.append_assoc,
+      List.getElem?_append_left hk, List.getElem?_eq_getElem hk]
+  have hk : (pre f R 0).length = 1 + (entryLoadsK f R (fun _ => true) B0).length := by
+    rw [hpre, List.length_cons, Nat.add_comm]
+  obtain ⟨ρK, ρF, w₁, w₁', hs1, hm1, hsw1, hs2, hm2, hsw2, hsP, hag⟩ := entry_step2PDGZK H hds
+    hMem hMR (ctx' := ctx') (X := X) hB0 hcall hfunc hslots hbody hterm hregs hty hsig (ρ₀ := ρ₀)
+    hmr hmr' hargs hreg h29 hstk (fun _ => true) hvb (by rw [← hpre]; exact hseg0)
+    (by rw [← hk]; exact hsz)
+  have hρ : ρF = ρK := funext fun y => hag y (fun _ _ _ h => by cases h)
+  subst hρ
+  rw [hk] at hm1 hm2
+  exact ⟨_, _, _, _, hs1, hm1, hsw1, hs2, hm2, hsw2, hsP⟩
 
 /-- **`entry_step2P` with the paired run guarded**, for any semantics with the memory forms
 (`entry_step2PDGZ` as plain runs). -/

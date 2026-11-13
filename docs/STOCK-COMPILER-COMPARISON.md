@@ -264,8 +264,13 @@ Before allocation, the adapter drops each `notrap` load whose results are unused
 (`must_lower_even_if_unused`, `inst_predicates.rs:113`). This pass is unproved.
 The CLIF fact it relies on is `Clif.evalInst_notrap_load`: such a load reads
 without changing memory, or the run is stuck; it never traps. Trapping, atomic
-and incoming stack-argument loads stay. The default mode and `cargo fv` keep these
-loads, as cg_clif's Cranelift 0.136.1 does.
+and incoming stack-argument loads stay. (The load of an incoming stack argument
+without a CLIF use is deleted before this pass, by the verified skip stage where
+that stage runs: #586, `docs/contracts/dead-cleanup.md`.) The default mode and
+`cargo fv` keep the unused `notrap` loads, as cg_clif's Cranelift does: the cg_clif
+of nightly-2026-09-26 carries cranelift-codegen 0.135.0, which lowers every load;
+`must_lower_even_if_unused` is in 0.136.1, the stock compiler of this comparison
+(#588).
 
 This adapter is **not covered by `backend_correct`**. Configured compilations are
 explicitly marked unverified; register allocation retains its existing checker.

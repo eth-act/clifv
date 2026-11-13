@@ -245,9 +245,8 @@ theorem driver_trapStop_skip {env0 : Clif.Env} {c : Clif.TrapCode} (hp : p.funcs
     (hrun : Clif.runLoop env0 p fuel cs = .trapped c) :
     VTraps vcK sem ρ₀ w₀ c ∨ (∃ obj w', VUnwinds vcK sem XR ρ₀ w₀ obj w') ∨
       VTryRaiseFrom vcK sem XR ⟨0, 0, ρ₀, w₀⟩ := by
-  obtain ⟨k, ρ₁, w₁, hstar, hm⟩ := entry_stepP H hds HR.mem HR.mrs hB0 hcall hfunc hslots hbody
+  obtain ⟨vsK, hsK, hmK⟩ := entry_matchK H hK hds HR.mem HR.mrs hB0 hcall hfunc hslots hbody
     hterm hregs hty hsig hmr hargs (ρ₀ := ρ₀)
-  obtain ⟨vsK, hsK, hmK⟩ := entry_matchK hK hB0 hbody hstar hm
   rcases sim_trapStopK hp H HU HR hK hfunc htr fuel cs _ (.refl _) hmK hrun with
     h | ⟨o, w', h⟩ | h
   · exact .inl (VTrapFrom.prefix hsK h)

@@ -368,11 +368,10 @@ theorem iselSim_prefixWI_next_cleanup_ends_stage {p : Clif.Program} {f : Clif.Fu
       fun s callee args et hr hb hT ⟨B, hB, e⟩ =>
         htr.tryIndirect s callee args et hr hb hT ⟨B, hf ▸ hB, e⟩⟩
   have hPr := probeOf_valueSem F ⟨fa.k, af.slotBase⟩ XI
-  obtain ⟨k0, ρ₁, w₁, hstar, hm⟩ := entry_stepP (Hb 0)
+  obtain ⟨⟨b1, k1, ρ1, w1⟩, hsK, hmK⟩ := entry_matchK (Hb 0) hK
     (driverSem_valueSem F ⟨fa.k, af.slotBase⟩ (XI.at 0).noCall)
     (memRefines_valueSem _ _ (XI.at 0).noCall hslot hsym) (mrStable_relW Γ f c) hB0 hce.callers
     hce.func rfl hbody hterm hregs hty.symm hce.sig (ρ₀ := ρ₀) hrel hargs
-  obtain ⟨⟨b1, k1, ρ1, w1⟩, hsK, hmK⟩ := entry_matchK hK hB0 hbody hstar hm
   obtain ⟨b, k', ρ, w, hst, hmt⟩ :=
     sim_prefix_callK hK (noncallIndep_valueSem F ⟨fa.k, af.slotBase⟩ XI) hPr hP Hb Hs hseg htc hmK
       hr hcn

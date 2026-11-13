@@ -21,8 +21,16 @@ operand, an `iconst` only a folded immediate uses.
   vreg that a deleted instruction writes, every block keeps its last instruction, and the CFG is
   unchanged. Otherwise `skipDead` returns `vc`.
 
+Cranelift's argument setup does the same for the entry block's parameters: `gen_arg_setup`
+(`machinst/lower.rs`) emits nothing for a parameter whose `ValueUseState` is `Unused`. The only
+code `lowerFunction` emits for a parameter is the load of a stack-passed one (`entryLoadOf`), so
+`skipMask` also deletes the load of a stack-passed parameter without a CLIF use (`preMask`,
+`irUsedB`, #586). Unlike the statements' demand, this is a property of the CLIF function alone:
+Cranelift counts the uses by every instruction, lowered or not.
+
 The proof (`FV/Backend/Proof/LowerSimSkip.lean`) is at the CLIF level: a deleted statement is pure,
-so the driver simulation steps over it without running any code.
+so the driver simulation steps over it without running any code; the entry code runs without the
+deleted loads, whose vregs nothing reads.
 -/
 
 namespace Backend.Proof.Driver
@@ -98,12 +106,30 @@ def deleteCheck (vc : VCode) (mask : Nat → List Bool) : Bool :=
 section
 variable (f : Clif.Function) (R : Reg → Reg) (bl : List BLow) (vc : VCode)
 
-/-- **The mask of block `b`**: the entry code, the segments of the statements not in `drop`, and
-the terminator's code are kept; a block without a CLIF block (an edge block) is kept whole. -/
+/-- **`v` has a CLIF use**: it is an operand of an instruction or of a terminator (branch
+arguments included) of `f`, or the `sret` parameter the epilogue returns. This is Cranelift's
+`ValueUseState` other than `Unused` (`compute_use_states`, `machinst/lower.rs`: one use per
+`inst_values` of every instruction, and the implicit use of the `sret` parameter). -/
+def irUsedB (v : Clif.ValueId) : Bool :=
+  (sretRet f).contains v || f.blocks.any fun B =>
+    (termArgs B.term).contains v || B.body.any fun s => (instArgs s.inst).contains v
+
+/-- **The mask of the entry code** `pre f R b` (block 0 only): the `args` pseudo-instruction is
+kept, the load of a stack-passed parameter is kept iff the parameter has a CLIF use (`irUsedB`;
+Cranelift's `gen_arg_setup` skips a parameter that is `Unused`). -/
+def preMask (b : Nat) : List Bool :=
+  match b, f.blocks[b]? with
+  | 0, some B =>
+    true :: (entryParams f B).filterMap fun q => (entryLoadOf R q).map fun _ => irUsedB f q.1.1.1
+  | _, _ => []
+
+/-- **The mask of block `b`**: the entry code as `preMask` says, the segments of the statements
+not in `drop`, and the terminator's code are kept; a block without a CLIF block (an edge block)
+is kept whole. -/
 def skipMask (drop : Nat → Nat → Bool) (b : Nat) : List Bool :=
   match f.blocks[b]? with
   | some B =>
-    List.replicate (pre f R b).length true ++
+    preMask f R b ++
       ((List.range B.body.length).map fun j =>
         List.replicate (seg f R bl b j).length (!drop b j)).flatten ++
       List.replicate (tseg R bl b).length true

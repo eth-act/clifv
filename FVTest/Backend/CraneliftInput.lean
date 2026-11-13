@@ -22,6 +22,9 @@ module gives `lean-regalloc` the prepared VCode `vcp` of a function lowered by t
   (`ValueUseState::Unused`) and `take_args` emits no `args` when none is left; `lowerFunction`
   lists every register-passed parameter and emits `args []` (#586). Here a pair is dropped when
   its parameter has no CLIF use (and its vreg no use in `vcp`), and an empty `args` is dropped.
+  The load of a stack-passed parameter without a CLIF use is not this module's: the verified
+  skip stage deletes it (`Proof.Driver.skipDead`, `preMask`), so `vcp` comes without it where
+  that stage ran, and with it elsewhere (#586 stays open for those functions).
 
 Nothing here is trusted: the dropped operands are fixed-register defs of vregs with no use, and
 an empty `args` does nothing, so regalloc2's answer for `code` is read back against `vcp`

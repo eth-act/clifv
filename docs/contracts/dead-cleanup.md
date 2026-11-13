@@ -87,6 +87,12 @@ instructions. `Backend.Proof.Driver.skipDead f vc`
 * It deletes from `lowerFunction f`'s VCode the segments of `skippable`
   statements (pure, non-trapping) whose written vregs no kept code reads. A
   backward fixpoint, Cranelift's demand, decides which statements these are.
+* It also deletes the entry load of a stack-passed parameter without a CLIF use
+  (#586, `preMask`, `irUsedB`). Cranelift's `gen_arg_setup` emits no code for an
+  entry parameter whose `ValueUseState` is `Unused` (`machinst/lower.rs:527`);
+  the only code `lowerFunction` emits for a parameter is that load. "Use" is
+  Cranelift's count over the CLIF function (an operand of any instruction or
+  terminator, or the `sret` parameter), not the demand of the kept code.
 * The result is accepted only if `deleteCheck` holds: no kept instruction or
   branch argument reads a vreg a deleted instruction writes, every block keeps
   its last instruction, and the CFG is unchanged.
@@ -98,9 +104,16 @@ the CLIF level and uses no flag reasoning:
   configuration of the full code. The correspondence (`CorrC`) means the same
   block and world, the kept index of the position, and register files equal
   outside the deleted instructions' definitions.
-* Kept statements, terminators and the entry run only kept instructions
-  (`stmt_run`, `term_step_abiP`, `term_step_tryP`, `entry_stepP`), so their runs
-  carry over to the kept code (`starP_deletes`, `FV/Backend/Proof/VCodeDelete.lean`).
+* Kept statements and terminators run only kept instructions (`stmt_run`,
+  `term_step_abiP`, `term_step_tryP`), so their runs carry over to the kept
+  code (`starP_deletes`, `FV/Backend/Proof/VCodeDelete.lean`).
+* The entry code is run in the kept code itself (`entry_matchK2`, `entry_matchK`,
+  from `entry_step2ZK` in `LowerSim.lean` and `entry_shapeK`): it is `Args` and
+  the loads of the stack-passed parameters with a CLIF use. `Match` holds of the
+  register file that also has the values the deleted loads would have read; the
+  two files differ only at those loads' vregs, which are definitions of deleted
+  instructions. `entry_runK` (the entry run of the full code carried over) now
+  needs the premise that no entry load is deleted and has no user left.
 * A deleted statement is pure: the kept code takes no step, and its world stays
   the kept run's.
 
@@ -110,8 +123,22 @@ production cleanup stage is `Backend.cleanupStage f vc = prune (skipStage f vc)`
 lowering `lowerCheck` accepts and leaves every other function unchanged. The driver reuses the
 validator's verdict instead of running `lowerCheck` again (`cleanupStageChecked`,
 `lowerForAllocation_verified`). The cleanup theorems take kept-code simulations for the stage
-(`_stage`/`K` variants, audit `scripts/audit/skip-wiring.lean`); the old statements stay. On
-the `icmp`/`brif` witness (`skipWitness`), `cmp; cset; cmp; b.eq` becomes stock's `cmp; b.eq`.
+(`_stage`/`K` variants, audit `scripts/audit/skip-wiring.lean`); the old statements stay, except
+three of the skip proof's own lemmas that #586 made false (`skipMask_pre`, `entry_runK`,
+`entry_matchK`: names kept, the docstrings say what changed). On
+the `icmp`/`brif` witness (`skipWitness`), `cmp; cset; cmp; b.eq` becomes stock's `cmp; b.eq`;
+on `skipArgWitness` (ten `i64` parameters, `v8` unused) the load of `v8` is deleted
+(`skipHyp_arg_witness`).
+
+The entry loads, measured on `%g586` of #586 (ten `i64` parameters, `store v9, v0;
+v10 = iadd v1, v9; return v10`): 32 → 28 bytes, stock 28 (the remaining difference is the
+base register of the load of `v9`, #959); with `--stock-config` the bytes are stock's. The
+load stays where `skipStage` does not run, and #586 stays open for that: a function outside
+subset E (e.g. one with a float operation), a function that is not validated (outside the
+theorems' scope or over the validation budget), and `--no-dead-cleanup`. No function of
+fv-demo, survey or deps (25,666 CLIF functions from cg_clif) has an unused stack-passed
+parameter, and 7 have a stack-passed parameter at all, so no crate number moves.
+
 regalloc2's input (`FVTest/Backend/CraneliftInput.lean`) gives the skipped statements'
 temporaries no vreg numbers, as Cranelift never lowers them. The Stock semantic routes run the
 same stage (`Stock.Arithmetic.stageV`, `FV/Backend/StockArithmeticStageF.lean`), CFG and memory
