@@ -13,6 +13,27 @@ import FV.E2E.SemanticPipelineCheckT
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
+/-- The call sites of `g` that fail the return-pin check (`LinkSys.returnPinSiteB`, #1003): the
+callee (at a `blr`, every function of the program the check holds it against), the registers of
+the call's result definitions and the callee's return pins. -/
+def returnPinDetail (I : LinkInput) (R : Res) (g : Clif.Function) (a : Art) : List String :=
+  let P := progOf R
+  let S := fun n => I.syms.lookup n
+  let line (what : String) (info : CallInfo) (h : Clif.Function) : Option String :=
+    let vc := (artOf R h).vc
+    let results := info.defs.take h.sig.returns.length
+    if ReturnPinCheck.check results h vc then none
+    else some s!"{what} {h.name}: the call's result definitions {reprStr (results.map (·.1))} (of {info.defs.length} def(s)) are not the callee's return pins {reprStr (ReturnPinCheck.pins h vc)} ({h.sig.returns.length} declared return(s), {if SemanticNI.check h vc then "ordinary" else "Stock ABI"} return mode)"
+  a.vcp.blocks.toList.flatMap fun vb => vb.insts.toList.flatMap fun i => match i with
+    | .call info | .tryCall info _ => (match info.dest with
+      | .sym n => ((P.func? n).bind (line "bl" info)).toList
+      | .reg (.vreg t .int) => P.funcs.filterMap fun h =>
+        if indToB S g h && (E2E.gotOf a.vcp t).all (· == h.name) &&
+            (regLocs h.sig).length == info.uses.length then line "blr, may enter" info h
+        else none
+      | _ => [])
+    | _ => []
+
 def main (args : List String) : IO UInt32 := do
   let some o := parseOpts args none | do IO.eprintln usage; return 2
   let dir : System.FilePath := o.dir
@@ -199,6 +220,8 @@ def main (args : List String) : IO UInt32 := do
       IO.println s!"      {b}"
       if let some e := R0.find? (·.1.name == n) then
         for l in detail I P0 e.1 (getOk e.2) b do IO.println s!"        {l}"
+        if b == "returnPins" then
+          for l in returnPinDetail I R0 e.1 (getOk e.2) do IO.println s!"        {l}"
   let mut counts : Std.HashMap String Nat := {}
   for (_, bs) in failing do
     for b in bs.eraseDups do counts := counts.insert b (counts.getD b 0 + 1)

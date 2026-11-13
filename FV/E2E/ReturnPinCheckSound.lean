@@ -38,4 +38,14 @@ theorem returnPinCheck_ignored (f : Clif.Function) (vc : VCode) :
   simp only [ReturnPinCheck.check,List.map_nil,List.take_nil,List.length_nil,List.take_zero,
     decide_true]
 
+/-- A call whose definitions all pass the check passes it on its results, its first `n`
+definitions (#1003: `LinkSys.returnPinSiteB` checks those, with `n` the callee's declared
+returns). -/
+theorem returnPinCheck_take {definitions : List (Reg × Reg)} {f : Clif.Function} {vc : VCode}
+    (checked : ReturnPinCheck.check definitions f vc = true) (n : Nat) :
+    ReturnPinCheck.check (definitions.take n) f vc = true := by
+  simp only [ReturnPinCheck.check,decide_eq_true_eq] at checked ⊢
+  have prefixed := congrArg (List.take n) checked
+  simpa only [List.map_take,List.take_take,List.length_take,Nat.min_comm] using prefixed
+
 end E2E

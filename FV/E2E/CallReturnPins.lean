@@ -26,6 +26,19 @@ theorem CallReturnPins.take {definitions : List (Reg × Nat)} {pins : List Reg}
   rw [List.take_take,List.take_take] at prefixed
   rw [CallReturnPins,List.length_take,List.take_take,prefixed,Nat.min_comm]
 
+/-- Agreement of a call's first `n` definitions with the callee's return pins is agreement of all
+its definitions with the first `n` pins (#1003: a call's results are its first
+`sig.returns.length` definitions; the definitions after them are a `try_call`'s exception payload
+registers, which no return pin of the callee describes). -/
+theorem CallReturnPins.take_defs {definitions : List (Reg × Nat)} {pins : List Reg} {n : Nat} :
+    CallReturnPins (definitions.take n) pins ↔ CallReturnPins definitions (pins.take n) := by
+  simp only [CallReturnPins,List.map_take,List.take_take,List.length_take,Nat.min_comm]
+
+/-- The first `n` definitions of a call, as register pairs. -/
+theorem callDefs_take (definitions : List (Reg × Nat)) (n : Nat) :
+    (callDefs definitions).take n = callDefs (definitions.take n) := by
+  simp only [callDefs,List.map_take]
+
 /-- Equal return values agree in every actual return pin, including x8. -/
 theorem ActRet.pins_agree {ra ra' : BitVec 64} {F G F' G' : BitVec 64 → Prop}
     {us : List (Reg × Reg)} {outs : List CV} {w s t w' s' t' : Arm.ArmState}

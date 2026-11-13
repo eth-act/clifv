@@ -1,5 +1,6 @@
 import FV.E2E.PreparedReturnPinSretWitness
 import FV.E2E.PreparedReturnPinCallerBoundaryWitness
+import FV.E2E.ReturnPinPayloadWitness
 
 #print axioms E2E.LinkCheck.staticChksSemanticFor_previous
 #print axioms E2E.LinkCheck.okRSemanticFor_previous
@@ -22,3 +23,6 @@ import FV.E2E.PreparedReturnPinCallerBoundaryWitness
 #print axioms E2E.PreparedReturnPinSretWitness.program_correct -- witness: native_decide
 
 #print axioms E2E.PreparedReturnPinCallerBoundaryWitness.legacy_caller_rejected_witness -- witness: native_decide
+#print axioms E2E.returnPinCheck_take
+#print axioms E2E.ReturnPinPayloadWitness.payload_try_call_accepted -- witness: native_decide
+#print axioms E2E.ReturnPinPayloadWitness.program_correct -- witness: native_decide
