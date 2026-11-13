@@ -1019,10 +1019,10 @@ theorem cpOk_simX {f : Function} {sol : List (ValueId × ValueId)} (h : cpOk f s
   show regs (rename (solMap sol) v) = regs v
   rw [← hpv, rename_of_not (hkeep p hp)]
 
-/-- **The pass simulates every function**: the unreachable blocks removed (`removeUnreachable`,
+/-- `runCore` simulates every function: the unreachable blocks removed (`removeUnreachable`,
 under the fresh-value guard) and, when `cpOk` accepts it, the solution applied. -/
-theorem run_simX (f : Function) : FunSimX f (run f) := by
-  unfold run
+theorem runCore_simX (f : Function) : FunSimX f (runCore f) := by
+  unfold runCore
   by_cases hc : freshOkB f = true
   · simp only [hc, Bool.not_true, Bool.false_eq_true, ite_false]
     have h1 := removeUnreachable_simX f hc
@@ -1034,5 +1034,12 @@ theorem run_simX (f : Function) : FunSimX f (run f) := by
   · have hc' : freshOkB f = false := by simpa using hc
     simp only [hc', Bool.not_false, ite_true]
     exact FunSimX.refl f
+
+/-- **The pass simulates every function.** -/
+theorem run_simX (f : Function) : FunSimX f (run f) := by
+  show FunSimX f (if keepsShapeB f (runCore f) then runCore f else f)
+  split
+  · exact runCore_simX f
+  · exact FunSimX.refl f
 
 end Opt.ConstPhi

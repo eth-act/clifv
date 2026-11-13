@@ -36,7 +36,8 @@ This file is the executable part, without proofs:
 * `run f` (the pass): when `freshOkB f`, remove the unreachable blocks (as Cranelift always
   does first, `Opt.removeUnreachable`), solve, and apply the solution if it is not empty and
   `cpOk` accepts it (otherwise the function without its unreachable blocks; `f` itself when
-  `freshOkB` fails).
+  `freshOkB` fails); `f` itself if the result does not keep the shape the backend's and linker's
+  theorems read (`keepsShapeB`, as `Opt.optimizeExe`).
 -/
 
 namespace Opt.ConstPhi
@@ -231,12 +232,19 @@ def cpOk (f : Function) (sol : List (ValueId × ValueId)) : Bool :=
 
 /-! ## The pass -/
 
-/-- **Constant-phi removal** (module doc): `f` without its unreachable blocks, with the solution
-applied when it is not empty and `cpOk` accepts it. -/
-def run (f : Function) : Function :=
+/-- The function without its unreachable blocks, with the solution applied when it is not
+empty and `cpOk` accepts it (`f` itself when `freshOkB` fails). -/
+def runCore (f : Function) : Function :=
   if !freshOkB f then f else
   let f1 := removeUnreachable f
   let sol := solve f1
   if !sol.isEmpty && cpOk f1 sol then apply f1 sol else f1
+
+/-- **Constant-phi removal** (module doc): `runCore f` when it keeps the shape the backend's and
+the linker's theorems read (`keepsShapeB`, as `Opt.optimizeExe`: removing an unreachable block
+can drop a `return_call` or an indirect call), else `f`. -/
+def run (f : Function) : Function :=
+  let g := runCore f
+  if keepsShapeB f g then g else f
 
 end Opt.ConstPhi

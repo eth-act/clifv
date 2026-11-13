@@ -40,8 +40,9 @@ jobs:
       FV_COMPARE_MEMCAP: '0'
       FV_COMPARE_PREBUILT: '1'
       CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      # Whole import cone from nothing on this runner: 1.75 h by scripts/ci-build-plan.py's
-      # estimate (418 modules, critical path 1.19 h recorded: more runners would not shorten it).
+      # Measured (#1020, run 43462386914): 293 of the executables' 418 modules built on this
+      # runner in 31 minutes (the scheduler's 29.2 and the link; heaviest module 9.4 GB). The
+      # limit is for a slow or swapping runner, not for the usual case.
       STOCK_LEAN_LIMIT_S: '9000'
       # 3.5 minutes with the Rust builds cached (run 43389851748); the Rust tools build cold
       # after a change to them.

@@ -75,8 +75,8 @@ Lean source change. Instead:
    elaborates (`scripts/test_stock_comparison_lean_build.py` checks this).
 3. `.github/scripts/stock-comparison-lean.sh` builds what is left with
    `scripts/lake-serial-build.py` under the limits of the Full gate's shards
-   (swap, heavy modules alone), within `STOCK_LEAN_LIMIT_S` (150 minutes; the
-   whole 418 modules are estimated at 105). It saves the result for later runs;
+   (swap, heavy modules alone), within `STOCK_LEAN_LIMIT_S` (150 minutes; 293 of
+   the 418 modules took 31 minutes when measured). It saves the result for later runs;
    after a failure or the time limit it saves the modules that did build, so a
    re-run continues from them.
 4. The pipeline then runs with `FV_COMPARE_PREBUILT=1`: an executable that is
@@ -102,10 +102,14 @@ failed jobs and the jobs that need them, which after a cancelled measurement is
 the check alone). A pending push run of `main` that GitHub drops from the queue
 for a newer push starts no job at all.
 
-Measured on #1019's first run (the chosen build had the tested tree's Lean
-sources: nothing to build): the job took 10 minutes, 4 of them the download and
+Measured: on #1019's first run (the chosen build had the tested tree's Lean
+sources: nothing to build) the job took 10 minutes, 4 of them the download and
 unstaging of `lake-full`, 1 restoring and staging the executables, 3 the Rust
-builds and the comparison.
+builds and the comparison; from the workflow's own cache, 6 minutes. With a
+change at the bottom of the import cone (#1020, a scratch declaration in
+`FV/Clif/Syntax.lean`: 293 modules to build on the runner) the job took 41
+minutes: 29.2 for the scheduler (3,012 s of Lean, heaviest module 9.4 GB),
+2 for the link and the stage, 4.5 for the Rust builds and the comparison.
 
 A green measurement job means that the full inventory was processed and the
 report is valid. It does **not** mean compiler equivalence. The pipeline exits
